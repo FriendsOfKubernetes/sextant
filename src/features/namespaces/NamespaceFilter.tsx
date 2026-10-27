@@ -11,7 +11,7 @@ import { useWatch, type ClusterId, type WatchSpec } from "../../api";
 import { useAppStore } from "../../app/store";
 import { Badge, Button, Checkbox, Icon, usePopup, usePopupPosition } from "../../components";
 import { formatList } from "../../i18n/format";
-import { candidatesOf, MAX_SCOPE_NAMESPACES, type FoundBy } from "./access";
+import { candidatesOf, inScope, MAX_SCOPE_NAMESPACES, type FoundBy } from "./access";
 import { refreshAccess, useAccess, useRestrictedScope } from "./accessStore";
 import { forgetKnownNamespaces, isNamespaceName, useKnownNamespaces } from "./known";
 import { selectNamespaces } from "./namespaces";
@@ -66,7 +66,7 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
   const visible = [...groups.selected, ...groups.others];
   // Namespaces "All" would watch if it were not capped.
   const reachable = restricted
-    ? candidatesOf(known, access.found).filter((ns) => access.namespaces.get(ns) !== "noAccess").length
+    ? candidatesOf(known, access.found).filter((ns) => inScope(access.namespaces.get(ns))).length
     : 0;
 
   usePopup(ref, () => setOpen(false), open);
@@ -88,14 +88,29 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
   const foundText = (by: readonly FoundBy[]) =>
     t("namespaces:found.title", { sources: formatList(by.map((b) => t(`namespaces:found.${b}`))) });
 
+  // The name alone shows only that namespace and closes the list (as in Lens); the checkbox adds or removes it.
+  const only = (ns: string) => {
+    choose([ns]);
+    setOpen(false);
+    ref.current?.querySelector<HTMLButtonElement>(".ns-filter__button")?.focus();
+  };
+
   const option = (ns: string) => {
     const mark = restricted ? access.namespaces.get(ns) : undefined;
     const by = access.found.get(ns);
     return (
       <div key={ns} className="ns-filter__row">
-        <label className="ns-filter__option">
-          <Checkbox checked={selected?.includes(ns) ?? false} onChange={() => toggle(ns)} />
-          <span className="ns-filter__name">{ns}</span>
+        <div className="ns-filter__option">
+          <Checkbox aria-label={ns} checked={selected?.includes(ns) ?? false} onChange={() => toggle(ns)} />
+          <button
+            type="button"
+            className="ns-filter__name"
+            aria-label={t("namespaces:filter.only", { namespace: ns })}
+            title={t("namespaces:filter.only", { namespace: ns })}
+            onClick={() => only(ns)}
+          >
+            {ns}
+          </button>
           {mark === "accessible" && <Badge tone="success">{t("namespaces:mark.accessible")}</Badge>}
           {mark === "noAccess" && <Badge tone="warning">{t("namespaces:mark.noAccess")}</Badge>}
           {by && !known.includes(ns) && (
@@ -103,7 +118,7 @@ export function NamespaceFilter({ clusterId }: { clusterId: ClusterId }) {
               {t("namespaces:mark.found")}
             </span>
           )}
-        </label>
+        </div>
         {known.includes(ns) && (
           <button
             type="button"

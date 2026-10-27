@@ -12,9 +12,7 @@
     "text_one": "Este {{count}} objeto será excluído do cluster:",
     "text_many": "Estes {{count}} objetos serão excluídos do cluster:",
     "text_other": "Estes {{count}} objetos serão excluídos do cluster:",
-    "confirm": "Excluir",
-    "failed": "Não excluído: {{name}}",
-    "partial": "{{done}} de {{total}} excluídos. Os demais falharam:"
+    "confirm": "Excluir"
   },
   "scale": {
     "label": "Escalar",

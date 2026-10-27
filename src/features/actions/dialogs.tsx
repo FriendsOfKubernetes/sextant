@@ -9,11 +9,9 @@ import {
   type ApiError,
   type ClusterId,
   type DrainPreview,
-  type KindRef,
   type ObjectRef,
   type PodRef,
 } from "../../api";
-import { useAppStore } from "../../app/store";
 import { Button, Checkbox, Dialog, ErrorState } from "../../components";
 
 /** "demo/web" for a namespaced object, "node-1" otherwise. */
@@ -94,122 +92,8 @@ export function ConfirmAction({
   );
 }
 
-interface Failure {
-  ref: ObjectRef;
-  error: ApiError;
-}
-
-/**
- * Lists every object to delete; deletes them one by one after confirmation and reports each failure. Once started,
- * the deletion runs to the end.
- */
-export function DeleteDialog({
-  clusterId,
-  kind,
-  refs,
-  close,
-}: {
-  clusterId: ClusterId;
-  kind: KindRef;
-  refs: ObjectRef[];
-  close: () => void;
-}) {
-  const { t } = useTranslation();
-  const [busy, setBusy] = useState(false);
-  const [failures, setFailures] = useState<Failure[] | null>(null);
-  const count = refs.length;
-
-  const confirm = async () => {
-    setBusy(true);
-    const failed: Failure[] = [];
-    const deleted: ObjectRef[] = [];
-    for (const ref of refs) {
-      try {
-        await api.resources.delete(clusterId, ref);
-        deleted.push(ref);
-      } catch (err) {
-        failed.push({ ref, error: toApiError(err) });
-      }
-    }
-    closeDetailsOf(deleted);
-    setBusy(false);
-    if (failed.length === 0) close();
-    else setFailures(failed);
-  };
-
-  // One object is named by its kind alone; a count takes the plural forms (Russian "one" also covers 21, 31…).
-  const title =
-    count === 1 ? t("actions:delete.titleSingle", { kind: kind.kind }) : t("actions:delete.title", { count, kind: kind.kind });
-  if (failures) {
-    return (
-      <Dialog
-        open
-        title={title}
-        onClose={close}
-        footer={
-          <Button variant="primary" onClick={close}>
-            {t("actions:dialog.close")}
-          </Button>
-        }
-      >
-        <p>{t("actions:delete.partial", { done: count - failures.length, total: count })}</p>
-        {failures.map(({ ref, error }) => (
-          <ErrorState
-            key={displayName(ref)}
-            error={error}
-            title={`${t("actions:delete.failed", { name: displayName(ref) })} — ${t(`errors:${error.code}`)}`}
-          />
-        ))}
-      </Dialog>
-    );
-  }
-
-  // Deleting cannot be cancelled halfway: while it runs, Cancel is disabled and Escape / × / the backdrop do nothing,
-  // so the dialog always ends with the full result (closed, or the list of what was not deleted).
-  const closeUnlessBusy = () => {
-    if (!busy) close();
-  };
-  return (
-    <Dialog
-      open
-      title={title}
-      onClose={closeUnlessBusy}
-      footer={
-        <>
-          <Button disabled={busy} onClick={close}>
-            {t("common:actions.cancel")}
-          </Button>
-          <Button variant="danger" disabled={busy} onClick={() => void confirm()}>
-            {busy ? t("actions:dialog.working") : t("actions:delete.confirm")}
-          </Button>
-        </>
-      }
-    >
-      <p>
-        {count === 1
-          ? t("actions:delete.textSingle", { kind: kind.kind })
-          : t("actions:delete.text", { count, kind: kind.kind })}
-      </p>
-      <ul className="action-dialog__names">
-        {refs.map((ref) => (
-          <li key={displayName(ref)}>{displayName(ref)}</li>
-        ))}
-      </ul>
-    </Dialog>
-  );
-}
-
-/** The details panel must not keep showing an object that is gone. */
-function closeDetailsOf(deleted: ObjectRef[]): void {
-  const { details, closeDetails } = useAppStore.getState();
-  if (!details) return;
-  const same = (r: ObjectRef) =>
-    r.name === details.name &&
-    (r.namespace ?? null) === (details.namespace ?? null) &&
-    r.kind.group === details.kind.group &&
-    r.kind.kind === details.kind.kind;
-  if (deleted.some(same)) closeDetails();
-}
+// Delete (one object or a selection, ADR-0126) has its own module.
+export { DeleteDialog } from "./DeleteDialog";
 
 /** Asks for the new number of replicas, starting from `current`. */
 export function ScaleDialog({

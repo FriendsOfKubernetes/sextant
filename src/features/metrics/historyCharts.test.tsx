@@ -116,6 +116,26 @@ describe("charts from metrics-server", () => {
     expect(await axeViolations(view.container)).toEqual([]);
   });
 
+  it("start again after a Reconnect that kept the details open", async () => {
+    serve(METRICS_SERVER_ONLY);
+    useClustersStore.setState({ states: { c1: { state: "connected" } as never } });
+    const Section = section(NODE);
+    render(<Section clusterId="c1" objectRef={{ kind: NODE, namespace: null, name: NODE_NAME }} obj={nodeJson as KubeObject} />);
+    expect(await screen.findByRole("figure", { name: "CPU" })).toBeInTheDocument();
+    const key = JSON.stringify({ type: "node", name: NODE_NAME });
+    // Reconnect: the connection goes and comes back; the rings of the cluster are dropped.
+    act(() => useClustersStore.setState({ states: { c1: { state: "connecting" } as never } }));
+    act(() => useClustersStore.setState({ states: { c1: { state: "connected" } as never } }));
+    expect(await screen.findByText("Waiting for the first values from metrics-server…")).toBeInTheDocument();
+    cpu = 1700;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+    });
+    await waitFor(() => expect(within(screen.getByRole("figure", { name: "CPU" })).getByText("1700m")).toBeInTheDocument());
+    expect(historySeries("c1", key).cpu.map((p) => p[1])).toEqual([1700]);
+    useClustersStore.setState({ states: {} });
+  });
+
   it("wait for the first values before drawing", async () => {
     serve(METRICS_SERVER_ONLY);
     wb.backend.on("metrics_nodes", () => new Promise(() => undefined));

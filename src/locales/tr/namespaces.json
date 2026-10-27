@@ -5,7 +5,8 @@
     "allAccessible_other": "Tüm erişilebilenler ({{count}})",
     "restrictedHint": "Bu kümenin namespace'lerini listeleme izniniz yok. Bir namespace yazıp Enter'a basın: Sextant onu hatırlar.",
     "scopeCapped": "“Tüm erişilebilenler” {{total}} namespace'in ilk {{max}} tanesini izler; diğerlerini görmek için namespace seçin.",
-    "forget": "{{namespace}} unutulsun"
+    "forget": "{{namespace}} unutulsun",
+    "only": "Yalnızca {{namespace}} göster"
   },
   "mark": {
     "accessible": "erişilebilir",

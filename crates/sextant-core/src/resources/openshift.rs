@@ -55,18 +55,40 @@ pub fn build_request(name: &str) -> Value {
     })
 }
 
+/// A DNS-1123 subdomain (an object name: at most 253 lowercase letters, digits, `-` and `.`, each dot-separated part
+/// starting and ending alphanumeric), as the API server's `NameIsDNSSubdomain`.
+fn is_dns_subdomain(s: &str) -> bool {
+    s.len() <= 253 && s.split('.').all(crate::vcluster::is_dns_label)
+}
+
+/// The object is of `group`/`kind`, its namespace a DNS-1123 label and its name a DNS-1123 subdomain (they go into
+/// the request path), checked before any request.
 fn ensure(r: &ObjectRef, group: &str, kind: &str) -> CoreResult<()> {
-    if r.kind.group == group && r.kind.kind == kind && !r.name.is_empty() {
-        Ok(())
-    } else {
-        Err(CoreError::new(
+    if r.kind.group != group || r.kind.kind != kind {
+        return Err(CoreError::new(
             ErrorCode::Invalid,
             format!(
                 "this action applies to a {kind} only, not to {}",
                 r.kind.kind
             ),
-        ))
+        ));
     }
+    let namespace = r.required_namespace()?;
+    if !crate::vcluster::is_dns_label(namespace) {
+        return Err(CoreError::new(
+            ErrorCode::Invalid,
+            "a namespace is a DNS-1123 label (lowercase letters, digits and '-')",
+        ));
+    }
+    if !is_dns_subdomain(&r.name) {
+        return Err(CoreError::new(
+            ErrorCode::Invalid,
+            format!(
+                "a {kind}'s name is a DNS-1123 subdomain (lowercase letters, digits, '-' and '.')"
+            ),
+        ));
+    }
+    Ok(())
 }
 
 /// `oc rollout latest`: starts a new rollout of a DeploymentConfig; returns its new ReplicationController.
@@ -343,5 +365,37 @@ mod tests {
             .unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid);
         assert_eq!(changes(&api).len(), 1);
+    }
+
+    #[tokio::test]
+    async fn names_that_are_not_dns_names_are_refused_before_any_request() {
+        let api = FakeApi::start(openshift).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let before = api.requests().len();
+        let named = |group: &str, kind: &str, namespace: Option<&str>, name: &str| ObjectRef {
+            namespace: namespace.map(str::to_owned),
+            ..reference(group, kind, name)
+        };
+        for r in [
+            named(APPS_GROUP, "DeploymentConfig", Some("shop"), "../builds"),
+            named(APPS_GROUP, "DeploymentConfig", Some("shop"), "front/end"),
+            named(APPS_GROUP, "DeploymentConfig", Some("shop"), "Frontend"),
+            named(APPS_GROUP, "DeploymentConfig", Some("shop"), ""),
+            named(APPS_GROUP, "DeploymentConfig", Some("sh/op"), "frontend"),
+            named(APPS_GROUP, "DeploymentConfig", Some("shop.a"), "frontend"),
+            named(APPS_GROUP, "DeploymentConfig", None, "frontend"),
+        ] {
+            let err = rollout_latest(&mgr, &id, &r).await.unwrap_err();
+            assert_eq!(err.code, ErrorCode::Invalid, "{r:?}");
+        }
+        for name in ["ruby?x=1", "ruby#a", &"r".repeat(254), "-ruby", "ruby..a"] {
+            let err = start_build(&mgr, &id, &reference(BUILD_GROUP, "BuildConfig", name))
+                .await
+                .unwrap_err();
+            assert_eq!(err.code, ErrorCode::Invalid, "{name}");
+        }
+        assert_eq!(api.requests().len(), before);
+        // A dotted name is a subdomain, as the API server allows.
+        assert!(is_dns_subdomain("ruby.v2") && is_dns_subdomain("ruby"));
     }
 }

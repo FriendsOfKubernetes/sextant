@@ -4,7 +4,8 @@
     "allAccessible_other": "所有可存取的（{{count}}）",
     "restrictedHint": "您沒有列出此叢集 Namespace 的權限。輸入一個 Namespace 並按 Enter：Sextant 會記住它。",
     "scopeCapped": "「所有可存取的」只監看 {{total}} 個 Namespace 中的前 {{max}} 個；選取 Namespace 以查看其餘的。",
-    "forget": "忘記 {{namespace}}"
+    "forget": "忘記 {{namespace}}",
+    "only": "僅顯示 {{namespace}}"
   },
   "mark": {
     "accessible": "可存取",

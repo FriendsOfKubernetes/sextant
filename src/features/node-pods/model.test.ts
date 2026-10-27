@@ -76,9 +76,8 @@ describe("the node's pods", () => {
     });
   });
 
-  it("have their usage asked for their namespaces, or every namespace above the cap", () => {
+  it("have their usage asked for their namespaces, sorted", () => {
     const pods = [pod("a", [], "Running", "b-ns"), pod("b", [], "Running", "a-ns"), pod("c", [], "Running", "a-ns")];
-    expect(namespacesOf(pods, 40)).toEqual(["a-ns", "b-ns"]);
-    expect(namespacesOf(pods, 1)).toBeNull();
+    expect(namespacesOf(pods)).toEqual(["a-ns", "b-ns"]);
   });
 });

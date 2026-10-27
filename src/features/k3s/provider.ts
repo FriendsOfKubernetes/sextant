@@ -12,10 +12,13 @@
 // (a k3s or RKE2 server). The watches, all shared (`acquireWatch`): HelmCharts (≤ `MAX_CHARTS`), the Jobs labelled
 // `helmcharts.helm.cattle.io/chart` (a label selector on the API server, ≤ `MAX_JOBS`) and kube-system's Deployments
 // (≤ `MAX_DEPLOYMENTS`). The values of a chart never reach a problem. Agents get none of it (NEVER_FOR_AGENTS).
+// A user who may not list Namespaces (#285) watches the HelmCharts and Jobs of the accessible namespaces
+// (`restrictedScope`) instead of cluster-wide; when that scope moves, the problems store starts its sources again.
 import type { ClusterId, KubeObject, WatchSpec, WatchState } from "../../api";
 import { isCapped } from "../../api/watchState";
 import { findKind } from "../../resources";
 import { knownClusterKinds } from "../../resources/useKinds";
+import { restrictedScope } from "../namespaces/accessStore";
 import type { Problem } from "../problems/model";
 import { registerProblemProvider, type ProvidedProblems } from "../problems/store";
 import { acquireWatch, epochOf, specKey, subscribeSharedWatches, watchState } from "../resource-map/watches";
@@ -173,8 +176,9 @@ export function provideK3s(clusterId: ClusterId, set: (update: ProvidedProblems)
       return;
     }
     const server = Boolean(findKind(kinds!, ADDON));
-    const chartSpec: WatchSpec = { kind: chartKind, namespaces: null, labelSelector: null, fieldSelector: null };
-    const jobSpec: WatchSpec = { kind: { group: "batch", version: "v1", kind: "Job" }, namespaces: null, labelSelector: JOBS_SELECTOR, fieldSelector: null };
+    const scope = restrictedScope(clusterId);
+    const chartSpec: WatchSpec = { kind: chartKind, namespaces: scope, labelSelector: null, fieldSelector: null };
+    const jobSpec: WatchSpec = { kind: { group: "batch", version: "v1", kind: "Job" }, namespaces: scope, labelSelector: JOBS_SELECTOR, fieldSelector: null };
     const deploymentSpec: WatchSpec = { kind: DEPLOYMENT, namespaces: [KUBE_SYSTEM], labelSelector: null, fieldSelector: null };
     hold([
       { spec: chartSpec, cap: MAX_CHARTS },

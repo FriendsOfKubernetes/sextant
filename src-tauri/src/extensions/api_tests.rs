@@ -1954,3 +1954,24 @@ async fn an_extension_never_gets_what_a_failed_exec_plugin_printed() {
     assert!(!listed.to_string().contains("PLUGIN-SAID"), "{listed}");
     assert_eq!(listed[0]["state"]["state"], "error", "{listed}");
 }
+
+#[test]
+fn objects_reach_an_extension_without_their_inline_secret_material() {
+    let route = json!({
+        "apiVersion": "route.openshift.io/v1", "kind": "Route",
+        "metadata": { "name": "web", "namespace": "a" },
+        "spec": { "host": "web.example.com", "tls": { "key": "-----BEGIN PRIVATE KEY-----", "certificate": "cert" } },
+    });
+    let out = without_inline_secrets(route);
+    assert_eq!(out["spec"]["tls"]["key"], "");
+    assert_eq!(out["spec"]["tls"]["certificate"], "cert");
+    assert!(!out.to_string().contains("PRIVATE KEY"));
+    // Saving such a copy back is refused by the core (the marker of hidden values).
+    assert!(
+        out["metadata"]["annotations"]
+            .get("sextant.dev/values-hidden")
+            .is_some()
+    );
+    let config_map = json!({ "apiVersion": "v1", "kind": "ConfigMap", "data": { "key": "v" } });
+    assert_eq!(without_inline_secrets(config_map.clone()), config_map);
+}

@@ -1,0 +1,51 @@
+{
+  "bar": {
+    "label": "選択したオブジェクト",
+    "selected_other": "{{count}} 個を選択中",
+    "cleared": "選択を解除しました",
+    "clear": "選択を解除",
+    "part": "{{part}}/{{total}}",
+    "partialLabel": "{{action}}（選択した {{total}} 個のうち {{part}} 個）"
+  },
+  "partial": {
+    "title": "{{action}}: 選択の一部のみ",
+    "text": "「{{action}}」は選択した {{total}} 個のオブジェクトのうち {{part}} 個に適用できます。次のオブジェクトは除外されます:",
+    "left": "除外",
+    "continue_other": "{{count}} 個で続行"
+  },
+  "notRestarted": {
+    "deleting": "削除中です。",
+    "mirror": "静的 Pod: kubelet が同じ Pod を戻します。",
+    "sextant": "Sextant のノードシェルまたはデバッグコピーです。",
+    "noController": "再作成するコントローラーがありません。",
+    "otherController": "コントローラー {{owner}} を通じた再起動はできません。",
+    "kind": "再起動は適用されません。"
+  },
+  "delete": {
+    "more_other": "…ほか {{count}} 個のオブジェクト。",
+    "ownedSingle": "このオブジェクトには、再作成する可能性が高いコントローラーがあります。削除しても置き換わるだけで、なくなりません。完全に削除するには、コントローラーを削除するかスケールダウンしてください。",
+    "owned_other": "このうち {{count}} 個のオブジェクトには、再作成する可能性が高いコントローラーがあります（一覧に表示）。削除しても置き換わるだけで、なくなりません。完全に削除するには、コントローラーを削除するかスケールダウンしてください。",
+    "gitopsSingle": "このオブジェクトは Flux または Argo CD で管理されており、次の同期で戻る可能性があります。",
+    "gitops_other": "このうち {{count}} 個のオブジェクトは Flux または Argo CD で管理されており（一覧に表示）、次の同期で戻る可能性があります。",
+    "namespaces": "namespace を削除すると、その中のすべてが削除されます: ワークロード、Services、ConfigMaps、Secrets、PersistentVolumeClaims とそのデータ。",
+    "recreatedBy": "戻ります: {{owner}}",
+    "syncedBy": {
+      "flux": "戻る可能性: Flux {{name}}",
+      "argocd": "戻る可能性: Argo CD アプリケーション {{name}}"
+    },
+    "typeCount": "確認のため、オブジェクトの数（{{number}}）を入力してください:",
+    "progress": "{{name}} を削除中（{{current}}/{{total}}）…",
+    "stop": "停止",
+    "stopping": "現在のオブジェクトの後に停止します…",
+    "summary": "{{total}} 個中 {{deleted}} 個を削除しました。",
+    "results": "各オブジェクトの結果",
+    "outcome": {
+      "deleted": "削除済み: {{name}}",
+      "gone": "すでに存在しません: {{name}}",
+      "changed": "保持: 一覧の表示後、{{name}} は同じ名前の別のオブジェクトに置き換えられました。",
+      "forbidden": "削除されません（権限なし）: {{name}}",
+      "failed": "削除されません: {{name}}",
+      "stopped": "未実行（停止）: {{name}}"
+    }
+  }
+}

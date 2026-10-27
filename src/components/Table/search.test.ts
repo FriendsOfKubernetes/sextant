@@ -3,6 +3,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type { KubeObject } from "../../api";
 import { i18n } from "../../i18n";
+import { loadLanguage } from "../../i18n/index";
+import "../../features/k3s/index";
+import "../../features/olm/index";
+import "../../features/openshift/index";
 import "../../resources";
 import { findResourceDef } from "../../resources";
 import type { ColumnDef } from "../../resources/registry";
@@ -75,6 +79,60 @@ describe("search over the shown columns", () => {
     // A changed object (the watch replaces it) is read again.
     rows.textOf({ metadata: { name: "web" } }, 2);
     expect(value).toHaveBeenCalledTimes(2);
+  });
+
+  it("never matches a raw boolean or time under a renderer, only what the cell shows", () => {
+    const columns: ColumnDef[] = [
+      { id: "name", value: (o) => o.metadata?.name },
+      { id: "approved", value: () => true, render: () => null },
+      { id: "started", value: () => "2026-10-01T10:00:00Z", render: () => null },
+      { id: "plain", value: () => "2026-09-30" },
+    ];
+    const obj: KubeObject = { metadata: { name: "a" } };
+    expect(search("true", [obj], columns)).toEqual([]);
+    expect(search("10:00", [obj], columns)).toEqual([]);
+    expect(search("2026-09-30", [obj], columns)).toEqual(["a"]);
+  });
+
+  it("matches translated cells in the UI language, not their raw values (German)", async () => {
+    await loadLanguage("de");
+    await i18n.changeLanguage("de");
+    try {
+      const SUBSCRIPTION = { group: "operators.coreos.com", version: "v1alpha1", kind: "Subscription" };
+      const INSTALL_PLAN = { group: "operators.coreos.com", version: "v1alpha1", kind: "InstallPlan" };
+      const OPERATOR_GROUP = { group: "operators.coreos.com", version: "v1", kind: "OperatorGroup" };
+      const HELM_CHART = { group: "helm.cattle.io", version: "v1", kind: "HelmChart" };
+      const ROUTE = { group: "route.openshift.io", version: "v1", kind: "Route" };
+      const columnsOf = (kind: typeof POD) => findResourceDef(kind)!.columns;
+      const named = (name: string, rest: Partial<KubeObject> = {}): KubeObject => ({ metadata: { name, namespace: "ops" }, ...rest });
+
+      const failed = named("sub", {
+        status: { conditions: [{ type: "ResolutionFailed", status: "True", reason: "ConstraintsNotSatisfiable" }] },
+      });
+      expect(search("Auflösung", [failed], columnsOf(SUBSCRIPTION))).toEqual(["sub"]);
+      expect(search("resolutionFailed", [failed], columnsOf(SUBSCRIPTION))).toEqual([]);
+
+      const plan = named("plan", { spec: { approved: true, approval: "Manual", clusterServiceVersionNames: [] } });
+      expect(search("Ja", [plan], columnsOf(INSTALL_PLAN))).toEqual(["plan"]);
+      expect(search("true", [plan], columnsOf(INSTALL_PLAN))).toEqual([]);
+
+      const group = named("og", { status: { namespaces: [""] } });
+      expect(search("Alle", [group], columnsOf(OPERATOR_GROUP))).toEqual(["og"]);
+      expect(search("*", [group], columnsOf(OPERATOR_GROUP))).toEqual([]);
+
+      const chart = named("traefik", { status: { conditions: [{ type: "Failed", status: "True", message: "boom" }] } });
+      expect(search("Fehlgeschlagen", [chart], columnsOf(HELM_CHART))).toEqual(["traefik"]);
+      expect(search("failed", [chart], columnsOf(HELM_CHART))).toEqual([]);
+
+      const route = named("web", {
+        spec: { host: "web.apps.example", to: { kind: "Service", name: "web" } },
+        status: { ingress: [{ conditions: [{ type: "Admitted", status: "True" }] }] },
+      });
+      expect(search("Zugelassen", [route], columnsOf(ROUTE))).toEqual(["web"]);
+      expect(search("admitted", [route], columnsOf(ROUTE))).toEqual([]);
+    } finally {
+      await i18n.changeLanguage("en");
+    }
   });
 
   it("keeps the selector terms as they were", () => {

@@ -8,9 +8,7 @@
     "title_other": "删除 {{count}} 个 {{kind}} 对象？",
     "textSingle": "将从集群中删除此 {{kind}}：",
     "text_other": "将从集群中删除以下 {{count}} 个对象：",
-    "confirm": "删除",
-    "failed": "未删除：{{name}}",
-    "partial": "已删除 {{done}}/{{total}} 个。其余删除失败："
+    "confirm": "删除"
   },
   "scale": {
     "label": "伸缩",

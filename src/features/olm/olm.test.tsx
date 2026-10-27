@@ -221,7 +221,7 @@ describe("problems", () => {
     expect(isProblem(plan("install-q9w4m"), INSTALL_PLAN)).toBe(false);
   });
 
-  it("a catalog not READY (nor IDLE) for ten minutes; a new state starts the grace again", () => {
+  it("a catalog not READY (nor IDLE) for ten minutes, however its unhealthy state moves", () => {
     expect(detect(CATALOG_SOURCE, catalog("operatorhubio-catalog"))).toEqual([]);
     const idle = catalog("operatorhubio-catalog");
     (st(idle).connectionState as Record<string, unknown>).lastObservedState = "IDLE";
@@ -230,8 +230,18 @@ describe("problems", () => {
     const [first] = resolve(CATALOG_SOURCE, broken, 1000);
     expect(first).toMatchObject({ reason: "CatalogSourceNotReady", messageParams: { state: "TRANSIENT_FAILURE" }, activeAt: 1000 + CATALOG_GRACE_MS });
     expect(resolve(CATALOG_SOURCE, broken, 5000, [first!])[0]?.activeAt).toBe(1000 + CATALOG_GRACE_MS);
+    // A crash-looping registry flips between TRANSIENT_FAILURE and CONNECTING: the grace keeps running from the first
+    // sighting, so the problem comes after ten minutes, and the message follows the current state.
     (st(broken).connectionState as Record<string, unknown>).lastObservedState = "CONNECTING";
-    expect(resolve(CATALOG_SOURCE, broken, 5000, [first!])[0]?.activeAt).toBe(5000 + CATALOG_GRACE_MS);
+    const [moved] = resolve(CATALOG_SOURCE, broken, 5000, [first!]);
+    expect(moved).toMatchObject({ activeAt: 1000 + CATALOG_GRACE_MS, messageParams: { state: "CONNECTING" } });
+    (st(broken).connectionState as Record<string, unknown>).lastObservedState = "TRANSIENT_FAILURE";
+    expect(resolve(CATALOG_SOURCE, broken, 90_000, [moved!])[0]?.activeAt).toBe(1000 + CATALOG_GRACE_MS);
+    // Healthy again ends it; the next failure starts a new grace.
+    (st(broken).connectionState as Record<string, unknown>).lastObservedState = "READY";
+    expect(resolve(CATALOG_SOURCE, broken, 100_000, [moved!])).toEqual([]);
+    (st(broken).connectionState as Record<string, unknown>).lastObservedState = "CONNECTING";
+    expect(resolve(CATALOG_SOURCE, broken, 200_000, [])[0]?.activeAt).toBe(200_000 + CATALOG_GRACE_MS);
     // A catalog without a connection state (a ConfigMap catalog) is not judged.
     const plain = catalog("broken-catalog");
     delete st(plain).connectionState;

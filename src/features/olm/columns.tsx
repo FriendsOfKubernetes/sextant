@@ -7,7 +7,7 @@
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { Age } from "../../components";
-import { ageColumn, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
+import { ageColumn, ageSearchText, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
 import { formatList } from "../../i18n";
 import {
   catalogInfo,
@@ -73,6 +73,16 @@ function ConditionCell({ obj, type }: { obj: KubeObject; type: string }) {
   ) : null;
 }
 
+/** The text a condition cell shows, for the search. */
+const conditionSearch = (type: string): ColumnDef["searchText"] => (o) => conditionText(o, type)?.text;
+
+/** An OperatorGroup's targets as the cell shows them. */
+function targetsText(obj: KubeObject, t: (key: string) => string): string {
+  const info = operatorGroupInfo(obj);
+  if (info.allNamespaces) return t("olm:allNamespaces");
+  return formatList(info.namespaces.length > 0 ? info.namespaces : info.targetNamespaces);
+}
+
 function YesNo({ value }: { value: boolean }) {
   const { t } = useTranslation();
   return <>{value ? t("olm:yes") : t("olm:no")}</>;
@@ -80,10 +90,7 @@ function YesNo({ value }: { value: boolean }) {
 
 function TargetsText({ obj }: { obj: KubeObject }) {
   const { t } = useTranslation();
-  const info = operatorGroupInfo(obj);
-  if (info.allNamespaces) return <>{t("olm:allNamespaces")}</>;
-  const list = info.namespaces.length > 0 ? info.namespaces : info.targetNamespaces;
-  return <>{formatList(list)}</>;
+  return <>{targetsText(obj, t)}</>;
 }
 
 export const subscriptionColumns: ColumnDef[] = [
@@ -97,6 +104,7 @@ export const subscriptionColumns: ColumnDef[] = [
   col("state", subscriptionState, {
     width: "150px",
     render: (o) => <SubscriptionStateText obj={o} />,
+    searchText: (o, ctx) => ctx.t(`olm:subscriptionState.${subscriptionState(o)}`),
   }),
   ageColumn,
 ];
@@ -119,6 +127,7 @@ export const installPlanColumns: ColumnDef[] = [
   col("approved", (o) => installPlanInfo(o).approved, {
     width: "90px",
     render: (o) => <YesNo value={installPlanInfo(o).approved} />,
+    searchText: (o, ctx) => (installPlanInfo(o).approved ? ctx.t("olm:yes") : ctx.t("olm:no")),
   }),
   col("phase", (o) => installPlanInfo(o).phase, {
     width: "140px",
@@ -162,6 +171,7 @@ export const operatorGroupColumns: ColumnDef[] = [
     {
       width: "minmax(160px, 3fr)",
       render: (o) => <TargetsText obj={o} />,
+      searchText: (o, ctx) => targetsText(o, ctx.t),
     },
   ),
   col("upgradeStrategy", (o) => operatorGroupInfo(o).upgradeStrategy, { width: "140px" }),
@@ -174,15 +184,27 @@ export const clusterExtensionColumns: ColumnDef[] = [
   nameColumn,
   col("package", (o) => extensionInfo(o).packageName),
   col("installedVersion", (o) => extensionInfo(o).installedVersion, { width: "120px" }),
-  col("installedCondition", (o) => conditionOf(o, "Installed")?.status, { width: "140px", render: (o) => <ConditionCell obj={o} type="Installed" /> }),
-  col("progressing", (o) => conditionOf(o, "Progressing")?.reason, { width: "180px", render: (o) => <ConditionCell obj={o} type="Progressing" /> }),
+  col("installedCondition", (o) => conditionOf(o, "Installed")?.status, {
+    width: "140px",
+    render: (o) => <ConditionCell obj={o} type="Installed" />,
+    searchText: conditionSearch("Installed"),
+  }),
+  col("progressing", (o) => conditionOf(o, "Progressing")?.reason, {
+    width: "180px",
+    render: (o) => <ConditionCell obj={o} type="Progressing" />,
+    searchText: conditionSearch("Progressing"),
+  }),
   ageColumn,
 ];
 
 export const clusterCatalogColumns: ColumnDef[] = [
   nameColumn,
   col("image", (o) => catalogV1Info(o).image, { width: "minmax(180px, 3fr)" }),
-  col("serving", (o) => conditionOf(o, "Serving")?.status, { width: "160px", render: (o) => <ConditionCell obj={o} type="Serving" /> }),
+  col("serving", (o) => conditionOf(o, "Serving")?.status, {
+    width: "160px",
+    render: (o) => <ConditionCell obj={o} type="Serving" />,
+    searchText: conditionSearch("Serving"),
+  }),
   col(
     "lastUnpacked",
     (o) => {
@@ -190,7 +212,11 @@ export const clusterCatalogColumns: ColumnDef[] = [
       const ms = at ? Date.parse(at) : NaN;
       return Number.isNaN(ms) ? undefined : -ms;
     },
-    { width: "110px", render: (o, ctx) => <Age timestamp={catalogV1Info(o).lastUnpacked} now={ctx.now} /> },
+    {
+      width: "110px",
+      render: (o, ctx) => <Age timestamp={catalogV1Info(o).lastUnpacked} now={ctx.now} />,
+      ...ageSearchText((o) => catalogV1Info(o).lastUnpacked),
+    },
   ),
   ageColumn,
 ];

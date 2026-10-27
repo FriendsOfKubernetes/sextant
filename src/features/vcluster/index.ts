@@ -2,7 +2,7 @@
 // cluster — control planes found by `app=vcluster` — with their state, pods, Service and kubeconfig Secret (metadata
 // only); the "vcluster" section of a control plane's StatefulSet or Deployment adds the objects the syncer copied from
 // the virtual cluster. "Connect" (a click and a confirmation) has the backend read the Secret, forward a local port
-// through the host cluster and add the virtual cluster to the cluster list as Sextant's own `vcluster.yaml`; the entry
+// through the host cluster and add the virtual cluster to the cluster list as Sextant's own `vcluster-<pid>.yaml`; the entry
 // lives as long as the forward. Nothing else writes anything; agents and extensions get nothing new.
 import { useEffect } from "react";
 import { registerDetailsSection } from "../../layout/details/registry";

@@ -53,7 +53,7 @@
     "confirm": "Conectar",
     "reads": "O Sextant lê o Secret {{secret}} em {{namespace}} com suas credenciais. O kubeconfig contido nele fica no backend do Sextant.",
     "forwards": "Uma porta local é redirecionada por {{host}} para o servidor de API do vcluster.",
-    "adds": "O cluster virtual {{context}} é adicionado à lista de clusters, no arquivo kubeconfig próprio do Sextant vcluster.yaml.",
+    "adds": "O cluster virtual {{context}} é adicionado à lista de clusters, no arquivo kubeconfig próprio do Sextant vcluster-<PID>.yaml.",
     "lasts": "Ele fica lá enquanto o redirecionamento de porta estiver ativo: desconectar {{host}}, parar o redirecionamento ou sair do Sextant o remove."
   },
   "fields": {

@@ -6,6 +6,7 @@
   "search": {
     "placeholder": "在所有列中搜索（标签用 app=web）…"
   },
+  "usagePartial": "为避免查询整个集群，仅显示按名称排在前面的 namespace 中 Pod 的用量（上限：{{max}}）。",
   "columns": {
     "cpuRequest": "CPU 请求",
     "cpuLimit": "CPU 限制",

@@ -4,7 +4,8 @@
     "allAccessible_other": "접근 가능한 모든 항목({{count}})",
     "restrictedHint": "이 클러스터의 namespace 목록을 조회할 권한이 없습니다. namespace를 입력하고 Enter를 누르세요. Sextant가 기억합니다.",
     "scopeCapped": "“접근 가능한 모든 항목”은 namespace {{total}}개 중 처음 {{max}}개만 감시합니다. 나머지를 보려면 namespace를 선택하세요.",
-    "forget": "{{namespace}} 잊기"
+    "forget": "{{namespace}} 잊기",
+    "only": "{{namespace}}만 표시"
   },
   "mark": {
     "accessible": "접근 가능",

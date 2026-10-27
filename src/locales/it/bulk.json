@@ -1,0 +1,61 @@
+{
+  "bar": {
+    "label": "Oggetti selezionati",
+    "selected_one": "{{count}} selezionato",
+    "selected_many": "{{count}} selezionati",
+    "selected_other": "{{count}} selezionati",
+    "cleared": "Selezione annullata",
+    "clear": "Annulla selezione",
+    "part": "{{part}} di {{total}}",
+    "partialLabel": "{{action}} (per {{part}} di {{total}} selezionati)"
+  },
+  "partial": {
+    "title": "{{action}}: solo una parte della selezione",
+    "text": "“{{action}}” si applica a {{part}} dei {{total}} oggetti selezionati. Questi vengono esclusi:",
+    "left": "Esclusi",
+    "continue_one": "Continua con {{count}} oggetto",
+    "continue_many": "Continua con {{count}} di oggetti",
+    "continue_other": "Continua con {{count}} oggetti"
+  },
+  "notRestarted": {
+    "deleting": "È in fase di eliminazione.",
+    "mirror": "Un Pod statico: il kubelet riporta lo stesso Pod.",
+    "sextant": "Una shell del nodo o una copia di debug di Sextant.",
+    "noController": "Nessun controller lo ricreerebbe.",
+    "otherController": "Il riavvio non funziona tramite il suo controller {{owner}}.",
+    "kind": "Il riavvio non si applica a questo oggetto."
+  },
+  "delete": {
+    "more_one": "…e {{count}} altro oggetto.",
+    "more_many": "…e altri {{count}} di oggetti.",
+    "more_other": "…e altri {{count}} oggetti.",
+    "ownedSingle": "Ha un controller che probabilmente lo ricreerà: eliminarlo lo sostituisce invece di rimuoverlo. Per rimuoverlo definitivamente, elimina il controller o riducine le repliche.",
+    "owned_one": "{{count}} di questi oggetti ha un controller (segnato nell'elenco) che probabilmente lo ricreerà: eliminarlo lo sostituisce invece di rimuoverlo. Per rimuoverlo definitivamente, elimina il controller o riducine le repliche.",
+    "owned_many": "{{count}} di questi oggetti hanno un controller (segnato nell'elenco) che probabilmente li ricreerà: eliminarli li sostituisce invece di rimuoverli. Per rimuoverli definitivamente, elimina i loro controller o riducine le repliche.",
+    "owned_other": "{{count}} di questi oggetti hanno un controller (segnato nell'elenco) che probabilmente li ricreerà: eliminarli li sostituisce invece di rimuoverli. Per rimuoverli definitivamente, elimina i loro controller o riducine le repliche.",
+    "gitopsSingle": "È gestito da Flux o Argo CD e può tornare alla prossima sincronizzazione.",
+    "gitops_one": "{{count}} di questi oggetti è gestito da Flux o Argo CD (segnato nell'elenco) e può tornare alla prossima sincronizzazione.",
+    "gitops_many": "{{count}} di questi oggetti sono gestiti da Flux o Argo CD (segnati nell'elenco) e possono tornare alla prossima sincronizzazione.",
+    "gitops_other": "{{count}} di questi oggetti sono gestiti da Flux o Argo CD (segnati nell'elenco) e possono tornare alla prossima sincronizzazione.",
+    "namespaces": "Eliminare un namespace elimina tutto ciò che contiene: carichi di lavoro, Services, ConfigMaps, Secrets e PersistentVolumeClaims con i loro dati.",
+    "recreatedBy": "tornerà: {{owner}}",
+    "syncedBy": {
+      "flux": "può tornare: Flux {{name}}",
+      "argocd": "può tornare: applicazione Argo CD {{name}}"
+    },
+    "typeCount": "Per confermare, digita il numero di oggetti ({{number}}):",
+    "progress": "Eliminazione di {{name}} ({{current}} di {{total}})…",
+    "stop": "Interrompi",
+    "stopping": "Interruzione dopo l'oggetto corrente…",
+    "summary": "{{deleted}} di {{total}} eliminati.",
+    "results": "Risultato per ogni oggetto",
+    "outcome": {
+      "deleted": "Eliminato: {{name}}",
+      "gone": "Già assente: {{name}}",
+      "changed": "Mantenuto: {{name}} è stato sostituito da un altro oggetto con lo stesso nome da quando è stato mostrato l'elenco.",
+      "forbidden": "Non eliminato, nessuna autorizzazione: {{name}}",
+      "failed": "Non eliminato: {{name}}",
+      "stopped": "Non tentato, interrotto: {{name}}"
+    }
+  }
+}

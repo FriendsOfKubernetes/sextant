@@ -119,13 +119,24 @@ describe("the order of the namespace list (#219)", () => {
     expect(listed(reopened)).toEqual(["payments", "shop", "|", "default", "kube-system", "web"]);
   });
 
+  it("adds a namespace with its checkbox and shows only that namespace on a click of its name", async () => {
+    const button = await renderWithNamespaces(["web"]);
+    toggleOpen(button);
+    fireEvent.click(screen.getByRole("checkbox", { name: "shop" }));
+    expect(useAppStore.getState().clusterViews.c1?.namespaces).toEqual(["web", "shop"]);
+    fireEvent.click(screen.getByRole("button", { name: "Show only payments" }));
+    expect(useAppStore.getState().clusterViews.c1?.namespaces).toEqual(["payments"]);
+    expect(screen.queryByRole("dialog", { name: "Choose namespaces" })).toBeNull();
+    expect(document.activeElement).toBe(button);
+  });
+
   it("keeps the split while filtering, and the focus order follows the list", async () => {
     const button = await renderWithNamespaces(["web", "kube-system"]);
     const dialog = toggleOpen(button)!;
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "e" } });
     expect(listed(dialog)).toEqual(["kube-system", "web", "|", "default", "payments"]);
     const boxes = [...dialog.querySelectorAll<HTMLInputElement>("input[type=checkbox]")].map(
-      (box) => box.closest("label")?.textContent,
+      (box) => box.closest(".ns-filter__option")?.textContent,
     );
     expect(boxes).toEqual(["All namespaces", "kube-system", "web", "default", "payments"]);
 

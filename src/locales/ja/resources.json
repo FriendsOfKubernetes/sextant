@@ -143,7 +143,6 @@
   "table": {
     "count_other": "{{count}} 件",
     "countFiltered": "{{total}} 件中 {{shown}} 件",
-    "selected_other": "{{count}} 件を選択中",
     "reconnecting": "再接続中…",
     "empty": "選択した namespace にオブジェクトは見つかりませんでした",
     "emptyClusterScoped": "オブジェクトは見つかりませんでした",
@@ -154,7 +153,7 @@
     "forbiddenIn": "権限がない namespace: {{namespaces}}",
     "unknownKind": "このクラスターは {{kind}} を提供していません",
     "search": "検索",
-    "searchPlaceholder": "名前、namespace、label (app=web) で検索…",
+    "searchPlaceholder": "すべての列で検索 (ラベルは app=web)…",
     "selectAll": "すべての行を選択",
     "selectRow": "{{name}} を選択",
     "actions": "操作",

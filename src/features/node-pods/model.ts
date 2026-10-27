@@ -69,12 +69,12 @@ export function allocatedResources(node: KubeObject | null, pods: Iterable<KubeO
   return { cpu, memory, pods: { count, allocatable: podsAllocatable } };
 }
 
-/** The namespaces of `pods`, sorted, or `null` (all) when there are more than `max` — the pods' usage is asked for them. */
-export function namespacesOf(pods: Iterable<KubeObject>, max: number): string[] | null {
+/** The namespaces of `pods`, sorted — the pods' usage is asked for them (`usePodUsageOfMany`). */
+export function namespacesOf(pods: Iterable<KubeObject>): string[] {
   const set = new Set<string>();
   for (const pod of pods) set.add(pod.metadata?.namespace ?? "");
   set.delete("");
-  return set.size > max ? null : [...set].sort();
+  return [...set].sort();
 }
 
 /** A pod's usage in `usage` (by `namespace/name`). */

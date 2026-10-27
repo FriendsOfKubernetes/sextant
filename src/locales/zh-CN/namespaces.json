@@ -4,7 +4,8 @@
     "allAccessible_other": "所有可访问的（{{count}}）",
     "restrictedHint": "你没有列出此集群 Namespace 的权限。输入一个 Namespace 并按 Enter：Sextant 会记住它。",
     "scopeCapped": "“所有可访问的”只监视 {{total}} 个 Namespace 中的前 {{max}} 个；选择 Namespace 以查看其余的。",
-    "forget": "忘记 {{namespace}}"
+    "forget": "忘记 {{namespace}}",
+    "only": "仅显示 {{namespace}}"
   },
   "mark": {
     "accessible": "可访问",

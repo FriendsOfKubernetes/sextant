@@ -6,6 +6,7 @@
   "search": {
     "placeholder": "Rechercher dans toutes les colonnes (app=web pour un label)…"
   },
+  "usagePartial": "L'utilisation n'est affichée que pour les pods des premiers namespaces par nom (limite : {{max}}), pour ne pas interroger tout le cluster.",
   "columns": {
     "cpuRequest": "Demande CPU",
     "cpuLimit": "Limite CPU",

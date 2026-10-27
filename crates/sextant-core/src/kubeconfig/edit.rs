@@ -386,6 +386,14 @@ impl KubeconfigRegistry {
     }
 
     fn ensure_writable(&self, source: &KubeconfigSource, writable: &[String]) -> CoreResult<()> {
+        if source.kind == SourceKind::Vcluster {
+            // Its entries follow the port forwards (ADR-0122) and its ids are not its path's.
+            return Err(CoreError::new(
+                ErrorCode::Denied,
+                "Sextant keeps the virtual clusters' entries itself: connect or disconnect them from the host \
+                 cluster's Virtual clusters page",
+            ));
+        }
         if self.is_own(source) || writable.contains(&source.id) {
             return Ok(());
         }

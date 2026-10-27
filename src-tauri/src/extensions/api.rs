@@ -9,7 +9,9 @@
 //! extensions' journal (`extensions-audit.jsonl`, event `ext-audit`).
 //!
 //! As for agents (ADR-0043, ADR-0045): Secrets come without their values from `resources.get/list/watch`; one value
-//! needs `secret.value` and the "Secret values" action; a JSON patch on a Secret that is not only add/replace/remove
+//! needs `secret.value` and the "Secret values" action; secret material other kinds hold inline (a Route's key, a
+//! node's k3s arguments, …: `sextant_core::resources::inline_secrets`) comes emptied from `resources.get/list/watch`
+//! and `resources.patch`, whatever was granted (no method reads one such value); a JSON patch on a Secret that is not only add/replace/remove
 //! needs "Secret values" too; node shell pods are never changed or deleted, whatever the rules, and a pod that cannot
 //! be read to make sure is refused.
 //!
@@ -36,7 +38,9 @@ use sextant_core::access::{
 };
 use sextant_core::error::with_timeout;
 use sextant_core::extensions::{ExtensionPermissions, InstalledExtension, decide_extension};
-use sextant_core::resources::{self, KindRef, PatchType, ResourceKind, WatchUpdate};
+use sextant_core::resources::{
+    self, KindRef, PatchType, ResourceKind, WatchUpdate, inline_secrets,
+};
 use sextant_core::{
     ClusterId, ClusterManager, ConnectionState, CoreError, CoreResult, ErrorCode, ObjectRef,
     SettingsStore, WatchSpec, logs,
@@ -1119,6 +1123,7 @@ impl<'a> ExtCall<'a> {
                 (items, truncated, Some(namespaces))
             }
         };
+        let items: Vec<Value> = items.into_iter().map(without_inline_secrets).collect();
         let mut out = json!({ "items": items, "truncated": truncated });
         if let Some(namespaces) = namespaces.filter(|_| namespace.is_none()) {
             out["namespaces"] = json!(namespaces);
@@ -1133,12 +1138,14 @@ impl<'a> ExtCall<'a> {
         let need = requirement(&object, AccessAction::Read);
         self.check(&cluster, &[need], &summary(describe(&object)))
             .await?;
-        // Always without Secret values (`resources::get`); one value is `secret.value`.
+        // Always without Secret values (`resources::get`) and inline secret material; one Secret value is
+        // `secret.value`.
         read(
             "reading the object",
             resources::get(&self.api.clusters, &cluster.id, &object),
         )
         .await
+        .map(without_inline_secrets)
     }
 
     async fn watch(&self, params: Value, sink: Option<(String, UpdateSink)>) -> CoreResult<Value> {
@@ -1194,8 +1201,13 @@ impl<'a> ExtCall<'a> {
             metadata_only: args.metadata_only,
         };
         let (mgr, cluster_id) = (self.api.clusters.clone(), cluster.id.clone());
-        // `resources::watch` gives Secrets without their values, like `watch_start`.
-        let open = async move { resources::watch(&mgr, &cluster_id, spec).await };
+        // `resources::watch` gives Secrets without their values, like `watch_start`; inline secret material is
+        // emptied here, object by object, before an update reaches the frame.
+        let open = async move {
+            resources::watch(&mgr, &cluster_id, spec)
+                .await
+                .map(|updates| updates.map(inline_secrets::hide_in_watch_update))
+        };
         self.api
             .start_stream(
                 self.host,
@@ -1283,6 +1295,7 @@ impl<'a> ExtCall<'a> {
             ),
         )
         .await
+        .map(without_inline_secrets)
     }
 
     async fn delete(&self, params: Value) -> CoreResult<Value> {
@@ -1441,6 +1454,13 @@ impl<'a> ExtCall<'a> {
             }
         })
     }
+}
+
+/// An object as an extension gets it: the secret material its kind holds inline emptied
+/// ([`inline_secrets::hide_inline_secrets`]; a Secret's values are already gone in the core).
+fn without_inline_secrets(mut value: Value) -> Value {
+    inline_secrets::hide_inline_secrets(&mut value);
+    value
 }
 
 /// The rules an extension was granted, as the agent's access model reads them.

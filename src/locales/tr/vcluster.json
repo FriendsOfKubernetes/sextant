@@ -52,7 +52,7 @@
     "confirm": "Bağlan",
     "reads": "Sextant, {{namespace}} içindeki {{secret}} Secret'ını kimlik bilgilerinizle okur. İçindeki kubeconfig Sextant'ın arka ucunda kalır.",
     "forwards": "Yerel bir port, {{host}} üzerinden vcluster'ın API sunucusuna yönlendirilir.",
-    "adds": "{{context}} sanal kümesi, Sextant'ın kendi kubeconfig dosyası vcluster.yaml içinde küme listesine eklenir.",
+    "adds": "{{context}} sanal kümesi, Sextant'ın kendi kubeconfig dosyası vcluster-<PID>.yaml içinde küme listesine eklenir.",
     "lasts": "Port yönlendirmesi çalıştığı sürece orada kalır: {{host}} bağlantısını kesmek, yönlendirmeyi durdurmak veya Sextant'tan çıkmak onu kaldırır."
   },
   "fields": {

@@ -12,9 +12,7 @@
     "text_one": "{{count}} objet sera supprimé du cluster :",
     "text_many": "{{count}} d'objets seront supprimés du cluster :",
     "text_other": "Ces {{count}} objets seront supprimés du cluster :",
-    "confirm": "Supprimer",
-    "failed": "Non supprimé : {{name}}",
-    "partial": "{{done}} supprimés sur {{total}}. Échec pour les autres :"
+    "confirm": "Supprimer"
   },
   "scale": {
     "label": "Mettre à l'échelle",

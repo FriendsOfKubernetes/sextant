@@ -6,6 +6,7 @@
   "search": {
     "placeholder": "모든 열에서 검색(레이블은 app=web)…"
   },
+  "usagePartial": "클러스터 전체를 조회하지 않도록 사용량은 이름순으로 앞쪽 namespace의 Pod에 대해서만 표시됩니다(한도: {{max}}).",
   "columns": {
     "cpuRequest": "CPU 요청",
     "cpuLimit": "CPU 제한",

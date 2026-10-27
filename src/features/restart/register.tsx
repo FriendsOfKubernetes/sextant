@@ -2,8 +2,9 @@
 // (`spec.restartAt`), ReplicaSets (their Deployment or Rollout; their pods one at a time when they have no owner) and
 // pods with a controller (deleted and recreated) — one object or several selected rows. Which kinds list it is
 // `ResourceDef.actions`; `canRestart` decides per object.
+import { i18n } from "../../i18n";
 import { registerAction } from "../actions/registry";
-import { canRestart, planRestart } from "./model";
+import { canRestart, planRestart, whyNotRestart } from "./model";
 import { RestartDialog } from "./RestartDialog";
 import { newRestartRunId } from "./runStore";
 
@@ -13,6 +14,13 @@ registerAction("restart", {
   icon: "restart",
   multiple: true,
   appliesTo: canRestart,
+  // The selection bar says why a selected object is left out (ADR-0126).
+  notApplicableReason: (obj, kind) => {
+    const why = whyNotRestart(obj, kind);
+    if (!why) return undefined;
+    const owner = why.reason === "otherController" ? `${why.owner.kind.kind} ${why.owner.name}` : "";
+    return i18n.t(`bulk:notRestarted.${why.reason}`, { owner });
+  },
   run: ({ clusterId, kind, objects, openDialog }) => {
     const steps = planRestart(objects, kind);
     if (steps.length === 0) return;

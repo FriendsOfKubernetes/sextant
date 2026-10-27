@@ -9,7 +9,7 @@ import { findResourceDef, status } from "../../resources";
 import { ActionBar } from "./ActionBar";
 import { kindView } from "./kinds";
 import { useDetailsLife } from "./liveObject";
-import { listedAnnotation, maskedAnnotation } from "./secrets";
+import { listedAnnotation, shownAnnotation } from "./secrets";
 import { Block, breakable, chips, Fields, inline, KINDS, link, mapChips, muted, strings, table, type ColumnWrap, type FieldRow } from "./ui";
 
 const { arr, get, record, str } = status;
@@ -111,16 +111,15 @@ export function MetadataSection({ obj, objectRef }: DetailsSectionProps) {
   const hidden = t("details:secret.annotationHidden");
   const annotations = Object.entries(record(meta.annotations))
     .filter(([key]) => listedAnnotation(objectRef.kind.kind, key))
-    .map(([key, value]) => (
-      <li key={key}>
-        <span className="dt-annotations__key">{key}</span>
-        {maskedAnnotation(objectRef.kind.kind, key) ? (
-          muted(hidden)
-        ) : (
-          <AnnotationValue name={key} value={typeof value === "string" ? value : JSON.stringify(value)} />
-        )}
-      </li>
-    ));
+    .map(([key, value]) => {
+      const shown = shownAnnotation(objectRef.kind.kind, key, typeof value === "string" ? value : JSON.stringify(value));
+      return (
+        <li key={key}>
+          <span className="dt-annotations__key">{key}</span>
+          {shown === null ? muted(hidden) : <AnnotationValue name={key} value={shown} />}
+        </li>
+      );
+    });
   const owners = arr(meta.ownerReferences).map((o) => {
     const kind = str(get(o, "kind")) ?? "";
     const name = str(get(o, "name"));

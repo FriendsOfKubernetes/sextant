@@ -12,9 +12,7 @@
     "text_one": "Se eliminará {{count}} objeto del clúster:",
     "text_many": "Se eliminarán {{count}} de objetos del clúster:",
     "text_other": "Se eliminarán {{count}} objetos del clúster:",
-    "confirm": "Eliminar",
-    "failed": "No eliminado: {{name}}",
-    "partial": "Se eliminaron {{done}} de {{total}}. Los demás fallaron:"
+    "confirm": "Eliminar"
   },
   "scale": {
     "label": "Escalar",

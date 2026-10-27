@@ -143,7 +143,6 @@
   "table": {
     "count_other": "{{count}} 個項目",
     "countFiltered": "{{shown}}/{{total}}",
-    "selected_other": "已選取 {{count}} 個",
     "reconnecting": "正在重新連線…",
     "empty": "在選取的 Namespace 中找不到物件",
     "emptyClusterScoped": "找不到物件",
@@ -154,7 +153,7 @@
     "forbiddenIn": "在下列 Namespace 中沒有權限：{{namespaces}}",
     "unknownKind": "此叢集未提供 {{kind}}",
     "search": "搜尋",
-    "searchPlaceholder": "依名稱、Namespace 或 label（app=web）搜尋…",
+    "searchPlaceholder": "在所有欄位中搜尋（標籤用 app=web）…",
     "selectAll": "選取所有列",
     "selectRow": "選取 {{name}}",
     "actions": "動作",

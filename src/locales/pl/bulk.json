@@ -1,0 +1,66 @@
+{
+  "bar": {
+    "label": "Zaznaczone obiekty",
+    "selected_one": "Zaznaczono: {{count}}",
+    "selected_few": "Zaznaczono: {{count}}",
+    "selected_many": "Zaznaczono: {{count}}",
+    "selected_other": "Zaznaczono: {{count}}",
+    "cleared": "Zaznaczenie wyczyszczone",
+    "clear": "Wyczyść zaznaczenie",
+    "part": "{{part}} z {{total}}",
+    "partialLabel": "{{action}} (dla {{part}} z {{total}} zaznaczonych)"
+  },
+  "partial": {
+    "title": "{{action}}: tylko część zaznaczenia",
+    "text": "„{{action}}” dotyczy {{part}} z {{total}} zaznaczonych obiektów. Te zostaną pominięte:",
+    "left": "Pominięte",
+    "continue_one": "Kontynuuj dla {{count}} obiektu",
+    "continue_few": "Kontynuuj dla {{count}} obiektów",
+    "continue_many": "Kontynuuj dla {{count}} obiektów",
+    "continue_other": "Kontynuuj dla {{count}} obiektu"
+  },
+  "notRestarted": {
+    "deleting": "Obiekt jest właśnie usuwany.",
+    "mirror": "Statyczny Pod: kubelet przywróci ten sam Pod.",
+    "sextant": "Powłoka węzła lub kopia debugowania Sextant.",
+    "noController": "Żaden kontroler nie utworzy go ponownie.",
+    "otherController": "Ponowne uruchomienie nie działa przez jego kontroler {{owner}}.",
+    "kind": "Ponowne uruchomienie go nie dotyczy."
+  },
+  "delete": {
+    "more_one": "…i jeszcze {{count}} obiekt.",
+    "more_few": "…i jeszcze {{count}} obiekty.",
+    "more_many": "…i jeszcze {{count}} obiektów.",
+    "more_other": "…i jeszcze {{count}} obiektu.",
+    "ownedSingle": "Obiekt ma kontroler, który prawdopodobnie utworzy go ponownie: usunięcie zastąpi obiekt, zamiast go usunąć na stałe. Aby usunąć go na dobre, należy usunąć kontroler lub zmniejszyć liczbę jego replik.",
+    "owned_one": "{{count}} z tych obiektów ma kontroler (oznaczony na liście), który prawdopodobnie utworzy go ponownie: usunięcie zastąpi obiekt, zamiast go usunąć na stałe. Aby usunąć go na dobre, należy usunąć kontroler lub zmniejszyć liczbę jego replik.",
+    "owned_few": "{{count}} z tych obiektów ma kontrolery (oznaczone na liście), które prawdopodobnie utworzą je ponownie: usunięcie zastąpi obiekty, zamiast je usunąć na stałe. Aby usunąć je na dobre, należy usunąć kontrolery lub zmniejszyć liczbę ich replik.",
+    "owned_many": "{{count}} z tych obiektów ma kontrolery (oznaczone na liście), które prawdopodobnie utworzą je ponownie: usunięcie zastąpi obiekty, zamiast je usunąć na stałe. Aby usunąć je na dobre, należy usunąć kontrolery lub zmniejszyć liczbę ich replik.",
+    "owned_other": "{{count}} z tych obiektów ma kontrolery (oznaczone na liście), które prawdopodobnie utworzą je ponownie: usunięcie zastąpi obiekty, zamiast je usunąć na stałe. Aby usunąć je na dobre, należy usunąć kontrolery lub zmniejszyć liczbę ich replik.",
+    "gitopsSingle": "Obiektem zarządza Flux lub Argo CD: może wrócić przy następnej synchronizacji.",
+    "gitops_one": "{{count}} z tych obiektów jest zarządzany przez Flux lub Argo CD (oznaczony na liście) i może wrócić przy następnej synchronizacji.",
+    "gitops_few": "{{count}} z tych obiektów jest zarządzanych przez Flux lub Argo CD (oznaczone na liście) i może wrócić przy następnej synchronizacji.",
+    "gitops_many": "{{count}} z tych obiektów jest zarządzanych przez Flux lub Argo CD (oznaczone na liście) i może wrócić przy następnej synchronizacji.",
+    "gitops_other": "{{count}} z tych obiektów jest zarządzanych przez Flux lub Argo CD (oznaczone na liście) i może wrócić przy następnej synchronizacji.",
+    "namespaces": "Usunięcie namespace usuwa wszystko, co się w nim znajduje: obciążenia, Services, ConfigMaps, Secrets i PersistentVolumeClaims wraz z danymi.",
+    "recreatedBy": "wróci: {{owner}}",
+    "syncedBy": {
+      "flux": "może wrócić: Flux {{name}}",
+      "argocd": "może wrócić: aplikacja Argo CD {{name}}"
+    },
+    "typeCount": "Aby potwierdzić, wpisz liczbę obiektów ({{number}}):",
+    "progress": "Usuwanie {{name}} ({{current}} z {{total}})…",
+    "stop": "Zatrzymaj",
+    "stopping": "Zatrzymywanie po bieżącym obiekcie…",
+    "summary": "Usunięto {{deleted}} z {{total}}.",
+    "results": "Wynik dla każdego obiektu",
+    "outcome": {
+      "deleted": "Usunięto: {{name}}",
+      "gone": "Już nie istniał: {{name}}",
+      "changed": "Zachowano: {{name}} został zastąpiony innym obiektem o tej samej nazwie od czasu wyświetlenia listy.",
+      "forbidden": "Nie usunięto, brak uprawnień: {{name}}",
+      "failed": "Nie usunięto: {{name}}",
+      "stopped": "Nie podjęto próby, zatrzymano: {{name}}"
+    }
+  }
+}

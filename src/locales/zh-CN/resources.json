@@ -143,7 +143,6 @@
   "table": {
     "count_other": "{{count}} 项",
     "countFiltered": "{{shown}}/{{total}}",
-    "selected_other": "已选择 {{count}} 项",
     "reconnecting": "正在重新连接…",
     "empty": "在选定的 Namespace 中未找到对象",
     "emptyClusterScoped": "未找到对象",
@@ -154,7 +153,7 @@
     "forbiddenIn": "在以下 Namespace 中没有权限：{{namespaces}}",
     "unknownKind": "该集群不提供 {{kind}}",
     "search": "搜索",
-    "searchPlaceholder": "按名称、Namespace 或 label（app=web）搜索…",
+    "searchPlaceholder": "在所有列中搜索（标签用 app=web）…",
     "selectAll": "选择所有行",
     "selectRow": "选择 {{name}}",
     "actions": "操作",

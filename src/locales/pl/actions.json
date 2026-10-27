@@ -14,9 +14,7 @@
     "text_few": "Z klastra zostaną usunięte {{count}} obiekty:",
     "text_many": "Z klastra zostanie usuniętych {{count}} obiektów:",
     "text_other": "Z klastra zostanie usunięte {{count}} obiektu:",
-    "confirm": "Usuń",
-    "failed": "Nie usunięto: {{name}}",
-    "partial": "Usunięto {{done}} z {{total}}. Pozostałych nie udało się usunąć:"
+    "confirm": "Usuń"
   },
   "scale": {
     "label": "Skaluj",

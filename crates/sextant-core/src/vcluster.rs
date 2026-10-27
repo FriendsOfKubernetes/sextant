@@ -13,9 +13,10 @@
 //! what a connection needs (no file, no exec plugin, no proxy: the Secret is cluster content, never a reason to run or
 //! read anything here); [`forward_target`] picks the vcluster's Service (port 443 → 8443) or, without one, its newest
 //! pod; the Tauri layer forwards through the host cluster and writes [`VirtualKubeconfig::kubeconfig`] with the
-//! forward's port into Sextant's own file [`FILE_NAME`] ([`save`]), one context per virtual cluster named as the CLI
-//! names it ([`context_name`]). Nothing of the Secret ever leaves the core except into that 0600 file; errors never
-//! quote it.
+//! forward's port into this process's own file `vcluster-<pid>.yaml` ([`save`]), one context per virtual cluster named
+//! as the CLI names it ([`context_name`]), with an id that does not depend on the PID ([`cluster_id`]). Nothing of the
+//! Secret ever leaves the core except into that 0600 file, which goes when its last entry goes, when the process
+//! closes ([`forget_own`]) or, after a crash, at the next start ([`forget_earlier_runs`]); errors never quote it.
 
 use std::time::Duration;
 
@@ -47,8 +48,15 @@ pub const RELEASE_LABEL: &str = "release";
 pub const MANAGED_BY_LABEL: &str = "vcluster.loft.sh/managed-by";
 /// Where the vcluster pod serves the API (`serverPort`: an implicit port means 8443).
 pub const DEFAULT_REMOTE_PORT: u16 = 8443;
-/// Sextant's own kubeconfig file of the connected virtual clusters, in the app data directory's `kubeconfigs/`.
-pub const FILE_NAME: &str = "vcluster.yaml";
+/// Sextant's own kubeconfig file of the virtual clusters this process forwards for, in the app data directory's
+/// `kubeconfigs/`: `vcluster-<pid>.yaml` ([`file_name`]). One per process, so a second Sextant (a development build
+/// beside the installed one shares the directory) never touches another's entries, and a file is known to be left
+/// over once its process is gone ([`forget_earlier_runs`]).
+pub const FILE_PREFIX: &str = "vcluster-";
+/// The name a virtual cluster's [`ClusterId`] is made from (with its context name, [`cluster_id`]): the same in every
+/// run and process, so its cluster settings come back when it is connected again. Also the single file earlier builds
+/// wrote, removed at start.
+pub const ID_FILE_NAME: &str = "vcluster.yaml";
 /// The forward listens here ([`crate::portforward`] binds `127.0.0.1`).
 pub const FORWARD_HOST: &str = "127.0.0.1";
 /// The name the certificate is checked against when the Secret names none: every vcluster serving certificate has it
@@ -77,7 +85,7 @@ pub struct VclusterLink {
 }
 
 /// A DNS-1123 label: at most 63 lowercase letters, digits and `-`, starting and ending alphanumeric.
-fn is_dns_label(s: &str) -> bool {
+pub(crate) fn is_dns_label(s: &str) -> bool {
     let bytes = s.as_bytes();
     !bytes.is_empty()
         && bytes.len() <= 63
@@ -436,33 +444,82 @@ pub async fn forward_target(
     ))
 }
 
-/// Writes `config` (one virtual cluster's context) into Sextant's own [`FILE_NAME`] (mode 0600, replacing an entry of
-/// the same name) and registers the file as a [`SourceKind::Vcluster`] source once.
+/// `vcluster-<pid>.yaml`: the file of the process `pid`.
+pub fn file_name_of(pid: u32) -> String {
+    format!("{FILE_PREFIX}{pid}.yaml")
+}
+
+/// This process's file ([`file_name_of`] its PID).
+pub fn file_name() -> String {
+    file_name_of(std::process::id())
+}
+
+/// The id of the virtual cluster entry `context` in `registry`: made from [`ID_FILE_NAME`], not from the per-process
+/// file, so it is the same in every run (the registry lists the entry under it).
+pub fn cluster_id(registry: &KubeconfigRegistry, context: &str) -> ClusterId {
+    ClusterId::for_context(&registry.own_dir().join(ID_FILE_NAME), context)
+}
+
+/// Writes `config` (one virtual cluster's context) into this process's [`file_name`] (mode 0600, replacing an entry of
+/// the same name) and lists the file as a [`SourceKind::Vcluster`] source once. The source is never stored in the
+/// settings ([`KubeconfigRegistry::added_sources`] leaves it out): it lives as long as this process's forwards.
 pub fn save(
     registry: &mut KubeconfigRegistry,
     config: &Kubeconfig,
 ) -> CoreResult<KubeconfigSource> {
-    registry.write_own_file(FILE_NAME, config, SourceKind::Vcluster)
+    registry.write_own_file(&file_name(), config, SourceKind::Vcluster)
 }
 
-/// Removes these contexts from [`FILE_NAME`]; the source goes with its last context. Whether the sources changed.
-pub fn remove(registry: &mut KubeconfigRegistry, contexts: &[String]) -> CoreResult<bool> {
-    registry.remove_own_contexts(FILE_NAME, SourceKind::Vcluster, contexts)
+/// Removes these contexts from this process's file; the source and the file go with its last context.
+pub fn remove(registry: &mut KubeconfigRegistry, contexts: &[String]) -> CoreResult<()> {
+    registry
+        .remove_own_contexts(&file_name(), SourceKind::Vcluster, contexts)
+        .map(|_| ())
 }
 
-/// At start no forward runs, so no entry of [`FILE_NAME`] can be reached: the source and its file are removed.
-/// Whether the sources changed.
-pub fn forget_all(registry: &mut KubeconfigRegistry) -> CoreResult<bool> {
-    let path = registry.own_dir().join(FILE_NAME);
-    let Some(source) = registry
-        .all_sources()
-        .into_iter()
-        .find(|s| s.kind == SourceKind::Vcluster && s.path == path)
-    else {
-        return Ok(false);
-    };
-    registry.remove_source(&source.id)?;
-    Ok(true)
+/// Removes this process's file and its source, whatever entries it holds (the window closing, the app exiting: the
+/// forwards stop with it). Synchronous, so the credentials are off the disk before the process ends.
+pub fn forget_own(registry: &mut KubeconfigRegistry) {
+    let path = registry.own_dir().join(file_name());
+    for source in registry.vcluster_sources() {
+        if source.path == path {
+            let _ = registry.remove_source(&source.id);
+        }
+    }
+    let _ = std::fs::remove_file(&path);
+}
+
+/// At start: no forward of this process runs yet, so nothing of an earlier run of it can be reached. Removes the
+/// [`SourceKind::Vcluster`] sources the settings still hold (earlier builds stored their single [`ID_FILE_NAME`] and
+/// it goes with them), and every `vcluster-<pid>.yaml` in the directory whose process no longer runs — or that
+/// carries this process's PID, left by an earlier process that had it. Another running Sextant's file stays, with its
+/// entries. Whether the sources the settings store changed.
+pub fn forget_earlier_runs(registry: &mut KubeconfigRegistry) -> bool {
+    let stored = registry.vcluster_sources();
+    for source in &stored {
+        let _ = registry.remove_source(&source.id);
+    }
+    let dir = registry.own_dir().to_path_buf();
+    let _ = std::fs::remove_file(dir.join(ID_FILE_NAME));
+    if let Ok(entries) = std::fs::read_dir(&dir) {
+        for entry in entries.filter_map(Result::ok) {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let Some(pid) = name
+                .strip_prefix(FILE_PREFIX)
+                .and_then(|rest| rest.strip_suffix(".yaml"))
+                .filter(|pid| !pid.is_empty() && pid.bytes().all(|b| b.is_ascii_digit()))
+                .and_then(|pid| pid.parse::<u32>().ok())
+            else {
+                continue;
+            };
+            let gone = pid == std::process::id() || !crate::kubeconfig::process_runs(pid);
+            // `DirEntry::file_type` does not follow links: only a regular file is removed.
+            if gone && entry.file_type().is_ok_and(|t| t.is_file()) {
+                let _ = std::fs::remove_file(entry.path());
+            }
+        }
+    }
+    !stored.is_empty()
 }
 
 #[cfg(test)]

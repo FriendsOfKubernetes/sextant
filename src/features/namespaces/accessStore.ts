@@ -107,20 +107,29 @@ const listeners = new Set<() => void>();
 const scopeListeners = new Set<(clusterId: ClusterId) => void>();
 const connected = new Map<ClusterId, boolean>();
 const waits = new Map<ClusterId, ReturnType<typeof setTimeout>>();
+/** Names typed or added while restricted whose answer is pending (asked once; not in the scope until answered). */
+const asking = new Map<ClusterId, Set<string>>();
 let unfollow: (() => void) | null = null;
 let version = 0;
 
 function changed(): void {
+  // The scope first: a listener that starts watches once the check settled (the problems store) reads the new one.
+  for (const id of new Set([...states.keys(), ...scopes.keys()])) updateScope(id);
   version++;
   for (const fn of [...listeners]) fn();
-  for (const id of new Set([...states.keys(), ...scopes.keys()])) updateScope(id);
 }
 
-/** Recomputes the cluster's restricted scope and tells the scope listeners when it moved. */
+/**
+ * Recomputes the cluster's restricted scope and tells the scope listeners when it moved (as a set: `scopeOf` is
+ * sorted and has no repeats). Only a settled check has a scope: until then the candidates' answers are still coming,
+ * and every move would restart each watch of "All namespaces".
+ */
 function updateScope(clusterId: ClusterId): void {
   const state = states.get(clusterId);
   const next =
-    state?.listNamespaces === false ? scopeOf(knownOf(getSettingsSnapshot(), clusterId), state.found, state.namespaces) : [];
+    state?.listNamespaces === false && state.settled
+      ? scopeOf(knownOf(getSettingsSnapshot(), clusterId), state.found, state.namespaces)
+      : [];
   const value = next.length > 0 ? next : null;
   const before = scopes.get(clusterId) ?? null;
   if ((before === null ? "" : before.join(",")) === (value === null ? "" : value.join(","))) return;
@@ -170,6 +179,12 @@ export function useAccess(clusterId: ClusterId): AccessState {
   return getAccess(clusterId);
 }
 
+/** Calls `fn` whenever any cluster's access check changes; returns the unsubscribe. */
+export function subscribeAccess(fn: () => void): () => void {
+  follow();
+  return subscribe(fn);
+}
+
 /** `restrictedScope` in React. */
 export function useRestrictedScope(clusterId: ClusterId | null): string[] | null {
   follow();
@@ -186,7 +201,10 @@ function follow(): void {
       const was = connected.get(id) ?? false;
       connected.set(id, now);
       if (now && !was) void runCheck(id);
-      if (!now && was) forget(id);
+      // A Reconnect (connected → connecting → connected) keeps the last answer on screen until the new check's
+      // answers come (`runCheck` starts from it), so views do not wait again; any other end forgets it.
+      else if (!now && was && all[id]?.state === "connecting") hold(id);
+      else if (!now && states.has(id) && all[id]?.state !== "connecting") forget(id);
     }
   };
   const offClusters = useClustersStore.subscribe((s, prev) => {
@@ -196,7 +214,8 @@ function follow(): void {
   const offSettings = subscribeSettings(() => {
     for (const [id, state] of states) {
       if (state.listNamespaces !== false) continue;
-      const unchecked = knownOf(getSettingsSnapshot(), id).filter((ns) => !state.namespaces.has(ns));
+      const pending = asking.get(id);
+      const unchecked = knownOf(getSettingsSnapshot(), id).filter((ns) => !state.namespaces.has(ns) && !pending?.has(ns));
       if (unchecked.length > 0) void checkNamespaces(id, unchecked);
     }
     changed();
@@ -211,12 +230,26 @@ function follow(): void {
   });
 }
 
-function forget(clusterId: ClusterId): void {
+/** Stops the cluster's run: answers still on their way are dropped. */
+function stopRun(clusterId: ClusterId): void {
   runs.set(clusterId, (runs.get(clusterId) ?? 0) + 1);
   const wait = waits.get(clusterId);
   if (wait) clearTimeout(wait);
   waits.delete(clusterId);
+  asking.delete(clusterId);
+}
+
+function forget(clusterId: ClusterId): void {
+  stopRun(clusterId);
   states.delete(clusterId);
+  changed();
+}
+
+/** The connection is being made again: the run stops, its last answers stay until the new run replaces them. */
+function hold(clusterId: ClusterId): void {
+  stopRun(clusterId);
+  const state = states.get(clusterId);
+  if (state?.status === "checking") states.set(clusterId, { ...state, status: "idle" });
   changed();
 }
 
@@ -305,10 +338,13 @@ async function runCheck(clusterId: ClusterId): Promise<void> {
   add(contextNamespace, "context");
   add(me?.serviceAccountNamespace, "serviceAccount");
   for (const ns of projects) add(ns, "project");
-  if (!set(clusterId, run, { found, username: me?.username || null, settled: true })) return;
+  if (!set(clusterId, run, { found, username: me?.username || null })) return;
 
+  // Views (and the restricted scope) settle once the candidates are answered, so they start with the final scope
+  // instead of moving with every batch (or after `CHECK_WAIT_MS`, with the answers so far).
   const candidates = candidatesOf(knownOf(getSettingsSnapshot(), clusterId), found);
   await askNamespaces(clusterId, run, candidates);
+  if (!set(clusterId, run, { settled: true })) return;
   await askKinds(clusterId, run, kinds);
   set(clusterId, run, { status: "ready", kindsSettled: true, checkedAt: Date.now() });
 }
@@ -421,13 +457,16 @@ export async function checkNamespaces(clusterId: ClusterId, names: readonly stri
   const state = getAccess(clusterId);
   const run = runs.get(clusterId);
   if (state.listNamespaces !== false || run === undefined) return;
-  const todo = [...new Set(names)].filter((ns) => isNamespaceName(ns) && !state.namespaces.has(ns));
+  const pending = asking.get(clusterId) ?? new Set<string>();
+  const todo = [...new Set(names)].filter((ns) => isNamespaceName(ns) && !state.namespaces.has(ns) && !pending.has(ns));
   if (todo.length === 0) return;
-  // Marked unknown at once, so a second change of the settings does not ask again.
-  const marks = new Map(state.namespaces);
-  for (const ns of todo) marks.set(ns, "unknown");
-  if (!set(clusterId, run, { namespaces: marks })) return;
+  // Pending, so a second change of the settings does not ask again; without a mark until answered, so the name joins
+  // the scope only when it may be read (never joins and leaves again).
+  for (const ns of todo) pending.add(ns);
+  asking.set(clusterId, pending);
   await askNamespaces(clusterId, run, todo);
+  if (runs.get(clusterId) !== run) return;
+  for (const ns of todo) pending.delete(ns);
   await reviewRules(clusterId, run, todo.filter((ns) => getAccess(clusterId).namespaces.get(ns) === "accessible"));
 }
 
@@ -437,6 +476,7 @@ export function resetAccess(): void {
   unfollow = null;
   for (const wait of waits.values()) clearTimeout(wait);
   waits.clear();
+  asking.clear();
   for (const id of states.keys()) runs.set(id, (runs.get(id) ?? 0) + 1);
   states.clear();
   scopes.clear();

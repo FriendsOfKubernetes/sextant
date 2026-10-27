@@ -14,7 +14,7 @@ use crate::kubeconfig::ClusterId;
 /// Annotation set on every Secret the frontend gets without its values; text carrying it is never saved back.
 pub const VALUES_HIDDEN_ANNOTATION: &str = "sextant.dev/values-hidden";
 /// `kubectl apply` keeps the whole last applied manifest here — for a Secret, its values.
-const LAST_APPLIED_ANNOTATION: &str = "kubectl.kubernetes.io/last-applied-configuration";
+pub(crate) const LAST_APPLIED_ANNOTATION: &str = "kubectl.kubernetes.io/last-applied-configuration";
 
 /// Reads one object; a namespaced kind without a namespace is `invalid`. `managedFields` are stripped, `apiVersion`
 /// and `kind` are always set. A Secret comes without its values (see `to_json`).
@@ -81,8 +81,9 @@ pub async fn secret_value(
     })
 }
 
-/// Refuses an object that was sent to the frontend without its values (it carries `VALUES_HIDDEN_ANNOTATION`):
-/// saving it would replace every value with an empty string.
+/// Refuses an object that was sent without its values (it carries `VALUES_HIDDEN_ANNOTATION`: a Secret, or an object
+/// whose inline secret material [`super::inline_secrets`] hid): saving it would replace every value with an empty
+/// string.
 pub(crate) fn ensure_values_present(value: &Value) -> CoreResult<()> {
     let hidden = value
         .pointer("/metadata/annotations")
@@ -91,7 +92,7 @@ pub(crate) fn ensure_values_present(value: &Value) -> CoreResult<()> {
     if hidden {
         return Err(CoreError::new(
             ErrorCode::Invalid,
-            "the secret was loaded without its values: reload the secret before saving",
+            "the object was loaded without its values (a Secret's, or secret fields hidden by Sextant): reload it before saving",
         ));
     }
     Ok(())

@@ -10,9 +10,7 @@
     "textSingle": "This {{kind}} will be deleted from the cluster:",
     "text_one": "This {{count}} object will be deleted from the cluster:",
     "text_other": "These {{count}} objects will be deleted from the cluster:",
-    "confirm": "Delete",
-    "failed": "Not deleted: {{name}}",
-    "partial": "{{done}} of {{total}} deleted. The others failed:"
+    "confirm": "Delete"
   },
   "scale": {
     "label": "Scale",

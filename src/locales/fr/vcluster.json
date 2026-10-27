@@ -53,7 +53,7 @@
     "confirm": "Se connecter",
     "reads": "Sextant lit le Secret {{secret}} dans {{namespace}} avec vos identifiants. Le kubeconfig qu'il contient reste dans le backend de Sextant.",
     "forwards": "Un port local est redirigé via {{host}} vers le serveur d'API du vcluster.",
-    "adds": "Le cluster virtuel {{context}} est ajouté à la liste des clusters, dans le fichier kubeconfig propre à Sextant vcluster.yaml.",
+    "adds": "Le cluster virtuel {{context}} est ajouté à la liste des clusters, dans le fichier kubeconfig propre à Sextant vcluster-<PID>.yaml.",
     "lasts": "Il y reste tant que la redirection de port fonctionne : déconnecter {{host}}, arrêter la redirection ou quitter Sextant le retire."
   },
   "fields": {

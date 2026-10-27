@@ -1,6 +1,7 @@
 // The Node details tabs "Pods" (#279) and "Resources" (#280): a full table of the node's pods from one watch by
 // spec.nodeName (no "Show more"), searched over every column, and "Allocated resources" with each pod's requests,
-// limits and usage; both pass axe.
+// limits and usage; the pods' usage never polled cluster-wide on the tabs' own account; both pass axe (on a small
+// node: axe over a fully rendered 63-row table takes seconds).
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { KubeObject, MetricsStatus, PodUsage } from "../../api";
@@ -11,10 +12,11 @@ import { axeViolations } from "../../test/axe";
 import "../details/index";
 import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetHistory } from "../metrics/history";
-import { resetMetricsCache } from "../metrics/hooks";
+import { resetMetricsCache, usePodUsage } from "../metrics/hooks";
 import "../metrics/index";
 import { resetNamespaceRestore } from "../namespaces";
 import "./index";
+import { MAX_USAGE_NAMESPACES } from "./hooks";
 import { NodePodsTab } from "./PodsTab";
 import { NodeResourcesTab } from "./ResourcesTab";
 
@@ -85,12 +87,17 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-async function podsWatch(): Promise<string> {
+/** A small node, for the axe checks. */
+const FEW = PODS.slice(0, 3);
+
+async function podsWatch(pods = PODS): Promise<string> {
   const id = await watchOf(wb, "Pod", (s) => s.fieldSelector === "spec.nodeName=n1");
   expect(wb.specs.get(id)!.namespaces).toBeNull();
-  emitSnapshot(wb, id, PODS);
+  emitSnapshot(wb, id, pods);
   return id;
 }
+
+const podCalls = () => wb.backend.calls.filter((c) => c.cmd === "metrics_pods").map((c) => c.args.namespaces);
 
 const bodyRows = () =>
   within(screen.getByRole("table", { name: /Pods on this node|Non-terminated pods/ }))
@@ -117,9 +124,18 @@ describe("Pods tab", () => {
     expect(headers).toContain("Restarts");
     expect(headers).not.toContain("Node");
     expect(screen.queryByText(/Show \d+ more/)).toBeNull();
-    // The usage comes from the node's own poll of its pods' namespaces.
+    // The usage comes from the node's own poll of its pods' namespaces, by name (never cluster-wide of its own).
     await waitFor(() => expect(screen.getAllByText("120m").length).toBeGreaterThan(0));
-    expect(wb.backend.calls.find((c) => c.cmd === "metrics_pods")!.args).toEqual({ clusterId: "c1", namespaces: null });
+    expect(wb.backend.calls.find((c) => c.cmd === "metrics_pods")!.args).toEqual({ clusterId: "c1", namespaces: ["ns-0", "ns-1"] });
+    expect(screen.queryByText(/Usage is shown only/)).toBeNull();
+    view.unmount();
+  });
+
+  it("passes axe", async () => {
+    const view = render(<NodePodsTab clusterId="c1" objectRef={REF} obj={node} />);
+    await podsWatch(FEW);
+    expect(await screen.findByText("3 items")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText("120m").length).toBeGreaterThan(0));
     expect(await axeViolations(view.container)).toEqual([]);
   });
 
@@ -152,6 +168,45 @@ describe("Resources tab", () => {
     for (const text of ["500m", "1000m", "120m", "1.00GiB", "2.00GiB", "300MiB"]) expect(row.textContent).toContain(text);
     const pending = bodyRows().find((r) => r.textContent?.startsWith("pod-2ns-"))!;
     expect(pending.textContent).toContain("no limit");
+    view.unmount();
+  });
+
+  it("passes axe", async () => {
+    const view = render(<NodeResourcesTab clusterId="c1" objectRef={REF} obj={node} />);
+    await podsWatch(FEW);
+    expect(await screen.findByText("2 of 3")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText("120m").length).toBeGreaterThan(0));
     expect(await axeViolations(view.container)).toEqual([]);
+  });
+});
+
+describe("the pods' usage of a node with pods in many namespaces", () => {
+  const MANY = Array.from({ length: MAX_USAGE_NAMESPACES + 5 }, (_, i) => pod(100 + i, "Running", {}, `ns-${String(i).padStart(2, "0")}`));
+  const FIRST = MANY.slice(0, MAX_USAGE_NAMESPACES).map((p) => p.metadata!.namespace);
+
+  it("asks for the first namespaces only and says so, under a selection of namespaces", async () => {
+    useAppStore.getState().setNamespaces("c1", ["ns-00"]);
+    const view = render(<NodePodsTab clusterId="c1" objectRef={REF} obj={node} />);
+    await podsWatch(MANY);
+    expect(await screen.findByText(`${MANY.length} items`)).toBeInTheDocument();
+    await waitFor(() => expect(podCalls()).toContainEqual(FIRST));
+    expect(podCalls()).not.toContainEqual(null);
+    expect(screen.getByText("Usage is shown only for pods in the first namespaces by name (limit: 40), so that the whole cluster is not polled.")).toBeInTheDocument();
+    view.unmount();
+  });
+
+  it("reads the poll of every namespace another view holds, and asks nothing of its own", async () => {
+    function TablePoll() {
+      usePodUsage("c1");
+      return null;
+    }
+    render(<TablePoll />);
+    await waitFor(() => expect(podCalls()).toEqual([null]));
+    const view = render(<NodePodsTab clusterId="c1" objectRef={REF} obj={node} />);
+    await podsWatch(MANY);
+    expect(await screen.findByText(`${MANY.length} items`)).toBeInTheDocument();
+    expect(podCalls()).toEqual([null]);
+    expect(screen.queryByText(/Usage is shown only/)).toBeNull();
+    view.unmount();
   });
 });

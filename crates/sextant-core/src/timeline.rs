@@ -37,9 +37,9 @@ use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode, with_timeout};
 use crate::helm;
 use crate::kubeconfig::ClusterId;
-use crate::resources::resolve_kind;
 use crate::resources::rollouts::{self, CHANGE_CAUSE_ANNOTATION, REVISION_ANNOTATION};
 use crate::resources::{KindRef, ObjectRef, STEP_TIMEOUT};
+use crate::resources::{inline_secrets, resolve_kind};
 
 /// At most this many objects per [`managers`] call.
 pub const MAX_REFS: usize = 50;
@@ -801,24 +801,38 @@ pub fn saved_path(dir: &Path, cluster: &ClusterId) -> PathBuf {
     dir.join(format!("{name}.json"))
 }
 
-/// Removes every value of a Secret's keys from the recorded changes: the window never records one, and a file must
-/// not hold one even if a bug made it.
+/// Removes every value of a Secret's keys, and every value recorded at an inline secret path of its kind
+/// ([`crate::resources::inline_secrets`]: a Route's key, a node's arguments, …), from the recorded changes: the window
+/// never records one, and a file must not hold one even if a bug made it.
 fn scrub_secret_values(doc: &mut Value) {
     let Some(entries) = doc.get_mut("entries").and_then(Value::as_array_mut) else {
         return;
     };
     for entry in entries {
-        let secret = entry.pointer("/kind/kind").and_then(Value::as_str) == Some("Secret")
-            && entry
-                .pointer("/kind/group")
-                .and_then(Value::as_str)
-                .is_none_or(str::is_empty);
-        if !secret {
+        let kind = entry
+            .pointer("/kind/kind")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned();
+        let group = entry
+            .pointer("/kind/group")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned();
+        let secret = kind == "Secret" && group.is_empty();
+        if !secret && !inline_secrets::has_inline_secrets(&group, &kind) {
             continue;
         }
         if let Some(changes) = entry.get_mut("changes").and_then(Value::as_array_mut) {
             for change in changes {
-                if let Some(change) = change.as_object_mut() {
+                let hidden = secret
+                    || change
+                        .get("path")
+                        .and_then(Value::as_str)
+                        .is_none_or(|path| {
+                            inline_secrets::is_inline_secret_path(&group, &kind, path)
+                        });
+                if let Some(change) = change.as_object_mut().filter(|_| hidden) {
                     change.remove("before");
                     change.remove("after");
                 }

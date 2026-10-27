@@ -120,15 +120,25 @@ export function kindAccessIn(
 }
 
 /**
+ * Whether a candidate belongs to "All namespaces" of a restricted user: answered and not refused ("unknown" after a
+ * failed review is tried). A candidate not answered yet is left out, so a typed name does not join the scope only to
+ * leave it once refused (each move of the scope restarts every watch of "All namespaces").
+ */
+export function inScope(mark: NamespaceAccess | undefined): boolean {
+  return mark !== undefined && mark !== "noAccess";
+}
+
+/**
  * What "All namespaces" watches for a user who may not list Namespaces: the found namespaces (by name) and the known
- * ones (in their order), without those the server said "no" to, at most `MAX_SCOPE_NAMESPACES`; sorted by name.
+ * ones (in their order) the server answered for and did not say "no" to (`inScope`), at most `MAX_SCOPE_NAMESPACES`;
+ * sorted by name.
  */
 export function scopeOf(
   known: readonly string[],
   found: ReadonlyMap<string, readonly FoundBy[]>,
   marks: ReadonlyMap<string, NamespaceAccess>,
 ): string[] {
-  const names = candidatesOf(known, found).filter((ns) => marks.get(ns) !== "noAccess");
+  const names = candidatesOf(known, found).filter((ns) => inScope(marks.get(ns)));
   return names.slice(0, MAX_SCOPE_NAMESPACES).sort();
 }
 

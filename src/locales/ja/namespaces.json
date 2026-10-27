@@ -4,7 +4,8 @@
     "allAccessible_other": "アクセス可能なすべて ({{count}})",
     "restrictedHint": "このクラスターの namespace を一覧表示する権限がありません。namespace を入力して Enter を押してください。Sextant が覚えておきます。",
     "scopeCapped": "「アクセス可能なすべて」は {{total}} 個の namespace のうち最初の {{max}} 個だけを監視します。ほかを見るには namespace を選択してください。",
-    "forget": "{{namespace}} を忘れる"
+    "forget": "{{namespace}} を忘れる",
+    "only": "{{namespace}} のみ表示"
   },
   "mark": {
     "accessible": "アクセス可",

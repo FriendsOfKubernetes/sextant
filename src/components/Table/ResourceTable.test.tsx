@@ -266,7 +266,7 @@ describe("ResourceTable", () => {
     // Two selected rows: only actions for several objects, run with both.
     fireEvent.click(screen.getByRole("checkbox", { name: "Select pod-0001" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Select pod-0003" }));
-    expect(screen.getByText("2 selected")).toBeInTheDocument();
+    expect(within(screen.getByRole("toolbar", { name: "Selected objects" })).getByText("2 selected")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Actions for pod-0003" }));
     const multi = screen.getByRole("menu");
     expect(within(multi).getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["Delete"]);

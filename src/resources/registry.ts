@@ -96,7 +96,7 @@ export interface CellContext {
 /** What `ColumnDef.searchText` gets: the time the table shows and a translation function (cached by the table). */
 export interface SearchTextContext {
   now: number;
-  t: (key: string, options?: { count?: number }) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
 export interface ColumnDef {

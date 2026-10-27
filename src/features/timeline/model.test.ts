@@ -100,6 +100,43 @@ describe("what counts as a change", () => {
     ]);
   });
 
+  it("never keeps or shows secret material other kinds hold inline, but sees that it changed", () => {
+    const ROUTE = { group: "route.openshift.io", kind: "Route" };
+    const route = (key: string, host: string): KubeObject => ({
+      apiVersion: "route.openshift.io/v1",
+      kind: "Route",
+      metadata: { name: "web", namespace: "a" },
+      spec: { host, tls: { termination: "edge", key, certificate: "CERT" } },
+    });
+    const before = route("-----BEGIN PRIVATE KEY-----old", "a.example.com");
+    const after = route("-----BEGIN PRIVATE KEY-----new", "b.example.com");
+    const text = canonical(projection(ROUTE, before));
+    expect(text).not.toContain("PRIVATE KEY");
+    expect(text).toContain("CERT");
+    expect(diff(ROUTE, before, after).changes).toEqual([
+      { path: "spec.host", op: "changed", before: "a.example.com", after: "b.example.com" },
+      { path: "spec.tls.key", op: "changed" },
+    ]);
+    // Only the key changed: still a change, without its value.
+    expect(diff(ROUTE, before, route("-----BEGIN PRIVATE KEY-----new", "a.example.com")).changes).toEqual([
+      { path: "spec.tls.key", op: "changed" },
+    ]);
+
+    const NODE = { group: "", kind: "Node" };
+    const node = (args: string): KubeObject => ({
+      apiVersion: "v1",
+      kind: "Node",
+      metadata: { name: "server-0", annotations: { "k3s.io/node-args": args, "k3s.io/node-config-hash": "A" } },
+    });
+    const added = diffObjects(NODE, projection(NODE, node("[]")), {
+      metadata: { annotations: { "k3s.io/node-args": "x" } },
+    });
+    expect(JSON.stringify(added)).not.toContain('"x"');
+    expect(canonical(projection(NODE, node('["--token","K10s3cret"]')))).not.toContain("s3cret");
+    const { changes } = diff(NODE, node('["--token","t1"]'), node('["--token","t2"]'));
+    expect(changes).toEqual([{ path: 'metadata.annotations["k3s.io/node-args"]', op: "changed" }]);
+  });
+
   it("does not record churn: Pods, ReplicaSets, Events, Leases, a CronJob's runs", () => {
     for (const kind of [POD, REPLICA_SET, { group: "", kind: "Event" }, { group: "coordination.k8s.io", kind: "Lease" }]) {
       expect(isRecordedKind(kind)).toBe(false);

@@ -91,14 +91,16 @@ describe("delete", () => {
     await run("delete", CONFIG_MAP, objects);
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    // One at a time, in the order shown, each with the uid the user saw (ADR-0126).
+    const pre = (uid: string) => ({ uid, resourceVersion: null });
     expect(calls("resource_delete")).toEqual([
-      { clusterId: "c1", ref: { kind: CONFIG_MAP, namespace: "demo", name: "a" } },
-      { clusterId: "c1", ref: { kind: CONFIG_MAP, namespace: "demo", name: "b" } },
-      { clusterId: "c1", ref: { kind: CONFIG_MAP, namespace: "other", name: "c" } },
+      { clusterId: "c1", ref: { kind: CONFIG_MAP, namespace: "demo", name: "a" }, preconditions: pre("ConfigMap-demo-a") },
+      { clusterId: "c1", ref: { kind: CONFIG_MAP, namespace: "demo", name: "b" }, preconditions: pre("ConfigMap-demo-b") },
+      { clusterId: "c1", ref: { kind: CONFIG_MAP, namespace: "other", name: "c" }, preconditions: pre("ConfigMap-other-c") },
     ]);
   });
 
-  it("cannot be cancelled halfway: while deleting, Cancel, Escape and × leave the dialog running", async () => {
+  it("cannot be cancelled halfway: while deleting, Escape and × leave the dialog running; only Stop is offered", async () => {
     let release: () => void = () => undefined;
     const first = new Promise<void>((resolve) => (release = resolve));
     backend.on("resource_delete", (args) => ((args.ref as { name: string }).name === "a" ? first : undefined));
@@ -107,8 +109,9 @@ describe("delete", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(calls("resource_delete")).toHaveLength(1));
 
-    expect(within(dialog).getByRole("button", { name: "Cancel" })).toBeDisabled();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(within(dialog).queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Stop" })).toBeEnabled();
+    expect(within(dialog).getByRole("status")).toHaveTextContent("Deleting demo/a (1 of 2)…");
     fireEvent.keyDown(window, { key: "Escape" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     expect(screen.getByRole("dialog", { name: "Delete 2 ConfigMap objects?" })).toBeInTheDocument();
@@ -142,7 +145,8 @@ describe("delete", () => {
     expect(alert).toHaveTextContent('configmaps "b" is forbidden');
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveTextContent("1 of 2 deleted.");
-    expect(dialog).toHaveTextContent("Not deleted: demo/b");
+    expect(dialog).toHaveTextContent("Deleted: demo/a");
+    expect(dialog).toHaveTextContent("Not deleted, no permission: demo/b");
     expect(calls("resource_delete")).toHaveLength(2);
   });
 });

@@ -10,9 +10,7 @@
     "textSingle": "Dieses {{kind}}-Objekt wird aus dem Cluster gelöscht:",
     "text_one": "Dieses {{count}} Objekt wird aus dem Cluster gelöscht:",
     "text_other": "Diese {{count}} Objekte werden aus dem Cluster gelöscht:",
-    "confirm": "Löschen",
-    "failed": "Nicht gelöscht: {{name}}",
-    "partial": "{{done}} von {{total}} gelöscht. Bei den übrigen ist es fehlgeschlagen:"
+    "confirm": "Löschen"
   },
   "scale": {
     "label": "Skalieren",

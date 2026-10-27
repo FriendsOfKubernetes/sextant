@@ -7,7 +7,8 @@
     "allAccessible_other": "Усі доступні ({{count}})",
     "restrictedHint": "У вас немає прав на перегляд списку namespace цього кластера. Введіть namespace і натисніть Enter — Sextant його запам'ятає.",
     "scopeCapped": "«Усі доступні» показує перші {{max}} із {{total}} namespace; щоб побачити інші, виберіть namespace.",
-    "forget": "Забути {{namespace}}"
+    "forget": "Забути {{namespace}}",
+    "only": "Показати лише {{namespace}}"
   },
   "mark": {
     "accessible": "доступний",

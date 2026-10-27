@@ -6,7 +6,7 @@ import { ErrorState } from "../../components";
 import { openClusterSettings } from "../clusters/clustersStore";
 import { Chart } from "./Chart";
 import { formatBytes, formatCount, formatCpu } from "./format";
-import { acquireHistory, hasHistory, recordSample, targetUsage, useHistorySeries } from "./history";
+import { acquireHistory, hasHistory, recordSample, targetUsage, useHistoryEpoch, useHistorySeries } from "./history";
 import { useCharts, useNodeUsage, usePodUsageIn, type Polled } from "./hooks";
 import "./metrics.css";
 
@@ -157,11 +157,13 @@ export function HistoryCharts({
   const pods = usePodUsageIn(clusterId, namespaces, ofPods);
   const nodes = useNodeUsage(clusterId, !ofPods);
   const [room, setRoom] = useState(true);
+  // A connection that came or went dropped the cluster's rings (and moved the epoch): hold a new one.
+  const epoch = useHistoryEpoch(clusterId);
   useEffect(() => {
     const release = acquireHistory(clusterId, key);
     setRoom(hasHistory(clusterId, key));
     return release;
-  }, [clusterId, key]);
+  }, [clusterId, key, epoch]);
   const answer = ofPods ? pods.data : nodes.data;
   useEffect(() => {
     if (!answer) return;

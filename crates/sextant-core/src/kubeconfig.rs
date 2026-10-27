@@ -41,8 +41,9 @@ pub enum SourceKind {
     /// Sextant's own file `merged.yaml` in the app data directory: kubeconfig files the user merged into one
     /// ([`edit::KubeconfigEdit::Merge`]).
     Merged,
-    /// Sextant's own file `vcluster.yaml` in the app data directory: virtual clusters connected through a port forward
-    /// of their host cluster ([`crate::vcluster`], ADR-0122); an entry lives only as long as its forward.
+    /// Sextant's own file `vcluster-<pid>.yaml` in the app data directory, one per process: virtual clusters connected
+    /// through a port forward of their host cluster ([`crate::vcluster`], ADR-0122); an entry lives only as long as its
+    /// forward, and the source is never stored in the settings.
     Vcluster,
 }
 
@@ -189,9 +190,23 @@ impl KubeconfigRegistry {
         sources
     }
 
-    /// Sources the user added or pasted — what the settings store.
+    /// Sources the user added or pasted — what the settings store. A [`SourceKind::Vcluster`] file is this process's
+    /// own and lives only as long as its port forwards (ADR-0122): it is never stored.
     pub fn added_sources(&self) -> Vec<KubeconfigSource> {
-        self.extra_sources.clone()
+        self.extra_sources
+            .iter()
+            .filter(|s| s.kind != SourceKind::Vcluster)
+            .cloned()
+            .collect()
+    }
+
+    /// The [`SourceKind::Vcluster`] sources listed now (this process's file; at start, any an earlier build stored).
+    pub(crate) fn vcluster_sources(&self) -> Vec<KubeconfigSource> {
+        self.extra_sources
+            .iter()
+            .filter(|s| s.kind == SourceKind::Vcluster)
+            .cloned()
+            .collect()
     }
 
     /// `KUBECONFIG` files, or `~/.kube/config` when the variable is unset or empty.
@@ -510,7 +525,7 @@ impl KubeconfigRegistry {
         let (loaded, _) = self.load();
         for entry in &loaded {
             for ctx in &entry.own.contexts {
-                if ClusterId::for_context(&entry.source.path, &ctx.name) == *id {
+                if ClusterId::for_context(&id_path(&entry.source), &ctx.name) == *id {
                     return Ok((entry.source.clone(), ctx.name.clone()));
                 }
             }
@@ -545,7 +560,7 @@ impl KubeconfigRegistry {
             .flat_map(|entry| {
                 entry.own.contexts.iter().map(|ctx| {
                     (
-                        ClusterId::for_context(&entry.source.path, &ctx.name),
+                        ClusterId::for_context(&id_path(&entry.source), &ctx.name),
                         ctx.name.clone(),
                         single_context(&entry.resolve, &ctx.name),
                     )
@@ -559,7 +574,7 @@ impl KubeconfigRegistry {
         let (loaded, _) = self.load();
         for entry in &loaded {
             for ctx in &entry.own.contexts {
-                if ClusterId::for_context(&entry.source.path, &ctx.name) == *id {
+                if ClusterId::for_context(&id_path(&entry.source), &ctx.name) == *id {
                     return Ok(single_context(&entry.resolve, &ctx.name));
                 }
             }
@@ -651,7 +666,7 @@ fn temp_kubeconfig_pid(rest: &str) -> Option<u32> {
 
 /// Whether a process with `pid` runs (whatever program it is). `true` when that cannot be told, so nothing of a live
 /// process is ever removed.
-fn process_runs(pid: u32) -> bool {
+pub(crate) fn process_runs(pid: u32) -> bool {
     pid == std::process::id() || os_process_runs(pid).unwrap_or(true)
 }
 
@@ -766,7 +781,7 @@ impl Loaded {
                     .unwrap_or_default();
                 let exec_problem = self.exec_problem(ctx.user.as_deref(), path_var);
                 ClusterInfo {
-                    id: ClusterId::for_context(&self.source.path, &named.name),
+                    id: ClusterId::for_context(&id_path(&self.source), &named.name),
                     context: named.name.clone(),
                     cluster_name: ctx.cluster,
                     server,
@@ -804,6 +819,17 @@ impl Loaded {
             command: command.to_owned(),
             missing,
         })
+    }
+}
+
+/// The path a source's cluster ids are made from: its file's, except for the virtual clusters' file, which is per
+/// process (`vcluster-<pid>.yaml`) while a virtual cluster keeps one id across runs (its settings come back with it):
+/// that file's ids are made from `vcluster.yaml` in the same directory ([`crate::vcluster::cluster_id`], ADR-0122).
+fn id_path(source: &KubeconfigSource) -> std::borrow::Cow<'_, Path> {
+    if source.kind == SourceKind::Vcluster {
+        std::borrow::Cow::Owned(source.path.with_file_name(crate::vcluster::ID_FILE_NAME))
+    } else {
+        std::borrow::Cow::Borrowed(&source.path)
     }
 }
 

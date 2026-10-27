@@ -7,7 +7,7 @@ import { ResourceTable } from "../../components/Table";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { useResourceDef } from "../../resources";
 import { usageColumns } from "./columns";
-import { useNodePodUsage, useNodePods } from "./hooks";
+import { MAX_USAGE_NAMESPACES, useNodePodUsage, useNodePods } from "./hooks";
 import { nodePodsSelector, POD } from "./model";
 import "./node-pods.css";
 
@@ -28,6 +28,7 @@ export function NodePodsTab({ clusterId, objectRef }: DetailsSectionProps) {
   const [search, setSearch] = useState("");
   return (
     <div className="np-tab">
+      <PartialUsageNote partial={usage.pods.partial} />
       <ResourceTable
         key={node}
         clusterId={clusterId}
@@ -41,6 +42,13 @@ export function NodePodsTab({ clusterId, objectRef }: DetailsSectionProps) {
       />
     </div>
   );
+}
+
+/** Says that usage is shown for the pods of the first namespaces only (`usePodUsageOfMany`). */
+export function PartialUsageNote({ partial }: { partial: boolean }) {
+  const { t } = useTranslation();
+  if (!partial) return null;
+  return <p className="np-note np-note--partial">{t("nodepods:usagePartial", { max: MAX_USAGE_NAMESPACES })}</p>;
 }
 
 export function SearchBox({ value, onChange }: { value: string; onChange: (value: string) => void }) {

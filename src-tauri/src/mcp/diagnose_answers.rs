@@ -980,6 +980,23 @@ pub async fn changes(
                 f.after = None;
             }
         }
+        // Secret material other kinds hold inline (a Route's key, a node's k3s arguments, …) leaves as paths only,
+        // even if the window recorded a value (ADR-0120, ADR-0123).
+        if sextant_core::resources::inline_secrets::has_inline_secrets(
+            &c.object.group,
+            &c.object.kind,
+        ) {
+            for f in &mut c.changes {
+                if sextant_core::resources::inline_secrets::is_inline_secret_path(
+                    &c.object.group,
+                    &c.object.kind,
+                    &f.path,
+                ) {
+                    f.before = None;
+                    f.after = None;
+                }
+            }
+        }
         let mut signals = Vec::new();
         for s in c.soon_after {
             if filter.can_object(&s.object).await {

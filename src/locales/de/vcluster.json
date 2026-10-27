@@ -52,7 +52,7 @@
     "confirm": "Verbinden",
     "reads": "Sextant liest das Secret {{secret}} in {{namespace}} mit Ihren Anmeldedaten. Die kubeconfig darin bleibt im Backend von Sextant.",
     "forwards": "Ein lokaler Port wird über {{host}} an den API-Server des vcluster weitergeleitet.",
-    "adds": "Der virtuelle Cluster {{context}} wird der Clusterliste hinzugefügt, in Sextants eigener kubeconfig-Datei vcluster.yaml.",
+    "adds": "Der virtuelle Cluster {{context}} wird der Clusterliste hinzugefügt, in Sextants eigener kubeconfig-Datei vcluster-<PID>.yaml.",
     "lasts": "Er bleibt dort, solange die Portweiterleitung läuft: Das Trennen von {{host}}, das Beenden der Weiterleitung oder das Beenden von Sextant entfernt ihn."
   },
   "fields": {

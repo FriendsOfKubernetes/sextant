@@ -76,13 +76,20 @@ export interface RowText {
   timed: boolean;
 }
 
+/** A time as the API server writes it (RFC 3339): under a renderer it is drawn as an age or a date, never as is. */
+const RFC3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+
 /** One column's text, or `undefined` when the cell shows nothing a word could match. */
 function columnText(column: ColumnDef, obj: KubeObject, ctx: SearchTextContext): string | undefined {
   if (column.searchText) return column.searchText(obj, ctx) ?? undefined;
   const value = column.value(obj);
   if (value === null || value === undefined) return undefined;
-  // A number under a renderer is not what the cell shows (container squares, an age drawn from a time).
-  if (typeof value === "number" && column.render) return undefined;
+  if (column.render) {
+    // Under a renderer a number (container squares, an age drawn from a time), a boolean (Yes/No in the UI language,
+    // a mark) or a time is not what the cell shows: only `searchText` can tell that text.
+    if (typeof value === "number" || typeof value === "boolean") return undefined;
+    if (RFC3339.test(value)) return undefined;
+  }
   return String(value);
 }
 

@@ -9,6 +9,8 @@
 //
 // A cluster that disconnects or connects again loses its sources at once (the backend closes a cluster's watches on
 // disconnect without a word, so one kept would never update again) and its `epochOf` moves on: users acquire anew.
+// A connected cluster's sources wait for its access check to settle (#285, `accessPending`), so a user who may not
+// list Namespaces starts them once with the accessible namespaces; they start again only when that scope changes.
 //
 // A watch that ends with an error (other than forbidden / not found) is opened again after a growing delay
 // (`RETRY_BASE_MS` doubling up to `RETRY_MAX_MS`) while someone holds it.
@@ -29,7 +31,7 @@ import {
 } from "../../api";
 import { reportWatchUpdate } from "../../api/watchObservers";
 import { useClustersStore } from "../clusters/clustersStore";
-import { restrictedScope, subscribeScope } from "../namespaces/accessStore";
+import { getAccess, restrictedScope, subscribeAccess, subscribeScope } from "../namespaces/accessStore";
 import {
   currentCertExpiryWarningMs,
   DEFAULT_CERT_EXPIRY_DAYS,
@@ -113,6 +115,28 @@ const epochs = new Map<ClusterId, number>();
 /** Per cluster: connected when last looked at. */
 const connected = new Map<ClusterId, boolean>();
 let unfollow: (() => void) | undefined;
+/** Sources whose watch waits for their connected cluster's access check to settle (`accessPending`). */
+const deferred = new Set<Entry>();
+
+/**
+ * A connected cluster whose access check has not settled yet (#285): its sources wait, so a user who may not list
+ * Namespaces starts them once with the accessible namespaces instead of cluster-wide and again (at most
+ * `CHECK_WAIT_MS`; a user who may list them waits for one access review).
+ */
+function accessPending(clusterId: ClusterId): boolean {
+  return connected.get(clusterId) === true && !getAccess(clusterId).settled;
+}
+
+/** Opens the deferred sources whose cluster's access check has settled. */
+function openSettled(): void {
+  for (const entry of [...deferred]) {
+    if (entries.get(entry.state.key) !== entry) deferred.delete(entry);
+    else if (!accessPending(entry.state.clusterId)) {
+      deferred.delete(entry);
+      entry.open();
+    }
+  }
+}
 
 /** Drops every source of the cluster: its watches belong to a connection that is gone (or new). */
 function dropCluster(clusterId: ClusterId): void {
@@ -146,11 +170,15 @@ function followConnections(): void {
   // A user who may not list Namespaces watches the accessible known namespaces (#285): when they change, the sources
   // start again with them.
   const offScope = subscribeScope((id) => {
-    if (connected.get(id)) dropCluster(id);
+    // Sources still waiting for the check open with the new scope as they are; open ones start again.
+    if (!connected.get(id)) return;
+    if ([...entries.values()].some((e) => e.state.clusterId === id && !deferred.has(e))) dropCluster(id);
   });
+  const offAccess = subscribeAccess(openSettled);
   unfollow = () => {
     offStates();
     offScope();
+    offAccess();
   };
 }
 
@@ -369,18 +397,25 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
       attempts: 0,
     };
     entries.set(key, created);
-    // `null` (cluster-wide) unless the user may not list Namespaces: then the accessible known namespaces (#285).
-    const spec: WatchSpec = { kind: def.kind, namespaces: restrictedScope(clusterId), labelSelector: null, fieldSelector: def.fieldSelector };
+    // `null` (cluster-wide) unless the user may not list Namespaces: then the accessible known namespaces (#285), as
+    // known when the watch first opens (a source waits for the access check, `accessPending`).
+    let spec: WatchSpec | undefined;
     created.open = () => {
+      const watched = (spec ??= {
+        kind: def.kind,
+        namespaces: restrictedScope(clusterId),
+        labelSelector: null,
+        fieldSelector: def.fieldSelector,
+      });
       created.stop = openStream<WatchUpdate>({
         start: (id, channel) =>
           def.maxObjects === undefined
-            ? api.resources.watchStart(clusterId, spec, id, channel)
-            : api.resources.watchStart(clusterId, spec, id, channel, { progressive: false, maxObjects: def.maxObjects }),
+            ? api.resources.watchStart(clusterId, watched, id, channel)
+            : api.resources.watchStart(clusterId, watched, id, channel, { progressive: false, maxObjects: def.maxObjects }),
         stop: api.resources.watchStop,
         onEvent: (update) => {
           if (entries.get(key) !== created) return;
-          reportWatchUpdate(clusterId, spec, update);
+          reportWatchUpdate(clusterId, watched, update);
           if (update.type === "error") {
             for (const tap of created.taps.values()) tap.state = applyToTap(tap, update) ?? tap.state;
             failed(key, created, toApiError(update));
@@ -418,7 +453,8 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
     if (def.across && !def.across.from) {
       created.taps.set(def.across.tap.id, { tap: def.across.tap, refs: 1, state: { status: "loading", rows: new Map(), truncated: false } });
     }
-    created.open();
+    if (accessPending(clusterId)) deferred.add(created);
+    else created.open();
     // A source judged across another source's rows holds that source with a tap for as long as it lives.
     if (def.across?.from) {
       created.acrossFrom = { key: sourceKey(clusterId, def.across.from), release: acquireRows(clusterId, def.across.from, def.across.tap) };
@@ -572,6 +608,7 @@ export function resetProblemSources(): void {
     entry.stop();
   }
   entries.clear();
+  deferred.clear();
   unfollow?.();
   unfollow = undefined;
   epochs.clear();

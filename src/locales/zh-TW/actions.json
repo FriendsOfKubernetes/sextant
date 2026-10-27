@@ -8,9 +8,7 @@
     "title_other": "要刪除 {{count}} 個 {{kind}} 物件嗎？",
     "textSingle": "將從叢集中刪除此 {{kind}}：",
     "text_other": "將從叢集中刪除以下 {{count}} 個物件：",
-    "confirm": "刪除",
-    "failed": "未刪除：{{name}}",
-    "partial": "已刪除 {{done}}/{{total}} 個。其餘項目刪除失敗："
+    "confirm": "刪除"
   },
   "scale": {
     "label": "調整規模",

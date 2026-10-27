@@ -1,0 +1,61 @@
+{
+  "bar": {
+    "label": "Objetos selecionados",
+    "selected_one": "{{count}} selecionado",
+    "selected_many": "{{count}} selecionados",
+    "selected_other": "{{count}} selecionados",
+    "cleared": "Seleção limpa",
+    "clear": "Limpar seleção",
+    "part": "{{part}} de {{total}}",
+    "partialLabel": "{{action}} (para {{part}} de {{total}} selecionados)"
+  },
+  "partial": {
+    "title": "{{action}}: só parte da seleção",
+    "text": "“{{action}}” se aplica a {{part}} dos {{total}} objetos selecionados. Estes ficam de fora:",
+    "left": "Deixados de fora",
+    "continue_one": "Continuar com {{count}} objeto",
+    "continue_many": "Continuar com {{count}} de objetos",
+    "continue_other": "Continuar com {{count}} objetos"
+  },
+  "notRestarted": {
+    "deleting": "Está sendo excluído.",
+    "mirror": "Um Pod estático: o kubelet traz de volta o mesmo Pod.",
+    "sextant": "Um shell de nó ou uma cópia de depuração do Sextant.",
+    "noController": "Nenhum controlador o criaria de novo.",
+    "otherController": "Reiniciar não funciona por meio do controlador {{owner}}.",
+    "kind": "Reiniciar não se aplica a ele."
+  },
+  "delete": {
+    "more_one": "…e mais {{count}} objeto.",
+    "more_many": "…e mais {{count}} de objetos.",
+    "more_other": "…e mais {{count}} objetos.",
+    "ownedSingle": "Ele tem um controlador que provavelmente o criará de novo: excluí-lo o substitui em vez de removê-lo. Para removê-lo de vez, exclua o controlador ou reduza suas réplicas.",
+    "owned_one": "{{count}} destes objetos tem um controlador (marcado na lista) que provavelmente o criará de novo: excluí-lo o substitui em vez de removê-lo. Para removê-lo de vez, exclua o controlador ou reduza suas réplicas.",
+    "owned_many": "{{count}} destes objetos têm um controlador (marcado na lista) que provavelmente os criará de novo: excluí-los os substitui em vez de removê-los. Para removê-los de vez, exclua os controladores ou reduza suas réplicas.",
+    "owned_other": "{{count}} destes objetos têm um controlador (marcado na lista) que provavelmente os criará de novo: excluí-los os substitui em vez de removê-los. Para removê-los de vez, exclua os controladores ou reduza suas réplicas.",
+    "gitopsSingle": "Ele é gerenciado pelo Flux ou Argo CD e pode voltar na próxima sincronização.",
+    "gitops_one": "{{count}} destes objetos é gerenciado pelo Flux ou Argo CD (marcado na lista) e pode voltar na próxima sincronização.",
+    "gitops_many": "{{count}} destes objetos são gerenciados pelo Flux ou Argo CD (marcados na lista) e podem voltar na próxima sincronização.",
+    "gitops_other": "{{count}} destes objetos são gerenciados pelo Flux ou Argo CD (marcados na lista) e podem voltar na próxima sincronização.",
+    "namespaces": "Excluir um namespace exclui tudo o que há nele: cargas de trabalho, Services, ConfigMaps, Secrets e PersistentVolumeClaims com seus dados.",
+    "recreatedBy": "voltará: {{owner}}",
+    "syncedBy": {
+      "flux": "pode voltar: Flux {{name}}",
+      "argocd": "pode voltar: aplicação do Argo CD {{name}}"
+    },
+    "typeCount": "Para confirmar, digite o número de objetos ({{number}}):",
+    "progress": "Excluindo {{name}} ({{current}} de {{total}})…",
+    "stop": "Parar",
+    "stopping": "Parando após o objeto atual…",
+    "summary": "{{deleted}} de {{total}} excluídos.",
+    "results": "Resultado de cada objeto",
+    "outcome": {
+      "deleted": "Excluído: {{name}}",
+      "gone": "Já não existia: {{name}}",
+      "changed": "Mantido: {{name}} foi substituído por outro objeto com o mesmo nome desde que a lista foi exibida.",
+      "forbidden": "Não excluído, sem permissão: {{name}}",
+      "failed": "Não excluído: {{name}}",
+      "stopped": "Não tentado, parado: {{name}}"
+    }
+  }
+}

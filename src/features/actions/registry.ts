@@ -48,6 +48,11 @@ export interface ActionDef {
   /** Whether the action is offered for `obj` (called for every selected object). */
   appliesTo: (obj: KubeObject, kind: KindRef) => boolean;
   run: (ctx: ActionContext) => void | Promise<void>;
+  /**
+   * Why the action is not offered for `obj` (translated, one sentence), for the selection bar's explanation of a
+   * mixed selection (ADR-0126); `undefined` when it does not say.
+   */
+  notApplicableReason?: (obj: KubeObject, kind: KindRef) => string | undefined;
   /** Shown in red (delete, drain). */
   danger?: boolean;
   /** Offered when several rows are selected (e.g. delete). Default: single object only. */

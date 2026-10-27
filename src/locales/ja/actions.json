@@ -8,9 +8,7 @@
     "title_other": "{{kind}} オブジェクト {{count}} 個を削除しますか?",
     "textSingle": "この {{kind}} をクラスターから削除します:",
     "text_other": "次の {{count}} 個のオブジェクトをクラスターから削除します:",
-    "confirm": "削除",
-    "failed": "削除されませんでした: {{name}}",
-    "partial": "{{total}} 個中 {{done}} 個を削除しました。次のものは失敗しました:"
+    "confirm": "削除"
   },
   "scale": {
     "label": "スケール",

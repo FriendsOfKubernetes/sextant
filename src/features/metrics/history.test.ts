@@ -7,6 +7,7 @@ import {
   acquireHistory,
   hasHistory,
   HISTORY_MS,
+  historyEpochOf,
   historySeries,
   historyStats,
   KEEP_MS,
@@ -124,14 +125,36 @@ describe("a sample ring", () => {
     expect(historyStats().rings).toBe(MAX_TARGETS);
   });
 
-  it("goes when the cluster's connection comes or goes", () => {
+  it("never pushes out another cluster's ring for one its own cap refuses", () => {
+    for (let i = 0; i < MAX_TARGETS_PER_CLUSTER; i++) acquireHistory("c1", `t${i}`);
+    // The other rings of the overall cap, idle, in other clusters (each under its own cap).
+    for (let i = MAX_TARGETS_PER_CLUSTER; i < MAX_TARGETS; i++) {
+      now += 1;
+      acquireHistory(`o${Math.floor(i / 20)}`, `t${i}`)();
+    }
+    expect(historyStats().rings).toBe(MAX_TARGETS);
+    acquireHistory("c1", "new");
+    expect(hasHistory("c1", "new")).toBe(false);
+    expect(historyStats().rings).toBe(MAX_TARGETS);
+    expect(hasHistory("o1", `t${MAX_TARGETS_PER_CLUSTER}`)).toBe(true);
+    // Room overall is still made from another cluster's idle ring when the cluster's own cap allows one more.
+    acquireHistory("c9", "new");
+    expect(hasHistory("c9", "new")).toBe(true);
+    expect(hasHistory("o1", `t${MAX_TARGETS_PER_CLUSTER}`)).toBe(false);
+    expect(historyStats().rings).toBe(MAX_TARGETS);
+  });
+
+  it("goes when the cluster's connection comes or goes, and its epoch moves on", () => {
     useClustersStore.setState({ states: { c1: { state: "connected" } as never } });
     acquireHistory("c1", "pod");
     acquireHistory("c2", "pod");
     answer("pod", use(1));
+    expect(historyEpochOf("c1")).toBe(0);
     useClustersStore.setState({ states: { c1: { state: "disconnected" } as never } });
     expect(hasHistory("c1", "pod")).toBe(false);
     expect(hasHistory("c2", "pod")).toBe(true);
+    expect(historyEpochOf("c1")).toBe(1);
+    expect(historyEpochOf("c2")).toBe(0);
   });
 });
 

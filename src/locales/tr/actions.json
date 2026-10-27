@@ -10,9 +10,7 @@
     "textSingle": "Bu {{kind}} kümeden silinecek:",
     "text_one": "Bu {{count}} nesne kümeden silinecek:",
     "text_other": "Bu {{count}} nesne kümeden silinecek:",
-    "confirm": "Sil",
-    "failed": "Silinmedi: {{name}}",
-    "partial": "{{total}} nesneden {{done}} tanesi silindi. Diğerleri başarısız oldu:"
+    "confirm": "Sil"
   },
   "scale": {
     "label": "Ölçeklendir",

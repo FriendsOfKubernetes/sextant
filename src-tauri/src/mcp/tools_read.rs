@@ -9,7 +9,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use sextant_core::access::{AccessAction, KindPattern, NamespaceScope};
 use sextant_core::error::with_timeout;
-use sextant_core::resources::{self, KindRef, ObjectRef, ResourceKind};
+use sextant_core::resources::{self, KindRef, ObjectRef, ResourceKind, inline_secrets};
 use sextant_core::{ClusterId, ClusterManager, ConnectionState, CoreError, CoreResult, ErrorCode};
 use sextant_core::{helm, logs, metrics};
 
@@ -50,14 +50,18 @@ pub fn register_read_tools(tools: &mut ToolSet) {
             "list_resources",
             "Objects of one kind, in a namespace or in every namespace the agent may read, optionally filtered by \
              label and field selectors. Up to `limit` objects (100 by default, at most 500); `truncated` says there \
-             are more. Secrets come without their values.",
+             are more. Secrets come without their values, and fields that hold secrets inline (a Route's TLS key, \
+             a BuildConfig's webhook secrets, a HelmChart's values, an InstallPlan's manifests, a k3s/RKE2 node's \
+             arguments) come empty.",
             ToolKind::Read,
             list_resources,
         )
         .add(
             "get_resource",
-            "One object as JSON (without managedFields). A Secret comes without its values unless the user allowed \
-             \"Secret values\".",
+            "One object as JSON (without managedFields). A Secret comes without its values, and fields that hold \
+             secrets inline (a Route's TLS key, a BuildConfig's webhook secrets, a HelmChart's values, an \
+             InstallPlan's manifests, a k3s/RKE2 node's arguments) come empty, unless the user allowed \"Secret \
+             values\".",
             ToolKind::Read,
             get_resource,
         )
@@ -403,7 +407,11 @@ async fn get_resource(call: ToolCall, args: GetArgs) -> ToolResult {
             &summary,
         )
         .await?;
-    let with_values = is_secret(&kind.kind_ref)
+    // A Secret's values, and secret material other kinds hold inline (ADR-0120, ADR-0121, ADR-0123), only with
+    // "Secret values".
+    let holds_values = is_secret(&kind.kind_ref)
+        || inline_secrets::has_inline_secrets(&kind.kind_ref.group, &kind.kind_ref.kind);
+    let with_values = holds_values
         && call
             .guard
             .allows(
@@ -426,7 +434,11 @@ async fn get_resource(call: ToolCall, args: GetArgs) -> ToolResult {
         )
         .await?
     };
-    Ok(ToolOutput::Json(compact(value)))
+    Ok(ToolOutput::Json(if with_values {
+        compact_with_values(value)
+    } else {
+        compact(value)
+    }))
 }
 
 async fn get_events(call: ToolCall, args: EventArgs) -> ToolResult {
@@ -895,8 +907,16 @@ fn state_name(state: &ConnectionState) -> &'static str {
     }
 }
 
+/// An object as an agent gets it without "Secret values": [`compact_with_values`], and the secret material its kind
+/// holds inline emptied ([`inline_secrets::hide_inline_secrets`]; a Secret's values are already gone in the core).
+pub(super) fn compact(value: Value) -> Value {
+    let mut value = compact_with_values(value);
+    inline_secrets::hide_inline_secrets(&mut value);
+    value
+}
+
 /// An object without what only takes room: `managedFields` (already gone) and the last-applied manifest.
-fn compact(mut value: Value) -> Value {
+fn compact_with_values(mut value: Value) -> Value {
     if let Some(meta) = value.get_mut("metadata").and_then(Value::as_object_mut) {
         meta.remove("managedFields");
         if let Some(annotations) = meta.get_mut("annotations").and_then(Value::as_object_mut) {
@@ -942,4 +962,36 @@ fn compact_event(event: &Value) -> Value {
         "count": event["count"],
         "lastSeen": last_seen(event),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn node() -> Value {
+        json!({
+            "apiVersion": "v1", "kind": "Node",
+            "metadata": { "name": "server-0", "managedFields": [{}], "annotations": {
+                "k3s.io/node-args": "[\"server\",\"--token\",\"K10s3cret\"]",
+                LAST_APPLIED: "{}",
+                "k3s.io/node-config-hash": "ABC",
+            } },
+        })
+    }
+
+    #[test]
+    fn an_agent_gets_inline_secret_material_only_with_secret_values() {
+        let hidden = compact(node());
+        assert!(!hidden.to_string().contains("s3cret"), "{hidden}");
+        let annotations = &hidden["metadata"]["annotations"];
+        assert_eq!(annotations["k3s.io/node-args"], "");
+        assert_eq!(annotations["k3s.io/node-config-hash"], "ABC");
+        assert!(annotations.get(LAST_APPLIED).is_none());
+        assert!(hidden["metadata"].get("managedFields").is_none());
+
+        let kept = compact_with_values(node());
+        assert!(kept.to_string().contains("s3cret"));
+        assert!(kept["metadata"]["annotations"].get(LAST_APPLIED).is_none());
+        assert!(kept["metadata"].get("managedFields").is_none());
+    }
 }

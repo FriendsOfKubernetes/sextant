@@ -1,0 +1,56 @@
+{
+  "bar": {
+    "label": "Ausgewählte Objekte",
+    "selected_one": "{{count}} ausgewählt",
+    "selected_other": "{{count}} ausgewählt",
+    "cleared": "Auswahl aufgehoben",
+    "clear": "Auswahl aufheben",
+    "part": "{{part}} von {{total}}",
+    "partialLabel": "{{action}} (für {{part}} von {{total}} ausgewählten)"
+  },
+  "partial": {
+    "title": "{{action}}: nur ein Teil der Auswahl",
+    "text": "„{{action}}“ gilt für {{part}} der {{total}} ausgewählten Objekte. Diese werden ausgelassen:",
+    "left": "Ausgelassen",
+    "continue_one": "Mit {{count}} Objekt fortfahren",
+    "continue_other": "Mit {{count}} Objekten fortfahren"
+  },
+  "notRestarted": {
+    "deleting": "Es wird gerade gelöscht.",
+    "mirror": "Ein statischer Pod: Das kubelet bringt denselben Pod zurück.",
+    "sextant": "Eine Knoten-Shell oder Debug-Kopie von Sextant.",
+    "noController": "Kein Controller würde es neu erstellen.",
+    "otherController": "Neustart funktioniert nicht über seinen Controller {{owner}}.",
+    "kind": "Neustart gilt hierfür nicht."
+  },
+  "delete": {
+    "more_one": "…und {{count}} weiteres Objekt.",
+    "more_other": "…und {{count}} weitere Objekte.",
+    "ownedSingle": "Es hat einen Controller, der es wahrscheinlich neu erstellt: Löschen ersetzt es, statt es zu entfernen. Um es endgültig zu entfernen, löschen Sie den Controller oder skalieren Sie ihn herunter.",
+    "owned_one": "{{count}} dieser Objekte hat einen Controller (in der Liste markiert), der es wahrscheinlich neu erstellt: Löschen ersetzt es, statt es zu entfernen. Um es endgültig zu entfernen, löschen Sie den Controller oder skalieren Sie ihn herunter.",
+    "owned_other": "{{count}} dieser Objekte haben einen Controller (in der Liste markiert), der sie wahrscheinlich neu erstellt: Löschen ersetzt sie, statt sie zu entfernen. Um sie endgültig zu entfernen, löschen Sie die Controller oder skalieren Sie sie herunter.",
+    "gitopsSingle": "Es wird von Flux oder Argo CD verwaltet und kann bei der nächsten Synchronisierung zurückkommen.",
+    "gitops_one": "{{count}} dieser Objekte wird von Flux oder Argo CD verwaltet (in der Liste markiert) und kann bei der nächsten Synchronisierung zurückkommen.",
+    "gitops_other": "{{count}} dieser Objekte werden von Flux oder Argo CD verwaltet (in der Liste markiert) und können bei der nächsten Synchronisierung zurückkommen.",
+    "namespaces": "Das Löschen eines Namespace löscht alles darin: Workloads, Services, ConfigMaps, Secrets und PersistentVolumeClaims samt ihren Daten.",
+    "recreatedBy": "kommt zurück: {{owner}}",
+    "syncedBy": {
+      "flux": "kann zurückkommen: Flux {{name}}",
+      "argocd": "kann zurückkommen: Argo-CD-Anwendung {{name}}"
+    },
+    "typeCount": "Geben Sie zur Bestätigung die Anzahl der Objekte ein ({{number}}):",
+    "progress": "{{name}} wird gelöscht ({{current}} von {{total}})…",
+    "stop": "Anhalten",
+    "stopping": "Wird nach dem aktuellen Objekt angehalten…",
+    "summary": "{{deleted}} von {{total}} gelöscht.",
+    "results": "Ergebnis je Objekt",
+    "outcome": {
+      "deleted": "Gelöscht: {{name}}",
+      "gone": "Bereits weg: {{name}}",
+      "changed": "Behalten: {{name}} wurde seit dem Anzeigen der Liste durch ein anderes Objekt gleichen Namens ersetzt.",
+      "forbidden": "Nicht gelöscht, keine Berechtigung: {{name}}",
+      "failed": "Nicht gelöscht: {{name}}",
+      "stopped": "Nicht versucht, angehalten: {{name}}"
+    }
+  }
+}

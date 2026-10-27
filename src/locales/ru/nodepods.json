@@ -6,6 +6,7 @@
   "search": {
     "placeholder": "Поиск по всем столбцам (app=web — по метке)…"
   },
+  "usagePartial": "Использование показано только для Pods первых по имени namespace (предел: {{max}}), чтобы не опрашивать весь кластер.",
   "columns": {
     "cpuRequest": "Запрос CPU",
     "cpuLimit": "Лимит CPU",

@@ -6,6 +6,7 @@
   "search": {
     "placeholder": "Tüm sütunlarda ara (etiket için app=web)…"
   },
+  "usagePartial": "Tüm kümeyi sorgulamamak için kullanım yalnızca ada göre ilk namespace'lerdeki Pod'lar için gösterilir (sınır: {{max}}).",
   "columns": {
     "cpuRequest": "CPU isteği",
     "cpuLimit": "CPU sınırı",

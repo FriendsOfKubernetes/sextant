@@ -1,0 +1,46 @@
+/* The selection bar of a resource table (ADR-0126): between the table's header and its rows. */
+.sel-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-panel);
+}
+
+.sel-bar__count {
+  font-weight: 600;
+}
+
+.sel-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sel-bar__part {
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* What an action leaves out of the selection, and why. */
+.sel-partial__list {
+  margin: 8px 0;
+  padding-left: 18px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.sel-partial__name {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.sel-partial__reason {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}

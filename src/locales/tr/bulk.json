@@ -1,0 +1,56 @@
+{
+  "bar": {
+    "label": "Seçili nesneler",
+    "selected_one": "{{count}} seçili",
+    "selected_other": "{{count}} seçili",
+    "cleared": "Seçim temizlendi",
+    "clear": "Seçimi temizle",
+    "part": "{{part}} / {{total}}",
+    "partialLabel": "{{action}} (seçili {{total}} nesnenin {{part}} tanesi için)"
+  },
+  "partial": {
+    "title": "{{action}}: seçimin yalnızca bir kısmı",
+    "text": "“{{action}}”, seçili {{total}} nesnenin {{part}} tanesine uygulanabilir. Şunlar dışarıda bırakılır:",
+    "left": "Dışarıda bırakılanlar",
+    "continue_one": "{{count}} nesneyle devam et",
+    "continue_other": "{{count}} nesneyle devam et"
+  },
+  "notRestarted": {
+    "deleting": "Siliniyor.",
+    "mirror": "Statik bir Pod: kubelet aynı Pod'u geri getirir.",
+    "sextant": "Sextant'ın düğüm kabuğu veya hata ayıklama kopyası.",
+    "noController": "Onu yeniden oluşturacak bir denetleyici yok.",
+    "otherController": "Yeniden başlatma, denetleyicisi {{owner}} üzerinden çalışmaz.",
+    "kind": "Yeniden başlatma buna uygulanmaz."
+  },
+  "delete": {
+    "more_one": "…ve {{count}} nesne daha.",
+    "more_other": "…ve {{count}} nesne daha.",
+    "ownedSingle": "Onu büyük olasılıkla yeniden oluşturacak bir denetleyicisi var: silmek onu kaldırmak yerine değiştirir. Kalıcı olarak kaldırmak için denetleyiciyi silin veya ölçeğini küçültün.",
+    "owned_one": "Bu nesnelerden {{count}} tanesinin, onları büyük olasılıkla yeniden oluşturacak bir denetleyicisi var (listede işaretli): silmek onları kaldırmak yerine değiştirir. Kalıcı olarak kaldırmak için denetleyicileri silin veya ölçeklerini küçültün.",
+    "owned_other": "Bu nesnelerden {{count}} tanesinin, onları büyük olasılıkla yeniden oluşturacak bir denetleyicisi var (listede işaretli): silmek onları kaldırmak yerine değiştirir. Kalıcı olarak kaldırmak için denetleyicileri silin veya ölçeklerini küçültün.",
+    "gitopsSingle": "Flux veya Argo CD tarafından yönetiliyor ve bir sonraki eşitlemede geri gelebilir.",
+    "gitops_one": "Bu nesnelerden {{count}} tanesi Flux veya Argo CD tarafından yönetiliyor (listede işaretli) ve bir sonraki eşitlemede geri gelebilir.",
+    "gitops_other": "Bu nesnelerden {{count}} tanesi Flux veya Argo CD tarafından yönetiliyor (listede işaretli) ve bir sonraki eşitlemede geri gelebilir.",
+    "namespaces": "Bir namespace'i silmek içindeki her şeyi siler: iş yükleri, Services, ConfigMaps, Secrets ve PersistentVolumeClaims, verileriyle birlikte.",
+    "recreatedBy": "geri gelir: {{owner}}",
+    "syncedBy": {
+      "flux": "geri gelebilir: Flux {{name}}",
+      "argocd": "geri gelebilir: Argo CD uygulaması {{name}}"
+    },
+    "typeCount": "Onaylamak için nesne sayısını yazın ({{number}}):",
+    "progress": "{{name}} siliniyor ({{current}} / {{total}})…",
+    "stop": "Durdur",
+    "stopping": "Geçerli nesneden sonra durduruluyor…",
+    "summary": "{{total}} nesneden {{deleted}} tanesi silindi.",
+    "results": "Her nesnenin sonucu",
+    "outcome": {
+      "deleted": "Silindi: {{name}}",
+      "gone": "Zaten yoktu: {{name}}",
+      "changed": "Korundu: {{name}}, liste gösterildikten sonra aynı adlı başka bir nesneyle değiştirildi.",
+      "forbidden": "Silinmedi, izin yok: {{name}}",
+      "failed": "Silinmedi: {{name}}",
+      "stopped": "Denenmedi, durduruldu: {{name}}"
+    }
+  }
+}

@@ -5,7 +5,8 @@
     "allAccessible_other": "Alle zugänglichen ({{count}})",
     "restrictedHint": "Sie dürfen die Namespaces dieses Clusters nicht auflisten. Geben Sie einen Namespace ein und drücken Sie Enter: Sextant merkt ihn sich.",
     "scopeCapped": "„Alle zugänglichen“ beobachtet die ersten {{max}} von {{total}} Namespaces; wählen Sie Namespaces aus, um die anderen zu sehen.",
-    "forget": "{{namespace}} vergessen"
+    "forget": "{{namespace}} vergessen",
+    "only": "Nur {{namespace}} anzeigen"
   },
   "mark": {
     "accessible": "zugänglich",

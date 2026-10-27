@@ -14,7 +14,7 @@ import { shareOf } from "../metrics/format";
 import { amountColumns, usageColumns } from "./columns";
 import { useNodePodUsage, useNodePods } from "./hooks";
 import { allocatedResources, isTerminated, nodePodsSelector, POD, type AllocatedResource } from "./model";
-import { SearchBox } from "./PodsTab";
+import { PartialUsageNote, SearchBox } from "./PodsTab";
 import "./node-pods.css";
 
 const running = (pod: KubeObject) => !isTerminated(pod);
@@ -51,6 +51,7 @@ export function NodeResourcesTab({ clusterId, objectRef, obj }: DetailsSectionPr
     <div className="np-tab">
       <div className="np-summary">
         <AllocatedBlock allocated={allocated} />
+        <PartialUsageNote partial={usage.pods.partial} />
       </div>
       <div className="np-table">
         <ResourceTable

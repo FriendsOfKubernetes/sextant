@@ -3,7 +3,7 @@
 // load is still in flight, so rounds never overlap) and stopped when the last one unmounts — so a table with a thousand CPU cells makes one `metrics_pods` call, and only while the table is open.
 // A value nobody shows is kept for `IDLE_TTL_MS` (at most `MAX_IDLE_ENTRIES` of them) and then forgotten.
 // A change of the cluster's metrics settings changes the key, so the next values come from the new source at once.
-import { useCallback, useRef, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import {
   api,
   toApiError,
@@ -56,6 +56,12 @@ const IDLE: Polled<never> = Object.freeze({ data: null, error: null, loading: fa
 const entries = new Map<string, Entry>();
 // Keys of the entries nobody shows, oldest first (a Set keeps insertion order).
 const idle = new Set<string>();
+/** Told whenever a poll starts (its first holder) or stops (its last one left): `usePeek` follows them. */
+const pollListeners = new Set<() => void>();
+
+function pollsChanged(): void {
+  for (const fn of [...pollListeners]) fn();
+}
 
 function setEntryState(entry: Entry, state: Polled<unknown>): void {
   entry.state = state;
@@ -104,6 +110,7 @@ function acquire(key: string, fetch: () => Promise<unknown>, interval: number): 
     if (Date.now() - entry.fetchedAt >= interval || entry.state === LOADING) load(entry);
     const current = entry;
     entry.timer = setInterval(() => load(current), interval);
+    pollsChanged();
   }
   return entry;
 }
@@ -124,6 +131,7 @@ function release(key: string): void {
       if (idle.size <= MAX_IDLE_ENTRIES) break;
       drop(oldest);
     }
+    pollsChanged();
   }
 }
 
@@ -168,6 +176,42 @@ export function usePolled<T>(key: string | null, fetch: () => Promise<T>, interv
   );
   const snapshot = useCallback(() => (key === null ? IDLE : (entries.get(key)?.state ?? LOADING)), [key]);
   return useSyncExternalStore(subscribe, snapshot, snapshot) as Polled<T>;
+}
+
+/**
+ * The value of the poll under `key` while other views hold it, without holding it (so it never keeps that poll
+ * going); `null` when nobody polls it.
+ */
+function usePeek<T>(key: string | null): Polled<T> | null {
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      if (key === null) return () => undefined;
+      let entry: Entry | undefined;
+      const attach = () => {
+        const next = entries.get(key);
+        if (next === entry) return;
+        entry?.listeners.delete(notify);
+        entry = next;
+        entry?.listeners.add(notify);
+      };
+      const onPolls = () => {
+        attach();
+        notify();
+      };
+      pollListeners.add(onPolls);
+      attach();
+      return () => {
+        pollListeners.delete(onPolls);
+        entry?.listeners.delete(notify);
+      };
+    },
+    [key],
+  );
+  const snapshot = useCallback(() => {
+    const entry = key === null ? undefined : entries.get(key);
+    return entry && entry.refs > 0 ? entry.state : null;
+  }, [key]);
+  return useSyncExternalStore(subscribe, snapshot, snapshot) as Polled<T> | null;
 }
 
 /** Stops every poller and forgets every value (tests). */
@@ -237,11 +281,16 @@ export function usePodUsageIn(
   namespaces: readonly string[] | null,
   enabled = true,
   selected = false,
+  /** Never the poll of every namespace in place of `namespaces` (under "All namespaces" it would be one). */
+  exact = false,
 ): Polled<Map<string, PodUsage>> {
   const settings = useMetricsSettings(clusterId);
   const chosen = useSelectedNamespaces(clusterId);
   // Until the selected namespaces are known nothing is asked (the poll would change at once).
-  const covered = selected || chosen === null || (chosen !== undefined && namespaces !== null && namespaces.every((n) => chosen.includes(n)));
+  const covered =
+    selected ||
+    (chosen === null && !exact) ||
+    (Array.isArray(chosen) && namespaces !== null && namespaces.every((n) => chosen.includes(n)));
   const asked = chosen === undefined || covered ? chosen : namespaces === null ? null : [...new Set(namespaces)].sort();
   const key =
     enabled && settings && asked !== undefined
@@ -253,6 +302,26 @@ export function usePodUsageIn(
     if (covered && key !== null && entries.has(key)) lastPods.set(clusterId, byKey);
     return byKey;
   });
+}
+
+/** What `usePodUsageOfMany` answers: `partial` when only the first namespaces were asked. */
+export type ManyPodUsage = Polled<Map<string, PodUsage>> & { partial: boolean };
+
+/**
+ * Current usage of the pods in `namespaces` (sorted), when there may be many (a node's pods): the poll of every
+ * namespace is read when another view holds it (the Pods table under "All namespaces"); otherwise these namespaces are
+ * asked by name (the selected namespaces' poll when it covers them), at most `max` of them — above it only the first
+ * `max` and the answer is `partial`. Never a cluster-wide poll of its own, which would ask for every pod's metrics of
+ * the cluster every 30 seconds while a node's tab is open.
+ */
+export function usePodUsageOfMany(clusterId: ClusterId, namespaces: readonly string[], max: number, enabled = true): ManyPodUsage {
+  const settings = useMetricsSettings(clusterId);
+  const many = namespaces.length > max;
+  const allKey = enabled && settings ? `pods|${clusterId}|${settingsKey(settings)}|${JSON.stringify(null)}` : null;
+  const shared = usePeek<Map<string, PodUsage>>(allKey);
+  const asked = useMemo(() => (many ? namespaces.slice(0, max) : namespaces), [namespaces, many, max]);
+  const own = usePodUsageIn(clusterId, asked, enabled && !shared && asked.length > 0, false, true);
+  return useMemo(() => (shared ? { ...shared, partial: false } : { ...own, partial: many && enabled }), [shared, own, many, enabled]);
 }
 
 /** Current usage of every node, by name (`enabled` false: nothing is fetched). */

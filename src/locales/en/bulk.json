@@ -1,0 +1,56 @@
+{
+  "bar": {
+    "label": "Selected objects",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
+    "cleared": "Selection cleared",
+    "clear": "Clear selection",
+    "part": "{{part}} of {{total}}",
+    "partialLabel": "{{action}} (for {{part}} of {{total}} selected)"
+  },
+  "partial": {
+    "title": "{{action}}: only part of the selection",
+    "text": "{{action}} applies to {{part}} of the {{total}} selected objects. These are left out:",
+    "left": "Left out",
+    "continue_one": "Continue with {{count}} object",
+    "continue_other": "Continue with {{count}} objects"
+  },
+  "notRestarted": {
+    "deleting": "It is being deleted.",
+    "mirror": "A static pod: the kubelet brings back the same pod.",
+    "sextant": "A node shell or debug copy of Sextant.",
+    "noController": "No controller would create it again.",
+    "otherController": "Restart does not work through its controller {{owner}}.",
+    "kind": "Restart does not apply to it."
+  },
+  "delete": {
+    "more_one": "…and {{count}} more object.",
+    "more_other": "…and {{count}} more objects.",
+    "ownedSingle": "It has a controller that will likely create it again: deleting it replaces it rather than removes it. To remove it for good, delete or scale down the controller.",
+    "owned_one": "{{count}} of these objects has a controller (marked in the list) that will likely create it again: deleting it replaces it rather than removes it. To remove it for good, delete or scale down the controller.",
+    "owned_other": "{{count}} of these objects have a controller (marked in the list) that will likely create them again: deleting them replaces them rather than removes them. To remove them for good, delete or scale down their controllers.",
+    "gitopsSingle": "It is managed by Flux or Argo CD and may come back on the next sync.",
+    "gitops_one": "{{count}} of these objects is managed by Flux or Argo CD (marked in the list) and may come back on the next sync.",
+    "gitops_other": "{{count}} of these objects are managed by Flux or Argo CD (marked in the list) and may come back on the next sync.",
+    "namespaces": "Deleting a namespace deletes everything inside it: its workloads, Services, ConfigMaps, Secrets and PersistentVolumeClaims with their data.",
+    "recreatedBy": "comes back: {{owner}}",
+    "syncedBy": {
+      "flux": "may come back: Flux {{name}}",
+      "argocd": "may come back: Argo CD application {{name}}"
+    },
+    "typeCount": "To confirm, type the number of objects ({{number}}):",
+    "progress": "Deleting {{name}} ({{current}} of {{total}})…",
+    "stop": "Stop",
+    "stopping": "Stopping after the current object…",
+    "summary": "{{deleted}} of {{total}} deleted.",
+    "results": "Result for each object",
+    "outcome": {
+      "deleted": "Deleted: {{name}}",
+      "gone": "Already gone: {{name}}",
+      "changed": "Kept: {{name}} was replaced by another object of the same name since the list was shown.",
+      "forbidden": "Not deleted, no permission: {{name}}",
+      "failed": "Not deleted: {{name}}",
+      "stopped": "Not tried, stopped: {{name}}"
+    }
+  }
+}

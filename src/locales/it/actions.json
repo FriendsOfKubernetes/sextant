@@ -12,9 +12,7 @@
     "text_one": "{{count}} oggetto verrà eliminato dal cluster:",
     "text_many": "{{count}} di oggetti verranno eliminati dal cluster:",
     "text_other": "Questi {{count}} oggetti verranno eliminati dal cluster:",
-    "confirm": "Elimina",
-    "failed": "Non eliminato: {{name}}",
-    "partial": "{{done}} eliminati su {{total}}. Gli altri non sono riusciti:"
+    "confirm": "Elimina"
   },
   "scale": {
     "label": "Scala",

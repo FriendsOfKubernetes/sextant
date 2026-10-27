@@ -47,6 +47,25 @@ export const ageColumn: ColumnDef = column(
   },
 );
 
+/**
+ * `searchText` of a column that draws the time `at(obj)` as an age ("5m", as the age column does): the search matches
+ * the age as shown, as of the table's clock. Spread into the column's options.
+ */
+export function ageSearchText(
+  at: (obj: KubeObject) => string | undefined,
+): Pick<ColumnDef, "searchText" | "searchTextTimed"> {
+  return {
+    searchText: (o, ctx) => {
+      const time = at(o);
+      const ms = time ? Date.parse(time) : NaN;
+      if (Number.isNaN(ms)) return undefined;
+      const { unit, count } = ageParts(ctx.now - ms);
+      return ctx.t(`common:age.${unit}`, { count });
+    },
+    searchTextTimed: true,
+  };
+}
+
 export const labelsColumn: ColumnDef = column("labels", (o) => labelPairs(o).join(", "), {
   width: "minmax(160px, 2fr)",
   sortable: false,

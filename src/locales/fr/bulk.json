@@ -1,0 +1,61 @@
+{
+  "bar": {
+    "label": "Objets sélectionnés",
+    "selected_one": "{{count}} sélectionné",
+    "selected_many": "{{count}} sélectionnés",
+    "selected_other": "{{count}} sélectionnés",
+    "cleared": "Sélection effacée",
+    "clear": "Effacer la sélection",
+    "part": "{{part}} sur {{total}}",
+    "partialLabel": "{{action}} (pour {{part}} sur {{total}} sélectionnés)"
+  },
+  "partial": {
+    "title": "{{action}} : une partie seulement de la sélection",
+    "text": "« {{action}} » s'applique à {{part}} des {{total}} objets sélectionnés. Ceux-ci sont laissés de côté :",
+    "left": "Laissés de côté",
+    "continue_one": "Continuer avec {{count}} objet",
+    "continue_many": "Continuer avec {{count}} d'objets",
+    "continue_other": "Continuer avec {{count}} objets"
+  },
+  "notRestarted": {
+    "deleting": "Il est en cours de suppression.",
+    "mirror": "Un Pod statique : le kubelet ramène le même Pod.",
+    "sextant": "Un shell de nœud ou une copie de débogage de Sextant.",
+    "noController": "Aucun contrôleur ne le recréerait.",
+    "otherController": "Le redémarrage ne passe pas par son contrôleur {{owner}}.",
+    "kind": "Le redémarrage ne s'y applique pas."
+  },
+  "delete": {
+    "more_one": "…et {{count}} autre objet.",
+    "more_many": "…et {{count}} d'autres objets.",
+    "more_other": "…et {{count}} autres objets.",
+    "ownedSingle": "Il a un contrôleur qui le recréera probablement : le supprimer le remplace au lieu de le retirer. Pour le retirer définitivement, supprimez le contrôleur ou réduisez son nombre de réplicas.",
+    "owned_one": "{{count}} de ces objets a un contrôleur (marqué dans la liste) qui le recréera probablement : le supprimer le remplace au lieu de le retirer. Pour le retirer définitivement, supprimez le contrôleur ou réduisez son nombre de réplicas.",
+    "owned_many": "{{count}} de ces objets ont un contrôleur (marqué dans la liste) qui les recréera probablement : les supprimer les remplace au lieu de les retirer. Pour les retirer définitivement, supprimez leurs contrôleurs ou réduisez leur nombre de réplicas.",
+    "owned_other": "{{count}} de ces objets ont un contrôleur (marqué dans la liste) qui les recréera probablement : les supprimer les remplace au lieu de les retirer. Pour les retirer définitivement, supprimez leurs contrôleurs ou réduisez leur nombre de réplicas.",
+    "gitopsSingle": "Il est géré par Flux ou Argo CD et peut revenir à la prochaine synchronisation.",
+    "gitops_one": "{{count}} de ces objets est géré par Flux ou Argo CD (marqué dans la liste) et peut revenir à la prochaine synchronisation.",
+    "gitops_many": "{{count}} de ces objets sont gérés par Flux ou Argo CD (marqués dans la liste) et peuvent revenir à la prochaine synchronisation.",
+    "gitops_other": "{{count}} de ces objets sont gérés par Flux ou Argo CD (marqués dans la liste) et peuvent revenir à la prochaine synchronisation.",
+    "namespaces": "Supprimer un namespace supprime tout ce qu'il contient : charges de travail, Services, ConfigMaps, Secrets et PersistentVolumeClaims avec leurs données.",
+    "recreatedBy": "reviendra : {{owner}}",
+    "syncedBy": {
+      "flux": "peut revenir : Flux {{name}}",
+      "argocd": "peut revenir : application Argo CD {{name}}"
+    },
+    "typeCount": "Pour confirmer, saisissez le nombre d'objets ({{number}}) :",
+    "progress": "Suppression de {{name}} ({{current}} sur {{total}})…",
+    "stop": "Arrêter",
+    "stopping": "Arrêt après l'objet en cours…",
+    "summary": "{{deleted}} sur {{total}} supprimés.",
+    "results": "Résultat pour chaque objet",
+    "outcome": {
+      "deleted": "Supprimé : {{name}}",
+      "gone": "Déjà disparu : {{name}}",
+      "changed": "Conservé : {{name}} a été remplacé par un autre objet du même nom depuis l'affichage de la liste.",
+      "forbidden": "Non supprimé, pas d'autorisation : {{name}}",
+      "failed": "Non supprimé : {{name}}",
+      "stopped": "Non tenté, arrêté : {{name}}"
+    }
+  }
+}

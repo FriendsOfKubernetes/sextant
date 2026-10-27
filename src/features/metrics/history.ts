@@ -57,6 +57,7 @@ const listeners = new Set<() => void>();
 let clock: () => number = () => Date.now();
 let unfollow: (() => void) | undefined;
 const connected = new Map<ClusterId, boolean>();
+const epochs = new Map<ClusterId, number>();
 
 const ringKey = (clusterId: ClusterId, target: string) => `${clusterId}\u0000${target}`;
 
@@ -71,24 +72,32 @@ function drop(key: string): void {
   rings.delete(key);
 }
 
-/** Makes room for one more ring of `clusterId`: drops the idle ring seen longest ago; false when only shown ones are left. */
+/**
+ * Makes room for one more ring of `clusterId` by dropping idle rings, those seen longest ago first: the cluster's own
+ * until it is under its cap, then any until all of them are. False, dropping nothing, when only shown rings stand in
+ * the way (another cluster's idle ring is never pushed out for a ring the cluster's own cap would refuse anyway).
+ */
 function makeRoom(clusterId: ClusterId): boolean {
-  const over = () => {
-    let ofCluster = 0;
-    for (const ring of rings.values()) if (ring.clusterId === clusterId) ofCluster++;
-    return rings.size >= MAX_TARGETS || ofCluster >= MAX_TARGETS_PER_CLUSTER;
-  };
-  while (over()) {
-    const full = rings.size >= MAX_TARGETS;
-    let oldest: [string, Ring] | undefined;
-    for (const entry of rings) {
-      const ring = entry[1];
-      if (ring.refs > 0 || (!full && ring.clusterId !== clusterId)) continue;
-      if (!oldest || ring.seen < oldest[1].seen) oldest = entry;
-    }
-    if (!oldest) return false;
-    drop(oldest[0]);
+  const idle = [...rings].filter(([, ring]) => ring.refs === 0).sort((a, b) => a[1].seen - b[1].seen);
+  const victims = new Set<string>();
+  let ofCluster = 0;
+  for (const ring of rings.values()) if (ring.clusterId === clusterId) ofCluster++;
+  for (const [key, ring] of idle) {
+    if (ofCluster < MAX_TARGETS_PER_CLUSTER) break;
+    if (ring.clusterId !== clusterId) continue;
+    victims.add(key);
+    ofCluster--;
   }
+  if (ofCluster >= MAX_TARGETS_PER_CLUSTER) return false;
+  let size = rings.size - victims.size;
+  for (const [key] of idle) {
+    if (size < MAX_TARGETS) break;
+    if (victims.has(key)) continue;
+    victims.add(key);
+    size--;
+  }
+  if (size >= MAX_TARGETS) return false;
+  for (const key of victims) drop(key);
   return true;
 }
 
@@ -194,15 +203,27 @@ export function useHistorySeries(clusterId: ClusterId, target: string): HistoryS
   return useSyncExternalStore(subscribeHistory, snapshot, snapshot);
 }
 
-/** Drops every ring of `clusterId`. */
+/**
+ * Drops every ring of `clusterId` and moves its epoch on: a chart still shown (a Reconnect keeps the details mounted)
+ * holds a ring that is gone, so it acquires again when the epoch moves (`useHistoryEpoch`).
+ */
 export function dropClusterHistory(clusterId: ClusterId): void {
-  let any = false;
   for (const [key, ring] of [...rings]) {
-    if (ring.clusterId !== clusterId) continue;
-    drop(key);
-    any = true;
+    if (ring.clusterId === clusterId) drop(key);
   }
-  if (any) changed();
+  epochs.set(clusterId, historyEpochOf(clusterId) + 1);
+  changed();
+}
+
+/** How many times the rings of `clusterId` were dropped: a holder depends on it and acquires again when it moves. */
+export function historyEpochOf(clusterId: ClusterId): number {
+  return epochs.get(clusterId) ?? 0;
+}
+
+/** Re-renders with `historyEpochOf(clusterId)`. */
+export function useHistoryEpoch(clusterId: ClusterId): number {
+  const snapshot = useCallback(() => historyEpochOf(clusterId), [clusterId]);
+  return useSyncExternalStore(subscribeHistory, snapshot, snapshot);
 }
 
 /** Rings held (tests): all of them and those of `clusterId`. */
@@ -216,6 +237,7 @@ export function historyStats(clusterId?: ClusterId): { rings: number; ofCluster:
 export function resetHistory(now?: () => number): void {
   for (const key of [...rings.keys()]) drop(key);
   connected.clear();
+  epochs.clear();
   unfollow?.();
   unfollow = undefined;
   clock = now ?? (() => Date.now());

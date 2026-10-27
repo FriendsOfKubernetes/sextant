@@ -3,6 +3,7 @@ import type { AccessAnswer, ReviewResourceRule, RulesReview } from "../../api";
 import {
   batches,
   candidatesOf,
+  inScope,
   kindAccessIn,
   kindAnswerOf,
   kindQuery,
@@ -14,6 +15,7 @@ import {
   scopeOf,
   type FoundBy,
   type KindFacts,
+  type NamespaceAccess,
 } from "./access";
 import { isNamespaceName, MAX_KNOWN_NAMESPACES, withKnown } from "./known";
 
@@ -128,14 +130,21 @@ describe("the namespaces of “All accessible”", () => {
     ["dev", ["context", "project"]],
   ]);
 
-  it("are the found and the known ones without the refused, sorted, at most 20", () => {
-    const marks = new Map([
-      ["team-b", "noAccess" as const],
-      ["team-a", "accessible" as const],
+  it("are the found and the known ones answered and not refused, sorted, at most 20", () => {
+    const marks = new Map<string, NamespaceAccess>([
+      ["team-b", "noAccess"],
+      ["team-a", "accessible"],
+      ["team-c", "unknown"],
+      ["dev", "accessible"],
     ]);
     expect(scopeOf(["team-b", "team-a", "dev"], found, marks)).toEqual(["dev", "team-a", "team-c"]);
+    // A name not answered yet (typed a moment ago) is left out until its answer comes.
+    expect(scopeOf(["team-b", "team-a", "dev", "typed"], found, marks)).toEqual(["dev", "team-a", "team-c"]);
+    expect(inScope(undefined)).toBe(false);
+    expect(inScope("unknown")).toBe(true);
+    expect(inScope("noAccess")).toBe(false);
     const many = Array.from({ length: 30 }, (_, i) => `ns-${String(i).padStart(2, "0")}`);
-    const scope = scopeOf(many, new Map(), new Map());
+    const scope = scopeOf(many, new Map(), new Map(many.map((ns) => [ns, "accessible" as const])));
     expect(scope).toHaveLength(MAX_SCOPE_NAMESPACES);
     expect(scope[0]).toBe("ns-00");
   });

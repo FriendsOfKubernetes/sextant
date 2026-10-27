@@ -7,6 +7,7 @@ mod cluster_check;
 mod create;
 mod dry_run;
 mod get;
+pub mod inline_secrets;
 mod list;
 mod mutate;
 pub mod openshift;

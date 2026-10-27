@@ -1,6 +1,6 @@
 // "Connect" on a vcluster, only on the user's click and after a short confirmation that says what will happen: the
 // backend reads the Secret `vc-<name>` with the user's credentials, forwards a local port through the host cluster and
-// adds the virtual cluster to the cluster list (Sextant's own `vcluster.yaml`). While Sextant forwards for it: "Open"
+// adds the virtual cluster to the cluster list (Sextant's own `vcluster-<pid>.yaml`). While Sextant forwards for it: "Open"
 // (switches to it, connecting it like any other cluster) and "Disconnect" (stops the forward, which removes the entry).
 // The window never sees the kubeconfig: only names and the local port.
 import { useState } from "react";

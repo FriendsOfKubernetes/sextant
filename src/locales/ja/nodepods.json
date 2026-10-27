@@ -6,6 +6,7 @@
   "search": {
     "placeholder": "すべての列で検索 (ラベルは app=web)…"
   },
+  "usagePartial": "クラスター全体を問い合わせないよう、使用量は名前順で先頭の namespace の Pod についてのみ表示されます（上限: {{max}}）。",
   "columns": {
     "cpuRequest": "CPU 要求",
     "cpuLimit": "CPU 上限",

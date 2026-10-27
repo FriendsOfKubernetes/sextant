@@ -50,7 +50,7 @@ pub struct AppState {
     /// dropped with a pod's cluster, on a reload and on exit.
     pub image_files: crate::image_files::ImageSessions,
     /// Virtual clusters connected through a port forward of their host cluster (#269, ADR-0122): each entry of
-    /// `kubeconfigs/vcluster.yaml` lives as long as its forward in `forwarder`.
+    /// this process's `kubeconfigs/vcluster-<pid>.yaml` lives as long as its forward in `forwarder`.
     pub vcluster: crate::commands::vcluster::VclusterLinks,
     /// Grows with every [`AppState::reset_streams`]; a start that began before a reset does not register.
     streams_generation: AtomicU64,
@@ -64,7 +64,7 @@ impl AppState {
             settings.get().kubeconfig_sources,
             data_dir.join("kubeconfigs"),
         )));
-        // No forward runs yet: virtual clusters of an earlier run cannot be reached (ADR-0122).
+        // No forward runs yet: virtual clusters of an earlier run of this process cannot be reached (ADR-0122).
         crate::commands::vcluster::forget_earlier_run(&registry, &settings);
         let clusters = ClusterManager::new(Arc::clone(&registry));
         // Node shell pods left by an earlier run go when their cluster connects.
@@ -122,6 +122,8 @@ impl AppState {
         self.ext_api.close();
         self.reset_streams();
         self.forwarder.stop_all();
+        // The virtual clusters' entries end with their forwards; their file goes now, not at the next start.
+        crate::commands::vcluster::close_all(self);
         self.argocd.close_all();
         let started = std::time::Instant::now();
         sextant_core::node_shell::wait_for_deletions(NODE_SHELL_DELETE_WAIT);

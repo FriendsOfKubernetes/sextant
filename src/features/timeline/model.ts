@@ -8,9 +8,13 @@
 //   changedManagers(before, now)    // which field managers made the change
 //
 // Secrets arrive without their values (`""` for every key, `sextant.dev/values-hidden`): only key names can change
-// here, and a Secret's diff never carries a value even if one arrived.
+// here, and a Secret's diff never carries a value even if one arrived. Secret material other kinds hold inline (a
+// Route's key, a BuildConfig's webhook secrets, a HelmChart's values, a k3s node's arguments: `inline-secrets.json`)
+// does arrive whole; the projection keeps each such value only as a salted hash (so a change of it is still seen) and
+// a diff names its path without a value.
 import type { FieldManager, KindRef, KubeObject } from "../../api";
 import { status } from "../../resources";
+import { isInlineSecretPath, replaceInlineSecrets } from "../../resources/inlineSecrets";
 
 const { arr, get, str } = status;
 
@@ -19,7 +23,7 @@ export interface FieldChange {
   /** `spec.replicas`, `metadata.labels["app.kubernetes.io/version"]`, `spec.template.spec.containers[web].image`. */
   path: string;
   op: "added" | "removed" | "changed";
-  /** The values as text, clipped to `MAX_VALUE_SHOWN`; absent for a Secret's values and for long values. */
+  /** The values as text, clipped to `MAX_VALUE_SHOWN`; absent for a Secret's values, inline secrets and long values. */
   before?: string;
   after?: string;
   /** A value was too long to keep: only that it changed is known. */
@@ -102,10 +106,15 @@ function sortedRecord(value: unknown, keep: (key: string) => boolean = () => tru
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
+/** Random per page load: an inline secret's hash says only whether it changed, and is never kept beyond the page. */
+const INLINE_SALT = Math.random().toString(36).slice(2) + Date.now().toString(36);
+const HIDDEN_MARK = "\u0000hidden:";
+const hiddenMark = (value: unknown) => `${HIDDEN_MARK}${hashText(INLINE_SALT + JSON.stringify(value))}`;
+
 /**
  * What a change of `obj` is about: its top-level fields but `status` (and `apiVersion`/`kind`), and of its metadata
  * the labels, the annotations that are not bookkeeping, the finalizers and the owners. A Secret keeps only the names
- * of its keys.
+ * of its keys; a value at an inline secret path of the kind only as a salted hash.
  */
 export function projection(kind: Pick<KindRef, "group" | "kind">, obj: KubeObject): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -139,7 +148,7 @@ export function projection(kind: Pick<KindRef, "group" | "kind">, obj: KubeObjec
     }
     if (value !== undefined) out[key] = value;
   }
-  return out;
+  return replaceInlineSecrets(kind.group, kind.kind, out, hiddenMark);
 }
 
 /** FNV-1a, 52 bits: a short stand-in for a long value. */
@@ -211,7 +220,8 @@ export interface Diff {
 export function diffObjects(kind: Pick<KindRef, "group" | "kind">, before: unknown, after: unknown): Diff {
   const changes: FieldChange[] = [];
   let more = 0;
-  const hidden = (path: string) => isSecret(kind) && (path.startsWith("data") || path.startsWith("stringData"));
+  const hidden = (path: string) =>
+    (isSecret(kind) && (path.startsWith("data") || path.startsWith("stringData"))) || isInlineSecretPath(kind.group, kind.kind, path);
   const push = (path: string, op: FieldChange["op"], a: unknown, b: unknown) => {
     if (changes.length >= MAX_CHANGES) {
       more++;

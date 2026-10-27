@@ -242,6 +242,50 @@ async fn history_lists_managers_revisions_and_helm_releases_newest_first() {
 }
 
 #[test]
+fn a_saved_timeline_never_holds_a_value_of_an_inline_secret_path() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path().join("timeline");
+    let cluster = ClusterId("c1".into());
+    let doc = json!({
+        "version": 1, "cluster": "c1",
+        "entries": [
+            { "kind": { "group": "route.openshift.io", "version": "v1", "kind": "Route" },
+              "changes": [
+                  { "path": "spec.tls.key", "op": "changed", "before": "old-key", "after": "new-key" },
+                  { "path": "spec.tls", "op": "added", "after": "{\"key\":\"added-key\"}" },
+                  { "path": "spec.host", "op": "changed", "before": "a.example.com", "after": "b.example.com" }
+              ] },
+            { "kind": { "group": "", "version": "v1", "kind": "Node" },
+              "changes": [
+                  { "path": "metadata.annotations[\"k3s.io/node-args\"]", "op": "changed",
+                    "before": "[\"--token\",\"tok-1\"]", "after": "[\"--token\",\"tok-2\"]" },
+                  { "op": "changed", "before": "no-path", "after": "no-path-2" },
+                  { "path": "spec.unschedulable", "op": "added", "after": "true" }
+              ] }
+        ]
+    });
+    save(&dir, &cluster, Some(&doc.to_string())).unwrap();
+    let on_disk = std::fs::read_to_string(saved_path(&dir, &cluster)).unwrap();
+    for secret in [
+        "old-key",
+        "new-key",
+        "added-key",
+        "tok-1",
+        "tok-2",
+        "no-path",
+    ] {
+        assert!(!on_disk.contains(secret), "{secret}: {on_disk}");
+    }
+    let read: Value = serde_json::from_str(&load(&dir, &cluster).unwrap().unwrap()).unwrap();
+    assert_eq!(
+        read["entries"][0]["changes"][0],
+        json!({ "path": "spec.tls.key", "op": "changed" })
+    );
+    assert_eq!(read["entries"][0]["changes"][2]["after"], "b.example.com");
+    assert_eq!(read["entries"][1]["changes"][2]["after"], "true");
+}
+
+#[test]
 fn a_saved_timeline_round_trips_and_never_holds_a_secret_value() {
     let tmp = tempfile::tempdir().unwrap();
     let dir = tmp.path().join("timeline");

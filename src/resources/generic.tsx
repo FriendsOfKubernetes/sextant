@@ -1,7 +1,7 @@
 // Description of a kind nobody registered (custom resources): name, namespace, the CRD's printer columns, age.
 import type { KindRef, KubeObject, PrinterColumn, ResourceKind } from "../api";
 import { Age } from "../components";
-import { ageColumn, nameColumn, namespaceColumn } from "./columns";
+import { ageColumn, ageSearchText, nameColumn, namespaceColumn } from "./columns";
 import { evalJsonPath, formatJsonPathValues } from "./jsonpath";
 import type { ColumnDef, ResourceDef } from "./registry";
 
@@ -32,6 +32,18 @@ function printerColumn(c: PrinterColumn, index: number): ColumnDef {
       if (c.type === "date" && v.length === 1 && typeof v[0] === "string") return <Age timestamp={v[0]} now={ctx.now} />;
       return formatJsonPathValues(v);
     },
+    // The search matches a date as the age it is drawn as, anything else (a number too) as shown.
+    ...(c.type === "date"
+      ? ageSearchText((o) => {
+          const v = values(o);
+          return v.length === 1 && typeof v[0] === "string" ? v[0] : undefined;
+        })
+      : {
+          searchText: (o) => {
+            const v = values(o);
+            return v.length === 0 ? undefined : formatJsonPathValues(v);
+          },
+        }),
   };
 }
 

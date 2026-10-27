@@ -4,7 +4,7 @@
 //
 // It watches the kind itself (`useWatch`) in the cluster's selected namespaces, filters by the cluster's search
 // text (name, namespace, labels, `app=web`), sorts by any column, renders only the visible rows (5 000 rows
-// scroll smoothly), supports selecting several rows, opens the details panel on a row click and offers the
+// scroll smoothly), supports selecting several rows (a bar of the selection's actions, ADR-0126), opens the details panel on a row click and offers the
 // registered actions of the kind in a context menu (right click or the "⋮" button). Everything has a default
 // from the resource registry and the store; the optional props override it (e.g. the Events page passes its own
 // columns, a details section passes a field selector and fixed namespaces).
@@ -31,6 +31,8 @@ import {
   useActionsVersion,
   type RegisteredAction,
 } from "../../features/actions/registry";
+import { selectionActions } from "../../features/bulk/selection";
+import { SelectionBar, startBarAction } from "../../features/bulk/SelectionBar";
 import { AddColumnDialog } from "../../features/custom-columns/AddColumnDialog";
 import {
   columnDefOf,
@@ -430,6 +432,15 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   // Keyboard: the row in the tab order and a row to focus once it is drawn (after a scroll to it), by object uid, so
   // an update of the watch that moves rows keeps the same object.
   const sectionRef = useRef<HTMLElement>(null);
+  // "Clear selection" removes the bar it was in: the focus goes to the table's row in the tab order.
+  const clearSelection = () => {
+    setRowSelection({});
+    const section = sectionRef.current;
+    const target =
+      section?.querySelector<HTMLElement>(".rt__body [role='row'][tabindex='0']") ??
+      section?.querySelector<HTMLElement>(".rt__head .rt__cell--check input");
+    target?.focus({ preventScroll: true });
+  };
   const [focusUid, setFocusUid] = useState<string | null>(null);
   const pendingFocus = useRef<string | null>(null);
   useEffect(() => {
@@ -509,9 +520,6 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
         <span className="rt__forbidden" data-testid="rt-forbidden" title={watch.forbidden.join("\n")}>
           <Badge tone="warning">{t("resources:table.forbiddenIn", { namespaces: watch.forbidden.join(", ") })}</Badge>
         </span>
-      )}
-      {selected.length > 0 && (
-        <span className="rt__selected">{t("resources:table.selected", { count: selected.length })}</span>
       )}
       <div className="rt__toolbar">
         {props.toolbar}
@@ -697,6 +705,13 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                     e.preventDefault();
                     const rect = e.currentTarget.getBoundingClientRect();
                     openMenu(obj, pointRect(rect.left + 32, rect.bottom));
+                  } else if (e.key === "Delete" && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && isSelected) {
+                    // Delete on a selected row: the selection's Delete, through its own confirmation (ADR-0126).
+                    const remove = selectionActions(selected, kind, actionIds).find((a) => a.action.id === "delete");
+                    if (remove) {
+                      e.preventDefault();
+                      startBarAction(remove, clusterId, kind);
+                    }
                   } else if (isCopyKey(e) && !window.getSelection()?.toString()) {
                     // Ctrl+C / ⌘C: "Copy namespace/name" of the row, or of every selected row when it is one of them.
                     const objects = rowSelection[uidOf(obj)] && selected.length > 1 ? selected : [obj];
@@ -760,6 +775,8 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
       data-kind={kind.kind}
     >
       {header}
+      {/* While rows are selected: their actions (Delete, Restart, …) and "Clear selection" (ADR-0126). */}
+      <SelectionBar clusterId={clusterId} kind={kind} objects={selected} actionIds={actionIds} onClear={clearSelection} />
       {/* A new set of rows (cluster, namespaces, selectors, search) gets a new scroller, from its first row. */}
       <RowsScroller
         key={JSON.stringify([watchKey, search])}

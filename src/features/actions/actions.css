@@ -48,3 +48,48 @@
 .drain-group__option .checkbox {
   margin-top: 2px;
 }
+
+/* Delete (ADR-0126): what comes back, the warnings, the typed count and the outcome of each object. */
+.delete-dialog__note {
+  margin-left: 8px;
+  color: var(--color-warning);
+  font-family: var(--font-ui);
+}
+
+.delete-dialog__warning {
+  color: var(--color-warning);
+}
+
+.delete-dialog__type {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.delete-dialog__type-input {
+  max-width: 120px;
+}
+
+.delete-dialog__outcomes {
+  max-height: 50vh;
+  overflow: auto;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.delete-dialog__outcome {
+  padding: 2px 0;
+  overflow-wrap: anywhere;
+}
+
+.delete-dialog__outcome--forbidden,
+.delete-dialog__outcome--failed {
+  color: var(--color-danger);
+}
+
+.delete-dialog__outcome--changed,
+.delete-dialog__outcome--stopped {
+  color: var(--color-warning);
+}

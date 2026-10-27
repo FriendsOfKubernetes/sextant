@@ -1,0 +1,51 @@
+{
+  "bar": {
+    "label": "已選取的物件",
+    "selected_other": "已選取 {{count}} 個",
+    "cleared": "已清除選取",
+    "clear": "清除選取",
+    "part": "{{part}}/{{total}}",
+    "partialLabel": "{{action}}（適用於已選取 {{total}} 個中的 {{part}} 個）"
+  },
+  "partial": {
+    "title": "{{action}}：僅適用於部分選取的物件",
+    "text": "「{{action}}」適用於選取的 {{total}} 個物件中的 {{part}} 個。下列物件將略過：",
+    "left": "已略過",
+    "continue_other": "繼續處理 {{count}} 個物件"
+  },
+  "notRestarted": {
+    "deleting": "正在刪除中。",
+    "mirror": "靜態 Pod：kubelet 會恢復同一個 Pod。",
+    "sextant": "Sextant 的節點 Shell 或偵錯副本。",
+    "noController": "沒有控制器會重新建立它。",
+    "otherController": "無法透過其控制器 {{owner}} 重新啟動。",
+    "kind": "重新啟動不適用於此物件。"
+  },
+  "delete": {
+    "more_other": "……還有 {{count}} 個物件。",
+    "ownedSingle": "它有控制器，很可能會重新建立它：刪除只會取代它，而不會移除它。若要徹底移除，請刪除控制器或將其縮減。",
+    "owned_other": "其中 {{count}} 個物件有控制器（已在清單中標示），很可能會重新建立它們：刪除只會取代它們，而不會移除。若要徹底移除，請刪除控制器或將其縮減。",
+    "gitopsSingle": "它由 Flux 或 Argo CD 管理，下次同步時可能會恢復。",
+    "gitops_other": "其中 {{count}} 個物件由 Flux 或 Argo CD 管理（已在清單中標示），下次同步時可能會恢復。",
+    "namespaces": "刪除 namespace 會刪除其中的一切：工作負載、Services、ConfigMaps、Secrets 和 PersistentVolumeClaims 及其資料。",
+    "recreatedBy": "會恢復：{{owner}}",
+    "syncedBy": {
+      "flux": "可能恢復：Flux {{name}}",
+      "argocd": "可能恢復：Argo CD 應用程式 {{name}}"
+    },
+    "typeCount": "請輸入物件數量（{{number}}）以確認：",
+    "progress": "正在刪除 {{name}}（{{current}}/{{total}}）…",
+    "stop": "停止",
+    "stopping": "將在目前物件完成後停止…",
+    "summary": "已刪除 {{deleted}}/{{total}} 個。",
+    "results": "每個物件的結果",
+    "outcome": {
+      "deleted": "已刪除：{{name}}",
+      "gone": "已不存在：{{name}}",
+      "changed": "已保留：顯示清單後，{{name}} 已被同名的另一個物件取代。",
+      "forbidden": "未刪除，沒有權限：{{name}}",
+      "failed": "未刪除：{{name}}",
+      "stopped": "未嘗試，已停止：{{name}}"
+    }
+  }
+}

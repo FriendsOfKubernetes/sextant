@@ -51,7 +51,7 @@
     "confirm": "连接",
     "reads": "Sextant 使用你的凭据读取 {{namespace}} 中的 Secret {{secret}}。其中的 kubeconfig 只保留在 Sextant 后端。",
     "forwards": "一个本地端口经由 {{host}} 转发到 vcluster 的 API 服务器。",
-    "adds": "虚拟集群 {{context}} 会加入集群列表，保存在 Sextant 自己的 kubeconfig 文件 vcluster.yaml 中。",
+    "adds": "虚拟集群 {{context}} 会加入集群列表，保存在 Sextant 自己的 kubeconfig 文件 vcluster-<PID>.yaml 中。",
     "lasts": "端口转发运行期间它会一直保留：断开 {{host}}、停止转发或退出 Sextant 都会将其移除。"
   },
   "fields": {

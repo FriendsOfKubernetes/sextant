@@ -51,7 +51,7 @@
     "confirm": "接続",
     "reads": "Sextant はあなたの認証情報で {{namespace}} の Secret {{secret}} を読み取ります。中の kubeconfig は Sextant のバックエンドにとどまります。",
     "forwards": "ローカルポートを {{host}} 経由で vcluster の API サーバーに転送します。",
-    "adds": "仮想クラスター {{context}} をクラスター一覧に追加します (Sextant 自身の kubeconfig ファイル vcluster.yaml)。",
+    "adds": "仮想クラスター {{context}} をクラスター一覧に追加します (Sextant 自身の kubeconfig ファイル vcluster-<PID>.yaml)。",
     "lasts": "ポート転送が動いている間だけ残ります。{{host}} の切断、転送の停止、Sextant の終了で削除されます。"
   },
   "fields": {

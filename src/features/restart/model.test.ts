@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { KindRef, KubeObject } from "../../api";
 import { ROLLOUT } from "../argo-rollouts/model";
 import { restartPatch, rfc3339Seconds } from "../argo-rollouts/patches";
-import { canRestart, planRestart, POD, REPLICA_SET } from "./model";
+import { canRestart, planRestart, POD, REPLICA_SET, whyNotRestart } from "./model";
 
 const DEPLOYMENT: KindRef = { group: "apps", version: "v1", kind: "Deployment" };
 const STATEFUL_SET: KindRef = { group: "apps", version: "v1", kind: "StatefulSet" };
@@ -88,5 +88,23 @@ describe("the Rollout's restart patch", () => {
   it("is kubectl argo rollouts restart's: spec.restartAt as Go's RFC 3339 in UTC", () => {
     expect(restartPatch(new Date("2026-10-23T10:11:12.345Z"))).toEqual({ spec: { restartAt: "2026-10-23T10:11:12Z" } });
     expect(rfc3339Seconds(new Date(Date.UTC(2026, 0, 2, 3, 4, 5)))).toBe("2026-01-02T03:04:05Z");
+  });
+});
+
+describe("why Restart is not offered (the selection bar's explanation, ADR-0126)", () => {
+  it("names the case stepOf refuses, and nothing for an object Restart applies to", () => {
+    const deleting = { deletionTimestamp: "2026-10-23T10:00:00Z" };
+    const cases: [KubeObject, KindRef, ReturnType<typeof whyNotRestart>][] = [
+      [obj("w"), DEPLOYMENT, null],
+      [rsOf("p", owner("apps/v1", "ReplicaSet", "web-1")), POD, null],
+      [obj("w", deleting), DEPLOYMENT, { reason: "deleting" }],
+      [obj("c"), CONFIG_MAP, { reason: "kind" }],
+      [obj("bare"), POD, { reason: "noController" }],
+      [obj("m", { annotations: { "kubernetes.io/config.mirror": "abc" } }), POD, { reason: "mirror" }],
+      [obj("sextant-node-shell-n1-abcde"), POD, { reason: "sextant" }],
+      [rsOf("job-pod", owner("batch/v1", "Job", "migrate")), POD, { reason: "otherController", owner: expect.objectContaining({ name: "migrate" }) }],
+      [rsOf("rs", owner("example.com/v1", "Thing", "t")), REPLICA_SET, { reason: "otherController", owner: expect.objectContaining({ name: "t" }) }],
+    ];
+    for (const [o, kind, why] of cases) expect(whyNotRestart(o, kind)).toEqual(why);
   });
 });

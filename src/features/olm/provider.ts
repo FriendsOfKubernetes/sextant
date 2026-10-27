@@ -6,27 +6,36 @@
 // while the problems store holds this source, one watch lists the originals only — the API server drops the copies by
 // the label selector `!olm.copiedFrom` — at most `MAX_SOURCE_OBJECTS`, and each CSV is judged by the shared rules
 // (`resolve` → `olmProblems`, which also skips a copy OLM's `IsCopied` recognises by its reason or annotation).
-// Nothing is kept once the source is released.
+// Nothing is kept once the source is released. A user who may not list Namespaces (#285) gets the watch of the
+// accessible namespaces (`restrictedScope`) instead of a cluster-wide one the API server refuses; when that scope
+// moves, the problems store starts its sources again, this one with them.
 import type { ClusterId, WatchSpec } from "../../api";
 import { acquireWatch, subscribeWatchKey, watchKey, watchStateByKey } from "../../api/watchRegistry";
 import { isCapped } from "../../api/watchState";
 import { findKind } from "../../resources";
 import { knownClusterKinds } from "../../resources/useKinds";
+import { restrictedScope } from "../namespaces/accessStore";
 import { resolve, type Problem } from "../problems/model";
 import { MAX_SOURCE_OBJECTS } from "../problems/sources";
-import { registerProblemProvider } from "../problems/store";
+import { registerProblemProvider, type ProvidedProblems } from "../problems/store";
 import { CSV, NOT_COPIED_SELECTOR } from "./model";
 
 const uidOf = (obj: { metadata?: { uid?: string; namespace?: string; name?: string } }) =>
   obj.metadata?.uid ?? `${obj.metadata?.namespace ?? ""}/${obj.metadata?.name ?? ""}`;
 
-registerProblemProvider("olm", (clusterId: ClusterId, set) => {
+/** Provides the category's problems of one cluster through `set`; returns the function that stops it. */
+export function provideOlm(clusterId: ClusterId, set: (update: ProvidedProblems) => void): () => void {
   const served = findKind(knownClusterKinds(clusterId), CSV)?.kindRef;
   if (!served) {
     set({ status: "ready", problems: [] });
     return () => undefined;
   }
-  const spec: WatchSpec = { kind: served, namespaces: null, labelSelector: NOT_COPIED_SELECTOR, fieldSelector: null };
+  const spec: WatchSpec = {
+    kind: served,
+    namespaces: restrictedScope(clusterId),
+    labelSelector: NOT_COPIED_SELECTOR,
+    fieldSelector: null,
+  };
   const key = watchKey(clusterId, spec);
   // The problems of the last look, by object: when each was first seen is kept across updates.
   let before = new Map<string, Problem[]>();
@@ -53,4 +62,6 @@ registerProblemProvider("olm", (clusterId: ClusterId, set) => {
     unsubscribe();
     release();
   };
-});
+}
+
+registerProblemProvider("olm", provideOlm);

@@ -197,6 +197,15 @@ registerResource({
           const time = str(get(o, "status", "lastScheduleTime"));
           return <LastSchedule time={time} now={ctx.now} />;
         },
+        // Matched as shown: "5m ago".
+        searchText: (o, ctx) => {
+          const time = str(get(o, "status", "lastScheduleTime"));
+          const ms = time ? Date.parse(time) : NaN;
+          if (Number.isNaN(ms)) return undefined;
+          const { unit, count } = ageParts(ctx.now - ms);
+          return ctx.t("resources:table.ago", { age: ctx.t(`common:age.${unit}`, { count }) });
+        },
+        searchTextTimed: true,
       },
     ),
   ),

@@ -133,6 +133,30 @@ function stepOf(obj: KubeObject, kind: KindRef): RestartStep | null {
 /** Whether Restart is offered for `obj` of `kind`. */
 export const canRestart = (obj: KubeObject, kind: KindRef): boolean => stepOf(obj, kind) !== null;
 
+/** Why Restart is not offered for an object (the cases `stepOf` refuses), for the selection bar (ADR-0126). */
+export type NotRestartable =
+  | { reason: "deleting" }
+  | { reason: "mirror" }
+  | { reason: "sextant" }
+  | { reason: "noController" }
+  | { reason: "otherController"; owner: Owner }
+  | { reason: "kind" };
+
+/** Why Restart is not offered for `obj` of `kind`, or null when it is. */
+export function whyNotRestart(obj: KubeObject, kind: KindRef): NotRestartable | null {
+  if (stepOf(obj, kind) !== null) return null;
+  if (isDeleting(obj)) return { reason: "deleting" };
+  if (is(kind, "apps", "ReplicaSet")) {
+    const owner = controllerOf(obj);
+    return owner ? { reason: "otherController", owner } : { reason: "kind" };
+  }
+  if (!is(kind, "", "Pod")) return { reason: "kind" };
+  if (isMirrorPod(obj)) return { reason: "mirror" };
+  if (isSextantPod(obj)) return { reason: "sextant" };
+  const owner = controllerOf(obj);
+  return owner ? { reason: "otherController", owner } : { reason: "noController" };
+}
+
 const refKey = (r: ObjectRef) => JSON.stringify([r.kind.group, r.kind.kind, r.namespace ?? "", r.name]);
 
 /**

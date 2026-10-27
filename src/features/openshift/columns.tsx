@@ -4,9 +4,9 @@
 // duration; an ImageStream's tags and the tags whose import fails; a Project's display name, phase and requester.
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
-import { Age } from "../../components";
+import { Age, ageParts } from "../../components";
 import { formatList, formatNumber } from "../../i18n";
-import { ageColumn, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
+import { ageColumn, ageSearchText, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
 import { DurationText } from "../argo-workflows/columns";
 import {
   bcTriggers,
@@ -99,7 +99,11 @@ const hostAndPath = (o: KubeObject) => {
 export const routeColumns: ColumnDef[] = [
   nameColumn,
   namespaceColumn,
-  col("status", routeState, { width: "110px", render: (o) => <RouteStateText obj={o} /> }),
+  col("status", routeState, {
+    width: "110px",
+    render: (o) => <RouteStateText obj={o} />,
+    searchText: (o, ctx) => ctx.t(`openshift:routeState.${routeState(o)}`),
+  }),
   col("host", hostAndPath, { width: "minmax(180px, 2fr)" }),
   col(
     "services",
@@ -107,7 +111,7 @@ export const routeColumns: ColumnDef[] = [
       routeBackends(o)
         .map((b) => b.name)
         .join(", "),
-    { width: "minmax(140px, 1.5fr)", render: (o) => <BackendsCell obj={o} /> },
+    { width: "minmax(140px, 1.5fr)", render: (o) => <BackendsCell obj={o} />, searchText: (o, ctx) => backendsText(ctx.t, routeBackends(o)) },
   ),
   col("tls", (o) => routeTls(o)?.termination, { width: "100px" }),
   ageColumn,
@@ -116,7 +120,11 @@ export const routeColumns: ColumnDef[] = [
 export const dcColumns: ColumnDef[] = [
   nameColumn,
   namespaceColumn,
-  col("status", dcState, { width: "120px", render: (o) => <DcStateText obj={o} /> }),
+  col("status", dcState, {
+    width: "120px",
+    render: (o) => <DcStateText obj={o} />,
+    searchText: (o, ctx) => ctx.t(`openshift:dcState.${dcState(o)}`),
+  }),
   col(
     "ready",
     (o) => {
@@ -163,8 +171,22 @@ export const buildColumns: ColumnDef[] = [
   col("status", buildPhase, { width: "100px", render: (o) => <BuildPhaseText obj={o} /> }),
   col("buildConfig", buildConfigOf, { width: "minmax(140px, 1fr)" }),
   col("strategy", (o) => buildStrategy(o).type, { width: "100px" }),
-  col("duration", (o) => buildDurationMs(o), { width: "90px", render: (o, ctx) => <DurationText ms={buildDurationMs(o, ctx.now)} /> }),
-  col("started", startedAt, { width: "100px", render: (o, ctx) => <Age timestamp={startedAt(o)} now={ctx.now} /> }),
+  col("duration", (o) => buildDurationMs(o), {
+    width: "90px",
+    render: (o, ctx) => <DurationText ms={buildDurationMs(o, ctx.now)} />,
+    searchText: (o, ctx) => {
+      const ms = buildDurationMs(o, ctx.now);
+      if (ms === undefined) return undefined;
+      const { unit, count } = ageParts(ms);
+      return ctx.t(`common:age.${unit}`, { count });
+    },
+    searchTextTimed: true,
+  }),
+  col("started", startedAt, {
+    width: "100px",
+    render: (o, ctx) => <Age timestamp={startedAt(o)} now={ctx.now} />,
+    ...ageSearchText(startedAt),
+  }),
   ageColumn,
 ];
 
@@ -185,7 +207,14 @@ export const imageStreamColumns: ColumnDef[] = [
         .join(", "),
     { width: "minmax(140px, 1.5fr)" },
   ),
-  col("imports", (o) => failedImports(o).length, { width: "130px", render: (o) => <FailedImportsCell obj={o} /> }),
+  col("imports", (o) => failedImports(o).length, {
+    width: "130px",
+    render: (o) => <FailedImportsCell obj={o} />,
+    searchText: (o, ctx) => {
+      const count = failedImports(o).length;
+      return count > 0 ? ctx.t("openshift:importFailing", { count }) : undefined;
+    },
+  }),
   col("repository", (o) => streamRepositories(o).internal, { width: "minmax(200px, 2fr)" }),
   ageColumn,
 ];

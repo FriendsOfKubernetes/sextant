@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { Age } from "../../components";
 import { formatBytes, parseQuantity } from "../metrics/format";
-import { ageColumn, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
+import { ageColumn, ageSearchText, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
 import {
   addonChecksumOf,
   addonOwnerOf,
@@ -49,7 +49,11 @@ export function sizeText(size: string | undefined): string {
 export const chartColumns: ColumnDef[] = [
   nameColumn,
   namespaceColumn,
-  col("state", (o) => chartStateOf(o), { width: "120px", render: (o) => <ChartStateText obj={o} /> }),
+  col("state", (o) => chartStateOf(o), {
+    width: "120px",
+    render: (o) => <ChartStateText obj={o} />,
+    searchText: (o, ctx) => ctx.t(`k3s:chartState.${chartStateOf(o)}`),
+  }),
   col("chart", (o) => chartInfoOf(o).chart ?? "", { width: "minmax(140px, 2fr)" }),
   col("version", (o) => chartInfoOf(o).version ?? "", { width: "minmax(80px, 1fr)" }),
   col("targetNamespace", (o) => chartInfoOf(o).targetNamespace, { width: "minmax(100px, 1fr)" }),
@@ -92,10 +96,22 @@ function Created({ obj }: { obj: KubeObject }) {
 export const snapshotColumns: ColumnDef[] = [
   nameColumn,
   col("node", (o) => snapshotOf(o).node ?? "", { width: "minmax(120px, 1fr)" }),
-  col("storage", (o) => snapshotOf(o).storage, { width: "90px", render: (o) => <StorageText obj={o} /> }),
+  col("storage", (o) => snapshotOf(o).storage, {
+    width: "90px",
+    render: (o) => <StorageText obj={o} />,
+    searchText: (o, ctx) => ctx.t(`k3s:storage.${snapshotOf(o).storage}`),
+  }),
   col("size", (o) => sizeText(snapshotOf(o).size), { width: "100px" }),
-  col("created", (o) => snapshotOf(o).createdAt ?? "", { width: "110px", render: (o) => <Created obj={o} /> }),
-  col("state", (o) => snapshotStateOf(snapshotOf(o)), { width: "110px", render: (o) => <SnapshotState obj={o} /> }),
+  col("created", (o) => snapshotOf(o).createdAt ?? "", {
+    width: "110px",
+    render: (o) => <Created obj={o} />,
+    ...ageSearchText((o) => snapshotOf(o).createdAt),
+  }),
+  col("state", (o) => snapshotStateOf(snapshotOf(o)), {
+    width: "110px",
+    render: (o) => <SnapshotState obj={o} />,
+    searchText: (o, ctx) => ctx.t(`k3s:snapshotState.${snapshotStateOf(snapshotOf(o))}`),
+  }),
   ageColumn,
 ];
 

@@ -377,7 +377,7 @@ fn entry(context: &str, port: u16) -> Kubeconfig {
 }
 
 #[test]
-fn entries_go_to_sextants_own_private_file_and_leave_with_their_last_context() {
+fn entries_go_to_this_processs_own_private_file_and_leave_with_their_last_context() {
     let dir = tempfile::tempdir().unwrap();
     let mut registry = registry(dir.path());
 
@@ -388,8 +388,16 @@ fn entries_go_to_sextants_own_private_file_and_leave_with_their_last_context() {
 
     assert_eq!(source.kind, SourceKind::Vcluster);
     assert_eq!(again.id, source.id);
-    assert_eq!(source.path, dir.path().join("kubeconfigs").join(FILE_NAME));
+    assert_eq!(
+        source.path,
+        dir.path()
+            .join("kubeconfigs")
+            .join(format!("vcluster-{}.yaml", std::process::id()))
+    );
     assert!(registry.is_own(&source));
+    // Listed, never stored in the settings: it lives as long as this process's forwards.
+    assert!(registry.sources().iter().any(|s| s.id == source.id));
+    assert!(registry.added_sources().is_empty());
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -412,11 +420,20 @@ fn entries_go_to_sextants_own_private_file_and_leave_with_their_last_context() {
             ("vcluster_qa_team-b_h", "https://127.0.0.1:40002"),
         ]
     );
-    // The kubeconfig a connection gets is the forward's, with the certificate checked against `localhost`.
+    // The id does not depend on the process: the same in every run.
     let dev = clusters
         .iter()
         .find(|c| c.context == "vcluster_dev_team-a_h")
         .unwrap();
+    assert_eq!(dev.id, cluster_id(&registry, "vcluster_dev_team-a_h"));
+    assert_eq!(
+        dev.id,
+        ClusterId::for_context(
+            &dir.path().join("kubeconfigs").join(ID_FILE_NAME),
+            "vcluster_dev_team-a_h"
+        )
+    );
+    // The kubeconfig a connection gets is the forward's, with the certificate checked against `localhost`.
     let config = registry.kubeconfig_for(&dev.id).unwrap();
     assert_eq!(
         config.clusters[0]
@@ -428,7 +445,7 @@ fn entries_go_to_sextants_own_private_file_and_leave_with_their_last_context() {
         Some("localhost")
     );
 
-    assert!(!remove(&mut registry, &["vcluster_dev_team-a_h".into()]).unwrap());
+    remove(&mut registry, &["vcluster_dev_team-a_h".into()]).unwrap();
     let left: Vec<_> = registry
         .clusters()
         .unwrap()
@@ -437,31 +454,70 @@ fn entries_go_to_sextants_own_private_file_and_leave_with_their_last_context() {
         .collect();
     assert_eq!(left, ["vcluster_qa_team-b_h"]);
 
-    assert!(remove(&mut registry, &["vcluster_qa_team-b_h".into()]).unwrap());
+    remove(&mut registry, &["vcluster_qa_team-b_h".into()]).unwrap();
     assert!(!source.path.exists());
-    assert!(registry.added_sources().is_empty());
+    assert!(registry.sources().iter().all(|s| s.id != source.id));
     // Nothing left to remove.
-    assert!(!remove(&mut registry, &["vcluster_qa_team-b_h".into()]).unwrap());
+    remove(&mut registry, &["vcluster_qa_team-b_h".into()]).unwrap();
 }
 
 #[test]
-fn at_start_the_file_of_an_earlier_run_is_forgotten() {
+fn closing_removes_this_processs_file_at_once() {
     let dir = tempfile::tempdir().unwrap();
     let mut registry = registry(dir.path());
     let source = save(&mut registry, &entry("vcluster_dev_team-a_h", 40001)).unwrap();
 
-    // The next run starts with the sources the settings kept.
-    let mut next =
-        KubeconfigRegistry::new(registry.added_sources(), dir.path().join("kubeconfigs")).with_env(
-            KubeconfigEnv {
-                kubeconfig: None,
-                home: None,
-            },
-        );
-    assert!(forget_all(&mut next).unwrap());
+    forget_own(&mut registry);
+
     assert!(!source.path.exists());
-    assert!(next.added_sources().is_empty());
-    assert!(!forget_all(&mut next).unwrap());
+    assert!(registry.clusters().unwrap().is_empty());
+    // Nothing to do the second time.
+    forget_own(&mut registry);
+}
+
+/// A PID no process has: past the largest PID Linux allows (`pid_max` ≤ 2^22).
+#[cfg(unix)]
+const DEAD_PID: u32 = 4_194_400;
+
+#[cfg(unix)]
+#[test]
+fn at_start_only_files_of_gone_processes_are_removed() {
+    let dir = tempfile::tempdir().unwrap();
+    let own = dir.path().join("kubeconfigs");
+    std::fs::create_dir_all(&own).unwrap();
+    let write = |name: &str| {
+        let path = own.join(name);
+        std::fs::write(&path, "apiVersion: v1\nkind: Config\n").unwrap();
+        path
+    };
+    // A crashed run, an earlier process that had this PID, another running Sextant (the parent of this test, a
+    // process of the same user that runs), an earlier build's single file, and files that are not of this module.
+    let dead = write(&file_name_of(DEAD_PID));
+    let reused = write(&file_name());
+    let live = write(&file_name_of(std::os::unix::process::parent_id()));
+    let legacy = write(ID_FILE_NAME);
+    let other = write("vcluster-abc.yaml");
+    let cloud = write("cloud-aws.yaml");
+    // An earlier build stored its source in the settings.
+    let stored = crate::kubeconfig::source(legacy.clone(), SourceKind::Vcluster);
+    let mut registry = KubeconfigRegistry::new(vec![stored], own.clone()).with_env(KubeconfigEnv {
+        kubeconfig: None,
+        home: None,
+    });
+
+    assert!(forget_earlier_runs(&mut registry));
+
+    assert!(!dead.exists() && !reused.exists() && !legacy.exists());
+    assert!(live.exists() && other.exists() && cloud.exists());
+    assert!(
+        registry
+            .sources()
+            .iter()
+            .all(|s| s.kind != SourceKind::Vcluster)
+    );
+    // Nothing stored any more: the settings need no new write.
+    assert!(!forget_earlier_runs(&mut registry));
+    assert!(live.exists());
 }
 
 #[test]
@@ -472,8 +528,9 @@ fn a_cloud_file_is_not_touched_by_removing_virtual_clusters() {
         .add_cloud("cloud-aws.yaml", &entry("vcluster_dev_team-a_h", 1))
         .unwrap();
 
-    assert!(!remove(&mut registry, &["vcluster_dev_team-a_h".into()]).unwrap());
-    assert!(!forget_all(&mut registry).unwrap());
+    remove(&mut registry, &["vcluster_dev_team-a_h".into()]).unwrap();
+    forget_own(&mut registry);
+    assert!(!forget_earlier_runs(&mut registry));
     assert!(cloud.path.exists());
     assert_eq!(registry.clusters().unwrap().len(), 1);
 }

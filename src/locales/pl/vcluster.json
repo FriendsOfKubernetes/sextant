@@ -54,7 +54,7 @@
     "confirm": "Połącz",
     "reads": "Sextant odczyta Secret {{secret}} w {{namespace}} przy użyciu Twoich poświadczeń. kubeconfig z niego pozostaje w backendzie Sextant.",
     "forwards": "Lokalny port jest przekierowywany przez {{host}} do serwera API vcluster.",
-    "adds": "Klaster wirtualny {{context}} zostanie dodany do listy klastrów, we własnym pliku kubeconfig Sextant vcluster.yaml.",
+    "adds": "Klaster wirtualny {{context}} zostanie dodany do listy klastrów, we własnym pliku kubeconfig Sextant vcluster-<PID>.yaml.",
     "lasts": "Pozostaje tam, dopóki działa przekierowanie portu: rozłączenie {{host}}, zatrzymanie przekierowania lub zamknięcie Sextant go usuwa."
   },
   "fields": {

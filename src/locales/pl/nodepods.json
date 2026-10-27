@@ -6,6 +6,7 @@
   "search": {
     "placeholder": "Szukaj we wszystkich kolumnach (app=web dla etykiety)…"
   },
+  "usagePartial": "Użycie jest pokazane tylko dla Podów z pierwszych namespace'ów według nazwy (limit: {{max}}), aby nie odpytywać całego klastra.",
   "columns": {
     "cpuRequest": "Request CPU",
     "cpuLimit": "Limit CPU",

@@ -765,7 +765,7 @@ export const alerts = {
 /**
  * vcluster (#269, ADR-0122): "Connect" on a virtual cluster of a connected host cluster. The backend reads the
  * vcluster's kubeconfig Secret, forwards a local port through the host cluster and writes the entry into Sextant's own
- * `vcluster.yaml`; the window gets names and the port only, never the kubeconfig. An entry lives as long as its
+ * `vcluster-<pid>.yaml`; the window gets names and the port only, never the kubeconfig. An entry lives as long as its
  * forward (`vcluster-links`). Window only: agents and extensions have no such call.
  */
 export const vcluster = {

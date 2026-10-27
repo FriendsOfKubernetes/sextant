@@ -494,6 +494,36 @@ async fn recent_changes_keep_readable_objects_and_never_a_secrets_values() {
 }
 
 #[tokio::test]
+async fn recent_changes_give_inline_secret_material_as_paths_only() {
+    let answer: answers::ChangesAnswer = serde_json::from_value(json!({
+        "changes": [
+            { "at": "2026-10-20T10:00:00Z", "action": "updated",
+              "object": obj("route.openshift.io", "Route", Some("team-a"), "web"),
+              "changes": [
+                  { "path": "spec.tls.key", "op": "changed", "before": "old-key", "after": "new-key" },
+                  { "path": "spec.host", "op": "changed", "before": "a.example.com", "after": "b.example.com" },
+              ] },
+            { "at": "2026-10-20T10:00:00Z", "action": "updated", "object": obj("", "Node", None, "server-0"),
+              "changes": [{ "path": "metadata.annotations[\"k3s.io/node-args\"]", "op": "changed",
+                            "before": "--token=tok-1", "after": "--token=tok-2" }] },
+        ],
+    }))
+    .unwrap();
+    let all = custom(vec![rule_all_read()]);
+    let out = answers::changes(answer, &mut filter(all), None, 10).await;
+    assert_eq!(out.changes.len(), 2);
+    let text = all_text(&answers::to_value(&out));
+    for secret in ["old-key", "new-key", "tok-1", "tok-2"] {
+        assert!(!text.contains(secret), "{secret}: {text}");
+    }
+    assert_eq!(out.changes[0].changes[0].path, "spec.tls.key");
+    assert_eq!(
+        out.changes[0].changes[1].after.as_deref(),
+        Some("b.example.com")
+    );
+}
+
+#[tokio::test]
 async fn autoscaling_keeps_the_asked_namespace() {
     let hpa = |ns: &str| {
         json!({ "object": obj("autoscaling", "HorizontalPodAutoscaler", Some(ns), "web"),

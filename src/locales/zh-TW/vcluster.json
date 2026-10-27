@@ -51,7 +51,7 @@
     "confirm": "連線",
     "reads": "Sextant 會以你的憑證讀取 {{namespace}} 中的 Secret {{secret}}。其中的 kubeconfig 只保留在 Sextant 後端。",
     "forwards": "一個本機連接埠會經由 {{host}} 轉送到 vcluster 的 API 伺服器。",
-    "adds": "虛擬叢集 {{context}} 會加入叢集清單，存放在 Sextant 自己的 kubeconfig 檔案 vcluster.yaml 中。",
+    "adds": "虛擬叢集 {{context}} 會加入叢集清單，存放在 Sextant 自己的 kubeconfig 檔案 vcluster-<PID>.yaml 中。",
     "lasts": "連接埠轉送執行期間它會一直保留：中斷 {{host}}、停止轉送或結束 Sextant 都會將其移除。"
   },
   "fields": {

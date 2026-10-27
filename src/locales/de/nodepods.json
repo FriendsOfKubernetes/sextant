@@ -6,6 +6,7 @@
   "search": {
     "placeholder": "In allen Spalten suchen (app=web für ein Label)…"
   },
+  "usagePartial": "Die Auslastung wird nur für Pods in den ersten Namespaces nach Name angezeigt (Grenze: {{max}}), damit nicht der ganze Cluster abgefragt wird.",
   "columns": {
     "cpuRequest": "CPU-Request",
     "cpuLimit": "CPU-Limit",

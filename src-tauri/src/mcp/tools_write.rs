@@ -63,8 +63,6 @@ pub const ARGO_REFRESH: &str = "argocd.argoproj.io/refresh";
 /// Who started a sync, in the Application's operation (as the application does it).
 pub const SYNC_INITIATOR: &str = "sextant";
 
-const LAST_APPLIED: &str = "kubectl.kubernetes.io/last-applied-configuration";
-
 /// Adds the changing tools.
 pub fn register_write_tools(tools: &mut ToolSet) {
     tools
@@ -1744,15 +1742,10 @@ fn agent_forwards(ctx: &McpContext) -> Vec<sextant_core::portforward::ForwardInf
     all.into_iter().filter(|f| ids.contains(&f.id)).collect()
 }
 
-/// An object without what only takes room: `managedFields` and the last-applied manifest.
-fn compact(mut value: Value) -> Value {
-    if let Some(meta) = value.get_mut("metadata").and_then(Value::as_object_mut) {
-        meta.remove("managedFields");
-        if let Some(annotations) = meta.get_mut("annotations").and_then(Value::as_object_mut) {
-            annotations.remove(LAST_APPLIED);
-        }
-    }
-    value
+/// The saved object as the agent gets it: without `managedFields` and the last-applied manifest, and with the
+/// secret material its kind holds inline emptied (a Modify grant is not "Secret values"; ADR-0120, ADR-0123).
+fn compact(value: Value) -> Value {
+    super::tools_read::compact(value)
 }
 
 fn lock<T>(m: &std::sync::Mutex<T>) -> std::sync::MutexGuard<'_, T> {

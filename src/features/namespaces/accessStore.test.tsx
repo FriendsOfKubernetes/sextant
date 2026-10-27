@@ -207,6 +207,109 @@ describe("the access check of a user who may not list Namespaces", () => {
   });
 });
 
+describe("the watches of a user who may not list Namespaces", () => {
+  const podStarts = (setup: Setup) => [...setup.specs.values()].filter((s) => s.kind.kind === "Pod");
+
+  it("start the problem sources once, with the accessible namespaces, never cluster-wide first", async () => {
+    current = setUp();
+    connect();
+    // Acquired while the check runs: the source waits for it instead of listing cluster-wide.
+    const release = acquireSource("c1", CATEGORY_SOURCES.pods[0]!);
+    await answerProjects(current, []);
+    await waitFor(() => expect(getAccess("c1").status).toBe("ready"));
+    await waitFor(() => expect(podStarts(current!)).toHaveLength(1));
+    expect(podStarts(current).map((s) => s.namespaces)).toEqual([["dev", "team-a", "team-c"]]);
+    release();
+  });
+
+  it("restart them only when the scope really changes: a refused typed name never joins it", async () => {
+    current = setUp();
+    expect(restrictedScope("c1")).toBeNull();
+    connect();
+    await answerProjects(current, []);
+    await waitFor(() => expect(getAccess("c1").status).toBe("ready"));
+    const scope = restrictedScope("c1");
+    const release = acquireSource("c1", CATEGORY_SOURCES.pods[0]!);
+    await waitFor(() => expect(podStarts(current!)).toHaveLength(1));
+
+    // Typed and refused: no mark while pending, so the scope never moves and nothing restarts.
+    await act(() => selectNamespaces("c1", ["nope"]));
+    await waitFor(() => expect(getAccess("c1").namespaces.get("nope")).toBe("noAccess"));
+    expect(restrictedScope("c1")).toBe(scope);
+    expect(podStarts(current)).toHaveLength(1);
+
+    // Typed and accessible: one restart, with it.
+    await act(() => selectNamespaces("c1", ["late"]));
+    await waitFor(() => expect(restrictedScope("c1")).toEqual(["dev", "late", "team-a", "team-c"]));
+    // The source is held again by whoever uses it; acquire as a view would after the epoch moved.
+    const again = acquireSource("c1", CATEGORY_SOURCES.pods[0]!);
+    await waitFor(() => expect(podStarts(current!)).toHaveLength(2));
+    expect(podStarts(current).at(-1)?.namespaces).toEqual(["dev", "late", "team-a", "team-c"]);
+    again();
+    release();
+  });
+});
+
+describe("a Reconnect", () => {
+  function reconnect(): void {
+    act(() => useClustersStore.setState({ states: { c1: { state: "connecting" } } }));
+    act(() => useClustersStore.setState({ states: { c1: { state: "connected" } } }));
+  }
+
+  it("keeps “All namespaces” of a user who may list Namespaces, asking one access review again", async () => {
+    current = setUp({ mayListNamespaces: true });
+    const seen: (string[] | null | undefined)[] = [];
+    renderHook(() => {
+      const value = useSelectedNamespaces("c1");
+      seen.push(value);
+      return value;
+    });
+    connect();
+    await waitFor(() => expect(getAccess("c1").status).toBe("ready"));
+    const before = seen.length;
+    reconnect();
+    await waitFor(() => expect(current!.questions).toHaveLength(2));
+    await waitFor(() => expect(getAccess("c1").status).toBe("ready"));
+    // The table never sees "not known yet", so it is not swapped for a loading one.
+    expect(seen.slice(before)).not.toContain(undefined);
+    expect(seen.at(-1)).toBeNull();
+    expect(current.backend.calls.some((c) => c.cmd === "rbac_whoami" || c.cmd === "rbac_rules_review")).toBe(false);
+  });
+
+  it("keeps the accessible namespaces of a restricted user until the new answers come", async () => {
+    current = setUp();
+    const seen: (string[] | null | undefined)[] = [];
+    renderHook(() => {
+      const value = useSelectedNamespaces("c1");
+      seen.push(value);
+      return value;
+    });
+    connect();
+    await answerProjects(current, []);
+    await waitFor(() => expect(getAccess("c1").status).toBe("ready"));
+    const scope = restrictedScope("c1");
+    const before = seen.length;
+    reconnect();
+    expect(restrictedScope("c1")).toBe(scope);
+    await answerProjects(current, []);
+    await waitFor(() => expect(getAccess("c1").status).toBe("ready"));
+    expect(seen.slice(before)).not.toContain(undefined);
+    expect(seen.slice(before).every((v) => v === scope)).toBe(true);
+  });
+
+  it("forgets the answer when the connection fails instead", async () => {
+    current = setUp({ mayListNamespaces: true });
+    expect(restrictedScope("c1")).toBeNull();
+    connect();
+    await waitFor(() => expect(getAccess("c1").status).toBe("ready"));
+    act(() => useClustersStore.setState({ states: { c1: { state: "connecting" } } }));
+    expect(getAccess("c1").listNamespaces).toBe(true);
+    act(() => useClustersStore.setState({ states: { c1: { state: "error", code: "unreachable", message: "down" } as never } }));
+    expect(getAccess("c1").status).toBe("idle");
+    expect(getAccess("c1").listNamespaces).toBeNull();
+  });
+});
+
 describe("the access check of a user who may list Namespaces", () => {
   it("changes nothing: one review, then “All namespaces” is cluster-wide", async () => {
     current = setUp({ mayListNamespaces: true });

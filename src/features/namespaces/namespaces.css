@@ -91,6 +91,22 @@
   white-space: nowrap;
 }
 
+/* The name is a button: a click shows only that namespace. */
+button.ns-filter__name {
+  flex: 0 1 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+button.ns-filter__name:hover {
+  text-decoration: underline;
+}
+
 .ns-filter__found {
   color: var(--color-text-muted);
   font-size: 0.85em;

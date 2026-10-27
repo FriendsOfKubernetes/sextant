@@ -21,6 +21,10 @@
   color: var(--color-text-muted);
 }
 
+.np-tab > .np-note--partial {
+  padding: 8px 16px 0;
+}
+
 .np-search {
   width: 200px;
   padding: 4px 8px;

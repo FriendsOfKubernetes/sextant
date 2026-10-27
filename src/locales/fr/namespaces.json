@@ -6,7 +6,8 @@
     "allAccessible_other": "Tous les accessibles ({{count}})",
     "restrictedHint": "Vous n'avez pas le droit de lister les namespaces de ce cluster. Saisissez un namespace et appuyez sur Enter : Sextant s'en souvient.",
     "scopeCapped": "« Tous les accessibles » surveille les {{max}} premiers des {{total}} namespaces ; sélectionnez des namespaces pour voir les autres.",
-    "forget": "Oublier {{namespace}}"
+    "forget": "Oublier {{namespace}}",
+    "only": "Afficher uniquement {{namespace}}"
   },
   "mark": {
     "accessible": "accessible",

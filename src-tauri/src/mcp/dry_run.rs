@@ -6,11 +6,14 @@
 //! A core Secret's dry run needs "Secret values" (ADR-0043, #169), and its result does not depend on whether a value
 //! the call names equals the live one: the change is `create`, `write` or `refused` — never `update` or `unchanged` —
 //! `data`/`stringData` are left out of the field changes, and `writtenKeys` lists the keys the call's own input names.
-//! An agent with "Secret values" can read the values anyway, so this is defence in depth. What the API server says
+//! An agent with "Secret values" can read the values anyway, so this is defence in depth. Secret material other kinds
+//! hold inline ([`inline_secrets`]) is emptied on both sides before the fields are compared. What the API server says
 //! apart from that (validation, the 1 MiB size limit, an admission webhook) is passed on as it is.
 
 use serde_json::{Value, json};
-use sextant_core::resources::{DryRunChange, DryRunObject, PatchType, field_changes};
+use sextant_core::resources::{
+    DryRunChange, DryRunObject, PatchType, field_changes, inline_secrets,
+};
 
 use super::audit::clip;
 use super::tools_read::describe;
@@ -103,7 +106,12 @@ fn object(o: &DryRunObject, named: &[String]) -> Value {
         out["error"] = json!(clip(&error.to_string()));
     }
     if let (Some(before), Some(after)) = (&o.before, &o.after) {
-        let lines: Vec<String> = field_changes(before, after)
+        // Secret material other kinds hold inline (a Route's key, …) is emptied on both sides: a dry run never shows
+        // the live value, whatever the agent may write (ADR-0120, ADR-0123).
+        let (mut before, mut after) = (before.clone(), after.clone());
+        inline_secrets::blank_inline_secrets(&mut before);
+        inline_secrets::blank_inline_secrets(&mut after);
+        let lines: Vec<String> = field_changes(&before, &after)
             .into_iter()
             // A Secret's values are "" on both sides anyway; the keys the call names are listed below.
             .filter(|c| {
@@ -225,6 +233,44 @@ mod tests {
         assert_eq!(refused["change"], "refused");
         assert!(refused["error"].as_str().unwrap().contains("bad"));
         assert!(refused.get("fields").is_none());
+    }
+
+    #[test]
+    fn a_dry_run_never_shows_a_value_held_inline() {
+        let route = |key: &str, host: &str| {
+            json!({
+                "apiVersion": "route.openshift.io/v1", "kind": "Route",
+                "metadata": { "name": "web", "namespace": "ns" },
+                "spec": { "host": host, "tls": { "termination": "edge", "key": key } },
+            })
+        };
+        let objects = vec![DryRunObject {
+            object: ObjectRef {
+                kind: KindRef {
+                    group: "route.openshift.io".into(),
+                    version: "v1".into(),
+                    kind: "Route".into(),
+                },
+                namespace: Some("ns".into()),
+                name: "web".into(),
+            },
+            label: String::new(),
+            before: Some(route("live-private-key", "a.example.com")),
+            after: Some(route("agent-key", "b.example.com")),
+            change: DryRunChange::Update,
+            secret_keys: None,
+            error: None,
+        }];
+        let out = summary(&objects, &[vec![]]);
+        let text = out.to_string();
+        assert!(
+            !text.contains("live-private-key") && !text.contains("agent-key"),
+            "{text}"
+        );
+        assert_eq!(
+            out["objects"][0]["fields"],
+            json!([r#"spec.host: "a.example.com" → "b.example.com""#])
+        );
     }
 
     /// A guessed value that matches and one that does not give the same answer: no oracle (ADR-0043).

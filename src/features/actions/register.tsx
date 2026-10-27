@@ -6,6 +6,7 @@ import type { KindRef, KubeObject } from "../../api";
 import { api } from "../../api";
 import { i18n } from "../../i18n";
 import { openEditTab } from "../editor";
+import { newDeleteRunId } from "./deleteStore";
 import { ConfirmAction, DeleteDialog, DrainDialog, ScaleDialog } from "./dialogs";
 import { registerAction } from "./registry";
 
@@ -39,8 +40,12 @@ registerAction("delete", {
   danger: true,
   multiple: true,
   appliesTo: () => true,
-  run: ({ clusterId, kind, refs, openDialog }) => {
-    openDialog((close) => <DeleteDialog clusterId={clusterId} kind={kind} refs={refs} close={close} />);
+  run: ({ clusterId, kind, objects, refs, openDialog }) => {
+    // One run per dialog entry: a remount of the entry shows its run instead of starting another (deleteStore.ts).
+    const runId = newDeleteRunId();
+    openDialog((close) => (
+      <DeleteDialog clusterId={clusterId} kind={kind} refs={refs} objects={objects} close={close} runId={runId} />
+    ));
   },
 });
 

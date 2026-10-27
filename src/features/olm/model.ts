@@ -709,12 +709,13 @@ function catalogProblems(cs: KubeObject): Detected[] {
   const state = catalogInfo(cs).state;
   // Only a registry OLM connects to has a connection state (grpc); a missing one is not judged.
   if (!state || HEALTHY_STATES.has(state)) return [];
+  // No stamp: a crash-looping registry moves between TRANSIENT_FAILURE and CONNECTING every few minutes, and a stamp
+  // of the state would start the grace again on every move, so it would never end. Unhealthy is one state here.
   return [
     {
       reason: "CatalogSourceNotReady",
       messageKey: "messages.olmCatalogState",
       messageParams: { state },
-      stamp: state,
       graceMs: CATALOG_GRACE_MS,
       notify: true,
     },

@@ -1,0 +1,51 @@
+{
+  "bar": {
+    "label": "선택한 개체",
+    "selected_other": "{{count}}개 선택됨",
+    "cleared": "선택 해제됨",
+    "clear": "선택 해제",
+    "part": "{{part}}/{{total}}",
+    "partialLabel": "{{action}}(선택한 {{total}}개 중 {{part}}개)"
+  },
+  "partial": {
+    "title": "{{action}}: 선택 항목의 일부만",
+    "text": "“{{action}}”은(는) 선택한 개체 {{total}}개 중 {{part}}개에 적용됩니다. 다음 개체는 제외됩니다:",
+    "left": "제외됨",
+    "continue_other": "{{count}}개로 계속"
+  },
+  "notRestarted": {
+    "deleting": "삭제 중입니다.",
+    "mirror": "정적 Pod: kubelet이 같은 Pod를 되돌립니다.",
+    "sextant": "Sextant의 노드 셸 또는 디버그 복사본입니다.",
+    "noController": "다시 만들 컨트롤러가 없습니다.",
+    "otherController": "컨트롤러 {{owner}}을(를) 통해서는 다시 시작할 수 없습니다.",
+    "kind": "다시 시작이 적용되지 않습니다."
+  },
+  "delete": {
+    "more_other": "…외 {{count}}개 개체.",
+    "ownedSingle": "이 개체에는 다시 만들 가능성이 높은 컨트롤러가 있습니다. 삭제하면 제거되지 않고 교체됩니다. 완전히 제거하려면 컨트롤러를 삭제하거나 스케일을 줄이세요.",
+    "owned_other": "이 중 {{count}}개 개체에는 다시 만들 가능성이 높은 컨트롤러가 있습니다(목록에 표시). 삭제하면 제거되지 않고 교체됩니다. 완전히 제거하려면 컨트롤러를 삭제하거나 스케일을 줄이세요.",
+    "gitopsSingle": "이 개체는 Flux 또는 Argo CD가 관리하며 다음 동기화 때 돌아올 수 있습니다.",
+    "gitops_other": "이 중 {{count}}개 개체는 Flux 또는 Argo CD가 관리하며(목록에 표시) 다음 동기화 때 돌아올 수 있습니다.",
+    "namespaces": "namespace를 삭제하면 그 안의 모든 것이 삭제됩니다: 워크로드, Services, ConfigMaps, Secrets, PersistentVolumeClaims와 그 데이터.",
+    "recreatedBy": "돌아옴: {{owner}}",
+    "syncedBy": {
+      "flux": "돌아올 수 있음: Flux {{name}}",
+      "argocd": "돌아올 수 있음: Argo CD 애플리케이션 {{name}}"
+    },
+    "typeCount": "확인하려면 개체 수({{number}})를 입력하세요:",
+    "progress": "{{name}} 삭제 중({{current}}/{{total}})…",
+    "stop": "중지",
+    "stopping": "현재 개체 후에 중지하는 중…",
+    "summary": "{{total}}개 중 {{deleted}}개 삭제됨.",
+    "results": "각 개체의 결과",
+    "outcome": {
+      "deleted": "삭제됨: {{name}}",
+      "gone": "이미 없음: {{name}}",
+      "changed": "유지됨: 목록을 표시한 뒤 {{name}}이(가) 같은 이름의 다른 개체로 바뀌었습니다.",
+      "forbidden": "삭제 안 됨, 권한 없음: {{name}}",
+      "failed": "삭제 안 됨: {{name}}",
+      "stopped": "시도 안 함, 중지됨: {{name}}"
+    }
+  }
+}
