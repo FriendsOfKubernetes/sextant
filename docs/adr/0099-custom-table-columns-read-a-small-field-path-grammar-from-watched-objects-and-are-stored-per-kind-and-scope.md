@@ -22,4 +22,4 @@
 ## Consequences
 
 - A value inside a list of unknown position (`containers[*].image`) cannot be a column; `[0]` is the way.
-- Only tables that pass `customColumns` (the main kind table) show and offer them; tables of details sections and the Events page do not.
+- Only tables that pass `customColumns` (the main kind table and, with [ADR-0127](0127-resource-table-filters-use-typed-local-predicates-and-cluster-kind-settings.md), the primary Events list) show and offer them; tables of details sections do not.

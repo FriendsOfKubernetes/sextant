@@ -17,8 +17,8 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 - **Cloud clusters** — find your Amazon EKS, Google GKE and Azure AKS clusters through the `aws`, `gcloud` and `az`
   you already use, and add them in a few clicks.
 - **Every resource** in live tables, with details, a YAML editor, scale, restart, cordon, drain and CronJob actions;
-  **custom columns** from labels, annotations and field paths, and **Set image…** with a preview and a patch of the
-  image fields only.
+  **custom columns** from labels, annotations and field paths, persistent **column filters** with nested AND/OR
+  conditions per cluster and table, and **Set image…** with a preview and a patch of the image fields only.
 - **Logs, shells and port forwarding** — container logs with search, logs of several pods at once, a shell in any
   container, debug containers, copying files to and from containers, a shell on a node (a temporary privileged pod,
   removed when you close it), a local terminal already pointed at the cluster.
