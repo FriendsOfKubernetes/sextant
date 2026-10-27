@@ -91,9 +91,11 @@
   white-space: nowrap;
 }
 
-/* The name is a button: a click shows only that namespace. */
+/* The name is a button: a click shows only that namespace. It fills the rest of the row, so a click beside the name
+   does the same; the marks sit at its end. */
 button.ns-filter__name {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
+  align-self: stretch;
   padding: 0;
   border: 0;
   background: none;
@@ -101,10 +103,6 @@ button.ns-filter__name {
   font: inherit;
   text-align: start;
   cursor: pointer;
-}
-
-button.ns-filter__name:hover {
-  text-decoration: underline;
 }
 
 .ns-filter__found {
