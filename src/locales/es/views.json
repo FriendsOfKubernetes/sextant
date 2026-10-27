@@ -15,7 +15,7 @@
     "labelSelector": "Label selector",
     "labelSelectorHint": "Se pide al clúster, por ejemplo app=web,tier!=db. Déjelo vacío para ninguno.",
     "pin": "Fijar en favoritos",
-    "captures": "Guarda el tipo de recurso, los namespaces, el texto de búsqueda, «Solo problemas», el label selector, el orden y las columnas visibles.",
+    "captures": "Guarda el tipo de recurso, los namespaces, el texto de búsqueda, «Solo problemas», el label selector, los filtros de columna, el orden y las columnas visibles.",
     "save": "Guardar",
     "cancel": "Cancelar",
     "full": "La lista de vistas está llena. Elimine primero una vista."
@@ -118,6 +118,7 @@
       "color": "color",
       "icon": "icono",
       "namespaces": "filtro de namespaces",
+      "tableFilters": "filtros de tabla",
       "previewChanges": "vista previa de cambios",
       "agentAccess": "reglas de acceso de agentes",
       "observabilityLinks": "enlaces a paneles y trazas"

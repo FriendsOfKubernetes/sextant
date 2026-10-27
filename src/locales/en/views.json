@@ -15,7 +15,7 @@
     "labelSelector": "Label selector",
     "labelSelectorHint": "Asked from the cluster, e.g. app=web,tier!=db. Leave empty for none.",
     "pin": "Pin to favourites",
-    "captures": "Saves the kind, namespaces, search text, Only problems, label selector, sort and visible columns.",
+    "captures": "Saves the kind, namespaces, search text, Only problems, label selector, column filters, sort and visible columns.",
     "save": "Save",
     "cancel": "Cancel",
     "full": "The list of views is full. Delete a view first."
@@ -118,6 +118,7 @@
       "color": "colour",
       "icon": "icon",
       "namespaces": "namespace filter",
+      "tableFilters": "table filters",
       "previewChanges": "preview changes",
       "agentAccess": "agent access rules",
       "observabilityLinks": "dashboard and trace links"

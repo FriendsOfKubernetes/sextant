@@ -57,6 +57,7 @@ const controlledByColumn: ColumnDef = column(
   },
   {
     width: "minmax(100px, 1fr)",
+    filter: { type: "string", value: (o) => controllerOf(o)?.kind },
     render: (o) => {
       const owner = controllerOf(o);
       return owner ? <ObjectLink target={owner} namespace={o.metadata?.namespace ?? null} /> : null;
@@ -179,6 +180,7 @@ registerResource({
     column("schedule", (o) => str(get(o, "spec", "schedule")), { width: "minmax(110px, 1fr)" }),
     column("suspend", (o) => String(get(o, "spec", "suspend") === true), {
       width: "80px",
+      filter: { type: "boolean", value: (o) => get(o, "spec", "suspend") === true },
       render: (o) => {
         const suspended = get(o, "spec", "suspend") === true;
         return <StatusText value={String(suspended)} tone={suspended ? "warning" : "neutral"} />;
@@ -193,6 +195,11 @@ registerResource({
       },
       {
         width: "110px",
+        filter: { type: "age", value: (o, ctx) => {
+          const time = str(get(o, "status", "lastScheduleTime"));
+          const timestamp = time ? Date.parse(time) : NaN;
+          return Number.isFinite(timestamp) ? Math.max(0, ctx.now - timestamp) : undefined;
+        } },
         render: (o, ctx) => {
           const time = str(get(o, "status", "lastScheduleTime"));
           return <LastSchedule time={time} now={ctx.now} />;

@@ -133,6 +133,7 @@ function KindTable({
     );
   return (
     <ResourceTable
+      filtering
       clusterId={clusterId}
       kind={kind}
       resourceKind={withColumns}
@@ -149,7 +150,7 @@ function KindTable({
         viewColumns: table.viewColumns,
         onViewColumnsChange: (viewColumns) => patchTable({ viewColumns }),
       }}
-      toolbar={
+      toolbar={({ filters }) => (
         <>
           {labelSelector && (
             <span className="main__selector">
@@ -172,6 +173,7 @@ function KindTable({
             </label>
           )}
           {namespaced && <NamespaceFilter clusterId={clusterId} />}
+          {filters}
           <input
             className="main__search"
             type="search"
@@ -184,7 +186,7 @@ function KindTable({
             <Component key={id} clusterId={clusterId} view={viewId} />
           ))}
         </>
-      }
+      )}
     />
   );
 }

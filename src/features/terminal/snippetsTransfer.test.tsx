@@ -40,8 +40,8 @@ function problems(text: string): string[] {
 describe("snippets in the export file", () => {
   it("are written since version 2", () => {
     const file = exported();
-    expect(EXPORT_VERSION).toBe(3);
-    expect(file.version).toBe(3);
+    expect(EXPORT_VERSION).toBe(4);
+    expect(file.version).toBe(4);
     expect(file.snippets).toEqual(SNIPPETS);
     expect(parseImport(JSON.stringify(file)).snippets).toEqual(SNIPPETS);
   });
@@ -72,7 +72,7 @@ describe("snippets in the export file", () => {
         "$.snippets[0].command: not a string",
       ]),
     );
-    expect(problems(JSON.stringify({ ...exported(), version: 4 }))).toEqual(["$.version: 4 is not supported"]);
+    expect(problems(JSON.stringify({ ...exported(), version: 5 }))).toEqual(["$.version: 5 is not supported"]);
   });
 
   it("are previewed as added, changed or kept and replace a local one only when overwriting is allowed", () => {

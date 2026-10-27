@@ -64,7 +64,10 @@ export const EVENT_COLUMNS: ColumnDef[] = [
       const t = eventTime(e);
       return t === undefined ? undefined : -t;
     },
-    { width: "80px", render: (e, ctx) => <Age timestamp={eventTimestamp(e)} now={ctx.now} /> },
+    { width: "80px", filter: { type: "age", value: (e, ctx) => {
+      const timestamp = eventTime(e);
+      return timestamp === undefined ? undefined : Math.max(0, ctx.now - timestamp);
+    } }, render: (e, ctx) => <Age timestamp={eventTimestamp(e)} now={ctx.now} /> },
   ),
 ];
 
@@ -84,17 +87,20 @@ export function EventsPage({ clusterId }: PageProps) {
   }
   return (
     <ResourceTable
+      filtering
       clusterId={clusterId}
       kind={EVENT_KIND}
       columns={EVENT_COLUMNS}
+      customColumns={{}}
       namespaces={namespaces}
       search={search}
       title={t("events:title")}
       actions={NO_ACTIONS}
       defaultSort={NEWEST_FIRST}
-      toolbar={
+      toolbar={({ filters }) => (
         <>
           <NamespaceFilter clusterId={clusterId} />
+          {filters}
           <input
             className="main__search"
             type="search"
@@ -104,7 +110,7 @@ export function EventsPage({ clusterId }: PageProps) {
             onChange={(e) => setSearch(clusterId, e.target.value)}
           />
         </>
-      }
+      )}
     />
   );
 }

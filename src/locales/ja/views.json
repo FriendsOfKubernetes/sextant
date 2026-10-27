@@ -15,7 +15,7 @@
     "labelSelector": "Label selector",
     "labelSelectorHint": "クラスターに要求されます。例: app=web,tier!=db。不要なら空のままにします。",
     "pin": "お気に入りにピン留め",
-    "captures": "リソースの種類、namespace、検索テキスト、「問題のみ」、label selector、並べ替え、表示する列を保存します。",
+    "captures": "リソースの種類、namespace、検索テキスト、「問題のみ」、label selector、列フィルター、並べ替え、表示する列を保存します。",
     "save": "保存",
     "cancel": "キャンセル",
     "full": "ビューの一覧がいっぱいです。先にビューを削除してください。"
@@ -118,6 +118,7 @@
       "color": "色",
       "icon": "アイコン",
       "namespaces": "namespace フィルター",
+      "tableFilters": "表フィルター",
       "previewChanges": "変更のプレビュー",
       "agentAccess": "エージェントのアクセスルール",
       "observabilityLinks": "ダッシュボードとトレースへのリンク"

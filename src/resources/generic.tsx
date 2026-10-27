@@ -20,6 +20,16 @@ function printerColumn(c: PrinterColumn, index: number): ColumnDef {
     id: `printer-${index}-${c.name}`,
     title: c.name,
     width: c.type === "date" ? "80px" : "minmax(90px, 1fr)",
+    filter: {
+      type: c.type === "date" ? "age" : numeric ? "number" : c.type === "boolean" ? "boolean" : "string",
+      value: (o, ctx) => values(o).map((v) => {
+        if (c.type === "date") {
+          const timestamp = typeof v === "string" ? Date.parse(v) : NaN;
+          return Number.isFinite(timestamp) ? Math.max(0, ctx.now - timestamp) : null;
+        }
+        return v === null || typeof v === "string" || typeof v === "number" || typeof v === "boolean" ? v : formatJsonPathValues([v]);
+      }),
+    },
     value: (o) => {
       const v = values(o);
       if (v.length === 0) return undefined;

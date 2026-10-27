@@ -15,7 +15,7 @@
     "labelSelector": "Label selector",
     "labelSelectorHint": "向集群请求，例如 app=web,tier!=db。留空表示不使用。",
     "pin": "固定到收藏",
-    "captures": "保存资源种类、namespace、搜索文本、“仅显示问题”、label selector、排序和可见列。",
+    "captures": "保存资源种类、namespace、搜索文本、“仅显示问题”、label selector、列筛选条件、排序和可见列。",
     "save": "保存",
     "cancel": "取消",
     "full": "视图列表已满。请先删除一个视图。"
@@ -118,6 +118,7 @@
       "color": "颜色",
       "icon": "图标",
       "namespaces": "namespace 筛选",
+      "tableFilters": "表格筛选条件",
       "previewChanges": "预览更改",
       "agentAccess": "智能体访问规则",
       "observabilityLinks": "仪表板和追踪链接"

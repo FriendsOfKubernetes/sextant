@@ -15,7 +15,7 @@
     "labelSelector": "Label selector",
     "labelSelectorHint": "Richiesto al cluster, ad esempio app=web,tier!=db. Lasciare vuoto per nessuno.",
     "pin": "Aggiungi ai preferiti",
-    "captures": "Salva il tipo di risorsa, i namespace, il testo di ricerca, «Solo problemi», il label selector, l'ordinamento e le colonne visibili.",
+    "captures": "Salva il tipo di risorsa, i namespace, il testo di ricerca, «Solo problemi», il label selector, i filtri di colonna, l'ordinamento e le colonne visibili.",
     "save": "Salva",
     "cancel": "Annulla",
     "full": "L'elenco delle viste è pieno. Elimina prima una vista."
@@ -118,6 +118,7 @@
       "color": "colore",
       "icon": "icona",
       "namespaces": "filtro dei namespace",
+      "tableFilters": "filtri della tabella",
       "previewChanges": "anteprima delle modifiche",
       "agentAccess": "regole di accesso degli agenti",
       "observabilityLinks": "link a dashboard e tracce"

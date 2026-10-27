@@ -108,6 +108,14 @@ export interface ColumnDef {
   title?: string;
   /** Value for sorting (numbers sort numerically) and the default cell text. */
   value: (obj: KubeObject) => string | number | boolean | null | undefined;
+  /** Raw filter semantics when sorting differs from the cell (owners, ages, metrics). */
+  filter?: {
+    type?: "string" | "number" | "boolean" | "age";
+    unit?: "cpu" | "bytes";
+    value?: (obj: KubeObject, ctx: CellContext) => ColumnFilterValue;
+    /** Shares an existing data subscription while a filter needs it, even with no visible rows. */
+    observer?: ComponentType<{ context: CellContext; onChange: () => void }>;
+  };
   /** Custom cell; the default shows `value`. */
   render?: (obj: KubeObject, ctx: CellContext) => ReactNode;
   /**
@@ -130,6 +138,14 @@ export interface ColumnDef {
   /** Where it goes when the column it should follow is not there: at the end (default: before "age"). */
   fallback?: "end" | "beforeAge";
 }
+
+export type ColumnFilterValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | readonly (string | number | boolean | null | undefined)[];
 
 /**
  * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `gatewayApi`, `flux` and

@@ -19,7 +19,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { isCapped, uidOf, updateSettings, useWatch, type ClusterId, type KindRef, type KubeObject, type ResourceKind } from "../../api";
 import { useCssLength } from "../../app/accessibility";
@@ -42,6 +42,8 @@ import {
   type ShownColumn,
 } from "../../features/custom-columns/model";
 import { columnIdOf, type CustomColumnSpec } from "../../features/custom-columns/path";
+import { useTableFilters } from "../../features/table-filters/state";
+import { useFilterControls } from "../../features/table-filters/useFilterControls";
 import { listSeparator } from "../../i18n/format";
 import { useObjectCount } from "../../resources/counts";
 import { kindKey, refOf } from "../../resources/refs";
@@ -95,7 +97,9 @@ export interface ResourceTableProps {
   /** Default: `openDetails` of the clicked object. */
   onRowClick?: (obj: KubeObject) => void;
   /** Extra controls in the header (namespace filter, search box). */
-  toolbar?: ReactNode;
+  toolbar?: ReactNode | ((controls: { filters: ReactNode }) => ReactNode);
+  /** Persistent column filters for primary resource lists; embedded detail tables opt out. */
+  filtering?: boolean;
   /** Initial sort; default by name. `null` keeps the watch order. */
   defaultSort?: { id: string; desc?: boolean } | null;
   /** Discovery entry of the kind (printer columns and scope of custom resources). */
@@ -319,16 +323,40 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   // matched again as the clock ticks, and an unchanged result keeps its array (no new sort).
   const rowText = useMemo(() => createRowText(columns, (key, options) => t(key, options)), [columns, t]);
   const searchNow = rowText.timed && hasPlainTerms(search) ? now : 0;
+  const baseMatches = useMemo(() => {
+    const matches = compileSearch(search, kindId, undefined, (obj) => rowText.textOf(obj, searchNow));
+    return (obj: KubeObject) => matches(obj) && (!rowFilter || rowFilter(obj));
+  }, [search, kindId, rowFilter, rowText, searchNow]);
+  const cellContext: CellContext = useMemo(() => ({ clusterId, kind, now }), [clusterId, kind, now]);
+  const savedFilters = useTableFilters(clusterId, `kind:${kindId}`, props.filtering === true);
+  const [metricsRevision, setMetricsRevision] = useState(0);
+  const metricsChanged = useCallback(() => setMetricsRevision((revision) => revision + 1), []);
+  const filterControls = useFilterControls({ enabled: props.filtering === true, filters: savedFilters.filters,
+    error: !!savedFilters.error, onChange: savedFilters.setFilters,
+    columns: allColumns, objects: items, context: cellContext, accept: baseMatches, revision: metricsRevision });
+  const compiledFilters = filterControls.compiled;
+  const filterObservers = useMemo(() => {
+    const ids = new Set([...compiledFilters.activeColumnIds, ...filterControls.inspectedColumns.split("\0")]);
+    return [...new Set(allColumns.filter((column) => ids.has(column.id)).map((column) => column.filter?.observer).filter((observer) => observer !== undefined))];
+  }, [allColumns, compiledFilters, filterControls.inspectedColumns]);
+  const usesMetricFilter = compiledFilters.activeColumnIds.some((id) => allColumns.some((column) => column.id === id && column.filter?.observer));
+  const filterRevision = usesMetricFilter ? metricsRevision : 0;
+  const filterNow = compiledFilters.needsTime ? now : 0;
   const lastData = useRef<KubeObject[]>([]);
   const data = useMemo(() => {
-    const matches = compileSearch(search, kindId, undefined, (obj) => rowText.textOf(obj, searchNow));
-    const next = [...items.values()].filter((obj) => matches(obj) && (!rowFilter || rowFilter(obj)));
-    const prev = lastData.current;
-    if (next.length === prev.length && next.every((obj, i) => obj === prev[i])) return prev;
-    lastData.current = next;
-    return next;
-  }, [items, search, kindId, rowFilter, rowText, searchNow]);
-  const filtered = Boolean(search.trim()) || rowFilter !== undefined;
+    const result: KubeObject[] = [];
+    const hasFilters = compiledFilters.activeColumnIds.length > 0;
+    for (const obj of items.values()) if (baseMatches(obj) && (!hasFilters || compiledFilters.matches(obj, cellContext))) result.push(obj);
+    const previous = lastData.current;
+    if (result.length === previous.length && result.every((obj, i) => obj === previous[i])) return previous;
+    lastData.current = result;
+    return result;
+  }, [items, baseMatches, compiledFilters, clusterId, kind, filterNow, filterRevision]);
+  const filtered = Boolean(search.trim()) || rowFilter !== undefined || compiledFilters.activeCount > 0;
+  // An identity counter avoids serializing potentially large value selections on every watch batch.
+  const filterIdentity = useRef({ filters: savedFilters.filters, version: 0 });
+  if (filterIdentity.current.filters !== savedFilters.filters) filterIdentity.current = { filters: savedFilters.filters, version: filterIdentity.current.version + 1 };
+  const filterVersion = filterIdentity.current.version;
 
   const tableColumns = useMemo(
     () =>
@@ -396,8 +424,6 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
   }, [data]);
 
   const selected = rows.filter((r) => r.getIsSelected()).map((r) => r.original);
-
-  const cellContext: CellContext = useMemo(() => ({ clusterId, kind, now }), [clusterId, kind, now]);
 
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [addingColumn, setAddingColumn] = useState(false);
@@ -485,7 +511,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     filtered && data.length !== total
       ? t("resources:table.countFiltered", { shown: data.length, total })
       : t("resources:table.count", { count: total });
-  const announced = useSearchAnnouncement(`${search.trim()}|${rowFilter ? 1 : 0}`, countText);
+  const announced = useSearchAnnouncement(`${search.trim()}|${rowFilter ? 1 : 0}|${filterVersion}`, countText);
 
   const header = (
     <header className="rt__header">
@@ -522,7 +548,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
         </span>
       )}
       <div className="rt__toolbar">
-        {props.toolbar}
+        {typeof props.toolbar === "function" ? props.toolbar({ filters: filterControls.button }) : <>{props.toolbar}{filterControls.button}</>}
         {(props.onHiddenColumnsChange || colWidths.customized || customOptions) && (
           <ColumnsMenu
             columns={allColumns}
@@ -585,7 +611,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
         title={
           search.trim() && total > 0
             ? t("resources:table.noMatches", { search: search.trim() })
-            : rowFilter && total > 0
+            : (rowFilter || compiledFilters.activeCount > 0) && total > 0
               ? t("resources:table.noFilterMatches")
             : namespaced
               ? t("resources:table.empty")
@@ -641,7 +667,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
               const ariaSort = ariaSortOf(sorted);
               const label = c.titleKey ? t(c.titleKey) : (c.title ?? c.id);
               return (
-                <div key={c.id} className="rt__cell rt__cell--head" role="columnheader" aria-sort={ariaSort}>
+                <div key={c.id} className={`rt__cell rt__cell--head${props.filtering ? " tf-header-cell" : ""}`} role="columnheader" aria-sort={ariaSort} aria-label={props.filtering ? label : undefined}>
                   {column?.getCanSort() ? (
                     <button type="button" className="rt__sort" onClick={() => column.toggleSorting()}>
                       <span className="rt__sort-label">{label}</span>
@@ -655,6 +681,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
                   ) : (
                     <span className="rt__head-label">{label}</span>
                   )}
+                  {filterControls.headerButton(c)}
                 </div>
               );
             })}
@@ -775,16 +802,20 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
       data-kind={kind.kind}
     >
       {header}
+      {filterControls.bar}
+      {props.filtering && isCapped(watch) && <p className="tf-loaded-only tf-hint">{t("filters:loadedOnly")}</p>}
+      {filterObservers.map((Observer, index) => <Observer key={index} context={cellContext} onChange={metricsChanged} />)}
       {/* While rows are selected: their actions (Delete, Restart, …) and "Clear selection" (ADR-0126). */}
       <SelectionBar clusterId={clusterId} kind={kind} objects={selected} actionIds={actionIds} onClear={clearSelection} />
       {/* A new set of rows (cluster, namespaces, selectors, search) gets a new scroller, from its first row. */}
       <RowsScroller
-        key={JSON.stringify([watchKey, search])}
+        key={JSON.stringify([watchKey, search, filterVersion])}
         count={rows.length}
         getItemKey={(index) => rows[index]?.id ?? index}
       >
         {(virtualizer) => state ?? renderGrid(virtualizer)}
       </RowsScroller>
+      {filterControls.overlays}
       {addingColumn && (
         <AddColumnDialog
           clusterId={clusterId}

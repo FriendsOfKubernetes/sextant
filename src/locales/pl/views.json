@@ -15,7 +15,7 @@
     "labelSelector": "Label selector",
     "labelSelectorHint": "Przekazywany do klastra, np. app=web,tier!=db. Pozostaw puste, jeśli niepotrzebny.",
     "pin": "Przypnij do ulubionych",
-    "captures": "Zapisuje rodzaj zasobu, namespaces, tekst wyszukiwania, „Tylko problemy”, label selector, sortowanie i widoczne kolumny.",
+    "captures": "Zapisuje rodzaj zasobu, namespaces, tekst wyszukiwania, „Tylko problemy”, label selector, filtry kolumn, sortowanie i widoczne kolumny.",
     "save": "Zapisz",
     "cancel": "Anuluj",
     "full": "Lista widoków jest pełna. Najpierw usuń jakiś widok."
@@ -118,6 +118,7 @@
       "color": "kolor",
       "icon": "ikona",
       "namespaces": "filtr namespaces",
+      "tableFilters": "filtry tabeli",
       "previewChanges": "podgląd zmian",
       "agentAccess": "reguły dostępu agentów",
       "observabilityLinks": "linki do pulpitów i śladów"

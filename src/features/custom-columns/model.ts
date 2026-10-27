@@ -5,7 +5,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { getSettingsSnapshot, subscribeSettings, type AppSettings, type ClusterId, type KubeObject } from "../../api";
 import type { CustomColumn } from "../../api/generated/CustomColumn";
-import type { ColumnDef } from "../../resources/registry";
+import type { ColumnDef, ColumnFilterValue } from "../../resources/registry";
 import {
   cellValue,
   columnIdOf,
@@ -110,6 +110,13 @@ export function columnDefOf(column: ShownColumn, separator: string): ColumnDef {
     id: column.id,
     title: spec.title || spec.path,
     value: (obj: KubeObject) => cellValue(readColumn(obj, spec.source, steps, spec.path), separator),
+    filter: { value: (obj) => {
+      const raw = readColumn(obj, spec.source, steps, spec.path);
+      const scalar = (v: unknown): Exclude<ColumnFilterValue, readonly unknown[]> =>
+        v === null || v === undefined || typeof v === "string" || typeof v === "number" || typeof v === "boolean"
+          ? v : cellValue(v, ", ");
+      return Array.isArray(raw) ? raw.map(scalar) : scalar(raw);
+    } },
     width: "minmax(100px, 1fr)",
   };
 }
