@@ -1,6 +1,6 @@
 //! Application settings stored as JSON on disk. The application decides the path (`app_config_dir`).
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -34,6 +34,14 @@ pub mod rail;
 pub use appearance::{AppearanceSettings, FontChoice, FontKind, ReduceMotion};
 pub use custom_columns::{ColumnSource, CustomColumn, CustomColumnSpec};
 pub use practices::PracticesSettings;
+pub mod filters;
+pub use filters::{
+    ColumnFilter, FilterCondition, FilterExpression, FilterGroupOperator, FilterMode,
+    FilterOperator, FilterValue, FilterValues, TableFilters,
+};
+
+#[cfg(test)]
+mod filters_tests;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -108,6 +116,11 @@ pub struct ClusterSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional = nullable)]
     pub known_namespaces: Option<Vec<String>>,
+    /// Filters per resource view (`kind:<group>/<Kind>`), owned by the frontend. Invalid entries are ignored
+    /// independently; an empty map is omitted for compatibility with older settings.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    #[ts(as = "Option<BTreeMap<String, TableFilters>>", optional)]
+    pub table_filters: BTreeMap<String, TableFilters>,
 }
 
 /// `ClusterSettings` as stored, with `agentAccess` still unread.
@@ -129,6 +142,7 @@ struct StoredClusterSettings {
     loki: Option<serde_json::Value>,
     observability_links: Option<serde_json::Value>,
     known_namespaces: Option<serde_json::Value>,
+    table_filters: Option<serde_json::Value>,
 }
 
 impl<'de> Deserialize<'de> for ClusterSettings {
@@ -172,6 +186,7 @@ impl<'de> Deserialize<'de> for ClusterSettings {
                 .known_namespaces
                 .as_ref()
                 .and_then(known_namespaces::read),
+            table_filters: filters::read_cluster(stored.table_filters),
         })
     }
 }
@@ -889,6 +904,32 @@ fn write_atomic(path: &Path, settings: &AppSettings) -> CoreResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn table_filters_survive_the_settings_json_round_trip() {
+        let filters = serde_json::json!({
+            "columns": {
+                "name": {
+                    "values": {"mode": "include", "values": [0, false, null, "web"]},
+                    "condition": {"operator": "eq", "value": 0}
+                }
+            },
+            "advanced": {
+                "type": "rule", "column": "ready",
+                "condition": {"operator": "eq", "value": false}
+            }
+        });
+        let settings: AppSettings = serde_json::from_value(serde_json::json!({
+            "theme": "dark",
+            "clusters": {"prod": {"tableFilters": {"kind:/Pod": filters}}}
+        }))
+        .unwrap();
+        let written = serde_json::to_value(settings).unwrap();
+        assert_eq!(
+            written["clusters"]["prod"]["tableFilters"]["kind:/Pod"],
+            filters
+        );
+    }
 
     fn store_in(dir: &tempfile::TempDir) -> (PathBuf, SettingsStore) {
         let path = dir.path().join("settings.json");

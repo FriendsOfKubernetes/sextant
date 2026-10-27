@@ -35,6 +35,10 @@ export const ageColumn: ColumnDef = column(
   },
   {
     width: "70px",
+    filter: { type: "age", value: (o, ctx) => {
+      const created = createdAt(o);
+      return created === undefined ? undefined : Math.max(0, ctx.now - created);
+    } },
     render: (o, ctx) => <Age timestamp={o.metadata?.creationTimestamp as string | undefined} now={ctx.now} />,
     // The search matches the age as the cell shows it ("5m"), as of the table's clock.
     searchText: (o, ctx) => {
@@ -69,6 +73,7 @@ export function ageSearchText(
 export const labelsColumn: ColumnDef = column("labels", (o) => labelPairs(o).join(", "), {
   width: "minmax(160px, 2fr)",
   sortable: false,
+  filter: { type: "string", value: labelPairs },
   render: (o) => <Labels values={labelPairs(o)} />,
 });
 
@@ -120,6 +125,7 @@ export function statusListColumn(
 ): ColumnDef {
   return column(id, (o) => sortStatuses(values(o), tone).join(" "), {
     width,
+    filter: { type: "string", value: values },
     render: (o) => <StatusList values={values(o)} tone={tone} />,
   });
 }

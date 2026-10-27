@@ -5,6 +5,7 @@ import type { ClusterIcon } from "./ClusterIcon";
 import type { LokiSettings } from "./LokiSettings";
 import type { ObservabilityLinks } from "./ObservabilityLinks";
 import type { PrometheusMode } from "./PrometheusMode";
+import type { TableFilters } from "./TableFilters";
 import type { UsageSource } from "./UsageSource";
 import type { JsonValue } from "./serde_json/JsonValue";
 
@@ -72,4 +73,9 @@ observabilityLinks?: ObservabilityLinks | null,
  * as "Accessible namespaces"; for a user who may not list Namespaces they stand for "All namespaces". Owned by the
  * frontend, read leniently ([`known_namespaces::read`]); left out of the file when there are none.
  */
-knownNamespaces?: Array<string> | null, };
+knownNamespaces?: Array<string> | null, 
+/**
+ * Filters per resource view (`kind:<group>/<Kind>`), owned by the frontend. Invalid entries are ignored
+ * independently; an empty map is omitted for compatibility with older settings.
+ */
+tableFilters?: { [key in string]: TableFilters }, };

@@ -10,6 +10,8 @@ import { DEFAULT_TABLE_STATE, EMPTY_CLUSTER_VIEW, tableStateOf, useAppStore } fr
 import { parseViewId, viewIdOf } from "../../resources";
 import { selectNamespaces } from "../namespaces";
 import { shownColumns } from "../custom-columns/model";
+import { EMPTY_TABLE_FILTERS, filterCount } from "../table-filters/model";
+import { getTableFilters, setTableFilters } from "../table-filters/state";
 
 export type { Pin, SavedView, Workspace };
 
@@ -54,6 +56,7 @@ export function captureView(
   const clean = cleanName(name);
   if (!kind || !cv.view || !clean) return null;
   const table = tableStateOf(cv, cv.view);
+  const tableFilters = getTableFilters(clusterId, cv.view);
   return {
     id,
     name: clean,
@@ -67,6 +70,7 @@ export function captureView(
     sort: table.sort ? { ...table.sort } : null,
     hiddenColumns: [...table.hiddenColumns],
     ...viewColumnsOf(clusterId, kind, table.viewColumns),
+    ...(filterCount(tableFilters) > 0 ? { tableFilters: structuredClone(tableFilters) } : {}),
   };
 }
 
@@ -99,7 +103,10 @@ export async function applyView(clusterId: ClusterId, view: SavedView): Promise<
       ? { viewColumns: view.customColumns.map((c) => ({ ...c })) }
       : {}),
   });
-  await selectNamespaces(clusterId, view.namespaces);
+  await Promise.all([
+    setTableFilters(clusterId, viewIdOfSaved(view), view.tableFilters ?? EMPTY_TABLE_FILTERS),
+    selectNamespaces(clusterId, view.namespaces),
+  ]);
 }
 
 // ---- workspaces ----

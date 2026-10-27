@@ -15,7 +15,7 @@
     "labelSelector": "Label selector",
     "labelSelectorHint": "向叢集請求，例如 app=web,tier!=db。留空表示不使用。",
     "pin": "釘選到我的最愛",
-    "captures": "儲存資源種類、namespace、搜尋文字、「僅顯示問題」、label selector、排序和可見欄。",
+    "captures": "儲存資源種類、namespace、搜尋文字、「僅顯示問題」、label selector、欄篩選條件、排序和可見欄。",
     "save": "儲存",
     "cancel": "取消",
     "full": "檢視清單已滿。請先刪除一個檢視。"
@@ -118,6 +118,7 @@
       "color": "顏色",
       "icon": "圖示",
       "namespaces": "namespace 篩選",
+      "tableFilters": "表格篩選條件",
       "previewChanges": "預覽變更",
       "agentAccess": "代理程式存取規則",
       "observabilityLinks": "儀表板與追蹤連結"

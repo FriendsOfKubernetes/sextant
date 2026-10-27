@@ -51,6 +51,14 @@ pub struct SavedView {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[ts(as = "Option<Vec<super::CustomColumnSpec>>", optional)]
     pub custom_columns: Vec<super::CustomColumnSpec>,
+    /// Resource-table filters captured by this view. Invalid or absent data reads as no filters.
+    #[serde(
+        default,
+        with = "super::filters::optional_field",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[ts(as = "Option<super::TableFilters>", optional)]
+    pub table_filters: Option<super::TableFilters>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
@@ -252,6 +260,7 @@ mod tests {
             }),
             hidden_columns: vec!["images".to_owned()],
             custom_columns: Vec::new(),
+            table_filters: None,
         }
     }
 

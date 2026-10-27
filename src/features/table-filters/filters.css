@@ -1,0 +1,63 @@
+.tf-button--active { color: var(--color-accent-strong); border-color: var(--color-accent); background: var(--color-selected); }
+.tf-count { display: inline-flex; align-items: center; justify-content: center; min-width: 1.1rem; height: 1.1rem; padding: 0 .2rem; border-radius: 3px; font-size: .6875rem; background: var(--color-selected); color: var(--color-accent-strong); }
+.tf-header-filter { width: 20px; height: 24px; flex: none; opacity: 0; padding: 3px; }
+.rt__cell--head:hover .tf-header-filter, .rt__cell--head:focus-within .tf-header-filter, .tf-header-filter--active { opacity: 1; }
+.tf-header-filter--active { color: var(--color-accent-strong); }
+.tf-header-cell .rt__sort { min-width: 0; flex: 1; }
+.tf-header-cell { display: flex; align-items: center; gap: 2px; }
+.tf-loaded-only { padding: .4rem 1rem; border-bottom: 1px solid var(--color-border); }
+.tf-header-cell .rt__head-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tf-bar { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem .5rem; padding: .5rem 1rem; border-bottom: 1px solid var(--color-border); }
+.tf-chip { display: inline-flex; min-width: 0; max-width: min(30rem, 100%); border: 1px solid var(--color-control-border); background: var(--color-selected); border-radius: 4px; }
+.tf-chip-label, .tf-chip-remove { border: 0; background: transparent; color: var(--color-text); font: inherit; cursor: pointer; }
+.tf-chip-label { padding: .2rem .4rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.tf-chip-remove { flex: none; padding: .2rem .35rem; display: inline-flex; align-items: center; }
+.tf-chip-label:hover, .tf-chip-remove:hover { background: var(--color-hover); }
+.tf-chip--paused { border-style: dashed; background: transparent; }
+.tf-chip--paused .tf-chip-label { color: var(--color-text-muted); }
+.tf-popup { position: fixed; z-index: 150; width: 25rem; max-width: calc(100vw - 16px); overflow: auto; border: 1px solid var(--color-border); border-radius: 5px; background: var(--color-panel); color: var(--color-text); box-shadow: var(--shadow-panel); font-size: .8125rem; }
+.tf-popup-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .65rem .8rem; }
+.tf-popup-heading strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tf-popup .tabs__list { padding-inline: .8rem; }
+.tf-tab-body { display: flex; flex-direction: column; gap: .7rem; padding: .75rem .8rem; }
+.tf-control { width: 100%; min-width: 0; height: var(--control-height); padding: 0 .5rem; color: var(--color-text); background: var(--color-main); border: 1px solid var(--color-control-border); border-radius: 3px; font: inherit; }
+.tf-segments { display: flex; gap: 2px; }
+.tf-segments button { flex: 1; min-width: 0; padding: .4rem; color: var(--color-text-muted); background: var(--color-main); border: 1px solid var(--color-control-border); cursor: pointer; font: inherit; border-radius: 3px; }
+.tf-segments button[aria-pressed="true"] { color: var(--color-accent-strong); border-color: var(--color-accent); background: var(--color-selected); }
+.tf-value-list { max-height: 17rem; overflow-y: auto; }
+.tf-value { display: flex; align-items: center; gap: .5rem; padding: .35rem .2rem; cursor: pointer; }
+.tf-value:hover { background: var(--color-hover); }
+.tf-value-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tf-value-count { margin-left: auto; color: var(--color-text-muted); flex: none; }
+.tf-hint { margin: 0; color: var(--color-text-muted); font-size: .75rem; line-height: 1.5; }
+.tf-error { margin: 0 .8rem .6rem; color: var(--color-warning); font-size: .75rem; }
+.tf-label { display: block; color: var(--color-text-muted); font-size: .75rem; margin-bottom: .25rem; }
+.tf-condition-fields { display: flex; flex-direction: column; gap: .6rem; min-width: 0; }
+.tf-operands { display: flex; gap: .4rem; align-items: flex-start; min-width: 0; }
+.tf-operands > label { flex: 1; min-width: 0; }
+.tf-operands .tf-unit, .tf-operands .tf-value-unit { flex: 0 1 8rem; }
+.tf-condition-actions { display: flex; justify-content: flex-end; gap: .5rem; }
+.tf-popup-footer, .tf-manager-footer { display: flex; gap: .6rem; padding: .65rem .8rem; border-top: 1px solid var(--color-border); }
+.tf-manager-body { padding: 0 .8rem; }
+.tf-manager-footer { flex-direction: column; }
+.tf-column-list { display: flex; flex-direction: column; max-height: 22rem; overflow-y: auto; padding-block: .35rem; }
+.tf-column-choice { display: flex; align-items: center; gap: .5rem; padding: .5rem .25rem; width: 100%; border: 0; background: transparent; color: var(--color-text); font: inherit; cursor: pointer; text-align: left; }
+.tf-column-choice > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tf-column-choice:hover { background: var(--color-hover); }
+.tf-advanced .dialog { width: min(64rem, calc(100vw - 32px)); }
+.tf-group { min-width: 0; border: 1px solid var(--color-border); border-radius: 5px; padding: .65rem; margin: 0; }
+.tf-group-heading { display: flex; justify-content: space-between; gap: .5rem; }
+.tf-group-heading > select { width: auto; max-width: 100%; }
+.tf-group-children { display: flex; flex-direction: column; gap: .7rem; margin-top: .65rem; }
+.tf-group-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .7rem; }
+.tf-advanced-rule { display: flex; align-items: flex-start; gap: .5rem; min-width: 0; }
+.tf-advanced-rule > label { flex: 1; min-width: 0; }
+.tf-advanced-rule > .tf-condition-fields { display: grid; grid-template-columns: minmax(7rem, 1fr) minmax(8rem, 1.5fr); flex: 2.5; }
+.tf-advanced-rule > .btn { margin-top: 1.15rem; }
+.tf-preview { margin-right: auto; color: var(--color-text-muted); font-size: .8125rem; }
+.tf-link { color: var(--color-accent-strong); padding: 0; background: transparent; border: 0; font: inherit; cursor: pointer; }
+.tf-link:hover { text-decoration: underline; }
+.tf-undo { display: flex; flex-wrap: wrap; gap: .5rem; font-size: .75rem; }
+@media (max-width: 800px) { .tf-advanced-rule { flex-wrap: wrap; } .tf-advanced-rule > .tf-condition-fields { flex-basis: 100%; order: 2; } .tf-advanced-rule > label { flex: 1; } .tf-advanced-rule > .btn { margin-top: 1.15rem; } }
+@media (max-width: 500px) { .tf-advanced-rule > .tf-condition-fields { display: flex; } .tf-operands { flex-wrap: wrap; } .tf-segments { flex-direction: column; } }
+@media (hover: none) { .tf-header-filter { opacity: 1; } }

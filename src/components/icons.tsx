@@ -7,6 +7,7 @@
 // An icon is decoration: the button it is in keeps its name as visible text or `aria-label`, so the SVG is
 // `aria-hidden` and has no <title>. No trademark logos (Flux, Argo CD get icons close in meaning).
 import type { ReactNode } from "react";
+import { Funnel } from "lucide-react";
 // Cluster API (#243): the section and its kinds.
 import {
   Boxes as CapiBoxes,
@@ -369,6 +370,7 @@ const ICONS = {
   rollback: History,
   // Controls.
   more: EllipsisVertical, // ⋮
+  filter: Funnel,
   close: X, // ×
   chevronDown: ChevronDown, // ▾
   chevronUp: ChevronUp, // ▴

@@ -15,7 +15,7 @@
     "labelSelector": "Label selector",
     "labelSelectorHint": "Kümeden istenir, örneğin app=web,tier!=db. Hiçbiri için boş bırakın.",
     "pin": "Favorilere sabitle",
-    "captures": "Kaynak türünü, namespace'leri, arama metnini, \"Yalnızca sorunlar\"ı, label selector'ı, sıralamayı ve görünür sütunları kaydeder.",
+    "captures": "Kaynak türünü, namespace'leri, arama metnini, \"Yalnızca sorunlar\"ı, label selector'ı, sütun filtrelerini, sıralamayı ve görünür sütunları kaydeder.",
     "save": "Kaydet",
     "cancel": "İptal",
     "full": "Görünüm listesi dolu. Önce bir görünümü silin."
@@ -118,6 +118,7 @@
       "color": "renk",
       "icon": "simge",
       "namespaces": "namespace filtresi",
+      "tableFilters": "tablo filtreleri",
       "previewChanges": "değişiklik önizlemesi",
       "agentAccess": "ajan erişim kuralları",
       "observabilityLinks": "pano ve iz bağlantıları"

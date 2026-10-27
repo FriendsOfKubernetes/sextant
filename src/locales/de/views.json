@@ -15,7 +15,7 @@
     "labelSelector": "Label-Selector",
     "labelSelectorHint": "Wird beim Cluster angefragt, z. B. app=web,tier!=db. Leer lassen für keinen.",
     "pin": "An Favoriten anheften",
-    "captures": "Speichert die Art der Ressource, Namespaces, Suchtext, „Nur Probleme“, Label-Selector, Sortierung und sichtbare Spalten.",
+    "captures": "Speichert die Art der Ressource, Namespaces, Suchtext, „Nur Probleme“, Label-Selector, Spaltenfilter, Sortierung und sichtbare Spalten.",
     "save": "Speichern",
     "cancel": "Abbrechen",
     "full": "Die Liste der Ansichten ist voll. Löschen Sie zuerst eine Ansicht."
@@ -118,6 +118,7 @@
       "color": "Farbe",
       "icon": "Symbol",
       "namespaces": "Namespace-Filter",
+      "tableFilters": "Tabellenfilter",
       "previewChanges": "Vorschau von Änderungen",
       "agentAccess": "Zugriffsregeln für Agenten",
       "observabilityLinks": "Links zu Dashboards und Traces"

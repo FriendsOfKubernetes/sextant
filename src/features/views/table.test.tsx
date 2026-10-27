@@ -109,7 +109,7 @@ describe("saved views in the window", () => {
     expect(tableStateOf(useAppStore.getState().clusterViews.c1!, POD_VIEW).hiddenColumns).toEqual([]);
 
     // Sorting is kept in the store too (what "Save view" captures).
-    fireEvent.click(within(table).getByRole("button", { name: /Age/ }));
+    fireEvent.click(within(table).getByRole("button", { name: "Age" }));
     expect(tableStateOf(useAppStore.getState().clusterViews.c1!, POD_VIEW).sort).toEqual({ column: "age", desc: false });
   });
 

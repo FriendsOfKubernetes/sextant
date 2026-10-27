@@ -12,11 +12,13 @@ import type { ClusterIcon } from "../../api/generated/ClusterIcon";
 import type { ObservabilityLinks } from "../../api/generated/ObservabilityLinks";
 import type { Snippet } from "../../api/generated/Snippet";
 import type { SourceKind } from "../../api/generated/SourceKind";
+import type { TableFilters } from "../../api/generated/TableFilters";
 import { clusterSettingsOf } from "../clusters/clusterSettings";
 import { readObservabilityLinks } from "../observability-links/transfer";
 import { MAX_COLUMNS_PER_KIND, MAX_CUSTOM_COLUMNS, type CustomColumn } from "../custom-columns/model";
 import { checkSpec, type ColumnSource, type CustomColumnSpec } from "../custom-columns/path";
 import { hasHiddenChars } from "../terminal/text";
+import { readTableFilterMap, readTableFilters } from "../table-filters/validation";
 import {
   MAX_PINS,
   MAX_VIEWS,
@@ -31,12 +33,13 @@ import {
 export const EXPORT_FORMAT = "sextant-workspace";
 /**
  * The version written. Version 2 (#154) added the required `snippets` section (terminal snippets); version 3 (#214)
- * the required `customColumns` section and a view's optional `customColumns`. An older file (without them) still
+ * the required `customColumns` section and a view's optional `customColumns`; version 4 adds optional table filters
+ * to saved views and shareable cluster settings. An older file (without them) still
  * imports, with none. Each version is read strictly: a field it does not have is an error.
  */
-export const EXPORT_VERSION = 3;
+export const EXPORT_VERSION = 4;
 /** Versions an import reads. */
-export const IMPORT_VERSIONS: readonly number[] = [1, 2, 3];
+export const IMPORT_VERSIONS: readonly number[] = [1, 2, 3, 4];
 /** Most snippets an import reads (`MAX_SNIPPETS` of the settings). */
 export const MAX_IMPORT_SNIPPETS = 500;
 
@@ -51,6 +54,8 @@ export interface SharedClusterSettings {
   agentAccess?: ClusterAccess;
   /** Only when "Include dashboard and trace links" was ticked (#266). */
   observabilityLinks?: ObservabilityLinks;
+  /** Resource-table filters by view id (version 4). Absent in older files; an explicit empty map can clear it. */
+  tableFilters?: Record<string, TableFilters>;
 }
 
 export interface ExportedCluster {
@@ -92,6 +97,7 @@ function sharedSettings(settings: ClusterSettings, includeAgentAccess: boolean, 
   };
   if (includeAgentAccess) shared.agentAccess = { preset: settings.agentAccess.preset, rules: settings.agentAccess.rules };
   if (includeLinks && settings.observabilityLinks) shared.observabilityLinks = settings.observabilityLinks;
+  if (settings.tableFilters && Object.keys(settings.tableFilters).length > 0) shared.tableFilters = structuredClone(settings.tableFilters);
   return shared;
 }
 
@@ -199,6 +205,11 @@ class Reader {
 
 const COLUMN_SOURCES: readonly ColumnSource[] = ["label", "annotation", "field"];
 
+function readValidatedFilters<T>(r: Reader, value: Json, path: string, read: (value: unknown, path: string) => T): T | undefined {
+  try { return read(value, path); }
+  catch (error) { r.problems.push(error instanceof Error ? error.message : `${path}: invalid table filters`); return undefined; }
+}
+
 /** One column spec (`source`, `path`, `title`) checked by the rules of a table of `group/kind`. */
 function readColumnSpec(r: Reader, o: Record<string, Json>, path: string, group: string, kind: string): CustomColumnSpec {
   const source = r.string(o.source, `${path}.source`) as ColumnSource;
@@ -241,7 +252,7 @@ function readView(r: Reader, value: Json, path: string, version = EXPORT_VERSION
     value,
     path,
     ["id", "name", "cluster", "group", "kind", "namespaces", "search", "onlyProblems", "labelSelector", "sort", "hiddenColumns"],
-    version >= 3 ? ["customColumns"] : [],
+    [...(version >= 3 ? ["customColumns"] : []), ...(version >= 4 ? ["tableFilters"] : [])],
   );
   if (!o) return null;
   let sort: SavedView["sort"] = null;
@@ -250,6 +261,9 @@ function readView(r: Reader, value: Json, path: string, version = EXPORT_VERSION
     if (s) sort = { column: r.string(s.column, `${path}.sort.column`, { empty: false, max: 253 }), desc: r.boolean(s.desc, `${path}.sort.desc`) };
   }
   const name = r.string(o.name, `${path}.name`, { empty: false, max: 120 });
+  const tableFilters = version >= 4 && "tableFilters" in o
+    ? readValidatedFilters(r, o.tableFilters, `${path}.tableFilters`, readTableFilters)
+    : undefined;
   return {
     id: r.id(o.id, `${path}.id`),
     name: cleanName(name) ?? name,
@@ -265,6 +279,7 @@ function readView(r: Reader, value: Json, path: string, version = EXPORT_VERSION
     ...("customColumns" in o
       ? { customColumns: readViewColumns(r, o.customColumns, `${path}.customColumns`, String(o.group), String(o.kind)) }
       : {}),
+    ...(tableFilters ? { tableFilters } : {}),
   };
 }
 
@@ -350,7 +365,7 @@ function readAccess(r: Reader, value: Json, path: string): ClusterAccess | undef
   return { preset, rules };
 }
 
-function readCluster(r: Reader, value: Json, path: string): ExportedCluster | null {
+function readCluster(r: Reader, value: Json, path: string, version: number): ExportedCluster | null {
   const o = r.object(value, path, ["id", "context", "source", "settings"]);
   if (!o) return null;
   const src = r.object(o.source, `${path}.source`, ["kind", "path"]);
@@ -360,7 +375,7 @@ function readCluster(r: Reader, value: Json, path: string): ExportedCluster | nu
     o.settings,
     `${path}.settings`,
     ["displayName", "color", "icon", "namespaces", "previewChanges"],
-    ["agentAccess", "observabilityLinks"],
+    ["agentAccess", "observabilityLinks", ...(version >= 4 ? ["tableFilters"] : [])],
   );
   const settings: SharedClusterSettings = {
     displayName: s ? r.nullableString(s.displayName, `${path}.settings.displayName`, 120) : null,
@@ -374,6 +389,10 @@ function readCluster(r: Reader, value: Json, path: string): ExportedCluster | nu
     const read = readObservabilityLinks(s.observabilityLinks, `${path}.settings.observabilityLinks`);
     r.problems.push(...read.problems);
     if (read.links) settings.observabilityLinks = read.links;
+  }
+  if (s && version >= 4 && "tableFilters" in s) {
+    const filters = readValidatedFilters(r, s.tableFilters, `${path}.settings.tableFilters`, readTableFilterMap);
+    if (filters) settings.tableFilters = filters;
   }
   return {
     id: r.string(o.id, `${path}.id`, { empty: false, max: 128 }),
@@ -409,7 +428,7 @@ export function parseImport(text: string): ExportFile {
   const file: ExportFile = {
     format: EXPORT_FORMAT,
     version: EXPORT_VERSION,
-    clusters: r.array(o.clusters, "$.clusters", 1000).flatMap((c, i) => readCluster(r, c, `$.clusters[${i}]`) ?? []),
+    clusters: r.array(o.clusters, "$.clusters", 1000).flatMap((c, i) => readCluster(r, c, `$.clusters[${i}]`, o.version as number) ?? []),
     views: r.array(o.views, "$.views", MAX_VIEWS).flatMap((v, i) => readView(r, v, `$.views[${i}]`, o.version as number) ?? []),
     pins: r.array(o.pins, "$.pins", MAX_PINS).flatMap((p, i) => readPin(r, p, `$.pins[${i}]`) ?? []),
     workspaces: r
@@ -505,6 +524,7 @@ function isEmptyValue(field: SharedField, value: unknown): boolean {
     const access = value as ClusterAccess | undefined;
     return !access || (access.preset === "off" && access.rules.length === 0);
   }
+  if (field === "tableFilters") return value === undefined || Object.keys(value as Record<string, TableFilters>).length === 0;
   return value === null || value === undefined || (Array.isArray(value) && value.length === 0);
 }
 
@@ -548,7 +568,7 @@ export function planImport(
       const currentShared = sharedSettings(current, true, true);
       for (const field of Object.keys(exported.settings) as SharedField[]) {
         const incoming = exported.settings[field];
-        if (incoming === undefined || isEmptyValue(field, incoming)) continue;
+        if (incoming === undefined || (field !== "tableFilters" && isEmptyValue(field, incoming))) continue;
         // Agent access and links go only to the very cluster they were exported from, never to one that shares a name.
         if (isGated(field) && matched?.match !== "exact") {
           if (field === "agentAccess") agentAccessSkipped = true;
@@ -556,7 +576,7 @@ export function planImport(
           continue;
         }
         const now = currentShared[field];
-        if (same(now, incoming)) continue;
+        if (same(now, incoming) || (field === "tableFilters" && isEmptyValue(field, now) && isEmptyValue(field, incoming))) continue;
         // Any agent access here, Off included, is a choice: replacing it is a change (it needs overwriting).
         if (field !== "agentAccess" && isEmptyValue(field, now)) added.push(field);
         else changed.push(field);
