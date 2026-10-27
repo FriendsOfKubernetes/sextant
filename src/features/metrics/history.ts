@@ -265,7 +265,8 @@ export function targetUsage(
       return sumUsage([...pods.values()].filter((p) => p.namespace === target.namespace && pattern.test(p.name)));
     }
     case "cluster":
-      return undefined;
+      // Every node's usage summed, as the Prometheus cluster charts sum every node.
+      return nodes && nodes.size > 0 ? sumUsage([...nodes.values()]) : undefined;
   }
 }
 

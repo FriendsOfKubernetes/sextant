@@ -80,8 +80,8 @@ export function UsageBar({ percent, label, title }: { percent: number | undefine
 }
 
 /**
- * Charts of the last hour for `target` from the Prometheus-compatible source; without one, a pod's, a workload's or a
- * node's from metrics-server since the chart was opened (`HistoryCharts`); a note when neither is there.
+ * Charts of the last hour for `target` from the Prometheus-compatible source; without one, from metrics-server since the
+ * chart was opened (`HistoryCharts`; the cluster's as every node summed); a note when neither is there.
  */
 export function ChartGrid({
   clusterId,
@@ -98,8 +98,7 @@ export function ChartGrid({
   const prometheus = status.prometheus !== null;
   const charts = useCharts(clusterId, target, prometheus);
 
-  // The cluster overview keeps asking for Prometheus: its charts sum every node, and its usage card shows the present.
-  if (!prometheus && status.effectiveUsageSource === "metricsServer" && target.type !== "cluster") {
+  if (!prometheus && status.effectiveUsageSource === "metricsServer") {
     return <HistoryCharts clusterId={clusterId} target={target} metrics={metrics} />;
   }
   if (!prometheus) {
@@ -174,9 +173,13 @@ export function HistoryCharts({
   const error = ofPods ? pods.error : nodes.error;
 
   const shown = metrics.filter((m) => SAMPLED.includes(m));
+  // The short warning: no history without a Prometheus-compatible source, and where to set one.
   const note = (
     <div className="mx-note" data-testid="mx-history-note">
-      {t("metrics:history.note")}
+      <span>{t("metrics:history.note")}</span>
+      <button type="button" className="mx-link" onClick={openSettings(clusterId)}>
+        {t("metrics:openSettings")}
+      </button>
     </div>
   );
   if (error) return <ErrorState error={error} />;

@@ -5,6 +5,7 @@ import { resetAppStore } from "../../app/store";
 import { MainView } from "../../layout/main/MainView";
 import { getPages } from "../../layout/pages";
 import "../../resources";
+import { axeViolations } from "../../test/axe";
 import deploymentJson from "../details/fixtures/deployment.json";
 import eventsJson from "../details/fixtures/events.json";
 import nodeJson from "../details/fixtures/node.json";
@@ -12,6 +13,7 @@ import podJson from "../details/fixtures/pod.json";
 import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import "../events";
 import { resetMetricsCache } from "../metrics";
+import { resetHistory } from "../metrics/history";
 import "../metrics";
 import { resetNamespaceRestore, selectNamespaces } from "../namespaces";
 import "./index";
@@ -38,12 +40,14 @@ beforeEach(() => {
   resetAppStore();
   resetNamespaceRestore();
   resetMetricsCache();
+  resetHistory();
   wb = watchBackend();
 });
 
 afterEach(() => {
   wb.backend.restore();
   resetMetricsCache();
+  resetHistory();
 });
 
 function named(obj: KubeObject, name: string, patch: (o: KubeObject) => void = () => undefined): KubeObject {
@@ -185,8 +189,27 @@ describe("Cluster overview", () => {
     expect(within(usage).getByText("25%")).toBeInTheDocument();
     expect(within(usage).getByText("7.00GiB of 27.3GiB allocatable")).toBeInTheDocument();
     // No Prometheus: no charts are asked for.
-    expect(within(screen.getByRole("region", { name: "Last hour" })).getByText("Charts of the last hour need a Prometheus-compatible source (Prometheus or VictoriaMetrics).")).toBeInTheDocument();
     expect(wb.backend.calls.filter((c) => c.cmd === "metrics_charts")).toHaveLength(0);
+  });
+
+  it("without Prometheus draws the cluster's CPU and memory from metrics-server since opened, with a short note", async () => {
+    serveMetrics(status(), [
+      { name: "n1", usage: { cpuMillicores: 3000, memoryBytes: 4 * 1024 ** 3 } },
+      { name: "n2", usage: { cpuMillicores: 1000, memoryBytes: 3 * 1024 ** 3 } },
+    ]);
+    const view = render(<MainView clusterId="c1" />);
+    await snapshot("Node", [node]);
+    const charts = await screen.findByRole("region", { name: "Last hour" });
+    const note = await within(charts).findByTestId("mx-history-note");
+    expect(note).toHaveTextContent("Since opened · metrics-server, no history");
+    expect(within(note).getByRole("button", { name: "Open cluster settings" })).toBeInTheDocument();
+    expect(within(charts).queryByText(/need a Prometheus-compatible source/)).toBeNull();
+    expect(within(await within(charts).findByRole("figure", { name: "CPU" })).getByText("4000m")).toBeInTheDocument();
+    expect(within(charts).getByRole("figure", { name: "Memory" })).toHaveTextContent("7.00GiB");
+    // metrics-server has no pod counts or disk.
+    expect(within(charts).queryByRole("figure", { name: "Pods" })).toBeNull();
+    expect(wb.backend.calls.filter((c) => c.cmd === "metrics_charts")).toHaveLength(0);
+    expect(await axeViolations(view.container)).toEqual([]);
   });
 
   it("draws the cluster charts of the last hour when Prometheus is there", async () => {

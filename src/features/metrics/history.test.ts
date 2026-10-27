@@ -170,14 +170,17 @@ describe("what a chart samples", () => {
     ].map((p) => [`${p.namespace}/${p.name}`, p]),
   );
   const nodes = new Map<string, NodeUsage>([["n1", { name: "n1", usage: use(500) }]]);
+  const twoNodes = new Map<string, NodeUsage>([...nodes, ["n3", { name: "n3", usage: use(250) }]]);
 
-  it("a pod's own, a workload's pods summed by their controller's names, a node's", () => {
+  it("a pod's own, a workload's pods summed by their controller's names, a node's, the cluster's as every node's", () => {
     expect(targetUsage({ type: "pod", namespace: "shop", name: "web-7f9c6d5b8-x2b4z" }, pods, null)).toEqual(use(10));
     expect(targetUsage({ type: "workload", namespace: "shop", kind: "Deployment", name: "web" }, pods, null)).toEqual(
       use(30, 30 * 1024),
     );
     expect(targetUsage({ type: "node", name: "n1" }, null, nodes)).toEqual(use(500));
     expect(targetUsage({ type: "node", name: "n2" }, null, nodes)).toBeUndefined();
-    expect(targetUsage({ type: "cluster" }, pods, nodes)).toBeUndefined();
+    expect(targetUsage({ type: "cluster" }, pods, twoNodes)).toEqual(use(750));
+    expect(targetUsage({ type: "cluster" }, pods, new Map())).toBeUndefined();
+    expect(targetUsage({ type: "cluster" }, pods, null)).toBeUndefined();
   });
 });
