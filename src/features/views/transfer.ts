@@ -205,9 +205,17 @@ class Reader {
 
 const COLUMN_SOURCES: readonly ColumnSource[] = ["label", "annotation", "field"];
 
-function readValidatedFilters<T>(r: Reader, value: Json, path: string, read: (value: unknown, path: string) => T): T | undefined {
-  try { return read(value, path); }
-  catch (error) { r.problems.push(error instanceof Error ? error.message : `${path}: invalid table filters`); return undefined; }
+function tableFilterFields(version: number): readonly string[] {
+  return version >= 4 ? ["tableFilters"] : [];
+}
+
+function readOptionalTableFilters<T>(
+  r: Reader, source: Record<string, Json> | null, path: string, version: number, read: (value: unknown, path: string) => T,
+): { tableFilters?: T } {
+  if (version < 4 || !source || !("tableFilters" in source)) return {};
+  const at = `${path}.tableFilters`;
+  try { return { tableFilters: read(source.tableFilters, at) }; }
+  catch (error) { r.problems.push(error instanceof Error ? error.message : `${at}: invalid table filters`); return {}; }
 }
 
 /** One column spec (`source`, `path`, `title`) checked by the rules of a table of `group/kind`. */
@@ -252,7 +260,7 @@ function readView(r: Reader, value: Json, path: string, version = EXPORT_VERSION
     value,
     path,
     ["id", "name", "cluster", "group", "kind", "namespaces", "search", "onlyProblems", "labelSelector", "sort", "hiddenColumns"],
-    [...(version >= 3 ? ["customColumns"] : []), ...(version >= 4 ? ["tableFilters"] : [])],
+    [...(version >= 3 ? ["customColumns"] : []), ...tableFilterFields(version)],
   );
   if (!o) return null;
   let sort: SavedView["sort"] = null;
@@ -261,9 +269,7 @@ function readView(r: Reader, value: Json, path: string, version = EXPORT_VERSION
     if (s) sort = { column: r.string(s.column, `${path}.sort.column`, { empty: false, max: 253 }), desc: r.boolean(s.desc, `${path}.sort.desc`) };
   }
   const name = r.string(o.name, `${path}.name`, { empty: false, max: 120 });
-  const tableFilters = version >= 4 && "tableFilters" in o
-    ? readValidatedFilters(r, o.tableFilters, `${path}.tableFilters`, readTableFilters)
-    : undefined;
+  const tableFilters = readOptionalTableFilters(r, o, path, version, readTableFilters);
   return {
     id: r.id(o.id, `${path}.id`),
     name: cleanName(name) ?? name,
@@ -279,7 +285,7 @@ function readView(r: Reader, value: Json, path: string, version = EXPORT_VERSION
     ...("customColumns" in o
       ? { customColumns: readViewColumns(r, o.customColumns, `${path}.customColumns`, String(o.group), String(o.kind)) }
       : {}),
-    ...(tableFilters ? { tableFilters } : {}),
+    ...tableFilters,
   };
 }
 
@@ -375,7 +381,7 @@ function readCluster(r: Reader, value: Json, path: string, version: number): Exp
     o.settings,
     `${path}.settings`,
     ["displayName", "color", "icon", "namespaces", "previewChanges"],
-    ["agentAccess", "observabilityLinks", ...(version >= 4 ? ["tableFilters"] : [])],
+    ["agentAccess", "observabilityLinks", ...tableFilterFields(version)],
   );
   const settings: SharedClusterSettings = {
     displayName: s ? r.nullableString(s.displayName, `${path}.settings.displayName`, 120) : null,
@@ -390,10 +396,7 @@ function readCluster(r: Reader, value: Json, path: string, version: number): Exp
     r.problems.push(...read.problems);
     if (read.links) settings.observabilityLinks = read.links;
   }
-  if (s && version >= 4 && "tableFilters" in s) {
-    const filters = readValidatedFilters(r, s.tableFilters, `${path}.settings.tableFilters`, readTableFilterMap);
-    if (filters) settings.tableFilters = filters;
-  }
+  Object.assign(settings, readOptionalTableFilters(r, s, `${path}.settings`, version, readTableFilterMap));
   return {
     id: r.string(o.id, `${path}.id`, { empty: false, max: 128 }),
     context: r.string(o.context, `${path}.context`, { empty: false, max: 253 }),
@@ -528,6 +531,15 @@ function isEmptyValue(field: SharedField, value: unknown): boolean {
   return value === null || value === undefined || (Array.isArray(value) && value.length === 0);
 }
 
+function isImportableSharedValue(field: SharedField, value: unknown): boolean {
+  // An explicit empty filter map is a choice to clear it; older files omit the field.
+  return value !== undefined && (field === "tableFilters" || !isEmptyValue(field, value));
+}
+
+function sameSharedValue(field: SharedField, current: unknown, incoming: unknown): boolean {
+  return same(current, incoming) || (field === "tableFilters" && isEmptyValue(field, current) && isEmptyValue(field, incoming));
+}
+
 /**
  * This machine's cluster for an exported one: the same id or the same source path and context (`exact`), else the
  * only cluster with that context name (`name`, which may be an unrelated cluster).
@@ -568,7 +580,7 @@ export function planImport(
       const currentShared = sharedSettings(current, true, true);
       for (const field of Object.keys(exported.settings) as SharedField[]) {
         const incoming = exported.settings[field];
-        if (incoming === undefined || (field !== "tableFilters" && isEmptyValue(field, incoming))) continue;
+        if (!isImportableSharedValue(field, incoming)) continue;
         // Agent access and links go only to the very cluster they were exported from, never to one that shares a name.
         if (isGated(field) && matched?.match !== "exact") {
           if (field === "agentAccess") agentAccessSkipped = true;
@@ -576,7 +588,7 @@ export function planImport(
           continue;
         }
         const now = currentShared[field];
-        if (same(now, incoming) || (field === "tableFilters" && isEmptyValue(field, now) && isEmptyValue(field, incoming))) continue;
+        if (sameSharedValue(field, now, incoming)) continue;
         // Any agent access here, Off included, is a choice: replacing it is a change (it needs overwriting).
         if (field !== "agentAccess" && isEmptyValue(field, now)) added.push(field);
         else changed.push(field);

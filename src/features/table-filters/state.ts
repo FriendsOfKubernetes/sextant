@@ -52,6 +52,61 @@ export function getTableFilters(clusterId: string, viewId: string): TableFilters
   return (edit?.dirty ? edit.filters : getSettingsSnapshot()?.clusters[clusterId]?.tableFilters?.[viewId]) ?? EMPTY_TABLE_FILTERS;
 }
 
+function discardUnpersistedClear(key: string, viewId: string, persisted: Record<string, TableFilters>, previous: Edit | undefined): boolean {
+  if (Object.hasOwn(persisted, viewId) || previous?.pending) return false;
+  if (previous) { previous.dirty = false; edits.delete(key); notify(); }
+  return true;
+}
+
+function checkOptimisticCapacity(clusterId: string, viewId: string, persisted: Record<string, TableFilters>): void {
+  const occupied = new Set(Object.keys(persisted));
+  for (const edit of edits.values()) if (edit.clusterId === clusterId && edit.dirty) occupied.add(edit.viewId);
+  occupied.add(viewId);
+  if (occupied.size > FILTER_LIMITS.tables) throw new TableFilterLimitError(`${pathOf(clusterId)}: too many tables`);
+}
+
+function captureEdits(edit: Edit, clearing: boolean): Edit[] {
+  const captured = clearing ? [edit] : [...edits.values()].filter((other) => other.clusterId === edit.clusterId && other.dirty);
+  for (const edit of captured) edit.pending++;
+  return captured;
+}
+
+function mergeCapturedEdits(persisted: Record<string, TableFilters> | undefined, captured: Edit[]): Record<string, TableFilters> {
+  const tableFilters = { ...persisted };
+  for (const edit of captured) {
+    // Another queued filter write may already have stored this captured edit. Do not replay it over an
+    // import or backend reload that ran since that write; only unsaved snapshots need retrying.
+    if (!edit.dirty) continue;
+    if (isEmpty(edit.filters)) delete tableFilters[edit.viewId];
+    else tableFilters[edit.viewId] = edit.filters;
+  }
+  return tableFilters;
+}
+
+function finishCapturedEdits(captured: Edit[]): void {
+  for (const edit of captured) {
+    edit.dirty = false;
+    const key = keyOf(edit.clusterId, edit.viewId);
+    if (edits.get(key) === edit) edits.delete(key);
+  }
+}
+
+function rejectCapturedEdits(error: unknown, capacityError: Error | null, edit: Edit, previous: Edit | undefined, captured: Edit[]): void {
+  // A queued import can fill the map after the optimistic preflight. This is a rejected edit, not an I/O
+  // failure: retain an earlier failed valid value if any, but never add a new over-cap session record.
+  if (error === capacityError) {
+    const key = keyOf(edit.clusterId, edit.viewId);
+    if (edits.get(key) === edit) {
+      if (previous?.dirty) edits.set(key, previous);
+      else edits.delete(key);
+    }
+    return;
+  }
+  for (const edit of captured) {
+    if (edits.get(keyOf(edit.clusterId, edit.viewId)) === edit) edit.error = error;
+  }
+}
+
 /** Saves captured edits through the common serialized settings queue, preserving every unrelated setting. */
 export async function setTableFilters(clusterId: string, viewId: string, next: FilterChange): Promise<void> {
   const key = keyOf(clusterId, viewId);
@@ -66,35 +121,19 @@ export async function setTableFilters(clusterId: string, viewId: string, next: F
   const previous = edits.get(key);
   // Discard an idle unsaved filter locally. An in-flight write still needs a queued removal, or its result
   // could bring the filter back after this clear. Failed siblings never take part in clearing this table.
-  if (clearing && !Object.hasOwn(persisted, viewId) && !previous?.pending) {
-    if (previous) { previous.dirty = false; edits.delete(key); notify(); }
-    return;
-  }
-  if (!clearing) {
-    const occupied = new Set(Object.keys(persisted));
-    for (const edit of edits.values()) if (edit.clusterId === clusterId && edit.dirty) occupied.add(edit.viewId);
-    occupied.add(viewId);
-    if (occupied.size > FILTER_LIMITS.tables) throw new TableFilterLimitError(`${pathOf(clusterId)}: too many tables`);
-  }
+  if (clearing && discardUnpersistedClear(key, viewId, persisted, previous)) return;
+  if (!clearing) checkOptimisticCapacity(clusterId, viewId, persisted);
   const edit: Edit = { clusterId, viewId, filters, error: null, dirty: true, pending: 0 };
   edits.set(key, edit);
   notify();
   // Include earlier failed edits of this cluster, but never read newer clicks inside the lazy callback.
-  const captured = clearing ? [edit] : [...edits.values()].filter((edit) => edit.clusterId === clusterId && edit.dirty);
-  for (const edit of captured) edit.pending++;
+  const captured = captureEdits(edit, clearing);
   const started = epoch;
   let capacityError: Error | null = null;
   try {
     await updateSettings((settings) => {
       const cluster = clusterSettingsOf(settings, clusterId);
-      const tableFilters = { ...cluster.tableFilters };
-      for (const edit of captured) {
-        // Another queued filter write may already have stored this captured edit. Do not replay it over an
-        // import or backend reload that ran since that write; only unsaved snapshots need retrying.
-        if (!edit.dirty) continue;
-        if (isEmpty(edit.filters)) delete tableFilters[edit.viewId];
-        else tableFilters[edit.viewId] = edit.filters;
-      }
+      const tableFilters = mergeCapturedEdits(cluster.tableFilters, captured);
       if (Object.keys(tableFilters).length > FILTER_LIMITS.tables) {
         capacityError = new TableFilterLimitError(`${pathOf(clusterId)}: too many tables`);
         throw capacityError;
@@ -102,24 +141,9 @@ export async function setTableFilters(clusterId: string, viewId: string, next: F
       return { ...settings, clusters: { ...settings.clusters, [clusterId]: { ...cluster, tableFilters } } };
     });
     if (started !== epoch) return;
-    for (const edit of captured) {
-      edit.dirty = false;
-      const key = keyOf(edit.clusterId, edit.viewId);
-      if (edits.get(key) === edit) edits.delete(key);
-    }
+    finishCapturedEdits(captured);
   } catch (error) {
-    if (started === epoch) {
-      // A queued import can fill the map after the optimistic preflight. This is a rejected edit, not an I/O
-      // failure: retain an earlier failed valid value if any, but never add a new over-cap session record.
-      if (error === capacityError) {
-        if (edits.get(key) === edit) {
-          if (previous?.dirty) edits.set(key, previous);
-          else edits.delete(key);
-        }
-      } else for (const edit of captured) {
-        if (edits.get(keyOf(edit.clusterId, edit.viewId)) === edit) edit.error = error;
-      }
-    }
+    if (started === epoch) rejectCapturedEdits(error, capacityError, edit, previous, captured);
     throw error;
   } finally {
     for (const edit of captured) edit.pending--;

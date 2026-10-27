@@ -44,6 +44,41 @@ function draftColumns(node: DraftNode, into = new Set<string>()): Set<string> {
   return into;
 }
 
+function initialDraft(advanced: FilterExpression | null, columns: readonly ColumnDef[], nextId: () => number): DraftGroup {
+  const root = advanced ? hydrate(advanced, columns, nextId) : null;
+  return root?.type === "group" ? root : { id: nextId(), type: "group", operator: "and", children: root ? [root] : [] };
+}
+
+function parseDraft(draft: DraftGroup, filters: TableFilters, columns: readonly ColumnDef[]) {
+  try { return { filters: readTableFilters({ ...filters, advanced: persist(draft, columns) }), error: false }; }
+  catch { return { filters: null, error: true }; }
+}
+
+function previewMatches(objects: ReadonlyMap<string, KubeObject>, accept: (obj: KubeObject) => boolean,
+  compiled: ReturnType<typeof compileTableFilters> | null, context: CellContext) {
+  let shown = 0; let total = 0;
+  for (const obj of objects.values()) {
+    if (!accept(obj)) continue;
+    total++;
+    if (compiled?.matches(obj, context)) shown++;
+  }
+  return { shown, total };
+}
+
+function useAdvancedPreview(draft: DraftGroup, filters: TableFilters, columns: readonly ColumnDef[],
+  { objects, context, revision, accept }: {
+    objects: ReadonlyMap<string, KubeObject>; context: CellContext; revision: number; accept: (obj: KubeObject) => boolean;
+  }) {
+  const parsed = useMemo(() => parseDraft(draft, filters, columns), [draft, filters, columns]);
+  // Preview work has lower priority than typing; applying still uses the current, fully validated draft.
+  const previewFilters = useDeferredValue(parsed.filters);
+  const compiled = useMemo(() => previewFilters ? compileTableFilters(previewFilters, columns) : null, [previewFilters, columns]);
+  const filterNow = compiled?.needsTime ? context.now : 0;
+  const preview = useMemo(() => previewMatches(objects, accept, compiled, context),
+    [objects, accept, compiled, revision, context.clusterId, context.kind, filterNow]);
+  return { parsed, preview, compiled, pending: previewFilters !== parsed.filters };
+}
+
 function adoptTypes(node: DraftNode, columns: readonly ColumnDef[]): DraftNode {
   if (node.type === "rule") {
     if (node.valueType !== null) return node;
@@ -104,6 +139,15 @@ function GroupFields({ group, columns, onChange, onRemove, nextId, depth, canAdd
   </fieldset>;
 }
 
+function AdvancedHints({ canAdd, error, unavailable }: { canAdd: boolean; error: boolean; unavailable: boolean | undefined }) {
+  const { t } = useTranslation();
+  return <>
+    {!canAdd && <p className="tf-hint">{t("filters:limitReached")}</p>}
+    {error && <p className="tf-error" role="alert">{t("filters:invalidValue")}</p>}
+    {unavailable && <p className="tf-hint" role="status">{t("filters:advancedSuspended")}</p>}
+  </>;
+}
+
 export function AdvancedEditor({ filters, columns: definitions, objects, context, revision, accept, onApply, onClose, onInspect }: {
   filters: TableFilters; columns: readonly ColumnDef[]; objects: ReadonlyMap<string, KubeObject>; context: CellContext; revision: number;
   accept: (obj: KubeObject) => boolean; onApply: (advanced: FilterExpression | null) => void; onClose: () => void;
@@ -117,40 +161,20 @@ export function AdvancedEditor({ filters, columns: definitions, objects, context
   }), [definitions, objects, context.clusterId, context.kind, revision]);
   const sequence = useRef(0);
   const nextId = () => ++sequence.current;
-  const [draft, setDraft] = useState<DraftGroup>(() => {
-    const root = filters.advanced ? hydrate(filters.advanced, columns, nextId) : null;
-    return root?.type === "group" ? root : { id: nextId(), type: "group", operator: "and", children: root ? [root] : [] };
-  });
+  const [draft, setDraft] = useState(() => initialDraft(filters.advanced, columns, nextId));
   useEffect(() => setDraft((current) => adoptTypes(current, columns) as DraftGroup), [columns]);
   const inspected = [...draftColumns(draft)].sort().join("\0");
   useEffect(() => { onInspect(inspected ? inspected.split("\0") : []); return () => onInspect([]); }, [inspected, onInspect]);
-  const parsed = useMemo(() => {
-    try { return { filters: readTableFilters({ ...filters, advanced: persist(draft, columns) }), error: false }; }
-    catch { return { filters: null, error: true }; }
-  }, [draft, filters, columns]);
-  // Preview work has lower priority than typing; applying still uses the current, fully validated draft.
-  const previewFilters = useDeferredValue(parsed.filters);
-  const compiled = useMemo(() => previewFilters ? compileTableFilters(previewFilters, columns) : null, [previewFilters, columns]);
-  const filterNow = compiled?.needsTime ? context.now : 0;
-  const preview = useMemo(() => {
-    let shown = 0; let total = 0;
-    for (const obj of objects.values()) {
-      if (!accept(obj)) continue;
-      total++;
-      if (compiled?.matches(obj, context)) shown++;
-    }
-    return { shown, total };
-  }, [objects, accept, compiled, revision, context.clusterId, context.kind, filterNow]);
+  const { parsed, preview, compiled, pending } = useAdvancedPreview(draft, filters, columns, { objects, context, revision, accept });
   let quickCount = 0;
   for (const filter of Object.values(filters.columns)) quickCount += columnFilterCount(filter);
-  const canAdd = draftSize(draft) < FILTER_LIMITS.nodes && draftSize(draft) + quickCount < FILTER_LIMITS.conditions;
+  const size = draftSize(draft);
+  const canAdd = size < FILTER_LIMITS.nodes && size + quickCount < FILTER_LIMITS.conditions;
   return <div className="tf-advanced"><Dialog open title={t("filters:advancedTitle")} onClose={onClose}
-    footer={<><span className="tf-preview" role="status" aria-busy={previewFilters !== parsed.filters}>{t("filters:preview", preview)}</span>
+    footer={<><span className="tf-preview" role="status" aria-busy={pending}>{t("filters:preview", preview)}</span>
       <Button onClick={onClose}>{t("filters:cancel")}</Button><Button variant="primary" disabled={parsed.error}
         onClick={() => { if (parsed.filters) onApply(parsed.filters.advanced); }}>{t("filters:apply")}</Button></>}>
     <GroupFields group={draft} columns={columns} onChange={setDraft} nextId={nextId} depth={1} canAdd={canAdd} />
-    {!canAdd && <p className="tf-hint">{t("filters:limitReached")}</p>}
-    {parsed.error && <p className="tf-error" role="alert">{t("filters:invalidValue")}</p>}
-    {compiled?.advancedUnavailable && <p className="tf-hint" role="status">{t("filters:advancedSuspended")}</p>}
+    <AdvancedHints canAdd={canAdd} error={parsed.error} unavailable={compiled?.advancedUnavailable} />
   </Dialog></div>;
 }

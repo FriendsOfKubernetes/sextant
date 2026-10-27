@@ -46,6 +46,8 @@ describe("resource column filter semantics", () => {
     ]);
     const object = { status: { ready: false, count: 0, since: "2026-10-27T11:00:00Z" } };
     expect(defs.map((c) => readFilterValue(c, object, ctx))).toEqual([[false], [0], [3_600_000]]);
+    expect(defs.map((c) => c.value(object))).toEqual(["false", 0, -Date.parse(object.status.since)]);
+    expect(defs.map((c) => c.value({}))).toEqual([undefined, undefined, undefined]);
     expect(defs.map((c) => c.filter?.type)).toEqual(["boolean", "number", "age"]);
   });
   it("keeps individual status and custom-column array values without parsing cell text", () => {

@@ -43,10 +43,9 @@ export function buildFacetOptions(
     row++;
     if (accept && !accept(obj)) continue;
     const raw = readFilterValue(column, obj, context);
-    if (Array.isArray(raw)) {
-      if (raw.length === 0) visit(null);
-      else for (const value of raw) visit(value);
-    } else visit(raw as FilterValue | undefined);
+    if (!Array.isArray(raw)) { visit(raw as FilterValue | undefined); continue; }
+    if (raw.length === 0) visit(null);
+    for (const value of raw) visit(value);
   }
   return {
     options: [...options.values()]

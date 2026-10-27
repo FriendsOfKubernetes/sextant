@@ -114,6 +114,18 @@ describe("resource filter controls", () => {
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByTestId("shown")).toHaveTextContent("1");
   });
+  it("clears quick and advanced conditions with the editor's regular button and supports Undo", () => {
+    render(<Harness initial={{ ...excludeJob, advanced: { type: "rule", column: "owner", condition: { operator: "neq", value: "ReplicaSet" } } }} />);
+    const editor = openOwner();
+    fireEvent.click(within(editor).getByRole("button", { name: "Clear this column" }));
+    expect(stored()).toEqual(EMPTY_TABLE_FILTERS);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByTestId("shown")).toHaveTextContent("3");
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.getByTestId("shown")).toHaveTextContent("1");
+    expect(stored().columns.owner).toEqual(excludeJob.columns.owner);
+    expect(stored().advanced?.type).toBe("rule");
+  });
   it("invalidates a previous Undo after another committed change", () => {
     render(<Harness initial={excludeJob} />);
     fireEvent.contextMenu(screen.getByRole("button", { name: "Filter Owner" }));
@@ -257,6 +269,25 @@ describe("resource filter controls", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     expect(stored().columns.enabled?.condition).toEqual({ operator: "eq", value: false });
     expect(screen.getByTestId("shown")).toHaveTextContent("2");
+  });
+  it.each(["false", "No"])("accepts %s in boolean values and stores false rather than its label", (text) => {
+    render(<Harness />);
+    openColumn("Enabled");
+    const input = screen.getByRole("searchbox");
+    fireEvent.change(input, { target: { value: text } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(stored().columns.enabled?.values?.values).toEqual([false]);
+    expect(screen.getByTestId("shown")).toHaveTextContent("2");
+  });
+  it("rejects a typed value that is not a boolean without changing the active filter", () => {
+    render(<Harness />);
+    openColumn("Enabled");
+    const input = screen.getByRole("searchbox");
+    fireEvent.change(input, { target: { value: "maybe" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(screen.getByRole("alert")).toHaveTextContent("valid value");
+    expect(stored()).toEqual(EMPTY_TABLE_FILTERS);
+    expect(screen.getByTestId("shown")).toHaveTextContent("3");
   });
   it.each([["empty", "is empty", 1], ["notEmpty", "is not empty", 2]])("applies %s without an operand", (operator, label, shown) => {
     render(<Harness />);

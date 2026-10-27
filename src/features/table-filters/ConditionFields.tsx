@@ -9,6 +9,28 @@ import { FILTER_LIMITS } from "./validation";
 
 export interface ConditionDraft { operator: FilterOperator; value: string; upper: string; unit: string; factor: number }
 const BOOLEAN_VALUES = ["true", "false"] as const;
+const NUMERIC_OPERATORS: FilterOperator[] = ["gt", "gte", "lt", "lte", "between"];
+const TEXT_OPERATORS: FilterOperator[] = ["contains", "notContains", "startsWith", "endsWith"];
+
+function numericCondition(type: string, operator: FilterOperator): boolean {
+  return type === "number" || type === "age" || NUMERIC_OPERATORS.includes(operator);
+}
+
+function booleanDraftCondition({ operator, value }: ConditionDraft): FilterCondition | null {
+  if (operator !== "eq" && operator !== "neq") return null;
+  return BOOLEAN_VALUES.includes(value as "true" | "false") ? { operator, value: value === "true" } : null;
+}
+
+function numberDraftCondition(draft: ConditionDraft, column: ColumnDef): FilterCondition | null {
+  const { operator } = draft;
+  if (TEXT_OPERATORS.includes(operator)) return null;
+  const factor = filterUnits(column).find((unit) => unit.id === draft.unit)?.factor ?? draft.factor;
+  const value = parseFilterNumber(draft.value, factor);
+  if (value === null) return null;
+  if (operator !== "between") return { operator, value };
+  const upper = parseFilterNumber(draft.upper, factor);
+  return upper === null || upper < value ? null : { operator, value, upper };
+}
 
 export function conditionDraft(column: ColumnDef, condition?: FilterCondition | null): ConditionDraft {
   const units = filterUnits(column);
@@ -25,17 +47,8 @@ export function conditionDraft(column: ColumnDef, condition?: FilterCondition | 
 export function draftCondition(draft: ConditionDraft, column: ColumnDef, type: string): FilterCondition | null {
   const { operator } = draft;
   if (operator === "empty" || operator === "notEmpty") return { operator };
-  if (type === "boolean") return (operator === "eq" || operator === "neq") && BOOLEAN_VALUES.includes(draft.value as "true" | "false")
-    ? { operator, value: draft.value === "true" } : null;
-  const numeric = type === "number" || type === "age" || ["gt", "gte", "lt", "lte", "between"].includes(operator);
-  if (numeric) {
-    if (["contains", "notContains", "startsWith", "endsWith"].includes(operator)) return null;
-    const factor = filterUnits(column).find((unit) => unit.id === draft.unit)?.factor ?? draft.factor;
-    const value = parseFilterNumber(draft.value, factor);
-    const upper = operator === "between" ? parseFilterNumber(draft.upper, factor) : undefined;
-    if (value === null || (operator === "between" && (upper === null || upper === undefined || upper < value))) return null;
-    return { operator, value, ...(upper === undefined ? {} : { upper }) };
-  }
+  if (type === "boolean") return booleanDraftCondition(draft);
+  if (numericCondition(type, operator)) return numberDraftCondition(draft, column);
   return [...draft.value].length <= FILTER_LIMITS.text ? { operator, value: draft.value } : null;
 }
 
@@ -46,7 +59,7 @@ export function ConditionFields({ column, type, draft, onChange }: {
   const operations: FilterOperator[] = type === "boolean" ? ["eq", "neq", "empty", "notEmpty"]
     : type === "number" || type === "age" ? ["eq", "neq", "gt", "gte", "lt", "lte", "between", "empty", "notEmpty"]
     : ["eq", "neq", "contains", "notContains", "startsWith", "endsWith", "gt", "gte", "lt", "lte", "between", "empty", "notEmpty"];
-  const numeric = type === "number" || type === "age" || ["gt", "gte", "lt", "lte", "between"].includes(draft.operator);
+  const numeric = numericCondition(type, draft.operator);
   const operands = draft.operator !== "empty" && draft.operator !== "notEmpty";
   const units = filterUnits(column);
   const chooseUnit = (id: string) => {

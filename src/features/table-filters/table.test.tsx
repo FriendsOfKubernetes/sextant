@@ -83,6 +83,10 @@ describe("filters in the live resource table", () => {
       fireEvent.click(within(selection).getByRole("button", { name: "Copy" }));
       expect(copy).toHaveBeenCalledTimes(1);
       expect(copy.mock.calls[0]![0].objects.map((obj: KubeObject) => obj.metadata?.name)).toEqual(["pod-0", "pod-2"]);
+      const firstRow = screen.getByText("pod-0").closest("[role='row']")!;
+      fireEvent.keyDown(firstRow, { key: "c", ctrlKey: true });
+      expect(copy).toHaveBeenCalledTimes(2);
+      expect(copy.mock.calls[1]![0].objects.map((obj: KubeObject) => obj.metadata?.name)).toEqual(["pod-0", "pod-2"]);
       fireEvent.click(within(selection).getByRole("button", { name: "Clear selection" }));
       expect(screen.queryByRole("toolbar", { name: "Selected objects" })).toBeNull();
       expect(screen.getByTestId("rt-count")).toHaveTextContent("2 of 3");

@@ -416,6 +416,25 @@ describe("resource table filter state", () => {
     expect(Object.keys(getSettingsSnapshot()!.clusters.c1!.tableFilters!)).toHaveLength(512);
   });
 
+  it("restores a prior failed value when an imported full map rejects its replacement", async () => {
+    const backend = mockBackend();
+    await loadSettings();
+    backend.on("settings_update", () => { throw new Error("disk full"); });
+    await expect(setTableFilters("c1", POD, selected("Job"))).rejects.toThrow("disk full");
+    backend.on("settings_update", ({ settings }) => structuredClone(settings));
+    const map = Object.fromEntries(Array.from({ length: 512 }, (_, i) => [`kind:/Imported${i}`, selected("other")]));
+    const imported = updateSettings((s) => ({ ...s, ...stored(map) }));
+    const replacement = setTableFilters("c1", POD, selected("CronJob"));
+    await expect(replacement).rejects.toBeInstanceOf(TableFilterLimitError);
+    await imported;
+    expect(getTableFilters("c1", POD)).toEqual(selected("Job"));
+    expect(getSettingsSnapshot()!.clusters.c1!.tableFilters).toEqual(map);
+    const writes = backend.calls.filter((call) => call.cmd === "settings_update").length;
+    await setTableFilters("c1", POD, EMPTY_TABLE_FILTERS);
+    expect(getTableFilters("c1", POD)).toBe(EMPTY_TABLE_FILTERS);
+    expect(backend.calls.filter((call) => call.cmd === "settings_update")).toHaveLength(writes);
+  });
+
   it("caps per-cluster tables before saving without discarding previous entries", async () => {
     const map = Object.fromEntries(Array.from({ length: 512 }, (_, i) => [`kind:/Kind${i}`, selected("Job")]));
     const backend = mockBackend({}, { settings: stored(map) });
