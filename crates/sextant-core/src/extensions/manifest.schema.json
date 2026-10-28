@@ -54,7 +54,50 @@
     },
     "icon": { "$ref": "#/$defs/icon" },
     "permissions": { "$ref": "#/$defs/permissions" },
-    "contributes": { "$ref": "#/$defs/contributes" }
+    "contributes": { "$ref": "#/$defs/contributes" },
+    "backend": {
+      "description": "Code that runs outside the window (ADR-0131): a WebAssembly component of the world sextant:extension/backend, the hosts it may call over HTTPS and the credentials the user enters for it. The consent screen shows each host and credential.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["module"],
+      "properties": {
+        "module": {
+          "description": "The component, relative to the package root, e.g. backend.wasm.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "format": "wasm-path"
+        },
+        "network": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["hosts"],
+          "properties": {
+            "hosts": {
+              "description": "Host names the backend may call over HTTPS on port 443: lower case, no wildcard, no IP address, not localhost.",
+              "type": "array",
+              "maxItems": 20,
+              "uniqueItems": true,
+              "items": { "type": "string", "minLength": 3, "maxLength": 253, "format": "host-name" }
+            }
+          }
+        },
+        "credentials": {
+          "description": "Secrets the user enters in Sextant for the backend (an API token, say); only this backend reads them. Ids are unique.",
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "label"],
+            "properties": {
+              "id": { "$ref": "#/$defs/contributionId" },
+              "label": { "$ref": "#/$defs/title" }
+            }
+          }
+        }
+      }
+    }
   },
   "$defs": {
     "title": {

@@ -99,6 +99,8 @@ import type { ObjectRef } from "./generated/ObjectRef";
 import type { PatchType } from "./generated/PatchType";
 import type { PendingInstall } from "./generated/PendingInstall";
 import type { CatalogView } from "./generated/CatalogView";
+import type { BackendLogLine } from "./generated/BackendLogLine";
+import type { CredentialStatus } from "./generated/CredentialStatus";
 import type { PodUsage } from "./generated/PodUsage";
 import type { RemoteEntry } from "./generated/RemoteEntry";
 import type { RemoteKind } from "./generated/RemoteKind";
@@ -825,6 +827,13 @@ export const extensions = {
   catalog: (refresh: boolean) => call<CatalogView>("extension_catalog", { refresh }),
   /** Downloads the catalog's release of `id`, checks it against the index and the publisher's signature, then as any package. */
   inspectCatalog: (id: string) => call<PendingInstall>("extension_inspect_catalog", { id }),
+  /** The credentials an extension's backend was granted and whether each is entered (never a value, ADR-0131). */
+  credentials: (id: string) => call<CredentialStatus[]>("extension_credentials", { id }),
+  /** Stores a credential the user typed in Sextant's own form, or with `null` removes it. */
+  setCredential: (id: string, credential: string, value: string | null) =>
+    call<void>("extension_credential_set", { id, credential, value }),
+  /** The backend's log (its `host.log`, stdout and stderr, and its failures), oldest first. */
+  backendLog: (id: string) => call<BackendLogLine[]>("extension_backend_log", { id }),
   /** Checks an unpacked folder (development mode: it runs from there and reloads when its files change). */
   inspectFolder: (path: string) => call<PendingInstall>("extension_inspect_folder", { path }),
   /**

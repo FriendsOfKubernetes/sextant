@@ -236,6 +236,10 @@ const FORMAT_MESSAGES = {
   identifier: "must be a name of letters, digits and `-`, starting with a letter",
   "non-blank": "must not be blank",
   "json-path": "is not a JSONPath Sextant understands (as in CRD printer columns, e.g. .spec.replicas)",
+  "wasm-path":
+    "must be a .wasm file inside the package: a relative path with `/`, without `..`, `.`, `\\`, `:` or other characters Windows forbids, no part starting with `.` or named `node_modules`",
+  "host-name":
+    "must be a lower-case host name such as api.example.com: no scheme, port, path, wildcard or IP address, and not localhost",
 };
 
 /** The message for a string that is not in `format`; `null` when it is. */
@@ -248,6 +252,8 @@ export function checkFormat(format, text) {
     identifier: isIdentifier,
     "non-blank": (t) => t.trim() !== "",
     "json-path": isSupportedJsonPath,
+    "wasm-path": isWasmPath,
+    "host-name": isHostName,
   };
   const ok = checks[format];
   if (!ok) return `internal: unsupported schema format \`${format}\``;
@@ -338,6 +344,27 @@ export function isPackagePath(text) {
 export function isServablePath(text) {
   return (
     isPackagePath(text) && text.split("/").every((s) => !s.startsWith(".") && s.toLowerCase() !== "node_modules")
+  );
+}
+
+/** A backend's component (ADR-0131): a servable package path ending with `.wasm` (any case). */
+export function isWasmPath(text) {
+  return isServablePath(text) && text.toLowerCase().endsWith(".wasm");
+}
+
+/**
+ * A host a backend may call: a lower-case DNS name of at least two labels, each 1–63 letters, digits and `-` not at
+ * either end, at most 253 characters; not an IP address (the last label has a letter), not localhost or under it.
+ */
+export function isHostName(text) {
+  const labels = text.split(".");
+  return (
+    text.length <= 253 &&
+    labels.length >= 2 &&
+    labels.every((l) => l.length >= 1 && l.length <= 63 && /^[a-z0-9-]+$/.test(l) && !l.startsWith("-") && !l.endsWith("-")) &&
+    /[a-z]/.test(labels[labels.length - 1]) &&
+    text !== "localhost" &&
+    !text.endsWith(".localhost")
   );
 }
 
@@ -432,6 +459,16 @@ function isFilter(inner) {
 
 /** Contribution ids are unique within each contribution type. */
 function checkUniqueIds(manifest) {
+  const credentials = manifest.backend?.credentials;
+  if (Array.isArray(credentials)) {
+    credentials.forEach((item, i) => {
+      const id = typeof item?.id === "string" ? item.id : "";
+      const first = credentials.slice(0, i).findIndex((other) => other?.id === id);
+      if (first >= 0) {
+        fail(["backend", "credentials", i, "id"], `duplicate id \`${id}\` (also ${pathText(["backend", "credentials", first])})`);
+      }
+    });
+  }
   for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions"]) {
     const items = manifest.contributes?.[kind];
     if (!Array.isArray(items)) continue;

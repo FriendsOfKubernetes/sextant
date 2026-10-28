@@ -150,6 +150,7 @@ export interface Methods {
   "storage.get": { params: { key: string }; result: JsonValue };
   "storage.set": { params: { key: string; value: JsonValue }; result: null };
   "storage.remove": { params: { key: string }; result: null };
+  "backend.call": { params: { method: string; params?: JsonValue }; result: JsonValue };
 }
 
 /** Options of one call. */

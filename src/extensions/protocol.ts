@@ -201,6 +201,7 @@ export const REMOTE_METHODS: readonly string[] = [
   "storage.get",
   "storage.set",
   "storage.remove",
+  "backend.call",
 ];
 
 /** Methods the window answers itself. */

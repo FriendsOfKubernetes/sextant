@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type CatalogStatus, type ExtensionInfo, type ExtensionState } from "../../api";
 import { Badge, Button, ConfirmDialog, Dialog, ErrorState, type BadgeTone } from "../../components";
 import { ExtensionSettingsFrame, refreshExtensions } from "../../extensions";
+import { BackendLogDialog, CredentialsDialog } from "./BackendDialogs";
 import { ExtensionActivityDialog } from "./ExtensionActivityDialog";
 import { ExtensionIcon } from "./ExtensionIcon";
 import { reinstallText, sourceText } from "./install";
@@ -17,7 +18,7 @@ const STATE_TONES: Record<ExtensionState, BadgeTone> = {
   failed: "danger",
 };
 
-type Dialogs = "permissions" | "activity" | "remove" | "review" | null;
+type Dialogs = "permissions" | "activity" | "remove" | "review" | "credentials" | "backendLog" | null;
 
 export interface ExtensionRowProps {
   info: ExtensionInfo;
@@ -149,6 +150,16 @@ export function ExtensionRow({ info, catalogStatus, onUpdate, busyInstall = fals
         <Button size="compact" aria-label={t("extensions:list.named.activity", named)} onClick={() => setDialog("activity")}>
           {t("extensions:list.activity")}
         </Button>
+        {(info.manifest?.backend?.credentials.length ?? 0) > 0 && (
+          <Button size="compact" aria-label={t("extensions:backend.credentialsNamed", named)} onClick={() => setDialog("credentials")}>
+            {t("extensions:backend.credentialsButton")}
+          </Button>
+        )}
+        {info.manifest?.backend && (
+          <Button size="compact" aria-label={t("extensions:backend.logNamed", named)} onClick={() => setDialog("backendLog")}>
+            {t("extensions:backend.logButton")}
+          </Button>
+        )}
         <Button size="compact" variant="danger" aria-label={t("extensions:list.named.remove", named)} onClick={() => setDialog("remove")}>
           {t("extensions:list.remove")}
         </Button>
@@ -190,6 +201,8 @@ export function ExtensionRow({ info, catalogStatus, onUpdate, busyInstall = fals
         <p>{t("extensions:remove.body")}</p>
       </ConfirmDialog>
       {dialog === "review" && reinstall === null && <ReviewDialog info={info} onClose={close} />}
+      {dialog === "credentials" && <CredentialsDialog extensionId={info.id} name={info.name} onClose={close} />}
+      {dialog === "backendLog" && <BackendLogDialog extensionId={info.id} name={info.name} onClose={close} />}
     </li>
   );
 }

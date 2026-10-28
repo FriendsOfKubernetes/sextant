@@ -1,4 +1,5 @@
-//! A backend for the runtime's tests: each method exercises one thing the runtime must allow or stop.
+//! A backend for the runtime's and the app's tests: each method exercises one thing the runtime must allow or stop.
+//! `params` may be JSON (as the app passes it) or plain text (the runtime's own tests); every answer is JSON.
 
 wit_bindgen::generate!({
     path: "../../../../sdk/wit",
@@ -44,23 +45,33 @@ fn http_get(url: &str) -> Result<String, String> {
     Ok(format!("{status} {}", String::from_utf8_lossy(&bytes)))
 }
 
+/// A JSON string's value, or the text itself.
+fn text(params: &str) -> String {
+    serde_json::from_str::<String>(params).unwrap_or_else(|_| params.to_owned())
+}
+
+fn json(text: &str) -> String {
+    serde_json::Value::String(text.to_owned()).to_string()
+}
+
 impl Guest for Backend {
     fn handle(method: String, params: String) -> Result<String, String> {
         match method.as_str() {
             "echo" => Ok(params),
             "host" => {
-                // params: {"method": "...", "params": "<json text>"}
-                let (method, inner) = params.split_once('\n').ok_or("method\\nparams")?;
+                // `method\nparams`, as text or as a JSON string.
+                let request = text(&params);
+                let (method, inner) = request.split_once('\n').ok_or("method\\nparams")?;
                 match host::call(method, inner) {
                     Ok(result) => Ok(result),
                     Err(e) => Err(format!("{}: {}", e.code, e.message)),
                 }
             }
             "log" => {
-                host::log(host::Level::Info, &params);
+                host::log(host::Level::Info, &text(&params));
                 println!("to stdout");
                 eprintln!("to stderr");
-                Ok("logged".into())
+                Ok(json("logged"))
             }
             "env" => {
                 let vars = std::env::vars().count();
@@ -68,7 +79,7 @@ impl Guest for Backend {
                 let root = std::fs::read_dir("/").is_ok();
                 let file = std::fs::read("/etc/passwd").is_ok();
                 let tcp = std::net::TcpStream::connect("127.0.0.1:22").is_ok();
-                Ok(format!("vars={vars} args={args} root={root} file={file} tcp={tcp}"))
+                Ok(json(&format!("vars={vars} args={args} root={root} file={file} tcp={tcp}")))
             }
             "clock" => {
                 let now = std::time::SystemTime::now()
@@ -95,8 +106,8 @@ impl Guest for Backend {
                 }
             }
             "panic" => panic!("on purpose"),
-            "fetch" => http_get(&params),
-            "big" => Ok("x".repeat(params.parse::<usize>().map_err(|e| e.to_string())?)),
+            "fetch" => http_get(&text(&params)).map(|answer| json(&answer)),
+            "big" => Ok(json(&"x".repeat(text(&params).parse::<usize>().map_err(|e| e.to_string())?))),
             other => Err(format!("unknown method {other}")),
         }
     }

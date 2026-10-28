@@ -42,7 +42,7 @@ pub struct AppState {
     pub mcp: McpServer,
     /// The extensions' API (`extension_call`): its watch streams, its journal `<data_dir>/extensions-audit.jsonl`;
     /// confirmations shared with `mcp`.
-    pub ext_api: ExtensionApi,
+    pub ext_api: Arc<ExtensionApi>,
     /// Flux / Argo CD installs: plans prepared for the user's "Install" and the installs running
     /// (`gitops_install_*`); stopped with their cluster, on a reload and on exit.
     pub gitops: GitopsInstalls,
@@ -78,12 +78,12 @@ impl AppState {
             config_dir,
             data_dir,
         ));
-        let ext_api = ExtensionApi::new(
+        let ext_api = Arc::new(ExtensionApi::new(
             clusters.clone(),
             Arc::clone(&settings),
             Arc::clone(&mcp.context().confirmations),
             data_dir,
-        );
+        ));
         Self {
             clusters,
             registry,

@@ -45,6 +45,7 @@ const catalogEntry = (over: Partial<CatalogEntry> = {}): CatalogEntry => ({
       rules: [{ namespaces: { type: "all" }, kinds: { type: "only", kinds: [{ group: "", kind: "ResourceQuota" }] }, actions: ["read"], confirm: true }],
     },
     contributes: { pages: 1, detailsSections: 0, actions: 0, columns: 2, dockActions: 0, settings: 0 },
+    backend: { hosts: ["api.quota.example.com"], credentials: ["Quota API token"] },
   },
   ...over,
 });
@@ -205,6 +206,10 @@ describe("the catalog tab", () => {
     expect(within(card).getByText("Table columns: 2")).toBeInTheDocument();
     expect(within(card).getByText("ResourceQuota in all namespaces: read")).toBeInTheDocument();
     expect(within(card).getByText(/As published in the catalog/)).toBeInTheDocument();
+    // Its backend, as the catalog lists it.
+    expect(within(card).getAllByText("Code outside the window")).toHaveLength(2);
+    expect(within(card).getByText("api.quota.example.com")).toBeInTheDocument();
+    expect(within(card).getByText("Quota API token")).toBeInTheDocument();
     fireEvent.click(within(card).getByRole("button", { name: "Open acme/sextant-quota on GitHub" }));
     expect(backend!.openedUrls).toEqual(["https://github.com/acme/sextant-quota"]);
   });

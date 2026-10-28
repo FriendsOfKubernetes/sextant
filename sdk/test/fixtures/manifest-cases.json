@@ -510,7 +510,9 @@
           }
         ]
       }
-    }
+    },
+    {"name": "a backend with hosts and credentials", "base": "minimal", "set": {"/backend": {"module": "backend.wasm", "network": {"hosts": ["api.example.com", "status.example.org"]}, "credentials": [{"id": "token", "label": "API token"}]}}},
+    {"name": "a backend with only its module, in a folder", "base": "minimal", "set": {"/backend": {"module": "dist/Backend.WASM"}}}
   ],
   "invalid": [
     {
@@ -1486,6 +1488,18 @@
       "base": "list",
       "path": "",
       "message": "must be an object"
-    }
+    },
+    {"name": "backend without a module", "base": "minimal", "set": {"/backend": {"network": {"hosts": ["api.example.com"]}}}, "path": "backend.module", "message": "is required"},
+    {"name": "backend module that is not .wasm", "base": "minimal", "set": {"/backend": {"module": "backend.js"}}, "path": "backend.module", "message": "must be a .wasm file"},
+    {"name": "backend module outside the package", "base": "minimal", "set": {"/backend": {"module": "../backend.wasm"}}, "path": "backend.module", "message": "must be a .wasm file"},
+    {"name": "backend host with a scheme", "base": "minimal", "set": {"/backend": {"module": "b.wasm", "network": {"hosts": ["https://api.example.com"]}}}, "path": "backend.network.hosts[0]", "message": "must be a lower-case host name"},
+    {"name": "backend host as a wildcard", "base": "minimal", "set": {"/backend": {"module": "b.wasm", "network": {"hosts": ["*.example.com"]}}}, "path": "backend.network.hosts[0]", "message": "must be a lower-case host name"},
+    {"name": "backend host as an IP address", "base": "minimal", "set": {"/backend": {"module": "b.wasm", "network": {"hosts": ["10.0.0.1"]}}}, "path": "backend.network.hosts[0]", "message": "must be a lower-case host name"},
+    {"name": "backend host in capitals", "base": "minimal", "set": {"/backend": {"module": "b.wasm", "network": {"hosts": ["API.example.com"]}}}, "path": "backend.network.hosts[0]", "message": "must be a lower-case host name"},
+    {"name": "backend host under localhost", "base": "minimal", "set": {"/backend": {"module": "b.wasm", "network": {"hosts": ["api.localhost"]}}}, "path": "backend.network.hosts[0]", "message": "must be a lower-case host name"},
+    {"name": "backend host with a port", "base": "minimal", "set": {"/backend": {"module": "b.wasm", "network": {"hosts": ["api.example.com:8443"]}}}, "path": "backend.network.hosts[0]", "message": "must be a lower-case host name"},
+    {"name": "backend host twice", "base": "minimal", "set": {"/backend": {"module": "b.wasm", "network": {"hosts": ["api.example.com", "api.example.com"]}}}, "path": "backend.network.hosts[1]", "message": "is listed twice"},
+    {"name": "backend credentials with the same id", "base": "minimal", "set": {"/backend": {"module": "b.wasm", "credentials": [{"id": "token", "label": "A"}, {"id": "token", "label": "B"}]}}, "path": "backend.credentials[1].id", "message": "duplicate id `token`"},
+    {"name": "backend with an unknown field", "base": "minimal", "set": {"/backend": {"module": "b.wasm", "command": "sh"}}, "path": "backend.command", "message": "unknown field"}
   ]
 }

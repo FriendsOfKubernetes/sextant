@@ -322,3 +322,57 @@
   margin: 0;
   padding-left: 18px;
 }
+
+/* An extension's backend (ADR-0131): the consent block, the credentials form, the log. */
+.ext-backend__list {
+  margin: 0 0 6px;
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+
+.ext-credential {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.ext-credential__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ext-credential__form .settings__input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.ext-backend__log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.ext-backend__log li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ext-backend__time {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.ext-backend__message {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

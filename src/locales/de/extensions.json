@@ -257,5 +257,34 @@
     "repositoryChanged": "Das Repository des Herausgebers hat sich im Katalog geändert, daher werden Updates abgelehnt. Um ihm zu vertrauen, entfernen Sie die Erweiterung und installieren Sie sie erneut.",
     "withdrawn": "Aus dem Katalog zurückgezogen: {{reason}}. Erwägen Sie, sie zu deaktivieren oder zu entfernen.",
     "notListed": "Der Katalog führt diese Erweiterung nicht mehr."
+  },
+  "backend": {
+    "heading": "Code außerhalb des Fensters",
+    "runsCode": "Führt eigenen Code außerhalb des Fensters aus",
+    "runsCodeHint": "Ihr Backend ist ein WebAssembly-Programm, das Sextant in einer Sandbox ausführt. Es erreicht Cluster nur mit den Berechtigungen oben und das Netzwerk nur bei den Hosts unten und kann keine Dateien auf Ihrem Computer lesen.",
+    "hosts": "Darf HTTPS-Anfragen senden an:",
+    "noNetwork": "Darf das Netzwerk nicht nutzen.",
+    "credentials": "Benötigt Zugangsdaten, die Sie in Sextant eingeben:",
+    "credentialsHint": "Sie geben sie nach der Installation ein, unter „Zugangsdaten“ in ihrer Zeile. Nur das Backend dieser Erweiterung kann sie lesen.",
+    "credentialsButton": "Zugangsdaten",
+    "credentialsNamed": "Zugangsdaten von {{name}}",
+    "credentialsTitle": "Zugangsdaten von {{name}}",
+    "credentialsIntro": "Die Werte werden im Schlüsselbund Ihres Systems gespeichert. Nur das Backend dieser Erweiterung liest sie, und Sextant zeigt sie nie wieder an.",
+    "set": "Eingegeben",
+    "notSet": "Nicht eingegeben",
+    "value": "Neuer Wert",
+    "save": "Speichern",
+    "clear": "Entfernen",
+    "loading": "Wird geladen…",
+    "logButton": "Backend-Protokoll",
+    "logNamed": "Backend-Protokoll von {{name}}",
+    "logTitle": "Backend-Protokoll von {{name}}",
+    "logEmpty": "Noch keine Einträge.",
+    "levels": {
+      "debug": "Debug",
+      "info": "Info",
+      "warn": "Warnung",
+      "error": "Fehler"
+    }
   }
 }

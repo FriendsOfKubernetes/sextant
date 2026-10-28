@@ -257,5 +257,34 @@
     "repositoryChanged": "Yayıncının deposu katalogda değişti, bu nedenle güncellemeler reddediliyor. Bu depoya güvenmek için uzantıyı kaldırıp yeniden yükleyin.",
     "withdrawn": "Katalogdan geri çekildi: {{reason}}. Devre dışı bırakmayı veya kaldırmayı düşünün.",
     "notListed": "Katalog artık bu uzantıyı listelemiyor."
+  },
+  "backend": {
+    "heading": "Pencere dışında çalışan kod",
+    "runsCode": "Kendi kodunu pencerenin dışında çalıştırır",
+    "runsCodeHint": "Arka ucu, Sextant'ın korumalı alanda çalıştırdığı bir WebAssembly programıdır. Kümelere yalnızca yukarıdaki izinlerle, ağa yalnızca aşağıdaki ana bilgisayarlarda erişir ve bilgisayarınızdaki dosyaları okuyamaz.",
+    "hosts": "Şunlara HTTPS istekleri gönderebilir:",
+    "noNetwork": "Ağı kullanamaz.",
+    "credentials": "Sextant'a girdiğiniz kimlik bilgilerini ister:",
+    "credentialsHint": "Bunları yüklemeden sonra, satırındaki Kimlik bilgileri bölümünde girersiniz. Bunları yalnızca bu uzantının arka ucu okuyabilir.",
+    "credentialsButton": "Kimlik bilgileri",
+    "credentialsNamed": "{{name}} kimlik bilgileri",
+    "credentialsTitle": "{{name}} kimlik bilgileri",
+    "credentialsIntro": "Değerler sisteminizin anahtarlığında saklanır. Bunları yalnızca bu uzantının arka ucu okur ve Sextant bunları bir daha asla göstermez.",
+    "set": "Girildi",
+    "notSet": "Girilmedi",
+    "value": "Yeni değer",
+    "save": "Kaydet",
+    "clear": "Kaldır",
+    "loading": "Yükleniyor…",
+    "logButton": "Arka uç günlüğü",
+    "logNamed": "{{name}} arka uç günlüğü",
+    "logTitle": "{{name}} arka uç günlüğü",
+    "logEmpty": "Henüz günlüğe bir şey yazılmadı.",
+    "levels": {
+      "debug": "Hata ayıklama",
+      "info": "Bilgi",
+      "warn": "Uyarı",
+      "error": "Hata"
+    }
   }
 }

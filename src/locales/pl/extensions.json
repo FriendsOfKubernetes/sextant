@@ -269,5 +269,34 @@
     "repositoryChanged": "Repozytorium wydawcy w katalogu się zmieniło, dlatego aktualizacje są odrzucane. Aby mu zaufać, usuń rozszerzenie i zainstaluj je ponownie.",
     "withdrawn": "Wycofane z katalogu: {{reason}}. Rozważ wyłączenie lub usunięcie.",
     "notListed": "Katalog nie zawiera już tego rozszerzenia."
+  },
+  "backend": {
+    "heading": "Kod poza oknem",
+    "runsCode": "Uruchamia własny kod poza oknem",
+    "runsCodeHint": "Jego backend to program WebAssembly, który Sextant uruchamia w piaskownicy. Do klastrów sięga tylko z powyższymi uprawnieniami, do sieci — tylko do poniższych hostów, i nie może czytać plików na komputerze.",
+    "hosts": "Może wysyłać żądania HTTPS do:",
+    "noNetwork": "Nie może korzystać z sieci.",
+    "credentials": "Prosi o dane uwierzytelniające wprowadzane w programie Sextant:",
+    "credentialsHint": "Wprowadza się je po instalacji, przyciskiem „Dane uwierzytelniające” w wierszu rozszerzenia. Odczytać je może tylko backend tego rozszerzenia.",
+    "credentialsButton": "Dane uwierzytelniające",
+    "credentialsNamed": "Dane uwierzytelniające rozszerzenia {{name}}",
+    "credentialsTitle": "Dane uwierzytelniające {{name}}",
+    "credentialsIntro": "Wartości są przechowywane w systemowym magazynie kluczy. Odczytuje je tylko backend tego rozszerzenia, a Sextant nigdy więcej ich nie pokazuje.",
+    "set": "Wprowadzono",
+    "notSet": "Nie wprowadzono",
+    "value": "Nowa wartość",
+    "save": "Zapisz",
+    "clear": "Usuń",
+    "loading": "Wczytywanie…",
+    "logButton": "Dziennik backendu",
+    "logNamed": "Dziennik backendu rozszerzenia {{name}}",
+    "logTitle": "Dziennik backendu {{name}}",
+    "logEmpty": "Na razie nic nie zapisano.",
+    "levels": {
+      "debug": "Debugowanie",
+      "info": "Informacja",
+      "warn": "Ostrzeżenie",
+      "error": "Błąd"
+    }
   }
 }

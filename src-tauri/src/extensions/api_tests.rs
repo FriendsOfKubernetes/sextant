@@ -55,7 +55,7 @@ current-context: ctx-a
 struct Env {
     dir: tempfile::TempDir,
     settings: Arc<SettingsStore>,
-    api: ExtensionApi,
+    api: Arc<ExtensionApi>,
     host: ExtensionHost,
 }
 
@@ -83,13 +83,13 @@ impl Env {
         });
         let clusters = ClusterManager::new(Arc::new(RwLock::new(registry)));
         let data = dir.path().join("data");
-        let api = ExtensionApi::with_kinds(
+        let api = Arc::new(ExtensionApi::with_kinds(
             clusters,
             Arc::clone(&settings),
             Arc::new(Confirmations::default()),
             &data,
             Arc::new(FakeKinds),
-        );
+        ));
         let host = ExtensionHost::new(&data, Arc::clone(&settings));
         Self {
             dir,
@@ -162,6 +162,7 @@ fn install_into(dir: &Path, settings: &SettingsStore, id: &str, permissions: Val
                 enabled: true,
                 granted,
                 installed_at: 1,
+                granted_backend: None,
             });
         })
         .unwrap();

@@ -80,7 +80,7 @@ pub const MAX_STORAGE_BYTES: usize = 1024 * 1024;
 pub const MAX_STORAGE_KEY_CHARS: usize = 256;
 
 /// The methods `extension_call` serves (`ui.*` and the context are the window's).
-pub const METHODS: [&str; 13] = [
+pub const METHODS: [&str; 14] = [
     "clusters.list",
     "kinds",
     "resources.list",
@@ -94,6 +94,7 @@ pub const METHODS: [&str; 13] = [
     "storage.get",
     "storage.set",
     "storage.remove",
+    "backend.call",
 ];
 
 const NODE_SHELL_REFUSAL: &str = "Sextant does not let extensions change or delete node shell pods";
@@ -375,6 +376,12 @@ impl ExtensionApi {
         *self.emitter.write().unwrap_or_else(|e| e.into_inner()) = Some(emitter);
     }
 
+    /// Writes an entry of the activity log and tells the window.
+    pub(super) fn journal(&self, entry: AuditEntry) {
+        self.audit.record(entry.clone());
+        self.emit(ApiEvent::Audit(entry));
+    }
+
     fn emit(&self, event: ApiEvent) -> bool {
         let emitter = self
             .emitter
@@ -405,7 +412,7 @@ impl ExtensionApi {
     /// Runs one method for `extension_id`. `watch` is where `resources.watch` sends its updates (its stream id and the
     /// sink); other methods ignore it. Cluster calls are journaled; `storage.*` is not.
     pub async fn call(
-        &self,
+        self: &Arc<Self>,
         host: &ExtensionHost,
         extension_id: &str,
         method: &str,
@@ -419,6 +426,8 @@ impl ExtensionApi {
         // through the blocking pool too.
         let (blocking_host, id) = (host.clone(), extension_id.to_owned());
         match method {
+            // The extension's own backend (ADR-0131): journaled there, with the calls it makes.
+            "backend.call" => return self.backend_call(host, extension_id, params).await,
             "storage.get" | "storage.set" | "storage.remove" => {
                 let (storage, method) = (Arc::clone(&self.storage), method.to_owned());
                 return blocking(move || {
@@ -1558,7 +1567,7 @@ fn invalid(message: impl Into<String>) -> CoreError {
     CoreError::new(ErrorCode::Invalid, message)
 }
 
-fn code_name(code: ErrorCode) -> String {
+pub(super) fn code_name(code: ErrorCode) -> String {
     serde_json::to_value(code)
         .ok()
         .and_then(|v| v.as_str().map(str::to_owned))

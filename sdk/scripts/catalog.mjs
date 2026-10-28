@@ -216,6 +216,13 @@ export function checkRelease(entry, picked, packageBytes, signatureText) {
     publishedAt: picked.publishedAt ?? null,
     permissions,
     contributes: contributionCounts(manifest.contributes),
+    // ADR-0131: whether it runs code outside the window, where it may connect and what it asks the user to enter.
+    backend: manifest.backend
+      ? {
+          hosts: manifest.backend.network?.hosts ?? [],
+          credentials: (manifest.backend.credentials ?? []).map((c) => c.label),
+        }
+      : null,
   };
 }
 

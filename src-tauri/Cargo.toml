@@ -25,6 +25,8 @@ tauri-build.workspace = true
 
 [dependencies]
 sextant-core.workspace = true
+# Extension backends (ADR-0131): WebAssembly components under wasmtime.
+sextant-ext-runtime = { path = "../crates/sextant-ext-runtime" }
 tauri.workspace = true
 tauri-plugin-dialog.workspace = true
 tauri-plugin-opener = "2.7"

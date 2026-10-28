@@ -88,6 +88,43 @@ pub struct CatalogRelease {
     /// not read by this Sextant's rules. The consent screen shows the downloaded manifest's own.
     pub permissions: Option<ExtensionPermissions>,
     pub contributes: ContributionCounts,
+    /// Its backend (ADR-0131), as the manifest declares it: shown in the details only.
+    pub backend: Option<CatalogBackend>,
+}
+
+/// A release's backend as the catalog lists it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CatalogBackend {
+    /// The hosts it may call.
+    pub hosts: Vec<String>,
+    /// The labels of the credentials it asks for.
+    pub credentials: Vec<String>,
+}
+
+/// A `backend` block of the index: at most 20 hosts and 10 labels, each checked; `None` when it does not read (the
+/// entry then shows no backend details; the consent screen shows the package's own).
+fn read_backend(value: &Value) -> Option<CatalogBackend> {
+    let hosts = value.get("hosts")?.as_array()?;
+    let credentials = value.get("credentials")?.as_array()?;
+    if hosts.len() > 20 || credentials.len() > 10 {
+        return None;
+    }
+    Some(CatalogBackend {
+        hosts: hosts
+            .iter()
+            .map(|h| {
+                h.as_str()
+                    .filter(|h| super::manifest::is_host_name(h))
+                    .map(str::to_owned)
+            })
+            .collect::<Option<_>>()?,
+        credentials: credentials
+            .iter()
+            .map(|c| text_of(c, 80))
+            .collect::<Option<_>>()?,
+    })
 }
 
 /// One extension of the catalog.
@@ -328,6 +365,9 @@ fn read_release(id: &str, value: &Value) -> Option<CatalogRelease> {
         permissions: field("permissions").and_then(read_permissions),
         contributes: field("contributes")
             .map_or(Some(ContributionCounts::default()), read_counts)?,
+        backend: field("backend")
+            .filter(|b| !b.is_null())
+            .and_then(read_backend),
     })
 }
 

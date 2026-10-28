@@ -374,6 +374,16 @@ pub(crate) fn check_format(format: &str, text: &str) -> Result<(), String> {
              other characters Windows forbids, no part starting with `.`, named `node_modules`, ending with `.` or a \
              space, or named like a Windows device (`nul`, `con`, `com1`, …)",
         ),
+        "wasm-path" => (
+            m::is_wasm_path(text),
+            "must be a .wasm file inside the package: a relative path with `/`, without `..`, `.`, `\\`, `:` or \
+             other characters Windows forbids, no part starting with `.` or named `node_modules`",
+        ),
+        "host-name" => (
+            m::is_host_name(text),
+            "must be a lower-case host name such as api.example.com: no scheme, port, path, wildcard or IP address, \
+             and not localhost",
+        ),
         "identifier" => (
             m::is_identifier(text),
             "must be a name of letters, digits and `-`, starting with a letter",

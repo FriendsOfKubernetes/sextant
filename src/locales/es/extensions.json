@@ -263,5 +263,34 @@
     "repositoryChanged": "El repositorio del editor cambió en el catálogo, por lo que se rechazan las actualizaciones. Para confiar en él, quite la extensión y vuelva a instalarla.",
     "withdrawn": "Retirada del catálogo: {{reason}}. Considere deshabilitarla o quitarla.",
     "notListed": "El catálogo ya no incluye esta extensión."
+  },
+  "backend": {
+    "heading": "Código fuera de la ventana",
+    "runsCode": "Ejecuta su propio código fuera de la ventana",
+    "runsCodeHint": "Su backend es un programa WebAssembly que Sextant ejecuta en un entorno aislado. Solo accede a los clústeres con los permisos de arriba y a la red solo en los hosts de abajo, y no puede leer archivos de su equipo.",
+    "hosts": "Puede enviar solicitudes HTTPS a:",
+    "noNetwork": "No puede usar la red.",
+    "credentials": "Pide credenciales que se introducen en Sextant:",
+    "credentialsHint": "Se introducen después de instalarla, en Credenciales, en su fila. Solo el backend de esta extensión puede leerlas.",
+    "credentialsButton": "Credenciales",
+    "credentialsNamed": "Credenciales de {{name}}",
+    "credentialsTitle": "Credenciales de {{name}}",
+    "credentialsIntro": "Los valores se guardan en el llavero del sistema. Solo el backend de esta extensión los lee, y Sextant no vuelve a mostrarlos.",
+    "set": "Introducida",
+    "notSet": "Sin introducir",
+    "value": "Nuevo valor",
+    "save": "Guardar",
+    "clear": "Quitar",
+    "loading": "Cargando…",
+    "logButton": "Registro del backend",
+    "logNamed": "Registro del backend de {{name}}",
+    "logTitle": "Registro del backend de {{name}}",
+    "logEmpty": "Todavía no hay nada registrado.",
+    "levels": {
+      "debug": "Depuración",
+      "info": "Información",
+      "warn": "Advertencia",
+      "error": "Error"
+    }
   }
 }

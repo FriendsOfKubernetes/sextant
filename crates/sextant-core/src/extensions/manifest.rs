@@ -71,6 +71,42 @@ pub struct ExtensionManifest {
     pub icon: Option<String>,
     pub permissions: ExtensionPermissions,
     pub contributes: Contributions,
+    /// Code that runs outside the window (ADR-0131).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub backend: Option<BackendManifest>,
+}
+
+/// An extension's backend: a WebAssembly component of the world `sextant:extension/backend`, the hosts it may call
+/// over HTTPS and the credentials the user enters for it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct BackendManifest {
+    /// The component's path in the package (`.wasm`).
+    pub module: String,
+    #[serde(default)]
+    pub network: BackendNetwork,
+    #[serde(default)]
+    pub credentials: Vec<BackendCredential>,
+}
+
+/// Where a backend may send HTTPS requests.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct BackendNetwork {
+    /// Lower-case DNS names, no wildcards, no IP addresses.
+    pub hosts: Vec<String>,
+}
+
+/// A secret the user enters in Sextant for the backend; only that backend reads it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct BackendCredential {
+    pub id: String,
+    pub label: String,
 }
 
 /// What an extension adds to Sextant's interface. Titles are shown as written (not translation keys).
@@ -224,8 +260,26 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     serde_json::from_value(value).map_err(|err| whole(format!("cannot be read: {err}")))
 }
 
-/// Contribution ids are unique within each contribution type.
+/// Contribution ids are unique within each contribution type, and credential ids within the backend.
 fn check_unique_ids(manifest: &Value) -> Result<(), ManifestError> {
+    if let Some(items) = manifest
+        .pointer("/backend/credentials")
+        .and_then(Value::as_array)
+    {
+        let list = JsonPath::default().key("backend").key("credentials");
+        for (i, item) in items.iter().enumerate() {
+            let id = item.get("id").and_then(Value::as_str).unwrap_or_default();
+            if let Some(first) = items[..i]
+                .iter()
+                .position(|other| other.get("id").and_then(Value::as_str) == Some(id))
+            {
+                return Err(ManifestError {
+                    path: list.index(i).key("id").to_string(),
+                    message: format!("duplicate id `{id}` (also {})", list.index(first)),
+                });
+            }
+        }
+    }
     let contributes = JsonPath::default().key("contributes");
     for kind in [
         "pages",
@@ -384,6 +438,33 @@ pub(crate) fn is_servable_path(text: &str) -> bool {
 pub(crate) fn is_html_path(text: &str) -> bool {
     let lower = text.to_ascii_lowercase();
     lower.ends_with(".html") || lower.ends_with(".htm")
+}
+
+/// A backend's component: a servable package path ending with `.wasm` (any case).
+pub(crate) fn is_wasm_path(text: &str) -> bool {
+    is_servable_path(text) && text.to_ascii_lowercase().ends_with(".wasm")
+}
+
+/// A host a backend may call: a lower-case DNS name of at least two labels (`api.example.com`), each 1–63 letters,
+/// digits and `-` not at either end, at most 253 characters; not an IP address (the last label has a letter) and not
+/// `localhost` or a name under it.
+pub(crate) fn is_host_name(text: &str) -> bool {
+    let labels: Vec<&str> = text.split('.').collect();
+    text.len() <= 253
+        && labels.len() >= 2
+        && labels.iter().all(|label| {
+            (1..=63).contains(&label.len())
+                && label
+                    .bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+                && !label.starts_with('-')
+                && !label.ends_with('-')
+        })
+        && labels
+            .last()
+            .is_some_and(|tld| tld.bytes().any(|b| b.is_ascii_lowercase()))
+        && text != "localhost"
+        && !text.ends_with(".localhost")
 }
 
 /// Whether the frontend's printer-column JSONPath evaluator (`src/resources/jsonpath.ts`) understands `path`:

@@ -263,5 +263,34 @@
     "repositoryChanged": "Le dépôt de l'éditeur a changé dans le catalogue, les mises à jour sont donc refusées. Pour lui faire confiance, supprimez l'extension et réinstallez-la.",
     "withdrawn": "Retirée du catalogue : {{reason}}. Envisagez de la désactiver ou de la supprimer.",
     "notListed": "Le catalogue ne répertorie plus cette extension."
+  },
+  "backend": {
+    "heading": "Code hors de la fenêtre",
+    "runsCode": "Exécute son propre code hors de la fenêtre",
+    "runsCodeHint": "Son backend est un programme WebAssembly que Sextant exécute dans un bac à sable. Il n'accède aux clusters qu'avec les autorisations ci-dessus et au réseau qu'avec les hôtes ci-dessous, et il ne peut pas lire les fichiers de votre ordinateur.",
+    "hosts": "Il peut envoyer des requêtes HTTPS à :",
+    "noNetwork": "Il ne peut pas utiliser le réseau.",
+    "credentials": "Il demande des identifiants que vous saisissez dans Sextant :",
+    "credentialsHint": "Vous les saisissez après l'installation, sous Identifiants dans sa ligne. Seul le backend de cette extension peut les lire.",
+    "credentialsButton": "Identifiants",
+    "credentialsNamed": "Identifiants de {{name}}",
+    "credentialsTitle": "Identifiants de {{name}}",
+    "credentialsIntro": "Les valeurs sont conservées dans le trousseau de votre système. Seul le backend de cette extension les lit, et Sextant ne les affiche plus jamais.",
+    "set": "Saisi",
+    "notSet": "Non saisi",
+    "value": "Nouvelle valeur",
+    "save": "Enregistrer",
+    "clear": "Supprimer",
+    "loading": "Chargement…",
+    "logButton": "Journal du backend",
+    "logNamed": "Journal du backend de {{name}}",
+    "logTitle": "Journal du backend de {{name}}",
+    "logEmpty": "Rien n'a encore été journalisé.",
+    "levels": {
+      "debug": "Débogage",
+      "info": "Info",
+      "warn": "Avertissement",
+      "error": "Erreur"
+    }
   }
 }

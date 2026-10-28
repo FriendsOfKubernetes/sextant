@@ -129,7 +129,7 @@ async fn host_calls_go_to_the_host_with_its_answers_and_errors() {
 #[tokio::test]
 async fn logs_stdout_and_stderr_reach_the_hosts_log() {
     let f = fixture();
-    assert_eq!(f.call("log", "a line").await.unwrap(), "logged");
+    assert_eq!(f.call("log", "a line").await.unwrap(), r#""logged""#);
     let logs = f.host.logs.lock().unwrap().clone();
     assert!(
         logs.contains(&(Level::Info, "a line".to_owned())),
@@ -150,7 +150,7 @@ async fn there_is_no_environment_no_file_and_no_socket_but_the_clock_works() {
     let f = fixture();
     assert_eq!(
         f.call("env", "").await.unwrap(),
-        "vars=0 args=0 root=false file=false tcp=false"
+        r#""vars=0 args=0 root=false file=false tcp=false""#
     );
     let seconds: u64 = f.call("clock", "").await.unwrap().parse().unwrap();
     assert!(seconds > 1_700_000_000);
@@ -163,7 +163,7 @@ async fn http_goes_only_through_the_hosts_policy() {
         f.call("fetch", "https://api.example.com/v1/x")
             .await
             .unwrap(),
-        "200 hello from the host"
+        r#""200 hello from the host""#
     );
     let denied = f
         .call("fetch", "https://elsewhere.example.org/")
@@ -248,11 +248,12 @@ async fn payloads_past_the_limit_are_refused_both_ways() {
         f.run("echo", &"x".repeat(1001), &limits).await.unwrap_err(),
         InvokeError::PayloadTooLarge
     );
+    // A JSON string of n characters is n + 2 bytes.
     assert_eq!(
-        f.run("big", "1001", &limits).await.unwrap_err(),
+        f.run("big", "999", &limits).await.unwrap_err(),
         InvokeError::PayloadTooLarge
     );
-    assert_eq!(f.run("big", "1000", &limits).await.unwrap().len(), 1000);
+    assert_eq!(f.run("big", "998", &limits).await.unwrap().len(), 1000);
 }
 
 #[tokio::test]

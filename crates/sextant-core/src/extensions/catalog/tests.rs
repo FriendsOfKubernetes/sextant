@@ -46,6 +46,7 @@ fn installed(version: &str, source: ExtensionSource) -> InstalledExtension {
         enabled: true,
         granted: ExtensionPermissions::none(),
         installed_at: 0,
+        granted_backend: None,
     }
 }
 

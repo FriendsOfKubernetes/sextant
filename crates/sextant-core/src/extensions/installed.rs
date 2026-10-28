@@ -6,6 +6,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use super::manifest::{BackendManifest, ExtensionManifest};
 use super::permissions::ExtensionPermissions;
 
 /// Where an installed extension came from.
@@ -51,6 +52,55 @@ pub struct InstalledExtension {
     /// When it was installed or last updated, in milliseconds since the Unix epoch.
     #[ts(type = "number")]
     pub installed_at: u64,
+    /// What the user agreed to of its backend (ADR-0131): the hosts it may call and the credentials it may read.
+    /// `None`: no backend was agreed to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub granted_backend: Option<BackendGrant>,
+}
+
+/// The part of a backend the user agrees to: hosts and credential ids.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct BackendGrant {
+    pub hosts: Vec<String>,
+    pub credentials: Vec<String>,
+}
+
+impl BackendGrant {
+    /// Everything `backend` asks for.
+    pub fn of(backend: &BackendManifest) -> Self {
+        Self {
+            hosts: backend.network.hosts.clone(),
+            credentials: backend.credentials.iter().map(|c| c.id.clone()).collect(),
+        }
+    }
+}
+
+/// Whether `manifest` asks for nothing beyond what was granted: its permissions within `granted`, and its backend (if
+/// any) agreed to with every host and credential it names. A new backend, host or credential needs consent again.
+pub fn asks_within(
+    manifest: &ExtensionManifest,
+    granted: &ExtensionPermissions,
+    granted_backend: Option<&BackendGrant>,
+) -> bool {
+    let backend_within = match (&manifest.backend, granted_backend) {
+        (None, _) => true,
+        (Some(_), None) => false,
+        (Some(asked), Some(granted)) => {
+            asked
+                .network
+                .hosts
+                .iter()
+                .all(|h| granted.hosts.contains(h))
+                && asked
+                    .credentials
+                    .iter()
+                    .all(|c| granted.credentials.contains(&c.id))
+        }
+    };
+    backend_within && manifest.permissions.is_within(granted)
 }
 
 /// `#[serde(with)]` for `AppSettings::extensions`: written as a plain list; read without ever failing the settings

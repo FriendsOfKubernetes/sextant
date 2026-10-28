@@ -251,5 +251,34 @@
     "repositoryChanged": "目录中发布者的仓库已更改，因此更新会被拒绝。要信任它，请移除此扩展并重新安装。",
     "withdrawn": "已从目录中撤回：{{reason}}。请考虑停用或移除它。",
     "notListed": "目录中已不再列出此扩展。"
+  },
+  "backend": {
+    "heading": "窗口外运行的代码",
+    "runsCode": "在窗口外运行自己的代码",
+    "runsCodeHint": "它的后端是一个 WebAssembly 程序，由 Sextant 在沙盒中运行。它只能以上述权限访问集群，只能访问下列主机的网络，且无法读取你计算机上的文件。",
+    "hosts": "它可以向以下主机发送 HTTPS 请求：",
+    "noNetwork": "它不能使用网络。",
+    "credentials": "它需要你在 Sextant 中输入以下凭据：",
+    "credentialsHint": "安装后，在其所在行的“凭据”中输入。只有此扩展的后端可以读取它们。",
+    "credentialsButton": "凭据",
+    "credentialsNamed": "{{name}} 的凭据",
+    "credentialsTitle": "{{name}} 的凭据",
+    "credentialsIntro": "这些值保存在系统的密钥环中。只有此扩展的后端会读取它们，Sextant 不会再次显示。",
+    "set": "已输入",
+    "notSet": "未输入",
+    "value": "新值",
+    "save": "保存",
+    "clear": "移除",
+    "loading": "正在加载…",
+    "logButton": "后端日志",
+    "logNamed": "{{name}} 的后端日志",
+    "logTitle": "{{name}} 的后端日志",
+    "logEmpty": "尚无日志。",
+    "levels": {
+      "debug": "调试",
+      "info": "信息",
+      "warn": "警告",
+      "error": "错误"
+    }
   }
 }

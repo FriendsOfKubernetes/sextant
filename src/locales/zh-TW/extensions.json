@@ -251,5 +251,34 @@
     "repositoryChanged": "目錄中發行者的儲存庫已變更，因此會拒絕更新。若要信任它，請移除此擴充功能後重新安裝。",
     "withdrawn": "已從目錄中撤下：{{reason}}。請考慮停用或移除它。",
     "notListed": "目錄中已不再列出此擴充功能。"
+  },
+  "backend": {
+    "heading": "在視窗外執行的程式碼",
+    "runsCode": "在視窗外執行自己的程式碼",
+    "runsCodeHint": "它的後端是一個 WebAssembly 程式，由 Sextant 在沙箱中執行。它只能以上述權限存取叢集，只能連線到下列主機，且無法讀取您電腦上的檔案。",
+    "hosts": "它可以向以下主機傳送 HTTPS 要求：",
+    "noNetwork": "它不能使用網路。",
+    "credentials": "它需要您在 Sextant 中輸入以下認證：",
+    "credentialsHint": "請在安裝後，於其所在列的「認證」中輸入。只有此擴充功能的後端能讀取它們。",
+    "credentialsButton": "認證",
+    "credentialsNamed": "{{name}} 的認證",
+    "credentialsTitle": "{{name}} 的認證",
+    "credentialsIntro": "這些值會保存在系統的金鑰圈中。只有此擴充功能的後端會讀取它們，Sextant 不會再顯示。",
+    "set": "已輸入",
+    "notSet": "未輸入",
+    "value": "新值",
+    "save": "儲存",
+    "clear": "移除",
+    "loading": "正在載入…",
+    "logButton": "後端日誌",
+    "logNamed": "{{name}} 的後端日誌",
+    "logTitle": "{{name}} 的後端日誌",
+    "logEmpty": "尚無日誌。",
+    "levels": {
+      "debug": "偵錯",
+      "info": "資訊",
+      "warn": "警告",
+      "error": "錯誤"
+    }
   }
 }

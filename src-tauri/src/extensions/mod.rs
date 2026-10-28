@@ -11,6 +11,7 @@
 //! agrees again (`extension_inspect_folder` + `extension_install`).
 
 pub mod api;
+pub mod backend;
 pub mod catalog;
 pub mod dev;
 pub mod manage;
@@ -23,8 +24,9 @@ use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 use sextant_core::SettingsStore;
 use sextant_core::extensions::{
-    ExtensionManifest, ExtensionPermissions, ExtensionSource, InstalledExtension, MANIFEST_FILE,
-    inspect_folder, parse_manifest, resolve_package_file, sweep_leftovers, version_dir,
+    BackendGrant, ExtensionManifest, ExtensionPermissions, ExtensionSource, InstalledExtension,
+    MANIFEST_FILE, asks_within, inspect_folder, parse_manifest, resolve_package_file,
+    sweep_leftovers, version_dir,
 };
 use ts_rs::TS;
 
@@ -91,8 +93,9 @@ type Emitter = Arc<dyn Fn(HostEvent) + Send + Sync>;
 struct Loaded {
     key: String,
     manifest: Result<ExtensionManifest, String>,
-    /// `manifest.permissions.is_within(granted)` for this `granted`.
+    /// `asks_within(manifest, granted, granted_backend)` for this `granted` and `granted_backend`.
     granted: ExtensionPermissions,
+    granted_backend: Option<BackendGrant>,
     within: bool,
 }
 
@@ -125,6 +128,8 @@ struct Inner {
     downloader: Downloader,
     /// The catalog's index as last fetched (`<data>/extension-catalog`).
     catalog: catalog::CatalogCache,
+    /// Backends: the runtime, what is compiled, running calls, logs, credentials (ADR-0131).
+    backends: backend::Backends,
     #[cfg(test)]
     read_hook: Mutex<Option<ReadHook>>,
 }
@@ -177,6 +182,7 @@ impl ExtensionHost {
                 emitter: Mutex::new(None),
                 downloader,
                 catalog: catalog::CatalogCache::new(data_dir.join("extension-catalog")),
+                backends: backend::Backends::new(data_dir, credential_store()),
                 #[cfg(test)]
                 read_hook: Mutex::new(None),
             }),
@@ -270,11 +276,14 @@ impl ExtensionHost {
         }
     }
 
-    /// Forgets the manifest read for `id`: the next look reads it again.
+    /// Forgets the manifest read for `id` (and its compiled backend): the next look reads it again.
     fn forget(&self, id: &str) {
-        let mut loaded = lock(&self.inner.loaded);
-        loaded.epoch += 1;
-        loaded.map.remove(id);
+        {
+            let mut loaded = lock(&self.inner.loaded);
+            loaded.epoch += 1;
+            loaded.map.remove(id);
+        }
+        self.forget_backend(id);
     }
 
     /// The manifest of `entry` and whether it is within `entry.granted`: kept from an earlier read while the entry's
@@ -283,9 +292,11 @@ impl ExtensionHost {
     fn manifest_of(&self, entry: &InstalledExtension) -> (Result<ExtensionManifest, String>, bool) {
         let key = format!("{:?}|{}", entry.source, entry.version);
         let answer = |current: &mut Loaded| {
-            if current.granted != entry.granted {
-                current.within = within(&current.manifest, &entry.granted);
+            if current.granted != entry.granted || current.granted_backend != entry.granted_backend
+            {
+                current.within = within(&current.manifest, entry);
                 current.granted = entry.granted.clone();
+                current.granted_backend = entry.granted_backend.clone();
             }
             (current.manifest.clone(), current.within)
         };
@@ -306,9 +317,10 @@ impl ExtensionHost {
         }
         let mut read = Loaded {
             key,
-            within: within(&manifest, &entry.granted),
+            within: within(&manifest, entry),
             manifest,
             granted: entry.granted.clone(),
+            granted_backend: entry.granted_backend.clone(),
         };
         let mut loaded = lock(&self.inner.loaded);
         if let Some(current) = loaded.map.get_mut(&entry.id).filter(|l| l.key == read.key) {
@@ -405,10 +417,22 @@ impl ExtensionHost {
     }
 }
 
-fn within(manifest: &Result<ExtensionManifest, String>, granted: &ExtensionPermissions) -> bool {
+fn within(manifest: &Result<ExtensionManifest, String>, entry: &InstalledExtension) -> bool {
     manifest
         .as_ref()
-        .is_ok_and(|m| m.permissions.is_within(granted))
+        .is_ok_and(|m| asks_within(m, &entry.granted, entry.granted_backend.as_ref()))
+}
+
+/// Backends' credentials: the OS keyring, or memory in tests.
+fn credential_store() -> Arc<dyn backend::CredentialStore> {
+    #[cfg(test)]
+    {
+        Arc::new(backend::MemoryCredentials::default())
+    }
+    #[cfg(not(test))]
+    {
+        Arc::new(backend::KeyringCredentials)
+    }
 }
 
 fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {

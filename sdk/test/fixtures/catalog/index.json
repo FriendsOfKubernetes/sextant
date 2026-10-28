@@ -48,7 +48,8 @@
         },
         "contributes": {
           "pages": 1
-        }
+        },
+        "backend": null
       }
     },
     {

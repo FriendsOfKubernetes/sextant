@@ -257,5 +257,34 @@
     "repositoryChanged": "The publisher's repository changed in the catalog, so updates are refused. To trust it, remove the extension and install it again.",
     "withdrawn": "Withdrawn from the catalog: {{reason}}. Consider disabling or removing it.",
     "notListed": "The catalog no longer lists this extension."
+  },
+  "backend": {
+    "heading": "Code outside the window",
+    "runsCode": "Runs its own code outside the window",
+    "runsCodeHint": "Its backend is a WebAssembly program that Sextant runs in a sandbox. It reaches clusters only with the permissions above and the network only at the hosts below, and it cannot read files on your computer.",
+    "hosts": "It may send HTTPS requests to:",
+    "noNetwork": "It may not use the network.",
+    "credentials": "It asks for credentials that you enter in Sextant:",
+    "credentialsHint": "You enter them after installing, under Credentials in its row. Only this extension's backend can read them.",
+    "credentialsButton": "Credentials",
+    "credentialsNamed": "Credentials of {{name}}",
+    "credentialsTitle": "Credentials of {{name}}",
+    "credentialsIntro": "Values are kept in your system's keyring. Only this extension's backend reads them, and Sextant never shows them again.",
+    "set": "Entered",
+    "notSet": "Not entered",
+    "value": "New value",
+    "save": "Save",
+    "clear": "Remove",
+    "loading": "Loading…",
+    "logButton": "Backend log",
+    "logNamed": "Backend log of {{name}}",
+    "logTitle": "Backend log of {{name}}",
+    "logEmpty": "Nothing is logged yet.",
+    "levels": {
+      "debug": "Debug",
+      "info": "Info",
+      "warn": "Warning",
+      "error": "Error"
+    }
   }
 }

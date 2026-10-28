@@ -167,6 +167,7 @@ function CatalogEntryCard({ entry, offer, busy, onInstall }: { entry: CatalogEnt
           <div className="ext-row__title">
             <strong>{entry.name}</strong>
             {latest && <span className="ext-row__version">{t("extensions:list.version", { version: latest.version })}</span>}
+            {latest?.backend && <Badge tone="warning">{t("extensions:backend.heading")}</Badge>}
             {entry.categories.map((c) => (
               <Badge key={c} tone="neutral">
                 {t(`extensions:catalog.categories.${c}`)}
@@ -240,6 +241,36 @@ function CatalogEntryCard({ entry, offer, busy, onInstall }: { entry: CatalogEnt
             <PermissionsView permissions={latest.permissions} />
           ) : (
             <p className="settings__hint">{t("extensions:catalog.permissionsUnreadable")}</p>
+          )}
+          {latest?.backend && (
+            <>
+              <h3 className="ext-consent__heading">{t("extensions:backend.heading")}</h3>
+              <p>{t("extensions:backend.runsCode")}</p>
+              {latest.backend.hosts.length > 0 ? (
+                <>
+                  <p>{t("extensions:backend.hosts")}</p>
+                  <ul className="ext-backend__list">
+                    {latest.backend.hosts.map((host) => (
+                      <li key={host}>
+                        <code>{host}</code>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p>{t("extensions:backend.noNetwork")}</p>
+              )}
+              {latest.backend.credentials.length > 0 && (
+                <>
+                  <p>{t("extensions:backend.credentials")}</p>
+                  <ul className="ext-backend__list">
+                    {latest.backend.credentials.map((label) => (
+                      <li key={label}>{label}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </>
           )}
         </div>
       )}

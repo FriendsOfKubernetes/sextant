@@ -4,6 +4,7 @@ import type {
   DetailsPlacement,
   KindPattern,
   ManifestAction,
+  ManifestBackend,
   ManifestColumn,
   ManifestContributions,
   ManifestDetailsSection,
@@ -41,6 +42,12 @@ export const MANIFEST_SHAPES = {
     icon: "optional",
     permissions: "required",
     contributes: "required",
+    backend: "optional",
+  }),
+  ManifestBackend: described<ManifestBackend>("/properties/backend", {
+    module: "required",
+    network: "optional",
+    credentials: "optional",
   }),
   ManifestPermissions: described<ManifestPermissions>("/$defs/permissions", {
     clusters: "required",

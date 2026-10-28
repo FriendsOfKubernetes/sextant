@@ -15,8 +15,8 @@ use std::time::{Duration, Instant};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use sextant_core::extensions::{
-    ExtensionManifest, ExtensionSource, InstalledExtension, MAX_UNPACKED_BYTES, Package,
-    inspect_folder, inspect_zip, prune_versions, remove, version_dir,
+    BackendGrant, ExtensionManifest, ExtensionSource, InstalledExtension, MAX_UNPACKED_BYTES,
+    Package, asks_within, inspect_folder, inspect_zip, prune_versions, remove, version_dir,
 };
 use sextant_core::{CoreError, CoreResult, ErrorCode};
 use tauri::State;
@@ -223,7 +223,9 @@ impl ExtensionHost {
     ) -> CoreResult<PendingInstall> {
         let manifest = package.manifest.clone();
         let existing = self.installed_one(&manifest.id);
-        if let Err(err) = check_replace(existing.as_ref(), &source) {
+        if let Err(err) =
+            check_replace(existing.as_ref(), &source).and_then(|()| self.check_backend(package))
+        {
             Pending {
                 created: Instant::now(),
                 manifest,
@@ -238,6 +240,7 @@ impl ExtensionHost {
             .map_or_else(sextant_core::extensions::ExtensionPermissions::none, |e| {
                 e.granted.clone()
             });
+        let granted_backend = existing.as_ref().and_then(|e| e.granted_backend.clone());
         let token = new_token()?;
         let listed_in_catalog = if matches!(source, ExtensionSource::Catalog { .. }) {
             None
@@ -251,7 +254,7 @@ impl ExtensionHost {
         let shown = PendingInstall {
             token: token.clone(),
             replaces: existing.map(|e| e.version),
-            new_permissions: !manifest.permissions.is_within(&granted),
+            new_permissions: !asks_within(&manifest, &granted, granted_backend.as_ref()),
             manifest: manifest.clone(),
             source: source.clone(),
             listed_in_catalog,
@@ -413,6 +416,7 @@ impl ExtensionHost {
             enabled: existing.as_ref().is_none_or(|e| e.enabled),
             granted: manifest.permissions.clone(),
             installed_at: now_ms(),
+            granted_backend: manifest.backend.as_ref().map(BackendGrant::of),
         };
         let saved = self.inner.settings.update(|settings| {
             match settings.extensions.iter_mut().find(|e| e.id == entry.id) {
@@ -489,6 +493,7 @@ impl ExtensionHost {
         if !matches!(entry.source, ExtensionSource::Folder { .. }) {
             remove(&self.inner.extensions_dir, id)?;
         }
+        self.remove_backend(&entry);
         self.inner
             .settings
             .update(|settings| settings.extensions.retain(|e| e.id != id))?;

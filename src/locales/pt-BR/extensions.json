@@ -263,5 +263,34 @@
     "repositoryChanged": "O repositório do editor mudou no catálogo, então as atualizações são recusadas. Para confiar nele, remova a extensão e instale-a novamente.",
     "withdrawn": "Retirada do catálogo: {{reason}}. Considere desativá-la ou removê-la.",
     "notListed": "O catálogo não lista mais esta extensão."
+  },
+  "backend": {
+    "heading": "Código fora da janela",
+    "runsCode": "Executa o próprio código fora da janela",
+    "runsCodeHint": "O backend dela é um programa WebAssembly que o Sextant executa em uma sandbox. Ele só acessa os clusters com as permissões acima e a rede só nos hosts abaixo, e não pode ler arquivos do seu computador.",
+    "hosts": "Pode enviar solicitações HTTPS para:",
+    "noNetwork": "Não pode usar a rede.",
+    "credentials": "Pede credenciais que são inseridas no Sextant:",
+    "credentialsHint": "Elas são inseridas após a instalação, em Credenciais, na linha da extensão. Só o backend desta extensão pode lê-las.",
+    "credentialsButton": "Credenciais",
+    "credentialsNamed": "Credenciais de {{name}}",
+    "credentialsTitle": "Credenciais de {{name}}",
+    "credentialsIntro": "Os valores ficam guardados no chaveiro do sistema. Só o backend desta extensão os lê, e o Sextant nunca os mostra de novo.",
+    "set": "Inserida",
+    "notSet": "Não inserida",
+    "value": "Novo valor",
+    "save": "Salvar",
+    "clear": "Remover",
+    "loading": "Carregando…",
+    "logButton": "Log do backend",
+    "logNamed": "Log do backend de {{name}}",
+    "logTitle": "Log do backend de {{name}}",
+    "logEmpty": "Nada foi registrado ainda.",
+    "levels": {
+      "debug": "Depuração",
+      "info": "Informação",
+      "warn": "Aviso",
+      "error": "Erro"
+    }
   }
 }

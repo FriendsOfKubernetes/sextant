@@ -5215,6 +5215,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "sextant-core",
+ "sextant-ext-runtime",
  "sha2 0.11.0",
  "tauri",
  "tauri-build",

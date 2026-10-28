@@ -119,6 +119,16 @@ export interface ManifestFile {
   icon?: string;
   permissions: ManifestPermissions;
   contributes: ManifestContributions;
+  /** Code that runs outside the window: a WebAssembly component, the hosts it may call, its credentials (ADR-0131). */
+  backend?: ManifestBackend;
+}
+
+/** `backend` as written: `network` and `credentials` may be left out. */
+export interface ManifestBackend {
+  /** The component's path in the package, e.g. `backend.wasm`. */
+  module: string;
+  network?: { hosts: string[] };
+  credentials?: Array<{ id: string; label: string }>;
 }
 
 /** Fills what Sextant fills when it reads a manifest: the result has the shape of `ExtensionManifest`. */
@@ -146,5 +156,12 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
   };
   if (file.icon !== undefined) manifest.icon = file.icon;
   if (c.settings !== undefined) manifest.contributes.settings = c.settings;
+  if (file.backend !== undefined) {
+    manifest.backend = {
+      module: file.backend.module,
+      network: { hosts: file.backend.network?.hosts ?? [] },
+      credentials: file.backend.credentials ?? [],
+    };
+  }
   return manifest;
 }

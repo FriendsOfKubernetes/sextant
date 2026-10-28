@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type PendingInstall } from "../../api";
 import { Badge, Button, Dialog, ErrorState } from "../../components";
 import { pushNotice, refreshExtensions } from "../../extensions";
+import { BackendConsent } from "./BackendDialogs";
 import { ExtensionIcon } from "./ExtensionIcon";
 import { installErrorTitle, sourceText } from "./install";
 import { ContributionsView, PermissionsView, readsSecretValues } from "./PermissionsView";
@@ -124,6 +125,7 @@ export function ConsentDialog({ pending, review = false, onClose }: ConsentDialo
           </div>
         )}
         <PermissionsView permissions={manifest.permissions} />
+        {manifest.backend && <BackendConsent backend={manifest.backend} />}
         {error && <ErrorState error={error} title={installErrorTitle(error, t)} className="settings__error" />}
       </div>
     </Dialog>

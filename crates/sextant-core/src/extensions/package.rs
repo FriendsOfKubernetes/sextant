@@ -90,6 +90,38 @@ impl Package {
     pub fn total_bytes(&self) -> u64 {
         self.files.iter().map(|f| f.size).sum()
     }
+
+    /// The contents of one of the package's files (`path` exactly as in [`Package::files`]), at most `limit` bytes.
+    pub fn read(&self, path: &str, limit: u64) -> CoreResult<Vec<u8>> {
+        let index = self
+            .files
+            .iter()
+            .position(|f| f.path == path)
+            .ok_or_else(|| {
+                CoreError::new(
+                    ErrorCode::NotFound,
+                    format!("`{path}` is not in the package"),
+                )
+            })?;
+        if self.files[index].size > limit {
+            return Err(invalid(format!("`{path}` is larger than {limit} bytes")));
+        }
+        match &self.content {
+            Content::Archive(buffers) => Ok(buffers[index].clone()),
+            Content::Folder(root) => {
+                let mut bytes = Vec::new();
+                std::io::Read::read_to_end(
+                    &mut std::io::Read::take(resolve_package_file(root, path)?, limit + 1),
+                    &mut bytes,
+                )
+                .map_err(CoreError::from)?;
+                if bytes.len() as u64 > limit {
+                    return Err(invalid(format!("`{path}` is larger than {limit} bytes")));
+                }
+                Ok(bytes)
+            }
+        }
+    }
 }
 
 /// What [`install`] wrote.
@@ -892,14 +924,21 @@ fn missing_manifest(files: &[PackageFile]) -> CoreError {
 }
 
 fn check_entry(manifest: &ExtensionManifest, files: &[PackageFile]) -> CoreResult<()> {
-    if files.iter().any(|f| f.path == manifest.entry) {
-        Ok(())
-    } else {
-        Err(invalid(format!(
+    if !files.iter().any(|f| f.path == manifest.entry) {
+        return Err(invalid(format!(
             "{MANIFEST_FILE}: entry: `{}` is not in the package",
             manifest.entry
-        )))
+        )));
     }
+    if let Some(backend) = &manifest.backend
+        && !files.iter().any(|f| f.path == backend.module)
+    {
+        return Err(invalid(format!(
+            "{MANIFEST_FILE}: backend.module: `{}` is not in the package",
+            backend.module
+        )));
+    }
+    Ok(())
 }
 
 /// Reads an unpacked extension folder in place and checks it. Entries whose name starts with `.` (`.git`, …) and

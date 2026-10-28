@@ -17,11 +17,12 @@ pub mod package;
 pub mod permissions;
 mod schema;
 
-pub use installed::{ExtensionSource, InstalledExtension};
+pub use installed::{BackendGrant, ExtensionSource, InstalledExtension, asks_within};
 pub use manifest::{
-    ActionContribution, ColumnContribution, Contributions, DetailsPlacement,
-    DetailsSectionContribution, DockActionContribution, ExtensionManifest, MANIFEST_FILE,
-    ManifestError, PageContribution, SUPPORTED_API, SettingsContribution, parse_manifest,
+    ActionContribution, BackendCredential, BackendManifest, BackendNetwork, ColumnContribution,
+    Contributions, DetailsPlacement, DetailsSectionContribution, DockActionContribution,
+    ExtensionManifest, MANIFEST_FILE, ManifestError, PageContribution, SUPPORTED_API,
+    SettingsContribution, parse_manifest,
 };
 pub use package::{
     InstalledFiles, MAX_FILES, MAX_UNPACKED_BYTES, Package, PackageFile, inspect_folder,
