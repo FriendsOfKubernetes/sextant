@@ -560,6 +560,7 @@ async fn an_agent_initializes_lists_the_tools_and_calls_one_and_the_call_is_jour
             "diagnose_service",
             "drain_node",
             "exec_command",
+            "get_access",
             "get_autoscaling_status",
             "get_events",
             "get_logs",
@@ -1817,5 +1818,71 @@ async fn an_agent_never_gets_what_a_failed_exec_plugin_printed() {
     let journal = serde_json::to_string(&state.mcp.context().audit.list(Some(&cluster))).unwrap();
     assert!(journal.contains("authPlugin"), "{journal}");
     assert!(!journal.contains("PLUGIN-SAID"), "{journal}");
+    state.close_all();
+}
+
+#[tokio::test]
+async fn get_access_tells_the_rules_and_only_readable_hints_without_connecting() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("kubeconfig");
+    // The server is unreachable: the tool reads only Sextant's settings.
+    std::fs::write(
+        &path,
+        "apiVersion: v1\nkind: Config\nclusters:\n- name: test\n  cluster:\n    server: https://127.0.0.1:1\n\
+         contexts:\n- name: test\n  context:\n    cluster: test\n    user: test\n    namespace: team-b\n\
+         users:\n- name: test\n  user: {}\ncurrent-context: test\n",
+    )
+    .unwrap();
+    let (state, _) = state_in(dir.path(), Some(path.into_os_string()));
+    let cluster = first_cluster(&state);
+
+    let off = tool(&state, "get_access", json!({ "cluster": "test" })).await;
+    assert!(off.unwrap_err().contains("access to it is off"));
+
+    let mut access = preset(AccessPreset::Custom);
+    access.rules = vec![
+        rule(&["team-a"], &[], &[AccessAction::Read, AccessAction::Logs]),
+        AccessRule {
+            confirm: true,
+            ..rule(
+                &["team-a"],
+                &[("apps", "Deployment")],
+                &[AccessAction::Modify],
+            )
+        },
+    ];
+    state
+        .settings
+        .update(|s| {
+            s.clusters.insert(
+                cluster.0.clone(),
+                ClusterSettings {
+                    agent_access: access,
+                    known_namespaces: Some(vec!["team-a".to_owned(), "secret-project".to_owned()]),
+                    ..ClusterSettings::default()
+                },
+            );
+        })
+        .unwrap();
+    let out = tool(&state, "get_access", json!({ "cluster": "test" }))
+        .await
+        .unwrap();
+    assert_eq!(out["preset"], "custom");
+    assert_eq!(
+        out["rules"],
+        json!([
+            { "namespaces": ["team-a"], "kinds": "all", "actions": ["read", "logs"], "askFirst": false },
+            { "namespaces": ["team-a"], "kinds": [{ "apiGroup": "apps", "kind": "Deployment" }],
+              "actions": ["modify"], "askFirst": true },
+        ])
+    );
+    // Neither the context's team-b nor the known secret-project is readable for the agent: not named.
+    assert_eq!(out["knownNamespaces"], json!(["team-a"]));
+    assert_eq!(out["contextNamespace"], Value::Null);
+    assert!(!out.to_string().contains("secret-project"));
+    assert!(!matches!(
+        state.clusters.state(&cluster),
+        ConnectionState::Connected
+    ));
     state.close_all();
 }

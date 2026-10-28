@@ -7,7 +7,7 @@ use std::time::Duration;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::{Value, json};
-use sextant_core::access::{AccessAction, KindPattern, NamespaceScope};
+use sextant_core::access::{self, AccessAction, KindPattern, KindScope, NamespaceScope};
 use sextant_core::error::with_timeout;
 use sextant_core::resources::{self, KindRef, ObjectRef, ResourceKind, inline_secrets};
 use sextant_core::{ClusterId, ClusterManager, ConnectionState, CoreError, CoreResult, ErrorCode};
@@ -38,6 +38,16 @@ pub fn register_read_tools(tools: &mut ToolSet) {
              access to each (`off` — every call to that cluster is refused). Use the `id` in other tools.",
             ToolKind::Read,
             list_clusters,
+        )
+        .add(
+            "get_access",
+            "What the user allows the agent on one cluster, from Sextant's settings (no request to the cluster): the \
+             rules in force — namespaces, kinds and actions, and whether the user is asked first — and the \
+             namespaces the user is known to work in (the kubeconfig context's and the ones the user keeps in \
+             Sextant), as hints of where to look when the cluster refuses lists over all namespaces. The \
+             Kubernetes API may still refuse what a rule allows: the rules never widen the user's own RBAC.",
+            ToolKind::Read,
+            get_access,
         )
         .add(
             "list_kinds",
@@ -260,6 +270,63 @@ async fn list_clusters(call: ToolCall, _args: NoArgs) -> ToolResult {
         })
         .collect();
     Ok(ToolOutput::Json(json!({ "clusters": clusters })))
+}
+
+async fn get_access(call: ToolCall, args: ClusterArgs) -> ToolResult {
+    let cluster = call.target(
+        &args.cluster,
+        &summary("get_access", "agent access rules".to_owned()),
+    )?;
+    let ctx = call.ctx();
+    let settings = ctx.settings.get();
+    let stored = settings.clusters.get(&cluster.id.0);
+    let access = stored.map(|s| s.agent_access.clone()).unwrap_or_default();
+    let rules: Vec<Value> = access::rules_in_force(&access)
+        .iter()
+        .map(|rule| {
+            json!({
+                "namespaces": match &rule.namespaces {
+                    NamespaceScope::All => json!("all"),
+                    NamespaceScope::Only { namespaces } => json!(namespaces),
+                },
+                "kinds": match &rule.kinds {
+                    KindScope::All => json!("all"),
+                    KindScope::Only { kinds } => json!(kinds
+                        .iter()
+                        .map(|k| json!({ "apiGroup": k.group, "kind": k.kind }))
+                        .collect::<Vec<_>>()),
+                },
+                "actions": rule.actions,
+                "askFirst": rule.confirm
+                    && rule.actions.iter().any(|a| a.can_ask()),
+            })
+        })
+        .collect();
+    // Hints only where the agent may read something: a namespace outside its rules is not named.
+    let readable = |ns: &str| access::allows_somewhere(&access, Some(ns), AccessAction::Read);
+    let context_namespace = ctx
+        .cluster_list()
+        .into_iter()
+        .find(|c| c.id == cluster.id)
+        .and_then(|c| c.namespace)
+        .filter(|ns| readable(ns));
+    let known: Vec<String> = stored
+        .and_then(|s| s.known_namespaces.clone())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|ns| readable(ns))
+        .collect();
+    Ok(ToolOutput::Json(json!({
+        "cluster": cluster.id,
+        "preset": access.preset,
+        "rules": rules,
+        "contextNamespace": context_namespace,
+        "knownNamespaces": known,
+        "note": "An action is allowed on an object when a rule covers its namespace (\"all\" also covers objects \
+                 without a namespace, such as Nodes), its kind and the action. \"secretValues\" — values of Secrets \
+                 and of Helm releases — comes only from a rule that names it. Rules with askFirst wait for the \
+                 user's approval.",
+    })))
 }
 
 async fn list_kinds(call: ToolCall, args: ClusterArgs) -> ToolResult {

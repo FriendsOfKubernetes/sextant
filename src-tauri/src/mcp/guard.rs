@@ -218,6 +218,20 @@ impl Guard {
         Ok(target)
     }
 
+    /// The cluster the agent named, without connecting it: for a call that reads only Sextant's own settings about
+    /// the cluster (`get_access`). Refused when access to it is Off.
+    pub fn target(&self, cluster: &str, summary: &CallSummary) -> Result<ClusterTarget, OpenError> {
+        let target = self.find(cluster).map_err(OpenError::Failed)?;
+        {
+            let mut record = self.lock();
+            record.cluster = Some(target.clone());
+            record.target = clip(&summary.target);
+        }
+        self.access(&target).map_err(OpenError::Refused)?;
+        self.running().map_err(OpenError::Refused)?;
+        Ok(target)
+    }
+
     /// The cluster's access rules from fresh settings; Off is refused. Notes the call as allowed unless a check
     /// already decided otherwise.
     pub fn access(&self, cluster: &ClusterTarget) -> Result<ClusterAccess, Refusal> {

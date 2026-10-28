@@ -287,7 +287,7 @@ pub fn preset_rules(preset: AccessPreset) -> Vec<AccessRule> {
 }
 
 /// The rules in force: the preset's own, or the saved ones for `Custom`.
-fn rules_in_force(access: &ClusterAccess) -> Vec<AccessRule> {
+pub fn rules_in_force(access: &ClusterAccess) -> Vec<AccessRule> {
     match access.preset {
         AccessPreset::Custom => access.rules.clone(),
         preset => preset_rules(preset),

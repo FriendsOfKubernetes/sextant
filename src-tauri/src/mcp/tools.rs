@@ -13,7 +13,7 @@ use serde_json::Value;
 use sextant_core::{CoreError, ErrorCode};
 
 use super::context::McpContext;
-use super::guard::{ClusterTarget, Guard, OpenError, Refusal};
+use super::guard::{CallSummary, ClusterTarget, Guard, OpenError, Refusal};
 
 /// A tool answer is cut to this many bytes (with a note), so one call cannot flood the agent's context.
 pub const MAX_OUTPUT_BYTES: usize = 256 * 1024;
@@ -92,6 +92,11 @@ impl ToolCall {
     /// The cluster the agent named, connected; refused when access to it is Off.
     pub async fn open(&self, cluster: &str) -> Result<ClusterTarget, ToolError> {
         Ok(self.guard.open(cluster).await?)
+    }
+
+    /// The cluster the agent named, not connected; refused when access to it is Off.
+    pub fn target(&self, cluster: &str, summary: &CallSummary) -> Result<ClusterTarget, ToolError> {
+        Ok(self.guard.target(cluster, summary)?)
     }
 }
 

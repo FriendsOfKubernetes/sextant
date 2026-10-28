@@ -259,7 +259,8 @@ fn client_name(context: &RequestContext<RoleServer>) -> String {
 }
 
 const INSTRUCTIONS: &str = "Sextant gives access to the user's Kubernetes clusters. Start with list_clusters; \
-list_kinds shows what you may touch in a cluster. The user decides per cluster, namespace, kind and action what you \
+get_access shows the rules the user set for you in a cluster (and the namespaces to look in when the cluster refuses \
+lists over all namespaces), list_kinds the kinds you may touch. The user decides per cluster, namespace, kind and action what you \
 may do; a refused call says how the user can allow it. Changes may wait for the user's confirmation in Sextant.";
 
 impl ServerHandler for SextantMcp {
