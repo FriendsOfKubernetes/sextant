@@ -28,6 +28,25 @@ pub fn restored_size(layout: &WindowLayout) -> Option<(u32, u32)> {
     }
 }
 
+/// The physical top-left that centres a window of logical `size` on a monitor at `origin` with physical `area` and
+/// `scale`; never left of or above the monitor when the window is larger than it.
+pub fn centered_position(
+    origin: (i32, i32),
+    area: (u32, u32),
+    scale: f64,
+    size: (u32, u32),
+) -> (i32, i32) {
+    let along = |start: i32, extent: u32, logical: u32| {
+        let window = f64::from(logical) * scale;
+        let offset = ((f64::from(extent) - window) / 2.0).max(0.0);
+        start.saturating_add(offset.round() as i32)
+    };
+    (
+        along(origin.0, area.0, size.0),
+        along(origin.1, area.1, size.1),
+    )
+}
+
 /// Layout after a resize. A maximized window keeps the last normal size so un-maximizing restores it.
 pub fn record_resize(layout: &mut WindowLayout, width: u32, height: u32, maximized: bool) {
     layout.maximized = maximized;
@@ -43,7 +62,28 @@ pub fn restore_main_window<R: Runtime>(app: &tauri::AppHandle<R>) {
         let layout = app.state::<AppState>().settings.get().window;
         if let Some((w, h)) = restored_size(&layout) {
             let _ = window.set_size(tauri::LogicalSize::new(w, h));
-            let _ = window.center();
+            // Centred from the size being restored, not by `center()`: on X11 the resize is applied later, and
+            // `center()` would centre the window's old size (its corner at the screen's middle, #304).
+            let monitor = window
+                .current_monitor()
+                .ok()
+                .flatten()
+                .or_else(|| window.primary_monitor().ok().flatten());
+            match monitor {
+                Some(monitor) => {
+                    let (origin, area) = (monitor.position(), monitor.size());
+                    let (x, y) = centered_position(
+                        (origin.x, origin.y),
+                        (area.width, area.height),
+                        monitor.scale_factor(),
+                        (w, h),
+                    );
+                    let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
+                }
+                None => {
+                    let _ = window.center();
+                }
+            }
         }
         if layout.maximized {
             let _ = window.maximize();
@@ -199,6 +239,24 @@ fn schedule_geometry_save<R: Runtime>(window: &Window<R>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_restored_window_is_centred_by_its_own_size() {
+        assert_eq!(
+            centered_position((0, 0), (2560, 1600), 1.0, (1280, 800)),
+            (640, 400)
+        );
+        // A second monitor to the right, at scale 2: physical pixels.
+        assert_eq!(
+            centered_position((2560, 0), (3840, 2160), 2.0, (1280, 800)),
+            (3200, 280)
+        );
+        // Larger than the monitor: at its corner, never off its left or top edge.
+        assert_eq!(
+            centered_position((0, 0), (1280, 800), 1.0, (1600, 900)),
+            (0, 0)
+        );
+    }
 
     #[test]
     fn exiting_the_application_closes_every_session_and_removes_its_temp_kubeconfig() {
