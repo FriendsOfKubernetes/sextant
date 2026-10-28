@@ -31,7 +31,10 @@
     "noSections": "Ancora niente da mostrare per questo cluster."
   },
   "dock": {
-    "empty": "Apri log, una shell o un terminale per vederli qui."
+    "empty": "Apri log, una shell o un terminale per vederli qui.",
+    "closeUnsavedTitle": "Scartare le modifiche?",
+    "closeUnsavedText": "{{title}} ha modifiche non salvate. Chiudendo la scheda andranno perse.",
+    "closeUnsavedConfirm": "Scarta e chiudi"
   },
   "details": {
     "loading": "Caricamento…",

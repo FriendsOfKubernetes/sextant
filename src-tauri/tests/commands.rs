@@ -105,6 +105,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("settings_status", None),
     ("tray_status", None),
     ("tray_set_texts", Some("texts")),
+    ("window_close", None),
     ("about_info", None),
     ("system_fonts", None),
     ("gitops_install_versions", Some("tool")),

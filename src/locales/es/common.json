@@ -31,7 +31,10 @@
     "noSections": "Todavía no hay nada que mostrar para este clúster."
   },
   "dock": {
-    "empty": "Abra registros, un shell o un terminal para verlos aquí."
+    "empty": "Abra registros, un shell o un terminal para verlos aquí.",
+    "closeUnsavedTitle": "¿Descartar los cambios?",
+    "closeUnsavedText": "{{title}} tiene cambios sin guardar. Al cerrar la pestaña se descartan.",
+    "closeUnsavedConfirm": "Descartar y cerrar"
   },
   "details": {
     "loading": "Cargando…",

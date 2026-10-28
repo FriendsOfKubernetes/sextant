@@ -28,6 +28,11 @@ pub const EXTENSIONS_CHANGED: &str = "extensions-changed";
 pub const EXTENSION_FILES_CHANGED: &str = "extension-files-changed";
 /// `open-about` — no payload (`null`): "About Sextant…" in the tray menu; the window opens the About dialog.
 pub const OPEN_ABOUT: &str = "open-about";
+/// `open-settings` — no payload (`null`): "Settings…" (Cmd+,) in the macOS app menu; the window opens Settings.
+pub const OPEN_SETTINGS: &str = "open-settings";
+/// `close-tab` — no payload (`null`): "Close Tab" (Cmd+W) in the macOS app menu; the window closes its active dock tab,
+/// or, with nothing to close, asks to close the window (`window_close`).
+pub const CLOSE_TAB: &str = "close-tab";
 /// `vcluster-links` — payload `VclusterLink[]`: the virtual clusters Sextant forwards for changed (ADR-0122); the window
 /// reads the cluster list again.
 pub const VCLUSTER_LINKS: &str = "vcluster-links";

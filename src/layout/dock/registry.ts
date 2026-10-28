@@ -1,6 +1,6 @@
 // Dock tabs and dock header buttons are registered by features, not listed in the dock. The dock re-renders when
 // they change (`useDockVersion`).
-import type { ComponentType } from "react";
+import { useEffect, type ComponentType } from "react";
 import type { ClusterId } from "../../api";
 import type { DockTab, DockTabType } from "../../app/store";
 import type { IconName } from "../../components/icons";
@@ -66,4 +66,23 @@ export function unregisterDockAction(id: string): void {
 /** Re-renders the caller when dock tabs or buttons are registered or removed. */
 export function useDockVersion(): number {
   return version.use();
+}
+
+// Tabs whose content would be lost on close (an editor with unsaved text): the dock asks before closing them, whether
+// by the close button, Delete, Cmd+W or Ctrl+W.
+const unsavedTabs = new Set<string>();
+
+/** Marks tab `tabId` as holding unsaved changes while `unsaved` is true (and the calling component is mounted). */
+export function useUnsavedChanges(tabId: string, unsaved: boolean): void {
+  useEffect(() => {
+    if (!unsaved) return;
+    unsavedTabs.add(tabId);
+    return () => {
+      unsavedTabs.delete(tabId);
+    };
+  }, [tabId, unsaved]);
+}
+
+export function hasUnsavedChanges(tabId: string): boolean {
+  return unsavedTabs.has(tabId);
 }

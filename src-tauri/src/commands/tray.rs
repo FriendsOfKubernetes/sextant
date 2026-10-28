@@ -1,5 +1,5 @@
 //! The tray icon, as far as the window needs to know: whether it exists (Settings offers "keep in the tray" only then),
-//! and the texts of its menu in the window's UI language.
+//! and the texts of its menu in the window's UI language; and closing the window from the window itself.
 
 use serde::{Deserialize, Serialize};
 use sextant_core::CoreError;
@@ -40,5 +40,13 @@ pub struct TrayTexts {
 #[tauri::command]
 pub fn tray_set_texts<R: Runtime>(app: AppHandle<R>, texts: TrayTexts) -> Result<(), CoreError> {
     crate::tray::set_texts(&app, &texts);
+    Ok(())
+}
+
+/// Closes the window as its close button does (keep in the tray decides): Cmd+W of the macOS app menu when the window
+/// has no dock tab to close.
+#[tauri::command]
+pub fn window_close<R: Runtime>(app: AppHandle<R>) -> Result<(), CoreError> {
+    crate::window::close_main(&app);
     Ok(())
 }

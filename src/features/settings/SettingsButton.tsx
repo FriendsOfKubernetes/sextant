@@ -1,9 +1,11 @@
 // The gear at the bottom of the cluster rail. With an open cluster it opens the Settings page in the main area;
 // without one (nothing to show the page in) the same settings open in a dialog (`openSettings`, store.ts, which also
 // serves links to a tab from elsewhere). Also mounts the settings file banner and the check for updates at start with
-// its dialog (the rail is always there, also in a narrow window).
+// its dialog (the rail is always there, also in a narrow window), and opens Settings for "Settings…" (Cmd+,) of the
+// macOS app menu (`open-settings`).
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { events } from "../../api";
 import { Dialog, Icon } from "../../components";
 import { UpdateNotice } from "../updates";
 import { SettingsFileBanner } from "./SettingsFileBanner";
@@ -16,6 +18,16 @@ export function SettingsButton() {
   const closeDialog = useSettingsUi((s) => s.closeDialog);
   // The dialog belongs to the rail: gone with it (as when it was local state of this button).
   useEffect(() => closeDialog, [closeDialog]);
+  useEffect(() => {
+    let live = true;
+    const unsubscribe = events.onOpenSettings(() => {
+      if (live) openSettings();
+    });
+    return () => {
+      live = false;
+      void unsubscribe.then((off) => off(), () => undefined);
+    };
+  }, []);
 
   return (
     <>

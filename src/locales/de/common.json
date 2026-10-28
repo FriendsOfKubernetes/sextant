@@ -31,7 +31,10 @@
     "noSections": "Für diesen Cluster gibt es noch nichts anzuzeigen."
   },
   "dock": {
-    "empty": "Öffnen Sie Logs, eine Shell oder ein Terminal, um sie hier zu sehen."
+    "empty": "Öffnen Sie Logs, eine Shell oder ein Terminal, um sie hier zu sehen.",
+    "closeUnsavedTitle": "Änderungen verwerfen?",
+    "closeUnsavedText": "{{title}} hat ungespeicherte Änderungen. Beim Schließen des Tabs gehen sie verloren.",
+    "closeUnsavedConfirm": "Verwerfen und schließen"
   },
   "details": {
     "loading": "Wird geladen…",

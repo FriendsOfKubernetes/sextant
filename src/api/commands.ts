@@ -460,6 +460,8 @@ export const settings = {
   trayStatus: () => call<TrayStatus>("tray_status"),
   /** The tray menu's texts in the UI language (the keys of `tray.json`); the menu is relabelled at once. */
   traySetTexts: (texts: TrayTexts) => call<void>("tray_set_texts", { texts }),
+  /** Closes the window as its close button does ("keep in the tray" decides): Cmd+W with no dock tab to close. */
+  windowClose: () => call<void>("window_close"),
 };
 
 /** What "About Sextant" shows about the machine (no paths, no user names). */

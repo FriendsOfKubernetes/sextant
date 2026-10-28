@@ -31,7 +31,10 @@
     "noSections": "Na razie nie ma nic do pokazania dla tego klastra."
   },
   "dock": {
-    "empty": "Otwórz logi, powłokę lub terminal, aby zobaczyć je tutaj."
+    "empty": "Otwórz logi, powłokę lub terminal, aby zobaczyć je tutaj.",
+    "closeUnsavedTitle": "Odrzucić zmiany?",
+    "closeUnsavedText": "{{title}} ma niezapisane zmiany. Zamknięcie karty je odrzuci.",
+    "closeUnsavedConfirm": "Odrzuć i zamknij"
   },
   "details": {
     "loading": "Wczytywanie…",

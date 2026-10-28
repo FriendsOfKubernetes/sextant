@@ -31,7 +31,10 @@
     "noSections": "Rien à afficher pour ce cluster pour l'instant."
   },
   "dock": {
-    "empty": "Ouvrez des journaux, un shell ou un terminal pour les voir ici."
+    "empty": "Ouvrez des journaux, un shell ou un terminal pour les voir ici.",
+    "closeUnsavedTitle": "Abandonner vos modifications ?",
+    "closeUnsavedText": "{{title}} contient des modifications non enregistrées. Fermer l’onglet les abandonne.",
+    "closeUnsavedConfirm": "Abandonner et fermer"
   },
   "details": {
     "loading": "Chargement…",

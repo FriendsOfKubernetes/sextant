@@ -1,8 +1,10 @@
-import { useEffect, useRef, type CSSProperties, type KeyboardEvent, type RefObject } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
+import { api, events } from "../../api";
 import { useAppStore } from "../../app/store";
-import { EmptyState, Icon, renderIcon, revealInStrip, useStripScroll } from "../../components";
-import { getDockActions, getDockTabComponent, useDockVersion, type DockActionDef } from "./registry";
+import { ConfirmDialog, EmptyState, Icon, renderIcon, revealInStrip, useStripScroll } from "../../components";
+import { closeTarget, isCloseTabKey } from "./closeShortcut";
+import { getDockActions, getDockTabComponent, hasUnsavedChanges, useDockVersion, type DockActionDef } from "./registry";
 
 /**
  * Bottom dock: a header with tabs, registered actions and an open/close toggle; the body shows the active tab.
@@ -30,7 +32,44 @@ export function Dock() {
     if (id) revealInStrip(strip.current, tabButtons.current.get(id), closeButtons.current.get(id));
   }, [dock.activeTabId, dock.tabs.length, dock.open]);
 
-  // The WAI-ARIA tabs pattern: ←/→ (wrapping), Home/End select and focus a tab; Delete closes it; Escape returns
+  // A tab with unsaved changes (an editor) closes only after "Discard and close"; `then` runs after the close.
+  const [discarding, setDiscarding] = useState<{ id: string; title: string; then?: () => void } | null>(null);
+  const requestClose = (id: string, then?: () => void) => {
+    if (hasUnsavedChanges(id)) {
+      setDiscarding({ id, title: dock.tabs.find((tab) => tab.id === id)?.title ?? "", then });
+      return;
+    }
+    closeDockTab(id);
+    then?.();
+  };
+  const requestCloseRef = useRef(requestClose);
+  requestCloseRef.current = requestClose;
+  // Cmd+W from the macOS app menu and Ctrl+W in the window (closeShortcut.ts).
+  useEffect(() => {
+    let live = true;
+    const unsubscribe = events.onCloseTab(() => {
+      if (!live) return;
+      const target = closeTarget();
+      if (target.type === "tab") requestCloseRef.current(target.id);
+      else if (target.type === "window") void api.settings.windowClose().catch(() => undefined);
+    });
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (!isCloseTabKey(e)) return;
+      const target = closeTarget();
+      if (target.type !== "tab") return;
+      e.preventDefault();
+      requestCloseRef.current(target.id);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      live = false;
+      document.removeEventListener("keydown", onKey);
+      void unsubscribe.then((off) => off(), () => undefined);
+    };
+  }, []);
+
+  // The WAI-ARIA tabs pattern: ←/→ (wrapping), Home/End select and focus a tab; Delete closes it (Cmd+W / Ctrl+W close
+  // the active one from anywhere, closeShortcut.ts); Escape returns
   // focus to where it was before the tab opened.
   const onTabKey = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const tabs = dock.tabs;
@@ -42,9 +81,10 @@ export function Dock() {
     else if (e.key === "Delete") {
       e.preventDefault();
       const neighbour = tabs[index + 1] ?? tabs[index - 1];
-      closeDockTab(tabs[index]!.id);
-      if (neighbour) requestAnimationFrame(() => tabButtons.current.get(neighbour.id)?.focus());
-      else trigger.restore();
+      requestClose(tabs[index]!.id, () => {
+        if (neighbour) requestAnimationFrame(() => tabButtons.current.get(neighbour.id)?.focus());
+        else trigger.restore();
+      });
       return;
     } else if (e.key === "Escape") {
       e.preventDefault();
@@ -117,7 +157,7 @@ export function Dock() {
               tabIndex={tab.id === dock.activeTabId ? 0 : -1}
               style={{ gridColumn: index * 2 + 2, "--dock-tab-index": index } as CSSProperties}
               aria-label={t("common:actions.closeTab", { title: tab.title })}
-              onClick={() => closeDockTab(tab.id)}
+              onClick={() => requestClose(tab.id)}
             >
               <Icon name="close" />
             </button>
@@ -147,6 +187,22 @@ export function Dock() {
           </button>
         </div>
       </div>
+      <ConfirmDialog
+        open={discarding !== null}
+        danger
+        title={t("common:dock.closeUnsavedTitle")}
+        confirmLabel={t("common:dock.closeUnsavedConfirm")}
+        onCancel={() => setDiscarding(null)}
+        onConfirm={() => {
+          const closing = discarding;
+          setDiscarding(null);
+          if (!closing) return;
+          closeDockTab(closing.id);
+          closing.then?.();
+        }}
+      >
+        <p>{t("common:dock.closeUnsavedText", { title: discarding?.title ?? "" })}</p>
+      </ConfirmDialog>
       <div className="dock__body" hidden={!dock.open}>
         {dock.tabs.length === 0 && <EmptyState title={t("common:dock.empty")} />}
         {dock.tabs.map((tab) => {

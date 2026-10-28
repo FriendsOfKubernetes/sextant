@@ -7,7 +7,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError, toApiError, type ClusterId, type DryRunResult, type ObjectRef } from "../../api";
 import { Button, ErrorState } from "../../components";
-import type { DockTabProps } from "../../layout/dock/registry";
+import { useUnsavedChanges, type DockTabProps } from "../../layout/dock/registry";
 import { hasHiddenValues } from "../details/secrets";
 import { ChangePreview, refusalsOf, useAlwaysPreview } from "../safe-apply";
 import { YamlEditor } from "./YamlEditor";
@@ -25,6 +25,8 @@ export function CreateTab({ tab }: DockTabProps) {
   const { t } = useTranslation();
   const { clusterId } = tab.payload as CreateTabPayload;
   const [text, setText] = useState("");
+  /** The text applied last: closing the tab asks first only while the text differs from it. */
+  const [appliedText, setAppliedText] = useState("");
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState<ObjectRef[] | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
@@ -62,6 +64,7 @@ export function CreateTab({ tab }: DockTabProps) {
     setError(null);
     try {
       setApplied(await api.resources.apply(clusterId, yaml));
+      setAppliedText(yaml);
       setPreview(null);
     } catch (err) {
       setError(toApiError(err));
@@ -75,6 +78,7 @@ export function CreateTab({ tab }: DockTabProps) {
 
   const onChange = useCallback((value: string) => setText(value), []);
   const empty = text.trim() === "";
+  useUnsavedChanges(tab.id, !empty && text !== appliedText);
 
   return (
     <div className="editor-tab">

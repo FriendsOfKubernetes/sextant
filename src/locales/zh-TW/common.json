@@ -31,7 +31,10 @@
     "noSections": "這個叢集目前沒有可顯示的內容。"
   },
   "dock": {
-    "empty": "開啟日誌、Shell 或終端機後，會顯示在這裡。"
+    "empty": "開啟日誌、Shell 或終端機後，會顯示在這裡。",
+    "closeUnsavedTitle": "捨棄變更？",
+    "closeUnsavedText": "「{{title}}」有未儲存的變更。關閉分頁將捨棄這些變更。",
+    "closeUnsavedConfirm": "捨棄並關閉"
   },
   "details": {
     "loading": "正在載入…",

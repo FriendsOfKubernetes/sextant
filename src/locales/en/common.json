@@ -31,7 +31,10 @@
     "noSections": "Nothing to show for this cluster yet."
   },
   "dock": {
-    "empty": "Open logs, a shell or a terminal to see it here."
+    "empty": "Open logs, a shell or a terminal to see it here.",
+    "closeUnsavedTitle": "Discard your changes?",
+    "closeUnsavedText": "{{title}} has unsaved changes. Closing the tab discards them.",
+    "closeUnsavedConfirm": "Discard and close"
   },
   "details": {
     "loading": "Loading…",

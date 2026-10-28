@@ -31,7 +31,10 @@
     "noSections": "此集群暂无可显示的内容。"
   },
   "dock": {
-    "empty": "打开日志、Shell 或终端后，将显示在这里。"
+    "empty": "打开日志、Shell 或终端后，将显示在这里。",
+    "closeUnsavedTitle": "放弃更改？",
+    "closeUnsavedText": "“{{title}}”有未保存的更改。关闭标签页将放弃这些更改。",
+    "closeUnsavedConfirm": "放弃并关闭"
   },
   "details": {
     "loading": "正在加载…",

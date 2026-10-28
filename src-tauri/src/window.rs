@@ -68,6 +68,14 @@ pub fn reveal<R: Runtime>(app: &AppHandle<R>) {
     let _ = app;
 }
 
+/// Closes the main window as its close button does: `CloseRequested` keeps Sextant in the tray when it should (the
+/// app menu's "Close Tab" with no tab to close, and "Close Window").
+pub fn close_main<R: Runtime>(app: &AppHandle<R>) {
+    if let Some(main) = app.get_webview_window(MAIN_WINDOW) {
+        let _ = main.close();
+    }
+}
+
 /// Whether closing the main window hides it instead: only with the setting on and a tray icon to bring it back from.
 pub fn hides_on_close(close_to_tray: bool, tray_available: bool) -> bool {
     close_to_tray && tray_available

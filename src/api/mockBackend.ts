@@ -152,6 +152,7 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   table.set("tray_status", () => ({ available: true }));
   // The window sends the tray menu's texts when the UI language changes; nothing to answer.
   table.set("tray_set_texts", () => undefined);
+  table.set("window_close", () => undefined);
   // A machine the About dialog can describe.
   table.set("about_info", () => ({
     os: "Linux",

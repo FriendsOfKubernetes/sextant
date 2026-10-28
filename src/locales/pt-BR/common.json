@@ -31,7 +31,10 @@
     "noSections": "Ainda não há nada para mostrar neste cluster."
   },
   "dock": {
-    "empty": "Abra logs, um shell ou um terminal para vê-los aqui."
+    "empty": "Abra logs, um shell ou um terminal para vê-los aqui.",
+    "closeUnsavedTitle": "Descartar suas alterações?",
+    "closeUnsavedText": "{{title}} tem alterações não salvas. Fechar a aba as descarta.",
+    "closeUnsavedConfirm": "Descartar e fechar"
   },
   "details": {
     "loading": "Carregando…",

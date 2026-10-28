@@ -31,7 +31,10 @@
     "noSections": "Bu küme için henüz gösterilecek bir şey yok."
   },
   "dock": {
-    "empty": "Burada görmek için günlükleri, bir kabuk veya bir terminal açın."
+    "empty": "Burada görmek için günlükleri, bir kabuk veya bir terminal açın.",
+    "closeUnsavedTitle": "Değişiklikler atılsın mı?",
+    "closeUnsavedText": "{{title}} kaydedilmemiş değişiklikler içeriyor. Sekmeyi kapatmak bunları atar.",
+    "closeUnsavedConfirm": "At ve kapat"
   },
   "details": {
     "loading": "Yükleniyor…",

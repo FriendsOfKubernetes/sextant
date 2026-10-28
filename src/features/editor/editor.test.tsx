@@ -298,3 +298,40 @@ describe("Create resource tab", () => {
     expect(screen.queryByRole("button", { name: "Create resource" })).not.toBeInTheDocument();
   });
 });
+
+describe("Closing an editor tab", () => {
+  const closeTab = (name: RegExp | string) =>
+    fireEvent.click(screen.getByRole("button", { name: typeof name === "string" ? `Close tab ${name}` : name }));
+  const tabCount = () => useAppStore.getState().dock.tabs.length;
+
+  it("asks only while the edited text is not saved", async () => {
+    await openEditor();
+    typeText(editorText().replace("mode: a", "mode: b"));
+    closeTab(/Close tab .*app-config/);
+    expect(await screen.findByRole("dialog", { name: "Discard your changes?" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(tabCount()).toBe(1);
+
+    backend.on("resource_replace", () => configMap("2", "b"));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(screen.getByText("Saved.")).toBeInTheDocument());
+    closeTab(/Close tab .*app-config/);
+    expect(tabCount()).toBe(0);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("a Create tab asks while it holds text not applied yet", async () => {
+    useAppStore.setState({ activeClusterId: "c1" });
+    backend.on("resource_apply", () => [{ kind: { group: "", version: "v1", kind: "ConfigMap" }, namespace: "demo", name: "settings" }]);
+    render(<Shell />);
+    fireEvent.click(screen.getByRole("button", { name: "Create resource" }));
+    await screen.findByRole("tab", { name: "Create resource" });
+    typeText("apiVersion: v1\nkind: ConfigMap\nmetadata: { name: settings, namespace: demo }\n");
+    closeTab("Create resource");
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+    await screen.findByRole("status");
+    closeTab("Create resource");
+    expect(tabCount()).toBe(0);
+  });
+});

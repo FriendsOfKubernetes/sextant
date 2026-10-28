@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError, toApiError, type ClusterId, type DryRunResult, type ObjectRef } from "../../api";
 import { Button, ConfirmDialog, ErrorState } from "../../components";
-import type { DockTabProps } from "../../layout/dock/registry";
+import { useUnsavedChanges, type DockTabProps } from "../../layout/dock/registry";
 import { openActionDialog } from "../actions/registry";
 import { YamlEditor } from "./YamlEditor";
 import { hasHiddenValues } from "../details/secrets";
@@ -123,6 +123,7 @@ export function EditTab({ tab }: DockTabProps) {
   };
 
   const dirty = text !== base;
+  useUnsavedChanges(tab.id, dirty);
   const reload = () => {
     if (!dirty) {
       void load();

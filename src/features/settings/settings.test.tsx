@@ -328,6 +328,14 @@ describe("Settings button in the cluster rail", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("dialog", { name: "Settings" })).not.toBeInTheDocument();
   });
+
+  it("opens for Settings… (Cmd+,) of the macOS app menu", async () => {
+    setup();
+    render(<AppShell />);
+    await waitFor(() => expect(backend.listenerCount("open-settings")).toBe(1));
+    act(() => backend.emit("open-settings", null));
+    expect(await screen.findByRole("dialog", { name: "Settings" })).toBeInTheDocument();
+  });
 });
 
 describe("Settings → Window", () => {

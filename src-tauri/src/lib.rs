@@ -1,6 +1,9 @@
 //! Sextant desktop application: Tauri state, commands, events, local PTY.
 
 pub mod access_guard;
+// The macOS app menu (Cmd+W closes a dock tab, not the window); desktop only, as the menu API.
+#[cfg(desktop)]
+mod app_menu;
 pub mod commands;
 pub mod download;
 pub mod events;
@@ -137,6 +140,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         settings::settings_status,
         commands::tray::tray_status,
         commands::tray::tray_set_texts,
+        commands::tray::window_close,
         commands::about::about_info,
         commands::fonts::system_fonts,
         commands::gitops_install::gitops_install_versions,
@@ -421,6 +425,11 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         // Used from Rust only (`kubeconfig_copy`); the window has no clipboard permission.
         .plugin(tauri_plugin_clipboard_manager::init());
+    // macOS shows Tauri's default app menu unless one is set; its Cmd+W closed the window (`app_menu`).
+    #[cfg(target_os = "macos")]
+    let builder = builder.menu(app_menu::build);
+    #[cfg(desktop)]
+    let builder = builder.on_menu_event(app_menu::on_menu_event);
     with_updates(builder, context.config())
         .setup(|app| {
             // Temporary kubeconfigs of a Sextant that crashed or was killed: no session owns them now.

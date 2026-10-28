@@ -31,7 +31,10 @@
     "noSections": "이 클러스터에는 아직 표시할 내용이 없습니다."
   },
   "dock": {
-    "empty": "로그, 셸 또는 터미널을 열면 여기에 표시됩니다."
+    "empty": "로그, 셸 또는 터미널을 열면 여기에 표시됩니다.",
+    "closeUnsavedTitle": "변경 사항을 버릴까요?",
+    "closeUnsavedText": "{{title}}에 저장되지 않은 변경 사항이 있습니다. 탭을 닫으면 버려집니다.",
+    "closeUnsavedConfirm": "버리고 닫기"
   },
   "details": {
     "loading": "로드 중…",

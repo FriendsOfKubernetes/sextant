@@ -40,6 +40,10 @@ export const events = {
     subscribe("extension-files-changed", handler),
   /** "About Sextant…" was chosen in the tray menu (the window is already back); open the About dialog. */
   onOpenAbout: (handler: () => void): Promise<Unsubscribe> => subscribe("open-about", () => handler()),
+  /** "Settings…" (Cmd+,) in the macOS app menu. */
+  onOpenSettings: (handler: () => void): Promise<Unsubscribe> => subscribe("open-settings", () => handler()),
+  /** "Close Tab" (Cmd+W) in the macOS app menu: close the active dock tab, else the window. */
+  onCloseTab: (handler: () => void): Promise<Unsubscribe> => subscribe("close-tab", () => handler()),
   /** A new call of an extension was written to the extensions' journal. */
   onExtAudit: (handler: (entry: AuditEntry) => void): Promise<Unsubscribe> => subscribe("ext-audit", handler),
   /** The virtual clusters Sextant forwards for changed (ADR-0122): the full list; read the cluster list again. */
