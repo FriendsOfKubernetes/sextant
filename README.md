@@ -122,8 +122,9 @@ Questions, ideas and projects go to [Discussions](https://github.com/FriendsOfKu
 [Show and tell](https://github.com/FriendsOfKubernetes/sextant/discussions/categories/show-and-tell) for what you built.
 Found a bug? [Open an issue](https://github.com/FriendsOfKubernetes/sextant/issues/new/choose).
 
-Articles about Sextant (in Russian, on Habr): [a Lens replacement written entirely by a model](https://habr.com/ru/articles/1095984/)
-and [two roadmaps in two days: what is new in 0.12–0.19](https://habr.com/ru/articles/1097014/).
+Articles about Sextant (in Russian, on Habr): [a Lens replacement written entirely by a model](https://habr.com/ru/articles/1095984/),
+[two roadmaps in two days: what is new in 0.12–0.19](https://habr.com/ru/articles/1097014/)
+and [13 releases in a week and the first outside contributors: 0.20–0.25.5](https://habr.com/ru/articles/1100782/).
 
 ## Roadmap
 
