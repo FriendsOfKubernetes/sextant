@@ -27,3 +27,5 @@ The frame talks to the host with JSON messages `{sextant: 1, doc, id, method, pa
 - That Tauri's IPC refuses `Origin: null` was read from the Tauri sources and checked on Linux (WebKitGTK) only; macOS and Windows are covered by CI at best. The sandbox attribute is the control that must never be loosened.
 
 Amended (v0.6.1): `doc` separates only well-behaved documents. Answers still on their way to a document that unloads can reach the next document in the same frame until the next `load` ends the old one, so `doc` is not a secret between the documents of one frame (no gain: the same extension with the same permissions). A frame that reaches its document limit ends its oldest document that is neither current nor kept, instead of ignoring the new one.
+
+Amended (0.26.0, ADR-0131): an extension may also have a backend: a WebAssembly component run by wasmtime with no ambient access, called only by the extension's own frames and reaching clusters through the same guard. "No backend extensions" now means no native backend code. The frame and its sandbox are unchanged.
