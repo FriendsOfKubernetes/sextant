@@ -5232,6 +5232,7 @@ dependencies = [
  "tokio-util",
  "ts-rs",
  "x11-dl",
+ "zip",
 ]
 
 [[package]]

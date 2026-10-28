@@ -89,6 +89,28 @@ fn tar_gz(files: &[(&str, &[u8])]) -> Vec<u8> {
     gz.finish().unwrap()
 }
 
+/// A zip archive of regular files, stored without compression.
+fn zip(files: &[(&str, &[u8])]) -> Vec<u8> {
+    let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Stored)
+        .unix_permissions(0o755);
+    for (path, data) in files {
+        writer.start_file(*path, options).unwrap();
+        writer.write_all(data).unwrap();
+    }
+    writer.finish().unwrap().into_inner()
+}
+
+/// The archive a download is packed in on this platform: zip on Windows, tar.gz elsewhere.
+fn pack(download: &tools::Download, files: &[(&str, &[u8])]) -> Vec<u8> {
+    match download.packing {
+        tools::Packing::Zip => zip(files),
+        tools::Packing::TarGz => tar_gz(files),
+        tools::Packing::Plain => unreachable!("a plain download is no archive"),
+    }
+}
+
 fn platform() -> Platform {
     Platform::current().expect("the tests run on a platform with tools")
 }
@@ -118,10 +140,13 @@ fn sources() -> Files {
     put(&mut files, HELM_LATEST_URL, b"v4.3.1".to_vec());
     let (helm, _) = tools::downloads(Tool::Helm, Version::parse("v4.3.1").unwrap(), p);
     let member = helm[0].binaries[0].0.clone();
-    let archive = tar_gz(&[
-        ("README.md", b"readme"),
-        (member.as_str(), b"#!/bin/sh\necho helm\n"),
-    ]);
+    let archive = pack(
+        &helm[0],
+        &[
+            ("README.md", b"readme"),
+            (member.as_str(), b"#!/bin/sh\necho helm\n"),
+        ],
+    );
     put(
         &mut files,
         &format!("{}.sha256sum", helm[0].url),
@@ -135,7 +160,14 @@ fn sources() -> Files {
         br#"{"tag_name":"v0.51.0","assets":[]}"#.to_vec(),
     );
     let (k9s, sums) = tools::downloads(Tool::K9s, Version::parse("v0.51.0").unwrap(), p);
-    let archive = tar_gz(&[("k9s", b"#!/bin/sh\necho k9s\n"), ("LICENSE", b"license")]);
+    let member = k9s[0].binaries[0].0.clone();
+    let archive = pack(
+        &k9s[0],
+        &[
+            (member.as_str(), b"#!/bin/sh\necho k9s\n"),
+            ("LICENSE", b"license"),
+        ],
+    );
     if let Checksums::Release(url) = sums {
         put(
             &mut files,
