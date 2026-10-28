@@ -44,7 +44,7 @@ export function ServiceDetails({ obj }: { obj: KubeObject }) {
   return (
     <>
       <Fields rows={rows} />
-      {ports && <Block title={t("details:service.ports")}>{ports}</Block>}
+      {ports && <Block id="details:service.ports" title={t("details:service.ports")}>{ports}</Block>}
     </>
   );
 }
@@ -90,7 +90,7 @@ export function EndpointsDetails({ obj }: { obj: KubeObject }) {
     rows,
   );
   if (!content) return null;
-  return <Block title={t("details:endpoints.subsets")}>{content}</Block>;
+  return <Block id="details:endpoints.subsets" title={t("details:endpoints.subsets")}>{content}</Block>;
 }
 
 function backend(value: unknown, namespace: string | null): ReactNode {
@@ -141,8 +141,8 @@ export function IngressDetails({ obj }: { obj: KubeObject }) {
   return (
     <>
       <Fields rows={fields} />
-      {rules && <Block title={t("details:ingress.rules")}>{rules}</Block>}
-      {tls && <Block title={t("details:ingress.tls")}>{tls}</Block>}
+      {rules && <Block id="details:ingress.rules" title={t("details:ingress.rules")}>{rules}</Block>}
+      {tls && <Block id="details:ingress.tls" title={t("details:ingress.tls")}>{tls}</Block>}
     </>
   );
 }

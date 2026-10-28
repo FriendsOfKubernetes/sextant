@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of Gateway API objects, one section (`gatewayApi`) for every kind of the section:
 //   Gateway       — summary cards, a plain-language banner per broken listener, the listeners table, attached routes;
 //   routes        — hostnames, a status row per parent, the rules as readable lines with backend readiness, broken
@@ -330,7 +331,8 @@ function GatewayDetails({ clusterId, gateway }: { clusterId: ClusterId; gateway:
   const certNamespaces = [
     ...new Set(lst.flatMap((l) => l.certificateRefs.flatMap((r) => (r.namespace && r.namespace !== ns ? [r.namespace] : [])))),
   ].sort();
-  const grantsIn = useGrants(clusterId, certNamespaces);
+  const overviewOpen = useDetailsDisclosure("gateway:blocks.overview")?.open ?? true;
+  const grantsIn = useGrants(clusterId, overviewOpen ? certNamespaces : []);
   const served = useServedRoutes(clusterId);
 
   const banners = lst
@@ -383,7 +385,7 @@ function GatewayDetails({ clusterId, gateway }: { clusterId: ClusterId; gateway:
 
   return (
     <>
-      <Block
+      <Block id="gateway:blocks.overview"
         title={t("gateway:blocks.overview")}
         actions={
           <CheckRequestButton onClick={() => openRequestCheck(clusterId, { form: gatewayPrefill(gateway, served.routes) })} />
@@ -415,7 +417,7 @@ function GatewayDetails({ clusterId, gateway }: { clusterId: ClusterId; gateway:
         )}
         {banners}
       </Block>
-      <Block title={t("gateway:blocks.listeners")}>
+      <Block id="gateway:blocks.listeners" title={t("gateway:blocks.listeners")}>
         <SimpleTable
           tableId="gateway.listeners"
           headers={[
@@ -482,7 +484,7 @@ function AttachedRoutes({ gateway, served }: { gateway: KubeObject; served: Serv
 
   return (
     <>
-      <Block title={t("gateway:blocks.attachedRoutesCount", { count: attachedRows.length })}>
+      <Block id="gateway:blocks.attachedRoutesCount" title={t("gateway:blocks.attachedRoutesCount", { count: attachedRows.length })}>
         {attachedRows.length > 0 && (
           <SimpleTable tableId="gateway.attachedRoutes" headers={[...headers, t("gateway:attached.status")]} columns={ROUTE_COLUMNS} rows={attachedRows} />
         )}
@@ -493,7 +495,7 @@ function AttachedRoutes({ gateway, served }: { gateway: KubeObject; served: Serv
         )}
       </Block>
       {refusedRows.length > 0 && (
-        <Block title={t("gateway:blocks.notAttached", { count: refusedRows.length })}>
+        <Block id="gateway:blocks.notAttached" title={t("gateway:blocks.notAttached", { count: refusedRows.length })}>
           <SimpleTable tableId="gateway.refusedRoutes" headers={[...headers, t("gateway:attached.reason")]} columns={ROUTE_COLUMNS} rows={refusedRows} />
         </Block>
       )}
@@ -520,7 +522,7 @@ function ParentsBlock({ route, ruleReasons }: { route: KubeObject; ruleReasons: 
   }));
   const problems = parents.filter((p) => p.health === "problem");
   return (
-    <Block title={t("gateway:blocks.parents")}>
+    <Block id="gateway:blocks.parents" title={t("gateway:blocks.parents")}>
       <SimpleTable
         tableId="gateway.routeParents"
         headers={[
@@ -552,7 +554,7 @@ function ParentsBlock({ route, ruleReasons }: { route: KubeObject; ruleReasons: 
 }
 
 /** The rules of a route and what is wrong with each backend (Services, slices and grants of their namespaces). */
-function useRuleState(clusterId: ClusterId, route: KubeObject, kind: KindRef) {
+function useRuleState(clusterId: ClusterId, route: KubeObject, kind: KindRef, enabled: boolean) {
   const ns = route.metadata?.namespace ?? null;
   const rules = routeRules(route, kind);
   const parents = parentStatuses(route);
@@ -561,8 +563,8 @@ function useRuleState(clusterId: ClusterId, route: KubeObject, kind: KindRef) {
     ...new Set(all.flatMap((b) => (b.group === "" && b.kind === "Service" && b.namespace ? [b.namespace] : []))),
   ].sort();
   const crossNamespaces = [...new Set(all.flatMap((b) => (b.namespace && b.namespace !== ns ? [b.namespace] : [])))].sort();
-  const { servicesIn, readiness } = useBackendState(clusterId, namespaces);
-  const grantsIn = useGrants(clusterId, crossNamespaces);
+  const { servicesIn, readiness } = useBackendState(clusterId, enabled ? namespaces : []);
+  const grantsIn = useGrants(clusterId, enabled ? crossNamespaces : []);
   const context = { routeNamespace: ns, routeKind: kind.kind, parents, servicesIn, grantsIn };
   const issueOf = (b: BackendRef) => backendIssue(b, context);
   const reasons = new Set(all.flatMap((b) => issueOf(b) ?? []));
@@ -586,7 +588,7 @@ function RulesBlock({
   const matched = isKind(kind, HTTP_ROUTE, GRPC_ROUTE);
 
   return (
-    <Block title={t("gateway:blocks.rules")}>
+    <Block id="gateway:blocks.rules" title={t("gateway:blocks.rules")}>
       {state.rules.map((rule) => (
         <RuleView
           key={rule.index}
@@ -705,7 +707,9 @@ function RuleView({
 function RouteDetails({ clusterId, route, kind }: { clusterId: ClusterId; route: KubeObject; kind: KindRef }) {
   const { t } = useTranslation();
   const hostnames = routeHostnames(route);
-  const state = useRuleState(clusterId, route, kind);
+  const parentsOpen = useDetailsDisclosure("gateway:blocks.parents")?.open ?? true;
+  const rulesOpen = useDetailsDisclosure("gateway:blocks.rules")?.open ?? true;
+  const state = useRuleState(clusterId, route, kind, parentsOpen || rulesOpen);
   const hasHostnames = !isKind(kind, TCP_ROUTE, UDP_ROUTE);
   const checkable = isKind(kind, HTTP_ROUTE, GRPC_ROUTE);
   const check = () =>
@@ -720,7 +724,7 @@ function RouteDetails({ clusterId, route, kind }: { clusterId: ClusterId; route:
   return (
     <>
       {hasHostnames && (
-        <Block title={t("gateway:route.hostnames")} actions={checkable ? <CheckRequestButton onClick={check} /> : undefined}>
+        <Block id="gateway:route.hostnames" title={t("gateway:route.hostnames")} actions={checkable ? <CheckRequestButton onClick={check} /> : undefined}>
           {chips(hostnames) ?? <p className="dt-muted">{t("gateway:route.anyHostname")}</p>}
         </Block>
       )}
@@ -754,7 +758,7 @@ function GatewayClassDetails({ clusterId, gatewayClass }: { clusterId: ClusterId
   ];
   return (
     <>
-      <Block title={t("gateway:blocks.fields")}>
+      <Block id="gateway:blocks.fields" title={t("gateway:blocks.fields")}>
         <Fields rows={rows} labelPrefix={FIELD_LABELS} />
         {health !== "ok" && (
           <ProblemBanner
@@ -773,7 +777,8 @@ function ClassGateways({ clusterId, gatewayClass }: { clusterId: ClusterId; gate
   const { t } = useTranslation();
   const kinds = useClusterKinds(clusterId);
   const served = servedKind(kinds, GATEWAY);
-  const gateways = useWatch(clusterId, everywhere(served));
+  const open = useDetailsDisclosure("gateway:blocks.gateways")?.open ?? true;
+  const gateways = useWatch(clusterId, open ? everywhere(served) : null);
   const loading = served === undefined || (served !== null && gateways.status === "loading");
   const name = gatewayClass.metadata?.name;
   const rows = [...gateways.items.values()]
@@ -793,7 +798,7 @@ function ClassGateways({ clusterId, gatewayClass }: { clusterId: ClusterId; gate
     })
     .sort((a, b) => a.key.localeCompare(b.key));
   return (
-    <Block title={t("gateway:blocks.gateways")}>
+    <Block id="gateway:blocks.gateways" title={t("gateway:blocks.gateways")}>
       {rows.length > 0 && (
         <SimpleTable
           tableId="gateway.classGateways"
@@ -828,7 +833,7 @@ function ReferenceGrantDetails({ grant }: { grant: KubeObject }) {
     t("gateway:grantTable.summary", { from: f.kind, namespace: f.namespace, to: toText, target }),
   );
   return (
-    <Block title={t("gateway:blocks.grant")}>
+    <Block id="gateway:blocks.grant" title={t("gateway:blocks.grant")}>
       {sentences.map((s) => (
         <p key={s} className="gw-sentence">
           {s}
@@ -879,10 +884,10 @@ function BackendTlsPolicyDetails({ policy }: { policy: KubeObject }) {
   const ancestors = policyAncestors(policy);
   return (
     <>
-      <Block title={t("gateway:blocks.fields")}>
+      <Block id="gateway:blocks.fields" title={t("gateway:blocks.fields")}>
         <Fields rows={rows} labelPrefix={FIELD_LABELS} />
       </Block>
-      <Block title={t("gateway:blocks.targets")}>
+      <Block id="gateway:blocks.targets" title={t("gateway:blocks.targets")}>
         <span className="dt-links">
           {targets.map((target) =>
             refLink(target, `${target.kind} ${target.name}${target.sectionName ? ` (${target.sectionName})` : ""}`),
@@ -890,7 +895,7 @@ function BackendTlsPolicyDetails({ policy }: { policy: KubeObject }) {
         </span>
       </Block>
       {ancestors.length > 0 && (
-        <Block title={t("gateway:blocks.ancestors")}>
+        <Block id="gateway:blocks.ancestors" title={t("gateway:blocks.ancestors")}>
           <SimpleTable
             tableId="gateway.ancestors"
             headers={[t("gateway:route.parent"), t("gateway:route.accepted"), t("gateway:attached.status")]}

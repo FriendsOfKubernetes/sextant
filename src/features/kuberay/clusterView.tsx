@@ -101,11 +101,11 @@ export function ClusterView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
       {state === "provisioning" && reason && <Note text={reason} tone="warning" />}
       {(state === "suspended" || state === "suspending") && <Muted text={t(`kuberay:suspendedNote.${state}`)} />}
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block title={t("kuberay:groups.title")}>
+      <Block id="kuberay:groups.title" title={t("kuberay:groups.title")}>
         {groupsTable}
         {groups.length === 0 && <Muted text={t("kuberay:groups.none")} />}
       </Block>
-      <Block
+      <Block id="kuberay:pods.title"
         title={t("kuberay:pods.title")}
         actions={
           ns && name ? (

@@ -140,10 +140,12 @@ function CertificateView({ obj }: { obj: KubeObject }) {
   ];
   return (
     <>
-      <Explanation phrase={explainCertificate(obj)} />
-      <Fields rows={rows} labelPrefix={LABELS} />
+      <div className="dt-disclosure-lead">
+        <Explanation phrase={explainCertificate(obj)} />
+        <Fields rows={rows} labelPrefix={LABELS} />
+      </div>
       {failure && (
-        <Block title={t("certmanager:lastFailure.title")}>
+        <Block id="certmanager:lastFailure.title" title={t("certmanager:lastFailure.title")}>
           <p className="cm-explain cm-explain--danger">
             {failure.attempts
               ? t("certmanager:lastFailure.withAttempts", { date: formatDateTime(failure.time), count: failure.attempts })
@@ -276,7 +278,7 @@ export function CertManagerSection({ objectRef, obj }: DetailsSectionProps) {
   ) : isKind(kind, CHALLENGE) ? (
     <ChallengeView obj={obj} />
   ) : null;
-  return <Block title={t("details:sections.fields", { kind: kind.kind })}>{view}</Block>;
+  return <Block id="details:sections.fields" title={t("details:sections.fields", { kind: kind.kind })}>{view}</Block>;
 }
 
 // ---------- The chain ----------
@@ -399,7 +401,7 @@ export function ChainSection({ clusterId, objectRef, obj }: DetailsSectionProps)
   const { t } = useTranslation();
   if (!obj) return null;
   return (
-    <Block title={t("certmanager:chain.title")}>
+    <Block id="certmanager:chain.title" title={t("certmanager:chain.title")}>
       <ChainView clusterId={clusterId} kind={objectRef.kind} obj={obj} />
     </Block>
   );

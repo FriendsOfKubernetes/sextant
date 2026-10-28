@@ -39,9 +39,9 @@ export interface LokiStatusState {
 }
 
 /** Whether the cluster has a Loki; asked again when its Loki settings change (an answer is shared for a minute). */
-export function useLokiStatus(clusterId: ClusterId): LokiStatusState {
+export function useLokiStatus(clusterId: ClusterId, enabled = true): LokiStatusState {
   const settings = useLokiSettings(clusterId);
-  const key = settings === undefined ? null : `${clusterId}\u0000${JSON.stringify(settings)}`;
+  const key = !enabled || settings === undefined ? null : `${clusterId}\u0000${JSON.stringify(settings)}`;
   const [state, setState] = useState<{ key: string | null; value: LokiStatusState }>({ key: null, value: { loading: true } });
   useEffect(() => {
     if (key === null) return;

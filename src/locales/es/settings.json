@@ -121,5 +121,15 @@
     "textSizeHint": "El texto, las filas de las tablas y los controles crecen con él; el terminal, los registros y el editor YAML también.",
     "terminalScreenReader": "Compatibilidad con lectores de pantalla en el terminal",
     "terminalScreenReaderHint": "Permite que un lector de pantalla lea la salida del terminal. Ralentiza el terminal, así que déjelo desactivado si no usa un lector de pantalla."
+  },
+  "details": {
+    "title": "Detalles del recurso",
+    "remember": "Recordar el estado de las secciones",
+    "modes": {
+      "none": "No recordar",
+      "cluster": "Por clúster",
+      "global": "Para todos los clústeres"
+    },
+    "hint": "El estado se guarda por separado para cada tipo de recurso. YAML aparece contraído inicialmente."
   }
 }

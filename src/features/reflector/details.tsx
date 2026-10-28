@@ -32,7 +32,7 @@ export function ReflectionSection({ clusterId, obj, objectRef }: DetailsSectionP
   const reflection = reflectionOf(obj);
   const mirror = reflection.reflects !== undefined || reflection.reflectsInvalid;
   return (
-    <Block title={t("reflector:title")}>
+    <Block id="reflector:title" title={t("reflector:title")}>
       <div className="reflector">
         {mirror && <MirrorView clusterId={clusterId} kind={kind} obj={obj} reflection={reflection} />}
         {(reflection.allowed || reflection.autoEnabled || !mirror) && <SourceDetails clusterId={clusterId} kind={kind} obj={obj} reflection={reflection} />}
@@ -166,8 +166,7 @@ function SourceDetails({ clusterId, kind, obj, reflection }: ViewProps) {
         </p>
       ))}
       {reflection.allowed && (
-        <>
-          <h4 className="reflector__heading">{t("reflector:mirrorsTitle")}</h4>
+        <Block id="reflector:mirrorsTitle" title={t("reflector:mirrorsTitle")}>
           {tableRows.length > 0
             ? table(MIRRORS_TABLE, headers, tableRows, MIRRORS_WRAP)
             : !state.loading && <p className="reflector__explain">{t("reflector:explain.noMirrors")}</p>}
@@ -177,7 +176,7 @@ function SourceDetails({ clusterId, kind, obj, reflection }: ViewProps) {
               {t("reflector:explain.notChecked", { count: view.notChecked.length, namespaces: formatList(view.notChecked.slice(0, MAX_LISTED_NAMESPACES)) })}
             </p>
           )}
-        </>
+        </Block>
       )}
     </>
   );

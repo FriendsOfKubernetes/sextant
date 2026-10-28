@@ -111,7 +111,7 @@ export const SYNCED_KINDS: KindRef[] = [
 ];
 
 /** The host objects of one kind the syncer copied from the vcluster `name` (metadata only). */
-export function useSynced(clusterId: ClusterId, kind: KindRef, namespace: string, name: string): Listed {
-  const watched = spec(kind, [namespace], `${MANAGED_BY_LABEL}=${name}`, true);
-  return listed(true, useWatch(clusterId, watched, { progressive: false, maxObjects: MAX_SYNCED }));
+export function useSynced(clusterId: ClusterId, kind: KindRef, namespace: string, name: string, enabled = true): Listed {
+  const watched = enabled ? spec(kind, [namespace], `${MANAGED_BY_LABEL}=${name}`, true) : null;
+  return listed(enabled, useWatch(clusterId, watched, { progressive: false, maxObjects: MAX_SYNCED }));
 }

@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // A BuildConfig's details: strategy and builder image, source (a Git URI without userinfo, query or fragment; an
 // inline Dockerfile only as "set"; the source Secret by name), output, run policy, triggers by type (a webhook's secret
 // never shown) and its builds — labelled with its name, newest first. "Start build" is an action of the panel.
@@ -53,7 +54,8 @@ export function BuildConfigView({ clusterId, obj }: { clusterId: ClusterId; obj:
   const ns = obj.metadata?.namespace ?? null;
   const source = buildSource(obj);
   const strategy = buildStrategy(obj);
-  const listed = useConfigBuilds(clusterId, obj);
+  const open = useDetailsDisclosure("openshift:builds.title")?.open ?? true;
+  const listed = useConfigBuilds(clusterId, open ? obj : null);
   const builds = buildsOf(obj, listed.items);
   const rows: FieldRow[] = [
     ["strategy", strategy.type],
@@ -80,7 +82,7 @@ export function BuildConfigView({ clusterId, obj }: { clusterId: ClusterId; obj:
     <>
       {bcPaused(obj) && <Muted text={t("openshift:buildPausedNote")} />}
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block title={t("openshift:builds.title")}>
+      <Block id="openshift:builds.title" title={t("openshift:builds.title")}>
         {listed.loading && <Muted text={t("openshift:loading")} />}
         {listed.error && <Muted text={t("openshift:listError")} />}
         {table(
@@ -127,7 +129,7 @@ export function BuildView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeO
     <>
       {isFailedBuild(obj) && reason && <Note text={reason} tone="danger" />}
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block
+      <Block id="openshift:logs.title"
         title={t("openshift:logs.title")}
         actions={
           pod ? (

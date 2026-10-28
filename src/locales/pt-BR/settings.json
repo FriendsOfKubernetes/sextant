@@ -121,5 +121,15 @@
     "textSizeHint": "Texto, linhas de tabelas e controles crescem com ele; o terminal, os logs e o editor YAML acompanham.",
     "terminalScreenReader": "Suporte a leitores de tela no terminal",
     "terminalScreenReaderHint": "Permite que um leitor de tela leia a saída do terminal. Isso deixa o terminal mais lento, então mantenha desligado se não usa um leitor de tela."
+  },
+  "details": {
+    "title": "Detalhes do recurso",
+    "remember": "Lembrar o estado das seções",
+    "modes": {
+      "none": "Não lembrar",
+      "cluster": "Por cluster",
+      "global": "Para todos os clusters"
+    },
+    "hint": "O estado das seções é salvo separadamente para cada tipo de recurso. YAML começa recolhido."
   }
 }

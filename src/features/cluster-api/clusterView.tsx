@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // A Cluster's details: its state in words, class, version and endpoint, the control plane and infrastructure objects
 // (read by name), the Machine counts its status keeps, the workload cluster when Sextant has it, and the chain of its
 // Machines: the control plane's, then each MachineDeployment → MachineSet → Machines, then any other Machines.
@@ -48,7 +49,8 @@ export function ClusterView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
   const controlPlane = controlPlaneRefOf(obj);
   const infrastructure = infrastructureRefOf(obj);
   const refs = [controlPlane, infrastructure].filter((r) => r !== undefined);
-  const read = useRefObjects(clusterId, refs, str(obj.metadata?.resourceVersion) ?? "");
+  const fieldsOpen = useDetailsDisclosure("details:sections.fields")?.open ?? true;
+  const read = useRefObjects(clusterId, fieldsOpen ? refs : [], str(obj.metadata?.resourceVersion) ?? "");
   const endpoint = endpointOf(obj);
   const cls = classOf(obj);
   const counts = clusterReplicasOf(obj);
@@ -72,7 +74,7 @@ export function ClusterView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
       : undefined;
   return (
     <>
-      <Block title={t("details:sections.fields", { kind: "Cluster" })}>
+      <Block id="details:sections.fields" title={t("details:sections.fields", { kind: "Cluster" })}>
         <Explain text={note} danger={state === "failed" || state === "notAvailable"} />
         <Message text={failure?.message ?? (state === "notAvailable" || state === "provisioning" ? available?.message : undefined)} />
         <Fields rows={rows} labelPrefix={LABELS} />
@@ -127,7 +129,8 @@ function MachineItems({ machines }: { machines: KubeObject[] }) {
 function MachineChain({ clusterId, cluster }: { clusterId: ClusterId; cluster: KubeObject }) {
   const { t } = useTranslation();
   const ns = cluster.metadata?.namespace ?? null;
-  const selector = cluster.metadata?.name ? `${CLUSTER_NAME_LABEL}=${cluster.metadata.name}` : undefined;
+  const open = useDetailsDisclosure("clusterapi:chain.title")?.open ?? true;
+  const selector = open && cluster.metadata?.name ? `${CLUSTER_NAME_LABEL}=${cluster.metadata.name}` : undefined;
   const deployments = useListed(clusterId, MACHINE_DEPLOYMENT, ns, selector);
   const sets = useListed(clusterId, MACHINE_SET, ns, selector);
   const machines = useListed(clusterId, MACHINE, ns, selector);
@@ -141,7 +144,7 @@ function MachineChain({ clusterId, cluster }: { clusterId: ClusterId; cluster: K
   );
   const empty = plan.controlPlane.length + plan.deployments.length + plan.sets.length + plan.others.length === 0;
   return (
-    <Block title={t("clusterapi:chain.title")}>
+    <Block id="clusterapi:chain.title" title={t("clusterapi:chain.title")}>
       {machines.unavailable && <p className="cm-muted">{t("clusterapi:chain.unavailable")}</p>}
       {empty && !machines.unavailable && <p className="cm-muted">{loading ? t("clusterapi:chain.loading") : t("clusterapi:chain.none")}</p>}
       <ul className="cm-chain">

@@ -66,7 +66,7 @@ function ExtensionView({ obj }: { obj: KubeObject }) {
       {failed && <p className="cm-explain cm-explain--danger">{t("contour:explain.extensionInvalid", { reason: validCondition(obj)?.errors[0]?.reason ?? validCondition(obj)?.reason ?? "" })}</p>}
       <Fields rows={fields} labelPrefix={LABELS} />
       <Issues obj={obj} />
-      {services && <Block title={t("contour:extension.services")}>{services}</Block>}
+      {services && <Block id="contour:extension.services" title={t("contour:extension.services")}>{services}</Block>}
     </>
   );
 }
@@ -83,5 +83,5 @@ export function ContourSection({ clusterId, objectRef, obj }: DetailsSectionProp
   ) : (
     <ExtensionView obj={obj} />
   );
-  return <Block title={t("details:sections.fields", { kind: kind.kind })}>{view}</Block>;
+  return <Block id="details:sections.fields" title={t("details:sections.fields", { kind: kind.kind })}>{view}</Block>;
 }

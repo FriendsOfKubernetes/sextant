@@ -57,7 +57,7 @@ function Note({ text, tone }: { text: string; tone: "warning" | "danger" | "mute
 }
 
 /** Which Prometheus picks the object up, or a warning that none does. */
-function PickedUp({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindRef; obj: KubeObject }) {
+function PickedUpBody({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindRef; obj: KubeObject }) {
   const { t } = useTranslation();
   const { loading, servers, namespaceLabels } = usePrometheuses(clusterId);
   let body: ReactNode;
@@ -80,10 +80,10 @@ function PickedUp({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindRe
       );
     } else body = <Note text={t(picked.unknown ? `${NS}:pickup.unknown` : `${NS}:pickup.none`)} tone="warning" />;
   }
-  return <Block title={t(`${NS}:pickup.title`)}>{body}</Block>;
+  return <>{body}</>;
 }
 
-function MonitorTargets({ clusterId, kind, obj, where }: { clusterId: ClusterId; kind: KindRef; obj: KubeObject; where: TargetNamespaces }) {
+function MonitorTargetsBody({ clusterId, kind, obj, where }: { clusterId: ClusterId; kind: KindRef; obj: KubeObject; where: TargetNamespaces }) {
   const { t } = useTranslation();
   const pods = isKind(kind, POD_MONITOR);
   const targets = useMonitorTargets(clusterId, pods ? POD : SERVICE, where, monitorSelector(obj));
@@ -152,7 +152,7 @@ function MonitorTargets({ clusterId, kind, obj, where }: { clusterId: ClusterId;
       );
     }
   }
-  return <Block title={t(`${NS}:targets.title`)}>{body}</Block>;
+  return <>{body}</>;
 }
 
 /** Where a monitor looks, once the Prometheus objects that pick it up are known (`ignoreNamespaceSelectors`). */
@@ -212,7 +212,7 @@ function RuleView({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindRe
   );
   return (
     <>
-      <Block title={t(`${NS}:groups.title`)}>
+      <Block id="groups" title={t(`${NS}:groups.title`)}>
         {groups.length === 0 ? <Note text={t(`${NS}:groups.none`)} tone="muted" /> : groupsTable}
       </Block>
       <PickedUp clusterId={clusterId} kind={kind} obj={obj} />
@@ -274,7 +274,7 @@ function ServerView({ kind, obj }: { kind: KindRef; obj: KubeObject }) {
     <>
       {(r.state === "failed" || r.state === "degraded") && r.message && <Note text={r.message} tone="danger" />}
       <Fields rows={rows} labelPrefix={LABELS} />
-      {selectors.length > 0 && <Block title={t(`${NS}:selectors.title`)}>{selectorsTable}</Block>}
+      {selectors.length > 0 && <Block id="selectors" title={t(`${NS}:selectors.title`)}>{selectorsTable}</Block>}
     </>
   );
 }
@@ -290,3 +290,12 @@ export function PrometheusOperatorSection({ clusterId, objectRef, obj }: Details
 }
 
 export const appliesTo = (kind: Parameters<typeof monitoringKind>[0]): boolean => monitoringKind(kind) !== undefined;
+
+function PickedUp(props: Parameters<typeof PickedUpBody>[0]) {
+  const { t } = useTranslation();
+  return <Block id="pickup" title={t(`${NS}:pickup.title`)}><PickedUpBody {...props} /></Block>;
+}
+function MonitorTargets(props: Parameters<typeof MonitorTargetsBody>[0]) {
+  const { t } = useTranslation();
+  return <Block id="targets" title={t(`${NS}:targets.title`)}><MonitorTargetsBody {...props} /></Block>;
+}

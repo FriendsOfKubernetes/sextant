@@ -67,7 +67,7 @@ export function RouteView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeO
       {state === "pending" && <Note text={t("openshift:routePending")} tone="warning" />}
       <Fields rows={rows} labelPrefix={LABELS} />
       {tls?.key && <Muted text={t("openshift:keyHidden")} />}
-      <Block title={t("openshift:backends.title")}>
+      <Block id="openshift:backends.title" title={t("openshift:backends.title")}>
         {table(
           TABLE_ROUTE_BACKENDS,
           [t("openshift:backends.service"), t("openshift:backends.weight"), t("openshift:backends.share"), t("openshift:backends.pods")],
@@ -76,7 +76,7 @@ export function RouteView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeO
         )}
         {backends.length === 0 && <Muted text={t("openshift:backends.none")} />}
       </Block>
-      <Block title={t("openshift:routers.title")}>
+      <Block id="openshift:routers.title" title={t("openshift:routers.title")}>
         {table(
           TABLE_ROUTERS,
           [t("openshift:routers.router"), t("openshift:routers.host"), t("openshift:routers.admitted"), t("openshift:routers.message"), t("openshift:routers.since")],

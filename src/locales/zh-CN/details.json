@@ -7,7 +7,11 @@
     "metadata": "元数据",
     "fields": "{{kind}}",
     "conditions": "状况",
-    "yaml": "YAML"
+    "yaml": "YAML",
+    "saveFailed": "无法保存分区状态。更改仅在当前会话中有效。",
+    "controls": "资源分区",
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠"
   },
   "yaml": {
     "show": "显示 YAML",

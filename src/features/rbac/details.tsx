@@ -8,6 +8,7 @@ import type { KubeObject } from "../../api";
 import { Button } from "../../components";
 import { useClusterKinds } from "../../resources";
 import type { DetailsSectionProps } from "../../layout/details/registry";
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 import { Block } from "../details";
 import {
   bindingsOfRole,
@@ -49,6 +50,8 @@ function SubjectButton({ clusterId, subject, label, namespace }: { clusterId: st
 
 export function RoleAccessSection({ clusterId, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
+  const rulesOpen = useDetailsDisclosure("rbac:details.rulesExplained")?.open ?? true;
+  const bindingsOpen = useDetailsDisclosure("rbac:details.boundTo")?.open ?? true;
   const isCluster = obj?.kind === "ClusterRole";
   const aggregated = !!obj && isCluster && hasAggregation(obj);
   const ns = obj?.metadata?.namespace ?? null;
@@ -56,31 +59,31 @@ export function RoleAccessSection({ clusterId, obj }: DetailsSectionProps) {
     clusterId,
     obj
       ? {
-          clusterRoles: aggregated,
-          roleBindings: true,
-          clusterRoleBindings: isCluster,
+          clusterRoles: aggregated && rulesOpen,
+          roleBindings: bindingsOpen,
+          clusterRoleBindings: isCluster && bindingsOpen,
           namespaces: isCluster || !ns ? null : [ns],
         }
       : {},
   );
   const ref: RbacRef | null = obj ? refOf(obj) : null;
   const rules = useMemo(() => {
-    if (!obj || !ref) return [];
+    if (!rulesOpen || !obj || !ref) return [];
     if (!aggregated) return rulesOf(obj).map((rule) => ({ rule }));
     // Resolve against the watched ClusterRoles, this one included as the watch has it.
     const index = buildIndex({ clusterRoles: [...(rbac.data.clusterRoles ?? []).filter((r) => r.metadata?.name !== obj.metadata?.name), obj] });
     return index.rulesOfRole(ref) ?? [];
-  }, [obj, aggregated, rbac.data.clusterRoles]);
+  }, [obj, aggregated, rulesOpen, rbac.data.clusterRoles]);
   const sources = useMemo(
-    () => (aggregated && obj ? buildIndex({ clusterRoles: [...(rbac.data.clusterRoles ?? []), obj] }).aggregatedFrom(obj.metadata?.name ?? "") : []),
-    [obj, aggregated, rbac.data.clusterRoles],
+    () => (rulesOpen && aggregated && obj ? buildIndex({ clusterRoles: [...(rbac.data.clusterRoles ?? []), obj] }).aggregatedFrom(obj.metadata?.name ?? "") : []),
+    [obj, aggregated, rulesOpen, rbac.data.clusterRoles],
   );
   if (!obj || !ref) return null;
-  const bindings = bindingsOfRole(rbac.data, ref);
+  const bindings = bindingsOpen ? bindingsOfRole(rbac.data, ref) : [];
   const lists: RbacList[] = [...(aggregated ? (["clusterRoles"] as const) : []), "roleBindings", ...(isCluster ? (["clusterRoleBindings"] as const) : [])];
   return (
     <>
-      <Block title={t("rbac:details.rulesExplained")}>
+      <Block id="rbac:details.rulesExplained" title={t("rbac:details.rulesExplained")}>
         {aggregated && (
           <p className="dt-muted">
             {sources.length === 0 ? t("rbac:details.aggregatedFromNone") : t("rbac:details.aggregatedFrom")}
@@ -93,7 +96,7 @@ export function RoleAccessSection({ clusterId, obj }: DetailsSectionProps) {
         )}
         <RulesTable rules={rules} />
       </Block>
-      <Block title={t("rbac:details.boundTo")}>
+      <Block id="rbac:details.boundTo" title={t("rbac:details.boundTo")}>
         <ListProblems state={rbac} lists={lists} />
         {!rbac.loading && bindings.length === 0 && <p className="dt-muted">{t("rbac:details.noBindings")}</p>}
         {bindings.length > 0 && (
@@ -138,22 +141,23 @@ export function RoleAccessSection({ clusterId, obj }: DetailsSectionProps) {
 
 export function BindingAccessSection({ clusterId, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
+  const open = useDetailsDisclosure("rbac:details.grants")?.open ?? true;
   const role = obj ? roleRefOf(obj) : undefined;
   const scope = obj?.kind === "RoleBinding" ? (obj.metadata?.namespace ?? null) : null;
   const toCluster = role?.kind === "ClusterRole";
   const rbac = useRbacData(
     clusterId,
-    role ? { roles: !toCluster, clusterRoles: toCluster, namespaces: role.namespace ? [role.namespace] : null } : {},
+    open && role ? { roles: !toCluster, clusterRoles: toCluster, namespaces: role.namespace ? [role.namespace] : null } : {},
   );
-  const index = useMemo(() => buildIndex(rbac.data), [rbac.data]);
+  const index = useMemo(() => open ? buildIndex(rbac.data) : null, [open, rbac.data]);
   if (!obj || !role) return null;
-  const rules = index.rulesOfRole(role);
-  const missing = index.isMissing(role);
+  const rules = index?.rulesOfRole(role);
+  const missing = index?.isMissing(role);
   const roleLists: RbacList[] = [toCluster ? "clusterRoles" : "roles"];
   const missingWarning: RbacWarning[] = [{ type: "missingRole", binding: refOf(obj), role }];
   return (
     <>
-      <Block title={t("rbac:details.grants", { role: refText(t, role) })}>
+      <Block id="rbac:details.grants" title={t("rbac:details.grants", { role: refText(t, role) })}>
         <p className="dt-muted">{scope === null ? t("rbac:details.grantsEverywhere") : t("rbac:details.grantsIn", { namespace: scope })}</p>
         <ListProblems state={rbac} lists={roleLists} />
         {missing && <Warnings warnings={missingWarning} />}
@@ -162,7 +166,7 @@ export function BindingAccessSection({ clusterId, obj }: DetailsSectionProps) {
           <p className="dt-muted">{t("rbac:details.urlsIgnored")}</p>
         )}
       </Block>
-      <Block title={t("rbac:details.subjectsPermissions")}>
+      <Block id="rbac:details.subjectsPermissions" title={t("rbac:details.subjectsPermissions")}>
         <ul className="rbac-list">
           {subjectsOf(obj).map((entry, i) => (
             <li key={i}>
@@ -177,7 +181,7 @@ export function BindingAccessSection({ clusterId, obj }: DetailsSectionProps) {
 
 // ---------- ServiceAccount ----------
 
-export function ServiceAccountAccessSection({ clusterId, obj }: DetailsSectionProps) {
+function ServiceAccountAccessContent({ clusterId, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
   const subject: Subject | null = obj?.metadata?.name
     ? { kind: "ServiceAccount", name: obj.metadata.name, namespace: obj.metadata.namespace ?? "" }
@@ -192,15 +196,20 @@ export function ServiceAccountAccessSection({ clusterId, obj }: DetailsSectionPr
   );
   if (!subject || !perms) return null;
   return (
-    <Block
-      title={t("rbac:details.canDo")}
-      actions={<Button size="compact" onClick={() => openRbacPage(clusterId, subject, null)}>{t("rbac:details.openPage")}</Button>}
-    >
+    <>
       <ImplicitGroups subject={subject} />
       <ComputedNote />
       <ListProblems state={rbac} />
       <Warnings warnings={perms.warnings} />
       {!rbac.loading && <PermissionMatrix grants={perms.grants} clusterScoped={scoped} label={t("rbac:matrix.label", { subject: `${subject.namespace}/${subject.name}` })} />}
-    </Block>
+    </>
   );
+}
+
+export function ServiceAccountAccessSection(props: DetailsSectionProps) {
+  const { t } = useTranslation();
+  const { clusterId, obj } = props;
+  if (!obj?.metadata?.name) return null;
+  const subject: Subject = { kind: "ServiceAccount", name: obj.metadata.name, namespace: obj.metadata.namespace ?? "" };
+  return <Block id="rbac:details.canDo" title={t("rbac:details.canDo")} actions={<Button size="compact" onClick={() => openRbacPage(clusterId, subject, null)}>{t("rbac:details.openPage")}</Button>}><ServiceAccountAccessContent {...props} /></Block>;
 }

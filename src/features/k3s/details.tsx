@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of the helm-controller and k3s kinds (one section, `k3s`), and the "k3s" / "RKE2" block of Nodes:
 //   HelmChart        — the state with its Job (helm-controller's conditions, else the Job's outcome), what it installs
 //                      and where, the Addon that deployed it, its HelmChartConfig, the install Job with its attempts
@@ -82,7 +83,7 @@ function ValuesBlock({ obj }: { obj: KubeObject }) {
   const set = maskedSet(spec.set);
   const nothing = content === "" && values === "" && set.length === 0;
   return (
-    <Block title={t("k3s:values.title")}>
+    <Block id="k3s:values.title" title={t("k3s:values.title")}>
       {nothing ? (
         <Muted text={t("k3s:values.none")} />
       ) : (
@@ -119,14 +120,15 @@ function ValuesSecrets({ obj, id }: { obj: KubeObject; id: string }) {
   const ns = obj.metadata?.namespace ?? null;
   const rows = valuesSecretsOf(obj).map((s) => [link(KINDS.secret, s.name, ns), chips(s.keys) ?? t("k3s:values.allKeys")]);
   if (rows.length === 0) return null;
-  return <Block title={t("k3s:values.secrets")}>{table(id, [t("k3s:values.secret"), t("k3s:values.keys")], rows, SECRETS_WRAP)}</Block>;
+  return <Block id="k3s:values.secrets" title={t("k3s:values.secrets")}>{table(id, [t("k3s:values.secret"), t("k3s:values.keys")], rows, SECRETS_WRAP)}</Block>;
 }
 
 function JobBlock({ clusterId, chart }: { clusterId: ClusterId; chart: KubeObject }) {
   const { t } = useTranslation();
   const ns = chart.metadata?.namespace ?? undefined;
   const name = chart.metadata?.name ?? undefined;
-  const jobs = useJobsOfChart(clusterId, ns, name);
+  const open = useDetailsDisclosure("k3s:job.title")?.open ?? true;
+  const jobs = useJobsOfChart(clusterId, ns, open ? name : undefined);
   const job = jobOfChart(chart, jobs.items);
   const info = job ? jobInfoOf(job) : undefined;
   const selector = `${CHART_LABEL}=${name ?? ""}`;
@@ -141,7 +143,7 @@ function JobBlock({ clusterId, chart }: { clusterId: ClusterId; chart: KubeObjec
       ]
     : [];
   return (
-    <Block
+    <Block id="k3s:job.title"
       title={t("k3s:job.title")}
       actions={
         ns && name ? (
@@ -309,10 +311,10 @@ export function NodeSection({ obj }: DetailsSectionProps) {
     ["etcdMember", d.etcdMember ?? null],
   ];
   return (
-    <Block title={t(`k3s:distribution.${d.distribution}`)}>
+    <Block id="distribution" title={t(`k3s:distribution.${d.distribution}`)}>
       <Fields rows={rows} labelPrefix={LABELS} />
       {d.args !== undefined && (
-        <Block title={t("k3s:node.args")}>
+        <Block id="k3s:node.args" title={t("k3s:node.args")}>
           <ArgsTable node={obj} />
         </Block>
       )}

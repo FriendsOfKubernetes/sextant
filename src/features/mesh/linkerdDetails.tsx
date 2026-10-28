@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of Linkerd objects (#155), in plain words: a ServiceProfile's routes (which are retried, timeouts, the
 // retry budget); a Server (which pods and port it describes, its default access) with the authorizations that target
 // it; ServerAuthorizations, AuthorizationPolicies, MeshTLSAuthentications and NetworkAuthentications as who is let in;
@@ -38,7 +39,7 @@ function ServiceProfileDetails({ obj }: { obj: KubeObject }) {
   }));
   return (
     <>
-      <Block title={t("mesh:blocks.serviceProfile")}>
+      <Block id="mesh:blocks.serviceProfile" title={t("mesh:blocks.serviceProfile")}>
         <p className="mesh-line">{t("mesh:linkerd.profileMeaning", { host: obj.metadata?.name ?? "" })}</p>
         {budget !== undefined && (
           <p className="mesh-line">
@@ -50,7 +51,7 @@ function ServiceProfileDetails({ obj }: { obj: KubeObject }) {
           </p>
         )}
       </Block>
-      <Block title={t("mesh:blocks.profileRoutes")}>
+      <Block id="mesh:blocks.profileRoutes" title={t("mesh:blocks.profileRoutes")}>
         <SimpleTable
           tableId="mesh.profileRoutes"
           headers={[t("mesh:columns.name"), t("mesh:columns.condition"), t("mesh:columns.retryable"), t("mesh:columns.timeout")]}
@@ -68,8 +69,9 @@ function ServerAuthorizations({ clusterId, server }: { clusterId: ClusterId; ser
   const ns = server.metadata?.namespace ?? "";
   const name = server.metadata?.name ?? "";
   const labels = record(server.metadata?.labels);
-  const sa = useWatch(clusterId, inNamespaces(servedKind(kinds, SERVER_AUTHORIZATION), [ns]));
-  const ap = useWatch(clusterId, inNamespaces(servedKind(kinds, LINKERD_AUTHORIZATION_POLICY), [ns]));
+  const open = useDetailsDisclosure("mesh:blocks.serverAuthorizations")?.open ?? true;
+  const sa = useWatch(clusterId, open ? inNamespaces(servedKind(kinds, SERVER_AUTHORIZATION), [ns]) : null);
+  const ap = useWatch(clusterId, open ? inNamespaces(servedKind(kinds, LINKERD_AUTHORIZATION_POLICY), [ns]) : null);
   const bySa = [...sa.items.values()].filter((o) => {
     const target = get(o, "spec", "server");
     if (str(get(target, "name"))) return str(get(target, "name")) === name;
@@ -86,7 +88,7 @@ function ServerAuthorizations({ clusterId, server }: { clusterId: ClusterId; ser
     ...byAp.map((o) => refTo(LINKERD_AUTHORIZATION_POLICY, ns, o.metadata?.name ?? "")),
   ];
   return (
-    <Block title={t("mesh:blocks.serverAuthorizations")}>
+    <Block id="mesh:blocks.serverAuthorizations" title={t("mesh:blocks.serverAuthorizations")}>
       {list.length === 0 ? (
         <p className="mesh-line">{t("mesh:linkerd.noAuthorizations")}</p>
       ) : (
@@ -108,7 +110,7 @@ function ServerDetails({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObje
   ];
   return (
     <>
-      <Block title={t("mesh:blocks.server")}>
+      <Block id="mesh:blocks.server" title={t("mesh:blocks.server")}>
         <Fields rows={rows} labelPrefix={FIELDS} />
         <p className="mesh-line">{t("mesh:linkerd.serverMeaning")}</p>
       </Block>
@@ -140,7 +142,7 @@ function ServerAuthorizationDetails({ obj }: { obj: KubeObject }) {
   ];
   const clients = clientLines(get(obj, "spec", "client"), t);
   return (
-    <Block title={t("mesh:blocks.serverAuthorization")}>
+    <Block id="mesh:blocks.serverAuthorization" title={t("mesh:blocks.serverAuthorization")}>
       <Fields rows={rows} labelPrefix={FIELDS} />
       <p className="mesh-line">{t("mesh:linkerd.allows")}</p>
       {clients.map((l) => (
@@ -166,7 +168,7 @@ function LinkerdAuthorizationPolicyDetails({ obj }: { obj: KubeObject }) {
     ["requiredAuthentications", chips(auth)],
   ];
   return (
-    <Block title={t("mesh:blocks.linkerdAuthorizationPolicy")}>
+    <Block id="mesh:blocks.linkerdAuthorizationPolicy" title={t("mesh:blocks.linkerdAuthorizationPolicy")}>
       <Fields rows={rows} labelPrefix={FIELDS} />
       <p className="mesh-line">{auth.length === 0 ? t("mesh:linkerd.policyNoAuth") : t("mesh:linkerd.policyMeaning")}</p>
     </Block>
@@ -183,7 +185,7 @@ function MeshTlsAuthenticationDetails({ obj }: { obj: KubeObject }) {
     ["identityRefs", chips(refs)],
   ];
   return (
-    <Block title={t("mesh:blocks.meshTlsAuthentication")}>
+    <Block id="mesh:blocks.meshTlsAuthentication" title={t("mesh:blocks.meshTlsAuthentication")}>
       <p className="mesh-line">{t("mesh:linkerd.meshTlsMeaning")}</p>
       <Fields rows={rows} labelPrefix={FIELDS} />
     </Block>
@@ -199,7 +201,7 @@ function NetworkAuthenticationDetails({ obj }: { obj: KubeObject }) {
   });
   const rows: FieldRow[] = [["networks", chips(nets)]];
   return (
-    <Block title={t("mesh:blocks.networkAuthentication")}>
+    <Block id="mesh:blocks.networkAuthentication" title={t("mesh:blocks.networkAuthentication")}>
       <p className="mesh-line">{t("mesh:linkerd.networkMeaning")}</p>
       <Fields rows={rows} labelPrefix={FIELDS} />
     </Block>
@@ -228,10 +230,10 @@ function LinkerdHttpRouteDetails({ obj }: { obj: KubeObject }) {
   }));
   return (
     <>
-      <Block title={t("mesh:blocks.linkerdHttpRoute")}>
+      <Block id="mesh:blocks.linkerdHttpRoute" title={t("mesh:blocks.linkerdHttpRoute")}>
         <Fields rows={fields} labelPrefix={FIELDS} />
       </Block>
-      <Block title={t("mesh:blocks.httpRoutes")}>
+      <Block id="mesh:blocks.httpRoutes" title={t("mesh:blocks.httpRoutes")}>
         <SimpleTable
           tableId="mesh.httpRoutes"
           headers={[t("mesh:columns.match"), t("mesh:columns.destinations")]}

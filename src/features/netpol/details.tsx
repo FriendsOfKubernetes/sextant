@@ -68,46 +68,49 @@ function PolicyView({ policy, pods, world, obj }: { policy: Policy; pods: PodInf
     ["order", policy.semantics === "ordered" ? (policy.order === null ? t("netpol:fields.noOrder") : String(policy.order)) : null],
     ["notModelled", policy.unmodelled.length > 0 ? formatList(policy.unmodelled) : null],
   ];
-  return (
-    <div className="np-details-policy" data-policy={policyName(policy.ref)}>
-      {policy.ref.part !== null && <h4 className="np-policy__title">{t("netpol:details.spec", { n: policy.ref.part + 1 })}</h4>}
-      <Fields rows={rows} labelPrefix={FIELD_LABELS} />
-      {ignored.map((d) => (
-        <p key={d} className="np-warning">
-          {t(`netpol:details.ignored.${d}`)}
-        </p>
-      ))}
+  const content = <>
+      <div className="dt-disclosure-lead">
+        <Fields rows={rows} labelPrefix={FIELD_LABELS} />
+        {ignored.map((d) => (
+          <p key={d} className="np-warning">
+            {t(`netpol:details.ignored.${d}`)}
+          </p>
+        ))}
+      </div>
       {SHOWN_DIRECTIONS.map((d) => (
-        <div key={d}>
-          <h4 className="np-policy__dir">{t(`netpol:direction.${d}`)}</h4>
+        <Block key={d} id={`direction.${d}`} title={t(`netpol:direction.${d}`)}>
           <RulesView policy={policy} direction={d} />
-        </div>
+        </Block>
       ))}
       {dns && dns.udp !== "allowed" && (
         <p className="np-warning" role="note">
           {t("netpol:details.noDns")}
         </p>
       )}
+    </>;
+  return (
+    <div className="np-details-policy dt-disclosure-group" data-policy={policyName(policy.ref)}>
+      {policy.ref.part === null ? content : (
+        <Block id="policyPart" title={t("netpol:details.spec", { n: policy.ref.part + 1 })}>
+          <div className="dt-disclosure-group np-policy-part">{content}</div>
+        </Block>
+      )}
     </div>
   );
 }
 
-function PolicyDetails({ clusterId, objectRef, obj }: { clusterId: ClusterId; objectRef: DetailsSectionProps["objectRef"]; obj: KubeObject }) {
+function PolicyBody({ clusterId, objectRef, obj }: { clusterId: ClusterId; objectRef: DetailsSectionProps["objectRef"]; obj: KubeObject }) {
   const { t } = useTranslation();
   const ns = obj.metadata?.namespace ?? null;
   const data = useNetpolData(clusterId, ns ? [ns] : []);
   const policies = policiesOf(objectRef.kind, obj);
   const pods = ns ? data.pods(ns)?.map(podInfo) : undefined;
-  const actions = ns ? (
-    <Button size="compact" icon="connectivity" onClick={() => openConnectivity(clusterId, { tab: "map", namespace: ns })}>
-      {t("netpol:details.openMap")}
-    </Button>
-  ) : undefined;
+  const note = flavorNote(t, policies);
   return (
-    <Block title={t("netpol:details.plainWords")} actions={actions}>
-      {flavorNote(t, policies)}
+    <>
+      {note && <div className="dt-disclosure-lead">{note}</div>}
       {policies.length === 0 ? <p className="dt-muted">{t("netpol:details.selectsNoPods")}</p> : policies.map((p, i) => <PolicyView key={i} policy={p} pods={pods} world={data.world} obj={obj} />)}
-    </Block>
+    </>
   );
 }
 
@@ -141,26 +144,17 @@ function IsolationValue({ iso, direction }: { iso: Isolation; direction: Directi
   return <span data-state={iso.state}>{t(iso.state === "notIsolated" ? `netpol:pod.notIsolated.${direction}` : `netpol:pod.${iso.state}`)}</span>;
 }
 
-function PodIsolation({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
+function PodIsolationBody({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
   const { t } = useTranslation();
   const pod = podInfo(obj);
   const data = useNetpolData(clusterId, [pod.namespace], { dns: true, pods: false });
-  const actions = (
-    <Button
-      size="compact"
-      icon="connectivity"
-      onClick={() => openConnectivity(clusterId, { tab: "check", form: { sourceType: "pod", sourceNamespace: pod.namespace, sourcePod: pod.name ?? "" } })}
-    >
-      {t("netpol:pod.check")}
-    </Button>
-  );
   if (data.loading) {
     return (
-      <Block title={t("netpol:pod.title")} actions={actions}>
+      <>
         <p className="dt-muted" role="status">
           {t("netpol:loading")}
         </p>
-      </Block>
+      </>
     );
   }
   const rows: FieldRow[] = SHOWN_DIRECTIONS.map((d) => [d, <IsolationValue key={d} iso={isolationOf(pod, d, data.world)} direction={d} />]);
@@ -173,7 +167,7 @@ function PodIsolation({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObjec
     ["defaultDeny", defaultDenyText(t, deny("ingress"), deny("egress"))],
   ];
   return (
-    <Block title={t("netpol:pod.title")} actions={actions}>
+    <>
       <Fields rows={rows} labelPrefix={DIRECTION_LABELS} />
       <Fields rows={coverageRows} labelPrefix={COVERAGE_LABELS} />
       {unknown.map((u, i) => (
@@ -189,10 +183,23 @@ function PodIsolation({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObjec
           </p>
         ))}
       <DnsWarning dns={dnsCheck(pod, data.dnsPods, data.world)} />
-    </Block>
+    </>
   );
 }
 
 export function PodIsolationSection({ clusterId, obj }: DetailsSectionProps) {
   return obj ? <PodIsolation clusterId={clusterId} obj={obj} /> : null;
+}
+
+function PolicyDetails(props: { clusterId: ClusterId; objectRef: DetailsSectionProps["objectRef"]; obj: KubeObject }) {
+  const { t } = useTranslation();
+  const ns = props.obj.metadata?.namespace;
+  const actions = ns ? <Button size="compact" icon="connectivity" onClick={() => openConnectivity(props.clusterId, { tab: "map", namespace: ns })}>{t("netpol:details.openMap")}</Button> : undefined;
+  return <Block id="netpol:details.plainWords" title={t("netpol:details.plainWords")} actions={actions}><PolicyBody {...props} /></Block>;
+}
+function PodIsolation(props: { clusterId: ClusterId; obj: KubeObject }) {
+  const { t } = useTranslation();
+  const pod = podInfo(props.obj);
+  const actions = <Button size="compact" icon="connectivity" onClick={() => openConnectivity(props.clusterId, { tab: "check", form: { sourceType: "pod", sourceNamespace: pod.namespace, sourcePod: pod.name ?? "" } })}>{t("netpol:pod.check")}</Button>;
+  return <Block id="netpol:pod.title" title={t("netpol:pod.title")} actions={actions}><PodIsolationBody {...props} /></Block>;
 }

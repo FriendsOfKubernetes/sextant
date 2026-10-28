@@ -78,7 +78,7 @@ export function SnapshotSection({ obj, objectRef }: DetailsSectionProps) {
         ["taken", time(obj, "status", "creationTime")],
       ];
   return (
-    <Block title={t("storage:snapshot.section")}>
+    <Block id="storage:snapshot.section" title={t("storage:snapshot.section")}>
       {phrase && <Explanation phrase={phrase} />}
       {!content && word === "Ready" && <p className="st-muted">{t("storage:snapshot.restoreHint")}</p>}
       <Fields rows={rows} labelPrefix={LABELS} />
@@ -129,7 +129,7 @@ export function VeleroSection({ obj, objectRef }: DetailsSectionProps) {
     );
   }
   return (
-    <Block title={t("storage:velero.section")}>
+    <Block id="storage:velero.section" title={t("storage:velero.section")}>
       {explainVelero(kind, obj).map((p) => (
         <Explanation key={p.key} phrase={p} />
       ))}

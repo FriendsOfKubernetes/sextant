@@ -16,6 +16,47 @@ use ts_rs::TS;
 /// Longest font family name kept, in characters.
 pub const MAX_FONT_FAMILY_CHARS: usize = 100;
 
+/// Persistence scope for details disclosures.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum DetailsSectionMemory {
+    None,
+    Cluster,
+    #[default]
+    Global,
+}
+
+pub type DetailsSections =
+    std::collections::BTreeMap<String, std::collections::BTreeMap<String, bool>>;
+
+pub(crate) fn read_details_sections(value: Option<&serde_json::Value>) -> DetailsSections {
+    let mut result = DetailsSections::new();
+    if let Some(kinds) = value.and_then(serde_json::Value::as_object) {
+        for (kind, value) in kinds {
+            if kind.is_empty() || kind.chars().count() > 240 {
+                continue;
+            }
+            let Some(sections) = value.as_object() else {
+                continue;
+            };
+            let kept: std::collections::BTreeMap<_, _> = sections
+                .iter()
+                .filter(|(key, _)| !key.is_empty() && key.chars().count() <= 240)
+                .filter_map(|(key, value)| value.as_bool().map(|open| (key.clone(), open)))
+                .take(256)
+                .collect();
+            if !kept.is_empty() {
+                result.insert(kind.clone(), kept);
+            }
+            if result.len() == 256 {
+                break;
+            }
+        }
+    }
+    result
+}
+
 /// Where a font comes from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -78,6 +119,8 @@ pub struct AppearanceSettings {
     pub sidebar_indent: bool,
     /// Draw tree guides in every cluster sidebar, independently of indentation.
     pub sidebar_guides: bool,
+    pub details_section_memory: DetailsSectionMemory,
+    pub details_sections: DetailsSections,
 }
 
 impl Default for AppearanceSettings {
@@ -90,6 +133,8 @@ impl Default for AppearanceSettings {
             terminal_screen_reader: false,
             sidebar_indent: true,
             sidebar_guides: false,
+            details_section_memory: DetailsSectionMemory::default(),
+            details_sections: DetailsSections::new(),
         }
     }
 }
@@ -165,6 +210,12 @@ pub(crate) mod appearance_field {
     ) -> Result<AppearanceSettings, D::Error> {
         let value = serde_json::Value::deserialize(d)?;
         Ok(AppearanceSettings {
+            details_section_memory: value
+                .get("detailsSectionMemory")
+                .cloned()
+                .and_then(|v| serde_json::from_value(v).ok())
+                .unwrap_or_default(),
+            details_sections: read_details_sections(value.get("detailsSections")),
             ui_font: read_choice(value.get("uiFont")),
             mono_font: read_choice(value.get("monoFont")),
             reduce_motion: read_reduce_motion(value.get("reduceMotion")),
@@ -205,7 +256,9 @@ mod tests {
                 "textSize": 100,
                 "terminalScreenReader": false,
                 "sidebarIndent": true,
-                "sidebarGuides": false
+                "sidebarGuides": false,
+                "detailsSectionMemory": "global",
+                "detailsSections": {}
             })
         );
     }
@@ -219,7 +272,9 @@ mod tests {
             "textSize": 125,
             "terminalScreenReader": true,
             "sidebarIndent": true,
-            "sidebarGuides": false
+            "sidebarGuides": false,
+                "detailsSectionMemory": "global",
+                "detailsSections": {}
         });
         let settings: AppSettings =
             serde_json::from_value(json!({ "appearance": appearance })).unwrap();
@@ -368,5 +423,89 @@ mod tests {
             settings.appearance.ui_font.family.as_deref(),
             Some("Inter color: red")
         );
+    }
+}
+
+#[cfg(test)]
+mod details_tests {
+    use crate::AppSettings;
+    use serde_json::json;
+    #[test]
+    fn details_sections_roundtrip_and_lenient_read() {
+        let value = json!({"appearance":{"detailsSectionMemory":"unknown","detailsSections":{"apps/Deployment":{"*":false,"summary":true,"yaml":false,"bad":4},"bad":[]}},"clusters":{"c":{"detailsSections":{"apps/Deployment":{"*":true,"yaml":true}}}}});
+        let settings: AppSettings = serde_json::from_value(value).unwrap();
+        let back = serde_json::to_value(settings).unwrap();
+        assert_eq!(back["appearance"]["detailsSectionMemory"], "global");
+        assert_eq!(
+            back["appearance"]["detailsSections"]["apps/Deployment"],
+            json!({"*":false,"summary":true,"yaml":false})
+        );
+        assert_eq!(
+            back["clusters"]["c"]["detailsSections"]["apps/Deployment"]["*"],
+            true
+        );
+        assert_eq!(
+            back["clusters"]["c"]["detailsSections"]["apps/Deployment"]["yaml"],
+            true
+        );
+    }
+}
+
+#[cfg(test)]
+mod details_bounds_tests {
+    use super::*;
+    use serde_json::json;
+    #[test]
+    fn details_sections_bound_each_bank_and_keep_valid_entries() {
+        for count in [256, 257] {
+            let sections: serde_json::Map<String, serde_json::Value> = (0..count)
+                .map(|i| (format!("section{i}"), json!(false)))
+                .collect();
+            let kinds: serde_json::Map<String, serde_json::Value> = (0..count)
+                .map(|i| (format!("group/Kind{i}"), json!(sections)))
+                .collect();
+            let kept = read_details_sections(Some(&json!(kinds)));
+            assert_eq!(kept.len(), 256);
+            assert!(kept.values().all(|sections| sections.len() == 256));
+        }
+        for value in [json!(null), json!([]), json!(true), json!({"bad": 1})] {
+            assert!(read_details_sections(Some(&value)).is_empty());
+        }
+        let old: crate::AppSettings = serde_json::from_value(json!({"clusters":{"c":{}}})).unwrap();
+        assert_eq!(
+            old.appearance.details_section_memory,
+            DetailsSectionMemory::Global
+        );
+        assert!(
+            serde_json::to_value(old).unwrap()["clusters"]["c"]
+                .get("detailsSections")
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn details_section_key_lengths_are_checked_without_the_count_cap_hiding_them() {
+        let longest_section = "s".repeat(240);
+        let longest_kind = "k".repeat(240);
+        let kept = read_details_sections(Some(&json!({
+            "group/Kind": {
+                "": true,
+                "known": false,
+                (longest_section.clone()): true,
+                ("x".repeat(241)): false
+            },
+            "": {"known": true},
+            (longest_kind.clone()): {"known": true},
+            ("x".repeat(241)): {"known": true}
+        })));
+        assert_eq!(kept.len(), 2);
+        assert_eq!(
+            kept["group/Kind"],
+            std::collections::BTreeMap::from([
+                ("known".to_owned(), false),
+                (longest_section, true)
+            ])
+        );
+        assert!(kept[&longest_kind]["known"]);
     }
 }

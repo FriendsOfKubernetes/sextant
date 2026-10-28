@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of Kueue objects (one section, `kueue`):
 //   ClusterQueue — its state and why it admits nothing, the quota against what is reserved and in use per flavor and
 //                  resource, its cohort, policies and admission checks, the LocalQueues pointing at it and the
@@ -129,8 +130,10 @@ const LQ_WRAP: ColumnWrap[] = ["nowrap", "nowrap", "nowrap", "nowrap"];
 function ClusterQueueView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
   const { t } = useTranslation();
   const name = obj.metadata?.name ?? "";
-  const localQueues = useLocalQueues(clusterId);
-  const workloads = useWorkloadRows(clusterId, true);
+  const localOpen = useDetailsDisclosure("kueue:localQueues")?.open ?? true;
+  const waitingOpen = useDetailsDisclosure("kueue:waiting.title")?.open ?? true;
+  const localQueues = useLocalQueues(clusterId, localOpen || waitingOpen);
+  const workloads = useWorkloadRows(clusterId, waitingOpen);
   const mine = localQueues.items.filter((lq) => clusterQueueOf(lq) === name);
   const keys = new Set(mine.map((lq) => `${lq.metadata?.namespace ?? ""}/${lq.metadata?.name ?? ""}`));
   const preemption = get(obj, "spec", "preemption");
@@ -160,10 +163,10 @@ function ClusterQueueView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeO
     <>
       <QueueNote obj={obj} />
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block title={t("kueue:quota.title")}>
+      <Block id="kueue:quota.title" title={t("kueue:quota.title")}>
         {quota.length > 0 ? <QuotaTable rows={quota} usage /> : <Muted text={t("kueue:quota.none")} />}
       </Block>
-      <Block title={t("kueue:localQueues")}>
+      <Block id="kueue:localQueues" title={t("kueue:localQueues")}>
         {localQueues.loading ? (
           <Muted text={t("kueue:loading")} />
         ) : lqRows.length > 0 ? (
@@ -172,7 +175,7 @@ function ClusterQueueView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeO
           <Muted text={localQueues.failed ? t("kueue:listUnknown") : t("kueue:noLocalQueues")} />
         )}
       </Block>
-      <Block title={t("kueue:waiting.title")}>
+      <Block id="kueue:waiting.title" title={t("kueue:waiting.title")}>
         <WaitingList list={waiting} data={workloads} showQueue />
       </Block>
     </>
@@ -185,7 +188,8 @@ function LocalQueueView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObj
   const { t } = useTranslation();
   const ns = obj.metadata?.namespace ?? "";
   const name = obj.metadata?.name ?? "";
-  const workloads = useWorkloadRows(clusterId, true);
+  const waitingOpen = useDetailsDisclosure("kueue:waiting.title")?.open ?? true;
+  const workloads = useWorkloadRows(clusterId, waitingOpen);
   const rows: FieldRow[] = [
     ["status", <QueueStateText key="s" obj={obj} />],
     ["clusterQueue", link(TYPES.clusterQueue, clusterQueueOf(obj))],
@@ -203,11 +207,11 @@ function LocalQueueView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObj
       <QueueNote obj={obj} />
       <Fields rows={rows} labelPrefix={LABELS} />
       {usage.length > 0 && (
-        <Block title={t("kueue:usage")}>
+        <Block id="kueue:usage" title={t("kueue:usage")}>
           {usageTable}
         </Block>
       )}
-      <Block title={t("kueue:waiting.title")}>
+      <Block id="kueue:waiting.title" title={t("kueue:waiting.title")}>
         <WaitingList list={waiting} data={workloads} showQueue={false} />
       </Block>
     </>
@@ -241,7 +245,7 @@ function ResourceFlavorView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
   return (
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block title={t("kueue:usedBy")}>
+      <Block id="kueue:usedBy" title={t("kueue:usedBy")}>
         <ClusterQueueLinks clusterId={clusterId} pick={(cq) => flavorsOf(cq).includes(name)} />
       </Block>
     </>
@@ -256,11 +260,11 @@ function CohortView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject 
   return (
     <>
       <Fields rows={parentRows} labelPrefix={LABELS} />
-      <Block title={t("kueue:members")}>
+      <Block id="kueue:members" title={t("kueue:members")}>
         <ClusterQueueLinks clusterId={clusterId} pick={(cq) => cohortOf(cq) === name} />
       </Block>
       {quota.length > 0 && (
-        <Block title={t("kueue:quota.title")}>
+        <Block id="kueue:quota.title" title={t("kueue:quota.title")}>
           <QuotaTable rows={quota} usage={false} />
         </Block>
       )}
@@ -282,7 +286,7 @@ function AdmissionCheckView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
     <>
       <QueueNote obj={obj} />
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block title={t("kueue:usedBy")}>
+      <Block id="kueue:usedBy" title={t("kueue:usedBy")}>
         <ClusterQueueLinks clusterId={clusterId} pick={(cq) => admissionChecksOf(cq).includes(name)} />
       </Block>
     </>

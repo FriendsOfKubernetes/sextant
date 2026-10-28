@@ -1,6 +1,7 @@
 // The details of a Trivy Operator report: the object it is about (a link), the operator's summary counts and the
 // first `TOP_LIMIT` rows by severity — vulnerabilities with their fixed versions, failed checks with the remediation,
 // exposed secrets (rule and file, never the matched text), failing compliance controls — not thousands of rows.
+import { Block } from "../details/ui";
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import type { DetailsSectionProps } from "../../layout/details/registry";
@@ -50,8 +51,8 @@ export function TrivyReportSection({ objectRef, obj }: DetailsSectionProps) {
   const target = targetOf(obj);
   const apiVersion = target ? API_VERSIONS[target.kind] : undefined;
   return (
-    <section className="sec-section" aria-label={t("security:trivy.reportTitle")}>
-      <h3 className="sec-section__title">{t("security:trivy.reportTitle")}</h3>
+    <Block id="security:trivy.reportTitle" title={t("security:trivy.reportTitle")} label={t("security:trivy.reportTitle")}>
+
       {target && (
         <p className="sec-report__head">
           <span className="sec-muted">{t("security:trivy.scanned")}</span>
@@ -67,7 +68,7 @@ export function TrivyReportSection({ objectRef, obj }: DetailsSectionProps) {
         </p>
       )}
       <ReportBody shape={def.shape} report={obj} />
-    </section>
+    </Block>
   );
 }
 

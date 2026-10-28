@@ -39,7 +39,7 @@ export function RuntimeView({ obj }: { obj: KubeObject }) {
   return (
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block title={t("kserve:formats.title")}>{formatsTable}</Block>
+      <Block id="kserve:formats.title" title={t("kserve:formats.title")}>{formatsTable}</Block>
     </>
   );
 }
@@ -85,7 +85,7 @@ export function GraphView({ obj }: { obj: KubeObject }) {
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
       {blocks.map((b) => (
-        <Block key={b.name} title={b.title}>
+        <Block key={b.name} id="graphNode" title={b.title}>
           {b.steps}
         </Block>
       ))}

@@ -1,3 +1,7 @@
+import { useEffect } from "react";
+import { useClusterKinds } from "../../resources";
+import { ErrorState } from "../../components";
+import { UNKNOWN_DETAILS_SOURCE, useDisclosureProbe } from "../details/disclosureProbe";
 // Details of Kyverno objects (#213):
 //   ClusterPolicy / Policy — readiness in plain words, mode, background scans, the rules (type, mode, kinds) and a
 //                            summary of the results in the reports (counts, the objects that fail, with links);
@@ -95,7 +99,7 @@ function ResultsTable({ results, withObject }: { results: { result: PolicyResult
   );
 }
 
-function PolicySummaryBlock({ clusterId, kind, obj }: { clusterId: string; kind: KindRef; obj: KubeObject }) {
+function PolicySummaryBody({ clusterId, kind, obj }: { clusterId: string; kind: KindRef; obj: KubeObject }) {
   const { t } = useTranslation();
   const summary = usePolicySummary(clusterId, kind, obj);
   if (!summary.served) return null;
@@ -111,7 +115,7 @@ function PolicySummaryBlock({ clusterId, kind, obj }: { clusterId: string; kind:
         {summary.failed.length > 0 && <ResultsTable withObject results={summary.failed.map((f) => ({ result: f.result, object: f.object }))} />}
       </>
     );
-  return <Block title={t("kyverno:policySummary.title")}>{body}</Block>;
+  return <>{body}</>;
 }
 
 function PolicyView({ clusterId, kind, obj }: { clusterId: string; kind: KindRef; obj: KubeObject }) {
@@ -163,18 +167,24 @@ export function KyvernoSection({ clusterId, objectRef, obj }: DetailsSectionProp
   const def = kyvernoKind(objectRef.kind);
   if (!obj || !def) return null;
   const view = isPolicyKind(def.kind) ? <PolicyView clusterId={clusterId} kind={def.kind} obj={obj} /> : <ReportView kind={def.kind} obj={obj} />;
-  return <Block title={t("details:sections.fields", { kind: def.kind.kind })}>{view}</Block>;
+  return <Block id="details:sections.fields" title={t("details:sections.fields", { kind: def.kind.kind })}>{view}</Block>;
 }
 
 /** "Policy results" of any object: its own report's results, failures first. */
 export function PolicyResultsSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
-  const { served, loading, results } = useObjectResults(clusterId, objectRef, obj?.metadata?.uid);
-  if (!served || loading || results.length === 0) return null;
+  const { open, enabled, result, settle } = useDisclosureProbe("kyverno:objectResults.title");
+  const discovery = useClusterKinds(clusterId);
+  const { served, loading, results, unknown } = useObjectResults(clusterId, objectRef, obj?.metadata?.uid, enabled);
+  const answer = loading ? null : results.length > 0 ? "present" : unknown || discovery.error ? "unknown" : "absent";
+  useEffect(() => { if (enabled && answer) settle(answer); }, [enabled, answer, settle]);
+  if (!open && result) return result === "absent" ? null : <Block id="kyverno:objectResults.title" title={t("kyverno:objectResults.title")}>{null}</Block>;
+  if (loading && result !== null && result !== "absent") return <Block id="kyverno:objectResults.title" title={t("kyverno:objectResults.title")}><p className="cm-muted">{t("common:details.loading")}</p></Block>;
+  if (!served || loading || results.length === 0) return unknown || discovery.error ? <Block id="kyverno:objectResults.title" title={t("kyverno:objectResults.title")}><ErrorState error={discovery.error ?? UNKNOWN_DETAILS_SOURCE} /></Block> : null;
   const sorted = sortResults(results);
   const failed = sorted.filter((r) => r.result === "fail").length;
   return (
-    <Block title={t("kyverno:objectResults.title")}>
+    <Block id="kyverno:objectResults.title" title={t("kyverno:objectResults.title")}>
       <p className={failed > 0 ? "cm-explain cm-explain--danger" : "cm-muted"}>
         {failed > 0 ? t("kyverno:objectResults.failing", { count: failed, total: sorted.length }) : t("kyverno:objectResults.passing", { count: sorted.length })}
       </p>
@@ -185,3 +195,10 @@ export function PolicyResultsSection({ clusterId, objectRef, obj }: DetailsSecti
 
 /** Every kind but Kyverno's own and Events. */
 export const appliesToObjectResults = (kind: KindRef) => !kyvernoKind(kind) && !isReportKind(kind) && !(kind.group === "" && kind.kind === "Event");
+
+function PolicySummaryBlock(props: Parameters<typeof PolicySummaryBody>[0]) {
+  const { t } = useTranslation();
+  const discovery = useClusterKinds(props.clusterId);
+  if (!discovery.error && !discovery.kinds?.some(kind => kind.kindRef.kind === "PolicyReport" || kind.kindRef.kind === "ClusterPolicyReport")) return null;
+  return <Block id="kyverno:policySummary.title" title={t("kyverno:policySummary.title")}>{discovery.error ? <ErrorState error={discovery.error} /> : <PolicySummaryBody {...props} />}</Block>;
+}

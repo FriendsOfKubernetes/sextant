@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../../layout/details/disclosure";
 // "Logs of previous pods (Loki)" in a workload's details: the pods its controller made that have lines in Loki in
 // the chosen period (by the names the controller gives them), each opened in a logs tab of Loki's lines only.
 import { useState } from "react";
@@ -41,18 +42,20 @@ export async function openLokiLogsTab(clusterId: ClusterId, namespace: string, p
 
 export function PreviousPodsSection({ clusterId, objectRef }: DetailsSectionProps) {
   const { t } = useTranslation();
-  const loki = useLokiStatus(clusterId);
+  const sectionOpen = useDetailsDisclosure("previousPods")?.open ?? true;
+  const loki = useLokiStatus(clusterId, sectionOpen);
   const [choice, setChoice] = useState<RangeChoice>(() => initialChoice());
   const [found, setFound] = useState<{ names: LokiNames; range: LokiRange } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const namespace = objectRef.namespace;
-  if (!namespace || loki.loading) return null;
-
   const title = t("loki:previous.title");
+  if (!namespace) return null;
+  if (!sectionOpen) return <Block id="previousPods" title={title}>{null}</Block>;
+  if (loki.loading) return null;
   if (loki.error) {
     return (
-      <Block title={title}>
+      <Block id="previousPods" title={title}>
         <ErrorState error={loki.error} title={t("loki:statusFailed")} />
       </Block>
     );
@@ -60,7 +63,7 @@ export function PreviousPodsSection({ clusterId, objectRef }: DetailsSectionProp
   const unavailable = lokiUnavailableKey(loki.status!);
   if (unavailable) {
     return (
-      <Block title={title}>
+      <Block id="previousPods" title={title}>
         <p className="loki-note">{t(unavailable)}</p>
       </Block>
     );
@@ -84,7 +87,7 @@ export function PreviousPodsSection({ clusterId, objectRef }: DetailsSectionProp
     void openLokiLogsTab(clusterId, namespace, pod, range).catch((err: unknown) => setError(toApiError(err)));
 
   return (
-    <Block title={title}>
+    <Block id="previousPods" title={title}>
       <div className="loki-previous">
         <RangePicker choice={choice} onChange={setChoice} presets={PRESETS} />
         <Button icon="logs" disabled={busy || rangeOf(choice, Date.now()).problem !== null} onClick={() => void find()}>

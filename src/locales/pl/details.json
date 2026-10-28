@@ -7,7 +7,11 @@
     "metadata": "Metadane",
     "fields": "{{kind}}",
     "conditions": "Warunki",
-    "yaml": "YAML"
+    "yaml": "YAML",
+    "saveFailed": "Nie udało się zapisać stanu sekcji. Zmiany obowiązują tylko w tej sesji.",
+    "controls": "Sekcje zasobu",
+    "expandAll": "Rozwiń wszystko",
+    "collapseAll": "Zwiń wszystko"
   },
   "yaml": {
     "show": "Pokaż YAML",

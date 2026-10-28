@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of the DRA kinds (section `dra`) and the DRA blocks of Pods and Nodes (#244):
 //   ResourceClaim         — its state in words, the node its devices are bound to (or the node selector), who reserved
 //                           it, the pod it was made for, its requests (CEL selectors as text) and the devices allocated;
@@ -119,16 +120,16 @@ function ClaimView({ clusterId, claim }: { clusterId: ClusterId; claim: KubeObje
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
       <p className={state === "bindingFailed" ? "dra-message" : "dra-note"}>{t(`dra:hint.${state}`)}</p>
-      <Block title={t("dra:requests.title")}>
+      <Block id="dra:requests.title" title={t("dra:requests.title")}>
         <RequestsTable requests={requestsOf(claimSpecOf(claim))} apiVersion={typeOf(claim, DEVICE_CLASS_KIND).apiVersion} id={CLAIM_REQUESTS_TABLE} />
       </Block>
       {isAllocated(claim) && (
-        <Block title={t("dra:results.title")}>
+        <Block id="dra:results.title" title={t("dra:results.title")}>
           <ResultsTable claim={claim} />
         </Block>
       )}
       {!isAllocated(claim) && (
-        <Block title={t("dra:waiting.title")}>
+        <Block id="dra:waiting.title" title={t("dra:waiting.title")}>
           <WaitingPods clusterId={clusterId} claim={claim} />
         </Block>
       )}
@@ -144,12 +145,12 @@ function DeviceClassView({ obj }: { obj: KubeObject }) {
   return (
     <>
       <Fields rows={classRows} labelPrefix={LABELS} />
-      <Block title={t("dra:class.selectors")}>
+      <Block id="dra:class.selectors" title={t("dra:class.selectors")}>
         {selectors.length > 0 ? <Cel expressions={selectors} /> : <p className="dra-muted">{t("dra:class.noSelectors")}</p>}
         <p className="dra-muted">{t("dra:class.celNote")}</p>
       </Block>
       {config.length > 0 && (
-        <Block title={t("dra:class.config")}>
+        <Block id="dra:class.config" title={t("dra:class.config")}>
           {config.map((c, i) => (
             <div key={`${c.driver}:${i}`} className="dra-config">
               <strong>{c.driver}</strong>
@@ -164,7 +165,8 @@ function DeviceClassView({ obj }: { obj: KubeObject }) {
 
 function SliceView({ clusterId, slice }: { clusterId: ClusterId; slice: KubeObject }) {
   const { t } = useTranslation();
-  const claims = useAllClaims(clusterId, true);
+  const open = useDetailsDisclosure("dra:devices.title")?.open ?? true;
+  const claims = useAllClaims(clusterId, open);
   const scope = sliceScope(slice);
   const rows: FieldRow[] = [
     ["driver", sliceDriver(slice)],
@@ -178,7 +180,7 @@ function SliceView({ clusterId, slice }: { clusterId: ClusterId; slice: KubeObje
   return (
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block title={t("dra:devices.title")}>
+      <Block id="dra:devices.title" title={t("dra:devices.title")}>
         <DevicesTable slices={[slice]} allocation={allocation} id={SLICE_DEVICES_TABLE} max={DEVICE_ROWS} />
       </Block>
     </>
@@ -192,7 +194,7 @@ export function DraSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
   if (isKind(kind, RESOURCE_CLAIM)) return <ClaimView clusterId={clusterId} claim={obj} />;
   if (isKind(kind, RESOURCE_CLAIM_TEMPLATE)) {
     return (
-      <Block title={t("dra:requests.title")}>
+      <Block id="dra:requests.title" title={t("dra:requests.title")}>
         <RequestsTable requests={requestsOf(claimSpecOf(obj))} apiVersion={typeOf(obj, DEVICE_CLASS_KIND).apiVersion} id={TEMPLATE_REQUESTS_TABLE} />
       </Block>
     );

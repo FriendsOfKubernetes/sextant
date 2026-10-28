@@ -7,7 +7,11 @@
     "metadata": "Métadonnées",
     "fields": "{{kind}}",
     "conditions": "Conditions",
-    "yaml": "YAML"
+    "yaml": "YAML",
+    "saveFailed": "Impossible d’enregistrer l’état des sections. Les modifications ne s’appliquent qu’à cette session.",
+    "controls": "Sections de la ressource",
+    "expandAll": "Tout déplier",
+    "collapseAll": "Tout replier"
   },
   "yaml": {
     "show": "Afficher le YAML",

@@ -19,6 +19,7 @@ export function defaultClusterSettings(): ClusterSettings {
     observabilityLinks: null,
     knownNamespaces: null,
     tableFilters: {},
+    detailsSections: {},
   };
 }
 

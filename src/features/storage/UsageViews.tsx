@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Where the fill levels show (#152): the Usage column of the PVC table (a bar and the percent of the space, the worse
 // of space and inodes colouring it by the thresholds), a "Usage" section in a claim's details and a "Volume usage"
 // section in a pod's details (each of its claims). All read the cluster's shared poll (usageStore.ts).
@@ -135,12 +136,13 @@ function UsageRows({ usage, thresholds }: { usage: VolumeUsage; thresholds: Thre
 }
 
 export function ClaimUsageSection({ clusterId, objectRef }: DetailsSectionProps) {
+  const open = useDetailsDisclosure("storage:usage.title")?.open ?? true;
   const { t } = useTranslation();
-  const state = useVolumeUsage(clusterId);
+  const state = useVolumeUsage(open ? clusterId : null);
   const thresholds = useThresholds();
   const usage = state.byClaim.get(claimKey(objectRef.namespace, objectRef.name));
   return (
-    <Block title={t("storage:usage.title")}>
+    <Block id="storage:usage.title" title={t("storage:usage.title")}>
       {usage ? <UsageRows usage={usage} thresholds={thresholds} /> : <Missing state={state} />}
       <SourceNote state={state} />
     </Block>
@@ -168,12 +170,13 @@ export function PodVolumeUsageSection({ clusterId, obj }: DetailsSectionProps) {
 }
 
 function PodVolumes({ clusterId, pod, claims }: { clusterId: ClusterId; pod: KubeObject; claims: [string, string][] }) {
+  const open = useDetailsDisclosure("storage:usage.podTitle")?.open ?? true;
   const { t } = useTranslation();
-  const state = useVolumeUsage(clusterId);
+  const state = useVolumeUsage(open ? clusterId : null);
   const thresholds = useThresholds();
   const namespace = pod.metadata?.namespace ?? null;
   return (
-    <Block title={t("storage:usage.podTitle")}>
+    <Block id="storage:usage.podTitle" title={t("storage:usage.podTitle")}>
       <ResizableTable tableId="storage.usage" className="st-table">
         <thead>
           <tr>

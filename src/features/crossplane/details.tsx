@@ -1,3 +1,8 @@
+import { useEffect, useState } from "react";
+import { UNKNOWN_DETAILS_SOURCE, useDisclosureProbe, watchProbeResult } from "../details/disclosureProbe";
+import { useClusterKinds } from "../../resources";
+import { ErrorState } from "../../components";
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of Crossplane objects (#213):
 //   XRD                    — the kinds it defines, its versions, Established / Offered in plain words, the default
 //                            Composition;
@@ -155,7 +160,7 @@ export function CrossplaneSection({ objectRef, obj }: DetailsSectionProps) {
     view = info ? <XrdView obj={obj} info={info} /> : null;
   } else if (sameKind(def.kind, COMPOSITION)) view = <CompositionView obj={obj} />;
   else if (isPackageKind(def.kind)) view = <PackageView obj={obj} />;
-  return <Block title={t("details:sections.fields", { kind: def.kind.kind })}>{view}</Block>;
+  return <Block id="details:sections.fields" title={t("details:sections.fields", { kind: def.kind.kind })}>{view}</Block>;
 }
 
 // ---------- Claims, composites, managed resources ----------
@@ -209,15 +214,16 @@ function Chain({ clusterId, objectRef, obj, role }: { clusterId: string; objectR
   const stamp = str(obj.metadata?.resourceVersion) ?? "";
   const claimTarget = role === "claim" ? resourceRefOf(obj) : undefined;
   const compositeRef = claimTarget ? objectRefOf(claimTarget, obj.metadata?.namespace ?? null) : undefined;
-  const upper = useChainObjects(clusterId, compositeRef ? [compositeRef] : [], stamp);
+  const open = useDetailsDisclosure("crossplane:chain.title")?.open ?? true;
+  const upper = useChainObjects(clusterId, open && compositeRef ? [compositeRef] : [], stamp);
   const fetchedComposite = compositeRef ? upper.byKey.get(refKey(compositeRef)) : undefined;
   const composite = role === "composite" ? obj : fetchedComposite && "obj" in fetchedComposite ? fetchedComposite.obj : undefined;
   const refs = composedRefs(composite);
-  const lower = useChainObjects(clusterId, refs, `${stamp}|${str(composite?.metadata?.resourceVersion) ?? ""}`);
+  const lower = useChainObjects(clusterId, open ? refs : [], `${stamp}|${str(composite?.metadata?.resourceVersion) ?? ""}`);
   const loading = upper.loading || lower.loading;
   const self = <ChainItem objRef={objectRef} fetched={{ obj }} current />;
   return (
-    <Block title={t("crossplane:chain.title")}>
+    <Block id="crossplane:chain.title" title={t("crossplane:chain.title")}>
       <ul className="cm-chain">
         <li className="cm-chain__item">
           {self}
@@ -255,7 +261,7 @@ function ClaimOrComposite({ clusterId, objectRef, obj, role }: { clusterId: stri
   ];
   return (
     <>
-      <Block title={t("details:sections.fields", { kind: objectRef.kind.kind })}>
+      <Block id="details:sections.fields" title={t("details:sections.fields", { kind: objectRef.kind.kind })}>
         <Explanation phrase={explainResource(obj)} danger={resourceHealth(obj) === "failed"} />
         <FailingMessage obj={obj} />
         <Fields rows={rows} labelPrefix={LABELS} />
@@ -282,7 +288,7 @@ function ManagedView({ objectRef, obj }: { objectRef: ObjectRef; obj: KubeObject
     ["claim", f.claimName ? (f.claimNamespace ? `${f.claimNamespace}/${f.claimName}` : f.claimName) : undefined],
   ];
   return (
-    <Block title={t("details:sections.fields", { kind: objectRef.kind.kind })}>
+    <Block id="details:sections.fields" title={t("details:sections.fields", { kind: objectRef.kind.kind })}>
       <Explanation phrase={explainResource(obj)} danger={resourceHealth(obj) === "failed"} />
       <FailingMessage obj={obj} />
       <Fields rows={rows} labelPrefix={LABELS} />
@@ -291,18 +297,29 @@ function ManagedView({ objectRef, obj }: { objectRef: ObjectRef; obj: KubeObject
 }
 
 /** The XRDs the cluster defines (one shared watch, the store's), `[]` when it serves none. */
-function useXrds(clusterId: string): XrdInfo[] {
+function useXrds(clusterId: string, enabled: boolean) {
   const served = useServed(clusterId, XRD);
-  const state = useWatch(clusterId, served ? { kind: served, namespaces: null, labelSelector: null, fieldSelector: null } : null);
-  return [...state.items.values()].map(parseXrd).filter((x): x is XrdInfo => x !== undefined);
+  const state = useWatch(clusterId, enabled && served ? { kind: served, namespaces: null, labelSelector: null, fieldSelector: null } : null);
+  const xrds = [...state.items.values()].map(parseXrd).filter((x): x is XrdInfo => x !== undefined);
+  return { xrds, state, served };
 }
 
 export function CrossplaneResourceSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
-  const xrds = useXrds(clusterId);
+  const { t } = useTranslation();
+  const fieldsOpen = useDetailsDisclosure("details:sections.fields")?.open ?? true;
+  const chainOpen = useDetailsDisclosure("crossplane:chain.title")?.open ?? true;
+  const [knownRole, setKnownRole] = useState<ReturnType<typeof roleOf>>();
+  const { enabled, result, settle } = useDisclosureProbe("details:sections.fields", fieldsOpen || (chainOpen && knownRole !== undefined));
+  const discovery = useClusterKinds(clusterId);
+  const { xrds, state, served } = useXrds(clusterId, enabled);
+  const liveRole = roleOf(objectRef.kind, xrds);
+  const answer = served === undefined ? null : served === null ? (discovery.error ? "unknown" : "absent") : watchProbeResult(liveRole !== undefined, [state]);
+  useEffect(() => { if (enabled && answer) { settle(answer); if (answer !== "unknown") setKnownRole(liveRole); } }, [enabled, answer, settle, liveRole]);
   if (!obj) return null;
-  const role = roleOf(objectRef.kind, xrds);
+  const role = enabled ? liveRole ?? (answer === null ? knownRole : undefined) : knownRole;
   if (role) return <ClaimOrComposite clusterId={clusterId} objectRef={objectRef} obj={obj} role={role} />;
   if (looksManaged(obj)) return <ManagedView objectRef={objectRef} obj={obj} />;
+  if (answer === "unknown" || (result === "unknown" && (!enabled || answer === null))) return <Block id="details:sections.fields" title={t("details:sections.fields", { kind: objectRef.kind.kind })}>{answer === null ? <p className="dt-muted">{t("common:details.loading")}</p> : <ErrorState error={discovery.error ?? state.error ?? UNKNOWN_DETAILS_SOURCE} />}</Block>;
   return null;
 }
 

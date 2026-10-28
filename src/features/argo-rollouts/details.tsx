@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of Argo Rollouts objects (one section, `argoRollouts`, for every kind of the section):
 //   Rollout            — the status in plain words, strategy, step, set and actual weight, why it is paused, the
 //                        Services; the canary steps with the current one marked; its ReplicaSets by role (stable,
@@ -110,7 +111,7 @@ function Steps({ ro }: { ro: KubeObject }) {
   const current = currentStepIndex(ro) ?? 0;
   const label = t("argorollouts:stepCurrent");
   return (
-    <Block title={t("argorollouts:sections.steps")}>
+    <Block id="argorollouts:sections.steps" title={t("argorollouts:sections.steps")}>
       <ol className="ar-steps">
         {steps.map((step, i) => {
           const state = stepState(i, current);
@@ -139,7 +140,7 @@ function ReplicaSetsBlock({ ro, sets, known }: { ro: KubeObject; sets: ReturnTyp
   const headers = ["name", "role", "revision", "available"].map((h) => t(`argorollouts:table.${h}`));
   const content = table("argoRolloutReplicaSets", headers, rows, WORDS);
   return (
-    <Block title={t("argorollouts:sections.replicaSets")}>
+    <Block id="argorollouts:sections.replicaSets" title={t("argorollouts:sections.replicaSets")}>
       {content ?? <p className="ar-muted">{t(known ? "argorollouts:noReplicaSets" : "argorollouts:loading")}</p>}
     </Block>
   );
@@ -160,7 +161,7 @@ function AnalysisRunsBlock({ ns, runs, known }: { ns: string | null; runs: KubeO
   const headers = ["name", "phase", "started", "message"].map((h) => t(`argorollouts:table.${h}`));
   const content = table("argoRolloutAnalysisRuns", headers, rows, WORDS);
   return (
-    <Block title={t("argorollouts:sections.analysisRuns")}>
+    <Block id="argorollouts:sections.analysisRuns" title={t("argorollouts:sections.analysisRuns")}>
       {content ?? <p className="ar-muted">{t(known ? "argorollouts:noAnalysisRuns" : "argorollouts:loading")}</p>}
     </Block>
   );
@@ -169,12 +170,15 @@ function AnalysisRunsBlock({ ns, runs, known }: { ns: string | null; runs: KubeO
 function RolloutView({ clusterId, ro }: { clusterId: ClusterId; ro: KubeObject }) {
   const { t } = useTranslation();
   const ns = ro.metadata?.namespace ?? null;
-  const lists = useRolloutLists(clusterId, ns);
+  const statusOpen = useDetailsDisclosure("argorollouts:sections.status")?.open ?? true;
+  const replicaSetsOpen = useDetailsDisclosure("argorollouts:sections.replicaSets")?.open ?? true;
+  const analysisRunsOpen = useDetailsDisclosure("argorollouts:sections.analysisRuns")?.open ?? true;
+  const lists = useRolloutLists(clusterId, ns, { replicaSets: statusOpen || replicaSetsOpen, analysisRuns: analysisRunsOpen });
   const sets = replicaSetsOf(ro, lists.replicaSets);
   const weight = actualWeight(ro, lists.replicaSetsKnown ? (canaryAvailable(ro, sets) ?? 0) : undefined);
   return (
     <>
-      <Block title={t("argorollouts:sections.status")}>
+      <Block id="argorollouts:sections.status" title={t("argorollouts:sections.status")}>
         <StatusBlock ro={ro} weight={weight} />
       </Block>
       <Steps ro={ro} />
@@ -212,7 +216,7 @@ function AnalysisRunView({ run }: { run: KubeObject }) {
   return (
     <>
       <Fields rows={rows} labelPrefix={FIELDS} />
-      {content && <Block title={t("argorollouts:sections.metrics")}>{content}</Block>}
+      {content && <Block id="argorollouts:sections.metrics" title={t("argorollouts:sections.metrics")}>{content}</Block>}
     </>
   );
 }
@@ -246,8 +250,8 @@ function ExperimentView({ exp }: { exp: KubeObject }) {
   return (
     <>
       <Fields rows={rows} labelPrefix={FIELDS} />
-      {templateTable && <Block title={t("argorollouts:sections.templates")}>{templateTable}</Block>}
-      {analysisTable && <Block title={t("argorollouts:sections.analysisRuns")}>{analysisTable}</Block>}
+      {templateTable && <Block id="argorollouts:sections.templates" title={t("argorollouts:sections.templates")}>{templateTable}</Block>}
+      {analysisTable && <Block id="argorollouts:sections.analysisRuns" title={t("argorollouts:sections.analysisRuns")}>{analysisTable}</Block>}
     </>
   );
 }
@@ -256,7 +260,7 @@ function TemplateView({ obj }: { obj: KubeObject }) {
   const { t } = useTranslation();
   const rows = templateMetrics(obj).map((m) => [m.name, m.provider ?? null]);
   const content = table("argoAnalysisTemplateMetrics", [t("argorollouts:table.metric"), t("argorollouts:table.provider")], rows, ["nowrap", "nowrap"]);
-  return content ? <Block title={t("argorollouts:sections.metrics")}>{content}</Block> : null;
+  return content ? <Block id="argorollouts:sections.metrics" title={t("argorollouts:sections.metrics")}>{content}</Block> : null;
 }
 
 /** The section of every Argo Rollouts kind. */

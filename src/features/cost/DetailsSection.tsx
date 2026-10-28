@@ -3,6 +3,8 @@
 // savings of applying it at this workload's own unit prices. Without OpenCost or Kubecost the section is not shown.
 // The savings need the workload's pods and its usage history; both come from the watch and the poller the
 // right-sizing section shares (`useWorkloadPods`, `useRightsizingSource`), so showing both opens each only once.
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
+import { Block } from "../details/ui";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { CostQuery, CostRow, CostWindow, KindRef, KubeObject, ObjectRef } from "../../api";
@@ -30,40 +32,41 @@ export function costApplies(kind: KindRef): boolean {
 export function CostDetailsSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
   const namespace = objectRef.namespace ?? "";
-  const query: CostQuery | null = namespace
+  const open = useDetailsDisclosure("cost:details.title")?.open ?? true;
+  const query: CostQuery | null = namespace && open
     ? { window: WINDOW, aggregate: { type: "workload" }, namespaces: [namespace] }
     : null;
   const report = useCostReport(clusterId, query);
   const data = report.data;
   // Nothing to say without a cost service, and nothing while the first answer is on its way.
-  if (!namespace || report.loading || (!report.error && !data?.source)) return null;
+  if (!namespace || (open && (report.loading || (!report.error && !data?.source)))) return null;
 
   const row = data ? findWorkload(data.rows, namespace, objectRef.kind.kind, objectRef.name) : null;
   const currency = data?.currency ?? null;
-  const money = (value: number) => formatMoney(value, currency);
+
   return (
-    <section className="cost-section" aria-label={t("cost:details.title")}>
-      <h3 className="cost-section__title">{t("cost:details.title")}</h3>
-      {report.error ? (
-        <p className="cost-note cost-note--warning">{t("cost:failed")}</p>
-      ) : !row ? (
-        <p className="cost-note">{t("cost:details.noData")}</p>
-      ) : (
-        <>
-          <dl className="cost-facts">
-            <dt>{t("cost:details.periodCost")}</dt>
-            <dd>{money(row.totalCost)}</dd>
-            <dt>{t("cost:details.monthly")}</dt>
-            <dd title={t("cost:details.monthlyHint")}>{money(monthlyEstimate(row, WINDOW))}</dd>
-          </dl>
-          <p className="cost-note">{t("cost:details.monthlyHint")}</p>
-          <Prices row={row} currency={currency} />
-          <Savings clusterId={clusterId} objectRef={objectRef} obj={obj} row={row} currency={currency} />
-          {!currency && <p className="cost-note">{t("cost:currencyUnknown")}</p>}
-        </>
-      )}
-    </section>
+    <Block id="cost:details.title" title={t("cost:details.title")} label={t("cost:details.title")}>
+
+      <CostResult clusterId={clusterId} objectRef={objectRef} obj={obj} row={row} currency={currency} failed={report.error !== null} />
+    </Block>
   );
+}
+
+function CostResult({ row, currency, failed, ...props }: DetailsSectionProps & { row: CostRow | null; currency: string | null; failed: boolean }) {
+  const { t } = useTranslation();
+  if (failed) return <p className="cost-note cost-note--warning">{t("cost:failed")}</p>;
+  if (!row) return <p className="cost-note">{t("cost:details.noData")}</p>;
+  const money = (value: number) => formatMoney(value, currency);
+  return <>
+    <dl className="cost-facts">
+      <dt>{t("cost:details.periodCost")}</dt><dd>{money(row.totalCost)}</dd>
+      <dt>{t("cost:details.monthly")}</dt><dd title={t("cost:details.monthlyHint")}>{money(monthlyEstimate(row, WINDOW))}</dd>
+    </dl>
+    <p className="cost-note">{t("cost:details.monthlyHint")}</p>
+    <Prices row={row} currency={currency} />
+    <Savings {...props} row={row} currency={currency} />
+    {!currency && <p className="cost-note">{t("cost:currencyUnknown")}</p>}
+  </>;
 }
 
 function Prices({ row, currency }: { row: CostRow; currency: string | null }) {

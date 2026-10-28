@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // The "Event path" block of the Eventing details (#234): the tree of eventingPath.ts — the sources that send to the
 // hub, the hub (Broker or Channel), its Triggers or Subscriptions, and their subscribers and replies — with the opened
 // object marked, each object a link with its state, and each destination with the address it resolved to.
@@ -83,11 +84,12 @@ function NodeItem({ node, lists }: { node: PathNode; lists: PathLists }) {
 export function EventPathView({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindRef; obj: KubeObject }) {
   const { t } = useTranslation();
   const needs = pathNeeds(kind, obj);
-  const { lists, loading } = usePathLists(clusterId, needs);
+  const open = useDetailsDisclosure("knative:eventing.path.title")?.open ?? true;
+  const { lists, loading } = usePathLists(clusterId, open ? needs : undefined);
   const path = eventPath(kind, obj, lists);
   if (!path) return null;
   return (
-    <Block title={t("knative:eventing.path.title")}>
+    <Block id="knative:eventing.path.title" title={t("knative:eventing.path.title")}>
       {loading && <p className="cm-muted">{t("knative:eventing.path.loading")}</p>}
       {path.from && path.from.length > 0 && (
         <>

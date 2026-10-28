@@ -36,6 +36,20 @@ function renderPage() {
 }
 
 describe("Accessibility in Settings -> Appearance", () => {
+  it("offers the three details-section scopes and preserves the existing section banks", async () => {
+    backend.settings.appearance.detailsSections = { "/Pod": { "fields/containers": false } };
+    const appearance = structuredClone(backend.settings.appearance);
+    renderPage();
+    const memory = screen.getByRole("combobox", { name: "Remember section state" });
+    await waitFor(() => expect(memory).toBeEnabled());
+    expect(memory).toHaveValue("global");
+    expect(within(memory).getAllByRole("option").map((o) => o.textContent)).toEqual(["Do not remember", "Per cluster", "Across all clusters"]);
+    for (const mode of ["none", "cluster", "global"]) {
+      fireEvent.change(memory, { target: { value: mode } });
+      await waitFor(() => expect(backend.settings.appearance.detailsSectionMemory).toBe(mode));
+      expect(backend.settings.appearance).toEqual({ ...appearance, detailsSectionMemory: mode });
+    }
+  });
   it("defaults to the system's motion, 100% text and no terminal screen reader mode", async () => {
     renderPage();
     const motion = screen.getByRole("radiogroup", { name: "Reduce motion" });
@@ -69,6 +83,8 @@ describe("Accessibility in Settings -> Appearance", () => {
     await waitFor(() => expect(backend.settings.appearance.terminalScreenReader).toBe(true));
 
     expect(backend.settings.appearance).toEqual({
+      detailsSectionMemory: "global",
+      detailsSections: {},
       uiFont: { kind: "builtin" },
       monoFont: { kind: "system" },
       reduceMotion: "on",

@@ -27,6 +27,8 @@ export function revealRequestHealth(from: Element): void {
     scope = scope.parentElement;
   }
   if (!section) return;
+  const heading = section.querySelector<HTMLElement>("h3 button, h3");
+  if (heading?.getAttribute("aria-expanded") === "false") heading.click();
   section.scrollIntoView?.({ block: "start", behavior: "smooth" });
-  section.querySelector<HTMLElement>("h3")?.focus();
+  heading?.focus();
 }

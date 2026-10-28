@@ -7,7 +7,11 @@
     "metadata": "Metadati",
     "fields": "{{kind}}",
     "conditions": "Condizioni",
-    "yaml": "YAML"
+    "yaml": "YAML",
+    "saveFailed": "Impossibile salvare lo stato delle sezioni. Le modifiche valgono solo per questa sessione.",
+    "controls": "Sezioni della risorsa",
+    "expandAll": "Espandi tutto",
+    "collapseAll": "Comprimi tutto"
   },
   "yaml": {
     "show": "Mostra YAML",

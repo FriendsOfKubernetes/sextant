@@ -76,7 +76,7 @@ export function TrafficTable({ obj }: { obj: KubeObject }) {
   ]);
   const headers = [t("knative:traffic.revision"), t("knative:traffic.tag"), t("knative:traffic.share"), t("knative:traffic.latest"), t("knative:traffic.url")];
   const body = table(TRAFFIC_TABLE, headers, rows, TRAFFIC_WRAP);
-  return <Block title={asked ? t("knative:traffic.askedTitle") : t("knative:traffic.title")}>{body}</Block>;
+  return <Block id={asked ? "askedTraffic" : "traffic"} title={asked ? t("knative:traffic.askedTitle") : t("knative:traffic.title")}>{body}</Block>;
 }
 
 function ServiceView({ obj, kind }: { obj: KubeObject; kind: typeof KSERVICE }) {
@@ -153,5 +153,5 @@ export function KnativeSection({ objectRef, obj }: DetailsSectionProps) {
   ) : (
     <ServiceView obj={obj} kind={kind} />
   );
-  return <Block title={t("details:sections.fields", { kind: kind.kind })}>{view}</Block>;
+  return <Block id="details:sections.fields" title={t("details:sections.fields", { kind: kind.kind })}>{view}</Block>;
 }

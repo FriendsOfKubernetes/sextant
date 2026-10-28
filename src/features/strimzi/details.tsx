@@ -63,7 +63,7 @@ function Messages({ obj }: { obj: KubeObject }) {
   return (
     <>
       {r.state === "notReady" && r.message && <p className="strimzi-note strimzi-note--danger">{r.message}</p>}
-      {warnings.length > 0 && <Block title={t("strimzi:warnings")}>{warningsTable}</Block>}
+      {warnings.length > 0 && <Block id="strimzi:warnings" title={t("strimzi:warnings")}>{warningsTable}</Block>}
     </>
   );
 }
@@ -112,7 +112,7 @@ function KafkaView({ obj }: { obj: KubeObject }) {
     <>
       <Messages obj={obj} />
       <Fields rows={rows} labelPrefix={LABELS} />
-      {listeners.length > 0 && <Block title={t("strimzi:listeners.title")}>{listenersTable}</Block>}
+      {listeners.length > 0 && <Block id="strimzi:listeners.title" title={t("strimzi:listeners.title")}>{listenersTable}</Block>}
     </>
   );
 }
@@ -217,8 +217,8 @@ function ConnectView({ obj, mirror }: { obj: KubeObject; mirror: boolean }) {
     <>
       <Messages obj={obj} />
       <Fields rows={rows} labelPrefix={LABELS} />
-      {mirror && mirrors.length > 0 && <Block title={t("strimzi:mirrors.title")}>{mirrorsTable}</Block>}
-      {connectors.length > 0 && <Block title={t("strimzi:connectors.title")}>{connectorsTable}</Block>}
+      {mirror && mirrors.length > 0 && <Block id="strimzi:mirrors.title" title={t("strimzi:mirrors.title")}>{mirrorsTable}</Block>}
+      {connectors.length > 0 && <Block id="strimzi:connectors.title" title={t("strimzi:connectors.title")}>{connectorsTable}</Block>}
       <ConnectorFailures connectors={reported} />
     </>
   );

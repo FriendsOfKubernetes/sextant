@@ -121,5 +121,15 @@
     "textSizeHint": "Metin, tablo satırları ve denetimler onunla büyür; terminal, günlükler ve YAML düzenleyici de izler.",
     "terminalScreenReader": "Terminalde ekran okuyucu desteği",
     "terminalScreenReaderHint": "Bir ekran okuyucunun terminal çıktısını okumasını sağlar. Terminali yavaşlatır; ekran okuyucu kullanmıyorsanız kapalı bırakın."
+  },
+  "details": {
+    "title": "Kaynak ayrıntıları",
+    "remember": "Bölümlerin durumunu hatırla",
+    "modes": {
+      "none": "Hatırlama",
+      "cluster": "Küme bazında",
+      "global": "Tüm kümelerde ortak"
+    },
+    "hint": "Bölümlerin durumu her kaynak türü için ayrı kaydedilir. YAML başlangıçta daraltılmıştır."
   }
 }

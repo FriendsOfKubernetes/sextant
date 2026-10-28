@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // The delegation tree of an HTTPProxy: for a root, every proxy it includes, and theirs, with the path prefix each
 // one gets (include prefixes concatenate from the root down) and its state; for an included proxy, the roots that
 // reach it with only the branches leading to it, then everything under it. The opened proxy is marked. Read from the
@@ -51,7 +52,7 @@ function Node({ node, current, top }: { node: TreeNode; current: string; top: bo
 
 export function DelegationTree({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
   const { t } = useTranslation();
-  const { index, loading, failed, truncated } = useProxyIndex(clusterId, true);
+  const { index, loading, failed, truncated } = useProxyIndex(clusterId, useDetailsDisclosure("contour:tree.title")?.open ?? true);
   const key = proxyKey(obj.metadata?.namespace ?? "", obj.metadata?.name ?? "");
   const row = index.get(key);
   const roots = row?.root ? [key] : rootsReaching(index, key);
@@ -70,7 +71,7 @@ export function DelegationTree({ clusterId, obj }: { clusterId: ClusterId; obj: 
       </ul>
     );
   return (
-    <Block title={t("contour:tree.title")}>
+    <Block id="contour:tree.title" title={t("contour:tree.title")}>
       {body}
       {cut && <p className="cm-muted">{t("contour:tree.truncated")}</p>}
     </Block>

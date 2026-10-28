@@ -49,11 +49,11 @@ function listed(state: ReturnType<typeof useWatch>, spec: WatchSpec | null, serv
 }
 
 /** The ServingRuntimes of `namespace` and the ClusterServingRuntimes. */
-export function useRuntimes(clusterId: ClusterId, namespace: string | null): { namespaced: Listed; clusterWide: Listed } {
+export function useRuntimes(clusterId: ClusterId, namespace: string | null, enabled = true): { namespaced: Listed; clusterWide: Listed } {
   const nsKind = useServed(clusterId, SERVING_RUNTIME);
   const clusterKind = useServed(clusterId, CLUSTER_SERVING_RUNTIME);
-  const nsSpec: WatchSpec | null = nsKind && namespace ? { kind: nsKind, namespaces: [namespace], labelSelector: null, fieldSelector: null } : null;
-  const clusterSpec: WatchSpec | null = clusterKind ? { kind: clusterKind, namespaces: null, labelSelector: null, fieldSelector: null } : null;
+  const nsSpec: WatchSpec | null = enabled && nsKind && namespace ? { kind: nsKind, namespaces: [namespace], labelSelector: null, fieldSelector: null } : null;
+  const clusterSpec: WatchSpec | null = enabled && clusterKind ? { kind: clusterKind, namespaces: null, labelSelector: null, fieldSelector: null } : null;
   const nsState = useWatch(clusterId, nsSpec, RUNTIME_OPTIONS);
   const clusterState = useWatch(clusterId, clusterSpec, RUNTIME_OPTIONS);
   return { namespaced: listed(nsState, nsSpec, nsKind), clusterWide: listed(clusterState, clusterSpec, clusterKind) };

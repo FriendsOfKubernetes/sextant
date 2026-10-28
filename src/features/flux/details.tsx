@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of Flux objects. The kind's own fields (`FluxFields`: Ready, revision, interval, the source as a link, …)
 // go into the panel's "fields" section; `FluxRelatedSection` (a section of its own, it needs the cluster) lists
 // what a Kustomization or HelmRelease created and which Kustomizations and HelmReleases use a source. Conditions are
@@ -360,7 +361,7 @@ function HelmReleaseResourcesView({
   ];
   const failure = results.find((r) => r.error !== null && r.error.code !== "forbidden")?.error;
   return (
-    <Block title={t("flux:related.resources")}>
+    <Block id="flux:related.resources" title={t("flux:related.resources")}>
       <RefTable>
         {inventory.map((r) => (
           <RefRow key={refKey(r)} objectRef={r} />
@@ -399,10 +400,11 @@ function UsedBy({ clusterId, source }: { clusterId: ClusterId; source: KubeObjec
 
 function UsedByView({ clusterId, source, onRetry }: { clusterId: ClusterId; source: KubeObject; onRetry: () => void }) {
   const { t } = useTranslation();
+  const open = useDetailsDisclosure("flux:related.usedBy")?.open ?? true;
   const kustomization = useServedKind(clusterId, KUSTOMIZATION);
   const release = useServedKind(clusterId, HELM_RELEASE);
-  const kustomizations = useWatch(clusterId, everywhere(kustomization ?? null));
-  const releases = useWatch(clusterId, everywhere(release ?? null));
+  const kustomizations = useWatch(clusterId, open ? everywhere(kustomization ?? null) : null);
+  const releases = useWatch(clusterId, open ? everywhere(release ?? null) : null);
   const loading = (
     [
       [kustomization, kustomizations.status],
@@ -417,7 +419,7 @@ function UsedByView({ clusterId, source, onRetry }: { clusterId: ClusterId; sour
     ...[...releases.items.values()].filter((o) => usesSource(o, source)).map((o) => objectRefOf(o, HELM_RELEASE)),
   ].sort((a, b) => refKey(a).localeCompare(refKey(b)));
   return (
-    <Block title={t("flux:related.usedBy")}>
+    <Block id="flux:related.usedBy" title={t("flux:related.usedBy")}>
       {using.length > 0 && (
         <RefTable>
           {using.map((r) => (
@@ -443,7 +445,7 @@ export function FluxRelatedSection({ clusterId, objectRef, obj }: DetailsSection
     const inventory = inventoryOf(obj);
     if (inventory.length === 0) return null;
     return (
-      <Block title={t("flux:related.inventory")}>
+      <Block id="flux:related.inventory" title={t("flux:related.inventory")}>
         <RefTable>
           {inventory.map((r) => (
             <RefRow key={refKey(r)} objectRef={r} />

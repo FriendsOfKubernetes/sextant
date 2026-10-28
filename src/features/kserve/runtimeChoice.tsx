@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // "Serving runtime" of an InferenceService's details: the runtime KServe chooses for the predictor now, computed from
 // the namespace's ServingRuntimes and the ClusterServingRuntimes as KServe does (runtimes.ts), the other candidates
 // in KServe's order, why none fits, and whether it differs from what KServe recorded in the status.
@@ -15,7 +16,8 @@ const CHOICE_LABELS = "kserve:choice.fields";
 export function RuntimeChoice({ clusterId, obj, predictor, modelMesh }: { clusterId: ClusterId; obj: KubeObject; predictor: ComponentSpec; modelMesh: boolean }) {
   const { t } = useTranslation();
   const ns = obj.metadata?.namespace ?? null;
-  const { namespaced, clusterWide } = useRuntimes(clusterId, ns);
+  const open = useDetailsDisclosure("kserve:choice.title")?.open ?? true;
+  const { namespaced, clusterWide } = useRuntimes(clusterId, ns, open);
   const recorded = recordedRuntimeOf(obj);
   let body;
   if (!namespaced.loaded || !clusterWide.loaded) body = <Muted text={t("kserve:choice.loading")} />;
@@ -41,5 +43,5 @@ export function RuntimeChoice({ clusterId, obj, predictor, modelMesh }: { cluste
       );
     } else body = <Note text={t(`kserve:choice.${choice.kind}`, { name: choice.runtime.name })} tone="danger" />;
   }
-  return <Block title={t("kserve:choice.title")}>{body}</Block>;
+  return <Block id="kserve:choice.title" title={t("kserve:choice.title")}>{body}</Block>;
 }

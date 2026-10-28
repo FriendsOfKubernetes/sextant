@@ -7,7 +7,11 @@
     "metadata": "Метадані",
     "fields": "{{kind}}",
     "conditions": "Умови",
-    "yaml": "YAML"
+    "yaml": "YAML",
+    "saveFailed": "Не вдалося зберегти стан секцій. Зміни діють лише в цьому сеансі.",
+    "controls": "Секції картки",
+    "expandAll": "Розгорнути все",
+    "collapseAll": "Згорнути все"
   },
   "yaml": {
     "show": "Показати YAML",

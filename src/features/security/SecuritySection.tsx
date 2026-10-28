@@ -3,6 +3,8 @@
 // this object, its findings with a fix to copy, and — when Trivy Operator is installed — the image vulnerabilities and
 // the configuration audit of the object, linked to the reports. Watched only while the panel shows it: the namespace by
 // name, the reports of this object by label in its namespace (a Deployment's through its ReplicaSets).
+import { Block } from "../details/ui";
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KindRef, type KubeObject, type WatchSpec } from "../../api";
@@ -62,7 +64,7 @@ export function podsOf(kind: string, obj: KubeObject, replicaSets: readonly Kube
   return [...pods].filter((p) => !p.metadata?.deletionTimestamp && isOwn(p, podOwner, owners));
 }
 
-export function SecuritySection({ clusterId, objectRef, obj }: DetailsSectionProps) {
+function SecuritySectionBody({ clusterId, objectRef, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
   const kind = objectRef.kind.kind;
   const namespace = objectRef.namespace ?? "";
@@ -90,7 +92,6 @@ export function SecuritySection({ clusterId, objectRef, obj }: DetailsSectionPro
   const owner = status.controllerOf(obj);
   return (
     <section className="sec-section" aria-label={t("security:details.title")}>
-      <h3 className="sec-section__title">{t("security:details.title")}</h3>
       <p className="sec-section__posture">
         <Badge tone={POSTURE_TONE[posture]}>{t(`security:posture.${posture}`)}</Badge>
         <span>{t(`security:postureText.${posture}`)}</span>
@@ -138,8 +139,9 @@ function TrivyOfObject({
   const vulnKind = useServedTrivyKind(clusterId, VULNERABILITY_REPORT);
   const auditKind = useServedTrivyKind(clusterId, CONFIG_AUDIT_REPORT);
   const served = !!vulnKind || !!auditKind;
+  const open = useDetailsDisclosure("security:trivy.section")?.open ?? true;
   const scanned = scannedAs(kind, obj, replicaSets);
-  const selector = scanned ? reportSelector(scanned) : null;
+  const selector = open && scanned ? reportSelector(scanned) : null;
   const vulns = useWatch(clusterId, selector ? inNamespaces(vulnKind, [namespace], selector) : null);
   const audits = useWatch(clusterId, selector ? inNamespaces(auditKind, [namespace], selector) : null);
 
@@ -154,8 +156,7 @@ function TrivyOfObject({
   if (!served) return null;
   const loading = !!vulnKind && vulns.status === "loading";
   return (
-    <div className="sec-trivy">
-      <h4 className="sec-trivy__title">{t("security:trivy.section")}</h4>
+    <Block id="security:trivy.section" title={t("security:trivy.section")}>
       {vulns.status === "error" || audits.status === "error" ? (
         <p className="sec-note sec-note--warning">{t("security:trivy.watchFailed")}</p>
       ) : vulnReports.length === 0 && auditReports.length === 0 ? (
@@ -167,7 +168,7 @@ function TrivyOfObject({
       {auditReports.map((r) => (
         <AuditReport key={r.metadata?.uid ?? r.metadata?.name} report={r} auditKind={auditKind!} />
       ))}
-    </div>
+    </Block>
   );
 }
 
@@ -225,4 +226,10 @@ function AuditReport({ report, auditKind }: { report: KubeObject; auditKind: Kin
       {top.rows.length > 0 ? <CheckTable top={top} /> : <p className="sec-note">{t("security:trivy.noFailed")}</p>}
     </div>
   );
+}
+
+export function SecuritySection(props: DetailsSectionProps) {
+  const { t } = useTranslation();
+  if (!props.obj) return null;
+  return <Block id="security:details.title" title={t("security:details.title")}><SecuritySectionBody {...props} /></Block>;
 }

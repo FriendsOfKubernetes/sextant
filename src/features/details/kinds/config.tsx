@@ -26,8 +26,8 @@ export function ConfigMapDetails({ obj }: { obj: KubeObject }) {
   );
   return (
     <>
-      {data && <Block title={t("details:configMap.data")}>{data}</Block>}
-      {binary && <Block title={t("details:configMap.binaryData")}>{binary}</Block>}
+      {data && <Block id="details:configMap.data" title={t("details:configMap.data")}>{data}</Block>}
+      {binary && <Block id="details:configMap.binaryData" title={t("details:configMap.binaryData")}>{binary}</Block>}
     </>
   );
 }
@@ -55,7 +55,7 @@ export function SecretDetails({ obj, clusterId }: KindViewProps) {
   return (
     <>
       <Fields rows={rows} />
-      {data && <Block title={t("details:secret.data")}>{data}</Block>}
+      {data && <Block id="details:secret.data" title={t("details:secret.data")}>{data}</Block>}
     </>
   );
 }

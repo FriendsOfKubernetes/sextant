@@ -7,7 +7,11 @@
     "metadata": "メタデータ",
     "fields": "{{kind}}",
     "conditions": "Condition",
-    "yaml": "YAML"
+    "yaml": "YAML",
+    "saveFailed": "セクションの状態を保存できませんでした。変更はこのセッションでのみ有効です。",
+    "controls": "リソースのセクション",
+    "expandAll": "すべて展開",
+    "collapseAll": "すべて折りたたむ"
   },
   "yaml": {
     "show": "YAML を表示",

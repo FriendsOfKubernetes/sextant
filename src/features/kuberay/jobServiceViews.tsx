@@ -62,7 +62,7 @@ export function JobView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObj
       {message && (state === "failed" || state === "retrying") && <Note text={clip(message)} tone={state === "failed" ? "danger" : "warning"} />}
       {message && state !== "failed" && state !== "retrying" && <Muted text={clip(message)} />}
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block title={t("kuberay:entrypoint")}>{entrypoint ?? <Muted text={t("kuberay:noEntrypoint")} />}</Block>
+      <Block id="kuberay:entrypoint" title={t("kuberay:entrypoint")}>{entrypoint ?? <Muted text={t("kuberay:noEntrypoint")} />}</Block>
       {ns && submitter && (
         <SelectorLogsButton
           clusterId={clusterId}
@@ -85,7 +85,7 @@ function ServeClusterBlock({ id, title, cluster, ns }: { id: string; title: stri
     ["targetCapacity", cluster.targetCapacity === undefined ? null : t("kuberay:percent", { value: cluster.targetCapacity })],
   ];
   return (
-    <Block title={title}>
+    <Block id={id} title={title}>
       <Fields rows={rows} labelPrefix={LABELS} />
       <AppsTable id={id} apps={cluster.apps} />
     </Block>
@@ -124,7 +124,7 @@ export function ServiceView({ obj }: { obj: KubeObject }) {
       <Fields rows={rows} labelPrefix={LABELS} />
       <ServeClusterBlock id="rayActiveApps" title={t("kuberay:activeCluster")} cluster={activeOf(obj)} ns={ns} />
       <ServeClusterBlock id="rayPendingApps" title={t("kuberay:pendingCluster")} cluster={pendingOf(obj)} ns={ns} />
-      <Block title={t("kuberay:serveConfig")}>{serveConfig}</Block>
+      <Block id="kuberay:serveConfig" title={t("kuberay:serveConfig")}>{serveConfig}</Block>
     </>
   );
 }

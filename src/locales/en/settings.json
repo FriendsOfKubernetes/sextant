@@ -121,5 +121,15 @@
     "textSizeHint": "Text, table rows and controls grow with it; the terminal, logs and the YAML editor follow.",
     "terminalScreenReader": "Screen reader support in the terminal",
     "terminalScreenReaderHint": "Lets a screen reader read terminal output. It slows the terminal down, so leave it off unless you use a screen reader."
+  },
+  "details": {
+    "title": "Resource details",
+    "remember": "Remember section state",
+    "modes": {
+      "none": "Do not remember",
+      "cluster": "Per cluster",
+      "global": "Across all clusters"
+    },
+    "hint": "Sections are remembered separately for each resource kind. YAML starts collapsed."
   }
 }

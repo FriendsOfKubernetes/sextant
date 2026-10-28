@@ -103,7 +103,7 @@ function AllocatedBlock({ allocated }: { allocated: ReturnType<typeof allocatedR
   const withoutLimit = Math.max(allocated.cpu.podsWithoutLimit, allocated.memory.podsWithoutLimit);
   const { count, allocatable } = allocated.pods;
   return (
-    <Block title={t("nodepods:resources.allocated")}>
+    <Block id="nodepods:resources.allocated" title={t("nodepods:resources.allocated")}>
       {table(
         SUMMARY_TABLE,
         [

@@ -283,6 +283,16 @@
   border-top: 1px solid var(--color-border);
 }
 
+/* Continue the outer guide across the existing 12px gap, 1px rule and 8px padding before the next part. */
+.np-details-policy:has(+ .np-details-policy) { --dt-guide-tail-gap: 21px; }
+/* A part owns an inner branch, separate from the outer branch that ends at its heading. */
+.np-policy-part { padding-inline-start: .5rem; }
+/* Empty directions render paragraphs; keep their margins inside the body, out of the next heading's gap. */
+:is(.np-details-policy, .np-policy-part) > .dt-disclosure-nested > .dt-block__body { display: flow-root; }
+.np-details-policy > .dt-disclosure-nested:has(> .dt-block__body > .np-policy-part) > .dt-disclosure-head {
+  --dt-branch-offset: 0px;
+}
+
 .np-coverage__intro {
   margin: 0 0 8px;
   color: var(--color-text-muted);

@@ -555,7 +555,7 @@ describe("YAML", () => {
       namespace: "sextant-demo",
       name: "demo-widget",
     });
-    fireEvent.click(within(section("yaml")).getByRole("button", { name: "Show YAML" }));
+    fireEvent.click(within(section("yaml")).getByRole("button", { name: "YAML" }));
     const yaml = yamlText();
     expect(yaml).toMatch(/^apiVersion: demo\.sextant\.dev\/v1\nkind: Widget\nmetadata:\n/);
     expect(yaml).toContain("  name: demo-widget\n");
@@ -568,7 +568,7 @@ describe("YAML", () => {
 
   it("does not reveal secret values", async () => {
     await openDetails(secret, { kind: { group: "", version: "v1", kind: "Secret" }, namespace: "sextant-demo", name: "demo-secret" });
-    fireEvent.click(within(section("yaml")).getByRole("button", { name: "Show YAML" }));
+    fireEvent.click(within(section("yaml")).getByRole("button", { name: "YAML" }));
     const yaml = yamlText();
     expect(yaml).toContain("data:\n  password: <hidden>\n  username: <hidden>");
     expect(yaml).not.toContain("bm90LWEtcmVhbC1wYXNzd29yZA==");

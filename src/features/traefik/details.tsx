@@ -144,7 +144,7 @@ function ReferencesTable({ checks, group }: { checks: RefCheck[]; group: string 
   ]);
   const headers = [t("traefik:refs.kind"), t("traefik:refs.name"), t("traefik:refs.where"), t("traefik:refs.state")];
   const body = table(REFS_TABLE, headers, rows, REFS_WRAP);
-  return body ? <Block title={t("traefik:refs.title")}>{body}</Block> : null;
+  return body ? <Block id="traefik:refs.title" title={t("traefik:refs.title")}>{body}</Block> : null;
 }
 
 const portText = (ref: Ref) => (ref.port === undefined ? "" : `:${ref.port}`);
@@ -171,7 +171,7 @@ function RoutesTable({ routes, group }: { routes: Route[]; group: string }) {
   ]);
   const headers = [t("traefik:routes.number"), t("traefik:routes.match"), t("traefik:routes.priority"), t("traefik:routes.middlewares"), t("traefik:routes.services")];
   const body = table(ROUTES_TABLE, headers, rows, ROUTES_WRAP);
-  return body ? <Block title={t("traefik:routes.title")}>{body}</Block> : null;
+  return body ? <Block id="traefik:routes.title" title={t("traefik:routes.title")}>{body}</Block> : null;
 }
 
 function RouteView({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindRef; obj: KubeObject }) {
@@ -196,7 +196,7 @@ function RouteView({ clusterId, kind, obj }: { clusterId: ClusterId; kind: KindR
       {spec.ingressClassName && <p className="cm-muted">{t("traefik:explain.ingressClass", { name: spec.ingressClassName })}</p>}
       <RoutesTable routes={spec.routes} group={kind.group} />
       {tls?.secretName && (
-        <Block title={t("traefik:fields.certificate")}>
+        <Block id="traefik:fields.certificate" title={t("traefik:fields.certificate")}>
           <TlsCertificateView clusterId={clusterId} obj={{ metadata: { namespace: ns, name: tls.secretName } } as KubeObject} />
         </Block>
       )}
@@ -251,8 +251,7 @@ function SettingsView({ kind, obj }: { kind: KindRef; obj: KubeObject }) {
 
 const stateRow = (health: Health): FieldRow[] => [["state", <HealthText key="h" health={health} />]];
 
-export function TraefikSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
-  const { t } = useTranslation();
+function TraefikSectionBody({ clusterId, objectRef, obj }: DetailsSectionProps) {
   const state = useTraefik(clusterId);
   const def = traefikKind(objectRef.kind);
   const kind = objectRef.kind;
@@ -280,12 +279,18 @@ export function TraefikSection({ clusterId, objectRef, obj }: DetailsSectionProp
     <MiddlewareView kind={kind} obj={obj} />
   );
   return (
-    <Block title={t("details:sections.fields", { kind: kind.kind })}>
+    <>
       <Fields rows={stateRow(health)} labelPrefix={LABELS} />
       {judgement && <Judged health={health} checks={judgement.checks} issues={judgement.issues} />}
       {!state.loading && <TwinNote kind={kind} twin={twin} />}
       {view}
       {judgement && <ReferencesTable checks={judgement.checks} group={kind.group} />}
-    </Block>
+    </>
   );
+}
+
+export function TraefikSection(props: DetailsSectionProps) {
+  const { t } = useTranslation();
+  if (!props.obj || !traefikKind(props.objectRef.kind)) return null;
+  return <Block id="details:sections.fields" title={t("details:sections.fields", { kind: props.objectRef.kind.kind })}><TraefikSectionBody {...props} /></Block>;
 }

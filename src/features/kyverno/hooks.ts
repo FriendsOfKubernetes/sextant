@@ -34,14 +34,15 @@ export interface ObjectResults {
   served: boolean;
   loading: boolean;
   results: PolicyResult[];
+  unknown: boolean;
 }
 
 /** The policy results of one object (its own report, by name). */
-export function useObjectResults(clusterId: ClusterId, ref: ObjectRef, uid: string | undefined): ObjectResults {
+export function useObjectResults(clusterId: ClusterId, ref: ObjectRef, uid: string | undefined, enabled = true): ObjectResults {
   const namespaced = ref.namespace !== null && ref.namespace !== "";
   const reportKind = useServed(clusterId, namespaced ? POLICY_REPORT : CLUSTER_POLICY_REPORT);
   const spec: WatchSpec | null =
-    reportKind && uid
+    enabled && reportKind && uid
       ? { kind: reportKind, namespaces: namespaced ? [ref.namespace!] : null, labelSelector: null, fieldSelector: `metadata.name=${uid}` }
       : null;
   const state = useWatch(clusterId, spec);
@@ -54,7 +55,7 @@ export function useObjectResults(clusterId: ClusterId, ref: ObjectRef, uid: stri
       results.push(...reportResults(reportKind, report));
     }
   }
-  return { served: !!reportKind, loading: reportKind === undefined || (!!spec && state.status === "loading"), results };
+  return { served: !!reportKind, loading: reportKind === undefined || (!!spec && state.status === "loading"), results, unknown: state.status === "error" || (state.forbidden?.length ?? 0) > 0 || isCapped(state) };
 }
 
 export interface FailedObject {

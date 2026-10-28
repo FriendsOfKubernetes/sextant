@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of the GPU Operator kinds (section `gpuOperator`, #245) and the "GPU" block of Nodes:
 //   ClusterPolicy — the state with the operator's message, where the operands run, the MIG strategy, and each
 //                   component: enabled or not (the spec, else the operator's default), its DaemonSet in the operand
@@ -79,7 +80,8 @@ function ListNote({ list, namespace }: { list: Listed; namespace: string | undef
 function PolicyView({ clusterId, policy }: { clusterId: ClusterId; policy: KubeObject }) {
   const { t } = useTranslation();
   const namespace = operandNamespaceOf(policy);
-  const daemonSets = useOperandDaemonSets(clusterId, namespace);
+  const open = useDetailsDisclosure("gpuoperator:components.title")?.open ?? true;
+  const daemonSets = useOperandDaemonSets(clusterId, open ? namespace : undefined);
   const strategy = migStrategyOf(policy);
   const rows: FieldRow[] = [
     ["state", <StateCell key="s" obj={policy} />],
@@ -108,7 +110,7 @@ function PolicyView({ clusterId, policy }: { clusterId: ClusterId; policy: KubeO
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
       <StateNote obj={policy} />
-      <Block title={t("gpuoperator:components.title")}>
+      <Block id="gpuoperator:components.title" title={t("gpuoperator:components.title")}>
         {view}
         <ListNote list={daemonSets} namespace={namespace} />
       </Block>
@@ -119,7 +121,8 @@ function PolicyView({ clusterId, policy }: { clusterId: ClusterId; policy: KubeO
 function DriverView({ clusterId, driver }: { clusterId: ClusterId; driver: KubeObject }) {
   const { t } = useTranslation();
   const namespace = operandNamespaceOf(driver);
-  const daemonSets = useOperandDaemonSets(clusterId, namespace);
+  const open = useDetailsDisclosure("gpuoperator:driver.daemonSets")?.open ?? true;
+  const daemonSets = useOperandDaemonSets(clusterId, open ? namespace : undefined);
   const owned = ownedDaemonSets(driver, daemonSets.items);
   const rows: FieldRow[] = [
     ["state", <StateCell key="s" obj={driver} />],
@@ -138,7 +141,7 @@ function DriverView({ clusterId, driver }: { clusterId: ClusterId; driver: KubeO
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
       <StateNote obj={driver} />
-      <Block title={t("gpuoperator:driver.daemonSets")}>
+      <Block id="gpuoperator:driver.daemonSets" title={t("gpuoperator:driver.daemonSets")}>
         {owned.length > 0 ? view : !daemonSets.loading && namespace && <p className="gpu-muted">{t("gpuoperator:driver.none")}</p>}
         <ListNote list={daemonSets} namespace={namespace} />
       </Block>
@@ -177,7 +180,7 @@ export function GpuNodeSection({ obj }: DetailsSectionProps) {
     ["migState", gpu.migState ? <StatusText key="m" value={gpu.migState} tone={migStateTone(gpu.migState)} /> : null],
   ];
   return (
-    <Block title={t("gpuoperator:node.title")}>
+    <Block id="gpuoperator:node.title" title={t("gpuoperator:node.title")}>
       <Fields rows={rows} labelPrefix={LABELS} />
       {gpu.migState === "failed" && <p className="gpu-message">{t("gpuoperator:node.migFailed", { config: gpu.migConfig ?? "" })}</p>}
       <AmountsTable node={obj} id={AMOUNTS_TABLE} />

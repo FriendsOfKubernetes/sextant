@@ -26,7 +26,7 @@ export function SyncHistorySection({ obj }: DetailsSectionProps) {
     e.sources.map((s) => [s.repoURL, s.path ?? s.chart].filter(Boolean).join(" ")).join(", "),
   ]);
   return (
-    <Block title={t("argocd:history.title")}>
+    <Block id="argocd:history.title" title={t("argocd:history.title")}>
       {table(
         TABLE_IDS.argocdSyncHistory,
         [

@@ -121,5 +121,15 @@
     "textSizeHint": "Le texte, les lignes des tableaux et les contrôles grandissent avec elle ; le terminal, les journaux et l’éditeur YAML suivent.",
     "terminalScreenReader": "Prise en charge des lecteurs d’écran dans le terminal",
     "terminalScreenReaderHint": "Permet à un lecteur d’écran de lire la sortie du terminal. Cela ralentit le terminal : laissez-la désactivée si vous n’utilisez pas de lecteur d’écran."
+  },
+  "details": {
+    "title": "Détails de la ressource",
+    "remember": "Mémoriser l’état des sections",
+    "modes": {
+      "none": "Ne pas mémoriser",
+      "cluster": "Par cluster",
+      "global": "Pour tous les clusters"
+    },
+    "hint": "L’état est mémorisé séparément pour chaque type de ressource. YAML est initialement replié."
   }
 }

@@ -38,15 +38,15 @@ function useListed(clusterId: ClusterId, spec: WatchSpec | null, options?: typeo
 }
 
 /** The ReplicationControllers labelled with the DeploymentConfig's name. */
-export function useDcControllers(clusterId: ClusterId, dc: KubeObject): Listed {
-  const name = dc.metadata?.name;
-  return useListed(clusterId, name ? selected(REPLICATION_CONTROLLER, dc.metadata?.namespace, `${DC_NAME_LABEL}=${labelValue(name)}`) : null, RC_OPTIONS);
+export function useDcControllers(clusterId: ClusterId, dc: KubeObject | null): Listed {
+  const name = dc?.metadata?.name;
+  return useListed(clusterId, name ? selected(REPLICATION_CONTROLLER, dc?.metadata?.namespace, `${DC_NAME_LABEL}=${labelValue(name)}`) : null, RC_OPTIONS);
 }
 
 /** The Builds labelled with the BuildConfig's name (cut as the build controller cuts it). */
-export function useConfigBuilds(clusterId: ClusterId, bc: KubeObject, build: KindRef = BUILD): Listed {
-  const name = bc.metadata?.name;
-  return useListed(clusterId, name ? selected(build, bc.metadata?.namespace, `${BC_LABEL}=${labelValue(name)}`) : null, BUILD_OPTIONS);
+export function useConfigBuilds(clusterId: ClusterId, bc: KubeObject | null, build: KindRef = BUILD): Listed {
+  const name = bc?.metadata?.name;
+  return useListed(clusterId, name ? selected(build, bc?.metadata?.namespace, `${BC_LABEL}=${labelValue(name)}`) : null, BUILD_OPTIONS);
 }
 
 /** One pod by name. */
