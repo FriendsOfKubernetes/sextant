@@ -23,6 +23,8 @@
     "sdk:check": "tsc -p sdk && tsc -p sdk/tsconfig.test.json && vitest run --config sdk/vitest.config.ts && node sdk/scripts/check.mjs",
     "sdk:build": "node sdk/scripts/build.mjs",
     "sdk:pack": "node sdk/scripts/pack.mjs",
+    "sdk:keygen": "node sdk/scripts/cli.mjs keygen",
+    "sdk:sign": "node sdk/scripts/cli.mjs sign",
     "sdk:sync-types": "node sdk/scripts/sync-types.mjs"
   },
   "dependencies": {

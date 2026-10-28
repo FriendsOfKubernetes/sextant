@@ -4,12 +4,14 @@
 //   sextant-ext build <project> [--out <dir>]          bundle the project into <project>/dist (or <dir>)
 //   sextant-ext pack <folder> [--out <dir>] [--dry-run] check the folder and write <id>-<version>.sextant-ext
 //   sextant-ext check <folder | sextant-extension.json> check a manifest as Sextant does
+//   sextant-ext keygen | sign | verify …               sign packages for the extension catalog (see sign.mjs)
 import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 import { run as build } from "./build.mjs";
 import { checkManifestBytes, formatManifestError, MANIFEST_FILE } from "./manifest.mjs";
 import { main as pack } from "./pack.mjs";
+import { main as signing } from "./sign.mjs";
 
 function check(target) {
   if (!target) {
@@ -33,9 +35,16 @@ function check(target) {
 }
 
 const [command, ...rest] = process.argv.slice(2);
-const commands = { build: () => build(rest), pack: () => pack(rest), check: () => check(rest[0]) };
+const commands = {
+  build: () => build(rest),
+  pack: () => pack(rest),
+  check: () => check(rest[0]),
+  keygen: () => signing("keygen", rest),
+  sign: () => signing("sign", rest),
+  verify: () => signing("verify", rest),
+};
 if (!commands[command]) {
-  process.stdout.write("usage: sextant-ext build|pack|check …\n");
+  process.stdout.write("usage: sextant-ext build|pack|check|keygen|sign|verify …\n");
   process.exitCode = command ? 2 : 0;
 } else {
   process.exitCode = await commands[command]();

@@ -1,0 +1,1 @@
+A file signed by the reference minisign crate (rust-minisign 0.7) for the SDK tests.
