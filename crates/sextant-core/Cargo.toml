@@ -48,6 +48,9 @@ ruzstd = "0.9.1"
 # Reflector's namespace patterns (`reflector.rs`): matched in linear time, never by a backtracking engine. The version
 # the build already has.
 regex = "1.13.1"
+# The extension catalog (`extensions::catalog`, ADR-0130): publishers' minisign signatures. Verify-only, no
+# dependencies; the version the updater already brings.
+minisign-verify = "0.3.0"
 
 # Signals without spawning `kill`: the liveness check of a temporary kubeconfig's owner (`kubeconfig.rs`) and stopping
 # a timed-out cloud CLI's whole process group (`cloud.rs`); `fs`: the `openat` walk that serves extension files without

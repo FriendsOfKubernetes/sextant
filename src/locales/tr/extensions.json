@@ -25,7 +25,8 @@
   "source": {
     "folder": "Klasör {{path}}",
     "file": "Dosya {{name}}",
-    "url": "{{url}}"
+    "url": "{{url}}",
+    "catalog": "Katalog: {{repository}}"
   },
   "url": {
     "title": "URL'den yükle",
@@ -63,7 +64,9 @@
     "permissions": "Yapabilecekleri",
     "noContributions": "Arayüze hiçbir şey eklenmez.",
     "secretWarning": "Secret değerlerini okur",
-    "secretWarningHint": "Bu uzantı Secret değerlerini okumak istiyor: parolalar, belirteçler ve anahtarlar. Yalnızca yazarına güveniyorsanız izin verin."
+    "secretWarningHint": "Bu uzantı Secret değerlerini okumak istiyor: parolalar, belirteçler ve anahtarlar. Yalnızca yazarına güveniyorsanız izin verin.",
+    "verified": "Yayıncı tarafından imzalandı, anahtar {{keyId}}",
+    "namesake": "Katalogda bu kimliğe sahip bir uzantı var: {{name}}, yazarı {{author}}. Bu paket katalogdan gelmiyor."
   },
   "contributes": {
     "pages": "Kenar çubuğundaki sayfalar",
@@ -139,7 +142,8 @@
   },
   "reinstall": {
     "file": "İzinlerini gözden geçirmek için {{name}} dosyasından yeniden yükleyin (Dosyadan yükle…).",
-    "url": "İzinlerini gözden geçirmek için şu adresten yeniden yükleyin: {{url}} (URL'den yükle…)."
+    "url": "İzinlerini gözden geçirmek için şu adresten yeniden yükleyin: {{url}} (URL'den yükle…).",
+    "catalog": "İzinlerini gözden geçirmek için katalogdan yeniden yükleyin."
   },
   "permissionsDialog": {
     "title": "{{name}} izinleri",
@@ -191,5 +195,67 @@
       "notChecked": "Denetlenmedi"
     },
     "duration": "{{ms}} ms"
+  },
+  "tabs": {
+    "installed": "Yüklü",
+    "catalog": "Katalog"
+  },
+  "catalog": {
+    "use": "Uzantı kataloğunu kullan",
+    "useHint": "Sextant, uzantı listesini kataloğu açtığınızda veya katalogdan bir uzantı yüklüyken bu sayfayı açtığınızda, saatte en fazla bir kez github.com/FriendsOfKubernetes/sextant-extensions adresinden okur. Kapalıyken Sextant hiçbir istek göndermez.",
+    "trust": "Katalog her uzantıyı kimin yayımladığını belirtir ve Sextant yüklediğiniz paketin bu yayıncı tarafından imzalandığını denetler. Katalog her sürümün kodunu incelemez: bir uzantı yine de yalnızca sonraki ekranda izin verdiklerinizi yapabilir.",
+    "loading": "Katalog yükleniyor…",
+    "failed": "Katalog okunamadı",
+    "updatedAt": "Güncellenme: {{date}}",
+    "staleNote": "{{date}} tarihli kopya gösteriliyor: katalog yenilenemedi ({{message}}).",
+    "newerFormat": "Bu katalog daha yeni bir Sextant için yazılmış. Göz atmak için Sextant'ı güncelleyin.",
+    "refresh": "Yenile",
+    "search": "Ara",
+    "searchPlaceholder": "Ad, yazar veya açıklama",
+    "category": "Kategori",
+    "allCategories": "Tüm kategoriler",
+    "empty": "Katalogda henüz uzantı yok.",
+    "noMatch": "Katalogda eşleşen uzantı yok.",
+    "skipped_one": "Katalogdaki {{count}} girdi okunamadı ve gösterilmiyor.",
+    "skipped_other": "Katalogdaki {{count}} girdi okunamadı ve gösterilmiyor.",
+    "by": "{{author}} tarafından",
+    "install": "Yükle",
+    "installNamed": "{{name}} uzantısını yükle",
+    "installed": "Yüklü",
+    "updateTo": "{{version}} sürümüne güncelle",
+    "updateNamed": "{{name}} uzantısını {{version}} sürümüne güncelle",
+    "otherSource": "Başka bir kaynaktan yüklendi",
+    "pinnedElsewhere": "Yayıncı değişti",
+    "needsNewer": "{{version}} sürümü daha yeni bir Sextant gerektiriyor",
+    "withdrawn": "Geri çekildi",
+    "details": "Ayrıntılar",
+    "detailsNamed": "{{name}} ayrıntıları",
+    "repository": "Depo",
+    "openRepository": "{{repository}} deposunu GitHub'da aç",
+    "publisherKey": "Yayıncı anahtarı",
+    "published": "Yayımlanma",
+    "size": "Boyut",
+    "contribution": "{{what}}: {{count}}",
+    "asPublished": "Katalogda yayımlandığı haliyle. Yükleme ekranı paketin kendisinin ne istediğini gösterir.",
+    "permissionsUnreadable": "Bu Sextant sürümü, katalogda listelenen izinleri gösteremiyor.",
+    "categories": {
+      "observability": "Gözlemlenebilirlik",
+      "cost": "Maliyet",
+      "security": "Güvenlik",
+      "gitops": "GitOps",
+      "networking": "Ağ",
+      "storage": "Depolama",
+      "workloads": "İş yükleri",
+      "developer": "Geliştirici araçları",
+      "other": "Diğer"
+    }
+  },
+  "catalogStatus": {
+    "updateAvailable": "{{version}} sürümü katalogda mevcut.",
+    "needsNewerSextant": "Katalogdaki {{version}} sürümü daha yeni bir Sextant gerektiriyor.",
+    "keyChanged": "Yayıncının anahtarı katalogda değişti, bu nedenle güncellemeler reddediliyor. Yeni anahtara güvenmek için uzantıyı kaldırıp yeniden yükleyin.",
+    "repositoryChanged": "Yayıncının deposu katalogda değişti, bu nedenle güncellemeler reddediliyor. Bu depoya güvenmek için uzantıyı kaldırıp yeniden yükleyin.",
+    "withdrawn": "Katalogdan geri çekildi: {{reason}}. Devre dışı bırakmayı veya kaldırmayı düşünün.",
+    "notListed": "Katalog artık bu uzantıyı listelemiyor."
   }
 }

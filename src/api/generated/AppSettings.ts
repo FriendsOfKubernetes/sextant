@@ -4,6 +4,7 @@ import type { CleanupSettings } from "./CleanupSettings";
 import type { ClusterSettings } from "./ClusterSettings";
 import type { CompareSettings } from "./CompareSettings";
 import type { CustomColumn } from "./CustomColumn";
+import type { ExtensionCatalogSettings } from "./ExtensionCatalogSettings";
 import type { FleetSettings } from "./FleetSettings";
 import type { ImageFilesSettings } from "./ImageFilesSettings";
 import type { InstalledExtension } from "./InstalledExtension";
@@ -158,4 +159,9 @@ customColumns: Array<CustomColumn>,
 /**
  * The image file viewer (#216): whether the user's Docker credentials may be used. Written by the frontend.
  */
-imageFiles: ImageFilesSettings, };
+imageFiles: ImageFilesSettings, 
+/**
+ * The extension catalog (ADR-0130): whether Sextant may read it. Written by the frontend; read leniently
+ * ([`extension_catalog`]).
+ */
+extensionCatalog: ExtensionCatalogSettings, };

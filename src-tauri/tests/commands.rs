@@ -175,6 +175,8 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("extensions_list", None),
     ("extension_inspect_file", Some("path")),
     ("extension_inspect_url", Some("url")),
+    ("extension_catalog", Some("refresh")),
+    ("extension_inspect_catalog", Some("id")),
     ("extension_inspect_folder", Some("path")),
     ("extension_install", Some("token")),
     ("extension_install_cancel", Some("token")),
@@ -1599,6 +1601,9 @@ fn extension_commands_answer_with_the_installed_list_and_core_errors() {
     )
     .unwrap_err();
     assert_eq!(err["code"], "invalid", "{err}");
+    // Nothing is fetched before the catalog is opened: an install from it has no index to take the entry from.
+    let err = invoke(&h, "extension_inspect_catalog", json!({ "id": "w" })).unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
 }
 
 #[test]

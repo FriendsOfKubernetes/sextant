@@ -25,7 +25,8 @@
   "source": {
     "folder": "文件夹 {{path}}",
     "file": "文件 {{name}}",
-    "url": "{{url}}"
+    "url": "{{url}}",
+    "catalog": "目录：{{repository}}"
   },
   "url": {
     "title": "从 URL 安装",
@@ -63,7 +64,9 @@
     "permissions": "它可以执行的操作",
     "noContributions": "不会向界面添加任何内容。",
     "secretWarning": "读取 Secret 的值",
-    "secretWarningHint": "此扩展请求读取 Secret 的值：密码、令牌和密钥。只有在你信任其作者时才允许。"
+    "secretWarningHint": "此扩展请求读取 Secret 的值：密码、令牌和密钥。只有在你信任其作者时才允许。",
+    "verified": "已由发布者签名，密钥 {{keyId}}",
+    "namesake": "目录中列有一个具有此 ID 的扩展：{{author}} 的 {{name}}。此扩展包并非来自目录。"
   },
   "contributes": {
     "pages": "侧栏中的页面",
@@ -135,7 +138,8 @@
   },
   "reinstall": {
     "file": "要审查其权限，请从文件 {{name}} 重新安装（从文件安装…）。",
-    "url": "要审查其权限，请从 {{url}} 重新安装（从 URL 安装…）。"
+    "url": "要审查其权限，请从 {{url}} 重新安装（从 URL 安装…）。",
+    "catalog": "要审查其权限，请从目录重新安装。"
   },
   "permissionsDialog": {
     "title": "{{name}} 的权限",
@@ -186,5 +190,66 @@
       "notChecked": "未检查"
     },
     "duration": "{{ms}} 毫秒"
+  },
+  "tabs": {
+    "installed": "已安装",
+    "catalog": "目录"
+  },
+  "catalog": {
+    "use": "使用扩展目录",
+    "useHint": "当你打开目录时，或在已安装来自目录的扩展期间打开此页面时，Sextant 会从 github.com/FriendsOfKubernetes/sextant-extensions 读取扩展列表，每小时最多一次。关闭后，Sextant 不会发出任何请求。",
+    "trust": "目录会说明每个扩展的发布者，Sextant 会检查你安装的扩展包是否由其签名。目录不会审查每个版本的代码：扩展仍然只能执行你在下一个界面中允许的操作。",
+    "loading": "正在加载目录…",
+    "failed": "无法读取目录",
+    "updatedAt": "更新于 {{date}}",
+    "staleNote": "正在显示 {{date}} 的副本：无法刷新目录（{{message}}）。",
+    "newerFormat": "此目录适用于更新版本的 Sextant。请更新 Sextant 后再浏览。",
+    "refresh": "刷新",
+    "search": "搜索",
+    "searchPlaceholder": "名称、作者或描述",
+    "category": "类别",
+    "allCategories": "所有类别",
+    "empty": "目录中尚无扩展。",
+    "noMatch": "目录中没有匹配的扩展。",
+    "skipped_other": "目录中有 {{count}} 个条目无法读取，未予显示。",
+    "by": "作者：{{author}}",
+    "install": "安装",
+    "installNamed": "安装 {{name}}",
+    "installed": "已安装",
+    "updateTo": "更新到 {{version}}",
+    "updateNamed": "将 {{name}} 更新到 {{version}}",
+    "otherSource": "已从其他来源安装",
+    "pinnedElsewhere": "发布者已变更",
+    "needsNewer": "版本 {{version}} 需要更新版本的 Sextant",
+    "withdrawn": "已撤回",
+    "details": "详细信息",
+    "detailsNamed": "{{name}} 的详细信息",
+    "repository": "仓库",
+    "openRepository": "在 GitHub 上打开 {{repository}}",
+    "publisherKey": "发布者密钥",
+    "published": "发布时间",
+    "size": "大小",
+    "contribution": "{{what}}：{{count}}",
+    "asPublished": "按目录中发布的内容显示。安装界面会显示扩展包本身请求的内容。",
+    "permissionsUnreadable": "此版本的 Sextant 无法显示目录中列出的权限。",
+    "categories": {
+      "observability": "可观测性",
+      "cost": "成本",
+      "security": "安全",
+      "gitops": "GitOps",
+      "networking": "网络",
+      "storage": "存储",
+      "workloads": "工作负载",
+      "developer": "开发者工具",
+      "other": "其他"
+    }
+  },
+  "catalogStatus": {
+    "updateAvailable": "目录中有可用的版本 {{version}}。",
+    "needsNewerSextant": "目录中的版本 {{version}} 需要更新版本的 Sextant。",
+    "keyChanged": "目录中发布者的密钥已更改，因此更新会被拒绝。要信任新密钥，请移除此扩展并重新安装。",
+    "repositoryChanged": "目录中发布者的仓库已更改，因此更新会被拒绝。要信任它，请移除此扩展并重新安装。",
+    "withdrawn": "已从目录中撤回：{{reason}}。请考虑停用或移除它。",
+    "notListed": "目录中已不再列出此扩展。"
   }
 }

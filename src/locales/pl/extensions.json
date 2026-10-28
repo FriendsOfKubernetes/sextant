@@ -25,7 +25,8 @@
   "source": {
     "folder": "Folder {{path}}",
     "file": "Plik {{name}}",
-    "url": "{{url}}"
+    "url": "{{url}}",
+    "catalog": "Katalog: {{repository}}"
   },
   "url": {
     "title": "Instalacja z adresu URL",
@@ -63,7 +64,9 @@
     "permissions": "Co może robić",
     "noContributions": "Nic nie jest dodawane do interfejsu.",
     "secretWarning": "Odczytuje wartości Secret",
-    "secretWarningHint": "To rozszerzenie prosi o odczyt wartości Secret: haseł, tokenów i kluczy. Zezwól na to tylko wtedy, gdy autor jest zaufany."
+    "secretWarningHint": "To rozszerzenie prosi o odczyt wartości Secret: haseł, tokenów i kluczy. Zezwól na to tylko wtedy, gdy autor jest zaufany.",
+    "verified": "Podpisane przez wydawcę, klucz {{keyId}}",
+    "namesake": "Katalog zawiera rozszerzenie o tym id: {{name}}, autor: {{author}}. Ten pakiet nie pochodzi z katalogu."
   },
   "contributes": {
     "pages": "Strony na pasku bocznym",
@@ -147,7 +150,8 @@
   },
   "reinstall": {
     "file": "Aby przejrzeć jego uprawnienia, zainstaluj je ponownie z pliku {{name}} (Zainstaluj z pliku…).",
-    "url": "Aby przejrzeć jego uprawnienia, zainstaluj je ponownie z {{url}} (Zainstaluj z adresu URL…)."
+    "url": "Aby przejrzeć jego uprawnienia, zainstaluj je ponownie z {{url}} (Zainstaluj z adresu URL…).",
+    "catalog": "Aby przejrzeć jego uprawnienia, zainstaluj je ponownie z katalogu."
   },
   "permissionsDialog": {
     "title": "Uprawnienia {{name}}",
@@ -201,5 +205,69 @@
       "notChecked": "Niesprawdzone"
     },
     "duration": "{{ms}} ms"
+  },
+  "tabs": {
+    "installed": "Zainstalowane",
+    "catalog": "Katalog"
+  },
+  "catalog": {
+    "use": "Używaj katalogu rozszerzeń",
+    "useHint": "Sextant odczytuje listę rozszerzeń z github.com/FriendsOfKubernetes/sextant-extensions po otwarciu katalogu lub tej strony, gdy zainstalowane jest rozszerzenie z katalogu, nie częściej niż raz na godzinę. Po wyłączeniu Sextant o nic nie pyta.",
+    "trust": "Katalog podaje, kto publikuje każde rozszerzenie, a Sextant sprawdza, czy instalowany pakiet jest podpisany przez tego wydawcę. Katalog nie sprawdza kodu każdego wydania: rozszerzenie może i tak robić tylko to, na co zezwolisz na następnym ekranie.",
+    "loading": "Wczytywanie katalogu…",
+    "failed": "Nie można odczytać katalogu",
+    "updatedAt": "Zaktualizowano {{date}}",
+    "staleNote": "Wyświetlana jest kopia z {{date}}: nie można odświeżyć katalogu ({{message}}).",
+    "newerFormat": "Ten katalog jest przeznaczony dla nowszej wersji programu Sextant. Zaktualizuj Sextant, aby go przeglądać.",
+    "refresh": "Odśwież",
+    "search": "Szukaj",
+    "searchPlaceholder": "Nazwa, autor lub opis",
+    "category": "Kategoria",
+    "allCategories": "Wszystkie kategorie",
+    "empty": "Katalog nie zawiera jeszcze żadnych rozszerzeń.",
+    "noMatch": "Żadne rozszerzenie w katalogu nie pasuje.",
+    "skipped_one": "Nie można odczytać {{count}} pozycji katalogu, więc nie jest wyświetlana.",
+    "skipped_few": "Nie można odczytać {{count}} pozycji katalogu, więc nie są wyświetlane.",
+    "skipped_many": "Nie można odczytać {{count}} pozycji katalogu, więc nie są wyświetlane.",
+    "skipped_other": "Nie można odczytać {{count}} pozycji katalogu, więc nie są wyświetlane.",
+    "by": "autor: {{author}}",
+    "install": "Zainstaluj",
+    "installNamed": "Zainstaluj {{name}}",
+    "installed": "Zainstalowane",
+    "updateTo": "Aktualizuj do {{version}}",
+    "updateNamed": "Aktualizuj {{name}} do {{version}}",
+    "otherSource": "Zainstalowane z innego źródła",
+    "pinnedElsewhere": "Zmienił się wydawca",
+    "needsNewer": "Wersja {{version}} wymaga nowszego programu Sextant",
+    "withdrawn": "Wycofane",
+    "details": "Szczegóły",
+    "detailsNamed": "Szczegóły {{name}}",
+    "repository": "Repozytorium",
+    "openRepository": "Otwórz {{repository}} w serwisie GitHub",
+    "publisherKey": "Klucz wydawcy",
+    "published": "Opublikowano",
+    "size": "Rozmiar",
+    "contribution": "{{what}}: {{count}}",
+    "asPublished": "Tak, jak opublikowano w katalogu. Ekran instalacji pokazuje, o co prosi sam pakiet.",
+    "permissionsUnreadable": "Ta wersja programu Sextant nie może wyświetlić uprawnień podanych w katalogu.",
+    "categories": {
+      "observability": "Obserwowalność",
+      "cost": "Koszty",
+      "security": "Bezpieczeństwo",
+      "gitops": "GitOps",
+      "networking": "Sieć",
+      "storage": "Pamięć masowa",
+      "workloads": "Obciążenia",
+      "developer": "Narzędzia deweloperskie",
+      "other": "Inne"
+    }
+  },
+  "catalogStatus": {
+    "updateAvailable": "W katalogu jest dostępna wersja {{version}}.",
+    "needsNewerSextant": "Wersja {{version}} z katalogu wymaga nowszego programu Sextant.",
+    "keyChanged": "Klucz wydawcy w katalogu się zmienił, dlatego aktualizacje są odrzucane. Aby zaufać nowemu kluczowi, usuń rozszerzenie i zainstaluj je ponownie.",
+    "repositoryChanged": "Repozytorium wydawcy w katalogu się zmieniło, dlatego aktualizacje są odrzucane. Aby mu zaufać, usuń rozszerzenie i zainstaluj je ponownie.",
+    "withdrawn": "Wycofane z katalogu: {{reason}}. Rozważ wyłączenie lub usunięcie.",
+    "notListed": "Katalog nie zawiera już tego rozszerzenia."
   }
 }

@@ -4860,6 +4860,7 @@ dependencies = [
  "hyper-util",
  "k8s-openapi",
  "kube",
+ "minisign-verify",
  "regex",
  "rustix",
  "rustls",

@@ -62,6 +62,7 @@ export function defaultAppSettings(): AppSettings {
     practices: { disabledChecks: [], excludedNamespaces: ["kube-system", "kube-public", "kube-node-lease"] },
     customColumns: [],
     imageFiles: { dockerCredentials: false },
+    extensionCatalog: { enabled: true },
   };
 }
 

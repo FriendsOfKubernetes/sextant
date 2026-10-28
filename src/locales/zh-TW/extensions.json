@@ -25,7 +25,8 @@
   "source": {
     "folder": "資料夾 {{path}}",
     "file": "檔案 {{name}}",
-    "url": "{{url}}"
+    "url": "{{url}}",
+    "catalog": "目錄：{{repository}}"
   },
   "url": {
     "title": "從 URL 安裝",
@@ -63,7 +64,9 @@
     "permissions": "它可以執行的操作",
     "noContributions": "不會在介面中新增任何內容。",
     "secretWarning": "讀取 Secret 的值",
-    "secretWarningHint": "此擴充功能要求讀取 Secret 的值：密碼、權杖與金鑰。請只在您信任其作者時允許。"
+    "secretWarningHint": "此擴充功能要求讀取 Secret 的值：密碼、權杖與金鑰。請只在您信任其作者時允許。",
+    "verified": "已由發行者簽署，金鑰 {{keyId}}",
+    "namesake": "目錄中列有一個使用此 ID 的擴充功能：{{author}} 的 {{name}}。此套件並非來自目錄。"
   },
   "contributes": {
     "pages": "側邊欄中的頁面",
@@ -135,7 +138,8 @@
   },
   "reinstall": {
     "file": "若要檢閱其權限，請從檔案 {{name}} 重新安裝（從檔案安裝…）。",
-    "url": "若要檢閱其權限，請從 {{url}} 重新安裝（從 URL 安裝…）。"
+    "url": "若要檢閱其權限，請從 {{url}} 重新安裝（從 URL 安裝…）。",
+    "catalog": "若要檢閱其權限，請從目錄重新安裝。"
   },
   "permissionsDialog": {
     "title": "{{name}} 的權限",
@@ -186,5 +190,66 @@
       "notChecked": "未檢查"
     },
     "duration": "{{ms}} 毫秒"
+  },
+  "tabs": {
+    "installed": "已安裝",
+    "catalog": "目錄"
+  },
+  "catalog": {
+    "use": "使用擴充功能目錄",
+    "useHint": "當您開啟目錄時，或在已安裝來自目錄的擴充功能期間開啟此頁面時，Sextant 會從 github.com/FriendsOfKubernetes/sextant-extensions 讀取擴充功能清單，每小時最多一次。關閉後，Sextant 不會發出任何要求。",
+    "trust": "目錄會標明每個擴充功能的發行者，Sextant 會檢查您安裝的套件是否由其簽署。目錄不會審查每個版本的程式碼：擴充功能仍然只能執行您在下一個畫面中允許的操作。",
+    "loading": "正在載入目錄…",
+    "failed": "無法讀取目錄",
+    "updatedAt": "更新於 {{date}}",
+    "staleNote": "正在顯示 {{date}} 的副本：無法重新整理目錄（{{message}}）。",
+    "newerFormat": "此目錄適用於較新版本的 Sextant。請更新 Sextant 後再瀏覽。",
+    "refresh": "重新整理",
+    "search": "搜尋",
+    "searchPlaceholder": "名稱、作者或說明",
+    "category": "類別",
+    "allCategories": "所有類別",
+    "empty": "目錄中尚無任何擴充功能。",
+    "noMatch": "目錄中沒有符合的擴充功能。",
+    "skipped_other": "目錄中有 {{count}} 個項目無法讀取，因此未顯示。",
+    "by": "作者：{{author}}",
+    "install": "安裝",
+    "installNamed": "安裝 {{name}}",
+    "installed": "已安裝",
+    "updateTo": "更新至 {{version}}",
+    "updateNamed": "將 {{name}} 更新至 {{version}}",
+    "otherSource": "已從其他來源安裝",
+    "pinnedElsewhere": "發行者已變更",
+    "needsNewer": "版本 {{version}} 需要較新版本的 Sextant",
+    "withdrawn": "已撤下",
+    "details": "詳細資料",
+    "detailsNamed": "{{name}} 的詳細資料",
+    "repository": "儲存庫",
+    "openRepository": "在 GitHub 上開啟 {{repository}}",
+    "publisherKey": "發行者金鑰",
+    "published": "發行日期",
+    "size": "大小",
+    "contribution": "{{what}}：{{count}}",
+    "asPublished": "依目錄中發行的內容顯示。安裝畫面會顯示套件本身要求的內容。",
+    "permissionsUnreadable": "此版本的 Sextant 無法顯示目錄中列出的權限。",
+    "categories": {
+      "observability": "可觀測性",
+      "cost": "成本",
+      "security": "安全性",
+      "gitops": "GitOps",
+      "networking": "網路",
+      "storage": "儲存",
+      "workloads": "工作負載",
+      "developer": "開發人員工具",
+      "other": "其他"
+    }
+  },
+  "catalogStatus": {
+    "updateAvailable": "目錄中有可用的版本 {{version}}。",
+    "needsNewerSextant": "目錄中的版本 {{version}} 需要較新版本的 Sextant。",
+    "keyChanged": "目錄中發行者的金鑰已變更，因此會拒絕更新。若要信任新金鑰，請移除此擴充功能後重新安裝。",
+    "repositoryChanged": "目錄中發行者的儲存庫已變更，因此會拒絕更新。若要信任它，請移除此擴充功能後重新安裝。",
+    "withdrawn": "已從目錄中撤下：{{reason}}。請考慮停用或移除它。",
+    "notListed": "目錄中已不再列出此擴充功能。"
   }
 }

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-28T12:00:00.000Z",
+  "extensions": [
+    {
+      "id": "demo.catalog",
+      "name": "Catalog demo",
+      "author": "Sextant tests",
+      "description": "A package of the catalog tests",
+      "categories": [
+        "developer",
+        "workloads"
+      ],
+      "repository": "FriendsOfKubernetes/demo",
+      "publisherKey": "RWRmwUKpGrT0wCM6r495TOHPsMcYy+xUdj3/1RXckiwRpEFye9nj9GjJ",
+      "latest": {
+        "version": "1.0.0",
+        "sextantApi": 1,
+        "tag": "v1.0.0",
+        "asset": "demo.catalog-1.0.0.sextant-ext",
+        "size": 569,
+        "sha256": "cdd8e1bd5d8cbac68fd9f5f922873a323fd815c3f919051024d3808f6f820291",
+        "keyId": "C0F4B41AA942C166",
+        "publishedAt": "2026-10-28T00:00:00Z",
+        "permissions": {
+          "clusters": {
+            "type": "all"
+          },
+          "rules": [
+            {
+              "namespaces": {
+                "type": "all"
+              },
+              "kinds": {
+                "type": "only",
+                "kinds": [
+                  {
+                    "group": "",
+                    "kind": "Pod"
+                  }
+                ]
+              },
+              "actions": [
+                "read"
+              ]
+            }
+          ]
+        },
+        "contributes": {
+          "pages": 1
+        }
+      }
+    },
+    {
+      "id": "demo.withdrawn",
+      "name": "Withdrawn demo",
+      "author": "Sextant tests",
+      "description": "An entry withdrawn from the catalog",
+      "categories": [
+        "other"
+      ],
+      "repository": "FriendsOfKubernetes/demo-withdrawn",
+      "publisherKey": "RWRmwUKpGrT0wCM6r495TOHPsMcYy+xUdj3/1RXckiwRpEFye9nj9GjJ",
+      "withdrawn": {
+        "reason": "A known-bad release"
+      }
+    }
+  ]
+}

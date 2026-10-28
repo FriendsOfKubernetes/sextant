@@ -230,10 +230,18 @@ struct PermissionsRepr {
 impl<'de> Deserialize<'de> for ExtensionPermissions {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let value = serde_json::Value::deserialize(deserializer)?;
+        Ok(Self::read_strict(&value).unwrap_or_else(Self::none))
+    }
+}
+
+impl ExtensionPermissions {
+    /// `value` read exactly: `None` for an unknown field, action or shape (where settings read [`Self::none`]). The
+    /// catalog shows such permissions as unreadable rather than as asking for nothing.
+    pub fn read_strict(value: &serde_json::Value) -> Option<Self> {
         let Ok(PermissionsRepr { clusters, rules }) =
             serde_json::from_value::<PermissionsRepr>(value.clone())
         else {
-            return Ok(Self::none());
+            return None;
         };
         let permissions = Self { clusters, rules };
         let only_extension_actions = permissions
@@ -243,10 +251,10 @@ impl<'de> Deserialize<'de> for ExtensionPermissions {
         // serde drops unknown fields of nested types (a rule, a scope): every field read must survive writing the
         // result back, or the permissions are closed.
         match serde_json::to_value(&permissions) {
-            Ok(written) if only_extension_actions && only_known_fields(&value, &written) => {
-                Ok(permissions)
+            Ok(written) if only_extension_actions && only_known_fields(value, &written) => {
+                Some(permissions)
             }
-            _ => Ok(Self::none()),
+            _ => None,
         }
     }
 }

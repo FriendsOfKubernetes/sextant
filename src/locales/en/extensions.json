@@ -25,7 +25,8 @@
   "source": {
     "folder": "Folder {{path}}",
     "file": "File {{name}}",
-    "url": "{{url}}"
+    "url": "{{url}}",
+    "catalog": "Catalog: {{repository}}"
   },
   "url": {
     "title": "Install from URL",
@@ -63,7 +64,9 @@
     "permissions": "What it may do",
     "noContributions": "Nothing is added to the interface.",
     "secretWarning": "Reads the values of Secrets",
-    "secretWarningHint": "This extension asks to read Secret values: passwords, tokens and keys. Allow it only if you trust its author."
+    "secretWarningHint": "This extension asks to read Secret values: passwords, tokens and keys. Allow it only if you trust its author.",
+    "verified": "Signed by the publisher, key {{keyId}}",
+    "namesake": "The catalog lists an extension with this id: {{name}} by {{author}}. This package is not from the catalog."
   },
   "contributes": {
     "pages": "Pages in the sidebar",
@@ -139,7 +142,8 @@
   },
   "reinstall": {
     "file": "To review its permissions, install it again from the file {{name}} (Install from file…).",
-    "url": "To review its permissions, install it again from {{url}} (Install from URL…)."
+    "url": "To review its permissions, install it again from {{url}} (Install from URL…).",
+    "catalog": "To review its permissions, install it again from the catalog."
   },
   "permissionsDialog": {
     "title": "Permissions of {{name}}",
@@ -191,5 +195,67 @@
       "notChecked": "Not checked"
     },
     "duration": "{{ms}} ms"
+  },
+  "tabs": {
+    "installed": "Installed",
+    "catalog": "Catalog"
+  },
+  "catalog": {
+    "use": "Use the extension catalog",
+    "useHint": "Sextant reads the list of extensions from github.com/FriendsOfKubernetes/sextant-extensions when you open the catalog, or this page while an extension from the catalog is installed, at most once an hour. Turned off, Sextant asks nothing.",
+    "trust": "The catalog says who publishes each extension, and Sextant checks that the package you install is signed by them. The catalog does not review the code of every release: an extension may still do only what you allow on the next screen.",
+    "loading": "Loading the catalog…",
+    "failed": "The catalog could not be read",
+    "updatedAt": "Updated {{date}}",
+    "staleNote": "Showing the copy from {{date}}: the catalog could not be refreshed ({{message}}).",
+    "newerFormat": "This catalog is written for a newer Sextant. Update Sextant to browse it.",
+    "refresh": "Refresh",
+    "search": "Search",
+    "searchPlaceholder": "Name, author or description",
+    "category": "Category",
+    "allCategories": "All categories",
+    "empty": "The catalog lists no extensions yet.",
+    "noMatch": "No extension in the catalog matches.",
+    "skipped_one": "{{count}} entry of the catalog could not be read and is not shown.",
+    "skipped_other": "{{count}} entries of the catalog could not be read and are not shown.",
+    "by": "by {{author}}",
+    "install": "Install",
+    "installNamed": "Install {{name}}",
+    "installed": "Installed",
+    "updateTo": "Update to {{version}}",
+    "updateNamed": "Update {{name}} to {{version}}",
+    "otherSource": "Installed from another source",
+    "pinnedElsewhere": "Publisher changed",
+    "needsNewer": "Version {{version}} needs a newer Sextant",
+    "withdrawn": "Withdrawn",
+    "details": "Details",
+    "detailsNamed": "Details of {{name}}",
+    "repository": "Repository",
+    "openRepository": "Open {{repository}} on GitHub",
+    "publisherKey": "Publisher key",
+    "published": "Published",
+    "size": "Size",
+    "contribution": "{{what}}: {{count}}",
+    "asPublished": "As published in the catalog. The install screen shows what the package itself asks for.",
+    "permissionsUnreadable": "This Sextant cannot show the permissions the catalog lists.",
+    "categories": {
+      "observability": "Observability",
+      "cost": "Cost",
+      "security": "Security",
+      "gitops": "GitOps",
+      "networking": "Networking",
+      "storage": "Storage",
+      "workloads": "Workloads",
+      "developer": "Developer tools",
+      "other": "Other"
+    }
+  },
+  "catalogStatus": {
+    "updateAvailable": "Version {{version}} is available in the catalog.",
+    "needsNewerSextant": "Version {{version}} in the catalog needs a newer Sextant.",
+    "keyChanged": "The publisher's key changed in the catalog, so updates are refused. To trust the new key, remove the extension and install it again.",
+    "repositoryChanged": "The publisher's repository changed in the catalog, so updates are refused. To trust it, remove the extension and install it again.",
+    "withdrawn": "Withdrawn from the catalog: {{reason}}. Consider disabling or removing it.",
+    "notListed": "The catalog no longer lists this extension."
   }
 }

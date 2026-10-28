@@ -140,6 +140,14 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   table.set(NOTIFICATION_COMMANDS.registerActionTypes, () => undefined);
   // The window asks for the installed extensions on start; none unless a test says otherwise.
   table.set("extensions_list", () => []);
+  // The extension catalog, as when its index has not been fetched yet (ADR-0130).
+  table.set("extension_catalog", () => ({
+    enabled: settings.extensionCatalog.enabled,
+    index: null,
+    fetchedAt: null,
+    error: null,
+    installed: [],
+  }));
   // Closing a window of consent drops its pending install; nothing to answer.
   table.set("extension_install_cancel", () => undefined);
   // Closing an install dialog stops its stream; nothing to answer.

@@ -24,6 +24,8 @@ pub mod columns;
 pub use columns::{ColumnWidths, TableColumnWidths};
 pub mod logs;
 pub use logs::LogViewSettings;
+pub mod extension_catalog;
+pub use extension_catalog::ExtensionCatalogSettings;
 pub mod appearance;
 pub mod custom_columns;
 pub mod known_namespaces;
@@ -548,6 +550,11 @@ pub struct AppSettings {
     pub custom_columns: Vec<CustomColumn>,
     /// The image file viewer (#216): whether the user's Docker credentials may be used. Written by the frontend.
     pub image_files: ImageFilesSettings,
+    /// The extension catalog (ADR-0130): whether Sextant may read it. Written by the frontend; read leniently
+    /// ([`extension_catalog`]).
+    #[serde(with = "extension_catalog::extension_catalog_field")]
+    #[ts(as = "ExtensionCatalogSettings")]
+    pub extension_catalog: ExtensionCatalogSettings,
 }
 
 impl Default for AppSettings {
@@ -581,6 +588,7 @@ impl Default for AppSettings {
             compare: CompareSettings::default(),
             column_widths: ColumnWidths::new(),
             logs: LogViewSettings::default(),
+            extension_catalog: ExtensionCatalogSettings::default(),
             cluster_order: Vec::new(),
             practices: PracticesSettings::default(),
             custom_columns: Vec::new(),

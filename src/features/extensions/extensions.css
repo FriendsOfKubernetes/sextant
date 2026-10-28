@@ -100,6 +100,10 @@
   border-left-color: var(--color-danger);
 }
 
+.ext-row__alert[data-tone="info"] {
+  border-left-color: var(--color-accent);
+}
+
 .ext-row__settings {
   border-top: 1px solid var(--color-border);
   padding-top: 8px;
@@ -270,4 +274,47 @@
 
 .ext-consent-notice__line {
   display: block;
+}
+
+/* Settings → Extensions → Catalog (ADR-0130). */
+.ext-tabs {
+  margin-top: 8px;
+}
+
+.ext-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 8px;
+}
+
+.ext-catalog__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.ext-catalog__search {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.ext-catalog__status {
+  margin: 0;
+  min-height: 1.2em;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.ext-catalog__details {
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+  min-width: 0;
+}
+
+.ext-catalog__counts {
+  margin: 0;
+  padding-left: 18px;
 }

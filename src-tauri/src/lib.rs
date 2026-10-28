@@ -202,6 +202,8 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         extensions::manage::extensions_list,
         extensions::manage::extension_inspect_file,
         extensions::manage::extension_inspect_url,
+        extensions::catalog::extension_catalog,
+        extensions::catalog::extension_inspect_catalog,
         extensions::manage::extension_inspect_folder,
         extensions::manage::extension_install,
         extensions::manage::extension_install_cancel,

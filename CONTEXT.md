@@ -253,6 +253,14 @@ _Avoid_: approval, confirmation (that is the Allow question while an action runs
 Loading an unpacked folder: the extension runs straight from the folder, is marked "Development", and reloads when files change. If a change widens its permissions it is paused until the user reviews them.
 _Avoid_: debug mode, symlink install
 
+**Extension catalog**:
+The list of extensions published by others that Sextant offers under Settings → Extensions → Catalog. It is read from one file of a GitHub repository, where each extension was added after a review. The catalog says who publishes an extension and that the package is theirs; it does not vouch for the code. It can be turned off, and then Sextant asks for nothing.
+_Avoid_: store, marketplace, registry
+
+**Publisher key**:
+The signing key of whoever publishes a catalog extension. Every package from the catalog must be signed with it, and an installed extension is tied to the key it was installed with: an update signed with another key is refused until the user installs the extension again.
+_Avoid_: certificate, author key
+
 **Extension activity log**:
 The record of everything extensions did through the Sextant API: time, extension, cluster, method, target, decision and result. It holds summaries, never values or YAML. Agents have their own log.
 _Avoid_: audit, history

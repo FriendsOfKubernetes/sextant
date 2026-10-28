@@ -4,7 +4,8 @@
 //! install with its token succeeds or the user cancels (`extension_install_cancel`); a failed install keeps it.
 //!
 //! Downloads come only from GitHub Releases (`https://github.com/<owner>/<repo>/releases/download/…`, redirects
-//! only to GitHub's asset hosts), at most [`MAX_DOWNLOAD_BYTES`], within [`DOWNLOAD_TIMEOUT`].
+//! only to GitHub's asset hosts), at most [`MAX_DOWNLOAD_BYTES`], within [`DOWNLOAD_TIMEOUT`]; the catalog's index
+//! only from [`super::catalog::INDEX_URL`], with no redirect.
 
 use std::collections::HashMap;
 use std::io::Read;
@@ -49,6 +50,17 @@ pub struct PendingInstall {
     pub replaces: Option<String>,
     /// The manifest asks for something not granted yet (for a new install: asks for anything at all).
     pub new_permissions: bool,
+    /// Not from the catalog, but the catalog lists an extension with this id: who publishes that one (ADR-0130).
+    pub listed_in_catalog: Option<CatalogNamesake>,
+}
+
+/// The catalog's extension of the same id as a package from elsewhere.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CatalogNamesake {
+    pub name: String,
+    pub author: String,
 }
 
 enum Content {
@@ -154,11 +166,13 @@ fn describe(source: &ExtensionSource) -> String {
         ExtensionSource::Folder { path } => format!("the folder {path}"),
         ExtensionSource::File { name } => format!("the file {name}"),
         ExtensionSource::Url { url } => url.clone(),
+        ExtensionSource::Catalog { repository, .. } => format!("the catalog ({repository})"),
     }
 }
 
-/// Whether a package from `source` may replace what is installed under its id: a package (file or URL) replaces a
-/// package; a folder replaces only the same folder. Anything else is a duplicate id from another source.
+/// Whether a package from `source` may replace what is installed under its id: a file or a URL replaces a file or a
+/// URL; a folder replaces only the same folder; a catalog install replaces only a catalog install pinned to the same
+/// repository and key (ADR-0130). Anything else is a duplicate id from another source.
 fn check_replace(
     existing: Option<&InstalledExtension>,
     source: &ExtensionSource,
@@ -171,6 +185,19 @@ fn check_replace(
             old == new
         }
         (ExtensionSource::Folder { .. }, _) | (_, ExtensionSource::Folder { .. }) => false,
+        (
+            ExtensionSource::Catalog {
+                repository: old_repository,
+                public_key: old_key,
+                ..
+            },
+            ExtensionSource::Catalog {
+                repository,
+                public_key,
+                ..
+            },
+        ) => old_repository == repository && old_key == public_key,
+        (ExtensionSource::Catalog { .. }, _) | (_, ExtensionSource::Catalog { .. }) => false,
         _ => true,
     };
     if allowed {
@@ -212,12 +239,22 @@ impl ExtensionHost {
                 e.granted.clone()
             });
         let token = new_token()?;
+        let listed_in_catalog = if matches!(source, ExtensionSource::Catalog { .. }) {
+            None
+        } else {
+            self.catalog_entry(&manifest.id)
+                .map(|entry| CatalogNamesake {
+                    name: entry.name,
+                    author: entry.author,
+                })
+        };
         let shown = PendingInstall {
             token: token.clone(),
             replaces: existing.map(|e| e.version),
             new_permissions: !manifest.permissions.is_within(&granted),
             manifest: manifest.clone(),
             source: source.clone(),
+            listed_in_catalog,
         };
         lock(&self.inner.pending).insert(
             token,
@@ -233,7 +270,18 @@ impl ExtensionHost {
 
     /// Checks an archive (read or downloaded) and keeps a copy until consent.
     fn inspect_archive(&self, bytes: &[u8], source: ExtensionSource) -> CoreResult<PendingInstall> {
+        self.inspect_archive_checked(bytes, source, |_| Ok(()))
+    }
+
+    /// [`Self::inspect_archive`] with one more check of the read package before anything is kept.
+    pub(super) fn inspect_archive_checked(
+        &self,
+        bytes: &[u8],
+        source: ExtensionSource,
+        check: impl FnOnce(&Package) -> CoreResult<()>,
+    ) -> CoreResult<PendingInstall> {
         let package = inspect_zip(bytes)?;
+        check(&package)?;
         let dir = &self.inner.pending_dir;
         std::fs::create_dir_all(dir)?;
         let path = dir.join(format!("{}.zip", new_token()?));
@@ -525,6 +573,11 @@ impl Downloader {
 
     /// Downloads `url` (a GitHub release asset) into memory.
     pub async fn download(&self, url: &str) -> CoreResult<Vec<u8>> {
+        self.download_at_most(url, self.max_bytes).await
+    }
+
+    /// [`Self::download`] refusing more than `max_bytes` (and never more than this downloader's own cap).
+    pub async fn download_at_most(&self, url: &str, max_bytes: u64) -> CoreResult<Vec<u8>> {
         let url = Url::parse(url.trim()).map_err(|e| invalid(format!("Not a link: {e}")))?;
         if !is_release_url(&url) {
             return Err(invalid(
@@ -532,10 +585,26 @@ impl Downloader {
             ));
         }
         Fetch {
-            max_bytes: self.max_bytes,
+            max_bytes: max_bytes.min(self.max_bytes),
             timeout: self.timeout,
             connect: self.connect.as_ref(),
             allowed_redirect: &is_allowed_redirect,
+            accept: None,
+        }
+        .get(url)
+        .await
+    }
+
+    /// The catalog's index from [`super::catalog::INDEX_URL`]: no redirect, at most
+    /// [`sextant_core::extensions::catalog::MAX_INDEX_BYTES`], within [`super::catalog::INDEX_TIMEOUT`].
+    pub async fn catalog_index(&self) -> CoreResult<Vec<u8>> {
+        let url = Url::parse(super::catalog::INDEX_URL)
+            .map_err(|e| CoreError::other(format!("the catalog's address does not read: {e}")))?;
+        Fetch {
+            max_bytes: sextant_core::extensions::catalog::MAX_INDEX_BYTES,
+            timeout: self.timeout.min(super::catalog::INDEX_TIMEOUT),
+            connect: self.connect.as_ref(),
+            allowed_redirect: &|_| false,
             accept: None,
         }
         .get(url)

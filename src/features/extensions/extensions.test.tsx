@@ -91,6 +91,7 @@ const pendingOf = (over: Partial<PendingInstall> = {}): PendingInstall => ({
   source: { type: "file", name: "widgets.sextant-ext" },
   replaces: null,
   newPermissions: true,
+  listedInCatalog: null,
   ...over,
 });
 

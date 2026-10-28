@@ -83,7 +83,20 @@ export function ConsentDialog({ pending, review = false, onClose }: ConsentDialo
           <dd>{manifest.version}</dd>
           <dt>{t("extensions:consent.source")}</dt>
           <dd className="ext-consent__source">{sourceText(source, t)}</dd>
+          {source.type === "catalog" && (
+            <>
+              <dt>{t("extensions:catalog.publisherKey")}</dt>
+              <dd className="ext-consent__source">
+                <Badge tone="success">{t("extensions:consent.verified", { keyId: source.keyId })}</Badge>
+              </dd>
+            </>
+          )}
         </dl>
+        {pending.listedInCatalog && (
+          <div className="ext-consent__warning" role="alert">
+            <strong>{t("extensions:consent.namesake", pending.listedInCatalog)}</strong>
+          </div>
+        )}
         {source.type === "folder" && <p className="settings__hint">{t("extensions:consent.devHint")}</p>}
         {review && <p className="ext-consent__review">{t("extensions:consent.reviewHint")}</p>}
         {update && pending.replaces && (

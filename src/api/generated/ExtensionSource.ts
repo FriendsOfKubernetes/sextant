@@ -3,4 +3,16 @@
 /**
  * Where an installed extension came from.
  */
-export type ExtensionSource = { "type": "folder", path: string, } | { "type": "file", name: string, } | { "type": "url", url: string, };
+export type ExtensionSource = { "type": "folder", path: string, } | { "type": "file", name: string, } | { "type": "url", url: string, } | { "type": "catalog", 
+/**
+ * `<owner>/<repository>` on GitHub.
+ */
+repository: string, 
+/**
+ * The key's id, as minisign prints it.
+ */
+keyId: string, 
+/**
+ * The base64 line of the publisher's public key.
+ */
+publicKey: string, };

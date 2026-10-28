@@ -25,7 +25,8 @@
   "source": {
     "folder": "フォルダー {{path}}",
     "file": "ファイル {{name}}",
-    "url": "{{url}}"
+    "url": "{{url}}",
+    "catalog": "カタログ: {{repository}}"
   },
   "url": {
     "title": "URL からインストール",
@@ -63,7 +64,9 @@
     "permissions": "許可される操作",
     "noContributions": "インターフェイスには何も追加されません。",
     "secretWarning": "Secret の値を読み取ります",
-    "secretWarningHint": "この拡張機能は Secret の値 (パスワード、トークン、鍵) の読み取りを求めています。作成者を信頼できる場合にのみ許可してください。"
+    "secretWarningHint": "この拡張機能は Secret の値 (パスワード、トークン、鍵) の読み取りを求めています。作成者を信頼できる場合にのみ許可してください。",
+    "verified": "発行元による署名済み (鍵 {{keyId}})",
+    "namesake": "カタログには、この ID の拡張機能として {{author}} の {{name}} が掲載されています。このパッケージはカタログからのものではありません。"
   },
   "contributes": {
     "pages": "サイドバーのページ",
@@ -135,7 +138,8 @@
   },
   "reinstall": {
     "file": "アクセス許可を確認するには、ファイル {{name}} から再インストールしてください (「ファイルからインストール…」)。",
-    "url": "アクセス許可を確認するには、{{url}} から再インストールしてください (「URL からインストール…」)。"
+    "url": "アクセス許可を確認するには、{{url}} から再インストールしてください (「URL からインストール…」)。",
+    "catalog": "アクセス許可を確認するには、カタログから再インストールしてください。"
   },
   "permissionsDialog": {
     "title": "{{name}} のアクセス許可",
@@ -186,5 +190,66 @@
       "notChecked": "未確認"
     },
     "duration": "{{ms}} ms"
+  },
+  "tabs": {
+    "installed": "インストール済み",
+    "catalog": "カタログ"
+  },
+  "catalog": {
+    "use": "拡張機能カタログを使用する",
+    "useHint": "Sextant は、カタログを開いたとき、またはカタログからの拡張機能がインストールされている間にこのページを開いたときに、github.com/FriendsOfKubernetes/sextant-extensions から拡張機能の一覧を読み込みます (最大で 1 時間に 1 回)。オフにすると、Sextant は何も問い合わせません。",
+    "trust": "カタログには各拡張機能の発行元が記載されており、Sextant はインストールするパッケージがその発行元によって署名されていることを確認します。カタログはすべてのリリースのコードをレビューするわけではありません。それでも、拡張機能は次の画面で許可した操作しか実行できません。",
+    "loading": "カタログを読み込み中…",
+    "failed": "カタログを読み取れませんでした",
+    "updatedAt": "{{date}} に更新",
+    "staleNote": "{{date}} 時点のコピーを表示しています: カタログを更新できませんでした ({{message}})。",
+    "newerFormat": "このカタログは新しいバージョンの Sextant 向けです。閲覧するには Sextant を更新してください。",
+    "refresh": "更新",
+    "search": "検索",
+    "searchPlaceholder": "名前、作成者、説明",
+    "category": "カテゴリ",
+    "allCategories": "すべてのカテゴリ",
+    "empty": "カタログにはまだ拡張機能がありません。",
+    "noMatch": "条件に一致する拡張機能はカタログにありません。",
+    "skipped_other": "カタログの {{count}} 件のエントリを読み取れなかったため、表示していません。",
+    "by": "作成者: {{author}}",
+    "install": "インストール",
+    "installNamed": "{{name}} をインストール",
+    "installed": "インストール済み",
+    "updateTo": "{{version}} に更新",
+    "updateNamed": "{{name}} を {{version}} に更新",
+    "otherSource": "別のソースからインストール済み",
+    "pinnedElsewhere": "発行元が変更されました",
+    "needsNewer": "バージョン {{version}} には新しい Sextant が必要",
+    "withdrawn": "取り下げ済み",
+    "details": "詳細",
+    "detailsNamed": "{{name}} の詳細",
+    "repository": "リポジトリ",
+    "openRepository": "GitHub で {{repository}} を開く",
+    "publisherKey": "発行元の鍵",
+    "published": "公開日",
+    "size": "サイズ",
+    "contribution": "{{what}}: {{count}}",
+    "asPublished": "カタログに掲載されている内容です。インストール画面には、パッケージ自体が求める内容が表示されます。",
+    "permissionsUnreadable": "この Sextant では、カタログに記載されたアクセス許可を表示できません。",
+    "categories": {
+      "observability": "オブザーバビリティ",
+      "cost": "コスト",
+      "security": "セキュリティ",
+      "gitops": "GitOps",
+      "networking": "ネットワーク",
+      "storage": "ストレージ",
+      "workloads": "ワークロード",
+      "developer": "開発者ツール",
+      "other": "その他"
+    }
+  },
+  "catalogStatus": {
+    "updateAvailable": "カタログでバージョン {{version}} が利用できます。",
+    "needsNewerSextant": "カタログのバージョン {{version}} には新しい Sextant が必要です。",
+    "keyChanged": "カタログで発行元の鍵が変更されたため、更新は拒否されます。新しい鍵を信頼するには、拡張機能を削除してから再インストールしてください。",
+    "repositoryChanged": "カタログで発行元のリポジトリが変更されたため、更新は拒否されます。信頼するには、拡張機能を削除してから再インストールしてください。",
+    "withdrawn": "カタログから取り下げられました: {{reason}}。無効化または削除を検討してください。",
+    "notListed": "この拡張機能はカタログに掲載されなくなりました。"
   }
 }

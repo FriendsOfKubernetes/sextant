@@ -192,3 +192,10 @@ describe("the index", () => {
     expect(rekeyed.index.generatedAt).toBe("2026-10-28T12:00:00.000Z");
   });
 });
+
+describe("the fixture index the app's tests read", () => {
+  it("is what the SDK writes for the fixture package", async () => {
+    const { indexText } = await import("./fixtures/catalog/build-index.mjs");
+    expect(fixture("index.json").toString()).toBe(indexText());
+  });
+});

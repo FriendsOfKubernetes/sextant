@@ -7,8 +7,10 @@
 //! - [`permissions`]: clusters × namespaces × kinds × actions in the AI agent's access model ([`decide_extension`]);
 //! - [`package`]: a `.zip` / `.sextant-ext` archive or a folder checked before the user is asked, and installed into
 //!   `<extensions dir>/<id>/<version>/` atomically;
-//! - [`installed`]: what is installed and what was granted (`AppSettings::extensions`, written only by the backend).
+//! - [`installed`]: what is installed and what was granted (`AppSettings::extensions`, written only by the backend);
+//! - [`catalog`]: the catalog's index and the checks of a package downloaded from it (ADR-0130).
 
+pub mod catalog;
 pub mod installed;
 pub mod manifest;
 pub mod package;

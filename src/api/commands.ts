@@ -98,6 +98,7 @@ import type { NodeUsage } from "./generated/NodeUsage";
 import type { ObjectRef } from "./generated/ObjectRef";
 import type { PatchType } from "./generated/PatchType";
 import type { PendingInstall } from "./generated/PendingInstall";
+import type { CatalogView } from "./generated/CatalogView";
 import type { PodUsage } from "./generated/PodUsage";
 import type { RemoteEntry } from "./generated/RemoteEntry";
 import type { RemoteKind } from "./generated/RemoteKind";
@@ -817,6 +818,13 @@ export const extensions = {
   inspectFile: (path: string) => call<PendingInstall>("extension_inspect_file", { path }),
   /** Downloads a GitHub release asset (`https://github.com/…/releases/download/…`) and checks it. */
   inspectUrl: (url: string) => call<PendingInstall>("extension_inspect_url", { url }),
+  /**
+   * The extension catalog (ADR-0130): the cached index, fetched again when `refresh` or older than an hour; nothing is
+   * requested while the catalog is turned off in the settings.
+   */
+  catalog: (refresh: boolean) => call<CatalogView>("extension_catalog", { refresh }),
+  /** Downloads the catalog's release of `id`, checks it against the index and the publisher's signature, then as any package. */
+  inspectCatalog: (id: string) => call<PendingInstall>("extension_inspect_catalog", { id }),
   /** Checks an unpacked folder (development mode: it runs from there and reloads when its files change). */
   inspectFolder: (path: string) => call<PendingInstall>("extension_inspect_folder", { path }),
   /**

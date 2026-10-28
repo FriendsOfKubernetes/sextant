@@ -1,7 +1,7 @@
 // One installed extension in Settings → Extensions: what it is, its state, and what you can do with it.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, toApiError, type ApiError, type ExtensionInfo, type ExtensionState } from "../../api";
+import { api, toApiError, type ApiError, type CatalogStatus, type ExtensionInfo, type ExtensionState } from "../../api";
 import { Badge, Button, ConfirmDialog, Dialog, ErrorState, type BadgeTone } from "../../components";
 import { ExtensionSettingsFrame, refreshExtensions } from "../../extensions";
 import { ExtensionActivityDialog } from "./ExtensionActivityDialog";
@@ -19,7 +19,35 @@ const STATE_TONES: Record<ExtensionState, BadgeTone> = {
 
 type Dialogs = "permissions" | "activity" | "remove" | "review" | null;
 
-export function ExtensionRow({ info }: { info: ExtensionInfo }) {
+export interface ExtensionRowProps {
+  info: ExtensionInfo;
+  /** Where a catalog extension stands against the catalog (ADR-0130); `undefined` for others or before it was read. */
+  catalogStatus?: CatalogStatus;
+  /** Starts the update from the catalog (its check, then the window of consent). */
+  onUpdate?: (id: string) => void;
+  /** A check is running. */
+  busyInstall?: boolean;
+}
+
+/** The text of a catalog status worth telling; `null` when there is nothing to say. */
+function catalogNote(status: CatalogStatus | undefined, t: ReturnType<typeof useTranslation>["t"]): { text: string; tone: string } | null {
+  switch (status?.type) {
+    case "needsNewerSextant":
+      return { text: t("extensions:catalogStatus.needsNewerSextant", { version: status.version }), tone: "info" };
+    case "keyChanged":
+      return { text: t("extensions:catalogStatus.keyChanged"), tone: "warning" };
+    case "repositoryChanged":
+      return { text: t("extensions:catalogStatus.repositoryChanged"), tone: "warning" };
+    case "withdrawn":
+      return { text: t("extensions:catalogStatus.withdrawn", { reason: status.reason }), tone: "danger" };
+    case "notListed":
+      return { text: t("extensions:catalogStatus.notListed"), tone: "info" };
+    default:
+      return null;
+  }
+}
+
+export function ExtensionRow({ info, catalogStatus, onUpdate, busyInstall = false }: ExtensionRowProps) {
   const { t } = useTranslation();
   const [dialog, setDialog] = useState<Dialogs>(null);
   const [busy, setBusy] = useState(false);
@@ -45,6 +73,8 @@ export function ExtensionRow({ info }: { info: ExtensionInfo }) {
   const requested = info.manifest?.permissions;
   // Only a folder can be read again for review; a package is reviewed by installing it again from its source.
   const reinstall = reinstallText(info.source, t);
+  const note = catalogNote(catalogStatus, t);
+  const update = catalogStatus?.type === "updateAvailable" ? catalogStatus.version : null;
 
   return (
     <li className="ext-row" data-state={info.state} aria-label={info.name}>
@@ -76,6 +106,25 @@ export function ExtensionRow({ info }: { info: ExtensionInfo }) {
             </Button>
           )}
         </div>
+      )}
+      {update !== null && (
+        <div className="ext-row__alert" data-tone="info">
+          <span>{t("extensions:catalogStatus.updateAvailable", { version: update })}</span>
+          <Button
+            variant="primary"
+            size="compact"
+            disabled={busyInstall}
+            aria-label={t("extensions:catalog.updateNamed", { name: info.name, version: update })}
+            onClick={() => onUpdate?.(info.id)}
+          >
+            {t("extensions:catalog.updateTo", { version: update })}
+          </Button>
+        </div>
+      )}
+      {note && (
+        <p className="ext-row__alert" data-tone={note.tone} role={note.tone === "danger" ? "alert" : undefined}>
+          {note.text}
+        </p>
       )}
       <div className="ext-row__actions">
         <Button

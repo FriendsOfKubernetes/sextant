@@ -19,6 +19,17 @@ pub enum ExtensionSource {
     File { name: String },
     /// Downloaded from a GitHub Release.
     Url { url: String },
+    /// Installed from the extension catalog (ADR-0130): the repository and the publisher's minisign key are pinned
+    /// here at install, and an update must come from the same repository with the same key.
+    #[serde(rename_all = "camelCase")]
+    Catalog {
+        /// `<owner>/<repository>` on GitHub.
+        repository: String,
+        /// The key's id, as minisign prints it.
+        key_id: String,
+        /// The base64 line of the publisher's public key.
+        public_key: String,
+    },
 }
 
 /// One installed extension (`AppSettings::extensions`).

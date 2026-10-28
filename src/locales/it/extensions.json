@@ -25,7 +25,8 @@
   "source": {
     "folder": "Cartella {{path}}",
     "file": "File {{name}}",
-    "url": "{{url}}"
+    "url": "{{url}}",
+    "catalog": "Catalogo: {{repository}}"
   },
   "url": {
     "title": "Installa da URL",
@@ -63,7 +64,9 @@
     "permissions": "Cosa può fare",
     "noContributions": "Non viene aggiunto nulla all'interfaccia.",
     "secretWarning": "Legge i valori dei Secret",
-    "secretWarningHint": "Questa estensione chiede di leggere i valori dei Secret: password, token e chiavi. Consentilo solo se ti fidi del suo autore."
+    "secretWarningHint": "Questa estensione chiede di leggere i valori dei Secret: password, token e chiavi. Consentilo solo se ti fidi del suo autore.",
+    "verified": "Firmato dall'editore, chiave {{keyId}}",
+    "namesake": "Il catalogo elenca un'estensione con questo identificativo: {{name}} di {{author}}. Questo pacchetto non proviene dal catalogo."
   },
   "contributes": {
     "pages": "Pagine nella barra laterale",
@@ -143,7 +146,8 @@
   },
   "reinstall": {
     "file": "Per rivederne le autorizzazioni, reinstallala dal file {{name}} (Installa da file…).",
-    "url": "Per rivederne le autorizzazioni, reinstallala da {{url}} (Installa da URL…)."
+    "url": "Per rivederne le autorizzazioni, reinstallala da {{url}} (Installa da URL…).",
+    "catalog": "Per rivederne le autorizzazioni, reinstallala dal catalogo."
   },
   "permissionsDialog": {
     "title": "Autorizzazioni di {{name}}",
@@ -196,5 +200,68 @@
       "notChecked": "Non controllato"
     },
     "duration": "{{ms}} ms"
+  },
+  "tabs": {
+    "installed": "Installate",
+    "catalog": "Catalogo"
+  },
+  "catalog": {
+    "use": "Usa il catalogo delle estensioni",
+    "useHint": "Sextant legge l'elenco delle estensioni da github.com/FriendsOfKubernetes/sextant-extensions quando apri il catalogo, o questa pagina mentre è installata un'estensione del catalogo, al massimo una volta all'ora. Se disattivato, Sextant non invia alcuna richiesta.",
+    "trust": "Il catalogo indica chi pubblica ogni estensione e Sextant verifica che il pacchetto che installi sia firmato da quell'editore. Il catalogo non esamina il codice di ogni versione: un'estensione può comunque fare solo ciò che consenti nella schermata successiva.",
+    "loading": "Caricamento del catalogo…",
+    "failed": "Impossibile leggere il catalogo",
+    "updatedAt": "Aggiornato: {{date}}",
+    "staleNote": "Viene mostrata la copia del {{date}}: impossibile aggiornare il catalogo ({{message}}).",
+    "newerFormat": "Questo catalogo è scritto per una versione più recente di Sextant. Aggiorna Sextant per sfogliarlo.",
+    "refresh": "Aggiorna",
+    "search": "Cerca",
+    "searchPlaceholder": "Nome, autore o descrizione",
+    "category": "Categoria",
+    "allCategories": "Tutte le categorie",
+    "empty": "Il catalogo non elenca ancora alcuna estensione.",
+    "noMatch": "Nessuna estensione del catalogo corrisponde.",
+    "skipped_one": "{{count}} voce del catalogo non può essere letta e non viene mostrata.",
+    "skipped_many": "{{count}} di voci del catalogo non possono essere lette e non vengono mostrate.",
+    "skipped_other": "{{count}} voci del catalogo non possono essere lette e non vengono mostrate.",
+    "by": "di {{author}}",
+    "install": "Installa",
+    "installNamed": "Installa {{name}}",
+    "installed": "Installata",
+    "updateTo": "Aggiorna a {{version}}",
+    "updateNamed": "Aggiorna {{name}} a {{version}}",
+    "otherSource": "Installata da un'altra origine",
+    "pinnedElsewhere": "Editore cambiato",
+    "needsNewer": "La versione {{version}} richiede un Sextant più recente",
+    "withdrawn": "Ritirata",
+    "details": "Dettagli",
+    "detailsNamed": "Dettagli di {{name}}",
+    "repository": "Repository",
+    "openRepository": "Apri {{repository}} su GitHub",
+    "publisherKey": "Chiave dell'editore",
+    "published": "Pubblicata",
+    "size": "Dimensione",
+    "contribution": "{{what}}: {{count}}",
+    "asPublished": "Come pubblicato nel catalogo. La schermata di installazione mostra ciò che chiede il pacchetto stesso.",
+    "permissionsUnreadable": "Questa versione di Sextant non può mostrare le autorizzazioni elencate nel catalogo.",
+    "categories": {
+      "observability": "Osservabilità",
+      "cost": "Costi",
+      "security": "Sicurezza",
+      "gitops": "GitOps",
+      "networking": "Rete",
+      "storage": "Archiviazione",
+      "workloads": "Carichi di lavoro",
+      "developer": "Strumenti per sviluppatori",
+      "other": "Altro"
+    }
+  },
+  "catalogStatus": {
+    "updateAvailable": "La versione {{version}} è disponibile nel catalogo.",
+    "needsNewerSextant": "La versione {{version}} nel catalogo richiede un Sextant più recente.",
+    "keyChanged": "La chiave dell'editore è cambiata nel catalogo, quindi gli aggiornamenti vengono rifiutati. Per fidarti della nuova chiave, rimuovi l'estensione e reinstallala.",
+    "repositoryChanged": "Il repository dell'editore è cambiato nel catalogo, quindi gli aggiornamenti vengono rifiutati. Per fidarti del nuovo repository, rimuovi l'estensione e reinstallala.",
+    "withdrawn": "Ritirata dal catalogo: {{reason}}. Valuta di disattivarla o rimuoverla.",
+    "notListed": "Il catalogo non elenca più questa estensione."
   }
 }

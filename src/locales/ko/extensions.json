@@ -25,7 +25,8 @@
   "source": {
     "folder": "폴더 {{path}}",
     "file": "파일 {{name}}",
-    "url": "{{url}}"
+    "url": "{{url}}",
+    "catalog": "카탈로그: {{repository}}"
   },
   "url": {
     "title": "URL에서 설치",
@@ -63,7 +64,9 @@
     "permissions": "허용되는 작업",
     "noContributions": "인터페이스에 아무것도 추가되지 않습니다.",
     "secretWarning": "Secret 값 읽기",
-    "secretWarningHint": "이 확장은 Secret 값(암호, 토큰, 키)을 읽으려고 합니다. 작성자를 신뢰하는 경우에만 허용하세요."
+    "secretWarningHint": "이 확장은 Secret 값(암호, 토큰, 키)을 읽으려고 합니다. 작성자를 신뢰하는 경우에만 허용하세요.",
+    "verified": "게시자가 서명함, 키 {{keyId}}",
+    "namesake": "카탈로그에 이 ID를 가진 확장이 있습니다: {{author}}의 {{name}}. 이 패키지는 카탈로그에서 받은 것이 아닙니다."
   },
   "contributes": {
     "pages": "사이드바의 페이지",
@@ -135,7 +138,8 @@
   },
   "reinstall": {
     "file": "권한을 검토하려면 파일 {{name}}에서 다시 설치하세요(파일에서 설치…).",
-    "url": "권한을 검토하려면 {{url}}에서 다시 설치하세요(URL에서 설치…)."
+    "url": "권한을 검토하려면 {{url}}에서 다시 설치하세요(URL에서 설치…).",
+    "catalog": "권한을 검토하려면 카탈로그에서 다시 설치하세요."
   },
   "permissionsDialog": {
     "title": "{{name}}의 권한",
@@ -186,5 +190,66 @@
       "notChecked": "확인 안 됨"
     },
     "duration": "{{ms}}ms"
+  },
+  "tabs": {
+    "installed": "설치됨",
+    "catalog": "카탈로그"
+  },
+  "catalog": {
+    "use": "확장 카탈로그 사용",
+    "useHint": "카탈로그를 열 때, 또는 카탈로그에서 설치한 확장이 있는 동안 이 페이지를 열 때 Sextant는 github.com/FriendsOfKubernetes/sextant-extensions에서 확장 목록을 읽습니다(최대 1시간에 한 번). 끄면 Sextant는 아무것도 요청하지 않습니다.",
+    "trust": "카탈로그는 각 확장의 게시자를 알려 주며, Sextant는 설치하는 패키지가 해당 게시자의 서명을 받았는지 확인합니다. 카탈로그가 모든 릴리스의 코드를 검토하지는 않습니다. 그래도 확장은 다음 화면에서 허용한 작업만 할 수 있습니다.",
+    "loading": "카탈로그를 로드하는 중…",
+    "failed": "카탈로그를 읽을 수 없습니다",
+    "updatedAt": "{{date}} 업데이트됨",
+    "staleNote": "{{date}}의 사본을 표시하는 중: 카탈로그를 새로 고칠 수 없습니다({{message}}).",
+    "newerFormat": "이 카탈로그는 최신 Sextant용입니다. 탐색하려면 Sextant를 업데이트하세요.",
+    "refresh": "새로 고침",
+    "search": "검색",
+    "searchPlaceholder": "이름, 작성자 또는 설명",
+    "category": "카테고리",
+    "allCategories": "모든 카테고리",
+    "empty": "카탈로그에 아직 확장이 없습니다.",
+    "noMatch": "카탈로그에 일치하는 확장이 없습니다.",
+    "skipped_other": "카탈로그 항목 {{count}}개를 읽을 수 없어 표시하지 않습니다.",
+    "by": "작성자: {{author}}",
+    "install": "설치",
+    "installNamed": "{{name}} 설치",
+    "installed": "설치됨",
+    "updateTo": "{{version}}(으)로 업데이트",
+    "updateNamed": "{{name}}을(를) {{version}}(으)로 업데이트",
+    "otherSource": "다른 소스에서 설치됨",
+    "pinnedElsewhere": "게시자 변경됨",
+    "needsNewer": "버전 {{version}}에는 최신 Sextant가 필요합니다",
+    "withdrawn": "철회됨",
+    "details": "세부 정보",
+    "detailsNamed": "{{name}} 세부 정보",
+    "repository": "저장소",
+    "openRepository": "GitHub에서 {{repository}} 열기",
+    "publisherKey": "게시자 키",
+    "published": "게시일",
+    "size": "크기",
+    "contribution": "{{what}}: {{count}}",
+    "asPublished": "카탈로그에 게시된 내용입니다. 설치 화면에는 패키지 자체가 요청하는 내용이 표시됩니다.",
+    "permissionsUnreadable": "이 버전의 Sextant는 카탈로그에 나열된 권한을 표시할 수 없습니다.",
+    "categories": {
+      "observability": "관측성",
+      "cost": "비용",
+      "security": "보안",
+      "gitops": "GitOps",
+      "networking": "네트워킹",
+      "storage": "스토리지",
+      "workloads": "워크로드",
+      "developer": "개발자 도구",
+      "other": "기타"
+    }
+  },
+  "catalogStatus": {
+    "updateAvailable": "카탈로그에서 버전 {{version}}을(를) 사용할 수 있습니다.",
+    "needsNewerSextant": "카탈로그의 버전 {{version}}에는 최신 Sextant가 필요합니다.",
+    "keyChanged": "카탈로그에서 게시자의 키가 변경되어 업데이트가 거부됩니다. 새 키를 신뢰하려면 확장을 제거한 후 다시 설치하세요.",
+    "repositoryChanged": "카탈로그에서 게시자의 저장소가 변경되어 업데이트가 거부됩니다. 이를 신뢰하려면 확장을 제거한 후 다시 설치하세요.",
+    "withdrawn": "카탈로그에서 철회됨: {{reason}}. 사용 중지하거나 제거하는 것을 고려하세요.",
+    "notListed": "카탈로그에 더 이상 이 확장이 없습니다."
   }
 }

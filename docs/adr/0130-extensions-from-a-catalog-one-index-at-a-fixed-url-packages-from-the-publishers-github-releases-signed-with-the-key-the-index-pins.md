@@ -34,7 +34,7 @@ What the app already has:
 ### What the app fetches, and when
 
 - Sextant fetches `https://raw.githubusercontent.com/FriendsOfKubernetes/sextant-extensions/main/index.json`. The URL is a constant in the Tauri layer, fetched by the rules of `download.rs`: at most 2 MiB, 2000 entries and 30 s.
-- The answer is cached in `<app cache>/extension-catalog/` with its fetch time, so the catalog can be browsed offline.
+- The answer is cached in `<app data>/extension-catalog/index.json` (its fetch time is the file's), so the catalog can be browsed offline.
 - It is fetched only:
   - when the user opens the catalog, if the copy is more than an hour old;
   - when the user clicks "Refresh";

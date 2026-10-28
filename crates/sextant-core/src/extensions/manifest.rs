@@ -259,7 +259,7 @@ fn check_unique_ids(manifest: &Value) -> Result<(), ManifestError> {
 }
 
 /// What the schema leaves out and the types need: `confirm` of a rule is `true` unless written.
-fn apply_defaults(manifest: &mut Value) {
+pub(crate) fn apply_defaults(manifest: &mut Value) {
     let rules = manifest
         .pointer_mut("/permissions/rules")
         .and_then(Value::as_array_mut);

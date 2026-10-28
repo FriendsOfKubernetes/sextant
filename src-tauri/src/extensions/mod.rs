@@ -1,5 +1,6 @@
 //! Extensions on the Tauri side: their files served to the window over the `sextant-ext` protocol ([`protocol`]),
-//! install, consent, enable and remove ([`manage`]), and development folders polled for changes ([`dev`]).
+//! install, consent, enable and remove ([`manage`]), the extension catalog ([`catalog`], ADR-0130), and development
+//! folders polled for changes ([`dev`]).
 //!
 //! [`ExtensionHost`] is managed state (`app.manage`) shared by the commands, the protocol handler and the poller. The
 //! list of installed extensions and what was granted is `AppSettings::extensions`, written only here.
@@ -10,6 +11,7 @@
 //! agrees again (`extension_inspect_folder` + `extension_install`).
 
 pub mod api;
+pub mod catalog;
 pub mod dev;
 pub mod manage;
 pub mod protocol;
@@ -121,6 +123,8 @@ struct Inner {
     dev: Mutex<dev::DevWatch>,
     emitter: Mutex<Option<Emitter>>,
     downloader: Downloader,
+    /// The catalog's index as last fetched (`<data>/extension-catalog`).
+    catalog: catalog::CatalogCache,
     #[cfg(test)]
     read_hook: Mutex<Option<ReadHook>>,
 }
@@ -172,6 +176,7 @@ impl ExtensionHost {
                 dev: Mutex::new(dev::DevWatch::default()),
                 emitter: Mutex::new(None),
                 downloader,
+                catalog: catalog::CatalogCache::new(data_dir.join("extension-catalog")),
                 #[cfg(test)]
                 read_hook: Mutex::new(None),
             }),
@@ -257,7 +262,9 @@ impl ExtensionHost {
     fn root_of(&self, entry: &InstalledExtension) -> Option<PathBuf> {
         match &entry.source {
             ExtensionSource::Folder { path } => Some(PathBuf::from(path)),
-            ExtensionSource::File { .. } | ExtensionSource::Url { .. } => {
+            ExtensionSource::File { .. }
+            | ExtensionSource::Url { .. }
+            | ExtensionSource::Catalog { .. } => {
                 version_dir(&self.inner.extensions_dir, &entry.id, &entry.version)
             }
         }
@@ -364,7 +371,9 @@ impl ExtensionHost {
             ExtensionSource::Folder { path } => inspect_folder(Path::new(path))
                 .map(|p| p.manifest)
                 .map_err(|e| e.message)?,
-            ExtensionSource::File { .. } | ExtensionSource::Url { .. } => {
+            ExtensionSource::File { .. }
+            | ExtensionSource::Url { .. }
+            | ExtensionSource::Catalog { .. } => {
                 let root = self
                     .root_of(entry)
                     .ok_or_else(|| format!("`{}` {} is not installed", entry.id, entry.version))?;

@@ -25,7 +25,8 @@
   "source": {
     "folder": "Ordner {{path}}",
     "file": "Datei {{name}}",
-    "url": "{{url}}"
+    "url": "{{url}}",
+    "catalog": "Katalog: {{repository}}"
   },
   "url": {
     "title": "Von URL installieren",
@@ -63,7 +64,9 @@
     "permissions": "Was sie darf",
     "noContributions": "Der Oberfläche wird nichts hinzugefügt.",
     "secretWarning": "Liest die Werte von Secrets",
-    "secretWarningHint": "Diese Erweiterung möchte Secret-Werte lesen: Passwörter, Tokens und Schlüssel. Erlauben Sie das nur, wenn Sie ihrem Autor vertrauen."
+    "secretWarningHint": "Diese Erweiterung möchte Secret-Werte lesen: Passwörter, Tokens und Schlüssel. Erlauben Sie das nur, wenn Sie ihrem Autor vertrauen.",
+    "verified": "Vom Herausgeber signiert, Schlüssel {{keyId}}",
+    "namesake": "Der Katalog führt eine Erweiterung mit dieser ID: {{name}} von {{author}}. Dieses Paket stammt nicht aus dem Katalog."
   },
   "contributes": {
     "pages": "Seiten in der Seitenleiste",
@@ -139,7 +142,8 @@
   },
   "reinstall": {
     "file": "Um ihre Berechtigungen zu prüfen, installieren Sie sie erneut aus der Datei {{name}} („Aus Datei installieren…“).",
-    "url": "Um ihre Berechtigungen zu prüfen, installieren Sie sie erneut von {{url}} („Von URL installieren…“)."
+    "url": "Um ihre Berechtigungen zu prüfen, installieren Sie sie erneut von {{url}} („Von URL installieren…“).",
+    "catalog": "Um ihre Berechtigungen zu prüfen, installieren Sie sie erneut aus dem Katalog."
   },
   "permissionsDialog": {
     "title": "Berechtigungen von {{name}}",
@@ -191,5 +195,67 @@
       "notChecked": "Nicht geprüft"
     },
     "duration": "{{ms}} ms"
+  },
+  "tabs": {
+    "installed": "Installiert",
+    "catalog": "Katalog"
+  },
+  "catalog": {
+    "use": "Erweiterungskatalog verwenden",
+    "useHint": "Sextant liest die Liste der Erweiterungen von github.com/FriendsOfKubernetes/sextant-extensions, wenn Sie den Katalog öffnen oder diese Seite, solange eine Erweiterung aus dem Katalog installiert ist, höchstens einmal pro Stunde. Ausgeschaltet fragt Sextant nichts ab.",
+    "trust": "Der Katalog gibt an, wer jede Erweiterung veröffentlicht, und Sextant prüft, dass das installierte Paket von diesem Herausgeber signiert ist. Der Katalog prüft nicht den Code jedes Releases: Eine Erweiterung darf trotzdem nur das, was Sie auf dem nächsten Bildschirm erlauben.",
+    "loading": "Katalog wird geladen…",
+    "failed": "Der Katalog konnte nicht gelesen werden",
+    "updatedAt": "Aktualisiert {{date}}",
+    "staleNote": "Angezeigt wird die Kopie vom {{date}}: Der Katalog konnte nicht aktualisiert werden ({{message}}).",
+    "newerFormat": "Dieser Katalog ist für ein neueres Sextant geschrieben. Aktualisieren Sie Sextant, um ihn zu durchsuchen.",
+    "refresh": "Aktualisieren",
+    "search": "Suchen",
+    "searchPlaceholder": "Name, Autor oder Beschreibung",
+    "category": "Kategorie",
+    "allCategories": "Alle Kategorien",
+    "empty": "Der Katalog enthält noch keine Erweiterungen.",
+    "noMatch": "Keine Erweiterung im Katalog passt.",
+    "skipped_one": "{{count}} Katalogeintrag konnte nicht gelesen werden und wird nicht angezeigt.",
+    "skipped_other": "{{count}} Katalogeinträge konnten nicht gelesen werden und werden nicht angezeigt.",
+    "by": "von {{author}}",
+    "install": "Installieren",
+    "installNamed": "{{name}} installieren",
+    "installed": "Installiert",
+    "updateTo": "Auf {{version}} aktualisieren",
+    "updateNamed": "{{name}} auf {{version}} aktualisieren",
+    "otherSource": "Aus einer anderen Quelle installiert",
+    "pinnedElsewhere": "Herausgeber geändert",
+    "needsNewer": "Version {{version}} benötigt ein neueres Sextant",
+    "withdrawn": "Zurückgezogen",
+    "details": "Details",
+    "detailsNamed": "Details zu {{name}}",
+    "repository": "Repository",
+    "openRepository": "{{repository}} auf GitHub öffnen",
+    "publisherKey": "Schlüssel des Herausgebers",
+    "published": "Veröffentlicht",
+    "size": "Größe",
+    "contribution": "{{what}}: {{count}}",
+    "asPublished": "Wie im Katalog veröffentlicht. Der Installationsbildschirm zeigt, was das Paket selbst verlangt.",
+    "permissionsUnreadable": "Dieses Sextant kann die im Katalog aufgeführten Berechtigungen nicht anzeigen.",
+    "categories": {
+      "observability": "Observability",
+      "cost": "Kosten",
+      "security": "Sicherheit",
+      "gitops": "GitOps",
+      "networking": "Netzwerk",
+      "storage": "Speicher",
+      "workloads": "Workloads",
+      "developer": "Entwicklerwerkzeuge",
+      "other": "Sonstiges"
+    }
+  },
+  "catalogStatus": {
+    "updateAvailable": "Version {{version}} ist im Katalog verfügbar.",
+    "needsNewerSextant": "Version {{version}} im Katalog benötigt ein neueres Sextant.",
+    "keyChanged": "Der Schlüssel des Herausgebers hat sich im Katalog geändert, daher werden Updates abgelehnt. Um dem neuen Schlüssel zu vertrauen, entfernen Sie die Erweiterung und installieren Sie sie erneut.",
+    "repositoryChanged": "Das Repository des Herausgebers hat sich im Katalog geändert, daher werden Updates abgelehnt. Um ihm zu vertrauen, entfernen Sie die Erweiterung und installieren Sie sie erneut.",
+    "withdrawn": "Aus dem Katalog zurückgezogen: {{reason}}. Erwägen Sie, sie zu deaktivieren oder zu entfernen.",
+    "notListed": "Der Katalog führt diese Erweiterung nicht mehr."
   }
 }

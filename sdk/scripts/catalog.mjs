@@ -30,7 +30,11 @@ export class CatalogError extends Error {}
 
 const ENTRY_FIELDS = ["id", "name", "author", "description", "categories", "repository", "publisherKey", "withdrawn"];
 
-const isControl = (c) => c.codePointAt(0) <= 0x1f || c.codePointAt(0) === 0x7f;
+// Rust's `char::is_control` (Cc) and the text-direction controls: never in a shown name (as `is_hidden` in the core).
+const isControl = (c) => {
+  const code = c.codePointAt(0);
+  return code <= 0x1f || (code >= 0x7f && code <= 0x9f) || code === 0x200e || code === 0x200f || (code >= 0x202a && code <= 0x202e) || (code >= 0x2066 && code <= 0x2069);
+};
 const isText = (value, max) =>
   typeof value === "string" && value.trim() !== "" && [...value].length <= max && ![...value].some(isControl);
 
@@ -169,6 +173,8 @@ export function checkRelease(entry, picked, packageBytes, signatureText) {
   } catch (err) {
     fail(err instanceof MinisignError ? `signature: ${err.message}` : "signature: cannot be read");
   }
+  // Sextant accepts only prehashed signatures, minisign's default (`allow_legacy: false` in the core).
+  if (!signed.prehashed) fail("signature: must be prehashed, as `minisign -S` and `sdk:sign` make it");
   let files;
   try {
     files = unzip(Buffer.from(packageBytes));

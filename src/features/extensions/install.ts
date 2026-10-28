@@ -34,6 +34,8 @@ export function sourceText(source: ExtensionSource, t: TFunction): string {
       return t("extensions:source.file", { name: source.name });
     case "url":
       return t("extensions:source.url", { url: source.url });
+    case "catalog":
+      return t("extensions:source.catalog", { repository: source.repository });
   }
 }
 
@@ -49,6 +51,8 @@ export function reinstallText(source: ExtensionSource, t: TFunction): string | n
       return t("extensions:reinstall.file", { name: source.name });
     case "url":
       return t("extensions:reinstall.url", { url: source.url });
+    case "catalog":
+      return t("extensions:reinstall.catalog");
   }
 }
 
