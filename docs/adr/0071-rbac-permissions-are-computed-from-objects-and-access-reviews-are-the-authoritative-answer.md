@@ -27,3 +27,5 @@
 - Tests: `engine.test.ts` (matching, scopes, aggregation, service accounts), `rbac.test.tsx`, and the Rust tests of `sextant_core::rbac`.
 
 Amended (v0.16.0): the computed views (Subject, Who can) reach AI agents through the read-only MCP tool `get_permissions` (#210, ADR-0094), always labelled as computed and over the RBAC lists the agent may read; the access reviews stay window-only.
+
+Amended (v0.25.5, ADR-0129): with the per-cluster opt-in "Let agents see my effective permissions" (off by default), `get_permissions { mine: true }` passes an agent the user's SelfSubjectRulesReview of the namespaces it may read, cut to the kinds its rules cover. The window's `rbac_*` commands stay window-only.

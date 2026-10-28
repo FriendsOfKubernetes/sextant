@@ -28,3 +28,5 @@ Resources without a namespace (Node, Namespace, PersistentVolume, CRD, ClusterRo
 - Because a call is allowed when any rule covers it, there are no deny rules; narrowing means deleting or editing a rule.
 - Tools that touch several objects (`apply_yaml`, `drain_node`) must check every object before sending anything, so the tool-to-permission table is part of the contract.
 - A new field in the rules must be tolerated by old settings files (`#[serde(default)]`), and an unknown value becomes Off rather than an error.
+
+Amended (v0.25.5, ADR-0129): `get_access` tells an agent the rules in force for a cluster, with the context's namespace and the known namespaces it may read in as hints; nothing is sent to the cluster.
