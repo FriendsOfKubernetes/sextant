@@ -1,0 +1,4 @@
+node_modules/
+dist/
+*.sextant-ext
+backend/target/

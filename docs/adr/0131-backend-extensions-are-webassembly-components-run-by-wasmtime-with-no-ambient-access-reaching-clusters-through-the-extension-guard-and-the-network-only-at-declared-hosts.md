@@ -93,13 +93,11 @@ Things that make it hard:
 
 ### For authors
 
-- Two languages are supported, each with a template, an example and a CI build in `npm run sdk:check`:
-  - **TypeScript**, built with jco (`jco componentize`, the StarlingMonkey engine pre-initialized into the component), so the author of a frame writes its backend in the same language. A component is about 8–12 MB, within the 16 MiB limit.
-  - **Rust**, built for `wasm32-wasip2` with `cargo component`, for a small (0.2–2 MB) and fast backend.
+- Two languages are supported, each with an example that is also the template to copy, built and run in Sextant's runtime by `npm run sdk:check` (`cargo run -p sextant-ext-runtime --example run`, a stand-in host):
+  - **TypeScript**, built with componentize-js (the StarlingMonkey engine pre-initialized into the component; an exact dev dependency of Sextant), so the author of a frame writes its backend in the same language. A component is about 12 MB, within the 16 MiB limit; `fetch` works within the network policy. `@sextant/extension-sdk/backend` gives `defineBackend` (JSON in and out, every error turned into the message a call fails with) and a typed `host`.
+  - **Rust**, built by `cargo build --target wasm32-wasip2` with wit-bindgen (and wstd for HTTP), for a small (about 0.3 MB) and fast backend.
 - `sdk:build` sees which one a project has and runs the right tool.
-- The SDK ships the WIT and the TypeScript types generated from it, and two examples:
-  - `sdk/examples/backend-ts`: calls one declared host and reads the cluster;
-  - `sdk/examples/backend-rust`: does the same in Rust.
+- The SDK ships the WIT (`sdk/wit/sextant-extension.wit`) and two examples: `sdk/examples/backend-ts` and `sdk/examples/backend-rust` count the clusters they may see through `host` and ask api.github.com (the one declared host) for Sextant's latest release, with an optional GitHub token as a credential.
 - Go through TinyGo compiles to the same WIT and is documented as working without guarantees: TinyGo's standard library is partial, and HTTP goes through `wasi:http` (no `net/http` sockets). Other languages that build components (C and C++ through wasi-sdk) work through the WIT on the same terms.
 - Python (componentize-py) is not supported. Its component bundles CPython at 20–40 MB, over the limits, and it starts slowly in a fresh store per call. Supporting it would need larger limits and long-lived instances, which is a separate decision.
 

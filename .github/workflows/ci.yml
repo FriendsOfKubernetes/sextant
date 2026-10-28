@@ -55,6 +55,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+          # The SDK's Rust backend example (ADR-0131) is built and run by `npm run sdk:check`.
+          targets: wasm32-wasip2
 
       - uses: Swatinem/rust-cache@v2
 

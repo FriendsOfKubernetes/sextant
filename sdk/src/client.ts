@@ -107,7 +107,7 @@ export interface Sextant {
    * WebAssembly component, with the answer it returns. A call is limited to 10 s and 1 MB each way.
    */
   backend: {
-    call<T extends JsonValue = JsonValue>(method: string, params?: JsonValue, options?: CallOptions): Promise<T>;
+    call<T = JsonValue>(method: string, params?: JsonValue, options?: CallOptions): Promise<T>;
   };
   /** The extension's own data, kept by Sextant (at most 1 MB in all). */
   storage: {

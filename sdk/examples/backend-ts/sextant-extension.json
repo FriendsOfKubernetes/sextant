@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.example.backend-ts",
+  "name": "Sextant releases (TypeScript backend)",
+  "version": "1.0.0",
+  "description": "Example: a page whose backend, written in TypeScript, counts the clusters it may see and asks GitHub for Sextant's latest release, with an optional GitHub token entered in Sextant.",
+  "author": "Sextant",
+  "sextantApi": 1,
+  "entry": "index.html",
+  "icon": "download",
+  "permissions": { "clusters": { "type": "all" }, "rules": [] },
+  "contributes": {
+    "pages": [{ "id": "releases", "title": "Sextant releases", "section": "backendDemo", "sectionTitle": "Backend demo", "icon": "download" }]
+  },
+  "backend": {
+    "module": "backend.wasm",
+    "network": { "hosts": ["api.github.com"] },
+    "credentials": [{ "id": "github-token", "label": "GitHub token (optional)" }]
+  }
+}

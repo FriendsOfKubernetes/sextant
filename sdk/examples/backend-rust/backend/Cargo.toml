@@ -1,0 +1,26 @@
+# The example's backend in Rust (ADR-0131): built by `sextant-ext build` with
+# `cargo build --release --target wasm32-wasip2` (rustup target add wasm32-wasip2).
+[package]
+name = "sextant-example-backend-rust"
+version = "1.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# The world of sdk/wit/sextant-extension.wit (copy the folder into a project outside the Sextant repository).
+wit-bindgen = "0.63.0"
+# HTTP over wasi:http, which Sextant sends only to the hosts the manifest declares.
+wstd = "0.6.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1
+
+[workspace]

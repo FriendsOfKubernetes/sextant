@@ -1,0 +1,10 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper. */
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+header h1 {
+  margin: 0;
+}

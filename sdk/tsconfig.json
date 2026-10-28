@@ -18,9 +18,10 @@
     "types": [],
     "paths": {
       "@sextant/extension-sdk": ["./src/index.ts"],
-      "@sextant/extension-sdk/testing": ["./src/testing.ts"]
+      "@sextant/extension-sdk/testing": ["./src/testing.ts"],
+      "@sextant/extension-sdk/backend": ["./src/backend.ts"]
     }
   },
-  "include": ["src", "template/src", "examples/*/src"],
+  "include": ["src", "template/src", "examples/*/src", "examples/*/backend/*.ts"],
   "exclude": ["**/*.test.ts", "**/dist"]
 }

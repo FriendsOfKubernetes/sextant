@@ -261,6 +261,14 @@ _Avoid_: store, marketplace, registry
 The signing key of whoever publishes a catalog extension. Every package from the catalog must be signed with it, and an installed extension is tied to the key it was installed with: an update signed with another key is refused until the user installs the extension again.
 _Avoid_: certificate, author key
 
+**Extension backend**:
+The part of an extension that runs outside the window: a WebAssembly program Sextant runs in a sandbox when one of the extension's own pages calls it. It reaches clusters only with the extension's permissions, the network only at the hosts the user agreed to, and the credentials the user entered for it; it has no files, no environment and nothing that keeps running between calls.
+_Avoid_: plugin process, sidecar, server
+
+**Extension credentials**:
+Secrets (an API token, say) that a backend asks for and the user types into Sextant's own form. They stay in the system keyring; only that extension's backend reads them, and Sextant never shows them again.
+_Avoid_: secrets (that word is the Kubernetes kind), keys
+
 **Extension activity log**:
 The record of everything extensions did through the Sextant API: time, extension, cluster, method, target, decision and result. It holds summaries, never values or YAML. Agents have their own log.
 _Avoid_: audit, history

@@ -32,3 +32,24 @@ tauri-plugin-dialog = "2.8"
 codegen-units = 1
 lto = true
 strip = true
+
+# Extension backends (ADR-0131): an unoptimized Cranelift needs half a minute to compile a TypeScript backend (its
+# JavaScript engine is 12 MB of WebAssembly); the compiler itself is optimized in debug builds and tests.
+[profile.dev.package.cranelift-codegen]
+opt-level = 2
+[profile.dev.package.cranelift-frontend]
+opt-level = 2
+[profile.dev.package.cranelift-bforest]
+opt-level = 2
+[profile.dev.package.cranelift-entity]
+opt-level = 2
+[profile.dev.package.cranelift-assembler-x64]
+opt-level = 2
+[profile.dev.package.regalloc2]
+opt-level = 2
+[profile.dev.package.wasmparser]
+opt-level = 2
+[profile.dev.package.wasmtime-environ]
+opt-level = 2
+[profile.dev.package.wasmtime-internal-cranelift]
+opt-level = 2
