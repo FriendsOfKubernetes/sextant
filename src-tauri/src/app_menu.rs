@@ -129,6 +129,9 @@ pub fn on_menu_event<R: Runtime>(app: &AppHandle<R>, event: MenuEvent) {
 mod tests {
     use super::*;
 
+    // muda creates macOS menu items only on the main thread, which a test thread is not; the menu is the same on
+    // every platform, so Linux and Windows check it.
+    #[cfg(not(target_os = "macos"))]
     #[test]
     fn the_menu_moves_cmd_w_from_the_window_to_the_tab() {
         let app = tauri::test::mock_app();

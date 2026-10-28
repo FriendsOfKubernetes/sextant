@@ -455,7 +455,7 @@ describe("resource filter controls", () => {
     // The removed original value remains available until close, as promised by the editor.
     fireEvent.change(search, { target: { value: "kind-0" } });
     expect(within(editor).getByRole("checkbox", { name: "kind-0" })).not.toBeChecked();
-  });
+  }, 20_000); // 1000 checkboxes: slow on the Windows runner
   it("has no axe violations in the column editor and advanced dialog", async () => {
     const { container } = render(<Harness />);
     openOwner();
