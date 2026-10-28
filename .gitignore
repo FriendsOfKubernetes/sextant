@@ -21,6 +21,8 @@ __pycache__/
 # Extension SDK build output
 sdk/**/dist/
 *.sextant-ext
+# Test fixtures are packages on purpose.
+!sdk/test/fixtures/**/*.sextant-ext
 
 # Local Claude Code settings and agent worktrees
 .claude/
