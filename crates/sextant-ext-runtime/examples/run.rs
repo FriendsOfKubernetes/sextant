@@ -22,7 +22,9 @@ impl Host for StandIn {
     ) -> HostFuture<'a, Result<String, CallError>> {
         Box::pin(async move {
             match method {
-                "clusters.list" => Ok(r#"[{"id":"demo","name":"demo","context":"demo"}]"#.to_owned()),
+                "clusters.list" => {
+                    Ok(r#"[{"id":"demo","name":"demo","context":"demo"}]"#.to_owned())
+                }
                 "credentials.get" => Ok("null".to_owned()),
                 _ => Err(CallError {
                     code: "forbidden".to_owned(),
@@ -37,7 +39,10 @@ impl Host for StandIn {
     }
 
     fn http(&self, request: HttpRequest) -> HostFuture<'static, Result<HttpResponse, HttpError>> {
-        eprintln!("[http] {} {} refused by the stand-in host", request.method, request.uri);
+        eprintln!(
+            "[http] {} {} refused by the stand-in host",
+            request.method, request.uri
+        );
         Box::pin(async { Err(HttpError::Denied) })
     }
 }
@@ -60,7 +65,13 @@ async fn main() {
         std::process::exit(1);
     });
     match runtime
-        .invoke(&backend, Arc::new(StandIn), method, params, &Limits::default())
+        .invoke(
+            &backend,
+            Arc::new(StandIn),
+            method,
+            params,
+            &Limits::default(),
+        )
         .await
     {
         Ok(answer) => println!("{answer}"),
