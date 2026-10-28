@@ -1,0 +1,44 @@
+{
+  "names": {
+    "kubectl": "kubectl",
+    "helm": "Helm",
+    "k9s": "k9s",
+    "kubectx": "kubectx 和 kubens"
+  },
+  "offer": {
+    "missing": "未安装 kubectl。Sextant 可以将 kubectl {{server}}（此集群的版本）安装到自己的文件夹中，仅供其终端使用。",
+    "outOfSkew": "此 kubectl（{{found}}）与集群版本 {{server}} 相差太远。Sextant 可以将 kubectl {{server}} 安装到自己的文件夹中，仅供其终端使用。",
+    "install": "安装 kubectl {{server}}",
+    "notNow": "暂不",
+    "neverAsk": "不再询问",
+    "installing": "正在安装 kubectl…",
+    "installed": "kubectl {{version}} 已安装。此集群的新终端将使用它。",
+    "failed": "无法安装 kubectl：{{message}}"
+  },
+  "settings": {
+    "title": "终端工具",
+    "hint": "Sextant 可以将 kubectl（按每个集群的版本）、Helm、k9s 和 kubectx/kubens 安装到自己的文件夹中。它们从各项目自己的发布源下载，并根据其公布的校验和进行验证，且只有 Sextant 的终端会使用它们；不会在系统范围内安装任何内容。",
+    "offerKubectl": "当集群的终端中没有 kubectl，或其版本与集群版本相差太远时，提供安装 kubectl",
+    "folder": "文件夹：{{dir}}",
+    "notInstalled": "未安装",
+    "installed": "{{version}}（{{size}}）",
+    "install": "安装",
+    "installNamed": "安装 {{name}}",
+    "kubectlHint": "kubectl 按集群的版本安装，在该集群的终端中进行。",
+    "check": "检查更新",
+    "checkNamed": "检查 {{name}} 的更新",
+    "upToDate": "已是最新",
+    "updateTo": "更新到 {{version}}",
+    "updateNamed": "将 {{name}} 更新到 {{version}}",
+    "remove": "移除",
+    "removeNamed": "移除 {{name}} {{version}}",
+    "working": "正在处理…",
+    "failed": "无法安装该工具",
+    "unsupported": "Sextant 没有为此操作系统或处理器提供工具。"
+  },
+  "helm": {
+    "install": "安装 Helm",
+    "installHint": "Sextant 可以将最新的 Helm 安装到自己的文件夹中，并在未安装 Helm 时使用它。",
+    "installing": "正在安装 Helm…"
+  }
+}

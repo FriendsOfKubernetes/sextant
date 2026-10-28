@@ -1,0 +1,44 @@
+{
+  "names": {
+    "kubectl": "kubectl",
+    "helm": "Helm",
+    "k9s": "k9s",
+    "kubectx": "kubectx y kubens"
+  },
+  "offer": {
+    "missing": "kubectl no está instalado. Sextant puede instalar kubectl {{server}} (la versión de este clúster) en su propia carpeta, solo para sus terminales.",
+    "outOfSkew": "Este kubectl ({{found}}) está demasiado lejos de la versión {{server}} del clúster. Sextant puede instalar kubectl {{server}} en su propia carpeta, solo para sus terminales.",
+    "install": "Instalar kubectl {{server}}",
+    "notNow": "Ahora no",
+    "neverAsk": "No volver a preguntar",
+    "installing": "Instalando kubectl…",
+    "installed": "kubectl {{version}} está instalado. Los nuevos terminales de este clúster lo usan.",
+    "failed": "No se pudo instalar kubectl: {{message}}"
+  },
+  "settings": {
+    "title": "Herramientas del terminal",
+    "hint": "Sextant puede instalar kubectl (para la versión de cada clúster), Helm, k9s y kubectx/kubens en su propia carpeta. Se descargan de las fuentes de publicación de los propios proyectos y se comprueban con sus sumas de verificación publicadas, y solo los terminales de Sextant los usan; no se instala nada en todo el sistema.",
+    "offerKubectl": "Ofrecer kubectl en el terminal de un clúster cuando no tenga ninguno o tenga uno demasiado lejos de la versión del clúster",
+    "folder": "Carpeta: {{dir}}",
+    "notInstalled": "No instalado",
+    "installed": "{{version}} ({{size}})",
+    "install": "Instalar",
+    "installNamed": "Instalar {{name}}",
+    "kubectlHint": "kubectl se instala para la versión de un clúster, desde el terminal de ese clúster.",
+    "check": "Buscar actualizaciones",
+    "checkNamed": "Buscar actualizaciones de {{name}}",
+    "upToDate": "Actualizado",
+    "updateTo": "Actualizar a {{version}}",
+    "updateNamed": "Actualizar {{name}} a {{version}}",
+    "remove": "Quitar",
+    "removeNamed": "Quitar {{name}} {{version}}",
+    "working": "Procesando…",
+    "failed": "No se pudo instalar la herramienta",
+    "unsupported": "Sextant no ofrece herramientas para este sistema operativo o procesador."
+  },
+  "helm": {
+    "install": "Instalar Helm",
+    "installHint": "Sextant puede instalar la versión más reciente de Helm en su propia carpeta y usarla cuando no haya ninguna instalada.",
+    "installing": "Instalando Helm…"
+  }
+}

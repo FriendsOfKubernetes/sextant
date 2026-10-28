@@ -28,6 +28,7 @@ import { refreshHelmStatus, useHelmStatus } from "../helm/hooks";
 import { ExtensionsPanel } from "../extensions/ExtensionsPanel";
 import { openAbout } from "../about/store";
 import { McpPanel } from "../mcp/McpPanel";
+import { InstallHelm, ToolsPanel } from "../terminal/ToolsPanel";
 import { NotificationsPanel } from "../notifications/NotificationsPanel";
 import { UpdatesPanel } from "../updates";
 import { AccessibilitySettings } from "./AccessibilitySettings";
@@ -102,6 +103,7 @@ export function SettingsContent() {
             <KubeconfigSection />
             <HelmSection settings={settings} save={save} />
             <TerminalSection settings={settings} save={save} />
+            <ToolsSection settings={settings} save={save} />
           </>
         )}
         {tab === "agents" && <McpSection settings={settings} save={save} />}
@@ -380,6 +382,7 @@ function HelmSection({ settings, save }: { settings: AppSettings | null; save: S
       <p className="settings__status" role="status" data-available={status?.available ?? undefined}>
         {statusText}
       </p>
+      {status && !status.available && !manual && <InstallHelm />}
     </Section>
   );
 }
@@ -478,6 +481,16 @@ function TerminalSection({ settings, save }: { settings: AppSettings | null; sav
         />
         <p className="settings__hint">{t("settings:terminal.nodeShellImageHint")}</p>
       </form>
+    </Section>
+  );
+}
+
+/** Terminal tools Sextant installs into its own folder (ADR-0132). */
+function ToolsSection({ settings, save }: { settings: AppSettings | null; save: Save }) {
+  const { t } = useTranslation();
+  return (
+    <Section title={t("tools:settings.title")} hint={t("tools:settings.hint")}>
+      <ToolsPanel settings={settings} save={save} />
     </Section>
   );
 }

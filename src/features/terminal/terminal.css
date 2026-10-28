@@ -351,3 +351,26 @@
   white-space: nowrap;
   font-size: 0.75rem;
 }
+
+/* The kubectl offer above a cluster's terminal (ADR-0132). */
+.terminal__offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-dock-header);
+  font-size: 0.75rem;
+}
+
+.terminal__offer > span:first-child {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.terminal__offer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

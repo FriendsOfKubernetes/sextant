@@ -39,6 +39,7 @@ pub mod resources;
 pub mod settings;
 pub mod timeline;
 pub mod tls;
+pub mod tools;
 pub mod upgrade;
 pub mod vcluster;
 

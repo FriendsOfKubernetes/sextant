@@ -18,6 +18,7 @@ import type { PracticesSettings } from "./PracticesSettings";
 import type { SavedView } from "./SavedView";
 import type { Snippet } from "./Snippet";
 import type { TableColumnWidths } from "./TableColumnWidths";
+import type { TerminalToolsSettings } from "./TerminalToolsSettings";
 import type { Theme } from "./Theme";
 import type { TimelineSettings } from "./TimelineSettings";
 import type { WindowLayout } from "./WindowLayout";
@@ -164,4 +165,9 @@ imageFiles: ImageFilesSettings,
  * The extension catalog (ADR-0130): whether Sextant may read it. Written by the frontend; read leniently
  * ([`extension_catalog`]).
  */
-extensionCatalog: ExtensionCatalogSettings, };
+extensionCatalog: ExtensionCatalogSettings, 
+/**
+ * Terminal tools (ADR-0132): whether a cluster's terminal offers kubectl. Written by the frontend; read
+ * leniently ([`terminal_tools`]).
+ */
+terminalTools: TerminalToolsSettings, };

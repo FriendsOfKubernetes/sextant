@@ -98,6 +98,10 @@ import type { NodeUsage } from "./generated/NodeUsage";
 import type { ObjectRef } from "./generated/ObjectRef";
 import type { PatchType } from "./generated/PatchType";
 import type { PendingInstall } from "./generated/PendingInstall";
+import type { InstalledTool } from "./generated/InstalledTool";
+import type { KubectlOffer } from "./generated/KubectlOffer";
+import type { Tool } from "./generated/Tool";
+import type { ToolsView } from "./generated/ToolsView";
 import type { CatalogView } from "./generated/CatalogView";
 import type { BackendLogLine } from "./generated/BackendLogLine";
 import type { CredentialStatus } from "./generated/CredentialStatus";
@@ -814,6 +818,23 @@ export const mcp = {
  * Installing is two steps: `inspect*` checks a package and keeps it for 10 minutes under a token; `install(token)` is
  * the consent click. Changes of the list come as `events.onExtensionsChanged`.
  */
+/**
+ * Terminal tools (ADR-0132): kubectl for a cluster's version, Helm, k9s and kubectx/kubens, installed into Sextant's
+ * own folder for its terminals. The backend picks every version and builds every URL; the window names a tool and,
+ * for kubectl, a cluster.
+ */
+export const tools = {
+  list: () => call<ToolsView>("tools_list"),
+  /** The newest version of `tool` from its source (kubectl: for `clusterId`'s server). */
+  latest: (tool: Tool, clusterId?: string | null) => call<string>("tools_latest", { tool, clusterId: clusterId ?? null }),
+  /** Installs the newest version of `tool` (kubectl: of `clusterId`'s server minor version). */
+  install: (tool: Tool, clusterId?: string | null) =>
+    call<InstalledTool>("tools_install", { tool, clusterId: clusterId ?? null }),
+  remove: (tool: Tool, version: string) => call<void>("tools_remove", { tool, version }),
+  /** What a cluster's terminal should offer, or `null`. */
+  kubectlOffer: (clusterId: string) => call<KubectlOffer | null>("tools_kubectl_offer", { clusterId }),
+};
+
 export const extensions = {
   list: () => call<ExtensionInfo[]>("extensions_list"),
   /** Checks a `.sextant-ext` / `.zip` file; installs nothing. */

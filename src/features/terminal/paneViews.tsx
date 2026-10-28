@@ -7,6 +7,7 @@ import type { DebugSpec } from "../../api/generated/DebugSpec";
 import { Button, ConfirmDialog } from "../../components";
 import { DEFAULT_DEBUG_IMAGE, DebugDialog } from "./DebugDialog";
 import { FilesDialog } from "./FilesDialog";
+import { KubectlBar } from "./KubectlBar";
 import { NodeShellConfirm } from "./NodeShellConfirm";
 import { TerminalView, type TerminalHandle } from "./TerminalView";
 import type { TerminalSessionFactory, UseTerminalOptions } from "./useTerminal";
@@ -203,6 +204,14 @@ function LocalShellView({ spec, active, extras }: ViewProps<"local">) {
       kubeconfigNotice={clusterId !== null}
       initialInput={input}
       {...extras}
+      banner={
+        clusterId !== null || extras.banner ? (
+          <>
+            {clusterId !== null && <KubectlBar clusterId={clusterId} />}
+            {extras.banner}
+          </>
+        ) : undefined
+      }
     />
   );
 }

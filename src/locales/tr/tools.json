@@ -1,0 +1,44 @@
+{
+  "names": {
+    "kubectl": "kubectl",
+    "helm": "Helm",
+    "k9s": "k9s",
+    "kubectx": "kubectx ve kubens"
+  },
+  "offer": {
+    "missing": "kubectl yüklü değil. Sextant, kubectl {{server}} sürümünü (bu kümenin sürümü) yalnızca kendi terminallerinde kullanılmak üzere kendi klasörüne yükleyebilir.",
+    "outOfSkew": "Bu kubectl ({{found}}), kümenin {{server}} sürümünden çok uzak. Sextant, kubectl {{server}} sürümünü yalnızca kendi terminallerinde kullanılmak üzere kendi klasörüne yükleyebilir.",
+    "install": "kubectl {{server}} yükle",
+    "notNow": "Şimdi değil",
+    "neverAsk": "Bir daha sorma",
+    "installing": "kubectl yükleniyor…",
+    "installed": "kubectl {{version}} yüklendi. Bu kümenin yeni terminalleri onu kullanır.",
+    "failed": "kubectl yüklenemedi: {{message}}"
+  },
+  "settings": {
+    "title": "Terminal araçları",
+    "hint": "Sextant; kubectl (her kümenin sürümü için), Helm, k9s ve kubectx/kubens araçlarını kendi klasörüne yükleyebilir. Bunlar projelerin kendi sürüm kaynaklarından indirilir ve yayımlanan sağlama toplamlarıyla denetlenir; yalnızca Sextant terminalleri bunları kullanır, sistem geneline hiçbir şey yüklenmez.",
+    "offerKubectl": "Bir kümenin terminalinde kubectl yoksa veya kümenin sürümünden çok uzaksa kubectl öner",
+    "folder": "Klasör: {{dir}}",
+    "notInstalled": "Yüklü değil",
+    "installed": "{{version}} ({{size}})",
+    "install": "Yükle",
+    "installNamed": "{{name}} yükle",
+    "kubectlHint": "kubectl, bir kümenin sürümü için o kümenin terminalinden yüklenir.",
+    "check": "Güncellemeleri denetle",
+    "checkNamed": "{{name}} güncellemelerini denetle",
+    "upToDate": "Güncel",
+    "updateTo": "{{version}} sürümüne güncelle",
+    "updateNamed": "{{name}} aracını {{version}} sürümüne güncelle",
+    "remove": "Kaldır",
+    "removeNamed": "{{name}} {{version}} sürümünü kaldır",
+    "working": "İşleniyor…",
+    "failed": "Araç yüklenemedi",
+    "unsupported": "Sextant bu işletim sistemi veya işlemci için araç sunmuyor."
+  },
+  "helm": {
+    "install": "Helm yükle",
+    "installHint": "Sextant, en son Helm sürümünü kendi klasörüne yükleyebilir ve Helm yüklü olmadığında onu kullanabilir.",
+    "installing": "Helm yükleniyor…"
+  }
+}

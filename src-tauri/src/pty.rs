@@ -372,10 +372,15 @@ fn set_var(platform: Platform, env: &mut Vec<(OsString, OsString)>, name: &str, 
 pub fn spawn_local_shell(
     shell: &ShellCommand,
     kubeconfig: &OsStr,
+    path: Option<&OsStr>,
     cols: u16,
     rows: u16,
 ) -> Result<LocalShell, CoreError> {
-    let base: Vec<(OsString, OsString)> = std::env::vars_os().collect();
+    let mut base: Vec<(OsString, OsString)> = std::env::vars_os().collect();
+    // Sextant's terminal tools in front of the user's PATH (ADR-0132), when any is installed.
+    if let Some(path) = path {
+        set_var(Platform::current(), &mut base, "PATH", path);
+    }
     spawn_local_shell_with(shell, kubeconfig, &base, &std::env::temp_dir(), cols, rows)
 }
 

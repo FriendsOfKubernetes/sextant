@@ -15,6 +15,7 @@ pub mod mcp;
 pub mod mcp_proxy;
 pub mod pty;
 pub mod state;
+pub mod tools;
 pub mod webkit;
 // The tray exists on the desktop only (as the window code in `window.rs`); elsewhere there is no icon.
 #[cfg(desktop)]
@@ -207,6 +208,11 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         extensions::backend::extension_credentials,
         extensions::backend::extension_credential_set,
         extensions::backend::extension_backend_log,
+        tools::tools_list,
+        tools::tools_latest,
+        tools::tools_install,
+        tools::tools_remove,
+        tools::tools_kubectl_offer,
         extensions::manage::extension_inspect_folder,
         extensions::manage::extension_install,
         extensions::manage::extension_install_cancel,

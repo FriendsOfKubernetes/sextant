@@ -217,6 +217,10 @@ _Avoid_: secret access, reveal
 The record of everything agents did through the MCP server: time, client, cluster, tool, target, decision, result and duration. The last 2000 entries are kept between runs; it holds summaries, never values, YAML or command output.
 _Avoid_: audit, history
 
+**Terminal tools**:
+kubectl, Helm, k9s and kubectx/kubens that Sextant installs into its own folder from the projects' own release sources, after checking their published checksums. Only Sextant's terminals use them: a cluster's terminal gets the kubectl of that cluster's version. A cluster's terminal offers kubectl when it would have none, or one too far from the cluster's version.
+_Avoid_: bundled tools, system install
+
 **Node shell**:
 A shell on a node, opened through a temporary privileged pod in `kube-system` that is deleted when the shell closes. Leftovers from earlier runs are removed on connect, but only the user's own. Neither the agent nor an extension has a node shell, and neither can run commands in, change or delete such a pod.
 _Avoid_: SSH to a node, debug pod

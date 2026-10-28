@@ -1,0 +1,44 @@
+{
+  "names": {
+    "kubectl": "kubectl",
+    "helm": "Helm",
+    "k9s": "k9s",
+    "kubectx": "kubectx と kubens"
+  },
+  "offer": {
+    "missing": "kubectl がインストールされていません。Sextant は kubectl {{server}} (このクラスターのバージョン) を自身のフォルダーにインストールし、自身のターミナル専用に使用できます。",
+    "outOfSkew": "この kubectl ({{found}}) はクラスターのバージョン {{server}} から離れすぎています。Sextant は kubectl {{server}} を自身のフォルダーにインストールし、自身のターミナル専用に使用できます。",
+    "install": "kubectl {{server}} をインストール",
+    "notNow": "後で",
+    "neverAsk": "今後確認しない",
+    "installing": "kubectl をインストール中…",
+    "installed": "kubectl {{version}} をインストールしました。このクラスターの新しいターミナルで使用されます。",
+    "failed": "kubectl をインストールできませんでした: {{message}}"
+  },
+  "settings": {
+    "title": "ターミナルツール",
+    "hint": "Sextant は kubectl (クラスターごとのバージョン)、Helm、k9s、kubectx/kubens を自身のフォルダーにインストールできます。これらは各プロジェクト自身のリリース元からダウンロードされ、公開されているチェックサムで検証されます。使用するのは Sextant のターミナルだけで、システム全体には何もインストールされません。",
+    "offerKubectl": "クラスターのターミナルに kubectl がない場合、またはクラスターのバージョンから離れすぎている場合に kubectl を提案する",
+    "folder": "フォルダー: {{dir}}",
+    "notInstalled": "未インストール",
+    "installed": "{{version}} ({{size}})",
+    "install": "インストール",
+    "installNamed": "{{name}} をインストール",
+    "kubectlHint": "kubectl はクラスターのバージョンに合わせて、そのクラスターのターミナルからインストールされます。",
+    "check": "アップデートを確認",
+    "checkNamed": "{{name}} のアップデートを確認",
+    "upToDate": "最新",
+    "updateTo": "{{version}} に更新",
+    "updateNamed": "{{name}} を {{version}} に更新",
+    "remove": "削除",
+    "removeNamed": "{{name}} {{version}} を削除",
+    "working": "処理中…",
+    "failed": "ツールをインストールできませんでした",
+    "unsupported": "Sextant はこのオペレーティングシステムまたはプロセッサー向けのツールを提供していません。"
+  },
+  "helm": {
+    "install": "Helm をインストール",
+    "installHint": "Sextant は最新の Helm を自身のフォルダーにインストールし、Helm がインストールされていない場合に使用できます。",
+    "installing": "Helm をインストール中…"
+  }
+}

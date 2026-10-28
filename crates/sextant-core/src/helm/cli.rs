@@ -407,6 +407,27 @@ pub struct Rendered {
     pub server_side: bool,
 }
 
+/// Sextant's own tools folder (ADR-0132): where a helm installed by Sextant is looked for when none is in `PATH`.
+static FALLBACK_TOOLS_DIR: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+
+/// Sets [`FALLBACK_TOOLS_DIR`] once, at start.
+pub fn set_fallback_tools_dir(dir: PathBuf) {
+    let _ = FALLBACK_TOOLS_DIR.set(dir);
+}
+
+/// The newest helm Sextant installed, if any.
+fn installed_helm() -> Option<PathBuf> {
+    let root = FALLBACK_TOOLS_DIR.get()?;
+    let platform = crate::tools::Platform::current()?;
+    let newest = crate::tools::installed(root, platform)
+        .into_iter()
+        .find(|t| t.tool == crate::tools::Tool::Helm)?;
+    let version = crate::tools::Version::parse(&newest.version)?;
+    let name = if cfg!(windows) { "helm.exe" } else { "helm" };
+    Some(crate::tools::version_dir(root, crate::tools::Tool::Helm, version).join(name))
+        .filter(|p| is_executable(p))
+}
+
 impl HelmCli {
     /// Always runs this binary instead of looking `helm` up in `PATH`.
     pub fn with_binary(mut self, path: impl Into<PathBuf>) -> Self {
@@ -465,7 +486,7 @@ impl HelmCli {
                     .find(|(k, _)| same_env_name(k, "PATH"))
                     .map(|(_, v)| v.clone())
                     .or_else(|| std::env::var_os("PATH"));
-                find_in_path(path.as_deref())
+                find_in_path(path.as_deref()).or_else(installed_helm)
             }
         }
     }

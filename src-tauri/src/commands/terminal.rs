@@ -381,7 +381,10 @@ pub fn start_plain_terminal<R: Runtime>(
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
-    let session = pty::spawn_shell(shell, &[], cols, rows)?;
+    // Sextant's terminal tools in front of PATH (ADR-0132), the newest of each.
+    let path = state.tools.terminal_path(None, std::env::var_os("PATH"));
+    let env: Vec<(&str, &std::ffi::OsStr)> = path.iter().map(|p| ("PATH", p.as_os_str())).collect();
+    let session = pty::spawn_shell(shell, &env, cols, rows)?;
     forward_term(app, state, id.clone(), None, session, None, channel)?;
     state.undo_if_reset(generation, || {
         state.sessions.stop(&id);
@@ -403,12 +406,19 @@ pub fn start_local_terminal<R: Runtime>(
     rows: u16,
     channel: Channel<TermPayload>,
 ) -> Result<(), CoreError> {
+    let cluster_for_path = cluster.clone();
     start_local_session(
         app,
         state,
         id,
         cluster,
-        |kubeconfig| pty::spawn_local_shell(shell, kubeconfig, cols, rows),
+        |kubeconfig| {
+            // Sextant's terminal tools in front of PATH (ADR-0132), with the kubectl of this cluster's version.
+            let path = state
+                .tools
+                .terminal_path(Some(&cluster_for_path), std::env::var_os("PATH"));
+            pty::spawn_local_shell(shell, kubeconfig, path.as_deref(), cols, rows)
+        },
         channel,
     )
 }

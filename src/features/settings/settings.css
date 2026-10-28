@@ -216,3 +216,14 @@
    list (tabs.css, stripScroll.ts) hides its scrollbar, scrolls with the wheel and fades its edges. A
    `scrollbar-width` here would bring back the scrollbar GTK draws over the labels (WebKit ignores
    `::-webkit-scrollbar` once it is set). */
+
+/* Terminal tools (ADR-0132). */
+.settings__tool-name {
+  flex: 0 0 140px;
+  font-weight: 600;
+}
+
+.settings__tool-hint {
+  flex: 1 1 100%;
+  margin: 0;
+}

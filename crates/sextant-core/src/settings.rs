@@ -26,6 +26,8 @@ pub mod logs;
 pub use logs::LogViewSettings;
 pub mod extension_catalog;
 pub use extension_catalog::ExtensionCatalogSettings;
+pub mod terminal_tools;
+pub use terminal_tools::TerminalToolsSettings;
 pub mod appearance;
 pub mod custom_columns;
 pub mod known_namespaces;
@@ -555,6 +557,11 @@ pub struct AppSettings {
     #[serde(with = "extension_catalog::extension_catalog_field")]
     #[ts(as = "ExtensionCatalogSettings")]
     pub extension_catalog: ExtensionCatalogSettings,
+    /// Terminal tools (ADR-0132): whether a cluster's terminal offers kubectl. Written by the frontend; read
+    /// leniently ([`terminal_tools`]).
+    #[serde(with = "terminal_tools::terminal_tools_field")]
+    #[ts(as = "TerminalToolsSettings")]
+    pub terminal_tools: TerminalToolsSettings,
 }
 
 impl Default for AppSettings {
@@ -589,6 +596,7 @@ impl Default for AppSettings {
             column_widths: ColumnWidths::new(),
             logs: LogViewSettings::default(),
             extension_catalog: ExtensionCatalogSettings::default(),
+            terminal_tools: TerminalToolsSettings::default(),
             cluster_order: Vec::new(),
             practices: PracticesSettings::default(),
             custom_columns: Vec::new(),

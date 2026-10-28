@@ -36,7 +36,8 @@ tauri-plugin-notification = "2.7"
 # "Copy kubeconfig" (#228) writes the clipboard from Rust, so credentials never cross into the webview. The window
 # is granted no clipboard permission: the plugin is used by `kubeconfig_copy` only.
 tauri-plugin-clipboard-manager = "2.3"
-tokio.workspace = true
+# `process`: `kubectl version --client` of the terminal tools (ADR-0132), killed when it takes too long.
+tokio = { workspace = true, features = ["process"] }
 futures.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -94,3 +95,5 @@ libc = "0.2"
 [dev-dependencies]
 tauri = { workspace = true, features = ["test"] }
 tempfile.workspace = true
+# Tool archives in the terminal tools' tests (ADR-0132).
+flate2.workspace = true

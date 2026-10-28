@@ -1,0 +1,44 @@
+{
+  "names": {
+    "kubectl": "kubectl",
+    "helm": "Helm",
+    "k9s": "k9s",
+    "kubectx": "kubectx 및 kubens"
+  },
+  "offer": {
+    "missing": "kubectl이 설치되어 있지 않습니다. Sextant는 kubectl {{server}}(이 클러스터의 버전)을(를) 자체 폴더에 설치하여 자체 터미널에서만 사용할 수 있습니다.",
+    "outOfSkew": "이 kubectl({{found}})은 클러스터 버전 {{server}}와(과) 차이가 너무 큽니다. Sextant는 kubectl {{server}}을(를) 자체 폴더에 설치하여 자체 터미널에서만 사용할 수 있습니다.",
+    "install": "kubectl {{server}} 설치",
+    "notNow": "나중에",
+    "neverAsk": "다시 묻지 않기",
+    "installing": "kubectl 설치 중…",
+    "installed": "kubectl {{version}}이(가) 설치되었습니다. 이 클러스터의 새 터미널에서 사용됩니다.",
+    "failed": "kubectl을 설치할 수 없습니다: {{message}}"
+  },
+  "settings": {
+    "title": "터미널 도구",
+    "hint": "Sextant는 kubectl(클러스터별 버전), Helm, k9s, kubectx/kubens를 자체 폴더에 설치할 수 있습니다. 이 도구들은 각 프로젝트의 자체 릴리스 소스에서 다운로드되고 공개된 체크섬으로 검증되며, Sextant의 터미널에서만 사용됩니다. 시스템 전체에는 아무것도 설치되지 않습니다.",
+    "offerKubectl": "클러스터의 터미널에 kubectl이 없거나 클러스터 버전과 차이가 너무 큰 경우 kubectl 설치 제안",
+    "folder": "폴더: {{dir}}",
+    "notInstalled": "설치되지 않음",
+    "installed": "{{version}}({{size}})",
+    "install": "설치",
+    "installNamed": "{{name}} 설치",
+    "kubectlHint": "kubectl은 클러스터의 버전에 맞춰 해당 클러스터의 터미널에서 설치됩니다.",
+    "check": "업데이트 확인",
+    "checkNamed": "{{name}} 업데이트 확인",
+    "upToDate": "최신 상태",
+    "updateTo": "{{version}}(으)로 업데이트",
+    "updateNamed": "{{name}}을(를) {{version}}(으)로 업데이트",
+    "remove": "제거",
+    "removeNamed": "{{name}} {{version}} 제거",
+    "working": "작업 중…",
+    "failed": "도구를 설치할 수 없습니다",
+    "unsupported": "Sextant는 이 운영 체제 또는 프로세서용 도구를 제공하지 않습니다."
+  },
+  "helm": {
+    "install": "Helm 설치",
+    "installHint": "Sextant는 최신 Helm을 자체 폴더에 설치하고, Helm이 설치되어 있지 않을 때 사용할 수 있습니다.",
+    "installing": "Helm 설치 중…"
+  }
+}

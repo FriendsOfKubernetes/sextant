@@ -39,6 +39,7 @@ export const api = {
   kubeconfig: commands.kubeconfig,
   mcp: commands.mcp,
   extensions: commands.extensions,
+  tools: commands.tools,
   streams: commands.streams,
   dialog: { openFile: openFileDialog, saveFile: saveFileDialog },
   /** The operating system: `openUrl(url)` opens a link in the default browser. */

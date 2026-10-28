@@ -1,0 +1,44 @@
+{
+  "names": {
+    "kubectl": "kubectl",
+    "helm": "Helm",
+    "k9s": "k9s",
+    "kubectx": "kubectx 和 kubens"
+  },
+  "offer": {
+    "missing": "未安裝 kubectl。Sextant 可以將 kubectl {{server}}（此叢集的版本）安裝到自己的資料夾中，僅供其終端機使用。",
+    "outOfSkew": "此 kubectl（{{found}}）與叢集版本 {{server}} 相差太遠。Sextant 可以將 kubectl {{server}} 安裝到自己的資料夾中，僅供其終端機使用。",
+    "install": "安裝 kubectl {{server}}",
+    "notNow": "暫時不要",
+    "neverAsk": "不要再詢問",
+    "installing": "正在安裝 kubectl…",
+    "installed": "kubectl {{version}} 已安裝。此叢集的新終端機將使用它。",
+    "failed": "無法安裝 kubectl：{{message}}"
+  },
+  "settings": {
+    "title": "終端機工具",
+    "hint": "Sextant 可以將 kubectl（依每個叢集的版本）、Helm、k9s 和 kubectx/kubens 安裝到自己的資料夾中。它們從各專案自己的發行來源下載，並依其公布的校驗和進行驗證，且只有 Sextant 的終端機會使用它們；不會在系統範圍內安裝任何內容。",
+    "offerKubectl": "當叢集的終端機中沒有 kubectl，或其版本與叢集版本相差太遠時，提供安裝 kubectl",
+    "folder": "資料夾：{{dir}}",
+    "notInstalled": "未安裝",
+    "installed": "{{version}}（{{size}}）",
+    "install": "安裝",
+    "installNamed": "安裝 {{name}}",
+    "kubectlHint": "kubectl 依叢集的版本安裝，在該叢集的終端機中進行。",
+    "check": "檢查更新",
+    "checkNamed": "檢查 {{name}} 的更新",
+    "upToDate": "已是最新版本",
+    "updateTo": "更新至 {{version}}",
+    "updateNamed": "將 {{name}} 更新至 {{version}}",
+    "remove": "移除",
+    "removeNamed": "移除 {{name}} {{version}}",
+    "working": "處理中…",
+    "failed": "無法安裝此工具",
+    "unsupported": "Sextant 未針對此作業系統或處理器提供工具。"
+  },
+  "helm": {
+    "install": "安裝 Helm",
+    "installHint": "Sextant 可以將最新的 Helm 安裝到自己的資料夾中，並在未安裝 Helm 時使用它。",
+    "installing": "正在安裝 Helm…"
+  }
+}

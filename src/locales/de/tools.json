@@ -1,0 +1,44 @@
+{
+  "names": {
+    "kubectl": "kubectl",
+    "helm": "Helm",
+    "k9s": "k9s",
+    "kubectx": "kubectx und kubens"
+  },
+  "offer": {
+    "missing": "kubectl ist nicht installiert. Sextant kann kubectl {{server}} (die Version dieses Clusters) in seinen eigenen Ordner installieren, nur für seine Terminals.",
+    "outOfSkew": "Dieses kubectl ({{found}}) ist zu weit von der Version {{server}} des Clusters entfernt. Sextant kann kubectl {{server}} in seinen eigenen Ordner installieren, nur für seine Terminals.",
+    "install": "kubectl {{server}} installieren",
+    "notNow": "Nicht jetzt",
+    "neverAsk": "Nicht mehr fragen",
+    "installing": "kubectl wird installiert…",
+    "installed": "kubectl {{version}} ist installiert. Neue Terminals dieses Clusters verwenden es.",
+    "failed": "kubectl konnte nicht installiert werden: {{message}}"
+  },
+  "settings": {
+    "title": "Terminal-Werkzeuge",
+    "hint": "Sextant kann kubectl (passend zur Version jedes Clusters), Helm, k9s und kubectx/kubens in seinen eigenen Ordner installieren. Sie werden aus den Release-Quellen der Projekte heruntergeladen und anhand ihrer veröffentlichten Prüfsummen geprüft, und nur die Terminals von Sextant verwenden sie; systemweit wird nichts installiert.",
+    "offerKubectl": "kubectl im Terminal eines Clusters anbieten, wenn keines vorhanden ist oder das vorhandene zu weit von der Version des Clusters entfernt ist",
+    "folder": "Ordner: {{dir}}",
+    "notInstalled": "Nicht installiert",
+    "installed": "{{version}} ({{size}})",
+    "install": "Installieren",
+    "installNamed": "{{name}} installieren",
+    "kubectlHint": "kubectl wird passend zur Version eines Clusters installiert, aus dem Terminal dieses Clusters.",
+    "check": "Nach Updates suchen",
+    "checkNamed": "Nach Updates für {{name}} suchen",
+    "upToDate": "Aktuell",
+    "updateTo": "Auf {{version}} aktualisieren",
+    "updateNamed": "{{name}} auf {{version}} aktualisieren",
+    "remove": "Entfernen",
+    "removeNamed": "{{name}} {{version}} entfernen",
+    "working": "Wird ausgeführt…",
+    "failed": "Das Werkzeug konnte nicht installiert werden",
+    "unsupported": "Sextant bietet für dieses Betriebssystem oder diesen Prozessor keine Werkzeuge an."
+  },
+  "helm": {
+    "install": "Helm installieren",
+    "installHint": "Sextant kann die neueste Helm-Version in seinen eigenen Ordner installieren und sie verwenden, wenn keine installiert ist.",
+    "installing": "Helm wird installiert…"
+  }
+}

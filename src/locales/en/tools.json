@@ -1,0 +1,44 @@
+{
+  "names": {
+    "kubectl": "kubectl",
+    "helm": "Helm",
+    "k9s": "k9s",
+    "kubectx": "kubectx and kubens"
+  },
+  "offer": {
+    "missing": "kubectl is not installed. Sextant can install kubectl {{server}} (the version of this cluster) into its own folder, for its terminals only.",
+    "outOfSkew": "This kubectl ({{found}}) is too far from the cluster's version {{server}}. Sextant can install kubectl {{server}} into its own folder, for its terminals only.",
+    "install": "Install kubectl {{server}}",
+    "notNow": "Not now",
+    "neverAsk": "Don't ask again",
+    "installing": "Installing kubectl…",
+    "installed": "kubectl {{version}} is installed. New terminals of this cluster use it.",
+    "failed": "kubectl could not be installed: {{message}}"
+  },
+  "settings": {
+    "title": "Terminal tools",
+    "hint": "Sextant can install kubectl (for each cluster's version), Helm, k9s and kubectx/kubens into its own folder. They are downloaded from the projects' own release sources and checked against their published checksums, and only Sextant's terminals use them; nothing is installed system-wide.",
+    "offerKubectl": "Offer kubectl in a cluster's terminal when it has none, or one too far from the cluster's version",
+    "folder": "Folder: {{dir}}",
+    "notInstalled": "Not installed",
+    "installed": "{{version}} ({{size}})",
+    "install": "Install",
+    "installNamed": "Install {{name}}",
+    "kubectlHint": "kubectl is installed for a cluster's version, from that cluster's terminal.",
+    "check": "Check for updates",
+    "checkNamed": "Check for updates of {{name}}",
+    "upToDate": "Up to date",
+    "updateTo": "Update to {{version}}",
+    "updateNamed": "Update {{name}} to {{version}}",
+    "remove": "Remove",
+    "removeNamed": "Remove {{name}} {{version}}",
+    "working": "Working…",
+    "failed": "The tool could not be installed",
+    "unsupported": "Sextant offers no tools for this operating system or processor."
+  },
+  "helm": {
+    "install": "Install Helm",
+    "installHint": "Sextant can install the latest Helm into its own folder and use it when none is installed.",
+    "installing": "Installing Helm…"
+  }
+}

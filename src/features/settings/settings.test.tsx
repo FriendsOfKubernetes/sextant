@@ -401,7 +401,7 @@ describe("Settings tabs", () => {
     expect(regions()).toEqual(["Appearance", "Window", "Notifications", "Editor"]);
 
     fireEvent.click(screen.getByRole("tab", { name: "Clusters" }));
-    expect(regions()).toEqual(["Kubeconfig", "Helm", "Terminal"]);
+    expect(regions()).toEqual(["Kubeconfig", "Helm", "Terminal", "Terminal tools"]);
     expect(screen.queryByRole("radiogroup", { name: "Theme" })).not.toBeInTheDocument();
 
     // Keyboard as everywhere else: the arrow moves to the next tab and selects it.

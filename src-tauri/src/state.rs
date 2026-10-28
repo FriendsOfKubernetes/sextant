@@ -43,6 +43,8 @@ pub struct AppState {
     /// The extensions' API (`extension_call`): its watch streams, its journal `<data_dir>/extensions-audit.jsonl`;
     /// confirmations shared with `mcp`.
     pub ext_api: Arc<ExtensionApi>,
+    /// Terminal tools installed by Sextant (ADR-0132).
+    pub tools: crate::tools::Tools,
     /// Flux / Argo CD installs: plans prepared for the user's "Install" and the installs running
     /// (`gitops_install_*`); stopped with their cluster, on a reload and on exit.
     pub gitops: GitopsInstalls,
@@ -94,6 +96,7 @@ impl AppState {
             argocd: ArgoSessions::new(Arc::new(KeyringStore::os())),
             mcp,
             ext_api,
+            tools: crate::tools::Tools::new(data_dir),
             gitops: GitopsInstalls::default(),
             image_files: crate::image_files::ImageSessions::default(),
             vcluster: crate::commands::vcluster::VclusterLinks::default(),

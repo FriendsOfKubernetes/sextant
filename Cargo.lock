@@ -5200,6 +5200,7 @@ dependencies = [
  "base64 0.23.1",
  "dbus",
  "dirs",
+ "flate2",
  "fontdb",
  "futures",
  "getrandom 0.3.4",

@@ -106,7 +106,8 @@ export const UPDATER_COMMANDS = {
 /**
  * Installs a mock backend. Commands without a handler reject like the backend stubs do
  * (`{ code: "other", message: "not implemented" }`); a handler that throws rejects with the thrown value.
- * `settings_get` / `settings_update` work out of the box on an in-memory copy, `extensions_list` answers `[]`, and
+ * `settings_get` / `settings_update` work out of the box on an in-memory copy, `extensions_list` answers `[]`, the
+ * terminal tools answer nothing installed and no kubectl offer, and
  * `extension_install_cancel`, `term_ack` and `files_transfer_stop` resolve.
  *
  * Stream ids come from the frontend (`streamId` of `*_start`), and so does the channel of the stream's payloads
@@ -148,6 +149,9 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
     error: null,
     installed: [],
   }));
+  // Terminal tools (ADR-0132): nothing installed, and no kubectl offer in a cluster's terminal.
+  table.set("tools_list", () => ({ dir: "/data/tools", installed: [], supported: true }));
+  table.set("tools_kubectl_offer", () => null);
   // Closing a window of consent drops its pending install; nothing to answer.
   table.set("extension_install_cancel", () => undefined);
   // Closing an install dialog stops its stream; nothing to answer.
