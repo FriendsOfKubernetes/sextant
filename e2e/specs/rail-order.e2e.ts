@@ -85,6 +85,15 @@ async function fill(selector: string, text: string): Promise<void> {
   );
 }
 
+/** Closes every open dialog, the innermost first (each Escape closes the top one). */
+async function closeDialogs(): Promise<void> {
+  for (let i = 0; i < 3 && (await $('[role="dialog"]').isExisting()); i += 1) {
+    await browser.keys("Escape");
+    await browser.pause(200);
+  }
+  await $('[role="dialog"]').waitForExist({ reverse: true });
+}
+
 describe("Cluster order in the rail", () => {
   before(async () => {
     await browser.setWindowSize(1280, 800);
@@ -93,15 +102,21 @@ describe("Cluster order in the rail", () => {
     await $("button=Paste kubeconfig").click();
     await fill('textarea[aria-label="Kubeconfig"]', KUBECONFIG);
     await $("button=Add").click();
+    // Add checks the text first (asynchronously, slower under load): it either adds the source at once or warns about
+    // the missing credentials, and the warning's "Add anyway" may appear only later — wait for whichever comes.
     const anyway = $("button=Add anyway");
+    await browser.waitUntil(async () => (await anyway.isExisting()) || (await railItem(EXTRA[1]).isExisting()), {
+      timeout: 20_000,
+      timeoutMsg: "the pasted kubeconfig was neither added nor warned about",
+    });
     if (await anyway.isExisting()) await anyway.click();
     await railItem(EXTRA[1]).waitForDisplayed({ timeout: 20_000 });
-    await browser.keys("Escape");
-    await $('[role="dialog"]').waitForExist({ reverse: true });
+    await closeDialogs();
   });
 
   after(async () => {
-    // The pasted source goes; the sandboxed settings go with the run.
+    // The pasted source goes; the sandboxed settings go with the run. A dialog a failed step left open goes first.
+    await closeDialogs();
     await click("Add cluster", rail());
     const remove = $('button[aria-label^="Remove "]');
     if (await remove.isExisting()) {
