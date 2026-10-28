@@ -19,7 +19,11 @@ export function ClusterRail() {
   const toggleLabel = t(expanded ? "clusters:rail.collapse" : "clusters:rail.expand");
   return (
     <nav className={expanded ? "rail rail--expanded" : "rail"} aria-label={t("common:layout.clusters")}>
-      <img className="rail__logo" src={logoUrl} alt={t("common:app.logo")} width={32} height={32} />
+      <div className="rail__brand">
+        {/* Expanded, the name next to it says what the logo would: the image is then decoration. */}
+        <img className="rail__logo" src={logoUrl} alt={expanded ? "" : t("common:app.logo")} width={32} height={32} />
+        {expanded && <span className="rail__brand-name">{t("common:app.name")}</span>}
+      </div>
       <div className="rail__content">{Content && <Content />}</div>
       <div className="rail__footer">
         <button

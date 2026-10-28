@@ -27,13 +27,27 @@
   padding: 12px 8px;
 }
 
+.rail__brand {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .rail__logo {
+  flex: none;
   border-radius: 8px;
 }
 
-.rail--expanded .rail__logo {
+.rail--expanded .rail__brand {
   align-self: flex-start;
   margin-left: 12px;
+}
+
+.rail__brand-name {
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .rail__content {
