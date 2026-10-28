@@ -20,6 +20,8 @@ export function buildFacetOptions(
   const pinned = new Set(selected.map(filterValueKey));
   for (const value of selected) options.set(filterValueKey(value), { value, count: 0, row: -1 });
   const wanted = query.trim().toLowerCase();
+  // A value that does not match the query is labelled once, not once per row that has it.
+  const rejected = new Set<string>();
   let candidates = 0;
   let row = 0;
   let truncated = false;
@@ -30,7 +32,8 @@ export function buildFacetOptions(
     const key = filterValueKey(value);
     let option = options.get(key);
     if (!option) {
-      if (wanted && !label(value).toLowerCase().includes(wanted)) return;
+      if (rejected.has(key)) return;
+      if (wanted && !label(value).toLowerCase().includes(wanted)) { rejected.add(key); return; }
       // Always retain the empty entry, so it can precede the selected values too.
       if (candidates >= limit && !isEmptyValue(value)) { truncated = true; return; }
       option = { value, count: 0, row: -1 };

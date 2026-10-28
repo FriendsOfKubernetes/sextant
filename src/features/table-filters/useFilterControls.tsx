@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import type { TableFilters } from "../../api/generated/TableFilters";
@@ -8,7 +8,8 @@ import type { PopupRect } from "../../components/placePopup";
 import type { CellContext, ColumnDef } from "../../resources/registry";
 import { AdvancedEditor } from "./AdvancedEditor";
 import { ColumnEditor } from "./ColumnEditor";
-import { FilterPopup } from "./FilterPopup";
+import { FILTER_TOGGLE_ATTRIBUTE, FilterPopup } from "./FilterPopup";
+import { formatList } from "../../i18n/format";
 import { columnLabel, conditionLabel, expressionLabel, selectionLabel } from "./labels";
 import { columnFilterCount, compileTableFilters, EMPTY_TABLE_FILTERS, withColumnFilter, withoutColumnFilter } from "./model";
 import { readTableFilters, TableFilterLimitError } from "./validation";
@@ -34,32 +35,40 @@ function filterChip({ key, text, edit, remove, paused = false, t }: {
   </span>;
 }
 
-function filterChips({ filters, columns, compiled, openColumn, openAdvanced, commit, t }: {
-  filters: TableFilters; columns: readonly ColumnDef[]; compiled: CompiledFilters; t: TFunction;
+function filterChips({ filters, columns, compiled, notReady, openColumn, openAdvanced, commit, t }: {
+  filters: TableFilters; columns: readonly ColumnDef[]; compiled: CompiledFilters; notReady: readonly string[]; t: TFunction;
   openColumn: (column: string, anchor: PopupRect) => void; openAdvanced: () => void; commit: (filters: TableFilters) => boolean;
 }): ReactNode[] {
   const chips: ReactNode[] = [];
   for (const [id, filter] of Object.entries(filters.columns)) {
     const column = columns.find((column) => column.id === id) ?? { id, value: () => undefined };
-    const paused = compiled.unavailableColumns.includes(id);
+    const paused = compiled.unavailableColumns.includes(id) || notReady.includes(id);
     if (filter.values) chips.push(filterChip({ key: `${id}:values`, text: selectionLabel(filter.values.mode, filter.values.values, column, t),
       edit: (anchor) => openColumn(id, anchor), remove: () => commit(withColumnFilter(filters, id, { ...filter, values: null })), paused, t }));
     if (filter.condition) chips.push(filterChip({ key: `${id}:condition`, text: conditionLabel(filter.condition, column, t),
       edit: (anchor) => openColumn(id, anchor), remove: () => commit(withColumnFilter(filters, id, { ...filter, condition: null })), paused, t }));
   }
   if (filters.advanced) chips.push(filterChip({ key: "advanced", text: t("filters:advancedSummary", { expression: expressionLabel(filters.advanced, columns, t) }),
-    edit: openAdvanced, remove: () => commit({ ...filters, advanced: null }), paused: compiled.advancedUnavailable, t }));
+    edit: openAdvanced, remove: () => commit({ ...filters, advanced: null }),
+    paused: compiled.advancedUnavailable || advancedWaits(filters.advanced, notReady), t }));
   return chips;
 }
 
-function filterBar({ chips, compiled, error, validation, undo, commit, filters, t }: {
-  chips: ReactNode[]; compiled: CompiledFilters; error: boolean; validation: boolean; undo: Undo | null;
+function advancedWaits(expression: TableFilters["advanced"], notReady: readonly string[]): boolean {
+  if (!expression) return false;
+  if (expression.type === "rule") return notReady.includes(expression.column);
+  return expression.children.some((child) => advancedWaits(child, notReady));
+}
+
+function filterBar({ chips, compiled, notReady, error, validation, undo, commit, filters, t }: {
+  chips: ReactNode[]; compiled: CompiledFilters; notReady: readonly string[]; error: boolean; validation: boolean; undo: Undo | null;
   commit: (filters: TableFilters) => boolean; filters: TableFilters; t: TFunction;
 }): ReactNode {
   if (!chips.length && !error && !validation && !undo) return null;
   return <div className="tf-bar">
     {chips}
     {compiled.unavailableColumns.length > 0 && <span className="tf-hint" role="status">{t("filters:unavailableColumn")}</span>}
+    {notReady.length > 0 && <span className="tf-hint" role="status">{t("filters:notReady", { columns: formatList(notReady) })}</span>}
     {compiled.advancedUnavailable && <span className="tf-hint" role="status">{t("filters:advancedSuspended")}</span>}
     {error && <span className="tf-error" role="alert">{t("filters:saveFailed")} <button type="button" className="tf-link" onClick={() => commit(filters)}>{t("filters:retry")}</button></span>}
     {validation && <span className="tf-error" role="alert">{t("filters:limitReached")}</span>}
@@ -98,9 +107,11 @@ function ColumnManager({ filters, columns, anchor, openColumn, openAdvanced, onC
   </>;
 }
 
-function FilterToggle({ popup, activeCount, onChange }: { popup: Popup | null; activeCount: number; onChange: (popup: Popup | null) => void }) {
+function FilterToggle({ popup, activeCount, onChange, toggleRef }: {
+  popup: Popup | null; activeCount: number; onChange: (popup: Popup | null) => void; toggleRef: RefObject<HTMLButtonElement | null>;
+}) {
   const { t } = useTranslation();
-  return <Button icon="filter" className={activeCount ? "tf-button--active" : undefined}
+  return <Button ref={toggleRef} icon="filter" className={activeCount ? "tf-button--active" : undefined} {...{ [FILTER_TOGGLE_ATTRIBUTE]: "" }}
     aria-haspopup="dialog" aria-expanded={!!popup} onClick={(e) => onChange(popup ? null : { column: null, anchor: e.currentTarget.getBoundingClientRect() })}>
     {t("filters:title")}{activeCount > 0 && <span className="tf-count">{activeCount}</span>}
   </Button>;
@@ -182,7 +193,7 @@ export function useFilterControls({ enabled, filters, error, onChange, columns, 
   const headerButton = (column: ColumnDef): ReactNode => {
     if (!enabled) return null;
     const active = columnFilterCount(filters.columns[column.id]) > 0 || compiled.columnIds.includes(column.id);
-    return <button type="button" className={`tf-header-filter icon-btn${active ? " tf-header-filter--active" : ""}`}
+    return <button type="button" className={`tf-header-filter icon-btn icon-btn--small${active ? " tf-header-filter--active" : ""}`}
       aria-label={t("filters:editColumn", { column: columnLabel(column, t) })}
       title={t("filters:headerHint", { column: columnLabel(column, t) })} aria-haspopup="dialog"
       onClick={(e) => openColumn(column.id, e.currentTarget.getBoundingClientRect())}
@@ -190,14 +201,23 @@ export function useFilterControls({ enabled, filters, error, onChange, columns, 
       <Icon name="filter" size={12} />
     </button>;
   };
-  const chips = enabled ? filterChips({ filters, columns, compiled, openColumn, openAdvanced, commit, t }) : [];
+  // A chip, Undo or Retry that is pressed goes away with the change: the focus moves to the "Filters" button.
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const commitFromBar = (next: TableFilters): boolean => {
+    const done = commit(next);
+    setTimeout(() => toggleRef.current?.focus({ preventScroll: true }), 0);
+    return done;
+  };
+  const notReadyIds = enabled ? compiled.notReadyColumns(context) : [];
+  const notReady = notReadyIds.map((id) => columnLabel(columns.find((c) => c.id === id) ?? { id, value: () => undefined }, t));
+  const chips = enabled ? filterChips({ filters, columns, compiled, notReady: notReadyIds, openColumn, openAdvanced, commit: commitFromBar, t }) : [];
   const applyAdvanced = (expression: TableFilters["advanced"]) => { if (commit({ ...filters, advanced: expression })) setAdvanced(false); };
   return {
     compiled,
     inspectedColumns: advanced ? inspected : popup?.column ?? "",
     headerButton,
-    button: enabled ? <FilterToggle popup={popup} activeCount={compiled.activeCount} onChange={setPopup} /> : null,
-    bar: enabled ? filterBar({ chips, compiled, error, validation, undo, commit, filters, t }) : null,
+    button: enabled ? <FilterToggle popup={popup} activeCount={compiled.activeCount} onChange={setPopup} toggleRef={toggleRef} /> : null,
+    bar: enabled ? filterBar({ chips, compiled, notReady, error, validation, undo, commit: commitFromBar, filters, t }) : null,
     overlays: enabled ? <FilterOverlays popup={popup} advanced={advanced} filters={filters} columns={columns}
       source={{ objects, context, accept, revision }} actions={{ close: () => setPopup(null), clearColumn, openColumn, openAdvanced, commit }}
       inspect={inspect} closeAdvanced={() => setAdvanced(false)} applyAdvanced={applyAdvanced} canClear={compiled.activeCount > 0} /> : null,

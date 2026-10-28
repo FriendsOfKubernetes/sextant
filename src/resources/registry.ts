@@ -115,6 +115,8 @@ export interface ColumnDef {
     value?: (obj: KubeObject, ctx: CellContext) => ColumnFilterValue;
     /** Shares an existing data subscription while a filter needs it, even with no visible rows. */
     observer?: ComponentType<{ context: CellContext; onChange: () => void }>;
+    /** False while the values are not there (metrics loading or failing): the column's conditions keep every row. */
+    ready?: (ctx: CellContext) => boolean;
   };
   /** Custom cell; the default shows `value`. */
   render?: (obj: KubeObject, ctx: CellContext) => ReactNode;

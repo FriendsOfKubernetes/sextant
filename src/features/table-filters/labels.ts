@@ -33,7 +33,10 @@ export function conditionLabel(condition: FilterCondition, column: ColumnDef, t:
     return t("filters:emptySummary", { column: label, operator: operatorLabel(condition, column, t) });
   if (condition.operator === "between") return t("filters:rangeSummary", { column: label,
     lower: valueLabel(condition.value, column, t), upper: valueLabel(condition.upper, column, t) });
-  return t("filters:conditionSummary", { column: label, operator: operatorLabel(condition, column, t), value: valueLabel(condition.value, column, t) });
+  // One sentence per comparison, so each language places the value where its grammar wants it.
+  const op = column.filter?.type === "age" && condition.operator === "gt" ? "older"
+    : column.filter?.type === "age" && condition.operator === "lt" ? "younger" : condition.operator;
+  return t(`filters:summary.${op}`, { column: label, value: valueLabel(condition.value, column, t) });
 }
 export function selectionLabel(mode: "include" | "exclude", values: readonly FilterValue[], column: ColumnDef, t: TFunction): string {
   return t(mode === "include" ? "filters:includeSummary" : "filters:excludeSummary", {

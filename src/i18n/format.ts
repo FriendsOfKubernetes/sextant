@@ -26,12 +26,20 @@ export function formatTime(value: Instant): string {
  * "1250" stays one token next to a unit ("1.50" in English, "1,50" in German).
  */
 export function formatNumber(value: number, digits = 0): string {
-  return new Intl.NumberFormat(currentLanguage(), {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-    useGrouping: false,
-  }).format(value);
+  // Building a formatter is far dearer than using one: they are kept per language and digits.
+  const key = `${currentLanguage()}|${digits}`;
+  let format = numberFormats.get(key);
+  if (!format) {
+    format = new Intl.NumberFormat(currentLanguage(), {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+      useGrouping: false,
+    });
+    numberFormats.set(key, format);
+  }
+  return format.format(value);
 }
+const numberFormats = new Map<string, Intl.NumberFormat>();
 
 /** The language's separator of list items (`common:list.separator`: ", " in English, "、" in Japanese). */
 export function listSeparator(): string {

@@ -98,24 +98,35 @@ describe("version 4 filter transfer", () => {
     expect(file.clusters[0]!.settings).not.toHaveProperty("tableFilters");
   });
 
-  it("replaces the shared cluster map only when its previewed change is allowed to overwrite", () => {
+  it("puts the file's tables over the same tables only when overwriting, keeping this machine's other tables (#294)", () => {
     const local = withFilters({ [POD]: OTHER, [DEPLOYMENT]: OTHER });
     const file = parseImport(JSON.stringify(wire()));
     const plan = planImport(file, local, CLUSTERS, SOURCES);
     expect(plan.clusters[0]!.changed).toContain("tableFilters");
     expect(applyImport(local, plan, { overwrite: false, agentAccess: false }).clusters.c1!.tableFilters![POD]).toEqual(OTHER);
     const next = applyImport(local, plan, { overwrite: true, agentAccess: false });
-    expect(next.clusters.c1!.tableFilters).toEqual({ [POD]: FILTERS });
+    expect(next.clusters.c1!.tableFilters).toEqual({ [POD]: FILTERS, [DEPLOYMENT]: OTHER });
   });
 
-  it("clears a cluster map explicitly only when overwriting is allowed", () => {
+  it("never applies table filters to a cluster matched by its context name only (#294)", () => {
+    const incoming = wire();
+    incoming.clusters[0].id = "elsewhere:prod";
+    incoming.clusters[0].source.path = "/home/colleague/.kube/config";
+    const local = withFilters({});
+    const plan = planImport(parseImport(JSON.stringify(incoming)), local, CLUSTERS, SOURCES);
+    expect(plan.clusters[0]!.match).toBe("name");
+    expect(plan.clusters[0]!.filtersSkipped).toBe(true);
+    expect([...plan.clusters[0]!.added, ...plan.clusters[0]!.changed]).not.toContain("tableFilters");
+    expect(applyImport(local, plan, { overwrite: true, agentAccess: false }).clusters.c1!.tableFilters).toEqual({});
+  });
+
+  it("an empty map in the file changes nothing: filters are merged table by table, never cleared by an import", () => {
     const incoming = wire();
     incoming.clusters[0].settings.tableFilters = {};
     const local = withFilters();
     const plan = planImport(parseImport(JSON.stringify(incoming)), local, CLUSTERS, SOURCES);
-    expect(plan.clusters[0]!.changed).toContain("tableFilters");
-    expect(applyImport(local, plan, { overwrite: false, agentAccess: false }).clusters.c1!.tableFilters).toEqual({ [POD]: FILTERS });
-    expect(applyImport(local, plan, { overwrite: true, agentAccess: false }).clusters.c1!.tableFilters).toEqual({});
+    expect([...plan.clusters[0]!.added, ...plan.clusters[0]!.changed]).not.toContain("tableFilters");
+    expect(applyImport(local, plan, { overwrite: true, agentAccess: false }).clusters.c1!.tableFilters).toEqual({ [POD]: FILTERS });
   });
 
   it.each([1, 2, 3])("reads version %i without changing the cluster filter map when overwriting an old saved view", (version) => {

@@ -85,6 +85,7 @@
     "export": "Exportieren…",
     "exportDialog": "Ansichten und Arbeitsbereiche exportieren",
     "exported": "Gespeichert unter {{path}}",
+    "tooLarge": "Dieser Export wäre {{size}} groß, mehr als die {{limit}}, die Sextant importieren kann. Entfernen Sie einige Ansichten oder Tabellenfilter und exportieren Sie erneut.",
     "filter": "Sextant-Ansichten",
     "importTitle": "Import",
     "importHint": "Zeigt, was sich ändern würde, bevor etwas gespeichert wird.",
@@ -113,6 +114,7 @@
     "matchName": "Nur über den Context-Namen zugeordnet: Es kann ein anderer Cluster sein",
     "agentAccessSkipped": "Zugriffsregeln für Agenten werden nicht übernommen: Der Cluster wurde nur über den Namen zugeordnet",
     "linksSkipped": "Links zu Dashboards und Traces werden nicht übernommen: Der Cluster wurde nur über den Namen zugeordnet",
+    "filtersSkipped": "Tabellenfilter werden nicht übernommen: Der Cluster wurde nur über den Namen zugeordnet",
     "fields": {
       "displayName": "Anzeigename",
       "color": "Farbe",

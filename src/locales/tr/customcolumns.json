@@ -36,6 +36,7 @@
     "pathInvalid": "Basit bir yol değil. Adları noktayla birleştirin, liste öğesi için [0], nokta içeren anahtar için [\"key\"] kullanın. Joker karakterler, filtreler ve fonksiyonlar desteklenmez.",
     "pathTooLong": "Yol çok uzun.",
     "secretData": "Bir Secret'ın değerleri (data ve stringData) sütunda gösterilemez.",
+    "inlineSecret": "Bu alan nesnenin gizli bilgilerini içerdiği için sütunda gösterilemez.",
     "metadataOnly": "Bu tablo yalnızca metadata listeler: .metadata ile başlayan bir yol kullanın.",
     "titleTooLong": "Başlık çok uzun.",
     "titleInvalid": "Başlık kontrol karakterleri içeriyor.",

@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { Age } from "../../components";
 import { formatBytes, parseQuantity } from "../metrics/format";
-import { ageColumn, ageSearchText, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
+import { ageColumn, ageOptions, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
 import {
   addonChecksumOf,
   addonOwnerOf,
@@ -105,7 +105,7 @@ export const snapshotColumns: ColumnDef[] = [
   col("created", (o) => snapshotOf(o).createdAt ?? "", {
     width: "110px",
     render: (o) => <Created obj={o} />,
-    ...ageSearchText((o) => snapshotOf(o).createdAt),
+    ...ageOptions((o) => snapshotOf(o).createdAt),
   }),
   col("state", (o) => snapshotStateOf(snapshotOf(o)), {
     width: "110px",

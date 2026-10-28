@@ -36,6 +36,7 @@
     "pathInvalid": "Kein einfacher Pfad. Verbinden Sie Namen mit Punkten, verwenden Sie [0] für ein Listenelement und [\"key\"] für einen Schlüssel mit Punkten. Platzhalter, Filter und Funktionen werden nicht unterstützt.",
     "pathTooLong": "Der Pfad ist zu lang.",
     "secretData": "Die Werte eines Secret (data und stringData) können nicht in einer Spalte angezeigt werden.",
+    "inlineSecret": "Dieses Feld enthält geheimes Material des Objekts und kann daher nicht in einer Spalte angezeigt werden.",
     "metadataOnly": "Diese Tabelle listet nur metadata: Verwenden Sie einen Pfad, der mit .metadata beginnt.",
     "titleTooLong": "Die Überschrift ist zu lang.",
     "titleInvalid": "Die Überschrift enthält Steuerzeichen.",

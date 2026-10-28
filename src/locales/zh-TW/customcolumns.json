@@ -36,6 +36,7 @@
     "pathInvalid": "這不是簡單路徑。請以點連接名稱，以 [0] 表示清單項目，以 [\"key\"] 表示含點的鍵。不支援萬用字元、篩選器與函式。",
     "pathTooLong": "路徑太長。",
     "secretData": "Secret 的值（data 與 stringData）不能顯示在欄中。",
+    "inlineSecret": "此欄位包含該物件的機密內容，因此不能顯示在欄中。",
     "metadataOnly": "此表只列出 metadata：請使用以 .metadata 開頭的路徑。",
     "titleTooLong": "欄標題太長。",
     "titleInvalid": "欄標題包含控制字元。",

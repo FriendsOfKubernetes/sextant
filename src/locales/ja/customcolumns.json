@@ -36,6 +36,7 @@
     "pathInvalid": "単純なパスではありません。名前をドットでつなぎ、リスト要素には [0]、ドットを含むキーには [\"key\"] を使います。ワイルドカード、フィルター、関数には対応していません。",
     "pathTooLong": "パスが長すぎます。",
     "secretData": "Secret の値（data と stringData）は列に表示できません。",
+    "inlineSecret": "このフィールドにはオブジェクトの秘密情報が含まれるため、列に表示できません。",
     "metadataOnly": "この表は metadata のみを一覧します。.metadata で始まるパスを使ってください。",
     "titleTooLong": "見出しが長すぎます。",
     "titleInvalid": "見出しに制御文字が含まれています。",

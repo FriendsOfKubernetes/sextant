@@ -54,8 +54,10 @@ describe("metric filters without visible metric cells", () => {
 
     failed = true;
     await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); });
-    expect(screen.getByTestId("a-cpu")).toHaveTextContent(/^undefined$/);
-    expect(screen.getByTestId("a-memory")).toHaveTextContent(/^undefined$/);
+    // A failed poll keeps the last good values for filters (as sorting does), so rows do not vanish (#294).
+    expect(screen.getByTestId("a-cpu")).toHaveTextContent(/^250$/);
+    expect(screen.getByTestId("a-memory")).toHaveTextContent(/^1048576$/);
+    expect(nodeColumns[0]!.filter!.ready!(nodeContext("a"))).toBe(true);
     expect(screen.getByTestId("b-cpu")).toHaveTextContent(/^900$/);
     expect(screen.getByTestId("b-memory")).toHaveTextContent(/^2097152$/);
     expect(calls()).toHaveLength(4);
@@ -67,17 +69,19 @@ describe("metric filters without visible metric cells", () => {
     expect(calls()).toHaveLength(6);
     rerender(<ObservedNode clusterId="a" metric="memory" />);
     expect(screen.getByTestId("a-memory")).toHaveTextContent(/^0$/);
-    expect(nodeColumns.map((column) => readFilterValue(column, node, nodeContext("b")))).toEqual([undefined, undefined]);
+    expect(nodeColumns.map((column) => readFilterValue(column, node, nodeContext("b")))).toEqual([900, 2_097_152]);
     await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); });
     expect(calls()).toHaveLength(7);
     expect(calls().at(-1)!.args.clusterId).toBe("a");
     expect(screen.getByTestId("a-memory")).toHaveTextContent(/^0$/);
     unmount();
-    expect(nodeColumns.map((column) => readFilterValue(column, node, nodeContext("a")))).toEqual([undefined, undefined]);
-    expect(nodeColumns.map((column) => readFilterValue(column, node, nodeContext("b")))).toEqual([undefined, undefined]);
+    expect(nodeColumns.map((column) => readFilterValue(column, node, nodeContext("a")))).toEqual([0, 0]);
     await act(async () => { await vi.advanceTimersByTimeAsync(IDLE_TTL_MS + POLL_INTERVAL_MS); });
     expect(calls()).toHaveLength(7);
     expect(metricsCacheStats()).toEqual({ entries: 0, podClusters: 0, nodeClusters: 0 });
+    // Nothing kept any more: no values and the column is not ready, so its filters keep every row.
+    expect(nodeColumns.map((column) => readFilterValue(column, node, nodeContext("a")))).toEqual([undefined, undefined]);
+    expect(nodeColumns[0]!.filter!.ready!(nodeContext("a"))).toBe(false);
   });
 
   it("shares the poller and handles missing data, recovery and explicit cluster scope", async () => {
@@ -99,7 +103,7 @@ describe("metric filters without visible metric cells", () => {
     expect(backend.calls.filter((call) => call.cmd === "metrics_pods")).toHaveLength(2);
     failed = true;
     await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); });
-    expect(screen.getAllByTestId("a").every((node) => node.textContent === "undefined")).toBe(true);
+    expect(screen.getAllByTestId("a").every((node) => node.textContent === "250")).toBe(true);
     expect(screen.getByTestId("b")).toHaveTextContent("900");
     failed = false; cpu = 0;
     await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); });
@@ -107,6 +111,6 @@ describe("metric filters without visible metric cells", () => {
     rerender(<Observed clusterId="a" />);
     expect(screen.getByTestId("a")).toHaveTextContent("0");
     unmount();
-    expect(readFilterValue(podColumns[0]!, pod, { clusterId: "a", kind: { group: "", version: "v1", kind: "Pod" }, now: 0 })).toBeUndefined();
+    expect(readFilterValue(podColumns[0]!, pod, { clusterId: "a", kind: { group: "", version: "v1", kind: "Pod" }, now: 0 })).toBe(0);
   });
 });

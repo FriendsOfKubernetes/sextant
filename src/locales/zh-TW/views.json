@@ -85,6 +85,7 @@
     "export": "匯出…",
     "exportDialog": "匯出檢視和工作區",
     "exported": "已儲存到 {{path}}",
+    "tooLarge": "此匯出將達到 {{size}}，超過 Sextant 可匯入的上限 {{limit}}。請移除部分檢視或表格篩選條件後重新匯出。",
     "filter": "Sextant 檢視",
     "importTitle": "匯入",
     "importHint": "在儲存任何內容之前顯示將會發生的變更。",
@@ -113,6 +114,7 @@
     "matchName": "僅依 context 名稱比對：可能是另一個叢集",
     "agentAccessSkipped": "不套用代理程式存取規則：此叢集僅依名稱比對",
     "linksSkipped": "不套用儀表板與追蹤連結：此叢集僅依名稱比對",
+    "filtersSkipped": "不套用表格篩選條件：此叢集僅依名稱比對",
     "fields": {
       "displayName": "顯示名稱",
       "color": "顏色",

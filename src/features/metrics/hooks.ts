@@ -261,6 +261,11 @@ export function latestPodUsage(clusterId: ClusterId | null, key: string): PodUsa
   return clusterId ? lastPods.get(clusterId)?.get(key) : undefined;
 }
 
+/** Whether a successful poll of the cluster's pods (or nodes) has been kept: what table filters fall back to. */
+export function hasLatestUsage(clusterId: ClusterId, of: "pods" | "nodes"): boolean {
+  return (of === "pods" ? lastPods : lastNodes).has(clusterId);
+}
+
 export function latestNodeUsage(clusterId: ClusterId | null, name: string): NodeUsage | undefined {
   return clusterId ? lastNodes.get(clusterId)?.get(name) : undefined;
 }

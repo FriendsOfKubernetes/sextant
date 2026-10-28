@@ -55,6 +55,25 @@ export const ageColumn: ColumnDef = column(
  * `searchText` of a column that draws the time `at(obj)` as an age ("5m", as the age column does): the search matches
  * the age as shown, as of the table's clock. Spread into the column's options.
  */
+/** A column drawn as the age of a timestamp filters by that age in milliseconds, as of the table's clock (ADR-0127). */
+export function ageFilter(at: (obj: KubeObject) => string | undefined): NonNullable<ColumnDef["filter"]> {
+  return {
+    type: "age",
+    value: (o, ctx) => {
+      const time = at(o);
+      const ms = time ? Date.parse(time) : NaN;
+      return Number.isNaN(ms) ? undefined : Math.max(0, ctx.now - ms);
+    },
+  };
+}
+
+/** `ageSearchText` and `ageFilter` together: the options of a column drawn as an age. */
+export function ageOptions(
+  at: (obj: KubeObject) => string | undefined,
+): Pick<ColumnDef, "searchText" | "searchTextTimed" | "filter"> {
+  return { ...ageSearchText(at), filter: ageFilter(at) };
+}
+
 export function ageSearchText(
   at: (obj: KubeObject) => string | undefined,
 ): Pick<ColumnDef, "searchText" | "searchTextTimed"> {

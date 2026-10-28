@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { Age } from "../../components";
 import { formatList } from "../../i18n";
-import { ageColumn, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
+import { ageColumn, ageOptions, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
 import {
   capabilitiesOf,
   lastSyncOf,
@@ -60,6 +60,7 @@ const refreshColumn = col("refresh", refreshIntervalOf, { width: "90px" });
 const lastSyncColumn = col("lastSync", (o) => lastSyncOf(o), {
   width: "100px",
   render: (o, ctx) => <Age timestamp={lastSyncOf(o)} now={ctx.now} />,
+  ...ageOptions(lastSyncOf),
 });
 
 export const externalSecretColumns: ColumnDef[] = [

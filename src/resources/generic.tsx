@@ -27,6 +27,8 @@ function printerColumn(c: PrinterColumn, index: number): ColumnDef {
           const timestamp = typeof v === "string" ? Date.parse(v) : NaN;
           return Number.isFinite(timestamp) ? Math.max(0, ctx.now - timestamp) : null;
         }
+        // A `type: string` column compares as text even when the JSON value is a number or a boolean, as kubectl prints it.
+        if (!numeric && c.type !== "boolean" && (typeof v === "number" || typeof v === "boolean")) return String(v);
         return v === null || typeof v === "string" || typeof v === "number" || typeof v === "boolean" ? v : formatJsonPathValues([v]);
       }),
     },

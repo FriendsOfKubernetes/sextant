@@ -485,6 +485,8 @@ export interface PlannedCluster {
   agentAccessSkipped: boolean;
   /** The file's dashboard and trace links are left out because the cluster matched by name only. */
   linksSkipped: boolean;
+  /** Table filters of the file were not planned: the cluster matched by its context name only. */
+  filtersSkipped: boolean;
   /** Fields the file sets on an empty local value (applied on confirmation). */
   added: SharedField[];
   /** Fields the file sets to another value than the local one (applied only when overwriting is allowed). */
@@ -536,6 +538,11 @@ function isImportableSharedValue(field: SharedField, value: unknown): boolean {
   return value !== undefined && (field === "tableFilters" || !isEmptyValue(field, value));
 }
 
+/** This machine's table filters with the file's tables put over the same tables (others kept). */
+function mergedTableFilters(current: unknown, incoming: unknown): Record<string, TableFilters> {
+  return { ...(current as Record<string, TableFilters> | undefined), ...(incoming as Record<string, TableFilters> | undefined) };
+}
+
 function sameSharedValue(field: SharedField, current: unknown, incoming: unknown): boolean {
   return same(current, incoming) || (field === "tableFilters" && isEmptyValue(field, current) && isEmptyValue(field, incoming));
 }
@@ -575,6 +582,7 @@ export function planImport(
     const changed: SharedField[] = [];
     let agentAccessSkipped = false;
     let linksSkipped = false;
+    let filtersSkipped = false;
     if (local) {
       const current = clusterSettingsOf(settings, local.id);
       const currentShared = sharedSettings(current, true, true);
@@ -587,7 +595,13 @@ export function planImport(
           else linksSkipped = true;
           continue;
         }
+        // Filters hide rows: only the very cluster gets them, and they are merged table by table (#294).
+        if (field === "tableFilters" && matched?.match !== "exact") {
+          filtersSkipped = true;
+          continue;
+        }
         const now = currentShared[field];
+        if (field === "tableFilters" && same(mergedTableFilters(now, incoming), now ?? {})) continue;
         if (sameSharedValue(field, now, incoming)) continue;
         // Any agent access here, Off included, is a choice: replacing it is a change (it needs overwriting).
         if (field !== "agentAccess" && isEmptyValue(field, now)) added.push(field);
@@ -602,6 +616,7 @@ export function planImport(
       match: matched?.match ?? null,
       agentAccessSkipped,
       linksSkipped,
+      filtersSkipped,
       added,
       changed,
       incoming: exported.settings,
@@ -713,6 +728,9 @@ export function applyImport(settings: AppSettings, plan: ImportPlan, options: Ap
           // A chosen access replaces one this version could not read.
           delete (current as Partial<ClusterSettings>).agentAccessUnrecognised;
         }
+      } else if (field === "tableFilters") {
+        // The file's tables replace the same tables here; this machine's other tables stay.
+        patch.tableFilters = mergedTableFilters(current.tableFilters, value);
       } else (patch as Record<string, unknown>)[field] = value;
     }
     clustersNext[planned.localId] = { ...current, ...patch };

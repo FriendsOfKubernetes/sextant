@@ -85,6 +85,7 @@
     "export": "내보내기…",
     "exportDialog": "보기 및 작업 공간 내보내기",
     "exported": "{{path}}에 저장했습니다",
+    "tooLarge": "이 내보내기는 {{size}}(으)로, Sextant가 가져올 수 있는 {{limit}}을(를) 초과합니다. 보기나 테이블 필터를 일부 제거한 뒤 다시 내보내세요.",
     "filter": "Sextant 보기",
     "importTitle": "가져오기",
     "importHint": "저장하기 전에 무엇이 바뀌는지 보여 줍니다.",
@@ -113,6 +114,7 @@
     "matchName": "context 이름으로만 일치: 다른 클러스터일 수 있습니다",
     "agentAccessSkipped": "에이전트 접근 규칙은 적용되지 않습니다: 클러스터가 이름으로만 일치했습니다",
     "linksSkipped": "대시보드와 트레이스 링크는 적용되지 않습니다: 클러스터가 이름으로만 일치했습니다",
+    "filtersSkipped": "테이블 필터는 적용되지 않습니다: 클러스터가 이름으로만 일치했습니다",
     "fields": {
       "displayName": "표시 이름",
       "color": "색상",

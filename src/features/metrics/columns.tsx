@@ -8,6 +8,7 @@ import type { CellContext } from "../../resources/registry";
 import { UnavailableCell, UsageBar, usageUnavailable } from "./components";
 import { formatBytes, formatCpu, parseQuantity, percentKey, percentOf } from "./format";
 import {
+  hasLatestUsage,
   latestNodeUsage,
   latestPodUsage,
   podKey,
@@ -48,6 +49,20 @@ function filterSnapshot<T>(snapshots: Map<ClusterId, Set<{ data: Map<string, T> 
   for (const lease of leases) data = lease.data;
   return data;
 }
+
+// While a poll loads or after it failed, a filter reads the last successful answer, as sorting does; with none at all
+// the column is not ready and its filters keep every row (paused) instead of hiding them all.
+function podFilterUsage(o: KubeObject, ctx: CellContext): PodUsage | undefined {
+  const snapshot = filterSnapshot(podFilterSnapshots, ctx.clusterId);
+  return snapshot ? snapshot.get(keyOf(o)) : latestPodUsage(ctx.clusterId, keyOf(o));
+}
+function nodeFilterUsage(o: KubeObject, ctx: CellContext): NodeUsage | undefined {
+  const snapshot = filterSnapshot(nodeFilterSnapshots, ctx.clusterId);
+  const name = o.metadata?.name ?? "";
+  return snapshot ? snapshot.get(name) : latestNodeUsage(ctx.clusterId, name);
+}
+const podsReady = (ctx: CellContext) => filterSnapshot(podFilterSnapshots, ctx.clusterId) !== null || hasLatestUsage(ctx.clusterId, "pods");
+const nodesReady = (ctx: CellContext) => filterSnapshot(nodeFilterSnapshots, ctx.clusterId) !== null || hasLatestUsage(ctx.clusterId, "nodes");
 
 function PodFilterObserver({ context, onChange }: { context: CellContext; onChange: () => void }) {
   const { data } = usePodUsage(context.clusterId);
@@ -106,7 +121,7 @@ export const podColumns: ColumnDef[] = [
     width: "80px",
     after: "containers",
     value: (o) => latestPodUsage(activeCluster(), keyOf(o))?.usage.cpuMillicores,
-    filter: { type: "number", unit: "cpu", value: (o, ctx) => filterSnapshot(podFilterSnapshots, ctx.clusterId)?.get(keyOf(o))?.usage.cpuMillicores, observer: PodFilterObserver },
+    filter: { type: "number", unit: "cpu", value: (o, ctx) => podFilterUsage(o, ctx)?.usage.cpuMillicores, observer: PodFilterObserver, ready: podsReady },
     render: (o, ctx) => <PodUsageCell clusterId={ctx.clusterId} pod={o} metric={CPU} />,
   },
   {
@@ -115,7 +130,7 @@ export const podColumns: ColumnDef[] = [
     width: "90px",
     after: "cpu",
     value: (o) => latestPodUsage(activeCluster(), keyOf(o))?.usage.memoryBytes,
-    filter: { type: "number", unit: "bytes", value: (o, ctx) => filterSnapshot(podFilterSnapshots, ctx.clusterId)?.get(keyOf(o))?.usage.memoryBytes, observer: PodFilterObserver },
+    filter: { type: "number", unit: "bytes", value: (o, ctx) => podFilterUsage(o, ctx)?.usage.memoryBytes, observer: PodFilterObserver, ready: podsReady },
     render: (o, ctx) => <PodUsageCell clusterId={ctx.clusterId} pod={o} metric={MEMORY} />,
   },
 ];
@@ -127,7 +142,7 @@ export const nodeColumns: ColumnDef[] = [
     width: "110px",
     after: "name",
     value: (o) => latestNodeUsage(activeCluster(), o.metadata?.name ?? "")?.usage.cpuMillicores,
-    filter: { type: "number", unit: "cpu", value: (o, ctx) => filterSnapshot(nodeFilterSnapshots, ctx.clusterId)?.get(o.metadata?.name ?? "")?.usage.cpuMillicores, observer: NodeFilterObserver },
+    filter: { type: "number", unit: "cpu", value: (o, ctx) => nodeFilterUsage(o, ctx)?.usage.cpuMillicores, observer: NodeFilterObserver, ready: nodesReady },
     render: (o, ctx) => <NodeUsageCell clusterId={ctx.clusterId} node={o} metric={CPU} />,
   },
   {
@@ -136,7 +151,7 @@ export const nodeColumns: ColumnDef[] = [
     width: "110px",
     after: "cpu",
     value: (o) => latestNodeUsage(activeCluster(), o.metadata?.name ?? "")?.usage.memoryBytes,
-    filter: { type: "number", unit: "bytes", value: (o, ctx) => filterSnapshot(nodeFilterSnapshots, ctx.clusterId)?.get(o.metadata?.name ?? "")?.usage.memoryBytes, observer: NodeFilterObserver },
+    filter: { type: "number", unit: "bytes", value: (o, ctx) => nodeFilterUsage(o, ctx)?.usage.memoryBytes, observer: NodeFilterObserver, ready: nodesReady },
     render: (o, ctx) => <NodeUsageCell clusterId={ctx.clusterId} node={o} metric={MEMORY} />,
   },
 ];

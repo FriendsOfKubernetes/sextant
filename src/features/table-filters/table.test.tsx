@@ -145,12 +145,14 @@ describe("filters in the live resource table", () => {
     render(<ResourceTable filtering clusterId="c1" kind={KIND} columns={columns} namespaces={["demo"]} search="pod-1" />);
     await snapshot([row(0), row(1)]);
     expect(screen.getByTestId("rt-count")).toHaveTextContent("0 of 2");
+    act(() => backend.emit("watch:watch-1", { type: "capped", total: 100_000 }));
+    expect(screen.getByText("Filters apply to the loaded part of this list.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
     fireEvent.click(screen.getByRole("button", { name: "Clear all filters" }));
     await waitFor(() => expect(screen.getByText("pod-1")).toBeInTheDocument());
     expect(screen.queryByText("pod-0")).toBeNull();
-    act(() => backend.emit("watch:watch-1", { type: "capped", total: 100_000 }));
-    expect(screen.getByText("Filters apply to the loaded part of this list.")).toBeInTheDocument();
+    // Without a filter the capped table says nothing about filters (#294).
+    expect(screen.queryByText("Filters apply to the loaded part of this list.")).toBeNull();
   });
   it("re-evaluates age on the existing table tick without starting another watch", async () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-27T12:00:00Z"));

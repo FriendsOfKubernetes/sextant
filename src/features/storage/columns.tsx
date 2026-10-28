@@ -2,7 +2,7 @@
 // state in one word; for Velero the namespaces, phase, error and warning counts, schedule and storage location.
 import type { KubeObject } from "../../api";
 import { Age } from "../../components";
-import { ageColumn, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
+import { ageColumn, ageOptions, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
 import { formatList } from "../../i18n";
 import {
   errorCount,
@@ -55,6 +55,7 @@ const timeColumn = (id: string, path: string[]) =>
   col(id, (o) => str(get(o, ...path)), {
     width: "90px",
     render: (o, ctx) => <Age timestamp={str(get(o, ...path))} now={ctx.now} />,
+    ...ageOptions((o) => str(get(o, ...path))),
   });
 
 const driverColumn = col("driver", (o) => str(get(o, "driver")) ?? str(get(o, "spec", "driver")), { width: "minmax(140px, 1.5fr)" });

@@ -36,6 +36,7 @@
     "pathInvalid": "No es una ruta simple. Una los nombres con puntos y use [0] para un elemento de lista y [\"key\"] para una clave con puntos. No se admiten comodines, filtros ni funciones.",
     "pathTooLong": "La ruta es demasiado larga.",
     "secretData": "Los valores de un Secret (data y stringData) no se pueden mostrar en una columna.",
+    "inlineSecret": "Este campo contiene material secreto del objeto, por lo que no se puede mostrar en una columna.",
     "metadataOnly": "Esta tabla solo lista metadata: use una ruta que empiece por .metadata.",
     "titleTooLong": "El encabezado es demasiado largo.",
     "titleInvalid": "El encabezado contiene caracteres de control.",

@@ -4,7 +4,7 @@
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { Age } from "../../components";
-import { ageColumn, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
+import { ageColumn, ageOptions, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
 import {
   activeOf,
   CLUSTER_TONE,
@@ -88,7 +88,7 @@ export const jobColumns: ColumnDef[] = [
   col("jobStatus", jobStatusOf, { width: "110px" }),
   col("deploymentStatus", deploymentStatusOf, { width: "130px" }),
   col("cluster", (o) => str(get(o, "status", "rayClusterName")), { width: "minmax(140px, 1.5fr)" }),
-  col("started", startedAt, { width: "100px", render: (o, ctx) => <Age timestamp={startedAt(o)} now={ctx.now} /> }),
+  col("started", startedAt, { width: "100px", render: (o, ctx) => <Age timestamp={startedAt(o)} now={ctx.now} />, ...ageOptions(startedAt) }),
   ageColumn,
 ];
 

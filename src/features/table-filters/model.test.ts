@@ -55,11 +55,31 @@ describe("resource table filter predicates", () => {
 
   it.each([
     ["eq", 0, undefined, [0]], ["neq", 1, undefined, [0, 2]], ["gt", 1, undefined, [2]],
-    ["gte", 1, undefined, [1, 2]], ["lt", 1, undefined, [0]], ["lte", 1, undefined, [0, 1]],
-    ["between", 0, 1, [0, 1]],
-  ] as const)("implements numeric %s, excluding missing numbers", (operator, value, upper, expected) => {
+    ["gte", 1, undefined, ["1", 1, 2]], ["lt", 1, undefined, [0]], ["lte", 1, undefined, ["1", 0, 1]],
+    ["between", 0, 1, ["1", 0, 1]],
+  ] as const)("implements numeric %s, excluding missing numbers and comparing text that is a number (#294)", (operator, value, upper, expected) => {
     expect(keeps(quick("count", { operator, value, ...(upper === undefined ? {} : { upper }) }),
       [{}, { count: null }, { count: "1" }, ...[0, 1, 2].map((count) => ({ count }))]).map((o) => o.count)).toEqual(expected);
+  });
+
+  it("compares a text column numerically only where the text is a number (a label such as \"3\")", () => {
+    const replicas: ColumnDef = { id: "replicas", value: (o) => o.replicas as string | undefined };
+    const rows = [{ replicas: "3" }, { replicas: " 10 " }, { replicas: "2" }, { replicas: "x3" }, { replicas: "" }];
+    expect(keeps(quick("replicas", { operator: "gt", value: 2 }), rows, [replicas]).map((o) => o.replicas)).toEqual(["3", " 10 "]);
+  });
+
+  it("keeps every row while a column has no values yet, and says which column waits (#294)", () => {
+    let ready = false;
+    const cpu: ColumnDef = { id: "cpu", value: (o) => o.cpu as number | undefined, filter: { type: "number", ready: () => ready } };
+    const rows = [{ cpu: 50 }, { cpu: 500 }, {}];
+    const filters: TableFilters = { columns: { cpu: { values: null, condition: { operator: "gt", value: 100 } } },
+      advanced: { type: "rule", column: "cpu", condition: { operator: "lt", value: 1000 } } };
+    const compiled = compileTableFilters(filters, [cpu]);
+    expect(rows.filter((o) => compiled.matches(o, context))).toHaveLength(3);
+    expect(compiled.notReadyColumns(context)).toEqual(["cpu"]);
+    ready = true;
+    expect(rows.filter((o) => compiled.matches(o, context))).toEqual([{ cpu: 500 }]);
+    expect(compiled.notReadyColumns(context)).toEqual([]);
   });
 
   it("distinguishes false, zero and empty values", () => {

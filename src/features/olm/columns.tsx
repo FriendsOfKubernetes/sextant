@@ -7,7 +7,7 @@
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { Age } from "../../components";
-import { ageColumn, ageSearchText, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
+import { ageColumn, ageOptions, nameColumn, namespaceColumn, StatusText, type ColumnDef } from "../../resources";
 import { formatList } from "../../i18n";
 import {
   catalogInfo,
@@ -215,7 +215,7 @@ export const clusterCatalogColumns: ColumnDef[] = [
     {
       width: "110px",
       render: (o, ctx) => <Age timestamp={catalogV1Info(o).lastUnpacked} now={ctx.now} />,
-      ...ageSearchText((o) => catalogV1Info(o).lastUnpacked),
+      ...ageOptions((o) => catalogV1Info(o).lastUnpacked),
     },
   ),
   ageColumn,

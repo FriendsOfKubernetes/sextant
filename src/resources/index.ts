@@ -10,6 +10,8 @@ import "./kinds/custom";
 
 export {
   ageColumn,
+  ageFilter,
+  ageOptions,
   ageSearchText,
   column,
   labelsColumn,

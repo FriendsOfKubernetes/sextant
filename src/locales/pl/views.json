@@ -85,6 +85,7 @@
     "export": "Eksportuj…",
     "exportDialog": "Eksport widoków i obszarów roboczych",
     "exported": "Zapisano w {{path}}",
+    "tooLarge": "Ten eksport miałby {{size}}, więcej niż {{limit}}, które Sextant może zaimportować. Usuń część widoków lub filtrów tabel i wyeksportuj ponownie.",
     "filter": "Widoki Sextant",
     "importTitle": "Import",
     "importHint": "Pokazuje, co się zmieni, zanim cokolwiek zostanie zapisane.",
@@ -113,6 +114,7 @@
     "matchName": "Dopasowano tylko po nazwie context — może to być inny klaster",
     "agentAccessSkipped": "Reguły dostępu agentów nie zostaną zastosowane: klaster dopasowano tylko po nazwie",
     "linksSkipped": "Linki do pulpitów i śladów nie zostaną zastosowane: klaster dopasowano tylko po nazwie",
+    "filtersSkipped": "Filtry tabeli nie zostaną zastosowane: klaster dopasowano tylko po nazwie",
     "fields": {
       "displayName": "nazwa wyświetlana",
       "color": "kolor",

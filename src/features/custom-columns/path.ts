@@ -4,10 +4,12 @@
 // A field path is a small grammar, not JSONPath: `["."] name ("." name | "[" digits "]" | "[\"" key "\"]")*`, a name
 // being `[A-Za-z0-9_-]+` and a quoted key anything without `"`, `\` or control characters. So `.spec.nodeName`,
 // `.spec.containers[0].image`, `.metadata.labels["app.kubernetes.io/name"]`; no wildcards, filters, recursion or
-// functions. A path into `data` or `stringData` of a core Secret is refused.
+// functions. A path into `data` or `stringData` of a core Secret is refused, and so is a path to secret material another
+// kind carries inline (`readsInlineSecret`).
 import type { KubeObject } from "../../api";
 import type { ColumnSource } from "../../api/generated/ColumnSource";
 import type { CustomColumnSpec } from "../../api/generated/CustomColumnSpec";
+import { inlineSecretPaths } from "../../resources/inlineSecrets";
 
 export type { ColumnSource, CustomColumnSpec };
 
@@ -91,6 +93,19 @@ export function isSecretDataPath(group: string, kind: string, steps: readonly Pa
   return group === "" && kind === "Secret" && first !== undefined && "key" in first && (first.key === "data" || first.key === "stringData");
 }
 
+/**
+ * Whether a column at `path` (field names, `*` for a list index) reads secret material a kind carries outside a
+ * Secret (`src/resources/inline-secrets.json`): the path is, holds or lies under one of the kind's secret paths. Such a
+ * value would end up in a table filter, `settings.json` and an export (#294).
+ */
+export function readsInlineSecret(group: string, kind: string, path: readonly string[]): boolean {
+  return inlineSecretPaths(group, kind).some((secret) => {
+    const n = Math.min(secret.length, path.length);
+    for (let i = 0; i < n; i++) if (secret[i] !== "*" && path[i] !== "*" && secret[i] !== path[i]) return false;
+    return true;
+  });
+}
+
 /** Why a column cannot be added; each is a key of `customcolumns:errors`. */
 export type SpecProblem =
   | "keyEmpty"
@@ -100,6 +115,7 @@ export type SpecProblem =
   | "pathInvalid"
   | "pathTooLong"
   | "secretData"
+  | "inlineSecret"
   | "metadataOnly"
   | "titleTooLong"
   | "titleInvalid";
@@ -129,6 +145,8 @@ export function checkSpec(
     if (!raw) return { problem: "keyEmpty" };
     if (Array.from(raw).length > MAX_KEY_CHARS) return { problem: "keyTooLong" };
     if (!isMetadataKey(raw)) return { problem: "keyInvalid" };
+    const map = source === "label" ? "labels" : "annotations";
+    if (readsInlineSecret(target.group, target.kind, ["metadata", map, raw])) return { problem: "inlineSecret" };
     return { spec: { source, path: raw, title: cleanTitle } };
   }
   if (!raw) return { problem: "pathEmpty" };
@@ -136,6 +154,7 @@ export function checkSpec(
   const steps = parseFieldPath(raw);
   if (!steps) return { problem: "pathInvalid" };
   if (isSecretDataPath(target.group, target.kind, steps)) return { problem: "secretData" };
+  if (readsInlineSecret(target.group, target.kind, steps.map((s) => ("index" in s ? "*" : s.key)))) return { problem: "inlineSecret" };
   const first = steps[0];
   if (target.metadataOnly && !(first && "key" in first && first.key === "metadata")) return { problem: "metadataOnly" };
   return { spec: { source, path: formatFieldPath(steps), title: cleanTitle } };

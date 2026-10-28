@@ -1,6 +1,6 @@
 .tf-button--active { color: var(--color-accent-strong); border-color: var(--color-accent); background: var(--color-selected); }
 .tf-count { display: inline-flex; align-items: center; justify-content: center; min-width: 1.1rem; height: 1.1rem; padding: 0 .2rem; border-radius: 3px; font-size: .6875rem; background: var(--color-selected); color: var(--color-accent-strong); }
-.tf-header-filter { width: 20px; height: 24px; flex: none; opacity: 0; padding: 3px; }
+.tf-header-filter { flex: none; opacity: 0; }
 .rt__cell--head:hover .tf-header-filter, .rt__cell--head:focus-within .tf-header-filter, .tf-header-filter--active { opacity: 1; }
 .tf-header-filter--active { color: var(--color-accent-strong); }
 .tf-header-cell .rt__sort { min-width: 0; flex: 1; }
@@ -16,7 +16,8 @@
 .tf-chip-label:hover, .tf-chip-remove:hover { background: var(--color-hover); }
 .tf-chip--paused { border-style: dashed; background: transparent; }
 .tf-chip--paused .tf-chip-label { color: var(--color-text-muted); }
-.tf-popup { position: fixed; z-index: 150; width: 25rem; max-width: calc(100vw - 16px); overflow: auto; border: 1px solid var(--color-border); border-radius: 5px; background: var(--color-panel); color: var(--color-text); box-shadow: var(--shadow-panel); font-size: .8125rem; }
+/* Under dialogs (`.dialog-backdrop` is 100): a dialog opened while the popup is up shows over it. */
+.tf-popup { position: fixed; z-index: 90; width: 25rem; max-width: calc(100vw - 16px); overflow: auto; border: 1px solid var(--color-border); border-radius: 5px; background: var(--color-panel); color: var(--color-text); box-shadow: var(--shadow-panel); font-size: .8125rem; }
 .tf-popup-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .65rem .8rem; }
 .tf-popup .tabs__list { padding-inline: .8rem; }
 .tf-tab-body { display: flex; flex-direction: column; gap: .7rem; padding: .75rem .8rem; }

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { Age, ageParts } from "../../components";
 import { formatList, formatNumber } from "../../i18n";
-import { ageColumn, ageSearchText, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
+import { ageColumn, ageOptions, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
 import { DurationText } from "../argo-workflows/columns";
 import {
   bcTriggers,
@@ -185,7 +185,7 @@ export const buildColumns: ColumnDef[] = [
   col("started", startedAt, {
     width: "100px",
     render: (o, ctx) => <Age timestamp={startedAt(o)} now={ctx.now} />,
-    ...ageSearchText(startedAt),
+    ...ageOptions(startedAt),
   }),
   ageColumn,
 ];

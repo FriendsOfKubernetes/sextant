@@ -36,6 +36,7 @@
     "pathInvalid": "这不是简单路径。请用点连接名称，用 [0] 表示列表项，用 [\"key\"] 表示含点的键。不支持通配符、过滤器和函数。",
     "pathTooLong": "路径太长。",
     "secretData": "Secret 的值（data 和 stringData）不能显示在列中。",
+    "inlineSecret": "此字段包含该对象的机密内容，因此不能显示在列中。",
     "metadataOnly": "此表只列出 metadata：请使用以 .metadata 开头的路径。",
     "titleTooLong": "列标题太长。",
     "titleInvalid": "列标题包含控制字符。",

@@ -803,7 +803,7 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     >
       {header}
       {filterControls.bar}
-      {props.filtering && isCapped(watch) && <p className="tf-loaded-only tf-hint">{t("filters:loadedOnly")}</p>}
+      {props.filtering && compiledFilters.activeCount > 0 && isCapped(watch) && <p className="tf-loaded-only tf-hint">{t("filters:loadedOnly")}</p>}
       {filterObservers.map((Observer, index) => <Observer key={index} context={cellContext} onChange={metricsChanged} />)}
       {/* While rows are selected: their actions (Delete, Restart, …) and "Clear selection" (ADR-0126). */}
       <SelectionBar clusterId={clusterId} kind={kind} objects={selected} actionIds={actionIds} onClear={clearSelection} />

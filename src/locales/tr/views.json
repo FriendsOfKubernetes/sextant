@@ -85,6 +85,7 @@
     "export": "Dışa aktar…",
     "exportDialog": "Görünümleri ve çalışma alanlarını dışa aktar",
     "exported": "{{path}} konumuna kaydedildi",
+    "tooLarge": "Bu dışa aktarma {{size}} olurdu; bu, Sextant'ın içe aktarabileceği {{limit}} sınırından fazla. Bazı görünümleri veya tablo filtrelerini kaldırıp yeniden dışa aktarın.",
     "filter": "Sextant görünümleri",
     "importTitle": "İçe aktar",
     "importHint": "Bir şey kaydedilmeden önce neyin değişeceğini gösterir.",
@@ -113,6 +114,7 @@
     "matchName": "Yalnızca context adıyla eşleşti: başka bir küme olabilir",
     "agentAccessSkipped": "Ajan erişim kuralları uygulanmaz: küme yalnızca adıyla eşleşti",
     "linksSkipped": "Pano ve iz bağlantıları uygulanmaz: küme yalnızca adıyla eşleşti",
+    "filtersSkipped": "Tablo filtreleri uygulanmaz: küme yalnızca adıyla eşleşti",
     "fields": {
       "displayName": "görünen ad",
       "color": "renk",

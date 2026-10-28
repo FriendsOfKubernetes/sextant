@@ -71,7 +71,9 @@ function conditionPredicate(condition: FilterCondition): (value: ColumnFilterVal
     const test = (v: FilterValue | undefined) => typeof v === "boolean" && v === value;
     return (raw) => anyValue(raw, test);
   }
-  const test = (v: FilterValue | undefined) => {
+  const test = (raw: FilterValue | undefined) => {
+    // Text that is a number ("3" in a label or annotation) compares as one; other text never does.
+    const v = typeof raw === "string" ? numberOf(raw) : raw;
     if (typeof v !== "number" || !Number.isFinite(v) || typeof value !== "number") return false;
     switch (operator) {
       case "eq": return v === value;
@@ -84,6 +86,13 @@ function conditionPredicate(condition: FilterCondition): (value: ColumnFilterVal
     }
   };
   return (raw) => anyValue(raw, test);
+}
+
+function numberOf(text: string): number | undefined {
+  const trimmed = text.trim();
+  if (trimmed === "") return undefined;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 export function columnFilterCount(filter: ColumnFilter | undefined): number {
@@ -163,23 +172,31 @@ export function compileTableFilters(filters: TableFilters, columns: readonly Col
       return values[slot];
     };
   };
+  // A column whose values are not there yet (metrics still loading or failing) keeps every row: its conditions wait.
+  const readiness = [...references].flatMap((id) => {
+    const ready = definitions.get(id)?.filter?.ready;
+    return ready ? [[id, ready] as const] : [];
+  });
+  const readyOf = new Map(readiness);
   const predicates: RowPredicate[] = [];
   for (const [id, filter] of Object.entries(filters.columns)) {
     const column = definitions.get(id);
     if (!column) continue;
     const read = getter(id);
+    const ready = readyOf.get(id);
     if (filter.values?.values.length) {
       const selected = new Set(filter.values.values.map(filterValueKey));
       const exclude = filter.values.mode === "exclude";
       const containsValue = (v: FilterValue | undefined) => selected.has(filterValueKey(valueForSelection(v, column)));
       predicates.push((obj, context) => {
+        if (ready && !ready(context)) return true;
         const contains = anyValue(read(obj, context), containsValue);
         return exclude ? !contains : contains;
       });
     }
     if (filter.condition) {
       const test = conditionPredicate(filter.condition);
-      predicates.push((obj, context) => test(read(obj, context)));
+      predicates.push((obj, context) => (ready && !ready(context)) || test(read(obj, context)));
     }
   }
   const compileExpression = (expression: FilterExpression): RowPredicate => {
@@ -193,7 +210,12 @@ export function compileTableFilters(filters: TableFilters, columns: readonly Col
       ? (obj, context) => { for (const child of children) if (!child(obj, context)) return false; return true; }
       : (obj, context) => { for (const child of children) if (child(obj, context)) return true; return false; };
   };
-  if (filters.advanced && !advancedUnavailable) predicates.push(compileExpression(filters.advanced));
+  if (filters.advanced && !advancedUnavailable) {
+    // Like an unavailable column, a column without values yet pauses the whole expression, never part of a group.
+    const expression = compileExpression(filters.advanced);
+    const waits = readiness.filter(([id]) => advancedColumns.has(id)).map(([, ready]) => ready);
+    predicates.push(waits.length === 0 ? expression : (obj, context) => waits.some((ready) => !ready(context)) || expression(obj, context));
+  }
   return {
     matches: (obj: KubeObject, context: CellContext): boolean => {
       rowVersion = (rowVersion + 1) >>> 0;
@@ -206,6 +228,8 @@ export function compileTableFilters(filters: TableFilters, columns: readonly Col
     activeColumnIds: [...indexes.keys()],
     unavailableColumns,
     advancedUnavailable,
+    /** The referenced columns whose values are not there now: their conditions keep every row until they are. */
+    notReadyColumns: (context: CellContext): string[] => readiness.filter(([, ready]) => !ready(context)).map(([id]) => id),
     needsTime,
   };
 }

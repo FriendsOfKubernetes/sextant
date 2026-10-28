@@ -36,6 +36,7 @@
     "pathInvalid": "Não é um caminho simples. Ligue os nomes com pontos, use [0] para um item de lista e [\"key\"] para uma chave com pontos. Curingas, filtros e funções não são suportados.",
     "pathTooLong": "O caminho é longo demais.",
     "secretData": "Os valores de um Secret (data e stringData) não podem ser mostrados em uma coluna.",
+    "inlineSecret": "Este campo contém material secreto do objeto, por isso não pode ser mostrado em uma coluna.",
     "metadataOnly": "Esta tabela lista apenas metadata: use um caminho que comece com .metadata.",
     "titleTooLong": "O cabeçalho é longo demais.",
     "titleInvalid": "O cabeçalho contém caracteres de controle.",

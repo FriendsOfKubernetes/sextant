@@ -85,6 +85,7 @@
     "export": "导出…",
     "exportDialog": "导出视图和工作区",
     "exported": "已保存到 {{path}}",
+    "tooLarge": "此导出将达到 {{size}}，超过 Sextant 可导入的上限 {{limit}}。请移除部分视图或表格筛选条件后重新导出。",
     "filter": "Sextant 视图",
     "importTitle": "导入",
     "importHint": "在保存任何内容之前显示将会发生的变化。",
@@ -113,6 +114,7 @@
     "matchName": "仅按 context 名称匹配：可能是另一个集群",
     "agentAccessSkipped": "不应用智能体访问规则：该集群仅按名称匹配",
     "linksSkipped": "不应用仪表板和追踪链接：该集群仅按名称匹配",
+    "filtersSkipped": "不应用表格筛选条件：该集群仅按名称匹配",
     "fields": {
       "displayName": "显示名称",
       "color": "颜色",

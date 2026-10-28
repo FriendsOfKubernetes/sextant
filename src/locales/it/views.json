@@ -85,6 +85,7 @@
     "export": "Esporta…",
     "exportDialog": "Esporta viste e spazi di lavoro",
     "exported": "Salvato in {{path}}",
+    "tooLarge": "Questa esportazione occuperebbe {{size}}, più dei {{limit}} che Sextant può importare. Rimuovi alcune viste o alcuni filtri di tabella ed esporta di nuovo.",
     "filter": "Viste di Sextant",
     "importTitle": "Importa",
     "importHint": "Mostra cosa cambierebbe prima di salvare qualsiasi cosa.",
@@ -113,6 +114,7 @@
     "matchName": "Associato solo per nome del context: potrebbe essere un altro cluster",
     "agentAccessSkipped": "Le regole di accesso degli agenti non vengono applicate: il cluster è stato associato solo per nome",
     "linksSkipped": "I link a dashboard e tracce non vengono applicati: il cluster è stato associato solo per nome",
+    "filtersSkipped": "I filtri di tabella non vengono applicati: il cluster è stato associato solo per nome",
     "fields": {
       "displayName": "nome visualizzato",
       "color": "colore",

@@ -15,7 +15,21 @@ function object(raw: unknown, path: string, keys?: readonly string[]): Record<st
   if (keys) for (const key of Object.keys(raw)) if (!keys.includes(key)) fail(`${path}.${key}`, "unknown field");
   return raw as Record<string, unknown>;
 }
+// A lone UTF-16 surrogate (pasted text) cannot be written as JSON by the backend: such an edit would fail on every save.
+function wellFormed(text: string): boolean {
+  for (let i = 0; i < text.length; i++) {
+    const unit = text.charCodeAt(i);
+    if (unit >= 0xdc00 && unit <= 0xdfff) return false;
+    if (unit >= 0xd800 && unit <= 0xdbff) {
+      const next = text.charCodeAt(i + 1);
+      if (!(next >= 0xdc00 && next <= 0xdfff)) return false;
+      i++;
+    }
+  }
+  return true;
+}
 function bounded(text: string, cap: number): boolean {
+  if (!wellFormed(text)) return false;
   let length = 0;
   for (const _ of text) if (++length > cap) return false;
   return true;

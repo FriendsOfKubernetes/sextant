@@ -154,3 +154,23 @@ describe("column ids", () => {
     expect(columnIdOf("annotation", `${long}c`)).not.toBe(id);
   });
 });
+
+describe("secret material outside a Secret (#294)", () => {
+  const BUILD = { group: "build.openshift.io", kind: "BuildConfig" };
+  const NODE = { group: "", kind: "Node" };
+  it.each([".spec.triggers[0].github.secret", ".spec.triggers", ".spec", ".spec.triggers[1].generic"])(
+    "%s on a BuildConfig reads a webhook secret, so it is refused",
+    (path) => expect(checkSpec(BUILD, "field", path, "")).toEqual({ problem: "inlineSecret" }),
+  );
+  it("allows the BuildConfig's other fields and the same paths on other kinds", () => {
+    expect("spec" in checkSpec(BUILD, "field", ".spec.source.git.uri", "")).toBe(true);
+    expect("spec" in checkSpec(BUILD, "field", ".spec.triggers[0].type", "")).toBe(true);
+    expect("spec" in checkSpec({ group: "", kind: "ConfigMap" }, "field", ".spec.triggers[0].github.secret", "")).toBe(true);
+  });
+  it("refuses a node's argument annotations of k3s and RKE2, not its other annotations", () => {
+    expect(checkSpec(NODE, "annotation", "k3s.io/node-args", "")).toEqual({ problem: "inlineSecret" });
+    expect(checkSpec(NODE, "annotation", "rke2.io/node-args", "")).toEqual({ problem: "inlineSecret" });
+    expect(checkSpec(NODE, "field", '.metadata.annotations["k3s.io/node-args"]', "")).toEqual({ problem: "inlineSecret" });
+    expect("spec" in checkSpec(NODE, "annotation", "k3s.io/hostname", "")).toBe(true);
+  });
+});

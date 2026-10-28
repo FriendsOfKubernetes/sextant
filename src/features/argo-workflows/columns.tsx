@@ -4,7 +4,7 @@
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { Age, ageParts } from "../../components";
-import { column, standardColumns, status, StatusText, type ColumnDef } from "../../resources";
+import { ageOptions, column, standardColumns, status, StatusText, type ColumnDef } from "../../resources";
 import {
   activeWorkflows,
   cronSuspended,
@@ -85,6 +85,7 @@ export const cronWorkflowColumns: ColumnDef[] = standardColumns(
   col("lastScheduled", (o) => Date.parse(lastScheduled(o) ?? "") || null, {
     width: "120px",
     render: (o, ctx) => <Age timestamp={lastScheduled(o)} now={ctx.now} />,
+    ...ageOptions(lastScheduled),
   }),
 );
 

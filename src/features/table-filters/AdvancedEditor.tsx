@@ -171,7 +171,7 @@ export function AdvancedEditor({ filters, columns: definitions, objects, context
   const size = draftSize(draft);
   const canAdd = size < FILTER_LIMITS.nodes && size + quickCount < FILTER_LIMITS.conditions;
   return <div className="tf-advanced"><Dialog open title={t("filters:advancedTitle")} onClose={onClose}
-    footer={<><span className="tf-preview" role="status" aria-busy={pending}>{t("filters:preview", preview)}</span>
+    footer={<><span className="tf-preview" role="status" aria-busy={pending}>{t("filters:preview", { shown: preview.shown, count: preview.total })}</span>
       <Button onClick={onClose}>{t("filters:cancel")}</Button><Button variant="primary" disabled={parsed.error}
         onClick={() => { if (parsed.filters) onApply(parsed.filters.advanced); }}>{t("filters:apply")}</Button></>}>
     <GroupFields group={draft} columns={columns} onChange={setDraft} nextId={nextId} depth={1} canAdd={canAdd} />

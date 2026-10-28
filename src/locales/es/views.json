@@ -85,6 +85,7 @@
     "export": "Exportar…",
     "exportDialog": "Exportar vistas y espacios de trabajo",
     "exported": "Guardado en {{path}}",
+    "tooLarge": "Esta exportación ocuparía {{size}}, más de los {{limit}} que Sextant puede importar. Quite algunas vistas o filtros de tabla y vuelva a exportar.",
     "filter": "Vistas de Sextant",
     "importTitle": "Importar",
     "importHint": "Muestra lo que cambiaría antes de guardar nada.",
@@ -113,6 +114,7 @@
     "matchName": "Asociado solo por el nombre del context: puede ser otro clúster",
     "agentAccessSkipped": "Las reglas de acceso de agentes no se aplican: el clúster se asoció solo por el nombre",
     "linksSkipped": "Los enlaces a paneles y trazas no se aplican: el clúster se asoció solo por el nombre",
+    "filtersSkipped": "Los filtros de tabla no se aplican: el clúster se asoció solo por el nombre",
     "fields": {
       "displayName": "nombre visible",
       "color": "color",

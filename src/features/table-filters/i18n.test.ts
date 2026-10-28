@@ -17,9 +17,10 @@ function flatten(tree: TextTree, prefix = ""): Record<string, string> {
 const texts = (collection: typeof modules, language: string, namespace: string) =>
   flatten(collection[`../../locales/${language}/${namespace}.json`]?.default ?? {});
 const english = texts(modules, "en", "filters");
+const pluralBase = (key: string) => key.replace(/_(zero|one|two|few|many|other)$/, "");
 const placeholders = (value: string) => [...value.matchAll(/\{\{[^}]+\}\}/g)].map(([token]) => token).sort();
 // Unit symbols and summaries made only of placeholders do not need translation.
-const shared = new Set(["conditionSummary", "emptySummary", "units.B", "units.KiB", "units.MiB", "units.GiB", "units.TiB"]);
+const shared = new Set(["emptySummary", "units.B", "units.KiB", "units.MiB", "units.GiB", "units.TiB"]);
 // These words have the same spelling in English and the indicated language.
 const sameWords: Record<string, string[]> = { es: ["no"], fr: ["condition"], it: ["no"] };
 const capturedFilters: Record<string, string> = {
@@ -37,10 +38,12 @@ describe("table filter translations", () => {
   for (const language of languages) {
     it(`${language} has every filter key and keeps interpolation tokens exactly`, () => {
       const translated = texts(modules, language, "filters");
-      expect(Object.keys(translated).sort()).toEqual(Object.keys(english).sort());
-      for (const [key, original] of Object.entries(english)) {
-        expect(translated[key]?.trim(), key).toBeTruthy();
-        expect(placeholders(translated[key] ?? ""), key).toEqual(placeholders(original));
+      // Plural forms differ by language (src/locales/locales.test.ts checks them): compare their base keys.
+      expect([...new Set(Object.keys(translated).map(pluralBase))].sort()).toEqual([...new Set(Object.keys(english).map(pluralBase))].sort());
+      for (const [key, value] of Object.entries(translated)) {
+        const original = english[key] ?? english[`${pluralBase(key)}_other`] ?? "";
+        expect(value.trim(), key).toBeTruthy();
+        expect(placeholders(value), key).toEqual(placeholders(original));
       }
     });
 

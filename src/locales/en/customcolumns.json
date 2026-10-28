@@ -36,6 +36,7 @@
     "pathInvalid": "Not a simple path. Use names joined by dots, [0] for a list item and [\"key\"] for a key with dots. Wildcards, filters and functions are not supported.",
     "pathTooLong": "The path is too long.",
     "secretData": "The values of a Secret (data and stringData) cannot be shown in a column.",
+    "inlineSecret": "This field holds secret material of the object, so it cannot be shown in a column.",
     "metadataOnly": "This table lists metadata only: use a path that starts with .metadata.",
     "titleTooLong": "The header is too long.",
     "titleInvalid": "The header contains control characters.",

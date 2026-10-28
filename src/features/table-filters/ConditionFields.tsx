@@ -57,7 +57,9 @@ export function ConditionFields({ column, type, draft, onChange }: {
 }) {
   const { t } = useTranslation();
   const operations: FilterOperator[] = type === "boolean" ? ["eq", "neq", "empty", "notEmpty"]
-    : type === "number" || type === "age" ? ["eq", "neq", "gt", "gte", "lt", "lte", "between", "empty", "notEmpty"]
+    // An age is never exactly equal to a typed duration: ages compare only by older/younger and ranges.
+    : type === "age" ? ["gt", "gte", "lt", "lte", "between", "empty", "notEmpty"]
+    : type === "number" ? ["eq", "neq", "gt", "gte", "lt", "lte", "between", "empty", "notEmpty"]
     : ["eq", "neq", "contains", "notContains", "startsWith", "endsWith", "gt", "gte", "lt", "lte", "between", "empty", "notEmpty"];
   const numeric = numericCondition(type, draft.operator);
   const operands = draft.operator !== "empty" && draft.operator !== "notEmpty";

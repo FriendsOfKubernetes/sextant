@@ -36,6 +36,7 @@
     "pathInvalid": "To nie jest prosta ścieżka. Łącz nazwy kropkami, użyj [0] dla elementu listy i [\"key\"] dla klucza z kropkami. Symbole wieloznaczne, filtry i funkcje nie są obsługiwane.",
     "pathTooLong": "Ścieżka jest za długa.",
     "secretData": "Wartości Secret (data i stringData) nie mogą być pokazane w kolumnie.",
+    "inlineSecret": "To pole zawiera tajne dane obiektu, więc nie może być pokazane w kolumnie.",
     "metadataOnly": "Ta tabela pobiera tylko metadata: użyj ścieżki zaczynającej się od .metadata.",
     "titleTooLong": "Nagłówek jest za długi.",
     "titleInvalid": "Nagłówek zawiera znaki sterujące.",

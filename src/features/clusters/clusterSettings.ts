@@ -18,6 +18,7 @@ export function defaultClusterSettings(): ClusterSettings {
     alertmanager: null,
     observabilityLinks: null,
     knownNamespaces: null,
+    tableFilters: {},
   };
 }
 

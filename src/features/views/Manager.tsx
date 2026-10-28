@@ -36,9 +36,13 @@ import {
   type SharedField,
 } from "./transfer";
 import type { Snippet } from "../../api/generated/Snippet";
+import { formatBytes } from "../metrics/format";
 import { visibleText } from "../terminal/text";
 import { closeManager, save, useViewsUi, type ManagerTab } from "./ui";
 import "./views.css";
+
+/** The largest file `views_import_open` reads (`MAX_IMPORT_BYTES` in `src-tauri/src/commands/views.rs`). */
+const MAX_IMPORT_BYTES = 1024 * 1024;
 
 /** Drawn in the rail footer; shows the manager while it is open. */
 export function ViewsHost() {
@@ -294,6 +298,7 @@ function TransferTab({ settings }: { settings: AppSettings }) {
   const [includeSnippets, setIncludeSnippets] = useState(true);
   const [includeLinks, setIncludeLinks] = useState(false);
   const [exported, setExported] = useState<string | null>(null);
+  const [tooLarge, setTooLarge] = useState<number | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [problems, setProblems] = useState<string[] | null>(null);
   const [plan, setPlan] = useState<ImportPlan | null>(null);
@@ -302,19 +307,27 @@ function TransferTab({ settings }: { settings: AppSettings }) {
   const doExport = async () => {
     setError(null);
     setExported(null);
+    setTooLarge(null);
     try {
+      const file = buildExport(settings, clusters, sources, {
+        includeAgentAccess: includeAccess,
+        includeSnippets,
+        includeObservabilityLinks: includeLinks,
+      });
+      const text = exportText(file);
+      // A file Sextant could not import again is not written (`views_import_open` reads at most 1 MiB).
+      const size = new TextEncoder().encode(text).length;
+      if (size > MAX_IMPORT_BYTES) {
+        setTooLarge(size);
+        return;
+      }
       const path = await api.dialog.saveFile({
         title: t("views:transfer.exportDialog"),
         defaultPath: "sextant-views.json",
         filters: [{ name: t("views:transfer.filter"), extensions: ["json"] }],
       });
       if (!path) return;
-      const file = buildExport(settings, clusters, sources, {
-        includeAgentAccess: includeAccess,
-        includeSnippets,
-        includeObservabilityLinks: includeLinks,
-      });
-      await api.files.save(path, exportText(file));
+      await api.files.save(path, text);
       setExported(path);
     } catch (err) {
       setError(toApiError(err));
@@ -359,6 +372,11 @@ function TransferTab({ settings }: { settings: AppSettings }) {
           {t("views:transfer.export")}
         </Button>
         {exported && <p role="status">{t("views:transfer.exported", { path: exported })}</p>}
+        {tooLarge !== null && (
+          <p role="alert">
+            {t("views:transfer.tooLarge", { size: formatBytes(tooLarge), limit: formatBytes(MAX_IMPORT_BYTES) })}
+          </p>
+        )}
       </section>
       <section>
         <h3>{t("views:transfer.importTitle")}</h3>
@@ -483,6 +501,7 @@ export function ImportPreview({
                   {c.match && <small>{t(c.match === "exact" ? "views:transfer.matchExact" : "views:transfer.matchName")}</small>}
                   {c.agentAccessSkipped && <small>{t("views:transfer.agentAccessSkipped")}</small>}
                   {c.linksSkipped && <small>{t("views:transfer.linksSkipped")}</small>}
+                  {c.filtersSkipped && <small>{t("views:transfer.filtersSkipped")}</small>}
                   {c.localId && c.added.length > 0 && <small>{t("views:transfer.clusterFields", { fields: fields(c.added) })}</small>}
                   {c.localId && c.changed.length > 0 && (
                     <small>{t("views:transfer.clusterChanges", { fields: fields(c.changed) })}</small>

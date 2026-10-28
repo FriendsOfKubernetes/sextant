@@ -85,6 +85,7 @@
     "export": "Export…",
     "exportDialog": "Export views and workspaces",
     "exported": "Saved to {{path}}",
+    "tooLarge": "This export would be {{size}}, more than the {{limit}} Sextant can import. Remove some views or table filters and export again.",
     "filter": "Sextant views",
     "importTitle": "Import",
     "importHint": "Shows what would change before anything is saved.",
@@ -113,6 +114,7 @@
     "matchName": "Matched by the context name only: it may be another cluster",
     "agentAccessSkipped": "Agent access rules are not applied: the cluster matched by name only",
     "linksSkipped": "Dashboard and trace links are not applied: the cluster matched by name only",
+    "filtersSkipped": "Table filters are not applied: the cluster matched by name only",
     "fields": {
       "displayName": "display name",
       "color": "colour",

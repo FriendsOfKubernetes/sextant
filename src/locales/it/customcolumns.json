@@ -36,6 +36,7 @@
     "pathInvalid": "Non è un percorso semplice. Unire i nomi con punti, usare [0] per un elemento di lista e [\"key\"] per una chiave con punti. Caratteri jolly, filtri e funzioni non sono supportati.",
     "pathTooLong": "Il percorso è troppo lungo.",
     "secretData": "I valori di un Secret (data e stringData) non possono essere mostrati in una colonna.",
+    "inlineSecret": "Questo campo contiene materiale segreto dell'oggetto, quindi non può essere mostrato in una colonna.",
     "metadataOnly": "Questa tabella elenca solo metadata: usare un percorso che inizia con .metadata.",
     "titleTooLong": "L'intestazione è troppo lunga.",
     "titleInvalid": "L'intestazione contiene caratteri di controllo.",

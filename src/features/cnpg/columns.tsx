@@ -4,7 +4,7 @@
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
 import { Age } from "../../components";
-import { ageColumn, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
+import { ageColumn, ageOptions, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
 import { BACKUP_TONE, backupMethodOf, backupState, CLUSTER_TONE, clusterInfo, clusterNameOf } from "./model";
 
 const { get, num, str } = status;
@@ -78,6 +78,7 @@ export const backupColumns: ColumnDef[] = [
   col("started", startedAt, {
     width: "100px",
     render: (o, ctx) => <Age timestamp={startedAt(o)} now={ctx.now} />,
+    ...ageOptions(startedAt),
   }),
   ageColumn,
 ];
@@ -91,6 +92,7 @@ export const scheduledBackupColumns: ColumnDef[] = [
   col("lastBackup", lastScheduled, {
     width: "110px",
     render: (o, ctx) => <Age timestamp={lastScheduled(o)} now={ctx.now} />,
+    ...ageOptions(lastScheduled),
   }),
   ageColumn,
 ];

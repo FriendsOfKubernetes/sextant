@@ -189,6 +189,14 @@ function useColumnValues(column: ColumnDef, filter: ColumnFilter, source: ValueS
     candidateType, truncated: facets.truncated };
 }
 
+/**
+ * An age has no Values tab: ages move every second, so a picked one would stop matching within a minute. An age
+ * selection saved by 0.25.2 keeps the tab until it is cleared.
+ */
+function tabsOf(column: ColumnDef, filter: ColumnFilter): readonly ("values" | "condition")[] {
+  return column.filter?.type === "age" && !filter.values?.values.length ? ["condition"] : FILTER_TABS;
+}
+
 export function ColumnEditor({ column, filter, objects, context, revision, accept, onChange, onClear, onClose }: {
   column: ColumnDef; filter: ColumnFilter; objects: ReadonlyMap<string, KubeObject>; context: CellContext;
   revision: number; accept: (obj: KubeObject) => boolean; onChange: (filter: ColumnFilter) => void; onClear: () => void; onClose: () => void;
@@ -207,7 +215,7 @@ export function ColumnEditor({ column, filter, objects, context, revision, accep
     <header className="tf-popup-heading"><strong>{columnLabel(column, t)}</strong>
       <Button iconOnly icon="close" label={t("filters:close")} size="compact" onClick={onClose} /></header>
     <Tabs label={t("filters:editColumn", { column: columnLabel(column, t) })} selected={tab} onSelect={setTab}
-      tabs={FILTER_TABS.map((id) => ({ id, label: t(`filters:${id}`) }))}>
+      tabs={tabsOf(column, filter).map((id) => ({ id, label: t(`filters:${id}`) }))}>
       {tab === "values" ? <ValuesTab mode={values.mode} onModeChange={values.changeMode}>
         <ValueSearch query={values.query} onQueryChange={values.setQuery} onAdd={() => values.addTyped(type)} units={values.units} unit={values.valueUnit} onUnitChange={values.setValueUnit} />
         <ValueOptions options={values.options} selected={values.selected} label={values.label} onToggle={values.toggle} truncated={values.truncated} />

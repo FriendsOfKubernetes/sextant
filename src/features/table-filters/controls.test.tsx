@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { useRef, useState } from "react";
+import { describe, expect, it, vi } from "vitest";
 import type { KubeObject } from "../../api";
+import { useFocusTrap } from "../../components";
 import type { TableFilters } from "../../api/generated/TableFilters";
 import type { CellContext, ColumnDef } from "../../resources/registry";
 import { axeViolations } from "../../test/axe";
@@ -86,6 +87,44 @@ describe("resource filter controls", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     expect(stored().columns.owner).toEqual({ values: { mode: "exclude", values: ["Job"] }, condition: { operator: "contains", value: "cron" } });
   });
+  it("closes its popup with a second press of Filters, and moves the focus to Filters after a chip's ✕ (#294)", () => {
+    render(<Harness initial={excludeJob} />);
+    const toggle = screen.getByRole("button", { name: /^Filters/ });
+    fireEvent.click(toggle);
+    expect(screen.getByRole("dialog", { name: "Filters" })).toBeInTheDocument();
+    // A real press: the mousedown outside the popup lands on Filters, then its click.
+    fireEvent.mouseDown(toggle);
+    fireEvent.click(toggle);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    vi.useFakeTimers();
+    try {
+      const remove = screen.getByRole("button", { name: /^Remove / });
+      remove.focus();
+      fireEvent.click(remove);
+      act(() => { vi.runAllTimers(); });
+      expect(stored().columns.owner).toBeUndefined();
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: /^Filters/ }));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it("keeps Escape for a dialog opened over the popup", () => {
+    render(<Harness />);
+    openOwner();
+    const popup = screen.getByRole("dialog", { name: "Filter Owner" });
+    expect(popup).toBeInTheDocument();
+    const Over = () => {
+      const ref = useRef<HTMLDivElement>(null);
+      useFocusTrap(ref, true);
+      return <div ref={ref} role="dialog" aria-label="Over"><button type="button">x</button></div>;
+    };
+    const over = render(<Over />);
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    expect(screen.getByRole("dialog", { name: "Filter Owner" })).toBeInTheDocument();
+    over.unmount();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Filter Owner" })).toBeNull();
+  });
   it("applies conditions explicitly and discards unapplied drafts on Escape", async () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
@@ -95,7 +134,7 @@ describe("resource filter controls", () => {
     fireEvent.change(within(editor).getByLabelText("Comparison"), { target: { value: "gte" } });
     fireEvent.change(within(editor).getByLabelText("Value"), { target: { value: "2" } });
     expect(screen.getByTestId("shown")).toHaveTextContent("3");
-    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByTestId("shown")).toHaveTextContent("3");
     fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
@@ -248,7 +287,16 @@ describe("resource filter controls", () => {
     expect(stored().columns.cpu?.condition).toEqual({ operator: "between", value: 1500, upper: 2000 });
     expect(screen.getByTestId("shown")).toHaveTextContent("3");
   });
-  it.each([["Memory", "MiB", "1.5", "memory", 1_572_864], ["Age", "seconds", "120", "age", 120_000]] as const)(
+  it("offers ages only as conditions: no Values tab and no exact equality (#294)", () => {
+    render(<Harness />);
+    openColumn("Age");
+    expect(screen.queryByRole("tab", { name: "Values" })).toBeNull();
+    const operators = [...(screen.getByLabelText("Comparison") as HTMLSelectElement).options].map((o) => o.value);
+    expect(operators).not.toContain("eq");
+    expect(operators).not.toContain("neq");
+    expect(operators).toContain("gt");
+  });
+  it.each([["Memory", "MiB", "1.5", "memory", 1_572_864]] as const)(
     "normalizes a typed absent %s value using the selected unit", (column, unit, value, id, expected) => {
       render(<Harness />);
       openColumn(column);
@@ -412,7 +460,7 @@ describe("resource filter controls", () => {
     const { container } = render(<Harness />);
     openOwner();
     expect(await axeViolations(document.body)).toEqual([]);
-    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
     fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
     fireEvent.click(screen.getByRole("button", { name: "Advanced conditions…" }));
     expect(await axeViolations(container)).toEqual([]);
