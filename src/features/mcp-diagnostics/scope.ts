@@ -3,7 +3,7 @@
 // case, a namespace only from a rule's list, an object without a namespace (or a list over all namespaces) only under
 // a rule for all namespaces. The window feeds its engines only what this allows; the backend checks every object of
 // the answer again.
-import type { KindRef, KubeObject, ReadRule } from "../../api";
+import type { KindRef, KubeObject, ReadRule, WatchState } from "../../api";
 
 type Kind = Pick<KindRef, "group" | "kind">;
 
@@ -81,4 +81,25 @@ export interface ListRef {
   kind: string;
   namespace: string | null;
   name?: string;
+}
+
+/**
+ * A list an answer could not read (the API server refused it, or it failed): its category's findings there are unknown,
+ * not absent. `namespaces`: only those failed; absent: the whole list.
+ */
+export interface FailedList {
+  category: string;
+  group: string;
+  kind: string;
+  code: string;
+  namespaces?: string[];
+}
+
+/** What of a watch of `kind` failed, for `category`: the whole list, or the namespaces the API server refused. */
+export function failuresOf(category: string, kind: Kind, state: WatchState | undefined): FailedList[] {
+  if (!state) return [];
+  const base = { category, group: kind.group, kind: kind.kind };
+  if (state.status === "error") return [{ ...base, code: state.error?.code ?? "other" }];
+  const forbidden = state.forbidden ?? [];
+  return forbidden.length > 0 ? [{ ...base, code: "forbidden", namespaces: [...forbidden] }] : [];
 }

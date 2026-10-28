@@ -245,6 +245,52 @@ async fn problems_keep_the_agents_namespaces_and_the_categories_that_are_on() {
 }
 
 #[tokio::test]
+async fn failed_lists_are_told_only_where_the_agent_may_read() {
+    let answer: answers::ProblemsAnswer = serde_json::from_value(json!({
+        "problems": [],
+        "categories": ["pods", "nodes"],
+        "failed": [
+            { "category": "pods", "group": "", "kind": "Pod", "code": "forbidden", "namespaces": ["team-a", "team-b"] },
+            { "category": "pods", "group": "", "kind": "Pod", "code": "forbidden", "namespaces": ["team-b"] },
+            { "category": "nodes", "group": "", "kind": "Node", "code": "forbidden" },
+            { "category": "credentials", "group": "", "kind": "Pod", "code": "forbidden", "namespaces": ["team-a"] },
+            { "category": "pods", "group": "", "kind": "Pod", "code": "made up: <secret>", "namespaces": ["team-a"] },
+        ],
+    }))
+    .unwrap();
+    let kept = answers::problems(answer.clone(), &mut filter(team_a()), &[], None, 100).await;
+    let failed: Vec<(&str, &str, Vec<&str>)> = kept
+        .failed
+        .iter()
+        .map(|f| {
+            (
+                f.kind.as_str(),
+                f.code.as_str(),
+                f.namespaces.iter().map(String::as_str).collect(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        failed,
+        [
+            ("Pod", "forbidden", vec!["team-a"]),
+            ("Pod", "other", vec!["team-a"])
+        ]
+    );
+    assert!(!all_text(&answers::to_value(&kept)).contains("team-b"));
+
+    // Read on everything: the cluster-wide Node list too.
+    let mut all = filter(custom(vec![rule(&[], &[], &[AccessAction::Read])]));
+    let kept = answers::problems(answer, &mut all, &[], None, 100).await;
+    assert!(
+        kept.failed
+            .iter()
+            .any(|f| f.kind == "Node" && f.namespaces.is_empty())
+    );
+    assert_eq!(kept.failed.len(), 4);
+}
+
+#[tokio::test]
 async fn a_diagnosis_names_only_what_the_agent_may_read() {
     let answer: answers::DiagnoseAnswer = serde_json::from_value(json!({
         "status": "broken",

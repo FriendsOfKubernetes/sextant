@@ -17,7 +17,7 @@ import { workloadInfo, type CheckId, type PracticeFinding, type WorkloadInfo } f
 import { practiceProblems } from "../practices/problems";
 import { NODE_SOURCE, NODE_TAP_DEF, type SchedulingNode } from "../practices/taps";
 import { useSharedWatches } from "../resource-map/watches";
-import { canRead, type ListRef } from "./scope";
+import { canRead, failuresOf, type FailedList, type ListRef } from "./scope";
 
 const WORKLOAD_KINDS: readonly KindRef[] = [DEPLOYMENT, STATEFULSET, DAEMONSET, JOB, CRONJOB];
 /** The workload kinds the checks judge. */
@@ -74,6 +74,8 @@ export interface AgentPractices {
   loading: boolean;
   /** The findings as problems (computed when called); `truncated`: workloads were left out. */
   problems: () => { problems: Problem[]; truncated: boolean };
+  /** The lists that could not be read. */
+  failed: () => FailedList[];
 }
 
 /**
@@ -123,5 +125,6 @@ export function useAgentPractices(
     }
     return practiceProblems(workloads, findings, practicesConfigOf(settings), new Map(), Date.now());
   };
-  return { loading, problems };
+  const failed = (): FailedList[] => plan.flatMap((i, at) => failuresOf("practices", kinds[i]!, states[at]));
+  return { loading, problems, failed };
 }

@@ -6,8 +6,9 @@
 // - the categories judged across objects are computed on what the agent may read: Service mesh by `useAgentMesh`,
 //   best practices by the shared category only with Read on every input everywhere, else by `useAgentPractices`;
 //   disk usage (the kubelets' stats of every node) only with Read on claims and Nodes in all namespaces;
-// - what is still loading or was cut is told of the agent's own sources only, and a category it cannot have looked at
-//   is named in `notChecked`;
+// - what is still loading or was cut is told of the agent's own sources only, a category it cannot have looked at
+//   is named in `notChecked`, and a list the API server refused (or that failed) in `failed` — its problems there
+//   are unknown, not absent;
 // - each finding says what it rests on (`refs`), which the backend checks again.
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import type { ClusterId, KindRef, ReadRule, ResourceKind, WatchSpec } from "../../api";
@@ -21,7 +22,7 @@ import { useSharedWatches } from "../resource-map/watches";
 import { en, iso, list } from "./english";
 import { meshRefs, useAgentMesh } from "./mesh";
 import { practiceRefs, readsAllPracticeInputs, useAgentPractices, WORKLOAD_INPUTS } from "./practices";
-import { canRead, objectName, ruleNamespaces, watchedNamespaces, type ListRef } from "./scope";
+import { canRead, failuresOf, objectName, ruleNamespaces, watchedNamespaces, type FailedList, type ListRef } from "./scope";
 import { useAnswer, type WorkerProps } from "./worker";
 
 interface Args {
@@ -178,7 +179,7 @@ export function ProblemsWorker(props: WorkerProps) {
     !practices.loading;
 
   useAnswer(props, ready, () => {
-    if (!plan) return { problems: [], categories, loading: categories, truncated: false, notChecked: [] };
+    if (!plan) return { problems: [], categories, loading: categories, truncated: false, notChecked: [], failed: [] };
     const now = Date.now();
     const out: Record<string, unknown>[] = [];
     const push = (p: Problem, source: Pick<KindRef, "group" | "kind">, refs: ListRef[]) => {
@@ -227,6 +228,14 @@ export function ProblemsWorker(props: WorkerProps) {
       practicesTruncated = found.truncated;
       for (const p of found.problems) push(p, p.object.kind, refsOf(p));
     }
+    const failed: FailedList[] = [
+      ...shared
+        .filter((s) => s.status === "error")
+        .map((s) => ({ category: s.category, group: s.def.kind.group, kind: s.def.kind.kind, code: s.error?.code ?? "other" })),
+      ...watched.flatMap(({ def }, i) => failuresOf(def.category, def.kind, watchedStates[i])),
+      ...(plan.mesh ? mesh.failed() : []),
+      ...(plan.practices ? practices.failed() : []),
+    ];
     const loading = new Set<string>([...sharedLoading.map((s) => s.category), ...watchedLoading]);
     if (mesh.loading) loading.add("mesh");
     if (practices.loading) loading.add("practices");
@@ -236,6 +245,7 @@ export function ProblemsWorker(props: WorkerProps) {
       loading: [...loading],
       truncated: plan.truncated || practicesTruncated || shared.some((s) => s.truncated),
       notChecked: plan.notChecked,
+      failed,
     };
   });
   return null;

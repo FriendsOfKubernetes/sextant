@@ -334,7 +334,84 @@ pub struct ProblemsAnswer {
     /// in all namespaces, …).
     #[serde(default)]
     pub not_checked: Vec<String>,
+    /// Lists the window could not read (the API server refused them or they failed): their category's problems
+    /// there are unknown, not absent.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub failed: Vec<FailedList>,
 }
+
+/// The error codes a [`FailedList`] may name; any other reads as `other`.
+const FAILED_CODES: [&str; 6] = [
+    "forbidden",
+    "unauthorized",
+    "notFound",
+    "unreachable",
+    "timeout",
+    "other",
+];
+
+/// A list an answer could not read: a kind (in `namespaces`, or wherever the category looks when empty) and why.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FailedList {
+    pub category: String,
+    #[serde(default)]
+    pub group: String,
+    pub kind: String,
+    pub code: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub namespaces: Vec<String>,
+}
+
+/// The failed lists the agent may hear about: of categories it may get, of kinds it may read where they failed
+/// (a namespace it may not read is dropped, never named).
+async fn failed_lists(
+    list: Vec<FailedList>,
+    filter: &mut ReadFilter,
+    enabled: &[String],
+    namespace: Option<&str>,
+) -> Vec<FailedList> {
+    let mut out = Vec::new();
+    for mut f in list {
+        if !category_for_agents(&f.category, enabled) {
+            continue;
+        }
+        if !FAILED_CODES.contains(&f.code.as_str()) {
+            f.code = "other".to_owned();
+        }
+        if f.namespaces.is_empty() {
+            let wherever = match namespace {
+                Some(ns) => filter.can(&f.group, &f.kind, Some(ns)).await,
+                None => filter.can(&f.group, &f.kind, None).await,
+            };
+            if !wherever {
+                continue;
+            }
+        } else {
+            let mut kept = Vec::new();
+            for ns in std::mem::take(&mut f.namespaces) {
+                if namespace.is_some_and(|asked| asked != ns) || kept.contains(&ns) {
+                    continue;
+                }
+                if filter.can(&f.group, &f.kind, Some(&ns)).await {
+                    kept.push(ns);
+                }
+            }
+            if kept.is_empty() {
+                continue;
+            }
+            f.namespaces = kept;
+        }
+        if out.len() >= MAX_FAILED_LISTS {
+            break;
+        }
+        out.push(f);
+    }
+    out
+}
+
+/// The most failed lists one answer names.
+const MAX_FAILED_LISTS: usize = 50;
 
 /// The problems the agent may see: known categories it may get, in `namespace` when given, objects (and the kinds
 /// they were found in) it may read; at most `limit`.
@@ -381,6 +458,7 @@ pub async fn problems(
         truncated,
         incomplete: answer.incomplete,
         not_checked: known(answer.not_checked),
+        failed: failed_lists(answer.failed, filter, enabled, namespace).await,
     }
 }
 

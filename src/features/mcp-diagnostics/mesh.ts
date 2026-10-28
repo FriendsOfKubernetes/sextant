@@ -13,7 +13,7 @@ import { parsePeerAuthentication } from "../mesh/mtls";
 import { meshProblems, type MeshNeed, type MeshProblem } from "../mesh/problems";
 import { MAX_SERVICE_NAMESPACES } from "../mesh/store";
 import { useSharedWatches } from "../resource-map/watches";
-import { canRead, watchedNamespaces, type ListRef } from "./scope";
+import { canRead, failuresOf, watchedNamespaces, type FailedList, type ListRef } from "./scope";
 
 /** The Istio kinds the mesh findings are judged from, in this order. */
 export const MESH_KINDS = [VIRTUAL_SERVICE, DESTINATION_RULE, ISTIO_GATEWAY, SERVICE_ENTRY, PEER_AUTHENTICATION] as const;
@@ -89,6 +89,8 @@ export interface AgentMesh {
   loading: boolean;
   /** The findings from what has been read (computed when called). */
   problems: () => MeshProblem[];
+  /** The lists that could not be read. */
+  failed: () => FailedList[];
 }
 
 /** The mesh findings for an agent while `enabled`, from watches of only what it may read (shared with other views). */
@@ -101,8 +103,10 @@ export function useAgentMesh(
 ): AgentMesh {
   const served = MESH_KINDS.map((k) => (kinds ? (findKind(kinds, k)?.kindRef ?? null) : undefined));
   const coverage = MESH_KINDS.map((k, i) => (served[i] ? watchedNamespaces(reads, k, null, ruled) : []));
-  const plan = enabled && kinds !== undefined ? MESH_KINDS.map((_, i) => (served[i] && coverage[i]!.length !== 0 ? i : -1)).filter((i) => i >= 0) : [];
-  const specs: WatchSpec[] = plan.map((i) => ({ kind: served[i]!, namespaces: coverage[i]!, labelSelector: null, fieldSelector: null }));
+  // A kind is watched where the agent may read it: `null` — in every namespace, an empty list — nowhere.
+  const watchedSomewhere = (i: number) => !!served[i] && (coverage[i] === null || coverage[i]!.length > 0);
+  const plan = enabled && kinds !== undefined ? MESH_KINDS.map((_, i) => i).filter(watchedSomewhere) : [];
+  const specs: WatchSpec[] = plan.map((i) => ({ kind: served[i]!, namespaces: coverage[i] ?? null, labelSelector: null, fieldSelector: null }));
   const states = useSharedWatches(clusterId, specs);
   const stateOf = (i: number) => states[plan.indexOf(i)];
   const itemsOf = (i: number): KubeObject[] =>
@@ -127,7 +131,7 @@ export function useAgentMesh(
         kind,
         served: true,
         items: watched ? itemsOf(i) : [],
-        known: (ns) => watched && coveredBy(stateOf(i), coverage[i]!, ns),
+        known: (ns) => watched && coveredBy(stateOf(i), coverage[i] ?? null, ns),
       };
     });
     const services: MeshList = {
@@ -138,5 +142,12 @@ export function useAgentMesh(
     };
     return agentMeshProblems(lists, services);
   };
-  return { loading, problems };
+  const failed = (): FailedList[] =>
+    enabled
+      ? [
+          ...plan.flatMap((i) => failuresOf("mesh", MESH_KINDS[i]!, stateOf(i))),
+          ...(serviceSpecs.length > 0 ? failuresOf("mesh", SERVICE, serviceState) : []),
+        ]
+      : [];
+  return { loading, problems, failed };
 }

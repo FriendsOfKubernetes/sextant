@@ -461,6 +461,33 @@ describe("what the window reads for an agent", () => {
     await waitFor(() => expect(wb.backend.calls.filter((c) => c.cmd === "tls_certificate_info")).toHaveLength(1));
   });
 
+  it("answers the mesh for an agent that may read everything, and names a list the API server refused", async () => {
+    const answers: { id: string; answer: DiagnosticAnswer }[] = [];
+    wb.backend.on("mcp_diagnostic_answer", (args) => {
+      answers.push(args as unknown as { id: string; answer: DiagnosticAnswer });
+      return undefined;
+    });
+    render(<DiagnosticsHost />);
+    await waitFor(() => expect(wb.backend.listenerCount("mcp-diagnostic")).toBe(1));
+    act(() =>
+      wb.backend.emit("mcp-diagnostic", { id: "all", tool: "problems", clusterId: "c1", reads: EVERYTHING, args: { namespace: null, categories: ["mesh", "pods"] } }),
+    );
+    // Read everywhere: the Istio kinds are watched cluster-wide (`null`), which once threw on `null.length`.
+    for (const k of ["VirtualService", "DestinationRule", "ServiceEntry"]) {
+      const id = await watchOf(wb, k);
+      expect(wb.specs.get(id)!.namespaces).toBeNull();
+      emitSnapshot(wb, id, []);
+    }
+    const pods = await watchOf(wb, "Pod");
+    act(() => wb.backend.emit(`watch:${pods}`, { type: "error", code: "forbidden", message: "pods is forbidden" }));
+    await waitFor(() => expect(answers).toHaveLength(1));
+    const answer = answers[0]!.answer;
+    expect(answer.type).toBe("ok");
+    const result = (answer as { result: { failed: unknown[]; problems: unknown[] } }).result;
+    expect(result.problems).toEqual([]);
+    expect(result.failed).toEqual([{ category: "pods", group: "", kind: "Pod", code: "forbidden" }]);
+  });
+
   it("watches the Istio configuration only in the namespaces a team-a agent may read", async () => {
     render(<DiagnosticsHost />);
     await waitFor(() => expect(wb.backend.listenerCount("mcp-diagnostic")).toBe(1));
