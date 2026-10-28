@@ -13,7 +13,7 @@ use sextant_core::resources::{self, KindRef, ObjectRef, ResourceKind, inline_sec
 use sextant_core::{ClusterId, ClusterManager, ConnectionState, CoreError, CoreResult, ErrorCode};
 use sextant_core::{helm, logs, metrics};
 
-use super::guard::CallSummary;
+use super::guard::{CallSummary, ClusterTarget};
 use super::tools::{ToolCall, ToolKind, ToolOutput, ToolResult, ToolSet};
 
 /// A read gives up after this long.
@@ -60,7 +60,8 @@ pub fn register_read_tools(tools: &mut ToolSet) {
             "list_resources",
             "Objects of one kind, in a namespace or in every namespace the agent may read, optionally filtered by \
              label and field selectors. Up to `limit` objects (100 by default, at most 500); `truncated` says there \
-             are more. Secrets come without their values, and fields that hold secrets inline (a Route's TLS key, \
+             are more. When the cluster refuses the list over all namespaces, the namespaces the user is known to \
+             work in are listed instead (`namespaces`, `refused`; see get_access). Secrets come without their values, and fields that hold secrets inline (a Route's TLS key, \
              a BuildConfig's webhook secrets, a HelmChart's values, an InstallPlan's manifests, a k3s/RKE2 node's \
              arguments) come empty.",
             ToolKind::Read,
@@ -420,25 +421,36 @@ async fn list_resources(call: ToolCall, args: ListArgs) -> ToolResult {
         }
     };
 
-    let (items, truncated, namespaces) = match scope {
-        NamespaceScope::All => {
-            let page = list(None, limit).await?;
-            (page.items, page.truncated, None)
-        }
-        NamespaceScope::Only { namespaces } => {
-            let mut items = Vec::new();
-            let mut truncated = false;
-            for (i, ns) in namespaces.iter().enumerate() {
-                let left = limit - u32::try_from(items.len()).unwrap_or(limit);
-                if left == 0 {
-                    truncated = i < namespaces.len();
-                    break;
-                }
-                let page = list(Some(ns.clone()), left).await?;
-                truncated |= page.truncated;
-                items.extend(page.items);
+    let asked = namespace.is_some();
+    let (items, truncated, over) = match scope {
+        NamespaceScope::All => match list(None, limit).await {
+            Ok(page) => (page.items, page.truncated, None),
+            Err(e) if is_forbidden(&e) => {
+                let tried = fallback_namespaces(&call, &cluster, &pattern, e)?;
+                let each = list_each(&tried, limit as usize, false, |ns, left| {
+                    let page = list(Some(ns), u32::try_from(left).unwrap_or(limit));
+                    async move { page.await.map(|p| (p.items, p.truncated)) }
+                })
+                .await?;
+                (
+                    each.items,
+                    each.truncated,
+                    Some((tried, each.refused, true)),
+                )
             }
-            (items, truncated, Some(namespaces))
+            Err(e) => return Err(e.into()),
+        },
+        NamespaceScope::Only { namespaces } => {
+            let each = list_each(&namespaces, limit as usize, asked, |ns, left| {
+                let page = list(Some(ns), u32::try_from(left).unwrap_or(limit));
+                async move { page.await.map(|p| (p.items, p.truncated)) }
+            })
+            .await?;
+            (
+                each.items,
+                each.truncated,
+                Some((namespaces, each.refused, false)),
+            )
         }
     };
     let items: Vec<Value> = items.into_iter().map(compact).collect();
@@ -449,9 +461,8 @@ async fn list_resources(call: ToolCall, args: ListArgs) -> ToolResult {
         "truncated": truncated,
         "items": items,
     });
-    if let Some(namespaces) = namespaces.filter(|_| namespace.is_none()) {
-        out["namespaces"] = json!(namespaces);
-        out["note"] = json!("only the namespaces the agent may read");
+    if let Some((namespaces, refused, fallback)) = over.filter(|_| !asked) {
+        tell_namespaces(&mut out, namespaces, refused, fallback);
     }
     Ok(ToolOutput::Json(out))
 }
@@ -532,6 +543,9 @@ async fn get_events(call: ToolCall, args: EventArgs) -> ToolResult {
         }
     };
 
+    // Over all namespaces read one by one: which, which the cluster refused, and whether in place of a refused
+    // cluster-wide list.
+    let mut over: Option<(Vec<String>, Vec<String>, bool)> = None;
     let events = match (&involved, namespace) {
         (Some(object), _) => {
             let summary = summary("get_events", format!("events of {}", describe(object)));
@@ -562,39 +576,57 @@ async fn get_events(call: ToolCall, args: EventArgs) -> ToolResult {
         }
         (None, None) => {
             let summary = summary("get_events", "Event in all namespaces".to_owned());
-            match call
-                .guard
-                .allowed_namespaces(&cluster, &event, AccessAction::Read, &summary)?
-            {
+            let scope =
+                call.guard
+                    .allowed_namespaces(&cluster, &event, AccessAction::Read, &summary)?;
+            // The cluster-wide answer, or the namespaces to read one by one instead.
+            let (namespaces, cluster_wide) = match scope {
                 NamespaceScope::All => {
-                    read(
+                    match read(
                         "reading events",
                         resources::events(mgr, &cluster.id, None, None, limit),
                     )
-                    .await?
-                }
-                NamespaceScope::Only { namespaces } => {
-                    let mut all = Vec::new();
-                    for ns in &namespaces {
-                        all.extend(
-                            read(
-                                "reading events",
-                                resources::events(mgr, &cluster.id, Some(ns), None, limit),
-                            )
-                            .await?,
-                        );
+                    .await
+                    {
+                        Ok(events) => (None, events),
+                        Err(e) if is_forbidden(&e) => (
+                            Some((fallback_namespaces(&call, &cluster, &event, e)?, true)),
+                            Vec::new(),
+                        ),
+                        Err(e) => return Err(e.into()),
                     }
+                }
+                NamespaceScope::Only { namespaces } => (Some((namespaces, false)), Vec::new()),
+            };
+            match namespaces {
+                None => cluster_wide,
+                Some((namespaces, fallback)) => {
+                    // Each namespace's newest `limit`, then the newest `limit` of them all.
+                    let id = &cluster.id;
+                    let each = list_each(&namespaces, usize::MAX, false, |ns, _| async move {
+                        read(
+                            "reading events",
+                            resources::events(mgr, id, Some(&ns), None, limit),
+                        )
+                        .await
+                        .map(|events| (events, false))
+                    })
+                    .await?;
+                    let mut all = each.items;
                     all.sort_by_key(|e| std::cmp::Reverse(last_seen(e)));
                     all.truncate(limit as usize);
+                    over = Some((namespaces, each.refused, fallback));
                     all
                 }
             }
         }
     };
     let events: Vec<Value> = events.iter().map(compact_event).collect();
-    Ok(ToolOutput::Json(
-        json!({ "count": events.len(), "events": events }),
-    ))
+    let mut out = json!({ "count": events.len(), "events": events });
+    if let Some((namespaces, refused, fallback)) = over {
+        tell_namespaces(&mut out, namespaces, refused, fallback);
+    }
+    Ok(ToolOutput::Json(out))
 }
 
 async fn get_logs(call: ToolCall, args: LogArgs) -> ToolResult {
@@ -675,7 +707,13 @@ async fn get_metrics(call: ToolCall, args: MetricsArgs) -> ToolResult {
         }
         MetricsOf::Pods => {
             let pod = KindPattern::new("", "Pod");
-            let namespaces = match non_empty(args.namespace.as_deref()) {
+            let usage = |namespaces: Option<Vec<String>>| {
+                read(
+                    "reading pod usage",
+                    metrics::pod_usage(&ctx.clusters, &cluster.id, &settings, namespaces),
+                )
+            };
+            let (asked, scope) = match non_empty(args.namespace.as_deref()) {
                 Some(ns) => {
                     let summary = summary("get_metrics", format!("Pod usage in namespace {ns}"));
                     call.guard
@@ -685,27 +723,44 @@ async fn get_metrics(call: ToolCall, args: MetricsArgs) -> ToolResult {
                             &summary,
                         )
                         .await?;
-                    Some(vec![ns.to_owned()])
+                    (
+                        true,
+                        NamespaceScope::Only {
+                            namespaces: vec![ns.to_owned()],
+                        },
+                    )
                 }
                 None => {
                     let summary = summary("get_metrics", "Pod usage in all namespaces".to_owned());
-                    match call.guard.allowed_namespaces(
+                    let scope = call.guard.allowed_namespaces(
                         &cluster,
                         &pod,
                         AccessAction::Read,
                         &summary,
-                    )? {
-                        NamespaceScope::All => None,
-                        NamespaceScope::Only { namespaces } => Some(namespaces),
-                    }
+                    )?;
+                    (false, scope)
                 }
             };
-            let pods = read(
-                "reading pod usage",
-                metrics::pod_usage(&ctx.clusters, &cluster.id, &settings, namespaces),
-            )
+            let (namespaces, fallback) = match scope {
+                NamespaceScope::All => match usage(None).await {
+                    Ok(pods) => return Ok(ToolOutput::Json(json!({ "pods": pods }))),
+                    Err(e) if is_forbidden(&e) => {
+                        (fallback_namespaces(&call, &cluster, &pod, e)?, true)
+                    }
+                    Err(e) => return Err(e.into()),
+                },
+                NamespaceScope::Only { namespaces } => (namespaces, false),
+            };
+            let each = list_each(&namespaces, usize::MAX, asked, |ns, _| {
+                let read = usage(Some(vec![ns]));
+                async move { read.await.map(|pods| (pods, false)) }
+            })
             .await?;
-            Ok(ToolOutput::Json(json!({ "pods": pods })))
+            let mut out = json!({ "pods": each.items });
+            if !asked {
+                tell_namespaces(&mut out, namespaces, each.refused, fallback);
+            }
+            Ok(ToolOutput::Json(out))
         }
     }
 }
@@ -713,7 +768,14 @@ async fn get_metrics(call: ToolCall, args: MetricsArgs) -> ToolResult {
 async fn helm_list_releases(call: ToolCall, args: HelmListArgs) -> ToolResult {
     let cluster = call.open(&args.cluster).await?;
     let release = KindPattern::helm_release();
-    let namespaces = match non_empty(args.namespace.as_deref()) {
+    let mgr = &call.ctx().clusters;
+    let releases = |namespaces: Option<Vec<String>>| {
+        read(
+            "listing Helm releases",
+            helm::list_releases(mgr, &cluster.id, namespaces),
+        )
+    };
+    let (asked, scope) = match non_empty(args.namespace.as_deref()) {
         Some(ns) => {
             let summary = summary("helm_list_releases", format!("Release in namespace {ns}"));
             call.guard
@@ -723,25 +785,41 @@ async fn helm_list_releases(call: ToolCall, args: HelmListArgs) -> ToolResult {
                     &summary,
                 )
                 .await?;
-            Some(vec![ns.to_owned()])
+            (
+                true,
+                NamespaceScope::Only {
+                    namespaces: vec![ns.to_owned()],
+                },
+            )
         }
         None => {
             let summary = summary("helm_list_releases", "Release in all namespaces".to_owned());
-            match call
-                .guard
-                .allowed_namespaces(&cluster, &release, AccessAction::Read, &summary)?
-            {
-                NamespaceScope::All => None,
-                NamespaceScope::Only { namespaces } => Some(namespaces),
-            }
+            let scope =
+                call.guard
+                    .allowed_namespaces(&cluster, &release, AccessAction::Read, &summary)?;
+            (false, scope)
         }
     };
-    let releases = read(
-        "listing Helm releases",
-        helm::list_releases(&call.ctx().clusters, &cluster.id, namespaces),
-    )
+    let (namespaces, fallback) = match scope {
+        NamespaceScope::All => match releases(None).await {
+            Ok(list) => return Ok(ToolOutput::Json(json!({ "releases": list }))),
+            Err(e) if is_forbidden(&e) => {
+                (fallback_namespaces(&call, &cluster, &release, e)?, true)
+            }
+            Err(e) => return Err(e.into()),
+        },
+        NamespaceScope::Only { namespaces } => (namespaces, false),
+    };
+    let each = list_each(&namespaces, usize::MAX, asked, |ns, _| {
+        let read = releases(Some(vec![ns]));
+        async move { read.await.map(|list| (list, false)) }
+    })
     .await?;
-    Ok(ToolOutput::Json(json!({ "releases": releases })))
+    let mut out = json!({ "releases": each.items });
+    if !asked {
+        tell_namespaces(&mut out, namespaces, each.refused, fallback);
+    }
+    Ok(ToolOutput::Json(out))
 }
 
 async fn helm_get_release(call: ToolCall, args: HelmGetArgs) -> ToolResult {
@@ -886,6 +964,130 @@ pub async fn find_kind(
 }
 
 /// A read with [`READ_TIMEOUT`].
+/// The most namespaces a call over all namespaces lists one by one when the cluster-wide list is refused.
+pub const MAX_FALLBACK_NAMESPACES: usize = 20;
+
+/// Whether the API server refused a request for lack of permission.
+fn is_forbidden(error: &CoreError) -> bool {
+    error.code == ErrorCode::Forbidden
+}
+
+/// The namespaces to list one by one when the API server refuses a list over all namespaces (the user may not list
+/// at cluster scope, ADR-0124): the kubeconfig context's namespace, then the known namespaces of the cluster settings,
+/// each one the agent may read `pattern` in, at most [`MAX_FALLBACK_NAMESPACES`]. None: the refusal, with where to
+/// go from there.
+fn fallback_namespaces(
+    call: &ToolCall,
+    cluster: &ClusterTarget,
+    pattern: &KindPattern,
+    refusal: CoreError,
+) -> Result<Vec<String>, CoreError> {
+    let ctx = call.ctx();
+    let settings = ctx.settings.get();
+    let stored = settings.clusters.get(&cluster.id.0);
+    let access = stored.map(|s| s.agent_access.clone()).unwrap_or_default();
+    let context = ctx
+        .cluster_list()
+        .into_iter()
+        .find(|c| c.id == cluster.id)
+        .and_then(|c| c.namespace);
+    let known = stored
+        .and_then(|s| s.known_namespaces.clone())
+        .unwrap_or_default();
+    let mut out: Vec<String> = Vec::new();
+    for ns in context.into_iter().chain(known) {
+        let ns = ns.trim().to_owned();
+        if ns.is_empty() || out.contains(&ns) {
+            continue;
+        }
+        if access::decide(&access, Some(&ns), pattern, AccessAction::Read).is_allowed() {
+            out.push(ns);
+        }
+        if out.len() == MAX_FALLBACK_NAMESPACES {
+            break;
+        }
+    }
+    if out.is_empty() {
+        return Err(CoreError::new(
+            refusal.code,
+            format!(
+                "{} — the user may not list it over all namespaces, and Sextant knows no namespace to list instead. \
+                 Pass a namespace; get_access names the ones the user works in, and the user can add them in Sextant \
+                 (the cluster's settings → Connection → Accessible namespaces).",
+                refusal.message
+            ),
+        ));
+    }
+    Ok(out)
+}
+
+/// What [`list_each`] read.
+struct Each<T> {
+    items: Vec<T>,
+    truncated: bool,
+    /// The namespaces the API server refused.
+    refused: Vec<String>,
+}
+
+/// Lists `namespaces` one by one, up to `limit` items in all (`list` gets the namespace and how many are still
+/// wanted, and returns the items and whether it left some out). A namespace the API server refuses goes to `refused`
+/// and the others are still read, unless `strict` (the agent asked for that namespace by name): then the refusal
+/// is the answer.
+async fn list_each<T, F, Fut>(
+    namespaces: &[String],
+    limit: usize,
+    strict: bool,
+    mut list: F,
+) -> CoreResult<Each<T>>
+where
+    F: FnMut(String, usize) -> Fut,
+    Fut: std::future::Future<Output = CoreResult<(Vec<T>, bool)>>,
+{
+    let mut each = Each {
+        items: Vec::new(),
+        truncated: false,
+        refused: Vec::new(),
+    };
+    for (i, ns) in namespaces.iter().enumerate() {
+        let left = limit.saturating_sub(each.items.len());
+        if left == 0 {
+            each.truncated = i < namespaces.len();
+            break;
+        }
+        match list(ns.clone(), left).await {
+            Ok((items, truncated)) => {
+                each.truncated |= truncated;
+                each.items.extend(items);
+            }
+            Err(e) if !strict && is_forbidden(&e) => each.refused.push(ns.clone()),
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(each)
+}
+
+/// Says over which namespaces a call over all of them read: the ones of the agent's rules, or (`fallback`) the ones
+/// listed because the cluster-wide list was refused; `refused` — the API server refused these too.
+fn tell_namespaces(out: &mut Value, namespaces: Vec<String>, refused: Vec<String>, fallback: bool) {
+    let read: Vec<&String> = namespaces
+        .iter()
+        .filter(|ns| !refused.contains(ns))
+        .collect();
+    out["namespaces"] = json!(read);
+    if !refused.is_empty() {
+        out["refused"] = json!(refused);
+    }
+    out["note"] = json!(if fallback {
+        "The cluster refused the list over all namespaces (the user may not list at cluster scope); listed instead \
+         in the namespaces Sextant knows the user works in (the context's and the known ones). Other namespaces \
+         may hold more. `refused`: the cluster refused these too."
+    } else if refused.is_empty() {
+        "only the namespaces the agent may read"
+    } else {
+        "only the namespaces the agent may read; `refused`: the cluster refused these (the user's own permissions)"
+    });
+}
+
 pub async fn read<T>(
     what: &str,
     call: impl std::future::Future<Output = CoreResult<T>>,

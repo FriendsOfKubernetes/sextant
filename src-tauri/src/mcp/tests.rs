@@ -1886,3 +1886,117 @@ async fn get_access_tells_the_rules_and_only_readable_hints_without_connecting()
     ));
     state.close_all();
 }
+
+/// A Kubernetes API server whose user may list pods in `team-a` only: the cluster-wide list and `team-b` are 403.
+async fn namespace_scoped_cluster() -> String {
+    use axum::http::{StatusCode, Uri, header};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    let forbidden = r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"Forbidden","code":403,"message":"pods is forbidden: User \"dev\" cannot list resource \"pods\""}"#;
+    let app = axum::Router::new().fallback(move |uri: Uri| async move {
+        let (status, body) = match uri.path() {
+            "/api" => (
+                StatusCode::OK,
+                r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#,
+            ),
+            "/api/v1" => (
+                StatusCode::OK,
+                r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[{"name":"pods","singularName":"pod","namespaced":true,"kind":"Pod","verbs":["get","list","watch"]}]}"#,
+            ),
+            "/apis" => (StatusCode::OK, r#"{"kind":"APIGroupList","groups":[]}"#),
+            "/api/v1/namespaces/team-a/pods" => (
+                StatusCode::OK,
+                r#"{"kind":"PodList","apiVersion":"v1","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"web-1","namespace":"team-a","uid":"u1"}}]}"#,
+            ),
+            "/api/v1/pods" | "/api/v1/namespaces/team-b/pods" => (StatusCode::FORBIDDEN, forbidden),
+            _ => (
+                StatusCode::NOT_FOUND,
+                r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"NotFound","code":404}"#,
+            ),
+        };
+        (status, [(header::CONTENT_TYPE, "application/json")], body)
+    });
+    tokio::spawn(async move {
+        let _ = axum::serve(listener, app).await;
+    });
+    url
+}
+
+#[tokio::test]
+async fn a_refused_list_over_all_namespaces_falls_back_to_the_known_ones() {
+    let dir = tempfile::tempdir().unwrap();
+    let server = namespace_scoped_cluster().await;
+    let path = dir.path().join("kubeconfig");
+    std::fs::write(
+        &path,
+        format!(
+            "apiVersion: v1\nkind: Config\nclusters:\n- name: test\n  cluster:\n    server: {server}\n\
+             contexts:\n- name: test\n  context:\n    cluster: test\n    user: test\n    namespace: team-a\n\
+             users:\n- name: test\n  user: {{}}\ncurrent-context: test\n"
+        ),
+    )
+    .unwrap();
+    let (state, _) = state_in(dir.path(), Some(path.into_os_string()));
+    let cluster = first_cluster(&state);
+    set_access(&state, &cluster, preset(AccessPreset::ReadOnly));
+    let pods = || {
+        tool(
+            &state,
+            "list_resources",
+            json!({ "cluster": "test", "kind": "Pod" }),
+        )
+    };
+
+    // Only the context's namespace is known: listed there instead of failing.
+    let out = pods().await.unwrap();
+    assert_eq!(out["items"][0]["metadata"]["name"], "web-1", "{out}");
+    assert_eq!(out["namespaces"], json!(["team-a"]));
+    assert!(
+        out["note"]
+            .as_str()
+            .unwrap()
+            .contains("refused the list over all namespaces")
+    );
+
+    // A known namespace the cluster refuses too is named, never shown as empty.
+    state
+        .settings
+        .update(|s| {
+            s.clusters.get_mut(&cluster.0).unwrap().known_namespaces =
+                Some(vec!["team-b".to_owned(), "team-a".to_owned()]);
+        })
+        .unwrap();
+    let out = pods().await.unwrap();
+    assert_eq!(out["count"], 1);
+    assert_eq!(out["refused"], json!(["team-b"]));
+    assert_eq!(out["namespaces"], json!(["team-a"]));
+
+    // Asked by name, a refused namespace is the answer.
+    let asked = tool(
+        &state,
+        "list_resources",
+        json!({ "cluster": "test", "kind": "Pod", "namespace": "team-b" }),
+    )
+    .await;
+    assert!(asked.unwrap_err().contains("forbidden"));
+
+    // Nothing known to fall back to: the refusal says where to go from there.
+    std::fs::write(
+        dir.path().join("kubeconfig"),
+        format!(
+            "apiVersion: v1\nkind: Config\nclusters:\n- name: test\n  cluster:\n    server: {server}\n\
+             contexts:\n- name: test\n  context:\n    cluster: test\n    user: test\n\
+             users:\n- name: test\n  user: {{}}\ncurrent-context: test\n"
+        ),
+    )
+    .unwrap();
+    state
+        .settings
+        .update(|s| s.clusters.get_mut(&cluster.0).unwrap().known_namespaces = None)
+        .unwrap();
+    // The registry reads the file again on the next listing.
+    let _ = state.registry.write().unwrap().clusters();
+    let err = pods().await.unwrap_err();
+    assert!(err.contains("get_access"), "{err}");
+    state.close_all();
+}
