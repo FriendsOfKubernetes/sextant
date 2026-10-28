@@ -4,6 +4,7 @@
 [![Latest release](https://img.shields.io/github/v/release/FriendsOfKubernetes/sextant?sort=semver)](https://github.com/FriendsOfKubernetes/sextant/releases/latest)
 [![Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FFriendsOfKubernetes%2Fsextant%2Fbadges%2Fdownloads.json)](https://github.com/FriendsOfKubernetes/sextant/releases)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](#license)
+[![Buy me a coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-DonationAlerts-orange?logo=buymeacoffee&logoColor=white)](https://www.donationalerts.com/r/mxp100)
 
 Sextant is a desktop application for managing Kubernetes clusters — an alternative to Lens, written in Rust on
 [Tauri 2](https://tauri.app). It reads your kubeconfig, shows the resources of every cluster in live tables and
@@ -125,6 +126,12 @@ Found a bug? [Open an issue](https://github.com/FriendsOfKubernetes/sextant/issu
 Articles about Sextant (in Russian, on Habr): [a Lens replacement written entirely by a model](https://habr.com/ru/articles/1095984/),
 [two roadmaps in two days: what is new in 0.12–0.19](https://habr.com/ru/articles/1097014/)
 and [13 releases in a week and the first outside contributors: 0.20–0.25.5](https://habr.com/ru/articles/1100782/).
+
+### Support the project
+
+Sextant is free and will stay free: every feature is for everyone, with no paid edition, account or telemetry.
+If it saves you time and you want to say thanks, you can [buy the author a coffee](https://www.donationalerts.com/r/mxp100).
+A star on GitHub, a bug report or a word about Sextant to your colleagues helps just as much.
 
 ## Roadmap
 
