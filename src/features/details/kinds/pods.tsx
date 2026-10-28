@@ -382,7 +382,7 @@ function Container({
   const probes = showsProbes(container, init ? "init" : "container");
 
   return (
-    <div className="dt-container dt-disclosure-group" data-container={name}>
+    <div className="dt-container" data-container={name}>
       <div className="dt-container__head">
         <span className="dt-container__name">{name}</span>
         {state}

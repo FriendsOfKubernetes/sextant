@@ -9,7 +9,7 @@
   border-block-start: 1px solid var(--color-border); pointer-events: none;
 }
 .details__section:first-child::before { content: none; }
-.dt-block.dt-block--disclosure { --dt-secondary-guide-color: color-mix(in srgb, var(--color-control-border) 85%, black); position: relative; margin: 0; min-width: 0; }
+.dt-block.dt-block--disclosure { position: relative; margin: 0; min-width: 0; }
 .dt-disclosure-root ~ .dt-disclosure-root { margin-top: 1rem; }
 .dt-block.dt-block--disclosure.dt-disclosure-nested { margin-top: .625rem; }
 :is(.dt-block__body, .dt-disclosure-group) > .dt-disclosure-nested:first-child { margin-top: 0; }
@@ -51,8 +51,6 @@
 .dt-disclosure-lead { display: flow-root; margin: 0; min-width: 0; }
 /* Row 1 centers the heading independently of actions in row 2. Each grid area is the pseudo's containing block. */
 :is(.dt-disclosure-root, .dt-disclosure-group > .dt-disclosure-nested):has(> .dt-block__body > .dt-disclosure-nested, > .dt-block__body > .dt-disclosure-group > .dt-disclosure-nested) > .dt-disclosure-head { --dt-branch-content: ""; }
-/* Container subsections live inside a frame, optionally behind a tab panel. */
-.dt-block--disclosure:has(> .dt-block__body > .dt-container > .dt-disclosure-nested, > .dt-block__body > .dt-container-tabs > .tabs__panel > .dt-container > .dt-disclosure-nested) > .dt-disclosure-head { --dt-branch-content: ""; --dt-branch-offset: calc(3px - .5rem); --dt-branch-color: var(--dt-secondary-guide-color); }
 .dt-disclosure-head::before,
 .dt-disclosure-head::after {
   content: var(--dt-branch-content); position: absolute; grid-column: 1 / -1;
@@ -81,19 +79,9 @@
   width: 0; border-inline-start: 1px solid var(--dt-guide-color, var(--color-control-border)); pointer-events: none;
 }
 :is(.dt-disclosure-root-body, .dt-disclosure-group) > .dt-disclosure-nested:first-child > .dt-disclosure-head > .dt-disclosure-title::after { top: 0; }
-/* Bridge the existing 8px tab padding, 8px frame margin/padding and 1px border; stop at the last heading. */
-.dt-block__body:has(> .dt-container > .dt-disclosure-nested) { display: flow-root; }
-.dt-container.dt-disclosure-group { --dt-guide-offset: calc(-6px - .5rem); --dt-guide-width: calc(2px + .5rem); --dt-guide-color: var(--dt-secondary-guide-color); position: relative; }
-.dt-container.dt-disclosure-group > .dt-container__head { --dt-guide-tail-gap: 6px; }
-.dt-container.dt-disclosure-group:has(> .dt-disclosure-nested)::before {
-  content: ""; position: absolute; inset-inline-start: calc(2px - .5rem); top: -9px; height: 17px;
-  width: 0; border-inline-start: 1px solid var(--dt-guide-color); pointer-events: none;
-}
-.dt-container-tabs:has(> .tabs__panel > .dt-container > .dt-disclosure-nested) { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
-.dt-container-tabs:has(> .tabs__panel > .dt-container > .dt-disclosure-nested)::before {
-  content: ""; position: absolute; grid-row: 1 / 2; top: 0; bottom: -8px; inset-inline-start: calc(3px - .5rem);
-  width: 0; border-inline-start: 1px solid var(--dt-secondary-guide-color); pointer-events: none;
-}
+/* A container's frame groups its subsections (probes, environment, mounts): the tree's guides stay outside it, so
+   no line crosses the frame or doubles the parent's corner at the Containers heading. */
+.dt-container .dt-disclosure-title--nested::before { content: none; }
 .details__section-controls {
   flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end;
   gap: .5rem; padding: .25rem 1rem; background: var(--color-panel);
