@@ -229,10 +229,10 @@ function WorkflowView({ clusterId, wf }: { clusterId: ClusterId; wf: KubeObject 
   const { t } = useTranslation();
   return (
     <>
-      <Block title={t("argoworkflows:sections.workflow")}>
+      <Block id="argoworkflows:sections.workflow" title={t("argoworkflows:sections.workflow")}>
         <WorkflowFields wf={wf} />
       </Block>
-      <Block title={t("argoworkflows:sections.nodes")}>
+      <Block id="argoworkflows:sections.nodes" title={t("argoworkflows:sections.nodes")}>
         {/* A tree of its own per Workflow: what is expanded does not carry over to another one. */}
         <NodeTree key={wf.metadata?.uid ?? wf.metadata?.name} clusterId={clusterId} wf={wf} />
       </Block>
@@ -258,7 +258,7 @@ function CronView({ cron }: { cron: KubeObject }) {
     ["entrypoint", templateSummary(cron).entrypoint],
   ];
   return (
-    <Block title={t("argoworkflows:sections.cron")}>
+    <Block id="argoworkflows:sections.cron" title={t("argoworkflows:sections.cron")}>
       <Fields rows={rows} labelPrefix={FIELDS} />
     </Block>
   );
@@ -272,7 +272,7 @@ function TemplateView({ obj }: { obj: KubeObject }) {
     ["templates", chips(summary.templates)],
   ];
   return (
-    <Block title={t("argoworkflows:sections.template")}>
+    <Block id="argoworkflows:sections.template" title={t("argoworkflows:sections.template")}>
       <Fields rows={rows} labelPrefix={FIELDS} />
     </Block>
   );

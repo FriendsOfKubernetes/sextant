@@ -39,6 +39,7 @@ export interface ServedRoutes {
   routes: { kind: KindRef; items: KubeObject[] }[];
   /** Discovery or a list has not come yet. */
   loading: boolean;
+  failed?: boolean;
 }
 
 /** Routes of every served kind in all namespaces (`enabled` false watches nothing). */
@@ -57,7 +58,8 @@ export function useServedRoutes(clusterId: ClusterId, enabled = true): ServedRou
   const routes = ROUTE_KINDS_ORDER.flatMap((kind, i) =>
     served[i] ? [{ kind, items: [...(watches[i]?.items.values() ?? [])] }] : [],
   );
-  return { routes, loading };
+  const failed = Boolean(kinds.error) || served.some((kind, i) => kind && (watches[i]?.status === "error" || (watches[i]?.forbidden?.length ?? 0) > 0));
+  return { routes, loading, failed };
 }
 
 /**

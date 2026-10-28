@@ -121,5 +121,15 @@
     "textSizeHint": "Testo, righe delle tabelle e controlli crescono con essa; terminale, log ed editor YAML seguono.",
     "terminalScreenReader": "Supporto per lettori di schermo nel terminale",
     "terminalScreenReaderHint": "Consente a un lettore di schermo di leggere l’output del terminale. Rallenta il terminale, quindi lascialo disattivato se non usi un lettore di schermo."
+  },
+  "details": {
+    "title": "Dettagli della risorsa",
+    "remember": "Ricorda lo stato delle sezioni",
+    "modes": {
+      "none": "Non ricordare",
+      "cluster": "Per cluster",
+      "global": "Per tutti i cluster"
+    },
+    "hint": "Lo stato viene memorizzato separatamente per ogni tipo di risorsa. YAML è inizialmente compresso."
   }
 }

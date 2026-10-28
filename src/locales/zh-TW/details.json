@@ -7,7 +7,11 @@
     "metadata": "中繼資料",
     "fields": "{{kind}}",
     "conditions": "狀況",
-    "yaml": "YAML"
+    "yaml": "YAML",
+    "saveFailed": "無法儲存區段狀態。變更僅在目前工作階段中有效。",
+    "controls": "資源區段",
+    "expandAll": "全部展開",
+    "collapseAll": "全部收合"
   },
   "yaml": {
     "show": "顯示 YAML",

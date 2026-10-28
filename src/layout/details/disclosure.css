@@ -1,0 +1,102 @@
+/* Compact B uses constant separators; no table-border detection or DOM measurements. */
+.details__sections { display: flex; flex-direction: column; gap: 1rem; }
+.details__section { position: relative; min-width: 0; }
+.details__section:empty { display: none; }
+.details__section::before,
+.dt-disclosure-root ~ .dt-disclosure-root::before {
+  /* Borders snap like table rules at fractional display scales; background strips do not. */
+  content: ""; position: absolute; top: -.5rem; inset-inline: 0; height: 0;
+  border-block-start: 1px solid var(--color-border); pointer-events: none;
+}
+.details__section:first-child::before { content: none; }
+.dt-block.dt-block--disclosure { --dt-secondary-guide-color: color-mix(in srgb, var(--color-control-border) 85%, black); position: relative; margin: 0; min-width: 0; }
+.dt-disclosure-root ~ .dt-disclosure-root { margin-top: 1rem; }
+.dt-block.dt-block--disclosure.dt-disclosure-nested { margin-top: .625rem; }
+:is(.dt-block__body, .dt-disclosure-group) > .dt-disclosure-nested:first-child { margin-top: 0; }
+.dt-block__head.dt-disclosure-head {
+  --dt-branch-content: none;
+  container: details-heading / inline-size;
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto;
+  column-gap: .5rem; row-gap: 0; margin-bottom: .375rem;
+}
+.dt-disclosure-head:has(> .dt-block__actions) { grid-template-columns: minmax(0, 1fr) auto; }
+.dt-disclosure-head > .dt-disclosure-title { grid-column: 1; grid-row: 1; }
+.dt-disclosure-head > .dt-block__actions { grid-column: 2; grid-row: 1; min-width: 0; }
+/* Explicit rows keep long titles readable and let the guide follow the complete action row. */
+@container details-heading (max-width: 24rem) {
+  .dt-disclosure-head > .dt-disclosure-title { grid-column: 1 / -1; }
+  .dt-disclosure-head > .dt-block__actions { grid-column: 1 / -1; grid-row: 2; padding-block-start: .5rem; justify-self: start; }
+}
+.dt-block--disclosure[data-open="false"] > .dt-disclosure-head { margin-bottom: 0; }
+/* Balance the whitespace against the preceding 1px separator, keeping its position on whole CSS pixels. */
+.dt-disclosure-root[data-open="false"] > .dt-disclosure-head { padding-block-start: 1px; }
+.dt-block__title.dt-disclosure-title { flex: 1; min-width: 0; font-size: .9375rem; line-height: 1.35; color: color-mix(in srgb, var(--color-text) 98%, white); }
+.dt-block__title.dt-disclosure-title--nested { font-size: .875rem; color: color-mix(in srgb, var(--color-text) 98%, black); }
+.dt-disclosure {
+  --icon-size: 14px;
+  display: flex; align-items: center; gap: .375rem; width: 100%; min-height: var(--control-height-compact);
+  padding: .125rem .25rem .125rem 0; border: 0; border-radius: 4px; background: transparent;
+  color: inherit; font: inherit; text-align: start; cursor: pointer;
+}
+.dt-disclosure > .icon { flex: none; width: 14px; height: 14px; color: var(--color-text-muted); }
+.dt-disclosure > span { overflow-wrap: anywhere; }
+.dt-disclosure > .badge { font-size: .6875rem; font-weight: 500; }
+.dt-disclosure:hover { background: var(--color-hover); }
+.dt-disclosure:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.dt-block__actions { display: flex; flex-wrap: wrap; gap: .375rem; max-width: 100%; }
+.dt-block__actions .btn { max-width: 100%; white-space: normal; }
+.dt-block__body { position: relative; min-width: 0; }
+/* Opt-in non-frame groups retain their layout boxes; leading flow contains paragraph margins in one segment. */
+.dt-disclosure-group { --dt-guide-tail-gap: 0px; display: flow-root; min-width: 0; }
+.dt-disclosure-lead { display: flow-root; margin: 0; min-width: 0; }
+/* Row 1 centers the heading independently of actions in row 2. Each grid area is the pseudo's containing block. */
+:is(.dt-disclosure-root, .dt-disclosure-group > .dt-disclosure-nested):has(> .dt-block__body > .dt-disclosure-nested, > .dt-block__body > .dt-disclosure-group > .dt-disclosure-nested) > .dt-disclosure-head { --dt-branch-content: ""; }
+/* Container subsections live inside a frame, optionally behind a tab panel. */
+.dt-block--disclosure:has(> .dt-block__body > .dt-container > .dt-disclosure-nested, > .dt-block__body > .dt-container-tabs > .tabs__panel > .dt-container > .dt-disclosure-nested) > .dt-disclosure-head { --dt-branch-content: ""; --dt-branch-offset: calc(3px - .5rem); --dt-branch-color: var(--dt-secondary-guide-color); }
+.dt-disclosure-head::before,
+.dt-disclosure-head::after {
+  content: var(--dt-branch-content); position: absolute; grid-column: 1 / -1;
+  inset-inline-start: var(--dt-branch-offset, -.5rem); pointer-events: none;
+}
+.dt-disclosure-head::before {
+  grid-row: 1 / 2; top: 50%; bottom: 0; width: calc(.5rem - 4px);
+  border-inline-start: 1px solid var(--dt-branch-color, var(--dt-guide-color, var(--color-control-border)));
+  border-block-start: 1px solid var(--dt-branch-color, var(--dt-guide-color, var(--color-control-border)));
+}
+.dt-disclosure-head::after { grid-row: 2 / 3; top: 0; bottom: -.375rem; width: 0; border-inline-start: 1px solid var(--dt-branch-color, var(--dt-guide-color, var(--color-control-border))); }
+/* Full segments belong only to siblings before another heading, never to the last child's body. */
+:is(.dt-disclosure-root-body, .dt-disclosure-group) > :has(~ .dt-disclosure-nested, ~ .dt-disclosure-group > .dt-disclosure-nested) { position: relative; }
+:is(.dt-disclosure-root-body, .dt-disclosure-group) > :has(~ .dt-disclosure-nested, ~ .dt-disclosure-group > .dt-disclosure-nested)::before {
+  content: ""; position: absolute; inset-inline-start: var(--dt-guide-offset, -.5rem); top: 0; bottom: calc(0px - var(--dt-guide-tail-gap, 0px));
+  width: 0; border-inline-start: 1px solid var(--dt-guide-color, var(--color-control-border)); pointer-events: none;
+}
+.dt-disclosure-title--nested { position: relative; }
+.dt-disclosure-title--nested::before {
+  content: ""; position: absolute; inset-inline-start: var(--dt-guide-offset, -.5rem); top: 50%;
+  width: var(--dt-guide-width, calc(.5rem - 4px)); height: 0; border-block-start: 1px solid var(--dt-guide-color, var(--color-control-border)); pointer-events: none;
+}
+/* Each heading connects the preceding gap to its notch; the last one ends here even when expanded. */
+:is(.dt-disclosure-root-body, .dt-disclosure-group) > .dt-disclosure-nested > .dt-disclosure-head > .dt-disclosure-title::after {
+  content: ""; position: absolute; inset-inline-start: var(--dt-guide-offset, -.5rem); top: -.625rem; bottom: calc(50% - 1px);
+  width: 0; border-inline-start: 1px solid var(--dt-guide-color, var(--color-control-border)); pointer-events: none;
+}
+:is(.dt-disclosure-root-body, .dt-disclosure-group) > .dt-disclosure-nested:first-child > .dt-disclosure-head > .dt-disclosure-title::after { top: 0; }
+/* Bridge the existing 8px tab padding, 8px frame margin/padding and 1px border; stop at the last heading. */
+.dt-block__body:has(> .dt-container > .dt-disclosure-nested) { display: flow-root; }
+.dt-container.dt-disclosure-group { --dt-guide-offset: calc(-6px - .5rem); --dt-guide-width: calc(2px + .5rem); --dt-guide-color: var(--dt-secondary-guide-color); position: relative; }
+.dt-container.dt-disclosure-group > .dt-container__head { --dt-guide-tail-gap: 6px; }
+.dt-container.dt-disclosure-group:has(> .dt-disclosure-nested)::before {
+  content: ""; position: absolute; inset-inline-start: calc(2px - .5rem); top: -9px; height: 17px;
+  width: 0; border-inline-start: 1px solid var(--dt-guide-color); pointer-events: none;
+}
+.dt-container-tabs:has(> .tabs__panel > .dt-container > .dt-disclosure-nested) { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
+.dt-container-tabs:has(> .tabs__panel > .dt-container > .dt-disclosure-nested)::before {
+  content: ""; position: absolute; grid-row: 1 / 2; top: 0; bottom: -8px; inset-inline-start: calc(3px - .5rem);
+  width: 0; border-inline-start: 1px solid var(--dt-secondary-guide-color); pointer-events: none;
+}
+.details__section-controls {
+  flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end;
+  gap: .5rem; padding: .25rem 1rem; background: var(--color-panel);
+}
+.dt-block__body > section, .dt-block__body > .events-section, .dt-block__body > .pf-section { margin: 0; }
+.details__save-error { color: var(--color-warning); }

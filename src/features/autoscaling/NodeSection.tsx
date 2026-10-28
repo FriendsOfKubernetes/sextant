@@ -7,13 +7,16 @@
 //  - Cluster Autoscaler's status ConfigMap (`kube-system/cluster-autoscaler-status`) read into health and node groups.
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { ClusterId, KubeObject } from "../../api";
+import type { ClusterId, KubeObject, WatchState } from "../../api";
 import { formatDateTime, formatList } from "../../i18n";
 import type { DetailsSectionProps } from "../../layout/details/registry";
-import { status, StatusText } from "../../resources";
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
+import { UNKNOWN_DETAILS_SOURCE, useDisclosureProbe, useDisclosureProbeResult, watchProbeResult } from "../details/disclosureProbe";
+import { ErrorState } from "../../components";
+import { status, StatusText, useClusterKinds } from "../../resources";
 import { Block, Fields, KINDS, link, table, type ColumnWrap, type FieldRow } from "../details";
 import { caNodeMarks, isCaEvent, isCaStatusMap, parseCaStatus } from "./clusterAutoscaler";
-import { useKindEvents, useObjectEvents, useSharedList } from "./hooks";
+import { useKindEvents, useObjectEventsSource, useSharedList } from "./hooks";
 import {
   CAPACITY_TYPE_LABEL,
   causeOf,
@@ -65,19 +68,41 @@ export function NodeAutoscalingSection({ clusterId, obj }: DetailsSectionProps) 
 
 function NodeAutoscaling({ clusterId, node }: { clusterId: ClusterId; node: KubeObject }) {
   const { t } = useTranslation();
+  const probe = useDisclosureProbe("autoscaling:title");
+  const { enabled, result } = probe;
+  const disruptionsProbe = useDisclosureProbe("autoscaling:title/autoscaling:karpenter.disruptions");
+  const caProbe = useDisclosureProbe("autoscaling:title/autoscaling:ca.title");
+  const discovery = useClusterKinds(clusterId);
   const karpenter = isKarpenterNode(node);
-  const pools = useSharedList(clusterId, NODE_POOL, null, karpenter);
-  const claims = useSharedList(clusterId, NODE_CLAIM, null, karpenter);
+  const pools = useSharedList(clusterId, NODE_POOL, null, karpenter && enabled);
+  const claims = useSharedList(clusterId, NODE_CLAIM, null, karpenter && enabled);
   const claim = useMemo(() => (karpenter ? nodeClaimOf(node, claims.items) : undefined), [karpenter, node, claims.items]);
   const poolName = nodePoolOf(node);
   const pool = pools.items.find((p) => p.metadata?.name === poolName);
-  const nodeEvents = useObjectEvents(clusterId, node, "Node");
-  const claimEvents = useObjectEvents(clusterId, claim, "NodeClaim", claim !== undefined);
+  const nodeSource = useObjectEventsSource(clusterId, node, "Node", enabled && (result === null || disruptionsProbe.enabled || caProbe.enabled));
+  const claimSource = useObjectEventsSource(clusterId, claim, "NodeClaim", claim !== undefined && enabled && disruptionsProbe.enabled);
+  const nodeEvents = nodeSource.events;
+  const claimEvents = claimSource.events;
   const cause = useCauseColumn();
   const caMarks = caNodeMarks(node);
   const caEvents = nodeEvents.filter(isCaEvent);
   const disruptionEvents = [...nodeEvents, ...claimEvents].filter(isDisruptionEvent);
-  if (!karpenter && caMarks.length === 0 && caEvents.length === 0) return null;
+  const caFound = caMarks.length > 0 || caEvents.length > 0;
+  const hasSources = karpenter || caFound;
+  const answer = watchProbeResult(hasSources, [nodeSource.state]);
+  const view = useDisclosureProbeResult(probe, answer);
+  const claimsReady = !karpenter || claims.served === false || (claims.state && claims.state.status !== "loading");
+  const disruptionStates: (WatchState | undefined)[] = [nodeSource.state];
+  if (karpenter && claims.served) disruptionStates.push(claims.state);
+  if (claim) disruptionStates.push(claimSource.state);
+  let disruptionsAnswer = watchProbeResult(disruptionEvents.length > 0, disruptionStates);
+  if (!claimsReady) disruptionsAnswer = null;
+  else if (karpenter && discovery.error && disruptionEvents.length === 0) disruptionsAnswer = "unknown";
+  const caAnswer = watchProbeResult(caFound, [nodeSource.state]);
+  const disruptionsView = useDisclosureProbeResult(disruptionsProbe, enabled ? disruptionsAnswer : null);
+  const caView = useDisclosureProbeResult(caProbe, enabled ? caAnswer : null);
+  if (!view.visible) return null;
+  if (!probe.open) return <Block id="autoscaling:title" title={t("autoscaling:title")}>{null}</Block>;
   const labels = record(node.metadata?.labels);
   const fields: FieldRow[] = [
     ["nodePool", link(NODE_POOL_TYPE, poolName)],
@@ -87,25 +112,24 @@ function NodeAutoscaling({ clusterId, node }: { clusterId: ClusterId; node: Kube
   ];
 
   return (
-    <Block title={t("autoscaling:title")}>
+    <Block id="autoscaling:title" title={t("autoscaling:title")}>
+      {!hasSources && nodeSource.state.status === "loading" && <p className="dt-muted">{t("common:details.loading")}</p>}
       {karpenter && (
         <>
           <Fields labelPrefix={FIELDS} rows={fields} />
           <Phrases phrases={phrasesWithTimes(disruptionOf(node, claim, pool))} />
-          {disruptionEvents.length > 0 && (
-            <>
-              <h4 className="as-subtitle">{t("autoscaling:karpenter.disruptions")}</h4>
-              <EventsTable events={disruptionEvents} first={cause} />
-            </>
+          {(disruptionEvents.length > 0 || claimSource.state.error || disruptionsView.visible) && (
+            <Block id="autoscaling:karpenter.disruptions" title={t("autoscaling:karpenter.disruptions")}>
+              {disruptionsAnswer === "unknown" ? <ErrorState error={claimSource.state.error ?? claims.state?.error ?? nodeSource.state.error ?? discovery.error ?? UNKNOWN_DETAILS_SOURCE} /> : <EventsTable events={disruptionEvents} first={cause} />}
+            </Block>
           )}
         </>
       )}
-      {(caMarks.length > 0 || caEvents.length > 0) && (
-        <>
-          <h4 className="as-subtitle">{t("autoscaling:ca.title")}</h4>
+      {(caFound || caView.visible) && (
+        <Block id="autoscaling:ca.title" title={t("autoscaling:ca.title")}>
           <Phrases phrases={caMarks} />
-          <EventsTable events={caEvents} />
-        </>
+          {caAnswer === "unknown" ? <ErrorState error={nodeSource.state.error ?? UNKNOWN_DETAILS_SOURCE} /> : <EventsTable events={caEvents} />}
+        </Block>
       )}
     </Block>
   );
@@ -120,14 +144,23 @@ export function NodeClaimSection({ clusterId, obj }: DetailsSectionProps) {
 
 function NodeClaimDetails({ clusterId, claim }: { clusterId: ClusterId; claim: KubeObject }) {
   const { t } = useTranslation();
+  return <Block id="autoscaling:karpenter.claimTitle" title={t("autoscaling:karpenter.claimTitle")}><NodeClaimDetailsContent clusterId={clusterId} claim={claim} /></Block>;
+}
+
+function NodeClaimDetailsContent({ clusterId, claim }: { clusterId: ClusterId; claim: KubeObject }) {
+  const { t } = useTranslation();
   const pools = useSharedList(clusterId, NODE_POOL, null);
   const poolName = nodePoolOf(claim);
   const pool = pools.items.find((p) => p.metadata?.name === poolName);
   const nodeName = str(get(claim, "status", "nodeName"));
   const labels = record(claim.metadata?.labels);
   const problem = launchProblem(claim);
-  const events = useObjectEvents(clusterId, claim, "NodeClaim");
+  const disruptionsProbe = useDisclosureProbe("autoscaling:karpenter.disruptions");
+  const eventSource = useObjectEventsSource(clusterId, claim, "NodeClaim", disruptionsProbe.enabled);
+  const events = eventSource.events;
   const disruptions = events.filter(isDisruptionEvent);
+  const answer = watchProbeResult(disruptions.length > 0, [eventSource.state]);
+  const disruptionsView = useDisclosureProbeResult(disruptionsProbe, answer);
   const cause = useCauseColumn();
   const fields: FieldRow[] = [
     ["node", link(KINDS.node, nodeName)],
@@ -137,17 +170,16 @@ function NodeClaimDetails({ clusterId, claim }: { clusterId: ClusterId; claim: K
     ["zone", str(labels[ZONE_LABEL]) ?? null],
   ];
   return (
-    <Block title={t("autoscaling:karpenter.claimTitle")}>
+    <>
       <PhraseLine phrase={problem ?? CLAIM_READY} />
       <Fields labelPrefix={FIELDS} rows={fields} />
       <Phrases phrases={phrasesWithTimes(disruptionOf(undefined, claim, pool))} />
-      {disruptions.length > 0 && (
-        <>
-          <h4 className="as-subtitle">{t("autoscaling:karpenter.disruptions")}</h4>
-          <EventsTable events={disruptions} first={cause} />
-        </>
+      {disruptionsView.visible && (
+        <Block id="autoscaling:karpenter.disruptions" title={t("autoscaling:karpenter.disruptions")}>
+          {answer === "unknown" ? <ErrorState error={eventSource.state.error ?? UNKNOWN_DETAILS_SOURCE} /> : <EventsTable events={disruptions} first={cause} />}
+        </Block>
       )}
-    </Block>
+    </>
   );
 }
 
@@ -160,13 +192,19 @@ export function NodePoolSection({ clusterId, obj }: DetailsSectionProps) {
 
 function NodePoolDetails({ clusterId, pool }: { clusterId: ClusterId; pool: KubeObject }) {
   const { t } = useTranslation();
+  return <Block id="autoscaling:karpenter.poolTitle" title={t("autoscaling:karpenter.poolTitle")}><NodePoolDetailsContent clusterId={clusterId} pool={pool} /></Block>;
+}
+
+function NodePoolDetailsContent({ clusterId, pool }: { clusterId: ClusterId; pool: KubeObject }) {
+  const { t } = useTranslation();
   const name = pool.metadata?.name ?? "";
   const limits = limitRows(pool);
   const settings = disruptionSettings(pool);
   const classRef = get(pool, "spec", "template", "spec", "nodeClassRef");
   const classKind = str(get(classRef, "kind"));
   const classGroup = str(get(classRef, "group")) ?? "karpenter.k8s.aws";
-  const events = useKindEvents(clusterId, "NodeClaim", true);
+  const disruptionsOpen = useDetailsDisclosure("autoscaling:karpenter.recentDisruptions")?.open ?? true;
+  const events = useKindEvents(clusterId, "NodeClaim", disruptionsOpen);
   // A NodePool names its NodeClaims `<nodepool>-<suffix>`.
   const disruptions = useMemo(() => events.filter((e) => e.involvedName.startsWith(`${name}-`) && isDisruptionEvent(e)), [events, name]);
   const cause = useCauseColumn();
@@ -192,13 +230,14 @@ function NodePoolDetails({ clusterId, pool }: { clusterId: ClusterId; pool: Kube
   const claimColumn = { header: t("autoscaling:karpenter.nodeClaim"), cell: (e: EventRow) => `${e.involvedName} · ${cause.cell(e)}` };
 
   return (
-    <Block title={t("autoscaling:karpenter.poolTitle")}>
+    <>
       {limitPhrase && <PhraseLine phrase={limitPhrase} />}
       <Fields labelPrefix={FIELDS} rows={fields} />
       {limits.length > 0 ? limitTable : <Note>{t("autoscaling:karpenter.noLimits")}</Note>}
-      <h4 className="as-subtitle">{t("autoscaling:karpenter.recentDisruptions")}</h4>
-      {disruptions.length === 0 ? <Note>{t("autoscaling:karpenter.noDisruptions")}</Note> : <EventsTable events={disruptions} first={claimColumn} />}
-    </Block>
+      <Block id="autoscaling:karpenter.recentDisruptions" title={t("autoscaling:karpenter.recentDisruptions")}>
+        {disruptions.length === 0 ? <Note>{t("autoscaling:karpenter.noDisruptions")}</Note> : <EventsTable events={disruptions} first={claimColumn} />}
+      </Block>
+    </>
   );
 }
 
@@ -219,7 +258,7 @@ export function CaStatusSection({ obj }: DetailsSectionProps) {
   const ca = useMemo(() => (isCaStatusMap(obj) ? parseCaStatus(obj ?? undefined) : undefined), [obj]);
   if (!ca) return null;
   return (
-    <Block title={t("autoscaling:ca.statusTitle")}>
+    <Block id="autoscaling:ca.statusTitle" title={t("autoscaling:ca.statusTitle")}>
       <CaStatusFields ca={ca} />
       {ca.groups.length > 0 &&
         table(

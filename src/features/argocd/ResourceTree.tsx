@@ -102,7 +102,13 @@ export function ResourceTreeSection(props: DetailsSectionProps) {
   return <ResourceTreeView key={attempt} {...props} onRetry={() => setAttempt((n) => n + 1)} />;
 }
 
-function ResourceTreeView({ clusterId, obj, onRetry }: DetailsSectionProps & { onRetry: () => void }) {
+function ResourceTreeView(props: DetailsSectionProps & { onRetry: () => void }) {
+  const { t } = useTranslation();
+  if (!props.obj || managedResources(props.obj).length === 0) return null;
+  return <Block id="argocd:tree.title" title={t("argocd:tree.title")}><ResourceTreeBody {...props} /></Block>;
+}
+
+function ResourceTreeBody({ clusterId, obj, onRetry }: DetailsSectionProps & { onRetry: () => void }) {
   const { t } = useTranslation();
   const app = obj;
   const resources = useMemo(() => (app ? managedResources(app) : []), [app]);
@@ -149,7 +155,7 @@ function ResourceTreeView({ clusterId, obj, onRetry }: DetailsSectionProps & { o
     t("argocd:tree.health"),
   ];
   return (
-    <Block title={t("argocd:tree.title")}>
+    <>
       {!local && <p className="dt-muted">{t("argocd:tree.remote")}</p>}
       <ResizableTable tableId="argocd.tree" className="dt-table argo-tree" aria-label={t("argocd:tree.title")}>
         <thead>
@@ -180,7 +186,7 @@ function ResourceTreeView({ clusterId, obj, onRetry }: DetailsSectionProps & { o
           </p>
         )
       )}
-    </Block>
+    </>
   );
 }
 

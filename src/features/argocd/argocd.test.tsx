@@ -328,7 +328,7 @@ describe("details of an Application", () => {
     await openApplication(app);
     const tree = section("argocdResources");
     expect(within(tree).getByText("Deployment")).toBeInTheDocument();
-    expect(within(tree).queryAllByRole("button")).toHaveLength(0);
+    expect(tree.querySelectorAll(".rt-link")).toHaveLength(0);
     expect(within(tree).getByText(/another cluster/)).toBeInTheDocument();
     expect([...wb.specs.values()].map((s) => s.kind.kind)).not.toContain("Pod");
   });

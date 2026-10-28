@@ -1,10 +1,12 @@
+import { useDisclosureProbe } from "../details/disclosureProbe";
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // The "vcluster" section of a control plane's StatefulSet or Deployment (`app=vcluster`, `release=<name>`): the
 // instance's state, its control-plane pods, whether its Service and kubeconfig Secret exist (looked up by name,
 // metadata only), "Connect" (ADR-0122), and the synced objects — what the syncer copied from the virtual cluster into
 // this namespace (`vcluster.loft.sh/managed-by=<name>`, metadata only, at most `MAX_SYNCED` per kind, the first
 // `MAX_SHOWN` shown) with the virtual name and namespace each stands for.
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KindRef, KubeObject, WatchSpec } from "../../api";
 import type { DetailsSectionProps } from "../../layout/details/registry";
@@ -34,9 +36,16 @@ const byName = (kind: KindRef, namespace: string, name: string): WatchSpec => ({
 
 function SyncedKind({ clusterId, kind, namespace, name }: { clusterId: ClusterId; kind: KindRef; namespace: string; name: string }) {
   const { t } = useTranslation();
-  const list = useSynced(clusterId, kind, namespace, name);
+  const id = `synced.${kind.group}/${kind.kind}`;
+  const { open, enabled, result, settle } = useDisclosureProbe(id);
+  const list = useSynced(clusterId, kind, namespace, name, enabled);
+  const [count, setCount] = useState(0);
+  const answer = list.loading ? null : list.items.length > 0 ? "present" : list.unavailable || list.truncated ? "unknown" : "absent";
+  useEffect(() => { if (enabled && answer) { settle(answer); if (answer !== "unknown") setCount(list.items.length); } }, [enabled, answer, list.items.length, settle]);
+  const title = t("vcluster:synced.kind", { kind: kind.kind, number: result === "unknown" ? "?" : count });
+  if (!open && result) return result === "absent" ? null : <Block id={id} title={title}>{null}</Block>;
   if (list.loading || list.items.length === 0) {
-    return list.unavailable ? <p className="vc-muted">{t("vcluster:synced.unavailable", { kind: kind.kind })}</p> : null;
+    return list.unavailable || (list.loading && result !== null && result !== "absent") ? <Block id={id} title={title}><p className="vc-muted">{list.unavailable ? t("vcluster:synced.unavailable", { kind: kind.kind }) : t("common:details.loading")}</p></Block> : null;
   }
   const synced = list.items
     .map((obj) => syncedOf(obj, name))
@@ -49,7 +58,7 @@ function SyncedKind({ clusterId, kind, namespace, name }: { clusterId: ClusterId
     s.virtualNamespace ?? "",
   ]);
   return (
-    <Block title={t("vcluster:synced.kind", { kind: kind.kind, number: synced.length })}>
+    <Block id={id} title={t("vcluster:synced.kind", { kind: kind.kind, number: synced.length })}>
       {table(
         `vclusterSynced${kind.kind}`,
         [t("vcluster:synced.columns.host"), t("vcluster:synced.columns.virtualName"), t("vcluster:synced.columns.virtualNamespace")],
@@ -79,7 +88,8 @@ function InstanceDetails({ clusterId, obj }: { clusterId: ClusterId; obj: KubeOb
         : [],
     [found, namespace, name],
   );
-  const [service, secret, pods] = useSharedWatches(clusterId, specs);
+  const open = useDetailsDisclosure("vcluster:section.title")?.open ?? true;
+  const [service, secret, pods] = useSharedWatches(clusterId, open ? specs : []);
   if (!instance) return null;
   const known = (s: typeof service): boolean | undefined =>
     !s || s.status === "loading" || s.status === "error" || (s.forbidden ?? []).length > 0 ? undefined : s.items.size > 0;
@@ -95,11 +105,11 @@ function InstanceDetails({ clusterId, obj }: { clusterId: ClusterId; obj: KubeOb
   ];
   return (
     <>
-      <Block title={t("vcluster:section.title")}>
+      <Block id="vcluster:section.title" title={t("vcluster:section.title")}>
         <Fields rows={rows} labelPrefix={LABELS} />
         <p className="vc-muted">{t("vcluster:page.lifetime")}</p>
       </Block>
-      <Block title={t("vcluster:synced.title")}>
+      <Block id="vcluster:synced.title" title={t("vcluster:synced.title")}>
         <p className="vc-muted">{t("vcluster:synced.hint", { name })}</p>
         {SYNCED_KINDS.map((kind) => (
           <SyncedKind key={kind.kind} clusterId={clusterId} kind={kind} namespace={namespace} name={name} />

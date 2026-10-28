@@ -6,6 +6,9 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KubeObject, ObjectRef } from "../../api";
 import type { DetailsSectionProps } from "../../layout/details/registry";
+import { UNKNOWN_DETAILS_SOURCE, useDisclosureProbe, useDisclosureProbeResult, watchProbeResult } from "../details/disclosureProbe";
+import { ErrorState } from "../../components";
+import { useClusterKinds } from "../../resources";
 import { status } from "../../resources";
 import { Block, Fields, link, type FieldRow } from "../details";
 import { HpaSummary } from "./HpaSection";
@@ -26,11 +29,14 @@ export function WorkloadAutoscalingSection({ clusterId, obj, objectRef }: Detail
 
 function WorkloadAutoscaling({ clusterId, obj, objectRef }: { clusterId: ClusterId; obj: KubeObject; objectRef: ObjectRef }) {
   const { t } = useTranslation();
+  const probe = useDisclosureProbe("autoscaling:title");
+  const { enabled, result } = probe;
+  const discovery = useClusterKinds(clusterId);
   const namespace = objectRef.namespace;
   const name = obj.metadata?.name;
   const kind = objectRef.kind.kind;
-  const hpaList = useSharedList(clusterId, HPA, namespace);
-  const soList = useSharedList(clusterId, SCALED_OBJECT, namespace);
+  const hpaList = useSharedList(clusterId, HPA, namespace, enabled);
+  const soList = useSharedList(clusterId, SCALED_OBJECT, namespace, enabled);
   const hpas = useMemo(
     () =>
       hpaList.items.filter(
@@ -46,12 +52,19 @@ function WorkloadAutoscaling({ clusterId, obj, objectRef }: { clusterId: Cluster
       }),
     [soList.items, kind, name],
   );
-  if (hpas.length === 0 && scaledObjects.length === 0) return null;
+  const hasSources = hpas.length > 0 || scaledObjects.length > 0;
+  const sources = [hpaList, soList];
+  const answer = sources.some(source => source.served === undefined) ? null : watchProbeResult(hasSources, sources.filter(source => source.served).map(source => source.state));
+  const outcome = answer === "absent" && discovery.error ? "unknown" : answer;
+  const view = useDisclosureProbeResult(probe, outcome);
+  if (!probe.open && result) return view.visible ? <Block id="autoscaling:title" title={t("autoscaling:title")}>{null}</Block> : null;
+  const error = hpaList.state?.error ?? soList.state?.error ?? discovery.error;
+  if (!view.visible && !error) return null;
   const conflict = hpas.length > 1 ? phrase("workload.conflict", { count: hpas.length }, "danger") : null;
   const soRows = (so: KubeObject): FieldRow[] => [["scaledObject", link(SCALED_OBJECT_TYPE, so.metadata?.name, namespace)]];
 
   return (
-    <Block title={t("autoscaling:title")}>
+    <Block id="autoscaling:title" title={t("autoscaling:title")}>
       {conflict && <PhraseLine phrase={conflict} />}
       {scaledObjects.map((so) => (
         <div key={so.metadata?.uid ?? so.metadata?.name} className="as-summary">
@@ -62,7 +75,7 @@ function WorkloadAutoscaling({ clusterId, obj, objectRef }: { clusterId: Cluster
       {hpas.map((hpa) => (
         <HpaSummary key={hpa.metadata?.uid ?? hpa.metadata?.name} hpa={hpa} />
       ))}
-      <PhraseLine phrase={MANUAL_SCALE} />
+      {error || outcome === "unknown" ? <ErrorState error={error ?? UNKNOWN_DETAILS_SOURCE} /> : outcome === null ? <p className="dt-muted">{t("common:details.loading")}</p> : <PhraseLine phrase={MANUAL_SCALE} />}
     </Block>
   );
 }

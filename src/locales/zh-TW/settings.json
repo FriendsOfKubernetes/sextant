@@ -121,5 +121,15 @@
     "textSizeHint": "文字、表格列和控制項會隨之變大；終端機、記錄和 YAML 編輯器也會跟著變化。",
     "terminalScreenReader": "終端機的螢幕閱讀器支援",
     "terminalScreenReaderHint": "讓螢幕閱讀器可以朗讀終端機輸出。這會讓終端機變慢，若不使用螢幕閱讀器請保持關閉。"
+  },
+  "details": {
+    "title": "資源詳細資訊",
+    "remember": "記住區段的展開狀態",
+    "modes": {
+      "none": "不記住",
+      "cluster": "依叢集分別記住",
+      "global": "所有叢集共用"
+    },
+    "hint": "每種資源類型會分別記住區段狀態。YAML 預設為收合。"
   }
 }

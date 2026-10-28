@@ -136,7 +136,7 @@ export function MetadataSection({ obj, objectRef }: DetailsSectionProps) {
     ["controlledBy", inline(owners)],
   ];
   return (
-    <Block title={t("details:sections.metadata")}>
+    <Block id="details:sections.metadata" title={t("details:sections.metadata")}>
       <Fields rows={rows} />
     </Block>
   );
@@ -151,7 +151,7 @@ export function FieldsSection({ clusterId, objectRef, obj }: DetailsSectionProps
   let content: ReactNode = null;
   if (View) content = <View obj={obj} clusterId={clusterId} objectRef={objectRef} />;
   else if (Registered) content = <Registered obj={obj} />;
-  return <Block title={t("details:sections.fields", { kind: objectRef.kind.kind })}>{content}</Block>;
+  return <Block id="details:sections.fields" title={t("details:sections.fields", { kind: objectRef.kind.kind })}>{content}</Block>;
 }
 
 export function hasFields(kind: ObjectRef["kind"]): boolean {
@@ -192,5 +192,5 @@ export function ConditionsSection({ obj }: DetailsSectionProps) {
     CONDITION_COLUMNS,
   );
   if (!content) return null;
-  return <Block title={t("details:sections.conditions")}>{content}</Block>;
+  return <Block id="details:sections.conditions" title={t("details:sections.conditions")}>{content}</Block>;
 }

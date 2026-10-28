@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { ClusterId, KubeObject, ObjectRef } from "../../api";
 import { useAppStore } from "../../app/store";
 import { ErrorState, Icon, Tabs } from "../../components";
+import { DetailsDisclosureProvider, DetailsSectionControls, DetailsSectionScope } from "./disclosure";
 import {
   getDetailsHeaderTools,
   getDetailsSections,
@@ -71,11 +72,20 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
       {loading && !obj && !error && <div className="details__loading">{t("common:details.loading")}</div>}
     </>
   );
-  const stacked = sections.map(({ id, Component }) => (
+  const summary = sections.find((s) => s.id === "summary");
+  const Summary = summary?.Component;
+  const stacked = <>
+    <DetailsSectionControls />
+    <div className="details__body">
+    {state}
+    {Summary && <section className="details__summary" data-section={summary.id}><Summary clusterId={clusterId} objectRef={objectRef} obj={obj} /></section>}
+    <div className="details__sections">{sections.filter((s) => s !== summary).map(({ id, Component }) => (
     <section key={id} className="details__section" data-section={id}>
+      <DetailsSectionScope id={id}>
       <Component clusterId={clusterId} objectRef={objectRef} obj={obj} />
+      </DetailsSectionScope>
     </section>
-  ));
+  ))}</div></div></>;
   // A tab that went away (its extension was disabled) leaves the panel on "Overview".
   const openTab = tabs.find((s) => s.id === tab);
 
@@ -101,12 +111,8 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
           <Icon name="close" />
         </button>
       </header>
-      {tabs.length === 0 ? (
-        <div className="details__body">
-          {state}
-          {stacked}
-        </div>
-      ) : (
+      <DetailsDisclosureProvider clusterId={clusterId} objectRef={objectRef}>
+      {tabs.length === 0 ? stacked : (
         <Tabs
           className="details__tabs"
           label={t("extensions:host.detailsTabs")}
@@ -119,14 +125,10 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
         >
           {openTab ? (
             <TabBody section={openTab} clusterId={clusterId} objectRef={objectRef} obj={obj} />
-          ) : (
-            <div className="details__body">
-              {state}
-              {stacked}
-            </div>
-          )}
+          ) : stacked}
         </Tabs>
       )}
+      </DetailsDisclosureProvider>
     </aside>
   );
 }

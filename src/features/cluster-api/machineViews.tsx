@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of a Machine (its bootstrap and infrastructure objects read by name, the Node in the workload cluster), of
 // MachineDeployments, MachineSets and KubeadmControlPlanes (replica counts, templates, their Machines by the
 // selector their controller uses) and of MachineHealthChecks (what is checked, healthy of expected, remediations
@@ -83,7 +84,8 @@ export function MachineView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
   const bootstrap = bootstrapRefOf(obj);
   const infrastructure = infrastructureRefOf(obj);
   const refs = [clusterRef, bootstrap, infrastructure].filter((r) => r !== undefined);
-  const read = useRefObjects(clusterId, refs, str(obj.metadata?.resourceVersion) ?? "");
+  const fieldsOpen = useDetailsDisclosure("details:sections.fields")?.open ?? true;
+  const read = useRefObjects(clusterId, fieldsOpen ? refs : [], str(obj.metadata?.resourceVersion) ?? "");
   const fetchedCluster = fetchedOf(read.byKey, clusterRef);
   const pause = clusterPause(obj, fetchedCluster);
   const own = machineState(obj);
@@ -113,7 +115,7 @@ export function MachineView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
   const note = state === "failed" || state === "provisioning" || state === "notReady" || state === "paused" || state === "deleting" ? t(`clusterapi:explain.machine.${state}`, { phase: phaseOf(obj) ?? "" }) : undefined;
   const failing = firstFailing(obj);
   return (
-    <Block title={t("details:sections.fields", { kind: MACHINE.kind })}>
+    <Block id="details:sections.fields" title={t("details:sections.fields", { kind: MACHINE.kind })}>
       <Explain text={note} danger={state === "failed" || state === "notReady"} />
       <ClusterPauseNote name={clusterName} pause={pause} />
       <Message text={failureOf(obj)?.message ?? (state !== "running" ? failing?.message : undefined)} />
@@ -125,7 +127,8 @@ export function MachineView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
 /** The Machines a selector picks in the object's namespace (≤ `MAX_LISTED`). */
 function MachineList({ clusterId, namespace, selector }: { clusterId: ClusterId; namespace: string | null; selector: string | undefined }) {
   const { t } = useTranslation();
-  const listed = useListed(clusterId, MACHINE, namespace, selector);
+  const open = useDetailsDisclosure("clusterapi:machines.title")?.open ?? true;
+  const listed = useListed(clusterId, MACHINE, namespace, open ? selector : undefined);
   if (!selector) return null;
   const shown = listed.items.slice(0, MAX_LISTED);
   const rows = shown.map((m) => [
@@ -134,7 +137,7 @@ function MachineList({ clusterId, namespace, selector }: { clusterId: ClusterId;
     nodeNameOf(m) ?? "",
   ]);
   return (
-    <Block title={t("clusterapi:machines.title")}>
+    <Block id="clusterapi:machines.title" title={t("clusterapi:machines.title")}>
       {listed.unavailable && <p className="cm-muted">{t("clusterapi:chain.unavailable")}</p>}
       {shown.length === 0 && !listed.unavailable && <p className="cm-muted">{listed.loading ? t("clusterapi:chain.loading") : t("clusterapi:machines.none")}</p>}
       {shown.length > 0 && table(MACHINES_TABLE, [t("clusterapi:machines.name"), t("clusterapi:machines.state"), t("clusterapi:machines.node")], rows, WRAP)}
@@ -184,7 +187,7 @@ export function MachineGroupView({ clusterId, obj }: { clusterId: ClusterId; obj
   const key = groupNote(state);
   return (
     <>
-      <Block title={t("details:sections.fields", { kind: obj.kind ?? "" })}>
+      <Block id="details:sections.fields" title={t("details:sections.fields", { kind: obj.kind ?? "" })}>
         <Explain text={key ? t(`clusterapi:explain.group.${key}`) : undefined} danger={state === "failed" || state === "notAvailable"} />
         <Message text={whyNot(obj, state)} />
         <Fields rows={rows} labelPrefix={LABELS} />
@@ -198,7 +201,8 @@ export function ControlPlaneView({ clusterId, obj }: { clusterId: ClusterId; obj
   const { t } = useTranslation();
   const linkTo = useRefLink(clusterId);
   const clusterRef = clusterRefOf(obj);
-  const read = useRefObjects(clusterId, clusterRef ? [clusterRef] : [], str(obj.metadata?.resourceVersion) ?? "");
+  const fieldsOpen = useDetailsDisclosure("details:sections.fields")?.open ?? true;
+  const read = useRefObjects(clusterId, fieldsOpen && clusterRef ? [clusterRef] : [], str(obj.metadata?.resourceVersion) ?? "");
   const pause = clusterPause(obj, fetchedOf(read.byKey, clusterRef));
   const own = scalableState(obj);
   const state = pause.paused && own !== "deleting" && own !== "failed" ? "paused" : own;
@@ -218,7 +222,7 @@ export function ControlPlaneView({ clusterId, obj }: { clusterId: ClusterId; obj
   const key = groupNote(state);
   return (
     <>
-      <Block title={t("details:sections.fields", { kind: obj.kind ?? "" })}>
+      <Block id="details:sections.fields" title={t("details:sections.fields", { kind: obj.kind ?? "" })}>
         <Explain text={key ? t(`clusterapi:explain.group.${key}`) : undefined} danger={state === "failed" || state === "notAvailable"} />
         <ClusterPauseNote name={clusterRef?.name} pause={pause} />
         <Message text={whyNot(obj, state)} />
@@ -258,7 +262,7 @@ export function HealthCheckView({ obj }: { obj: KubeObject }) {
   ];
   const note = state === "blocked" || state === "remediating" ? t(`clusterapi:explain.healthCheck.${state}`, { healthy: counts.healthy ?? 0, expected: counts.expected ?? 0 }) : undefined;
   return (
-    <Block title={t("details:sections.fields", { kind: obj.kind ?? "" })}>
+    <Block id="details:sections.fields" title={t("details:sections.fields", { kind: obj.kind ?? "" })}>
       <Explain text={note} danger={state === "blocked"} />
       <Message text={blocked?.message} />
       <Fields rows={rows} labelPrefix={LABELS} />

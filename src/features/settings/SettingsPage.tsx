@@ -39,6 +39,7 @@ import "./settings.css";
 
 const THEMES: Theme[] = ["system", "light", "dark"];
 const SIDEBAR_CHOICES = [["sidebarIndent", "indentChildren"], ["sidebarGuides", "treeGuides"]] as const;
+const DETAILS_MEMORY = ["none", "cluster", "global"] as const;
 const DEFAULT_NODE_SHELL_IMAGE = defaultAppSettings().nodeShellImage;
 
 /** The sidebar page (`registerPage`). */
@@ -139,11 +140,13 @@ function AppearanceSection({ settings, save }: { settings: AppSettings | null; s
   const { t } = useTranslation();
   const languageId = useId();
   const sidebarHintId = useId();
+  const detailsId = useId();
   const theme = settings?.theme ?? "system";
   // "system" (a new install) follows the OS; a stored code is an explicit choice. Empty reads as "system".
   const language = settings?.language || SYSTEM_LANGUAGE;
   const known = language === SYSTEM_LANGUAGE || availableLanguages.includes(language);
   const languages = known ? availableLanguages : [...availableLanguages, language];
+  const detailsMemory = settings?.appearance.detailsSectionMemory ?? "global";
 
   return (
     <Section title={t("settings:appearance.title")}>
@@ -212,6 +215,21 @@ function AppearanceSection({ settings, save }: { settings: AppSettings | null; s
         <p className="settings__hint" id={sidebarHintId}>{t("settings:sidebar.hint")}</p>
       </div>
       <AccessibilitySettings settings={settings} save={save} />
+      <div className="settings__field">
+        <span className="settings__label">{t("settings:details.title")}</span>
+        <div className="settings__row">
+        <label htmlFor={detailsId}>{t("settings:details.remember")}</label>
+        <select id={detailsId} className="settings__select" value={detailsMemory}
+          disabled={!settings} aria-describedby={`${detailsId}-hint`}
+          onChange={(e) => {
+            const value = e.target.value as typeof DETAILS_MEMORY[number];
+            void save((s) => ({ ...s, appearance: { ...s.appearance, detailsSectionMemory: value } }));
+          }}>
+          {DETAILS_MEMORY.map((value) => <option key={value} value={value}>{t(`settings:details.modes.${value}`)}</option>)}
+        </select>
+        </div>
+        <p id={`${detailsId}-hint`} className="settings__hint">{t("settings:details.hint")}</p>
+      </div>
     </Section>
   );
 }

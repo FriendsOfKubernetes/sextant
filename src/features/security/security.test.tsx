@@ -264,7 +264,8 @@ describe("the Security section of a workload", () => {
     emitSnapshot(wb, await watchOf(wb, "VulnerabilityReport", (s) => s.labelSelector === selector), [vuln]);
     emitSnapshot(wb, await watchOf(wb, "ConfigAuditReport", (s) => s.labelSelector === selector), [audit]);
     await waitFor(() => expect(sec.getByText("CVE-2024-45491")).toBeInTheDocument());
-    expect(within(section("security").querySelector<HTMLElement>(".sec-trivy")!).getByText("Container nginx")).toBeInTheDocument();
+    const imageScans = sec.getByRole("heading", { name: "Image scans (Trivy)" }).closest<HTMLElement>(".dt-block")!;
+    expect(within(imageScans).getByText("Container nginx")).toBeInTheDocument();
     expect(sec.getByText("4 vulnerabilities have a fixed version.")).toBeInTheDocument();
     expect(sec.getByText("KSV014")).toBeInTheDocument();
     expect(sec.getByRole("button", { name: "Open VulnerabilityReport replicaset-web-7d9c6b8f5d-nginx" })).toBeInTheDocument();

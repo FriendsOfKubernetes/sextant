@@ -2,6 +2,7 @@
 // CPU/memory metrics: request rate, error rate and latency from each request-metric source Prometheus has (Istio,
 // Linkerd, ingress-nginx, Grafana Beyla, Cilium Hubble), the last hour as small charts, and CPU throttling per
 // container with a hint when the CPU limit is the likely cause. Read-only; polled once a minute while shown.
+import { Block } from "../details/ui";
 import type { TFunction } from "i18next";
 import type { MouseEvent } from "react";
 import { useCallback, useMemo } from "react";
@@ -60,8 +61,7 @@ function Golden({ golden }: { golden: GoldenMetrics }) {
   // Stable, so a chart is not redrawn on every render.
   const rateFormat = useCallback((v: number) => formatRate(t, v), [t]);
   return (
-    <div className="rh-source">
-      <h4 className="rh-source__title">{t("requesthealth:fromSource", { source: sourceName(t, golden.source) })}</h4>
+    <Block id={`source.${golden.source}`} title={t("requesthealth:fromSource", { source: sourceName(t, golden.source) })}>
       <p className="rh-note">{t(`requesthealth:scope.${key}`)}</p>
       {golden.via === "linkerdViz" && <p className="rh-note">{t("requesthealth:viaLinkerdViz")}</p>}
       <dl className="mx-current">
@@ -104,7 +104,7 @@ function Golden({ golden }: { golden: GoldenMetrics }) {
           )}
         </div>
       )}
-    </div>
+    </Block>
   );
 }
 
@@ -187,10 +187,9 @@ function Throttling({ health, rows, ...props }: { health: RequestHealth; rows: T
       </>
     );
   return (
-    <div className="rh-source">
-      <h4 className="rh-source__title">{t("requesthealth:throttling.title")}</h4>
+    <Block id="requesthealth:throttling.title" title={t("requesthealth:throttling.title")}>
       {body}
-    </div>
+    </Block>
   );
 }
 
@@ -215,7 +214,7 @@ function ThrottleItem({ row, ...props }: { row: ThrottleRow } & DetailsSectionPr
   );
 }
 
-export function RequestHealthSection(props: DetailsSectionProps) {
+function RequestHealthSectionBody(props: DetailsSectionProps) {
   const { clusterId, objectRef, obj } = props;
   const { t } = useTranslation();
   const target = targetOf(objectRef);
@@ -247,11 +246,14 @@ export function RequestHealthSection(props: DetailsSectionProps) {
     );
   }
   return (
-    <section className="rh-section" aria-label={t("requesthealth:title")} {...{ [SECTION_ATTRIBUTE]: SECTION_ID }}>
-      <h3 className="rh-section__title" tabIndex={-1}>
-        {t("requesthealth:title")}
-      </h3>
+    <section className="rh-section" aria-label={t("requesthealth:title")}>
       {body}
     </section>
   );
+}
+
+export function RequestHealthSection(props: DetailsSectionProps) {
+  const { t } = useTranslation();
+  if (!targetOf(props.objectRef)) return null;
+  return <div {...{ [SECTION_ATTRIBUTE]: SECTION_ID }}><Block id="requesthealth:title" title={t("requesthealth:title")}><RequestHealthSectionBody {...props} /></Block></div>;
 }

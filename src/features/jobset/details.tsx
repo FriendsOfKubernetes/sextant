@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of a JobSet (section `jobset`): its state, and when it failed the controller's reason and message with the
 // first failed Job and that Job's own failure reason; restarts against `failurePolicy.maxRestarts`; the success,
 // failure and startup policies; the replicated jobs with their counts; its Jobs and their pods (links). Conditions,
@@ -83,7 +84,7 @@ function JobsBlock({ obj, jobs }: { obj: KubeObject; jobs: Children }) {
   const headers = ["job", "replicatedJob", "index", "state", "attempt", "reason"].map((h) => t(`jobset:jobs.${h}`));
   const list = table("jobsetJobs", headers, rows, JOB_WRAP);
   return (
-    <Block title={t("jobset:jobs.title")}>
+    <Block id="jobset:jobs.title" title={t("jobset:jobs.title")}>
       {jobs.loading ? <Muted text={t("jobset:loading")} /> : rows.length > 0 ? list : <Muted text={jobs.failed ? t("jobset:listUnknown") : t("jobset:noJobs")} />}
       {jobs.truncated && <Muted text={t("jobset:truncated", { max: MAX_CHILDREN })} />}
     </Block>
@@ -104,7 +105,7 @@ function PodsBlock({ obj, pods }: { obj: KubeObject; pods: Children }) {
   const headers = [t("jobset:pods.pod"), t("jobset:pods.job"), t("jobset:pods.status")];
   const list = table("jobsetPods", headers, rows, POD_WRAP);
   return (
-    <Block title={t("jobset:pods.title")}>
+    <Block id="jobset:pods.title" title={t("jobset:pods.title")}>
       {pods.loading ? <Muted text={t("jobset:loading")} /> : rows.length > 0 ? list : <Muted text={pods.failed ? t("jobset:listUnknown") : t("jobset:noPods")} />}
       {sorted.length > shown.length && <Muted text={t("jobset:morePods", { shown: shown.length, total: sorted.length })} />}
       {pods.truncated && <Muted text={t("jobset:truncated", { max: MAX_CHILDREN })} />}
@@ -121,9 +122,11 @@ function successText(success: ReturnType<typeof successPolicyOf>, t: (key: strin
 
 function JobSetView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
   const { t } = useTranslation();
-  const jobs = useJobSetJobs(clusterId, obj);
-  const pods = useJobSetPods(clusterId, obj);
   const state = jobSetState(obj);
+  const jobsOpen = useDetailsDisclosure("jobset:jobs.title")?.open ?? true;
+  const podsOpen = useDetailsDisclosure("jobset:pods.title")?.open ?? true;
+  const jobs = useJobSetJobs(clusterId, jobsOpen || state === "failed" ? obj : null);
+  const pods = useJobSetPods(clusterId, podsOpen ? obj : null);
   const restarts = restartsOf(obj);
   const success = successPolicyOf(obj);
   const coordinator = get(obj, "spec", "coordinator");
@@ -167,8 +170,8 @@ function JobSetView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject 
       {nearLimit && <Note text={t("jobset:nearLimit", { counted: restarts.counted, max: restarts.max })} tone="warning" />}
       {state === "suspended" && <Muted text={t("jobset:suspendedNote")} />}
       <Fields rows={rows} labelPrefix={LABELS} />
-      {replicated.length > 0 && <Block title={t("jobset:replicated.title")}>{replicatedTable}</Block>}
-      {rules.length > 0 && <Block title={t("jobset:rules.title")}>{rulesTable}</Block>}
+      {replicated.length > 0 && <Block id="jobset:replicated.title" title={t("jobset:replicated.title")}>{replicatedTable}</Block>}
+      {rules.length > 0 && <Block id="jobset:rules.title" title={t("jobset:rules.title")}>{rulesTable}</Block>}
       <JobsBlock obj={obj} jobs={jobs} />
       <PodsBlock obj={obj} pods={pods} />
     </>

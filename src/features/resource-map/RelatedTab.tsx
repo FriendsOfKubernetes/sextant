@@ -101,7 +101,7 @@ function Related({ clusterId, objectRef, obj }: DetailsSectionProps) {
 
   return (
     <div className="rmap-related">
-      <Block title={t("resourcemap:impact.title")}>
+      <Block id="resourcemap:impact.title" title={t("resourcemap:impact.title")}>
         {impact.length > 0 ? (
           <ul className="rmap-impact" aria-label={t("resourcemap:impact.title")}>
             {impact.map((line) => (
@@ -115,7 +115,7 @@ function Related({ clusterId, objectRef, obj }: DetailsSectionProps) {
           <p className="dt-muted">{loading ? t("resourcemap:related.loading") : t("resourcemap:impact.none")}</p>
         )}
       </Block>
-      <Block title={t("resourcemap:related.title")}>
+      <Block id="resourcemap:related.title" title={t("resourcemap:related.title")}>
         <p className="rmap-related__scope dt-muted">{t("resourcemap:related.scope")}</p>
         {failed.length > 0 && (
           <p className="rmap-related__failed" role="status">

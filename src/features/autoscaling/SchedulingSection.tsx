@@ -9,6 +9,7 @@ import { api, type ClusterId, type KubeObject } from "../../api";
 import { Age } from "../../components";
 import { formatList, formatParts } from "../../i18n";
 import type { DetailsSectionProps } from "../../layout/details/registry";
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 import { status, StatusText } from "../../resources";
 import { Block, Fields, KINDS, link, table, type ColumnWrap, type FieldRow } from "../details";
 import {
@@ -59,6 +60,11 @@ export function SchedulingSection({ clusterId, obj }: DetailsSectionProps) {
 
 function Scheduling({ clusterId, pod }: { clusterId: ClusterId; pod: KubeObject }) {
   const { t } = useTranslation();
+  return <Block id="autoscaling:sched.title" title={t("autoscaling:sched.title")}><SchedulingContent clusterId={clusterId} pod={pod} /></Block>;
+}
+
+function SchedulingContent({ clusterId, pod }: { clusterId: ClusterId; pod: KubeObject }) {
+  const { t } = useTranslation();
   const events = useObjectEvents(clusterId, pod, "Pod");
   const condition = schedulingCondition(pod);
   const message = useMemo(() => {
@@ -75,19 +81,20 @@ function Scheduling({ clusterId, pod }: { clusterId: ClusterId; pod: KubeObject 
   ];
 
   return (
-    <Block title={t("autoscaling:sched.title")}>
+    <>
       <Fields labelPrefix={FIELDS} rows={fields} />
       {!message && <Note>{t("autoscaling:sched.noMessage")}</Note>}
       {parsed && parsed.reasons.length > 0 && (
         <>
-          <h4 className="as-subtitle">{t("autoscaling:sched.schedulerSays")}</h4>
-          <ReasonsTable reasons={parsed.reasons} countHeader={t("autoscaling:sched.nodes")} />
+          <Block id="autoscaling:sched.schedulerSays" title={t("autoscaling:sched.schedulerSays")}>
+            <ReasonsTable reasons={parsed.reasons} countHeader={t("autoscaling:sched.nodes")} />
+          </Block>
         </>
       )}
       <LocalCheck clusterId={clusterId} pod={pod} schedulerTotal={parsed?.total} />
       <Karpenter clusterId={clusterId} events={events} />
       <ClusterAutoscaler clusterId={clusterId} events={events} />
-    </Block>
+    </>
   );
 }
 
@@ -141,6 +148,11 @@ function useVolumeAffinities(clusterId: ClusterId, pod: KubeObject): { volumes: 
 }
 
 function LocalCheck({ clusterId, pod, schedulerTotal }: { clusterId: ClusterId; pod: KubeObject; schedulerTotal: number | undefined }) {
+  const { t } = useTranslation();
+  return <Block id="autoscaling:check.title" title={t("autoscaling:check.title")}><LocalCheckContent clusterId={clusterId} pod={pod} schedulerTotal={schedulerTotal} /></Block>;
+}
+
+function LocalCheckContent({ clusterId, pod, schedulerTotal }: { clusterId: ClusterId; pod: KubeObject; schedulerTotal: number | undefined }) {
   const { t } = useTranslation();
   const nodes = useNodeRows(clusterId, true);
   const bound = useBoundPods(clusterId, true);
@@ -215,7 +227,6 @@ function LocalCheck({ clusterId, pod, schedulerTotal }: { clusterId: ClusterId; 
 
   return (
     <>
-      <h4 className="as-subtitle">{t("autoscaling:check.title")}</h4>
       <Fields labelPrefix={FIELDS} rows={requestRows} />
       <Phrases phrases={notes} />
       {body}
@@ -225,9 +236,10 @@ function LocalCheck({ clusterId, pod, schedulerTotal }: { clusterId: ClusterId; 
 
 function Karpenter({ clusterId, events }: { clusterId: ClusterId; events: readonly EventRow[] }) {
   const { t } = useTranslation();
-  const pools = useSharedList(clusterId, NODE_POOL, null);
+  const open = useDetailsDisclosure("autoscaling:karpenter.title")?.open ?? true;
+  const pools = useSharedList(clusterId, NODE_POOL, null, open);
   const nominations = useMemo(() => nominationsOf(events), [events]);
-  const claims = useSharedList(clusterId, NODE_CLAIM, null, pools.served === true);
+  const claims = useSharedList(clusterId, NODE_CLAIM, null, pools.served === true && open);
   const own = useMemo(() => events.filter(isKarpenterEvent), [events]);
   if (pools.served !== true) return null;
   const nominated = nominations.claims.map((name) => {
@@ -241,26 +253,27 @@ function Karpenter({ clusterId, events }: { clusterId: ClusterId; events: readon
 
   return (
     <>
-      <h4 className="as-subtitle">{t("autoscaling:karpenter.title")}</h4>
-      {nominated.length === 0 && own.length === 0 && <Note>{t("autoscaling:karpenter.noDecision")}</Note>}
-      {nominated.length > 0 &&
-        table(
-          TABLE_IDS.karpenterNominated,
-          [t("autoscaling:karpenter.nodeClaim"), t("autoscaling:karpenter.state")],
-          nominated.map((n) => [
-            link(NODE_CLAIM_TYPE, n.name),
-            n.problem ? (
-              <span className={`as-tone--${n.problem.tone ?? "neutral"}`}>{t(`autoscaling:${n.problem.key}`, n.problem.params ?? {})}</span>
-            ) : n.claim ? (
-              <StatusText value={t("autoscaling:karpenter.launched")} tone="success" />
-            ) : (
-              <span className="as-muted">{t("autoscaling:karpenter.claimGone")}</span>
-            ),
-          ]),
-          TWO_WRAP,
-        )}
-      <Phrases phrases={atLimit} />
-      <EventsTable events={own} />
+      <Block id="autoscaling:karpenter.title" title={t("autoscaling:karpenter.title")}>
+        {nominated.length === 0 && own.length === 0 && <Note>{t("autoscaling:karpenter.noDecision")}</Note>}
+        {nominated.length > 0 &&
+          table(
+            TABLE_IDS.karpenterNominated,
+            [t("autoscaling:karpenter.nodeClaim"), t("autoscaling:karpenter.state")],
+            nominated.map((n) => [
+              link(NODE_CLAIM_TYPE, n.name),
+              n.problem ? (
+                <span className={`as-tone--${n.problem.tone ?? "neutral"}`}>{t(`autoscaling:${n.problem.key}`, n.problem.params ?? {})}</span>
+              ) : n.claim ? (
+                <StatusText value={t("autoscaling:karpenter.launched")} tone="success" />
+              ) : (
+                <span className="as-muted">{t("autoscaling:karpenter.claimGone")}</span>
+              ),
+            ]),
+            TWO_WRAP,
+          )}
+        <Phrases phrases={atLimit} />
+        <EventsTable events={own} />
+      </Block>
     </>
   );
 }
@@ -283,9 +296,10 @@ export function CaStatusFields({ ca }: { ca: CaStatus }) {
 
 function ClusterAutoscaler({ clusterId, events }: { clusterId: ClusterId; events: readonly EventRow[] }) {
   const { t } = useTranslation();
+  const open = useDetailsDisclosure("autoscaling:ca.title")?.open ?? true;
   const own = useMemo(() => events.filter(isCaEvent), [events]);
   // The status ConfigMap is read only once Cluster Autoscaler has said something about this pod.
-  const configMap = useObject(clusterId, own.length > 0 ? CONFIG_MAP : null, STATUS_NAMESPACE, STATUS_NAME);
+  const configMap = useObject(clusterId, open && own.length > 0 ? CONFIG_MAP : null, STATUS_NAMESPACE, STATUS_NAME);
   const ca = useMemo(() => parseCaStatus(configMap), [configMap]);
   if (own.length === 0) return null;
   const latest = [...own].sort((a, b) => (b.time ?? "").localeCompare(a.time ?? ""))[0]!;
@@ -301,16 +315,17 @@ function ClusterAutoscaler({ clusterId, events }: { clusterId: ClusterId; events
       : null;
   return (
     <>
-      <h4 className="as-subtitle">{t("autoscaling:ca.title")}</h4>
-      {triggered && <PhraseLine phrase={triggered} />}
-      {reasons.length > 0 && (
-        <>
-          <PhraseLine phrase={NOT_TRIGGERED} />
-          <ReasonsTable reasons={reasons} countHeader={t("autoscaling:ca.groups")} />
-        </>
-      )}
-      {ca && <CaStatusFields ca={ca} />}
-      <EventsTable events={own} />
+      <Block id="autoscaling:ca.title" title={t("autoscaling:ca.title")}>
+        {triggered && <PhraseLine phrase={triggered} />}
+        {reasons.length > 0 && (
+          <>
+            <PhraseLine phrase={NOT_TRIGGERED} />
+            <ReasonsTable reasons={reasons} countHeader={t("autoscaling:ca.groups")} />
+          </>
+        )}
+        {ca && <CaStatusFields ca={ca} />}
+        <EventsTable events={own} />
+      </Block>
     </>
   );
 }

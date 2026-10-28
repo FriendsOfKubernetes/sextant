@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of a VerticalPodAutoscaler (section `vpa`): its state from the conditions with the recommender's message and
 // what it means, the update mode explained, a link to the target, an HPA that fights it, the recommendation per
 // container against the target template's requests and limits with what a pod created now would get (admission.ts),
@@ -51,7 +52,7 @@ function Recommendation({ clusterId, vpa, ref }: { clusterId: ClusterId; vpa: Ku
   return (
     <>
       <ConflictLines vpa={vpa} hpas={hpas.items} target={target.obj} />
-      <Block title={t("vpa:recommendation.title")}>{body}</Block>
+      <Block id="vpa:recommendation.title" title={t("vpa:recommendation.title")}>{body}</Block>
     </>
   );
 }
@@ -63,13 +64,14 @@ const COMPONENT_WRAP: ColumnWrap[] = ["nowrap", "nowrap", undefined];
 /** The recommender, updater and admission controller found in the cluster, and what a missing one means. */
 function Components({ clusterId, vpa }: { clusterId: ClusterId; vpa: KubeObject }) {
   const { t } = useTranslation();
-  const { found, error } = useComponents(clusterId);
+  const open = useDetailsDisclosure("vpa:components.title")?.open ?? true;
+  const { found, error } = useComponents(clusterId, open);
   const mode = updateModeOf(vpa);
   // A recommendation in the status shows a recommender works, whatever the conditions say now.
   const provided = recommendationsOf(vpa).length > 0 || statusOf(vpa).state === "ready";
   if (!found)
     return (
-      <Block title={t("vpa:components.title")}>
+      <Block id="vpa:components.title" title={t("vpa:components.title")}>
         <p className="vpa-muted">{t("vpa:loading")}</p>
       </Block>
     );
@@ -96,7 +98,7 @@ function Components({ clusterId, vpa }: { clusterId: ClusterId; vpa: KubeObject 
   const missing = COMPONENTS.some((c) => found[c].length === 0);
   const view = table(COMPONENTS_TABLE, [t("vpa:components.component"), t("vpa:components.state"), t("vpa:components.deployment")], rows, COMPONENT_WRAP);
   return (
-    <Block title={t("vpa:components.title")}>
+    <Block id="vpa:components.title" title={t("vpa:components.title")}>
       {view}
       {notes.map((n) => (
         <p key={n} className="vpa-note">

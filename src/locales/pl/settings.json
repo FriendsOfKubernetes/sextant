@@ -121,5 +121,15 @@
     "textSizeHint": "Tekst, wiersze tabel i kontrolki rosną razem z nim; terminal, logi i edytor YAML również.",
     "terminalScreenReader": "Obsługa czytników ekranu w terminalu",
     "terminalScreenReaderHint": "Pozwala czytnikowi ekranu odczytywać wyjście terminala. Spowalnia to terminal, więc zostaw wyłączone, jeśli nie używasz czytnika ekranu."
+  },
+  "details": {
+    "title": "Szczegóły zasobu",
+    "remember": "Zapamiętuj stan sekcji",
+    "modes": {
+      "none": "Nie zapamiętuj",
+      "cluster": "Osobno dla każdego klastra",
+      "global": "Wspólnie dla wszystkich klastrów"
+    },
+    "hint": "Stan sekcji jest zapamiętywany osobno dla każdego rodzaju zasobu. YAML jest początkowo zwinięty."
   }
 }

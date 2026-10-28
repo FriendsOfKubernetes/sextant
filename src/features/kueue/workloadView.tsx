@@ -89,17 +89,17 @@ export function WorkloadView({ obj }: { obj: KubeObject }) {
       <WorkloadWhy obj={obj} info={info} />
       <Fields rows={rows} labelPrefix={LABELS} />
       {podSets.length > 0 && (
-        <Block title={t("kueue:podSets.title")}>
+        <Block id="kueue:podSets.title" title={t("kueue:podSets.title")}>
           {podSetTable}
         </Block>
       )}
       {checks.length > 0 && (
-        <Block title={t("kueue:checks.title")}>
+        <Block id="kueue:checks.title" title={t("kueue:checks.title")}>
           {checkTable}
         </Block>
       )}
       {evictions.length > 0 && (
-        <Block title={t("kueue:evictions.title")}>
+        <Block id="kueue:evictions.title" title={t("kueue:evictions.title")}>
           {evictionTable}
         </Block>
       )}

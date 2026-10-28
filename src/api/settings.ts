@@ -33,6 +33,8 @@ export function defaultAppSettings(): AppSettings {
       terminalScreenReader: false,
       sidebarIndent: true,
       sidebarGuides: false,
+      detailsSectionMemory: "global",
+      detailsSections: {},
     },
     checkForUpdates: true,
     closeToTray: false,

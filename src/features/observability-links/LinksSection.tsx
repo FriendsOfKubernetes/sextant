@@ -1,5 +1,6 @@
 // The "Dashboards and traces" section of a workload's, pod's, node's or namespace's details (#266): shown only when
 // the cluster's settings give the object a link.
+import { Block } from "../details/ui";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import type { KindRef } from "../../api";
@@ -21,9 +22,9 @@ export function LinksSection({ clusterId, objectRef, obj }: DetailsSectionProps)
   const links = useObjectLinks(clusterId, target ?? "pod", valuesAt);
   if (!obj || !target || (!links.dashboard && !links.traces)) return null;
   return (
-    <section className="observability-section" aria-label={t("observability:details.title")}>
-      <h3 className="observability-section__title">{t("observability:details.title")}</h3>
+    <Block id="observability:details.title" title={t("observability:details.title")} label={t("observability:details.title")}>
+
       <LinkButtons clusterId={clusterId} target={target} valuesAt={valuesAt} />
-    </section>
+    </Block>
   );
 }

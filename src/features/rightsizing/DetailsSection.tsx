@@ -2,6 +2,7 @@
 // rows as the page for this one workload. A workload's pods are watched in its namespace only (by its
 // selector when it has one) and only while the panel shows it, through a watch shared with the cost section; a pod
 // uses the object the panel already has.
+import { Block } from "../details/ui";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { HistoryScope, HistoryWindow, KindRef } from "../../api";
@@ -20,7 +21,7 @@ export function rightsizingApplies(kind: KindRef): boolean {
   return kind.group === "apps" && WORKLOADS.has(kind.kind);
 }
 
-export function RightsizingDetailsSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
+function RightsizingDetailsSectionBody({ clusterId, objectRef, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
   const [window, setWindow] = useState<HistoryWindow>("week");
   const kind = objectRef.kind.kind;
@@ -42,7 +43,6 @@ export function RightsizingDetailsSection({ clusterId, objectRef, obj }: Details
   if (!namespace) return null;
   return (
     <section className="rs-section" aria-label={t("rightsizing:sectionTitle")}>
-      <h3 className="rs-section__title">{t("rightsizing:sectionTitle")}</h3>
       <div className="rs-toolbar">
         {source.mode === "history" && (
           <label className="rs-choice">
@@ -65,4 +65,10 @@ export function RightsizingDetailsSection({ clusterId, objectRef, obj }: Details
       )}
     </section>
   );
+}
+
+export function RightsizingDetailsSection(props: DetailsSectionProps) {
+  const { t } = useTranslation();
+  if (!props.objectRef.namespace) return null;
+  return <Block id="rightsizing:sectionTitle" title={t("rightsizing:sectionTitle")}><RightsizingDetailsSectionBody {...props} /></Block>;
 }

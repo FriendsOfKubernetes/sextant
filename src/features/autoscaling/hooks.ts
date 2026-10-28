@@ -142,6 +142,11 @@ export function useObject(clusterId: ClusterId, kind: KindRef | null | undefined
 
 /** Events about one object (by uid when namespaced, by kind and name otherwise), as rows. */
 export function useObjectEvents(clusterId: ClusterId, obj: KubeObject | null | undefined, kind: string, enabled = true): EventRow[] {
+  return useObjectEventsSource(clusterId, obj, kind, enabled).events;
+}
+
+/** The conditional details disclosures also need to know whether an empty result is complete or unknown. */
+export function useObjectEventsSource(clusterId: ClusterId, obj: KubeObject | null | undefined, kind: string, enabled = true) {
   const uid = obj?.metadata?.uid;
   const name = obj?.metadata?.name;
   const namespace = obj?.metadata?.namespace ?? null;
@@ -151,7 +156,8 @@ export function useObjectEvents(clusterId: ClusterId, obj: KubeObject | null | u
     return { kind: EVENT, namespaces: namespace ? [namespace] : null, labelSelector: null, fieldSelector };
   }, [enabled, uid, name, namespace, kind]);
   const watch = useWatch(clusterId, spec);
-  return useMemo(() => [...watch.items.values()].map(eventRow), [watch.items]);
+  const events = useMemo(() => [...watch.items.values()].map(eventRow), [watch.items]);
+  return { events, state: watch };
 }
 
 /** Events about objects of one kind (cluster-scoped kinds: every NodeClaim's), as rows. */

@@ -1,4 +1,5 @@
 // Details section with the events of the opened object (every kind but Event itself), newest first, live.
+import { Block } from "../details/ui";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KubeObject, type WatchSpec } from "../../api";
@@ -8,9 +9,10 @@ import { byNewest, EVENT_KIND, eventCount, eventSelectorFor, eventSource, eventT
 import "./events.css";
 
 export function ObjectEventsSection({ clusterId, obj, objectRef }: DetailsSectionProps) {
+  const { t } = useTranslation();
   const selector = obj ? eventSelectorFor(obj, objectRef.kind.kind) : null;
   if (!selector) return null;
-  return <ObjectEvents clusterId={clusterId} selector={selector} namespace={objectRef.namespace ?? null} />;
+  return <Block id="events:title" title={t("events:title")}><ObjectEvents clusterId={clusterId} selector={selector} namespace={objectRef.namespace ?? null} /></Block>;
 }
 
 function ObjectEvents({ clusterId, selector, namespace }: { clusterId: ClusterId; selector: string; namespace: string | null }) {
@@ -37,7 +39,7 @@ function ObjectEvents({ clusterId, selector, namespace }: { clusterId: ClusterId
 
   return (
     <div className="events-section">
-      <h3 className="events-section__title">{t("events:title")}</h3>
+
       {body}
     </div>
   );

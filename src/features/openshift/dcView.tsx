@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // A DeploymentConfig's details: its rollout state and why (the Progressing condition's message), the replicas, the
 // latest version and what caused it, the strategy, its triggers (an ImageChange trigger's ImageStreamTag linked to its
 // ImageStream), and its rollouts — the ReplicationControllers labelled with its name, newest first, each with the
@@ -28,7 +29,8 @@ export function DcView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObje
   const reason = dcReason(obj);
   const replicas = dcReplicas(obj);
   const strategy = dcStrategy(obj);
-  const rcs = useDcControllers(clusterId, obj);
+  const open = useDetailsDisclosure("openshift:rollouts.title")?.open ?? true;
+  const rcs = useDcControllers(clusterId, open ? obj : null);
   const yes = (value: boolean | undefined) => (value === undefined ? "" : value ? t("openshift:yes") : t("openshift:no"));
   const rows: FieldRow[] = [
     ["status", <DcStateText key="s" obj={obj} />],
@@ -69,7 +71,7 @@ export function DcView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObje
       {(state === "progressing" || state === "unavailable") && reason && <Note text={reason} tone="warning" />}
       {state === "paused" && <Muted text={t("openshift:pausedNote")} />}
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block title={t("openshift:triggers.title")}>
+      <Block id="openshift:triggers.title" title={t("openshift:triggers.title")}>
         {table(
           TABLE_DC_TRIGGERS,
           [t("openshift:triggers.type"), t("openshift:triggers.image"), t("openshift:triggers.automatic"), t("openshift:triggers.containers")],
@@ -78,7 +80,7 @@ export function DcView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObje
         )}
         {triggers.length === 0 && <Muted text={t("openshift:triggers.none")} />}
       </Block>
-      <Block title={t("openshift:rollouts.title")}>
+      <Block id="openshift:rollouts.title" title={t("openshift:rollouts.title")}>
         {rcs.loading && <Muted text={t("openshift:loading")} />}
         {rcs.error && <Muted text={t("openshift:listError")} />}
         {table(

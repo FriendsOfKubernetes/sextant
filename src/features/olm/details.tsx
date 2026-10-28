@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // Details of OLM objects (one section, `olm`): a Subscription's package, channel, catalog, approval, installed and
 // current CSV with its InstallPlan (both read while open) and the catalogs' health; a CSV's phase, requirements, owned
 // and required CRDs, the Deployments of its install strategy (read while open) and install modes — a copy in a target
@@ -86,7 +87,7 @@ function SubscriptionView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeO
         <Muted text={t("olm:upgradePending", { installed: info.installedCSV, current: info.currentCSV })} />
       )}
       <Fields rows={rows} labelPrefix={LABELS} />
-      {health.length > 0 && <Block title={t("olm:catalogHealth.title")}>{healthTable}</Block>}
+      {health.length > 0 && <Block id="olm:catalogHealth.title" title={t("olm:catalogHealth.title")}>{healthTable}</Block>}
     </>
   );
 }
@@ -102,14 +103,15 @@ function CrdTable({ id, title, crds }: { id: string; title: string; crds: CrdDes
   if (crds.length === 0) return null;
   const rows = crds.map((c) => [link(TYPES.crd, c.name), c.kind ?? "", c.version ?? "", c.displayName ?? ""]);
   const headers = ["name", "kind", "version", "displayName"].map((h) => t(`olm:crds.${h}`));
-  return <Block title={title}>{table(id, headers, rows, CRD_WRAP)}</Block>;
+  return <Block id={id} title={title}>{table(id, headers, rows, CRD_WRAP)}</Block>;
 }
 
 function DeploymentsBlock({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
   const { t } = useTranslation();
   const ns = obj.metadata?.namespace ?? null;
   const names = strategyDeployments(obj);
-  const deployments = useCsvDeployments(clusterId, names.length > 0 ? obj : null);
+  const open = useDetailsDisclosure("olm:deployments.title")?.open ?? true;
+  const deployments = useCsvDeployments(clusterId, open && names.length > 0 ? obj : null);
   if (names.length === 0) return null;
   const byName = new Map(deployments.items.map((d) => [d.metadata?.name ?? "", d]));
   const unknown = deployments.failed || deployments.truncated || !deploymentSelector(obj);
@@ -132,7 +134,7 @@ function DeploymentsBlock({ clusterId, obj }: { clusterId: ClusterId; obj: KubeO
   const headers = ["name", "ready", "state"].map((h) => t(`olm:deployments.${h}`));
   const list = table("olmCsvDeployments", headers, rows, DEP_WRAP);
   return (
-    <Block title={t("olm:deployments.title")}>
+    <Block id="olm:deployments.title" title={t("olm:deployments.title")}>
       {list}
       {deployments.truncated && <Muted text={t("olm:truncated", { max: MAX_DEPLOYMENTS })} />}
     </Block>
@@ -201,7 +203,7 @@ function CsvView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) 
       {info.phase === "Failed" && <Note text={reasonText(info.reason, info.message) || t("olm:noReason")} tone="danger" />}
       {unmet.length > 0 && <Note text={t("olm:requirementsUnmet", { count: unmet.length })} tone="warning" />}
       <Fields rows={rows} labelPrefix={LABELS} />
-      {requirements.length > 0 && <Block title={t("olm:requirements.title")}>{reqTable}</Block>}
+      {requirements.length > 0 && <Block id="olm:requirements.title" title={t("olm:requirements.title")}>{reqTable}</Block>}
       <CrdTable id="olmOwnedCrds" title={t("olm:crds.owned")} crds={owned} />
       <CrdTable id="olmRequiredCrds" title={t("olm:crds.required")} crds={required} />
       <DeploymentsBlock clusterId={clusterId} obj={obj} />
@@ -248,9 +250,9 @@ function InstallPlanView({ obj }: { obj: KubeObject }) {
       {info.phase === "RequiresApproval" && <Note text={t("olm:planNeedsApproval")} tone="warning" />}
       {info.phase === "Failed" && <Note text={failure || t("olm:noReason")} tone="danger" />}
       <Fields rows={rows} labelPrefix={LABELS} />
-      {lookups.length > 0 && <Block title={t("olm:lookups.title")}>{lookupTable}</Block>}
+      {lookups.length > 0 && <Block id="olm:lookups.title" title={t("olm:lookups.title")}>{lookupTable}</Block>}
       {stepRows.length > 0 && (
-        <Block title={t("olm:steps.title")}>
+        <Block id="olm:steps.title" title={t("olm:steps.title")}>
           {stepTable}
           {total > steps.length && <Muted text={t("olm:moreSteps", { shown: steps.length, total, max: MAX_STEPS })} />}
         </Block>

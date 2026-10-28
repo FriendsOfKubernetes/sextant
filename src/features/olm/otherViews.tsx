@@ -93,7 +93,7 @@ export function OperatorView({ obj }: { obj: KubeObject }) {
   const headers = ["kind", "name", "namespace", "conditions"].map((h) => t(`olm:components.${h}`));
   const list = table("olmOperatorComponents", headers, rows, COMPONENT_WRAP);
   return (
-    <Block title={t("olm:components.title")}>
+    <Block id="olm:components.title" title={t("olm:components.title")}>
       {rows.length > 0 ? list : <Muted text={t("olm:noComponents")} />}
       {total > refs.length && <Muted text={t("olm:moreComponents", { shown: refs.length, total, max: MAX_COMPONENTS })} />}
     </Block>

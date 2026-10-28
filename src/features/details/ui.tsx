@@ -8,23 +8,12 @@ import { ObjectLink, StatusText, status } from "../../resources";
 import type { Tone } from "../../resources/status";
 import "./details.css";
 import { ResizableTable } from "../../components/Table";
+import { DetailsBlock, type DetailsBlockProps } from "../../layout/details/disclosure";
 
 const { arr, get, record, str } = status;
 
 /** A titled block inside a section. `title` is already translated. */
-export function Block({ title, children, actions }: { title?: string; children: ReactNode; actions?: ReactNode }) {
-  return (
-    <div className="dt-block">
-      {(title || actions) && (
-        <div className="dt-block__head">
-          {title && <h3 className="dt-block__title">{title}</h3>}
-          {actions}
-        </div>
-      )}
-      {children}
-    </div>
-  );
-}
+export function Block(props: DetailsBlockProps) { return <DetailsBlock {...props} />; }
 
 /** `[labelKey under labelPrefix (details:fields by default), value]`; rows with an empty value are left out. */
 export type FieldRow = readonly [labelKey: string, value: ReactNode];

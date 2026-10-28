@@ -84,4 +84,4 @@ agentAccessReviews?: boolean | null,
  * Filters per resource view (`kind:<group>/<Kind>`), owned by the frontend. Invalid entries are ignored
  * independently; an empty map is omitted for compatibility with older settings.
  */
-tableFilters?: { [key in string]: TableFilters }, };
+tableFilters?: { [key in string]: TableFilters }, detailsSections?: { [key in string]: { [key in string]: boolean } }, };

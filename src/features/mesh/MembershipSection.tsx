@@ -1,9 +1,11 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
+import { useDisclosureProbe } from "../details/disclosureProbe";
 // The "Service mesh" details section of Pods and workloads (#155): whether it is in the Istio or Linkerd mesh (and
 // how: sidecar, native sidecar, ambient; revision; injection), its Istio mTLS mode by PeerAuthentication precedence,
 // and "Who may call this workload?" from AuthorizationPolicies. Shown only when the cluster serves Istio or Linkerd
 // kinds, or the pod carries a proxy. The namespace is read with one field-selected watch; the policies come from the
 // shared Istio configuration (store.ts).
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useWatch, type ClusterId, type KindRef, type KubeObject, type WatchSpec } from "../../api";
 import { Block, Fields, type FieldRow } from "../details";
@@ -13,7 +15,7 @@ import type { Tone } from "../../resources/status";
 import { SimpleTable } from "../gateway-api/details";
 import { whoMayCall, type AuthzDecision, type Caller } from "./authz";
 import { AUTHORIZATION_POLICY, LINKERD_SERVER, PEER_AUTHENTICATION, SERVICE_PROFILE, VIRTUAL_SERVICE } from "./kinds";
-import { istioMembership, linkerdMembership, namespaceShape, podShape, type IstioMembership, type LinkerdMembership } from "./membership";
+import { istioMembership, linkerdMembership, namespaceShape, podShape, type IstioMembership, type LinkerdMembership, type NamespaceShape, type PodShape } from "./membership";
 import { mtlsModeFor } from "./mtls";
 import { useMeshConfig } from "./store";
 import { meshLink, type T } from "./ui";
@@ -194,48 +196,80 @@ function WhoMayCall({ clusterId, namespace, labels, t }: { clusterId: ClusterId;
   );
 }
 
+/** The same applicability determines rendered headers and which of their open choices can own the namespace. */
+function membershipView(pod: PodShape, ns: NamespaceShape | undefined, template: boolean, served: { istio: boolean; linkerd: boolean; authz: boolean }) {
+  const istio = istioMembership(pod, ns, template);
+  const linkerd = linkerdMembership(pod, ns, template);
+  const showIstio = served.istio || istio.mode !== "none";
+  const inIstio = istio.mode !== "none" || istio.injection;
+  return {
+    istio,
+    linkerd,
+    showIstio,
+    showLinkerd: served.linkerd || linkerd.mode !== "none",
+    showMtls: showIstio && served.istio && inIstio,
+    showAuthz: showIstio && served.authz && inIstio,
+  };
+}
+
 export function MeshMembershipSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
   const { kinds } = useClusterKinds(clusterId);
   const served = (k: KindRef) => !!kinds && !!findKind(kinds, k);
   const istioServed = served(PEER_AUTHENTICATION) || served(VIRTUAL_SERVICE);
   const linkerdServed = served(LINKERD_SERVER) || served(SERVICE_PROFILE);
+  const supported = { istio: istioServed, linkerd: linkerdServed, authz: served(AUTHORIZATION_POLICY) };
   const template = objectRef.kind.kind !== "Pod";
   const pod = useMemo(() => (obj ? podShape(obj, template) : undefined), [obj, template]);
   const hasProxy = !!pod && [...pod.containers, ...pod.initContainers].some((c) => c.name === "istio-proxy" || c.name === "linkerd-proxy");
   const shown = !!pod && (istioServed || linkerdServed || hasProxy);
-  const nsWatch = useWatch(clusterId, shown ? oneNamespace(obj?.metadata?.namespace) : null);
+  const istioOpen = useDetailsDisclosure("mesh:blocks.istioMembership")?.open ?? true;
+  const linkerdOpen = useDetailsDisclosure("mesh:blocks.linkerdMembership")?.open ?? true;
+  const mtlsOpen = useDetailsDisclosure("mesh:blocks.mtls")?.open ?? true;
+  const authzOpen = useDetailsDisclosure("mesh:blocks.whoMayCall")?.open ?? true;
+  const [lastNamespace, setLastNamespace] = useState(() => namespaceShape(undefined));
+  const cached = pod ? membershipView(pod, lastNamespace, template, supported) : undefined;
+  const active = [
+    [cached?.showIstio, istioOpen],
+    [cached?.showLinkerd, linkerdOpen],
+    [cached?.showMtls, mtlsOpen],
+    [cached?.showAuthz, authzOpen],
+  ].some(([visible, open]) => visible && open);
+  const { enabled, settle } = useDisclosureProbe("mesh:blocks.istioMembership", active);
+  const nsWatch = useWatch(clusterId, shown && enabled ? oneNamespace(obj?.metadata?.namespace) : null);
   const nsObj: KubeObject | undefined = [...nsWatch.items.values()][0];
+  const currentNamespace = useMemo(() => namespaceShape(nsObj), [nsObj]);
+  useEffect(() => {
+    if (!shown || !enabled || nsWatch.status === "loading") return;
+    settle(nsWatch.status === "ready" ? "present" : "unknown");
+    if (nsWatch.status === "ready") setLastNamespace(currentNamespace);
+  }, [shown, enabled, nsWatch.status, currentNamespace, settle]);
   if (!shown || !pod) return null;
-  const ns = namespaceShape(nsObj);
-  const istio = istioMembership(pod, ns, template);
-  const linkerd = linkerdMembership(pod, ns, template);
+  const ns = enabled ? currentNamespace : lastNamespace;
+  const view = membershipView(pod, ns, template, supported);
   const namespace = obj?.metadata?.namespace ?? "";
-  const showIstio = istioServed || istio.mode !== "none";
-  const showLinkerd = linkerdServed || linkerd.mode !== "none";
-  const inIstio = istio.mode !== "none" || istio.injection;
   return (
     <>
-      {showIstio && (
-        <Block title={t("mesh:blocks.istioMembership")}>
-          <IstioBlock m={istio} template={template} t={t} />
+      {view.showIstio && (
+        <Block id="mesh:blocks.istioMembership" title={t("mesh:blocks.istioMembership")}>
+          <IstioBlock m={view.istio} template={template} t={t} />
         </Block>
       )}
-      {showIstio && istioServed && inIstio && (
-        <Block title={t("mesh:blocks.mtls")}>
+      {view.showMtls && (
+        <Block id="mesh:blocks.mtls" title={t("mesh:blocks.mtls")}>
           <MtlsBlock clusterId={clusterId} namespace={namespace} labels={pod.labels} t={t} />
         </Block>
       )}
-      {showIstio && served(AUTHORIZATION_POLICY) && inIstio && (
-        <Block title={t("mesh:blocks.whoMayCall")}>
+      {view.showAuthz && (
+        <Block id="mesh:blocks.whoMayCall" title={t("mesh:blocks.whoMayCall")}>
           <WhoMayCall clusterId={clusterId} namespace={namespace} labels={pod.labels} t={t} />
         </Block>
       )}
-      {showLinkerd && (
-        <Block title={t("mesh:blocks.linkerdMembership")}>
+      {view.showLinkerd && (
+        <Block id="mesh:blocks.linkerdMembership" title={t("mesh:blocks.linkerdMembership")}>
           <LinkerdBlock
             clusterId={clusterId}
-            m={linkerd}
+            m={view.linkerd}
             template={template}
             requests={requestHealthApplies(objectRef.kind)}
             t={t}

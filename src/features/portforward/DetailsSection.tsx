@@ -1,5 +1,6 @@
 // Details section of pods and services: one "Forward" button per port, and the forwards already running for
 // this object with a way to open them.
+import { Block } from "../details/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
@@ -12,9 +13,10 @@ import { openInBrowser } from "./openInBrowser";
 import "./portforward.css";
 
 export function PortForwardSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
+  const { t } = useTranslation();
   const ports = obj ? portsOf(obj as KubeObject, objectRef.kind) : [];
   if (ports.length === 0) return null;
-  return <PortList clusterId={clusterId} objectRef={objectRef} ports={ports} />;
+  return <Block id="portforward:section.title" title={t("portforward:section.title")}><PortList clusterId={clusterId} objectRef={objectRef} ports={ports} /></Block>;
 }
 
 function PortList({ clusterId, objectRef, ports }: Pick<DetailsSectionProps, "clusterId" | "objectRef"> & { ports: number[] }) {
@@ -26,7 +28,7 @@ function PortList({ clusterId, objectRef, ports }: Pick<DetailsSectionProps, "cl
 
   return (
     <div className="pf-section">
-      <h3 className="pf-section__title">{t("portforward:section.title")}</h3>
+
       <ul className="pf-section__ports">
         {ports.map((port) => (
           <li key={port}>

@@ -86,7 +86,7 @@ export function ConnectorFailures({ connectors }: { connectors: ConnectorStatus[
   });
   if (items.length === 0) return null;
   return (
-    <Block title={t("strimzi:connector.failuresTitle")}>
+    <Block id="strimzi:connector.failuresTitle" title={t("strimzi:connector.failuresTitle")}>
       {items.map((i) => (
         <Failure key={i.key} title={i.title} trace={i.trace} />
       ))}
@@ -167,10 +167,10 @@ export function KafkaConnectorView({ obj }: { obj: KubeObject }) {
       {exhausted && failing && (
         <p className="strimzi-note">{t("strimzi:connector.restartsExhausted", { count: restart.count })}</p>
       )}
-      {warnings.length > 0 && <Block title={t("strimzi:warnings")}>{warningsTable}</Block>}
+      {warnings.length > 0 && <Block id="strimzi:warnings" title={t("strimzi:warnings")}>{warningsTable}</Block>}
       <Fields rows={rows} labelPrefix={LABELS} />
       {connector && <ConnectorFailures connectors={[connector]} />}
-      {connector && connector.tasks.length > 0 && <Block title={t("strimzi:connector.tasksTitle")}>{tasksTable}</Block>}
+      {connector && connector.tasks.length > 0 && <Block id="strimzi:connector.tasksTitle" title={t("strimzi:connector.tasksTitle")}>{tasksTable}</Block>}
     </>
   );
 }

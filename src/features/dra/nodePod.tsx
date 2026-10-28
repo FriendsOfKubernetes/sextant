@@ -1,3 +1,6 @@
+import { useDisclosureProbe, useDisclosureProbeResult } from "../details/disclosureProbe";
+import { useClusterKinds } from "../../resources";
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // The DRA blocks of Pod and Node details (#244). A pod without `spec.resourceClaims` and a node without
 // ResourceSlices draw nothing, and nothing is watched for a cluster that does not serve the kinds.
 import type { ReactNode } from "react";
@@ -18,9 +21,11 @@ const NODE_DEVICES_TABLE = "draNodeDevices";
 
 function PodDevices({ clusterId, pod }: { clusterId: ClusterId; pod: KubeObject }) {
   const { t } = useTranslation();
+  const open = useDetailsDisclosure("dra:pod.title")?.open ?? true;
   const namespace = pod.metadata?.namespace ?? null;
   const served = useServed(clusterId, RESOURCE_CLAIM);
-  const claims = useNamespaceClaims(clusterId, namespace, served !== null);
+  const claims = useNamespaceClaims(clusterId, namespace, open && served !== null);
+  if (!open) return <Block id="dra:pod.title" title={t("dra:pod.title")}>{null}</Block>;
   const byName = new Map(claims.items.map((c) => [c.metadata?.name ?? "", c]));
   const known = !claims.loading && !claims.unavailable && !claims.truncated;
   const rows: ReactNode[][] = podClaimsOf(pod).map((c) => {
@@ -48,7 +53,7 @@ function PodDevices({ clusterId, pod }: { clusterId: ClusterId; pod: KubeObject 
   const message = waiting ? schedulingCondition(pod).message : undefined;
   const reasons = draReasonsIn(message);
   return (
-    <Block title={t("dra:pod.title")}>
+    <Block id="dra:pod.title" title={t("dra:pod.title")}>
       {view}
       {waiting && reasons.length > 0 && (
         <>
@@ -68,13 +73,20 @@ export function DraPodSection({ clusterId, obj }: DetailsSectionProps) {
 
 function NodeDevices({ clusterId, node }: { clusterId: ClusterId; node: string }) {
   const { t } = useTranslation();
-  const slices = useSlices(clusterId, node);
-  const claims = useAllClaims(clusterId, slices.items.length > 0);
-  if (slices.items.length === 0) return null;
+  const probe = useDisclosureProbe("dra:node.title");
+  const { open, enabled, result } = probe;
+  const discovery = useClusterKinds(clusterId);
+  const served = useServed(clusterId, RESOURCE_SLICE);
+  const slices = useSlices(clusterId, node, enabled);
+  const claims = useAllClaims(clusterId, open && slices.items.length > 0);
+  const answer = slices.loading ? null : served === null && !discovery.error ? "absent" : slices.items.length > 0 ? "present" : slices.unavailable || slices.truncated ? "unknown" : "absent";
+  const view = useDisclosureProbeResult(probe, answer);
+  if (!view.visible) return null;
+  if (!open && result) return <Block id="dra:node.title" title={t("dra:node.title")}>{null}</Block>;
   const allocation = claims.loading || claims.unavailable || claims.truncated ? undefined : allocationIndex(claims.items);
   return (
-    <Block title={t("dra:node.title")}>
-      <DevicesTable slices={slices.items} allocation={allocation} id={NODE_DEVICES_TABLE} max={NODE_DEVICE_ROWS} />
+    <Block id="dra:node.title" title={t("dra:node.title")}>
+      {slices.loading ? <p className="dra-muted">{t("dra:loading")}</p> : answer === "unknown" ? <p className="dra-muted">{t("dra:devices.unknown")}</p> : <DevicesTable slices={slices.items} allocation={allocation} id={NODE_DEVICES_TABLE} max={NODE_DEVICE_ROWS} />}
       {slices.truncated && <p className="dra-muted">{t("dra:node.truncated", { count: MAX_SLICES })}</p>}
     </Block>
   );

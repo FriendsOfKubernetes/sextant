@@ -131,6 +131,9 @@ pub struct ClusterSettings {
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     #[ts(as = "Option<BTreeMap<String, TableFilters>>", optional)]
     pub table_filters: BTreeMap<String, TableFilters>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    #[ts(as = "Option<appearance::DetailsSections>", optional)]
+    pub details_sections: appearance::DetailsSections,
 }
 
 /// `ClusterSettings` as stored, with `agentAccess` still unread.
@@ -154,6 +157,7 @@ struct StoredClusterSettings {
     known_namespaces: Option<serde_json::Value>,
     agent_access_reviews: Option<serde_json::Value>,
     table_filters: Option<serde_json::Value>,
+    details_sections: Option<serde_json::Value>,
 }
 
 impl<'de> Deserialize<'de> for ClusterSettings {
@@ -202,6 +206,7 @@ impl<'de> Deserialize<'de> for ClusterSettings {
                 .filter(|v| v.as_bool() == Some(true))
                 .map(|_| true),
             table_filters: filters::read_cluster(stored.table_filters),
+            details_sections: appearance::read_details_sections(stored.details_sections.as_ref()),
         })
     }
 }

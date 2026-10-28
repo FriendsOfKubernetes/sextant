@@ -2,9 +2,8 @@
 // feature's job. Secret values are replaced by "<hidden>" here — the Data block shows them one by one on request.
 import { yaml } from "@codemirror/lang-yaml";
 import { basicSetup, EditorView } from "codemirror";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "../../components";
 import { useEditorTheme } from "../editor/editorTheme";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { maskSecret } from "./secrets";
@@ -13,28 +12,26 @@ import { displayObject, toYaml } from "./yaml";
 
 export function YamlSection({ obj, objectRef }: DetailsSectionProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
   if (!obj) return null;
   return (
-    <Block
+    <Block id="details:sections.yaml"
       title={t("details:sections.yaml")}
-      actions={
-        <Button aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-          {t(open ? "details:yaml.hide" : "details:yaml.show")}
-        </Button>
-      }
+      defaultOpen={false}
     >
-      {open && (
-        <>
+      <YamlContent obj={obj} objectRef={objectRef} />
+    </Block>
+  );
+}
+
+function YamlContent({ obj, objectRef }: Pick<DetailsSectionProps, "objectRef"> & { obj: NonNullable<DetailsSectionProps["obj"]> }) {
+  const { t } = useTranslation();
+  return <>
           {obj.kind === "Secret" && <div className="dt-muted">{t("details:yaml.secretMasked")}</div>}
           <YamlViewer
             text={toYaml(displayObject(maskSecret(obj)))}
             label={t("details:yaml.label", { kind: objectRef.kind.kind, name: objectRef.name })}
           />
-        </>
-      )}
-    </Block>
-  );
+        </>;
 }
 
 /** Read-only highlighted YAML; the text is replaced in place when the object changes. */

@@ -110,7 +110,7 @@ function VirtualServiceDetails({ clusterId, vs }: { clusterId: ClusterId; vs: Vi
   return (
     <>
       <ObjectProblems clusterId={clusterId} obj={vs.obj} />
-      <Block
+      <Block id="mesh:blocks.virtualService"
         title={t("mesh:blocks.virtualService")}
         actions={
           !vs.delegate && vs.http.length > 0 ? (
@@ -123,7 +123,7 @@ function VirtualServiceDetails({ clusterId, vs }: { clusterId: ClusterId; vs: Vi
         <Fields rows={rows} labelPrefix={FIELDS} />
       </Block>
       {vs.http.length > 0 && (
-        <Block title={t("mesh:blocks.httpRoutes")}>
+        <Block id="mesh:blocks.httpRoutes" title={t("mesh:blocks.httpRoutes")}>
           <p className="dt-muted">{t("mesh:route.order")}</p>
           {vs.http.map((r) => (
             <RouteCard key={r.index} route={r} t={t} />
@@ -131,7 +131,7 @@ function VirtualServiceDetails({ clusterId, vs }: { clusterId: ClusterId; vs: Vi
         </Block>
       )}
       {vs.l4.length > 0 && (
-        <Block title={t("mesh:blocks.l4Routes")}>
+        <Block id="mesh:blocks.l4Routes" title={t("mesh:blocks.l4Routes")}>
           <L4Table routes={vs.l4} t={t} />
         </Block>
       )}
@@ -154,11 +154,11 @@ function DestinationRuleDetails({ clusterId, obj }: { clusterId: ClusterId; obj:
   return (
     <>
       <ObjectProblems clusterId={clusterId} obj={obj} />
-      <Block title={t("mesh:blocks.destinationRule")}>
+      <Block id="mesh:blocks.destinationRule" title={t("mesh:blocks.destinationRule")}>
         <Fields rows={rows} labelPrefix={FIELDS} />
       </Block>
       {rule.portTls.length > 0 && (
-        <Block title={t("mesh:blocks.portTls")}>
+        <Block id="mesh:blocks.portTls" title={t("mesh:blocks.portTls")}>
           <SimpleTable
             tableId="mesh.portTls"
             headers={[t("mesh:columns.port"), t("mesh:columns.tlsMode")]}
@@ -167,7 +167,7 @@ function DestinationRuleDetails({ clusterId, obj }: { clusterId: ClusterId; obj:
         </Block>
       )}
       {rule.subsets.length > 0 && (
-        <Block title={t("mesh:blocks.subsets")}>
+        <Block id="mesh:blocks.subsets" title={t("mesh:blocks.subsets")}>
           <p className="dt-muted">{t("mesh:dr.subsetsHint")}</p>
           <SimpleTable
             tableId="mesh.subsets"
@@ -188,16 +188,14 @@ function DestinationRuleDetails({ clusterId, obj }: { clusterId: ClusterId; obj:
 function GatewayDetails({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
   const { t } = useTranslation();
   const gateway = parseIstioGateway(obj);
-  const config = useMeshConfig(clusterId);
-  const bound = config.virtualServices.filter((vs) => vs.gateways.includes(gateway.key));
   const rows: FieldRow[] = [["selector", mapChips(gateway.selector)]];
   return (
     <>
-      <Block title={t("mesh:blocks.gateway")}>
+      <Block id="mesh:blocks.gateway" title={t("mesh:blocks.gateway")}>
         <Fields rows={rows} labelPrefix={FIELDS} />
         <p className="dt-muted">{t("mesh:gateway.selectorHint")}</p>
       </Block>
-      <Block title={t("mesh:blocks.servers")}>
+      <Block id="mesh:blocks.servers" title={t("mesh:blocks.servers")}>
         <SimpleTable
           tableId="mesh.servers"
           headers={[t("mesh:columns.port"), t("mesh:columns.protocol"), t("mesh:columns.hosts"), t("mesh:columns.tlsMode")]}
@@ -207,12 +205,8 @@ function GatewayDetails({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObj
           }))}
         />
       </Block>
-      <Block title={t("mesh:blocks.boundVirtualServices")}>
-        {bound.length === 0 ? (
-          <p className="dt-muted">{config.loading ? t("mesh:loading") : t("mesh:gateway.noneBound")}</p>
-        ) : (
-          <span className="dt-links">{bound.map((vs) => meshLink(vs.ref, undefined, gateway.ref.namespace))}</span>
-        )}
+      <Block id="mesh:blocks.boundVirtualServices" title={t("mesh:blocks.boundVirtualServices")}>
+        <BoundVirtualServices clusterId={clusterId} obj={obj} />
       </Block>
     </>
   );
@@ -232,7 +226,7 @@ function ServiceEntryDetails({ obj }: { obj: KubeObject }) {
     ["exportTo", exportText(entry.exportTo, t)],
   ];
   return (
-    <Block title={t("mesh:blocks.serviceEntry")}>
+    <Block id="mesh:blocks.serviceEntry" title={t("mesh:blocks.serviceEntry")}>
       <Fields rows={rows} labelPrefix={FIELDS} />
     </Block>
   );
@@ -248,7 +242,7 @@ function SidecarDetails({ obj }: { obj: KubeObject }) {
     ["outboundTrafficPolicy", str(get(obj, "spec", "outboundTrafficPolicy", "mode"))],
   ];
   return (
-    <Block title={t("mesh:blocks.sidecar")}>
+    <Block id="mesh:blocks.sidecar" title={t("mesh:blocks.sidecar")}>
       <p className="mesh-line">{t("mesh:sidecar.meaning")}</p>
       <Fields rows={rows} labelPrefix={FIELDS} />
     </Block>
@@ -265,7 +259,7 @@ function WorkloadEntryDetails({ obj }: { obj: KubeObject }) {
     ["ports", mapChips(get(obj, "spec", "ports"))],
   ];
   return (
-    <Block title={t("mesh:blocks.workloadEntry")}>
+    <Block id="mesh:blocks.workloadEntry" title={t("mesh:blocks.workloadEntry")}>
       <p className="mesh-line">{t("mesh:workloadEntry.meaning")}</p>
       <Fields rows={rows} labelPrefix={FIELDS} />
     </Block>
@@ -283,7 +277,7 @@ function TelemetryDetails({ obj }: { obj: KubeObject }) {
     ["accessLogging", providers("accessLogging")],
   ];
   return (
-    <Block title={t("mesh:blocks.telemetry")}>
+    <Block id="mesh:blocks.telemetry" title={t("mesh:blocks.telemetry")}>
       <Fields rows={rows} labelPrefix={FIELDS} />
     </Block>
   );
@@ -304,13 +298,13 @@ function PeerAuthenticationDetails({ obj }: { obj: KubeObject }) {
   const ports = pa.ports.map((p) => ({ key: `${p.port}`, cells: [p.port, p.mode ?? "UNSET"] }));
   return (
     <>
-      <Block title={t("mesh:blocks.peerAuthentication")}>
+      <Block id="mesh:blocks.peerAuthentication" title={t("mesh:blocks.peerAuthentication")}>
         <Fields rows={rows} labelPrefix={FIELDS} />
         <p className="mesh-line">{t(`mesh:mtls.meaning.${mode}`)}</p>
         <p className="dt-muted">{t("mesh:mtls.precedence")}</p>
       </Block>
       {pa.ports.length > 0 && (
-        <Block title={t("mesh:blocks.portMtls")}>
+        <Block id="mesh:blocks.portMtls" title={t("mesh:blocks.portMtls")}>
           <SimpleTable
             tableId="mesh.portMtls"
             headers={[t("mesh:columns.port"), t("mesh:columns.mtlsMode")]}
@@ -333,7 +327,7 @@ function RequestAuthenticationDetails({ obj }: { obj: KubeObject }) {
     ],
   }));
   return (
-    <Block title={t("mesh:blocks.requestAuthentication")}>
+    <Block id="mesh:blocks.requestAuthentication" title={t("mesh:blocks.requestAuthentication")}>
       <Fields rows={[scopeRow(obj, t)]} labelPrefix={FIELDS} />
       <p className="mesh-line">{t("mesh:jwt.meaning")}</p>
       <SimpleTable
@@ -380,13 +374,13 @@ function AuthorizationPolicyDetails({ obj }: { obj: KubeObject }) {
   const rows: FieldRow[] = [["action", policy.action], ["provider", policy.provider], scopeRow(obj, t)];
   return (
     <>
-      <Block title={t("mesh:blocks.authorizationPolicy")}>
+      <Block id="mesh:blocks.authorizationPolicy" title={t("mesh:blocks.authorizationPolicy")}>
         <Fields rows={rows} labelPrefix={FIELDS} />
         <PhraseLines phrases={policyPhrases(policy)} />
         <p className="dt-muted">{t("mesh:authz.order")}</p>
       </Block>
       {policy.rules.map((rule, i) => (
-        <Block key={i} title={t("mesh:authz.rule", { n: i + 1 })}>
+        <Block id="mesh:authz.rule" key={i} title={t("mesh:authz.rule", { n: i + 1 })}>
           {ruleLines(rule).length === 0 ? <p className="mesh-line">{t("mesh:authz.emptyRule")}</p> : <RuleLinesView lines={ruleLines(rule)} t={t} />}
         </Block>
       ))}
@@ -422,3 +416,11 @@ export function IstioDetails({ clusterId, obj, kind }: { clusterId: ClusterId; o
 }
 
 
+
+function BoundVirtualServices({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
+  const { t } = useTranslation();
+  const gateway = parseIstioGateway(obj);
+  const config = useMeshConfig(clusterId);
+  const bound = config.virtualServices.filter(vs => vs.gateways.includes(gateway.key));
+  return bound.length === 0 ? <p className="dt-muted">{config.loading ? t("mesh:loading") : t("mesh:gateway.noneBound")}</p> : <span className="dt-links">{bound.map(vs => meshLink(vs.ref, undefined, gateway.ref.namespace))}</span>;
+}

@@ -38,7 +38,7 @@ export function ImageStreamView({ obj }: { obj: KubeObject }) {
     <>
       {failed.length > 0 && <Note text={t("openshift:importFailingNote", { count: failed.length })} tone="danger" />}
       <Fields rows={rows} labelPrefix={LABELS} />
-      <Block title={t("openshift:tags.title")}>
+      <Block id="openshift:tags.title" title={t("openshift:tags.title")}>
         {table(
           TABLE_TAGS,
           [t("openshift:tags.tag"), t("openshift:tags.from"), t("openshift:tags.image"), t("openshift:tags.created"), t("openshift:tags.scheduled"), t("openshift:tags.state")],

@@ -51,9 +51,9 @@ export function NodeDetails({ obj }: { obj: KubeObject }) {
   return (
     <>
       <Fields rows={rows} />
-      {resourceTable && <Block title={t("details:node.resources")}>{resourceTable}</Block>}
+      {resourceTable && <Block id="details:node.resources" title={t("details:node.resources")}>{resourceTable}</Block>}
       {info !== undefined && (
-        <Block title={t("details:node.system")}>
+        <Block id="details:node.system" title={t("details:node.system")}>
           <Fields rows={system} />
         </Block>
       )}

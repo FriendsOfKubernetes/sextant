@@ -47,7 +47,7 @@ export function RoleDetails({ obj }: { obj: KubeObject }) {
   return (
     <>
       <Fields rows={rows} />
-      {rules && <Block title={t("details:rbac.rules")}>{rules}</Block>}
+      {rules && <Block id="details:rbac.rules" title={t("details:rbac.rules")}>{rules}</Block>}
     </>
   );
 }
@@ -74,7 +74,7 @@ export function RoleBindingDetails({ obj }: { obj: KubeObject }) {
   return (
     <>
       <Fields rows={rows} />
-      {subjects && <Block title={t("details:rbac.subjects")}>{subjects}</Block>}
+      {subjects && <Block id="details:rbac.subjects" title={t("details:rbac.subjects")}>{subjects}</Block>}
     </>
   );
 }

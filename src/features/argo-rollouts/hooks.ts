@@ -26,10 +26,10 @@ export interface RolloutLists {
   analysisRunsKnown: boolean;
 }
 
-export function useRolloutLists(clusterId: ClusterId, namespace: string | null): RolloutLists {
+export function useRolloutLists(clusterId: ClusterId, namespace: string | null, enabled = { replicaSets: true, analysisRuns: true }): RolloutLists {
   const runKind = useServed(clusterId, ANALYSIS_RUN);
-  const replicaSets = useWatch(clusterId, inNamespace(REPLICA_SET, namespace));
-  const runs = useWatch(clusterId, inNamespace(runKind, namespace));
+  const replicaSets = useWatch(clusterId, enabled.replicaSets ? inNamespace(REPLICA_SET, namespace) : null);
+  const runs = useWatch(clusterId, enabled.analysisRuns ? inNamespace(runKind, namespace) : null);
   return {
     replicaSets: [...replicaSets.items.values()],
     analysisRuns: [...runs.items.values()],

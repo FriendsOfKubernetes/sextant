@@ -1,3 +1,5 @@
+import { UNKNOWN_DETAILS_SOURCE, useDisclosureProbe, useDisclosureProbeResult, watchProbeResult } from "../details/disclosureProbe";
+import { ErrorState } from "../../components";
 // The "Autoscaling" details of a HorizontalPodAutoscaler — why it is where it is: the verdict, causes read from the
 // conditions, the target and its pod template's requests, each metric's current value against its target and the
 // replicas it asks for, the conditions in plain words, the behavior (stabilization, policies, tolerance) and the
@@ -8,10 +10,11 @@ import type { ClusterId, KubeObject } from "../../api";
 import { Age } from "../../components";
 import { formatList } from "../../i18n";
 import type { DetailsSectionProps } from "../../layout/details/registry";
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 import { kindFromApiVersion, StatusText } from "../../resources";
 import { Block, Fields, link, table, type ColumnWrap, type FieldRow } from "../details";
 import { analyzeHpa, isScalingEvent, requestChecks, templateOf, type DirectionBehavior, type HpaAnalysis, type MetricRow, type RequestCheck } from "./hpa";
-import { useObject, useObjectEvents, useServed } from "./hooks";
+import { useObject, useObjectEventsSource, useServed } from "./hooks";
 import { HPA, phrase, type Phrase } from "./model";
 import { EventsTable, Note, PhraseLine, Phrases } from "./ui";
 
@@ -145,15 +148,30 @@ function replicaRows(a: HpaAnalysis, t: (key: string, values?: Record<string, un
 
 function HpaDetails({ clusterId, hpa }: { clusterId: ClusterId; hpa: KubeObject }) {
   const { t } = useTranslation();
+  return <Block id="autoscaling:hpa.title" title={t("autoscaling:hpa.title")}><HpaDetailsContent clusterId={clusterId} hpa={hpa} /></Block>;
+}
+
+function HpaDetailsContent({ clusterId, hpa }: { clusterId: ClusterId; hpa: KubeObject }) {
+  const { t } = useTranslation();
   const a = useMemo(() => analyzeHpa(hpa), [hpa]);
   const namespace = hpa.metadata?.namespace ?? null;
   const targetRef = a.target ? kindFromApiVersion(a.target.apiVersion, a.target.kind) : HPA;
   const served = useServed(clusterId, targetRef);
-  const target = useObject(clusterId, a.target ? served : null, namespace, a.target?.name);
-  const events = useObjectEvents(clusterId, hpa, "HorizontalPodAutoscaler");
+  const requestsOpen = useDetailsDisclosure("autoscaling:hpa.requests")?.open ?? true;
+  const eventsProbe = useDisclosureProbe("autoscaling:hpa.events");
+  const requestsPresent = requestChecks(hpa, undefined).length > 0;
+  const requestsEnabled = requestsOpen && requestsPresent;
+  const target = useObject(clusterId, requestsEnabled && a.target ? served : null, namespace, a.target?.name);
+  const eventSource = useObjectEventsSource(clusterId, hpa, "HorizontalPodAutoscaler", eventsProbe.enabled);
+  const events = eventSource.events;
   const scaling = useMemo(() => events.filter(isScalingEvent), [events]);
-  const template = templateOf(target);
-  const checks = requestPhrases(requestChecks(hpa, template), template !== undefined);
+  const checks = useMemo(() => {
+    if (!requestsEnabled) return [];
+    const template = templateOf(target);
+    return requestPhrases(requestChecks(hpa, template), template !== undefined);
+  }, [requestsEnabled, hpa, target]);
+  const eventsAnswer = watchProbeResult(scaling.length > 0, [eventSource.state]);
+  const eventsView = useDisclosureProbeResult(eventsProbe, eventsAnswer);
 
   const fields: FieldRow[] = [
     ["target", a.target ? link({ apiVersion: a.target.apiVersion, kind: a.target.kind }, a.target.name, namespace, `${a.target.kind}/${a.target.name}`) : null],
@@ -165,30 +183,35 @@ function HpaDetails({ clusterId, hpa }: { clusterId: ClusterId; hpa: KubeObject 
   ];
 
   return (
-    <Block title={t("autoscaling:hpa.title")}>
-      <PhraseLine phrase={a.verdict} />
-      <Phrases phrases={a.causes} />
-      <Fields labelPrefix={FIELDS} rows={fields} />
-      <h4 className="as-subtitle">{t("autoscaling:hpa.metrics")}</h4>
-      <MetricsTable metrics={a.metrics} />
-      {a.estimate && <Note>{t("autoscaling:hpa.estimateNote")}</Note>}
-      {checks.length > 0 && (
+    <>
+      <div className="dt-disclosure-lead">
+        <PhraseLine phrase={a.verdict} />
+        <Phrases phrases={a.causes} />
+        <Fields labelPrefix={FIELDS} rows={fields} />
+      </div>
+      <Block id="autoscaling:hpa.metrics" title={t("autoscaling:hpa.metrics")}>
+        <MetricsTable metrics={a.metrics} />
+        {a.estimate && <Note>{t("autoscaling:hpa.estimateNote")}</Note>}
+      </Block>
+      {requestsPresent && (
         <>
-          <h4 className="as-subtitle">{t("autoscaling:hpa.requests")}</h4>
-          <Phrases phrases={checks} />
+          <Block id="autoscaling:hpa.requests" title={t("autoscaling:hpa.requests")}>
+            <Phrases phrases={checks} />
+          </Block>
         </>
       )}
-      <h4 className="as-subtitle">{t("autoscaling:hpa.conditions")}</h4>
-      <ConditionsTable a={a} />
-      <h4 className="as-subtitle">{t("autoscaling:hpa.behavior")}</h4>
-      <Fields labelPrefix={FIELDS} rows={behavior} />
-      {scaling.length > 0 && (
-        <>
-          <h4 className="as-subtitle">{t("autoscaling:hpa.events")}</h4>
-          <EventsTable events={scaling} />
-        </>
+      <Block id="autoscaling:hpa.conditions" title={t("autoscaling:hpa.conditions")}>
+        <ConditionsTable a={a} />
+      </Block>
+      <Block id="autoscaling:hpa.behavior" title={t("autoscaling:hpa.behavior")}>
+        <Fields labelPrefix={FIELDS} rows={behavior} />
+      </Block>
+      {eventsView.visible && (
+        <Block id="autoscaling:hpa.events" title={t("autoscaling:hpa.events")}>
+          {eventsAnswer === "unknown" ? <ErrorState error={eventSource.state.error ?? UNKNOWN_DETAILS_SOURCE} /> : <EventsTable events={scaling} />}
+        </Block>
       )}
-    </Block>
+    </>
   );
 }
 

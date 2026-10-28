@@ -7,7 +7,11 @@
     "metadata": "Meta veriler",
     "fields": "{{kind}}",
     "conditions": "Koşullar",
-    "yaml": "YAML"
+    "yaml": "YAML",
+    "saveFailed": "Bölümlerin durumu kaydedilemedi. Değişiklikler yalnızca bu oturumda geçerlidir.",
+    "controls": "Kaynak bölümleri",
+    "expandAll": "Tümünü genişlet",
+    "collapseAll": "Tümünü daralt"
   },
   "yaml": {
     "show": "YAML'ı göster",

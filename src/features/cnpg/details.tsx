@@ -108,8 +108,8 @@ function ClusterView({ obj }: { obj: KubeObject }) {
       {(info.state === "hibernated" || info.state === "hibernating") && <p className="cnpg-muted">{t(`cnpg:hibernation.${info.state}`)}</p>}
       {info.replicaCluster && <p className="cnpg-muted">{t("cnpg:replicaCluster")}</p>}
       <Fields rows={rows} labelPrefix={LABELS} />
-      {members.length > 0 && <Block title={t("cnpg:members.title")}>{membersTable}</Block>}
-      <Block title={t("cnpg:backups")}>
+      {members.length > 0 && <Block id="cnpg:members.title" title={t("cnpg:members.title")}>{membersTable}</Block>}
+      <Block id="cnpg:backups" title={t("cnpg:backups")}>
         <Fields rows={backupRows} labelPrefix={LABELS} />
         {!archiving && !lastBackup && !info.lastSuccessfulBackup && <p className="cnpg-muted">{t("cnpg:noBackups")}</p>}
         {failingMessages.map((m) => (
@@ -138,7 +138,7 @@ function BackupView({ obj }: { obj: KubeObject }) {
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
       {error && backupState(obj) === "failed" && (
-        <Block title={t("cnpg:error")}>
+        <Block id="cnpg:error" title={t("cnpg:error")}>
           <Note text={error} tone="danger" />
         </Block>
       )}

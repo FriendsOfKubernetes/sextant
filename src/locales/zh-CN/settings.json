@@ -121,5 +121,15 @@
     "textSizeHint": "文字、表格行和控件随之变大；终端、日志和 YAML 编辑器也随之变化。",
     "terminalScreenReader": "终端中的屏幕阅读器支持",
     "terminalScreenReaderHint": "让屏幕阅读器可以朗读终端输出。这会降低终端速度，如不使用屏幕阅读器请保持关闭。"
+  },
+  "details": {
+    "title": "资源详情",
+    "remember": "记住分区的展开状态",
+    "modes": {
+      "none": "不记住",
+      "cluster": "按集群分别记住",
+      "global": "在所有集群中共用"
+    },
+    "hint": "每种资源类型分别记住分区状态。YAML 默认折叠。"
   }
 }

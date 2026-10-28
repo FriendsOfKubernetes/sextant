@@ -180,7 +180,7 @@ export function EventingSection({ clusterId, objectRef, obj }: DetailsSectionPro
   const danger = healthOf(obj) === "failed";
   return (
     <>
-      <Block title={t("details:sections.fields", { kind: kind.kind })}>
+      <Block id="details:sections.fields" title={t("details:sections.fields", { kind: kind.kind })}>
         {phrase && <p className={danger ? "cm-explain cm-explain--danger" : "cm-explain"}>{t(`knative:eventing.explain.${phrase.key}`, phrase.params ?? {})}</p>}
         {failing?.message && <p className="cm-message">{failing.message}</p>}
         <Fields rows={rowsOf(obj, kind)} labelPrefix={LABELS} />

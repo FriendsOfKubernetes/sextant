@@ -3,6 +3,7 @@
 // namespace's HPAs, PodDisruptionBudgets and LimitRanges through the resource map's shared watches, its pods through
 // the watch the right-sizing and cost sections share, and the right-sizing history of this workload when Prometheus
 // answers.
+import { Block } from "../details/ui";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, HistoryScope, KindRef, KubeObject, WatchSpec } from "../../api";
@@ -30,14 +31,14 @@ export function PracticesSection({ clusterId, objectRef, obj }: DetailsSectionPr
   const namespace = objectRef.namespace ?? "";
   if (!obj || !namespace || !loaded) return null;
   return (
-    <section className="sec-section" aria-label={t("practices:details.title")}>
-      <h3 className="sec-section__title">{t("practices:details.title")}</h3>
+    <Block id="practices:details.title" title={t("practices:details.title")} label={t("practices:details.title")}>
+
       {config.excluded.has(namespace) ? (
         <p className="sec-note">{t("practices:details.excluded", { namespace })}</p>
       ) : (
         <Findings clusterId={clusterId} kind={objectRef.kind} obj={obj} namespace={namespace} />
       )}
-    </section>
+    </Block>
   );
 }
 

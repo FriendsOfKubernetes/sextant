@@ -1,5 +1,6 @@
 // "Metrics" section of the details panel: current CPU/memory of a pod (per container) or a node (of allocatable),
 // and charts of the last hour for pods, nodes and Deployments/StatefulSets/DaemonSets (the sum of their pods).
+import { Block } from "../details/ui";
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -36,7 +37,7 @@ function chartTarget(ref: ObjectRef): ChartTarget | null {
   return null;
 }
 
-export function MetricsDetailsSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
+function MetricsDetailsSectionBody({ clusterId, objectRef, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
   const metricsStatus = useMetricsStatus(clusterId);
   const target = chartTarget(objectRef);
@@ -65,7 +66,6 @@ export function MetricsDetailsSection({ clusterId, objectRef, obj }: DetailsSect
 
   return (
     <section className="mx-section" aria-label={t("metrics:title")}>
-      <h3 className="mx-section__title">{t("metrics:title")}</h3>
       {body}
     </section>
   );
@@ -277,4 +277,10 @@ function NodeCurrent({ clusterId, node, status }: { clusterId: ClusterId; node: 
       <dd>{row(value.memoryBytes, alloc.memory, formatBytes)}</dd>
     </dl>
   );
+}
+
+export function MetricsDetailsSection(props: DetailsSectionProps) {
+  const { t } = useTranslation();
+  if (!chartTarget(props.objectRef)) return null;
+  return <Block id="metrics:title" title={t("metrics:title")}><MetricsDetailsSectionBody {...props} /></Block>;
 }

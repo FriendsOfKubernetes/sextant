@@ -1,3 +1,5 @@
+import { useClusterKinds } from "../../resources";
+import { useDisclosureProbe, useDisclosureProbeResult } from "../details/disclosureProbe";
 // The "Queue" section of a job Kueue can queue (a Job, a JobSet, a RayJob, a Kubeflow job, …): its LocalQueue (the
 // `kueue.x-k8s.io/queue-name` label) and its Workload — found by the label Kueue puts on it (the job's uid) and its
 // owner reference, or the prebuilt Workload the job names — with the Workload's state and why it waits. Shown only
@@ -37,17 +39,23 @@ export const appliesToJob = (kind: Pick<KindRef, "group" | "kind">): boolean =>
 
 export function QueueSection({ clusterId, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
-  const found = useJobWorkloads(clusterId, obj);
-  if (!obj || found.served === false) return null;
-  const queue = status.str(status.record(obj.metadata?.labels)[QUEUE_LABEL]);
+  const probe = useDisclosureProbe("kueue:queue.title");
+  const { enabled, result } = probe;
+  const discovery = useClusterKinds(clusterId);
+  const found = useJobWorkloads(clusterId, enabled ? obj : null);
+  const queue = status.str(status.record(obj?.metadata?.labels)[QUEUE_LABEL]);
   const items = found.items;
-  if (!queue && (items === undefined || items.length === 0)) return null;
+  const answer = queue || (items?.length ?? 0) > 0 ? "present" : found.failed || discovery.error ? "unknown" : found.served === false || items ? "absent" : null;
+  const view = useDisclosureProbeResult(probe, answer);
+  if (!probe.open && result) return view.visible ? <Block id="kueue:queue.title" title={t("kueue:queue.title")}>{null}</Block> : null;
+  if (!obj || (found.served === false && !discovery.error)) return null;
+  if (!view.visible) return null;
   const ns = obj.metadata?.namespace ?? null;
   const queueRows: FieldRow[] = [["queue", link(TYPES.localQueue, queue, ns)]];
   return (
-    <Block title={t("kueue:queue.title")}>
+    <Block id="kueue:queue.title" title={t("kueue:queue.title")}>
       {queue && <Fields rows={queueRows} labelPrefix={LABELS} />}
-      {items === undefined ? (
+      {answer === "unknown" ? <Muted text={t("kueue:listUnknown")} /> : items === undefined ? (
         <Muted text={t("kueue:loading")} />
       ) : items.length === 0 ? (
         <Muted text={found.failed ? t("kueue:listUnknown") : t("kueue:queue.noWorkload")} />

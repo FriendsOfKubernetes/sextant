@@ -118,7 +118,7 @@ function Volumes({ volumes, namespace }: { volumes: unknown; namespace: string |
   });
   const content = table("pod.volumes", [t("details:columns.name"), t("details:columns.type"), t("details:columns.source")], rows);
   if (!content) return null;
-  return <Block title={t("details:pod.volumes")}>{content}</Block>;
+  return <Block id="details:pod.volumes" title={t("details:pod.volumes")}>{content}</Block>;
 }
 
 interface ContainerItem {
@@ -178,7 +178,7 @@ export function ContainerList({
     );
   const render = (items: ContainerItem[], blockTitle: string) =>
     items.length > 0 && (
-      <Block title={blockTitle}>
+      <Block id={items[0]!.init ? "initContainers" : "containers"} title={blockTitle}>
         {items.map((item) => (
           <Container
             key={item.name}
@@ -242,7 +242,7 @@ function ContainerTabs({
     };
   });
   return (
-    <Block title={title}>
+    <Block id="containers" title={title}>
       <Tabs
         label={t("details:pod.tabs")}
         tabs={tabs}
@@ -382,7 +382,7 @@ function Container({
   const probes = showsProbes(container, init ? "init" : "container");
 
   return (
-    <div className="dt-container" data-container={name}>
+    <div className="dt-container dt-disclosure-group" data-container={name}>
       <div className="dt-container__head">
         <span className="dt-container__name">{name}</span>
         {state}
@@ -392,9 +392,9 @@ function Container({
       </div>
       <Fields rows={rows} />
       {probes && <Probes container={container} />}
-      {env && <Block title={t("details:pod.env")}>{env}</Block>}
-      {envFrom && <Block title={t("details:pod.envFrom")}>{envFrom}</Block>}
-      {mounts && <Block title={t("details:pod.mounts")}>{mounts}</Block>}
+      {env && <Block id="details:pod.env" title={t("details:pod.env")}>{env}</Block>}
+      {envFrom && <Block id="details:pod.envFrom" title={t("details:pod.envFrom")}>{envFrom}</Block>}
+      {mounts && <Block id="details:pod.mounts" title={t("details:pod.mounts")}>{mounts}</Block>}
     </div>
   );
 }
@@ -412,7 +412,7 @@ function Probes({ container }: { container: unknown }) {
           probes.map((probe) => [t(PROBE_LABELS[probe.kind]), probeHandler(probe, t), probeTiming(probe, t)]),
           ["nowrap", undefined, undefined],
         );
-  return <Block title={t("details:probes.title")}>{content}</Block>;
+  return <Block id="details:probes.title" title={t("details:probes.title")}>{content}</Block>;
 }
 
 const PROBE_LABELS = {

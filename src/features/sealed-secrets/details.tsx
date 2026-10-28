@@ -56,7 +56,7 @@ function Failure({ obj }: { obj: KubeObject }) {
   }
   const hint = failureHint(sync.message);
   return (
-    <Block title={t("sealedsecrets:lastError")}>
+    <Block id="sealedsecrets:lastError" title={t("sealedsecrets:lastError")}>
       <p className="ss-message">{sync.message}</p>
       {hint && <p className="ss-note">{t(`sealedsecrets:hint.${hint}`)}</p>}
     </Block>
@@ -78,7 +78,7 @@ function Keys({ obj }: { obj: KubeObject }) {
   const rows: FieldRow[] = [["templated", chips(templated)]];
   if (keys.length === 0 && templated.length === 0) return null;
   return (
-    <Block title={t("sealedsecrets:keys.title")}>
+    <Block id="sealedsecrets:keys.title" title={t("sealedsecrets:keys.title")}>
       <p className="ss-muted">{t("sealedsecrets:keys.namesOnly")}</p>
       {keysTable}
       <Fields rows={rows} labelPrefix={LABELS} />
@@ -90,6 +90,11 @@ const CONTROLLER_WRAP: ColumnWrap[] = ["nowrap", "nowrap", undefined];
 const KEY_WRAP: ColumnWrap[] = ["nowrap", "nowrap", "nowrap"];
 
 function SealingKeys({ clusterId, namespaces }: { clusterId: ClusterId; namespaces: string[] }) {
+  const { t } = useTranslation();
+  return <Block id="sealedsecrets:sealingKeys.title" title={t("sealedsecrets:sealingKeys.title")}><SealingKeysBody clusterId={clusterId} namespaces={namespaces} /></Block>;
+}
+
+function SealingKeysBody({ clusterId, namespaces }: { clusterId: ClusterId; namespaces: string[] }) {
   const { t } = useTranslation();
   const { value } = useSealingKeys(clusterId, namespaces);
   const rows = (value ?? []).map((s) => [
@@ -105,7 +110,6 @@ function SealingKeys({ clusterId, namespaces }: { clusterId: ClusterId; namespac
   );
   return (
     <>
-      <h4 className="ss-subtitle">{t("sealedsecrets:sealingKeys.title")}</h4>
       {value === undefined ? <p className="ss-muted">{t("sealedsecrets:loading")}</p> : keysTable}
       {value !== undefined && rows.length === 0 && <p className="ss-muted">{t("sealedsecrets:sealingKeys.none")}</p>}
       <p className="ss-muted">{t("sealedsecrets:sealingKeys.certificateNotShown")}</p>
@@ -115,6 +119,11 @@ function SealingKeys({ clusterId, namespaces }: { clusterId: ClusterId; namespac
 
 /** The controller found in the cluster by kubeseal's default name or the Helm chart's label. */
 function Controller({ clusterId }: { clusterId: ClusterId }) {
+  const { t } = useTranslation();
+  return <Block id="sealedsecrets:controller.title" title={t("sealedsecrets:controller.title")}><ControllerBody clusterId={clusterId} /></Block>;
+}
+
+function ControllerBody({ clusterId }: { clusterId: ClusterId }) {
   const { t } = useTranslation();
   const { deployments, error } = useControllers(clusterId);
   let body: ReactNode;
@@ -145,7 +154,7 @@ function Controller({ clusterId }: { clusterId: ClusterId }) {
       </>
     );
   }
-  return <Block title={t("sealedsecrets:controller.title")}>{body}</Block>;
+  return body;
 }
 
 function SealedSecretView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {

@@ -42,7 +42,7 @@ function Changes({ clusterId, objectRef }: DetailsSectionProps) {
 
   return (
     <div className="tl-tab">
-      <Block title={t("timeline:tab")}>
+      <Block id="timeline:tab" title={t("timeline:tab")}>
         <p className="dt-muted">{t("timeline:tabLead")}</p>
         {history.error && (
           <p className="tl-page__note" role="status">

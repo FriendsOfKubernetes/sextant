@@ -53,11 +53,14 @@ function specNumber(obj: KubeObject, field: keyof typeof DEFAULTS | "idleReplica
 
 function ScaledObject({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
   const { t } = useTranslation();
+  return <Block id="autoscaling:keda.title" title={t("autoscaling:keda.title")}><ScaledObjectContent clusterId={clusterId} obj={obj} /></Block>;
+}
+
+function ScaledObjectContent({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
+  const { t } = useTranslation();
   const namespace = obj.metadata?.namespace ?? null;
   const target = scaleTargetOf(obj);
   const hpaName = managedHpaName(obj);
-  const hpaKind = useServed(clusterId, HPA);
-  const hpa = useObject(clusterId, hpaKind, namespace, hpaName);
   const state = kedaState(obj);
   const fallback = get(obj, "spec", "fallback");
   const fields: FieldRow[] = [
@@ -76,16 +79,17 @@ function ScaledObject({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObjec
         : null,
     ],
   ];
-  const missing = phrase("keda.hpaMissing", { name: hpaName }, "warning");
   return (
-    <Block title={t("autoscaling:keda.title")}>
+    <>
       <Phrases phrases={state.phrases} />
       <Fields labelPrefix={FIELDS} rows={fields} />
-      <h4 className="as-subtitle">{t("autoscaling:keda.triggers")}</h4>
-      <TriggersTable obj={obj} />
-      <h4 className="as-subtitle">{t("autoscaling:keda.managedHpa")}</h4>
-      {hpa ? <HpaSummary hpa={hpa} metrics /> : <PhraseLine phrase={missing} />}
-    </Block>
+      <Block id="autoscaling:keda.triggers" title={t("autoscaling:keda.triggers")}>
+        <TriggersTable obj={obj} />
+      </Block>
+      <Block id="autoscaling:keda.managedHpa" title={t("autoscaling:keda.managedHpa")}>
+        <ManagedHpa clusterId={clusterId} namespace={namespace} name={hpaName} />
+      </Block>
+    </>
   );
 }
 
@@ -100,11 +104,12 @@ export function ScaledJobSection({ obj }: DetailsSectionProps) {
     ["image", str(get(obj, "spec", "jobTargetRef", "template", "spec", "containers", 0, "image")) ?? null],
   ];
   return (
-    <Block title={t("autoscaling:keda.title")}>
+    <Block id="autoscaling:keda.title" title={t("autoscaling:keda.title")}>
       <Phrases phrases={state.phrases} />
       <Fields labelPrefix={FIELDS} rows={fields} />
-      <h4 className="as-subtitle">{t("autoscaling:keda.triggers")}</h4>
-      <TriggersTable obj={obj} />
+      <Block id="autoscaling:keda.triggers" title={t("autoscaling:keda.triggers")}>
+        <TriggersTable obj={obj} />
+      </Block>
     </Block>
   );
 }
@@ -124,10 +129,17 @@ export function TriggerAuthenticationSection({ obj }: DetailsSectionProps) {
   const headers = [t("autoscaling:keda.parameter"), t("autoscaling:keda.from"), t("autoscaling:keda.name"), t("autoscaling:keda.key")];
   const rows: ReactNode[][] = sources.map((s) => [s.parameter, s.from, target(s.from, s.name), s.key ?? ""]);
   return (
-    <Block title={t("autoscaling:keda.authTitle")}>
+    <Block id="autoscaling:keda.authTitle" title={t("autoscaling:keda.authTitle")}>
       <Fields labelPrefix={FIELDS} rows={fields} />
       {sources.length === 0 && !podIdentity && <Note>{t("autoscaling:keda.noSources")}</Note>}
       {table(TABLE_IDS.kedaSources, headers, rows, SOURCE_WRAP)}
     </Block>
   );
+}
+
+function ManagedHpa({ clusterId, namespace, name }: { clusterId: ClusterId; namespace: string | null; name: string }) {
+  const kind = useServed(clusterId, HPA);
+  const hpa = useObject(clusterId, kind, namespace, name);
+  const missing = phrase("keda.hpaMissing", { name }, "warning");
+  return hpa ? <HpaSummary hpa={hpa} metrics /> : <PhraseLine phrase={missing} />;
 }

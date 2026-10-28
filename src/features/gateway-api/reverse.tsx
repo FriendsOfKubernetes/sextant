@@ -1,3 +1,5 @@
+import { UNKNOWN_DETAILS_SOURCE, useDisclosureProbe, watchProbeResult } from "../details/disclosureProbe";
+import { ErrorState } from "../../components";
 // Reverse links of the Gateway API, as details sections of the objects traffic reaches:
 //   Service    — "Exposed by": the external addresses, routes and Gateway listeners (and Ingresses) that reach it;
 //   TLS Secret — "Used by listeners": the Gateway listeners whose certificates name it;
@@ -94,28 +96,39 @@ function parentCell(exposure: Exposure, from: string | null) {
 
 function ExposedBy({ clusterId, service }: { clusterId: ClusterId; service: KubeObject }) {
   const { t } = useTranslation();
+  const { open, enabled: active, result, settle } = useDisclosureProbe("gateway:exposedBy.title");
   const kinds = useClusterKinds(clusterId);
   const ns = service.metadata?.namespace ?? "";
   const svc = { namespace: ns, name: service.metadata?.name ?? "" };
-  const { routes } = useServedRoutes(clusterId);
+  const routeSource = useServedRoutes(clusterId, active);
+  const { routes } = routeSource;
   const reaching = routesReaching(routes, svc);
   // Only the Gateways the reaching routes name, only the grants of the Service's namespace when a route is elsewhere.
   const gatewayNamespaces = reaching.flatMap(({ route }) =>
     parentStatuses(route).flatMap((p) => (p.ref.kind === "Gateway" && p.ref.group === GATEWAY_GROUP && p.ref.namespace ? [p.ref.namespace] : [])),
   );
-  const gateways = useWatch(clusterId, inNamespaces(servedKind(kinds, GATEWAY), gatewayNamespaces));
-  const grantsIn = useGrants(clusterId, reaching.some(({ route }) => route.metadata?.namespace !== ns) ? [ns] : []);
-  const ingresses = useWatch(clusterId, inNamespaces(servedKind(kinds, INGRESS), ns ? [ns] : []));
+  const gateways = useWatch(clusterId, active ? inNamespaces(servedKind(kinds, GATEWAY), gatewayNamespaces) : null);
+  const grantsIn = useGrants(clusterId, active && reaching.some(({ route }) => route.metadata?.namespace !== ns) ? [ns] : []);
+  const ingresses = useWatch(clusterId, active ? inNamespaces(servedKind(kinds, INGRESS), ns ? [ns] : []) : null);
 
   const gatewayList = [...gateways.items.values()];
-  const exposures = serviceExposures(service, {
+  const exposures = active ? serviceExposures(service, {
     routes,
     gatewayOf: (ref: ObjRef) =>
       gatewayList.find((g) => g.metadata?.name === ref.name && (g.metadata?.namespace ?? null) === ref.namespace),
     grantsIn,
-  });
-  const viaIngress = ingressExposures(service, ingresses.items.values());
-  if (exposures.length === 0 && viaIngress.length === 0) return null;
+  }) : [];
+  const viaIngress = active ? ingressExposures(service, ingresses.items.values()) : [];
+  const found = exposures.length > 0 || viaIngress.length > 0;
+  const ingressKind = servedKind(kinds, INGRESS);
+  const listsReady = !routeSource.loading && ingressKind !== undefined;
+  const ingressAnswer = watchProbeResult(found, ingressKind ? [ingresses] : []);
+  const unavailable = routeSource.failed || kinds.error || ingressAnswer === "unknown";
+  const answer = found ? "present" : unavailable ? "unknown" : listsReady && ingressAnswer ? "absent" : null;
+  useEffect(() => { if (active && answer) settle(answer); }, [active, answer, settle]);
+  if (!open && result) return result === "absent" ? null : <Block id="gateway:exposedBy.title" title={t("gateway:exposedBy.title")}>{null}</Block>;
+  if (!found && answer === null && result !== null && result !== "absent") return <Block id="gateway:exposedBy.title" title={t("gateway:exposedBy.title")}><p className="dt-muted">{t("common:details.loading")}</p></Block>;
+  if (!found) return answer === "unknown" ? <Block id="gateway:exposedBy.title" title={t("gateway:exposedBy.title")}><ErrorState error={kinds.error ?? ingresses.error ?? UNKNOWN_DETAILS_SOURCE} /></Block> : null;
 
   const rows = [
     ...exposures.map((e) => ({
@@ -149,7 +162,7 @@ function ExposedBy({ clusterId, service }: { clusterId: ClusterId; service: Kube
     })),
   ];
   return (
-    <Block title={t("gateway:exposedBy.title")}>
+    <Block id="gateway:exposedBy.title" title={t("gateway:exposedBy.title")}>
       <SimpleTable
         tableId="gateway.exposedBy"
         headers={[
@@ -175,15 +188,21 @@ const PROBLEM: Health = "problem";
 
 function UsedByListeners({ clusterId, secret }: { clusterId: ClusterId; secret: KubeObject }) {
   const { t } = useTranslation();
+  const { open, enabled: active, result, settle } = useDisclosureProbe("gateway:secretUse.title");
   const kinds = useClusterKinds(clusterId);
   const ns = secret.metadata?.namespace ?? "";
-  const gateways = useWatch(clusterId, everywhere(servedKind(kinds, GATEWAY)));
+  const gateways = useWatch(clusterId, active ? everywhere(servedKind(kinds, GATEWAY)) : null);
   const fromElsewhere = [...gateways.items.values()].some((g) => g.metadata?.namespace !== ns);
-  const grantsIn = useGrants(clusterId, fromElsewhere ? [ns] : []);
-  const uses = listenersUsingSecret(secret, gateways.items.values(), grantsIn);
-  if (uses.length === 0) return null;
+  const grantsIn = useGrants(clusterId, active && fromElsewhere ? [ns] : []);
+  const uses = active ? listenersUsingSecret(secret, gateways.items.values(), grantsIn) : [];
+  const kind = servedKind(kinds, GATEWAY);
+  const answer = kind === undefined ? null : kinds.error ? "unknown" : watchProbeResult(uses.length > 0, kind ? [gateways] : []);
+  useEffect(() => { if (active && answer) settle(answer); }, [active, answer, settle]);
+  if (!open && result) return result === "absent" ? null : <Block id="gateway:secretUse.title" title={t("gateway:secretUse.title")}>{null}</Block>;
+  if (uses.length === 0 && answer === null && result !== null && result !== "absent") return <Block id="gateway:secretUse.title" title={t("gateway:secretUse.title")}><p className="dt-muted">{t("common:details.loading")}</p></Block>;
+  if (uses.length === 0) return answer === "unknown" ? <Block id="gateway:secretUse.title" title={t("gateway:secretUse.title")}><ErrorState error={kinds.error ?? gateways.error ?? UNKNOWN_DETAILS_SOURCE} /></Block> : null;
   return (
-    <Block title={t("gateway:secretUse.title")}>
+    <Block id="gateway:secretUse.title" title={t("gateway:secretUse.title")}>
       <SimpleTable
         tableId="gateway.secretUse"
         headers={[t("gateway:secretUse.gateway"), t("gateway:secretUse.listener"), t("gateway:secretUse.status")]}
@@ -230,12 +249,14 @@ export function isPolicyTarget(kind: Pick<KindRef, "group" | "kind">): boolean {
 interface Found {
   kind: ResourceKind;
   policies: { policy: KubeObject; sectionNames: string[] }[];
+  complete: boolean;
+  failed: boolean;
 }
 
 /** Same kind and the same policy objects naming the same sections: nothing to re-render. */
 function samePolicies(a: Found, b: Found): boolean {
   return (
-    a.kind === b.kind &&
+    a.kind === b.kind && a.complete === b.complete && a.failed === b.failed &&
     a.policies.length === b.policies.length &&
     a.policies.every((p, i) => p.policy === b.policies[i]?.policy && p.sectionNames.join() === b.policies[i]?.sectionNames.join())
   );
@@ -263,15 +284,17 @@ function PolicyKindWatch({
   );
   const key = kindKey(kind.kindRef);
   useEffect(() => {
-    onFound(key, policies.length > 0 ? { kind, policies } : null);
-  }, [key, kind, policies, onFound]);
+    onFound(key, { kind, policies, complete: watch.status !== "loading", failed: watch.status === "error" || (watch.forbidden?.length ?? 0) > 0 });
+  }, [key, kind, policies, watch.status, watch.forbidden, onFound]);
   useEffect(() => () => onFound(key, null), [key, onFound]);
   return null;
 }
 
 function PoliciesAttached({ clusterId, obj, kind }: { clusterId: ClusterId; obj: KubeObject; kind: KindRef }) {
   const { t } = useTranslation();
-  const { kinds } = useClusterKinds(clusterId);
+  const { open, enabled: active, result, settle } = useDisclosureProbe("gateway:attachedPolicies.title");
+  const discovery = useClusterKinds(clusterId);
+  const { kinds } = discovery;
   const [found, setFound] = useState<ReadonlyMap<string, Found>>(() => new Map());
   const onFound = useCallback(
     (key: string, value: Found | null) =>
@@ -288,10 +311,14 @@ function PoliciesAttached({ clusterId, obj, kind }: { clusterId: ClusterId; obj:
     [],
   );
   // Policy attachment is a Gateway API mechanism: without it served, no policy kind is watched.
-  const candidates = kinds?.some((k) => k.kindRef.group === GATEWAY_GROUP)
+  const candidates = active && kinds?.some((k) => k.kindRef.group === GATEWAY_GROUP)
     ? policyKinds(kinds).filter((k) => k.namespaced)
     : [];
-  const rows = [...found.values()]
+  const hasPolicies = [...found.values()].some(item => item.policies.length > 0);
+  const complete = Boolean(kinds) && candidates.every(kind => found.get(kindKey(kind.kindRef))?.complete);
+  const answer = hasPolicies ? "present" : discovery.error || [...found.values()].some(item => item.failed) ? "unknown" : complete ? "absent" : null;
+  useEffect(() => { if (active && answer) settle(answer); }, [active, answer, settle]);
+  const rows = [...(active ? found.values() : [])]
     .sort((a, b) => a.kind.kindRef.kind.localeCompare(b.kind.kindRef.kind))
     .flatMap(({ kind: policyKind, policies }) =>
       policies.map(({ policy, sectionNames }) => {
@@ -313,6 +340,7 @@ function PoliciesAttached({ clusterId, obj, kind }: { clusterId: ClusterId; obj:
         };
       }),
     );
+  if (!open && result) return result === "absent" ? null : <Block id="gateway:attachedPolicies.title" title={t("gateway:attachedPolicies.title")}>{null}</Block>;
   return (
     <>
       {candidates.map((k) => (
@@ -325,8 +353,10 @@ function PoliciesAttached({ clusterId, obj, kind }: { clusterId: ClusterId; obj:
           onFound={onFound}
         />
       ))}
-      {rows.length > 0 && (
-        <Block title={t("gateway:attachedPolicies.title")}>
+      {(rows.length > 0 || answer === "unknown" || (answer === null && result !== null && result !== "absent")) && (
+        <Block id="gateway:attachedPolicies.title" title={t("gateway:attachedPolicies.title")}>
+          {answer === "unknown" && <ErrorState error={discovery.error ?? UNKNOWN_DETAILS_SOURCE} />}
+          {answer === null && <p className="dt-muted">{t("common:details.loading")}</p>}
           <SimpleTable
             tableId="gateway.attachedPolicies"
             headers={[

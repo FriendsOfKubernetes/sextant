@@ -1,3 +1,4 @@
+import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // An InferenceService's details: its state and why (the failing condition or the model's last failure), URL and
 // address, the deployment mode, each component (predictor, transformer, explainer) with its model format, runtime,
 // storage URI (never with credentials or a query), replicas, revisions, traffic split and what KServe made for it
@@ -76,7 +77,7 @@ function ComponentBlock({ obj, spec, made }: { obj: KubeObject; spec: ComponentS
     TRAFFIC_WRAP,
   );
   return (
-    <Block title={t(`kserve:component.${spec.name}`)}>
+    <Block id={`component.${spec.name}`} title={t(`kserve:component.${spec.name}`)}>
       <Fields rows={rows} labelPrefix={LABELS} />
       {trafficTable}
     </Block>
@@ -98,7 +99,7 @@ function ModelStatusBlock({ obj }: { obj: KubeObject }) {
     ["copies", m.copies?.total !== undefined ? t("kserve:copies", { failed: m.copies.failed ?? 0, total: m.copies.total }) : null],
   ];
   return (
-    <Block title={t("kserve:modelStatus")}>
+    <Block id="kserve:modelStatus" title={t("kserve:modelStatus")}>
       <Fields rows={rows} labelPrefix={LABELS} />
       {m.failure?.message && <Note text={m.failure.message} tone={modelFailed(m) || invalidSpec(m) ? "danger" : "warning"} />}
     </Block>
@@ -112,8 +113,12 @@ export function ServiceView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
   const reason = serviceReason(obj);
   const mode = deploymentModeOf(obj);
   const recorded = recordedRuntimeOf(obj);
-  const made = useUnderlying(clusterId, ns, obj.metadata?.name);
   const components = componentsOf(obj);
+  const predictorOpen = useDetailsDisclosure("component.predictor")?.open ?? true;
+  const transformerOpen = useDetailsDisclosure("component.transformer")?.open ?? true;
+  const explainerOpen = useDetailsDisclosure("component.explainer")?.open ?? true;
+  const visible = { predictor: predictorOpen, transformer: transformerOpen, explainer: explainerOpen };
+  const made = useUnderlying(clusterId, components.some(c => visible[c.name]) ? ns : null, obj.metadata?.name);
   const predictor = components.find((c) => c.name === "predictor");
   const rows: FieldRow[] = [
     ["status", <ServiceStateText key="s" obj={obj} />],

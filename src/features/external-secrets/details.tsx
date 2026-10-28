@@ -65,7 +65,7 @@ function LastError({ obj }: { obj: KubeObject }) {
   const r = readinessOf(obj);
   if (r.state !== "failed" || !r.message) return null;
   return (
-    <Block title={t("externalsecrets:lastError")}>
+    <Block id="externalsecrets:lastError" title={t("externalsecrets:lastError")}>
       <p className="eso-message">{r.message}</p>
     </Block>
   );
@@ -131,7 +131,7 @@ function ExternalSecretView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
       <Fields rows={rows} labelPrefix={LABELS} />
       <LastError obj={obj} />
       {(keys.length > 0 || bulk.length > 0) && (
-        <Block title={t("externalsecrets:keys.title")}>
+        <Block id="externalsecrets:keys.title" title={t("externalsecrets:keys.title")}>
           <p className="eso-muted">{t("externalsecrets:keys.namesOnly")}</p>
           {keysTable}
           <Fields rows={bulkRows} labelPrefix={LABELS} />
@@ -160,7 +160,7 @@ function ClusterExternalSecretView({ obj }: { obj: KubeObject }) {
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
       <LastError obj={obj} />
-      {failed.length > 0 && <Block title={t("externalsecrets:failedNamespaces.title")}>{failedTable}</Block>}
+      {failed.length > 0 && <Block id="externalsecrets:failedNamespaces.title" title={t("externalsecrets:failedNamespaces.title")}>{failedTable}</Block>}
     </>
   );
 }
@@ -201,7 +201,7 @@ function PushSecretView({ obj }: { obj: KubeObject }) {
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
       <LastError obj={obj} />
-      {keys.length > 0 && <Block title={t("externalsecrets:keys.pushTitle")}>{keysTable}</Block>}
+      {keys.length > 0 && <Block id="externalsecrets:keys.pushTitle" title={t("externalsecrets:keys.pushTitle")}>{keysTable}</Block>}
     </>
   );
 }

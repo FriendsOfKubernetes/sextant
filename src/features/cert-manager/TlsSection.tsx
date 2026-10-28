@@ -116,13 +116,13 @@ export function TlsCertificateView({ clusterId, obj }: { clusterId: ClusterId; o
     <>
       <Fields rows={rows} labelPrefix={LABELS} />
       {chain.length > 1 && (
-        <Block title={t("certmanager:tls.chainTitle")}>
+        <Block id="certmanager:tls.chainTitle" title={t("certmanager:tls.chainTitle")}>
           {certificateList(chain)}
           {chainTruncated && <p className="cm-muted">{t("certmanager:tls.truncated")}</p>}
         </Block>
       )}
       {(ca.length > 0 || caInvalid) && (
-        <Block title={t("certmanager:tls.caTitle")}>
+        <Block id="certmanager:tls.caTitle" title={t("certmanager:tls.caTitle")}>
           {caInvalid ? <p className="cm-muted">{t("certmanager:tls.caInvalid")}</p> : certificateList(ca)}
         </Block>
       )}
@@ -135,7 +135,7 @@ export function TlsCertificateSection({ clusterId, obj }: DetailsSectionProps) {
   const { t } = useTranslation();
   if (!obj || !holdsCertificate(obj)) return null;
   return (
-    <Block title={t("certmanager:tls.title")}>
+    <Block id="certmanager:tls.title" title={t("certmanager:tls.title")}>
       <TlsCertificateView clusterId={clusterId} obj={obj} />
     </Block>
   );

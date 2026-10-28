@@ -13,7 +13,7 @@ export function WorkloadLogsSection({ clusterId, objectRef, obj }: DetailsSectio
   const namespace = objectRef.namespace;
   if (!obj || !selector || !namespace) return null;
   return (
-    <Block title={t("logs:details.title")}>
+    <Block id="logs:details.title" title={t("logs:details.title")}>
       <p className="logs-details">
         <Button icon="logs" onClick={() => openSelectorLogsTab(clusterId, namespace, selector, selectorTabTitle(objectRef.kind, obj))}>
           {t("logs:details.allPods")}
