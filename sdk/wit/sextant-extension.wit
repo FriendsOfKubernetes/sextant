@@ -1,0 +1,40 @@
+// The contract between Sextant and an extension's backend (ADR-0131). A backend is a WebAssembly component of the world
+// `backend`: it exports `handle`, which answers its frames' `backend.call(method, params)`, and imports `host`. Sextant
+// also links WASI 0.2 with nothing behind it (no files, environment or arguments, sockets refused; stdout and stderr go
+// to the extension's log; clocks and random numbers work) and `wasi:http/outgoing-handler`, whose requests reach only
+// the hosts the manifest declares (`backend.network.hosts`), over HTTPS.
+package sextant:extension@1.0.0;
+
+interface host {
+    /// An error of a call to Sextant, as the frame gets it: `code` is the extension API's (`forbidden`, `notFound`,
+    /// `invalid`, `conflict`, `timeout`, `unreachable`, `other`, …).
+    record call-error {
+        code: string,
+        message: string,
+    }
+
+    /// One method of the extension API, with the extension's own grant, confirmations and activity log, as its frames
+    /// call it: `clusters.list`, `kinds`, `resources.list`, `resources.get`, `resources.apply`, `resources.patch`,
+    /// `resources.delete`, `logs.tail`, `secret.value`, `storage.get`, `storage.set`, `storage.remove`, and
+    /// `credentials.get` (`{ "name": "<credential>" }` → the value, or null when the user entered none). `params` and
+    /// the result are JSON text.
+    call: func(method: string, params: string) -> result<string, call-error>;
+
+    enum level {
+        debug,
+        info,
+        warn,
+        error,
+    }
+
+    /// A line of the extension's backend log (clipped; never the activity log).
+    log: func(level: level, message: string);
+}
+
+world backend {
+    import host;
+
+    /// Answers `backend.call(method, params)` of one of the extension's frames. `params` and the result are JSON text;
+    /// an error is a message for the frame.
+    export handle: func(method: string, params: string) -> result<string, string>;
+}

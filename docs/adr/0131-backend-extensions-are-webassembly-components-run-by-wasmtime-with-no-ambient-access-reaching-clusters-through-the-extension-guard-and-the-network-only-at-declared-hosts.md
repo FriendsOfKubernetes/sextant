@@ -26,14 +26,10 @@ Things that make it hard:
 - An extension without `backend` is exactly what it is today.
 - The component implements a world that Sextant defines in WIT, `sextant:extension/backend@1.0.0`:
   - it exports `handle(method, params-json) -> result-json`;
-  - it imports only Sextant's interfaces:
-    - `cluster`: the extension API's resource, log and Secret-value methods;
-    - `http`: one request, one response;
-    - `credentials`: read its own credentials;
-    - `storage`: the extension's existing 1 MB;
-    - `log`;
-    - `clock` and `random`.
-- No WASI filesystem, sockets, environment, arguments or process interfaces are linked. A component that imports anything else fails to instantiate, so the install refuses it before consent.
+  - it imports Sextant's interface `host`, whose `call(method, params)` reaches the extension API's methods as the frames call them (`clusters.list`, `kinds`, `resources.*` but `watch`, `logs.tail`, `secret.value`, `storage.*`) plus `credentials.get`, and whose `log` writes the backend's log;
+  - it may import WASI 0.2, which Sextant links with nothing behind it: no environment, arguments or preopened directories, stdin closed, every socket address refused, stdout and stderr captured (capped) into the backend's log; clocks and random numbers work. A component built by `rustc` for `wasm32-wasip2` or by jco imports these whether or not it uses them;
+  - `wasi:http/outgoing-handler` is linked too, but sends nothing itself: every request goes to Sextant's network policy below, so a TypeScript backend's `fetch()` and a Rust HTTP client work within it.
+- A component that imports anything other than `wasi:*` and `sextant:extension/*` is refused at install, before consent, even when there would be nothing to link.
 - The manifest's `sextantApi` stays 1. The world's version is the backend's contract: a newer major is an install refusal, as an unsupported `sextantApi` is.
 
 ### How it runs
@@ -68,7 +64,7 @@ Things that make it hard:
   - `apply` checked on the parsed documents (ADR-0057).
 
   There is no second permission vocabulary. The frame and its backend share one grant.
-- **The network.** Only `http.request` to a declared host:
+- **The network.** Only `wasi:http` requests to a declared host:
   - HTTPS on port 443, no credentials in the URL, a redirect only to a declared host;
   - never a loopback, link-local, private, metadata or carrier-grade NAT address. This is checked on every resolved address by a filtering resolver, as for image registries (ADR-0103), so DNS cannot point a declared name inside;
   - at most 8 MiB per response and 30 s per request;
@@ -104,12 +100,12 @@ Things that make it hard:
 - The SDK ships the WIT and the TypeScript types generated from it, and two examples:
   - `sdk/examples/backend-ts`: calls one declared host and reads the cluster;
   - `sdk/examples/backend-rust`: does the same in Rust.
-- Go through TinyGo compiles to the same WIT and is documented as working without guarantees: TinyGo's standard library is partial, and there is no `net/http`, only Sextant's `http` interface. Other languages that build components (C and C++ through wasi-sdk) work through the WIT on the same terms.
+- Go through TinyGo compiles to the same WIT and is documented as working without guarantees: TinyGo's standard library is partial, and HTTP goes through `wasi:http` (no `net/http` sockets). Other languages that build components (C and C++ through wasi-sdk) work through the WIT on the same terms.
 - Python (componentize-py) is not supported. Its component bundles CPython at 20–40 MB, over the limits, and it starts slowly in a fresh store per call. Supporting it would need larger limits and long-lived instances, which is a separate decision.
 
 ## Why
 
-- **WebAssembly with no ambient authority.** The component can do only what Sextant links in, and Sextant links in nothing that is not an extension-API call. Its memory is bounds-checked and separate from the process.
+- **WebAssembly with no ambient authority.** The component can do only what Sextant links in: extension-API calls, HTTP through Sextant's policy, and WASI with nothing behind it. Its memory is bounds-checked and separate from the process.
 - **wasmtime.** It is written in Rust, fuzzed continuously and has a security process. It implements the component model and WIT, so the boundary is typed and every host call is one checked function. It has epoch interruption and a resource limiter for time and memory.
 
   The rejected engines:

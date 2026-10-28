@@ -1,0 +1,22 @@
+# The backend the runtime's tests run (crates/sextant-ext-runtime/tests/). Built by `build.sh` into
+# ../fixtures/guest.wasm; not part of the workspace.
+[package]
+name = "sextant-test-backend"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.63.0"
+wasi = "0.14.7"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1
+
+[workspace]

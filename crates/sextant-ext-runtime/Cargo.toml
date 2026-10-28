@@ -1,0 +1,27 @@
+[package]
+name = "sextant-ext-runtime"
+description = "Runs extension backends (ADR-0131): WebAssembly components under wasmtime, with no ambient access"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+# Cranelift compiles a backend once, at install; async: host calls (cluster, HTTP) are awaited; no GC proposals, no
+# profiling, no WAT, no pooling allocator.
+wasmtime = { version = "50.0.0", default-features = false, features = ["std", "cranelift", "component-model", "async", "parallel-compilation"] }
+# WASI 0.2 with an empty context (no files, environment, arguments or sockets) and wasi:http without its own client:
+# every request goes to `Host::http`, where the embedder applies its policy.
+wasmtime-wasi = { version = "50.0.0", default-features = false, features = ["p2"] }
+wasmtime-wasi-http = { version = "50.0.0", default-features = false, features = ["p2"] }
+tokio.workspace = true
+http = "1.5"
+http-body-util = "0.1.5"
+bytes = "1"
+
+[dev-dependencies]
+# Components written as text in the tests.
+wat = "1"
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
