@@ -14,6 +14,7 @@ use sextant_core::{ClusterId, ClusterManager, ConnectionState, CoreError, CoreRe
 use sextant_core::{helm, logs, metrics};
 
 use super::guard::{CallSummary, ClusterTarget};
+use super::projection;
 use super::tools::{ToolCall, ToolKind, ToolOutput, ToolResult, ToolSet};
 
 /// A read gives up after this long.
@@ -61,7 +62,8 @@ pub fn register_read_tools(tools: &mut ToolSet) {
             "Objects of one kind, in a namespace or in every namespace the agent may read, optionally filtered by \
              label and field selectors. Up to `limit` objects (100 by default, at most 500); `truncated` says there \
              are more. When the cluster refuses the list over all namespaces, the namespaces the user is known to \
-             work in are listed instead (`namespaces`, `refused`; see get_access). Secrets come without their values, and fields that hold secrets inline (a Route's TLS key, \
+             work in are listed instead (`namespaces`, `refused`; see get_access). `fields` or `summary: true` \
+             return a few fields of each object instead of the whole object, many times shorter. Secrets come without their values, and fields that hold secrets inline (a Route's TLS key, \
              a BuildConfig's webhook secrets, a HelmChart's values, an InstallPlan's manifests, a k3s/RKE2 node's \
              arguments) come empty.",
             ToolKind::Read,
@@ -146,6 +148,13 @@ pub struct ListArgs {
     pub field_selector: Option<String>,
     /// How many objects at most (default 100, at most 500).
     pub limit: Option<u32>,
+    /// Instead of whole objects, only these fields of each (at most 20), as `{namespace, name, values}`: paths such
+    /// as `.status.phase`, `.spec.containers[0].image`, `.metadata.labels["app"]` (no wildcards or filters).
+    pub fields: Option<Vec<String>>,
+    /// Instead of whole objects, a short summary of each: phase, ready containers, restarts and node of a Pod,
+    /// replicas of a workload, status of a Job, Node, Service, claim or Event, the conditions of other kinds.
+    #[serde(default)]
+    pub summary: bool,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -367,6 +376,15 @@ async fn list_resources(call: ToolCall, args: ListArgs) -> ToolResult {
     let kind = find_kind(mgr, &cluster.id, args.api_version.as_deref(), &args.kind).await?;
     let pattern = pattern_of(&kind.kind_ref);
     let name = &kind.kind_ref.kind;
+    let fields = match (&args.fields, args.summary) {
+        (Some(_), true) => return Err(invalid("give `fields` or `summary`, not both").into()),
+        (Some(fields), false) => Some(projection::parse_fields(
+            &kind.kind_ref.group,
+            name,
+            fields,
+        )?),
+        (None, _) => None,
+    };
     let namespace = non_empty(args.namespace.as_deref()).filter(|_| kind.namespaced);
     let cluster_id = &cluster.id;
     let list = |ns: Option<String>, limit: u32| {
@@ -453,7 +471,16 @@ async fn list_resources(call: ToolCall, args: ListArgs) -> ToolResult {
             )
         }
     };
-    let items: Vec<Value> = items.into_iter().map(compact).collect();
+    // A projection reads the object as the agent would get it whole: after `compact`.
+    let items: Vec<Value> = items
+        .into_iter()
+        .map(compact)
+        .map(|obj| match &fields {
+            Some(fields) => projection::project(&obj, fields),
+            None if args.summary => projection::summarize(&kind.kind_ref.group, name, &obj),
+            None => obj,
+        })
+        .collect();
     let mut out = json!({
         "apiVersion": api_version(&kind.kind_ref),
         "kind": name,

@@ -6,7 +6,7 @@
 //! - `http` — `127.0.0.1:<port>/mcp` with the Host/Origin/token/body checks before MCP;
 //! - `guard` — the permission check of every call, confirmation in the window, the journal record;
 //! - `confirm`, `audit` — waiting confirmations (`mcp-confirm`), the journal (`mcp-audit`);
-//! - `tools`, `tools_read` — the tool registry and the reading tools;
+//! - `tools`, `tools_read` — the tool registry and the reading tools; `projection` — their `fields`/`summary`;
 //! - `dry_run` — what `apply_yaml` / `patch_resource` with `dryRun: true` return;
 //! - `window`, `tools_diagnose`, `diagnose_answers` — the read-only diagnostic tools the window computes (ADR-0094);
 //! - `effective` — `get_permissions` with `mine: true`: the user's own rules review, behind an opt-in (#300).
@@ -20,6 +20,7 @@ pub mod effective;
 pub mod guard;
 pub mod http;
 pub mod paths;
+pub mod projection;
 pub mod server;
 pub mod token;
 pub mod tools;

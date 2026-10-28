@@ -1963,6 +1963,19 @@ async fn a_refused_list_over_all_namespaces_falls_back_to_the_known_ones() {
             .contains("refused the list over all namespaces")
     );
 
+    // Only some fields of each object, through the same fallback.
+    let projected = tool(
+        &state,
+        "list_resources",
+        json!({ "cluster": "test", "kind": "Pod", "fields": [".metadata.uid"] }),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        projected["items"],
+        json!([{ "namespace": "team-a", "name": "web-1", "values": { ".metadata.uid": "u1" } }])
+    );
+
     // A known namespace the cluster refuses too is named, never shown as empty.
     state
         .settings
