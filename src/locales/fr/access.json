@@ -75,5 +75,9 @@
     "label": "Demander avant l'exécution",
     "hint": "Modification, Suppression, Exec et Redirection de port attendent votre réponse dans Sextant pour cette règle (120 s, après quoi elles sont refusées)."
   },
-  "secretWarning": "Valeurs des Secrets permet à l'agent de lire en clair les données des Secrets et les valeurs des releases Helm. Ne l'autorisez que pour les namespaces dont l'agent a réellement besoin."
+  "secretWarning": "Valeurs des Secrets permet à l'agent de lire en clair les données des Secrets et les valeurs des releases Helm. Ne l'autorisez que pour les namespaces dont l'agent a réellement besoin.",
+  "reviews": {
+    "label": "Permettre aux agents de voir mes permissions effectives",
+    "hint": "Un agent peut alors demander à l’API Kubernetes ce que vos identifiants pour ce cluster ont le droit de faire (un SelfSubjectRulesReview), dans les namespaces qu’il peut lire, et reçoit la réponse limitée aux kinds couverts par ses règles. Utile quand votre RBAC est restreint et que les Roles ne sont pas lisibles."
+  }
 }

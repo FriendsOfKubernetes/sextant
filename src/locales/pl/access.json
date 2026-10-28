@@ -75,5 +75,9 @@
     "label": "Pytaj przed wykonaniem",
     "hint": "Modyfikacja, usuwanie, exec i przekierowanie portów w tej regule czekają na odpowiedź w programie Sextant (120 s, potem są odrzucane)."
   },
-  "secretWarning": "Uprawnienie „Wartości Secret” pozwala agentowi odczytywać dane Secret i wartości wydań Helm w postaci jawnej. Zezwalaj na to tylko w namespace’ach, których agent naprawdę potrzebuje."
+  "secretWarning": "Uprawnienie „Wartości Secret” pozwala agentowi odczytywać dane Secret i wartości wydań Helm w postaci jawnej. Zezwalaj na to tylko w namespace’ach, których agent naprawdę potrzebuje.",
+  "reviews": {
+    "label": "Pozwól agentom widzieć moje faktyczne uprawnienia",
+    "hint": "Agent będzie mógł zapytać Kubernetes API, co wolno Twoim poświadczeniom w tym klastrze (SelfSubjectRulesReview), w przestrzeniach nazw, które może czytać, i otrzyma odpowiedź ograniczoną do kinds objętych jego regułami. Przydatne, gdy Twój RBAC jest ograniczony i nie da się odczytać Roles."
+  }
 }

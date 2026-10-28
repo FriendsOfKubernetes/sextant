@@ -75,5 +75,9 @@
     "label": "Ask before running",
     "hint": "Modify, Delete, Exec and Port forward in this rule wait for your answer in Sextant (120 s, then they are refused)."
   },
-  "secretWarning": "Secret values lets the agent read Secret data and the values of Helm releases in clear text. Only allow it for namespaces the agent really needs."
+  "secretWarning": "Secret values lets the agent read Secret data and the values of Helm releases in clear text. Only allow it for namespaces the agent really needs.",
+  "reviews": {
+    "label": "Let agents see my effective permissions",
+    "hint": "An agent may then ask the Kubernetes API what your credentials for this cluster may do (a SelfSubjectRulesReview) in the namespaces it may read, and gets the answer cut to the kinds its rules cover. Useful when your RBAC is limited and the Roles cannot be read."
+  }
 }

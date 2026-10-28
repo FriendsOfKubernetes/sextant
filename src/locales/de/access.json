@@ -75,5 +75,9 @@
     "label": "Vor dem Ausführen fragen",
     "hint": "Ändern, Löschen, Exec und Portweiterleitung warten in dieser Regel auf Ihre Antwort in Sextant (120 s, danach werden sie abgelehnt)."
   },
-  "secretWarning": "„Secret-Werte“ erlaubt dem Agenten, Secret-Daten und die Werte von Helm-Releases im Klartext zu lesen. Erlauben Sie das nur für Namespaces, die der Agent wirklich braucht."
+  "secretWarning": "„Secret-Werte“ erlaubt dem Agenten, Secret-Daten und die Werte von Helm-Releases im Klartext zu lesen. Erlauben Sie das nur für Namespaces, die der Agent wirklich braucht.",
+  "reviews": {
+    "label": "Agenten meine tatsächlichen Berechtigungen sehen lassen",
+    "hint": "Ein Agent kann dann die Kubernetes API fragen, was Ihre Zugangsdaten für diesen Cluster dürfen (ein SelfSubjectRulesReview), in den Namespaces, die er lesen darf, und erhält die Antwort beschränkt auf die Kinds seiner Regeln. Hilfreich, wenn Ihr RBAC eingeschränkt ist und die Roles nicht lesbar sind."
+  }
 }

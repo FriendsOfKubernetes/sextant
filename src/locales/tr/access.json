@@ -75,5 +75,9 @@
     "label": "Çalıştırmadan önce sor",
     "hint": "Bu kuraldaki Değiştirme, Silme, Exec ve Bağlantı noktası yönlendirme eylemleri Sextant'ta yanıtınızı bekler (120 sn, sonra reddedilir)."
   },
-  "secretWarning": "Secret değerleri, ajanın Secret verilerini ve Helm yayınlarının değerlerini açık metin olarak okumasına izin verir. Yalnızca ajanın gerçekten ihtiyaç duyduğu namespace'ler için izin verin."
+  "secretWarning": "Secret değerleri, ajanın Secret verilerini ve Helm yayınlarının değerlerini açık metin olarak okumasına izin verir. Yalnızca ajanın gerçekten ihtiyaç duyduğu namespace'ler için izin verin.",
+  "reviews": {
+    "label": "Ajanların etkin izinlerimi görmesine izin ver",
+    "hint": "Bir ajan, bu kümedeki kimlik bilgilerinizin neler yapabileceğini Kubernetes API’sine sorabilir (SelfSubjectRulesReview); okuyabildiği namespace’lerde ve yanıt kurallarının kapsadığı kind’larla sınırlı olarak. RBAC’niz kısıtlı olduğunda ve Role’ler okunamadığında yararlıdır."
+  }
 }

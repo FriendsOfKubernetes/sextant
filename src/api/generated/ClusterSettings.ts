@@ -75,6 +75,12 @@ observabilityLinks?: ObservabilityLinks | null,
  */
 knownNamespaces?: Array<string> | null, 
 /**
+ * "Let agents see my effective permissions" (#300): `get_permissions` may then ask the API server what the user's
+ * own credentials may do (SelfSubjectRulesReview), cut to the agent's own rules. Off unless exactly `true`.
+ * Owned by the frontend, like `agent_access`; never exported; left out of the file while off.
+ */
+agentAccessReviews?: boolean | null, 
+/**
  * Filters per resource view (`kind:<group>/<Kind>`), owned by the frontend. Invalid entries are ignored
  * independently; an empty map is omitted for compatibility with older settings.
  */

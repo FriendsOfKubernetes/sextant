@@ -2,7 +2,8 @@
 // A set (Off by default, Read-only, Read + write, Full) or Custom rules; the core reads the saved value on every
 // agent call. Changes are saved at once, each applied to the latest saved value. A value the core could not read
 // arrives as `agentAccessUnrecognised` beside a closed access; it is sent back untouched until the user resets it or
-// chooses a set.
+// chooses a set. "Let agents see my effective permissions" (`agentAccessReviews`, #300) is its own switch, off by
+// default: with it, `get_permissions` may ask the API server for the user's rules review, cut to the agent's rules.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -15,7 +16,7 @@ import {
   type ApiError,
   type ClusterAccess,
 } from "../../api";
-import { Button, ErrorState, Radio } from "../../components";
+import { Button, Checkbox, ErrorState, Radio } from "../../components";
 import { clusterSettingsOf } from "../clusters/clusterSettings";
 import type { ClusterSettingsSectionProps } from "../clusters/settingsRegistry";
 import { RulesEditor } from "./RulesEditor";
@@ -69,6 +70,20 @@ export function AgentAccessSection({ clusterId }: ClusterSettingsSectionProps) {
     await save((current) => makeAccess("custom", current.rules.length > 0 ? current.rules : rules));
   };
 
+  const setReviews = async (on: boolean) => {
+    try {
+      await updateSettings((current) => {
+        const next = { ...clusterSettingsOf(current, clusterId) };
+        if (on) next.agentAccessReviews = true;
+        else delete next.agentAccessReviews;
+        return { ...current, clusters: { ...current.clusters, [clusterId]: next } };
+      });
+      setError(null);
+    } catch (err) {
+      setError(toApiError(err));
+    }
+  };
+
   const editRules = (change: (rules: AccessRule[]) => AccessRule[]) =>
     void save((current) => makeAccess(current.preset, change(current.rules)));
 
@@ -99,6 +114,15 @@ export function AgentAccessSection({ clusterId }: ClusterSettingsSectionProps) {
       </p>
       {access.preset !== "off" && access.preset !== "custom" && <p className="aa-note">{t("access:customizeHint")}</p>}
       {access.preset === "custom" && <RulesEditor clusterId={clusterId} rules={access.rules} edit={editRules} />}
+      {access.preset !== "off" && (
+        <div className="aa-reviews">
+          <label className="aa-choice">
+            <Checkbox checked={cluster.agentAccessReviews === true} onChange={(e) => void setReviews(e.target.checked)} />
+            {t("access:reviews.label")}
+          </label>
+          <p className="aa-note">{t("access:reviews.hint")}</p>
+        </div>
+      )}
       {error && <ErrorState error={error} />}
     </div>
   );

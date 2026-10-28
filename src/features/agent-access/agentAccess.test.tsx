@@ -112,6 +112,29 @@ describe("registration", () => {
   });
 });
 
+describe("effective permissions", () => {
+  const box = () => screen.queryByRole("checkbox", { name: "Let agents see my effective permissions" });
+
+  it("is not offered while access is Off", async () => {
+    setup();
+    await section();
+    expect(box()).toBeNull();
+  });
+
+  it("is off by default and saved as its own switch", async () => {
+    setup({ preset: "readOnly", rules: [] });
+    await section();
+    expect(box()).not.toBeChecked();
+    fireEvent.click(box()!);
+    await waitFor(() => expect(wb.backend.settings.clusters["c1"]?.agentAccessReviews).toBe(true));
+    // The access itself is untouched.
+    expect(saved()).toEqual({ preset: "readOnly", rules: [] });
+    await waitFor(() => expect(box()).toBeChecked());
+    fireEvent.click(box()!);
+    await waitFor(() => expect(wb.backend.settings.clusters["c1"]).not.toHaveProperty("agentAccessReviews"));
+  });
+});
+
 describe("sets", () => {
   it("starts with Off and says what that means", async () => {
     setup();

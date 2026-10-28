@@ -8,13 +8,15 @@
 //! - `confirm`, `audit` — waiting confirmations (`mcp-confirm`), the journal (`mcp-audit`);
 //! - `tools`, `tools_read` — the tool registry and the reading tools;
 //! - `dry_run` — what `apply_yaml` / `patch_resource` with `dryRun: true` return;
-//! - `window`, `tools_diagnose`, `diagnose_answers` — the read-only diagnostic tools the window computes (ADR-0094).
+//! - `window`, `tools_diagnose`, `diagnose_answers` — the read-only diagnostic tools the window computes (ADR-0094);
+//! - `effective` — `get_permissions` with `mine: true`: the user's own rules review, behind an opt-in (#300).
 
 pub mod audit;
 pub mod confirm;
 pub mod context;
 pub mod diagnose_answers;
 pub mod dry_run;
+pub mod effective;
 pub mod guard;
 pub mod http;
 pub mod paths;

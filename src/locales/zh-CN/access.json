@@ -75,5 +75,9 @@
     "label": "运行前询问",
     "hint": "此规则中的修改、删除、Exec 和端口转发将在 Sextant 中等待你的答复（120 秒后自动拒绝）。"
   },
-  "secretWarning": "“Secret 值”允许智能体以明文读取 Secret 数据和 Helm 发布的值。请仅对智能体确实需要的 Namespace 启用。"
+  "secretWarning": "“Secret 值”允许智能体以明文读取 Secret 数据和 Helm 发布的值。请仅对智能体确实需要的 Namespace 启用。",
+  "reviews": {
+    "label": "允许代理查看我的实际权限",
+    "hint": "代理可以向 Kubernetes API 询问你在此集群的凭据能做什么（SelfSubjectRulesReview），仅限它可读取的命名空间，答案会裁剪到其规则涵盖的 kind。适用于 RBAC 受限、无法读取 Role 的情况。"
+  }
 }

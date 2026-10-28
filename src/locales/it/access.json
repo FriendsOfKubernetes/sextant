@@ -75,5 +75,9 @@
     "label": "Chiedi prima di eseguire",
     "hint": "In questa regola, Modifica, Eliminazione, Exec e Inoltro di porta attendono una risposta in Sextant (120 s, poi vengono rifiutate)."
   },
-  "secretWarning": "Valori dei Secret consente all'agente di leggere in chiaro i dati dei Secret e i valori delle release Helm. Consentilo solo per i namespace di cui l'agente ha davvero bisogno."
+  "secretWarning": "Valori dei Secret consente all'agente di leggere in chiaro i dati dei Secret e i valori delle release Helm. Consentilo solo per i namespace di cui l'agente ha davvero bisogno.",
+  "reviews": {
+    "label": "Consenti agli agenti di vedere i miei permessi effettivi",
+    "hint": "Un agente potrà chiedere all’API Kubernetes cosa possono fare le tue credenziali per questo cluster (un SelfSubjectRulesReview), nei namespace che può leggere, e riceverà la risposta limitata ai kind coperti dalle sue regole. Utile quando il tuo RBAC è limitato e i Role non sono leggibili."
+  }
 }

@@ -75,5 +75,9 @@
     "label": "執行前詢問",
     "hint": "此規則中的修改、刪除、Exec 與連接埠轉送會在 Sextant 中等待您的回覆（120 秒後視為拒絕）。"
   },
-  "secretWarning": "「Secret 值」允許代理程式以明文讀取 Secret 資料及 Helm 發行版本的值。請只對代理程式確實需要的 Namespace 開放。"
+  "secretWarning": "「Secret 值」允許代理程式以明文讀取 Secret 資料及 Helm 發行版本的值。請只對代理程式確實需要的 Namespace 開放。",
+  "reviews": {
+    "label": "允許代理查看我的實際權限",
+    "hint": "代理可以向 Kubernetes API 詢問你在此叢集的憑證能做什麼（SelfSubjectRulesReview），僅限它可讀取的命名空間，答案會裁剪到其規則涵蓋的 kind。適用於 RBAC 受限、無法讀取 Role 的情況。"
+  }
 }

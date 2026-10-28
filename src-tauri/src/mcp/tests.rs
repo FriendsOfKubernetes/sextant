@@ -1909,6 +1909,11 @@ async fn namespace_scoped_cluster() -> String {
                 r#"{"kind":"PodList","apiVersion":"v1","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"web-1","namespace":"team-a","uid":"u1"}}]}"#,
             ),
             "/api/v1/pods" | "/api/v1/namespaces/team-b/pods" => (StatusCode::FORBIDDEN, forbidden),
+            // Every namespace answers the same: pods in the core group, and a webhook that cannot list its rules.
+            "/apis/authorization.k8s.io/v1/selfsubjectrulesreviews" => (
+                StatusCode::CREATED,
+                r#"{"kind":"SelfSubjectRulesReview","apiVersion":"authorization.k8s.io/v1","spec":{},"status":{"resourceRules":[{"verbs":["get","list","watch"],"apiGroups":[""],"resources":["pods","pods/log"]},{"verbs":["create"],"apiGroups":["authorization.k8s.io"],"resources":["selfsubjectrulesreviews"]}],"nonResourceRules":[{"verbs":["get"],"nonResourceURLs":["/healthz"]}],"incomplete":true}}"#,
+            ),
             _ => (
                 StatusCode::NOT_FOUND,
                 r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"NotFound","code":404}"#,
@@ -1998,5 +2003,71 @@ async fn a_refused_list_over_all_namespaces_falls_back_to_the_known_ones() {
     let _ = state.registry.write().unwrap().clusters();
     let err = pods().await.unwrap_err();
     assert!(err.contains("get_access"), "{err}");
+    state.close_all();
+}
+
+#[tokio::test]
+async fn the_users_own_permissions_reach_an_agent_only_when_allowed_and_cut_to_its_rules() {
+    let dir = tempfile::tempdir().unwrap();
+    let server = namespace_scoped_cluster().await;
+    let path = dir.path().join("kubeconfig");
+    std::fs::write(
+        &path,
+        format!(
+            "apiVersion: v1\nkind: Config\nclusters:\n- name: test\n  cluster:\n    server: {server}\n\
+             contexts:\n- name: test\n  context:\n    cluster: test\n    user: test\n    namespace: team-a\n\
+             users:\n- name: test\n  user: {{}}\ncurrent-context: test\n"
+        ),
+    )
+    .unwrap();
+    let (state, _) = state_in(dir.path(), Some(path.into_os_string()));
+    let cluster = first_cluster(&state);
+    let mut access = preset(AccessPreset::Custom);
+    access.rules = vec![rule(&["team-a"], &[("", "Pod")], &[AccessAction::Read])];
+    set_access(&state, &cluster, access);
+    let mine = |ns: Option<&str>| {
+        let mut args = json!({ "cluster": "test", "mine": true });
+        if let Some(ns) = ns {
+            args["namespace"] = json!(ns);
+        }
+        tool(&state, "get_permissions", args)
+    };
+
+    // Off by default: the agent learns how the user can allow it, and no review is sent.
+    let err = mine(None).await.unwrap_err();
+    assert!(
+        err.contains("Let agents see my effective permissions"),
+        "{err}"
+    );
+
+    state
+        .settings
+        .update(|s| s.clusters.get_mut(&cluster.0).unwrap().agent_access_reviews = Some(true))
+        .unwrap();
+    let out = mine(None).await.unwrap();
+    let ns = &out["namespaces"][0];
+    assert_eq!(ns["namespace"], "team-a", "{out}");
+    let resources: Vec<&str> = ns["rules"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["resource"].as_str().unwrap())
+        .collect();
+    // The review kinds and /healthz are no kinds the agent's rules cover.
+    assert_eq!(resources, ["pods", "pods/log"]);
+    assert_eq!(ns["rules"][0]["agentActions"], json!(["read"]));
+    assert_eq!(ns["incomplete"], true);
+    assert!(!out.to_string().contains("healthz"));
+
+    // A namespace the agent may not read is refused before anything is asked.
+    let err = mine(Some("team-b")).await.unwrap_err();
+    assert!(err.contains("denied"), "{err}");
+    let together = tool(
+        &state,
+        "get_permissions",
+        json!({ "cluster": "test", "mine": true, "whoCan": { "verb": "get", "resource": "pods" } }),
+    )
+    .await;
+    assert!(together.unwrap_err().contains("exactly one"));
     state.close_all();
 }

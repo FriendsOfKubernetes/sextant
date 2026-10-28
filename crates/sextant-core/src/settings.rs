@@ -116,6 +116,12 @@ pub struct ClusterSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional = nullable)]
     pub known_namespaces: Option<Vec<String>>,
+    /// "Let agents see my effective permissions" (#300): `get_permissions` may then ask the API server what the user's
+    /// own credentials may do (SelfSubjectRulesReview), cut to the agent's own rules. Off unless exactly `true`.
+    /// Owned by the frontend, like `agent_access`; never exported; left out of the file while off.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional = nullable)]
+    pub agent_access_reviews: Option<bool>,
     /// Filters per resource view (`kind:<group>/<Kind>`), owned by the frontend. Invalid entries are ignored
     /// independently; an empty map is omitted for compatibility with older settings.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
@@ -142,6 +148,7 @@ struct StoredClusterSettings {
     loki: Option<serde_json::Value>,
     observability_links: Option<serde_json::Value>,
     known_namespaces: Option<serde_json::Value>,
+    agent_access_reviews: Option<serde_json::Value>,
     table_filters: Option<serde_json::Value>,
 }
 
@@ -186,6 +193,10 @@ impl<'de> Deserialize<'de> for ClusterSettings {
                 .known_namespaces
                 .as_ref()
                 .and_then(known_namespaces::read),
+            agent_access_reviews: stored
+                .agent_access_reviews
+                .filter(|v| v.as_bool() == Some(true))
+                .map(|_| true),
             table_filters: filters::read_cluster(stored.table_filters),
         })
     }

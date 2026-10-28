@@ -75,5 +75,9 @@
     "label": "실행 전에 확인",
     "hint": "이 규칙의 수정, 삭제, Exec, 포트 포워딩은 Sextant에서 응답을 기다립니다(120초가 지나면 거부됨)."
   },
-  "secretWarning": "Secret 값 권한을 주면 에이전트가 Secret 데이터와 Helm 릴리스의 값을 평문으로 읽을 수 있습니다. 에이전트에게 꼭 필요한 namespace에만 허용하세요."
+  "secretWarning": "Secret 값 권한을 주면 에이전트가 Secret 데이터와 Helm 릴리스의 값을 평문으로 읽을 수 있습니다. 에이전트에게 꼭 필요한 namespace에만 허용하세요.",
+  "reviews": {
+    "label": "에이전트가 내 실제 권한을 볼 수 있게 허용",
+    "hint": "에이전트가 이 클러스터에서 사용자의 자격 증명으로 무엇을 할 수 있는지 Kubernetes API에 물어볼 수 있습니다(SelfSubjectRulesReview). 읽을 수 있는 네임스페이스에서만 가능하며, 답변은 규칙이 다루는 kind로 제한됩니다. RBAC가 제한되어 Role을 읽을 수 없을 때 유용합니다."
+  }
 }

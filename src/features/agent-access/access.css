@@ -179,3 +179,10 @@
   color: var(--color-danger);
   font-size: 0.75rem;
 }
+
+.aa-reviews {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}

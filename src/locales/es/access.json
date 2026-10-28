@@ -75,5 +75,9 @@
     "label": "Preguntar antes de ejecutar",
     "hint": "Modificar, Eliminar, Exec y Reenvío de puertos en esta regla esperan su respuesta en Sextant (120 s; después se rechazan)."
   },
-  "secretWarning": "Valores de Secrets permite al agente leer en texto claro los datos de los Secrets y los valores de las releases de Helm. Permítalo solo para los namespaces que el agente realmente necesite."
+  "secretWarning": "Valores de Secrets permite al agente leer en texto claro los datos de los Secrets y los valores de las releases de Helm. Permítalo solo para los namespaces que el agente realmente necesite.",
+  "reviews": {
+    "label": "Permitir que los agentes vean mis permisos efectivos",
+    "hint": "Un agente podrá preguntar a la API de Kubernetes qué pueden hacer tus credenciales en este clúster (un SelfSubjectRulesReview), en los namespaces que puede leer, y recibirá la respuesta limitada a los kinds que cubren sus reglas. Útil cuando tu RBAC es limitado y no se pueden leer los Roles."
+  }
 }
