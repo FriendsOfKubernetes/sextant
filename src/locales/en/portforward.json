@@ -5,9 +5,12 @@
   "empty": "No active port forwards.",
   "emptyText": "Start one from the details of a pod or service.",
   "columns": {
-    "target": "Target",
-    "ports": "Ports",
-    "status": "Status"
+    "target": "Resource",
+    "ports": "Local → remote",
+    "status": "Status",
+    "namespace": "Namespace",
+    "source": "Source",
+    "details": "Details"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "Open in browser",
-    "stop": "Stop"
+    "stop": "Stop",
+    "copy": "Copy address",
+    "retry": "Retry",
+    "remove": "Remove",
+    "all": "All port forwards",
+    "stopSelected": "Stop selected",
+    "clearSelection": "Clear selection"
   },
   "action": {
     "label": "Port forward…"
@@ -44,6 +53,35 @@
     "started": "Forwarding localhost:{{local}} to port {{remote}}.",
     "inUse": "Local port {{port}} is already in use.",
     "useFree": "Use a free port",
-    "close": "Close"
+    "close": "Close",
+    "existing": "Existing forwards for this port",
+    "stopped": "This port forward has stopped.",
+    "startAnother": "Start another"
+  },
+  "search": "Namespace, resource or port…",
+  "searchLabel": "Search port forwards",
+  "statusFilter": "Forward status",
+  "allStates": "All states",
+  "noMatches": "No matching port forwards.",
+  "clearFilters": "Clear filters",
+  "counts": {
+    "active": "Active: {{value}}",
+    "error": "Errors: {{value}}"
+  },
+  "source": {
+    "user": "Manual",
+    "agent": "AI agent",
+    "vcluster": "Internal · vcluster",
+    "argoCd": "Internal · Argo CD"
+  },
+  "selection": "Selected: {{value}}",
+  "selectAll": "Select visible user forwards",
+  "selectForward": "Select {{target}} on port {{port}}",
+  "protected": "Internal connection; stop individually.",
+  "confirm": {
+    "title": "Stop port forwards?",
+    "many": "Stop the selected port forwards ({{value}})?",
+    "vcluster": "This forward connects a virtual cluster. Stopping it will disconnect that cluster.",
+    "internal": "This forward is used by an internal connection. Stopping it may interrupt that connection."
   }
 }

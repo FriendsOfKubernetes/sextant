@@ -5,9 +5,12 @@
   "empty": "Nenhum encaminhamento de porta ativo.",
   "emptyText": "Inicie um nos detalhes de um Pod ou Service.",
   "columns": {
-    "target": "Destino",
-    "ports": "Portas",
-    "status": "Status"
+    "target": "Recurso",
+    "ports": "Local → remoto",
+    "status": "Status",
+    "namespace": "Namespace",
+    "source": "Origem",
+    "details": "Detalhes"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "Abrir no navegador",
-    "stop": "Parar"
+    "stop": "Parar",
+    "copy": "Copiar endereço",
+    "retry": "Tentar novamente",
+    "remove": "Remover",
+    "all": "Todos os encaminhamentos",
+    "stopSelected": "Parar selecionados",
+    "clearSelection": "Limpar seleção"
   },
   "action": {
     "label": "Encaminhar porta…"
@@ -44,6 +53,35 @@
     "started": "Encaminhando localhost:{{local}} para a porta {{remote}}.",
     "inUse": "A porta local {{port}} já está em uso.",
     "useFree": "Usar uma porta livre",
-    "close": "Fechar"
+    "close": "Fechar",
+    "existing": "Encaminhamentos existentes para esta porta",
+    "stopped": "Este encaminhamento de porta foi interrompido.",
+    "startAnother": "Iniciar outro"
+  },
+  "search": "Namespace, recurso ou porta…",
+  "searchLabel": "Pesquisar encaminhamentos de portas",
+  "statusFilter": "Estado do encaminhamento",
+  "allStates": "Todos os estados",
+  "noMatches": "Nenhum encaminhamento correspondente.",
+  "clearFilters": "Limpar filtros",
+  "counts": {
+    "active": "Ativos: {{value}}",
+    "error": "Com erro: {{value}}"
+  },
+  "source": {
+    "user": "Manual",
+    "agent": "Agente de IA",
+    "vcluster": "Interno · vcluster",
+    "argoCd": "Interno · Argo CD"
+  },
+  "selection": "Selecionados: {{value}}",
+  "selectAll": "Selecionar encaminhamentos de usuário visíveis",
+  "selectForward": "Selecionar {{target}} na porta {{port}}",
+  "protected": "Conexão interna; pare individualmente.",
+  "confirm": {
+    "title": "Parar encaminhamentos de portas?",
+    "many": "Parar os encaminhamentos selecionados ({{value}})?",
+    "vcluster": "Este encaminhamento conecta um cluster virtual. Pará-lo desconectará esse cluster.",
+    "internal": "Este encaminhamento é usado por uma conexão interna. Pará-lo pode interromper essa conexão."
   }
 }

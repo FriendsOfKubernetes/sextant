@@ -5,9 +5,12 @@
   "empty": "Aucune redirection de port active.",
   "emptyText": "Démarrez-en une depuis les détails d'un pod ou d'un service.",
   "columns": {
-    "target": "Cible",
-    "ports": "Ports",
-    "status": "État"
+    "target": "Ressource",
+    "ports": "Local → distant",
+    "status": "État",
+    "namespace": "Namespace",
+    "source": "Origine",
+    "details": "Détails"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "Ouvrir dans le navigateur",
-    "stop": "Arrêter"
+    "stop": "Arrêter",
+    "copy": "Copier l’adresse",
+    "retry": "Réessayer",
+    "remove": "Supprimer",
+    "all": "Toutes les redirections",
+    "stopSelected": "Arrêter la sélection",
+    "clearSelection": "Effacer la sélection"
   },
   "action": {
     "label": "Rediriger un port…"
@@ -44,6 +53,35 @@
     "started": "Redirection de localhost:{{local}} vers le port {{remote}}.",
     "inUse": "Le port local {{port}} est déjà utilisé.",
     "useFree": "Utiliser un port libre",
-    "close": "Fermer"
+    "close": "Fermer",
+    "existing": "Redirections existantes pour ce port",
+    "stopped": "Cette redirection de port est arrêtée.",
+    "startAnother": "En démarrer une autre"
+  },
+  "search": "Namespace, ressource ou port…",
+  "searchLabel": "Rechercher des redirections de ports",
+  "statusFilter": "État de la redirection",
+  "allStates": "Tous les états",
+  "noMatches": "Aucune redirection correspondante.",
+  "clearFilters": "Effacer les filtres",
+  "counts": {
+    "active": "Actives : {{value}}",
+    "error": "En erreur : {{value}}"
+  },
+  "source": {
+    "user": "Manuelle",
+    "agent": "Agent IA",
+    "vcluster": "Interne · vcluster",
+    "argoCd": "Interne · Argo CD"
+  },
+  "selection": "Sélection : {{value}}",
+  "selectAll": "Sélectionner les redirections utilisateur visibles",
+  "selectForward": "Sélectionner {{target}} sur le port {{port}}",
+  "protected": "Connexion interne ; arrêter séparément.",
+  "confirm": {
+    "title": "Arrêter les redirections de ports ?",
+    "many": "Arrêter les redirections sélectionnées ({{value}}) ?",
+    "vcluster": "Cette redirection connecte un cluster virtuel. Son arrêt déconnectera ce cluster.",
+    "internal": "Cette redirection sert à une connexion interne. Son arrêt peut interrompre cette connexion."
   }
 }

@@ -31,7 +31,7 @@ use sextant_core::argocd::{
     ServerBinding, Session,
 };
 use sextant_core::error::with_timeout;
-use sextant_core::portforward::{ForwardStatus, ForwardTarget, PortForwarder};
+use sextant_core::portforward::{ForwardSource, ForwardStatus, ForwardTarget, PortForwarder};
 use sextant_core::{ClusterId, ClusterManager, CoreError, ErrorCode, ObjectRef};
 use tauri::State;
 use ts_rs::TS;
@@ -880,13 +880,14 @@ impl ArgoSessions {
         };
         let info = self
             .forwarder
-            .start(
+            .start_with_source(
                 mgr,
                 cluster,
                 target,
                 server.port,
                 None,
                 sextant_core::portforward::PodFilter::Any,
+                ForwardSource::ArgoCd,
             )
             .await
             .map_err(|err| match err.code {

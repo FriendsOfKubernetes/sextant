@@ -38,7 +38,7 @@ use sextant_core::access::{AccessAction, KindPattern};
 use sextant_core::error::with_timeout;
 use sextant_core::exec;
 use sextant_core::helm::cli::{self as helm_cli, HelmCli};
-use sextant_core::portforward::{ForwardTarget, PodFilter};
+use sextant_core::portforward::{ForwardSource, ForwardTarget, PodFilter};
 use sextant_core::resources::{self, KindRef, ObjectRef, PatchType, rollouts};
 use sextant_core::{ClusterId, CoreError, CoreResult, DrainOptions, ErrorCode};
 
@@ -1255,13 +1255,14 @@ async fn port_forward_start(call: ToolCall, args: ForwardStartArgs) -> ToolResul
     let info = with_timeout(
         CHANGE_TIMEOUT,
         "starting the port forward",
-        ctx.forwarder.start(
+        ctx.forwarder.start_with_source(
             &ctx.clusters,
             &cluster.id,
             target,
             args.remote_port,
             args.local_port.filter(|p| *p != 0),
             PodFilter::NoNodeAccess,
+            ForwardSource::Agent,
         ),
     )
     .await

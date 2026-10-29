@@ -27,6 +27,7 @@ function info(over: Partial<ForwardInfo> = {}): ForwardInfo {
     remotePort: 80,
     localPort: 41234,
     status: { state: "active" },
+    source: "user",
     ...over,
   };
 }
@@ -177,6 +178,16 @@ describe("details section", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it("stops an existing forward from details and opens the cluster manager without stopping other entries", async () => {
+    setup({ portforward_list: () => [info(), info({ id: "elsewhere", cluster: "other" })] });
+    render(section(SERVICE_KIND, service, serviceRef));
+    fireEvent.click(await screen.findByRole("button", { name: "Stop" }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Stop" })).toBeNull());
+    expect(backend.calls.filter(c => c.cmd === "portforward_stop").map(c => c.args.id)).toEqual(["pf-1"]);
+    fireEvent.click(screen.getByRole("button", { name: "All port forwards" }));
+    expect(backend.calls.filter(c => c.cmd === "portforward_stop")).toHaveLength(1);
+  });
+
   it("is also an action of pods and services that opens the same dialog", async () => {
     setup();
     const action = getAction("portForward");
@@ -219,9 +230,10 @@ describe("Port Forwarding page", () => {
 
     const rows = async () => (await screen.findAllByRole("row")).slice(1);
     expect(await rows()).toHaveLength(1);
-    expect(screen.getByText("Service sextant-demo/nginx")).toBeInTheDocument();
+    expect(screen.getByText("Service nginx")).toBeInTheDocument();
+    expect(screen.getByText("sextant-demo")).toBeInTheDocument();
     expect(screen.getByText("localhost:41234 → 80")).toBeInTheDocument();
-    expect(screen.getByText("Active")).toBeInTheDocument();
+    expect(within((await rows())[0]!).getByText("Active")).toBeInTheDocument();
 
     // The pod behind the forward died: the backend pushes the whole list again.
     act(() =>
@@ -229,7 +241,7 @@ describe("Port Forwarding page", () => {
         info({ status: { state: "error", code: "notFound", message: "pod nginx-1 was deleted" } }),
       ]),
     );
-    await waitFor(() => expect(screen.getByText("Error")).toBeInTheDocument());
+    await waitFor(() => expect(within(screen.getAllByRole("row")[1]!).getByText("Error")).toBeInTheDocument());
     expect(screen.getByText(/pod nginx-1 was deleted/)).toBeInTheDocument();
 
     act(() => backend.emit("portforwards", []));

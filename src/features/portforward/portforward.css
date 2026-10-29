@@ -1,129 +1,52 @@
-/* Port forwarding: details section, start dialog and the Port Forwarding page. */
-.pf-section {
-  margin: 12px 0;
-}
-
-.pf-section__title {
-  margin: 0 0 6px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-.pf-section__ports,
-.pf-section__active {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.pf-section__ports li,
-.pf-section__active li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 2px 0;
-}
-
-.pf-section__port {
-  min-width: 48px;
-  font-family: var(--font-mono);
-}
-
-.pf-section__active {
-  margin-top: 6px;
-  color: var(--color-text-muted);
-}
-
-.pf-section__error {
-  color: var(--color-danger);
-}
-
-.pf-dialog {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.pf-dialog__field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.pf-dialog__field input,
-.pf-dialog__field select {
-  width: 120px;
-}
-
-.pf-dialog__choice {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.pf-dialog__choice label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.pf-dialog__hint {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-.pf-dialog__taken {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  color: var(--color-warning);
-}
-
-.pf-dialog__result {
-  color: var(--color-success);
-}
-
-.pf-page {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  height: 100%;
-  min-height: 0;
-  padding: 12px 16px;
-  overflow: auto;
-}
-
-.pf-page__header h2 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.pf-muted {
-  color: var(--color-text-muted);
-}
-
-.pf-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8125rem;
-}
-
-.pf-table th,
-.pf-table td {
-  padding: 6px 8px;
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.pf-table__message {
-  margin-left: 8px;
-  color: var(--color-danger);
-  overflow-wrap: anywhere;
-}
-
-.pf-table__actions {
-  display: flex;
-  gap: 6px;
-  justify-content: flex-end;
+/* Cluster-scoped port forwards, details actions and creation dialog. */
+.pf-section { margin: 12px 0; }
+.pf-section__ports, .pf-section__active { list-style: none; margin: 0; padding: 0; }
+.pf-section__ports li, .pf-section__active li { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 2px 0; }
+.pf-section__port { min-width: 48px; font-family: var(--font-mono); }
+.pf-section__active { margin: 6px 0; color: var(--color-text-muted); }
+.pf-section__error, .pf-error-text { color: var(--color-danger); }
+.pf-dialog { display: flex; flex-direction: column; gap: 10px; }
+.pf-dialog__field { display: flex; flex-direction: column; gap: 4px; }
+.pf-dialog__field input, .pf-dialog__field select { width: 120px; }
+.pf-dialog__choice { display: flex; flex-direction: column; gap: 4px; }
+.pf-dialog__choice label { display: inline-flex; align-items: center; gap: 6px; }
+.pf-dialog__hint { color: var(--color-text-muted); font-size: .75rem; }
+.pf-dialog__taken { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--color-warning); }
+.pf-dialog__result { color: var(--color-success); }
+.pf-dialog__existing { border: 1px solid var(--color-border); border-radius: 4px; padding: 10px; }
+.pf-dialog__existing p { margin: 0 0 6px; color: var(--color-text-muted); }
+.pf-dialog__existing > div { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-block: 2px; }
+.pf-page { display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 0; padding: 12px 16px; overflow: auto; }
+.pf-page__header, .pf-toolbar, .pf-selection { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.pf-page__header h2 { margin: 0; font-size: 1rem; }
+.pf-search { min-width: 0; max-width: 100%; }
+.pf-toolbar select { min-height: var(--control-height); font: inherit; }
+.pf-counts { display: flex; gap: 12px; margin-left: auto; font-size: .75rem; color: var(--color-text-muted); }
+.pf-selection { padding: 6px 8px; background: var(--color-selected); }
+.pf-muted { color: var(--color-text-muted); }
+.pf-internal { color: var(--color-warning); }
+.pf-table-scroll { overflow: auto; min-height: 0; }
+.pf-table { width: 100%; min-width: 64rem; table-layout: fixed; border-collapse: collapse; font-size: .8125rem; }
+.pf-table tr, .pf-table th, .pf-table td { height: var(--table-row-height); }
+.pf-table th, .pf-table td { padding: 0 8px; vertical-align: middle; text-align: left; border-bottom: 1px solid var(--color-border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-table th { color: var(--color-text-muted); font-weight: 600; position: sticky; top: 0; z-index: 1; background: var(--color-main); }
+.pf-actions-heading { z-index: 2; }
+.pf-table__row:hover { background: var(--color-hover); }
+.pf-table__selected { background: var(--color-selected); }
+.pf-table .pf-check { width: 2rem; padding: 0; text-align: center; }
+.pf-table th[data-col="target"] { width: 9rem; }
+.pf-table th[data-col="namespace"] { width: 6rem; }
+.pf-table th[data-col="ports"] { width: 11rem; }
+.pf-table th[data-col="status"] { width: 5rem; }
+.pf-table th[data-col="source"] { width: 9rem; }
+.pf-table th[data-col="details"] { width: 11rem; }
+.pf-table th[data-col="actions"] { width: 13rem; }
+.pf-actions { display: inline-flex; align-items: center; justify-content: flex-start; gap: 4px; white-space: nowrap; }
+.pf-route { font-family: var(--font-mono); font-size: .75rem; }
+.pf-confirm-targets { padding-left: 20px; overflow-wrap: anywhere; }
+.pf-confirm-targets .pf-route { display: block; }
+@media (max-width: 600px) {
+  .pf-counts { margin-left: 0; flex-basis: 100%; }
+  .pf-toolbar select { max-width: 100%; }
+  .pf-section__active .pf-actions { flex-wrap: wrap; }
 }

@@ -5,9 +5,12 @@
   "empty": "沒有使用中的連接埠轉送。",
   "emptyText": "可從 Pod 或 Service 的詳細資料中啟動。",
   "columns": {
-    "target": "目標",
-    "ports": "連接埠",
-    "status": "狀態"
+    "target": "資源",
+    "ports": "本機 → 遠端",
+    "status": "狀態",
+    "namespace": "Namespace",
+    "source": "來源",
+    "details": "詳細資訊"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "在瀏覽器中開啟",
-    "stop": "停止"
+    "stop": "停止",
+    "copy": "複製位址",
+    "retry": "重試",
+    "remove": "移除",
+    "all": "所有連接埠轉發",
+    "stopSelected": "停止所選項目",
+    "clearSelection": "清除選取"
   },
   "action": {
     "label": "連接埠轉送…"
@@ -44,6 +53,35 @@
     "started": "正在將 localhost:{{local}} 轉送到連接埠 {{remote}}。",
     "inUse": "本機連接埠 {{port}} 已被占用。",
     "useFree": "使用可用的連接埠",
-    "close": "關閉"
+    "close": "關閉",
+    "existing": "此連接埠現有的轉發",
+    "stopped": "此連接埠轉發已停止。",
+    "startAnother": "再建立一個"
+  },
+  "search": "Namespace、資源或連接埠…",
+  "searchLabel": "搜尋連接埠轉發",
+  "statusFilter": "轉發狀態",
+  "allStates": "所有狀態",
+  "noMatches": "沒有符合條件的連接埠轉發。",
+  "clearFilters": "清除篩選",
+  "counts": {
+    "active": "啟用中：{{value}}",
+    "error": "錯誤：{{value}}"
+  },
+  "source": {
+    "user": "手動",
+    "agent": "AI 代理",
+    "vcluster": "內部連線 · vcluster",
+    "argoCd": "內部連線 · Argo CD"
+  },
+  "selection": "已選取：{{value}}",
+  "selectAll": "選取可見的使用者轉發",
+  "selectForward": "選取 {{target}} 的連接埠 {{port}}",
+  "protected": "內部連線，請個別停止。",
+  "confirm": {
+    "title": "停止連接埠轉發？",
+    "many": "停止所選的連接埠轉發（{{value}}）？",
+    "vcluster": "此轉發用於連線至虛擬叢集。停止後將中斷該叢集的連線。",
+    "internal": "此轉發用於內部連線。停止後可能會中斷該連線。"
   }
 }

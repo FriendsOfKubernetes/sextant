@@ -4,11 +4,10 @@ import { registerPage } from "../../layout/pages";
 import { registerAction } from "../actions/registry";
 import { PortForwardSection } from "./DetailsSection";
 import { ForwardDialog } from "./ForwardDialog";
-import { isForwardable, portsOf, targetOf } from "./model";
+import { isForwardable, portsOf, targetOf, PORT_FORWARD_PAGE } from "./model";
 import { PortForwardPage } from "./PortForwardPage";
 import "./portforward.css";
 
-export const PORT_FORWARD_PAGE = "portforward";
 
 registerDetailsSection({ id: "portforward", order: 40, appliesTo: isForwardable, Component: PortForwardSection });
 
