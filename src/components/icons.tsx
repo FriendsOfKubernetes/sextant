@@ -27,6 +27,7 @@ import {
   ArrowDown,
   ArrowDownToLine,
   ArrowLeftRight,
+  ArrowRightToLine,
   ArrowUp,
   ArrowUpDown,
   ArrowUpNarrowWide,
@@ -349,7 +350,7 @@ const ICONS = {
   // Actions on resources and the glyphs they replace.
   logs: ScrollText, // ≡
   shell: SquareTerminal, // >_
-  portForward: ArrowLeftRight, // ⇄
+  portForward: ArrowRightToLine, // →|
   edit: Pencil, // ✎
   delete: Trash2, // ×
   scale: ArrowUpDown, // ↕
@@ -433,7 +434,7 @@ const ICONS = {
   ingressClass: Signpost,
   networkPolicy: BrickWall,
   connectivity: ArrowLeftRight,
-  portForwarding: ArrowLeftRight,
+  portForwarding: ArrowRightToLine,
   persistentVolumeClaim: HardDrive,
   persistentVolume: Disc,
   storageClass: Archive,
