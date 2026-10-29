@@ -10,7 +10,8 @@
     "details": "세부 정보",
     "dock": "도크",
     "resizeSidebar": "사이드바 크기 조정",
-    "resizeDock": "도크 크기 조정"
+    "resizeDock": "도크 크기 조정",
+    "resizeDetails": "리소스 상세 정보 너비 조절"
   },
   "actions": {
     "close": "닫기",

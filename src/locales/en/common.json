@@ -10,7 +10,8 @@
     "details": "Details",
     "dock": "Dock",
     "resizeSidebar": "Resize sidebar",
-    "resizeDock": "Resize dock"
+    "resizeDock": "Resize dock",
+    "resizeDetails": "Resize resource details"
   },
   "actions": {
     "close": "Close",

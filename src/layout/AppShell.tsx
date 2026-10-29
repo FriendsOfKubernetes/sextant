@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { memo, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   DOCK_MAX_HEIGHT,
@@ -19,6 +19,7 @@ import { DiagnosticsHost } from "../features/mcp-diagnostics/DiagnosticsHost";
 import { PaletteHost } from "../features/palette/PaletteHost";
 import { ClusterRail } from "./ClusterRail";
 import { DetailsPanel } from "./details/DetailsPanel";
+import { DetailsPane } from "./details/DetailsPane";
 import { Dock } from "./dock/Dock";
 import { MainView } from "./main/MainView";
 import { Sidebar } from "./sidebar/Sidebar";
@@ -42,7 +43,7 @@ import "./layout.css";
  * unmounts a running install), the command palette with its Ctrl+K / Cmd+K shortcut (`PaletteHost`) and, drawing
  * nothing, the window's side of the agents' diagnostic tools (`DiagnosticsHost`, ADR-0094).
  */
-export function AppShell() {
+export const AppShell = memo(function AppShell() {
   const { t } = useTranslation();
   const narrow = useNarrowLayout();
   const activeClusterId = useAppStore((s) => s.activeClusterId);
@@ -106,7 +107,9 @@ export function AppShell() {
             )}
           </main>
           {details && activeClusterId && (
-            <DetailsPanel key={JSON.stringify(details)} clusterId={activeClusterId} objectRef={details} />
+            <DetailsPane kind={details.kind} narrow={narrow}>
+              <DetailsPanel key={JSON.stringify(details)} clusterId={activeClusterId} objectRef={details} />
+            </DetailsPane>
           )}
         </div>
         {dockOpen && (
@@ -131,7 +134,7 @@ export function AppShell() {
       <PaletteHost />
     </div>
   );
-}
+});
 
 /**
  * Top bar with a menu button and the drawer holding the rail and the sidebar. The drawer stays mounted while closed

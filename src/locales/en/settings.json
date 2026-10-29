@@ -130,6 +130,13 @@
       "cluster": "Per cluster",
       "global": "Across all clusters"
     },
-    "hint": "Sections are remembered separately for each resource kind. YAML starts collapsed."
+    "hint": "Sections are remembered separately for each resource kind. YAML starts collapsed.",
+    "width": "Panel width",
+    "widthScopes": {
+      "kind": "Per resource kind",
+      "global": "Shared width"
+    },
+    "widthSessionOnly": "This session only",
+    "widthHint": "Widths apply across all clusters. Session-only widths reset when Sextant restarts."
   }
 }

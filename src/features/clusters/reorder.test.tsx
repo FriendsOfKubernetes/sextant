@@ -155,6 +155,7 @@ describe("dragging a cluster in the rail", () => {
 function defaultWindow(): AppSettings["window"] {
   return {
     sidebarWidth: 220,
+    detailsWidths: {},
     dockHeight: 300,
     dockOpen: false,
     lastCluster: null,

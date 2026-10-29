@@ -2,7 +2,8 @@
 // as `ClusterSettings.namespaces`, so the choice survives a restart. Every namespace selected is also remembered as a
 // known namespace (`known.ts`, #285).
 import { useEffect, useState } from "react";
-import { updateSettings, useSettings, type ClusterId } from "../../api";
+import { updateSettings, type ClusterId } from "../../api";
+import { getSettingsSnapshot, useSettingsSelector } from "../../api/settings";
 import { useAppStore } from "../../app/store";
 import { clusterSettingsOf } from "../clusters/clusterSettings";
 import { useClustersStore } from "../clusters/clustersStore";
@@ -20,7 +21,8 @@ const restored = new Set<ClusterId>();
  * a connected cluster's first access answer is pending (at most `CHECK_WAIT_MS`), "All namespaces" is `undefined` too.
  */
 export function useSelectedNamespaces(clusterId: ClusterId): string[] | null | undefined {
-  const { settings, error } = useSettings();
+  // Restoration needs only the first completed load, not later writes of window layout (including card widths).
+  const ready = useSettingsSelector(s => s.settings !== null || s.error !== null);
   const namespaces = useAppStore((s) => s.clusterViews[clusterId]?.namespaces ?? null);
   const connected = useClustersStore((s) => s.states[clusterId]?.state === "connected");
   const access = useAccess(clusterId);
@@ -28,17 +30,17 @@ export function useSelectedNamespaces(clusterId: ClusterId): string[] | null | u
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    if (!settings && !error) return;
+    if (!ready) return;
     // Restored by another user of the hook (the sidebar and a table both ask): this one shows it too.
     if (restored.has(clusterId)) {
       setTick((n) => n + 1);
       return;
     }
     restored.add(clusterId);
-    const saved = settings?.clusters[clusterId]?.namespaces;
+    const saved = getSettingsSnapshot()?.clusters[clusterId]?.namespaces;
     if (saved && saved.length > 0) useAppStore.getState().setNamespaces(clusterId, saved);
     setTick((n) => n + 1);
-  }, [clusterId, settings, error]);
+  }, [clusterId, ready]);
 
   if (!restored.has(clusterId)) return undefined;
   if (namespaces !== null) return namespaces;

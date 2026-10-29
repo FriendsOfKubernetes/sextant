@@ -36,6 +36,20 @@ function renderPage() {
 }
 
 describe("Accessibility in Settings -> Appearance", () => {
+  it("offers independent width scope and session-only choices, preserving every other preference", async () => {
+    const before = structuredClone(backend.settings);
+    renderPage();
+    const scope = screen.getByRole("combobox", { name: "Panel width" });
+    await waitFor(() => expect(scope).toBeEnabled());
+    expect(scope).toHaveValue("kind");
+    const session = screen.getByRole("checkbox", { name: "This session only" });
+    expect(session).not.toBeChecked();
+    fireEvent.change(scope, { target: { value: "global" } });
+    await waitFor(() => expect(backend.settings.appearance.detailsWidthScope).toBe("global"));
+    fireEvent.click(session);
+    await waitFor(() => expect(backend.settings.appearance.detailsWidthSessionOnly).toBe(true));
+    expect(backend.settings).toEqual({ ...before, appearance: { ...before.appearance, detailsWidthScope: "global", detailsWidthSessionOnly: true } });
+  });
   it("offers the three details-section scopes and preserves the existing section banks", async () => {
     backend.settings.appearance.detailsSections = { "/Pod": { "fields/containers": false } };
     const appearance = structuredClone(backend.settings.appearance);
@@ -85,6 +99,8 @@ describe("Accessibility in Settings -> Appearance", () => {
     expect(backend.settings.appearance).toEqual({
       detailsSectionMemory: "global",
       detailsSections: {},
+      detailsWidthScope: "kind",
+      detailsWidthSessionOnly: false,
       uiFont: { kind: "builtin" },
       monoFont: { kind: "system" },
       reduceMotion: "on",

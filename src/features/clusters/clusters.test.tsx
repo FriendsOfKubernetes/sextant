@@ -710,7 +710,7 @@ describe("restart", () => {
     setup([alpha, beta], {
       backend: {
         settings: {
-          window: { sidebarWidth: 220, dockHeight: 300, dockOpen: false, lastCluster: "bbbb", width: null, height: null, maximized: false, railExpanded: false },
+          window: { sidebarWidth: 220, detailsWidths: {}, dockHeight: 300, dockOpen: false, lastCluster: "bbbb", width: null, height: null, maximized: false, railExpanded: false },
           clusters: {
             bbbb: { displayName: null, color: null, namespaces: null, lastView: "nodes", prometheus: { mode: "auto" }, usageSource: "auto", icon: null, agentAccess: { preset: "off", rules: [] } },
           },

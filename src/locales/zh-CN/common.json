@@ -10,7 +10,8 @@
     "details": "详细信息",
     "dock": "底部面板",
     "resizeSidebar": "调整侧栏大小",
-    "resizeDock": "调整底部面板大小"
+    "resizeDock": "调整底部面板大小",
+    "resizeDetails": "调整资源详情宽度"
   },
   "actions": {
     "close": "关闭",

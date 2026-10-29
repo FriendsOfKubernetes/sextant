@@ -130,6 +130,13 @@
       "cluster": "Por cluster",
       "global": "Para todos os clusters"
     },
-    "hint": "O estado das seções é salvo separadamente para cada tipo de recurso. YAML começa recolhido."
+    "hint": "O estado das seções é salvo separadamente para cada tipo de recurso. YAML começa recolhido.",
+    "width": "Largura do painel",
+    "widthScopes": {
+      "kind": "Por tipo de recurso",
+      "global": "Largura compartilhada"
+    },
+    "widthSessionOnly": "Somente nesta sessão",
+    "widthHint": "As larguras se aplicam a todos os clusters. No modo de sessão, são redefinidas ao reiniciar o Sextant."
   }
 }

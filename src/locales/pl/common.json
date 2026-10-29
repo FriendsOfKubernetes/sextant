@@ -10,7 +10,8 @@
     "details": "Szczegóły",
     "dock": "Panel dolny",
     "resizeSidebar": "Zmień rozmiar paska bocznego",
-    "resizeDock": "Zmień rozmiar panelu dolnego"
+    "resizeDock": "Zmień rozmiar panelu dolnego",
+    "resizeDetails": "Zmień szerokość szczegółów zasobu"
   },
   "actions": {
     "close": "Zamknij",

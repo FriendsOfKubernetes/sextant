@@ -130,6 +130,13 @@
       "cluster": "Par cluster",
       "global": "Pour tous les clusters"
     },
-    "hint": "L’état est mémorisé séparément pour chaque type de ressource. YAML est initialement replié."
+    "hint": "L’état est mémorisé séparément pour chaque type de ressource. YAML est initialement replié.",
+    "width": "Largeur du panneau",
+    "widthScopes": {
+      "kind": "Par type de ressource",
+      "global": "Largeur commune"
+    },
+    "widthSessionOnly": "Pour cette session uniquement",
+    "widthHint": "Les largeurs s’appliquent à tous les clusters. En mode session, elles sont réinitialisées au redémarrage de Sextant."
   }
 }

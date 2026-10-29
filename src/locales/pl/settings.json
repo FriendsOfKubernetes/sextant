@@ -130,6 +130,13 @@
       "cluster": "Osobno dla każdego klastra",
       "global": "Wspólnie dla wszystkich klastrów"
     },
-    "hint": "Stan sekcji jest zapamiętywany osobno dla każdego rodzaju zasobu. YAML jest początkowo zwinięty."
+    "hint": "Stan sekcji jest zapamiętywany osobno dla każdego rodzaju zasobu. YAML jest początkowo zwinięty.",
+    "width": "Szerokość panelu",
+    "widthScopes": {
+      "kind": "Osobno dla typów zasobów",
+      "global": "Wspólna szerokość"
+    },
+    "widthSessionOnly": "Tylko w bieżącej sesji",
+    "widthHint": "Szerokości obowiązują we wszystkich klastrach. W trybie sesji są resetowane po ponownym uruchomieniu Sextant."
   }
 }

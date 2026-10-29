@@ -27,6 +27,16 @@ pub enum DetailsSectionMemory {
     Global,
 }
 
+/// Whether resource details share a width or remember it by resource kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum DetailsWidthScope {
+    #[default]
+    Kind,
+    Global,
+}
+
 pub type DetailsSections =
     std::collections::BTreeMap<String, std::collections::BTreeMap<String, bool>>;
 
@@ -121,6 +131,8 @@ pub struct AppearanceSettings {
     pub sidebar_guides: bool,
     pub details_section_memory: DetailsSectionMemory,
     pub details_sections: DetailsSections,
+    pub details_width_scope: DetailsWidthScope,
+    pub details_width_session_only: bool,
 }
 
 impl Default for AppearanceSettings {
@@ -135,6 +147,8 @@ impl Default for AppearanceSettings {
             sidebar_guides: false,
             details_section_memory: DetailsSectionMemory::default(),
             details_sections: DetailsSections::new(),
+            details_width_scope: DetailsWidthScope::default(),
+            details_width_session_only: false,
         }
     }
 }
@@ -216,6 +230,15 @@ pub(crate) mod appearance_field {
                 .and_then(|v| serde_json::from_value(v).ok())
                 .unwrap_or_default(),
             details_sections: read_details_sections(value.get("detailsSections")),
+            details_width_scope: value
+                .get("detailsWidthScope")
+                .cloned()
+                .and_then(|v| serde_json::from_value(v).ok())
+                .unwrap_or_default(),
+            details_width_session_only: value
+                .get("detailsWidthSessionOnly")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
             ui_font: read_choice(value.get("uiFont")),
             mono_font: read_choice(value.get("monoFont")),
             reduce_motion: read_reduce_motion(value.get("reduceMotion")),
@@ -243,6 +266,68 @@ mod tests {
     use serde_json::json;
 
     #[test]
+    fn details_width_defaults_are_persistent_and_kind_specific() {
+        let settings: AppSettings = serde_json::from_value(json!({"theme": "dark"})).unwrap();
+        let value = serde_json::to_value(settings).unwrap();
+        assert_eq!(value["appearance"]["detailsWidthScope"], "kind");
+        assert_eq!(value["appearance"]["detailsWidthSessionOnly"], false);
+        assert_eq!(value["window"]["detailsWidths"], json!({}));
+        assert_eq!(value["theme"], "dark");
+    }
+
+    #[test]
+    fn details_width_settings_round_trip_without_losing_inactive_banks() {
+        let value = json!({
+            "appearance": {"detailsWidthScope": "global", "detailsWidthSessionOnly": true},
+            "window": {"detailsWidths": {"*": 900, "/Pod": 600, "apps/Deployment": 800}}
+        });
+        let settings: AppSettings = serde_json::from_value(value.clone()).unwrap();
+        let back = serde_json::to_value(settings).unwrap();
+        assert_eq!(back["appearance"]["detailsWidthScope"], "global");
+        assert_eq!(back["appearance"]["detailsWidthSessionOnly"], true);
+        assert_eq!(
+            back["window"]["detailsWidths"],
+            value["window"]["detailsWidths"]
+        );
+    }
+
+    #[test]
+    fn details_width_reader_ignores_invalid_values_without_truncating_kind_banks() {
+        for bad in [json!(null), json!(7), json!([]), json!("bad"), json!({})] {
+            let settings: AppSettings = serde_json::from_value(json!({
+                "appearance": {"detailsWidthScope": bad, "detailsWidthSessionOnly": bad},
+                "window": {"detailsWidths": bad}
+            }))
+            .unwrap();
+            let back = serde_json::to_value(settings).unwrap();
+            assert_eq!(back["appearance"]["detailsWidthScope"], "kind");
+            assert_eq!(back["appearance"]["detailsWidthSessionOnly"], false);
+            assert_eq!(back["window"]["detailsWidths"], json!({}));
+        }
+        let settings: AppSettings = serde_json::from_value(json!({"window": {"detailsWidths": {
+            "/Pod": 480, "*": 950, "low": 479, "negative": -1,
+            "fraction": 600.5, "huge": 4294967296_u64, "text": "700", "empty": null
+        }}}))
+        .unwrap();
+        assert_eq!(
+            serde_json::to_value(settings).unwrap()["window"]["detailsWidths"],
+            json!({"/Pod": 480, "*": 950})
+        );
+        let widths: serde_json::Map<String, serde_json::Value> = (0..300)
+            .map(|i| (format!("test/Kind{i:03}"), json!(700)))
+            .collect();
+        let settings: AppSettings =
+            serde_json::from_value(json!({"window": {"detailsWidths": widths}})).unwrap();
+        assert_eq!(
+            serde_json::to_value(settings).unwrap()["window"]["detailsWidths"]
+                .as_object()
+                .unwrap()
+                .len(),
+            300
+        );
+    }
+
+    #[test]
     fn the_built_in_fonts_are_the_default() {
         let settings: AppSettings = serde_json::from_value(json!({ "theme": "dark" })).unwrap();
         assert_eq!(settings.appearance, AppearanceSettings::default());
@@ -258,7 +343,9 @@ mod tests {
                 "sidebarIndent": true,
                 "sidebarGuides": false,
                 "detailsSectionMemory": "global",
-                "detailsSections": {}
+                "detailsSections": {},
+                "detailsWidthScope": "kind",
+                "detailsWidthSessionOnly": false
             })
         );
     }
@@ -274,7 +361,9 @@ mod tests {
             "sidebarIndent": true,
             "sidebarGuides": false,
                 "detailsSectionMemory": "global",
-                "detailsSections": {}
+                "detailsSections": {},
+                "detailsWidthScope": "kind",
+                "detailsWidthSessionOnly": false
         });
         let settings: AppSettings =
             serde_json::from_value(json!({ "appearance": appearance })).unwrap();

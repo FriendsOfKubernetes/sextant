@@ -1,6 +1,6 @@
 // UI state of the window (zustand). Data from clusters lives in src/api hooks, not here.
 import { create } from "zustand";
-import type { ClusterId, ObjectRef, WindowLayout } from "../api";
+import type { AppSettings, ClusterId, ObjectRef, WindowLayout } from "../api";
 import type { CustomColumnSpec } from "../api/generated/CustomColumnSpec";
 
 /** Built-in tab kinds, and `ext:<extensionId>:<id>` for an extension's dock tab. */
@@ -65,6 +65,9 @@ export const SIDEBAR_MIN_WIDTH = 160;
 export const SIDEBAR_MAX_WIDTH = 480;
 export const DOCK_MIN_HEIGHT = 120;
 export const DOCK_MAX_HEIGHT = 1600;
+export const DETAILS_MIN_WIDTH = 480;
+export const DETAILS_DEFAULT_WIDTH = 725;
+type WidthScope = AppSettings["appearance"]["detailsWidthScope"];
 
 export const EMPTY_CLUSTER_VIEW: ClusterView = Object.freeze({ view: null, namespaces: null, search: "" }) as ClusterView;
 
@@ -74,6 +77,9 @@ export interface AppState {
   details: ObjectRef | null;
   dock: DockState;
   sidebarWidth: number;
+  detailsWidths: Record<string, number>;
+  detailsWidthScope: WidthScope;
+  detailsWidthSessionOnly: boolean;
   /** The cluster rail shows names next to the icons. */
   railExpanded: boolean;
   /**
@@ -102,12 +108,14 @@ export interface AppState {
   toggleDock(): void;
   setDockHeight(height: number): void;
   setSidebarWidth(width: number): void;
+  setDetailsWidth(kind: string, width: number): void;
+  setDetailsWidthPreferences(scope: WidthScope, sessionOnly: boolean, saved: Record<string, number>): void;
   setRailExpanded(expanded: boolean): void;
   /** Shows a window-wide page (`null`: the welcome area); a view other than `null` also leaves the active cluster. */
   setHomeView(view: string | null): void;
 
   /** Applies the saved window layout (on start). */
-  hydrateLayout(layout: WindowLayout): void;
+  hydrateLayout(layout: WindowLayout, appearance?: AppSettings["appearance"]): void;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(value)));
@@ -120,6 +128,9 @@ export const initialAppState = {
   details: null,
   dock: { open: false, height: 300, tabs: [], activeTabId: null },
   sidebarWidth: 220,
+  detailsWidths: {},
+  detailsWidthScope: "kind" as WidthScope,
+  detailsWidthSessionOnly: false,
   railExpanded: false,
   homeView: null,
 } satisfies Partial<AppState>;
@@ -181,13 +192,33 @@ export const useAppStore = create<AppState>()((set, get) => {
     setDockHeight: (height) =>
       set((s) => ({ dock: { ...s.dock, height: clamp(height, DOCK_MIN_HEIGHT, DOCK_MAX_HEIGHT) } })),
     setSidebarWidth: (width) => set({ sidebarWidth: clamp(width, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH) }),
+    setDetailsWidth: (kind, width) => {
+      if (!Number.isFinite(width)) return;
+      const value = Math.max(DETAILS_MIN_WIDTH, Math.round(width));
+      const state = get();
+      const key = state.detailsWidthScope === "global" ? "*" : kind;
+      if ((state.detailsWidths[key] ?? DETAILS_DEFAULT_WIDTH) === value) return;
+      set({ detailsWidths: { ...state.detailsWidths, [key]: value } });
+    },
+    setDetailsWidthPreferences: (scope, sessionOnly, saved) => {
+      const state = get();
+      if (state.detailsWidthScope === scope && state.detailsWidthSessionOnly === sessionOnly) return;
+      set({
+        detailsWidthScope: scope,
+        detailsWidthSessionOnly: sessionOnly,
+        ...(!sessionOnly && state.detailsWidthSessionOnly ? { detailsWidths: { ...saved, ...state.detailsWidths } } : {}),
+      });
+    },
     setRailExpanded: (expanded) => set({ railExpanded: expanded }),
     setHomeView: (view) =>
       set(view === null ? { homeView: null } : { homeView: view, activeClusterId: null, details: null }),
 
-    hydrateLayout: (layout) =>
+    hydrateLayout: (layout, appearance) =>
       set((s) => ({
         sidebarWidth: clamp(layout.sidebarWidth, SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH),
+        detailsWidths: appearance?.detailsWidthSessionOnly ? {} : { ...layout.detailsWidths },
+        detailsWidthScope: appearance?.detailsWidthScope ?? "kind",
+        detailsWidthSessionOnly: appearance?.detailsWidthSessionOnly ?? false,
         // A file from before the rail could be expanded has no such field.
         railExpanded: layout.railExpanded === true,
         dock: {

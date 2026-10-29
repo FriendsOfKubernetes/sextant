@@ -112,9 +112,13 @@ const asking = new Map<ClusterId, Set<string>>();
 let unfollow: (() => void) | null = null;
 let version = 0;
 
-function changed(): void {
+function changed(scopeOnly = false): void {
   // The scope first: a listener that starts watches once the check settled (the problems store) reads the new one.
-  for (const id of new Set([...states.keys(), ...scopes.keys()])) updateScope(id);
+  let scopeChanged = false;
+  for (const id of new Set([...states.keys(), ...scopes.keys()])) {
+    if (updateScope(id)) scopeChanged = true;
+  }
+  if (scopeOnly && !scopeChanged) return;
   version++;
   for (const fn of [...listeners]) fn();
 }
@@ -124,7 +128,7 @@ function changed(): void {
  * sorted and has no repeats). Only a settled check has a scope: until then the candidates' answers are still coming,
  * and every move would restart each watch of "All namespaces".
  */
-function updateScope(clusterId: ClusterId): void {
+function updateScope(clusterId: ClusterId): boolean {
   const state = states.get(clusterId);
   const next =
     state?.listNamespaces === false && state.settled
@@ -132,9 +136,10 @@ function updateScope(clusterId: ClusterId): void {
       : [];
   const value = next.length > 0 ? next : null;
   const before = scopes.get(clusterId) ?? null;
-  if ((before === null ? "" : before.join(",")) === (value === null ? "" : value.join(","))) return;
+  if ((before === null ? "" : before.join(",")) === (value === null ? "" : value.join(","))) return false;
   scopes.set(clusterId, value);
   for (const fn of [...scopeListeners]) fn(clusterId);
+  return true;
 }
 
 function set(clusterId: ClusterId, run: number, patch: Partial<AccessState>): boolean {
@@ -218,7 +223,8 @@ function follow(): void {
       const unchecked = knownOf(getSettingsSnapshot(), id).filter((ns) => !state.namespaces.has(ns) && !pending?.has(ns));
       if (unchecked.length > 0) void checkNamespaces(id, unchecked);
     }
-    changed();
+    // A layout-only write does not change access; notify React only if the namespace scope moved.
+    changed(true);
   });
   unfollow = () => {
     offClusters();

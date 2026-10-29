@@ -10,7 +10,8 @@
     "details": "Detalhes",
     "dock": "Painel inferior",
     "resizeSidebar": "Redimensionar barra lateral",
-    "resizeDock": "Redimensionar painel inferior"
+    "resizeDock": "Redimensionar painel inferior",
+    "resizeDetails": "Alterar a largura dos detalhes do recurso"
   },
   "actions": {
     "close": "Fechar",
