@@ -5194,7 +5194,7 @@ dependencies = [
 
 [[package]]
 name = "sextant"
-version = "0.26.1"
+version = "0.26.2"
 dependencies = [
  "axum",
  "base64 0.23.1",
@@ -5237,7 +5237,7 @@ dependencies = [
 
 [[package]]
 name = "sextant-core"
-version = "0.26.1"
+version = "0.26.2"
 dependencies = [
  "base64 0.23.1",
  "dunce",
@@ -5271,7 +5271,7 @@ dependencies = [
 
 [[package]]
 name = "sextant-ext-runtime"
-version = "0.26.1"
+version = "0.26.2"
 dependencies = [
  "bytes",
  "http",
