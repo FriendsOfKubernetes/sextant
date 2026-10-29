@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant używa narzędzi aws, gcloud i az, które są już zainstalowane i zalogowane na tym komputerze. Zapisuje własny kubeconfig, nigdy nie zmienia pliku ~/.kube/config i nie loguje się w imieniu użytkownika.",
-    "detecting": "Wyszukiwanie aws, gcloud i az…",
+    "hint": "Sextant korzysta z aws, gcloud, az i yc już zainstalowanych i zalogowanych na tym komputerze. Zapisuje własny kubeconfig, nie zmienia ~/.kube/config ani nie loguje się za użytkownika.",
+    "detecting": "Wyszukiwanie aws, gcloud, az i yc…",
     "providers": "Chmura",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(wersja nieznana)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "Profil",
       "gcp": "Projekt",
-      "azure": "Subskrypcja"
+      "azure": "Subskrypcja",
+      "yandex": "Folder"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "Poświadczenia ze środowiska",
@@ -162,7 +165,22 @@
     },
     "copyCommand": "Kopiuj polecenie",
     "copied": "Skopiowano",
-    "copyFailed": "Schowek jest niedostępny; zaznacz polecenie i skopiuj je."
+    "copyFailed": "Schowek jest niedostępny; zaznacz polecenie i skopiuj je.",
+    "yandex": {
+      "chooseProfile": "Wybierz profil",
+      "cloud": "Chmura",
+      "noClouds": "Brak dostępnych chmur",
+      "enterFolder": "Wpisz identyfikator folderu…",
+      "folderId": "Identyfikator folderu",
+      "endpoint": "Adres API",
+      "external": "Publiczny",
+      "internal": "Wewnętrzny (VPN lub sieć prywatna)",
+      "endpointHint": "Wybrany adres musi być dostępny z tego komputera.",
+      "unavailable": "Wybrany adres API lub certyfikat klastra jest niedostępny.",
+      "reload": "Odśwież listę"
+    },
+    "clusterStatus": "Stan: {{status}}",
+    "alreadyAdded": "Już dodano"
   },
   "order": {
     "hint": "Przeciągnij, aby zmienić kolejność, lub naciśnij Alt+Strzałka w górę albo Alt+Strzałka w dół.",

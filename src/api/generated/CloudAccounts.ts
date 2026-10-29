@@ -2,9 +2,14 @@
 import type { CloudAccount } from "./CloudAccount";
 import type { CloudProblem } from "./CloudProblem";
 import type { CloudProvider } from "./CloudProvider";
+import type { YandexDiscovery } from "./YandexDiscovery";
 
 export type CloudAccounts = { provider: CloudProvider, accounts: Array<CloudAccount>, 
 /**
  * Regions to search (AWS only; empty for the others).
  */
-regions: Array<string>, problem: CloudProblem | null, };
+regions: Array<string>, problem: CloudProblem | null, 
+/**
+ * YC's profile/cloud scope; absent for the other providers.
+ */
+yandex?: YandexDiscovery, };

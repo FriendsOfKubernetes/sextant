@@ -1,8 +1,8 @@
-// "Add cluster → From cloud": the cloud CLIs found on this machine (`aws`, `gcloud`, `az`), an account of the chosen
+// "Add cluster → From cloud": the cloud CLIs found on this machine (`aws`, `gcloud`, `az`, `yc`), an account of the chosen
 // one (and the regions for AWS), the clusters it lists, and "Add". Sextant never signs in: when a CLI is signed out or
 // a plugin is missing, the problem shows the command the user runs (copied with one click, or typed — not run — into a
 // local terminal in the dock) or the install guide.
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   api,
@@ -16,90 +16,16 @@ import {
   type CloudImport,
   type CloudProblem,
   type CloudProvider,
+  type CloudQuery,
   type CloudSearch,
 } from "../../api";
 import { Button, Checkbox, ErrorState, Radio } from "../../components";
 import { dotSeparator } from "../../i18n";
-// Not "../terminal": that feature imports the clusters store, and its index registers actions.
-import { openCommandTerminalTab } from "../terminal/tabs";
 import { refreshClusters } from "./clustersStore";
-
-async function writeClipboard(text: string): Promise<void> {
-  if (!navigator.clipboard) throw new Error("the clipboard is not available");
-  await navigator.clipboard.writeText(text);
-}
-
-/**
- * A command for the user to run, with "Copy command" and "Open terminal" (a local terminal in the dock with the
- * command typed in; the user presses Enter). `onTerminalOpened` lets a window that would cover the dock close itself.
- */
-function CommandLine({ command, onTerminalOpened }: { command: string; onTerminalOpened?: () => void }) {
-  const { t } = useTranslation();
-  const [feedback, setFeedback] = useState<"copied" | "copyFailed" | "opened" | null>(null);
-  const copy = async () => {
-    try {
-      await writeClipboard(command);
-      setFeedback("copied");
-    } catch {
-      setFeedback("copyFailed");
-    }
-  };
-  const openTerminal = () => {
-    openCommandTerminalTab(command);
-    setFeedback("opened");
-    onTerminalOpened?.();
-  };
-  const feedbackKey = {
-    copied: "clusters:cloud.copied",
-    copyFailed: "clusters:cloud.copyFailed",
-    opened: "terminal:local.openedWithCommand",
-  } as const;
-  return (
-    <div className="cloud-command">
-      <code className="cloud-command__text">{command}</code>
-      <Button size="compact" onClick={() => void copy()}>
-        {t("clusters:cloud.copyCommand")}
-      </Button>
-      <Button size="compact" onClick={openTerminal}>
-        {t("terminal:local.openWithCommand")}
-      </Button>
-      {feedback && (
-        <span className="cloud-command__feedback" role="status">
-          {t(feedbackKey[feedback])}
-        </span>
-      )}
-    </div>
-  );
-}
-
-/** What went wrong with a cloud CLI and what to do about it. */
-export function CloudProblemView({ problem, onTerminalOpened }: { problem: CloudProblem; onTerminalOpened?: () => void }) {
-  const { t } = useTranslation();
-  const cli = t(`clusters:cloud.cli.${problem.provider}`);
-  return (
-    <div className="cloud-problem" role="note" data-kind={problem.kind}>
-      <p className="cloud-problem__title">
-        {problem.scope
-          ? t(`clusters:cloud.problemIn.${problem.kind}`, { cli, scope: problem.scope })
-          : t(`clusters:cloud.problem.${problem.kind}`, { cli })}
-      </p>
-      {problem.command && (
-        <>
-          <p className="clusters-hint">{t(`clusters:cloud.problemHint.${problem.kind}`)}</p>
-          <CommandLine command={problem.command} onTerminalOpened={onTerminalOpened} />
-        </>
-      )}
-      {problem.url && (
-        <Button size="compact" onClick={() => void api.shell.openUrl(problem.url!)}>
-          {t("clusters:cloud.installGuide")}
-        </Button>
-      )}
-      {problem.message && problem.kind !== "cliMissing" && problem.kind !== "pluginMissing" && (
-        <p className="clusters-error__details">{t("common:error.details", { message: problem.message })}</p>
-      )}
-    </div>
-  );
-}
+import { YandexCloudQuery } from "./YandexCloudQuery";
+import { YandexClusterStatus } from "./YandexClusterStatus";
+import { CloudProblemView, CommandLine } from "./CloudProblemView";
+export { CloudProblemView } from "./CloudProblemView";
 
 /** Below a failed connection: how to sign in again with the cluster's cloud CLI, if it signs in through one. */
 export function CloudLoginHint({ clusterId }: { clusterId: ClusterId }) {
@@ -156,6 +82,35 @@ function clusterKey(cluster: CloudCluster): string {
   return `${cluster.provider}:${cluster.context}`;
 }
 
+function canImport(cluster: CloudCluster): boolean {
+  return cluster.provider !== "yandex" || !!(cluster.endpoint && cluster.certificateAuthority);
+}
+
+function CloudClusterRow({ cluster, selected, alreadyAdded, onChange }: {
+  cluster: CloudCluster; selected: boolean; alreadyAdded: boolean; onChange: (checked: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const unavailable = !canImport(cluster);
+  const details = [cluster.location, cluster.version, cluster.provider === "yandex" ? null : cluster.status].filter(Boolean).join(dotSeparator());
+  return (
+    <li className={`cloud-clusters__item${unavailable ? " cloud-clusters__item--unavailable" : ""}`}>
+      <label className={cluster.provider === "yandex" ? "cloud-clusters__label cloud-yandex-row" : "cloud-clusters__label"}>
+        <Checkbox
+          className={alreadyAdded ? "cloud-clusters__check-added" : undefined}
+          checked={alreadyAdded || selected}
+          disabled={unavailable || alreadyAdded}
+          onChange={e => onChange(e.target.checked)}
+        />
+        <span className="cloud-clusters__name">{cluster.name}</span>
+        <span className="cloud-clusters__details">{details}</span>
+        {cluster.provider === "yandex" && <YandexClusterStatus status={cluster.status} />}
+        {unavailable && <span className="cloud-clusters__details">{t("clusters:cloud.yandex.unavailable")}</span>}
+        {alreadyAdded && <span className="cloud-clusters__added">{t("clusters:cloud.alreadyAdded")}</span>}
+      </label>
+    </li>
+  );
+}
+
 /** `onTerminalOpened`: a terminal tab was opened in the dock (the window around this view closes, so it is seen). */
 export function CloudClusters({ onTerminalOpened }: { onTerminalOpened?: () => void }) {
   const { t } = useTranslation();
@@ -166,9 +121,20 @@ export function CloudClusters({ onTerminalOpened }: { onTerminalOpened?: () => v
   const [regions, setRegions] = useState<string[]>([]);
   const [search, setSearch] = useState<CloudSearch | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [added, setAdded] = useState<Set<string>>(new Set());
   const [result, setResult] = useState<CloudImport | null>(null);
   const [busy, setBusy] = useState<"accounts" | "find" | "import" | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
+  const searchGeneration = useRef(0);
+  const clearSearch = useCallback((preserveAdded = false) => {
+    searchGeneration.current++;
+    setSearch(null);
+    setResult(null);
+    setSelected(new Set());
+    if (!preserveAdded) setAdded(new Set());
+    setError(null);
+    setBusy(current => current === "find" ? null : current);
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -186,12 +152,13 @@ export function CloudClusters({ onTerminalOpened }: { onTerminalOpened?: () => v
   }, []);
 
   useEffect(() => {
+    clearSearch();
     setAccounts(null);
     setAccount(null);
     setSearch(null);
     setResult(null);
     setError(null);
-    if (!provider) return;
+    if (!provider || provider === "yandex") { setBusy(null); return; }
     let live = true;
     setBusy("accounts");
     api.cloud
@@ -208,9 +175,10 @@ export function CloudClusters({ onTerminalOpened }: { onTerminalOpened?: () => v
     return () => {
       live = false;
     };
-  }, [provider]);
+  }, [provider, clearSearch]);
 
   const chooseAccount = (id: string) => {
+    clearSearch();
     setAccount(id);
     const region = accounts?.accounts.find((a) => a.id === id)?.region;
     setRegions(region ? [region] : []);
@@ -221,35 +189,47 @@ export function CloudClusters({ onTerminalOpened }: { onTerminalOpened?: () => v
   const toggleRegion = (region: string, on: boolean) =>
     setRegions((current) => (on ? [...current, region] : current.filter((r) => r !== region)));
 
-  const find = async () => {
-    if (!provider || account === null) return;
+  const find = async (request: CloudQuery) => {
+    const generation = searchGeneration.current;
     setBusy("find");
     setError(null);
     setResult(null);
     try {
-      const found = await api.cloud.find({ provider, account, regions: provider === "aws" ? regions : [] });
+      const found = await api.cloud.find(request);
+      if (generation !== searchGeneration.current) return;
       setSearch(found);
-      setSelected(new Set(found.clusters.map(clusterKey)));
+      setSelected(new Set(found.clusters.filter(c => canImport(c) && !added.has(clusterKey(c))).map(clusterKey)));
     } catch (err) {
-      setError(toApiError(err));
+      if (generation === searchGeneration.current) setError(toApiError(err));
     } finally {
-      setBusy(null);
+      if (generation === searchGeneration.current) setBusy(null);
     }
   };
 
   const add = async () => {
     if (!search) return;
-    const chosen = search.clusters.filter((c) => selected.has(clusterKey(c)));
+    const generation = searchGeneration.current;
+    const chosen = search.clusters.filter((c) => selected.has(clusterKey(c)) && canImport(c));
     setBusy("import");
     setError(null);
     try {
       const imported = await api.cloud.importClusters(chosen);
-      setResult(imported);
+      if (generation === searchGeneration.current) {
+        setResult(imported);
+        const contexts = new Set(imported.contexts);
+        const completed = chosen.filter(c => contexts.has(c.context)).map(clusterKey);
+        setAdded(current => new Set([...current, ...completed]));
+        setSelected(current => {
+          const next = new Set(current);
+          completed.forEach(key => next.delete(key));
+          return next;
+        });
+      }
       await refreshClusters();
     } catch (err) {
-      setError(toApiError(err));
+      if (generation === searchGeneration.current) setError(toApiError(err));
     } finally {
-      setBusy(null);
+      setBusy(current => current === "import" ? null : current);
     }
   };
 
@@ -293,7 +273,8 @@ export function CloudClusters({ onTerminalOpened }: { onTerminalOpened?: () => v
       {provider && busy === "accounts" && <p role="status">{t("clusters:cloud.loadingAccounts")}</p>}
       {accounts?.problem && <CloudProblemView problem={accounts.problem} onTerminalOpened={onTerminalOpened} />}
 
-      {provider && accounts && accounts.accounts.length > 0 && (
+      {provider === "yandex" && <YandexCloudQuery busy={busy === "find" || busy === "import"} searching={busy === "find"} onFind={find} onChange={clearSearch} onTerminalOpened={onTerminalOpened} />}
+      {provider && provider !== "yandex" && accounts && accounts.accounts.length > 0 && (
         <div className="cloud-query">
           <label className="cloud-field">
             <span>{accountLabel}</span>
@@ -322,7 +303,7 @@ export function CloudClusters({ onTerminalOpened }: { onTerminalOpened?: () => v
             </fieldset>
           )}
           <div className="clusters-buttons cloud-query__buttons">
-            <Button variant="primary" disabled={!canFind} onClick={() => void find()}>
+            <Button variant="primary" disabled={!canFind} onClick={() => void find({ provider, account: account ?? "", regions: provider === "aws" ? regions : [] })}>
               {busy === "find" ? t("clusters:cloud.finding") : t("clusters:cloud.find")}
             </Button>
           </div>
@@ -343,35 +324,19 @@ export function CloudClusters({ onTerminalOpened }: { onTerminalOpened?: () => v
           ) : (
             <>
               <ul className="cloud-clusters" aria-label={t("clusters:cloud.found")}>
-                {search.clusters.map((cluster) => {
-                  const key = clusterKey(cluster);
-                  const details = [cluster.location, cluster.version, cluster.status].filter(Boolean).join(dotSeparator());
-                  return (
-                    <li key={key} className="cloud-clusters__item">
-                      <label className="cloud-clusters__label">
-                        <Checkbox
-                          checked={selected.has(key)}
-                          onChange={(e) =>
-                            setSelected((current) => {
-                              const next = new Set(current);
-                              if (e.target.checked) next.add(key);
-                              else next.delete(key);
-                              return next;
-                            })
-                          }
-                        />
-                        <span className="cloud-clusters__name">{cluster.name}</span>
-                        <span className="cloud-clusters__details">{details}</span>
-                      </label>
-                    </li>
-                  );
-                })}
+                {search.clusters.map(cluster => <CloudClusterRow key={clusterKey(cluster)} cluster={cluster}
+                  selected={selected.has(clusterKey(cluster))} alreadyAdded={added.has(clusterKey(cluster))}
+                  onChange={on => setSelected(current => {
+                    const next = new Set(current);
+                    if (on) next.add(clusterKey(cluster)); else next.delete(clusterKey(cluster));
+                    return next;
+                  })} />)}
               </ul>
-              <div className="clusters-buttons">
+              {(chosenCount > 0 || added.size === 0) && <div className="clusters-buttons">
                 <Button variant="primary" disabled={busy !== null || chosenCount === 0} onClick={() => void add()}>
                   {t("clusters:cloud.add", { count: chosenCount })}
                 </Button>
-              </div>
+              </div>}
             </>
           )}
         </div>

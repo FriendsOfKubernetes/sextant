@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant, bu bilgisayarda zaten yüklü ve oturum açılmış aws, gcloud ve az araçlarını kullanır. Kendi kubeconfig dosyasını yazar; ~/.kube/config dosyasını hiçbir zaman değiştirmez ve sizin yerinize oturum açmaz.",
-    "detecting": "aws, gcloud ve az aranıyor…",
+    "hint": "Sextant, bu bilgisayarda yüklü ve oturum açılmış aws, gcloud, az ve yc araçlarını kullanır. Kendi kubeconfig dosyasını yazar; ~/.kube/config dosyasını değiştirmez veya sizin yerinize oturum açmaz.",
+    "detecting": "aws, gcloud, az ve yc aranıyor…",
     "providers": "Bulut",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(sürüm bilinmiyor)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "Profil",
       "gcp": "Proje",
-      "azure": "Abonelik"
+      "azure": "Abonelik",
+      "yandex": "Klasör"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "Ortamdaki kimlik bilgileri",
@@ -158,7 +161,22 @@
     },
     "copyCommand": "Komutu kopyala",
     "copied": "Kopyalandı",
-    "copyFailed": "Pano kullanılamıyor; komutu seçip kopyalayın."
+    "copyFailed": "Pano kullanılamıyor; komutu seçip kopyalayın.",
+    "yandex": {
+      "chooseProfile": "Bir profil seçin",
+      "cloud": "Bulut",
+      "noClouds": "Kullanılabilir bulut yok",
+      "enterFolder": "Klasör kimliği girin…",
+      "folderId": "Klasör kimliği",
+      "endpoint": "API adresi",
+      "external": "Genel",
+      "internal": "Dahili (VPN veya özel ağ)",
+      "endpointHint": "Seçilen adrese bu bilgisayardan erişilebilmelidir.",
+      "unavailable": "Seçilen API adresi veya küme sertifikası kullanılamıyor.",
+      "reload": "Listeyi yenile"
+    },
+    "clusterStatus": "Durum: {{status}}",
+    "alreadyAdded": "Zaten eklendi"
   },
   "order": {
     "hint": "Sırayı değiştirmek için sürükleyin ya da Alt+Yukarı Ok veya Alt+Aşağı Ok tuşlarına basın.",

@@ -1,4 +1,4 @@
-//! Cloud clusters (EKS, GKE, AKS) through the user's own `aws`, `gcloud` and `az` (`sextant_core::cloud`).
+//! Cloud clusters (EKS, GKE, AKS, Yandex Cloud) through the user's installed CLIs (`sextant_core::cloud`).
 //!
 //! The CLIs and their environment come from a managed `CloudCli` when the app (or a test) registers one with
 //! `app.manage(..)`, otherwise the app's environment as a local terminal gets it (`pty::shell_environment`: without
@@ -29,20 +29,28 @@ fn cli_with_env(base: impl IntoIterator<Item = (OsString, OsString)>) -> CloudCl
     CloudCli::default().with_env(pty::shell_environment(Platform::current(), base))
 }
 
-/// `aws`, `gcloud`, `az`: installed or not, their versions and credential plugins.
+/// `aws`, `gcloud`, `az`, `yc`: installed or not, their versions and credential plugins.
 #[tauri::command]
 pub async fn cloud_status<R: Runtime>(app: AppHandle<R>) -> Result<Vec<CloudCliStatus>, CoreError> {
     Ok(cloud_cli(&app).status().await)
 }
 
-/// AWS profiles and regions, GCP projects or Azure subscriptions; a problem (not installed, not signed in) instead
-/// of an error.
+/// AWS profiles and regions, GCP projects, Azure subscriptions or scoped YC discovery; a problem
+/// (not installed, not signed in) instead of an error.
 #[tauri::command]
 pub async fn cloud_accounts<R: Runtime>(
     app: AppHandle<R>,
     provider: CloudProvider,
+    profile: Option<String>,
+    cloud_id: Option<String>,
 ) -> Result<CloudAccounts, CoreError> {
-    Ok(cloud_cli(&app).accounts(provider).await)
+    let cli = cloud_cli(&app);
+    Ok(if provider == CloudProvider::Yandex {
+        cli.yandex_accounts(profile.as_deref(), cloud_id.as_deref())
+            .await
+    } else {
+        cli.accounts(provider).await
+    })
 }
 
 /// The clusters of an account (in the chosen regions for AWS), with the problems of the regions that failed.

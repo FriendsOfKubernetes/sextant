@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "O Sextant usa o aws, o gcloud e o az já instalados e com login feito neste computador. Ele grava o próprio kubeconfig e nunca altera o ~/.kube/config nem faz login por você.",
-    "detecting": "Procurando aws, gcloud e az…",
+    "hint": "O Sextant usa aws, gcloud, az e yc já instalados e autenticados neste computador. Grava seu próprio kubeconfig, sem alterar ~/.kube/config nem fazer login por você.",
+    "detecting": "Procurando aws, gcloud, az e yc…",
     "providers": "Nuvem",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(versão desconhecida)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "Perfil",
       "gcp": "Projeto",
-      "azure": "Assinatura"
+      "azure": "Assinatura",
+      "yandex": "Pasta"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "Credenciais do ambiente",
@@ -160,7 +163,22 @@
     },
     "copyCommand": "Copiar comando",
     "copied": "Copiado",
-    "copyFailed": "A área de transferência não está disponível; selecione o comando e copie-o."
+    "copyFailed": "A área de transferência não está disponível; selecione o comando e copie-o.",
+    "yandex": {
+      "chooseProfile": "Escolha um perfil",
+      "cloud": "Nuvem",
+      "noClouds": "Nenhuma nuvem disponível",
+      "enterFolder": "Informar o ID da pasta…",
+      "folderId": "ID da pasta",
+      "endpoint": "Endereço da API",
+      "external": "Público",
+      "internal": "Interno (VPN ou rede privada)",
+      "endpointHint": "O endereço selecionado deve ser acessível a partir deste computador.",
+      "unavailable": "O endereço da API selecionado ou o certificado do cluster não está disponível.",
+      "reload": "Atualizar lista"
+    },
+    "clusterStatus": "Estado: {{status}}",
+    "alreadyAdded": "Já adicionado"
   },
   "order": {
     "hint": "Arraste para mudar a ordem ou pressione Alt+Seta para cima ou Alt+Seta para baixo.",

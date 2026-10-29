@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant は、このコンピューターにインストール済みでサインイン済みの aws、gcloud、az を使用します。独自の kubeconfig を書き込み、~/.kube/config を変更したり、代わりにサインインしたりすることはありません。",
-    "detecting": "aws、gcloud、az を検索中…",
+    "hint": "Sextantは、このコンピューターにインストール済みで認証済みのaws、gcloud、az、ycを使用します。独自のkubeconfigを書き込み、~/.kube/configの変更や代理でのログインは行いません。",
+    "detecting": "aws、gcloud、az、ycを検索中…",
     "providers": "クラウド",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(バージョン不明)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "プロファイル",
       "gcp": "プロジェクト",
-      "azure": "サブスクリプション"
+      "azure": "サブスクリプション",
+      "yandex": "フォルダー"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "環境変数の資格情報",
@@ -156,7 +159,22 @@
     },
     "copyCommand": "コマンドをコピー",
     "copied": "コピーしました",
-    "copyFailed": "クリップボードを使用できません。コマンドを選択してコピーしてください。"
+    "copyFailed": "クリップボードを使用できません。コマンドを選択してコピーしてください。",
+    "yandex": {
+      "chooseProfile": "プロファイルを選択",
+      "cloud": "クラウド",
+      "noClouds": "利用できるクラウドがありません",
+      "enterFolder": "フォルダーIDを入力…",
+      "folderId": "フォルダーID",
+      "endpoint": "APIアドレス",
+      "external": "パブリック",
+      "internal": "内部（VPNまたはプライベートネットワーク）",
+      "endpointHint": "選択したアドレスに、このコンピューターから接続できる必要があります。",
+      "unavailable": "選択したAPIアドレスまたはクラスター証明書を利用できません。",
+      "reload": "一覧を更新"
+    },
+    "clusterStatus": "状態：{{status}}",
+    "alreadyAdded": "追加済み"
   },
   "order": {
     "hint": "ドラッグして順序を変更するか、Alt+上矢印 または Alt+下矢印 を押します。",

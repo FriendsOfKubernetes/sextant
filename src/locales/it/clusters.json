@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant usa aws, gcloud e az già installati e con accesso effettuato su questo computer. Scrive un proprio kubeconfig, non modifica mai ~/.kube/config e non effettua mai l'accesso al posto tuo.",
-    "detecting": "Ricerca di aws, gcloud e az…",
+    "hint": "Sextant usa aws, gcloud, az e yc già installati e autenticati su questo computer. Scrive un proprio kubeconfig, senza modificare ~/.kube/config né effettuare l’accesso al posto tuo.",
+    "detecting": "Ricerca di aws, gcloud, az e yc…",
     "providers": "Cloud",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(versione sconosciuta)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "Profilo",
       "gcp": "Progetto",
-      "azure": "Sottoscrizione"
+      "azure": "Sottoscrizione",
+      "yandex": "Cartella"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "Credenziali dall'ambiente",
@@ -160,7 +163,22 @@
     },
     "copyCommand": "Copia comando",
     "copied": "Copiato",
-    "copyFailed": "Gli appunti non sono disponibili; seleziona il comando e copialo."
+    "copyFailed": "Gli appunti non sono disponibili; seleziona il comando e copialo.",
+    "yandex": {
+      "chooseProfile": "Scegli un profilo",
+      "cloud": "Cloud",
+      "noClouds": "Nessun cloud disponibile",
+      "enterFolder": "Inserisci l’ID della cartella…",
+      "folderId": "ID della cartella",
+      "endpoint": "Indirizzo API",
+      "external": "Pubblico",
+      "internal": "Interno (VPN o rete privata)",
+      "endpointHint": "L’indirizzo selezionato deve essere raggiungibile da questo computer.",
+      "unavailable": "L’indirizzo API selezionato o il certificato del cluster non è disponibile.",
+      "reload": "Aggiorna elenco"
+    },
+    "clusterStatus": "Stato: {{status}}",
+    "alreadyAdded": "Già aggiunto"
   },
   "order": {
     "hint": "Trascina per cambiare l’ordine, oppure premi Alt+Freccia su o Alt+Freccia giù.",

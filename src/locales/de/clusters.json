@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant verwendet die auf diesem Computer bereits installierten und angemeldeten aws, gcloud und az. Es schreibt eine eigene kubeconfig, ändert nie ~/.kube/config und meldet Sie nie selbst an.",
-    "detecting": "aws, gcloud und az werden gesucht…",
+    "hint": "Sextant verwendet die auf diesem Computer bereits installierten und angemeldeten CLIs aws, gcloud, az und yc. Es schreibt eine eigene kubeconfig, ändert ~/.kube/config nicht und meldet Sie nicht an.",
+    "detecting": "Suche nach aws, gcloud, az und yc…",
     "providers": "Cloud",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(Version unbekannt)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "Profil",
       "gcp": "Projekt",
-      "azure": "Abonnement"
+      "azure": "Abonnement",
+      "yandex": "Ordner"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "Anmeldedaten aus der Umgebung",
@@ -158,7 +161,22 @@
     },
     "copyCommand": "Befehl kopieren",
     "copied": "Kopiert",
-    "copyFailed": "Die Zwischenablage ist nicht verfügbar; markieren und kopieren Sie den Befehl."
+    "copyFailed": "Die Zwischenablage ist nicht verfügbar; markieren und kopieren Sie den Befehl.",
+    "yandex": {
+      "chooseProfile": "Profil auswählen",
+      "cloud": "Cloud",
+      "noClouds": "Keine Clouds verfügbar",
+      "enterFolder": "Ordner-ID eingeben…",
+      "folderId": "Ordner-ID",
+      "endpoint": "API-Adresse",
+      "external": "Öffentlich",
+      "internal": "Intern (VPN oder privates Netzwerk)",
+      "endpointHint": "Die gewählte Adresse muss von diesem Computer erreichbar sein.",
+      "unavailable": "Die gewählte API-Adresse oder das Clusterzertifikat ist nicht verfügbar.",
+      "reload": "Liste aktualisieren"
+    },
+    "clusterStatus": "Status: {{status}}",
+    "alreadyAdded": "Bereits hinzugefügt"
   },
   "order": {
     "hint": "Zum Ändern der Reihenfolge ziehen oder Alt+Pfeil nach oben bzw. Alt+Pfeil nach unten drücken.",

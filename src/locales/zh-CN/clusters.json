@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant 使用此计算机上已安装并已登录的 aws、gcloud 和 az。它会写入自己的 kubeconfig，绝不会更改 ~/.kube/config，也不会替你登录。",
-    "detecting": "正在查找 aws、gcloud 和 az…",
+    "hint": "Sextant 使用此计算机上已安装并登录的 aws、gcloud、az 和 yc。它会写入自己的 kubeconfig，不会修改 ~/.kube/config，也不会代您登录。",
+    "detecting": "正在查找 aws、gcloud、az 和 yc…",
     "providers": "云",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "（版本未知）",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "配置文件",
       "gcp": "项目",
-      "azure": "订阅"
+      "azure": "订阅",
+      "yandex": "目录"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "来自环境变量的凭据",
@@ -156,7 +159,22 @@
     },
     "copyCommand": "复制命令",
     "copied": "已复制",
-    "copyFailed": "剪贴板不可用；请选中该命令并手动复制。"
+    "copyFailed": "剪贴板不可用；请选中该命令并手动复制。",
+    "yandex": {
+      "chooseProfile": "选择配置文件",
+      "cloud": "云",
+      "noClouds": "没有可用的云",
+      "enterFolder": "输入目录 ID…",
+      "folderId": "目录 ID",
+      "endpoint": "API 地址",
+      "external": "公网",
+      "internal": "内网（VPN 或专用网络）",
+      "endpointHint": "必须能够从此计算机访问所选地址。",
+      "unavailable": "所选 API 地址或集群证书不可用。",
+      "reload": "刷新列表"
+    },
+    "clusterStatus": "状态：{{status}}",
+    "alreadyAdded": "已添加"
   },
   "order": {
     "hint": "拖动以更改顺序，或按 Alt+上箭头 或 Alt+下箭头。",

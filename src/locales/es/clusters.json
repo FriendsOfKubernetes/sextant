@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant usa aws, gcloud y az ya instalados y con la sesión iniciada en este equipo. Escribe su propio kubeconfig y nunca cambia ~/.kube/config ni inicia sesión en su lugar.",
-    "detecting": "Buscando aws, gcloud y az…",
+    "hint": "Sextant utiliza aws, gcloud, az y yc ya instalados y con la sesión iniciada en este equipo. Crea su propio kubeconfig, no modifica ~/.kube/config ni inicia sesión en tu nombre.",
+    "detecting": "Buscando aws, gcloud, az y yc…",
     "providers": "Nube",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(versión desconocida)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "Perfil",
       "gcp": "Proyecto",
-      "azure": "Suscripción"
+      "azure": "Suscripción",
+      "yandex": "Carpeta"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "Credenciales del entorno",
@@ -160,7 +163,22 @@
     },
     "copyCommand": "Copiar comando",
     "copied": "Copiado",
-    "copyFailed": "El portapapeles no está disponible; seleccione el comando y cópielo."
+    "copyFailed": "El portapapeles no está disponible; seleccione el comando y cópielo.",
+    "yandex": {
+      "chooseProfile": "Selecciona un perfil",
+      "cloud": "Nube",
+      "noClouds": "No hay nubes disponibles",
+      "enterFolder": "Introducir el ID de la carpeta…",
+      "folderId": "ID de la carpeta",
+      "endpoint": "Dirección de la API",
+      "external": "Pública",
+      "internal": "Interna (VPN o red privada)",
+      "endpointHint": "La dirección seleccionada debe ser accesible desde este equipo.",
+      "unavailable": "La dirección de la API seleccionada o el certificado del clúster no están disponibles.",
+      "reload": "Actualizar lista"
+    },
+    "clusterStatus": "Estado: {{status}}",
+    "alreadyAdded": "Ya añadido"
   },
   "order": {
     "hint": "Arrastre para cambiar el orden, o pulse Alt+Flecha arriba o Alt+Flecha abajo.",
