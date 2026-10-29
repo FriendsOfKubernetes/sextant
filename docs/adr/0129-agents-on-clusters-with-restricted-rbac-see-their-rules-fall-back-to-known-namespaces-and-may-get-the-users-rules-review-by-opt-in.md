@@ -41,3 +41,7 @@ The agent ended up asking the user which namespaces to look at. Sextant already 
 - The window's access check (ServiceAccount namespace, OpenShift projects) lives in its memory, so the MCP fallback uses only what Rust holds: the context's namespace and the saved known namespaces.
 - A rules review lists ClusterRoleBinding rules in every namespace: the note says so.
 - No new command. Only `ClusterSettings` gains a field (`agentAccessReviews`, frontend-written, read leniently: only `true` is on).
+
+## Amendment (0.26.4, #313)
+
+`get_metrics` over all namespaces never reached the fallback: with the usage source `Auto`, a cluster-scope 403 from metrics-server and no Prometheus became `notFound` "metrics are unavailable", so the agent concluded that there were no metrics, while `metrics.k8s.io` answered per namespace. The core now keeps `forbidden` when metrics-server refused and Prometheus is not available (the message still names both sources; any other metrics-server failure stays `notFound`). Pods then take the fallback above. Nodes have no per-namespace form: their 403 says that node usage needs node metrics at cluster scope and that pod usage per namespace may still work. The window needs no change: a user who may not list Namespaces already polls the accessible ones (ADR-0124).

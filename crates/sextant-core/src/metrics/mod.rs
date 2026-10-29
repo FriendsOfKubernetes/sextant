@@ -181,7 +181,8 @@ pub struct Series {
 }
 
 /// Current usage of the pods in `namespaces` (`None` = all), from the source chosen by `settings.usage_source`.
-/// No source available → `notFound` ("metrics are unavailable").
+/// No source available → `notFound` ("metrics are unavailable"), or `forbidden` when metrics-server refused the user
+/// (the list may still be allowed per namespace, #313).
 pub async fn pod_usage(
     mgr: &ClusterManager,
     cluster: &ClusterId,
@@ -331,7 +332,8 @@ async fn required_prometheus(
     Prometheus::new(&mgr.client(cluster)?, &target)
 }
 
-/// `auto` without metrics-server: Prometheus, or an error naming both sources.
+/// `auto` without metrics-server: Prometheus, or an error naming both sources. A refusal of metrics-server keeps
+/// its `forbidden` code: it says the user may not read these metrics here, not that there are none (#313).
 async fn fallback_prometheus(
     mgr: &ClusterManager,
     cluster: &ClusterId,
@@ -341,12 +343,91 @@ async fn fallback_prometheus(
     required_prometheus(mgr, cluster, &settings.prometheus)
         .await
         .map_err(|prometheus_error| {
+            let code = match server_error.code {
+                ErrorCode::Forbidden => ErrorCode::Forbidden,
+                _ => ErrorCode::NotFound,
+            };
             CoreError::new(
-                ErrorCode::NotFound,
+                code,
                 format!(
                     "metrics are unavailable ({}; {})",
                     server_error.message, prometheus_error.message
                 ),
             )
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::fake_api::{FakeApi, Reply, Request, connected_to};
+
+    const API_VERSIONS: &str =
+        r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
+    const FORBIDDEN: &str =
+        r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"Forbidden","code":403}"#;
+    const UNAVAILABLE: &str = r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"ServiceUnavailable","code":503}"#;
+    const POD_METRICS: &str = r#"{"kind":"PodMetricsList","apiVersion":"metrics.k8s.io/v1beta1","metadata":{},"items":[{"metadata":{"name":"web","namespace":"team-a"},"containers":[{"name":"app","usage":{"cpu":"5m","memory":"1Mi"}}]}]}"#;
+
+    fn auto_without_prometheus() -> ClusterSettings {
+        ClusterSettings {
+            usage_source: UsageSource::Auto,
+            prometheus: PrometheusMode::Off,
+            ..Default::default()
+        }
+    }
+
+    #[tokio::test]
+    async fn a_cluster_wide_refusal_of_metrics_server_stays_forbidden_without_prometheus() {
+        let api = FakeApi::start(|req: &Request| match req.path.as_str() {
+            "/api" => Reply::json(200, API_VERSIONS),
+            "/apis/metrics.k8s.io/v1beta1/pods" | "/apis/metrics.k8s.io/v1beta1/nodes" => {
+                Reply::json(403, FORBIDDEN)
+            }
+            "/apis/metrics.k8s.io/v1beta1/namespaces/team-a/pods" => Reply::json(200, POD_METRICS),
+            _ => Reply::not_found(),
+        })
+        .await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let settings = auto_without_prometheus();
+
+        let err = pod_usage(&mgr, &id, &settings, None).await.unwrap_err();
+        assert_eq!(err.code, ErrorCode::Forbidden);
+        assert!(
+            err.message
+                .starts_with("metrics are unavailable (metrics-server: "),
+            "{}",
+            err.message
+        );
+        assert!(
+            err.message.contains("Prometheus is turned off"),
+            "{}",
+            err.message
+        );
+        let err = node_usage(&mgr, &id, &settings).await.unwrap_err();
+        assert_eq!(err.code, ErrorCode::Forbidden);
+
+        let pods = pod_usage(&mgr, &id, &settings, Some(vec!["team-a".into()]))
+            .await
+            .unwrap();
+        assert_eq!(pods.len(), 1);
+        assert_eq!(pods[0].name, "web");
+    }
+
+    #[tokio::test]
+    async fn a_missing_or_failing_metrics_server_without_prometheus_is_not_found() {
+        for (status, body) in [(404, crate::fake_api::NOT_FOUND), (503, UNAVAILABLE)] {
+            let api = FakeApi::start(move |req: &Request| match req.path.as_str() {
+                "/api" => Reply::json(200, API_VERSIONS),
+                "/apis/metrics.k8s.io/v1beta1/pods" => Reply::json(status, body),
+                _ => Reply::not_found(),
+            })
+            .await;
+            let (_tmp, mgr, id) = connected_to(api.url()).await;
+            let err = pod_usage(&mgr, &id, &auto_without_prometheus(), None)
+                .await
+                .unwrap_err();
+            assert_eq!(err.code, ErrorCode::NotFound, "{status}: {}", err.message);
+        }
+    }
 }

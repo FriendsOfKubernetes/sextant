@@ -13,6 +13,7 @@ use sextant_core::access::{
     AccessAction, AccessPreset, AccessRule, ClusterAccess, KindPattern, KindScope, NamespaceScope,
 };
 use sextant_core::kubeconfig::KubeconfigEnv;
+use sextant_core::metrics::PrometheusMode;
 use sextant_core::{ClusterId, ClusterSettings, ConnectionState, McpSettings};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
@@ -1909,6 +1910,14 @@ async fn namespace_scoped_cluster() -> String {
                 r#"{"kind":"PodList","apiVersion":"v1","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"web-1","namespace":"team-a","uid":"u1"}}]}"#,
             ),
             "/api/v1/pods" | "/api/v1/namespaces/team-b/pods" => (StatusCode::FORBIDDEN, forbidden),
+            // metrics.k8s.io the same way: per namespace in `team-a` only, never at cluster scope (#313).
+            "/apis/metrics.k8s.io/v1beta1/namespaces/team-a/pods" => (
+                StatusCode::OK,
+                r#"{"kind":"PodMetricsList","apiVersion":"metrics.k8s.io/v1beta1","metadata":{},"items":[{"metadata":{"name":"web-1","namespace":"team-a"},"containers":[{"name":"app","usage":{"cpu":"5m","memory":"1Mi"}}]}]}"#,
+            ),
+            "/apis/metrics.k8s.io/v1beta1/pods"
+            | "/apis/metrics.k8s.io/v1beta1/nodes"
+            | "/apis/metrics.k8s.io/v1beta1/namespaces/team-b/pods" => (StatusCode::FORBIDDEN, forbidden),
             // Every namespace answers the same: pods in the core group, and a webhook that cannot list its rules.
             "/apis/authorization.k8s.io/v1/selfsubjectrulesreviews" => (
                 StatusCode::CREATED,
@@ -1927,20 +1936,27 @@ async fn namespace_scoped_cluster() -> String {
     url
 }
 
-#[tokio::test]
-async fn a_refused_list_over_all_namespaces_falls_back_to_the_known_ones() {
-    let dir = tempfile::tempdir().unwrap();
-    let server = namespace_scoped_cluster().await;
-    let path = dir.path().join("kubeconfig");
+/// A kubeconfig `kubeconfig` in `dir` for `server`, its context in `namespace` if any.
+fn scoped_kubeconfig(dir: &Path, server: &str, namespace: Option<&str>) -> std::path::PathBuf {
+    let path = dir.join("kubeconfig");
+    let namespace = namespace.map_or(String::new(), |ns| format!("    namespace: {ns}\n"));
     std::fs::write(
         &path,
         format!(
             "apiVersion: v1\nkind: Config\nclusters:\n- name: test\n  cluster:\n    server: {server}\n\
-             contexts:\n- name: test\n  context:\n    cluster: test\n    user: test\n    namespace: team-a\n\
+             contexts:\n- name: test\n  context:\n    cluster: test\n    user: test\n{namespace}\
              users:\n- name: test\n  user: {{}}\ncurrent-context: test\n"
         ),
     )
     .unwrap();
+    path
+}
+
+#[tokio::test]
+async fn a_refused_list_over_all_namespaces_falls_back_to_the_known_ones() {
+    let dir = tempfile::tempdir().unwrap();
+    let server = namespace_scoped_cluster().await;
+    let path = scoped_kubeconfig(dir.path(), &server, Some("team-a"));
     let (state, _) = state_in(dir.path(), Some(path.into_os_string()));
     let cluster = first_cluster(&state);
     set_access(&state, &cluster, preset(AccessPreset::ReadOnly));
@@ -1999,15 +2015,7 @@ async fn a_refused_list_over_all_namespaces_falls_back_to_the_known_ones() {
     assert!(asked.unwrap_err().contains("forbidden"));
 
     // Nothing known to fall back to: the refusal says where to go from there.
-    std::fs::write(
-        dir.path().join("kubeconfig"),
-        format!(
-            "apiVersion: v1\nkind: Config\nclusters:\n- name: test\n  cluster:\n    server: {server}\n\
-             contexts:\n- name: test\n  context:\n    cluster: test\n    user: test\n\
-             users:\n- name: test\n  user: {{}}\ncurrent-context: test\n"
-        ),
-    )
-    .unwrap();
+    scoped_kubeconfig(dir.path(), &server, None);
     state
         .settings
         .update(|s| s.clusters.get_mut(&cluster.0).unwrap().known_namespaces = None)
@@ -2016,6 +2024,78 @@ async fn a_refused_list_over_all_namespaces_falls_back_to_the_known_ones() {
     let _ = state.registry.write().unwrap().clusters();
     let err = pods().await.unwrap_err();
     assert!(err.contains("get_access"), "{err}");
+    state.close_all();
+}
+
+#[tokio::test]
+async fn pod_metrics_refused_at_cluster_scope_are_read_in_the_known_namespaces() {
+    let dir = tempfile::tempdir().unwrap();
+    let server = namespace_scoped_cluster().await;
+    let path = scoped_kubeconfig(dir.path(), &server, Some("team-a"));
+    let (state, _) = state_in(dir.path(), Some(path.into_os_string()));
+    let cluster = first_cluster(&state);
+    set_access(&state, &cluster, preset(AccessPreset::ReadOnly));
+    state
+        .settings
+        .update(|s| {
+            let stored = s.clusters.entry(cluster.0.clone()).or_default();
+            // No Prometheus to fall back to: metrics-server's refusal is the answer (#313).
+            stored.prometheus = PrometheusMode::Off;
+            stored.known_namespaces = Some(vec!["team-b".to_owned()]);
+        })
+        .unwrap();
+    let pods = || {
+        tool(
+            &state,
+            "get_metrics",
+            json!({ "cluster": "test", "of": "pods" }),
+        )
+    };
+
+    let out = pods().await.unwrap();
+    assert_eq!(out["pods"][0]["name"], "web-1", "{out}");
+    assert_eq!(out["namespaces"], json!(["team-a"]));
+    assert_eq!(out["refused"], json!(["team-b"]));
+    assert!(
+        out["note"]
+            .as_str()
+            .unwrap()
+            .contains("refused the list over all namespaces")
+    );
+
+    // Node usage has no per-namespace way: the refusal says what is needed and what may still work.
+    let err = tool(
+        &state,
+        "get_metrics",
+        json!({ "cluster": "test", "of": "nodes" }),
+    )
+    .await
+    .unwrap_err();
+    assert!(
+        err.contains("at cluster scope") && err.contains("a namespace"),
+        "{err}"
+    );
+
+    // Nothing known: pass a namespace.
+    scoped_kubeconfig(dir.path(), &server, None);
+    state
+        .settings
+        .update(|s| s.clusters.get_mut(&cluster.0).unwrap().known_namespaces = None)
+        .unwrap();
+    let _ = state.registry.write().unwrap().clusters();
+    let err = pods().await.unwrap_err();
+    assert!(
+        err.contains("Pass a namespace") && err.contains("get_access"),
+        "{err}"
+    );
+    let asked = tool(
+        &state,
+        "get_metrics",
+        json!({ "cluster": "test", "of": "pods", "namespace": "team-a" }),
+    )
+    .await
+    .unwrap();
+    assert_eq!(asked["pods"][0]["name"], "web-1", "{asked}");
     state.close_all();
 }
 
