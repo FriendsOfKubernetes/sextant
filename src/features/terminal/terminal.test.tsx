@@ -213,6 +213,13 @@ describe("Shell action", () => {
     await waitFor(() => expect(document.querySelector(".terminal__leave-hint")).toBeNull());
   });
 
+  it("keeps the screen's gap out of the height the fit measures, so the last row is not cut off", () => {
+    // The fit reads the computed height of the screen element; with border-box that height includes its padding.
+    const rule = cssRule("src/features/terminal/terminal.css", ".terminal__screen");
+    expect(rule.padding).toBeUndefined();
+    expect(rule.margin).toBe("4px 0 0 6px");
+  });
+
   it("shows a broken connection and a start failure with Reconnect", async () => {
     backend.on("exec_start", () => {
       throw { code: "forbidden", message: "pods/exec is forbidden" };

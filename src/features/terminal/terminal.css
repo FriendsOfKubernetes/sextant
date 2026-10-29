@@ -34,10 +34,12 @@
   visibility: visible;
 }
 
+/* The gap is a margin, not padding: xterm's fit takes this element's computed height, which with border-box would
+   include padding and give a row more than fits, its bottom cut off. */
 .terminal__screen {
   flex: 1;
   min-height: 0;
-  padding: 4px 0 0 6px;
+  margin: 4px 0 0 6px;
   overflow: hidden;
 }
 
