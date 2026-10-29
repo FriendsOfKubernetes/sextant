@@ -5,9 +5,12 @@
   "empty": "Keine aktiven Portweiterleitungen.",
   "emptyText": "Starten Sie eine in den Details eines Pods oder Services.",
   "columns": {
-    "target": "Ziel",
-    "ports": "Ports",
-    "status": "Status"
+    "target": "Ressource",
+    "ports": "Lokal → entfernt",
+    "status": "Status",
+    "namespace": "Namespace",
+    "source": "Quelle",
+    "details": "Details"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "Im Browser öffnen",
-    "stop": "Beenden"
+    "stop": "Beenden",
+    "copy": "Adresse kopieren",
+    "retry": "Erneut versuchen",
+    "remove": "Entfernen",
+    "all": "Alle Portweiterleitungen",
+    "stopSelected": "Ausgewählte stoppen",
+    "clearSelection": "Auswahl aufheben"
   },
   "action": {
     "label": "Port weiterleiten…"
@@ -44,6 +53,35 @@
     "started": "localhost:{{local}} wird an Port {{remote}} weitergeleitet.",
     "inUse": "Der lokale Port {{port}} ist bereits belegt.",
     "useFree": "Freien Port verwenden",
-    "close": "Schließen"
+    "close": "Schließen",
+    "existing": "Bestehende Weiterleitungen für diesen Port",
+    "stopped": "Diese Portweiterleitung wurde gestoppt.",
+    "startAnother": "Weitere starten"
+  },
+  "search": "Namespace, Ressource oder Port…",
+  "searchLabel": "Portweiterleitungen suchen",
+  "statusFilter": "Status der Weiterleitung",
+  "allStates": "Alle Status",
+  "noMatches": "Keine passenden Portweiterleitungen.",
+  "clearFilters": "Filter zurücksetzen",
+  "counts": {
+    "active": "Aktiv: {{value}}",
+    "error": "Fehler: {{value}}"
+  },
+  "source": {
+    "user": "Manuell",
+    "agent": "KI-Agent",
+    "vcluster": "Intern · vcluster",
+    "argoCd": "Intern · Argo CD"
+  },
+  "selection": "Ausgewählt: {{value}}",
+  "selectAll": "Sichtbare Benutzerweiterleitungen auswählen",
+  "selectForward": "{{target}} an Port {{port}} auswählen",
+  "protected": "Interne Verbindung; einzeln stoppen.",
+  "confirm": {
+    "title": "Portweiterleitungen stoppen?",
+    "many": "Ausgewählte Portweiterleitungen ({{value}}) stoppen?",
+    "vcluster": "Diese Weiterleitung verbindet einen virtuellen Cluster. Beim Stoppen wird dieser Cluster getrennt.",
+    "internal": "Diese Weiterleitung wird von einer internen Verbindung verwendet. Beim Stoppen kann diese Verbindung unterbrochen werden."
   }
 }

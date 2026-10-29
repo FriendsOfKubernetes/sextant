@@ -4,6 +4,13 @@ import type { ForwardInfo, ForwardTarget, KindRef, KubeObject, ObjectRef } from 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
 const list = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? v.filter(isRecord) : []);
 
+export const PORT_FORWARD_PAGE = "portforward";
+
+/** Internal connections must not be stopped as part of a bulk user action. */
+export function isInternal(forward: ForwardInfo): boolean {
+  return forward.source === "vcluster" || forward.source === "argoCd";
+}
+
 /** Pods and Services of the core group are the only things that can be forwarded to. */
 export function isForwardable(kind: KindRef): boolean {
   return kind.group === "" && (kind.kind === "Pod" || kind.kind === "Service");

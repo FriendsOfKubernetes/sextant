@@ -5,9 +5,12 @@
   "empty": "No hay reenvíos de puertos activos.",
   "emptyText": "Inicie uno desde los detalles de un Pod o un Service.",
   "columns": {
-    "target": "Destino",
-    "ports": "Puertos",
-    "status": "Estado"
+    "target": "Recurso",
+    "ports": "Local → remoto",
+    "status": "Estado",
+    "namespace": "Namespace",
+    "source": "Origen",
+    "details": "Detalles"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "Abrir en el navegador",
-    "stop": "Detener"
+    "stop": "Detener",
+    "copy": "Copiar dirección",
+    "retry": "Reintentar",
+    "remove": "Eliminar",
+    "all": "Todos los reenvíos",
+    "stopSelected": "Detener seleccionados",
+    "clearSelection": "Quitar selección"
   },
   "action": {
     "label": "Reenviar puerto…"
@@ -44,6 +53,35 @@
     "started": "Reenviando localhost:{{local}} al puerto {{remote}}.",
     "inUse": "El puerto local {{port}} ya está en uso.",
     "useFree": "Usar un puerto libre",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "existing": "Reenvíos existentes para este puerto",
+    "stopped": "Este reenvío de puerto se ha detenido.",
+    "startAnother": "Iniciar otro"
+  },
+  "search": "Namespace, recurso o puerto…",
+  "searchLabel": "Buscar reenvíos de puertos",
+  "statusFilter": "Estado del reenvío",
+  "allStates": "Todos los estados",
+  "noMatches": "No hay reenvíos que coincidan.",
+  "clearFilters": "Borrar filtros",
+  "counts": {
+    "active": "Activos: {{value}}",
+    "error": "Con error: {{value}}"
+  },
+  "source": {
+    "user": "Manual",
+    "agent": "Agente de IA",
+    "vcluster": "Interno · vcluster",
+    "argoCd": "Interno · Argo CD"
+  },
+  "selection": "Seleccionados: {{value}}",
+  "selectAll": "Seleccionar reenvíos de usuario visibles",
+  "selectForward": "Seleccionar {{target}} en el puerto {{port}}",
+  "protected": "Conexión interna; detener por separado.",
+  "confirm": {
+    "title": "¿Detener reenvíos de puertos?",
+    "many": "¿Detener los reenvíos seleccionados ({{value}})?",
+    "vcluster": "Este reenvío conecta un clúster virtual. Al detenerlo se desconectará ese clúster.",
+    "internal": "Este reenvío se usa para una conexión interna. Al detenerlo se puede interrumpir esa conexión."
   }
 }

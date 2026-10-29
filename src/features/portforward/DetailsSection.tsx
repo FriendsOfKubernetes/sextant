@@ -4,12 +4,13 @@ import { Block } from "../details/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
-import { Button } from "../../components";
+import { Button, ErrorState } from "../../components";
+import { useAppStore } from "../../app/store";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { ForwardDialog } from "./ForwardDialog";
-import { usePortForwards } from "./hooks";
-import { portsOf, sameTarget, targetOf } from "./model";
-import { openInBrowser } from "./openInBrowser";
+import { portsOf, sameTarget, targetOf, PORT_FORWARD_PAGE } from "./model";
+import { ForwardButtons, useForwardControls } from "./ForwardButtons";
+import { useForwardRetry } from "./useForwardRetry";
 import "./portforward.css";
 
 export function PortForwardSection({ clusterId, objectRef, obj }: DetailsSectionProps) {
@@ -22,7 +23,8 @@ export function PortForwardSection({ clusterId, objectRef, obj }: DetailsSection
 function PortList({ clusterId, objectRef, ports }: Pick<DetailsSectionProps, "clusterId" | "objectRef"> & { ports: number[] }) {
   const { t } = useTranslation();
   const [dialogPort, setDialogPort] = useState<number | null>(null);
-  const { forwards } = usePortForwards();
+  const { forwards, pending, error, requestStop, actionError, confirmation } = useForwardControls();
+  const { retry, retryDialog } = useForwardRetry();
   const target = targetOf(objectRef);
   const mine = forwards.filter((f) => f.cluster === clusterId && sameTarget(f.target, target));
 
@@ -47,13 +49,14 @@ function PortList({ clusterId, objectRef, ports }: Pick<DetailsSectionProps, "cl
           {mine.map((f) => (
             <li key={f.id} className={f.status.state === "error" ? "pf-section__error" : undefined}>
               <span>{t("portforward:section.active", { local: f.localPort, remote: f.remotePort })}</span>
-              <Button onClick={() => openInBrowser(f)}>
-                {t("portforward:actions.open")}
-              </Button>
+              <ForwardButtons forward={f} pending={pending.has(f.id)} onStop={() => requestStop(f)} onRetry={() => void retry(f)} />
+              {f.status.state === "error" && <span title={f.status.message}>{f.status.message}</span>}
             </li>
           ))}
         </ul>
       )}
+      <Button size="compact" onClick={() => { useAppStore.getState().setView(clusterId, PORT_FORWARD_PAGE); useAppStore.getState().closeDetails(); }}>{t("portforward:actions.all")}</Button>
+      {error && <ErrorState error={error} />}{actionError && <ErrorState error={actionError} />}{confirmation}{retryDialog}
       {dialogPort !== null && (
         <ForwardDialog
           clusterId={clusterId}

@@ -5,9 +5,12 @@
   "empty": "Etkin bağlantı noktası yönlendirmesi yok.",
   "emptyText": "Bir Pod'un veya Service'in ayrıntılarından başlatabilirsiniz.",
   "columns": {
-    "target": "Hedef",
-    "ports": "Bağlantı noktaları",
-    "status": "Durum"
+    "target": "Kaynak",
+    "ports": "Yerel → uzak",
+    "status": "Durum",
+    "namespace": "Namespace",
+    "source": "Kaynak türü",
+    "details": "Ayrıntılar"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "Tarayıcıda aç",
-    "stop": "Durdur"
+    "stop": "Durdur",
+    "copy": "Adresi kopyala",
+    "retry": "Yeniden dene",
+    "remove": "Kaldır",
+    "all": "Tüm port yönlendirmeleri",
+    "stopSelected": "Seçilenleri durdur",
+    "clearSelection": "Seçimi temizle"
   },
   "action": {
     "label": "Bağlantı noktası yönlendir…"
@@ -44,6 +53,35 @@
     "started": "localhost:{{local}}, {{remote}} bağlantı noktasına yönlendiriliyor.",
     "inUse": "Yerel bağlantı noktası {{port}} zaten kullanımda.",
     "useFree": "Boş bir bağlantı noktası kullan",
-    "close": "Kapat"
+    "close": "Kapat",
+    "existing": "Bu port için mevcut yönlendirmeler",
+    "stopped": "Bu port yönlendirmesi durduruldu.",
+    "startAnother": "Başka bir tane başlat"
+  },
+  "search": "Namespace, kaynak veya port…",
+  "searchLabel": "Port yönlendirmelerinde ara",
+  "statusFilter": "Yönlendirme durumu",
+  "allStates": "Tüm durumlar",
+  "noMatches": "Eşleşen port yönlendirmesi yok.",
+  "clearFilters": "Filtreleri temizle",
+  "counts": {
+    "active": "Etkin: {{value}}",
+    "error": "Hatalı: {{value}}"
+  },
+  "source": {
+    "user": "Elle",
+    "agent": "Yapay zekâ aracısı",
+    "vcluster": "Dahili · vcluster",
+    "argoCd": "Dahili · Argo CD"
+  },
+  "selection": "Seçilen: {{value}}",
+  "selectAll": "Görünen kullanıcı yönlendirmelerini seç",
+  "selectForward": "{{target}} için {{port}} portunu seç",
+  "protected": "Dahili bağlantı; ayrı olarak durdurun.",
+  "confirm": {
+    "title": "Port yönlendirmeleri durdurulsun mu?",
+    "many": "Seçilen port yönlendirmeleri ({{value}}) durdurulsun mu?",
+    "vcluster": "Bu yönlendirme bir sanal kümeye bağlanır. Durdurulması bu kümenin bağlantısını keser.",
+    "internal": "Bu yönlendirme dahili bir bağlantı tarafından kullanılıyor. Durdurulması bu bağlantıyı kesintiye uğratabilir."
   }
 }

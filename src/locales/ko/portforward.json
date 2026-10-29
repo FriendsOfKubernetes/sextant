@@ -5,9 +5,12 @@
   "empty": "활성 포트 포워딩이 없습니다.",
   "emptyText": "Pod 또는 Service의 세부 정보에서 시작하세요.",
   "columns": {
-    "target": "대상",
-    "ports": "포트",
-    "status": "상태"
+    "target": "리소스",
+    "ports": "로컬 → 원격",
+    "status": "상태",
+    "namespace": "Namespace",
+    "source": "생성 주체",
+    "details": "상세 정보"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "브라우저에서 열기",
-    "stop": "중지"
+    "stop": "중지",
+    "copy": "주소 복사",
+    "retry": "다시 시도",
+    "remove": "삭제",
+    "all": "모든 포트 포워딩",
+    "stopSelected": "선택 항목 중지",
+    "clearSelection": "선택 해제"
   },
   "action": {
     "label": "포트 포워딩…"
@@ -44,6 +53,35 @@
     "started": "localhost:{{local}}을(를) 포트 {{remote}}(으)로 포워딩하고 있습니다.",
     "inUse": "로컬 포트 {{port}}이(가) 이미 사용 중입니다.",
     "useFree": "사용 가능한 포트 사용",
-    "close": "닫기"
+    "close": "닫기",
+    "existing": "이 포트의 기존 포워딩",
+    "stopped": "이 포트 포워딩이 중지되었습니다.",
+    "startAnother": "다른 포워딩 시작"
+  },
+  "search": "Namespace, 리소스 또는 포트…",
+  "searchLabel": "포트 포워딩 검색",
+  "statusFilter": "포워딩 상태",
+  "allStates": "모든 상태",
+  "noMatches": "일치하는 포트 포워딩이 없습니다.",
+  "clearFilters": "필터 초기화",
+  "counts": {
+    "active": "활성: {{value}}",
+    "error": "오류: {{value}}"
+  },
+  "source": {
+    "user": "수동",
+    "agent": "AI 에이전트",
+    "vcluster": "내부 연결 · vcluster",
+    "argoCd": "내부 연결 · Argo CD"
+  },
+  "selection": "선택됨: {{value}}",
+  "selectAll": "표시된 사용자 포워딩 선택",
+  "selectForward": "{{target}}의 포트 {{port}} 선택",
+  "protected": "내부 연결이므로 개별적으로 중지하세요.",
+  "confirm": {
+    "title": "포트 포워딩을 중지할까요?",
+    "many": "선택한 포트 포워딩({{value}})을 중지할까요?",
+    "vcluster": "이 포워딩은 가상 클러스터에 연결합니다. 중지하면 해당 클러스터의 연결이 끊어집니다.",
+    "internal": "이 포워딩은 내부 연결에 사용됩니다. 중지하면 해당 연결이 중단될 수 있습니다."
   }
 }

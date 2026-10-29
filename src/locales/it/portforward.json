@@ -5,9 +5,12 @@
   "empty": "Nessun inoltro di porta attivo.",
   "emptyText": "Avviane uno dai dettagli di un pod o di un service.",
   "columns": {
-    "target": "Destinazione",
-    "ports": "Porte",
-    "status": "Stato"
+    "target": "Risorsa",
+    "ports": "Locale → remoto",
+    "status": "Stato",
+    "namespace": "Namespace",
+    "source": "Origine",
+    "details": "Dettagli"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "Apri nel browser",
-    "stop": "Arresta"
+    "stop": "Arresta",
+    "copy": "Copia indirizzo",
+    "retry": "Riprova",
+    "remove": "Rimuovi",
+    "all": "Tutti gli inoltri",
+    "stopSelected": "Arresta selezionati",
+    "clearSelection": "Deseleziona"
   },
   "action": {
     "label": "Inoltra porta…"
@@ -44,6 +53,35 @@
     "started": "Inoltro da localhost:{{local}} alla porta {{remote}}.",
     "inUse": "La porta locale {{port}} è già in uso.",
     "useFree": "Usa una porta libera",
-    "close": "Chiudi"
+    "close": "Chiudi",
+    "existing": "Inoltri esistenti per questa porta",
+    "stopped": "Questo inoltro di porta è stato arrestato.",
+    "startAnother": "Avviane un altro"
+  },
+  "search": "Namespace, risorsa o porta…",
+  "searchLabel": "Cerca inoltri di porte",
+  "statusFilter": "Stato dell’inoltro",
+  "allStates": "Tutti gli stati",
+  "noMatches": "Nessun inoltro corrispondente.",
+  "clearFilters": "Reimposta filtri",
+  "counts": {
+    "active": "Attivi: {{value}}",
+    "error": "Con errori: {{value}}"
+  },
+  "source": {
+    "user": "Manuale",
+    "agent": "Agente IA",
+    "vcluster": "Interno · vcluster",
+    "argoCd": "Interno · Argo CD"
+  },
+  "selection": "Selezionati: {{value}}",
+  "selectAll": "Seleziona gli inoltri utente visibili",
+  "selectForward": "Seleziona {{target}} sulla porta {{port}}",
+  "protected": "Connessione interna; arrestare singolarmente.",
+  "confirm": {
+    "title": "Arrestare gli inoltri di porte?",
+    "many": "Arrestare gli inoltri selezionati ({{value}})?",
+    "vcluster": "Questo inoltro connette un cluster virtuale. Arrestarlo disconnetterà quel cluster.",
+    "internal": "Questo inoltro è usato da una connessione interna. Arrestarlo potrebbe interrompere la connessione."
   }
 }

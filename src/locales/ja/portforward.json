@@ -5,9 +5,12 @@
   "empty": "有効なポートフォワードはありません。",
   "emptyText": "Pod または Service の詳細から開始できます。",
   "columns": {
-    "target": "対象",
-    "ports": "ポート",
-    "status": "状態"
+    "target": "リソース",
+    "ports": "ローカル → リモート",
+    "status": "状態",
+    "namespace": "Namespace",
+    "source": "作成元",
+    "details": "詳細"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "ブラウザーで開く",
-    "stop": "停止"
+    "stop": "停止",
+    "copy": "アドレスをコピー",
+    "retry": "再試行",
+    "remove": "削除",
+    "all": "すべてのポート転送",
+    "stopSelected": "選択した転送を停止",
+    "clearSelection": "選択を解除"
   },
   "action": {
     "label": "ポートフォワード…"
@@ -44,6 +53,35 @@
     "started": "localhost:{{local}} をポート {{remote}} に転送しています。",
     "inUse": "ローカルポート {{port}} は既に使用されています。",
     "useFree": "空いているポートを使用",
-    "close": "閉じる"
+    "close": "閉じる",
+    "existing": "このポートの既存の転送",
+    "stopped": "このポート転送は停止しました。",
+    "startAnother": "別の転送を開始"
+  },
+  "search": "Namespace、リソース、ポート…",
+  "searchLabel": "ポート転送を検索",
+  "statusFilter": "転送の状態",
+  "allStates": "すべての状態",
+  "noMatches": "一致するポート転送はありません。",
+  "clearFilters": "フィルターを解除",
+  "counts": {
+    "active": "稼働中: {{value}}",
+    "error": "エラー: {{value}}"
+  },
+  "source": {
+    "user": "手動",
+    "agent": "AI エージェント",
+    "vcluster": "内部接続 · vcluster",
+    "argoCd": "内部接続 · Argo CD"
+  },
+  "selection": "選択数: {{value}}",
+  "selectAll": "表示中のユーザー作成の転送を選択",
+  "selectForward": "{{target}} のポート {{port}} を選択",
+  "protected": "内部接続のため個別に停止してください。",
+  "confirm": {
+    "title": "ポート転送を停止しますか？",
+    "many": "選択したポート転送（{{value}}）を停止しますか？",
+    "vcluster": "この転送は仮想クラスターへの接続に使用されています。停止すると、そのクラスターが切断されます。",
+    "internal": "この転送は内部接続に使用されています。停止すると、その接続が中断される可能性があります。"
   }
 }

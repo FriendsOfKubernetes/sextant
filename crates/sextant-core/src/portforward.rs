@@ -54,6 +54,18 @@ pub enum ForwardStatus {
     Error(CoreError),
 }
 
+/// The feature that created a forward. Display metadata, independent of its pod access policy.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ForwardSource {
+    #[default]
+    User,
+    Agent,
+    Vcluster,
+    ArgoCd,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -64,6 +76,8 @@ pub struct ForwardInfo {
     pub remote_port: u16,
     pub local_port: u16,
     pub status: ForwardStatus,
+    #[serde(default)]
+    pub source: ForwardSource,
 }
 
 /// All active forwards of the application. Each forward is a listener on `127.0.0.1` that opens a new stream to
@@ -142,6 +156,30 @@ impl PortForwarder {
         local_port: Option<u16>,
         pods: PodFilter,
     ) -> CoreResult<ForwardInfo> {
+        self.start_with_source(
+            mgr,
+            cluster,
+            target,
+            remote_port,
+            local_port,
+            pods,
+            ForwardSource::User,
+        )
+        .await
+    }
+
+    /// Assigns provenance before the first event; callers still choose the pod access policy explicitly.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn start_with_source(
+        &self,
+        mgr: &ClusterManager,
+        cluster: &ClusterId,
+        target: ForwardTarget,
+        remote_port: u16,
+        local_port: Option<u16>,
+        pods: PodFilter,
+        source: ForwardSource,
+    ) -> CoreResult<ForwardInfo> {
         let client = mgr.client(cluster)?;
         let listener = bind_local(local_port.unwrap_or(0)).await?;
         let local_port = listener.local_addr()?.port();
@@ -156,6 +194,7 @@ impl PortForwarder {
             remote_port,
             local_port,
             status: ForwardStatus::Active,
+            source,
         };
         let current = Arc::new(Mutex::new(resolved));
         let listener = tokio::spawn(accept_loop(listener, client.clone(), Arc::clone(&current)));
@@ -573,6 +612,20 @@ mod tests {
     use super::*;
     use crate::fake_api::{FakeApi, Reply, Request, connected_to};
 
+    #[test]
+    fn forward_source_survives_wire_round_trip() {
+        for source in ["user", "agent", "vcluster", "argoCd"] {
+            let value = serde_json::json!({
+                "id": "pf-1", "cluster": "c1",
+                "target": { "type": "service", "namespace": "ns", "name": "web" },
+                "remotePort": 80, "localPort": 8080, "status": { "state": "active" },
+                "source": source,
+            });
+            let info: ForwardInfo = serde_json::from_value(value).unwrap();
+            assert_eq!(serde_json::to_value(info).unwrap()["source"], source);
+        }
+    }
+
     const API_VERSIONS: &str =
         r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#;
 
@@ -697,6 +750,55 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(pod_reached(&api, &info).await, "a-shell");
+        assert_eq!(info.source, ForwardSource::User);
+    }
+
+    #[tokio::test]
+    async fn provenance_is_present_in_the_first_event_and_does_not_change_pod_access() {
+        let api = server().await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        for source in [
+            ForwardSource::Agent,
+            ForwardSource::Vcluster,
+            ForwardSource::ArgoCd,
+        ] {
+            let forwarder = PortForwarder::new();
+            let mut events = forwarder.subscribe();
+            let info = forwarder
+                .start_with_source(
+                    &mgr,
+                    &id,
+                    service("web"),
+                    80,
+                    None,
+                    PodFilter::NoNodeAccess,
+                    source,
+                )
+                .await
+                .unwrap();
+            assert_eq!(info.source, source);
+            assert_eq!(events.recv().await.unwrap(), vec![info.clone()]);
+            assert_eq!(forwarder.list(), vec![info.clone()]);
+            assert_eq!(pod_reached(&api, &info).await, "c-web");
+            forwarder.stop(&info.id).await.unwrap();
+        }
+    }
+
+    #[test]
+    fn old_forward_info_defaults_to_user_and_invalid_provenance_is_rejected() {
+        let mut value = serde_json::json!({
+            "id": "pf-1", "cluster": "c1",
+            "target": {"type": "pod", "namespace": "ns", "name": "web"},
+            "remotePort": 80, "localPort": 8080, "status": {"state": "active"}
+        });
+        assert_eq!(
+            serde_json::from_value::<ForwardInfo>(value.clone())
+                .unwrap()
+                .source,
+            ForwardSource::User
+        );
+        value["source"] = serde_json::json!("unknown");
+        assert!(serde_json::from_value::<ForwardInfo>(value).is_err());
     }
 
     #[tokio::test]

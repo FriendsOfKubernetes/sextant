@@ -5,9 +5,12 @@
   "empty": "Brak aktywnych przekierowań portów.",
   "emptyText": "Uruchom przekierowanie ze szczegółów Poda lub Service.",
   "columns": {
-    "target": "Cel",
-    "ports": "Porty",
-    "status": "Stan"
+    "target": "Zasób",
+    "ports": "Lokalny → zdalny",
+    "status": "Stan",
+    "namespace": "Namespace",
+    "source": "Źródło",
+    "details": "Szczegóły"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "Otwórz w przeglądarce",
-    "stop": "Zatrzymaj"
+    "stop": "Zatrzymaj",
+    "copy": "Kopiuj adres",
+    "retry": "Ponów",
+    "remove": "Usuń",
+    "all": "Wszystkie przekierowania",
+    "stopSelected": "Zatrzymaj wybrane",
+    "clearSelection": "Wyczyść zaznaczenie"
   },
   "action": {
     "label": "Przekieruj port…"
@@ -44,6 +53,35 @@
     "started": "Przekierowano localhost:{{local}} na port {{remote}}.",
     "inUse": "Port lokalny {{port}} jest już zajęty.",
     "useFree": "Użyj wolnego portu",
-    "close": "Zamknij"
+    "close": "Zamknij",
+    "existing": "Istniejące przekierowania tego portu",
+    "stopped": "To przekierowanie portu zostało zatrzymane.",
+    "startAnother": "Uruchom kolejne"
+  },
+  "search": "Namespace, zasób lub port…",
+  "searchLabel": "Szukaj przekierowań portów",
+  "statusFilter": "Stan przekierowania",
+  "allStates": "Wszystkie stany",
+  "noMatches": "Brak pasujących przekierowań.",
+  "clearFilters": "Wyczyść filtry",
+  "counts": {
+    "active": "Aktywne: {{value}}",
+    "error": "Z błędem: {{value}}"
+  },
+  "source": {
+    "user": "Ręczne",
+    "agent": "Agent AI",
+    "vcluster": "Wewnętrzne · vcluster",
+    "argoCd": "Wewnętrzne · Argo CD"
+  },
+  "selection": "Wybrano: {{value}}",
+  "selectAll": "Zaznacz widoczne przekierowania użytkownika",
+  "selectForward": "Zaznacz {{target}} na porcie {{port}}",
+  "protected": "Połączenie wewnętrzne; zatrzymaj osobno.",
+  "confirm": {
+    "title": "Zatrzymać przekierowania portów?",
+    "many": "Zatrzymać wybrane przekierowania ({{value}})?",
+    "vcluster": "To przekierowanie łączy z klastrem wirtualnym. Zatrzymanie go rozłączy ten klaster.",
+    "internal": "To przekierowanie służy połączeniu wewnętrznemu. Zatrzymanie go może przerwać to połączenie."
   }
 }

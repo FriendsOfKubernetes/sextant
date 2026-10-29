@@ -15,7 +15,7 @@ use std::collections::HashSet;
 use std::sync::RwLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use sextant_core::portforward::{ForwardInfo, PodFilter, PortForwarder};
+use sextant_core::portforward::{ForwardInfo, ForwardSource, PodFilter, PortForwarder};
 use sextant_core::vcluster::{self, VclusterLink};
 use sextant_core::{
     ClusterId, ConnectionState, CoreError, ErrorCode, KubeconfigRegistry, SettingsStore,
@@ -197,13 +197,14 @@ pub async fn vcluster_connect<R: Runtime>(
         vcluster::forward_target(&client, &namespace, &name, virtual_config.remote_port()).await?;
     let forward = state
         .forwarder
-        .start(
+        .start_with_source(
             &state.clusters,
             &host_cluster_id,
             target,
             remote_port,
             None,
             PodFilter::Any,
+            ForwardSource::Vcluster,
         )
         .await?;
     let context = virtual_config.context().to_owned();
@@ -352,6 +353,7 @@ mod tests {
             remote_port: 443,
             local_port: 40000,
             status: ForwardStatus::Active,
+            source: ForwardSource::Vcluster,
         }
     }
 

@@ -5,9 +5,12 @@
   "empty": "没有活动的端口转发。",
   "emptyText": "可从 Pod 或 Service 的详细信息中启动。",
   "columns": {
-    "target": "目标",
-    "ports": "端口",
-    "status": "状态"
+    "target": "资源",
+    "ports": "本地 → 远程",
+    "status": "状态",
+    "namespace": "Namespace",
+    "source": "来源",
+    "details": "详情"
   },
   "target": {
     "pod": "Pod {{name}}",
@@ -20,7 +23,13 @@
   "ports": "localhost:{{local}} → {{remote}}",
   "actions": {
     "open": "在浏览器中打开",
-    "stop": "停止"
+    "stop": "停止",
+    "copy": "复制地址",
+    "retry": "重试",
+    "remove": "移除",
+    "all": "所有端口转发",
+    "stopSelected": "停止所选项",
+    "clearSelection": "清除选择"
   },
   "action": {
     "label": "端口转发…"
@@ -44,6 +53,35 @@
     "started": "正在将 localhost:{{local}} 转发到端口 {{remote}}。",
     "inUse": "本地端口 {{port}} 已被占用。",
     "useFree": "使用空闲端口",
-    "close": "关闭"
+    "close": "关闭",
+    "existing": "此端口已有的转发",
+    "stopped": "此端口转发已停止。",
+    "startAnother": "再创建一个"
+  },
+  "search": "Namespace、资源或端口…",
+  "searchLabel": "搜索端口转发",
+  "statusFilter": "转发状态",
+  "allStates": "所有状态",
+  "noMatches": "没有匹配的端口转发。",
+  "clearFilters": "清除筛选",
+  "counts": {
+    "active": "活跃：{{value}}",
+    "error": "错误：{{value}}"
+  },
+  "source": {
+    "user": "手动",
+    "agent": "AI 代理",
+    "vcluster": "内部连接 · vcluster",
+    "argoCd": "内部连接 · Argo CD"
+  },
+  "selection": "已选：{{value}}",
+  "selectAll": "选择可见的用户转发",
+  "selectForward": "选择 {{target}} 的端口 {{port}}",
+  "protected": "内部连接，请单独停止。",
+  "confirm": {
+    "title": "停止端口转发？",
+    "many": "停止所选的端口转发（{{value}}）？",
+    "vcluster": "此转发用于连接虚拟集群。停止后将断开该集群的连接。",
+    "internal": "此转发用于内部连接。停止后可能会中断该连接。"
   }
 }
