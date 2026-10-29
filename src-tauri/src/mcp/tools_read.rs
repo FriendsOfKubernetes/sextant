@@ -93,7 +93,10 @@ pub fn register_read_tools(tools: &mut ToolSet) {
         )
         .add(
             "get_metrics",
-            "Current CPU (millicores) and memory (bytes) usage of pods or nodes, from metrics-server or Prometheus.",
+            "Current CPU (millicores) and memory (bytes) usage of pods or nodes, from metrics-server or Prometheus. \
+             When the cluster refuses pod metrics over all namespaces (the user may read them only per namespace), \
+             the namespaces the user is known to work in are read instead (`namespaces`, `refused`; see get_access), \
+             or pass a namespace. Node usage needs the user to read node metrics at cluster scope.",
             ToolKind::Read,
             get_metrics,
         )
@@ -729,7 +732,21 @@ async fn get_metrics(call: ToolCall, args: MetricsArgs) -> ToolResult {
                 "reading node usage",
                 metrics::node_usage(&ctx.clusters, &cluster.id, &settings),
             )
-            .await?;
+            .await
+            .map_err(|e| {
+                if !is_forbidden(&e) {
+                    return e;
+                }
+                CoreError::new(
+                    e.code,
+                    format!(
+                        "{} — node usage needs the user to read node metrics (nodes.metrics.k8s.io) at cluster scope. \
+                         Pod usage may still be readable per namespace: call get_metrics with of \"pods\" and a \
+                         namespace (get_access names the ones the user works in).",
+                        e.message
+                    ),
+                )
+            })?;
             Ok(ToolOutput::Json(json!({ "nodes": nodes })))
         }
         MetricsOf::Pods => {
