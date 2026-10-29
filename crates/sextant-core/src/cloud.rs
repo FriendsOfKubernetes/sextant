@@ -1,4 +1,4 @@
-//! Cloud clusters (EKS, GKE, AKS) through the user's own, already signed-in `aws`, `gcloud` and `az`.
+//! Cloud clusters (EKS, GKE, AKS, Yandex Cloud) through already signed-in `aws`, `gcloud`, `az` and `yc`.
 //!
 //! Sextant never signs in for the user and never asks a CLI to write a kubeconfig (`aws eks update-kubeconfig`,
 //! `gcloud container clusters get-credentials` change `~/.kube/config`): it reads the cluster's endpoint and CA from
@@ -27,6 +27,13 @@ use ts_rs::TS;
 
 use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::{KubeconfigRegistry, KubeconfigSource, kubeconfig_error};
+
+mod yandex;
+pub use yandex::{YandexDiscovery, YandexEndpoint, YandexSelection};
+
+#[cfg(test)]
+#[path = "cloud/yandex_tests.rs"]
+mod yandex_tests;
 
 /// How long one CLI call may take (an SSO prompt that cannot be answered, a hung network call).
 pub const CLI_TIMEOUT: Duration = Duration::from_secs(60);
@@ -87,10 +94,12 @@ pub enum CloudProvider {
     Gcp,
     /// Azure AKS through `az`.
     Azure,
+    /// Yandex Cloud Managed Service for Kubernetes through `yc`.
+    Yandex,
 }
 
 impl CloudProvider {
-    pub const ALL: [CloudProvider; 3] = [Self::Aws, Self::Gcp, Self::Azure];
+    pub const ALL: [CloudProvider; 4] = [Self::Aws, Self::Gcp, Self::Azure, Self::Yandex];
 
     /// The CLI's command name.
     pub fn cli(self) -> &'static str {
@@ -98,6 +107,7 @@ impl CloudProvider {
             Self::Aws => "aws",
             Self::Gcp => "gcloud",
             Self::Azure => "az",
+            Self::Yandex => "yc",
         }
     }
 
@@ -107,6 +117,7 @@ impl CloudProvider {
             Self::Aws => "cloud-aws.yaml",
             Self::Gcp => "cloud-gcp.yaml",
             Self::Azure => "cloud-azure.yaml",
+            Self::Yandex => "cloud-yandex.yaml",
         }
     }
 
@@ -118,13 +129,14 @@ impl CloudProvider {
             }
             Self::Gcp => "https://cloud.google.com/sdk/docs/install",
             Self::Azure => "https://learn.microsoft.com/cli/azure/install-azure-cli",
+            Self::Yandex => "https://yandex.cloud/en/docs/cli/operations/install-cli",
         }
     }
 
     /// The exec credential plugin the provider's kubeconfig needs besides the CLI (`aws` is its own plugin).
     pub fn plugin(self) -> Option<Plugin> {
         match self {
-            Self::Aws => None,
+            Self::Aws | Self::Yandex => None,
             Self::Gcp => Some(Plugin {
                 name: "gke-gcloud-auth-plugin",
                 install_command: "gcloud components install gke-gcloud-auth-plugin",
@@ -237,6 +249,10 @@ pub struct CloudAccounts {
     /// Regions to search (AWS only; empty for the others).
     pub regions: Vec<String>,
     pub problem: Option<CloudProblem>,
+    /// YC's profile/cloud scope; absent for the other providers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub yandex: Option<YandexDiscovery>,
 }
 
 /// What to search: an account and, for AWS, the regions.
@@ -248,6 +264,9 @@ pub struct CloudQuery {
     pub account: String,
     #[serde(default)]
     pub regions: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub yandex: Option<YandexSelection>,
 }
 
 /// A cluster a CLI listed: what is shown and everything the kubeconfig is built from (no credentials).
@@ -273,6 +292,10 @@ pub struct CloudCluster {
     pub status: Option<String>,
     /// The kubeconfig context the import creates (the name `aws`/`gcloud` would give it).
     pub context: String,
+    /// The profile and endpoint mode selected during YC discovery.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub yandex: Option<YandexSelection>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -411,6 +434,15 @@ impl CloudCli {
         env
     }
 
+    fn provider_env(&self, provider: CloudProvider) -> Vec<(OsString, OsString)> {
+        let mut env = self.child_env();
+        if provider == CloudProvider::Yandex {
+            // This token overrides --profile, so YC must use the chosen profile's credentials.
+            env.retain(|(key, _)| !same_name(key, "YC_IAM_TOKEN"));
+        }
+        env
+    }
+
     fn var(&self, name: &str) -> Option<String> {
         self.child_env()
             .into_iter()
@@ -441,10 +473,15 @@ impl CloudCli {
 
     /// Runs `binary` with `args` (never through a shell). Fails only when it cannot start or runs out of time; a
     /// non-zero exit is in the output.
-    async fn run(&self, binary: &Path, args: &[String]) -> CoreResult<CliOutput> {
+    async fn run(
+        &self,
+        provider: CloudProvider,
+        binary: &Path,
+        args: &[String],
+    ) -> CoreResult<CliOutput> {
         let mut cmd = Command::new(binary);
         cmd.env_clear()
-            .envs(self.child_env())
+            .envs(self.provider_env(provider))
             .args(args)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
@@ -476,7 +513,7 @@ impl CloudCli {
         let Some(binary) = self.cli_path(provider) else {
             return Err(cli_missing(provider));
         };
-        self.run(&binary, args)
+        self.run(provider, &binary, args)
             .await
             .map_err(|e| problem(provider, CloudProblemKind::Failed, scope, e.message))
     }
@@ -515,6 +552,7 @@ impl CloudCli {
             }
             CloudProvider::Gcp => "gcloud auth login".to_owned(),
             CloudProvider::Azure => "az login".to_owned(),
+            CloudProvider::Yandex => yandex::login_command(account),
         };
         CloudProblem {
             command: Some(command),
@@ -581,8 +619,9 @@ impl CloudCli {
             CloudProvider::Aws => vec!["--version".into()],
             CloudProvider::Gcp => vec!["version".into(), "--format=json".into()],
             CloudProvider::Azure => vec!["version".into(), "--output=json".into()],
+            CloudProvider::Yandex => vec!["version".into()],
         };
-        if let Ok(out) = self.run(&path, &args).await
+        if let Ok(out) = self.run(provider, &path, &args).await
             && out.success
         {
             status.available = true;
@@ -590,6 +629,7 @@ impl CloudCli {
                 CloudProvider::Aws => parse_aws_version(&format!("{}\n{}", out.stdout, out.stderr)),
                 CloudProvider::Gcp => parse_gcloud_version(&out.stdout),
                 CloudProvider::Azure => parse_az_version(&out.stdout),
+                CloudProvider::Yandex => yandex::version(&out.stdout),
             };
         }
         status
@@ -598,6 +638,7 @@ impl CloudCli {
     /// AWS profiles (with their regions and the regions to search), GCP projects or Azure subscriptions.
     pub async fn accounts(&self, provider: CloudProvider) -> CloudAccounts {
         let mut result = CloudAccounts {
+            yandex: None,
             provider,
             accounts: Vec::new(),
             regions: Vec::new(),
@@ -616,6 +657,7 @@ impl CloudCli {
             }),
             CloudProvider::Gcp => self.gcp_projects().await,
             CloudProvider::Azure => self.azure_subscriptions().await,
+            CloudProvider::Yandex => return self.yandex_accounts(None, None).await,
         };
         match listed {
             Ok(accounts) => result.accounts = accounts,
@@ -715,6 +757,7 @@ impl CloudCli {
     pub async fn find_clusters(&self, query: &CloudQuery) -> CoreResult<CloudSearch> {
         plain_arg(&query.account, "account")?;
         let mut search = match query.provider {
+            CloudProvider::Yandex => self.find_yandex(query).await?,
             CloudProvider::Aws => self.find_eks(query).await?,
             CloudProvider::Gcp => {
                 let args = vec![
@@ -957,6 +1000,21 @@ impl CloudCli {
             )
         };
         match command_name(command).as_str() {
+            "yc" => {
+                if !args.iter().any(|a| a == "create-token" || a == "token")
+                    || !args.iter().any(|a| a == "managed-kubernetes" || a == "k8s")
+                {
+                    return None;
+                }
+                let provider = CloudProvider::Yandex;
+                if self.cli_path(provider).is_none() {
+                    return Some(cli_missing(provider));
+                }
+                Some(not_logged_in(
+                    provider,
+                    yandex::login_command(&flag_value(&args, "--profile").unwrap_or_default()),
+                ))
+            }
             "aws" => {
                 let aws = CloudProvider::Aws;
                 if self.cli_path(aws).is_none() {
@@ -1219,6 +1277,16 @@ pub fn is_login_error(provider: CloudProvider, stderr: &str) -> bool {
             "interactive authentication is needed",
             "no subscription found",
         ],
+        CloudProvider::Yandex => &[
+            "unauthenticated",
+            "token has expired",
+            "token is expired",
+            "invalid oauth token",
+            "oauth token is missing",
+            "authentication required",
+            "no credentials",
+            "yc init",
+        ],
     };
     patterns.iter().any(|p| text.contains(p))
 }
@@ -1297,6 +1365,7 @@ pub fn parse_eks_cluster(text: &str, profile: &str, region: &str) -> Result<Clou
         None => format!("eks_{region}_{name}"),
     };
     Ok(CloudCluster {
+        yandex: None,
         provider: CloudProvider::Aws,
         account: profile.to_owned(),
         location: region.to_owned(),
@@ -1344,6 +1413,7 @@ pub fn parse_gke_clusters(text: &str, project: &str) -> Result<Vec<CloudCluster>
                 .or_else(|| str_at(c, "/zone"))
                 .unwrap_or_default();
             Some(CloudCluster {
+                yandex: None,
                 provider: CloudProvider::Gcp,
                 account: project.to_owned(),
                 context: format!("gke_{project}_{location}_{name}"),
@@ -1397,6 +1467,7 @@ pub fn parse_aks_clusters(text: &str, subscription: &str) -> Result<Vec<CloudClu
             let name = str_at(c, "/name")?;
             let group = str_at(c, "/resourceGroup").unwrap_or_default();
             Some(CloudCluster {
+                yandex: None,
                 provider: CloudProvider::Azure,
                 account: subscription.to_owned(),
                 context: format!("aks_{subscription}_{group}_{name}"),
@@ -1481,6 +1552,7 @@ pub fn kubeconfig_for(cluster: &CloudCluster) -> CoreResult<Kubeconfig> {
         .ok_or_else(|| invalid(format!("{}: the CA is not base64", cluster.name)))?;
 
     let (context, exec) = match cluster.provider {
+        CloudProvider::Yandex => yandex::exec_for(cluster)?,
         CloudProvider::Aws => {
             let context = cluster
                 .cloud_id
@@ -1794,6 +1866,48 @@ mod tests {
     use super::*;
 
     #[test]
+    fn yandex_provider_uses_yc_without_a_separate_plugin() {
+        let provider: CloudProvider = serde_json::from_str("\"yandex\"").expect("YC provider");
+        assert!(CloudProvider::ALL.contains(&provider));
+        assert_eq!(provider.cli(), "yc");
+        assert_eq!(provider.file_name(), "cloud-yandex.yaml");
+        assert!(provider.plugin().is_none());
+    }
+
+    #[test]
+    fn yandex_kubeconfig_pins_the_profile_without_saving_a_token() {
+        let cluster: CloudCluster = serde_json::from_value(json!({
+            "provider": "yandex", "name": "demo", "account": "folder-demo", "location": "ru-central1-a",
+            "resourceGroup": null, "cloudId": "cluster-demo", "endpoint": "https://192.0.2.10:6443",
+            "certificateAuthority": "Y2E=", "version": "1.32", "status": "RUNNING", "context": "yc-cluster-demo",
+            "yandex": {"profile": "work profile", "endpoint": "external"}
+        })).expect("YC cluster");
+        let config = kubeconfig_for(&cluster).unwrap();
+        assert_eq!(config.contexts[0].name, "yc-cluster-demo");
+        let exec = exec_of(&config);
+        assert_eq!(exec.command.as_deref(), Some("yc"));
+        assert_eq!(
+            flag_value(exec.args.as_ref().unwrap(), "--profile").as_deref(),
+            Some("work profile")
+        );
+        assert!(
+            exec.args
+                .as_ref()
+                .unwrap()
+                .iter()
+                .any(|arg| arg == "create-token")
+        );
+        assert!(
+            config.auth_infos[0]
+                .auth_info
+                .as_ref()
+                .unwrap()
+                .token
+                .is_none()
+        );
+    }
+
+    #[test]
     fn versions_are_read_from_each_cli() {
         assert_eq!(
             parse_aws_version(
@@ -2012,6 +2126,7 @@ mod tests {
 
     fn eks(name: &str) -> CloudCluster {
         CloudCluster {
+            yandex: None,
             provider: CloudProvider::Aws,
             name: name.into(),
             account: "dev".into(),
@@ -2071,6 +2186,7 @@ mod tests {
         );
 
         let no_profile = kubeconfig_for(&CloudCluster {
+            yandex: None,
             account: String::new(),
             ..eks("prod")
         })
@@ -2087,6 +2203,7 @@ mod tests {
     #[test]
     fn gke_and_aks_kubeconfigs_use_their_plugins() {
         let gke = CloudCluster {
+            yandex: None,
             provider: CloudProvider::Gcp,
             account: "shop-prod".into(),
             location: "europe-west1-b".into(),
@@ -2100,6 +2217,7 @@ mod tests {
         assert!(exec.provide_cluster_info);
 
         let aks = CloudCluster {
+            yandex: None,
             provider: CloudProvider::Azure,
             account: "sub-1".into(),
             location: "westeurope".into(),
@@ -2126,16 +2244,19 @@ mod tests {
     #[test]
     fn a_kubeconfig_is_refused_for_values_that_would_turn_into_flags_or_bad_endpoints() {
         let flag = CloudCluster {
+            yandex: None,
             name: "--exec=evil".into(),
             ..eks("x")
         };
         assert_eq!(kubeconfig_for(&flag).unwrap_err().code, ErrorCode::Invalid);
         let http = CloudCluster {
+            yandex: None,
             endpoint: Some("http://plain".into()),
             ..eks("x")
         };
         assert_eq!(kubeconfig_for(&http).unwrap_err().code, ErrorCode::Invalid);
         let no_ca = CloudCluster {
+            yandex: None,
             certificate_authority: Some("%%%".into()),
             ..eks("x")
         };

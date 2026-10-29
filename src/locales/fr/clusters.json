@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant utilise aws, gcloud et az déjà installés et connectés sur cet ordinateur. Il écrit son propre kubeconfig, ne modifie jamais ~/.kube/config et ne se connecte jamais à votre place.",
-    "detecting": "Recherche de aws, gcloud et az…",
+    "hint": "Sextant utilise aws, gcloud, az et yc déjà installés sur cet ordinateur et authentifiés. Il écrit son propre kubeconfig sans modifier ~/.kube/config ni vous connecter à votre place.",
+    "detecting": "Recherche de aws, gcloud, az et yc…",
     "providers": "Cloud",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(version inconnue)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "Profil",
       "gcp": "Projet",
-      "azure": "Abonnement"
+      "azure": "Abonnement",
+      "yandex": "Dossier"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "Identifiants de l'environnement",
@@ -160,7 +163,22 @@
     },
     "copyCommand": "Copier la commande",
     "copied": "Copié",
-    "copyFailed": "Le presse-papiers n'est pas disponible ; sélectionnez la commande et copiez-la."
+    "copyFailed": "Le presse-papiers n'est pas disponible ; sélectionnez la commande et copiez-la.",
+    "yandex": {
+      "chooseProfile": "Choisir un profil",
+      "cloud": "Cloud",
+      "noClouds": "Aucun cloud disponible",
+      "enterFolder": "Saisir un ID de dossier…",
+      "folderId": "ID du dossier",
+      "endpoint": "Adresse de l’API",
+      "external": "Publique",
+      "internal": "Interne (VPN ou réseau privé)",
+      "endpointHint": "L’adresse choisie doit être accessible depuis cet ordinateur.",
+      "unavailable": "L’adresse de l’API choisie ou le certificat du cluster n’est pas disponible.",
+      "reload": "Actualiser la liste"
+    },
+    "clusterStatus": "État : {{status}}",
+    "alreadyAdded": "Déjà ajouté"
   },
   "order": {
     "hint": "Faites glisser pour changer l’ordre, ou appuyez sur Alt+Flèche haut ou Alt+Flèche bas.",

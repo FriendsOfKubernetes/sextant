@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant использует aws, gcloud и az, уже установленные на этом компьютере и с выполненным входом. Он записывает собственный kubeconfig, никогда не изменяет ~/.kube/config и не выполняет вход за вас.",
-    "detecting": "Поиск aws, gcloud и az…",
+    "hint": "Sextant использует aws, gcloud, az и yc, уже установленные на этом компьютере и с выполненным входом. Он записывает собственный kubeconfig, никогда не изменяет ~/.kube/config и не выполняет вход за вас.",
+    "detecting": "Поиск aws, gcloud, az и yc…",
     "providers": "Облако",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(версия неизвестна)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "Профиль",
       "gcp": "Проект",
-      "azure": "Подписка"
+      "azure": "Подписка",
+      "yandex": "Каталог"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "Учетные данные из окружения",
@@ -162,7 +165,22 @@
     },
     "copyCommand": "Скопировать команду",
     "copied": "Скопировано",
-    "copyFailed": "Буфер обмена недоступен; выделите команду и скопируйте ее."
+    "copyFailed": "Буфер обмена недоступен; выделите команду и скопируйте ее.",
+    "yandex": {
+      "chooseProfile": "Выберите профиль",
+      "cloud": "Облако",
+      "noClouds": "Нет доступных облаков",
+      "enterFolder": "Указать ID каталога…",
+      "folderId": "ID каталога",
+      "endpoint": "Адрес API",
+      "external": "Публичный",
+      "internal": "Внутренний (VPN или частная сеть)",
+      "endpointHint": "Выбранный адрес должен быть доступен с этого компьютера.",
+      "unavailable": "Выбранный адрес API или сертификат кластера недоступен.",
+      "reload": "Обновить список"
+    },
+    "clusterStatus": "Состояние: {{status}}",
+    "alreadyAdded": "Уже добавлен"
   },
   "order": {
     "hint": "Перетащите, чтобы изменить порядок, или нажмите Alt+Стрелка вверх или Alt+Стрелка вниз.",

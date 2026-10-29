@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant використовує aws, gcloud і az, які вже встановлено на цьому комп'ютері та в яких виконано вхід. Він записує власний kubeconfig, ніколи не змінює ~/.kube/config і не виконує вхід за вас.",
-    "detecting": "Пошук aws, gcloud і az…",
+    "hint": "Sextant використовує aws, gcloud, az і yc, уже встановлені на цьому комп’ютері та з виконаним входом. Він записує власний kubeconfig, не змінює ~/.kube/config і не виконує вхід замість вас.",
+    "detecting": "Пошук aws, gcloud, az і yc…",
     "providers": "Хмара",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(версія невідома)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "Профіль",
       "gcp": "Проєкт",
-      "azure": "Підписка"
+      "azure": "Підписка",
+      "yandex": "Каталог"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "Облікові дані з оточення",
@@ -162,7 +165,22 @@
     },
     "copyCommand": "Копіювати команду",
     "copied": "Скопійовано",
-    "copyFailed": "Буфер обміну недоступний; виділіть команду та скопіюйте її."
+    "copyFailed": "Буфер обміну недоступний; виділіть команду та скопіюйте її.",
+    "yandex": {
+      "chooseProfile": "Виберіть профіль",
+      "cloud": "Хмара",
+      "noClouds": "Немає доступних хмар",
+      "enterFolder": "Указати ID каталогу…",
+      "folderId": "ID каталогу",
+      "endpoint": "Адреса API",
+      "external": "Публічна",
+      "internal": "Внутрішня (VPN або приватна мережа)",
+      "endpointHint": "Вибрана адреса має бути доступною з цього комп’ютера.",
+      "unavailable": "Вибрана адреса API або сертифікат кластера недоступні.",
+      "reload": "Оновити список"
+    },
+    "clusterStatus": "Стан: {{status}}",
+    "alreadyAdded": "Вже додано"
   },
   "order": {
     "hint": "Перетягніть, щоб змінити порядок, або натисніть Alt+Стрілка вгору чи Alt+Стрілка вниз.",

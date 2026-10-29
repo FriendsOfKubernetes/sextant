@@ -103,18 +103,20 @@
     "source": "Kubeconfig"
   },
   "cloud": {
-    "hint": "Sextant uses the aws, gcloud and az already installed and signed in on this computer. It writes its own kubeconfig and never changes ~/.kube/config or signs in for you.",
-    "detecting": "Looking for aws, gcloud and az…",
+    "hint": "Sextant uses aws, gcloud, az and yc already installed and signed in on this computer. It writes its own kubeconfig and never changes ~/.kube/config or signs in for you.",
+    "detecting": "Looking for aws, gcloud, az and yc…",
     "providers": "Cloud",
     "provider": {
       "aws": "Amazon EKS",
       "gcp": "Google GKE",
-      "azure": "Azure AKS"
+      "azure": "Azure AKS",
+      "yandex": "Yandex Cloud"
     },
     "cli": {
       "aws": "aws",
       "gcp": "gcloud",
-      "azure": "az"
+      "azure": "az",
+      "yandex": "yc"
     },
     "version": "{{cli}} {{version}}",
     "unknownVersion": "(version unknown)",
@@ -125,7 +127,8 @@
     "account": {
       "aws": "Profile",
       "gcp": "Project",
-      "azure": "Subscription"
+      "azure": "Subscription",
+      "yandex": "Folder"
     },
     "accountOption": "{{name}} ({{id}})",
     "environmentCredentials": "Credentials from the environment",
@@ -158,7 +161,22 @@
     },
     "copyCommand": "Copy command",
     "copied": "Copied",
-    "copyFailed": "The clipboard is not available; select the command and copy it."
+    "copyFailed": "The clipboard is not available; select the command and copy it.",
+    "yandex": {
+      "chooseProfile": "Choose a profile",
+      "cloud": "Cloud",
+      "noClouds": "No clouds available",
+      "enterFolder": "Enter a folder ID…",
+      "folderId": "Folder ID",
+      "endpoint": "API address",
+      "external": "Public",
+      "internal": "Internal (VPN or private network)",
+      "endpointHint": "The selected address must be reachable from this computer.",
+      "unavailable": "The selected API address or cluster certificate is not available.",
+      "reload": "Refresh list"
+    },
+    "clusterStatus": "Status: {{status}}",
+    "alreadyAdded": "Already added"
   },
   "order": {
     "hint": "Drag to change the order, or press Alt+Up Arrow or Alt+Down Arrow.",

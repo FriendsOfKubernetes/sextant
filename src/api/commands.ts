@@ -167,7 +167,7 @@ export const cloud = {
   /** The three CLIs: installed or not, version, credential plugin. */
   status: () => call<CloudCliStatus[]>("cloud_status"),
   /** AWS profiles (and regions), GCP projects or Azure subscriptions; `problem` when the CLI is missing or signed out. */
-  accounts: (provider: CloudProvider) => call<CloudAccounts>("cloud_accounts", { provider }),
+  accounts: (provider: CloudProvider, scope?: { profile?: string; cloudId?: string }) => call<CloudAccounts>("cloud_accounts", { provider, ...scope }),
   /** Clusters of an account (in the chosen regions for AWS). */
   find: (query: CloudQuery) => call<CloudSearch>("cloud_find", { query }),
   /** Writes the clusters to Sextant's own `cloud-<provider>.yaml` and saves the sources; refresh the cluster list after. */

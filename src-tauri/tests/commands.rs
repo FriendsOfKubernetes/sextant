@@ -240,7 +240,7 @@ fn harness_in(dirs: tempfile::TempDir) -> Harness {
     app.manage(
         sextant_core::helm::cli::HelmCli::default().with_binary(dirs.path().join("no-helm")),
     );
-    // Cloud commands look for `aws`/`gcloud`/`az` in an empty directory: no test runs the developer's cloud CLIs.
+    // Cloud commands look for `aws`/`gcloud`/`az`/`yc` in an empty directory: no test runs the developer's cloud CLIs.
     app.manage(
         sextant_core::cloud::CloudCli::default().with_env([("PATH", dirs.path().join("no-cli"))]),
     );
@@ -946,7 +946,10 @@ fn cloud_clusters_are_imported_into_sextants_own_file_and_saved_as_a_source() {
         .iter()
         .map(|s| s["provider"].clone())
         .collect();
-    assert_eq!(providers, [json!("aws"), json!("gcp"), json!("azure")]);
+    assert_eq!(
+        providers,
+        [json!("aws"), json!("gcp"), json!("azure"), json!("yandex")]
+    );
     assert!(
         status
             .as_array()
@@ -1018,6 +1021,76 @@ fn cloud_clusters_are_imported_into_sextants_own_file_and_saved_as_a_source() {
             .join("cloud-aws.yaml")
             .exists()
     );
+}
+
+#[test]
+fn yandex_import_keeps_its_profile_and_source_through_the_command_boundary() {
+    let dirs = tempfile::tempdir().unwrap();
+    let root = dirs.path().to_path_buf();
+    let h = harness_in(dirs);
+    let accounts = invoke(
+        &h,
+        "cloud_accounts",
+        json!({"provider":"yandex", "profile":"work", "cloudId":"cloud-demo"}),
+    )
+    .unwrap();
+    assert_eq!(accounts["problem"]["kind"], "cliMissing");
+    assert_eq!(accounts["yandex"]["profiles"], json!([]));
+    let search = invoke(
+        &h,
+        "cloud_find",
+        json!({"query": {
+            "provider":"yandex", "account":"folder-demo", "regions":[],
+            "yandex":{"profile":"work", "endpoint":"internal"}
+        }}),
+    )
+    .unwrap();
+    assert_eq!(search["problems"][0]["kind"], "cliMissing");
+    let cluster = json!({
+        "provider":"yandex", "name":"Demo", "account":"folder-demo", "location":"ru-central1-a",
+        "resourceGroup":null, "cloudId":"cluster-demo", "context":"yc-cluster-demo",
+        "endpoint":"https://192.0.2.20:6443", "certificateAuthority":"Y2E=",
+        "version":"1.32", "status":"RUNNING", "yandex":{"profile":"work", "endpoint":"internal"}
+    });
+    let imported = invoke(&h, "cloud_import", json!({"clusters":[cluster]})).unwrap();
+    assert_eq!(imported["problems"], json!([]));
+    assert_eq!(imported["contexts"], json!(["yc-cluster-demo"]));
+    let source = &imported["sources"][0];
+    assert_eq!(
+        source["path"],
+        root.join("data")
+            .join("kubeconfigs")
+            .join("cloud-yandex.yaml")
+            .to_str()
+            .unwrap()
+    );
+    assert_eq!(
+        invoke(&h, "settings_get", json!({})).unwrap()["kubeconfigSources"],
+        json!([source])
+    );
+    let restarted = isolated_state(&root);
+    let registry = restarted.registry.read().unwrap();
+    let info = registry.clusters().unwrap().remove(0);
+    assert_eq!(info.server, "https://192.0.2.20:6443");
+    let config = registry.kubeconfig_for(&info.id).unwrap();
+    let exec = config.auth_infos[0]
+        .auth_info
+        .as_ref()
+        .unwrap()
+        .exec
+        .as_ref()
+        .unwrap();
+    assert_eq!(exec.command.as_deref(), Some("yc"));
+    assert!(
+        exec.args
+            .as_ref()
+            .unwrap()
+            .windows(2)
+            .any(|a| a == ["--profile", "work"])
+    );
+    let hint = invoke(&h, "cloud_login_hint", json!({"clusterId":info.id})).unwrap();
+    assert_eq!(hint["kind"], "cliMissing");
+    assert_eq!(hint["provider"], "yandex");
 }
 
 #[test]

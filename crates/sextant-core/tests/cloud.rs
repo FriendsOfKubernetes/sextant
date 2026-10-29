@@ -12,6 +12,33 @@ use sextant_core::{ClusterId, SourceKind};
 const LEAK_MARKER: &str = "value-that-must-not-reach-a-cli";
 const AKS_TOKEN: &str = "fake-aks-token-from-get-credentials";
 
+const YC: &str = r#"#!/bin/sh
+echo "$*" >> "$FAKE_LOG/yc.calls"
+env > "$FAKE_LOG/yc.env"
+case "$*" in
+  "version") echo "Yandex Cloud CLI 1.18.0 linux/amd64" ;;
+  "config profile list --no-browser")
+    if [ -f "$FAKE_LOG/no-profiles" ]; then exit 0; fi
+    if [ -f "$FAKE_LOG/personal-active" ]; then printf 'work\npersonal ACTIVE\n'; else printf 'work ACTIVE\npersonal\n'; fi ;;
+  "config get cloud-id --profile="*" --no-browser") echo "cloud-demo" ;;
+  "config get folder-id --profile="*" --no-browser") echo "folder-demo" ;;
+  "resource-manager cloud list --profile="*" --format=json --no-browser --no-user-output")
+    if [ -f "$FAKE_LOG/deny-clouds" ]; then echo 'rpc error: code = PermissionDenied desc = cloud listing denied' >&2; exit 1; fi
+    echo '[{"id":"cloud-demo","name":"Demo cloud"}]' ;;
+  "resource-manager folder list --cloud-id=cloud-demo --profile="*" --format=json --no-browser --no-user-output")
+    if [ -f "$FAKE_LOG/deny-folders" ]; then echo 'rpc error: code = PermissionDenied desc = folder listing denied' >&2; exit 1; fi
+    echo '[{"id":"folder-demo","name":"Demo folder"}]' ;;
+  "managed-kubernetes cluster list --folder-id="*" --profile="*" --format=json --no-browser --no-user-output")
+    if [ -f "$FAKE_LOG/expired" ]; then echo 'rpc error: code = Unauthenticated desc = token has expired' >&2; exit 1; fi
+    if [ -f "$FAKE_LOG/hang-yc" ]; then sleep 30; fi
+    cat <<'JSON'
+[{"id":"cluster-demo","name":"Demo","folder_id":"folder-demo","status":"RUNNING","master":{"version":"1.32","zonal_master":{"zone_id":"ru-central1-a"},"master_auth":{"cluster_ca_certificate":"-----BEGIN CERTIFICATE-----\nY2E=\n-----END CERTIFICATE-----\n"},"endpoints":{"external_v4_endpoint":"https://192.0.2.10:6443","internal_v4_endpoint":"https://192.0.2.20:6443"}}}]
+JSON
+    ;;
+  *) echo "fake yc: unexpected arguments: $*" >&2; exit 2 ;;
+esac
+"#;
+
 const AWS: &str = r#"#!/bin/sh
 env > "$FAKE_LOG/aws.env"
 echo "$*" >> "$FAKE_LOG/aws.calls"
@@ -144,6 +171,7 @@ impl Fake {
             ("HOME".to_owned(), self.dir.path().display().to_string()),
             ("FAKE_LOG".to_owned(), self.log().display().to_string()),
             ("AKS_TOKEN".to_owned(), AKS_TOKEN.to_owned()),
+            ("YC_IAM_TOKEN".to_owned(), "ambient-iam-token".to_owned()),
             ("KUBECONFIG".to_owned(), format!("/{LEAK_MARKER}")),
             ("HELM_KUBETOKEN".to_owned(), LEAK_MARKER.to_owned()),
             ("HELM_NAMESPACE".to_owned(), LEAK_MARKER.to_owned()),
@@ -193,6 +221,7 @@ async fn clusters_are_found_with_the_fake_clis_and_imported_into_sextants_own_fi
     assert!(aws.regions.iter().any(|r| r == "eu-west-1"));
     let eks = cli
         .find_clusters(&CloudQuery {
+            yandex: None,
             provider: CloudProvider::Aws,
             account: "dev".into(),
             regions: vec!["eu-west-1".into(), "us-east-1".into()],
@@ -223,6 +252,7 @@ async fn clusters_are_found_with_the_fake_clis_and_imported_into_sextants_own_fi
     );
     let gke = cli
         .find_clusters(&CloudQuery {
+            yandex: None,
             provider: CloudProvider::Gcp,
             account: "shop-prod".into(),
             regions: vec![],
@@ -237,6 +267,7 @@ async fn clusters_are_found_with_the_fake_clis_and_imported_into_sextants_own_fi
     assert_eq!(azure.accounts[0].id, "sub-1");
     let aks = cli
         .find_clusters(&CloudQuery {
+            yandex: None,
             provider: CloudProvider::Azure,
             account: "sub-1".into(),
             regions: vec![],
@@ -359,6 +390,7 @@ async fn a_missing_cli_or_plugin_says_how_to_install_it_and_a_failed_sign_in_say
     let mut registry = fake.registry(Vec::new());
     let gke = cli
         .find_clusters(&CloudQuery {
+            yandex: None,
             provider: CloudProvider::Gcp,
             account: "shop-prod".into(),
             regions: vec![],
@@ -367,6 +399,7 @@ async fn a_missing_cli_or_plugin_says_how_to_install_it_and_a_failed_sign_in_say
         .unwrap();
     let aks = cli
         .find_clusters(&CloudQuery {
+            yandex: None,
             provider: CloudProvider::Azure,
             account: "sub-1".into(),
             regions: vec![],
@@ -375,6 +408,7 @@ async fn a_missing_cli_or_plugin_says_how_to_install_it_and_a_failed_sign_in_say
         .unwrap();
     let eks = cli
         .find_clusters(&CloudQuery {
+            yandex: None,
             provider: CloudProvider::Aws,
             account: "dev".into(),
             regions: vec!["eu-west-1".into()],
@@ -418,6 +452,7 @@ async fn an_aks_cluster_without_entra_id_sign_in_is_refused_and_not_written() {
     let cli = fake.cli();
     let aks = cli
         .find_clusters(&CloudQuery {
+            yandex: None,
             provider: CloudProvider::Azure,
             account: "sub-1".into(),
             regions: vec![],
@@ -426,6 +461,7 @@ async fn an_aks_cluster_without_entra_id_sign_in_is_refused_and_not_written() {
         .unwrap();
     // A cluster with local accounts: `az aks get-credentials` prints a token user, not kubelogin.
     let local = sextant_core::cloud::CloudCluster {
+        yandex: None,
         name: "aks-local".into(),
         context: "aks_sub-1_rg-prod_aks-local".into(),
         ..aks.clusters[0].clone()
@@ -531,4 +567,179 @@ async fn a_cli_briefly_held_open_for_writing_is_still_found_with_its_version() {
         .unwrap();
     assert!(az.available, "{az:?}");
     assert_eq!(az.version.as_deref(), Some("2.58.0"));
+}
+
+#[tokio::test]
+async fn yandex_discovers_explicit_scopes_and_imports_a_profile_pinned_private_source() {
+    use sextant_core::cloud::{YandexEndpoint, YandexSelection};
+    let fake = Fake::new();
+    fake.script("yc", YC);
+    let cli = fake.cli();
+    let status = cli.status().await;
+    let yc = status
+        .iter()
+        .find(|s| s.provider == CloudProvider::Yandex)
+        .unwrap();
+    assert!(yc.available);
+    assert_eq!(yc.version.as_deref(), Some("1.18.0"));
+    assert!(yc.plugin.is_none());
+    let accounts = cli.yandex_accounts(None, None).await;
+    assert!(accounts.problem.is_none());
+    let scope = accounts.yandex.unwrap();
+    assert_eq!(scope.profile.as_deref(), Some("work"));
+    assert_eq!(scope.cloud_id.as_deref(), Some("cloud-demo"));
+    assert_eq!(accounts.accounts[0].id, "folder-demo");
+    let found = cli
+        .find_clusters(&CloudQuery {
+            provider: CloudProvider::Yandex,
+            account: "folder-demo".into(),
+            regions: vec![],
+            yandex: Some(YandexSelection {
+                profile: "work".into(),
+                endpoint: YandexEndpoint::Internal,
+            }),
+        })
+        .await
+        .unwrap();
+    assert!(found.problems.is_empty());
+    assert_eq!(
+        found.clusters[0].endpoint.as_deref(),
+        Some("https://192.0.2.20:6443")
+    );
+    let mut registry = fake.registry(Vec::new());
+    let imported = cli
+        .prepare_import(&found.clusters)
+        .await
+        .apply(&mut registry)
+        .unwrap();
+    assert_eq!(imported.contexts, ["yc-cluster-demo"]);
+    assert_eq!(imported.sources.len(), 1);
+    assert_eq!(mode(Path::new(&imported.sources[0].path)), 0o600);
+    cli.prepare_import(&found.clusters)
+        .await
+        .apply(&mut registry)
+        .unwrap();
+    assert_eq!(registry.clusters().unwrap().len(), 1);
+    let info = registry.clusters().unwrap().remove(0);
+    let config = registry.kubeconfig_for(&info.id).unwrap();
+    let exec = config.auth_infos[0]
+        .auth_info
+        .as_ref()
+        .unwrap()
+        .exec
+        .as_ref()
+        .unwrap();
+    assert_eq!(exec.command.as_deref(), Some("yc"));
+    let args = exec.args.as_ref().unwrap();
+    assert!(args.windows(2).any(|a| a == ["--profile", "work"]));
+    assert!(
+        config.auth_infos[0]
+            .auth_info
+            .as_ref()
+            .unwrap()
+            .token
+            .is_none()
+    );
+    std::fs::write(fake.log().join("personal-active"), "").unwrap();
+    assert_eq!(
+        cli.yandex_accounts(None, None)
+            .await
+            .yandex
+            .unwrap()
+            .profile
+            .as_deref(),
+        Some("personal")
+    );
+    assert!(
+        exec.args
+            .as_ref()
+            .unwrap()
+            .windows(2)
+            .any(|a| a == ["--profile", "work"])
+    );
+    let calls = std::fs::read_to_string(fake.log().join("yc.calls")).unwrap();
+    assert!(
+        !calls.contains("activate")
+            && !calls.contains("get-credentials")
+            && !calls.contains("create-token")
+            && !calls.contains("config set"),
+        "{calls}"
+    );
+    let env = std::fs::read_to_string(fake.log().join("yc.env")).unwrap();
+    assert!(!env.contains(LEAK_MARKER));
+    assert!(!env.contains("ambient-iam-token"));
+}
+
+#[tokio::test]
+async fn yandex_list_permission_errors_keep_the_manual_folder_path_and_do_not_become_login_errors()
+{
+    use sextant_core::cloud::{YandexEndpoint, YandexSelection};
+    let fake = Fake::new();
+    fake.script("yc", YC);
+    std::fs::write(fake.log().join("deny-clouds"), "").unwrap();
+    std::fs::write(fake.log().join("deny-folders"), "").unwrap();
+    let cli = fake.cli();
+    let found = cli.yandex_accounts(Some("work"), None).await;
+    assert!(found.problem.is_none());
+    let scope = found.yandex.unwrap();
+    assert_eq!(scope.problems.len(), 2);
+    assert!(
+        scope
+            .problems
+            .iter()
+            .all(|p| p.kind == CloudProblemKind::Failed && p.command.is_none())
+    );
+    assert_eq!(scope.profile.as_deref(), Some("work"));
+    let query = CloudQuery {
+        provider: CloudProvider::Yandex,
+        account: "known-folder".into(),
+        regions: vec![],
+        yandex: Some(YandexSelection {
+            profile: "work".into(),
+            endpoint: YandexEndpoint::External,
+        }),
+    };
+    assert_eq!(cli.find_clusters(&query).await.unwrap().clusters.len(), 1);
+    std::fs::write(fake.log().join("expired"), "").unwrap();
+    let expired = cli.find_clusters(&query).await.unwrap();
+    assert_eq!(expired.problems[0].kind, CloudProblemKind::NotLoggedIn);
+    assert_eq!(
+        expired.problems[0].command.as_deref(),
+        Some("yc init --profile work")
+    );
+    let removed = cli.yandex_accounts(Some("removed-profile"), None).await;
+    assert_eq!(removed.problem.unwrap().kind, CloudProblemKind::Failed);
+    std::fs::write(fake.log().join("no-profiles"), "").unwrap();
+    let empty = cli.yandex_accounts(None, None).await;
+    assert_eq!(empty.problem.unwrap().kind, CloudProblemKind::NotLoggedIn);
+}
+
+#[tokio::test]
+async fn yandex_search_obeys_the_shared_time_limit() {
+    use sextant_core::cloud::{YandexEndpoint, YandexSelection};
+    let fake = Fake::new();
+    fake.script("yc", YC);
+    std::fs::write(fake.log().join("hang-yc"), "").unwrap();
+    let cli = fake
+        .cli()
+        .with_timeout(std::time::Duration::from_millis(300));
+    let started = std::time::Instant::now();
+    let found = cli
+        .find_clusters(&CloudQuery {
+            provider: CloudProvider::Yandex,
+            account: "folder-demo".into(),
+            regions: vec![],
+            yandex: Some(YandexSelection {
+                profile: "work".into(),
+                endpoint: YandexEndpoint::External,
+            }),
+        })
+        .await
+        .unwrap();
+    assert!(started.elapsed() < std::time::Duration::from_secs(10));
+    assert!(found.clusters.is_empty());
+    assert_eq!(found.problems[0].kind, CloudProblemKind::Failed);
+    assert_eq!(found.problems[0].scope.as_deref(), Some("folder-demo"));
+    assert!(found.problems[0].message.contains("did not answer"));
+    assert!(found.problems[0].command.is_none());
 }
