@@ -130,6 +130,13 @@
       "cluster": "Per cluster",
       "global": "Per tutti i cluster"
     },
-    "hint": "Lo stato viene memorizzato separatamente per ogni tipo di risorsa. YAML è inizialmente compresso."
+    "hint": "Lo stato viene memorizzato separatamente per ogni tipo di risorsa. YAML è inizialmente compresso.",
+    "width": "Larghezza del pannello",
+    "widthScopes": {
+      "kind": "Per tipo di risorsa",
+      "global": "Larghezza condivisa"
+    },
+    "widthSessionOnly": "Solo per questa sessione",
+    "widthHint": "Le larghezze si applicano a tutti i cluster. In modalità sessione vengono reimpostate al riavvio di Sextant."
   }
 }

@@ -130,6 +130,13 @@
       "cluster": "Küme bazında",
       "global": "Tüm kümelerde ortak"
     },
-    "hint": "Bölümlerin durumu her kaynak türü için ayrı kaydedilir. YAML başlangıçta daraltılmıştır."
+    "hint": "Bölümlerin durumu her kaynak türü için ayrı kaydedilir. YAML başlangıçta daraltılmıştır.",
+    "width": "Panel genişliği",
+    "widthScopes": {
+      "kind": "Kaynak türüne göre",
+      "global": "Ortak genişlik"
+    },
+    "widthSessionOnly": "Yalnızca bu oturumda",
+    "widthHint": "Genişlikler tüm kümelere uygulanır. Oturum modunda, Sextant yeniden başlatıldığında sıfırlanır."
   }
 }

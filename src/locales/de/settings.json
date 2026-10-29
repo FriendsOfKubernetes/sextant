@@ -130,6 +130,13 @@
       "cluster": "Pro Cluster",
       "global": "Für alle Cluster"
     },
-    "hint": "Der Zustand wird für jede Ressourcenart getrennt gespeichert. YAML ist anfangs eingeklappt."
+    "hint": "Der Zustand wird für jede Ressourcenart getrennt gespeichert. YAML ist anfangs eingeklappt.",
+    "width": "Breite der Detailansicht",
+    "widthScopes": {
+      "kind": "Je Ressourcentyp",
+      "global": "Gemeinsame Breite"
+    },
+    "widthSessionOnly": "Nur für diese Sitzung",
+    "widthHint": "Die Breiten gelten clusterübergreifend. Im Sitzungsmodus werden sie beim Neustart von Sextant zurückgesetzt."
   }
 }

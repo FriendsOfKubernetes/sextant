@@ -10,7 +10,8 @@
     "details": "Ayrıntılar",
     "dock": "Alt panel",
     "resizeSidebar": "Kenar çubuğunu yeniden boyutlandır",
-    "resizeDock": "Alt paneli yeniden boyutlandır"
+    "resizeDock": "Alt paneli yeniden boyutlandır",
+    "resizeDetails": "Kaynak ayrıntılarının genişliğini değiştir"
   },
   "actions": {
     "close": "Kapat",

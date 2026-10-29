@@ -10,7 +10,8 @@
     "details": "Details",
     "dock": "Dock",
     "resizeSidebar": "Seitenleistenbreite ändern",
-    "resizeDock": "Dockhöhe ändern"
+    "resizeDock": "Dockhöhe ändern",
+    "resizeDetails": "Breite der Ressourcendetails ändern"
   },
   "actions": {
     "close": "Schließen",

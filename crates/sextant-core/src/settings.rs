@@ -412,6 +412,9 @@ impl Default for NotificationSettings {
 #[ts(export)]
 pub struct WindowLayout {
     pub sidebar_width: u32,
+    /// Resource details widths in CSS pixels, keyed by `group/Kind`; `*` is the shared width.
+    #[serde(deserialize_with = "read_details_widths")]
+    pub details_widths: BTreeMap<String, u32>,
     pub dock_height: u32,
     pub dock_open: bool,
     pub last_cluster: Option<String>,
@@ -427,6 +430,7 @@ impl Default for WindowLayout {
     fn default() -> Self {
         Self {
             sidebar_width: 220,
+            details_widths: BTreeMap::new(),
             dock_height: 300,
             dock_open: false,
             last_cluster: None,
@@ -436,6 +440,22 @@ impl Default for WindowLayout {
             rail_expanded: false,
         }
     }
+}
+
+fn read_details_widths<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> Result<BTreeMap<String, u32>, D::Error> {
+    let value = serde_json::Value::deserialize(d)?;
+    Ok(value
+        .as_object()
+        .into_iter()
+        .flatten()
+        .filter(|(key, _)| !key.is_empty())
+        .filter_map(|(key, value)| {
+            let width = u32::try_from(value.as_u64()?).ok()?;
+            (width >= 480).then(|| (key.clone(), width))
+        })
+        .collect())
 }
 
 /// `AppSettings.language` of "follow the operating system".

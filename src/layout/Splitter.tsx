@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useRef, type KeyboardEvent, type PointerEvent } from "react";
 
 export interface SplitterProps {
   orientation: "vertical" | "horizontal";
@@ -22,12 +22,18 @@ const KEY_STEP = 16;
 export function Splitter({ orientation, label, value, min, max, onResize, direction }: SplitterProps) {
   const drag = useRef<{ start: number; size: number } | null>(null);
   const axis = (e: { clientX: number; clientY: number }) => (orientation === "vertical" ? e.clientX : e.clientY);
+  const resizingClass = orientation === "vertical" ? "resizing-x" : "resizing-y";
+
+  useEffect(() => () => {
+    if (drag.current) document.body.classList.remove(resizingClass);
+    drag.current = null;
+  }, [resizingClass]);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     drag.current = { start: axis(e), size: value };
     e.currentTarget.setPointerCapture?.(e.pointerId);
-    document.body.classList.add(orientation === "vertical" ? "resizing-x" : "resizing-y");
+    document.body.classList.add(resizingClass);
   };
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
     if (!drag.current) return;
@@ -36,12 +42,12 @@ export function Splitter({ orientation, label, value, min, max, onResize, direct
   const end = (e: PointerEvent<HTMLDivElement>) => {
     if (!drag.current) return;
     drag.current = null;
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
-    document.body.classList.remove("resizing-x", "resizing-y");
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    document.body.classList.remove(resizingClass);
   };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    const grow = orientation === "vertical" ? "ArrowRight" : direction === 1 ? "ArrowDown" : "ArrowUp";
-    const shrink = orientation === "vertical" ? "ArrowLeft" : direction === 1 ? "ArrowUp" : "ArrowDown";
+    const grow = orientation === "vertical" ? (direction === 1 ? "ArrowRight" : "ArrowLeft") : direction === 1 ? "ArrowDown" : "ArrowUp";
+    const shrink = orientation === "vertical" ? (direction === 1 ? "ArrowLeft" : "ArrowRight") : direction === 1 ? "ArrowUp" : "ArrowDown";
     if (e.key === grow) onResize(value + KEY_STEP);
     else if (e.key === shrink) onResize(value - KEY_STEP);
     else return;
@@ -62,6 +68,7 @@ export function Splitter({ orientation, label, value, min, max, onResize, direct
       onPointerMove={onPointerMove}
       onPointerUp={end}
       onPointerCancel={end}
+      onLostPointerCapture={end}
       onKeyDown={onKeyDown}
     />
   );

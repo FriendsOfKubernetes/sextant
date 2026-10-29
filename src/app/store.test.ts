@@ -61,6 +61,7 @@ describe("app store", () => {
   it("hydrates the saved window layout", () => {
     useAppStore.getState().hydrateLayout({
       sidebarWidth: 300,
+      detailsWidths: {},
       dockHeight: 250,
       dockOpen: true,
       lastCluster: null,

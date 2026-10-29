@@ -4,6 +4,18 @@ import { mockBackend, updateSettings, useWatch, type MockBackend } from "../api"
 import { App } from "./App";
 import { resetAppStore, useAppStore } from "./store";
 import { PERSIST_DELAY_MS } from "./useLayoutPersistence";
+import { registerDetailsSection, unregisterDetailsSection } from "../layout/details/registry";
+import { resetNamespaceRestore } from "../features/namespaces";
+import { resetClusterKinds } from "../resources";
+
+const tableRenders = vi.hoisted(() => vi.fn());
+vi.mock("../components/Table", async (original) => {
+  const table = await original<typeof import("../components/Table")>();
+  return { ...table, ResourceTable: (props: Parameters<typeof table.ResourceTable>[0]) => {
+    tableRenders();
+    return <table.ResourceTable {...props} />;
+  } };
+});
 
 /** A controllable `prefers-color-scheme: dark` media query. */
 function mockColorScheme(initialDark: boolean) {
@@ -71,11 +83,53 @@ describe("theme", () => {
 });
 
 describe("window layout across restarts", () => {
+  it("saving a details width does not rerender the main table or restart the active details subscription", async () => {
+    mockColorScheme(false);
+    resetNamespaceRestore();
+    resetClusterKinds();
+    backend = mockBackend({
+      cluster_kinds: () => [{ kindRef: { group: "", version: "v1", kind: "Pod" }, plural: "pods", namespaced: true, verbs: ["list", "watch"], printerColumns: [] }],
+      watch_start: args => {
+        const items = (args.spec as { kind: { kind: string } }).kind.kind === "Pod"
+          ? [{ apiVersion: "v1", kind: "Pod", metadata: { uid: "web", name: "web", namespace: "apps" } }] : [];
+        queueMicrotask(() => backend.emit(`watch:${args.streamId}`, { type: "snapshot", items }));
+        return args.streamId;
+      },
+      watch_stop: () => undefined,
+    });
+    registerDetailsSection({ id: "details-width-watch", placement: "tab", label: "Width subscription", order: 1, appliesTo: () => true, Component: () => {
+      useWatch("c1", { kind: { group: "", version: "v1", kind: "Pod" }, namespaces: null, labelSelector: null, fieldSelector: null });
+      return <input aria-label="Width draft" defaultValue="keep me" />;
+    } });
+    try {
+      render(<App />);
+      await waitFor(() => expect(backend.calls.some(c => c.cmd === "settings_get")).toBe(true));
+      act(() => { useAppStore.getState().setActiveCluster("c1"); useAppStore.getState().setView("c1", "kind:/Pod"); });
+      // jsdom has no viewport for virtual rows; the real table's counter proves its snapshot is loaded.
+      await within(await screen.findByRole("region", { name: "Pods" })).findByText("1 item");
+      act(() => useAppStore.getState().openDetails({ kind: { group: "", version: "v1", kind: "Pod" }, namespace: "apps", name: "web" }));
+      fireEvent.click(await screen.findByRole("tab", { name: "Width subscription" }));
+      const input = screen.getByRole("textbox", { name: "Width draft" });
+      const body = input.closest(".details__body") as HTMLElement;
+      body.scrollTop = 250;
+      await new Promise(resolve => setTimeout(resolve, PERSIST_DELAY_MS + 100));
+      tableRenders.mockClear();
+      const calls = backend.calls.filter(c => c.cmd === "watch_start" || c.cmd === "watch_stop").length;
+      act(() => useAppStore.getState().setDetailsWidth("/Pod", 800));
+      await waitFor(() => expect(backend.settings.window.detailsWidths["/Pod"]).toBe(800));
+      expect(tableRenders).not.toHaveBeenCalled();
+      expect(screen.getByRole("textbox", { name: "Width draft" })).toBe(input);
+      expect(input).toHaveValue("keep me");
+      expect(body.scrollTop).toBe(250);
+      expect(screen.getByRole("tab", { name: "Width subscription" })).toHaveAttribute("aria-selected", "true");
+      expect(backend.calls.filter(c => c.cmd === "watch_start" || c.cmd === "watch_stop")).toHaveLength(calls);
+    } finally { act(() => unregisterDetailsSection("details-width-watch")); }
+  });
   it("restores sidebar width, dock height/visibility and the expanded rail from the saved settings", async () => {
     mockColorScheme(false);
     backend = mockBackend(
       {},
-      { settings: { window: { sidebarWidth: 300, dockHeight: 250, dockOpen: true, lastCluster: null, width: 1400, height: 900, maximized: false, railExpanded: true } } },
+      { settings: { window: { sidebarWidth: 300, detailsWidths: {}, dockHeight: 250, dockOpen: true, lastCluster: null, width: 1400, height: 900, maximized: false, railExpanded: true } } },
     );
     render(<App />);
     act(() => useAppStore.getState().setActiveCluster("c1"));

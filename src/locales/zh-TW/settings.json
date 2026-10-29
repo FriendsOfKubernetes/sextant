@@ -130,6 +130,13 @@
       "cluster": "依叢集分別記住",
       "global": "所有叢集共用"
     },
-    "hint": "每種資源類型會分別記住區段狀態。YAML 預設為收合。"
+    "hint": "每種資源類型會分別記住區段狀態。YAML 預設為收合。",
+    "width": "面板寬度",
+    "widthScopes": {
+      "kind": "依資源類型",
+      "global": "共用寬度"
+    },
+    "widthSessionOnly": "僅限目前工作階段",
+    "widthHint": "寬度設定適用於所有叢集。僅限目前工作階段時，重新啟動 Sextant 後將重設寬度。"
   }
 }

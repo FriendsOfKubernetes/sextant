@@ -10,7 +10,8 @@
     "details": "詳細",
     "dock": "ドック",
     "resizeSidebar": "サイドバーのサイズを変更",
-    "resizeDock": "ドックのサイズを変更"
+    "resizeDock": "ドックのサイズを変更",
+    "resizeDetails": "リソース詳細の幅を変更"
   },
   "actions": {
     "close": "閉じる",

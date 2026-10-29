@@ -15,6 +15,7 @@ export function defaultAppSettings(): AppSettings {
     clusters: {},
     window: {
       sidebarWidth: 220,
+      detailsWidths: {},
       dockHeight: 300,
       dockOpen: false,
       lastCluster: null,
@@ -35,6 +36,8 @@ export function defaultAppSettings(): AppSettings {
       sidebarGuides: false,
       detailsSectionMemory: "global",
       detailsSections: {},
+      detailsWidthScope: "kind",
+      detailsWidthSessionOnly: false,
     },
     checkForUpdates: true,
     closeToTray: false,
@@ -165,7 +168,14 @@ export interface UseSettings extends SettingsState {
 
 /** Current application settings (loaded on first use) and a serialized `update`. */
 export function useSettings(): UseSettings {
-  const snapshot = useSyncExternalStore(subscribeSettings, getSnapshot, getSnapshot);
-  useEffect(ensureLoaded, []);
+  const snapshot = useSettingsSelector(getSnapshot);
   return { ...snapshot, update: updateSettings };
+}
+
+/** Subscribe to a stable projection, so unrelated settings writes do not rerender the reader. */
+export function useSettingsSelector<T>(select: (snapshot: SettingsState) => T): T {
+  const read = () => select(state);
+  const snapshot = useSyncExternalStore(subscribeSettings, read, read);
+  useEffect(ensureLoaded, []);
+  return snapshot;
 }

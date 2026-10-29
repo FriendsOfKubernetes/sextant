@@ -130,6 +130,13 @@
       "cluster": "Por clúster",
       "global": "Para todos los clústeres"
     },
-    "hint": "El estado se guarda por separado para cada tipo de recurso. YAML aparece contraído inicialmente."
+    "hint": "El estado se guarda por separado para cada tipo de recurso. YAML aparece contraído inicialmente.",
+    "width": "Ancho del panel",
+    "widthScopes": {
+      "kind": "Por tipo de recurso",
+      "global": "Ancho compartido"
+    },
+    "widthSessionOnly": "Solo durante esta sesión",
+    "widthHint": "Los anchos se aplican a todos los clústeres. En el modo de sesión, se restablecen al reiniciar Sextant."
   }
 }

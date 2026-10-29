@@ -40,6 +40,7 @@ import "./settings.css";
 const THEMES: Theme[] = ["system", "light", "dark"];
 const SIDEBAR_CHOICES = [["sidebarIndent", "indentChildren"], ["sidebarGuides", "treeGuides"]] as const;
 const DETAILS_MEMORY = ["none", "cluster", "global"] as const;
+const DETAILS_WIDTH_SCOPES = ["kind", "global"] as const;
 const DEFAULT_NODE_SHELL_IMAGE = defaultAppSettings().nodeShellImage;
 
 /** The sidebar page (`registerPage`). */
@@ -229,8 +230,39 @@ function AppearanceSection({ settings, save }: { settings: AppSettings | null; s
         </select>
         </div>
         <p id={`${detailsId}-hint`} className="settings__hint">{t("settings:details.hint")}</p>
+        <DetailsWidthSettings settings={settings} save={save} />
       </div>
     </Section>
+  );
+}
+
+function DetailsWidthSettings({ settings, save }: { settings: AppSettings | null; save: Save }) {
+  const { t } = useTranslation();
+  const detailsWidthId = useId();
+  const detailsWidthScope = settings?.appearance.detailsWidthScope ?? DETAILS_WIDTH_SCOPES[0];
+  return (
+    <>
+      <div className="settings__row">
+        <label htmlFor={detailsWidthId}>{t("settings:details.width")}</label>
+        <select id={detailsWidthId} className="settings__select" disabled={!settings}
+          value={detailsWidthScope} aria-describedby={`${detailsWidthId}-hint`}
+          onChange={(e) => {
+            const value = e.target.value as AppSettings["appearance"]["detailsWidthScope"];
+            void save(s => ({ ...s, appearance: { ...s.appearance, detailsWidthScope: value } }));
+          }}>
+          {DETAILS_WIDTH_SCOPES.map(value => <option key={value} value={value}>{t(`settings:details.widthScopes.${value}`)}</option>)}
+        </select>
+      </div>
+      <label className="settings__choice">
+        <Checkbox disabled={!settings} checked={settings?.appearance.detailsWidthSessionOnly ?? false}
+          aria-describedby={`${detailsWidthId}-hint`} onChange={(e) => {
+            const checked = e.target.checked;
+            void save(s => ({ ...s, appearance: { ...s.appearance, detailsWidthSessionOnly: checked } }));
+          }} />
+        {t("settings:details.widthSessionOnly")}
+      </label>
+      <p id={`${detailsWidthId}-hint`} className="settings__hint">{t("settings:details.widthHint")}</p>
+    </>
   );
 }
 

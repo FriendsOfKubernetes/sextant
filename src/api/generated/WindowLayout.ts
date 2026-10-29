@@ -3,7 +3,11 @@
 /**
  * Window geometry and panel sizes, restored on start.
  */
-export type WindowLayout = { sidebarWidth: number, dockHeight: number, dockOpen: boolean, lastCluster: string | null, 
+export type WindowLayout = { sidebarWidth: number, 
+/**
+ * Resource details widths in CSS pixels, keyed by `group/Kind`; `*` is the shared width.
+ */
+detailsWidths: { [key in string]: number }, dockHeight: number, dockOpen: boolean, lastCluster: string | null, 
 /**
  * Logical window size; written by the application when the window is resized.
  */
