@@ -15,8 +15,8 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 ## Features
 
 - **Your kubeconfig** — every context is a cluster; several can be connected at once.
-- **Cloud clusters** — find your Amazon EKS, Google GKE and Azure AKS clusters through the `aws`, `gcloud` and `az`
-  you already use, and add them in a few clicks.
+- **Cloud clusters** — find your Amazon EKS, Google GKE, Azure AKS and Yandex Cloud clusters through the `aws`,
+  `gcloud`, `az` and `yc` you already use, and add them in a few clicks.
 - **Every resource** in live tables, with details, a YAML editor, scale, restart, cordon, drain and CronJob actions;
   **custom columns** from labels, annotations and field paths, persistent **column filters** with nested AND/OR
   conditions per cluster and table, and **Set image…** with a preview and a patch of the image fields only.
@@ -96,7 +96,7 @@ winget (`winget install FriendsOfKubernetes.Sextant`) is coming soon.
 The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everything:
 
 - [Installation](https://github.com/FriendsOfKubernetes/sextant/wiki/Installation) — installers, unsigned builds, updates
-- [Getting started](https://github.com/FriendsOfKubernetes/sextant/wiki/Getting-started) — kubeconfig, cloud clusters (EKS, GKE, AKS), connecting, the window
+- [Getting started](https://github.com/FriendsOfKubernetes/sextant/wiki/Getting-started) — kubeconfig, cloud clusters (EKS, GKE, AKS, Yandex Cloud), connecting, the window
 - [Using Sextant](https://github.com/FriendsOfKubernetes/sextant/wiki/Using-Sextant) — tables, YAML, logs, shells (containers and nodes), port forwarding, Helm, Flux, Argo CD
 - [Problems and notifications](https://github.com/FriendsOfKubernetes/sextant/wiki/Problems-and-notifications) — a cluster's problems on one page, desktop notifications and how to turn them off
 - [Right-sizing](https://github.com/FriendsOfKubernetes/sextant/wiki/Right-sizing), [cert-manager and certificates](https://github.com/FriendsOfKubernetes/sextant/wiki/cert-manager-and-certificates), [Resource map](https://github.com/FriendsOfKubernetes/sextant/wiki/Resource-map), [RBAC](https://github.com/FriendsOfKubernetes/sextant/wiki/RBAC)
@@ -158,7 +158,7 @@ with one issue per feature; plans can change, and ideas are welcome in
 | [0.23](https://github.com/FriendsOfKubernetes/sextant/milestone/27) | GPU and AI/ML *(released)* | Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe |
 | [0.24](https://github.com/FriendsOfKubernetes/sextant/milestone/29) | Alerts and logs *(released)* | Alertmanager alerts on the objects they name, logs of gone pods from Loki, links to Grafana dashboards and traces |
 | [0.25](https://github.com/FriendsOfKubernetes/sextant/milestone/30) | OpenShift and platforms *(released)* | OpenShift Routes, DeploymentConfigs, Builds and ImageStreams, Operator Lifecycle Manager, vcluster, k3s and RKE2, accessible namespaces, actions on selected rows, charts from metrics-server, table filters (0.25.2, contributed by @VasiliyIsaichkin), Cmd+W closes the dock tab in front (0.25.4), agents on clusters with restricted RBAC (0.25.5) |
-| [0.26](https://github.com/FriendsOfKubernetes/sextant/milestone/31) | Extensions ecosystem *(released)* | A catalog of extensions with signed publishers, extensions with a backend part (WebAssembly, in TypeScript or Rust), kubectl for the cluster's version, Helm, k9s and kubectx offered in Sextant's terminals, collapsible sections in resource details (contributed by @VasiliyIsaichkin), their guides kept outside a container's frame (0.26.1), port forwards stopped where they were started and managed on one page (0.26.2, contributed by @VasiliyIsaichkin), resource details resized from their left edge with widths kept per kind (0.26.3, contributed by @VasiliyIsaichkin) |
+| [0.26](https://github.com/FriendsOfKubernetes/sextant/milestone/31) | Extensions ecosystem *(released)* | A catalog of extensions with signed publishers, extensions with a backend part (WebAssembly, in TypeScript or Rust), kubectl for the cluster's version, Helm, k9s and kubectx offered in Sextant's terminals, collapsible sections in resource details (contributed by @VasiliyIsaichkin), their guides kept outside a container's frame (0.26.1), port forwards stopped where they were started and managed on one page (0.26.2, contributed by @VasiliyIsaichkin), resource details resized from their left edge with widths kept per kind (0.26.3, contributed by @VasiliyIsaichkin), Yandex Cloud clusters from the installed `yc` (0.26.4, contributed by @VasiliyIsaichkin), pod metrics for agents read per namespace when the cluster refuses them at cluster scope (0.26.4) |
 | [0.27](https://github.com/FriendsOfKubernetes/sextant/milestone/28) | Stability and memory | Lower WebView memory on big clusters, hardened extension responses, measured against Freelens |
 
 Further out: resource templates and forms, code-signed installers ([#20](https://github.com/FriendsOfKubernetes/sextant/issues/20)),
