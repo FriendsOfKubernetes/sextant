@@ -417,6 +417,42 @@ describe("details of other kinds", () => {
     expect(cells[3]!.querySelectorAll("wbr").length).toBeGreaterThan(0);
   });
 
+  it("cuts credentials, signed queries and fragments out of the URIs in condition messages (#259)", async () => {
+    const gateway = {
+      apiVersion: "gateway.networking.k8s.io/v1",
+      kind: "Gateway",
+      metadata: { name: "public-gw", namespace: "sextant-demo", uid: "g2", creationTimestamp: "2026-10-01T00:00:00Z" },
+      spec: { gatewayClassName: "eg", listeners: [] },
+      status: {
+        conditions: [
+          {
+            type: "Ready",
+            status: "False",
+            reason: "FetchFailed",
+            message: "pull from https://reader:s3cr3t@models.example.com/m.tar.gz failed: 403",
+            lastTransitionTime: "2026-10-01T00:00:00Z",
+          },
+          {
+            type: "Synced",
+            status: "False",
+            reason: "Denied",
+            message: "GET https://acct.blob.core.windows.net/c/model.bin?sv=2024-01-01&sig=SAS%2Bsecret#part refused",
+            lastTransitionTime: "2026-10-01T00:00:00Z",
+          },
+        ],
+      },
+    };
+    await openDetails(gateway, {
+      kind: { group: "gateway.networking.k8s.io", version: "v1", kind: "Gateway" },
+      namespace: "sextant-demo",
+      name: "public-gw",
+    });
+    const conditions = section("conditions");
+    expect(conditions).toHaveTextContent("pull from https://models.example.com/m.tar.gz failed: 403");
+    expect(conditions).toHaveTextContent("GET https://acct.blob.core.windows.net/c/model.bin refused");
+    expect(conditions.textContent).not.toMatch(/reader|s3cr3t|sig=|SAS|#part/);
+  });
+
   it("shows type, cluster IP, ports and selector of a service, with a link to its endpoints", async () => {
     await openDetails(service, { kind: { group: "", version: "v1", kind: "Service" }, namespace: "sextant-demo", name: "nginx" });
     const fields = section("fields");

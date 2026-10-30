@@ -6,6 +6,7 @@ import type { ObjectRef } from "../../api";
 import { Age, Button } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { findResourceDef, status } from "../../resources";
+import { cleanText } from "../../resources/uri";
 import { ActionBar } from "./ActionBar";
 import { kindView } from "./kinds";
 import { useDetailsLife } from "./liveObject";
@@ -168,7 +169,8 @@ export function ConditionsSection({ obj }: DetailsSectionProps) {
   const rows = conditions.map((c) => {
     const value = str(get(c, "status")) ?? "";
     const since = str(get(c, "lastTransitionTime"));
-    const message = str(get(c, "message"));
+    // Controllers write what they saw into messages: a URI's credentials, signed query or fragment are cut (#259).
+    const message = cleanText(str(get(c, "message")));
     return [
       str(get(c, "type")),
       <span key="s" className={`dt-condition dt-condition--${value.toLowerCase()}`}>
