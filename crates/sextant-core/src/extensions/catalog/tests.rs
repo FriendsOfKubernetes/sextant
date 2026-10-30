@@ -47,6 +47,7 @@ fn installed(version: &str, source: ExtensionSource) -> InstalledExtension {
         granted: ExtensionPermissions::none(),
         installed_at: 0,
         granted_backend: None,
+        granted_problems: None,
     }
 }
 
@@ -288,7 +289,7 @@ fn an_installed_catalog_extension_is_judged_against_its_pinned_repository_and_ke
         Some(CatalogStatus::UpToDate)
     );
     let newer_api = with_entry(|e| {
-        e["latest"]["sextantApi"] = json!(2);
+        e["latest"]["sextantApi"] = json!(3);
     });
     assert_eq!(
         status_of(&installed("0.9.0", pinned.clone()), &newer_api),

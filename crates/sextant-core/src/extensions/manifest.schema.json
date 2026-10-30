@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/FriendsOfKubernetes/sextant/extension-manifest.schema.json",
   "title": "Sextant extension manifest (sextant-extension.json)",
-  "description": "Sextant reads this schema itself (crates/sextant-core/src/extensions/schema.rs) and adds checks a schema cannot express: sextantApi must be one Sextant supports, contribution ids are unique per contribution type. `format` names Sextant's own formats (extension-id, contribution-id, semver, entry-path, identifier, non-blank, json-path); `pattern` says the same as a regular expression for other validators (json-path has none: it is the JSONPath subset of CRD printer columns).",
+  "description": "Sextant reads this schema itself (crates/sextant-core/src/extensions/schema.rs) and adds checks a schema cannot express: sextantApi must be one Sextant supports, contribution ids are unique per contribution type, and problem rules (sextantApi 2) have unique titles, judge at most 10 kinds, nest `all`/`any` at most 3 deep with 20 conditions per rule, and use field paths (`.a.b`, `[0]`, `[\"key\"]`) that read no Secret values or inline secret fields, at most 5 of them as `{{…}}` placeholders in a message. `format` names Sextant's own formats (extension-id, contribution-id, semver, entry-path, identifier, non-blank, json-path); `pattern` says the same as a regular expression for other validators (json-path has none: it is the JSONPath subset of CRD printer columns).",
   "type": "object",
   "additionalProperties": false,
   "required": ["id", "name", "version", "description", "author", "sextantApi", "entry", "permissions", "contributes"],
@@ -40,9 +40,9 @@
       "pattern": "\\S"
     },
     "sextantApi": {
-      "description": "Major version of the extension API the extension is written for; Sextant supports 1.",
+      "description": "Major version of the extension API the extension is written for; Sextant supports 1 and 2 (2 adds `contributes.problems`).",
       "type": "integer",
-      "enum": [1]
+      "enum": [1, 2]
     },
     "entry": {
       "description": "The HTML file every view opens, relative to the package root, e.g. index.html or dist/index.html; no part may start with `.`, be `node_modules` (any case), end with `.` or a space, or be a Windows device name.",
@@ -378,8 +378,153 @@
           "properties": {
             "title": { "$ref": "#/$defs/title" }
           }
+        },
+        "problems": {
+          "description": "Problem rules Sextant evaluates on its own watches (ADR-0137); needs `sextantApi` 2. Paths must not read a Secret's values or another kind's inline secret fields.",
+          "type": "array",
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/problemRule" }
         }
       }
+    },
+    "fieldPath": {
+      "description": "A field path: `.status.phase`, `.items[0]`, `.metadata.labels[\"app\"]`; no wildcards or filters.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "problemValue": {
+      "description": "A string, number or boolean.",
+      "oneOf": [{ "type": "string", "maxLength": 256 }, { "type": "number" }, { "type": "boolean" }]
+    },
+    "problemRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "kind", "when", "message"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contributionId" },
+        "title": { "$ref": "#/$defs/title" },
+        "kind": { "$ref": "#/$defs/kind" },
+        "when": { "$ref": "#/$defs/problemCondition" },
+        "since": { "$ref": "#/$defs/fieldPath" },
+        "graceMinutes": {
+          "description": "The problem counts only this long after it began (or was first seen).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        },
+        "notify": { "description": "It may send a notification (the default); `false`: listed only.", "type": "boolean" },
+        "message": {
+          "description": "Text with at most 5 `{{<field path>}}` placeholders.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "format": "non-blank",
+          "pattern": "\\S"
+        }
+      }
+    },
+    "problemCondition": {
+      "description": "A condition of a problem rule, by `type`; `all` and `any` nest at most 3 deep, 20 conditions per rule.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path", "value"],
+          "properties": {
+            "type": { "const": "equals" },
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "value": { "$ref": "#/$defs/problemValue" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path", "values"],
+          "properties": {
+            "type": { "const": "in" },
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "values": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "$ref": "#/$defs/problemValue" } }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path"],
+          "properties": {
+            "type": { "const": "exists" },
+            "path": { "$ref": "#/$defs/fieldPath" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path"],
+          "properties": {
+            "type": { "const": "absent" },
+            "path": { "$ref": "#/$defs/fieldPath" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "conditionType", "status"],
+          "properties": {
+            "type": { "const": "condition" },
+            "conditionType": { "type": "string", "minLength": 1, "maxLength": 100, "format": "non-blank", "pattern": "\\S" },
+            "status": { "type": "string", "enum": ["True", "False", "Unknown"] },
+            "reason": { "type": "string", "minLength": 1, "maxLength": 100, "format": "non-blank", "pattern": "\\S" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path", "value"],
+          "properties": {
+            "type": { "const": "above" },
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "value": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path", "value"],
+          "properties": {
+            "type": { "const": "below" },
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "value": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path", "minutes"],
+          "properties": {
+            "type": { "const": "olderThan" },
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "minutes": { "type": "integer", "minimum": 1, "maximum": 525600 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "of"],
+          "properties": {
+            "type": { "const": "all" },
+            "of": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "$ref": "#/$defs/problemCondition" } }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "of"],
+          "properties": {
+            "type": { "const": "any" },
+            "of": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "$ref": "#/$defs/problemCondition" } }
+          }
+        }
+      ]
     }
   }
 }

@@ -15,10 +15,10 @@ use std::sync::Mutex;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
-use sextant_core::extensions::SUPPORTED_API;
 use sextant_core::extensions::catalog::{
     self, CatalogEntry, CatalogIndex, CatalogStatus, MAX_SIGNATURE_BYTES,
 };
+use sextant_core::extensions::supports_api;
 use sextant_core::{CoreError, CoreResult, ErrorCode};
 use tauri::State;
 use ts_rs::TS;
@@ -259,7 +259,7 @@ impl ExtensionHost {
                 format!("{} has no release in the catalog yet", entry.name),
             )
         })?;
-        if release.sextant_api != u64::from(SUPPORTED_API) {
+        if !supports_api(release.sextant_api) {
             return Err(CoreError::new(
                 ErrorCode::Invalid,
                 format!("{} {} needs a newer Sextant", entry.name, release.version),

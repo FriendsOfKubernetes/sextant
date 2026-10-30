@@ -8,6 +8,8 @@ use ts_rs::TS;
 
 use super::manifest::{BackendManifest, ExtensionManifest};
 use super::permissions::ExtensionPermissions;
+use super::problems::problems_within;
+use crate::access::KindPattern;
 
 /// Where an installed extension came from.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -57,6 +59,11 @@ pub struct InstalledExtension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub granted_backend: Option<BackendGrant>,
+    /// The kinds the user agreed to have the extension's problem rules judge (ADR-0137); only their rules run. `None`:
+    /// no rules were agreed to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub granted_problems: Option<Vec<KindPattern>>,
 }
 
 /// The part of a backend the user agrees to: hosts and credential ids.
@@ -78,12 +85,14 @@ impl BackendGrant {
     }
 }
 
-/// Whether `manifest` asks for nothing beyond what was granted: its permissions within `granted`, and its backend (if
-/// any) agreed to with every host and credential it names. A new backend, host or credential needs consent again.
+/// Whether `manifest` asks for nothing beyond what was granted: its permissions within `granted`, its backend (if
+/// any) agreed to with every host and credential it names, and every kind its problem rules judge agreed to. A new
+/// backend, host, credential or judged kind needs consent again.
 pub fn asks_within(
     manifest: &ExtensionManifest,
     granted: &ExtensionPermissions,
     granted_backend: Option<&BackendGrant>,
+    granted_problems: Option<&[KindPattern]>,
 ) -> bool {
     let backend_within = match (&manifest.backend, granted_backend) {
         (None, _) => true,
@@ -100,7 +109,9 @@ pub fn asks_within(
                     .all(|c| granted.credentials.contains(&c.id))
         }
     };
-    backend_within && manifest.permissions.is_within(granted)
+    backend_within
+        && problems_within(manifest, granted_problems)
+        && manifest.permissions.is_within(granted)
 }
 
 /// `#[serde(with)]` for `AppSettings::extensions`: written as a plain list; read without ever failing the settings

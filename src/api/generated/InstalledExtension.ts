@@ -2,6 +2,7 @@
 import type { BackendGrant } from "./BackendGrant";
 import type { ExtensionPermissions } from "./ExtensionPermissions";
 import type { ExtensionSource } from "./ExtensionSource";
+import type { KindPattern } from "./KindPattern";
 
 /**
  * One installed extension (`AppSettings::extensions`).
@@ -35,4 +36,9 @@ installedAt: number,
  * What the user agreed to of its backend (ADR-0131): the hosts it may call and the credentials it may read.
  * `None`: no backend was agreed to.
  */
-grantedBackend?: BackendGrant, };
+grantedBackend?: BackendGrant, 
+/**
+ * The kinds the user agreed to have the extension's problem rules judge (ADR-0137); only their rules run. `None`:
+ * no rules were agreed to.
+ */
+grantedProblems?: Array<KindPattern>, };

@@ -1763,6 +1763,7 @@ mod tests {
             granted: ExtensionPermissions::none(),
             installed_at: 1_760_000_000_000,
             granted_backend: None,
+            granted_problems: None,
         };
         store
             .update(|s| s.extensions.push(installed.clone()))

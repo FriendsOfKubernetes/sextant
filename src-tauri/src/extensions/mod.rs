@@ -15,6 +15,7 @@ pub mod backend;
 pub mod catalog;
 pub mod dev;
 pub mod manage;
+pub mod problems;
 pub mod protocol;
 
 use std::collections::HashMap;
@@ -23,6 +24,7 @@ use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 use sextant_core::SettingsStore;
+use sextant_core::access::KindPattern;
 use sextant_core::extensions::{
     BackendGrant, ExtensionManifest, ExtensionPermissions, ExtensionSource, InstalledExtension,
     MANIFEST_FILE, asks_within, inspect_folder, parse_manifest, resolve_package_file,
@@ -93,9 +95,10 @@ type Emitter = Arc<dyn Fn(HostEvent) + Send + Sync>;
 struct Loaded {
     key: String,
     manifest: Result<ExtensionManifest, String>,
-    /// `asks_within(manifest, granted, granted_backend)` for this `granted` and `granted_backend`.
+    /// `asks_within(manifest, granted, granted_backend, granted_problems)` for these grants.
     granted: ExtensionPermissions,
     granted_backend: Option<BackendGrant>,
+    granted_problems: Option<Vec<KindPattern>>,
     within: bool,
 }
 
@@ -292,11 +295,14 @@ impl ExtensionHost {
     fn manifest_of(&self, entry: &InstalledExtension) -> (Result<ExtensionManifest, String>, bool) {
         let key = format!("{:?}|{}", entry.source, entry.version);
         let answer = |current: &mut Loaded| {
-            if current.granted != entry.granted || current.granted_backend != entry.granted_backend
+            if current.granted != entry.granted
+                || current.granted_backend != entry.granted_backend
+                || current.granted_problems != entry.granted_problems
             {
                 current.within = within(&current.manifest, entry);
                 current.granted = entry.granted.clone();
                 current.granted_backend = entry.granted_backend.clone();
+                current.granted_problems = entry.granted_problems.clone();
             }
             (current.manifest.clone(), current.within)
         };
@@ -321,6 +327,7 @@ impl ExtensionHost {
             manifest,
             granted: entry.granted.clone(),
             granted_backend: entry.granted_backend.clone(),
+            granted_problems: entry.granted_problems.clone(),
         };
         let mut loaded = lock(&self.inner.loaded);
         if let Some(current) = loaded.map.get_mut(&entry.id).filter(|l| l.key == read.key) {
@@ -418,9 +425,14 @@ impl ExtensionHost {
 }
 
 fn within(manifest: &Result<ExtensionManifest, String>, entry: &InstalledExtension) -> bool {
-    manifest
-        .as_ref()
-        .is_ok_and(|m| asks_within(m, &entry.granted, entry.granted_backend.as_ref()))
+    manifest.as_ref().is_ok_and(|m| {
+        asks_within(
+            m,
+            &entry.granted,
+            entry.granted_backend.as_ref(),
+            entry.granted_problems.as_deref(),
+        )
+    })
 }
 
 /// Backends' credentials: the OS keyring, or memory in tests.

@@ -15,6 +15,7 @@ pub mod installed;
 pub mod manifest;
 pub mod package;
 pub mod permissions;
+pub mod problems;
 mod schema;
 
 pub use installed::{BackendGrant, ExtensionSource, InstalledExtension, asks_within};
@@ -22,7 +23,7 @@ pub use manifest::{
     ActionContribution, BackendCredential, BackendManifest, BackendNetwork, ColumnContribution,
     Contributions, DetailsPlacement, DetailsSectionContribution, DockActionContribution,
     ExtensionManifest, MANIFEST_FILE, ManifestError, PageContribution, SUPPORTED_API,
-    SettingsContribution, parse_manifest,
+    SettingsContribution, parse_manifest, supports_api,
 };
 pub use package::{
     InstalledFiles, MAX_FILES, MAX_UNPACKED_BYTES, Package, PackageFile, inspect_folder,

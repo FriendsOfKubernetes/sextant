@@ -180,6 +180,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("extension_credentials", Some("id")),
     ("extension_credential_set", Some("id")),
     ("extension_backend_log", Some("id")),
+    ("extension_problem_scopes", Some("id")),
     ("tools_list", None),
     ("tools_latest", Some("tool")),
     ("tools_install", Some("tool")),

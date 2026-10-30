@@ -17,7 +17,7 @@ use sha2::{Digest, Sha256};
 use ts_rs::TS;
 
 use super::installed::{ExtensionSource, InstalledExtension};
-use super::manifest::{ExtensionManifest, SUPPORTED_API, apply_defaults, is_extension_id};
+use super::manifest::{ExtensionManifest, apply_defaults, is_extension_id, supports_api};
 use super::permissions::ExtensionPermissions;
 use crate::{CoreError, CoreResult, ErrorCode};
 
@@ -620,7 +620,7 @@ pub fn status_of(installed: &InstalledExtension, index: &CatalogIndex) -> Option
     }
     Some(match &entry.latest {
         Some(latest) if older(&installed.version, &latest.version) => {
-            if latest.sextant_api == u64::from(SUPPORTED_API) {
+            if supports_api(latest.sextant_api) {
                 CatalogStatus::UpdateAvailable {
                     version: latest.version.clone(),
                 }

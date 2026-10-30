@@ -9,6 +9,7 @@ use serde_json::Value;
 use ts_rs::TS;
 
 use super::permissions::ExtensionPermissions;
+use super::problems::{self, ProblemContribution};
 use super::schema::{self, JsonPath};
 use crate::access::KindPattern;
 use crate::error::{CoreError, ErrorCode};
@@ -16,8 +17,16 @@ use crate::error::{CoreError, ErrorCode};
 /// The manifest's file name, at the root of a package or folder.
 pub const MANIFEST_FILE: &str = "sextant-extension.json";
 
-/// The extension API major version this Sextant implements (`sextantApi`).
-pub const SUPPORTED_API: u32 = 1;
+/// The newest extension API major version this Sextant implements (`sextantApi`); 2 brought `contributes.problems`
+/// (ADR-0137).
+pub const SUPPORTED_API: u32 = 2;
+/// The oldest one it still reads.
+pub const MIN_API: u32 = 1;
+
+/// Whether this Sextant reads extensions of API version `api`.
+pub fn supports_api(api: u64) -> bool {
+    (u64::from(MIN_API)..=u64::from(SUPPORTED_API)).contains(&api)
+}
 
 /// A manifest larger than this is refused before it is parsed.
 pub const MAX_MANIFEST_BYTES: usize = 256 * 1024;
@@ -122,6 +131,8 @@ pub struct Contributions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub settings: Option<SettingsContribution>,
+    /// Problem rules the window evaluates (ADR-0137); `sextantApi` 2.
+    pub problems: Vec<ProblemContribution>,
 }
 
 /// A page in the cluster's sidebar (`view=page`).
@@ -245,19 +256,22 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     }
     // A manifest for another API version may have fields this Sextant does not know: the version is the reason.
     if let Some(api) = value.get("sextantApi").and_then(Value::as_i64)
-        && api != i64::from(SUPPORTED_API)
+        && !(i64::from(MIN_API)..=i64::from(SUPPORTED_API)).contains(&api)
     {
         return Err(ManifestError {
             path: "sextantApi".to_owned(),
             message: format!(
-                "extension API {api} is not supported; this Sextant supports {SUPPORTED_API}"
+                "extension API {api} is not supported; this Sextant supports {MIN_API} to {SUPPORTED_API}"
             ),
         });
     }
     schema::validate(&schema::manifest_schema(), &value)?;
     check_unique_ids(&value)?;
     apply_defaults(&mut value);
-    serde_json::from_value(value).map_err(|err| whole(format!("cannot be read: {err}")))
+    let manifest: ExtensionManifest =
+        serde_json::from_value(value).map_err(|err| whole(format!("cannot be read: {err}")))?;
+    problems::check_problems(&manifest)?;
+    Ok(manifest)
 }
 
 /// Contribution ids are unique within each contribution type, and credential ids within the backend.
@@ -287,6 +301,7 @@ fn check_unique_ids(manifest: &Value) -> Result<(), ManifestError> {
         "actions",
         "columns",
         "dockActions",
+        "problems",
     ] {
         let Some(items) = manifest
             .get("contributes")
@@ -914,7 +929,7 @@ mod tests {
 
     #[test]
     fn an_unsupported_api_version_is_its_own_error() {
-        for api in [0, 2, 99] {
+        for api in [0, 3, 99] {
             // Even with fields this Sextant does not know: the version is the reason.
             let value = with(
                 with(minimal(), "/sextantApi", json!(api)),
@@ -1378,7 +1393,7 @@ mod tests {
         let rejected = [
             with(minimal(), "/extra", json!(1)),
             without(minimal(), "/entry"),
-            with(minimal(), "/sextantApi", json!(2)),
+            with(minimal(), "/sextantApi", json!(3)),
             with(minimal(), "/id", json!("Bad Id")),
             with(full(), "/permissions/rules/0/actions", json!(["exec"])),
             with(full(), "/contributes/columns/0/jsonPath", json!("nope")),

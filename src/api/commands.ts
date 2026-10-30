@@ -861,6 +861,11 @@ export const extensions = {
     call<void>("extension_credential_set", { id, credential, value }),
   /** The backend's log (its `host.log`, stdout and stderr, and its failures), oldest first. */
   backendLog: (id: string) => call<BackendLogLine[]>("extension_backend_log", { id }),
+  /**
+   * Where the problem rules of extension `id` run in a cluster (ADR-0137): each agreed kind with the namespaces the
+   * extension may read; empty when it is not active or its rules were not agreed to.
+   */
+  problemScopes: (id: string, clusterId: string) => call<ProblemScope[]>("extension_problem_scopes", { id, clusterId }),
   /** Checks an unpacked folder (development mode: it runs from there and reloads when its files change). */
   inspectFolder: (path: string) => call<PendingInstall>("extension_inspect_folder", { path }),
   /**

@@ -95,6 +95,7 @@ mod tests {
             granted: ExtensionPermissions::none(),
             installed_at: 1,
             granted_backend: None,
+            granted_problems: None,
         }
     }
 

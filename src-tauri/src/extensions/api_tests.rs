@@ -163,6 +163,7 @@ fn install_into(dir: &Path, settings: &SettingsStore, id: &str, permissions: Val
                 granted,
                 installed_at: 1,
                 granted_backend: None,
+                granted_problems: None,
             });
         })
         .unwrap();

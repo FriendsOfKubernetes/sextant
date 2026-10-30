@@ -4,9 +4,14 @@ import type { ColumnContribution } from "./ColumnContribution";
 import type { DetailsSectionContribution } from "./DetailsSectionContribution";
 import type { DockActionContribution } from "./DockActionContribution";
 import type { PageContribution } from "./PageContribution";
+import type { ProblemContribution } from "./ProblemContribution";
 import type { SettingsContribution } from "./SettingsContribution";
 
 /**
  * What an extension adds to Sextant's interface. Titles are shown as written (not translation keys).
  */
-export type Contributions = { pages: Array<PageContribution>, detailsSections: Array<DetailsSectionContribution>, actions: Array<ActionContribution>, columns: Array<ColumnContribution>, dockActions: Array<DockActionContribution>, settings?: SettingsContribution, };
+export type Contributions = { pages: Array<PageContribution>, detailsSections: Array<DetailsSectionContribution>, actions: Array<ActionContribution>, columns: Array<ColumnContribution>, dockActions: Array<DockActionContribution>, settings?: SettingsContribution, 
+/**
+ * Problem rules the window evaluates (ADR-0137); `sextantApi` 2.
+ */
+problems: Array<ProblemContribution>, };

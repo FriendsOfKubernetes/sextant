@@ -316,6 +316,11 @@ async fn a_new_host_or_credential_brings_consent_back() {
         hosts: vec!["api.example.com".into()],
         credentials: vec!["token".into()],
     };
-    assert!(asks_within(&parsed, &parsed.permissions, Some(&grant)));
-    assert!(!asks_within(&parsed, &parsed.permissions, None));
+    assert!(asks_within(
+        &parsed,
+        &parsed.permissions,
+        Some(&grant),
+        None
+    ));
+    assert!(!asks_within(&parsed, &parsed.permissions, None, None));
 }

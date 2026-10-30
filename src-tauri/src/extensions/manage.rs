@@ -14,6 +14,7 @@ use std::time::{Duration, Instant};
 
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use sextant_core::extensions::problems::problem_kinds;
 use sextant_core::extensions::{
     BackendGrant, ExtensionManifest, ExtensionSource, InstalledExtension, MAX_UNPACKED_BYTES,
     Package, asks_within, inspect_folder, inspect_zip, prune_versions, remove, version_dir,
@@ -241,6 +242,7 @@ impl ExtensionHost {
                 e.granted.clone()
             });
         let granted_backend = existing.as_ref().and_then(|e| e.granted_backend.clone());
+        let granted_problems = existing.as_ref().and_then(|e| e.granted_problems.clone());
         let token = new_token()?;
         let listed_in_catalog = if matches!(source, ExtensionSource::Catalog { .. }) {
             None
@@ -254,7 +256,12 @@ impl ExtensionHost {
         let shown = PendingInstall {
             token: token.clone(),
             replaces: existing.map(|e| e.version),
-            new_permissions: !asks_within(&manifest, &granted, granted_backend.as_ref()),
+            new_permissions: !asks_within(
+                &manifest,
+                &granted,
+                granted_backend.as_ref(),
+                granted_problems.as_deref(),
+            ),
             manifest: manifest.clone(),
             source: source.clone(),
             listed_in_catalog,
@@ -417,6 +424,10 @@ impl ExtensionHost {
             granted: manifest.permissions.clone(),
             installed_at: now_ms(),
             granted_backend: manifest.backend.as_ref().map(BackendGrant::of),
+            granted_problems: {
+                let kinds = problem_kinds(&manifest);
+                (!kinds.is_empty()).then_some(kinds)
+            },
         };
         let saved = self.inner.settings.update(|settings| {
             match settings.extensions.iter_mut().find(|e| e.id == entry.id) {
@@ -967,14 +978,14 @@ mod tests {
             host.inspect_file(&bad).unwrap_err().code,
             ErrorCode::Invalid
         );
-        let api2 = manifest("widgets", "1.0.0", read_all())
-            .replace("\"sextantApi\":1", "\"sextantApi\":2");
+        let api3 = manifest("widgets", "1.0.0", read_all())
+            .replace("\"sextantApi\":1", "\"sextantApi\":3");
         let zip = stored_zip(&[
-            ("sextant-extension.json", api2.as_bytes()),
+            ("sextant-extension.json", api3.as_bytes()),
             ("index.html", b"x"),
         ]);
-        let api2 = write_package(dir.path(), "api2.zip", zip);
-        let err = host.inspect_file(&api2).unwrap_err();
+        let api3 = write_package(dir.path(), "api3.zip", zip);
+        let err = host.inspect_file(&api3).unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid);
         assert!(err.message.contains("sextantApi"), "{}", err.message);
         assert_eq!(
