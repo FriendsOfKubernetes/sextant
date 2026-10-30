@@ -471,8 +471,10 @@ pub fn spawn_local_shell_with(
 const ZDOTDIR_PROBE_MARKER: &str = "sextant-zdotdir:";
 /// zsh's command for [`probe_zdotdir`].
 const ZDOTDIR_PROBE: &str = "print -rn -- \"sextant-zdotdir:$ZDOTDIR\"";
-/// How long [`probe_zdotdir`] waits for zsh.
-const ZDOTDIR_PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
+/// How long [`probe_zdotdir`] waits for zsh. `zsh -f` reads only `/etc/zshenv`, but a loaded machine can take over
+/// 2 s to start it (a macOS CI runner did, #316), and a probe that gives up leaves the session's `KUBECONFIG` to the
+/// user's rc files; only a zsh that hangs makes the terminal wait this long.
+const ZDOTDIR_PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 /// The `ZDOTDIR` a zsh (`program`) started with exactly `env` has once `/etc/zshenv` — which zsh always reads first,
 /// even with `-f` — has run: `zsh -f -c 'print …'` reads no other startup file. `None` when zsh fails, prints no
