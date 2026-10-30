@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Probe A</title>
+    <style>
+      body { font: 14px system-ui, sans-serif; margin: 16px; }
+      table { border-collapse: collapse; }
+      td, th { border: 1px solid #8888; padding: 4px 8px; text-align: left; }
+      .pass { color: #1a7f37; } .fail { color: #cf222e; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <h1>Extension frame isolation</h1>
+    <p id="summary">Checking…</p>
+    <table><thead><tr><th>Check</th><th>Expected</th><th>Got</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    <script>
+      // What Probe A's frame may and may not do (sdk/test/fixtures/csp-probe/README.md). Inline, so it runs under
+      // the extension CSP's 'unsafe-inline' whatever else is refused.
+      const B = location.href.replace(/probe\.a\/.*/, "probe.b/");
+      const OWN = location.href.replace(/(probe\.a\/).*/, "$1");
+      const load = (tag, attrs) =>
+        new Promise((res) => {
+          const el = document.createElement(tag);
+          Object.assign(el, attrs);
+          el.onload = () => res("loaded");
+          el.onerror = () => res("blocked");
+          document.head.append(el);
+          setTimeout(() => res("timeout"), 3000);
+        });
+      const attempt = async (f) => {
+        try {
+          return await f();
+        } catch (e) {
+          return "blocked";
+        }
+      };
+      let heardFromB = false;
+      addEventListener("message", (e) => {
+        if (e.data && e.data.probeBLoaded) heardFromB = true;
+      });
+      const checks = [
+        ["Origin of the frame", "null", async () => String(self.origin)],
+        ["Own script", "loaded", () => load("script", { src: OWN + "a.js" })],
+        ["Own stylesheet", "loaded", () => load("link", { rel: "stylesheet", href: OWN + "a.css" })],
+        ["Own image", "loaded", () => load("img", { src: OWN + "a.png" })],
+        ["Another extension's script", "blocked", async () => ((await load("script", { src: B + "b.js" })) === "loaded" || globalThis.__fromB ? "loaded" : "blocked")],
+        ["Another extension's module", "blocked", () => attempt(() => import(B + "b.js").then(() => "loaded"))],
+        ["Another extension's stylesheet", "blocked", () => load("link", { rel: "stylesheet", href: B + "b.css" })],
+        ["Another extension's image", "blocked", () => load("img", { src: B + "b.png" })],
+        ["Another extension's font", "blocked", () => attempt(() => new FontFace("probe", `url(${B}b.woff2)`).load().then(() => "loaded"))],
+        ["Another extension's page in a frame", "blocked", async () => {
+          const f = document.createElement("iframe");
+          f.src = B + "index.html";
+          f.style.cssText = "width: 0; height: 0; border: 0";
+          document.body.append(f);
+          await new Promise((r) => setTimeout(r, 2000));
+          return heardFromB ? "loaded" : "blocked";
+        }],
+        ["fetch of an own file", "blocked", () => attempt(() => fetch(OWN + "a.js").then(() => "loaded"))],
+        ["fetch of another extension's file", "blocked", () => attempt(() => fetch(B + "b.js").then(() => "loaded"))],
+        ["fetch of a web page", "blocked", () => attempt(() => fetch("https://example.com/").then(() => "loaded"))],
+        ["Sextant's window (parent.document)", "blocked", () => attempt(() => (parent.document ? "readable" : "blocked"))],
+        ["localStorage", "blocked", () => attempt(() => (localStorage.setItem("probe", "1"), "writable"))],
+        ["A cookie", "blocked", () => attempt(() => ((document.cookie = "probe=1"), document.cookie ? "set" : "blocked"))],
+        ["window.open", "blocked", () => attempt(() => (window.open(B + "index.html") ? "opened" : "blocked"))],
+      ];
+      (async () => {
+        const results = [];
+        const rows = document.getElementById("rows");
+        for (const [name, expected, run] of checks) {
+          const got = await run();
+          results.push({ name, expected, got, pass: got === expected });
+          const tr = document.createElement("tr");
+          for (const text of [name, expected, got, got === expected ? "✓" : "✗"]) {
+            const td = document.createElement("td");
+            td.textContent = text;
+            tr.append(td);
+          }
+          tr.className = got === expected ? "pass" : "fail";
+          rows.append(tr);
+        }
+        const failed = results.filter((r) => !r.pass).length;
+        document.getElementById("summary").textContent = failed === 0
+          ? `All ${results.length} checks passed in ${navigator.userAgent}`
+          : `${failed} of ${results.length} checks failed in ${navigator.userAgent}`;
+        document.getElementById("summary").className = failed === 0 ? "pass" : "fail";
+        // For a driven run (WebKit's inspector, WebDriver): the window hears the results.
+        parent.postMessage({ probeResult: { failed, results } }, "*");
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "probe.a",
+  "name": "Probe A",
+  "version": "1.0.0",
+  "description": "Checks the extension frame's isolation (sdk/test/fixtures/csp-probe/README.md). Not for use.",
+  "author": "Sextant",
+  "sextantApi": 1,
+  "entry": "index.html",
+  "permissions": { "clusters": { "type": "all" }, "rules": [] },
+  "contributes": { "pages": [{ "id": "a", "title": "Probe A", "section": "workloads", "order": 200 }] }
+}

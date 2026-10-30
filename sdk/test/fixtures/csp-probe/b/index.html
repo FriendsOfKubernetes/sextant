@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>Probe B</title></head>
+  <body>
+    <p>Probe B serves the files Probe A must not reach.</p>
+    <script>
+      // Probe A puts this page in a frame of its own: if the frame is allowed, A hears from it.
+      parent.postMessage({ probeBLoaded: true }, "*");
+    </script>
+  </body>
+</html>
