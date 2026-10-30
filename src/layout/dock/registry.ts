@@ -1,6 +1,6 @@
 // Dock tabs and dock header buttons are registered by features, not listed in the dock. The dock re-renders when
 // they change (`useDockVersion`).
-import { useEffect, type ComponentType } from "react";
+import { useLayoutEffect, type ComponentType } from "react";
 import type { ClusterId } from "../../api";
 import type { DockTab, DockTabType } from "../../app/store";
 import type { IconName } from "../../components/icons";
@@ -72,9 +72,12 @@ export function useDockVersion(): number {
 // by the close button, Delete, Cmd+W or Ctrl+W.
 const unsavedTabs = new Set<string>();
 
-/** Marks tab `tabId` as holding unsaved changes while `unsaved` is true (and the calling component is mounted). */
+/**
+ * Marks tab `tabId` as holding unsaved changes while `unsaved` is true (and the calling component is mounted). A layout
+ * effect: the mark follows the render that shows "Saved." at once, so a close clicked right after it does not ask.
+ */
 export function useUnsavedChanges(tabId: string, unsaved: boolean): void {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!unsaved) return;
     unsavedTabs.add(tabId);
     return () => {
