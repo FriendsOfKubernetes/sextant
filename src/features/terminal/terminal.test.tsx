@@ -40,7 +40,8 @@ function pod(name: string, containers: string[], extra: Partial<KubeObject> = {}
   };
 }
 
-const b64 = (text: string) => btoa(text);
+/** Output as the backend sends it: raw bytes (an `ArrayBuffer`). */
+const out = (text: string) => new TextEncoder().encode(text).buffer;
 
 let backend: MockBackend;
 let sessions: number;
@@ -127,13 +128,13 @@ describe("Shell action", () => {
     expect(listenersAtResize).toEqual([1]);
     expect(calls("term_resize")[0]).toMatchObject({ sessionId: start?.streamId });
 
-    act(() => backend.emit("term:term-1", { type: "data", data: b64("root@web:/# ") }));
+    act(() => backend.emit("term:term-1", out("root@web:/# ")));
     await waitFor(() => expect(screenText()).toContain("root@web:/#"));
   });
 
   it("shows the prompt the shell prints before exec_start answers", async () => {
     backend.on("exec_start", (args) => {
-      backend.emit(`term:${args.streamId as string}`, { type: "data", data: b64("early$ ") });
+      backend.emit(`term:${args.streamId as string}`, out("early$ "));
       return undefined;
     });
     render(<App />);
@@ -369,7 +370,7 @@ describe("Open terminal with a sign-in command", () => {
     await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
     expect(calls("terminal_start")[0]).toMatchObject({ clusterId: null });
     // Typed once the shell printed its prompt; never with Enter.
-    act(() => backend.emit(`term:${sessionIds()[0] as string}`, { type: "data", data: b64("$ ") }));
+    act(() => backend.emit(`term:${sessionIds()[0] as string}`, out("$ ")));
     await waitFor(() => expect(calls("term_input")).toEqual([{ sessionId: sessionIds()[0], data: COMMAND }]), {
       timeout: 3000,
     });
@@ -386,7 +387,7 @@ describe("a command typed into a terminal", () => {
       openCommandTerminalTab("aws sso login\r\n--profile dev\x1b[201~\x03\x7f\x00x\u009b\t");
     });
     await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
-    act(() => backend.emit(`term:${sessionIds()[0] as string}`, { type: "data", data: b64("$ ") }));
+    act(() => backend.emit(`term:${sessionIds()[0] as string}`, out("$ ")));
     await waitFor(() => expect(calls("term_input")).toHaveLength(1), { timeout: 3000 });
     const typed = calls("term_input")[0]!.data as string;
     expect(typed).toBe("aws sso login --profile dev [201~ x");
@@ -429,7 +430,7 @@ describe("Terminal button", () => {
     await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
     expect(calls("terminal_start")[0]).toMatchObject({ clusterId: "c1" });
     expect(listenersAtStart).toEqual([1]);
-    act(() => backend.emit("term:term-1", { type: "data", data: b64("$ kubectl get pods") }));
+    act(() => backend.emit("term:term-1", out("$ kubectl get pods")));
     await waitFor(() => expect(screenText()).toContain("$ kubectl get pods"));
   });
 });
@@ -460,7 +461,7 @@ describe("KUBECONFIG notice", () => {
 
   it("is shown in a local terminal whose shell may override KUBECONFIG", async () => {
     await openLocalTerminal();
-    act(() => backend.emit("term:term-1", { type: "data", data: b64(`${NOTICE}$ `) }));
+    act(() => backend.emit("term:term-1", out(`${NOTICE}$ `)));
     await waitFor(() => expect(screenText()).toContain("$"));
     const note = await screen.findByRole("note");
     expect(note).toHaveTextContent(/profile may override KUBECONFIG/);
@@ -469,7 +470,7 @@ describe("KUBECONFIG notice", () => {
 
   it("is not shown for a shell that keeps the session's KUBECONFIG", async () => {
     await openLocalTerminal();
-    act(() => backend.emit("term:term-1", { type: "data", data: b64("$ ") }));
+    act(() => backend.emit("term:term-1", out("$ ")));
     await waitFor(() => expect(screenText()).toContain("$"));
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
@@ -478,7 +479,7 @@ describe("KUBECONFIG notice", () => {
     render(<App />);
     await runShell(pod("web", ["nginx"]));
     await waitFor(() => expect(calls("term_resize")).toHaveLength(1));
-    act(() => backend.emit("term:term-1", { type: "data", data: b64(`${NOTICE}# `) }));
+    act(() => backend.emit("term:term-1", out(`${NOTICE}# `)));
     await waitFor(() => expect(screenText()).toContain("#"));
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
@@ -525,14 +526,14 @@ describe("useTerminal", () => {
     const written = () => new Promise<void>((resolve) => term.write("", resolve));
 
     // A little output is acknowledged a moment after it is written.
-    act(() => backend.emit(`term:${streamId}`, { type: "data", data: b64("hello") }));
+    act(() => backend.emit(`term:${streamId}`, out("hello")));
     await written();
     await waitFor(() => expect(calls("term_ack")).toEqual([{ sessionId: streamId, bytes: 5 }]));
 
     // A lot of it at once, as soon as it is written: every byte, counted once.
     const big = "y\n".repeat(ACK_BYTES);
-    act(() => backend.emit(`term:${streamId}`, { type: "data", data: b64(big) }));
-    act(() => backend.emit(`term:${streamId}`, { type: "data", data: b64("!") }));
+    act(() => backend.emit(`term:${streamId}`, out(big)));
+    act(() => backend.emit(`term:${streamId}`, out("!")));
     await written();
     await waitFor(() => {
       const acked = calls("term_ack").reduce((sum, c) => sum + (c.bytes as number), 0);
@@ -542,7 +543,7 @@ describe("useTerminal", () => {
 
     // Output written after the tab is closed is not acknowledged.
     const before = calls("term_ack").length;
-    act(() => backend.emit(`term:${streamId}`, { type: "data", data: b64("late") }));
+    act(() => backend.emit(`term:${streamId}`, out("late")));
     unmount();
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(calls("term_ack")).toHaveLength(before);
@@ -555,7 +556,7 @@ describe("useTerminal", () => {
     let answer: () => void = () => undefined;
     // The shell prints its prompt before the start answers (#107).
     backend.on("terminal_start", (args) => {
-      backend.emit(`term:${args.streamId as string}`, { type: "data", data: b64("$ ") });
+      backend.emit(`term:${args.streamId as string}`, out("$ "));
       return new Promise((resolve) => {
         answer = () => resolve(undefined);
       });

@@ -12,7 +12,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal, type ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import { api, openStream, toApiError, type ApiError, type StreamChannel, type TermPayload } from "../../api";
+import { api, openStream, toApiError, type ApiError, type StreamChannel, type TermMessage } from "../../api";
 import {
   currentMonoStack,
   fontLoaded,
@@ -30,7 +30,7 @@ export type TerminalSessionFactory = (
   cols: number,
   rows: number,
   streamId: string,
-  onEvent: StreamChannel<TermPayload>,
+  onEvent: StreamChannel<TermMessage>,
 ) => Promise<unknown>;
 
 export type TerminalStatus = "connecting" | "running" | "ended" | "error";
@@ -255,15 +255,17 @@ export function useTerminal(
       api.terminal.resize(id, terminal.cols, terminal.rows).catch(() => undefined);
     };
 
-    const onPayload = (payload: TermPayload) => {
+    const onPayload = (payload: TermMessage) => {
+      // Output is the bytes; the end is a payload with its `type` (never `instanceof`, which a buffer of another
+      // realm fails).
+      if (!("type" in payload)) {
+        const bytes = new Uint8Array(payload);
+        terminal.write(bytes, () => wrote(bytes.length));
+        sawOutput = true;
+        scheduleInput(INPUT_QUIET_MS);
+        return;
+      }
       switch (payload.type) {
-        case "data": {
-          const bytes = decodeBase64(payload.data);
-          terminal.write(bytes, () => wrote(bytes.length));
-          sawOutput = true;
-          scheduleInput(INPUT_QUIET_MS);
-          break;
-        }
         case "exit":
           ended = true;
           setExitCode(payload.code);
@@ -294,7 +296,7 @@ export function useTerminal(
     safeFit(fitRef.current);
     const cols = terminal.cols || DEFAULT_COLS;
     const rows = terminal.rows || DEFAULT_ROWS;
-    const close = openStream<TermPayload>({
+    const close = openStream<TermMessage>({
       start: (id, channel) => {
         streamId = id;
         return factoryRef.current(cols, rows, id, channel);
@@ -458,13 +460,6 @@ function safeFit(fit: FitAddon | null): void {
   } catch {
     // Not laid out yet (hidden tab): the next resize fits it.
   }
-}
-
-function decodeBase64(data: string): Uint8Array {
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
 }
 
 /** Terminal colors from the app's theme tokens; xterm's defaults where a token is missing. */

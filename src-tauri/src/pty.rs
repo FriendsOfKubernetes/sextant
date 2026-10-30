@@ -4,7 +4,7 @@
 //! ([`shell_environment`]).
 //!
 //! [`spawn_local_shell`] gives the same handles as a container shell ([`ExecSession`]), so both kinds of terminal share
-//! the output channel ([`crate::events::TermPayload`]) and the `term_*` commands. Dropping the session's `input` hangs
+//! the output channel ([`crate::events::TermChannel`]) and the `term_*` commands. Dropping the session's `input` hangs
 //! up the shell.
 
 use std::ffi::{OsStr, OsString};

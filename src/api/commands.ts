@@ -145,6 +145,12 @@ export type KubeObject = {
   [key: string]: unknown;
 };
 
+/**
+ * What a terminal session's channel brings: its output as raw bytes, then how it ended. The bytes come as an
+ * `ArrayBuffer` and go to the terminal as they are, with no base64 to decode (#321).
+ */
+export type TermMessage = ArrayBuffer | TermPayload;
+
 export const clusters = {
   list: () => call<ClusterInfo[]>("clusters_list"),
   sources: () => call<KubeconfigSource[]>("kubeconfig_sources"),
@@ -287,7 +293,7 @@ export const terminal = {
     cols: number,
     rows: number,
     streamId: string,
-    onEvent: StreamChannel<TermPayload>,
+    onEvent: StreamChannel<TermMessage>,
   ) => call<void>("exec_start", { clusterId, pod, container, cols, rows, streamId, onEvent }),
   /**
    * Local shell, session `streamId`: with `KUBECONFIG` set to the cluster, or — `clusterId` null — without any
@@ -298,7 +304,7 @@ export const terminal = {
     cols: number,
     rows: number,
     streamId: string,
-    onEvent: StreamChannel<TermPayload>,
+    onEvent: StreamChannel<TermMessage>,
   ) => call<void>("terminal_start", { clusterId, cols, rows, streamId, onEvent }),
   /**
    * Shell on `node` through a temporary privileged pod in `kube-system` (deleted when the session ends), session
@@ -310,7 +316,7 @@ export const terminal = {
     cols: number,
     rows: number,
     streamId: string,
-    onEvent: StreamChannel<TermPayload>,
+    onEvent: StreamChannel<TermMessage>,
   ) => call<void>("node_shell_start", { clusterId, node, cols, rows, streamId, onEvent }),
   /**
    * Debug container for `pod` (`kubectl debug`), session `streamId`: an ephemeral container in the pod, or — with
@@ -324,7 +330,7 @@ export const terminal = {
     cols: number,
     rows: number,
     streamId: string,
-    onEvent: StreamChannel<TermPayload>,
+    onEvent: StreamChannel<TermMessage>,
   ) => call<void>("debug_start", { clusterId, pod, spec, cols, rows, streamId, onEvent }),
   input: (sessionId: string, data: string) => call<void>("term_input", { sessionId, data }),
   resize: (sessionId: string, cols: number, rows: number) => call<void>("term_resize", { sessionId, cols, rows }),

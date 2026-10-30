@@ -57,37 +57,50 @@ pub struct ExtensionFilesChangedPayload {
     pub id: String,
 }
 
-/// Terminal output. Serialized with a `type` tag; `data` is base64.
+/// How a terminal session ended, serialized with a `type` tag. Its output is no payload: it comes through the same
+/// channel as raw bytes.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "type", rename_all = "camelCase")]
 #[ts(export)]
 pub enum TermPayload {
-    Data { data: String },
     Exit { code: Option<i32> },
     Error { error: CoreError },
 }
 
 impl TermPayload {
-    pub fn data(bytes: &[u8]) -> Self {
-        use base64::Engine as _;
-        Self::Data {
-            data: base64::engine::general_purpose::STANDARD.encode(bytes),
-        }
+    /// The payload as the JSON body of a [`TermChannel`] message.
+    pub fn body(&self) -> tauri::ipc::InvokeResponseBody {
+        tauri::ipc::InvokeResponseBody::Json(
+            serde_json::to_string(self).expect("a TermPayload serializes"),
+        )
     }
 }
 
-/// A stream channel for module tests: what the backend sends through it arrives on the receiver as JSON.
+/// A terminal session's channel: output as raw bytes (`InvokeResponseBody::Raw`, an `ArrayBuffer` in the window) and
+/// the end as a JSON [`TermPayload`]. Raw output is written to the terminal as it comes, where base64 in JSON cost
+/// the window a JSON text, a string, a decoded string and a copy per message: several times the output in garbage
+/// that JavaScriptCore collects late (#321).
+pub type TermChannel = tauri::ipc::Channel<tauri::ipc::InvokeResponseBody>;
+
+/// A stream channel for module tests: what the backend sends through it arrives on the receiver as JSON, raw bytes
+/// (a terminal's output) as `{"type": "data", "data": <base64>}`.
 #[cfg(test)]
 pub(crate) fn test_channel<T>() -> (
     tauri::ipc::Channel<T>,
     std::sync::mpsc::Receiver<serde_json::Value>,
 ) {
+    use base64::Engine as _;
     let (tx, rx) = std::sync::mpsc::channel();
     let channel = tauri::ipc::Channel::new(move |body| {
-        if let tauri::ipc::InvokeResponseBody::Json(json) = body {
-            // The test may have stopped listening; the stream does not care.
-            let _ = tx.send(serde_json::from_str(&json).unwrap());
-        }
+        let value = match body {
+            tauri::ipc::InvokeResponseBody::Json(json) => serde_json::from_str(&json).unwrap(),
+            tauri::ipc::InvokeResponseBody::Raw(bytes) => serde_json::json!({
+                "type": "data",
+                "data": base64::engine::general_purpose::STANDARD.encode(bytes),
+            }),
+        };
+        // The test may have stopped listening; the stream does not care.
+        let _ = tx.send(value);
         Ok(())
     });
     (channel, rx)
@@ -99,10 +112,13 @@ mod tests {
 
     #[test]
     fn term_payload_wire_format() {
-        let json = serde_json::to_value(TermPayload::data(b"hi")).unwrap();
-        assert_eq!(json, serde_json::json!({ "type": "data", "data": "aGk=" }));
         let json = serde_json::to_value(TermPayload::Exit { code: Some(0) }).unwrap();
         assert_eq!(json, serde_json::json!({ "type": "exit", "code": 0 }));
+        let tauri::ipc::InvokeResponseBody::Json(text) = (TermPayload::Exit { code: None }).body()
+        else {
+            panic!("a TermPayload goes as JSON");
+        };
+        assert_eq!(text, r#"{"type":"exit","code":null}"#);
     }
 
     #[test]

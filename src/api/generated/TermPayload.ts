@@ -2,6 +2,7 @@
 import type { CoreError } from "./CoreError";
 
 /**
- * Terminal output. Serialized with a `type` tag; `data` is base64.
+ * How a terminal session ended, serialized with a `type` tag. Its output is no payload: it comes through the same
+ * channel as raw bytes.
  */
-export type TermPayload = { "type": "data", data: string, } | { "type": "exit", code: number | null, } | { "type": "error", error: CoreError, };
+export type TermPayload = { "type": "exit", code: number | null, } | { "type": "error", error: CoreError, };

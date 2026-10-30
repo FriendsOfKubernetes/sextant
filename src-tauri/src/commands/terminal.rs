@@ -1,7 +1,7 @@
 //! Terminal sessions: shell in a container (`exec_start`), shell on a node through a temporary privileged pod
 //! (`node_shell_start`), a debug container (`debug_start`) and a local shell (`terminal_start`).
-//! Output goes through the session's channel (`onEvent`, [`TermPayload`]); input, resize and stop are shared by all
-//! kinds.
+//! Output goes through the session's channel (`onEvent`, [`TermChannel`]: raw bytes, then a [`TermPayload`]);
+//! input, resize and stop are shared by all kinds.
 //!
 //! The frontend chooses the session id and creates the channel before `*_start`, so output is sent as soon as the
 //! shell prints it (the first prompt, an immediate exit) and nothing is held back.
@@ -20,12 +20,12 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use sextant_core::{ClusterId, CoreError, CoreResult, ErrorCode, ObjectRef};
-use tauri::ipc::Channel;
+use tauri::ipc::InvokeResponseBody;
 use tauri::{AppHandle, Manager, Runtime, State};
 use tokio::sync::{Notify, mpsc, oneshot};
 use tokio::time::Instant;
 
-use crate::events::TermPayload;
+use crate::events::{TermChannel, TermPayload};
 use crate::pty::{self, ShellCommand};
 use crate::state::{AppState, SessionGuard, TermSession, check_stream_id};
 
@@ -41,7 +41,7 @@ pub async fn exec_start<R: Runtime>(
     cols: u16,
     rows: u16,
     stream_id: String,
-    on_event: Channel<TermPayload>,
+    on_event: TermChannel,
 ) -> Result<(), CoreError> {
     let open = exec::exec_shell(&state.clusters, &cluster_id, &pod, &container, cols, rows);
     start_exec(&app, &state, stream_id, cluster_id.clone(), open, on_event).await
@@ -55,7 +55,7 @@ pub async fn start_exec<R: Runtime>(
     id: String,
     cluster: ClusterId,
     open: impl Future<Output = CoreResult<ExecSession>>,
-    channel: Channel<TermPayload>,
+    channel: TermChannel,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
@@ -87,7 +87,7 @@ pub async fn node_shell_start<R: Runtime>(
     cols: u16,
     rows: u16,
     stream_id: String,
-    on_event: Channel<TermPayload>,
+    on_event: TermChannel,
 ) -> Result<(), CoreError> {
     start_node_shell(
         &app, &state, stream_id, cluster_id, &node, cols, rows, on_event,
@@ -110,7 +110,7 @@ pub async fn start_node_shell<R: Runtime>(
     node: &str,
     cols: u16,
     rows: u16,
-    channel: Channel<TermPayload>,
+    channel: TermChannel,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
@@ -180,7 +180,7 @@ pub async fn debug_start<R: Runtime>(
     cols: u16,
     rows: u16,
     stream_id: String,
-    on_event: Channel<TermPayload>,
+    on_event: TermChannel,
 ) -> Result<(), CoreError> {
     start_debug(
         &app, &state, stream_id, cluster_id, &pod, &spec, cols, rows, on_event,
@@ -202,7 +202,7 @@ pub async fn start_debug<R: Runtime>(
     spec: &debug::DebugSpec,
     cols: u16,
     rows: u16,
-    channel: Channel<TermPayload>,
+    channel: TermChannel,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
@@ -292,7 +292,7 @@ fn finish_node_shell<R: Runtime>(
     cancel: &node_shell::StartCancel,
     session: ExecSession,
     pod: SessionGuard,
-    channel: Channel<TermPayload>,
+    channel: TermChannel,
 ) -> Result<(), CoreError> {
     if cancel.is_cancelled() {
         return Err(node_shell::StartCancel::error());
@@ -349,7 +349,7 @@ pub async fn terminal_start<R: Runtime>(
     cols: u16,
     rows: u16,
     stream_id: String,
-    on_event: Channel<TermPayload>,
+    on_event: TermChannel,
 ) -> Result<(), CoreError> {
     // Spawning blocks (forking the shell, and for zsh a probe of `/etc/zshenv` that may take up to 2 s), so it runs
     // on a blocking thread rather than an async worker. The order of the start is unchanged: the generation is taken,
@@ -377,7 +377,7 @@ pub fn start_plain_terminal<R: Runtime>(
     shell: &ShellCommand,
     cols: u16,
     rows: u16,
-    channel: Channel<TermPayload>,
+    channel: TermChannel,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     let generation = state.streams_generation();
@@ -404,7 +404,7 @@ pub fn start_local_terminal<R: Runtime>(
     shell: &ShellCommand,
     cols: u16,
     rows: u16,
-    channel: Channel<TermPayload>,
+    channel: TermChannel,
 ) -> Result<(), CoreError> {
     let cluster_for_path = cluster.clone();
     start_local_session(
@@ -430,7 +430,7 @@ pub fn start_local_session<R: Runtime, S: Into<pty::LocalShell>>(
     id: String,
     cluster: ClusterId,
     spawn: impl FnOnce(&std::ffi::OsStr) -> CoreResult<S>,
-    channel: Channel<TermPayload>,
+    channel: TermChannel,
 ) -> Result<(), CoreError> {
     check_stream_id(&id)?;
     // Commands run in parallel: a reset may come while the shell is being spawned.
@@ -651,7 +651,7 @@ pub fn forward_term<R>(
     cluster: Option<ClusterId>,
     session: ExecSession,
     guard: Option<SessionGuard>,
-    channel: Channel<TermPayload>,
+    channel: TermChannel,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
@@ -670,7 +670,7 @@ fn term_session<R>(
     cluster: Option<ClusterId>,
     session: ExecSession,
     guard: Option<SessionGuard>,
-    channel: Channel<TermPayload>,
+    channel: TermChannel,
 ) -> (TermSession, oneshot::Sender<()>)
 where
     R: Runtime,
@@ -691,7 +691,8 @@ where
             resize,
             mut output,
         } = session;
-        let emit = |payload: TermPayload| channel.send(payload).is_ok();
+        let emit = |payload: TermPayload| channel.send(payload.body()).is_ok();
+        let emit_output = |bytes: Vec<u8>| channel.send(InvokeResponseBody::Raw(bytes)).is_ok();
         // Output taken from the shell and not sent yet, and when output was last sent.
         let mut pending: Vec<u8> = Vec::new();
         let mut last_emit: Option<Instant> = None;
@@ -716,18 +717,15 @@ where
                             pending.extend_from_slice(&bytes);
                             (None, false)
                         }
-                        Some(ev) => {
-                            let (payload, last) = payload_of(ev);
-                            (Some(payload), last)
-                        }
+                        Some(TermEvent::Exit { code }) => (Some(TermPayload::Exit { code }), true),
+                        Some(TermEvent::Error(error)) => (Some(TermPayload::Error { error }), true),
                         None => (Some(TermPayload::Exit { code: None }), true),
                     };
                     if let Some(payload) = payload {
                         // What the shell printed before it ended goes first.
-                        if !pending.is_empty() && !emit(TermPayload::data(&pending)) {
+                        if !pending.is_empty() && !emit_output(std::mem::take(&mut pending)) {
                             break;
                         }
-                        pending.clear();
                         if !emit(payload) || last {
                             break;
                         }
@@ -737,10 +735,9 @@ where
             let due = last_emit.is_none_or(|t| t.elapsed() >= COALESCE);
             if !pending.is_empty() && (due || pending.len() >= MAX_EVENT) {
                 credit.sent(pending.len());
-                if !emit(TermPayload::data(&pending)) {
+                if !emit_output(std::mem::take(&mut pending)) {
                     break;
                 }
-                pending.clear();
                 last_emit = Some(Instant::now());
             }
         }
@@ -757,15 +754,6 @@ where
         guard,
     };
     (running, registered_tx)
-}
-
-/// The payload of `event`, and whether it ends the session.
-fn payload_of(event: TermEvent) -> (TermPayload, bool) {
-    match event {
-        TermEvent::Data(bytes) => (TermPayload::data(&bytes), false),
-        TermEvent::Exit { code } => (TermPayload::Exit { code }, true),
-        TermEvent::Error(error) => (TermPayload::Error { error }, true),
-    }
 }
 
 #[cfg(test)]

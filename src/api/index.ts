@@ -50,7 +50,7 @@ export const api = {
   notifications,
 };
 
-export type { KubeObject } from "./commands";
+export type { KubeObject, TermMessage } from "./commands";
 export { ApiError, ERROR_CODES, errorKey, toApiError } from "./errors";
 export { events } from "./events";
 export { observeWatchUpdates, type WatchObserver } from "./watchObservers";
