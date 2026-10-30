@@ -1,0 +1,820 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.rook-ceph",
+  "name": "Rook Ceph",
+  "version": "1.0.0",
+  "description": "Rook Ceph clusters at a glance, read-only: Ceph health and its checks in plain words, capacity, versions, the daemons and CSI drivers, pools and filesystems with the storage classes and claims on them, charts from the Ceph mgr's metrics, and problems when Ceph is unhealthy or its status goes stale.",
+  "author": "Sextant",
+  "sextantApi": 2,
+  "entry": "index.html",
+  "icon": "storage",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephCluster"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephBlockPool"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephFilesystem"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephObjectStore"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephObjectStoreUser"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephNFS"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephClient"
+            },
+            {
+              "group": "objectbucket.io",
+              "kind": "ObjectBucketClaim"
+            },
+            {
+              "group": "objectbucket.io",
+              "kind": "ObjectBucket"
+            },
+            {
+              "group": "",
+              "kind": "Pod"
+            },
+            {
+              "group": "",
+              "kind": "PersistentVolumeClaim"
+            },
+            {
+              "group": "storage.k8s.io",
+              "kind": "StorageClass"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "pages": [
+      {
+        "id": "overview",
+        "title": "Rook Ceph",
+        "section": "storage",
+        "icon": "storage"
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "status",
+        "title": "Ceph status",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephCluster"
+          }
+        ],
+        "placement": "section",
+        "order": 40
+      },
+      {
+        "id": "daemons",
+        "title": "Daemons",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephCluster"
+          }
+        ],
+        "placement": "tab",
+        "order": 10
+      },
+      {
+        "id": "metrics",
+        "title": "Metrics",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephCluster"
+          }
+        ],
+        "placement": "tab",
+        "order": 20
+      },
+      {
+        "id": "storage",
+        "title": "Storage classes and claims",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephBlockPool"
+          },
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephFilesystem"
+          },
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephObjectStore"
+          }
+        ],
+        "placement": "section"
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephCluster"
+        },
+        "id": "ceph-version",
+        "title": "Ceph",
+        "jsonPath": ".status.version.version",
+        "after": "Health"
+      }
+    ],
+    "problems": [
+      {
+        "id": "health-error",
+        "title": "Ceph health error",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephCluster"
+        },
+        "when": {
+          "type": "equals",
+          "path": ".status.ceph.health",
+          "value": "HEALTH_ERR"
+        },
+        "since": ".status.ceph.lastChanged",
+        "message": "Ceph reports HEALTH_ERR; the cluster's Ceph status lists the health checks"
+      },
+      {
+        "id": "cluster-failed",
+        "title": "Rook cannot run the Ceph cluster",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephCluster"
+        },
+        "when": {
+          "type": "equals",
+          "path": ".status.phase",
+          "value": "Failure"
+        },
+        "message": "Rook's phase is Failure: {{.status.message}}"
+      },
+      {
+        "id": "health-warning",
+        "title": "Ceph health warning",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephCluster"
+        },
+        "when": {
+          "type": "equals",
+          "path": ".status.ceph.health",
+          "value": "HEALTH_WARN"
+        },
+        "since": ".status.ceph.lastChanged",
+        "graceMinutes": 15,
+        "message": "Ceph reports HEALTH_WARN since {{.status.ceph.lastChanged}}; the cluster's Ceph status lists the health checks"
+      },
+      {
+        "id": "health-stale",
+        "title": "Ceph status not refreshed",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephCluster"
+        },
+        "when": {
+          "type": "olderThan",
+          "path": ".status.ceph.lastChecked",
+          "minutes": 15
+        },
+        "message": "Rook last checked Ceph's health at {{.status.ceph.lastChecked}}: is the Rook operator running?"
+      },
+      {
+        "id": "pool-not-ready",
+        "title": "Ceph block pool not ready",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephBlockPool"
+        },
+        "when": {
+          "type": "in",
+          "path": ".status.phase",
+          "values": [
+            "Failure",
+            "Progressing",
+            "Connecting"
+          ]
+        },
+        "graceMinutes": 10,
+        "message": "Phase {{.status.phase}} for 10 minutes. {{.status.message}}"
+      },
+      {
+        "id": "pool-no-status",
+        "title": "Ceph block pool without status",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephBlockPool"
+        },
+        "when": {
+          "type": "absent",
+          "path": ".status.phase"
+        },
+        "graceMinutes": 10,
+        "message": "Rook has reported no phase for 10 minutes: is the Rook operator running?"
+      },
+      {
+        "id": "filesystem-not-ready",
+        "title": "Ceph filesystem not ready",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephFilesystem"
+        },
+        "when": {
+          "type": "in",
+          "path": ".status.phase",
+          "values": [
+            "Failure",
+            "Progressing",
+            "Connecting"
+          ]
+        },
+        "graceMinutes": 10,
+        "message": "Phase {{.status.phase}} for 10 minutes. {{.status.message}}"
+      },
+      {
+        "id": "filesystem-no-status",
+        "title": "Ceph filesystem without status",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephFilesystem"
+        },
+        "when": {
+          "type": "absent",
+          "path": ".status.phase"
+        },
+        "graceMinutes": 10,
+        "message": "Rook has reported no phase for 10 minutes: is the Rook operator running?"
+      },
+      {
+        "id": "object-store-not-ready",
+        "title": "Ceph object store not ready",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephObjectStore"
+        },
+        "when": {
+          "type": "in",
+          "path": ".status.phase",
+          "values": [
+            "Failure",
+            "Progressing",
+            "Connecting"
+          ]
+        },
+        "graceMinutes": 10,
+        "message": "Phase {{.status.phase}} for 10 minutes. {{.status.message}}"
+      },
+      {
+        "id": "object-store-no-status",
+        "title": "Ceph object store without status",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephObjectStore"
+        },
+        "when": {
+          "type": "absent",
+          "path": ".status.phase"
+        },
+        "graceMinutes": 10,
+        "message": "Rook has reported no phase for 10 minutes: is the Rook operator running?"
+      }
+    ],
+    "metricQueries": [
+      {
+        "id": "health",
+        "title": "Ceph health (0 OK, 1 WARN, 2 ERR)",
+        "query": "max(ceph_health_status{namespace=\"{{namespace}}\"})",
+        "params": [
+          {
+            "name": "namespace",
+            "type": "namespace"
+          }
+        ],
+        "range": {
+          "maxHours": 168
+        }
+      },
+      {
+        "id": "capacity",
+        "title": "Raw capacity: total and used bytes",
+        "query": "max by (__name__) ({__name__=~\"ceph_cluster_total_bytes|ceph_cluster_total_used_raw_bytes\",namespace=\"{{namespace}}\"})",
+        "params": [
+          {
+            "name": "namespace",
+            "type": "namespace"
+          }
+        ],
+        "range": {
+          "maxHours": 168
+        }
+      },
+      {
+        "id": "osds",
+        "title": "OSDs up, in and in all",
+        "query": "label_replace(sum(max by (ceph_daemon) (ceph_osd_up{namespace=\"{{namespace}}\"})), \"state\", \"up\", \"\", \"\") or label_replace(sum(max by (ceph_daemon) (ceph_osd_in{namespace=\"{{namespace}}\"})), \"state\", \"in\", \"\", \"\") or label_replace(count(max by (ceph_daemon) (ceph_osd_up{namespace=\"{{namespace}}\"})), \"state\", \"total\", \"\", \"\")",
+        "params": [
+          {
+            "name": "namespace",
+            "type": "namespace"
+          }
+        ],
+        "range": {
+          "maxHours": 168
+        }
+      },
+      {
+        "id": "pgs",
+        "title": "Placement groups by state",
+        "query": "sum by (__name__) (max by (__name__, pool_id) ({__name__=~\"ceph_pg_(total|active|clean|degraded|undersized|down|stale|peering|incomplete|inconsistent|recovering|backfilling|remapped)\",namespace=\"{{namespace}}\"}))",
+        "params": [
+          {
+            "name": "namespace",
+            "type": "namespace"
+          }
+        ],
+        "range": {
+          "maxHours": 168
+        }
+      }
+    ]
+  },
+  "translations": {
+    "ru": {
+      "name": "Rook Ceph",
+      "description": "Кластеры Rook Ceph с первого взгляда, только чтение: исправность Ceph и её проверки простыми словами, ёмкость, версии, демоны и драйверы CSI, пулы и файловые системы с классами хранилища и запросами томов на них, графики по метрикам Ceph mgr, а также проблемы, когда Ceph неисправен или его состояние устарело.",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Состояние Ceph",
+      "detailsSections.daemons.title": "Демоны",
+      "detailsSections.metrics.title": "Метрики",
+      "detailsSections.storage.title": "Классы хранилища и запросы томов",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Ошибка исправности Ceph",
+      "problems.health-error.message": "Ceph сообщает HEALTH_ERR; проверки исправности перечислены в состоянии Ceph этого кластера",
+      "problems.cluster-failed.title": "Rook не может запустить кластер Ceph",
+      "problems.cluster-failed.message": "Фаза Rook — Failure: {{.status.message}}",
+      "problems.health-warning.title": "Предупреждение об исправности Ceph",
+      "problems.health-warning.message": "Ceph сообщает HEALTH_WARN с {{.status.ceph.lastChanged}}; проверки исправности перечислены в состоянии Ceph этого кластера",
+      "problems.health-stale.title": "Состояние Ceph не обновляется",
+      "problems.health-stale.message": "Rook последний раз проверял исправность Ceph в {{.status.ceph.lastChecked}}: запущен ли оператор Rook?",
+      "problems.pool-not-ready.title": "Блочный пул Ceph не готов",
+      "problems.pool-not-ready.message": "Фаза {{.status.phase}} уже 10 минут. {{.status.message}}",
+      "problems.pool-no-status.title": "Блочный пул Ceph без состояния",
+      "problems.pool-no-status.message": "Rook уже 10 минут не сообщает фазу: запущен ли оператор Rook?",
+      "problems.filesystem-not-ready.title": "Файловая система Ceph не готова",
+      "problems.filesystem-not-ready.message": "Фаза {{.status.phase}} уже 10 минут. {{.status.message}}",
+      "problems.filesystem-no-status.title": "Файловая система Ceph без состояния",
+      "problems.filesystem-no-status.message": "Rook уже 10 минут не сообщает фазу: запущен ли оператор Rook?",
+      "problems.object-store-not-ready.title": "Объектное хранилище Ceph не готово",
+      "problems.object-store-not-ready.message": "Фаза {{.status.phase}} уже 10 минут. {{.status.message}}",
+      "problems.object-store-no-status.title": "Объектное хранилище Ceph без состояния",
+      "problems.object-store-no-status.message": "Rook уже 10 минут не сообщает фазу: запущен ли оператор Rook?",
+      "metricQueries.health.title": "Исправность Ceph (0 OK, 1 WARN, 2 ERR)",
+      "metricQueries.capacity.title": "Сырая ёмкость: всего и занято байт",
+      "metricQueries.osds.title": "OSD: up, in и всего",
+      "metricQueries.pgs.title": "Группы размещения по состояниям"
+    },
+    "uk": {
+      "name": "Rook Ceph",
+      "description": "Кластери Rook Ceph з першого погляду, лише читання: справність Ceph і її перевірки простими словами, ємність, версії, демони та драйвери CSI, пули й файлові системи з класами сховища та запитами томів на них, графіки за метриками Ceph mgr, а також проблеми, коли Ceph несправний або його стан застарів.",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Стан Ceph",
+      "detailsSections.daemons.title": "Демони",
+      "detailsSections.metrics.title": "Метрики",
+      "detailsSections.storage.title": "Класи сховища та запити томів",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Помилка справності Ceph",
+      "problems.health-error.message": "Ceph повідомляє HEALTH_ERR; перевірки справності перелічено в стані Ceph цього кластера",
+      "problems.cluster-failed.title": "Rook не може запустити кластер Ceph",
+      "problems.cluster-failed.message": "Фаза Rook — Failure: {{.status.message}}",
+      "problems.health-warning.title": "Попередження про справність Ceph",
+      "problems.health-warning.message": "Ceph повідомляє HEALTH_WARN з {{.status.ceph.lastChanged}}; перевірки справності перелічено в стані Ceph цього кластера",
+      "problems.health-stale.title": "Стан Ceph не оновлюється",
+      "problems.health-stale.message": "Rook востаннє перевіряв справність Ceph о {{.status.ceph.lastChecked}}: чи запущений оператор Rook?",
+      "problems.pool-not-ready.title": "Блоковий пул Ceph не готовий",
+      "problems.pool-not-ready.message": "Фаза {{.status.phase}} уже 10 хвилин. {{.status.message}}",
+      "problems.pool-no-status.title": "Блоковий пул Ceph без стану",
+      "problems.pool-no-status.message": "Rook уже 10 хвилин не повідомляє фазу: чи запущений оператор Rook?",
+      "problems.filesystem-not-ready.title": "Файлова система Ceph не готова",
+      "problems.filesystem-not-ready.message": "Фаза {{.status.phase}} уже 10 хвилин. {{.status.message}}",
+      "problems.filesystem-no-status.title": "Файлова система Ceph без стану",
+      "problems.filesystem-no-status.message": "Rook уже 10 хвилин не повідомляє фазу: чи запущений оператор Rook?",
+      "problems.object-store-not-ready.title": "Об'єктне сховище Ceph не готове",
+      "problems.object-store-not-ready.message": "Фаза {{.status.phase}} уже 10 хвилин. {{.status.message}}",
+      "problems.object-store-no-status.title": "Об'єктне сховище Ceph без стану",
+      "problems.object-store-no-status.message": "Rook уже 10 хвилин не повідомляє фазу: чи запущений оператор Rook?",
+      "metricQueries.health.title": "Справність Ceph (0 OK, 1 WARN, 2 ERR)",
+      "metricQueries.capacity.title": "Сира ємність: усього та зайнято байтів",
+      "metricQueries.osds.title": "OSD: up, in і всього",
+      "metricQueries.pgs.title": "Групи розміщення за станами"
+    },
+    "de": {
+      "name": "Rook Ceph",
+      "description": "Rook-Ceph-Cluster auf einen Blick, nur lesend: der Ceph-Zustand und seine Prüfungen in einfachen Worten, Kapazität, Versionen, die Daemons und CSI-Treiber, Pools und Dateisysteme mit den Storage Classes und Claims darauf, Diagramme aus den Metriken des Ceph-mgr sowie Probleme, wenn Ceph nicht gesund ist oder sein Status veraltet.",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Ceph-Status",
+      "detailsSections.daemons.title": "Daemons",
+      "detailsSections.metrics.title": "Metriken",
+      "detailsSections.storage.title": "Storage Classes und Claims",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Ceph-Zustand: Fehler",
+      "problems.health-error.message": "Ceph meldet HEALTH_ERR; der Ceph-Status des Clusters listet die Zustandsprüfungen auf",
+      "problems.cluster-failed.title": "Rook kann den Ceph-Cluster nicht betreiben",
+      "problems.cluster-failed.message": "Die Phase von Rook ist Failure: {{.status.message}}",
+      "problems.health-warning.title": "Ceph-Zustand: Warnung",
+      "problems.health-warning.message": "Ceph meldet seit {{.status.ceph.lastChanged}} HEALTH_WARN; der Ceph-Status des Clusters listet die Zustandsprüfungen auf",
+      "problems.health-stale.title": "Ceph-Status nicht aktualisiert",
+      "problems.health-stale.message": "Letzte Prüfung des Ceph-Zustands durch Rook: {{.status.ceph.lastChecked}}. Läuft der Rook-Operator?",
+      "problems.pool-not-ready.title": "Ceph-Block-Pool nicht bereit",
+      "problems.pool-not-ready.message": "Phase {{.status.phase}} seit 10 Minuten. {{.status.message}}",
+      "problems.pool-no-status.title": "Ceph-Block-Pool ohne Status",
+      "problems.pool-no-status.message": "Rook hat seit 10 Minuten keine Phase gemeldet: Läuft der Rook-Operator?",
+      "problems.filesystem-not-ready.title": "Ceph-Dateisystem nicht bereit",
+      "problems.filesystem-not-ready.message": "Phase {{.status.phase}} seit 10 Minuten. {{.status.message}}",
+      "problems.filesystem-no-status.title": "Ceph-Dateisystem ohne Status",
+      "problems.filesystem-no-status.message": "Rook hat seit 10 Minuten keine Phase gemeldet: Läuft der Rook-Operator?",
+      "problems.object-store-not-ready.title": "Ceph-Objektspeicher nicht bereit",
+      "problems.object-store-not-ready.message": "Phase {{.status.phase}} seit 10 Minuten. {{.status.message}}",
+      "problems.object-store-no-status.title": "Ceph-Objektspeicher ohne Status",
+      "problems.object-store-no-status.message": "Rook hat seit 10 Minuten keine Phase gemeldet: Läuft der Rook-Operator?",
+      "metricQueries.health.title": "Ceph-Zustand (0 OK, 1 WARN, 2 ERR)",
+      "metricQueries.capacity.title": "Rohkapazität: Bytes gesamt und belegt",
+      "metricQueries.osds.title": "OSDs up, in und insgesamt",
+      "metricQueries.pgs.title": "Placement Groups nach Zustand"
+    },
+    "fr": {
+      "name": "Rook Ceph",
+      "description": "Les clusters Rook Ceph en un coup d'œil, en lecture seule : la santé de Ceph et ses contrôles expliqués simplement, la capacité, les versions, les démons et les pilotes CSI, les pools et systèmes de fichiers avec leurs storage classes et leurs demandes, des graphiques issus des métriques du mgr de Ceph, et des problèmes quand Ceph n'est pas en bonne santé ou que son statut n'est plus actualisé.",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Statut Ceph",
+      "detailsSections.daemons.title": "Démons",
+      "detailsSections.metrics.title": "Métriques",
+      "detailsSections.storage.title": "Storage classes et demandes",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Erreur de santé Ceph",
+      "problems.health-error.message": "Ceph signale HEALTH_ERR ; le statut Ceph du cluster liste les contrôles de santé",
+      "problems.cluster-failed.title": "Rook ne parvient pas à faire fonctionner le cluster Ceph",
+      "problems.cluster-failed.message": "La phase de Rook est Failure : {{.status.message}}",
+      "problems.health-warning.title": "Avertissement de santé Ceph",
+      "problems.health-warning.message": "Ceph signale HEALTH_WARN depuis {{.status.ceph.lastChanged}} ; le statut Ceph du cluster liste les contrôles de santé",
+      "problems.health-stale.title": "Statut Ceph non actualisé",
+      "problems.health-stale.message": "Dernière vérification de la santé de Ceph par Rook : {{.status.ceph.lastChecked}}. L'opérateur Rook est-il en marche ?",
+      "problems.pool-not-ready.title": "Pool de blocs Ceph non prêt",
+      "problems.pool-not-ready.message": "Phase {{.status.phase}} depuis 10 minutes. {{.status.message}}",
+      "problems.pool-no-status.title": "Pool de blocs Ceph sans statut",
+      "problems.pool-no-status.message": "Rook n'a signalé aucune phase depuis 10 minutes : l'opérateur Rook est-il en marche ?",
+      "problems.filesystem-not-ready.title": "Système de fichiers Ceph non prêt",
+      "problems.filesystem-not-ready.message": "Phase {{.status.phase}} depuis 10 minutes. {{.status.message}}",
+      "problems.filesystem-no-status.title": "Système de fichiers Ceph sans statut",
+      "problems.filesystem-no-status.message": "Rook n'a signalé aucune phase depuis 10 minutes : l'opérateur Rook est-il en marche ?",
+      "problems.object-store-not-ready.title": "Magasin d'objets Ceph non prêt",
+      "problems.object-store-not-ready.message": "Phase {{.status.phase}} depuis 10 minutes. {{.status.message}}",
+      "problems.object-store-no-status.title": "Magasin d'objets Ceph sans statut",
+      "problems.object-store-no-status.message": "Rook n'a signalé aucune phase depuis 10 minutes : l'opérateur Rook est-il en marche ?",
+      "metricQueries.health.title": "Santé de Ceph (0 OK, 1 WARN, 2 ERR)",
+      "metricQueries.capacity.title": "Capacité brute : octets au total et utilisés",
+      "metricQueries.osds.title": "OSD up, in et au total",
+      "metricQueries.pgs.title": "Groupes de placement par état"
+    },
+    "es": {
+      "name": "Rook Ceph",
+      "description": "Los clústeres de Rook Ceph de un vistazo, en solo lectura: la salud de Ceph y sus comprobaciones en palabras sencillas, la capacidad, las versiones, los demonios y los controladores CSI, los pools y sistemas de archivos con las storage classes y solicitudes que los usan, gráficos de las métricas del mgr de Ceph, y problemas cuando Ceph no está sano o su estado deja de actualizarse.",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Estado de Ceph",
+      "detailsSections.daemons.title": "Demonios",
+      "detailsSections.metrics.title": "Métricas",
+      "detailsSections.storage.title": "Storage classes y solicitudes",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Error de salud de Ceph",
+      "problems.health-error.message": "Ceph informa de HEALTH_ERR; el estado de Ceph del clúster lista las comprobaciones de salud",
+      "problems.cluster-failed.title": "Rook no puede ejecutar el clúster de Ceph",
+      "problems.cluster-failed.message": "La fase de Rook es Failure: {{.status.message}}",
+      "problems.health-warning.title": "Advertencia de salud de Ceph",
+      "problems.health-warning.message": "Ceph informa de HEALTH_WARN desde {{.status.ceph.lastChanged}}; el estado de Ceph del clúster lista las comprobaciones de salud",
+      "problems.health-stale.title": "Estado de Ceph sin actualizar",
+      "problems.health-stale.message": "Última comprobación de la salud de Ceph por Rook: {{.status.ceph.lastChecked}}. ¿Está en ejecución el operador de Rook?",
+      "problems.pool-not-ready.title": "Pool de bloques de Ceph no listo",
+      "problems.pool-not-ready.message": "Fase {{.status.phase}} durante 10 minutos. {{.status.message}}",
+      "problems.pool-no-status.title": "Pool de bloques de Ceph sin estado",
+      "problems.pool-no-status.message": "Rook no ha informado de ninguna fase en 10 minutos: ¿está en ejecución el operador de Rook?",
+      "problems.filesystem-not-ready.title": "Sistema de archivos de Ceph no listo",
+      "problems.filesystem-not-ready.message": "Fase {{.status.phase}} durante 10 minutos. {{.status.message}}",
+      "problems.filesystem-no-status.title": "Sistema de archivos de Ceph sin estado",
+      "problems.filesystem-no-status.message": "Rook no ha informado de ninguna fase en 10 minutos: ¿está en ejecución el operador de Rook?",
+      "problems.object-store-not-ready.title": "Almacén de objetos de Ceph no listo",
+      "problems.object-store-not-ready.message": "Fase {{.status.phase}} durante 10 minutos. {{.status.message}}",
+      "problems.object-store-no-status.title": "Almacén de objetos de Ceph sin estado",
+      "problems.object-store-no-status.message": "Rook no ha informado de ninguna fase en 10 minutos: ¿está en ejecución el operador de Rook?",
+      "metricQueries.health.title": "Salud de Ceph (0 OK, 1 WARN, 2 ERR)",
+      "metricQueries.capacity.title": "Capacidad bruta: bytes totales y usados",
+      "metricQueries.osds.title": "OSD up, in y en total",
+      "metricQueries.pgs.title": "Grupos de colocación por estado"
+    },
+    "pt-BR": {
+      "name": "Rook Ceph",
+      "description": "Clusters Rook Ceph num relance, somente leitura: a saúde do Ceph e as verificações dela em palavras simples, capacidade, versões, os daemons e drivers CSI, pools e sistemas de arquivos com as classes de armazenamento e claims sobre eles, gráficos das métricas do mgr do Ceph e problemas quando o Ceph não está saudável ou o status dele fica desatualizado.",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Status do Ceph",
+      "detailsSections.daemons.title": "Daemons",
+      "detailsSections.metrics.title": "Métricas",
+      "detailsSections.storage.title": "Classes de armazenamento e claims",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Erro de saúde do Ceph",
+      "problems.health-error.message": "O Ceph relata HEALTH_ERR; a seção Status do Ceph do cluster lista as verificações de saúde",
+      "problems.cluster-failed.title": "O Rook não consegue executar o cluster Ceph",
+      "problems.cluster-failed.message": "A fase do Rook é Failure: {{.status.message}}",
+      "problems.health-warning.title": "Aviso de saúde do Ceph",
+      "problems.health-warning.message": "O Ceph relata HEALTH_WARN desde {{.status.ceph.lastChanged}}; a seção Status do Ceph do cluster lista as verificações de saúde",
+      "problems.health-stale.title": "Status do Ceph não atualizado",
+      "problems.health-stale.message": "O Rook verificou a saúde do Ceph pela última vez em {{.status.ceph.lastChecked}}: o operador do Rook está em execução?",
+      "problems.pool-not-ready.title": "Pool de blocos do Ceph não está pronto",
+      "problems.pool-not-ready.message": "Fase {{.status.phase}} há 10 minutos. {{.status.message}}",
+      "problems.pool-no-status.title": "Pool de blocos do Ceph sem status",
+      "problems.pool-no-status.message": "O Rook não relata nenhuma fase há 10 minutos: o operador do Rook está em execução?",
+      "problems.filesystem-not-ready.title": "Sistema de arquivos do Ceph não está pronto",
+      "problems.filesystem-not-ready.message": "Fase {{.status.phase}} há 10 minutos. {{.status.message}}",
+      "problems.filesystem-no-status.title": "Sistema de arquivos do Ceph sem status",
+      "problems.filesystem-no-status.message": "O Rook não relata nenhuma fase há 10 minutos: o operador do Rook está em execução?",
+      "problems.object-store-not-ready.title": "Armazenamento de objetos do Ceph não está pronto",
+      "problems.object-store-not-ready.message": "Fase {{.status.phase}} há 10 minutos. {{.status.message}}",
+      "problems.object-store-no-status.title": "Armazenamento de objetos do Ceph sem status",
+      "problems.object-store-no-status.message": "O Rook não relata nenhuma fase há 10 minutos: o operador do Rook está em execução?",
+      "metricQueries.health.title": "Saúde do Ceph (0 OK, 1 WARN, 2 ERR)",
+      "metricQueries.capacity.title": "Capacidade bruta: bytes totais e usados",
+      "metricQueries.osds.title": "OSDs up, in e total",
+      "metricQueries.pgs.title": "Grupos de posicionamento por estado"
+    },
+    "it": {
+      "name": "Rook Ceph",
+      "description": "I cluster Rook Ceph a colpo d'occhio, in sola lettura: lo stato di salute di Ceph e i suoi controlli in parole semplici, capacità, versioni, i daemon e i driver CSI, pool e file system con le storage class e le richieste che li usano, grafici dalle metriche del mgr di Ceph, e problemi quando Ceph non è in salute o il suo stato non viene più aggiornato.",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Stato di Ceph",
+      "detailsSections.daemons.title": "Daemon",
+      "detailsSections.metrics.title": "Metriche",
+      "detailsSections.storage.title": "Storage class e richieste",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Errore di salute di Ceph",
+      "problems.health-error.message": "Ceph segnala HEALTH_ERR; lo stato di Ceph del cluster elenca i controlli di salute",
+      "problems.cluster-failed.title": "Rook non riesce a far funzionare il cluster Ceph",
+      "problems.cluster-failed.message": "La fase di Rook è Failure: {{.status.message}}",
+      "problems.health-warning.title": "Avviso di salute di Ceph",
+      "problems.health-warning.message": "Ceph segnala HEALTH_WARN da {{.status.ceph.lastChanged}}; lo stato di Ceph del cluster elenca i controlli di salute",
+      "problems.health-stale.title": "Stato di Ceph non aggiornato",
+      "problems.health-stale.message": "Ultimo controllo dello stato di salute di Ceph da parte di Rook: {{.status.ceph.lastChecked}}. L'operatore Rook è in esecuzione?",
+      "problems.pool-not-ready.title": "Pool a blocchi Ceph non pronto",
+      "problems.pool-not-ready.message": "Fase {{.status.phase}} da 10 minuti. {{.status.message}}",
+      "problems.pool-no-status.title": "Pool a blocchi Ceph senza stato",
+      "problems.pool-no-status.message": "Rook non segnala alcuna fase da 10 minuti: l'operatore Rook è in esecuzione?",
+      "problems.filesystem-not-ready.title": "File system Ceph non pronto",
+      "problems.filesystem-not-ready.message": "Fase {{.status.phase}} da 10 minuti. {{.status.message}}",
+      "problems.filesystem-no-status.title": "File system Ceph senza stato",
+      "problems.filesystem-no-status.message": "Rook non segnala alcuna fase da 10 minuti: l'operatore Rook è in esecuzione?",
+      "problems.object-store-not-ready.title": "Archivio di oggetti Ceph non pronto",
+      "problems.object-store-not-ready.message": "Fase {{.status.phase}} da 10 minuti. {{.status.message}}",
+      "problems.object-store-no-status.title": "Archivio di oggetti Ceph senza stato",
+      "problems.object-store-no-status.message": "Rook non segnala alcuna fase da 10 minuti: l'operatore Rook è in esecuzione?",
+      "metricQueries.health.title": "Stato di salute di Ceph (0 OK, 1 WARN, 2 ERR)",
+      "metricQueries.capacity.title": "Capacità grezza: byte totali e usati",
+      "metricQueries.osds.title": "OSD up, in e in totale",
+      "metricQueries.pgs.title": "Placement group per stato"
+    },
+    "pl": {
+      "name": "Rook Ceph",
+      "description": "Klastry Rook Ceph w skrócie, tylko do odczytu: kondycja Ceph i jej kontrole prostymi słowami, pojemność, wersje, demony i sterowniki CSI, pule i systemy plików z klasami pamięci masowej i żądaniami woluminów na nich, wykresy z metryk Ceph mgr oraz problemy, gdy Ceph ma złą kondycję lub jego stan przestaje być odświeżany.",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Stan Ceph",
+      "detailsSections.daemons.title": "Demony",
+      "detailsSections.metrics.title": "Metryki",
+      "detailsSections.storage.title": "Klasy pamięci masowej i żądania woluminów",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Błąd kondycji Ceph",
+      "problems.health-error.message": "Ceph zgłasza HEALTH_ERR; kontrole kondycji są wymienione w stanie Ceph tego klastra",
+      "problems.cluster-failed.title": "Rook nie może uruchomić klastra Ceph",
+      "problems.cluster-failed.message": "Faza Rook to Failure: {{.status.message}}",
+      "problems.health-warning.title": "Ostrzeżenie o kondycji Ceph",
+      "problems.health-warning.message": "Ceph zgłasza HEALTH_WARN od {{.status.ceph.lastChanged}}; kontrole kondycji są wymienione w stanie Ceph tego klastra",
+      "problems.health-stale.title": "Stan Ceph nie jest odświeżany",
+      "problems.health-stale.message": "Rook ostatnio sprawdził kondycję Ceph o {{.status.ceph.lastChecked}}: czy operator Rook działa?",
+      "problems.pool-not-ready.title": "Pula blokowa Ceph nie jest gotowa",
+      "problems.pool-not-ready.message": "Faza {{.status.phase}} od 10 minut. {{.status.message}}",
+      "problems.pool-no-status.title": "Pula blokowa Ceph bez stanu",
+      "problems.pool-no-status.message": "Rook od 10 minut nie zgłasza fazy: czy operator Rook działa?",
+      "problems.filesystem-not-ready.title": "System plików Ceph nie jest gotowy",
+      "problems.filesystem-not-ready.message": "Faza {{.status.phase}} od 10 minut. {{.status.message}}",
+      "problems.filesystem-no-status.title": "System plików Ceph bez stanu",
+      "problems.filesystem-no-status.message": "Rook od 10 minut nie zgłasza fazy: czy operator Rook działa?",
+      "problems.object-store-not-ready.title": "Magazyn obiektów Ceph nie jest gotowy",
+      "problems.object-store-not-ready.message": "Faza {{.status.phase}} od 10 minut. {{.status.message}}",
+      "problems.object-store-no-status.title": "Magazyn obiektów Ceph bez stanu",
+      "problems.object-store-no-status.message": "Rook od 10 minut nie zgłasza fazy: czy operator Rook działa?",
+      "metricQueries.health.title": "Kondycja Ceph (0 OK, 1 WARN, 2 ERR)",
+      "metricQueries.capacity.title": "Surowa pojemność: łącznie i zajęte bajty",
+      "metricQueries.osds.title": "OSD: up, in i łącznie",
+      "metricQueries.pgs.title": "Grupy rozmieszczenia według stanu"
+    },
+    "tr": {
+      "name": "Rook Ceph",
+      "description": "Rook Ceph kümelerine salt okunur bir bakış: Ceph'in sağlık durumu ve denetimleri sade bir dille, kapasite, sürümler, daemon'lar ve CSI sürücüleri, üzerlerindeki depolama sınıfları ve taleplerle birlikte havuzlar ve dosya sistemleri, Ceph mgr ölçümlerinden grafikler ve Ceph sağlıksız olduğunda ya da durumu güncelliğini yitirdiğinde sorunlar.",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Ceph durumu",
+      "detailsSections.daemons.title": "Daemon'lar",
+      "detailsSections.metrics.title": "Ölçümler",
+      "detailsSections.storage.title": "Depolama sınıfları ve talepler",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Ceph sağlık hatası",
+      "problems.health-error.message": "Ceph HEALTH_ERR bildiriyor; sağlık denetimleri kümenin Ceph durumu bölümünde listelenir",
+      "problems.cluster-failed.title": "Rook, Ceph kümesini çalıştıramıyor",
+      "problems.cluster-failed.message": "Rook'un aşaması Failure: {{.status.message}}",
+      "problems.health-warning.title": "Ceph sağlık uyarısı",
+      "problems.health-warning.message": "Ceph şu zamandan beri HEALTH_WARN bildiriyor: {{.status.ceph.lastChanged}}; sağlık denetimleri kümenin Ceph durumu bölümünde listelenir",
+      "problems.health-stale.title": "Ceph durumu yenilenmiyor",
+      "problems.health-stale.message": "Rook, Ceph'in sağlık durumunu en son şu zamanda denetledi: {{.status.ceph.lastChecked}}. Rook operatörü çalışıyor mu?",
+      "problems.pool-not-ready.title": "Ceph blok havuzu hazır değil",
+      "problems.pool-not-ready.message": "10 dakikadır aşama: {{.status.phase}}. {{.status.message}}",
+      "problems.pool-no-status.title": "Ceph blok havuzunun durumu yok",
+      "problems.pool-no-status.message": "Rook 10 dakikadır hiçbir aşama bildirmedi: Rook operatörü çalışıyor mu?",
+      "problems.filesystem-not-ready.title": "Ceph dosya sistemi hazır değil",
+      "problems.filesystem-not-ready.message": "10 dakikadır aşama: {{.status.phase}}. {{.status.message}}",
+      "problems.filesystem-no-status.title": "Ceph dosya sisteminin durumu yok",
+      "problems.filesystem-no-status.message": "Rook 10 dakikadır hiçbir aşama bildirmedi: Rook operatörü çalışıyor mu?",
+      "problems.object-store-not-ready.title": "Ceph nesne deposu hazır değil",
+      "problems.object-store-not-ready.message": "10 dakikadır aşama: {{.status.phase}}. {{.status.message}}",
+      "problems.object-store-no-status.title": "Ceph nesne deposunun durumu yok",
+      "problems.object-store-no-status.message": "Rook 10 dakikadır hiçbir aşama bildirmedi: Rook operatörü çalışıyor mu?",
+      "metricQueries.health.title": "Ceph sağlığı (0 OK, 1 WARN, 2 ERR)",
+      "metricQueries.capacity.title": "Ham kapasite: toplam ve kullanılan bayt",
+      "metricQueries.osds.title": "OSD'ler: up, in ve toplam",
+      "metricQueries.pgs.title": "Duruma göre yerleşim grupları"
+    },
+    "zh-CN": {
+      "name": "Rook Ceph",
+      "description": "只读一览 Rook Ceph 集群：用通俗的话说明 Ceph 的健康状况及其检查项，以及容量、版本、守护进程和 CSI 驱动、存储池和文件系统及其上的 StorageClass 与申领、基于 Ceph mgr 指标的图表；当 Ceph 不健康或其状态过时时报告问题。",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Ceph 状态",
+      "detailsSections.daemons.title": "守护进程",
+      "detailsSections.metrics.title": "指标",
+      "detailsSections.storage.title": "StorageClass 与申领",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Ceph 健康错误",
+      "problems.health-error.message": "Ceph 报告 HEALTH_ERR；集群的 Ceph 状态中列出了健康检查项",
+      "problems.cluster-failed.title": "Rook 无法运行 Ceph 集群",
+      "problems.cluster-failed.message": "Rook 的阶段为 Failure：{{.status.message}}",
+      "problems.health-warning.title": "Ceph 健康警告",
+      "problems.health-warning.message": "Ceph 自 {{.status.ceph.lastChanged}} 起报告 HEALTH_WARN；集群的 Ceph 状态中列出了健康检查项",
+      "problems.health-stale.title": "Ceph 状态未刷新",
+      "problems.health-stale.message": "Rook 上次检查 Ceph 健康状况的时间为 {{.status.ceph.lastChecked}}：Rook operator 是否在运行？",
+      "problems.pool-not-ready.title": "Ceph 块存储池未就绪",
+      "problems.pool-not-ready.message": "已处于 {{.status.phase}} 阶段 10 分钟。{{.status.message}}",
+      "problems.pool-no-status.title": "Ceph 块存储池没有状态",
+      "problems.pool-no-status.message": "Rook 已有 10 分钟未报告阶段：Rook operator 是否在运行？",
+      "problems.filesystem-not-ready.title": "Ceph 文件系统未就绪",
+      "problems.filesystem-not-ready.message": "已处于 {{.status.phase}} 阶段 10 分钟。{{.status.message}}",
+      "problems.filesystem-no-status.title": "Ceph 文件系统没有状态",
+      "problems.filesystem-no-status.message": "Rook 已有 10 分钟未报告阶段：Rook operator 是否在运行？",
+      "problems.object-store-not-ready.title": "Ceph 对象存储未就绪",
+      "problems.object-store-not-ready.message": "已处于 {{.status.phase}} 阶段 10 分钟。{{.status.message}}",
+      "problems.object-store-no-status.title": "Ceph 对象存储没有状态",
+      "problems.object-store-no-status.message": "Rook 已有 10 分钟未报告阶段：Rook operator 是否在运行？",
+      "metricQueries.health.title": "Ceph 健康状况（0 OK，1 WARN，2 ERR）",
+      "metricQueries.capacity.title": "原始容量：总字节数和已用字节数",
+      "metricQueries.osds.title": "OSD：up、in 和总数",
+      "metricQueries.pgs.title": "按状态统计的归置组"
+    },
+    "zh-TW": {
+      "name": "Rook Ceph",
+      "description": "唯讀一覽 Rook Ceph 叢集：以淺白的文字說明 Ceph 的健康狀態及其檢查項目，以及容量、版本、常駐程式與 CSI 驅動程式、儲存池與檔案系統及其上的 StorageClass 與宣告、根據 Ceph mgr 指標繪製的圖表；當 Ceph 不健康或其狀態過時時回報問題。",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Ceph 狀態",
+      "detailsSections.daemons.title": "常駐程式",
+      "detailsSections.metrics.title": "指標",
+      "detailsSections.storage.title": "StorageClass 與宣告",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Ceph 健康錯誤",
+      "problems.health-error.message": "Ceph 回報 HEALTH_ERR；叢集的 Ceph 狀態中列出了健康檢查項目",
+      "problems.cluster-failed.title": "Rook 無法執行 Ceph 叢集",
+      "problems.cluster-failed.message": "Rook 的階段為 Failure：{{.status.message}}",
+      "problems.health-warning.title": "Ceph 健康警告",
+      "problems.health-warning.message": "Ceph 自 {{.status.ceph.lastChanged}} 起回報 HEALTH_WARN；叢集的 Ceph 狀態中列出了健康檢查項目",
+      "problems.health-stale.title": "Ceph 狀態未重新整理",
+      "problems.health-stale.message": "Rook 上次檢查 Ceph 健康狀態的時間為 {{.status.ceph.lastChecked}}：Rook operator 是否在執行？",
+      "problems.pool-not-ready.title": "Ceph 區塊儲存池未就緒",
+      "problems.pool-not-ready.message": "已處於 {{.status.phase}} 階段 10 分鐘。{{.status.message}}",
+      "problems.pool-no-status.title": "Ceph 區塊儲存池沒有狀態",
+      "problems.pool-no-status.message": "Rook 已有 10 分鐘未回報階段：Rook operator 是否在執行？",
+      "problems.filesystem-not-ready.title": "Ceph 檔案系統未就緒",
+      "problems.filesystem-not-ready.message": "已處於 {{.status.phase}} 階段 10 分鐘。{{.status.message}}",
+      "problems.filesystem-no-status.title": "Ceph 檔案系統沒有狀態",
+      "problems.filesystem-no-status.message": "Rook 已有 10 分鐘未回報階段：Rook operator 是否在執行？",
+      "problems.object-store-not-ready.title": "Ceph 物件儲存未就緒",
+      "problems.object-store-not-ready.message": "已處於 {{.status.phase}} 階段 10 分鐘。{{.status.message}}",
+      "problems.object-store-no-status.title": "Ceph 物件儲存沒有狀態",
+      "problems.object-store-no-status.message": "Rook 已有 10 分鐘未回報階段：Rook operator 是否在執行？",
+      "metricQueries.health.title": "Ceph 健康狀態（0 OK，1 WARN，2 ERR）",
+      "metricQueries.capacity.title": "原始容量：總位元組數與已用位元組數",
+      "metricQueries.osds.title": "OSD：up、in 與總數",
+      "metricQueries.pgs.title": "依狀態統計的放置群組"
+    },
+    "ja": {
+      "name": "Rook Ceph",
+      "description": "Rook Ceph クラスターをひと目で確認 (読み取り専用): Ceph のヘルスとヘルスチェックをわかりやすい言葉で、容量、バージョン、デーモンと CSI ドライバー、プールとファイルシステムおよびそれらを使うストレージクラスと要求、Ceph mgr のメトリクスのグラフ、そして Ceph が正常でないときやステータスが古くなったときの問題を表示します。",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Ceph のステータス",
+      "detailsSections.daemons.title": "デーモン",
+      "detailsSections.metrics.title": "メトリクス",
+      "detailsSections.storage.title": "ストレージクラスと要求",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Ceph のヘルスエラー",
+      "problems.health-error.message": "Ceph が HEALTH_ERR を報告しています。ヘルスチェックはクラスターの「Ceph のステータス」に表示されます",
+      "problems.cluster-failed.title": "Rook が Ceph クラスターを実行できません",
+      "problems.cluster-failed.message": "Rook のフェーズが Failure です: {{.status.message}}",
+      "problems.health-warning.title": "Ceph のヘルス警告",
+      "problems.health-warning.message": "Ceph は {{.status.ceph.lastChanged}} から HEALTH_WARN を報告しています。ヘルスチェックはクラスターの「Ceph のステータス」に表示されます",
+      "problems.health-stale.title": "Ceph のステータスが更新されていません",
+      "problems.health-stale.message": "Rook が最後に Ceph のヘルスを確認したのは {{.status.ceph.lastChecked}} です。Rook オペレーターは動作していますか？",
+      "problems.pool-not-ready.title": "Ceph ブロックプールの準備ができていません",
+      "problems.pool-not-ready.message": "10 分間フェーズ {{.status.phase}} のままです。{{.status.message}}",
+      "problems.pool-no-status.title": "Ceph ブロックプールにステータスがありません",
+      "problems.pool-no-status.message": "Rook が 10 分間フェーズを報告していません。Rook オペレーターは動作していますか？",
+      "problems.filesystem-not-ready.title": "Ceph ファイルシステムの準備ができていません",
+      "problems.filesystem-not-ready.message": "10 分間フェーズ {{.status.phase}} のままです。{{.status.message}}",
+      "problems.filesystem-no-status.title": "Ceph ファイルシステムにステータスがありません",
+      "problems.filesystem-no-status.message": "Rook が 10 分間フェーズを報告していません。Rook オペレーターは動作していますか？",
+      "problems.object-store-not-ready.title": "Ceph オブジェクトストアの準備ができていません",
+      "problems.object-store-not-ready.message": "10 分間フェーズ {{.status.phase}} のままです。{{.status.message}}",
+      "problems.object-store-no-status.title": "Ceph オブジェクトストアにステータスがありません",
+      "problems.object-store-no-status.message": "Rook が 10 分間フェーズを報告していません。Rook オペレーターは動作していますか？",
+      "metricQueries.health.title": "Ceph のヘルス (0 OK、1 WARN、2 ERR)",
+      "metricQueries.capacity.title": "RAW 容量: 合計と使用済みのバイト数",
+      "metricQueries.osds.title": "OSD の up、in、合計",
+      "metricQueries.pgs.title": "状態別の配置グループ"
+    },
+    "ko": {
+      "name": "Rook Ceph",
+      "description": "Rook Ceph 클러스터를 한눈에 보는 읽기 전용 확장입니다. Ceph 건강 상태와 상태 검사 항목을 쉬운 말로 설명하고, 용량, 버전, 데몬과 CSI 드라이버, 풀과 파일 시스템 및 그 위의 스토리지 클래스와 클레임, Ceph mgr 메트릭 차트를 보여 주며, Ceph가 비정상이거나 상태가 오래되면 문제로 알립니다.",
+      "pages.overview.title": "Rook Ceph",
+      "detailsSections.status.title": "Ceph 상태",
+      "detailsSections.daemons.title": "데몬",
+      "detailsSections.metrics.title": "메트릭",
+      "detailsSections.storage.title": "스토리지 클래스와 클레임",
+      "columns.ceph-version.title": "Ceph",
+      "problems.health-error.title": "Ceph 건강 상태 오류",
+      "problems.health-error.message": "Ceph가 HEALTH_ERR를 보고합니다. 클러스터의 Ceph 상태에 상태 검사 항목이 나열되어 있습니다",
+      "problems.cluster-failed.title": "Rook이 Ceph 클러스터를 실행할 수 없음",
+      "problems.cluster-failed.message": "Rook의 단계가 Failure입니다: {{.status.message}}",
+      "problems.health-warning.title": "Ceph 건강 상태 경고",
+      "problems.health-warning.message": "Ceph가 {{.status.ceph.lastChanged}}부터 HEALTH_WARN을 보고합니다. 클러스터의 Ceph 상태에 상태 검사 항목이 나열되어 있습니다",
+      "problems.health-stale.title": "Ceph 상태가 갱신되지 않음",
+      "problems.health-stale.message": "Rook이 마지막으로 Ceph의 건강 상태를 검사한 시각은 {{.status.ceph.lastChecked}}입니다. Rook 오퍼레이터가 실행 중입니까?",
+      "problems.pool-not-ready.title": "Ceph 블록 풀이 준비되지 않음",
+      "problems.pool-not-ready.message": "10분 동안 {{.status.phase}} 단계입니다. {{.status.message}}",
+      "problems.pool-no-status.title": "상태가 없는 Ceph 블록 풀",
+      "problems.pool-no-status.message": "Rook이 10분 동안 단계를 보고하지 않았습니다. Rook 오퍼레이터가 실행 중입니까?",
+      "problems.filesystem-not-ready.title": "Ceph 파일 시스템이 준비되지 않음",
+      "problems.filesystem-not-ready.message": "10분 동안 {{.status.phase}} 단계입니다. {{.status.message}}",
+      "problems.filesystem-no-status.title": "상태가 없는 Ceph 파일 시스템",
+      "problems.filesystem-no-status.message": "Rook이 10분 동안 단계를 보고하지 않았습니다. Rook 오퍼레이터가 실행 중입니까?",
+      "problems.object-store-not-ready.title": "Ceph 오브젝트 스토어가 준비되지 않음",
+      "problems.object-store-not-ready.message": "10분 동안 {{.status.phase}} 단계입니다. {{.status.message}}",
+      "problems.object-store-no-status.title": "상태가 없는 Ceph 오브젝트 스토어",
+      "problems.object-store-no-status.message": "Rook이 10분 동안 단계를 보고하지 않았습니다. Rook 오퍼레이터가 실행 중입니까?",
+      "metricQueries.health.title": "Ceph 건강 상태(0 OK, 1 WARN, 2 ERR)",
+      "metricQueries.capacity.title": "원시 용량: 전체 및 사용된 바이트",
+      "metricQueries.osds.title": "OSD: up, in, 전체",
+      "metricQueries.pgs.title": "상태별 배치 그룹"
+    }
+  }
+}

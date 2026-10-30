@@ -36,6 +36,7 @@ const ASSERTIONS: &[&str] = &[
     "properties",
     "required",
     "additionalProperties",
+    "maxProperties",
     "items",
     "minItems",
     "maxItems",
@@ -320,11 +321,16 @@ fn check_object(
     path: &JsonPath,
 ) -> Result<(), ManifestError> {
     let properties = keywords.get("properties").and_then(Value::as_object);
-    if keywords.get("additionalProperties") == Some(&Value::Bool(false)) {
-        let known = |key: &str| properties.is_some_and(|p| p.contains_key(key));
-        if let Some(unknown) = fields.keys().find(|k| !known(k)) {
-            return Err(error(&path.key(unknown), "unknown field"));
-        }
+    let known = |key: &str| properties.is_some_and(|p| p.contains_key(key));
+    if keywords.get("additionalProperties") == Some(&Value::Bool(false))
+        && let Some(unknown) = fields.keys().find(|k| !known(k))
+    {
+        return Err(error(&path.key(unknown), "unknown field"));
+    }
+    if let Some(max) = limit(keywords, "maxProperties")
+        && fields.len() as u64 > max
+    {
+        return Err(error(path, format!("must have at most {max} entries")));
     }
     if let Some(required) = keywords.get("required").and_then(Value::as_array) {
         for name in required.iter().filter_map(Value::as_str) {
@@ -337,6 +343,17 @@ fn check_object(
         for (name, value) in fields {
             if let Some(property) = properties.get(name) {
                 check(root, property, value, &path.key(name))?;
+            }
+        }
+    }
+    // A map: every other field is checked against one schema.
+    if let Some(other) = keywords
+        .get("additionalProperties")
+        .filter(|v| v.is_object())
+    {
+        for (name, value) in fields {
+            if !known(name) {
+                check(root, other, value, &path.key(name))?;
             }
         }
     }

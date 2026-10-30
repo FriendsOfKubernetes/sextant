@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-// `npm run sdk:check`, after tsc and vitest: builds the template and the examples into a temporary folder and packs
-// each in a dry run, so a manifest Sextant would refuse or a build that breaks fails the check. The backend examples
-// (ADR-0131: TypeScript through componentize-js, Rust through cargo for wasm32-wasip2) are then run by Sextant's own
-// runtime (`cargo run -p sextant-ext-runtime --example run`, a stand-in host) to prove they load and answer.
+// `npm run sdk:check`, after tsc and vitest: builds the template, the examples and Sextant's own extensions
+// (`extensions/`) into a temporary folder and packs each in a dry run, so a manifest Sextant would refuse or a build
+// that breaks fails the check. The backend examples (ADR-0131: TypeScript through componentize-js, Rust through
+// cargo for wasm32-wasip2) are then run by Sextant's own runtime (`cargo run -p sextant-ext-runtime --example run`,
+// a stand-in host) to prove they load and answer.
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
@@ -13,7 +14,11 @@ import { buildExtension } from "./build.mjs";
 import { packFolder } from "./pack.mjs";
 
 const sdk = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const PROJECTS = ["template", "examples/hello-page", "examples/crd-view", "examples/rook-ceph", "examples/backend-ts", "examples/backend-rust"];
+/** Sextant's own extensions (`extensions/<name>`, ADR-0139), built against this SDK. */
+const EXTENSIONS = readdirSync(resolve(sdk, "..", "extensions"), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => `../extensions/${entry.name}`);
+const PROJECTS = ["template", "examples/hello-page", "examples/crd-view", "examples/backend-ts", "examples/backend-rust"];
 /** What each backend must answer to the stand-in host (one cluster, no network). */
 const BACKEND_CALLS = [
   ["ping", null, (answer) => answer === "pong"],
@@ -33,8 +38,8 @@ function runBackend(wasm, method, params) {
 
 const out = mkdtempSync(join(tmpdir(), "sextant-sdk-check-"));
 try {
-  for (const project of PROJECTS) {
-    const built = await buildExtension(join(sdk, project), { out: join(out, project), quiet: true });
+  for (const project of [...PROJECTS, ...EXTENSIONS]) {
+    const built = await buildExtension(join(sdk, project), { out: join(out, project.replaceAll("../", "")), quiet: true });
     const { manifest, files } = packFolder(built, { dryRun: true });
     process.stdout.write(`sdk: ${project} builds and packs (${manifest.id} ${manifest.version}, ${files.length} files)\n`);
     if (manifest.backend) {

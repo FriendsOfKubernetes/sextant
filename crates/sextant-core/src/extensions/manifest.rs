@@ -4,6 +4,8 @@
 //! (`contributes.pages[0].title: must not be empty`), so a typo never silently drops a permission or a contribution.
 //! The structure is checked against `manifest.schema.json`; this module adds what a schema cannot say.
 
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use ts_rs::TS;
@@ -12,6 +14,7 @@ use super::metric_queries::{self, MetricQuery};
 use super::permissions::ExtensionPermissions;
 use super::problems::{self, ProblemContribution};
 use super::schema::{self, JsonPath};
+use super::translations;
 use crate::access::KindPattern;
 use crate::error::{CoreError, ErrorCode};
 
@@ -85,6 +88,10 @@ pub struct ExtensionManifest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub backend: Option<BackendManifest>,
+    /// Translations of its texts (ADR-0140): language tag → text key (`pages.<id>.title`, …) → text.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[ts(as = "Option<BTreeMap<String, BTreeMap<String, String>>>", optional)]
+    pub translations: BTreeMap<String, BTreeMap<String, String>>,
 }
 
 /// An extension's backend: a WebAssembly component of the world `sextant:extension/backend`, the hosts it may call
@@ -275,6 +282,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
         serde_json::from_value(value).map_err(|err| whole(format!("cannot be read: {err}")))?;
     problems::check_problems(&manifest)?;
     metric_queries::check_metric_queries(&manifest)?;
+    translations::check_translations(&manifest)?;
     Ok(manifest)
 }
 
@@ -1501,18 +1509,21 @@ mod tests {
         assert!(wrong.is_empty(), "{}", wrong.join("\n"));
     }
 
-    /// The SDK's template and examples, Rook Ceph's among them (#319), are what Sextant installs: its own parser
-    /// accepts each manifest (the SDK's check is a copy of these rules).
+    /// The SDK's template and examples and Sextant's own extensions (`extensions/`, Rook Ceph's among them, #319) are
+    /// what Sextant installs: its own parser accepts each manifest (the SDK's check is a copy of these rules).
     #[test]
-    fn the_sdk_template_and_examples_have_manifests_sextant_accepts() {
-        let sdk = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../sdk");
-        let mut projects = vec![sdk.join("template")];
-        let mut examples: Vec<_> = std::fs::read_dir(sdk.join("examples"))
-            .unwrap()
-            .map(|entry| entry.unwrap().path())
-            .collect();
-        examples.sort();
-        projects.extend(examples);
+    fn the_sdk_examples_and_sextants_extensions_have_manifests_sextant_accepts() {
+        let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let mut projects = vec![repo.join("sdk/template")];
+        for dir in ["sdk/examples", "extensions"] {
+            let mut found: Vec<_> = std::fs::read_dir(repo.join(dir))
+                .unwrap()
+                .map(|entry| entry.unwrap().path())
+                .filter(|path| path.is_dir())
+                .collect();
+            found.sort();
+            projects.extend(found);
+        }
         let mut ids = Vec::new();
         for project in projects {
             let bytes = std::fs::read(project.join("sextant-extension.json")).unwrap();

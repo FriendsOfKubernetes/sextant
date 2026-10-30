@@ -18,6 +18,7 @@ pub mod package;
 pub mod permissions;
 pub mod problems;
 mod schema;
+pub mod translations;
 
 pub use installed::{BackendGrant, ExtensionSource, InstalledExtension, asks_within};
 pub use manifest::{

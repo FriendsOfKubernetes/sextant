@@ -157,7 +157,7 @@ export interface ManifestFile {
   version: string;
   description: string;
   author: string;
-  /** 1, or 2 for `contributes.problems` and `contributes.metricQueries`. */
+  /** 1, or 2 for `contributes.problems`, `contributes.metricQueries` and `translations`. */
   sextantApi: 1 | typeof SEXTANT_API;
   /** The HTML file every view opens, relative to the package root. */
   entry: string;
@@ -166,7 +166,15 @@ export interface ManifestFile {
   contributes: ManifestContributions;
   /** Code that runs outside the window: a WebAssembly component, the hosts it may call, its credentials (ADR-0131). */
   backend?: ManifestBackend;
+  /**
+   * Translations of the texts above (sextantApi 2): language tag (`de`, `pt-BR`) → text key (`name`, `description`,
+   * `pages.<id>.title`, `problems.<id>.message`, …) → text. Untranslated texts are shown in English.
+   */
+  translations?: ManifestTranslations;
 }
+
+/** Language tag → text key → text. */
+export type ManifestTranslations = Record<string, Record<string, string>>;
 
 /** `backend` as written: `network` and `credentials` may be left out. */
 export interface ManifestBackend {
@@ -210,5 +218,6 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       credentials: file.backend.credentials ?? [],
     };
   }
+  if (file.translations !== undefined && Object.keys(file.translations).length > 0) manifest.translations = file.translations;
   return manifest;
 }

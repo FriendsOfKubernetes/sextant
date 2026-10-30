@@ -4,6 +4,7 @@
 export { registerExtension, registeredExtensions, syncExtensions, unregisterExtension } from "./contributions";
 export { ExtensionFrame, ExtensionSettingsFrame, FRAME_SANDBOX, type ExtensionFrameProps } from "./ExtensionFrame";
 export { ExtensionsHost } from "./ExtensionsHost";
+export { localizeExtension, localizeManifest } from "./localize";
 export { pushNotice, resetNotices, useNotices, type Notice } from "./notices";
 export * from "./protocol";
 export {

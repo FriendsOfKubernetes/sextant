@@ -4,21 +4,19 @@
 
 Optional, operator-specific views are to move from the core into catalog extensions over time (#320). The first one
 is written as an extension from the start: Rook Ceph (#319), once extensions can report problems (ADR-0137) and read
-metrics (ADR-0138). It has to prove that an operator view is possible with nothing an outside author lacks. It is
-also the reference example of an operator extension.
+metrics (ADR-0138). It has to prove that an operator view is possible with nothing an outside author lacks.
 
 ## Decision
 
-- **Source next to the SDK.** The extension lives in `sdk/examples/rook-ceph`, beside the other examples:
-  - it is built against the SDK of the same commit;
-  - `npm run sdk:check` type-checks it, tests it, builds it and packs it in a dry run;
-  - a Rust test (`the_sdk_template_and_examples_have_manifests_sextant_accepts`) has Sextant's own parser accept its
-    manifest.
+- **A module of Sextant's own, not an example.** The extension lives in `extensions/rook-ceph`, the folder of
+  Sextant's own extensions, apart from the SDK's examples. The id is `sextant.rook-ceph`.
+  - It is built against the SDK of the same commit.
+  - `npm run sdk:check` type-checks, tests, builds and packs (dry run) every folder of `extensions/`.
+  - A Rust test (`the_sdk_examples_and_sextants_extensions_have_manifests_sextant_accepts`) has Sextant's own parser
+    accept its manifest.
 
-  The id is `sextant.rook-ceph`, not `sextant.example.*`, because it is meant to be used. Until #320 sets up releases
-  of first-party extensions from the catalog repository, it is released like the examples:
-  `FriendsOfKubernetes/sextant-extension-examples` builds it at a Sextant commit and signs it with that repository's
-  key, under a catalog entry of its own.
+  It is released on its own version from the catalog repository `FriendsOfKubernetes/sextant-extensions`, signed with
+  a key of Sextant's own extensions, not the examples' key (#320).
 - **Public API only.** No core change was made for it. If a later operator extension needs something the API lacks,
   that becomes an issue and an ADR, not a private hook. Four pieces cover what it needs:
   - the manifest's contributions:
@@ -68,9 +66,9 @@ also the reference example of an operator extension.
   dry run. Rook declares its statuses with `x-kubernetes-preserve-unknown-fields`, so the API server would keep a
   misspelt field; the script also walks every field against the CRD's schema. A real Rook cluster is not part of CI:
   Ceph needs raw devices and several GB of memory.
-- **English only for now.** Extensions have no way to translate manifest texts, and the SDK has no catalogs for frame
-  texts. That gap belongs to #320's bar ("every language") and is tracked in #323; until then the extension's
-  texts are English.
+- **Every language Sextant has.** Its manifest's texts are translated in `translations` and its pages' texts in
+  catalogs `src/locales/<lang>.json` (ADR-0140, #323). A test keeps every catalog equal to English and the manifest
+  translated whole into every language of `src/locales/`.
 
 ## Consequences
 
@@ -78,5 +76,4 @@ also the reference example of an operator extension.
   any extension gets.
 - Problems of Rook Ceph form one category named after the extension. Agents never receive them (ADR-0137).
 - Rook keeps changing; a new label or field is a change of the extension only, released on its own version.
-- A release needs `rook-ceph` in the examples repository's release workflow and an entry in the catalog repository.
-  Both are outside this repository.
+- A release needs a release workflow and a signing key in the catalog repository, and an entry there.

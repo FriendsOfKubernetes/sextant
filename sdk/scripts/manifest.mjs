@@ -108,6 +108,7 @@ const ASSERTIONS = new Set([
   "properties",
   "required",
   "additionalProperties",
+  "maxProperties",
   "items",
   "minItems",
   "maxItems",
@@ -216,15 +217,23 @@ function checkArray(root, schema, items, path) {
 function checkObject(root, schema, fields, path) {
   const properties = isObject(schema.properties) ? schema.properties : null;
   const keys = sortedKeys(fields);
+  const known = (k) => properties !== null && Object.hasOwn(properties, k);
   if (schema.additionalProperties === false) {
-    const unknown = keys.find((k) => !(properties && Object.hasOwn(properties, k)));
+    const unknown = keys.find((k) => !known(k));
     if (unknown !== undefined) fail([...path, unknown], "unknown field");
+  }
+  if (typeof schema.maxProperties === "number" && keys.length > schema.maxProperties) {
+    fail(path, `must have at most ${schema.maxProperties} entries`);
   }
   if (Array.isArray(schema.required)) {
     for (const name of schema.required) if (!Object.hasOwn(fields, name)) fail([...path, name], "is required");
   }
   if (properties) {
     for (const key of keys) if (Object.hasOwn(properties, key)) check(root, properties[key], fields[key], [...path, key]);
+  }
+  // A map: every other field is checked against one schema.
+  if (isObject(schema.additionalProperties)) {
+    for (const key of keys) if (!known(key)) check(root, schema.additionalProperties, fields[key], [...path, key]);
   }
 }
 
@@ -705,6 +714,75 @@ function checkMetricQueries(manifest) {
   });
 }
 
+/** A language tag as Sextant's own languages are written: `de`, `pt-BR`, `zh-CN`, `sr-Latn`, `es-419`. */
+export function isLanguageTag(tag) {
+  return /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$/.test(tag);
+}
+
+/** Every text of the manifest a translation may give: key → `{max, message?}` (the English message of a rule). */
+export function translatableTexts(manifest) {
+  const c = manifest.contributes ?? {};
+  const out = new Map([
+    ["name", { max: 80 }],
+    ["description", { max: 500 }],
+  ]);
+  const title = { max: 80 };
+  for (const page of c.pages ?? []) {
+    out.set(`pages.${page.id}.title`, title);
+    if (page.sectionTitle !== undefined) out.set(`pages.${page.id}.sectionTitle`, title);
+  }
+  for (const section of c.detailsSections ?? []) out.set(`detailsSections.${section.id}.title`, title);
+  for (const action of c.actions ?? []) out.set(`actions.${action.id}.title`, title);
+  for (const column of c.columns ?? []) out.set(`columns.${column.id}.title`, title);
+  for (const dock of c.dockActions ?? []) out.set(`dockActions.${dock.id}.title`, title);
+  if (c.settings !== undefined) out.set("settings.title", title);
+  for (const rule of c.problems ?? []) {
+    out.set(`problems.${rule.id}.title`, title);
+    out.set(`problems.${rule.id}.message`, { max: 300, message: rule.message });
+  }
+  for (const query of c.metricQueries ?? []) out.set(`metricQueries.${query.id}.title`, title);
+  for (const credential of manifest.backend?.credentials ?? []) out.set(`backend.credentials.${credential.id}.label`, title);
+  return out;
+}
+
+const sortedPlaceholders = (text) => placeholders(text)?.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)) ?? null;
+
+/** What Sextant checks of `translations` beyond the schema, in its order (languages, then keys). */
+function checkTranslations(manifest) {
+  const translations = manifest.translations ?? {};
+  const languages = sortedKeys(translations);
+  if (languages.length === 0) return;
+  const root = ["translations"];
+  if (manifest.sextantApi < PROBLEMS_API) fail(root, `needs sextantApi ${PROBLEMS_API} or later`);
+  const texts = translatableTexts(manifest);
+  for (const language of languages) {
+    const here = [...root, language];
+    if (!isLanguageTag(language)) fail(here, "must be a language tag such as `de`, `pt-BR` or `zh-CN`");
+    if (language === "en") fail(here, "English is the manifest itself: translate to other languages only");
+    const translated = translations[language];
+    for (const key of sortedKeys(translated)) {
+      const path = [...here, key];
+      const text = translated[key];
+      const kind = texts.get(key);
+      if (!kind) fail(path, `\`${key}\` is not a text of this manifest`);
+      if (text.trim() === "") fail(path, "must not be blank");
+      if ([...text].length > kind.max) fail(path, `must be at most ${kind.max} characters`);
+      if (kind.message !== undefined && !equal(sortedPlaceholders(text), sortedPlaceholders(kind.message))) {
+        fail(path, "must have the same `{{…}}` placeholders as the English message");
+      }
+    }
+    // A problem's title is its reason: unique among the rules in every language.
+    const titles = [];
+    for (const rule of manifest.contributes?.problems ?? []) {
+      const key = `problems.${rule.id}.title`;
+      const title = Object.hasOwn(translated, key) ? translated[key] : rule.title;
+      const other = titles.find((t) => t.title === title);
+      if (other) fail([...here, key], `is also the title of the rule \`${other.id}\` in this language`);
+      titles.push({ id: rule.id, title });
+    }
+  }
+}
+
 /** The problem with a parsed manifest (see `readJson`) as `{path, message}`, or `null` when Sextant accepts it. */
 export function validateManifest(value, schema = manifestSchema()) {
   try {
@@ -717,6 +795,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     checkUniqueIds(value);
     checkProblems(value);
     checkMetricQueries(value);
+    checkTranslations(value);
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };

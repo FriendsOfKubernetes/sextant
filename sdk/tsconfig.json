@@ -22,6 +22,6 @@
       "@sextant/extension-sdk/backend": ["./src/backend.ts"]
     }
   },
-  "include": ["src", "template/src", "examples/*/src", "examples/*/backend/*.ts"],
-  "exclude": ["**/*.test.ts", "**/dist"]
+  "include": ["src", "template/src", "examples/*/src", "examples/*/backend/*.ts", "../extensions/*/src"],
+  "exclude": ["**/*.test.ts", "../extensions/**/*.test.ts", "**/dist"]
 }

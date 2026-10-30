@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/FriendsOfKubernetes/sextant/extension-manifest.schema.json",
   "title": "Sextant extension manifest (sextant-extension.json)",
-  "description": "Sextant reads this schema itself (crates/sextant-core/src/extensions/schema.rs) and adds checks a schema cannot express: sextantApi must be one Sextant supports, contribution ids are unique per contribution type, and problem rules (sextantApi 2) have unique titles, judge at most 10 kinds, nest `all`/`any` at most 3 deep with 20 conditions per rule, and use field paths (`.a.b`, `[0]`, `[\"key\"]`) that read no Secret values or inline secret fields, at most 5 of them as `{{…}}` placeholders in a message. Metric queries (sextantApi 2) have unique parameter names, use each parameter as a `{{name}}` placeholder (a namespace, name or labelValue only inside a \"…\" string, a duration only outside strings) and have no comments. `format` names Sextant's own formats (extension-id, contribution-id, semver, entry-path, identifier, non-blank, json-path); `pattern` says the same as a regular expression for other validators (json-path has none: it is the JSONPath subset of CRD printer columns).",
+  "description": "Sextant reads this schema itself (crates/sextant-core/src/extensions/schema.rs) and adds checks a schema cannot express: sextantApi must be one Sextant supports, contribution ids are unique per contribution type, and problem rules (sextantApi 2) have unique titles, judge at most 10 kinds, nest `all`/`any` at most 3 deep with 20 conditions per rule, and use field paths (`.a.b`, `[0]`, `[\"key\"]`) that read no Secret values or inline secret fields, at most 5 of them as `{{…}}` placeholders in a message. Metric queries (sextantApi 2) have unique parameter names, use each parameter as a `{{name}}` placeholder (a namespace, name or labelValue only inside a \"…\" string, a duration only outside strings) and have no comments. Translations (sextantApi 2) name texts this manifest has, keep their limits and, for a problem message, exactly the English placeholders. `format` names Sextant's own formats (extension-id, contribution-id, semver, entry-path, identifier, non-blank, json-path); `pattern` says the same as a regular expression for other validators (json-path has none: it is the JSONPath subset of CRD printer columns).",
   "type": "object",
   "additionalProperties": false,
   "required": ["id", "name", "version", "description", "author", "sextantApi", "entry", "permissions", "contributes"],
@@ -40,7 +40,7 @@
       "pattern": "\\S"
     },
     "sextantApi": {
-      "description": "Major version of the extension API the extension is written for; Sextant supports 1 and 2 (2 adds `contributes.problems`).",
+      "description": "Major version of the extension API the extension is written for; Sextant supports 1 and 2 (2 adds `contributes.problems`, `contributes.metricQueries` and `translations`).",
       "type": "integer",
       "enum": [1, 2]
     },
@@ -96,6 +96,16 @@
             }
           }
         }
+      }
+    },
+    "translations": {
+      "description": "Translations of the manifest's texts (sextantApi 2): language tag (`de`, `pt-BR`, `zh-CN`) → text key (`name`, `description`, `pages.<id>.title`, `problems.<id>.message`, …) → text. English is the manifest itself; a text not translated is shown in English. Metric queries, kinds and paths are never translated.",
+      "type": "object",
+      "maxProperties": 30,
+      "additionalProperties": {
+        "type": "object",
+        "maxProperties": 300,
+        "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 500 }
       }
     }
   },

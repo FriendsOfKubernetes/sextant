@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type PendingInstall } from "../../api";
 import { Badge, Button, Dialog, ErrorState } from "../../components";
-import { pushNotice, refreshExtensions } from "../../extensions";
+import { localizeManifest, pushNotice, refreshExtensions } from "../../extensions";
 import { BackendConsent } from "./BackendDialogs";
 import { ExtensionIcon } from "./ExtensionIcon";
 import { MetricsConsent } from "./MetricsConsent";
@@ -21,8 +21,10 @@ export interface ConsentDialogProps {
 }
 
 export function ConsentDialog({ pending, review = false, onClose }: ConsentDialogProps) {
-  const { t } = useTranslation();
-  const { manifest, source } = pending;
+  const { t, i18n } = useTranslation();
+  const { source } = pending;
+  // The texts in the UI language (ADR-0140); metric queries and permissions are never translated.
+  const manifest = localizeManifest(pending.manifest, i18n.language);
   const [installing, setInstalling] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const update = pending.replaces !== null && !review;

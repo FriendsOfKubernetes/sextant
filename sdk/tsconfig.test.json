@@ -8,6 +8,6 @@
     "checkJs": false,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "test", "template/src", "examples/*/src", "vitest.config.ts"],
+  "include": ["src", "test", "template/src", "examples/*/src", "../extensions/*/src", "vitest.config.ts"],
   "exclude": ["**/dist"]
 }

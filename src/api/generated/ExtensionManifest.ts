@@ -30,4 +30,8 @@ icon?: string, permissions: ExtensionPermissions, contributes: Contributions,
 /**
  * Code that runs outside the window (ADR-0131).
  */
-backend?: BackendManifest, };
+backend?: BackendManifest, 
+/**
+ * Translations of its texts (ADR-0140): language tag → text key (`pages.<id>.title`, …) → text.
+ */
+translations?: { [key in string]: { [key in string]: string } }, };

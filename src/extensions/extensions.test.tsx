@@ -9,6 +9,7 @@ import { AppShell } from "../layout/AppShell";
 import { getDetailsSections } from "../layout/details/registry";
 import { getDockActions } from "../layout/dock/registry";
 import { getPage, registerPage, unregisterPage } from "../layout/pages";
+import { i18n } from "../i18n";
 import { getResourceDef } from "../resources/registry";
 import { registerExtension, syncExtensions, unregisterExtension } from "./contributions";
 import { ExtensionSettingsFrame } from "./ExtensionFrame";
@@ -329,6 +330,27 @@ describe("contributions of an extension", () => {
     expect(screen.getByRole("main")).toHaveTextContent("cluster overview");
     expect(useAppStore.getState().clusterViews.c1?.view).toBeNull();
     expect(frames()).toHaveLength(0);
+  });
+
+  it("show their texts in the UI language when the manifest translates them, English otherwise", async () => {
+    const translations = {
+      ru: { "pages.board.sectionTitle": "Инструменты виджетов", "detailsSections.info.title": "Сведения о виджете" },
+    };
+    list = [info({ manifest: { ...manifest, sextantApi: 2, translations } })];
+    await renderShell();
+    const sidebar = screen.getByRole("navigation", { name: "Sections" });
+    expect(within(sidebar).getByRole("button", { name: "Widget tools" })).toBeInTheDocument();
+    await act(() => i18n.changeLanguage("ru"));
+    try {
+      await waitFor(() => expect(within(sidebar).getByRole("button", { name: "Инструменты виджетов" })).toBeInTheDocument());
+      const sections = getDetailsSections({ group: "demo.sextant.dev", version: "v1", kind: "Widget" }).map((s) => s.label);
+      expect(sections).toContain("Сведения о виджете");
+      // Not translated: shown in English.
+      expect(sections).toContain("Widget graph");
+    } finally {
+      await act(() => i18n.changeLanguage("en"));
+    }
+    await waitFor(() => expect(within(sidebar).getByRole("button", { name: "Widget tools" })).toBeInTheDocument());
   });
 
   it("never take the place of Sextant's overview as the start page or the fallback", async () => {

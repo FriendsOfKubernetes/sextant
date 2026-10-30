@@ -4,6 +4,7 @@ export { connect, type ConnectOptions, type Sextant, type Watch, type WatchHandl
 export { SextantError, isSextantError } from "./errors";
 export { applyTheme, addBaseStyles, type ThemeOptions } from "./theme";
 export { trackObjects, objectKey } from "./live";
+export { createI18n, catalogProblems, matchLanguage, type Catalog, type Catalogs, type I18n, type TranslationValues } from "./i18n";
 export type * from "./api";
 export type { HostContext, FrameView, RequestId } from "./protocol";
 export { PROTOCOL_VERSION, THEME_TOKENS } from "./protocol";

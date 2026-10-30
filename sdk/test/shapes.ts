@@ -45,6 +45,7 @@ export const MANIFEST_SHAPES = {
     permissions: "required",
     contributes: "required",
     backend: "optional",
+    translations: "optional",
   }),
   ManifestBackend: described<ManifestBackend>("/properties/backend", {
     module: "required",

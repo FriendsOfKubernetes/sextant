@@ -1,8 +1,10 @@
 // The installed extensions as the window knows them: `api.extensions.list()`, asked again on `extensions-changed`, and
 // a counter per extension that grows on `extension-files-changed` (development mode), which reloads its frames.
 // One shared copy: it starts with its first subscriber and stops (forgetting the list) after the last one leaves.
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
+import { useTranslation } from "react-i18next";
 import { api, events, toApiError, type ApiError, type ExtensionInfo, type Unsubscribe } from "../api";
+import { localizeExtension } from "./localize";
 
 export interface ExtensionsSnapshot {
   /** Installed extensions (any state); empty until the first answer. */
@@ -68,15 +70,24 @@ function subscribe(listener: () => void): () => void {
 
 const getSnapshot = () => snapshot;
 
-/** Installed extensions with their states, kept up to date. */
+/** Installed extensions with their states, kept up to date, their texts in the UI language (ADR-0140). */
 export function useExtensions(): ExtensionsSnapshot & { refresh: () => Promise<void> } {
   const current = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  return { ...current, refresh: refreshExtensions };
+  const { i18n } = useTranslation();
+  const language = i18n.language;
+  const extensions = useMemo(
+    () => current.extensions.map((info) => localizeExtension(info, language)),
+    [current.extensions, language],
+  );
+  return { ...current, extensions, refresh: refreshExtensions };
 }
 
-/** One installed extension, kept up to date (`undefined` when it is not installed or the list is not read yet). */
+/** One installed extension, kept up to date (`undefined` when it is not installed or the list is not read yet), its
+ * texts in the UI language. */
 export function useExtension(id: string): ExtensionInfo | undefined {
-  return useSyncExternalStore(subscribe, () => findExtension(id), () => findExtension(id));
+  const info = useSyncExternalStore(subscribe, () => findExtension(id), () => findExtension(id));
+  const { i18n } = useTranslation();
+  return useMemo(() => info && localizeExtension(info, i18n.language), [info, i18n.language]);
 }
 
 /** How many times the extension's files changed (development mode): a new value means its frames reload. */

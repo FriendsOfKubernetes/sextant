@@ -636,6 +636,70 @@
           }
         ]
       }
+    },
+    {
+      "name": "translations of the manifest's texts (sextantApi 2)",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "ru": {
+            "name": "Ceph",
+            "description": "Ceph с первого взгляда",
+            "pages.overview.title": "Ceph",
+            "problems.error.title": "Ошибка Ceph",
+            "problems.error.message": "{{.metadata.name}}: {{.status.ceph.health}}",
+            "metricQueries.health.title": "Состояние"
+          },
+          "pt-BR": {
+            "problems.warn.title": "Aviso do Ceph"
+          }
+        }
+      }
     }
   ],
   "invalid": [
@@ -2605,6 +2669,753 @@
       },
       "path": "contributes.metricQueries[1].id",
       "message": "duplicate id `q` (also contributes.metricQueries[0])"
+    },
+    {
+      "name": "a translation of a text the manifest does not have",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "de": {
+            "pages.missing.title": "x"
+          }
+        }
+      },
+      "path": "translations.de.pages.missing.title",
+      "message": "`pages.missing.title` is not a text of this manifest"
+    },
+    {
+      "name": "a translated metric query",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "de": {
+            "metricQueries.health.query": "x"
+          }
+        }
+      },
+      "path": "translations.de.metricQueries.health.query",
+      "message": "`metricQueries.health.query` is not a text of this manifest"
+    },
+    {
+      "name": "a translated message with other placeholders",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "de": {
+            "problems.error.message": "{{.metadata.name}}"
+          }
+        }
+      },
+      "path": "translations.de.problems.error.message",
+      "message": "must have the same `{{…}}` placeholders as the English message"
+    },
+    {
+      "name": "a translated message that adds a placeholder",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "de": {
+            "problems.warn.message": "Warnung {{.metadata.name}}"
+          }
+        }
+      },
+      "path": "translations.de.problems.warn.message",
+      "message": "must have the same `{{…}}` placeholders as the English message"
+    },
+    {
+      "name": "a translated title over 80 characters",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "de": {
+            "pages.overview.title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          }
+        }
+      },
+      "path": "translations.de.pages.overview.title",
+      "message": "must be at most 80 characters"
+    },
+    {
+      "name": "a blank translation",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "de": {
+            "name": "   "
+          }
+        }
+      },
+      "path": "translations.de.name",
+      "message": "must not be blank"
+    },
+    {
+      "name": "an empty translation",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "de": {
+            "name": ""
+          }
+        }
+      },
+      "path": "translations.de.name",
+      "message": "must not be empty"
+    },
+    {
+      "name": "a translation that is not text",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "de": {
+            "name": 1
+          }
+        }
+      },
+      "path": "translations.de.name",
+      "message": "must be a string"
+    },
+    {
+      "name": "a malformed language tag",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "pt_BR": {
+            "name": "x"
+          }
+        }
+      },
+      "path": "translations.pt_BR",
+      "message": "must be a language tag such as `de`, `pt-BR` or `zh-CN`"
+    },
+    {
+      "name": "English as a translation",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "en": {
+            "name": "x"
+          }
+        }
+      },
+      "path": "translations.en",
+      "message": "English is the manifest itself: translate to other languages only"
+    },
+    {
+      "name": "rule titles that clash in a translation",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "de": {
+            "problems.warn.title": "Ceph error"
+          }
+        }
+      },
+      "path": "translations.de.problems.warn.title",
+      "message": "is also the title of the rule `error` in this language"
+    },
+    {
+      "name": "translations with sextantApi 1",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 1,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ]
+        },
+        "/translations": {
+          "de": {
+            "name": "Ceph"
+          }
+        }
+      },
+      "path": "translations",
+      "message": "needs sextantApi 2 or later"
+    },
+    {
+      "name": "translations into more than 30 languages",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes": {
+          "pages": [
+            {
+              "id": "overview",
+              "title": "Ceph",
+              "section": "storage"
+            }
+          ],
+          "problems": [
+            {
+              "id": "error",
+              "title": "Ceph error",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "{{.status.ceph.health}} in {{.metadata.name}}"
+            },
+            {
+              "id": "warn",
+              "title": "Ceph warning",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephCluster"
+              },
+              "when": {
+                "type": "exists",
+                "path": ".status"
+              },
+              "message": "warning"
+            }
+          ],
+          "metricQueries": [
+            {
+              "id": "health",
+              "title": "Health",
+              "query": "up"
+            }
+          ]
+        },
+        "/translations": {
+          "la": {},
+          "lb": {},
+          "lc": {},
+          "ld": {},
+          "le": {},
+          "lf": {},
+          "lg": {},
+          "lh": {},
+          "li": {},
+          "lj": {},
+          "lk": {},
+          "ll": {},
+          "lm": {},
+          "ln": {},
+          "lo": {},
+          "lp": {},
+          "lq": {},
+          "lr": {},
+          "ls": {},
+          "lt": {},
+          "lu": {},
+          "lv": {},
+          "lw": {},
+          "lx": {},
+          "ly": {},
+          "lz": {},
+          "xa": {},
+          "xb": {},
+          "xc": {},
+          "xd": {},
+          "xe": {}
+        }
+      },
+      "path": "translations",
+      "message": "must have at most 30 entries"
     }
   ]
 }
