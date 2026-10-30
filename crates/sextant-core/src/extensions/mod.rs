@@ -13,6 +13,7 @@
 pub mod catalog;
 pub mod installed;
 pub mod manifest;
+pub mod metric_queries;
 pub mod package;
 pub mod permissions;
 pub mod problems;

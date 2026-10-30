@@ -596,6 +596,46 @@
           }
         ]
       }
+    },
+    {
+      "name": "metric queries (sextantApi 2) with every parameter type and a range",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "used-bytes",
+            "title": "Used capacity",
+            "query": "sum(rate(ceph_osd_op_w_in_bytes{namespace=\"{{ns}}\",ceph_daemon=~\"{{daemon}}\",pool=\"{{pool}}\"}[{{window}}]))",
+            "params": [
+              {
+                "name": "ns",
+                "type": "namespace"
+              },
+              {
+                "name": "daemon",
+                "type": "name"
+              },
+              {
+                "name": "pool",
+                "type": "labelValue"
+              },
+              {
+                "name": "window",
+                "type": "duration"
+              }
+            ],
+            "range": {
+              "maxHours": 24
+            }
+          },
+          {
+            "id": "up",
+            "title": "Up",
+            "query": "up"
+          }
+        ]
+      }
     }
   ],
   "invalid": [
@@ -2280,6 +2320,291 @@
       },
       "path": "contributes.problems[0].when.value",
       "message": "does not match any of the allowed shapes"
+    },
+    {
+      "name": "metric queries under sextantApi 1",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 1,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up"
+          }
+        ]
+      },
+      "path": "contributes.metricQueries",
+      "message": "needs sextantApi 2 or later"
+    },
+    {
+      "name": "a metric query parameter outside a string",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up{namespace={{ns}}}",
+            "params": [
+              {
+                "name": "ns",
+                "type": "namespace"
+              }
+            ]
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].query",
+      "message": "`{{ns}}` goes inside a \"…\" string"
+    },
+    {
+      "name": "a metric query duration inside a string",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "rate(up{a=\"{{w}}\"}[5m])",
+            "params": [
+              {
+                "name": "w",
+                "type": "duration"
+              }
+            ]
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].query",
+      "message": "the duration `{{w}}` goes outside strings"
+    },
+    {
+      "name": "a metric query parameter in a single-quoted string",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up{namespace='{{ns}}'}",
+            "params": [
+              {
+                "name": "ns",
+                "type": "namespace"
+              }
+            ]
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].query",
+      "message": "`{{ns}}` is in a '…' or `…` string: a parameter goes only into a \"…\" string"
+    },
+    {
+      "name": "a metric query placeholder of no parameter",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up{namespace=\"{{other}}\"}",
+            "params": [
+              {
+                "name": "ns",
+                "type": "namespace"
+              }
+            ]
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].query",
+      "message": "`{{other}}` is not a parameter of this query"
+    },
+    {
+      "name": "a metric query parameter not used",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up",
+            "params": [
+              {
+                "name": "ns",
+                "type": "namespace"
+              }
+            ]
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].params[0]",
+      "message": "`ns` is not used in the query"
+    },
+    {
+      "name": "a metric query parameter named twice",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up{namespace=\"{{ns}}\"}",
+            "params": [
+              {
+                "name": "ns",
+                "type": "namespace"
+              },
+              {
+                "name": "ns",
+                "type": "name"
+              }
+            ]
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].params[1].name",
+      "message": "duplicate parameter `ns` (also contributes.metricQueries[0].params[0])"
+    },
+    {
+      "name": "a metric query with a comment",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up # comment"
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].query",
+      "message": "comments (`#`) are not allowed"
+    },
+    {
+      "name": "a metric query with a string not closed",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up{a=\"x}"
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].query",
+      "message": "a string is not closed"
+    },
+    {
+      "name": "a metric query placeholder not closed",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up{a=\"{{ns\"}",
+            "params": [
+              {
+                "name": "ns",
+                "type": "namespace"
+              }
+            ]
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].query",
+      "message": "a `{{` is not closed by `}}`"
+    },
+    {
+      "name": "a metric query parameter of an unknown type",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up{a=\"{{ns}}\"}",
+            "params": [
+              {
+                "name": "ns",
+                "type": "promql"
+              }
+            ]
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].params[0].type",
+      "message": "must be one of: `namespace`, `name`, `labelValue`, `duration`"
+    },
+    {
+      "name": "a metric query range over a week",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up",
+            "range": {
+              "maxHours": 169
+            }
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].range.maxHours",
+      "message": "must be at most 168"
+    },
+    {
+      "name": "a metric query with an unknown field",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up",
+            "promql": "up"
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[0].promql",
+      "message": "unknown field"
+    },
+    {
+      "name": "metric queries with the same id",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 2,
+        "/contributes/metricQueries": [
+          {
+            "id": "q",
+            "title": "Q",
+            "query": "up"
+          },
+          {
+            "id": "q",
+            "title": "Q2",
+            "query": "up"
+          }
+        ]
+      },
+      "path": "contributes.metricQueries[1].id",
+      "message": "duplicate id `q` (also contributes.metricQueries[0])"
     }
   ]
 }

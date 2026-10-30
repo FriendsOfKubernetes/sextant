@@ -437,12 +437,12 @@ mod tests {
         );
         let agreed = problem_kinds(&m);
         assert!(problems_within(&m, Some(&agreed)));
-        assert!(asks_within(&m, &m.permissions, None, Some(&agreed)));
+        assert!(asks_within(&m, &m.permissions, None, Some(&agreed), None));
         // A kind not agreed to (an update that judges Nodes now), or nothing agreed to: consent again.
         let fewer = [kind("ceph.rook.io", "CephCluster")];
         assert!(!problems_within(&m, Some(&fewer)));
-        assert!(!asks_within(&m, &m.permissions, None, Some(&fewer)));
-        assert!(!asks_within(&m, &m.permissions, None, None));
+        assert!(!asks_within(&m, &m.permissions, None, Some(&fewer), None));
+        assert!(!asks_within(&m, &m.permissions, None, None, None));
         // Without rules nothing needs agreeing to.
         assert!(problems_within(&manifest(json!([])), None));
     }

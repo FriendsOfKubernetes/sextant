@@ -243,6 +243,9 @@ impl ExtensionHost {
             });
         let granted_backend = existing.as_ref().and_then(|e| e.granted_backend.clone());
         let granted_problems = existing.as_ref().and_then(|e| e.granted_problems.clone());
+        let granted_metric_queries = existing
+            .as_ref()
+            .and_then(|e| e.granted_metric_queries.clone());
         let token = new_token()?;
         let listed_in_catalog = if matches!(source, ExtensionSource::Catalog { .. }) {
             None
@@ -261,6 +264,7 @@ impl ExtensionHost {
                 &granted,
                 granted_backend.as_ref(),
                 granted_problems.as_deref(),
+                granted_metric_queries.as_deref(),
             ),
             manifest: manifest.clone(),
             source: source.clone(),
@@ -427,6 +431,10 @@ impl ExtensionHost {
             granted_problems: {
                 let kinds = problem_kinds(&manifest);
                 (!kinds.is_empty()).then_some(kinds)
+            },
+            granted_metric_queries: {
+                let queries = manifest.contributes.metric_queries.clone();
+                (!queries.is_empty()).then_some(queries)
             },
         };
         let saved = self.inner.settings.update(|settings| {

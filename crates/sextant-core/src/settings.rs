@@ -1764,6 +1764,7 @@ mod tests {
             installed_at: 1_760_000_000_000,
             granted_backend: None,
             granted_problems: None,
+            granted_metric_queries: None,
         };
         store
             .update(|s| s.extensions.push(installed.clone()))

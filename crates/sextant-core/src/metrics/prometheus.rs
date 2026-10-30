@@ -230,6 +230,39 @@ impl Prometheus {
         answer_data(status, &body)
     }
 
+    /// Range query from `start` to `end` every `step` seconds (with the server-side timeout), the answer read up to
+    /// `limit` bytes, as [`Prometheus::query_limited`] does for an instant query (a GET refused as too long is sent
+    /// again as a form POST only when Prometheus is reached by its own URL).
+    pub(crate) async fn query_range_limited(
+        &self,
+        promql: &str,
+        start: i64,
+        end: i64,
+        step: i64,
+        limit: usize,
+    ) -> CoreResult<Value> {
+        let form = format!(
+            "query={}&start={start}&end={end}&step={step}&timeout={}",
+            encode(promql),
+            rightsizing::SERVER_TIMEOUT
+        );
+        let get = http::Request::get(format!("{}/api/v1/query_range?{form}", self.base))
+            .body(Vec::new())
+            .map_err(|e| CoreError::new(ErrorCode::Invalid, e.to_string()))?;
+        let (mut status, mut body) = self.send_limited(get, limit).await?;
+        if too_long(status) && self.direct {
+            let post = http::Request::post(format!("{}/api/v1/query_range", self.base))
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .body(form.into_bytes())
+                .map_err(|e| CoreError::new(ErrorCode::Invalid, e.to_string()))?;
+            (status, body) = self.send_limited(post, limit).await?;
+        }
+        answer_data(status, &body)
+    }
+
     /// `GET <base>/<path>` with the answer read up to `limit` bytes: the status and the body as sent, for a caller that
     /// tells the answers apart itself (the alerting rules' alerts, `crate::alerts`, ADR-0119).
     pub(crate) async fn get_raw_limited(

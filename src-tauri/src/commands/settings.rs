@@ -96,6 +96,7 @@ mod tests {
             installed_at: 1,
             granted_backend: None,
             granted_problems: None,
+            granted_metric_queries: None,
         }
     }
 

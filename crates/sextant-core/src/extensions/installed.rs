@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use super::manifest::{BackendManifest, ExtensionManifest};
+use super::metric_queries::{MetricQuery, metric_queries_within};
 use super::permissions::ExtensionPermissions;
 use super::problems::problems_within;
 use crate::access::KindPattern;
@@ -64,6 +65,10 @@ pub struct InstalledExtension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub granted_problems: Option<Vec<KindPattern>>,
+    /// The metric queries the user agreed to (ADR-0138), word for word; only these run. `None`: none were agreed to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub granted_metric_queries: Option<Vec<MetricQuery>>,
 }
 
 /// The part of a backend the user agrees to: hosts and credential ids.
@@ -86,13 +91,14 @@ impl BackendGrant {
 }
 
 /// Whether `manifest` asks for nothing beyond what was granted: its permissions within `granted`, its backend (if
-/// any) agreed to with every host and credential it names, and every kind its problem rules judge agreed to. A new
-/// backend, host, credential or judged kind needs consent again.
+/// any) agreed to with every host and credential it names, every kind its problem rules judge and every metric query
+/// agreed to. A new backend, host, credential, judged kind or a new or changed metric query needs consent again.
 pub fn asks_within(
     manifest: &ExtensionManifest,
     granted: &ExtensionPermissions,
     granted_backend: Option<&BackendGrant>,
     granted_problems: Option<&[KindPattern]>,
+    granted_metric_queries: Option<&[MetricQuery]>,
 ) -> bool {
     let backend_within = match (&manifest.backend, granted_backend) {
         (None, _) => true,
@@ -111,6 +117,7 @@ pub fn asks_within(
     };
     backend_within
         && problems_within(manifest, granted_problems)
+        && metric_queries_within(manifest, granted_metric_queries)
         && manifest.permissions.is_within(granted)
 }
 

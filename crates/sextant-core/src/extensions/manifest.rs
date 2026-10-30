@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use ts_rs::TS;
 
+use super::metric_queries::{self, MetricQuery};
 use super::permissions::ExtensionPermissions;
 use super::problems::{self, ProblemContribution};
 use super::schema::{self, JsonPath};
@@ -133,6 +134,8 @@ pub struct Contributions {
     pub settings: Option<SettingsContribution>,
     /// Problem rules the window evaluates (ADR-0137); `sextantApi` 2.
     pub problems: Vec<ProblemContribution>,
+    /// Prometheus-compatible queries the extension runs by id (ADR-0138); `sextantApi` 2.
+    pub metric_queries: Vec<MetricQuery>,
 }
 
 /// A page in the cluster's sidebar (`view=page`).
@@ -271,6 +274,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     let manifest: ExtensionManifest =
         serde_json::from_value(value).map_err(|err| whole(format!("cannot be read: {err}")))?;
     problems::check_problems(&manifest)?;
+    metric_queries::check_metric_queries(&manifest)?;
     Ok(manifest)
 }
 
@@ -302,6 +306,7 @@ fn check_unique_ids(manifest: &Value) -> Result<(), ManifestError> {
         "columns",
         "dockActions",
         "problems",
+        "metricQueries",
     ] {
         let Some(items) = manifest
             .get("contributes")

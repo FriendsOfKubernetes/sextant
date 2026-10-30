@@ -313,7 +313,7 @@ fn off() -> CoreError {
     )
 }
 
-async fn required_prometheus(
+pub(crate) async fn required_prometheus(
     mgr: &ClusterManager,
     cluster: &ClusterId,
     mode: &PrometheusMode,

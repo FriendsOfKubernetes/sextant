@@ -164,6 +164,7 @@ fn install_into(dir: &Path, settings: &SettingsStore, id: &str, permissions: Val
                 installed_at: 1,
                 granted_backend: None,
                 granted_problems: None,
+                granted_metric_queries: None,
             });
         })
         .unwrap();
@@ -1184,6 +1185,11 @@ async fn fake_cluster() -> String {
                 StatusCode::OK,
                 r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#,
             ),
+            "/api/v1/namespaces/monitoring/services/prometheus-k8s:9090/proxy/api/v1/query" => (
+                StatusCode::OK,
+                r#"{"status":"success","data":{"resultType":"vector",
+                    "result":[{"metric":{"namespace":"rook-ceph"},"value":[100,"3"]}]}}"#,
+            ),
             "/api/v1/namespaces/team-a/secrets/db" => (
                 StatusCode::OK,
                 r#"{"apiVersion":"v1","kind":"Secret","metadata":{"name":"db","namespace":"team-a"},
@@ -1976,4 +1982,103 @@ fn objects_reach_an_extension_without_their_inline_secret_material() {
     );
     let config_map = json!({ "apiVersion": "v1", "kind": "ConfigMap", "data": { "key": "v" } });
     assert_eq!(without_inline_secrets(config_map.clone()), config_map);
+}
+
+/// Agrees to the metric query `ceph_health_status{namespace="{{ns}}"}` of `id` and points `context`'s metrics at a
+/// Prometheus Service.
+fn agree_to_metric_query(env: &Env, id: &str, context: &str) {
+    let query: sextant_core::extensions::metric_queries::MetricQuery =
+        serde_json::from_value(json!({
+            "id": "health",
+            "title": "Ceph health",
+            "query": "ceph_health_status{namespace=\"{{ns}}\"}",
+            "params": [{ "name": "ns", "type": "namespace" }]
+        }))
+        .unwrap();
+    let cluster = env.cluster_id(context);
+    env.settings
+        .update(|s| {
+            let entry = s.extensions.iter_mut().find(|e| e.id == id).unwrap();
+            entry.granted_metric_queries = Some(vec![query]);
+            let settings = s.clusters.entry(cluster.0.clone()).or_default();
+            settings.prometheus = sextant_core::metrics::PrometheusMode::Manual {
+                target: sextant_core::metrics::PrometheusTarget::Service {
+                    namespace: "monitoring".into(),
+                    service: "prometheus-k8s".into(),
+                    port: 9090,
+                    path_prefix: String::new(),
+                },
+            };
+        })
+        .unwrap();
+}
+
+#[tokio::test]
+async fn a_metric_query_runs_only_when_agreed_to_and_is_journaled_without_its_answer() {
+    let env = Env::at(&fake_cluster().await);
+    env.install(
+        "ceph",
+        perms(only(&["ctx-a"]), &["rook-ceph"], &["read"], false),
+    );
+    let call = |params: Value| {
+        env.api
+            .call(&env.host, "ceph", "metrics.query", params, None)
+    };
+
+    // Not agreed to: refused before the cluster is touched.
+    let err =
+        call(json!({ "clusterId": "ctx-a", "id": "health", "params": { "ns": "rook-ceph" } }))
+            .await
+            .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied);
+    assert!(
+        err.message.contains("not a query of its manifest"),
+        "{}",
+        err.message
+    );
+    let journal = env.api.audit_list(Some("ceph"));
+    assert_eq!(journal[0].tool, "metrics.query");
+    assert_eq!(journal[0].target, "health(ns=rook-ceph)");
+    assert_eq!(journal[0].decision, AuditDecision::Denied);
+    assert!(journal[0].cluster_id.is_none());
+
+    agree_to_metric_query(&env, "ceph", "ctx-a");
+    let answer =
+        call(json!({ "clusterId": "ctx-a", "id": "health", "params": { "ns": "rook-ceph" } }))
+            .await
+            .unwrap();
+    assert_eq!(answer["resultType"], "vector");
+    assert_eq!(answer["series"][0]["points"], json!([[100.0, 3.0]]));
+    let journal = env.api.audit_list(Some("ceph"));
+    assert_eq!(journal[0].decision, AuditDecision::Allowed);
+    assert_eq!(journal[0].result, "ok");
+    assert_eq!(journal[0].cluster_name.as_deref(), Some("ctx-a"));
+
+    // A cluster outside the grant, a bad value, PromQL in place of an id, unknown fields: refused.
+    let err =
+        call(json!({ "clusterId": "ctx-b", "id": "health", "params": { "ns": "rook-ceph" } }))
+            .await
+            .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied);
+    let err = call(
+        json!({ "clusterId": "ctx-a", "id": "health", "params": { "ns": "a\"} or up{x=\"" } }),
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid);
+    let err = call(json!({ "clusterId": "ctx-a", "id": "up", "params": {} }))
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied);
+    let err = call(json!({ "clusterId": "ctx-a", "id": "health", "query": "up" }))
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid);
+    let err = call(
+        json!({ "clusterId": "ctx-a", "id": "health", "params": { "ns": "rook-ceph" },
+        "range": { "minutes": 5, "step": "1m" } }),
+    )
+    .await
+    .unwrap_err();
+    assert!(err.message.contains("instant query"), "{}", err.message);
 }

@@ -22,8 +22,8 @@
 //!
 //! `storage.*` keeps one JSON object per extension in `<data>/extensions-data/<id>.json`, at most [`MAX_STORAGE_BYTES`].
 
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+use std::collections::{BTreeMap, HashMap};
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
@@ -37,6 +37,7 @@ use sextant_core::access::{
     self, AccessAction, AccessPreset, ClusterAccess, Decision, KindPattern, NamespaceScope,
 };
 use sextant_core::error::with_timeout;
+use sextant_core::extensions::metric_queries::{MetricQueryRange, run_metric_query};
 use sextant_core::extensions::{ExtensionPermissions, InstalledExtension, decide_extension};
 use sextant_core::resources::{
     self, KindRef, PatchType, ResourceKind, WatchUpdate, inline_secrets,
@@ -452,6 +453,7 @@ impl ExtensionApi {
             "resources.delete" => call.delete(params).await,
             "logs.tail" => call.logs(params).await,
             "secret.value" => call.secret_value(params).await,
+            "metrics.query" => call.metric_query(params).await,
             _ => Err(invalid(format!("unknown method {method}"))),
         };
         let record = call.record();
@@ -1386,6 +1388,57 @@ impl<'a> ExtCall<'a> {
     // Helpers
 
     /// The kind as the cluster serves it; without a version, the version the cluster serves.
+    /// One of the metric queries the user agreed to (ADR-0138), by id, with the extension's parameter values, in the
+    /// cluster's Prometheus-compatible source. Only the query id and the parameters are journaled, never the answer.
+    async fn metric_query(&self, params: Value) -> CoreResult<Value> {
+        let args: MetricQueryArgs = parse(&self.method, params)?;
+        lock(&self.record).target = clip(&metric_query_target(&args));
+        let entry = match active_off_runtime(self.host, &self.id).await? {
+            Some(entry) => entry,
+            None => {
+                self.decide(AuditDecision::Denied);
+                return Err(inactive(&self.id));
+            }
+        };
+        let Some(query) = entry
+            .granted_metric_queries
+            .iter()
+            .flatten()
+            .find(|q| q.id == args.id)
+            .cloned()
+        else {
+            return Err(self.denied(format!(
+                "Sextant denied metric query {:?} for extension {}: it is not a query of its manifest the user \
+                 agreed to.",
+                args.id,
+                self.name()
+            )));
+        };
+        let cluster = self.open(&args.cluster_id).await?;
+        // The cluster is granted and the query agreed to: that is the whole decision.
+        self.decide(AuditDecision::Allowed);
+        let mode = self
+            .api
+            .settings
+            .get()
+            .clusters
+            .get(&cluster.id.0)
+            .map(|c| c.prometheus.clone())
+            .unwrap_or_default();
+        let now = i64::try_from(now_ms() / 1000).unwrap_or(i64::MAX);
+        let answer = run_metric_query(
+            &self.api.clusters,
+            &cluster.id,
+            &mode,
+            &query,
+            &args.params,
+            args.range.as_ref(),
+            now,
+        )
+        .await?;
+        to_value(&answer)
+    }
+
     async fn find_kind(&self, cluster: &ExtCluster, kind: &KindArg) -> CoreResult<ResourceKind> {
         let name = kind.kind.trim();
         if name.is_empty() {
@@ -1623,6 +1676,32 @@ struct RefArg {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct ClusterArgs {
     cluster_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct MetricQueryArgs {
+    cluster_id: String,
+    id: String,
+    #[serde(default)]
+    params: BTreeMap<String, String>,
+    #[serde(default)]
+    range: Option<MetricQueryRange>,
+}
+
+/// `<id>(<name>=<value>, …)`, and the range when there is one: what the journal says of a metric query.
+fn metric_query_target(args: &MetricQueryArgs) -> String {
+    let params: Vec<String> = args
+        .params
+        .iter()
+        .map(|(name, value)| format!("{name}={value}"))
+        .collect();
+    let range = args
+        .range
+        .as_ref()
+        .map(|r| format!(" over {} min every {}", r.minutes, r.step))
+        .unwrap_or_default();
+    format!("{}({}){range}", args.id, params.join(", "))
 }
 
 #[derive(Deserialize)]

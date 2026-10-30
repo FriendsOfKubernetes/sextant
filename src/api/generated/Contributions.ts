@@ -3,6 +3,7 @@ import type { ActionContribution } from "./ActionContribution";
 import type { ColumnContribution } from "./ColumnContribution";
 import type { DetailsSectionContribution } from "./DetailsSectionContribution";
 import type { DockActionContribution } from "./DockActionContribution";
+import type { MetricQuery } from "./MetricQuery";
 import type { PageContribution } from "./PageContribution";
 import type { ProblemContribution } from "./ProblemContribution";
 import type { SettingsContribution } from "./SettingsContribution";
@@ -14,4 +15,8 @@ export type Contributions = { pages: Array<PageContribution>, detailsSections: A
 /**
  * Problem rules the window evaluates (ADR-0137); `sextantApi` 2.
  */
-problems: Array<ProblemContribution>, };
+problems: Array<ProblemContribution>, 
+/**
+ * Prometheus-compatible queries the extension runs by id (ADR-0138); `sextantApi` 2.
+ */
+metricQueries: Array<MetricQuery>, };

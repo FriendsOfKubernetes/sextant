@@ -3,6 +3,7 @@ import type { BackendGrant } from "./BackendGrant";
 import type { ExtensionPermissions } from "./ExtensionPermissions";
 import type { ExtensionSource } from "./ExtensionSource";
 import type { KindPattern } from "./KindPattern";
+import type { MetricQuery } from "./MetricQuery";
 
 /**
  * One installed extension (`AppSettings::extensions`).
@@ -41,4 +42,8 @@ grantedBackend?: BackendGrant,
  * The kinds the user agreed to have the extension's problem rules judge (ADR-0137); only their rules run. `None`:
  * no rules were agreed to.
  */
-grantedProblems?: Array<KindPattern>, };
+grantedProblems?: Array<KindPattern>, 
+/**
+ * The metric queries the user agreed to (ADR-0138), word for word; only these run. `None`: none were agreed to.
+ */
+grantedMetricQueries?: Array<MetricQuery>, };

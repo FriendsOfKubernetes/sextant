@@ -25,6 +25,7 @@ use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 use sextant_core::SettingsStore;
 use sextant_core::access::KindPattern;
+use sextant_core::extensions::metric_queries::MetricQuery;
 use sextant_core::extensions::{
     BackendGrant, ExtensionManifest, ExtensionPermissions, ExtensionSource, InstalledExtension,
     MANIFEST_FILE, asks_within, inspect_folder, parse_manifest, resolve_package_file,
@@ -95,10 +96,11 @@ type Emitter = Arc<dyn Fn(HostEvent) + Send + Sync>;
 struct Loaded {
     key: String,
     manifest: Result<ExtensionManifest, String>,
-    /// `asks_within(manifest, granted, granted_backend, granted_problems)` for these grants.
+    /// `asks_within(manifest, granted, granted_backend, granted_problems, granted_metric_queries)` for these grants.
     granted: ExtensionPermissions,
     granted_backend: Option<BackendGrant>,
     granted_problems: Option<Vec<KindPattern>>,
+    granted_metric_queries: Option<Vec<MetricQuery>>,
     within: bool,
 }
 
@@ -298,11 +300,13 @@ impl ExtensionHost {
             if current.granted != entry.granted
                 || current.granted_backend != entry.granted_backend
                 || current.granted_problems != entry.granted_problems
+                || current.granted_metric_queries != entry.granted_metric_queries
             {
                 current.within = within(&current.manifest, entry);
                 current.granted = entry.granted.clone();
                 current.granted_backend = entry.granted_backend.clone();
                 current.granted_problems = entry.granted_problems.clone();
+                current.granted_metric_queries = entry.granted_metric_queries.clone();
             }
             (current.manifest.clone(), current.within)
         };
@@ -328,6 +332,7 @@ impl ExtensionHost {
             granted: entry.granted.clone(),
             granted_backend: entry.granted_backend.clone(),
             granted_problems: entry.granted_problems.clone(),
+            granted_metric_queries: entry.granted_metric_queries.clone(),
         };
         let mut loaded = lock(&self.inner.loaded);
         if let Some(current) = loaded.map.get_mut(&entry.id).filter(|l| l.key == read.key) {
@@ -431,6 +436,7 @@ fn within(manifest: &Result<ExtensionManifest, String>, entry: &InstalledExtensi
             &entry.granted,
             entry.granted_backend.as_ref(),
             entry.granted_problems.as_deref(),
+            entry.granted_metric_queries.as_deref(),
         )
     })
 }

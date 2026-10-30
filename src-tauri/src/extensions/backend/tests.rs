@@ -320,7 +320,8 @@ async fn a_new_host_or_credential_brings_consent_back() {
         &parsed,
         &parsed.permissions,
         Some(&grant),
+        None,
         None
     ));
-    assert!(!asks_within(&parsed, &parsed.permissions, None, None));
+    assert!(!asks_within(&parsed, &parsed.permissions, None, None, None));
 }
