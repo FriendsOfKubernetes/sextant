@@ -246,20 +246,30 @@ describe("performance", () => {
     let seed = 42;
     const random = () => (seed = (seed * 1_103_515_245 + 12_345) % 2 ** 31) / 2 ** 31;
     const alphabet = ["\u001b", "[", "]", "P", "\\", "\u0007", ";", "m", "1", "38", "5", "2", "a", " ", "\u009b", "\u009c", "\r", "\n", "<b>"];
-    let worst = 0;
+    const lines: string[] = [];
     for (let n = 0; n < 200; n++) {
       let line = "";
       while (line.length < 2048) line += alphabet[Math.floor(random() * alphabet.length)];
-      const t0 = performance.now();
-      const segments = parseAnsi(line);
-      worst = Math.max(worst, performance.now() - t0);
-      for (const s of segments) expect([...s.text].some((c) => "\u001b\u009b\u009c\u0007\r".includes(c))).toBe(false);
+      lines.push(line);
     }
-    expect(worst).toBeLessThan(50);
+    for (const line of lines) {
+      for (const s of parseAnsi(line)) expect([...s.text].some((c) => "\u001b\u009b\u009c\u0007\r".includes(c))).toBe(false);
+    }
+    // Compared with as many ordinary coloured lines of the same length in the same run, not a fixed time: a loaded
+    // runner is slow for both (#261). They take about as long (0.6–0.7x here); a quadratic path would take ~1000x.
+    const ordinary = Array.from({ length: 200 }, (_, i) => coloured(i).repeat(Math.ceil(2048 / coloured(i).length)).slice(0, 2048));
+    const ordinaryTime = fastest(() => ordinary.forEach((line) => parseAnsi(line)), 3);
+    expect(fastest(() => lines.forEach((line) => parseAnsi(line)), 3)).toBeLessThan(Math.max(30 * ordinaryTime, 20));
   });
 
   it("a search over 100 000 coloured lines reads only the appended lines on each batch", () => {
     let buffer = appendLines(EMPTY_BUFFER, Array.from({ length: 100_000 }, (_, i) => coloured(i)));
+    // The first update is a full search: as fast as `findMatches` over the same lines in the same run, not a fixed
+    // time (#261).
+    const full = fastest(() => findMatches(buffer.lines, "request 99999 took"), 2);
+    expect(fastest(() => new MatchIndex().update(buffer.lines, buffer.dropped, "request 99999 took", "s0"), 2)).toBeLessThan(
+      Math.max(5 * full, 20),
+    );
     const index = new MatchIndex();
     const t0 = performance.now();
     const first = index.update(buffer.lines, buffer.dropped, "request 99999 took", "s1");
@@ -275,7 +285,6 @@ describe("performance", () => {
       // Older lines were discarded (the buffer keeps 100 000): the match moves up.
       expect(found).toEqual([{ line: 99_999 - buffer.dropped, start: expect.any(Number) }]);
     }
-    expect(initial).toBeLessThan(1500);
     // A batch reads 100 lines, a full pass reads 100 000: compare with the full pass measured on the same machine
     // rather than a fixed number of milliseconds (a loaded CI runner took 23 ms for a batch once).
     const median = [...batches].sort((a, b) => a - b)[Math.floor(batches.length / 2)]!;
