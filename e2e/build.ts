@@ -45,7 +45,9 @@ export function buildApp(app = APP, stamp = STAMP): void {
   const build = spawnSync("npm", ["run", "tauri", "--", "build", "--debug", "--no-bundle"], {
     cwd: ROOT,
     stdio: "inherit",
-    env: { ...process.env, PATH: toolPath() },
+    // The bundle users get: WebdriverIO sets NODE_ENV=test, and Vite builds React's development bundle for any
+    // NODE_ENV but production (dev checks, a stack trace per element), which changes both speed and memory.
+    env: { ...process.env, PATH: toolPath(), NODE_ENV: "production" },
     shell: process.platform === "win32",
   });
   if (build.status !== 0) throw new Error("building the app failed");
