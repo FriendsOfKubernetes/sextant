@@ -46,8 +46,12 @@ describe("manifest validator", () => {
 
 /** The object schema at `pointer` (`/$defs/rule`), following `items`. */
 function schemaAt(pointer: string): { properties: Record<string, unknown>; required?: string[] } {
-  let node: unknown = manifestSchema();
+  const root = manifestSchema() as Record<string, unknown>;
+  let node: unknown = root;
   for (const part of pointer.split("/").slice(1)) node = (node as Record<string, unknown>)[part];
+  // `items` of the problem rules is a `$ref` to `$defs/problemRule`.
+  const ref = (node as { $ref?: string }).$ref;
+  if (ref?.startsWith("#/$defs/")) node = (root.$defs as Record<string, unknown>)[ref.slice("#/$defs/".length)];
   return node as { properties: Record<string, unknown>; required?: string[] };
 }
 
@@ -82,7 +86,7 @@ describe("manifest types and the schema", () => {
       [true, true],
     ]);
     const minimal = normalizeManifest(applyCase({ name: "x", base: "minimal" }) as unknown as ManifestFile);
-    expect(minimal.contributes).toEqual({ pages: [], detailsSections: [], actions: [], columns: [], dockActions: [] });
+    expect(minimal.contributes).toEqual({ pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [] });
     expect("icon" in minimal).toBe(false);
   });
 });

@@ -3,9 +3,9 @@
   "id": "sextant.example.crd-view",
   "name": "Widgets",
   "version": "1.0.0",
-  "description": "Example: a view of the test cluster's Widget custom resource — a table column, a details section, a Scale action and a settings section.",
+  "description": "Example: a view of the test cluster's Widget custom resource — a table column, a details section, a Scale action, a settings section and a problem rule.",
   "author": "Sextant",
-  "sextantApi": 1,
+  "sextantApi": 2,
   "entry": "index.html",
   "icon": "customResource",
   "permissions": {
@@ -50,6 +50,16 @@
         "kinds": [{ "group": "demo.sextant.dev", "kind": "Widget" }]
       }
     ],
-    "settings": { "title": "Widgets" }
+    "settings": { "title": "Widgets" },
+    "problems": [
+      {
+        "id": "scaled-to-zero",
+        "title": "Widget scaled to zero",
+        "kind": { "group": "demo.sextant.dev", "kind": "Widget" },
+        "when": { "type": "below", "path": ".spec.replicas", "value": 1 },
+        "graceMinutes": 2,
+        "message": "{{.metadata.name}} asks for {{.spec.replicas}} replicas"
+      }
+    ]
   }
 }

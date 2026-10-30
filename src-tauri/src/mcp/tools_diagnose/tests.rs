@@ -184,7 +184,7 @@ fn problem_categories_are_the_windows() {
         answers::PROBLEM_CATEGORIES
     );
     assert_eq!(
-        list("export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = ["),
+        list("export const OPT_IN_CATEGORIES: readonly BuiltInCategory[] = ["),
         answers::OPT_IN_CATEGORIES
     );
 }

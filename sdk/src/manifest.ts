@@ -5,14 +5,16 @@
 import type { ExtensionManifest } from "./generated/ExtensionManifest";
 import type { KindPattern } from "./generated/KindPattern";
 import type { DetailsPlacement } from "./generated/DetailsPlacement";
+import type { ProblemCondition } from "./generated/ProblemCondition";
+import type { ProblemScalar } from "./generated/ProblemScalar";
 
-export type { ExtensionManifest, KindPattern, DetailsPlacement };
+export type { ExtensionManifest, KindPattern, DetailsPlacement, ProblemCondition, ProblemScalar };
 
 /** The file name of the manifest, at the top of the package. */
 export const MANIFEST_FILE = "sextant-extension.json";
 
-/** The extension API major version this SDK speaks (`sextantApi`). */
-export const SEXTANT_API = 1;
+/** The newest extension API major version this SDK speaks (`sextantApi`); 2 brought `contributes.problems`. */
+export const SEXTANT_API = 2;
 
 /** What an extension may be allowed to do with objects (a subset of the agent's actions). */
 export type ExtensionAction = "read" | "modify" | "delete" | "logs" | "secretValues";
@@ -95,6 +97,27 @@ export interface ManifestSettings {
   title: string;
 }
 
+/**
+ * A problem rule (`sextantApi` 2, ADR-0137): Sextant judges objects of `kind` by `when` on its own watches and lists
+ * a problem titled `title` on the Problems page; no extension code runs for it. Paths are field paths
+ * (`.status.phase`, `.items[0]`, `.metadata.labels["app"]`) that read no Secret values or inline secret fields.
+ */
+export interface ManifestProblem {
+  id: string;
+  /** Shown as the problem's reason; unique among the rules. */
+  title: string;
+  kind: KindPattern;
+  when: ProblemCondition;
+  /** A field holding an RFC 3339 time: when the state began. */
+  since?: string;
+  /** The problem counts only this long after it began. Default `0`. */
+  graceMinutes?: number;
+  /** It may send a notification. Default `true`. */
+  notify?: boolean;
+  /** Text with at most 5 `{{<field path>}}` placeholders. */
+  message: string;
+}
+
 export interface ManifestContributions {
   pages?: ManifestPage[];
   detailsSections?: ManifestDetailsSection[];
@@ -102,6 +125,8 @@ export interface ManifestContributions {
   columns?: ManifestColumn[];
   dockActions?: ManifestDockAction[];
   settings?: ManifestSettings;
+  /** Problem rules; needs `sextantApi` 2. */
+  problems?: ManifestProblem[];
 }
 
 /** `sextant-extension.json` as written. */
@@ -113,7 +138,8 @@ export interface ManifestFile {
   version: string;
   description: string;
   author: string;
-  sextantApi: typeof SEXTANT_API;
+  /** 1, or 2 for `contributes.problems`. */
+  sextantApi: 1 | typeof SEXTANT_API;
   /** The HTML file every view opens, relative to the package root. */
   entry: string;
   icon?: string;
@@ -152,6 +178,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       actions: (c.actions ?? []).map((a) => ({ ...a, danger: a.danger ?? false, multiple: a.multiple ?? false })),
       columns: c.columns ?? [],
       dockActions: c.dockActions ?? [],
+      problems: (c.problems ?? []).map((p) => ({ ...p, graceMinutes: p.graceMinutes ?? 0, notify: p.notify ?? true })),
     },
   };
   if (file.icon !== undefined) manifest.icon = file.icon;

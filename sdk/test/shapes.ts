@@ -12,6 +12,7 @@ import type {
   ManifestFile,
   ManifestPage,
   ManifestPermissions,
+  ManifestProblem,
   ManifestRule,
   ManifestSettings,
 } from "../src/manifest";
@@ -67,6 +68,17 @@ export const MANIFEST_SHAPES = {
     columns: "optional",
     dockActions: "optional",
     settings: "optional",
+    problems: "optional",
+  }),
+  ManifestProblem: described<ManifestProblem>(`${CONTRIBUTION}/problems/items`, {
+    id: "required",
+    title: "required",
+    kind: "required",
+    when: "required",
+    since: "optional",
+    graceMinutes: "optional",
+    notify: "optional",
+    message: "required",
   }),
   ManifestPage: described<ManifestPage>(`${CONTRIBUTION}/pages/items`, {
     id: "required",

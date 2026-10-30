@@ -9,12 +9,17 @@ import { fileURLToPath } from "node:url";
 import { TextDecoder, TextEncoder } from "node:util";
 
 export const MANIFEST_FILE = "sextant-extension.json";
-export const SUPPORTED_API = 1;
+/** The newest extension API Sextant implements; 2 brought `contributes.problems` (ADR-0137). */
+export const SUPPORTED_API = 2;
+/** The oldest one it still reads. */
+export const MIN_API = 1;
 export const MAX_MANIFEST_BYTES = 256 * 1024;
 export const SCHEMA_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../crates/sextant-core/src/extensions/manifest.schema.json",
 );
+/** The kinds with secret material inline (ADR-0120): the table Sextant's checks share. */
+export const INLINE_SECRETS_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "../../src/resources/inline-secrets.json");
 
 let schemaCache = null;
 /** The manifest's JSON schema, as Sextant has it. */
@@ -469,7 +474,7 @@ function checkUniqueIds(manifest) {
       }
     });
   }
-  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions"]) {
+  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems"]) {
     const items = manifest.contributes?.[kind];
     if (!Array.isArray(items)) continue;
     items.forEach((item, i) => {
@@ -482,16 +487,148 @@ function checkUniqueIds(manifest) {
   }
 }
 
+// --- Problem rules (`check_problems` in crates/sextant-core/src/extensions/problems.rs) ----------------------------
+
+const PROBLEMS_API = 2;
+const MAX_KINDS = 10;
+const MAX_CONDITIONS = 20;
+const MAX_DEPTH = 3;
+const MAX_PLACEHOLDERS = 5;
+const MAX_FIELD_PATH_CHARS = 256;
+
+let inlineSecretsCache = null;
+function inlineSecrets() {
+  inlineSecretsCache ??= JSON.parse(readFileSync(INLINE_SECRETS_PATH, "utf8")).kinds;
+  return inlineSecretsCache;
+}
+
+const sameKind = (a, b) => a.group.toLowerCase() === b.group.toLowerCase() && a.kind.toLowerCase() === b.kind.toLowerCase();
+const kindName = (kind) => (kind.group === "" ? kind.kind : `${kind.group}/${kind.kind}`);
+const isNameChar = (c) => /^[A-Za-z0-9_-]$/.test(c);
+
+/** The steps of a field path of the custom columns' grammar (ADR-0099), or `null`. */
+export function parseFieldPath(path) {
+  const chars = Array.from(path);
+  if (chars.length === 0 || chars.length > MAX_FIELD_PATH_CHARS) return null;
+  let i = chars[0] === "." && chars[1] !== "[" ? 1 : 0;
+  const steps = [];
+  let expectName = true;
+  while (i < chars.length) {
+    if (chars[i] === "[") {
+      if (chars[i + 1] === '"') {
+        const end = chars.indexOf('"', i + 2);
+        if (end < 0 || chars[end + 1] !== "]" || end === i + 2) return null;
+        const key = chars.slice(i + 2, end).join("");
+        // eslint-disable-next-line no-control-regex
+        if (/[\\\u0000-\u001f\u007f-\u009f]/.test(key)) return null;
+        steps.push({ key });
+        i = end + 2;
+      } else {
+        const end = chars.indexOf("]", i + 1);
+        if (end < 0) return null;
+        const digits = chars.slice(i + 1, end).join("");
+        if (!/^[0-9]{1,6}$/.test(digits)) return null;
+        steps.push({ index: Number(digits) });
+        i = end + 1;
+      }
+      expectName = false;
+      continue;
+    }
+    if (!expectName) {
+      if (chars[i] !== ".") return null;
+      i += 1;
+    }
+    const start = i;
+    while (i < chars.length && isNameChar(chars[i])) i += 1;
+    if (i === start) return null;
+    steps.push({ key: chars.slice(start, i).join("") });
+    expectName = false;
+  }
+  return steps.length > 0 ? steps : null;
+}
+
+/** Whether a path of an object of `kind` reads a core Secret's values or is, holds or lies under an inline secret. */
+function readsSecret(kind, steps) {
+  const first = steps[0];
+  if (kind.group === "" && kind.kind.toLowerCase() === "secret" && first && (first.key === "data" || first.key === "stringData")) {
+    return true;
+  }
+  return inlineSecrets()
+    .filter((k) => sameKind(k, kind))
+    .some((k) =>
+      k.paths.some((secret) =>
+        secret.slice(0, steps.length).every((want, i) => want === "*" || (steps[i].key !== undefined && steps[i].key === want)),
+      ),
+    );
+}
+
+function checkPath(text, kind, segments) {
+  const steps = parseFieldPath(text);
+  if (!steps) fail(segments, 'must be a field path such as `.status.phase`, `.items[0]` or `.metadata.labels["app"]`');
+  if (readsSecret(kind, steps)) fail(segments, `reads secret values of ${kindName(kind)}, which rules may not`);
+}
+
+/** The insides of the `{{…}}` of a message, in order; `null` when a `{{` has no `}}`. */
+export function placeholders(text) {
+  const out = [];
+  let rest = text;
+  for (let start = rest.indexOf("{{"); start >= 0; start = rest.indexOf("{{")) {
+    const after = rest.slice(start + 2);
+    const end = after.indexOf("}}");
+    if (end < 0) return null;
+    out.push(after.slice(0, end));
+    rest = after.slice(end + 2);
+  }
+  return out;
+}
+
+function checkCondition(condition, kind, segments, depth, counter) {
+  counter.count += 1;
+  if (counter.count > MAX_CONDITIONS) fail(segments, `a rule has at most ${MAX_CONDITIONS} conditions`);
+  if (condition.type === "condition") return;
+  if (condition.type === "all" || condition.type === "any") {
+    if (depth >= MAX_DEPTH) fail(segments, `\`all\` and \`any\` nest at most ${MAX_DEPTH} deep`);
+    condition.of.forEach((inner, i) => checkCondition(inner, kind, [...segments, "of", i], depth + 1, counter));
+    return;
+  }
+  checkPath(condition.path, kind, [...segments, "path"]);
+}
+
+/** What Sextant checks of problem rules beyond the schema, in its order. */
+function checkProblems(manifest) {
+  const rules = manifest.contributes?.problems ?? [];
+  const list = ["contributes", "problems"];
+  if (rules.length === 0) return;
+  if (manifest.sextantApi < PROBLEMS_API) fail(list, `needs sextantApi ${PROBLEMS_API} or later`);
+  const kinds = [];
+  rules.forEach((rule, i) => {
+    const here = [...list, i];
+    const first = rules.slice(0, i).findIndex((other) => other.title.trim() === rule.title.trim());
+    if (first >= 0) fail([...here, "title"], `duplicate title (also ${pathText([...list, first])})`);
+    if (!kinds.some((k) => sameKind(k, rule.kind))) {
+      kinds.push(rule.kind);
+      if (kinds.length > MAX_KINDS) fail([...here, "kind"], `the rules judge at most ${MAX_KINDS} kinds`);
+    }
+    checkCondition(rule.when, rule.kind, [...here, "when"], 1, { count: 0 });
+    if (rule.since !== undefined) checkPath(rule.since, rule.kind, [...here, "since"]);
+    const found = placeholders(rule.message);
+    if (found === null) fail([...here, "message"], "has a `{{` without its `}}`");
+    if (found.length > MAX_PLACEHOLDERS) fail([...here, "message"], `has at most ${MAX_PLACEHOLDERS} placeholders`);
+    for (const field of found) checkPath(field.trim(), rule.kind, [...here, "message"]);
+  });
+}
+
 /** The problem with a parsed manifest (see `readJson`) as `{path, message}`, or `null` when Sextant accepts it. */
 export function validateManifest(value, schema = manifestSchema()) {
   try {
     if (!isObject(value)) fail([], "must be an object");
     const api = value.sextantApi;
-    if (typeof api === "number" && Number.isInteger(api) && api !== SUPPORTED_API) {
-      fail(["sextantApi"], `extension API ${api} is not supported; this Sextant supports ${SUPPORTED_API}`);
+    if (typeof api === "number" && Number.isInteger(api) && (api < MIN_API || api > SUPPORTED_API)) {
+      fail(["sextantApi"], `extension API ${api} is not supported; this Sextant supports ${MIN_API} to ${SUPPORTED_API}`);
     }
     check(schema, schema, value, []);
     checkUniqueIds(value);
+    checkProblems(value);
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };
