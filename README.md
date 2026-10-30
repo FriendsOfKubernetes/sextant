@@ -60,11 +60,59 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
   set per cluster, confirmations in the window and an activity log; read-only diagnostic tools give agents the
   window's own answers (problems, traffic diagnosis, connectivity, permissions, recent changes, autoscaling), only
   from what the agent may read.
+- **Extensions** — install more from the catalog (signed by their publishers, checked by Sextant) or write your
+  own: pages, details panels, actions, columns, problem rules and metric charts, in isolated frames with the
+  permissions you agree to — see [Extensions](#extensions) below.
 - No account, no server, no telemetry.
 
 An AI agent asks to scale a deployment; Sextant asks you first and records the call:
 
 ![An AI agent asks through the MCP server, the user allows it in the window, the call is in the activity log](docs/demo-mcp.gif)
+
+## Extensions
+
+Sextant keeps its core focused on what every cluster needs and grows through **extensions**: small web pages, with an
+optional sandboxed WebAssembly backend, that add views for the operators and tools you actually run. Open
+**Settings → Extensions → Catalog**, pick one, read what it asks for, and press **Install**.
+
+**Sextant's own extensions.** The catalog starts with extensions Sextant makes itself, kept out of the core so they
+ship on their own versions. The first is **Rook Ceph**:
+- Ceph's health and each health check in plain words;
+- raw capacity, versions, and a "stale" mark when the operator stops refreshing the status;
+- the operator, monitors, managers, OSDs by node, MDS, RGW and CSI drivers with their readiness;
+- the storage classes and claims on every pool, filesystem and object store;
+- charts of health, capacity, OSDs and placement groups from the Ceph mgr's metrics;
+- problems and notifications when Ceph is unhealthy or its status goes stale.
+
+It only reads, and it speaks every language Sextant does.
+
+**What an extension can add**:
+- a page in the sidebar;
+- a section or tab in an object's details;
+- an action in its menu;
+- a table column;
+- a dock tab;
+- a settings section;
+- **problem rules** that Sextant evaluates itself, with nothing of the extension running, and that show up on the
+  Problems page and in notifications;
+- **charts** from the cluster's Prometheus or VictoriaMetrics, through queries written in its manifest;
+- a **backend** that calls the services you agree to, such as a pager or ticket system.
+
+**You stay in control.**
+- An extension asks for permissions in the same model as AI agents: which clusters, namespaces, kinds and actions.
+  The consent screen shows them in plain words, with every metric query word for word, before anything is
+  installed.
+- Every call is checked in Sextant's core, and changes ask you first. Secret values never reach an extension unless
+  you allow them.
+- Each extension runs in an isolated frame with no network, and every call is written to an activity log.
+- Catalog packages are signed by their publisher and checked before they are unpacked. An update that asks for more
+  asks you again, and nothing updates by itself.
+
+**Write your own.** The SDK in [`sdk/`](sdk) gives a template, examples, a test host, typed APIs, translations into
+Sextant's 14 languages and the `sextant-ext` tool to build, check, pack and sign. [Rook
+Ceph](extensions/rook-ceph) is a full extension to learn from. Start with [Writing
+extensions](https://github.com/FriendsOfKubernetes/sextant/wiki/Writing-extensions). To share yours, publish a signed
+release and open a pull request to the [catalog](https://github.com/FriendsOfKubernetes/sextant-extensions).
 
 ## Install
 
@@ -111,7 +159,7 @@ The [wiki](https://github.com/FriendsOfKubernetes/sextant/wiki) describes everyt
 - [Gateway API](https://github.com/FriendsOfKubernetes/sextant/wiki/Gateway-API) — Gateways and routes with explained problems, topology, the request check and the hostname map
 - [Installing Flux and Argo CD](https://github.com/FriendsOfKubernetes/sextant/wiki/Installing-Flux-and-Argo-CD) — from the app: sources and checks, rights, preview, removing them by hand
 - [MCP server](https://github.com/FriendsOfKubernetes/sextant/wiki/MCP-server) — AI agents: setup, permissions, confirmations, security
-- [Extensions](https://github.com/FriendsOfKubernetes/sextant/wiki/Extensions) and [Writing extensions](https://github.com/FriendsOfKubernetes/sextant/wiki/Writing-extensions) — your own pages, panels, actions and columns in isolated frames, with permissions you agree to; the SDK in `sdk/`
+- [Extensions](https://github.com/FriendsOfKubernetes/sextant/wiki/Extensions) and [Writing extensions](https://github.com/FriendsOfKubernetes/sextant/wiki/Writing-extensions) — the catalog, Sextant's own extensions (Rook Ceph), permissions and consent; for authors the SDK in `sdk/`, problem rules, metric queries and translations
 - [Settings](https://github.com/FriendsOfKubernetes/sextant/wiki/Settings) and [Troubleshooting](https://github.com/FriendsOfKubernetes/sextant/wiki/Troubleshooting)
 - [Building from source](https://github.com/FriendsOfKubernetes/sextant/wiki/Building-from-source), [Development](https://github.com/FriendsOfKubernetes/sextant/wiki/Development) and [Translating](https://github.com/FriendsOfKubernetes/sextant/wiki/Translating) — the translations are machine-made; corrections from native speakers are welcome
 
