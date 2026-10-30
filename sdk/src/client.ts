@@ -18,6 +18,8 @@ import type {
   ListResult,
   LogsParams,
   Methods,
+  MetricAnswer,
+  MetricQueryParams,
   ObjectRef,
   PatchParams,
   RefInput,
@@ -102,6 +104,8 @@ export interface Sextant {
   logs: { tail(params: LogsParams, options?: CallOptions): Promise<string> };
   /** One value of a Secret (needs the "Secret values" permission). */
   secret: { value(params: SecretParams, options?: CallOptions): Promise<string> };
+  /** Runs one of the manifest's metric queries in the cluster's Prometheus-compatible source (ADR-0138). */
+  metrics: { query(params: MetricQueryParams, options?: CallOptions): Promise<MetricAnswer> };
   /**
    * The extension's own backend (ADR-0131), when its manifest declares one: `handle(method, params)` of its
    * WebAssembly component, with the answer it returns. A call is limited to 10 s and 1 MB each way.
@@ -493,6 +497,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
     },
     logs: { tail: (params, o) => onCluster("logs.tail", params, o) },
     secret: { value: (params, o) => onCluster("secret.value", params, o) },
+    metrics: { query: (params, o) => onCluster("metrics.query", params, o) },
     backend: {
       call: (method, params, o) => send("backend.call", params === undefined ? { method } : { method, params }, o),
     },

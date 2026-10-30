@@ -69,6 +69,7 @@ export const REMOTE_METHODS = [
   "resources.delete",
   "logs.tail",
   "secret.value",
+  "metrics.query",
   "storage.get",
   "storage.set",
   "storage.remove",

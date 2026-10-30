@@ -474,7 +474,7 @@ function checkUniqueIds(manifest) {
       }
     });
   }
-  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems"]) {
+  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries"]) {
     const items = manifest.contributes?.[kind];
     if (!Array.isArray(items)) continue;
     items.forEach((item, i) => {
@@ -618,6 +618,93 @@ function checkProblems(manifest) {
   });
 }
 
+// --- Metric queries (`check_metric_queries` in crates/sextant-core/src/extensions/metric_queries.rs) -------------
+
+const METRIC_QUERIES_API = 2;
+
+/**
+ * `query` split into text and `{{name}}` placeholders: `{text}` or `{name, string}` where `string` is `null` outside
+ * strings and otherwise whether the `"…"` string is a regular-expression matcher's (`=~`, `!~`); throws a message.
+ */
+export function queryPieces(query) {
+  const out = [];
+  let quote = null;
+  let regex = false;
+  let i = 0;
+  let textStart = 0;
+  while (i < query.length) {
+    const ch = query[i];
+    if (ch === "{" && query[i + 1] === "{") {
+      const end = query.indexOf("}}", i + 2);
+      if (end < 0) throw new Error("a `{{` is not closed by `}}`");
+      const name = query.slice(i + 2, end);
+      if (!/^[A-Za-z][A-Za-z0-9-]{0,39}$/.test(name)) throw new Error(`\`{{${name}}}\` is not a placeholder of a parameter name`);
+      if (quote !== null && quote !== '"') {
+        throw new Error(`\`{{${name}}}\` is in a '…' or \`…\` string: a parameter goes only into a "…" string`);
+      }
+      if (textStart < i) out.push({ text: query.slice(textStart, i) });
+      out.push({ name, string: quote === null ? null : regex });
+      i = end + 2;
+      textStart = i;
+      continue;
+    }
+    if (quote !== null) {
+      if (ch === "\\" && quote !== "`") i += 1;
+      else if (ch === quote) quote = null;
+    } else if (ch === '"' || ch === "'" || ch === "`") {
+      const before = query.slice(0, i).trimEnd();
+      quote = ch;
+      regex = before.endsWith("=~") || before.endsWith("!~");
+    } else if (ch === "#") {
+      throw new Error("comments (`#`) are not allowed");
+    }
+    i += 1;
+  }
+  if (quote !== null) throw new Error("a string is not closed");
+  if (textStart < query.length) out.push({ text: query.slice(textStart) });
+  return out;
+}
+
+/** What Sextant checks of metric queries beyond the schema, in its order. */
+function checkMetricQueries(manifest) {
+  const queries = manifest.contributes?.metricQueries ?? [];
+  const list = ["contributes", "metricQueries"];
+  if (queries.length === 0) return;
+  if (manifest.sextantApi < METRIC_QUERIES_API) fail(list, `needs sextantApi ${METRIC_QUERIES_API} or later`);
+  queries.forEach((query, i) => {
+    const here = [...list, i];
+    const params = query.params ?? [];
+    params.forEach((param, p) => {
+      const first = params.slice(0, p).findIndex((other) => other.name === param.name);
+      if (first >= 0) {
+        fail([...here, "params", p, "name"], `duplicate parameter \`${param.name}\` (also ${pathText([...here, "params", first])})`);
+      }
+    });
+    let parts;
+    try {
+      parts = queryPieces(query.query);
+    } catch (err) {
+      fail([...here, "query"], err.message);
+    }
+    for (const part of parts) {
+      if (part.name === undefined) continue;
+      const param = params.find((p) => p.name === part.name);
+      if (!param) fail([...here, "query"], `\`{{${part.name}}}\` is not a parameter of this query`);
+      if (param.type === "duration" && part.string !== null) {
+        fail([...here, "query"], `the duration \`{{${part.name}}}\` goes outside strings`);
+      }
+      if (param.type !== "duration" && part.string === null) {
+        fail([...here, "query"], `\`{{${part.name}}}\` goes inside a "…" string`);
+      }
+    }
+    params.forEach((param, p) => {
+      if (!parts.some((part) => part.name === param.name)) {
+        fail([...here, "params", p], `\`${param.name}\` is not used in the query`);
+      }
+    });
+  });
+}
+
 /** The problem with a parsed manifest (see `readJson`) as `{path, message}`, or `null` when Sextant accepts it. */
 export function validateManifest(value, schema = manifestSchema()) {
   try {
@@ -629,6 +716,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     check(schema, schema, value, []);
     checkUniqueIds(value);
     checkProblems(value);
+    checkMetricQueries(value);
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };

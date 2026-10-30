@@ -3,6 +3,8 @@
 import type { ClusterId } from "./generated/ClusterId";
 import type { ConnectionState } from "./generated/ConnectionState";
 import type { KindRef } from "./generated/KindRef";
+import type { MetricAnswer } from "./generated/MetricAnswer";
+import type { MetricQueryRange } from "./generated/MetricQueryRange";
 import type { ObjectRef } from "./generated/ObjectRef";
 import type { PatchType } from "./generated/PatchType";
 import type { ResourceKind } from "./generated/ResourceKind";
@@ -10,7 +12,18 @@ import type { JsonValue } from "./generated/serde_json/JsonValue";
 import type { WatchUpdate } from "./generated/WatchUpdate";
 import type { HostContext } from "./protocol";
 
-export type { ClusterId, ConnectionState, JsonValue, KindRef, ObjectRef, PatchType, ResourceKind, WatchUpdate };
+export type {
+  ClusterId,
+  ConnectionState,
+  JsonValue,
+  KindRef,
+  MetricAnswer,
+  MetricQueryRange,
+  ObjectRef,
+  PatchType,
+  ResourceKind,
+  WatchUpdate,
+};
 
 /** A kind: the API group (`""` for the core group) and kind; without a version, the one the cluster serves. */
 export interface KindInput {
@@ -129,6 +142,15 @@ export interface SecretParams extends OnCluster {
   key: string;
 }
 
+export interface MetricQueryParams extends OnCluster {
+  /** The id of one of the manifest's `contributes.metricQueries`. */
+  id: string;
+  /** A value for each of the query's parameters, by name. */
+  params?: Record<string, string>;
+  /** Over the last `minutes`, a point every `step`; the manifest's `range.maxHours` allows it. Default: now only. */
+  range?: MetricQueryRange;
+}
+
 /** Every method: its parameters and its result. */
 export interface Methods {
   "context.get": { params: undefined; result: HostContext };
@@ -147,6 +169,7 @@ export interface Methods {
   "resources.delete": { params: DeleteParams & { clusterId: ClusterId }; result: null };
   "logs.tail": { params: LogsParams & { clusterId: ClusterId }; result: string };
   "secret.value": { params: SecretParams & { clusterId: ClusterId }; result: string };
+  "metrics.query": { params: MetricQueryParams & { clusterId: ClusterId }; result: MetricAnswer };
   "storage.get": { params: { key: string }; result: JsonValue };
   "storage.set": { params: { key: string; value: JsonValue }; result: null };
   "storage.remove": { params: { key: string }; result: null };

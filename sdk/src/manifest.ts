@@ -7,8 +7,9 @@ import type { KindPattern } from "./generated/KindPattern";
 import type { DetailsPlacement } from "./generated/DetailsPlacement";
 import type { ProblemCondition } from "./generated/ProblemCondition";
 import type { ProblemScalar } from "./generated/ProblemScalar";
+import type { MetricParamType } from "./generated/MetricParamType";
 
-export type { ExtensionManifest, KindPattern, DetailsPlacement, ProblemCondition, ProblemScalar };
+export type { ExtensionManifest, KindPattern, DetailsPlacement, MetricParamType, ProblemCondition, ProblemScalar };
 
 /** The file name of the manifest, at the top of the package. */
 export const MANIFEST_FILE = "sextant-extension.json";
@@ -118,6 +119,22 @@ export interface ManifestProblem {
   message: string;
 }
 
+/**
+ * A metric query (`sextantApi` 2, ADR-0138): PromQL fixed in the manifest that the extension runs by id with
+ * `sextant.metrics.query`, giving a value for each parameter. A `namespace`, `name` or `labelValue` placeholder goes
+ * inside a `"…"` string (escaped there; matched literally after `=~`), a `duration` outside strings.
+ */
+export interface ManifestMetricQuery {
+  id: string;
+  /** What it reads; shown when the user agrees to the extension. */
+  title: string;
+  /** PromQL with `{{name}}` placeholders of `params`; no comments. */
+  query: string;
+  params?: Array<{ name: string; type: MetricParamType }>;
+  /** It may also run over a range of up to `maxHours` back. */
+  range?: { maxHours: number };
+}
+
 export interface ManifestContributions {
   pages?: ManifestPage[];
   detailsSections?: ManifestDetailsSection[];
@@ -127,6 +144,8 @@ export interface ManifestContributions {
   settings?: ManifestSettings;
   /** Problem rules; needs `sextantApi` 2. */
   problems?: ManifestProblem[];
+  /** Metric queries; needs `sextantApi` 2. */
+  metricQueries?: ManifestMetricQuery[];
 }
 
 /** `sextant-extension.json` as written. */
@@ -138,7 +157,7 @@ export interface ManifestFile {
   version: string;
   description: string;
   author: string;
-  /** 1, or 2 for `contributes.problems`. */
+  /** 1, or 2 for `contributes.problems` and `contributes.metricQueries`. */
   sextantApi: 1 | typeof SEXTANT_API;
   /** The HTML file every view opens, relative to the package root. */
   entry: string;
@@ -179,6 +198,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       columns: c.columns ?? [],
       dockActions: c.dockActions ?? [],
       problems: (c.problems ?? []).map((p) => ({ ...p, graceMinutes: p.graceMinutes ?? 0, notify: p.notify ?? true })),
+      metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
     },
   };
   if (file.icon !== undefined) manifest.icon = file.icon;

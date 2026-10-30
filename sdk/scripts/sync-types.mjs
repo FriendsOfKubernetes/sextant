@@ -23,6 +23,8 @@ export const ROOTS = [
   "ConnectionState",
   "PatchType",
   "CoreError",
+  "MetricAnswer",
+  "MetricQueryRange",
 ];
 
 /** Updates only the window's own watches get (`WatchOptions`, #157): an extension never receives them. */

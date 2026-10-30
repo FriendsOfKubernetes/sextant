@@ -86,7 +86,7 @@ describe("manifest types and the schema", () => {
       [true, true],
     ]);
     const minimal = normalizeManifest(applyCase({ name: "x", base: "minimal" }) as unknown as ManifestFile);
-    expect(minimal.contributes).toEqual({ pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [] });
+    expect(minimal.contributes).toEqual({ pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [], metricQueries: [] });
     expect("icon" in minimal).toBe(false);
   });
 });

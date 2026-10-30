@@ -10,6 +10,7 @@ import type {
   ManifestDetailsSection,
   ManifestDockAction,
   ManifestFile,
+  ManifestMetricQuery,
   ManifestPage,
   ManifestPermissions,
   ManifestProblem,
@@ -69,6 +70,14 @@ export const MANIFEST_SHAPES = {
     dockActions: "optional",
     settings: "optional",
     problems: "optional",
+    metricQueries: "optional",
+  }),
+  ManifestMetricQuery: described<ManifestMetricQuery>(`${CONTRIBUTION}/metricQueries/items`, {
+    id: "required",
+    title: "required",
+    query: "required",
+    params: "optional",
+    range: "optional",
   }),
   ManifestProblem: described<ManifestProblem>(`${CONTRIBUTION}/problems/items`, {
     id: "required",
