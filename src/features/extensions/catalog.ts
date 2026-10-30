@@ -25,8 +25,15 @@ export const CATEGORIES: CatalogCategory[] = [
   "other",
 ];
 
-/** The extension API this Sextant supports (`SUPPORTED_API` in the core). */
-export const SUPPORTED_API = 1;
+/** The extension API versions this Sextant reads: `MIN_API` to `SUPPORTED_API`, as the core's `supports_api` (a Rust test
+ * keeps them equal). */
+export const MIN_API = 1;
+export const SUPPORTED_API = 2;
+
+/** Whether this Sextant installs an extension written for API version `api`. */
+export function supportsApi(api: number): boolean {
+  return api >= MIN_API && api <= SUPPORTED_API;
+}
 
 /** What an entry offers next to what is installed. */
 export type EntryOffer =
@@ -42,7 +49,7 @@ export type EntryOffer =
 export function offerOf(entry: CatalogEntry, installed: ExtensionInfo | undefined, status: CatalogStatus | undefined): EntryOffer {
   if (entry.withdrawn !== null) return { kind: "withdrawn", reason: entry.withdrawn };
   if (installed === undefined) {
-    if (entry.latest !== null && entry.latest.sextantApi !== SUPPORTED_API) return { kind: "needsNewer", version: entry.latest.version };
+    if (entry.latest !== null && !supportsApi(entry.latest.sextantApi)) return { kind: "needsNewer", version: entry.latest.version };
     return { kind: "install" };
   }
   if (installed.source.type !== "catalog") return { kind: "otherSource" };

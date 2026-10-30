@@ -382,3 +382,22 @@ fn the_key_id_is_minisigns() {
     assert_eq!(asset_version("a.b", "a.b-01.2.3.sextant-ext"), None);
     let _ = ExtensionPermissions::none();
 }
+
+/// The window decides on its own whether a catalog entry it does not have installed needs a newer Sextant
+/// (`src/features/extensions/catalog.ts`): its API range must be this one, or an extension this Sextant reads is
+/// shown as needing a newer one.
+#[test]
+fn the_window_knows_the_api_versions_this_sextant_reads() {
+    use crate::extensions::manifest::{MIN_API, SUPPORTED_API};
+    let source = include_str!("../../../../../src/features/extensions/catalog.ts");
+    let constant = |name: &str| -> u32 {
+        let prefix = format!("export const {name} = ");
+        let line = source
+            .lines()
+            .find_map(|l| l.strip_prefix(&prefix))
+            .unwrap_or_else(|| panic!("catalog.ts has no {name}"));
+        line.trim_end_matches(';').parse().unwrap()
+    };
+    assert_eq!(constant("MIN_API"), MIN_API);
+    assert_eq!(constant("SUPPORTED_API"), SUPPORTED_API);
+}

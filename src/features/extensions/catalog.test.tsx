@@ -156,7 +156,9 @@ describe("what an entry offers", () => {
   it("depends on what is installed and on the backend's status of it", () => {
     const entry = catalogEntry();
     expect(offerOf(entry, undefined, undefined)).toEqual({ kind: "install" });
-    expect(offerOf(catalogEntry({ latest: { ...entry.latest!, sextantApi: 2 } }), undefined, undefined)).toEqual({ kind: "needsNewer", version: "1.1.0" });
+    // Every API version this Sextant reads installs; only a newer one asks for a newer Sextant.
+    expect(offerOf(catalogEntry({ latest: { ...entry.latest!, sextantApi: 2 } }), undefined, undefined)).toEqual({ kind: "install" });
+    expect(offerOf(catalogEntry({ latest: { ...entry.latest!, sextantApi: 3 } }), undefined, undefined)).toEqual({ kind: "needsNewer", version: "1.1.0" });
     expect(offerOf(entry, installedInfo(), status({ type: "updateAvailable", version: "1.1.0" }))).toEqual({ kind: "update", version: "1.1.0" });
     expect(offerOf(entry, installedInfo(), status({ type: "upToDate" }))).toEqual({ kind: "installed" });
     expect(offerOf(entry, installedInfo(), status({ type: "keyChanged" }))).toEqual({ kind: "pinnedElsewhere" });
