@@ -264,17 +264,15 @@ describe("performance", () => {
 
   it("a search over 100 000 coloured lines reads only the appended lines on each batch", () => {
     let buffer = appendLines(EMPTY_BUFFER, Array.from({ length: 100_000 }, (_, i) => coloured(i)));
-    // The first update is a full search: as fast as `findMatches` over the same lines in the same run, not a fixed
-    // time (#261).
-    const full = fastest(() => findMatches(buffer.lines, "request 99999 took"), 2);
-    expect(fastest(() => new MatchIndex().update(buffer.lines, buffer.dropped, "request 99999 took", "s0"), 2)).toBeLessThan(
-      Math.max(5 * full, 20),
-    );
     const index = new MatchIndex();
     const t0 = performance.now();
     const first = index.update(buffer.lines, buffer.dropped, "request 99999 took", "s1");
     const initial = performance.now() - t0;
     expect(first).toEqual([{ line: 99_999, start: expect.any(Number) }]);
+    // The first update is a full search: about as fast as `findMatches` over the same lines in the same run, not a
+    // fixed time (#261). One more pass, not more: each takes ~0.25 s here.
+    const full = fastest(() => findMatches(buffer.lines, "request 99999 took"), 1);
+    expect(initial).toBeLessThan(Math.max(5 * full, 20));
 
     const batches: number[] = [];
     for (let b = 0; b < 10; b++) {
@@ -289,7 +287,8 @@ describe("performance", () => {
     // rather than a fixed number of milliseconds (a loaded CI runner took 23 ms for a batch once).
     const median = [...batches].sort((a, b) => a - b)[Math.floor(batches.length / 2)]!;
     expect(median).toBeLessThan(Math.max(initial / 10, 5));
-  });
+    // Four passes over 100 000 lines: more than vitest's default 5 s on a loaded runner.
+  }, 20_000);
 
   it("the incremental search gives what a full search gives, through drops, a new query and a new stream", () => {
     let buffer = appendLines(EMPTY_BUFFER, ["a x", "b", "x x"], 4, Infinity);
