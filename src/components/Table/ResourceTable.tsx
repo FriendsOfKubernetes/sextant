@@ -19,7 +19,8 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { isCapped, uidOf, updateSettings, useWatch, type ClusterId, type KindRef, type KubeObject, type ResourceKind } from "../../api";
 import { useCssLength } from "../../app/accessibility";
@@ -237,12 +238,14 @@ interface MenuState {
 }
 
 function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) {
-  const { clusterId, kind, onRetry } = props;
+  const { clusterId, onRetry } = props;
+  // The kind by value: a caller's new `{group, version, kind}` on each render must not redraw every row.
+  const { group: kindGroup, version: kindVersion, kind: kindName } = props.kind;
+  const kind = useMemo(() => ({ group: kindGroup, version: kindVersion, kind: kindName }), [kindGroup, kindVersion, kindName]);
   const { t } = useTranslation();
   const def = useResourceDef(kind, props.resourceKind);
   const view = useClusterView(clusterId);
   const openDetails = useAppStore((s) => s.openDetails);
-  const details = useAppStore((s) => s.details);
   useActionsVersion();
 
   const customOptions = props.customColumns;
@@ -372,22 +375,25 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     [columns],
   );
 
-  const initialSort = props.defaultSort === undefined ? { id: "name", desc: false } : props.defaultSort;
+  // The sort as plain values: a new `sorting` array makes the table sort every row again, so it changes only when
+  // the sort does (not with a new props object or callback on every render, e.g. when the details open).
+  const initialSortId = props.defaultSort === undefined ? "name" : (props.defaultSort?.id ?? null);
+  const initialSortDesc = props.defaultSort?.desc ?? false;
   const [ownSorting, setOwnSorting] = useState<SortingState>(() =>
-    initialSort && columns.some((c) => c.id === initialSort.id)
-      ? [{ id: initialSort.id, desc: initialSort.desc ?? false }]
-      : [],
+    initialSortId !== null && columns.some((c) => c.id === initialSortId) ? [{ id: initialSortId, desc: initialSortDesc }] : [],
   );
   const { onSortChange } = props;
-  const controlledSort = props.sort;
+  const controlled = onSortChange !== undefined;
+  const controlledColumn = props.sort?.column ?? null;
+  const controlledDesc = props.sort?.desc ?? false;
   const sorting: SortingState = useMemo(() => {
-    if (!onSortChange) return ownSorting;
-    if (controlledSort && columns.some((c) => c.id === controlledSort.column))
-      return [{ id: controlledSort.column, desc: controlledSort.desc }];
-    return initialSort && columns.some((c) => c.id === initialSort.id)
-      ? [{ id: initialSort.id, desc: initialSort.desc ?? false }]
+    if (!controlled) return ownSorting;
+    if (controlledColumn !== null && columns.some((c) => c.id === controlledColumn))
+      return [{ id: controlledColumn, desc: controlledDesc }];
+    return initialSortId !== null && columns.some((c) => c.id === initialSortId)
+      ? [{ id: initialSortId, desc: initialSortDesc }]
       : [];
-  }, [onSortChange, ownSorting, controlledSort, columns, initialSort]);
+  }, [controlled, ownSorting, controlledColumn, controlledDesc, columns, initialSortId, initialSortDesc]);
   const setSorting = (updater: SortingState | ((old: SortingState) => SortingState)) => {
     const next = typeof updater === "function" ? updater(sorting) : updater;
     if (!onSortChange) {
@@ -621,6 +627,54 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
     );
   }
 
+  // What a row does, read through a ref: the rows are memoized (`TableRow`) and share one handler object that never
+  // changes, so a render of the table (the details opening, a row selected) redraws only the rows whose props changed.
+  const rowActions = useRef<RowActions | null>(null);
+  rowActions.current = {
+    focus: setFocusUid,
+    open: (obj) => (props.onRowClick ? props.onRowClick(obj) : openDetails(refOf(obj, kind))),
+    toggle: (uid, value) => rows.find((r) => r.id === uid)?.toggleSelected(value),
+    menu: openMenu,
+    key: (e, obj, isSelected) => {
+      if (e.key === "Enter") {
+        if (props.onRowClick) props.onRowClick(obj);
+        else openDetails(refOf(obj, kind));
+      } else if (e.key === " ") {
+        e.preventDefault();
+        rowActions.current?.toggle(uidOf(obj));
+      } else if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) {
+        e.preventDefault();
+        const rect = e.currentTarget.getBoundingClientRect();
+        openMenu(obj, pointRect(rect.left + 32, rect.bottom));
+      } else if (e.key === "Delete" && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && isSelected) {
+        // Delete on a selected row: the selection's Delete, through its own confirmation (ADR-0126).
+        const remove = selectionActions(selected, kind, actionIds).find((a) => a.action.id === "delete");
+        if (remove) {
+          e.preventDefault();
+          startBarAction(remove, clusterId, kind);
+        }
+      } else if (isCopyKey(e) && !window.getSelection()?.toString()) {
+        // Ctrl+C / ⌘C: "Copy namespace/name" of the row, or of every selected row when it is one of them.
+        const objects = rowSelection[uidOf(obj)] && selected.length > 1 ? selected : [obj];
+        const copy = getActionsFor(objects, kind, actionIds).find((a) => COPY_ACTIONS.has(a.id));
+        if (copy) {
+          e.preventDefault();
+          void runAction(copy, clusterId, kind, objects);
+        }
+      }
+    },
+  };
+  const rowHandlers = useMemo<RowActions>(
+    () => ({
+      focus: (uid) => rowActions.current?.focus(uid),
+      open: (obj) => rowActions.current?.open(obj),
+      toggle: (uid, value) => rowActions.current?.toggle(uid, value),
+      menu: (obj, anchor) => rowActions.current?.menu(obj, anchor),
+      key: (e, obj, isSelected) => rowActions.current?.key(e, obj, isSelected),
+    }),
+    [],
+  );
+
   const renderGrid = (virtualizer: Virtualizer<HTMLDivElement, Element>) => {
     const allSelected = table.getIsAllRowsSelected();
     const drawn = virtualizer.getVirtualItems();
@@ -696,95 +750,22 @@ function ResourceTableView(props: ResourceTableProps & { onRetry: () => void }) 
             if (!row) return null;
             const obj = row.original;
             const isSelected = row.getIsSelected();
-            // One row is in the tab order (the last focused one, or the first drawn); arrows move between rows, and
-            // the row's own controls are tab stops only in that row.
             const current = row.id === tabUid;
-            const active =
-              details !== null &&
-              details.kind.kind === kind.kind &&
-              details.kind.group === kind.group &&
-              details.name === obj.metadata?.name &&
-              (details.namespace ?? null) === (obj.metadata?.namespace ?? null);
             return (
-              <div
+              <TableRow
                 key={row.id}
-                className={`rt__row${isSelected ? " rt__row--selected" : ""}${active ? " rt__row--active" : ""}`}
-                role="row"
-                aria-rowindex={item.index + 2}
-                aria-selected={isSelected}
-                data-uid={row.id}
-                data-index={item.index}
-                tabIndex={current ? 0 : -1}
-                onFocus={(e) => {
-                  if (e.target === e.currentTarget) setFocusUid(row.id);
-                }}
-                style={{ transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)` }}
-                onClick={() => (props.onRowClick ? props.onRowClick(obj) : openDetails(refOf(obj, kind)))}
-                onKeyDown={(e) => {
-                  if (e.target !== e.currentTarget) return;
-                  if (e.key === "Enter") {
-                    if (props.onRowClick) props.onRowClick(obj);
-                    else openDetails(refOf(obj, kind));
-                  } else if (e.key === " ") {
-                    e.preventDefault();
-                    row.toggleSelected();
-                  } else if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) {
-                    e.preventDefault();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    openMenu(obj, pointRect(rect.left + 32, rect.bottom));
-                  } else if (e.key === "Delete" && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && isSelected) {
-                    // Delete on a selected row: the selection's Delete, through its own confirmation (ADR-0126).
-                    const remove = selectionActions(selected, kind, actionIds).find((a) => a.action.id === "delete");
-                    if (remove) {
-                      e.preventDefault();
-                      startBarAction(remove, clusterId, kind);
-                    }
-                  } else if (isCopyKey(e) && !window.getSelection()?.toString()) {
-                    // Ctrl+C / ⌘C: "Copy namespace/name" of the row, or of every selected row when it is one of them.
-                    const objects = rowSelection[uidOf(obj)] && selected.length > 1 ? selected : [obj];
-                    const copy = getActionsFor(objects, kind, actionIds).find((a) => COPY_ACTIONS.has(a.id));
-                    if (copy) {
-                      e.preventDefault();
-                      void runAction(copy, clusterId, kind, objects);
-                    }
-                  }
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  openMenu(obj, pointRect(e.clientX, e.clientY));
-                }}
-              >
-                <div className="rt__cell rt__cell--check" role="cell" onClick={(e) => e.stopPropagation()}>
-                  <Checkbox
-                    aria-label={t("resources:table.selectRow", { name: obj.metadata?.name ?? "" })}
-                    tabIndex={current ? 0 : -1}
-                    checked={isSelected}
-                    onChange={() => undefined}
-                    onClick={row.getToggleSelectedHandler()}
-                  />
-                </div>
-                {columns.map((c) => (
-                  <div key={c.id} className="rt__cell" role="cell">
-                    {c.render ? c.render(obj, cellContext) : formatValue(c.value(obj))}
-                  </div>
-                ))}
-                <div className="rt__cell rt__cell--menu" role="cell">
-                  <button
-                    type="button"
-                    className="icon-btn icon-btn--small"
-                    tabIndex={current ? 0 : -1}
-                    aria-label={t("resources:table.actionsFor", { name: obj.metadata?.name ?? "" })}
-                    aria-haspopup="menu"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const { left, top, right, bottom } = e.currentTarget.getBoundingClientRect();
-                      openMenu(obj, { left, top, right, bottom });
-                    }}
-                  >
-                    <Icon name="more" />
-                  </button>
-                </div>
-              </div>
+                obj={obj}
+                uid={row.id}
+                index={item.index}
+                top={item.start - virtualizer.options.scrollMargin}
+                kind={kind}
+                selected={isSelected}
+                current={current}
+                columns={columns}
+                context={cellContext}
+                actions={rowHandlers}
+                t={t}
+              />
             );
           })}
         </div>
@@ -875,6 +856,106 @@ function RowsScroller({
     </div>
   );
 }
+
+/** What a row asks the table to do (`ResourceTableView`'s handlers, behind a ref). */
+interface RowActions {
+  focus: (uid: string) => void;
+  open: (obj: KubeObject) => void;
+  /** Selects or deselects a row; without `value`, toggles it. */
+  toggle: (uid: string, value?: boolean) => void;
+  menu: (obj: KubeObject, anchor: PopupRect) => void;
+  /** A key pressed on the row itself (not on a control in it). */
+  key: (e: KeyboardEvent<HTMLDivElement>, obj: KubeObject, selected: boolean) => void;
+}
+
+interface TableRowProps {
+  obj: KubeObject;
+  uid: string;
+  index: number;
+  /** Offset from the top of the body, in pixels. */
+  top: number;
+  kind: KindRef;
+  selected: boolean;
+  /** The row in the tab order. */
+  current: boolean;
+  columns: readonly ColumnDef[];
+  context: CellContext;
+  actions: RowActions;
+  t: TFunction;
+}
+
+/**
+ * One drawn row. Memoized: a render of the table redraws only the rows whose object, state, place, columns or time
+ * changed. One row is in the tab order (the last focused one, or the first drawn); arrows move between rows, and the
+ * row's own controls are tab stops only in that row.
+ */
+const TableRow = memo(function TableRow({ obj, uid, index, top, kind, selected, current, columns, context, actions, t }: TableRowProps) {
+  // Each row follows the open details itself, so opening an object redraws the two rows it concerns, not the table.
+  const active = useAppStore((s) => {
+    const details = s.details;
+    return (
+      details !== null &&
+      details.kind.kind === kind.kind &&
+      details.kind.group === kind.group &&
+      details.name === obj.metadata?.name &&
+      (details.namespace ?? null) === (obj.metadata?.namespace ?? null)
+    );
+  });
+  return (
+    <div
+      className={`rt__row${selected ? " rt__row--selected" : ""}${active ? " rt__row--active" : ""}`}
+      role="row"
+      aria-rowindex={index + 2}
+      aria-selected={selected}
+      data-uid={uid}
+      data-index={index}
+      tabIndex={current ? 0 : -1}
+      onFocus={(e) => {
+        if (e.target === e.currentTarget) actions.focus(uid);
+      }}
+      style={{ transform: `translateY(${top}px)` }}
+      onClick={() => actions.open(obj)}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget) actions.key(e, obj, selected);
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        actions.menu(obj, pointRect(e.clientX, e.clientY));
+      }}
+    >
+      <div className="rt__cell rt__cell--check" role="cell" onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          aria-label={t("resources:table.selectRow", { name: obj.metadata?.name ?? "" })}
+          tabIndex={current ? 0 : -1}
+          checked={selected}
+          onChange={() => undefined}
+          onClick={(e) => actions.toggle(uid, e.currentTarget.checked)}
+        />
+      </div>
+      {columns.map((c) => (
+        <div key={c.id} className="rt__cell" role="cell">
+          {c.render ? c.render(obj, context) : formatValue(c.value(obj))}
+        </div>
+      ))}
+      <div className="rt__cell rt__cell--menu" role="cell">
+        <button
+          type="button"
+          className="icon-btn icon-btn--small"
+          tabIndex={current ? 0 : -1}
+          aria-label={t("resources:table.actionsFor", { name: obj.metadata?.name ?? "" })}
+          aria-haspopup="menu"
+          onClick={(e) => {
+            e.stopPropagation();
+            const { left, top: rectTop, right, bottom } = e.currentTarget.getBoundingClientRect();
+            actions.menu(obj, { left, top: rectTop, right, bottom });
+          }}
+        >
+          <Icon name="more" />
+        </button>
+      </div>
+    </div>
+  );
+});
 
 /** The row a navigation key moves to (ARIA practices for rows: ↑ ↓, Home, End, Page Up/Down), `null` for any other key. */
 export function rowKeyTarget(key: string, from: number, last: number, page: number): number | null {

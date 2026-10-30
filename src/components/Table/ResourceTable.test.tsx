@@ -240,6 +240,34 @@ describe("ResourceTable", () => {
     expect(useAppStore.getState().details).toEqual({ kind: POD, namespace: "default", name: "pod-0002" });
   });
 
+  it("redraws only the rows whose details open or close, without sorting the rows again (#125)", async () => {
+    const value = vi.fn((obj: KubeObject) => obj.metadata?.name ?? "");
+    const drawn = vi.fn((obj: KubeObject) => obj.metadata?.name ?? "");
+    const columns = [{ id: "name", title: "Name", value, render: drawn }];
+    const { rerender } = render(<ResourceTable clusterId="c1" kind={POD} columns={columns} />);
+    await snapshot([pod(1), pod(2), pod(3)]);
+    expect(names()).toEqual(["pod-0001", "pod-0002", "pod-0003"]);
+    const drawnNames = () => drawn.mock.calls.map(([obj]) => obj.metadata?.name);
+    value.mockClear();
+    drawn.mockClear();
+
+    act(() => useAppStore.getState().openDetails({ kind: POD, namespace: "default", name: "pod-0002" }));
+    expect(bodyRows()[1]).toHaveClass("rt__row--active");
+    expect(drawnNames()).toEqual(["pod-0002"]);
+    drawn.mockClear();
+    act(() => useAppStore.getState().openDetails({ kind: POD, namespace: "default", name: "pod-0003" }));
+    expect(drawnNames().sort()).toEqual(["pod-0002", "pod-0003"]);
+    expect(bodyRows()[1]).not.toHaveClass("rt__row--active");
+    expect(bodyRows()[2]).toHaveClass("rt__row--active");
+
+    // A caller that passes the same kind as a new object on every render redraws nothing either.
+    drawn.mockClear();
+    rerender(<ResourceTable clusterId="c1" kind={{ ...POD }} columns={columns} />);
+    expect(drawn).not.toHaveBeenCalled();
+    // The sort reads each row's value; none of this sorted again.
+    expect(value).not.toHaveBeenCalled();
+  });
+
   it("builds the context menu from registered actions and runs them on the selection", async () => {
     const logs = vi.fn();
     const remove = vi.fn();

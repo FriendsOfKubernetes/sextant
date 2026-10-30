@@ -47,7 +47,6 @@ export const AppShell = memo(function AppShell() {
   const { t } = useTranslation();
   const narrow = useNarrowLayout();
   const activeClusterId = useAppStore((s) => s.activeClusterId);
-  const details = useAppStore((s) => s.details);
   const sidebarWidth = useAppStore((s) => s.sidebarWidth);
   const dockOpen = useAppStore((s) => s.dock.open);
   const dockHeight = useAppStore((s) => s.dock.height);
@@ -106,11 +105,7 @@ export const AppShell = memo(function AppShell() {
               <EmptyState title={t("common:welcome.title")} text={t("common:welcome.text")} />
             )}
           </main>
-          {details && activeClusterId && (
-            <DetailsPane kind={details.kind} narrow={narrow}>
-              <DetailsPanel key={JSON.stringify(details)} clusterId={activeClusterId} objectRef={details} />
-            </DetailsPane>
-          )}
+          <OpenDetails narrow={narrow} />
         </div>
         {dockOpen && (
           <Splitter
@@ -135,6 +130,21 @@ export const AppShell = memo(function AppShell() {
     </div>
   );
 });
+
+/**
+ * The details of the object they were opened for: the only part of the shell that follows `details`, so opening
+ * another object redraws the details, not the window around them.
+ */
+function OpenDetails({ narrow }: { narrow: boolean }) {
+  const activeClusterId = useAppStore((s) => s.activeClusterId);
+  const details = useAppStore((s) => s.details);
+  if (!details || !activeClusterId) return null;
+  return (
+    <DetailsPane kind={details.kind} narrow={narrow}>
+      <DetailsPanel key={JSON.stringify(details)} clusterId={activeClusterId} objectRef={details} />
+    </DetailsPane>
+  );
+}
 
 /**
  * Top bar with a menu button and the drawer holding the rail and the sidebar. The drawer stays mounted while closed
