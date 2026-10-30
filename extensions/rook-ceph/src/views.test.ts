@@ -2,7 +2,10 @@ import { SextantError, type KubeObject, type WatchParams } from "@sextant/extens
 import { startTestHost, type TestHost, type TestHostOptions, type TestWatch } from "@sextant/extension-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fixtures from "../fixtures/objects.json";
+import { startAction } from "./actions";
 import { startDaemons } from "./daemons";
+import { startNodeTopology } from "./nodeTopology";
+import { startOsds } from "./osds";
 import { setLanguage, t } from "./i18n";
 import { startMetrics } from "./metrics";
 import { startPage } from "./page";
@@ -21,6 +24,33 @@ const ALL = [
   ...fixtures.pods,
 ] as unknown as KubeObject[];
 
+/** OSD Deployments as Rook labels them: osd.0 running on kind-worker, osd.1 stopped on kind-worker2. */
+const OSD_DEPLOYMENTS = [0, 1].map((id) => ({
+  apiVersion: "apps/v1",
+  kind: "Deployment",
+  metadata: {
+    name: `rook-ceph-osd-${id}`,
+    namespace: "rook-ceph",
+    resourceVersion: `90${id}`,
+    labels: {
+      app: "rook-ceph-osd",
+      "ceph-osd-id": String(id),
+      "device-class": "hdd",
+      "topology-location-root": "default",
+      "topology-location-host": id ? "kind-worker2" : "kind-worker",
+      ...(id ? { "ceph.rook.io/do-not-reconcile": "true" } : {}),
+    },
+  },
+  spec: { replicas: id ? 0 : 1 },
+  status: { readyReplicas: id ? 0 : 1 },
+})) as unknown as KubeObject[];
+const NODE = {
+  apiVersion: "v1",
+  kind: "Node",
+  metadata: { name: "kind-worker", resourceVersion: "55", labels: { "kubernetes.io/hostname": "kind-worker", "topology.rook.io/rack": "rack1" } },
+} as unknown as KubeObject;
+ALL.push(...OSD_DEPLOYMENTS, NODE);
+
 const ROOK_KINDS = ["CephCluster", "CephBlockPool", "CephFilesystem", "CephObjectStore", "CephObjectStoreUser", "CephNFS", "CephClient"];
 const servedKinds = (rook = true) => [
   ...(rook ? ROOK_KINDS.map((kind) => ({ group: "ceph.rook.io", version: "v1", kind })) : []),
@@ -28,7 +58,10 @@ const servedKinds = (rook = true) => [
   { group: "", version: "v1", kind: "Pod" },
   { group: "", version: "v1", kind: "PersistentVolumeClaim" },
   { group: "storage.k8s.io", version: "v1", kind: "StorageClass" },
-].map((kindRef) => ({ kindRef, plural: "", namespaced: kindRef.kind !== "StorageClass", verbs: ["list", "watch"], printerColumns: [] }));
+  { group: "apps", version: "v1", kind: "Deployment" },
+  { group: "batch", version: "v1", kind: "Job" },
+  { group: "", version: "v1", kind: "Node" },
+].map((kindRef) => ({ kindRef, plural: "", namespaced: !["StorageClass", "Node"].includes(kindRef.kind), verbs: ["list", "watch"], printerColumns: [] }));
 
 const ref = (object: { apiVersion: string; kind: string; metadata: { name: string; namespace?: string } }) => ({
   kind: { group: object.apiVersion.includes("/") ? object.apiVersion.split("/")[0]! : "", version: object.apiVersion.split("/").pop()!, kind: object.kind },
@@ -159,7 +192,7 @@ describe("Ceph status", () => {
     const items = [...root.querySelectorAll(".checks > li")].map((li) => li.textContent ?? "");
     expect(items[1]).toContain("OSD_DOWN");
     expect(items[1]).toContain("their data is served by the other copies");
-    expect(items[0]).toBe("WarningNEW_CHECK_FROM_A_LATER_CEPHsomething newer");
+    expect(items[0]).toBe("WarningNEW_CHECK_FROM_A_LATER_CEPHsomething newerMute");
     expect(text()).toContain("The daemons run 2 Ceph versions (20.2.0 tentacle (stable): 3; 19.2.3 squid (stable): 1)");
     await expect.poll(text).toContain("Toolbox: rook-ceph-tools-6c7d8e9f0-st45u");
     root.querySelector<HTMLButtonElement>("section:last-child button.link")!.click();
@@ -300,5 +333,133 @@ describe("Storage classes and claims", () => {
     stop = startStorage(host.sextant, root);
     await answerWatches();
     await expect.poll(text).toContain("No StorageClass puts volumes here");
+  });
+});
+
+/** The patches, applies and deletes the frame sent, in order. */
+const changes = () => host.calls.filter((c) => /^resources\.(patch|apply|delete)$/.test(c.method));
+const button = (label: string) => [...root.querySelectorAll("button")].find((b) => b.textContent === label || b.getAttribute("aria-label") === label);
+const CHANGE_HANDLERS = {
+  "resources.patch": () => ({}),
+  "resources.apply": () => [],
+  "resources.delete": () => null,
+};
+
+describe("managing a cluster", () => {
+  it("mutes a health check with the resourceVersion it was shown with", async () => {
+    await start({ context: { view: "details", contribution: "status", selection: [ref(CLUSTER)], resourceVersion: "4021" }, handlers: CHANGE_HANDLERS });
+    stop = startStatus(host.sextant, root);
+    await expect.poll(() => root.querySelectorAll(".checks > li").length).toBe(3);
+    const osdDown = [...root.querySelectorAll(".checks > li")].find((li) => li.textContent?.includes("OSD_DOWN"))!;
+    osdDown.querySelector("button")!.click();
+    await expect.poll(() => changes()[0]?.params).toMatchObject({
+      ref: { name: "my-cluster" },
+      patchType: "merge",
+      patch: { spec: { healthCheck: { muteHealthWarning: { OSD_DOWN: { policy: "mute" } } } }, metadata: { resourceVersion: "4021" } },
+    });
+  });
+
+  it("refuses a Ceph upgrade the checks block, and sends the image otherwise", async () => {
+    const healthy = structuredClone(CLUSTER) as unknown as KubeObject & { status: { ceph: Record<string, unknown> } };
+    healthy.status.ceph.health = "HEALTH_OK";
+    healthy.status.ceph.versions = { overall: { "ceph version 20.2.1 (x) tentacle (stable)": 4 } };
+    await start({ context: { view: "action", contribution: "upgrade", selection: [ref(CLUSTER)] }, handlers: { ...CHANGE_HANDLERS, "resources.get": () => healthy } });
+    stop = startAction(host.sextant, root, "upgrade");
+    await expect.poll(() => root.querySelector("input")).not.toBeNull();
+    const input = root.querySelector("input")!;
+    const apply = button("Upgrade")!;
+    expect(apply.disabled).toBe(true);
+    input.value = "quay.io/ceph/ceph:v19.2.3";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(text()).toContain("Upgrading is not possible until the blocking checks pass.");
+    expect(apply.disabled).toBe(true);
+    input.value = "quay.io/ceph/ceph:v20.2.4-20260818";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(apply.disabled).toBe(false);
+    apply.click();
+    await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(changes()).toHaveLength(1);
+    expect(changes()[0]!.params).toMatchObject({ patch: { spec: { cephVersion: { image: "quay.io/ceph/ceph:v20.2.4-20260818" } } } });
+    expect(host.notices).toEqual(["my-cluster: Rook upgrades Ceph to quay.io/ceph/ceph:v20.2.4-20260818"]);
+  });
+});
+
+describe("CRUSH and OSDs", () => {
+  const operator = { ...fixtures.pods[0], spec: { containers: [{ name: "rook-ceph-operator", image: "docker.io/rook/ceph:v1.21.1" }] } };
+  const metric = (series: [string, string, number][]) => ({
+    resultType: "vector",
+    truncated: false,
+    series: series.map(([name, daemon, value]) => ({ labels: { __name__: name, ...(daemon ? { ceph_daemon: daemon } : {}) }, points: [[1, value]] })),
+  });
+
+  async function startTab(pgsClean: boolean) {
+    await start({
+      context: { view: "details", contribution: "osds", selection: [ref(CLUSTER)], resourceVersion: "4021" },
+      handlers: {
+        ...CHANGE_HANDLERS,
+        "resources.list": (params) =>
+          params.labelSelector === "app=rook-ceph-operator"
+            ? { items: [operator], truncated: false }
+            : { items: matching({ ...params, namespaces: params.namespace ? [params.namespace] : undefined }), truncated: false },
+        "metrics.query": ({ id }) =>
+          id === "pgs"
+            ? metric([["ceph_pg_total", "", 49], ["ceph_pg_active", "", 49], ["ceph_pg_clean", "", pgsClean ? 49 : 30]])
+            : metric([["ceph_osd_up", "osd.0", 1], ["ceph_osd_in", "osd.0", 1], ["ceph_osd_stat_bytes", "osd.0", 100 * 2 ** 30], ["ceph_osd_stat_bytes_used", "osd.0", 25 * 2 ** 30]]),
+      },
+    });
+    stop = startOsds(host.sextant, root);
+    await answerWatches();
+    await expect.poll(() => root.querySelectorAll(".crush-osd").length).toBe(2);
+  }
+
+  it("draws the tree from the Deployments' labels and stops an OSD as Rook's guide does", async () => {
+    await startTab(true);
+    expect([...root.querySelectorAll(".crush-bucket")].map((b) => b.textContent)).toEqual(["root default", "host kind-worker", "host kind-worker2"]);
+    await expect.poll(() => root.querySelector(".crush-osd")?.textContent).toContain("25 GiB / 100 GiB (25%)");
+    button("Stop osd.0")!.click();
+    await expect.poll(() => changes()[0]?.params).toMatchObject({
+      ref: { kind: { group: "apps", kind: "Deployment" }, namespace: "rook-ceph", name: "rook-ceph-osd-0" },
+      patch: { metadata: { labels: { "ceph.rook.io/do-not-reconcile": "true" }, resourceVersion: "900" }, spec: { replicas: 0 } },
+    });
+  });
+
+  it("removes a stopped OSD with Rook's purge Job only when the placement groups are clean", async () => {
+    await startTab(false);
+    const box = root.querySelector<HTMLDetailsElement>(".remove-osd")!;
+    expect(box.textContent).toContain("osd.1");
+    expect(button("Remove osd.1")!.disabled).toBe(false);
+    expect(box.textContent).toMatch(/not (all )?(active and )?clean|clean/i);
+    stop();
+    root.replaceChildren();
+    await startTab(true);
+    button("Remove osd.1")!.click();
+    await expect.poll(() => changes()[0]?.method).toBe("resources.apply");
+    const job = JSON.parse((changes()[0]!.params as { yaml: string }).yaml);
+    expect(job.metadata.name).toBe("rook-ceph-purge-osd-1");
+    expect(job.spec.template.spec.containers[0].image).toBe("docker.io/rook/ceph:v1.21.1");
+    expect(job.spec.template.spec.containers[0].args).toContain("--force-osd-removal");
+  });
+});
+
+describe("a node's Rook Ceph topology", () => {
+  it("changes only the CRUSH labels and refuses names CRUSH does not take", async () => {
+    await start({ context: { view: "details", contribution: "topology", selection: [ref(NODE as never)], resourceVersion: "55" }, handlers: CHANGE_HANDLERS });
+    stop = startNodeTopology(host.sextant, root);
+    await expect.poll(() => root.querySelectorAll("input").length).toBeGreaterThan(5);
+    const inputs = [...root.querySelectorAll("input")];
+    const rack = inputs.find((i) => i.value === "rack1")!;
+    const apply = button("Apply")!;
+    expect(apply.disabled).toBe(true);
+    rack.value = "rack 2";
+    rack.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(text()).toContain("rack 2 is not a CRUSH name");
+    expect(apply.disabled).toBe(true);
+    rack.value = "rack2";
+    rack.dispatchEvent(new Event("input", { bubbles: true }));
+    apply.click();
+    await expect.poll(() => changes()[0]?.params).toMatchObject({
+      ref: { kind: { kind: "Node" }, name: "kind-worker" },
+      patch: { metadata: { labels: { "topology.rook.io/rack": "rack2" }, resourceVersion: "55" } },
+    });
   });
 });

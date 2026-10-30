@@ -1,7 +1,10 @@
 import { connect } from "@sextant/extension-sdk";
+import { startAction } from "./actions";
 import { startDaemons } from "./daemons";
 import { setLanguage, t } from "./i18n";
 import { startMetrics } from "./metrics";
+import { startNodeTopology } from "./nodeTopology";
+import { startOsds } from "./osds";
 import { startPage } from "./page";
 import { startStatus } from "./status";
 import { startStorage } from "./storageView";
@@ -21,6 +24,9 @@ function start(): () => void {
   if (view === "details" && contribution === "daemons") return startDaemons(sextant, root);
   if (view === "details" && contribution === "metrics") return startMetrics(sextant, root);
   if (view === "details" && contribution === "storage") return startStorage(sextant, root);
+  if (view === "details" && contribution === "osds") return startOsds(sextant, root);
+  if (view === "details" && contribution === "topology") return startNodeTopology(sextant, root);
+  if (view === "action") return startAction(sextant, root, contribution);
   root.textContent = t("common.nothingToShow", { view });
   return () => undefined;
 }

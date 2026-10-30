@@ -2,8 +2,8 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.rook-ceph",
   "name": "Rook Ceph",
-  "version": "1.0.0",
-  "description": "Rook Ceph clusters at a glance, read-only: Ceph health and its checks in plain words, capacity, versions, the daemons and CSI drivers, pools and filesystems with the storage classes and claims on them, charts from the Ceph mgr's metrics, and problems when Ceph is unhealthy or its status goes stale.",
+  "version": "1.1.0",
+  "description": "Rook Ceph clusters: Ceph health and its checks in plain words, capacity, daemons, the CRUSH tree and OSDs, pools, filesystems and object stores with their storage classes and claims, charts and problems; and managing them through Rook's own objects, every change shown first and confirmed.",
   "author": "Sextant",
   "sextantApi": 2,
   "entry": "index.html",
@@ -67,12 +67,116 @@
             {
               "group": "storage.k8s.io",
               "kind": "StorageClass"
+            },
+            {
+              "group": "",
+              "kind": "Node"
+            },
+            {
+              "group": "apps",
+              "kind": "Deployment"
+            },
+            {
+              "group": "batch",
+              "kind": "Job"
             }
           ]
         },
         "actions": [
           "read"
         ]
+      },
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephCluster"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephBlockPool"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephFilesystem"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephObjectStore"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephObjectStoreUser"
+            },
+            {
+              "group": "storage.k8s.io",
+              "kind": "StorageClass"
+            },
+            {
+              "group": "",
+              "kind": "Node"
+            },
+            {
+              "group": "apps",
+              "kind": "Deployment"
+            },
+            {
+              "group": "batch",
+              "kind": "Job"
+            }
+          ]
+        },
+        "actions": [
+          "modify"
+        ],
+        "confirm": true
+      },
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephBlockPool"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephFilesystem"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephObjectStore"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephObjectStoreUser"
+            },
+            {
+              "group": "storage.k8s.io",
+              "kind": "StorageClass"
+            },
+            {
+              "group": "",
+              "kind": "Pod"
+            },
+            {
+              "group": "batch",
+              "kind": "Job"
+            }
+          ]
+        },
+        "actions": [
+          "delete"
+        ],
+        "confirm": true
       }
     ]
   },
@@ -123,6 +227,18 @@
         "order": 20
       },
       {
+        "id": "osds",
+        "title": "CRUSH and OSDs",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephCluster"
+          }
+        ],
+        "placement": "tab",
+        "order": 15
+      },
+      {
         "id": "storage",
         "title": "Storage classes and claims",
         "kinds": [
@@ -140,6 +256,105 @@
           }
         ],
         "placement": "section"
+      },
+      {
+        "id": "topology",
+        "title": "Rook Ceph",
+        "kinds": [
+          {
+            "group": "",
+            "kind": "Node"
+          }
+        ],
+        "placement": "tab",
+        "order": 90
+      }
+    ],
+    "actions": [
+      {
+        "id": "upgrade",
+        "title": "Upgrade Ceph…",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephCluster"
+          }
+        ]
+      },
+      {
+        "id": "pool-settings",
+        "title": "Pool settings…",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephBlockPool"
+          }
+        ]
+      },
+      {
+        "id": "mds",
+        "title": "Metadata servers…",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephFilesystem"
+          }
+        ]
+      },
+      {
+        "id": "gateways",
+        "title": "Object gateways…",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephObjectStore"
+          }
+        ]
+      },
+      {
+        "id": "create-class",
+        "title": "Create StorageClass…",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephBlockPool"
+          },
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephFilesystem"
+          },
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephObjectStore"
+          }
+        ]
+      },
+      {
+        "id": "delete-unused",
+        "title": "Delete if unused…",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephBlockPool"
+          },
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephFilesystem"
+          },
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephObjectStore"
+          },
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephObjectStoreUser"
+          },
+          {
+            "group": "storage.k8s.io",
+            "kind": "StorageClass"
+          }
+        ],
+        "danger": true
       }
     ],
     "columns": [
@@ -370,18 +585,37 @@
         "range": {
           "maxHours": 168
         }
+      },
+      {
+        "id": "osd-usage",
+        "title": "Each OSD: up, in, override weight, size and used bytes",
+        "query": "max by (ceph_daemon, __name__) ({__name__=~\"ceph_osd_(up|in|weight|stat_bytes|stat_bytes_used)\",namespace=\"{{namespace}}\"})",
+        "params": [
+          {
+            "name": "namespace",
+            "type": "namespace"
+          }
+        ]
       }
     ]
   },
   "translations": {
     "ru": {
       "name": "Rook Ceph",
-      "description": "Кластеры Rook Ceph с первого взгляда, только чтение: исправность Ceph и её проверки простыми словами, ёмкость, версии, демоны и драйверы CSI, пулы и файловые системы с классами хранилища и запросами томов на них, графики по метрикам Ceph mgr, а также проблемы, когда Ceph неисправен или его состояние устарело.",
+      "description": "Кластеры Rook Ceph: исправность Ceph и её проверки простыми словами, ёмкость, демоны, дерево CRUSH и OSD, пулы, файловые системы и объектные хранилища с классами хранилища и запросами томов, графики и проблемы; а также управление ими через собственные объекты Rook, где каждое изменение сначала показывается и подтверждается.",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Состояние Ceph",
       "detailsSections.daemons.title": "Демоны",
       "detailsSections.metrics.title": "Метрики",
+      "detailsSections.osds.title": "CRUSH и OSD",
       "detailsSections.storage.title": "Классы хранилища и запросы томов",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Обновить Ceph…",
+      "actions.pool-settings.title": "Настройки пула…",
+      "actions.mds.title": "Серверы метаданных…",
+      "actions.gateways.title": "Объектные шлюзы…",
+      "actions.create-class.title": "Создать StorageClass…",
+      "actions.delete-unused.title": "Удалить, если не используется…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Ошибка исправности Ceph",
       "problems.health-error.message": "Ceph сообщает HEALTH_ERR; проверки исправности перечислены в состоянии Ceph этого кластера",
@@ -406,16 +640,25 @@
       "metricQueries.health.title": "Исправность Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Сырая ёмкость: всего и занято байт",
       "metricQueries.osds.title": "OSD: up, in и всего",
-      "metricQueries.pgs.title": "Группы размещения по состояниям"
+      "metricQueries.pgs.title": "Группы размещения по состояниям",
+      "metricQueries.osd-usage.title": "Каждый OSD: up, in, переопределённый вес, размер и занято байт"
     },
     "uk": {
       "name": "Rook Ceph",
-      "description": "Кластери Rook Ceph з першого погляду, лише читання: справність Ceph і її перевірки простими словами, ємність, версії, демони та драйвери CSI, пули й файлові системи з класами сховища та запитами томів на них, графіки за метриками Ceph mgr, а також проблеми, коли Ceph несправний або його стан застарів.",
+      "description": "Кластери Rook Ceph: справність Ceph і її перевірки простими словами, ємність, демони, дерево CRUSH і OSD, пули, файлові системи та об'єктні сховища з класами сховища й запитами томів, графіки та проблеми; а також керування ними через власні об'єкти Rook, де кожну зміну спершу показано й підтверджено.",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Стан Ceph",
       "detailsSections.daemons.title": "Демони",
       "detailsSections.metrics.title": "Метрики",
+      "detailsSections.osds.title": "CRUSH і OSD",
       "detailsSections.storage.title": "Класи сховища та запити томів",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Оновити Ceph…",
+      "actions.pool-settings.title": "Налаштування пулу…",
+      "actions.mds.title": "Сервери метаданих…",
+      "actions.gateways.title": "Об'єктні шлюзи…",
+      "actions.create-class.title": "Створити StorageClass…",
+      "actions.delete-unused.title": "Видалити, якщо не використовується…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Помилка справності Ceph",
       "problems.health-error.message": "Ceph повідомляє HEALTH_ERR; перевірки справності перелічено в стані Ceph цього кластера",
@@ -440,16 +683,25 @@
       "metricQueries.health.title": "Справність Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Сира ємність: усього та зайнято байтів",
       "metricQueries.osds.title": "OSD: up, in і всього",
-      "metricQueries.pgs.title": "Групи розміщення за станами"
+      "metricQueries.pgs.title": "Групи розміщення за станами",
+      "metricQueries.osd-usage.title": "Кожен OSD: up, in, перевизначена вага, розмір і зайнято байтів"
     },
     "de": {
       "name": "Rook Ceph",
-      "description": "Rook-Ceph-Cluster auf einen Blick, nur lesend: der Ceph-Zustand und seine Prüfungen in einfachen Worten, Kapazität, Versionen, die Daemons und CSI-Treiber, Pools und Dateisysteme mit den Storage Classes und Claims darauf, Diagramme aus den Metriken des Ceph-mgr sowie Probleme, wenn Ceph nicht gesund ist oder sein Status veraltet.",
+      "description": "Rook-Ceph-Cluster: der Ceph-Zustand und seine Prüfungen in einfachen Worten, Kapazität, Daemons, der CRUSH-Baum und die OSDs, Pools, Dateisysteme und Objektspeicher mit ihren Storage Classes und Claims, Diagramme und Probleme; dazu ihre Verwaltung über Rooks eigene Objekte, wobei jede Änderung zuerst angezeigt und bestätigt wird.",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Ceph-Status",
       "detailsSections.daemons.title": "Daemons",
       "detailsSections.metrics.title": "Metriken",
+      "detailsSections.osds.title": "CRUSH und OSDs",
       "detailsSections.storage.title": "Storage Classes und Claims",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Ceph-Upgrade…",
+      "actions.pool-settings.title": "Pool-Einstellungen…",
+      "actions.mds.title": "Metadatenserver…",
+      "actions.gateways.title": "Objekt-Gateways…",
+      "actions.create-class.title": "StorageClass erstellen…",
+      "actions.delete-unused.title": "Löschen, falls ungenutzt…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Ceph-Zustand: Fehler",
       "problems.health-error.message": "Ceph meldet HEALTH_ERR; der Ceph-Status des Clusters listet die Zustandsprüfungen auf",
@@ -474,16 +726,25 @@
       "metricQueries.health.title": "Ceph-Zustand (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Rohkapazität: Bytes gesamt und belegt",
       "metricQueries.osds.title": "OSDs up, in und insgesamt",
-      "metricQueries.pgs.title": "Placement Groups nach Zustand"
+      "metricQueries.pgs.title": "Placement Groups nach Zustand",
+      "metricQueries.osd-usage.title": "Jedes OSD: up, in, Override-Gewicht, Größe und belegte Bytes"
     },
     "fr": {
       "name": "Rook Ceph",
-      "description": "Les clusters Rook Ceph en un coup d'œil, en lecture seule : la santé de Ceph et ses contrôles expliqués simplement, la capacité, les versions, les démons et les pilotes CSI, les pools et systèmes de fichiers avec leurs storage classes et leurs demandes, des graphiques issus des métriques du mgr de Ceph, et des problèmes quand Ceph n'est pas en bonne santé ou que son statut n'est plus actualisé.",
+      "description": "Les clusters Rook Ceph : la santé de Ceph et ses contrôles expliqués simplement, la capacité, les démons, l'arbre CRUSH et les OSD, les pools, systèmes de fichiers et magasins d'objets avec leurs storage classes et leurs demandes, des graphiques et des problèmes ; et leur gestion via les objets propres à Rook, chaque modification étant d'abord affichée puis confirmée.",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Statut Ceph",
       "detailsSections.daemons.title": "Démons",
       "detailsSections.metrics.title": "Métriques",
+      "detailsSections.osds.title": "CRUSH et OSD",
       "detailsSections.storage.title": "Storage classes et demandes",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Mettre Ceph à niveau…",
+      "actions.pool-settings.title": "Paramètres du pool…",
+      "actions.mds.title": "Serveurs de métadonnées…",
+      "actions.gateways.title": "Passerelles objet…",
+      "actions.create-class.title": "Créer une StorageClass…",
+      "actions.delete-unused.title": "Supprimer si inutilisé…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Erreur de santé Ceph",
       "problems.health-error.message": "Ceph signale HEALTH_ERR ; le statut Ceph du cluster liste les contrôles de santé",
@@ -508,16 +769,25 @@
       "metricQueries.health.title": "Santé de Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Capacité brute : octets au total et utilisés",
       "metricQueries.osds.title": "OSD up, in et au total",
-      "metricQueries.pgs.title": "Groupes de placement par état"
+      "metricQueries.pgs.title": "Groupes de placement par état",
+      "metricQueries.osd-usage.title": "Chaque OSD : up, in, poids override, taille et octets utilisés"
     },
     "es": {
       "name": "Rook Ceph",
-      "description": "Los clústeres de Rook Ceph de un vistazo, en solo lectura: la salud de Ceph y sus comprobaciones en palabras sencillas, la capacidad, las versiones, los demonios y los controladores CSI, los pools y sistemas de archivos con las storage classes y solicitudes que los usan, gráficos de las métricas del mgr de Ceph, y problemas cuando Ceph no está sano o su estado deja de actualizarse.",
+      "description": "Los clústeres de Rook Ceph: la salud de Ceph y sus comprobaciones en palabras sencillas, la capacidad, los demonios, el árbol CRUSH y los OSD, los pools, sistemas de archivos y almacenes de objetos con sus storage classes y solicitudes, gráficos y problemas; y su gestión mediante los propios objetos de Rook, con cada cambio mostrado primero y confirmado.",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Estado de Ceph",
       "detailsSections.daemons.title": "Demonios",
       "detailsSections.metrics.title": "Métricas",
+      "detailsSections.osds.title": "CRUSH y OSD",
       "detailsSections.storage.title": "Storage classes y solicitudes",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Actualizar Ceph…",
+      "actions.pool-settings.title": "Configuración del pool…",
+      "actions.mds.title": "Servidores de metadatos…",
+      "actions.gateways.title": "Pasarelas de objetos…",
+      "actions.create-class.title": "Crear StorageClass…",
+      "actions.delete-unused.title": "Eliminar si no se usa…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Error de salud de Ceph",
       "problems.health-error.message": "Ceph informa de HEALTH_ERR; el estado de Ceph del clúster lista las comprobaciones de salud",
@@ -542,16 +812,25 @@
       "metricQueries.health.title": "Salud de Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Capacidad bruta: bytes totales y usados",
       "metricQueries.osds.title": "OSD up, in y en total",
-      "metricQueries.pgs.title": "Grupos de colocación por estado"
+      "metricQueries.pgs.title": "Grupos de colocación por estado",
+      "metricQueries.osd-usage.title": "Cada OSD: up, in, peso override, tamaño y bytes usados"
     },
     "pt-BR": {
       "name": "Rook Ceph",
-      "description": "Clusters Rook Ceph num relance, somente leitura: a saúde do Ceph e as verificações dela em palavras simples, capacidade, versões, os daemons e drivers CSI, pools e sistemas de arquivos com as classes de armazenamento e claims sobre eles, gráficos das métricas do mgr do Ceph e problemas quando o Ceph não está saudável ou o status dele fica desatualizado.",
+      "description": "Clusters Rook Ceph: a saúde do Ceph e as verificações dela em palavras simples, capacidade, daemons, a árvore CRUSH e os OSDs, pools, sistemas de arquivos e armazenamentos de objetos com as classes de armazenamento e claims deles, gráficos e problemas; e o gerenciamento deles pelos próprios objetos do Rook, com cada alteração mostrada antes e confirmada.",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Status do Ceph",
       "detailsSections.daemons.title": "Daemons",
       "detailsSections.metrics.title": "Métricas",
+      "detailsSections.osds.title": "CRUSH e OSDs",
       "detailsSections.storage.title": "Classes de armazenamento e claims",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Atualizar o Ceph…",
+      "actions.pool-settings.title": "Configurações do pool…",
+      "actions.mds.title": "Servidores de metadados…",
+      "actions.gateways.title": "Gateways de objetos…",
+      "actions.create-class.title": "Criar StorageClass…",
+      "actions.delete-unused.title": "Excluir se não estiver em uso…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Erro de saúde do Ceph",
       "problems.health-error.message": "O Ceph relata HEALTH_ERR; a seção Status do Ceph do cluster lista as verificações de saúde",
@@ -576,16 +855,25 @@
       "metricQueries.health.title": "Saúde do Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Capacidade bruta: bytes totais e usados",
       "metricQueries.osds.title": "OSDs up, in e total",
-      "metricQueries.pgs.title": "Grupos de posicionamento por estado"
+      "metricQueries.pgs.title": "Grupos de posicionamento por estado",
+      "metricQueries.osd-usage.title": "Cada OSD: up, in, peso de reweight, tamanho e bytes usados"
     },
     "it": {
       "name": "Rook Ceph",
-      "description": "I cluster Rook Ceph a colpo d'occhio, in sola lettura: lo stato di salute di Ceph e i suoi controlli in parole semplici, capacità, versioni, i daemon e i driver CSI, pool e file system con le storage class e le richieste che li usano, grafici dalle metriche del mgr di Ceph, e problemi quando Ceph non è in salute o il suo stato non viene più aggiornato.",
+      "description": "I cluster Rook Ceph: lo stato di salute di Ceph e i suoi controlli in parole semplici, capacità, daemon, l'albero CRUSH e gli OSD, pool, file system e archivi di oggetti con le loro storage class e richieste, grafici e problemi; e la loro gestione tramite gli oggetti propri di Rook, con ogni modifica mostrata prima e confermata.",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Stato di Ceph",
       "detailsSections.daemons.title": "Daemon",
       "detailsSections.metrics.title": "Metriche",
+      "detailsSections.osds.title": "CRUSH e OSD",
       "detailsSections.storage.title": "Storage class e richieste",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Aggiorna Ceph…",
+      "actions.pool-settings.title": "Impostazioni del pool…",
+      "actions.mds.title": "Server di metadati…",
+      "actions.gateways.title": "Gateway di oggetti…",
+      "actions.create-class.title": "Crea StorageClass…",
+      "actions.delete-unused.title": "Elimina se inutilizzato…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Errore di salute di Ceph",
       "problems.health-error.message": "Ceph segnala HEALTH_ERR; lo stato di Ceph del cluster elenca i controlli di salute",
@@ -610,16 +898,25 @@
       "metricQueries.health.title": "Stato di salute di Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Capacità grezza: byte totali e usati",
       "metricQueries.osds.title": "OSD up, in e in totale",
-      "metricQueries.pgs.title": "Placement group per stato"
+      "metricQueries.pgs.title": "Placement group per stato",
+      "metricQueries.osd-usage.title": "Ogni OSD: up, in, peso override, dimensione e byte usati"
     },
     "pl": {
       "name": "Rook Ceph",
-      "description": "Klastry Rook Ceph w skrócie, tylko do odczytu: kondycja Ceph i jej kontrole prostymi słowami, pojemność, wersje, demony i sterowniki CSI, pule i systemy plików z klasami pamięci masowej i żądaniami woluminów na nich, wykresy z metryk Ceph mgr oraz problemy, gdy Ceph ma złą kondycję lub jego stan przestaje być odświeżany.",
+      "description": "Klastry Rook Ceph: kondycja Ceph i jej kontrole prostymi słowami, pojemność, demony, drzewo CRUSH i OSD, pule, systemy plików i magazyny obiektów z klasami pamięci masowej i żądaniami woluminów, wykresy i problemy; a także zarządzanie nimi przez własne obiekty Rook, przy czym każda zmiana jest najpierw pokazywana i potwierdzana.",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Stan Ceph",
       "detailsSections.daemons.title": "Demony",
       "detailsSections.metrics.title": "Metryki",
+      "detailsSections.osds.title": "CRUSH i OSD",
       "detailsSections.storage.title": "Klasy pamięci masowej i żądania woluminów",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Aktualizuj Ceph…",
+      "actions.pool-settings.title": "Ustawienia puli…",
+      "actions.mds.title": "Serwery metadanych…",
+      "actions.gateways.title": "Bramy obiektowe…",
+      "actions.create-class.title": "Utwórz StorageClass…",
+      "actions.delete-unused.title": "Usuń, jeśli nieużywany…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Błąd kondycji Ceph",
       "problems.health-error.message": "Ceph zgłasza HEALTH_ERR; kontrole kondycji są wymienione w stanie Ceph tego klastra",
@@ -644,16 +941,25 @@
       "metricQueries.health.title": "Kondycja Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Surowa pojemność: łącznie i zajęte bajty",
       "metricQueries.osds.title": "OSD: up, in i łącznie",
-      "metricQueries.pgs.title": "Grupy rozmieszczenia według stanu"
+      "metricQueries.pgs.title": "Grupy rozmieszczenia według stanu",
+      "metricQueries.osd-usage.title": "Każdy OSD: up, in, waga nadpisująca, rozmiar i zajęte bajty"
     },
     "tr": {
       "name": "Rook Ceph",
-      "description": "Rook Ceph kümelerine salt okunur bir bakış: Ceph'in sağlık durumu ve denetimleri sade bir dille, kapasite, sürümler, daemon'lar ve CSI sürücüleri, üzerlerindeki depolama sınıfları ve taleplerle birlikte havuzlar ve dosya sistemleri, Ceph mgr ölçümlerinden grafikler ve Ceph sağlıksız olduğunda ya da durumu güncelliğini yitirdiğinde sorunlar.",
+      "description": "Rook Ceph kümeleri: Ceph'in sağlık durumu ve denetimleri sade bir dille, kapasite, daemon'lar, CRUSH ağacı ve OSD'ler, depolama sınıfları ve talepleriyle birlikte havuzlar, dosya sistemleri ve nesne depoları, grafikler ve sorunlar; ayrıca her değişikliği önce gösterip onay alarak Rook'un kendi nesneleriyle yönetim.",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Ceph durumu",
       "detailsSections.daemons.title": "Daemon'lar",
       "detailsSections.metrics.title": "Ölçümler",
+      "detailsSections.osds.title": "CRUSH ve OSD'ler",
       "detailsSections.storage.title": "Depolama sınıfları ve talepler",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Ceph'i yükselt…",
+      "actions.pool-settings.title": "Havuz ayarları…",
+      "actions.mds.title": "Meta veri sunucuları…",
+      "actions.gateways.title": "Nesne ağ geçitleri…",
+      "actions.create-class.title": "StorageClass oluştur…",
+      "actions.delete-unused.title": "Kullanılmıyorsa sil…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Ceph sağlık hatası",
       "problems.health-error.message": "Ceph HEALTH_ERR bildiriyor; sağlık denetimleri kümenin Ceph durumu bölümünde listelenir",
@@ -678,16 +984,25 @@
       "metricQueries.health.title": "Ceph sağlığı (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Ham kapasite: toplam ve kullanılan bayt",
       "metricQueries.osds.title": "OSD'ler: up, in ve toplam",
-      "metricQueries.pgs.title": "Duruma göre yerleşim grupları"
+      "metricQueries.pgs.title": "Duruma göre yerleşim grupları",
+      "metricQueries.osd-usage.title": "Her OSD: up, in, reweight ağırlığı, boyut ve kullanılan bayt"
     },
     "zh-CN": {
       "name": "Rook Ceph",
-      "description": "只读一览 Rook Ceph 集群：用通俗的话说明 Ceph 的健康状况及其检查项，以及容量、版本、守护进程和 CSI 驱动、存储池和文件系统及其上的 StorageClass 与申领、基于 Ceph mgr 指标的图表；当 Ceph 不健康或其状态过时时报告问题。",
+      "description": "Rook Ceph 集群：用通俗的话说明 Ceph 的健康状况及其检查项，以及容量、守护进程、CRUSH 树和 OSD、存储池、文件系统和对象存储及其 StorageClass 与申领、图表和问题；并通过 Rook 自己的对象管理它们，每项更改都会先显示，经确认后才发送。",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Ceph 状态",
       "detailsSections.daemons.title": "守护进程",
       "detailsSections.metrics.title": "指标",
+      "detailsSections.osds.title": "CRUSH 与 OSD",
       "detailsSections.storage.title": "StorageClass 与申领",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "升级 Ceph…",
+      "actions.pool-settings.title": "存储池设置…",
+      "actions.mds.title": "元数据服务器…",
+      "actions.gateways.title": "对象网关…",
+      "actions.create-class.title": "创建 StorageClass…",
+      "actions.delete-unused.title": "未使用时删除…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Ceph 健康错误",
       "problems.health-error.message": "Ceph 报告 HEALTH_ERR；集群的 Ceph 状态中列出了健康检查项",
@@ -712,16 +1027,25 @@
       "metricQueries.health.title": "Ceph 健康状况（0 OK，1 WARN，2 ERR）",
       "metricQueries.capacity.title": "原始容量：总字节数和已用字节数",
       "metricQueries.osds.title": "OSD：up、in 和总数",
-      "metricQueries.pgs.title": "按状态统计的归置组"
+      "metricQueries.pgs.title": "按状态统计的归置组",
+      "metricQueries.osd-usage.title": "每个 OSD：up、in、覆盖权重、大小和已用字节数"
     },
     "zh-TW": {
       "name": "Rook Ceph",
-      "description": "唯讀一覽 Rook Ceph 叢集：以淺白的文字說明 Ceph 的健康狀態及其檢查項目，以及容量、版本、常駐程式與 CSI 驅動程式、儲存池與檔案系統及其上的 StorageClass 與宣告、根據 Ceph mgr 指標繪製的圖表；當 Ceph 不健康或其狀態過時時回報問題。",
+      "description": "Rook Ceph 叢集：以淺白的文字說明 Ceph 的健康狀態及其檢查項目，以及容量、常駐程式、CRUSH 樹與 OSD、儲存池、檔案系統與物件儲存及其 StorageClass 與宣告、圖表與問題；並透過 Rook 自己的物件管理它們，每項變更都會先顯示，經確認後才送出。",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Ceph 狀態",
       "detailsSections.daemons.title": "常駐程式",
       "detailsSections.metrics.title": "指標",
+      "detailsSections.osds.title": "CRUSH 與 OSD",
       "detailsSections.storage.title": "StorageClass 與宣告",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "升級 Ceph…",
+      "actions.pool-settings.title": "儲存池設定…",
+      "actions.mds.title": "中繼資料伺服器…",
+      "actions.gateways.title": "物件閘道…",
+      "actions.create-class.title": "建立 StorageClass…",
+      "actions.delete-unused.title": "未使用時刪除…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Ceph 健康錯誤",
       "problems.health-error.message": "Ceph 回報 HEALTH_ERR；叢集的 Ceph 狀態中列出了健康檢查項目",
@@ -746,16 +1070,25 @@
       "metricQueries.health.title": "Ceph 健康狀態（0 OK，1 WARN，2 ERR）",
       "metricQueries.capacity.title": "原始容量：總位元組數與已用位元組數",
       "metricQueries.osds.title": "OSD：up、in 與總數",
-      "metricQueries.pgs.title": "依狀態統計的放置群組"
+      "metricQueries.pgs.title": "依狀態統計的放置群組",
+      "metricQueries.osd-usage.title": "每個 OSD：up、in、覆寫權重、大小與已用位元組數"
     },
     "ja": {
       "name": "Rook Ceph",
-      "description": "Rook Ceph クラスターをひと目で確認 (読み取り専用): Ceph のヘルスとヘルスチェックをわかりやすい言葉で、容量、バージョン、デーモンと CSI ドライバー、プールとファイルシステムおよびそれらを使うストレージクラスと要求、Ceph mgr のメトリクスのグラフ、そして Ceph が正常でないときやステータスが古くなったときの問題を表示します。",
+      "description": "Rook Ceph クラスター: Ceph のヘルスとヘルスチェックをわかりやすい言葉で、容量、デーモン、CRUSH ツリーと OSD、プール、ファイルシステム、オブジェクトストアとそれらのストレージクラスと要求、グラフと問題を表示します。さらに Rook 自身のオブジェクトを通じて管理でき、すべての変更は事前に表示して確認します。",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Ceph のステータス",
       "detailsSections.daemons.title": "デーモン",
       "detailsSections.metrics.title": "メトリクス",
+      "detailsSections.osds.title": "CRUSH と OSD",
       "detailsSections.storage.title": "ストレージクラスと要求",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Ceph をアップグレード…",
+      "actions.pool-settings.title": "プールの設定…",
+      "actions.mds.title": "メタデータサーバー…",
+      "actions.gateways.title": "オブジェクトゲートウェイ…",
+      "actions.create-class.title": "StorageClass を作成…",
+      "actions.delete-unused.title": "未使用なら削除…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Ceph のヘルスエラー",
       "problems.health-error.message": "Ceph が HEALTH_ERR を報告しています。ヘルスチェックはクラスターの「Ceph のステータス」に表示されます",
@@ -780,16 +1113,25 @@
       "metricQueries.health.title": "Ceph のヘルス (0 OK、1 WARN、2 ERR)",
       "metricQueries.capacity.title": "RAW 容量: 合計と使用済みのバイト数",
       "metricQueries.osds.title": "OSD の up、in、合計",
-      "metricQueries.pgs.title": "状態別の配置グループ"
+      "metricQueries.pgs.title": "状態別の配置グループ",
+      "metricQueries.osd-usage.title": "各 OSD: up、in、reweight 値、サイズ、使用バイト数"
     },
     "ko": {
       "name": "Rook Ceph",
-      "description": "Rook Ceph 클러스터를 한눈에 보는 읽기 전용 확장입니다. Ceph 건강 상태와 상태 검사 항목을 쉬운 말로 설명하고, 용량, 버전, 데몬과 CSI 드라이버, 풀과 파일 시스템 및 그 위의 스토리지 클래스와 클레임, Ceph mgr 메트릭 차트를 보여 주며, Ceph가 비정상이거나 상태가 오래되면 문제로 알립니다.",
+      "description": "Rook Ceph 클러스터: Ceph 건강 상태와 상태 검사 항목을 쉬운 말로 설명하고, 용량, 데몬, CRUSH 트리와 OSD, 풀·파일 시스템·오브젝트 스토어와 그 스토리지 클래스 및 클레임, 차트와 문제를 보여 줍니다. 또한 Rook 자체 개체를 통해 이를 관리하며, 모든 변경 사항은 먼저 보여 주고 확인을 받습니다.",
       "pages.overview.title": "Rook Ceph",
       "detailsSections.status.title": "Ceph 상태",
       "detailsSections.daemons.title": "데몬",
       "detailsSections.metrics.title": "메트릭",
+      "detailsSections.osds.title": "CRUSH와 OSD",
       "detailsSections.storage.title": "스토리지 클래스와 클레임",
+      "detailsSections.topology.title": "Rook Ceph",
+      "actions.upgrade.title": "Ceph 업그레이드…",
+      "actions.pool-settings.title": "풀 설정…",
+      "actions.mds.title": "메타데이터 서버…",
+      "actions.gateways.title": "오브젝트 게이트웨이…",
+      "actions.create-class.title": "StorageClass 만들기…",
+      "actions.delete-unused.title": "사용하지 않으면 삭제…",
       "columns.ceph-version.title": "Ceph",
       "problems.health-error.title": "Ceph 건강 상태 오류",
       "problems.health-error.message": "Ceph가 HEALTH_ERR를 보고합니다. 클러스터의 Ceph 상태에 상태 검사 항목이 나열되어 있습니다",
@@ -814,7 +1156,8 @@
       "metricQueries.health.title": "Ceph 건강 상태(0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "원시 용량: 전체 및 사용된 바이트",
       "metricQueries.osds.title": "OSD: up, in, 전체",
-      "metricQueries.pgs.title": "상태별 배치 그룹"
+      "metricQueries.pgs.title": "상태별 배치 그룹",
+      "metricQueries.osd-usage.title": "OSD별: up, in, override weight, 크기, 사용된 바이트"
     }
   }
 }

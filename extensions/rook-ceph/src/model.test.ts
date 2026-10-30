@@ -205,10 +205,11 @@ describe("the manifest", () => {
   });
 
   it("has the queries the Metrics tab runs, each allowing its longest range", () => {
-    expect(contributes.metricQueries.map((q) => q.id)).toEqual(["health", "capacity", "osds", "pgs"]);
+    expect(contributes.metricQueries.map((q) => q.id)).toEqual(["health", "capacity", "osds", "pgs", "osd-usage"]);
     const longest = Math.max(...RANGES.map((r) => r.minutes));
     const stepSeconds: Record<string, number> = { "1m": 60, "5m": 300, "15m": 900, "1h": 3600 };
-    for (const query of contributes.metricQueries) {
+    // The charts' queries run over ranges; the OSD tab's `osd-usage` only now.
+    for (const query of contributes.metricQueries.filter((q) => q.id !== "osd-usage")) {
       expect(query.range!.maxHours * 60).toBeGreaterThanOrEqual(longest);
       expect(query.params).toEqual([{ name: "namespace", type: "namespace" }]);
     }
@@ -220,10 +221,24 @@ describe("the manifest", () => {
     expect(promtool.tests[0]!.promql_expr_test.map((t) => t.expr)).toEqual(filled);
   });
 
-  it("reads only, and every kind it judges or shows is one it may read", () => {
+  it("asks before every change, and every kind it judges, shows or changes is one it may", () => {
     const rules = manifest.permissions.rules;
-    expect(rules.flatMap((r) => r.actions)).toEqual(["read"]);
-    const readable = new Set(rules.flatMap((r) => r.kinds.kinds.map((k) => `${k.group}/${k.kind}`)));
+    expect(rules.map((r) => r.actions)).toEqual([["read"], ["modify"], ["delete"]]);
+    for (const rule of rules.slice(1)) expect((rule as { confirm?: boolean }).confirm).toBe(true);
+    const kinds = (action: string) =>
+      new Set(rules.filter((r) => r.actions.includes(action)).flatMap((r) => r.kinds.kinds.map((k) => `${k.group}/${k.kind}`)));
+    const readable = kinds("read");
+    const modifiable = kinds("modify");
+    const deletable = kinds("delete");
+    // What the code patches, applies and deletes (changes.ts, actions.ts, osds.ts, daemons.ts, nodeTopology.ts).
+    for (const kind of ["ceph.rook.io/CephCluster", "ceph.rook.io/CephBlockPool", "ceph.rook.io/CephFilesystem", "ceph.rook.io/CephObjectStore", "ceph.rook.io/CephObjectStoreUser", "storage.k8s.io/StorageClass", "/Node", "apps/Deployment", "batch/Job"]) {
+      expect(modifiable).toContain(kind);
+      expect(readable).toContain(kind);
+    }
+    for (const kind of ["ceph.rook.io/CephBlockPool", "ceph.rook.io/CephFilesystem", "ceph.rook.io/CephObjectStore", "ceph.rook.io/CephObjectStoreUser", "storage.k8s.io/StorageClass", "/Pod", "batch/Job"]) {
+      expect(deletable).toContain(kind);
+    }
+    for (const action of contributes.actions) for (const kind of action.kinds) expect(readable).toContain(`${kind.group}/${kind.kind}`);
     const used = [
       ...contributes.problems.map((p) => p.kind),
       ...contributes.detailsSections.flatMap((s) => s.kinds),

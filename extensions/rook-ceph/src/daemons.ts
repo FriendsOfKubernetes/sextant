@@ -4,6 +4,7 @@ import type { Sextant } from "@sextant/extension-sdk";
 import { componentsOf, daemonIdOf, isReady, notReadyReason, OPERATOR_SELECTOR, restartsOf, type Component, type Pod } from "./components";
 import { badge, element, errorBox, objectLink } from "./dom";
 import { t } from "./i18n";
+import { changeButton } from "./ui";
 import { kindKey, servedKinds, watchLists, type LiveList } from "./live";
 import { POD, refOf } from "./rook";
 
@@ -26,6 +27,7 @@ function podTable(sextant: Sextant, pods: Pod[], withNode: boolean): HTMLElement
         withNode ? element("th", { textContent: t("table.node") }) : null,
         element("th", { textContent: t("table.state") }),
         element("th", { textContent: t("table.restarts") }),
+        element("th", { textContent: t("table.actions") }),
       ),
     ),
     element(
@@ -40,12 +42,29 @@ function podTable(sextant: Sextant, pods: Pod[], withNode: boolean): HTMLElement
           withNode ? element("td", { textContent: pod.spec?.nodeName ?? t("daemons.notScheduled") }) : null,
           element("td", {}, isReady(pod) ? badge(t("daemons.ready"), "ok") : badge(notReadyReason(pod), "error")),
           element("td", { textContent: String(restartsOf(pod)) }),
+          element("td", {}, restartControl(sextant, pod)),
         ),
       ),
     ),
   );
   if (pods.length <= MAX_ROWS) return table;
   return element("div", {}, table, element("p", { className: "muted", textContent: t("common.andMore", { count: pods.length - MAX_ROWS }) }));
+}
+
+/** Restart a pod its controller re-creates (a Deployment's ReplicaSet, a DaemonSet, a StatefulSet): delete it. */
+export function canRestart(pod: Pod): boolean {
+  const owners = (pod.metadata.ownerReferences ?? []) as { kind?: string; controller?: boolean }[];
+  return owners.some((o) => o.controller && (o.kind === "ReplicaSet" || o.kind === "DaemonSet" || o.kind === "StatefulSet"));
+}
+
+function restartControl(sextant: Sextant, pod: Pod): HTMLElement | string {
+  if (!canRestart(pod)) return "";
+  const ref = { ...refOf(pod, POD) };
+  const { button, status } = changeButton(t("manage.restart"), () => sextant.resources.delete({ ref }), {
+    doneText: t("manage.restarted"),
+  });
+  button.setAttribute("aria-label", t("manage.restartPod", { pod: pod.metadata.name }));
+  return element("span", { className: "inline-change" }, button, status);
 }
 
 function componentView(sextant: Sextant, component: Component): HTMLElement {

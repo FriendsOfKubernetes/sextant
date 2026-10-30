@@ -66,6 +66,7 @@ describe("the manifest's translations", () => {
       "description",
       ...c.pages.map((p) => `pages.${p.id}.title`),
       ...c.detailsSections.map((s) => `detailsSections.${s.id}.title`),
+      ...c.actions.map((a) => `actions.${a.id}.title`),
       ...c.columns.map((col) => `columns.${col.id}.title`),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
       ...c.metricQueries.map((q) => `metricQueries.${q.id}.title`),

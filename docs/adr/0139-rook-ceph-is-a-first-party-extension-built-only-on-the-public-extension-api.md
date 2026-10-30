@@ -31,6 +31,9 @@ metrics (ADR-0138). It has to prove that an operator view is possible with nothi
   - `ui.openDetails`.
 - **Read-only.** It runs no `ceph` command and changes nothing through the operator. Extensions have no exec, so the
   toolbox (`rook-ceph-tools`) is only found and linked: Shell on its pod is Sextant's own.
+
+  *Amended by ADR-0141 (1.1.0, #327):* the extension now also changes Rook through Rook's own objects, after
+  Sextant's confirmation. It still runs no `ceph` command.
 - **Rook's own words.**
   - **Status fields** are read by the names of Rook's types (`pkg/apis/ceph.rook.io/v1/types.go`, read at v1.21.1).
   - **Pods** are matched by the labels Rook and ceph-csi-operator set:

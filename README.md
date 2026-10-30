@@ -82,9 +82,13 @@ ship on their own versions. The first is **Rook Ceph**:
 - the operator, monitors, managers, OSDs by node, MDS, RGW and CSI drivers with their readiness;
 - the storage classes and claims on every pool, filesystem and object store;
 - charts of health, capacity, OSDs and placement groups from the Ceph mgr's metrics;
-- problems and notifications when Ceph is unhealthy or its status goes stale.
+- problems and notifications when Ceph is unhealthy or its status goes stale;
+- since 1.1.0, management through Rook's own objects: Ceph upgrades checked against the versions Rook supports, the
+  CRUSH tree and OSDs (replace, stop, remove with Rook's purge Job), a node's CRUSH location, pool, MDS and gateway
+  settings, new pools, filesystems, object stores and StorageClasses, muted health checks and the toolbox.
 
-It only reads, and it speaks every language Sextant does.
+Every change is shown before it is sent and confirmed in Sextant; it never runs a `ceph` command. It speaks every
+language Sextant does.
 
 **What an extension can add**:
 - a page in the sidebar;

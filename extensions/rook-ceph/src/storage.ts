@@ -4,7 +4,8 @@
 // - RBD: provisioner `<prefix>.rbd.csi.ceph.com`, `parameters.clusterID` the CephCluster's namespace (Rook's default
 //   clusterID), `parameters.pool` the Ceph pool, or `parameters.dataPool` for an erasure-coded data pool;
 // - CephFS: provisioner `<prefix>.cephfs.csi.ceph.com`, `clusterID`, `fsName` the filesystem;
-// - buckets: provisioner `<operator namespace>.ceph.rook.io/bucket`, `objectStoreName` and `objectStoreNamespace`.
+// - buckets: provisioner `ceph.rook.io/bucket` (prefixed by the cluster's namespace in Rook's operator.yaml),
+//   `objectStoreName` and `objectStoreNamespace`.
 // A StorageClass with another clusterID (one set up by hand through a ClientProfile, a RADOS namespace or a
 // subvolume group) is not matched: Sextant cannot tell from the objects which CephCluster that is.
 import type { KubeObject } from "@sextant/extension-sdk";
@@ -24,7 +25,9 @@ export function driverOf(storageClass: StorageClass): Driver | null {
   const provisioner = storageClass.provisioner ?? "";
   if (provisioner.endsWith(".rbd.csi.ceph.com")) return "rbd";
   if (provisioner.endsWith(".cephfs.csi.ceph.com")) return "cephfs";
-  if (provisioner.endsWith(".ceph.rook.io/bucket")) return "bucket";
+  // Rook names it `ceph.rook.io/bucket`, with a prefix when the operator sets one (`GetObjectBucketProvisioner`,
+  // pkg/operator/ceph/object/objectstore.go): the cluster's namespace in Rook's operator.yaml, or a custom prefix.
+  if (provisioner === "ceph.rook.io/bucket" || provisioner.endsWith(".ceph.rook.io/bucket")) return "bucket";
   return null;
 }
 

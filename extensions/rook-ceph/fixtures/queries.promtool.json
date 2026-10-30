@@ -100,6 +100,26 @@
         {
           "series": "ceph_pg_total{namespace=\"other-ceph\",instance=\"10.0.1.1:9283\",job=\"rook-ceph-mgr\",pool_id=\"1\"}",
           "values": "64 64 64 64"
+        },
+        {
+          "series": "ceph_osd_weight{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",ceph_daemon=\"osd.0\"}",
+          "values": "1 1 1 1"
+        },
+        {
+          "series": "ceph_osd_weight{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",ceph_daemon=\"osd.1\"}",
+          "values": "0.8 0.8 0.8 0.8"
+        },
+        {
+          "series": "ceph_osd_stat_bytes{namespace=\"rook-ceph\",instance=\"10.0.0.3:9926\",job=\"rook-ceph-exporter\",ceph_daemon=\"osd.0\"}",
+          "values": "100 100 100 100"
+        },
+        {
+          "series": "ceph_osd_stat_bytes_used{namespace=\"rook-ceph\",instance=\"10.0.0.3:9926\",job=\"rook-ceph-exporter\",ceph_daemon=\"osd.0\"}",
+          "values": "10 20 30 40"
+        },
+        {
+          "series": "ceph_osd_stat_bytes{namespace=\"other-ceph\",instance=\"10.0.1.1:9283\",job=\"rook-ceph-mgr\",ceph_daemon=\"osd.0\"}",
+          "values": "999 999 999 999"
         }
       ],
       "promql_expr_test": [
@@ -164,6 +184,44 @@
             {
               "labels": "{__name__=\"ceph_pg_degraded\"}",
               "value": 16
+            }
+          ]
+        },
+        {
+          "expr": "max by (ceph_daemon, __name__) ({__name__=~\"ceph_osd_(up|in|weight|stat_bytes|stat_bytes_used)\",namespace=\"rook-ceph\"})",
+          "eval_time": "3m",
+          "exp_samples": [
+            {
+              "labels": "{__name__=\"ceph_osd_up\",ceph_daemon=\"osd.0\"}",
+              "value": 1
+            },
+            {
+              "labels": "{__name__=\"ceph_osd_up\",ceph_daemon=\"osd.1\"}",
+              "value": 0
+            },
+            {
+              "labels": "{__name__=\"ceph_osd_in\",ceph_daemon=\"osd.0\"}",
+              "value": 1
+            },
+            {
+              "labels": "{__name__=\"ceph_osd_in\",ceph_daemon=\"osd.1\"}",
+              "value": 1
+            },
+            {
+              "labels": "{__name__=\"ceph_osd_weight\",ceph_daemon=\"osd.0\"}",
+              "value": 1
+            },
+            {
+              "labels": "{__name__=\"ceph_osd_weight\",ceph_daemon=\"osd.1\"}",
+              "value": 0.8
+            },
+            {
+              "labels": "{__name__=\"ceph_osd_stat_bytes\",ceph_daemon=\"osd.0\"}",
+              "value": 100
+            },
+            {
+              "labels": "{__name__=\"ceph_osd_stat_bytes_used\",ceph_daemon=\"osd.0\"}",
+              "value": 40
             }
           ]
         }

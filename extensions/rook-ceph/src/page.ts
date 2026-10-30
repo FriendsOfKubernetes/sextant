@@ -17,12 +17,14 @@ import {
   healthChecks,
   OBJECT_BUCKET_CLAIM,
   phaseTone,
+  POD,
   PVC,
   refOf,
   STORAGE_CLASS,
   type CephCluster,
   type RookObject,
 } from "./rook";
+import { createSection, type CreateData } from "./create";
 import { capacityView, freshness, headline, REDRAW_MS } from "./status";
 import { claimsOf, driverOf, storageClassesOf, targetOf, type Claim, type StorageClass } from "./storage";
 
@@ -205,9 +207,29 @@ export function startPage(sextant: Sextant, root: HTMLElement): () => void {
   let shownNamespaces: string | undefined;
   let served: Set<string> | null = null;
   let last: Record<ListName, LiveList> | null = null;
+  let driverPrefix: string | null = null;
+  let createNode: HTMLElement | null = null;
+  const createData = (): CreateData => ({
+    clusters: (last?.clusters.items ?? []) as CephCluster[],
+    pools: (last?.pools.items ?? []) as RookObject[],
+    filesystems: (last?.filesystems.items ?? []) as RookObject[],
+    objectStores: (last?.objectStores.items ?? []) as RookObject[],
+    users: (last?.users.items ?? []) as RookObject[],
+    classes: (last?.classes.items ?? []) as StorageClass[],
+    driverPrefix,
+  });
   const render = () => {
-    if (!stopped && last?.clusters.ready) root.replaceChildren(pageView(sextant, last, Date.now()));
+    if (stopped || !last?.clusters.ready) return;
+    // The create forms are built once (when there is a cluster to create in) and kept, so typing survives redraws.
+    createNode ??= createSection(sextant, createData);
+    root.replaceChildren(pageView(sextant, last, Date.now()), ...(createNode ? [createNode] : []));
   };
+  void sextant.resources
+    .list({ kind: POD, labelSelector: "app=rook-ceph-operator", limit: 5 })
+    .then((r) => {
+      driverPrefix = r.items[0]?.metadata.namespace ?? null;
+    })
+    .catch(() => undefined);
 
   const start = (context: HostContext) => {
     const key = JSON.stringify(context.namespaces);

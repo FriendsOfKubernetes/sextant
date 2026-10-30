@@ -194,3 +194,126 @@ svg.chart .line {
 .s3 { stroke: var(--color-danger); background: var(--color-danger); }
 .s4 { stroke: var(--color-text-muted); background: var(--color-text-muted); }
 .s5 { stroke: var(--color-text); background: var(--color-text); }
+
+/* Changes (1.1.0): forms, the change shown before it is sent, and its outcome. */
+.form {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0;
+  max-width: 560px;
+}
+.field {
+  display: grid;
+  gap: 2px;
+}
+.field label {
+  font-weight: 500;
+}
+.field input:not([type="checkbox"]),
+.field select {
+  width: 100%;
+  max-width: 360px;
+  box-sizing: border-box;
+}
+.hint {
+  font-size: 12px;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+input[type="checkbox"] {
+  height: auto;
+  padding: 0;
+  margin: 0;
+}
+.topology {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  max-width: none;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.inline-change {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin-left: 6px;
+}
+.inline-change button,
+.check-head button {
+  height: var(--control-height-compact, 28px);
+}
+.change-status:empty {
+  display: none;
+}
+.change-status {
+  font-size: 12px;
+}
+.ok-text {
+  color: var(--color-success);
+}
+.preview {
+  margin: 8px 0;
+}
+.preview summary,
+.create summary,
+.remove-osd summary {
+  cursor: pointer;
+}
+.preview pre {
+  max-height: 280px;
+  overflow: auto;
+  margin: 4px 0 0;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg, transparent);
+  font-size: 12px;
+  white-space: pre;
+}
+.create,
+.remove-osd {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+.create summary {
+  font-weight: 600;
+}
+
+/* The CRUSH tree. */
+.crush {
+  list-style: none;
+  margin: 0;
+  padding-left: 16px;
+  border-left: 1px solid var(--color-border);
+}
+.crush-root {
+  padding-left: 0;
+  border-left: none;
+}
+.crush-bucket {
+  padding: 2px 0;
+}
+.crush-osd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  padding: 2px 0;
+}
