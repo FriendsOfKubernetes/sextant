@@ -195,7 +195,9 @@ async fn an_image_that_cannot_be_pulled_fails_with_the_reason_and_leaves_no_pod(
     let (_tmp, mgr, id) = common::connected(&cluster.kubeconfig).await;
 
     let started = Instant::now();
-    let err = node_shell::create(&mgr, &id, &node, "sextant.invalid/no-such-image:1")
+    // A registry at a closed port of the node itself: refused at once, with no DNS lookup whose speed depends on the
+    // host's network (a `sextant.invalid` name once kept the pod in ContainerCreating past the start timeout, #290).
+    let err = node_shell::create(&mgr, &id, &node, "127.0.0.1:1/no-such-image:1")
         .await
         .expect_err("the image does not exist");
     assert!(
@@ -205,7 +207,7 @@ async fn an_image_that_cannot_be_pulled_fails_with_the_reason_and_leaves_no_pod(
     );
     let text = err.message.to_lowercase();
     assert!(
-        text.contains("sextant.invalid/no-such-image"),
+        text.contains("127.0.0.1:1/no-such-image"),
         "the reason from the pod's events is missing: {err}"
     );
     assert!(text.contains("pull"), "{err}");
