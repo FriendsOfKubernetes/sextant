@@ -1,0 +1,173 @@
+{
+  "rule_files": [],
+  "evaluation_interval": "1m",
+  "tests": [
+    {
+      "interval": "1m",
+      "input_series": [
+        {
+          "series": "ceph_health_status{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\"}",
+          "values": "0 1 1 1"
+        },
+        {
+          "series": "ceph_health_status{namespace=\"other-ceph\",instance=\"10.0.1.1:9283\",job=\"rook-ceph-mgr\"}",
+          "values": "2 2 2 2"
+        },
+        {
+          "series": "ceph_cluster_total_bytes{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\"}",
+          "values": "300 300 300 300"
+        },
+        {
+          "series": "ceph_cluster_total_bytes{namespace=\"rook-ceph\",instance=\"10.0.0.2:9283\",job=\"duplicate-scrape\"}",
+          "values": "300 300 300 300"
+        },
+        {
+          "series": "ceph_cluster_total_bytes{namespace=\"other-ceph\",instance=\"10.0.1.1:9283\",job=\"rook-ceph-mgr\"}",
+          "values": "999 999 999 999"
+        },
+        {
+          "series": "ceph_cluster_total_used_raw_bytes{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\"}",
+          "values": "80 85 90 90"
+        },
+        {
+          "series": "ceph_cluster_total_used_bytes{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\"}",
+          "values": "70 70 70 70"
+        },
+        {
+          "series": "ceph_osd_up{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",ceph_daemon=\"osd.0\"}",
+          "values": "1 1 1 1"
+        },
+        {
+          "series": "ceph_osd_up{namespace=\"rook-ceph\",instance=\"10.0.0.2:9283\",job=\"duplicate-scrape\",ceph_daemon=\"osd.0\"}",
+          "values": "1 1 1 1"
+        },
+        {
+          "series": "ceph_osd_up{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",ceph_daemon=\"osd.1\"}",
+          "values": "1 0 0 0"
+        },
+        {
+          "series": "ceph_osd_up{namespace=\"other-ceph\",instance=\"10.0.1.1:9283\",job=\"rook-ceph-mgr\",ceph_daemon=\"osd.0\"}",
+          "values": "1 1 1 1"
+        },
+        {
+          "series": "ceph_osd_in{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",ceph_daemon=\"osd.0\"}",
+          "values": "1 1 1 1"
+        },
+        {
+          "series": "ceph_osd_in{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",ceph_daemon=\"osd.1\"}",
+          "values": "1 1 1 1"
+        },
+        {
+          "series": "ceph_osd_weight{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",ceph_daemon=\"osd.0\"}",
+          "values": "1 1 1 1"
+        },
+        {
+          "series": "ceph_pg_total{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",pool_id=\"1\"}",
+          "values": "32 32 32 32"
+        },
+        {
+          "series": "ceph_pg_total{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",pool_id=\"2\"}",
+          "values": "17 17 17 17"
+        },
+        {
+          "series": "ceph_pg_total{namespace=\"rook-ceph\",instance=\"10.0.0.2:9283\",job=\"duplicate-scrape\",pool_id=\"1\"}",
+          "values": "32 32 32 32"
+        },
+        {
+          "series": "ceph_pg_active{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",pool_id=\"1\"}",
+          "values": "32 32 32 32"
+        },
+        {
+          "series": "ceph_pg_active{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",pool_id=\"2\"}",
+          "values": "17 17 17 17"
+        },
+        {
+          "series": "ceph_pg_clean{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",pool_id=\"1\"}",
+          "values": "32 32 32 32"
+        },
+        {
+          "series": "ceph_pg_clean{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",pool_id=\"2\"}",
+          "values": "17 1 1 1"
+        },
+        {
+          "series": "ceph_pg_degraded{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",pool_id=\"2\"}",
+          "values": "0 16 16 16"
+        },
+        {
+          "series": "ceph_pg_scrubbing{namespace=\"rook-ceph\",instance=\"10.0.0.1:9283\",job=\"rook-ceph-mgr\",pool_id=\"1\"}",
+          "values": "3 3 3 3"
+        },
+        {
+          "series": "ceph_pg_total{namespace=\"other-ceph\",instance=\"10.0.1.1:9283\",job=\"rook-ceph-mgr\",pool_id=\"1\"}",
+          "values": "64 64 64 64"
+        }
+      ],
+      "promql_expr_test": [
+        {
+          "expr": "max(ceph_health_status{namespace=\"rook-ceph\"})",
+          "eval_time": "3m",
+          "exp_samples": [
+            {
+              "labels": "{}",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "expr": "max by (__name__) ({__name__=~\"ceph_cluster_total_bytes|ceph_cluster_total_used_raw_bytes\",namespace=\"rook-ceph\"})",
+          "eval_time": "3m",
+          "exp_samples": [
+            {
+              "labels": "{__name__=\"ceph_cluster_total_bytes\"}",
+              "value": 300
+            },
+            {
+              "labels": "{__name__=\"ceph_cluster_total_used_raw_bytes\"}",
+              "value": 90
+            }
+          ]
+        },
+        {
+          "expr": "label_replace(sum(max by (ceph_daemon) (ceph_osd_up{namespace=\"rook-ceph\"})), \"state\", \"up\", \"\", \"\") or label_replace(sum(max by (ceph_daemon) (ceph_osd_in{namespace=\"rook-ceph\"})), \"state\", \"in\", \"\", \"\") or label_replace(count(max by (ceph_daemon) (ceph_osd_up{namespace=\"rook-ceph\"})), \"state\", \"total\", \"\", \"\")",
+          "eval_time": "3m",
+          "exp_samples": [
+            {
+              "labels": "{state=\"up\"}",
+              "value": 1
+            },
+            {
+              "labels": "{state=\"in\"}",
+              "value": 2
+            },
+            {
+              "labels": "{state=\"total\"}",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "expr": "sum by (__name__) (max by (__name__, pool_id) ({__name__=~\"ceph_pg_(total|active|clean|degraded|undersized|down|stale|peering|incomplete|inconsistent|recovering|backfilling|remapped)\",namespace=\"rook-ceph\"}))",
+          "eval_time": "3m",
+          "exp_samples": [
+            {
+              "labels": "{__name__=\"ceph_pg_total\"}",
+              "value": 49
+            },
+            {
+              "labels": "{__name__=\"ceph_pg_active\"}",
+              "value": 49
+            },
+            {
+              "labels": "{__name__=\"ceph_pg_clean\"}",
+              "value": 33
+            },
+            {
+              "labels": "{__name__=\"ceph_pg_degraded\"}",
+              "value": 16
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

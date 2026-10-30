@@ -1500,4 +1500,26 @@ mod tests {
         }
         assert!(wrong.is_empty(), "{}", wrong.join("\n"));
     }
+
+    /// The SDK's template and examples, Rook Ceph's among them (#319), are what Sextant installs: its own parser
+    /// accepts each manifest (the SDK's check is a copy of these rules).
+    #[test]
+    fn the_sdk_template_and_examples_have_manifests_sextant_accepts() {
+        let sdk = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../sdk");
+        let mut projects = vec![sdk.join("template")];
+        let mut examples: Vec<_> = std::fs::read_dir(sdk.join("examples"))
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .collect();
+        examples.sort();
+        projects.extend(examples);
+        let mut ids = Vec::new();
+        for project in projects {
+            let bytes = std::fs::read(project.join("sextant-extension.json")).unwrap();
+            let manifest =
+                parse_manifest(&bytes).unwrap_or_else(|e| panic!("{}: {e}", project.display()));
+            ids.push(manifest.id);
+        }
+        assert!(ids.iter().any(|id| id == "sextant.rook-ceph"), "{ids:?}");
+    }
 }

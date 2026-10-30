@@ -13,7 +13,7 @@ import { buildExtension } from "./build.mjs";
 import { packFolder } from "./pack.mjs";
 
 const sdk = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const PROJECTS = ["template", "examples/hello-page", "examples/crd-view", "examples/backend-ts", "examples/backend-rust"];
+const PROJECTS = ["template", "examples/hello-page", "examples/crd-view", "examples/rook-ceph", "examples/backend-ts", "examples/backend-rust"];
 /** What each backend must answer to the stand-in host (one cluster, no network). */
 const BACKEND_CALLS = [
   ["ping", null, (answer) => answer === "pong"],

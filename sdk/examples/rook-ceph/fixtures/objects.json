@@ -1,0 +1,1027 @@
+{
+  "_source": "Shapes from Rook v1.21.1's deploy/examples (cluster-test.yaml, pool-test.yaml, filesystem-test.yaml, object-test.yaml, object-user.yaml, nfs-test.yaml, csi/rbd/storageclass-test.yaml, csi/cephfs/storageclass.yaml, storageclass-bucket-delete.yaml, object-bucket-claim-delete.yaml, toolbox.yaml), status fields of pkg/apis/ceph.rook.io/v1/types.go, pod labels of Rook's AppLabels/CephDaemonAppLabels and ceph-csi-operator; checked by fixtures/dry-run.sh against Rook's CRDs.",
+  "clusters": [
+    {
+      "apiVersion": "ceph.rook.io/v1",
+      "kind": "CephCluster",
+      "metadata": {
+        "name": "my-cluster",
+        "uid": "uid-rook-ceph-my-cluster",
+        "resourceVersion": "4021",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph"
+      },
+      "spec": {
+        "dataDirHostPath": "/var/lib/rook",
+        "cephVersion": {
+          "image": "quay.io/ceph/ceph:v20",
+          "allowUnsupported": true
+        },
+        "mon": {
+          "count": 1,
+          "allowMultiplePerNode": true
+        },
+        "mgr": {
+          "count": 1,
+          "allowMultiplePerNode": true
+        },
+        "dashboard": {
+          "enabled": true
+        },
+        "storage": {
+          "useAllNodes": true,
+          "useAllDevices": true
+        },
+        "monitoring": {
+          "enabled": true
+        }
+      },
+      "status": {
+        "state": "Created",
+        "phase": "Ready",
+        "message": "Cluster created successfully",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True",
+            "reason": "ClusterCreated",
+            "message": "Cluster created successfully",
+            "lastHeartbeatTime": "2026-10-30T09:59:10Z",
+            "lastTransitionTime": "2026-10-29T08:10:00Z"
+          }
+        ],
+        "ceph": {
+          "health": "HEALTH_WARN",
+          "previousHealth": "HEALTH_OK",
+          "lastChecked": "2026-10-30T09:59:10Z",
+          "lastChanged": "2026-10-30T09:20:00Z",
+          "fsid": "1b2c3d4e-5f60-4718-92a3-b4c5d6e7f809",
+          "details": {
+            "OSD_DOWN": {
+              "severity": "HEALTH_WARN",
+              "message": "1 osds down"
+            },
+            "PG_DEGRADED": {
+              "severity": "HEALTH_WARN",
+              "message": "Degraded data redundancy: 120/360 objects degraded (33.333%), 16 pgs degraded"
+            },
+            "NEW_CHECK_FROM_A_LATER_CEPH": {
+              "severity": "HEALTH_WARN",
+              "message": "something newer"
+            }
+          },
+          "capacity": {
+            "bytesTotal": 322122547200,
+            "bytesUsed": 96636764160,
+            "bytesAvailable": 225485783040,
+            "lastUpdated": "2026-10-30T09:59:10Z"
+          },
+          "versions": {
+            "mon": {
+              "ceph version 20.2.0 (69f84cb54ae9d9a69de9b1a1ae5baad5b4b86e94) tentacle (stable)": 1
+            },
+            "mgr": {
+              "ceph version 20.2.0 (69f84cb54ae9d9a69de9b1a1ae5baad5b4b86e94) tentacle (stable)": 1
+            },
+            "osd": {
+              "ceph version 20.2.0 (69f84cb54ae9d9a69de9b1a1ae5baad5b4b86e94) tentacle (stable)": 1,
+              "ceph version 19.2.3 (c92aebb279828e9c3c1f5d24613efca272649e62) squid (stable)": 1
+            },
+            "overall": {
+              "ceph version 20.2.0 (69f84cb54ae9d9a69de9b1a1ae5baad5b4b86e94) tentacle (stable)": 3,
+              "ceph version 19.2.3 (c92aebb279828e9c3c1f5d24613efca272649e62) squid (stable)": 1
+            }
+          }
+        },
+        "version": {
+          "image": "quay.io/ceph/ceph:v20",
+          "version": "20.2.0-0"
+        },
+        "storage": {
+          "deviceClasses": [
+            {
+              "name": "hdd"
+            }
+          ],
+          "osd": {
+            "storeType": {
+              "bluestore": 2
+            }
+          }
+        },
+        "observedGeneration": 2
+      }
+    },
+    {
+      "apiVersion": "ceph.rook.io/v1",
+      "kind": "CephCluster",
+      "metadata": {
+        "name": "external",
+        "uid": "uid-rook-ceph-external-external",
+        "resourceVersion": "77",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph-external"
+      },
+      "spec": {
+        "external": {
+          "enable": true
+        },
+        "dataDirHostPath": "/var/lib/rook",
+        "cephVersion": {
+          "image": "quay.io/ceph/ceph:v19"
+        }
+      },
+      "status": {
+        "state": "Connected",
+        "phase": "Connected",
+        "message": "Cluster connected successfully",
+        "ceph": {
+          "health": "HEALTH_OK",
+          "lastChecked": "2026-10-30T09:58:50Z",
+          "fsid": "aa11bb22-cc33-4dd4-8ee5-ff6677889900",
+          "capacity": {
+            "bytesTotal": 1099511627776,
+            "bytesUsed": 109951162778,
+            "bytesAvailable": 989560464998,
+            "lastUpdated": "2026-10-30T09:58:50Z"
+          }
+        },
+        "version": {
+          "image": "quay.io/ceph/ceph:v19",
+          "version": "19.2.3-0"
+        }
+      }
+    }
+  ],
+  "pools": [
+    {
+      "apiVersion": "ceph.rook.io/v1",
+      "kind": "CephBlockPool",
+      "metadata": {
+        "name": "replicapool",
+        "uid": "uid-rook-ceph-replicapool",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph"
+      },
+      "spec": {
+        "failureDomain": "osd",
+        "replicated": {
+          "size": 1,
+          "requireSafeReplicaSize": false
+        }
+      },
+      "status": {
+        "phase": "Ready",
+        "poolID": 2,
+        "info": {
+          "type": "Replicated",
+          "failureDomain": "osd"
+        },
+        "observedGeneration": 1
+      }
+    },
+    {
+      "apiVersion": "ceph.rook.io/v1",
+      "kind": "CephBlockPool",
+      "metadata": {
+        "name": "builtin-mgr",
+        "uid": "uid-rook-ceph-builtin-mgr",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph"
+      },
+      "spec": {
+        "name": ".mgr",
+        "replicated": {
+          "size": 1,
+          "requireSafeReplicaSize": false
+        }
+      },
+      "status": {
+        "phase": "Ready",
+        "poolID": 1,
+        "info": {
+          "type": "Replicated",
+          "failureDomain": "host"
+        },
+        "observedGeneration": 1
+      }
+    }
+  ],
+  "filesystems": [
+    {
+      "apiVersion": "ceph.rook.io/v1",
+      "kind": "CephFilesystem",
+      "metadata": {
+        "name": "myfs",
+        "uid": "uid-rook-ceph-myfs",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph"
+      },
+      "spec": {
+        "metadataPool": {
+          "replicated": {
+            "size": 1,
+            "requireSafeReplicaSize": false
+          }
+        },
+        "dataPools": [
+          {
+            "name": "replicated",
+            "failureDomain": "osd",
+            "replicated": {
+              "size": 1,
+              "requireSafeReplicaSize": false
+            }
+          }
+        ],
+        "preserveFilesystemOnDelete": false,
+        "metadataServer": {
+          "activeCount": 1,
+          "activeStandby": true
+        }
+      },
+      "status": {
+        "phase": "Ready",
+        "observedGeneration": 1
+      }
+    }
+  ],
+  "objectStores": [
+    {
+      "apiVersion": "ceph.rook.io/v1",
+      "kind": "CephObjectStore",
+      "metadata": {
+        "name": "my-store",
+        "uid": "uid-rook-ceph-my-store",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph"
+      },
+      "spec": {
+        "metadataPool": {
+          "replicated": {
+            "size": 1
+          }
+        },
+        "dataPool": {
+          "replicated": {
+            "size": 1
+          }
+        },
+        "preservePoolsOnDelete": false,
+        "gateway": {
+          "port": 80,
+          "instances": 1
+        }
+      },
+      "status": {
+        "phase": "Progressing",
+        "message": "failed to create object store \"my-store\": waiting for the RGW pods",
+        "endpoints": {
+          "insecure": [
+            "http://rook-ceph-rgw-my-store.rook-ceph.svc:80"
+          ],
+          "secure": []
+        },
+        "info": {
+          "endpoint": "http://rook-ceph-rgw-my-store.rook-ceph.svc:80"
+        },
+        "observedGeneration": 1
+      }
+    }
+  ],
+  "others": [
+    {
+      "apiVersion": "ceph.rook.io/v1",
+      "kind": "CephObjectStoreUser",
+      "metadata": {
+        "name": "my-user",
+        "uid": "uid-rook-ceph-my-user",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph"
+      },
+      "spec": {
+        "store": "my-store",
+        "displayName": "my display name"
+      },
+      "status": {
+        "phase": "Ready",
+        "info": {
+          "secretName": "rook-ceph-object-user-my-store-my-user"
+        }
+      }
+    },
+    {
+      "apiVersion": "ceph.rook.io/v1",
+      "kind": "CephNFS",
+      "metadata": {
+        "name": "my-nfs",
+        "uid": "uid-rook-ceph-my-nfs",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph"
+      },
+      "spec": {
+        "server": {
+          "active": 1
+        }
+      },
+      "status": {
+        "phase": "Ready"
+      }
+    }
+  ],
+  "storageClasses": [
+    {
+      "apiVersion": "storage.k8s.io/v1",
+      "kind": "StorageClass",
+      "metadata": {
+        "name": "rook-ceph-block",
+        "uid": "uid-cluster-rook-ceph-block",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z"
+      },
+      "provisioner": "rook-ceph.rbd.csi.ceph.com",
+      "parameters": {
+        "clusterID": "rook-ceph",
+        "pool": "replicapool",
+        "imageFormat": "2",
+        "imageFeatures": "layering",
+        "csi.storage.k8s.io/fstype": "ext4"
+      },
+      "reclaimPolicy": "Delete",
+      "allowVolumeExpansion": true
+    },
+    {
+      "apiVersion": "storage.k8s.io/v1",
+      "kind": "StorageClass",
+      "metadata": {
+        "name": "rook-cephfs",
+        "uid": "uid-cluster-rook-cephfs",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z"
+      },
+      "provisioner": "rook-ceph.cephfs.csi.ceph.com",
+      "parameters": {
+        "clusterID": "rook-ceph",
+        "fsName": "myfs",
+        "pool": "myfs-replicated"
+      },
+      "reclaimPolicy": "Delete",
+      "allowVolumeExpansion": true
+    },
+    {
+      "apiVersion": "storage.k8s.io/v1",
+      "kind": "StorageClass",
+      "metadata": {
+        "name": "rook-ceph-delete-bucket",
+        "uid": "uid-cluster-rook-ceph-delete-bucket",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z"
+      },
+      "provisioner": "rook-ceph.ceph.rook.io/bucket",
+      "parameters": {
+        "objectStoreName": "my-store",
+        "objectStoreNamespace": "rook-ceph"
+      },
+      "reclaimPolicy": "Delete"
+    },
+    {
+      "apiVersion": "storage.k8s.io/v1",
+      "kind": "StorageClass",
+      "metadata": {
+        "name": "local-path-example",
+        "uid": "uid-cluster-standard",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z"
+      },
+      "provisioner": "rancher.io/local-path",
+      "reclaimPolicy": "Delete"
+    }
+  ],
+  "pvcs": [
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "name": "rbd-pvc",
+        "uid": "uid-default-rbd-pvc",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "default"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "storageClassName": "rook-ceph-block",
+        "resources": {
+          "requests": {
+            "storage": "1Gi"
+          }
+        }
+      },
+      "status": {
+        "phase": "Bound",
+        "capacity": {
+          "storage": "1Gi"
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "name": "cephfs-pvc",
+        "uid": "uid-kube-system-cephfs-pvc",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "kube-system"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteMany"
+        ],
+        "storageClassName": "rook-cephfs",
+        "resources": {
+          "requests": {
+            "storage": "1Gi"
+          }
+        }
+      },
+      "status": {
+        "phase": "Pending"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "name": "local",
+        "uid": "uid-default-local",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "default"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "storageClassName": "local-path-example",
+        "resources": {
+          "requests": {
+            "storage": "1Gi"
+          }
+        }
+      },
+      "status": {
+        "phase": "Bound"
+      }
+    }
+  ],
+  "objectBucketClaims": [
+    {
+      "apiVersion": "objectbucket.io/v1alpha1",
+      "kind": "ObjectBucketClaim",
+      "metadata": {
+        "name": "ceph-delete-bucket",
+        "uid": "uid-default-ceph-delete-bucket",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "default"
+      },
+      "spec": {
+        "generateBucketName": "ceph-bkt",
+        "storageClassName": "rook-ceph-delete-bucket"
+      },
+      "status": {
+        "phase": "Bound"
+      }
+    }
+  ],
+  "pods": [
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph-operator-7d9f8c6b5-abcde",
+        "uid": "uid-rook-ceph-rook-ceph-operator-7d9f8c6b5-abcde",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph-operator"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph-mon-a-5c8d7f9b4-xk2lp",
+        "uid": "uid-rook-ceph-rook-ceph-mon-a-5c8d7f9b4-xk2lp",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph-mon",
+          "mon": "a",
+          "ceph_daemon_id": "a",
+          "ceph_daemon_type": "mon",
+          "rook_cluster": "rook-ceph"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph-mgr-a-6b7c8d9f5-qw3er",
+        "uid": "uid-rook-ceph-rook-ceph-mgr-a-6b7c8d9f5-qw3er",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph-mgr",
+          "mgr": "a",
+          "ceph_daemon_id": "a",
+          "ceph_daemon_type": "mgr",
+          "rook_cluster": "rook-ceph"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph-osd-0-7f6e5d4c3-ab12c",
+        "uid": "uid-rook-ceph-rook-ceph-osd-0-7f6e5d4c3-ab12c",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph-osd",
+          "osd": "0",
+          "ceph-osd-id": "0",
+          "ceph_daemon_id": "0",
+          "ceph_daemon_type": "osd",
+          "topology-location-host": "kind-worker",
+          "rook_cluster": "rook-ceph"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph-osd-1-8a7b6c5d4-cd34e",
+        "uid": "uid-rook-ceph-rook-ceph-osd-1-8a7b6c5d4-cd34e",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph-osd",
+          "osd": "1",
+          "ceph-osd-id": "1",
+          "ceph_daemon_id": "1",
+          "ceph_daemon_type": "osd",
+          "topology-location-host": "kind-worker2",
+          "rook_cluster": "rook-ceph"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker2",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "False"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": false,
+            "restartCount": 7,
+            "state": {
+              "waiting": {
+                "reason": "CrashLoopBackOff"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph-osd-prepare-kind-worker-x7k2q",
+        "uid": "uid-rook-ceph-rook-ceph-osd-prepare-kind-worker-x7k2q",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph-osd-prepare",
+          "rook_cluster": "rook-ceph"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph-mds-myfs-a-5d6c7b8a9-ef56g",
+        "uid": "uid-rook-ceph-rook-ceph-mds-myfs-a-5d6c7b8a9-ef56g",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph-mds",
+          "mds": "myfs-a",
+          "ceph_daemon_id": "myfs-a",
+          "rook_file_system": "myfs",
+          "rook_cluster": "rook-ceph"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph.rbd.csi.ceph.com-nodeplugin-j8k9l",
+        "uid": "uid-rook-ceph-rook-ceph.rbd.csi.ceph.com-nodeplugin-j8k9l",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph.rbd.csi.ceph.com-nodeplugin"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph.rbd.csi.ceph.com-ctrlplugin-5f6g7h8i9-mn01o",
+        "uid": "uid-rook-ceph-rook-ceph.rbd.csi.ceph.com-ctrlplugin-5f6g7h8i9-mn01o",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph.rbd.csi.ceph.com-ctrlplugin"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph.cephfs.csi.ceph.com-nodeplugin-p2q3r",
+        "uid": "uid-rook-ceph-rook-ceph.cephfs.csi.ceph.com-nodeplugin-p2q3r",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph.cephfs.csi.ceph.com-nodeplugin"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "rook-ceph-tools-6c7d8e9f0-st45u",
+        "uid": "uid-rook-ceph-rook-ceph-tools-6c7d8e9f0-st45u",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "rook-ceph-tools"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "unrelated-7b8c9d0e1-vw67x",
+        "uid": "uid-rook-ceph-unrelated-7b8c9d0e1-vw67x",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-29T08:00:00Z",
+        "namespace": "rook-ceph",
+        "labels": {
+          "app": "something-else"
+        }
+      },
+      "spec": {
+        "nodeName": "kind-worker",
+        "containers": [
+          {
+            "name": "main"
+          }
+        ]
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "True"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "name": "main",
+            "ready": true,
+            "restartCount": 0,
+            "state": {
+              "running": {}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
