@@ -53,6 +53,7 @@ import {
   PVC,
   STATEFULSET,
   categoryOf,
+  type BuiltInCategory,
   type Problem,
   type ProblemCategory,
 } from "./model";
@@ -74,6 +75,11 @@ export interface SourceDef {
    * thousand (Kafka topics and users, policy reports); beyond it the source says it is truncated.
    */
   maxObjects?: number;
+  /**
+   * Only these namespaces are watched (within the accessible ones, ADR-0124): an extension's rules run only where it
+   * may read (ADR-0137). `undefined`: every namespace.
+   */
+  namespaces?: readonly string[];
   /**
    * Problems judged across the objects of the source: the store keeps a row tap of the watch while the source is held
    * and passes every problem list through `keep` with the rows (an HTTPProxy orphaned because the root that includes
@@ -113,7 +119,7 @@ const tool = (category: ProblemCategory, kind: KindRef, maxObjects?: number): So
 /** Flux kinds with a Ready condition worth watching: the sources and what applies them. */
 const FLUX_WATCHED = [GIT_REPOSITORY, OCI_REPOSITORY, HELM_REPOSITORY, BUCKET, KUSTOMIZATION, HELM_RELEASE];
 
-export const CATEGORY_SOURCES: Record<ProblemCategory, SourceDef[]> = {
+export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   nodes: [builtIn("nodes", NODE)],
   pods: [builtIn("pods", POD)],
   workloads: [builtIn("workloads", DEPLOYMENT), builtIn("workloads", STATEFULSET), builtIn("workloads", DAEMONSET)],
@@ -263,7 +269,8 @@ export function sourcesFor(categories: readonly ProblemCategory[], kinds: Resour
     out.push(def);
   };
   for (const category of categories) {
-    for (const def of CATEGORY_SOURCES[category]) {
+    // An extension's category has its sources per cluster (`extensionSourcesFor`).
+    for (const def of builtInSources(category)) {
       if (!def.discovered) {
         add(def);
         continue;
@@ -296,19 +303,30 @@ function servedAcross(def: SourceDef, kinds: ResourceKind[] | null | undefined):
 export function judgedByRules(kind: Pick<KindRef, "group" | "kind">): boolean {
   const category = categoryOf(kind);
   if (!category) return false;
-  const defs = CATEGORY_SOURCES[category];
+  const defs = builtInSources(category);
   if (!defs.some((d) => d.external)) return true;
   return defs.some((d) => !d.external && d.kind.group === kind.group && d.kind.kind === kind.kind);
 }
 
 export function needsDiscovery(categories: readonly ProblemCategory[]): boolean {
-  return categories.some((c) => CATEGORY_SOURCES[c].some((d) => d.discovered));
+  // An extension's rules judge kinds of discovery.
+  return categories.some((c) => c.startsWith("ext:") || builtInSources(c).some((d) => d.discovered));
+}
+
+/** The sources of a built-in category; none for an extension's. */
+function builtInSources(category: ProblemCategory): readonly SourceDef[] {
+  return (CATEGORY_SOURCES as Record<string, SourceDef[] | undefined>)[category] ?? [];
 }
 
 /** The store's key of a source in a cluster. */
-export function sourceKey(clusterId: string, def: Pick<SourceDef, "kind" | "fieldSelector"> & { category?: ProblemCategory }): string {
+export function sourceKey(
+  clusterId: string,
+  def: Pick<SourceDef, "kind" | "fieldSelector" | "namespaces"> & { category?: ProblemCategory },
+): string {
   const { group, version, kind } = def.kind;
   const key = `${clusterId}|${group}/${version}/${kind}|${def.fieldSelector ?? ""}`;
+  // An extension's rules judge their own sources, over the namespaces the extension may read.
+  if (def.category?.startsWith("ext:")) return `${key}|${def.category}|${def.namespaces?.join(",") ?? "*"}`;
   // A security source judges the same kinds as pods and workloads by other rules: a source of its own; so is the
   // provider's source of full claims, which watches nothing.
   if (def.category === "practices") return `${key}|${def.category}`;

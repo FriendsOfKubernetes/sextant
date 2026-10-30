@@ -74,7 +74,8 @@
     "actions": "資源上的動作",
     "columns": "表格欄位",
     "dockActions": "底部面板按鈕",
-    "settings": "「設定」中的區段"
+    "settings": "「設定」中的區段",
+    "problems": "問題規則"
   },
   "permissions": {
     "clusters": "叢集",
@@ -280,5 +281,10 @@
       "warn": "警告",
       "error": "錯誤"
     }
+  },
+  "problems": {
+    "heading": "問題與通知",
+    "kinds": "Sextant 依擴充功能的規則檢查以下類型的物件，在「問題」頁面列出發現的問題，並可能就此通知你：",
+    "scope": "僅限擴充功能可以讀取這些類型的叢集與命名空間。此過程不會執行擴充功能的任何程式碼。"
   }
 }

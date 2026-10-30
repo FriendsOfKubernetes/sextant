@@ -74,7 +74,8 @@
     "actions": "Actions on resources",
     "columns": "Table columns",
     "dockActions": "Dock buttons",
-    "settings": "Section in Settings"
+    "settings": "Section in Settings",
+    "problems": "Problem rules"
   },
   "permissions": {
     "clusters": "Clusters",
@@ -286,5 +287,10 @@
       "warn": "Warning",
       "error": "Error"
     }
+  },
+  "problems": {
+    "heading": "Problems and notifications",
+    "kinds": "Sextant checks objects of these kinds by the extension's rules, lists what they find on the Problems page and may notify you about it:",
+    "scope": "Only in clusters and namespaces where the extension may read these kinds. No code of the extension runs for this."
   }
 }

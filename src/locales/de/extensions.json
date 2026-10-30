@@ -74,7 +74,8 @@
     "actions": "Aktionen für Ressourcen",
     "columns": "Tabellenspalten",
     "dockActions": "Dock-Schaltflächen",
-    "settings": "Abschnitt in den Einstellungen"
+    "settings": "Abschnitt in den Einstellungen",
+    "problems": "Problemregeln"
   },
   "permissions": {
     "clusters": "Cluster",
@@ -286,5 +287,10 @@
       "warn": "Warnung",
       "error": "Fehler"
     }
+  },
+  "problems": {
+    "heading": "Probleme und Benachrichtigungen",
+    "kinds": "Sextant prüft Objekte dieser Arten nach den Regeln der Erweiterung, zeigt die Funde auf der Seite „Probleme“ und kann Sie darüber benachrichtigen:",
+    "scope": "Nur in Clustern und Namespaces, in denen die Erweiterung diese Arten lesen darf. Dafür läuft kein Code der Erweiterung."
   }
 }

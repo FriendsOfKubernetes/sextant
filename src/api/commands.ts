@@ -104,6 +104,7 @@ import type { Tool } from "./generated/Tool";
 import type { ToolsView } from "./generated/ToolsView";
 import type { CatalogView } from "./generated/CatalogView";
 import type { BackendLogLine } from "./generated/BackendLogLine";
+import type { ProblemScope } from "./generated/ProblemScope";
 import type { CredentialStatus } from "./generated/CredentialStatus";
 import type { PodUsage } from "./generated/PodUsage";
 import type { RemoteEntry } from "./generated/RemoteEntry";

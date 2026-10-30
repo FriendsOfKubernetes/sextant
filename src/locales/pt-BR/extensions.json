@@ -74,7 +74,8 @@
     "actions": "Ações em recursos",
     "columns": "Colunas de tabela",
     "dockActions": "Botões do painel inferior",
-    "settings": "Seção em Configurações"
+    "settings": "Seção em Configurações",
+    "problems": "Regras de problemas"
   },
   "permissions": {
     "clusters": "Clusters",
@@ -292,5 +293,10 @@
       "warn": "Aviso",
       "error": "Erro"
     }
+  },
+  "problems": {
+    "heading": "Problemas e notificações",
+    "kinds": "O Sextant verifica objetos desses tipos pelas regras da extensão, mostra o que elas encontram na página Problemas e pode notificar você sobre isso:",
+    "scope": "Somente em clusters e namespaces em que a extensão pode ler esses tipos. Nenhum código da extensão é executado para isso."
   }
 }

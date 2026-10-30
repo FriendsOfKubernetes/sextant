@@ -41,6 +41,7 @@ import {
   type Problem,
   type ProblemCategory,
 } from "./model";
+import { forgetClusterScopes } from "./extensionCategories";
 import { sourceKey, type SourceDef } from "./sources";
 
 /** At most this many objects with problems are kept per source; beyond it the oldest go (`truncated`). */
@@ -149,6 +150,8 @@ function dropCluster(clusterId: ClusterId): void {
     entry.acrossFrom?.release();
   }
   epochs.set(clusterId, epochOf(clusterId) + 1);
+  // Where extensions' rules run is asked again: a new connection may be another context.
+  forgetClusterScopes(clusterId);
   changed();
 }
 
@@ -381,6 +384,12 @@ function failed(key: string, entry: Entry, error: ApiError): void {
 }
 
 /** Starts (or shares) the watch of `def` in the cluster; the returned function releases it. */
+/** The accessible namespaces (`null`: all) within a source's own (`undefined`: no limit of its own). */
+function narrowed(accessible: string[] | null, own: readonly string[] | undefined): string[] | null {
+  if (!own) return accessible;
+  return accessible ? accessible.filter((ns) => own.includes(ns)) : [...own];
+}
+
 export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void {
   followConnections();
   const key = sourceKey(clusterId, def);
@@ -403,10 +412,17 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
     created.open = () => {
       const watched = (spec ??= {
         kind: def.kind,
-        namespaces: restrictedScope(clusterId),
+        namespaces: narrowed(restrictedScope(clusterId), def.namespaces),
         labelSelector: null,
         fieldSelector: def.fieldSelector,
       });
+      // A source of its own namespaces none of which is accessible reads nothing: an empty list would mean every
+      // namespace to the backend.
+      if (def.namespaces && watched.namespaces?.length === 0) {
+        created.stop = () => undefined;
+        publish(created, { status: "ready" });
+        return;
+      }
       created.stop = openStream<WatchUpdate>({
         start: (id, channel) =>
           def.maxObjects === undefined

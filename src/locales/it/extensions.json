@@ -74,7 +74,8 @@
     "actions": "Azioni sulle risorse",
     "columns": "Colonne delle tabelle",
     "dockActions": "Pulsanti del pannello inferiore",
-    "settings": "Sezione nelle Impostazioni"
+    "settings": "Sezione nelle Impostazioni",
+    "problems": "Regole dei problemi"
   },
   "permissions": {
     "clusters": "Cluster",
@@ -292,5 +293,10 @@
       "warn": "Avviso",
       "error": "Errore"
     }
+  },
+  "problems": {
+    "heading": "Problemi e notifiche",
+    "kinds": "Sextant controlla gli oggetti di questi tipi secondo le regole dell'estensione, mostra ciò che trovano nella pagina Problemi e può avvisarti:",
+    "scope": "Solo nei cluster e nei namespace in cui l'estensione può leggere questi tipi. Per questo non viene eseguito codice dell'estensione."
   }
 }

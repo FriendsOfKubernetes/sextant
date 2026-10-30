@@ -92,10 +92,14 @@ export const PROBLEM_CATEGORIES = [
   "alerts",
   "events",
 ] as const;
-export type ProblemCategory = (typeof PROBLEM_CATEGORIES)[number];
+/** A category of Sextant's own rules. */
+export type BuiltInCategory = (typeof PROBLEM_CATEGORIES)[number];
+/** The category of an extension's problem rules (ADR-0137, `extensionCategories.ts`). */
+export type ExtensionCategory = `ext:${string}`;
+export type ProblemCategory = BuiltInCategory | ExtensionCategory;
 
 /** The categories that notify: Warning events are shown on the screen only. */
-export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.filter((c) => c !== "events");
+export const NOTIFY_CATEGORIES: readonly BuiltInCategory[] = PROBLEM_CATEGORIES.filter((c) => c !== "events");
 
 /**
  * Categories that are off until the user turns them on (`notifications.enabledCategories`, one setting for the
@@ -114,7 +118,7 @@ export const NOTIFY_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.
  * the queues themselves (`kueue`) are few and on by default.
  * And firing alerts (`alerts`, #264, ADR-0119): Prometheus' and Alertmanager's alerts polled once a minute.
  */
-export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = [
+export const OPT_IN_CATEGORIES: readonly BuiltInCategory[] = [
   "security",
   "credentials",
   "disk",
@@ -127,6 +131,17 @@ export const OPT_IN_CATEGORIES: readonly ProblemCategory[] = [
   "kueueWorkloads",
   "alerts",
 ];
+
+/** How the problems of an extension's category are found: set by its registry (`extensionCategories.ts`), so this
+ * module does not import it. */
+let extensionDetector: ((category: ExtensionCategory, kind: KindRef, obj: KubeObject) => Detected[]) | undefined;
+
+export function setExtensionDetector(detector: typeof extensionDetector): void {
+  extensionDetector = detector;
+}
+
+/** Whether a category is off until the user turns it on (`OPT_IN_CATEGORIES`); an extension's never is. */
+export const isOptIn = (category: ProblemCategory): boolean => (OPT_IN_CATEGORIES as readonly string[]).includes(category);
 
 /** How long a container restart or an OOM kill counts after it happened. */
 export const RECENT_RESTART_MS = 15 * 60_000;
@@ -271,7 +286,7 @@ function condition(obj: KubeObject, type: string): Record<string, unknown> | und
 const transition = (c: unknown) => str(get(c, "lastTransitionTime"));
 
 /** The category of a watched kind (Events, pods, …). */
-export function categoryOf(kind: Pick<KindRef, "group" | "kind">): ProblemCategory | undefined {
+export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCategory | undefined {
   if (same(kind, POD)) return "pods";
   if (same(kind, NODE)) return "nodes";
   if (same(kind, DEPLOYMENT) || same(kind, STATEFULSET) || same(kind, DAEMONSET)) return "workloads";
@@ -838,7 +853,12 @@ export function resolve(
   const uid = uidOfObject(obj);
   const self: ObjectRef = { kind, namespace: obj.metadata?.namespace ?? null, name: obj.metadata?.name ?? "" };
   const identity = ownerIdentity(kind, obj) ?? uid;
-  const found = category === "security" ? securityProblems(kind, obj) : detect(kind, obj);
+  const found =
+    category === "security"
+      ? securityProblems(kind, obj)
+      : category.startsWith("ext:")
+        ? (extensionDetector?.(category as ExtensionCategory, kind, obj) ?? [])
+        : detect(kind, obj);
   return found.map(({ object, ...d }) => {
     const key = `${uid}|${d.reason}`;
     const previous = before.find((p) => p.key === key);

@@ -93,7 +93,7 @@ export function PermissionsView({ permissions }: { permissions: ExtensionPermiss
   );
 }
 
-const CONTRIBUTION_KINDS = ["pages", "detailsSections", "actions", "columns", "dockActions"] as const;
+const CONTRIBUTION_KINDS = ["pages", "detailsSections", "actions", "columns", "dockActions", "problems"] as const;
 
 /** Titles of what the extension adds, by kind of contribution. */
 export function contributionLines(contributes: Contributions): { kind: string; titles: string[] }[] {

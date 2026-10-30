@@ -6,7 +6,7 @@
 // Security findings (Baseline Pod Security Standard violations, #143) are an opt-in category: listed while
 // "Security findings" is on — the saved setting `notifications.enabledCategories`, which the sidebar counter and the
 // notifications follow too.
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../../app/store";
 import { Age, Badge, Button, Checkbox, ErrorState, LoadingIndicator } from "../../components";
@@ -18,7 +18,9 @@ import { filterProblems, groupProblems } from "./group";
 import { useCategoriesOn, useClusterProblems } from "./hooks";
 import { updateSettings } from "../../api";
 import { setCategory } from "../notifications/prefs";
-import { PROBLEM_CATEGORIES, startedAt, type Problem } from "./model";
+import { useExtensionCategories } from "./extensionCategories";
+import { categoryLabel } from "./labels";
+import { PROBLEM_CATEGORIES, startedAt, type Problem, type ProblemCategory } from "./model";
 import "./problems.css";
 import { useProblemsUi } from "./ui";
 import { formatTime } from "../../i18n";
@@ -26,7 +28,10 @@ import { formatTime } from "../../i18n";
 export function ProblemsPage({ clusterId }: PageProps) {
   const { t } = useTranslation();
   const namespaces = useSelectedNamespaces(clusterId);
-  const categories = useCategoriesOn(PROBLEM_CATEGORIES);
+  // Sextant's categories, then the extensions' (ADR-0137).
+  const extensionCategories = useExtensionCategories();
+  const all = useMemo((): readonly ProblemCategory[] => [...PROBLEM_CATEGORIES, ...extensionCategories], [extensionCategories]);
+  const categories = useCategoriesOn(all);
   const showSecurity = categories.includes("security");
   const { sources, active, loading } = useClusterProblems(clusterId, categories);
   const mark = useProblemsUi((s) => s.marks[clusterId]) ?? null;
@@ -152,9 +157,9 @@ export function ProblemsPage({ clusterId }: PageProps) {
         )
       ) : (
         groups.map((group) => (
-          <section key={group.category} className="problems__group" aria-label={t(`problems:categories.${group.category}`)}>
+          <section key={group.category} className="problems__group" aria-label={categoryLabel(t, group.category)}>
             <h3 className="problems__heading">
-              {t(`problems:categories.${group.category}`)}
+              {categoryLabel(t, group.category)}
               <Badge tone="danger">{group.count}</Badge>
             </h3>
             {group.namespaces.map((ns) => (

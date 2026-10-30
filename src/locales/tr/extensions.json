@@ -74,7 +74,8 @@
     "actions": "Kaynaklar üzerindeki eylemler",
     "columns": "Tablo sütunları",
     "dockActions": "Alt panel düğmeleri",
-    "settings": "Ayarlar'daki bölüm"
+    "settings": "Ayarlar'daki bölüm",
+    "problems": "Sorun kuralları"
   },
   "permissions": {
     "clusters": "Kümeler",
@@ -286,5 +287,10 @@
       "warn": "Uyarı",
       "error": "Hata"
     }
+  },
+  "problems": {
+    "heading": "Sorunlar ve bildirimler",
+    "kinds": "Sextant bu türlerdeki nesneleri uzantının kurallarına göre denetler, bulduklarını Sorunlar sayfasında gösterir ve bunlar hakkında size bildirim gönderebilir:",
+    "scope": "Yalnızca uzantının bu türleri okuyabildiği kümelerde ve namespace'lerde. Bunun için uzantının hiçbir kodu çalışmaz."
   }
 }

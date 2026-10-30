@@ -13,6 +13,7 @@ import type { ActionContribution, ExtensionInfo, KindPattern, KindRef, KubeObjec
 import { useAppStore } from "../app/store";
 import { Dialog, isIconName, type IconName } from "../components";
 import { registerAction, type ActionContext } from "../features/actions/registry";
+import { registerExtensionProblems } from "../features/problems/extensionCategories";
 import { registerDetailsSection, unregisterDetailsSection, type DetailsSectionProps } from "../layout/details/registry";
 import {
   getDockTabComponent,
@@ -79,7 +80,9 @@ function isActive(info: ExtensionInfo): info is ExtensionInfo & { entryUrl: stri
 }
 
 function signatureOf(info: ExtensionInfo): string {
-  return JSON.stringify([info.name, info.entryUrl, info.manifest?.icon, info.manifest?.contributes]);
+  // A new consent (permissions, the kinds its problem rules judge) comes with a new install time: where its rules run
+  // is asked again.
+  return JSON.stringify([info.name, info.entryUrl, info.manifest?.icon, info.manifest?.contributes, info.granted, info.installedAt]);
 }
 
 function removeRegistration(extensionId: string): void {
@@ -118,6 +121,12 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
   const contributes = info.manifest!.contributes;
   const removers: (() => void)[] = [];
   const extensionIcon = iconOf(info.manifest!.icon);
+
+  // Problem rules: evaluated by the problems store, never by extension code (ADR-0137); where they run is decided in
+  // Rust for the kinds the user agreed to.
+  if (contributes.problems.length > 0) {
+    removers.push(registerExtensionProblems(extensionId, info.name, contributes.problems));
+  }
 
   for (const page of contributes.pages) {
     const id = contributionKey(extensionId, page.id);

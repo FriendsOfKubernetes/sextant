@@ -74,7 +74,8 @@
     "actions": "Akcje na zasobach",
     "columns": "Kolumny tabel",
     "dockActions": "Przyciski panelu dolnego",
-    "settings": "Sekcja w Ustawieniach"
+    "settings": "Sekcja w Ustawieniach",
+    "problems": "Reguły problemów"
   },
   "permissions": {
     "clusters": "Klastry",
@@ -298,5 +299,10 @@
       "warn": "Ostrzeżenie",
       "error": "Błąd"
     }
+  },
+  "problems": {
+    "heading": "Problemy i powiadomienia",
+    "kinds": "Sextant sprawdza obiekty tych rodzajów według reguł rozszerzenia, pokazuje znaleziska na stronie Problemy i może o nich powiadamiać:",
+    "scope": "Tylko w klastrach i przestrzeniach nazw, w których rozszerzenie może odczytywać te rodzaje. Nie uruchamia się przy tym żaden kod rozszerzenia."
   }
 }

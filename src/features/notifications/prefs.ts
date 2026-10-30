@@ -1,7 +1,7 @@
 // The notification settings (`AppSettings.notifications`, written here by the frontend) as the notifier reads them:
 // the global switch, the categories turned off, the muted clusters and "Mute for 1 hour".
 import type { AppSettings, ClusterId } from "../../api";
-import { NOTIFY_CATEGORIES, OPT_IN_CATEGORIES, type ProblemCategory } from "../problems/model";
+import { isOptIn, NOTIFY_CATEGORIES, type ProblemCategory } from "../problems/model";
 
 /** "Mute for 1 hour". */
 export const MUTE_MS = 3600_000;
@@ -30,14 +30,14 @@ export function prefsOf(settings: AppSettings | null): NotificationPrefs | null 
   };
 }
 
-/** The categories that notify: every notifying category the user did not turn off. */
-export function enabledCategories(prefs: NotificationPrefs): ProblemCategory[] {
-  return NOTIFY_CATEGORIES.filter((c) => categoryOn(prefs, c));
+/** The categories that notify: every notifying category (Sextant's and `extensions`') the user did not turn off. */
+export function enabledCategories(prefs: NotificationPrefs, extensions: readonly ProblemCategory[] = []): ProblemCategory[] {
+  return [...NOTIFY_CATEGORIES, ...extensions].filter((c) => categoryOn(prefs, c));
 }
 
 /** Whether a category notifies: an opt-in one once turned on, any other until turned off. */
 export function categoryOn(prefs: Pick<NotificationPrefs, "disabledCategories" | "enabledCategories">, category: ProblemCategory): boolean {
-  return OPT_IN_CATEGORIES.includes(category) ? prefs.enabledCategories.has(category) : !prefs.disabledCategories.has(category);
+  return isOptIn(category) ? prefs.enabledCategories.has(category) : !prefs.disabledCategories.has(category);
 }
 
 export function mutedNow(prefs: NotificationPrefs, now: number): boolean {
@@ -67,7 +67,7 @@ const patch =
 export const setEnabled = (enabled: boolean): Change => patch(() => ({ enabled }));
 
 export const setCategory = (category: ProblemCategory, on: boolean): Change =>
-  OPT_IN_CATEGORIES.includes(category)
+  isOptIn(category)
     ? patch((n) => {
         const others = (n.enabledCategories ?? []).filter((c) => c !== category);
         return { enabledCategories: on ? [...others, category] : others };

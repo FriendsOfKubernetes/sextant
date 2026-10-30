@@ -1,5 +1,6 @@
 // How the problems screen lists problems: filtered by the namespace filter and "Only new since…", grouped by category
 // (in `PROBLEM_CATEGORIES` order) and namespace (cluster-wide objects first), newest first. Pure.
+import { extensionCategories } from "./extensionCategories";
 import { PROBLEM_CATEGORIES, startedAt, type Problem, type ProblemCategory } from "./model";
 
 export interface NamespaceGroup {
@@ -32,7 +33,12 @@ export function filterProblems(problems: readonly Problem[], filter: ProblemFilt
 
 export function groupProblems(problems: readonly Problem[]): CategoryGroup[] {
   const groups: CategoryGroup[] = [];
-  for (const category of PROBLEM_CATEGORIES) {
+  // Sextant's categories in their order, then the extensions' (by name; one that went meanwhile last).
+  const registered = extensionCategories();
+  const gone = [...new Set(problems.map((p) => p.category))].filter(
+    (c) => c.startsWith("ext:") && !(registered as readonly string[]).includes(c),
+  );
+  for (const category of [...PROBLEM_CATEGORIES, ...registered, ...gone]) {
     const ofCategory = problems.filter((p) => p.category === category);
     if (ofCategory.length === 0) continue;
     const byNamespace = new Map<string | null, Problem[]>();

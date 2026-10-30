@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useSettings, type ClusterId } from "../../api";
 import { useClusterKinds } from "../../resources";
 import { useClustersStore } from "../clusters/clustersStore";
-import { isActive, NOTIFY_CATEGORIES, OPT_IN_CATEGORIES, type Problem, type ProblemCategory } from "./model";
+import { isActive, isOptIn, NOTIFY_CATEGORIES, OPT_IN_CATEGORIES, type Problem, type ProblemCategory } from "./model";
+import { extensionSourcesFor, requestScopes, useExtensionCategories, useExtensionProblemsVersion } from "./extensionCategories";
 import { needsDiscovery, sourceKey, sourcesFor } from "./sources";
 import {
   acquireSource,
@@ -36,7 +37,18 @@ export function useNow(intervalMs = TICK_MS): number {
 export function useProblemSources(clusterId: ClusterId | null, categories: readonly ProblemCategory[]): SourceState[] {
   const discovery = useClusterKinds(clusterId && needsDiscovery(categories) ? clusterId : null);
   const kinds = discovery.kinds ?? (discovery.error ? null : undefined);
-  const defs = useMemo(() => (clusterId ? sourcesFor(categories, kinds) : []), [clusterId, categories, kinds]);
+  // Extensions' categories: their rules and where they run in this cluster (asked from Rust once per extension).
+  const extensions = useExtensionProblemsVersion();
+  useEffect(() => {
+    if (clusterId) requestScopes(clusterId, categories);
+  }, [clusterId, categories, extensions]);
+  const defs = useMemo(
+    () => {
+      void extensions;
+      return clusterId ? [...sourcesFor(categories, kinds), ...extensionSourcesFor(categories, clusterId, kinds)] : [];
+    },
+    [clusterId, categories, kinds, extensions],
+  );
   const keys = JSON.stringify(defs.map((d) => sourceKey(clusterId ?? "", d)));
   const version = useSyncExternalStore(subscribeSources, sourcesVersion, sourcesVersion);
   // A new connection (or its loss) dropped the cluster's sources: acquire them again.
@@ -109,7 +121,9 @@ export function useClusterProblems(clusterId: ClusterId | null, categories: read
  * the page lists too. The same rule as the notifications, so the badge and the notifications agree.
  */
 export function useProblemCount(clusterId: ClusterId): number {
-  return useClusterProblems(clusterId, useCategoriesOn(NOTIFY_CATEGORIES)).active.filter((p) => p.notify).length;
+  const extensions = useExtensionCategories();
+  const categories = useMemo((): readonly ProblemCategory[] => [...NOTIFY_CATEGORIES, ...extensions], [extensions]);
+  return useClusterProblems(clusterId, useCategoriesOn(categories)).active.filter((p) => p.notify).length;
 }
 
 const EMPTY: readonly string[] = [];
@@ -124,7 +138,7 @@ export function useCategoriesOn(categories: readonly ProblemCategory[]): readonl
   return useMemo(
     () => {
       const on = key.split("#")[1]!.split(",");
-      return categories.filter((c) => !OPT_IN_CATEGORIES.includes(c) || on.includes(c));
+      return categories.filter((c) => !isOptIn(c) || on.includes(c));
     },
     // `key` stands for both lists by value.
     [key],

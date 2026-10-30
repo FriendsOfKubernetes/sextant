@@ -6,6 +6,8 @@ import { Button, Checkbox } from "../../components";
 import { displayNameOf } from "../clusters/clusterSettings";
 import { useClusters } from "../clusters/hooks";
 import { useNow } from "../problems/hooks";
+import { useExtensionCategories } from "../problems/extensionCategories";
+import { categoryLabel } from "../problems/labels";
 import { NOTIFY_CATEGORIES } from "../problems/model";
 import { categoryOn, muteForHour, mutedNow, prefsOf, setCategory, setClusterMuted, setEnabled, unmute } from "./prefs";
 import { CertExpiryField } from "./CertExpiryField";
@@ -16,6 +18,7 @@ type Save = (change: (current: AppSettings) => AppSettings) => Promise<boolean>;
 
 export function NotificationsPanel({ settings, save }: { settings: AppSettings | null; save: Save }) {
   const { t } = useTranslation();
+  const extensionCategories = useExtensionCategories();
   const { clusters } = useClusters();
   const now = useNow(10_000);
   const prefs = prefsOf(settings);
@@ -50,14 +53,14 @@ export function NotificationsPanel({ settings, save }: { settings: AppSettings |
       <fieldset className="notif-settings__group" disabled={!on}>
         <legend className="settings__label">{t("notifications:settings.categories")}</legend>
         <div className="settings__choices settings__choices--column">
-          {NOTIFY_CATEGORIES.map((category) => (
+          {[...NOTIFY_CATEGORIES, ...extensionCategories].map((category) => (
             <label key={category} className="settings__choice">
               <Checkbox
                 checked={prefs ? categoryOn(prefs, category) : false}
                 disabled={!on}
                 onChange={(e) => void save(setCategory(category, e.target.checked))}
               />
-              {t(`problems:categories.${category}`)}
+              {categoryLabel(t, category)}
             </label>
           ))}
         </div>

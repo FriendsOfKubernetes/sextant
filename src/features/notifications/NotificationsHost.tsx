@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useSettings, type ClusterId } from "../../api";
 import { displayNameOf } from "../clusters/clusterSettings";
 import { useClustersStore } from "../clusters/clustersStore";
+import { useExtensionCategories } from "../problems/extensionCategories";
 import { useNow, useProblemSources } from "../problems/hooks";
 import type { ProblemCategory } from "../problems/model";
 import { notifier, setClusterNames, wireNotificationActions } from "./notifier";
@@ -31,7 +32,9 @@ export function NotificationsHost() {
     if (on) void wireNotificationActions();
   }, [on]);
 
-  const categoriesKey = prefs ? enabledCategories(prefs).join(",") : "";
+  // Extensions' categories notify too, on until turned off (ADR-0137).
+  const extensions = useExtensionCategories();
+  const categoriesKey = prefs ? enabledCategories(prefs, extensions).join(",") : "";
   const categories = useMemo(
     () => (categoriesKey ? (categoriesKey.split(",") as ProblemCategory[]) : []),
     [categoriesKey],
