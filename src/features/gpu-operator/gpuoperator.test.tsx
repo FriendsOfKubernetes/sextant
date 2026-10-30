@@ -28,6 +28,7 @@ import {
   migStrategyOf,
   NVIDIA_DRIVER,
   ownedDaemonSets,
+  shownComponent,
   stateOf,
 } from "./model";
 import { MIG_FAILED_SELECTOR, NOT_READY_GRACE_MS, operandNamespaces, ROLLOUT_GRACE_MS, toProblems, type Seen } from "./provider";
@@ -70,6 +71,39 @@ describe("the model", () => {
     expect(rows.sandboxValidator).toMatchObject({ enabled: true, state: "ready" });
     const plain = Object.fromEntries(componentsOf(f.policyNotReady!, []).map((r) => [r.def.id, r.enabled]));
     expect(plain).toMatchObject({ kataSandboxDevicePlugin: false, sandboxValidator: false });
+  });
+
+  it("follows the sandbox mode and never counts the retired Kata manager as on (#260)", () => {
+    const ds = (name: string, ready = 1): KubeObject => ({
+      apiVersion: "apps/v1",
+      kind: "DaemonSet",
+      metadata: { name, namespace: "gpu-operator", uid: name },
+      status: { desiredNumberScheduled: 1, numberReady: ready, updatedNumberScheduled: 1, numberAvailable: ready },
+    });
+    const policy = (mode?: string): KubeObject => {
+      const p = copy(f.policyNotReady!);
+      Object.assign(p.spec as Record<string, unknown>, {
+        sandboxWorkloads: { enabled: true, ...(mode ? { mode } : {}) },
+        sandboxDevicePlugin: { enabled: true },
+        kataSandboxDevicePlugin: { enabled: true },
+        kataManager: { enabled: true },
+        ccManager: { enabled: true },
+      });
+      return p;
+    };
+    const enabledIn = (p: KubeObject) => Object.fromEntries(componentsOf(p, []).map((r) => [r.def.id, r.enabled]));
+    expect(enabledIn(policy("kubevirt"))).toMatchObject({ sandboxDevicePlugin: true, kataSandboxDevicePlugin: false, ccManager: false, kataManager: false });
+    expect(enabledIn(policy("kata"))).toMatchObject({ sandboxDevicePlugin: false, kataSandboxDevicePlugin: true, ccManager: true, kataManager: false });
+    // A policy of an operator from before `mode` names none: no mode is checked.
+    expect(enabledIn(policy())).toMatchObject({ sandboxDevicePlugin: true, kataSandboxDevicePlugin: true, ccManager: true, kataManager: false });
+
+    // Not "not deployed yet": hidden unless an older operator's DaemonSet is left, then in that DaemonSet's state.
+    const without = componentsOf(policy("kata"), []).find((r) => r.def.id === "kataManager")!;
+    expect(without).toMatchObject({ enabled: false, state: "off" });
+    expect(shownComponent(without)).toBe(false);
+    const left = componentsOf(policy("kata"), [ds("nvidia-kata-manager", 0)]).find((r) => r.def.id === "kataManager")!;
+    expect(left).toMatchObject({ enabled: false, state: "rollingOut" });
+    expect(shownComponent(left)).toBe(true);
   });
 
   it("judges components as their IsEnabled() defaults do", () => {

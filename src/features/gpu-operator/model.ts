@@ -93,6 +93,16 @@ export interface ComponentDef {
   defaultEnabled: boolean | "always";
   /** Only where `sandboxWorkloads.enabled` is true. */
   sandbox?: boolean;
+  /**
+   * Only in this `sandboxWorkloads.mode`, when the policy names one (the CRD defaults it to `kubevirt`; a ClusterPolicy
+   * of an operator from before the field names none, and that operator does not look at a mode).
+   */
+  mode?: "kubevirt" | "kata";
+  /**
+   * No current operator deploys it (`isStateEnabled` answers false whatever the policy says): never counted as on,
+   * shown only while a DaemonSet an older operator made is left, in that DaemonSet's state.
+   */
+  retired?: boolean;
 }
 
 export const COMPONENTS: ComponentDef[] = [
@@ -108,18 +118,24 @@ export const COMPONENTS: ComponentDef[] = [
   { id: "vgpuManager", daemonSet: "nvidia-vgpu-manager-daemonset", defaultEnabled: false, sandbox: true },
   { id: "vgpuDeviceManager", daemonSet: "nvidia-vgpu-device-manager", defaultEnabled: false, sandbox: true },
   { id: "vfioManager", daemonSet: "nvidia-vfio-manager", defaultEnabled: false, sandbox: true },
-  { id: "sandboxDevicePlugin", daemonSet: "nvidia-sandbox-device-plugin-daemonset", defaultEnabled: false, sandbox: true },
+  // `isStateEnabled` in controllers/state_manager.go (v26.7.2): the sandbox device plugin in `kubevirt` mode, the Kata
+  // one and the CC manager in `kata` mode.
+  { id: "sandboxDevicePlugin", daemonSet: "nvidia-sandbox-device-plugin-daemonset", defaultEnabled: false, sandbox: true, mode: "kubevirt" },
   // assets/state-kata-device-plugin/0500_daemonset.yaml; `KataDevicePluginSpec.IsEnabled` is false when not set.
-  { id: "kataSandboxDevicePlugin", daemonSet: "nvidia-kata-sandbox-device-plugin-daemonset", defaultEnabled: false, sandbox: true },
+  { id: "kataSandboxDevicePlugin", daemonSet: "nvidia-kata-sandbox-device-plugin-daemonset", defaultEnabled: false, sandbox: true, mode: "kata" },
   // assets/state-sandbox-validation/0500_daemonset.yaml; `isStateEnabled` runs it whenever sandbox workloads are on.
   { id: "sandboxValidator", daemonSet: "nvidia-sandbox-validator", defaultEnabled: "always", sandbox: true },
-  { id: "kataManager", daemonSet: "nvidia-kata-manager", defaultEnabled: false, sandbox: true },
-  { id: "ccManager", daemonSet: "nvidia-cc-manager", defaultEnabled: false, sandbox: true },
+  // `isStateEnabled("state-kata-manager")` returns false: the Kata manager "stands deprecated" (#260).
+  { id: "kataManager", daemonSet: "nvidia-kata-manager", defaultEnabled: false, sandbox: true, retired: true },
+  { id: "ccManager", daemonSet: "nvidia-cc-manager", defaultEnabled: false, sandbox: true, mode: "kata" },
 ];
 
 /** Whether the ClusterPolicy turns a component on, as the component's `IsEnabled()` does. */
 export function isEnabled(policy: KubeObject, def: ComponentDef): boolean {
+  if (def.retired) return false;
   if (def.sandbox && get(policy, "spec", "sandboxWorkloads", "enabled") !== true) return false;
+  const mode = get(policy, "spec", "sandboxWorkloads", "mode");
+  if (def.mode && typeof mode === "string" && mode !== def.mode) return false;
   if (def.defaultEnabled === "always") return true;
   const value = get(policy, "spec", def.field ?? def.id, "enabled");
   return typeof value === "boolean" ? value : def.defaultEnabled;
@@ -258,6 +274,7 @@ export function componentsOf(policy: KubeObject, daemonSets: readonly KubeObject
     const own = rollouts.filter((r) => isComponentDaemonSet(def, r.name)).sort((a, b) => a.name.localeCompare(b.name));
     let state: ComponentState;
     if (def.id === "driver" && enabled && driverByCrd(policy)) state = "managedByDriver";
+    else if (def.retired && own.length > 0) state = own.every(isRolledOut) ? "ready" : "rollingOut";
     else if (!enabled) state = "off";
     else if (own.length === 0) state = "missing";
     else state = own.every(isRolledOut) ? "ready" : "rollingOut";
