@@ -371,8 +371,10 @@ impl ClusterManager {
 /// within the connect timeouts. Also the connection test of a kubeconfig that is not a source yet
 /// ([`check_connection`]).
 pub(crate) async fn open_checked_client(
-    kubeconfig: kube::config::Kubeconfig,
+    mut kubeconfig: kube::config::Kubeconfig,
 ) -> CoreResult<(kube::Client, Option<ServerBinding>)> {
+    // As client-go without a terminal: no plugin is run interactively (#288).
+    crate::kubeconfig::exec_mode::without_terminal(&mut kubeconfig)?;
     // Read from the very text the client is built from.
     let binding = ServerBinding::of(&kubeconfig).ok();
     // The exec plugin's command as the kubeconfig writes it goes into error messages, so a path that does not exist
@@ -754,6 +756,32 @@ mod tests {
         format!(
             "      exec:\n        apiVersion: client.authentication.k8s.io/v1\n        command: sh\n        args:\n          - -c\n          - \"{script}\"\n          - --password=ARG-SECRET\n        env:\n          - name: VAULT_TOKEN\n            value: ENV-SECRET-123\n        interactiveMode: Never\n"
         )
+    }
+
+    /// As client-go without a terminal (#288): a plugin without `interactiveMode` runs without one (`interactive:
+    /// false` in its exec info), so its stderr is captured for the window; `Always` is refused before it runs.
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn exec_plugins_run_without_a_terminal_and_always_is_refused() {
+        let script = "echo $KUBERNETES_EXEC_INFO >&2; exit 2";
+        let unset = exec_user(script).replace("        interactiveMode: Never\n", "");
+        let (_dir, mgr, id) = manager(&kubeconfig("https://127.0.0.1:1", &unset));
+        let err = mgr.connect(&id).await.unwrap_err();
+        assert_eq!(err.code, ErrorCode::AuthPlugin, "{err}");
+        let output = err
+            .plugin_output()
+            .expect("the plugin's stderr is captured");
+        assert!(output.contains(r#""interactive":false"#), "{output}");
+
+        let ran = tempfile::tempdir().unwrap();
+        let marker = ran.path().join("ran");
+        let always = exec_user(&format!("touch {}; exit 2", marker.display()))
+            .replace("interactiveMode: Never", "interactiveMode: Always");
+        let (_dir, mgr, id) = manager(&kubeconfig("https://127.0.0.1:1", &always));
+        let err = mgr.connect(&id).await.unwrap_err();
+        assert_eq!(err.code, ErrorCode::AuthPlugin, "{err}");
+        assert!(err.message.contains("interactiveMode: Always"), "{err}");
+        assert!(!marker.exists(), "the plugin was run");
     }
 
     #[cfg(unix)]

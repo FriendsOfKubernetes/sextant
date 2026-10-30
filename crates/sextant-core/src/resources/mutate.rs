@@ -709,11 +709,12 @@ pub(super) fn post_params() -> PostParams {
 async fn eviction_client(mgr: &ClusterManager, cluster: &ClusterId) -> CoreResult<kube::Client> {
     // Only for a connected cluster, like every other action.
     mgr.client(cluster)?;
-    let kubeconfig = {
+    let mut kubeconfig = {
         let registry = mgr.registry();
         let registry = registry.read().unwrap_or_else(|e| e.into_inner());
         registry.kubeconfig_for(cluster)?
     };
+    crate::kubeconfig::exec_mode::without_terminal(&mut kubeconfig)?;
     let options = kube::config::KubeConfigOptions {
         context: kubeconfig.current_context.clone(),
         ..Default::default()

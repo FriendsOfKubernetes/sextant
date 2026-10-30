@@ -17,6 +17,7 @@ use ts_rs::TS;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 
 pub mod edit;
+pub mod exec_mode;
 pub mod expiry;
 pub(crate) mod mask;
 pub mod validate;

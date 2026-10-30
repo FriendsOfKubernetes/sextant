@@ -12,6 +12,8 @@ fn main() -> ExitCode {
     }
     // Still before any thread: an empty window on NVIDIA drivers older than 495 (#278).
     sextant_lib::webkit::disable_dmabuf_on_old_nvidia();
+    // Still before any thread: exec auth plugins without a console window on Windows (#288).
+    sextant_core::kubeconfig::exec_mode::hide_plugin_consoles();
     sextant_lib::run();
     ExitCode::SUCCESS
 }
