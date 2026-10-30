@@ -75,7 +75,8 @@
     "columns": "Tablo sütunları",
     "dockActions": "Alt panel düğmeleri",
     "settings": "Ayarlar'daki bölüm",
-    "problems": "Sorun kuralları"
+    "problems": "Sorun kuralları",
+    "metricQueries": "Metrik sorguları"
   },
   "permissions": {
     "clusters": "Kümeler",
@@ -292,5 +293,10 @@
     "heading": "Sorunlar ve bildirimler",
     "kinds": "Sextant bu türlerdeki nesneleri uzantının kurallarına göre denetler, bulduklarını Sorunlar sayfasında gösterir ve bunlar hakkında size bildirim gönderebilir:",
     "scope": "Yalnızca uzantının bu türleri okuyabildiği kümelerde ve namespace'lerde. Bunun için uzantının hiçbir kodu çalışmaz."
+  },
+  "metrics": {
+    "heading": "Metrikler",
+    "queries": "Eklenti, erişebildiği her kümenin Prometheus uyumlu kaynağında bu sabit sorguları çalıştırabilir; yalnızca adları ve süreleri doldurur:",
+    "scope": "Prometheus, eklentinin nesne okuyamadığı namespace'ler dahil herhangi bir namespace'in verileriyle yanıt verebilir."
   }
 }

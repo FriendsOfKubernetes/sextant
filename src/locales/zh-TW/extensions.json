@@ -75,7 +75,8 @@
     "columns": "表格欄位",
     "dockActions": "底部面板按鈕",
     "settings": "「設定」中的區段",
-    "problems": "問題規則"
+    "problems": "問題規則",
+    "metricQueries": "指標查詢"
   },
   "permissions": {
     "clusters": "叢集",
@@ -286,5 +287,10 @@
     "heading": "問題與通知",
     "kinds": "Sextant 依擴充功能的規則檢查以下類型的物件，在「問題」頁面列出發現的問題，並可能就此通知你：",
     "scope": "僅限擴充功能可以讀取這些類型的叢集與命名空間。此過程不會執行擴充功能的任何程式碼。"
+  },
+  "metrics": {
+    "heading": "指標",
+    "queries": "擴充功能可以在其可存取的每個叢集的 Prometheus 相容資料來源中執行這些固定查詢；它只填入名稱與時長：",
+    "scope": "Prometheus 可能回傳任何命名空間的資料，包括擴充功能無權讀取物件的命名空間。"
   }
 }

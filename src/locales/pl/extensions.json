@@ -75,7 +75,8 @@
     "columns": "Kolumny tabel",
     "dockActions": "Przyciski panelu dolnego",
     "settings": "Sekcja w Ustawieniach",
-    "problems": "Reguły problemów"
+    "problems": "Reguły problemów",
+    "metricQueries": "Zapytania o metryki"
   },
   "permissions": {
     "clusters": "Klastry",
@@ -304,5 +305,10 @@
     "heading": "Problemy i powiadomienia",
     "kinds": "Sextant sprawdza obiekty tych rodzajów według reguł rozszerzenia, pokazuje znaleziska na stronie Problemy i może o nich powiadamiać:",
     "scope": "Tylko w klastrach i przestrzeniach nazw, w których rozszerzenie może odczytywać te rodzaje. Nie uruchamia się przy tym żaden kod rozszerzenia."
+  },
+  "metrics": {
+    "heading": "Metryki",
+    "queries": "Rozszerzenie może uruchamiać te stałe zapytania w źródle zgodnym z Prometheusem w każdym klastrze, do którego ma dostęp; wstawia do nich tylko nazwy i czasy trwania:",
+    "scope": "Prometheus może odpowiedzieć danymi z dowolnej przestrzeni nazw, także z tych, w których rozszerzenie nie może odczytywać obiektów."
   }
 }

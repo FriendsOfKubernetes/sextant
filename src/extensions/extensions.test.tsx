@@ -56,6 +56,7 @@ const manifest: ExtensionManifest = {
     columns: [{ kind: { group: "demo.sextant.dev", kind: "Widget" }, id: "size", title: "Size", jsonPath: ".spec.size", after: "name" }],
     dockActions: [{ id: "console", title: "Widget console" }],
     problems: [],
+    metricQueries: [],
     settings: { title: "Widget settings" },
   },
 };

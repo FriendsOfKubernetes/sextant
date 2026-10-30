@@ -75,7 +75,8 @@
     "columns": "表格列",
     "dockActions": "底部面板按钮",
     "settings": "“设置”中的分区",
-    "problems": "问题规则"
+    "problems": "问题规则",
+    "metricQueries": "指标查询"
   },
   "permissions": {
     "clusters": "集群",
@@ -286,5 +287,10 @@
     "heading": "问题与通知",
     "kinds": "Sextant 按扩展的规则检查以下类型的对象，在“问题”页面列出发现的问题，并可能就此通知你：",
     "scope": "仅限扩展可以读取这些类型的集群和命名空间。此过程不运行扩展的任何代码。"
+  },
+  "metrics": {
+    "heading": "指标",
+    "queries": "扩展可以在其可访问的每个集群的 Prometheus 兼容数据源中运行这些固定查询；它只填入名称和时长：",
+    "scope": "Prometheus 可能返回任何命名空间的数据，包括扩展无权读取对象的命名空间。"
   }
 }

@@ -75,7 +75,8 @@
     "columns": "Colunas de tabela",
     "dockActions": "Botões do painel inferior",
     "settings": "Seção em Configurações",
-    "problems": "Regras de problemas"
+    "problems": "Regras de problemas",
+    "metricQueries": "Consultas de métricas"
   },
   "permissions": {
     "clusters": "Clusters",
@@ -298,5 +299,10 @@
     "heading": "Problemas e notificações",
     "kinds": "O Sextant verifica objetos desses tipos pelas regras da extensão, mostra o que elas encontram na página Problemas e pode notificar você sobre isso:",
     "scope": "Somente em clusters e namespaces em que a extensão pode ler esses tipos. Nenhum código da extensão é executado para isso."
+  },
+  "metrics": {
+    "heading": "Métricas",
+    "queries": "A extensão pode executar estas consultas fixas na fonte compatível com Prometheus de cada cluster que pode acessar; ela preenche apenas nomes e durações:",
+    "scope": "O Prometheus pode responder com dados de qualquer namespace, inclusive daqueles em que a extensão não pode ler objetos."
   }
 }

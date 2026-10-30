@@ -55,6 +55,7 @@ const manifest: ExtensionManifest = {
     columns: [{ kind: { group: "demo.dev", kind: "Widget" }, id: "size", title: "Size", jsonPath: ".spec.size" }],
     dockActions: [],
     problems: [],
+    metricQueries: [],
     settings: { title: "Widget settings" },
   },
 };
@@ -476,6 +477,28 @@ describe("the window of consent", () => {
     expect(within(consent).getByText("Only the clusters named prod-admin, staging")).toBeInTheDocument();
     expect(within(consent).getByText(/covers every cluster context with that name, from every kubeconfig source/)).toBeInTheDocument();
     expect(consent.querySelector('[data-secret]')).not.toBeNull();
+  });
+
+  it("lists the metric queries word for word and says Prometheus may answer about any namespace", async () => {
+    const query = 'ceph_health_status{namespace="{{ns}}"}';
+    pending = pendingOf({
+      manifest: {
+        ...manifest,
+        sextantApi: 2,
+        contributes: {
+          ...manifest.contributes,
+          metricQueries: [{ id: "health", title: "Ceph health", query, params: [{ name: "ns", type: "namespace" }] }],
+        },
+      },
+    });
+    setup();
+    render(<ExtensionsPanel />);
+    fireEvent.click(await screen.findByRole("button", { name: "Install from file…" }));
+    const consent = await screen.findByRole("dialog");
+    expect(within(consent).getByRole("heading", { name: "Metrics" })).toBeInTheDocument();
+    expect(within(consent).getByText(query).closest("li")).toHaveTextContent("Ceph health");
+    expect(within(consent).getByText(/data of any namespace/)).toBeInTheDocument();
+    expect(within(consent).getByText("Metric queries")).toBeInTheDocument();
   });
 
   it("an update says whether the permissions widened", async () => {

@@ -75,7 +75,8 @@
     "columns": "Tabellenspalten",
     "dockActions": "Dock-Schaltflächen",
     "settings": "Abschnitt in den Einstellungen",
-    "problems": "Problemregeln"
+    "problems": "Problemregeln",
+    "metricQueries": "Metrikabfragen"
   },
   "permissions": {
     "clusters": "Cluster",
@@ -292,5 +293,10 @@
     "heading": "Probleme und Benachrichtigungen",
     "kinds": "Sextant prüft Objekte dieser Arten nach den Regeln der Erweiterung, zeigt die Funde auf der Seite „Probleme“ und kann Sie darüber benachrichtigen:",
     "scope": "Nur in Clustern und Namespaces, in denen die Erweiterung diese Arten lesen darf. Dafür läuft kein Code der Erweiterung."
+  },
+  "metrics": {
+    "heading": "Metriken",
+    "queries": "Die Erweiterung darf diese festen Abfragen in der Prometheus-kompatiblen Quelle jedes Clusters ausführen, den sie erreichen darf; sie setzt nur Namen und Zeitspannen ein:",
+    "scope": "Prometheus kann mit Daten aus jedem Namespace antworten, auch aus Namespaces, in denen die Erweiterung keine Objekte lesen darf."
   }
 }
