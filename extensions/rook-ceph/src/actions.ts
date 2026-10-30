@@ -65,7 +65,7 @@ const ACTIONS: Record<string, Opener> = {
     const cluster = object as CephCluster;
     const current = (cluster.spec?.cephVersion?.image as string | undefined) ?? "";
     const image = textInput(current, "quay.io/ceph/ceph:v20.2.4-20260818");
-    const list = element("ul", { className: "checks compact" });
+    const list = element("ul", { className: "checks compact badged" });
     const draw = () => {
       const checks = upgradeChecks(cluster, image.value);
       list.replaceChildren(

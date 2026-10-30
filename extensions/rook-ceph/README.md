@@ -51,8 +51,9 @@ asks to look again.
   - replace its disk (Rook's `osd.rook.io/replace`);
   - stop or start it;
   - pause or resume its reconciling;
-  - once it is stopped, remove it with Rook's purge Job. This is offered only after the placement groups are seen
-    active and clean.
+  - once it is stopped, remove it with Rook's purge Job. This is refused while the placement groups are seen not
+    active and clean; when their state cannot be told, the view says so, and Rook's Job, never forced, still refuses
+    an OSD that is not safe to destroy.
 - The cluster's storage switches (`useAllNodes`, `useAllDevices`, `deviceFilter`, the device class and CRUSH weight
   updates, removing OSDs that are out and safe to remove) and the `count` of each device set.
 

@@ -88,6 +88,14 @@ button.link:hover:not(:disabled) {
   padding: 2px 0;
   border: none;
 }
+/* A badge with its text beside it, wrapped lines under the text. */
+.checks.badged > li {
+  display: flex;
+  align-items: baseline;
+}
+.checks.badged > li > .badge {
+  flex: none;
+}
 .check-head {
   display: flex;
   flex-wrap: wrap;
@@ -316,4 +324,11 @@ input[type="checkbox"] {
   align-items: center;
   gap: 2px 4px;
   padding: 2px 0;
+}
+
+/* An example in an empty field must not read as a value. */
+input::placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+  opacity: 0.7;
 }

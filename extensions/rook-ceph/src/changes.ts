@@ -279,7 +279,34 @@ export function storageClassObject(c: NewStorageClass) {
 
 /** Objects as one YAML text of JSON documents. */
 export function asYaml(objects: readonly object[]): string {
-  return objects.map((o) => JSON.stringify(o, null, 2)).join("\n---\n");
+  return objects.map((o) => yamlLines(o, "").join("\n")).join("\n---\n");
+}
+
+/** A key written bare when YAML cannot read it as anything but that string. */
+const PLAIN_KEY = /^[A-Za-z][A-Za-z0-9_./-]*$/;
+const YAML_WORDS = /^(true|false|null|yes|no|on|off|y|n|~)$/i;
+const yamlKey = (key: string) => (PLAIN_KEY.test(key) && !YAML_WORDS.test(key) ? key : JSON.stringify(key));
+const isBlock = (value: unknown) =>
+  value !== null && typeof value === "object" && (Array.isArray(value) ? value.length > 0 : Object.keys(value).length > 0);
+
+/** Block-style YAML of a JSON value; every string is double-quoted, which YAML reads exactly as JSON does. */
+function yamlLines(value: unknown, indent: string): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => {
+      if (!isBlock(item)) return [`${indent}- ${yamlScalar(item)}`];
+      const [first = "", ...rest] = yamlLines(item, `${indent}  `);
+      return [`${indent}- ${first.slice(indent.length + 2)}`, ...rest];
+    });
+  }
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, item]) =>
+    isBlock(item) ? [`${indent}${yamlKey(key)}:`, ...yamlLines(item, `${indent}  `)] : [`${indent}${yamlKey(key)}: ${yamlScalar(item)}`],
+  );
+}
+
+function yamlScalar(value: unknown): string {
+  if (Array.isArray(value)) return "[]";
+  if (value !== null && typeof value === "object") return "{}";
+  return JSON.stringify(value) ?? "null";
 }
 
 /** A DNS-1123 subdomain: the name of a Rook object or StorageClass. */

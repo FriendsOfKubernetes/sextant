@@ -16,7 +16,7 @@ import { element } from "./dom";
 import { t } from "./i18n";
 import type { CephCluster, RookObject } from "./rook";
 import { driverOf, type StorageClass } from "./storage";
-import { changeButton, checkbox, field, numberInput, preview, readCount, select, textInput } from "./ui";
+import { changeButton, checkbox, field, numberInput, readCount, select, showPreview, textInput } from "./ui";
 
 export type CreateKind = "pool" | "filesystem" | "objectStore" | "user";
 
@@ -148,7 +148,7 @@ function form(sextant: Sextant, kind: CreateKind, current: () => CreateData): HT
   const refresh = () => {
     const built = build();
     reason.textContent = "reason" in built ? built.reason : "";
-    previewSlot.replaceChildren(...("change" in built ? [preview(built.change)] : []));
+    showPreview(previewSlot, "change" in built ? built.change : null);
     button.disabled = "reason" in built;
   };
   body.addEventListener("input", refresh);

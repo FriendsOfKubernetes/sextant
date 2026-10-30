@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.rook-ceph",
   "name": "Rook Ceph",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Rook Ceph clusters: Ceph health and its checks in plain words, capacity, daemons, the CRUSH tree and OSDs, pools, filesystems and object stores with their storage classes and claims, charts and problems; and managing them through Rook's own objects, every change shown first and confirmed.",
   "author": "Sextant",
   "sextantApi": 2,

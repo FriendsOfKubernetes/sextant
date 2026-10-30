@@ -65,8 +65,9 @@ examples.
       - HEALTH_WARN.
   - **OSD removal**, in the order of Rook's guide:
     1. Stop the OSD: its Deployment gets 0 replicas and `do-not-reconcile`.
-    2. Check that every placement group is active and clean. The `pgs` metric query tells this; when it cannot be
-       told, the view says so.
+    2. Check that every placement group is active and clean. The `pgs` metric query tells this. While they are seen
+       not clean, removal is refused. When it cannot be told (no metrics), the view says so and lets removal go on,
+       because Rook's Job, never forced, still refuses an OSD that is not safe to destroy.
     3. Run Rook's purge Job for that one OSD with the operator's own image and `--force-osd-removal false`.
 
     An OSD on a PVC is removed through its device set's `count`.

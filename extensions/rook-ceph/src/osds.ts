@@ -5,6 +5,7 @@
 // Rook's purge Job, never forced, which refuses an OSD that is not safe to destroy.
 import type { KubeObject, MetricAnswer, ObjectRef, Sextant } from "@sextant/extension-sdk";
 import {
+  asYaml,
   autoRemovePatch,
   daemonReconcilePatch,
   deviceSetCountPatch,
@@ -18,7 +19,7 @@ import { badge, element, errorBox, formatBytes, formatPercent, objectLink, richT
 import { t } from "./i18n";
 import { kindKey, servedKinds, watchLists, type LiveList } from "./live";
 import { POD, type CephCluster } from "./rook";
-import { changeButton, checkbox, field, numberInput, preview, readCount, textInput } from "./ui";
+import { changeButton, checkbox, field, numberInput, preview, readCount, showPreview, textInput } from "./ui";
 
 export const DEPLOYMENT = { group: "apps", kind: "Deployment" };
 export const JOB = { group: "batch", kind: "Job" };
@@ -85,7 +86,7 @@ function storageView(sextant: Sextant, ref: ObjectRef, cluster: CephCluster): HT
   );
   const refresh = () => {
     const patch = build();
-    previewSlot.replaceChildren(...(patch ? [preview(patch)] : []));
+    showPreview(previewSlot, patch ?? null);
     button.disabled = !patch;
   };
   form.addEventListener("input", refresh);
@@ -175,14 +176,15 @@ function removeControl(c: OsdContext, osd: Osd): HTMLElement {
   const job = c.rookImage ? purgeJobObject(c.namespace, osd.id, c.rookImage) : null;
   const run = changeButton(t("osds.removeRun", { id: osd.id }), async () => {
     if (!job) throw new Error(t("osds.noRookImage"));
-    await c.sextant.resources.apply({ yaml: JSON.stringify(job, null, 2) });
+    await c.sextant.resources.apply({ yaml: asYaml([job]) });
   }, { danger: true });
-  if (!job) run.button.disabled = true;
+  // Not clean is refused; not known only warns, and Rook's Job (not forced) still refuses an OSD unsafe to destroy.
+  if (!job || c.pgsClean === false) run.button.disabled = true;
   box.append(
     element("p", {}, ...richText(t("osds.removeIntro", { id: osd.id }))),
     element("p", { className: "warning-text", textContent: t(osd.onPvc ? "osds.removePvc" : "osds.removeHost") }),
-    ...checks.map((text) => element("p", { className: "warning-text", textContent: text })),
-    ...(job ? [preview(job)] : []),
+    ...checks.map((text) => element("p", { className: "warning-text" }, ...richText(text))),
+    ...(job ? [preview(asYaml([job]))] : []),
     element("p", {}, run.button, run.status),
   );
   return box;

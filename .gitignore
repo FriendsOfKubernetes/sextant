@@ -20,6 +20,7 @@ __pycache__/
 
 # Extension SDK build output
 sdk/**/dist/
+extensions/**/dist/
 *.sextant-ext
 # Test fixtures are packages on purpose.
 !sdk/test/fixtures/**/*.sextant-ext

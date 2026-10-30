@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseAllDocuments } from "yaml";
 import fixtures from "../fixtures/objects.json";
 import {
   asYaml,
@@ -28,6 +29,7 @@ import { nodeClassOwners } from "./nodeTopology";
 import { pgsClean } from "./osds";
 import type { CephCluster } from "./rook";
 import { ROOK_TOOLBOX_YAML } from "./toolbox";
+import { showPreview } from "./ui";
 import { upgradeChecks, versionOfImage } from "./upgrade";
 
 const cluster = fixtures.clusters[0] as unknown as CephCluster;
@@ -89,6 +91,14 @@ describe("the changes", () => {
     expect(yaml).toContain("${ROOK_CEPH_USERNAME}");
   });
 
+  it("write YAML that reads back as the same objects", () => {
+    const tricky = {
+      metadata: { name: "x", labels: { "app.kubernetes.io/name": "yes", true: "no", "1x": "007" }, annotations: {} },
+      spec: { list: [], items: [{ a: 1, b: [true, null, "on"] }, "plain", ["nested"]], quote: 'a "b" \\ c\nd', empty: "" },
+    };
+    expect(parseAllDocuments(asYaml([tricky])).map((d) => d.toJS())).toEqual([tricky]);
+  });
+
   it("purge one OSD with Rook's Job, never forced", () => {
     const job = purgeJobObject("rook-ceph", 3, "docker.io/rook/ceph:v1.21.1");
     expect(job.metadata).toEqual({ name: "rook-ceph-purge-osd-3", namespace: "rook-ceph", labels: { app: "rook-ceph-purge-osd" } });
@@ -117,7 +127,7 @@ describe("the changes", () => {
       reclaimPolicy: "Retain",
     });
     expect(bucket.provisioner).toBe("ceph.rook.io/bucket");
-    expect(asYaml([fs, sc]).split("\n---\n")).toHaveLength(2);
+    expect(parseAllDocuments(asYaml([fs, sc])).map((d) => d.toJS())).toEqual([fs, sc]);
   });
 });
 
@@ -222,5 +232,20 @@ describe("pods and nodes", () => {
     const c = { metadata: { name: "c", namespace: "rook-ceph" }, spec: { storage: { nodes: [{ name: "n1", config: { deviceClass: "ssd" } }, { name: "n2" }] } } } as never;
     expect(nodeClassOwners([c], "n1")).toEqual(["rook-ceph/c"]);
     expect(nodeClassOwners([c], "n2")).toEqual([]);
+  });
+});
+
+describe("the change shown before it is sent", () => {
+  it("stays open while the form is edited", () => {
+    const slot = document.createElement("div");
+    showPreview(slot, { size: 2 });
+    const details = slot.querySelector("details")!;
+    details.open = true;
+    showPreview(slot, { size: 3 });
+    expect(slot.querySelector("details")).toBe(details);
+    expect(details.open).toBe(true);
+    expect(details.querySelector("pre")!.textContent).toContain("3");
+    showPreview(slot, null);
+    expect(slot.children).toHaveLength(0);
   });
 });

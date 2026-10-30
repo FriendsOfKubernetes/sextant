@@ -1,6 +1,7 @@
 import { SextantError, type KubeObject, type WatchParams } from "@sextant/extension-sdk";
 import { startTestHost, type TestHost, type TestHostOptions, type TestWatch } from "@sextant/extension-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { parse } from "yaml";
 import fixtures from "../fixtures/objects.json";
 import { startAction } from "./actions";
 import { startDaemons } from "./daemons";
@@ -427,14 +428,14 @@ describe("CRUSH and OSDs", () => {
     await startTab(false);
     const box = root.querySelector<HTMLDetailsElement>(".remove-osd")!;
     expect(box.textContent).toContain("osd.1");
-    expect(button("Remove osd.1")!.disabled).toBe(false);
-    expect(box.textContent).toMatch(/not (all )?(active and )?clean|clean/i);
+    expect(box.textContent).toContain("Not every placement group is active+clean");
+    expect(button("Remove osd.1")!.disabled).toBe(true);
     stop();
     root.replaceChildren();
     await startTab(true);
     button("Remove osd.1")!.click();
     await expect.poll(() => changes()[0]?.method).toBe("resources.apply");
-    const job = JSON.parse((changes()[0]!.params as { yaml: string }).yaml);
+    const job = parse((changes()[0]!.params as { yaml: string }).yaml);
     expect(job.metadata.name).toBe("rook-ceph-purge-osd-1");
     expect(job.spec.template.spec.containers[0].image).toBe("docker.io/rook/ceph:v1.21.1");
     expect(job.spec.template.spec.containers[0].args).toContain("--force-osd-removal");

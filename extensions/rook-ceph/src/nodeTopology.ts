@@ -8,7 +8,7 @@ import { CRUSH_NAME, NODE_DEVICE_CLASS, nodeLabelsPatch, TOPOLOGY_LABELS } from 
 import { element, errorBox } from "./dom";
 import { t } from "./i18n";
 import { CEPH_CLUSTER, type CephCluster } from "./rook";
-import { changeButton, field, preview, textInput } from "./ui";
+import { changeButton, field, showPreview, textInput } from "./ui";
 
 type ClusterWithNodes = CephCluster & {
   spec?: { storage?: { nodes?: { name?: string; config?: { deviceClass?: string } }[]; allowDeviceClassUpdate?: boolean } };
@@ -58,7 +58,7 @@ export function topologyView(sextant: Sextant, node: KubeObject, clusters: reado
   const refresh = () => {
     const built = build();
     reason.textContent = "reason" in built ? built.reason : "";
-    previewSlot.replaceChildren(...("change" in built ? [preview(built.change)] : []));
+    showPreview(previewSlot, "change" in built ? built.change : null);
     button.disabled = "reason" in built;
   };
   form.addEventListener("input", refresh);

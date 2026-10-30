@@ -14,7 +14,9 @@ import { startStorage } from "./storageView";
 const sextant = await connect();
 const root = document.getElementById("app")!;
 const { view, contribution } = sextant.context;
-if (view === "details") document.body.classList.add("compact");
+// A section sits inside the Overview's own padding; a tab fills its tab and keeps the theme's.
+const SECTIONS = new Set(["status", "storage"]);
+if (view === "details" && SECTIONS.has(contribution)) document.body.classList.add("compact");
 
 function start(): () => void {
   setLanguage(sextant.context.language);

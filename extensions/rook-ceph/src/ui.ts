@@ -46,10 +46,25 @@ export function readCount(input: HTMLInputElement, min: number, max: number): nu
   return n >= min && n <= max ? n : null;
 }
 
+const previewText = (change: unknown) => (typeof change === "string" ? change : JSON.stringify(change, null, 2));
+
 /** The change as it will be sent, folded: what a confirmation is about. */
 export function preview(change: unknown): HTMLElement {
-  const text = typeof change === "string" ? change : JSON.stringify(change, null, 2);
-  return element("details", { className: "preview" }, element("summary", { textContent: t("change.preview") }), element("pre", { textContent: text }));
+  return element("details", { className: "preview" }, element("summary", { textContent: t("change.preview") }), element("pre", { textContent: previewText(change) }));
+}
+
+/**
+ * Shows `change` in `slot`, or nothing for `null`. A preview already there keeps its element, so one the user opened
+ * stays open while the form is edited.
+ */
+export function showPreview(slot: HTMLElement, change: unknown): void {
+  if (change === null) {
+    slot.replaceChildren();
+    return;
+  }
+  const pre = slot.querySelector(".preview > pre");
+  if (pre) pre.textContent = previewText(change);
+  else slot.replaceChildren(preview(change));
 }
 
 /** What a failed change says: Sextant's or the user's refusal, a conflict, or the cluster's message. */
@@ -118,7 +133,8 @@ export function actionWindow(
   },
 ): () => void {
   const previewSlot = element("div", {});
-  const reason = element("p", { className: "error" });
+  // Why it cannot be applied yet: a hint, not an error (refusals of the cluster are shown by the button).
+  const reason = element("p", { className: "muted" });
   const { button, status } = changeButton(parts.applyLabel, async () => {
     const built = parts.build();
     if ("reason" in built) throw new Error(built.reason);
@@ -132,11 +148,11 @@ export function actionWindow(
     const built = parts.build();
     if ("reason" in built) {
       reason.textContent = built.reason;
-      previewSlot.replaceChildren();
+      showPreview(previewSlot, null);
       button.disabled = true;
     } else {
       reason.textContent = "";
-      previewSlot.replaceChildren(preview(built.change));
+      showPreview(previewSlot, built.change);
       button.disabled = false;
     }
   };
