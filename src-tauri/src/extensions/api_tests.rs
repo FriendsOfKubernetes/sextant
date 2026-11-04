@@ -1535,6 +1535,41 @@ async fn every_method_against_the_test_cluster() {
         .unwrap_err();
     assert_eq!(outside.code, ErrorCode::Denied);
 
+    // resources.getMany: each object in its place, a missing one as its error; a batch with one object the extension
+    // may not read is refused as a whole.
+    let missing =
+        json!({ "kind": { "kind": "ConfigMap" }, "namespace": NS, "name": "no-such-map" });
+    let many = live
+        .call(
+            "resources.getMany",
+            json!({ "clusterId": id, "refs": [cm, secret, missing] }),
+        )
+        .await
+        .unwrap();
+    let items = many["items"].as_array().unwrap();
+    assert_eq!(items[0]["object"]["metadata"]["name"], cm["name"]);
+    assert_eq!(items[1]["object"]["data"]["password"], "");
+    assert!(!many.to_string().contains("hunter2"));
+    assert_eq!(items[2]["error"]["code"], "notFound");
+    let outside = json!({ "kind": { "kind": "ConfigMap" }, "namespace": "default", "name": "kube-root-ca.crt" });
+    let refused = live
+        .call(
+            "resources.getMany",
+            json!({ "clusterId": id, "refs": [cm, outside] }),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(refused.code, ErrorCode::Denied);
+    let too_many: Vec<Value> = (0..=MAX_GET_MANY).map(|_| cm.clone()).collect();
+    let err = live
+        .call(
+            "resources.getMany",
+            json!({ "clusterId": id, "refs": too_many }),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid);
+
     // resources.patch: a merge patch; on a Secret, a JSON patch that may read values needs "Secret values".
     let patched = live
         .call(

@@ -63,6 +63,7 @@ export const REMOTE_METHODS = [
   "kinds",
   "resources.list",
   "resources.get",
+  "resources.getMany",
   "resources.watch",
   "resources.apply",
   "resources.patch",

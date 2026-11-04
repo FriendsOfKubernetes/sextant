@@ -100,6 +100,16 @@ export interface GetParams extends OnCluster {
   ref: RefInput;
 }
 
+/** Up to 50 named objects in one call (`resources.getMany`). */
+export interface GetManyParams extends OnCluster {
+  refs: RefInput[];
+}
+
+/** Each object in its place: the object, or why it could not be read (`notFound`, …). */
+export interface GetManyResult<T = KubeObject> {
+  items: ({ object: T } | { error: { code: string; message: string } })[];
+}
+
 export interface WatchParams extends OnCluster {
   kind: KindInput;
   /** Only these namespaces; without them, every namespace the extension may read. */
@@ -163,6 +173,7 @@ export interface Methods {
   kinds: { params: { clusterId: ClusterId }; result: ResourceKind[] };
   "resources.list": { params: ListParams & { clusterId: ClusterId }; result: ListResult };
   "resources.get": { params: GetParams & { clusterId: ClusterId }; result: KubeObject };
+  "resources.getMany": { params: GetManyParams & { clusterId: ClusterId }; result: GetManyResult };
   "resources.watch": { params: WatchParams & { clusterId: ClusterId }; result: { stream: string | number } };
   "resources.apply": { params: ApplyParams & { clusterId: ClusterId }; result: ObjectRef[] };
   "resources.patch": { params: PatchParams & { clusterId: ClusterId }; result: KubeObject };

@@ -57,7 +57,7 @@
 //   ui.notify({text})                     → null       a short notice in the window (at most 500 characters)
 //   ui.close()                            → null       closes the frame's window (action) or dock tab
 //   resources.unwatch({stream})           → null       stops a watch opened by `resources.watch`
-//   clusters.list, kinds, resources.list/get/watch/apply/patch/delete, logs.tail, secret.value, metrics.query,
+//   clusters.list, kinds, resources.list/get/getMany/watch/apply/patch/delete, logs.tail, secret.value, metrics.query,
 //   storage.get/set/remove
 //                                                      backend methods (`src-tauri/src/extensions/api.rs`)
 //
@@ -194,6 +194,7 @@ export const REMOTE_METHODS: readonly string[] = [
   "kinds",
   "resources.list",
   "resources.get",
+  "resources.getMany",
   "resources.watch",
   "resources.apply",
   "resources.patch",

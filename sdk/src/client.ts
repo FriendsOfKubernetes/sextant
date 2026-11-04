@@ -10,6 +10,8 @@ import type {
   CallOptions,
   ClusterSummary,
   DeleteParams,
+  GetManyParams,
+  GetManyResult,
   GetParams,
   JsonValue,
   KindsParams,
@@ -90,6 +92,11 @@ export interface Sextant {
   resources: {
     list<T = KubeObject>(params: ListParams, options?: CallOptions): Promise<ListResult<T>>;
     get<T = KubeObject>(params: GetParams, options?: CallOptions): Promise<T>;
+    /**
+     * Up to 50 named objects in one call, read 4 at a time: each in its place as `{object}` or `{error}` (a missing one
+     * is `notFound`). Refused as a whole when the extension may not read every one of them (since Sextant 0.29).
+     */
+    getMany<T = KubeObject>(params: GetManyParams, options?: CallOptions): Promise<GetManyResult<T>>;
     /** Watches objects: a snapshot first, then deltas (objects changed, uids deleted), batched by Sextant. */
     watch(
       params: WatchParams,
@@ -490,6 +497,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
     resources: {
       list: (params, o) => onCluster("resources.list", params, o),
       get: (params, o) => onCluster("resources.get", params, o),
+      getMany: (params, o) => onCluster("resources.getMany", params, o),
       watch,
       apply: (params, o) => onCluster("resources.apply", params, o),
       patch: (params, o) => onCluster("resources.patch", params, o),

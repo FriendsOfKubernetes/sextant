@@ -17,6 +17,7 @@ pub mod dev;
 pub mod manage;
 pub mod problems;
 pub mod protocol;
+pub mod watch_hub;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

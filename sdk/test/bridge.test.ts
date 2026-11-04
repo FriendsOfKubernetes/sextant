@@ -94,6 +94,18 @@ describe("the SDK with Sextant's bridge", () => {
     });
   });
 
+  it("reads several objects in one call, each in its place", async () => {
+    const answer = { items: [{ object: { metadata: { name: "a" } } }, { error: { code: "notFound", message: "b is gone" } }] };
+    backend.on("extension_call", (args) => (args.method === "resources.getMany" ? answer : null));
+    const client = await connected();
+    const refs = [
+      { kind: { kind: "ConfigMap" }, namespace: "x", name: "a" },
+      { kind: { kind: "ConfigMap" }, namespace: "x", name: "b" },
+    ];
+    await expect(client.resources.getMany({ refs })).resolves.toEqual(answer);
+    expect(calls("extension_call")[0]!.args.params).toEqual({ clusterId: "c1", refs });
+  });
+
   it("passes refusals on with their code", async () => {
     backend.on("extension_call", () => {
       throw { code: "denied", message: "Extension Demo may not modify Pods" };

@@ -5205,6 +5205,7 @@ dependencies = [
  "futures",
  "getrandom 0.3.4",
  "glib",
+ "indexmap 2.14.2",
  "keyring",
  "libc",
  "portable-pty",

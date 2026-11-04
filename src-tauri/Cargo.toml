@@ -57,6 +57,8 @@ axum = { version = "0.8.9", default-features = false, features = ["http1", "toki
 schemars = "1.2.2"
 # `CancellationToken` that stops rmcp's server and its sessions.
 tokio-util = "0.7.20"
+# The extensions' shared watches keep a list in the order its objects came (`extensions::watch_hub`); already in the tree.
+indexmap = "2.14"
 # The MCP token: 32 bytes from the OS random source.
 getrandom = "0.3.4"
 # Config and data directories for `sextant mcp`, which runs without Tauri; the same crate and rule Tauri uses.

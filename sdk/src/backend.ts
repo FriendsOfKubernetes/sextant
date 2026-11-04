@@ -74,6 +74,7 @@ export const host = {
   resources: {
     list: (params: Params<"resources.list">) => callApi("resources.list", params),
     get: (params: Params<"resources.get">) => callApi("resources.get", params),
+    getMany: (params: Params<"resources.getMany">) => callApi("resources.getMany", params),
     apply: (params: Params<"resources.apply">) => callApi("resources.apply", params),
     patch: (params: Params<"resources.patch">) => callApi("resources.patch", params),
     delete: (params: Params<"resources.delete">) => callApi("resources.delete", params),

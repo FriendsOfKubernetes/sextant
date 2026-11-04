@@ -50,6 +50,7 @@ use tauri::ipc::JavaScriptChannelId;
 use tauri::{Runtime, State, Webview};
 use tokio::task::AbortHandle;
 
+use super::watch_hub::WatchHub;
 use super::{ExtensionHost, HostEvent, WeakExtensionHost};
 use crate::access_guard::audit::{AuditDecision, AuditEntry, AuditLog, clip};
 use crate::access_guard::confirm::{
@@ -79,13 +80,18 @@ pub const DEFAULT_LOG_LINES: u32 = 200;
 pub const MAX_STORAGE_BYTES: usize = 1024 * 1024;
 /// Longest `storage` key.
 pub const MAX_STORAGE_KEY_CHARS: usize = 256;
+/// Objects one `resources.getMany` reads at most.
+pub const MAX_GET_MANY: usize = 50;
+/// Reads of one `resources.getMany` running at once.
+pub const GET_MANY_AT_ONCE: usize = 4;
 
 /// The methods `extension_call` serves (`ui.*` and the context are the window's).
-pub const METHODS: [&str; 14] = [
+pub const METHODS: [&str; 15] = [
     "clusters.list",
     "kinds",
     "resources.list",
     "resources.get",
+    "resources.getMany",
     "resources.watch",
     "resources.apply",
     "resources.patch",
@@ -335,6 +341,8 @@ pub struct ExtensionApi {
     /// `extensions-audit.jsonl`
     pub audit: AuditLog,
     pub streams: Arc<ExtensionStreams>,
+    /// One core watch per list for every extension frame that watches it (#334, ADR-0145).
+    watches: Arc<WatchHub>,
     emitter: RwLock<Option<ApiEmitter>>,
     /// One `storage` change at a time.
     storage: Arc<Mutex<()>>,
@@ -367,6 +375,7 @@ impl ExtensionApi {
             confirmations,
             audit: AuditLog::open(AuditLog::extensions_path_in(data_dir)),
             streams: Arc::new(ExtensionStreams::default()),
+            watches: Arc::new(WatchHub::default()),
             emitter: RwLock::new(None),
             storage: Arc::new(Mutex::new(())),
         }
@@ -447,6 +456,7 @@ impl ExtensionApi {
             "kinds" => call.kinds(params).await,
             "resources.list" => call.list(params).await,
             "resources.get" => call.get(params).await,
+            "resources.getMany" => call.get_many(params).await,
             "resources.watch" => call.watch(params, watch).await,
             "resources.apply" => call.apply(params).await,
             "resources.patch" => call.patch(params).await,
@@ -1159,6 +1169,59 @@ impl<'a> ExtCall<'a> {
         .map(without_inline_secrets)
     }
 
+    /// Named reads in one call (#334, ADR-0145): at most [`MAX_GET_MANY`], [`GET_MANY_AT_ONCE`] at a time, each answered
+    /// in its place as `{object}` or `{error}`. Every object is checked for Read in one decision before any is read: a
+    /// batch the extension may not read in full is refused as a whole, as one `resources.get` would be.
+    async fn get_many(&self, params: Value) -> CoreResult<Value> {
+        let args: GetManyArgs = parse(&self.method, params)?;
+        if args.refs.is_empty() || args.refs.len() > MAX_GET_MANY {
+            return Err(invalid(format!(
+                "resources.getMany reads 1 to {MAX_GET_MANY} objects"
+            )));
+        }
+        let cluster = self.open(&args.cluster_id).await?;
+        let mut resolved = Vec::with_capacity(args.refs.len());
+        for r in &args.refs {
+            resolved.push(self.object(&cluster, r).await);
+        }
+        let objects: Vec<ObjectRef> = resolved
+            .iter()
+            .filter_map(|r| r.as_ref().ok().cloned())
+            .collect();
+        if !objects.is_empty() {
+            let needs: Vec<Requirement> = objects
+                .iter()
+                .map(|o| requirement(o, AccessAction::Read))
+                .collect();
+            self.check(&cluster, &needs, &summary(targets_text(&objects)))
+                .await?;
+        }
+        let mgr = &self.api.clusters;
+        let cluster_id = &cluster.id;
+        let items: Vec<Value> = futures::stream::iter(resolved)
+            .map(|object| async move {
+                let answer = match object {
+                    Ok(object) => read(
+                        "reading the object",
+                        resources::get(mgr, cluster_id, &object),
+                    )
+                    .await
+                    .map(without_inline_secrets),
+                    Err(err) => Err(err),
+                };
+                match answer {
+                    Ok(object) => serde_json::json!({ "object": object }),
+                    Err(err) => {
+                        serde_json::json!({ "error": { "code": err.code, "message": err.message } })
+                    }
+                }
+            })
+            .buffered(GET_MANY_AT_ONCE)
+            .collect()
+            .await;
+        Ok(serde_json::json!({ "items": items }))
+    }
+
     async fn watch(&self, params: Value, sink: Option<(String, UpdateSink)>) -> CoreResult<Value> {
         let args: WatchArgs = parse(&self.method, params)?;
         let Some((stream_id, sink)) = sink else {
@@ -1212,12 +1275,22 @@ impl<'a> ExtCall<'a> {
             metadata_only: args.metadata_only,
         };
         let (mgr, cluster_id) = (self.api.clusters.clone(), cluster.id.clone());
-        // `resources::watch` gives Secrets without their values, like `watch_start`; inline secret material is
-        // emptied here, object by object, before an update reaches the frame.
+        // Frames watching the same list share one core watch (ADR-0145): this call was checked against its own grant
+        // above, and every extension's watch carries the same data. `resources::watch` gives Secrets without their
+        // values, like `watch_start`; inline secret material is emptied here, object by object, before the hub.
+        let hub = Arc::clone(&self.api.watches);
+        let key = format!(
+            "{}\u{0}{}",
+            cluster_id,
+            serde_json::to_string(&spec).map_err(|e| invalid(e.to_string()))?
+        );
         let open = async move {
-            resources::watch(&mgr, &cluster_id, spec)
-                .await
-                .map(|updates| updates.map(inline_secrets::hide_in_watch_update))
+            hub.subscribe(key, async move {
+                resources::watch(&mgr, &cluster_id, spec)
+                    .await
+                    .map(|updates| updates.map(inline_secrets::hide_in_watch_update))
+            })
+            .await
         };
         self.api
             .start_stream(
@@ -1670,6 +1743,13 @@ struct RefArg {
     #[serde(default)]
     namespace: Option<String>,
     name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct GetManyArgs {
+    cluster_id: String,
+    refs: Vec<RefArg>,
 }
 
 #[derive(Deserialize)]
