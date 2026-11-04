@@ -17,6 +17,7 @@ are what users have installed. Today's Sextant and SDK must keep running them, a
 | `published/sextant.example.crd-view-1.0.0.sextant-ext` | 1 | the release `crd-view-v1.0.0` of FriendsOfKubernetes/sextant-extension-examples (SDK 0.26) | `c66ace1fc751106f6bc3a010b0acaccd6fc52f49ec2b7cb99810805b41adc456` |
 | `published/sextant.rook-ceph-1.0.0.sextant-ext` | 2 | the release `rook-ceph-v1.0.0` of FriendsOfKubernetes/sextant-extensions (SDK 0.28.0) | `fcb439336280c8fdd27823b3fcdeb714e445b50e505e1b67b0ef7fcbaf3f40ce` |
 | `published/sextant.rook-ceph-1.1.1.sextant-ext` | 2 | the release `rook-ceph-v1.1.1` of FriendsOfKubernetes/sextant-extensions (SDK 0.28.1) | `d7de956caa92f5e98cd08abc6dfff62c81f6add0a4518aa67832905f520182a2` |
+| `sdk-0.29.0/sextant.example.crd-view-1.1.0.sextant-ext` | 3 | the SDK of the release `v0.29.0` (`sdk:build` + `sdk:pack` of its `sdk/examples/crd-view`) | `3a9f2850323c4b3fc5c190a0c3bef3d17360da6b0ffc7d480f74345ebe322f23` |
 
 The `published/` files equal the release assets: their SHA-256 is the `digest` GitHub shows for each.
 

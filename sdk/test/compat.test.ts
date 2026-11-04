@@ -199,6 +199,7 @@ describe("frozen packages: their own SDK against today's Sextant", () => {
       "published/sextant.example.crd-view-1.0.0.sextant-ext",
       "published/sextant.rook-ceph-1.0.0.sextant-ext",
       "published/sextant.rook-ceph-1.1.1.sextant-ext",
+      "sdk-0.29.0/sextant.example.crd-view-1.1.0.sextant-ext",
     ];
     const found = readdirSync(COMPAT, { withFileTypes: true })
       .filter((e) => e.isDirectory())
@@ -231,6 +232,7 @@ describe("frozen packages: their own SDK against today's Sextant", () => {
   for (const path of [
     "sdk-0.6.0/sextant.example.crd-view-1.0.0.sextant-ext",
     "published/sextant.example.crd-view-1.0.0.sextant-ext",
+    "sdk-0.29.0/sextant.example.crd-view-1.1.0.sextant-ext",
   ]) {
     it(`${path}: a details section reads the shown object and follows its changes`, async () => {
       serve([WIDGET]);
@@ -253,6 +255,15 @@ describe("frozen packages: their own SDK against today's Sextant", () => {
       expect(onFrameError).not.toHaveBeenCalled();
     });
   }
+
+  it("sdk-0.29.0/sextant.example.crd-view-1.1.0.sextant-ext: its page in a section of its own lists the widgets", async () => {
+    serve([WIDGET]);
+    const doc = open("sdk-0.29.0/sextant.example.crd-view-1.1.0.sextant-ext", context("sextant.example.crd-view", { contribution: "widgets" }));
+    await vi.waitFor(() => expect(doc.body.textContent).toContain("1 widget"));
+    expect(doc.body.textContent).toContain("blue");
+    expect(calls()).toContain("resources.watch");
+    expect(onFrameError).not.toHaveBeenCalled();
+  });
 
   for (const path of ["published/sextant.rook-ceph-1.0.0.sextant-ext", "published/sextant.rook-ceph-1.1.1.sextant-ext"]) {
     it(`${path}: the Rook Ceph page draws the fixtures' CephClusters`, async () => {
