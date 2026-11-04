@@ -1,0 +1,69 @@
+{
+  "extensions": [
+    {
+      "id": "sextant.example.backend-rust",
+      "version": "1.0.0",
+      "name": "Sextant releases (Rust backend)",
+      "source": {
+        "type": "file",
+        "name": "sextant.example.backend-rust-1.0.0.sextant-ext"
+      },
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": []
+      },
+      "installedAt": 1761700000000,
+      "grantedBackend": {
+        "hosts": [
+          "api.github.com"
+        ],
+        "credentials": [
+          "github-token"
+        ]
+      }
+    },
+    {
+      "id": "sextant.example.hello-page",
+      "version": "1.0.0",
+      "name": "Hello pods",
+      "source": {
+        "type": "file",
+        "name": "sextant.example.hello-page-1.0.0.sextant-ext"
+      },
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": [
+          {
+            "namespaces": {
+              "type": "all"
+            },
+            "kinds": {
+              "type": "only",
+              "kinds": [
+                {
+                  "group": "",
+                  "kind": "Pod"
+                },
+                {
+                  "group": "",
+                  "kind": "Namespace"
+                }
+              ]
+            },
+            "actions": [
+              "read"
+            ],
+            "confirm": false
+          }
+        ]
+      },
+      "installedAt": 1761700000000
+    }
+  ]
+}

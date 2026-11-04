@@ -1,0 +1,160 @@
+{
+  "extensions": [
+    {
+      "id": "sextant.rook-ceph",
+      "version": "1.0.0",
+      "name": "Rook Ceph",
+      "source": {
+        "type": "file",
+        "name": "sextant.rook-ceph-1.0.0.sextant-ext"
+      },
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": [
+          {
+            "namespaces": {
+              "type": "all"
+            },
+            "kinds": {
+              "type": "only",
+              "kinds": [
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephCluster"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephBlockPool"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephFilesystem"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephObjectStore"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephObjectStoreUser"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephNFS"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephClient"
+                },
+                {
+                  "group": "objectbucket.io",
+                  "kind": "ObjectBucketClaim"
+                },
+                {
+                  "group": "objectbucket.io",
+                  "kind": "ObjectBucket"
+                },
+                {
+                  "group": "",
+                  "kind": "Pod"
+                },
+                {
+                  "group": "",
+                  "kind": "PersistentVolumeClaim"
+                },
+                {
+                  "group": "storage.k8s.io",
+                  "kind": "StorageClass"
+                }
+              ]
+            },
+            "actions": [
+              "read"
+            ],
+            "confirm": false
+          }
+        ]
+      },
+      "installedAt": 1761850000000,
+      "grantedProblems": [
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephCluster"
+        },
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephBlockPool"
+        },
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephFilesystem"
+        },
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephObjectStore"
+        }
+      ],
+      "grantedMetricQueries": [
+        {
+          "id": "health",
+          "title": "Ceph health (0 OK, 1 WARN, 2 ERR)",
+          "query": "max(ceph_health_status{namespace=\"{{namespace}}\"})",
+          "params": [
+            {
+              "name": "namespace",
+              "type": "namespace"
+            }
+          ],
+          "range": {
+            "maxHours": 168
+          }
+        },
+        {
+          "id": "capacity",
+          "title": "Raw capacity: total and used bytes",
+          "query": "max by (__name__) ({__name__=~\"ceph_cluster_total_bytes|ceph_cluster_total_used_raw_bytes\",namespace=\"{{namespace}}\"})",
+          "params": [
+            {
+              "name": "namespace",
+              "type": "namespace"
+            }
+          ],
+          "range": {
+            "maxHours": 168
+          }
+        },
+        {
+          "id": "osds",
+          "title": "OSDs up, in and in all",
+          "query": "label_replace(sum(max by (ceph_daemon) (ceph_osd_up{namespace=\"{{namespace}}\"})), \"state\", \"up\", \"\", \"\") or label_replace(sum(max by (ceph_daemon) (ceph_osd_in{namespace=\"{{namespace}}\"})), \"state\", \"in\", \"\", \"\") or label_replace(count(max by (ceph_daemon) (ceph_osd_up{namespace=\"{{namespace}}\"})), \"state\", \"total\", \"\", \"\")",
+          "params": [
+            {
+              "name": "namespace",
+              "type": "namespace"
+            }
+          ],
+          "range": {
+            "maxHours": 168
+          }
+        },
+        {
+          "id": "pgs",
+          "title": "Placement groups by state",
+          "query": "sum by (__name__) (max by (__name__, pool_id) ({__name__=~\"ceph_pg_(total|active|clean|degraded|undersized|down|stale|peering|incomplete|inconsistent|recovering|backfilling|remapped)\",namespace=\"{{namespace}}\"}))",
+          "params": [
+            {
+              "name": "namespace",
+              "type": "namespace"
+            }
+          ],
+          "range": {
+            "maxHours": 168
+          }
+        }
+      ]
+    }
+  ]
+}

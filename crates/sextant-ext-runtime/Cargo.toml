@@ -25,3 +25,6 @@ bytes = "1"
 # Components written as text in the tests.
 wat = "1"
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+# The frozen packages of earlier SDKs (`sdk/test/fixtures/compat/`, ADR-0142): their component is read from the archive.
+zip = { version = "4.6.1", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+serde_json.workspace = true

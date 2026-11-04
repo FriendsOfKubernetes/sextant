@@ -11,6 +11,8 @@
 //! - [`catalog`]: the catalog's index and the checks of a package downloaded from it (ADR-0130).
 
 pub mod catalog;
+#[cfg(test)]
+mod compat_tests;
 pub mod installed;
 pub mod manifest;
 pub mod metric_queries;

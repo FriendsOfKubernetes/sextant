@@ -5276,11 +5276,13 @@ dependencies = [
  "bytes",
  "http",
  "http-body-util",
+ "serde_json",
  "tokio",
  "wasmtime",
  "wasmtime-wasi",
  "wasmtime-wasi-http",
  "wat",
+ "zip",
 ]
 
 [[package]]

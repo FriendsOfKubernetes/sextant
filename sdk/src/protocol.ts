@@ -5,7 +5,7 @@ import type { ClusterId } from "./generated/ClusterId";
 import type { ErrorCode } from "./generated/ErrorCode";
 import type { ObjectRef } from "./generated/ObjectRef";
 
-/** The protocol (and extension API) major version carried by every message. */
+/** The message format's version, carried by every message; it stays 1 (ADR-0142: only additions). */
 export const PROTOCOL_VERSION = 1;
 
 /** Where a frame is shown; also the `view` query parameter of its URL. */

@@ -1,0 +1,98 @@
+{
+  "extensions": [
+    {
+      "id": "sextant.example.crd-view",
+      "version": "1.0.0",
+      "name": "Widgets",
+      "source": {
+        "type": "file",
+        "name": "sextant.example.crd-view-1.0.0.sextant-ext"
+      },
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": [
+          {
+            "namespaces": {
+              "type": "all"
+            },
+            "kinds": {
+              "type": "only",
+              "kinds": [
+                {
+                  "group": "demo.sextant.dev",
+                  "kind": "Widget"
+                }
+              ]
+            },
+            "actions": [
+              "read"
+            ],
+            "confirm": false
+          },
+          {
+            "namespaces": {
+              "type": "all"
+            },
+            "kinds": {
+              "type": "only",
+              "kinds": [
+                {
+                  "group": "demo.sextant.dev",
+                  "kind": "Widget"
+                }
+              ]
+            },
+            "actions": [
+              "modify"
+            ],
+            "confirm": true
+          }
+        ]
+      },
+      "installedAt": 1760500000000
+    },
+    {
+      "id": "sextant.example.hello-page",
+      "version": "1.0.0",
+      "name": "Hello pods",
+      "source": {
+        "type": "file",
+        "name": "sextant.example.hello-page-1.0.0.sextant-ext"
+      },
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": [
+          {
+            "namespaces": {
+              "type": "all"
+            },
+            "kinds": {
+              "type": "only",
+              "kinds": [
+                {
+                  "group": "",
+                  "kind": "Pod"
+                },
+                {
+                  "group": "",
+                  "kind": "Namespace"
+                }
+              ]
+            },
+            "actions": [
+              "read"
+            ],
+            "confirm": false
+          }
+        ]
+      },
+      "installedAt": 1760500000000
+    }
+  ]
+}

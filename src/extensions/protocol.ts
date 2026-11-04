@@ -3,7 +3,8 @@
 //
 // An extension runs in `<iframe sandbox="allow-scripts allow-forms allow-popups-to-escape-sandbox">` (never
 // `allow-same-origin`), so its origin is opaque and it reaches nothing of Sextant but `window.parent.postMessage`.
-// Every message carries `sextant: 1` (the API major version, `sextantApi` of the manifest); the host ignores messages
+// Every message carries `sextant: 1`, the version of this message format: it stays 1, and the format only grows
+// (ADR-0142), while the manifest's `sextantApi` versions what an extension may declare. The host ignores messages
 // without it, and messages from any window but the frame's own.
 //
 // Every message also carries `doc`: the id of the document in the frame that sent it, or that it is for. The
@@ -65,7 +66,7 @@
 // backend checks against the extension's permissions.
 import type { ClusterId, ErrorCode, ObjectRef } from "../api";
 
-/** The protocol (and extension API) major version carried by every message. */
+/** The message format's version, carried by every message; it stays 1 (ADR-0142: only additions). */
 export const PROTOCOL_VERSION = 1;
 
 /** Where a frame is shown; also the `view` query parameter of its URL. */

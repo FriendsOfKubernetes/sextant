@@ -24,7 +24,7 @@ pub const MANIFEST_FILE: &str = "sextant-extension.json";
 /// The newest extension API major version this Sextant implements (`sextantApi`); 2 brought `contributes.problems`
 /// (ADR-0137).
 pub const SUPPORTED_API: u32 = 2;
-/// The oldest one it still reads.
+/// The oldest one it still reads: every extension once accepted keeps working (ADR-0142).
 pub const MIN_API: u32 = 1;
 
 /// Whether this Sextant reads extensions of API version `api`.

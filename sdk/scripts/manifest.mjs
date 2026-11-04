@@ -11,7 +11,7 @@ import { TextDecoder, TextEncoder } from "node:util";
 export const MANIFEST_FILE = "sextant-extension.json";
 /** The newest extension API Sextant implements; 2 brought `contributes.problems` (ADR-0137). */
 export const SUPPORTED_API = 2;
-/** The oldest one it still reads. */
+/** The oldest one it still reads: every extension once accepted keeps working (ADR-0142). */
 export const MIN_API = 1;
 export const MAX_MANIFEST_BYTES = 256 * 1024;
 export const SCHEMA_PATH = resolve(
