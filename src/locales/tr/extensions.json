@@ -294,6 +294,7 @@
   "problems": {
     "heading": "Sorunlar ve bildirimler",
     "kinds": "Sextant bu türlerdeki nesneleri uzantının kurallarına göre denetler, bulduklarını Sorunlar sayfasında gösterir ve bunlar hakkında size bildirim gönderebilir:",
+    "lookups": "Bir kuralın adlandırdığı nesnenin var olup olmadığını anlamak için Sextant bu türlerin nesnelerini de listeler:",
     "scope": "Yalnızca uzantının bu türleri okuyabildiği kümelerde ve namespace'lerde. Bunun için uzantının hiçbir kodu çalışmaz."
   },
   "metrics": {

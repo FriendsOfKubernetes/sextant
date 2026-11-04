@@ -1,0 +1,174 @@
+// Rules across objects (ADR-0144): what stands once the rows say what the rules look up — and that whatever cannot be
+// told is no problem.
+import { describe, expect, it } from "vitest";
+import type { KubeObject, ProblemContribution } from "../api";
+import type { Problem } from "../features/problems/model";
+import type { JudgeContext, JudgedRows, SourceDef } from "../features/problems/sources";
+import { judgeAcross, rowOf, type AcrossTarget } from "./problemsAcross";
+import { detectRule } from "./problemRules";
+
+const QUEUE = { group: "kueue.x-k8s.io", kind: "ClusterQueue" };
+const QUEUE_DEF: SourceDef = {
+  category: "ext:demo",
+  kind: { ...QUEUE, version: "v1beta1" },
+  fieldSelector: null,
+  discovered: true,
+};
+const SECRETLESS_DEF: SourceDef = { ...QUEUE_DEF, kind: { group: "demo.example.com", version: "v1", kind: "Store" } };
+
+const rule = (over: Partial<ProblemContribution>): ProblemContribution => ({
+  id: "r",
+  title: "R",
+  kind: { group: "kueue.x-k8s.io", kind: "LocalQueue" },
+  when: { type: "exists", path: ".metadata.name" },
+  graceMinutes: 0,
+  notify: true,
+  message: "m",
+  toldThroughOwner: false,
+  ...over,
+});
+
+const MISSING = rule({
+  id: "queue-missing",
+  when: {
+    type: "all",
+    of: [
+      { type: "exists", path: ".spec.clusterQueue" },
+      { type: "missing", path: ".spec.clusterQueue", kind: QUEUE },
+    ],
+  },
+});
+const OWNED = rule({ id: "owned", toldThroughOwner: true });
+const NEWEST = rule({ id: "newest", kind: { group: "build.openshift.io", kind: "Build" }, newestPer: "openshift.io/build-config.name" });
+const RULES = new Map([MISSING, OWNED, NEWEST].map((r) => [r.id, r]));
+
+interface Obj extends KubeObject {
+  metadata: { name: string; namespace?: string; uid: string } & Record<string, unknown>;
+}
+
+function obj(name: string, over: Record<string, unknown> & { metadata?: Record<string, unknown> } = {}): Obj {
+  return { apiVersion: "v1", kind: "X", ...over, metadata: { name, namespace: "team-a", uid: `u-${name}`, ...over.metadata } } as Obj;
+}
+
+/** The problem `detectRule` finds in `o` by `r`, as the store keeps it. */
+function problemOf(r: ProblemContribution, o: Obj): Problem {
+  const [found] = detectRule(r, o);
+  expect(found).toBeDefined();
+  return {
+    ...found!,
+    key: `${o.metadata.uid}|${found!.reason}`,
+    notifyKey: `${o.metadata.uid}|${r.id}`,
+    category: "ext:demo",
+    uid: o.metadata.uid,
+    object: { kind: { group: "", version: "v1", kind: "X" }, namespace: o.metadata.namespace ?? null, name: o.metadata.name },
+    firstSeen: 0,
+    activeAt: 0,
+  };
+}
+
+const rows = (objects: Obj[], over: Partial<JudgedRows> = {}): JudgedRows => ({
+  status: "ready",
+  rows: new Map(objects.map((o) => [o.metadata.uid, rowOf(["openshift.io/build-config.name"])(o)])),
+  truncated: false,
+  namespaces: null,
+  ...over,
+});
+
+function context(over: { own?: JudgedRows; queues?: JudgedRows; problemUids?: string[] } = {}): JudgeContext {
+  return {
+    rows: over.own,
+    target: (def) => (def === QUEUE_DEF ? over.queues : undefined),
+    problemUids: () => new Set(over.problemUids ?? []),
+  };
+}
+
+const TARGETS: AcrossTarget[] = [
+  { ...QUEUE, namespaced: false, def: QUEUE_DEF },
+  { group: "demo.example.com", kind: "Store", namespaced: true, def: SECRETLESS_DEF },
+];
+const judge = (problems: Problem[], ctx: JudgeContext) => judgeAcross(problems, ctx, { rules: RULES, targets: TARGETS });
+
+describe("missing", () => {
+  const local = obj("lq", { spec: { clusterQueue: "gpu" } });
+  const problem = problemOf(MISSING, local);
+
+  it("stands only when the read list has no such name", () => {
+    expect(problem.lookups).toEqual([{ ...QUEUE, name: "gpu" }]);
+    expect(judge([problem], context({ queues: rows([obj("cpu", { metadata: { name: "cpu", namespace: undefined, uid: "q1" } })]) }))).toEqual([problem]);
+    expect(judge([problem], context({ queues: rows([obj("gpu", { metadata: { name: "gpu", namespace: undefined, uid: "q2" } })]) }))).toEqual([]);
+  });
+
+  it("is no problem while the list cannot tell: loading, failed, capped, not watched", () => {
+    for (const queues of [
+      undefined,
+      rows([], { status: "loading" }),
+      rows([], { status: "error" }),
+      rows([], { truncated: true }),
+    ]) {
+      expect(judge([problem], context({ queues }))).toEqual([]);
+    }
+  });
+
+  it("looks a namespaced kind up in the object's namespace, and only where its source watches", () => {
+    const store = rule({ id: "store-missing", when: { type: "missing", path: ".spec.store", kind: { group: "demo.example.com", kind: "Store" } } });
+    const judgeStore = (p: Problem, stores: JudgedRows) =>
+      judgeAcross([p], { rows: undefined, target: (def) => (def === SECRETLESS_DEF ? stores : undefined), problemUids: () => new Set() }, {
+        rules: new Map([[store.id, store]]),
+        targets: TARGETS,
+      });
+    const p = problemOf(store, obj("app", { spec: { store: "main" } }));
+    const other = { ...obj("main"), metadata: { name: "main", namespace: "team-b", uid: "s1" } };
+    expect(judgeStore(p, rows([other]))).toEqual([p]);
+    expect(judgeStore(p, rows([obj("main", { metadata: { name: "main", namespace: "team-a", uid: "s2" } })]))).toEqual([]);
+    // The source does not read team-a: it cannot tell.
+    expect(judgeStore(p, rows([], { namespaces: ["team-b"] }))).toEqual([]);
+    expect(judgeStore(p, rows([], { namespaces: ["team-a"] }))).toEqual([p]);
+  });
+
+  it("names nothing when the path holds no text, so nothing is missing", () => {
+    expect(detectRule(MISSING, obj("lq", { spec: { clusterQueue: "" } }))).toEqual([]);
+    expect(detectRule(rule({ when: { type: "missing", path: ".spec.q", kind: QUEUE } }), obj("lq", { spec: { q: 3 } }))).toEqual([]);
+  });
+});
+
+describe("toldThroughOwner", () => {
+  const owned = obj("pod", { metadata: { name: "pod", namespace: "team-a", uid: "u-pod", ownerReferences: [{ uid: "u-rs", controller: true }] } as never });
+
+  it("is told by the controller while it has a problem of the extension", () => {
+    const problem = problemOf(OWNED, owned);
+    expect(problem.ownerUid).toBe("u-rs");
+    expect(judge([problem], context({ problemUids: ["u-rs"] }))).toEqual([]);
+    expect(judge([problem], context({ problemUids: ["u-other"] }))).toEqual([problem]);
+  });
+
+  it("stands for an object without a controller", () => {
+    const loose = obj("pod", { metadata: { name: "pod", namespace: "team-a", uid: "u-pod", ownerReferences: [{ uid: "u-rs" }] } as never });
+    expect(problemOf(OWNED, loose).ownerUid).toBeUndefined();
+  });
+});
+
+describe("newestPer", () => {
+  const build = (name: string, created: string, config?: string) =>
+    obj(name, {
+      metadata: {
+        name,
+        namespace: "team-a",
+        uid: `u-${name}`,
+        creationTimestamp: created,
+        ...(config ? { labels: { "openshift.io/build-config.name": config } } : {}),
+      },
+    });
+  const old = build("app-1", "2026-11-01T10:00:00Z", "app");
+  const latest = build("app-2", "2026-11-02T10:00:00Z", "app");
+  const alone = build("one-off", "2026-10-01T10:00:00Z");
+
+  it("leaves the problem only on the newest object with the same label value; one without it is judged alone", () => {
+    const own = rows([old, latest, alone]);
+    const problems = [old, latest, alone].map((b) => problemOf(NEWEST, b));
+    expect(judge(problems, context({ own })).map((p) => p.object.name)).toEqual(["app-2", "one-off"]);
+  });
+
+  it("tells nothing until its own rows are read", () => {
+    expect(judge([problemOf(NEWEST, latest)], context({ own: rows([], { status: "loading" }) }))).toEqual([]);
+  });
+});

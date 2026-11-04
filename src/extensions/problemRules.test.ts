@@ -91,6 +91,7 @@ describe("problem rules of extensions", () => {
       when: { type: "condition", conditionType: "Ready", status: "False" },
       graceMinutes: 5,
       notify: false,
+      toldThroughOwner: false,
       message: "{{.status.ceph.health}}",
     };
     expect(detectRule(rule, cluster)).toEqual([

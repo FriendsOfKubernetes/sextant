@@ -486,6 +486,7 @@ describe("contributions of an extension", () => {
       when: { type: "exists" as const, path: ".status.error" },
       graceMinutes: 0,
       notify: true,
+      toldThroughOwner: false,
       message: "broken",
     };
     registerExtension(

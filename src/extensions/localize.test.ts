@@ -25,6 +25,7 @@ const manifest: ExtensionManifest = {
         when: { type: "exists", path: ".status" },
         graceMinutes: 0,
         notify: true,
+        toldThroughOwner: false,
         message: "Ceph reports {{.status.ceph.health}}",
       },
     ],

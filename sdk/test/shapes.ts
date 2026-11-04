@@ -95,6 +95,8 @@ export const MANIFEST_SHAPES = {
     graceMinutes: "optional",
     notify: "optional",
     message: "required",
+    toldThroughOwner: "optional",
+    newestPer: "optional",
   }),
   ManifestPage: described<ManifestPage>(`${CONTRIBUTION}/pages/items`, {
     id: "required",

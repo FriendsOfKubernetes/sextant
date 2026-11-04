@@ -18,6 +18,8 @@ use crate::settings::custom_columns::{PathStep, parse_field_path};
 
 /// The extension API version that brought `contributes.problems`.
 pub const PROBLEMS_API: u32 = 2;
+/// The extension API version that brought rules across objects: `missing`, `toldThroughOwner`, `newestPer` (ADR-0144).
+pub const ACROSS_API: u32 = 3;
 /// Rules per extension (the schema's `maxItems`).
 pub const MAX_RULES: usize = 20;
 /// Kinds the rules of one extension judge.
@@ -51,6 +53,15 @@ pub struct ProblemContribution {
     pub notify: bool,
     /// Text with `{{<field path>}}` placeholders.
     pub message: String,
+    /// The problem is not told while the object's controller (its owner reference with `controller: true`) has a
+    /// problem of this extension's rules: the owner tells it (ADR-0144); `sextantApi` 3.
+    #[serde(default)]
+    pub told_through_owner: bool,
+    /// A label key: of the objects of the rule's kind in one namespace with the same value of this label, only the
+    /// newest (by `metadata.creationTimestamp`) can have the problem (ADR-0144); `sextantApi` 3.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub newest_per: Option<String>,
 }
 
 fn yes() -> bool {
@@ -106,6 +117,13 @@ pub enum ProblemCondition {
         path: String,
         minutes: u32,
     },
+    /// The text at `path` names no object of `kind` — in the object's namespace, or for a kind without namespaces in
+    /// the cluster (ADR-0144); `sextantApi` 3. Unknown (so not holding) while that list is not read in full where the
+    /// extension may read it. Not inside `any`.
+    Missing {
+        path: String,
+        kind: KindPattern,
+    },
     All {
         of: Vec<ProblemCondition>,
     },
@@ -160,7 +178,39 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             }
         }
         let mut count = 0;
-        check_condition(&rule.when, &rule.kind, &here.key("when"), 1, &mut count)?;
+        let mut checks = ConditionChecks {
+            api: manifest.sextant_api,
+            kinds: &mut kinds,
+            count: &mut count,
+        };
+        check_condition(
+            &rule.when,
+            &rule.kind,
+            &here.key("when"),
+            1,
+            false,
+            &mut checks,
+        )?;
+        if rule.told_through_owner && manifest.sextant_api < ACROSS_API {
+            return Err(at(
+                &here.key("toldThroughOwner"),
+                format!("needs sextantApi {ACROSS_API} or later"),
+            ));
+        }
+        if let Some(label) = &rule.newest_per {
+            if manifest.sextant_api < ACROSS_API {
+                return Err(at(
+                    &here.key("newestPer"),
+                    format!("needs sextantApi {ACROSS_API} or later"),
+                ));
+            }
+            if !is_label_key(label) {
+                return Err(at(
+                    &here.key("newestPer"),
+                    "must be a label key such as `app` or `example.com/name`",
+                ));
+            }
+        }
         if let Some(since) = &rule.since {
             check_path(since, &rule.kind, &here.key("since"))?;
         }
@@ -169,14 +219,24 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
     Ok(())
 }
 
-fn check_condition(
-    condition: &ProblemCondition,
+/// What checking one rule's conditions keeps across them.
+struct ConditionChecks<'a, 'k> {
+    api: u32,
+    /// The kinds the rules judge or look up so far (`missing` adds its kind).
+    kinds: &'a mut Vec<&'k KindPattern>,
+    count: &'a mut usize,
+}
+
+fn check_condition<'k>(
+    condition: &'k ProblemCondition,
     kind: &KindPattern,
     path: &JsonPath,
     depth: usize,
-    count: &mut usize,
+    in_any: bool,
+    checks: &mut ConditionChecks<'_, 'k>,
 ) -> Result<(), ManifestError> {
-    *count += 1;
+    *checks.count += 1;
+    let count = &*checks.count;
     if *count > MAX_CONDITIONS {
         return Err(at(
             path,
@@ -194,6 +254,37 @@ fn check_condition(
             check_path(field, kind, &path.key("path"))
         }
         ProblemCondition::Condition { .. } => Ok(()),
+        ProblemCondition::Missing {
+            path: field,
+            kind: target,
+        } => {
+            if checks.api < ACROSS_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`missing` needs sextantApi {ACROSS_API} or later"),
+                ));
+            }
+            if in_any {
+                return Err(at(
+                    &path.key("type"),
+                    "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown",
+                ));
+            }
+            if target.group.is_empty() && target.kind.eq_ignore_ascii_case("Secret") {
+                return Err(at(&path.key("kind"), "Secrets are never listed for rules"));
+            }
+            check_path(field, kind, &path.key("path"))?;
+            if !checks.kinds.iter().any(|k| same_kind(k, target)) {
+                checks.kinds.push(target);
+                if checks.kinds.len() > MAX_KINDS {
+                    return Err(at(
+                        &path.key("kind"),
+                        format!("the rules judge at most {MAX_KINDS} kinds"),
+                    ));
+                }
+            }
+            Ok(())
+        }
         ProblemCondition::All { of } | ProblemCondition::Any { of } => {
             if depth >= MAX_DEPTH {
                 return Err(at(
@@ -201,11 +292,67 @@ fn check_condition(
                     format!("`all` and `any` nest at most {MAX_DEPTH} deep"),
                 ));
             }
+            let any = in_any || matches!(condition, ProblemCondition::Any { .. });
             for (i, inner) in of.iter().enumerate() {
-                check_condition(inner, kind, &path.key("of").index(i), depth + 1, count)?;
+                check_condition(
+                    inner,
+                    kind,
+                    &path.key("of").index(i),
+                    depth + 1,
+                    any,
+                    checks,
+                )?;
             }
             Ok(())
         }
+    }
+}
+
+/// A label key: an optional DNS subdomain prefix and `/`, then a name of 1–63 letters, digits, `-`, `_` and `.`,
+/// starting and ending with a letter or digit.
+fn is_label_key(text: &str) -> bool {
+    let (prefix, name) = match text.rsplit_once('/') {
+        Some((prefix, name)) => (Some(prefix), name),
+        None => (None, text),
+    };
+    let alnum = |c: char| c.is_ascii_alphanumeric();
+    let name_ok = !name.is_empty()
+        && name.len() <= 63
+        && name.starts_with(alnum)
+        && name.ends_with(alnum)
+        && name
+            .chars()
+            .all(|c| alnum(c) || matches!(c, '-' | '_' | '.'));
+    let prefix_ok = prefix.is_none_or(|p| {
+        !p.is_empty()
+            && p.len() <= 253
+            && p.split('.').all(|part| {
+                !part.is_empty()
+                    && part.len() <= 63
+                    && part.starts_with(|c: char| c.is_ascii_lowercase() || c.is_ascii_digit())
+                    && part.ends_with(|c: char| c.is_ascii_lowercase() || c.is_ascii_digit())
+                    && part
+                        .chars()
+                        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+            })
+    });
+    name_ok && prefix_ok
+}
+
+/// The kinds a condition looks up (`missing`), each once, added to `out`.
+fn looked_up<'c>(condition: &'c ProblemCondition, out: &mut Vec<&'c KindPattern>) {
+    match condition {
+        ProblemCondition::Missing { kind, .. } => {
+            if !out.iter().any(|k| same_kind(k, kind)) {
+                out.push(kind);
+            }
+        }
+        ProblemCondition::All { of } | ProblemCondition::Any { of } => {
+            for inner in of {
+                looked_up(inner, out);
+            }
+        }
+        _ => {}
     }
 }
 
@@ -279,12 +426,20 @@ pub fn reads_secret(kind: &KindPattern, steps: &[PathStep]) -> bool {
             })
 }
 
-/// The kinds the rules of `manifest` judge, each once, in order.
+/// The kinds the rules of `manifest` judge or look up (`missing`), each once, in order: what the user agrees to have
+/// them read (`grantedProblems`).
 pub fn problem_kinds(manifest: &ExtensionManifest) -> Vec<KindPattern> {
     let mut out: Vec<KindPattern> = Vec::new();
     for rule in &manifest.contributes.problems {
         if !out.iter().any(|k| same_kind(k, &rule.kind)) {
             out.push(rule.kind.clone());
+        }
+        let mut targets = Vec::new();
+        looked_up(&rule.when, &mut targets);
+        for target in targets {
+            if !out.iter().any(|k| same_kind(k, target)) {
+                out.push(target.clone());
+            }
         }
     }
     out

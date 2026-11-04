@@ -42,7 +42,7 @@ import {
   type ProblemCategory,
 } from "./model";
 import { forgetClusterScopes } from "./extensionCategories";
-import { sourceKey, type SourceDef } from "./sources";
+import { sourceKey, type JudgeContext, type JudgedRows, type SourceDef } from "./sources";
 
 /** At most this many objects with problems are kept per source; beyond it the oldest go (`truncated`). */
 export const MAX_PROBLEM_OBJECTS = 2000;
@@ -105,6 +105,8 @@ interface Entry {
   capped?: boolean;
   /** `SourceDef.across.from`: the key of the other source whose rows judge this one's problems, and its release. */
   acrossFrom?: { key: string; release: () => void };
+  /** The namespaces the watch reads (`null`: every namespace); set when it opens. */
+  watched?: readonly string[] | null;
 }
 
 const entries = new Map<string, Entry>();
@@ -204,8 +206,53 @@ function publish(entry: Entry, patch: Partial<SourceState> = {}): void {
   const rows = across ? tapsOf?.get(across.tap.id)?.state : undefined;
   // Only rows read in full may hide a problem: while they load (or after an error) every problem stays.
   if (across && rows?.status === "ready") problems = across.keep(problems, rows.rows);
+  const judge = entry.state.def.judge;
+  if (judge) problems = judge.judge(problems, judgeContext(entry, judge.tap.id));
   entry.state = { ...entry.state, ...patch, problems };
   changed();
+  // Sources judged with this one's rows or problems (its category's, in its cluster) look again.
+  if (entry.state.category.startsWith("ext:") && !republishing) {
+    republishing = true;
+    try {
+      for (const other of entries.values()) {
+        if (other !== entry && other.state.def.judge && other.state.clusterId === entry.state.clusterId && other.state.category === entry.state.category) {
+          publish(other);
+        }
+      }
+    } finally {
+      republishing = false;
+    }
+  }
+}
+
+/** A source of an extension's category is publishing the others judged with it (once, not in turn). */
+let republishing = false;
+
+function judgedRows(entry: Entry, tapId: string): JudgedRows | undefined {
+  const state = entry.taps.get(tapId)?.state;
+  return state && { status: state.status, rows: state.rows, truncated: state.truncated || entry.capped === true, namespaces: entry.watched };
+}
+
+function judgeContext(entry: Entry, tapId: string): JudgeContext {
+  const { clusterId, category } = entry.state;
+  let uids: Set<string> | undefined;
+  return {
+    rows: judgedRows(entry, tapId),
+    target: (def) => {
+      const other = entries.get(sourceKey(clusterId, def));
+      return other && judgedRows(other, tapId);
+    },
+    problemUids: () => {
+      if (!uids) {
+        uids = new Set();
+        for (const other of entries.values()) {
+          if (other.state.clusterId !== clusterId || other.state.category !== category) continue;
+          for (const [uid, list] of other.byUid) if (list.length > 0) uids.add(uid);
+        }
+      }
+      return uids;
+    },
+  };
 }
 
 /** Publishes again the sources judged across the rows of the source `key` (`AcrossDef.from`) after they changed. */
@@ -416,6 +463,7 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
         labelSelector: null,
         fieldSelector: def.fieldSelector,
       });
+      created.watched = watched.namespaces;
       // A source of its own namespaces none of which is accessible reads nothing: an empty list would mean every
       // namespace to the backend.
       if (def.namespaces && watched.namespaces?.length === 0) {
@@ -452,7 +500,7 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
           const patch = applyUpdate(created, update, clock());
           if (patch) publish(created, patch);
           // The rows decide which problems a source judged across its objects shows.
-          else if (tapped && def.across && !def.across.from) publish(created);
+          else if (tapped && ((def.across && !def.across.from) || def.judge)) publish(created);
           else if (tapped) changed();
           if (tapped) publishDependents(key);
         },
@@ -468,6 +516,10 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
     // shares it).
     if (def.across && !def.across.from) {
       created.taps.set(def.across.tap.id, { tap: def.across.tap, refs: 1, state: { status: "loading", rows: new Map(), truncated: false } });
+    }
+    // So does a source an extension's rules judge across objects.
+    if (def.judge) {
+      created.taps.set(def.judge.tap.id, { tap: def.judge.tap, refs: 1, state: { status: "loading", rows: new Map(), truncated: false } });
     }
     if (accessPending(clusterId)) deferred.add(created);
     else created.open();

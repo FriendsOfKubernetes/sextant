@@ -301,6 +301,7 @@
   "problems": {
     "heading": "Problemas y notificaciones",
     "kinds": "Sextant revisa los objetos de estos tipos según las reglas de la extensión, muestra lo que encuentran en la página Problemas y puede avisarte de ello:",
+    "lookups": "Para saber si existe un objeto que nombra una regla, Sextant también lista objetos de estos tipos:",
     "scope": "Solo en los clústeres y namespaces donde la extensión puede leer estos tipos. Para esto no se ejecuta código de la extensión."
   },
   "metrics": {

@@ -294,6 +294,7 @@
   "problems": {
     "heading": "Problems and notifications",
     "kinds": "Sextant checks objects of these kinds by the extension's rules, lists what they find on the Problems page and may notify you about it:",
+    "lookups": "To tell whether an object a rule names exists, Sextant also lists objects of these kinds:",
     "scope": "Only in clusters and namespaces where the extension may read these kinds. No code of the extension runs for this."
   },
   "metrics": {

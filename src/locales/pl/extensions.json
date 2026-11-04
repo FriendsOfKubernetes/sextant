@@ -308,6 +308,7 @@
   "problems": {
     "heading": "Problemy i powiadomienia",
     "kinds": "Sextant sprawdza obiekty tych rodzajów według reguł rozszerzenia, pokazuje znaleziska na stronie Problemy i może o nich powiadamiać:",
+    "lookups": "Aby sprawdzić, czy obiekt wskazany przez regułę istnieje, Sextant wyświetla też listę obiektów tych rodzajów:",
     "scope": "Tylko w klastrach i przestrzeniach nazw, w których rozszerzenie może odczytywać te rodzaje. Nie uruchamia się przy tym żaden kod rozszerzenia."
   },
   "metrics": {

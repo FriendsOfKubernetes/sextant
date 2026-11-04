@@ -8,6 +8,7 @@
 import { useSyncExternalStore } from "react";
 import { api, type ClusterId, type KindRef, type KubeObject, type ProblemContribution, type ProblemScope, type ResourceKind } from "../../api";
 import { compileRules, kindKeyOf } from "../../extensions/problemRules";
+import { judgeAcross, judgedAcross, lookedUp, rowOf, type AcrossTarget } from "../../extensions/problemsAcross";
 import { setExtensionDetector, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
 import { MAX_SOURCE_OBJECTS, type SourceDef } from "./sources";
 
@@ -16,7 +17,16 @@ interface Entry {
   extensionId: string;
   title: string;
   detectors: Map<string, (obj: KubeObject) => Detected[]>;
+  /** The rules by id. */
+  rules: ReadonlyMap<string, ProblemContribution>;
+  /** `group/kind` (lower case) of the kinds judged across objects (ADR-0144): their rules' or looked up. */
+  across: ReadonlySet<string>;
+  /** `group/kind` → the labels `newestPer` of its rules names. */
+  newestLabels: ReadonlyMap<string, readonly string[]>;
 }
+
+/** The tap id of a source judged across objects (`SourceDef.judge`): the same on every source of a category. */
+const ACROSS_TAP = "ext-across";
 
 const entries = new Map<ExtensionCategory, Entry>();
 /** `cluster|extension` → where its rules run there; "loading" while asked. */
@@ -35,7 +45,24 @@ export const categoryOfExtension = (extensionId: string): ExtensionCategory => `
 /** Registers the rules of an active extension (replacing earlier ones); returns what removes them. */
 export function registerExtensionProblems(extensionId: string, title: string, rules: readonly ProblemContribution[]): () => void {
   const category = categoryOfExtension(extensionId);
-  const entry: Entry = { category, extensionId, title, detectors: compileRules(rules) };
+  const across = new Set<string>();
+  const newestLabels = new Map<string, string[]>();
+  for (const rule of rules) {
+    if (!judgedAcross(rule)) continue;
+    const key = kindKeyOf(rule.kind);
+    across.add(key);
+    for (const target of lookedUp(rule.when)) across.add(kindKeyOf(target));
+    if (rule.newestPer !== undefined) newestLabels.set(key, [...new Set([...(newestLabels.get(key) ?? []), rule.newestPer])]);
+  }
+  const entry: Entry = {
+    category,
+    extensionId,
+    title,
+    detectors: compileRules(rules),
+    rules: new Map(rules.map((r) => [r.id, r])),
+    across,
+    newestLabels,
+  };
   entries.set(category, entry);
   forgetScopes(extensionId);
   changed();
@@ -148,20 +175,35 @@ export function extensionSourcesFor(
     const entry = isExtensionCategory(category) ? entries.get(category) : undefined;
     const scope = entry ? scopes.get(`${clusterId}|${entry.extensionId}`) : undefined;
     if (!entry || !scope || scope === "loading" || !kinds) continue;
+    const judged: { def: SourceDef; key: string }[] = [];
+    const targets: AcrossTarget[] = [];
     for (const { kind, namespaces } of scope) {
-      if (!entry.detectors.has(kindKeyOf(kind))) continue;
-      const served = kinds.find((k) => kindKeyOf(k.kindRef) === kindKeyOf(kind));
+      const key = kindKeyOf(kind);
+      // A kind only looked up (`missing`) gets a source too: its rows hold the names.
+      if (!entry.detectors.has(key) && !entry.across.has(key)) continue;
+      const served = kinds.find((k) => kindKeyOf(k.kindRef) === key);
       if (!served) continue;
       const everywhere = namespaces.type === "all";
       if (!served.namespaced && !everywhere) continue;
-      out.push({
+      const def: SourceDef = {
         category,
         kind: served.kindRef,
         fieldSelector: null,
         discovered: true,
         maxObjects: MAX_SOURCE_OBJECTS,
         ...(everywhere || !served.namespaced ? {} : { namespaces: namespaces.namespaces }),
-      });
+      };
+      out.push(def);
+      if (entry.across.has(key)) {
+        judged.push({ def, key });
+        targets.push({ group: served.kindRef.group, kind: served.kindRef.kind, namespaced: served.namespaced, def });
+      }
+    }
+    for (const { def, key } of judged) {
+      def.judge = {
+        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? []), max: MAX_SOURCE_OBJECTS },
+        judge: (problems, context) => judgeAcross(problems, context, { rules: entry.rules, targets }),
+      };
     }
   }
   return out;

@@ -591,16 +591,44 @@ export function placeholders(text) {
   return out;
 }
 
-function checkCondition(condition, kind, segments, depth, counter) {
+const ACROSS_API = 3;
+
+function checkCondition(condition, kind, segments, depth, counter, inAny = false) {
   counter.count += 1;
   if (counter.count > MAX_CONDITIONS) fail(segments, `a rule has at most ${MAX_CONDITIONS} conditions`);
   if (condition.type === "condition") return;
   if (condition.type === "all" || condition.type === "any") {
     if (depth >= MAX_DEPTH) fail(segments, `\`all\` and \`any\` nest at most ${MAX_DEPTH} deep`);
-    condition.of.forEach((inner, i) => checkCondition(inner, kind, [...segments, "of", i], depth + 1, counter));
+    const any = inAny || condition.type === "any";
+    condition.of.forEach((inner, i) => checkCondition(inner, kind, [...segments, "of", i], depth + 1, counter, any));
+    return;
+  }
+  if (condition.type === "missing") {
+    if (counter.api < ACROSS_API) fail([...segments, "type"], `\`missing\` needs sextantApi ${ACROSS_API} or later`);
+    if (inAny) fail([...segments, "type"], "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown");
+    if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret") {
+      fail([...segments, "kind"], "Secrets are never listed for rules");
+    }
+    checkPath(condition.path, kind, [...segments, "path"]);
+    if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
+      counter.kinds.push(condition.kind);
+      if (counter.kinds.length > MAX_KINDS) fail([...segments, "kind"], `the rules judge at most ${MAX_KINDS} kinds`);
+    }
     return;
   }
   checkPath(condition.path, kind, [...segments, "path"]);
+}
+
+/** A label key: an optional DNS subdomain prefix and `/`, then a name of 1–63 characters (`is_label_key` in Rust). */
+function isLabelKey(text) {
+  const at = text.lastIndexOf("/");
+  const prefix = at >= 0 ? text.slice(0, at) : null;
+  const name = at >= 0 ? text.slice(at + 1) : text;
+  const nameOk = name.length >= 1 && name.length <= 63 && /^[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$/.test(name);
+  const prefixOk =
+    prefix === null ||
+    (prefix.length >= 1 && prefix.length <= 253 && prefix.split(".").every((part) => part.length <= 63 && /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/.test(part)));
+  return nameOk && prefixOk;
 }
 
 /** What Sextant checks of problem rules beyond the schema, in its order. */
@@ -618,7 +646,14 @@ function checkProblems(manifest) {
       kinds.push(rule.kind);
       if (kinds.length > MAX_KINDS) fail([...here, "kind"], `the rules judge at most ${MAX_KINDS} kinds`);
     }
-    checkCondition(rule.when, rule.kind, [...here, "when"], 1, { count: 0 });
+    checkCondition(rule.when, rule.kind, [...here, "when"], 1, { count: 0, api: manifest.sextantApi, kinds });
+    if (rule.toldThroughOwner === true && manifest.sextantApi < ACROSS_API) {
+      fail([...here, "toldThroughOwner"], `needs sextantApi ${ACROSS_API} or later`);
+    }
+    if (rule.newestPer !== undefined) {
+      if (manifest.sextantApi < ACROSS_API) fail([...here, "newestPer"], `needs sextantApi ${ACROSS_API} or later`);
+      if (!isLabelKey(rule.newestPer)) fail([...here, "newestPer"], "must be a label key such as `app` or `example.com/name`");
+    }
     if (rule.since !== undefined) checkPath(rule.since, rule.kind, [...here, "since"]);
     const found = placeholders(rule.message);
     if (found === null) fail([...here, "message"], "has a `{{` without its `}}`");

@@ -25,4 +25,14 @@ notify: boolean,
 /**
  * Text with `{{<field path>}}` placeholders.
  */
-message: string, };
+message: string, 
+/**
+ * The problem is not told while the object's controller (its owner reference with `controller: true`) has a
+ * problem of this extension's rules: the owner tells it (ADR-0144); `sextantApi` 3.
+ */
+toldThroughOwner: boolean, 
+/**
+ * A label key: of the objects of the rule's kind in one namespace with the same value of this label, only the
+ * newest (by `metadata.creationTimestamp`) can have the problem (ADR-0144); `sextantApi` 3.
+ */
+newestPer?: string, };

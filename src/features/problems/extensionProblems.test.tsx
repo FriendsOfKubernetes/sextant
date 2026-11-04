@@ -6,7 +6,7 @@ import type { KubeObject, ProblemContribution, ProblemScope, ResourceKind } from
 import { resetAppStore } from "../../app/store";
 import "../../resources";
 import { resetClusterKinds } from "../../resources/useKinds";
-import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
+import { emitDelta, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetNamespaceRestore } from "../namespaces";
 import { resetNotifier } from "../notifications/notifier";
 import { registerExtensionProblems } from "./extensionCategories";
@@ -34,6 +34,7 @@ const RULES: ProblemContribution[] = [
     when: { type: "equals", path: ".status.ceph.health", value: "HEALTH_ERR" },
     graceMinutes: 0,
     notify: true,
+    toldThroughOwner: false,
     message: "Ceph reports {{.status.ceph.health}}",
   },
   {
@@ -43,6 +44,7 @@ const RULES: ProblemContribution[] = [
     when: { type: "condition", conditionType: "Ready", status: "False" },
     graceMinutes: 0,
     notify: true,
+    toldThroughOwner: false,
     message: "{{.metadata.name}}",
   },
 ];
@@ -136,6 +138,51 @@ describe("problems of extensions", () => {
     // Two rules hold for the one cluster: it counts once.
     await waitFor(() => expect(every.result.current).toBe(1));
     expect(warnings.result.current).toBe(0);
+  });
+
+  it("judge across objects: a reference to an object that is not there, told only once its list is read", async () => {
+    const LOCAL_QUEUE: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "kueue.x-k8s.io", version: "v1beta1", kind: "LocalQueue" }, plural: "localqueues" };
+    const CLUSTER_QUEUE: ResourceKind = {
+      ...CEPH_CLUSTER,
+      kindRef: { group: "kueue.x-k8s.io", version: "v1beta1", kind: "ClusterQueue" },
+      plural: "clusterqueues",
+      namespaced: false,
+    };
+    wb.backend.on("cluster_kinds", () => [LOCAL_QUEUE, CLUSTER_QUEUE]);
+    scopes = [
+      { kind: { group: "kueue.x-k8s.io", kind: "LocalQueue" }, namespaces: { type: "all" } },
+      { kind: { group: "kueue.x-k8s.io", kind: "ClusterQueue" }, namespaces: { type: "all" } },
+    ];
+    unregister = registerExtensionProblems("rook-ceph-ext", "Kueue", [
+      {
+        id: "queue-missing",
+        title: "ClusterQueue missing",
+        kind: { group: "kueue.x-k8s.io", kind: "LocalQueue" },
+        when: { type: "missing", path: ".spec.clusterQueue", kind: { group: "kueue.x-k8s.io", kind: "ClusterQueue" } },
+        graceMinutes: 0,
+        notify: true,
+        toldThroughOwner: false,
+        message: "{{.spec.clusterQueue}} does not exist",
+      },
+    ]);
+    const { result } = renderHook(() => useProblemCount("c1"));
+    const local = {
+      apiVersion: "kueue.x-k8s.io/v1beta1",
+      kind: "LocalQueue",
+      metadata: { name: "team-a", namespace: "team-a", uid: "u-lq" },
+      spec: { clusterQueue: "gpu" },
+    };
+    const queue = (name: string) => ({ apiVersion: "kueue.x-k8s.io/v1beta1", kind: "ClusterQueue", metadata: { name, uid: `u-${name}` } });
+    emitSnapshot(wb, await watchOf(wb, "LocalQueue"), [local]);
+    const queues = await watchOf(wb, "ClusterQueue");
+    // The ClusterQueues are not read yet: it cannot tell.
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    expect(result.current).toBe(0);
+    emitSnapshot(wb, queues, [queue("cpu")]);
+    await waitFor(() => expect(result.current).toBe(1));
+    // The queue it names comes: the problem goes.
+    emitDelta(wb, queues, [queue("gpu")]);
+    await waitFor(() => expect(result.current).toBe(0));
   });
 
   it("run nowhere when Rust says the extension may read nothing there", async () => {

@@ -55,10 +55,21 @@ function timeOf(value: unknown): number | undefined {
   return Number.isNaN(t) ? undefined : t;
 }
 
+/** An object a `missing` condition says must not exist for the rule to hold (the rest of the rule holds). */
+export interface Lookup {
+  group: string;
+  kind: string;
+  name: string;
+}
+
 /** What a condition says of an object. */
 export interface Verdict {
-  /** It holds (now, or from `activeFrom` on). */
+  /**
+   * It holds (now, or from `activeFrom` on) — for a rule with `missing`, if none of `lookups` exists, which only the
+   * rows of other sources tell (`judgeAcross`).
+   */
   holds: boolean;
+  lookups?: Lookup[];
   /** It holds only from this time (ms): an `olderThan` that is not yet old enough counts from then. */
   activeFrom?: number;
   /** When the state began, as an entry of `.status.conditions` says (its `lastTransitionTime`). */
@@ -107,16 +118,24 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject): Verdict 
       const t = timeOf(valueAt(obj, condition.path));
       return t === undefined ? NO : { holds: true, activeFrom: t + condition.minutes * MINUTE_MS };
     }
+    case "missing": {
+      // Nothing named, nothing missing.
+      const name = valueAt(obj, condition.path);
+      if (typeof name !== "string" || name.trim() === "") return NO;
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name }] };
+    }
     case "all": {
       let activeFrom: number | undefined;
       let since: string | undefined;
+      let lookups: Lookup[] | undefined;
       for (const inner of condition.of) {
         const v = evaluate(inner, obj);
         if (!v.holds) return NO;
         if (v.activeFrom !== undefined) activeFrom = Math.max(activeFrom ?? v.activeFrom, v.activeFrom);
         since ??= v.since;
+        if (v.lookups) lookups = [...(lookups ?? []), ...v.lookups];
       }
-      return { holds: true, activeFrom, since };
+      return lookups ? { holds: true, activeFrom, since, lookups } : { holds: true, activeFrom, since };
     }
     case "any": {
       // The earliest branch counts: one that holds now (no `activeFrom`) before one that holds later.
@@ -164,8 +183,21 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject): Detected
       graceMs: rule.graceMinutes > 0 ? rule.graceMinutes * MINUTE_MS : undefined,
       activeFrom: verdict.activeFrom,
       notify: rule.notify,
+      ...(verdict.lookups ? { lookups: verdict.lookups } : {}),
+      ...(rule.toldThroughOwner ? controllerOf(obj) : {}),
     },
   ];
+}
+
+/** The uid of the object's controller (`ownerUid`), when it has one. */
+function controllerOf(obj: KubeObject): { ownerUid?: string } {
+  const owners = (obj.metadata as { ownerReferences?: unknown }).ownerReferences;
+  if (!Array.isArray(owners)) return {};
+  const controller = owners.find((o): o is { uid: string } => {
+    const owner = o as { controller?: unknown; uid?: unknown } | null;
+    return owner?.controller === true && typeof owner.uid === "string";
+  });
+  return controller ? { ownerUid: controller.uid } : {};
 }
 
 /** `group/kind` in lower case: how rules and watched kinds are matched (kinds compare ignoring case). */

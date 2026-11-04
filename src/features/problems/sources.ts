@@ -86,6 +86,37 @@ export interface SourceDef {
    * it is invalid is told through that root, #233). `keep` runs only while the rows are read in full.
    */
   across?: AcrossDef;
+  /**
+   * An extension's rules across objects (ADR-0144): the source keeps a row tap of its own objects while it lives, and
+   * every problem list goes through `judge`, which may read the rows of the category's other sources of the cluster
+   * (`targets`) and which of them have problems. Unlike `across`, it runs while rows still load: what it cannot tell
+   * yet is no problem.
+   */
+  judge?: JudgeDef;
+}
+
+/** A source's problems judged with its rows and its category's other sources (`SourceDef.judge`). */
+export interface JudgeDef {
+  tap: { id: string; toRow(obj: KubeObject): unknown; max: number };
+  judge(problems: readonly Problem[], context: JudgeContext): Problem[];
+}
+
+/** What `JudgeDef.judge` may read, at the time it runs. */
+export interface JudgeContext {
+  /** The rows of the source's own tap. */
+  rows: JudgedRows | undefined;
+  /** The rows of another source of the cluster (under the same tap id), and the namespaces it watches. */
+  target(def: SourceDef): JudgedRows | undefined;
+  /** The uids of the objects with problems (counted or not yet) in the category's sources of the cluster. */
+  problemUids(): ReadonlySet<string>;
+}
+
+export interface JudgedRows {
+  status: "loading" | "ready" | "reconnecting" | "error";
+  rows: ReadonlyMap<string, unknown>;
+  truncated: boolean;
+  /** The namespaces the source watches (`null`: every namespace); `undefined` before it opened. */
+  namespaces: readonly string[] | null | undefined;
 }
 
 /** A source's problems judged across its objects (`SourceDef.across`). */

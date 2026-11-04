@@ -120,6 +120,10 @@ export interface ManifestProblem {
   notify?: boolean;
   /** Text with at most 5 `{{<field path>}}` placeholders. */
   message: string;
+  /** Not told while the object's controller has a problem of this extension (sextantApi 3). Default `false`. */
+  toldThroughOwner?: boolean;
+  /** A label key: of one namespace's objects with the same value of it, only the newest has the problem (sextantApi 3). */
+  newestPer?: string;
 }
 
 /**
@@ -219,7 +223,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       actions: (c.actions ?? []).map((a) => ({ ...a, danger: a.danger ?? false, multiple: a.multiple ?? false })),
       columns: c.columns ?? [],
       dockActions: c.dockActions ?? [],
-      problems: (c.problems ?? []).map((p) => ({ ...p, graceMinutes: p.graceMinutes ?? 0, notify: p.notify ?? true })),
+      problems: (c.problems ?? []).map((p) => ({ ...p, graceMinutes: p.graceMinutes ?? 0, notify: p.notify ?? true, toldThroughOwner: p.toldThroughOwner ?? false })),
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
       sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [] })),
     },

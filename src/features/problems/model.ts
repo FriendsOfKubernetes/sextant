@@ -202,6 +202,10 @@ export interface Detected {
   messageLists?: Record<string, string[]>;
   /** When the state began (RFC 3339), if the object says. */
   since?: string;
+  /** An extension's rule with `missing` (ADR-0144): the objects that must not exist for the problem to stand. */
+  lookups?: { group: string; kind: string; name: string }[];
+  /** An extension's rule told through the owner (ADR-0144): the uid of the object's controller. */
+  ownerUid?: string;
   /** The problem counts only this long after it began (or was first seen). */
   graceMs?: number;
   /** Counts from this time (ms) on, whatever `since` says (a certificate expiring soon). */
