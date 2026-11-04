@@ -2091,11 +2091,13 @@ contexts:
                 .iter()
                 .all(|c| c.folder.as_ref().unwrap().source_id == folder.id)
         );
-        // A file's cluster id is its path's, as for a file added on its own.
+        // A file's cluster id is its path's, as for a file added on its own: the canonical path (on macOS the
+        // temporary folder is behind the `/var` → `/private/var` link, on Windows a `\\?\` path).
         let prod = clusters.iter().find(|c| c.context == "prod").unwrap();
+        let root = std::fs::canonicalize(f.path("configs")).unwrap();
         assert_eq!(
             prod.id,
-            ClusterId::for_context(&f.path("configs/prod.yaml"), "prod")
+            ClusterId::for_context(&root.join("prod.yaml"), "prod")
         );
         let sources = reg.sources();
         let broken = sources
@@ -2142,6 +2144,8 @@ contexts:
         f.write("configs/in.yaml", &one_context("inside", "https://i:6443"));
         #[cfg(unix)]
         std::os::unix::fs::symlink(&outside, f.path("configs/link.yaml")).unwrap();
+        #[cfg(not(unix))]
+        let _ = outside;
         let mut reg = f.registry();
         let folder = reg.add_folder(f.path("configs")).unwrap();
         let contexts: Vec<String> = reg
@@ -2178,6 +2182,7 @@ contexts:
         );
         let mut reg = f.registry();
         reg.add_folder(f.path("configs")).unwrap();
+        let root = std::fs::canonicalize(f.path("configs")).unwrap();
         let before = reg.clusters().unwrap();
         std::fs::create_dir_all(f.path("configs/team-c")).unwrap();
         std::fs::rename(
@@ -2202,8 +2207,8 @@ contexts:
         assert_eq!(
             moved,
             [folders::Moved {
-                from: ClusterId::for_context(&f.path("configs/team-a/web.yaml"), "web"),
-                to: ClusterId::for_context(&f.path("configs/team-c/web.yaml"), "web"),
+                from: ClusterId::for_context(&root.join("team-a").join("web.yaml"), "web"),
+                to: ClusterId::for_context(&root.join("team-c").join("web.yaml"), "web"),
             }]
         );
     }
