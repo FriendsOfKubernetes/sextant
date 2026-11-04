@@ -252,10 +252,12 @@
       "workloads": "Workloads",
       "developer": "Entwicklerwerkzeuge",
       "other": "Sonstiges"
-    }
+    },
+    "newerNeedsSextant": "Dieses Sextant installiert Version {{version}}. Version {{newer}} erfordert ein neueres Sextant."
   },
   "catalogStatus": {
     "updateAvailable": "Version {{version}} ist im Katalog verfügbar.",
+    "updateAvailableNewer": "Version {{version}} ist im Katalog verfügbar. Version {{newer}} erfordert ein neueres Sextant.",
     "needsNewerSextant": "Version {{version}} im Katalog benötigt ein neueres Sextant.",
     "keyChanged": "Der Schlüssel des Herausgebers hat sich im Katalog geändert, daher werden Updates abgelehnt. Um dem neuen Schlüssel zu vertrauen, entfernen Sie die Erweiterung und installieren Sie sie erneut.",
     "repositoryChanged": "Das Repository des Herausgebers hat sich im Katalog geändert, daher werden Updates abgelehnt. Um ihm zu vertrauen, entfernen Sie die Erweiterung und installieren Sie sie erneut.",

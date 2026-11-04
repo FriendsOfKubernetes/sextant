@@ -12,6 +12,8 @@ import {
   compareVersions,
   isReleaseTag,
   isRepository,
+  needsEarlier,
+  pickEarlier,
   pickRelease,
   releaseUrl,
 } from "../scripts/catalog.mjs";
@@ -190,6 +192,37 @@ describe("the index", () => {
     const rekeyed = buildIndex({ entries: [newKey], results: new Map([["demo.catalog", { error: "demo.catalog v3: signature: bad" }]]), previous, now });
     expect(rekeyed.index.extensions[0]).not.toHaveProperty("latest");
     expect(rekeyed.index.generatedAt).toBe("2026-10-28T12:00:00.000Z");
+  });
+
+  it("lists, apart from the entries, the newest earlier release of each older extension API (ADR-0149)", () => {
+    const at = (version: string, sextantApi: number) => ({ ...latest(version), sextantApi });
+    const newest = at("3.0.0", 3);
+    // Newest first, as checked: 2.1.0 and 2.0.0 are API 2 (the newer counts), 1.9.0 is API 1, a later 1.0.0 API 2 is
+    // not lower than the one before.
+    const checked = [at("2.1.0", 2), at("2.0.0", 2), at("1.9.0", 1), at("1.0.0", 2)];
+    expect(pickEarlier(newest, checked).map((r) => r.version)).toEqual(["2.1.0", "1.9.0"]);
+    expect(needsEarlier(newest)).toBe(true);
+    expect(needsEarlier(at("1.0.0", 1))).toBe(false);
+
+    const built = buildIndex({
+      entries: [ENTRY],
+      results: new Map([["demo.catalog", { latest: newest, earlier: checked }]]),
+      previous: null,
+      now,
+    });
+    const index = built.index as typeof built.index & { earlier?: unknown };
+    // Never a field of the entry: Sextant 0.26–0.28 would drop an entry with a field it does not know.
+    expect(index.extensions[0]).toEqual({ ...ENTRY, latest: newest });
+    expect(index.earlier).toEqual({ "demo.catalog": [at("2.1.0", 2), at("1.9.0", 1)] });
+    // A builder that gives no earlier releases writes no key at all.
+    const plain = buildIndex({ entries: [ENTRY], results: new Map([["demo.catalog", { latest: newest }]]), previous: null, now });
+    expect(plain.index).not.toHaveProperty("earlier");
+    // A kept latest keeps its earlier releases; a new key or repository does not.
+    const failed = buildIndex({ entries: [ENTRY], results: new Map([["demo.catalog", { error: "bad" }]]), previous: index, now });
+    expect((failed.index as { earlier?: unknown }).earlier).toEqual(index.earlier);
+    expect(failed.index.generatedAt).toBe(index.generatedAt);
+    const moved = buildIndex({ entries: [{ ...ENTRY, repository: "other/repo" }], results: new Map(), previous: index, now });
+    expect(moved.index).not.toHaveProperty("earlier");
   });
 });
 

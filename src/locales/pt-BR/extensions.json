@@ -259,10 +259,12 @@
       "workloads": "Cargas de trabalho",
       "developer": "Ferramentas de desenvolvimento",
       "other": "Outros"
-    }
+    },
+    "newerNeedsSextant": "Este Sextant instala a versão {{version}}. A versão {{newer}} precisa de um Sextant mais novo."
   },
   "catalogStatus": {
     "updateAvailable": "A versão {{version}} está disponível no catálogo.",
+    "updateAvailableNewer": "A versão {{version}} está disponível no catálogo. A versão {{newer}} precisa de um Sextant mais novo.",
     "needsNewerSextant": "A versão {{version}} do catálogo requer um Sextant mais recente.",
     "keyChanged": "A chave do editor mudou no catálogo, então as atualizações são recusadas. Para confiar na nova chave, remova a extensão e instale-a novamente.",
     "repositoryChanged": "O repositório do editor mudou no catálogo, então as atualizações são recusadas. Para confiar nele, remova a extensão e instale-a novamente.",

@@ -252,10 +252,12 @@
       "workloads": "İş yükleri",
       "developer": "Geliştirici araçları",
       "other": "Diğer"
-    }
+    },
+    "newerNeedsSextant": "Bu Sextant {{version}} sürümünü kurar. {{newer}} sürümü daha yeni bir Sextant gerektirir."
   },
   "catalogStatus": {
     "updateAvailable": "{{version}} sürümü katalogda mevcut.",
+    "updateAvailableNewer": "Katalogda {{version}} sürümü var. {{newer}} sürümü daha yeni bir Sextant gerektirir.",
     "needsNewerSextant": "Katalogdaki {{version}} sürümü daha yeni bir Sextant gerektiriyor.",
     "keyChanged": "Yayıncının anahtarı katalogda değişti, bu nedenle güncellemeler reddediliyor. Yeni anahtara güvenmek için uzantıyı kaldırıp yeniden yükleyin.",
     "repositoryChanged": "Yayıncının deposu katalogda değişti, bu nedenle güncellemeler reddediliyor. Bu depoya güvenmek için uzantıyı kaldırıp yeniden yükleyin.",

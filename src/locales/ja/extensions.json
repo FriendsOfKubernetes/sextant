@@ -245,10 +245,12 @@
       "workloads": "ワークロード",
       "developer": "開発者ツール",
       "other": "その他"
-    }
+    },
+    "newerNeedsSextant": "この Sextant ではバージョン {{version}} をインストールします。バージョン {{newer}} にはより新しい Sextant が必要です。"
   },
   "catalogStatus": {
     "updateAvailable": "カタログでバージョン {{version}} が利用できます。",
+    "updateAvailableNewer": "カタログにバージョン {{version}} があります。バージョン {{newer}} にはより新しい Sextant が必要です。",
     "needsNewerSextant": "カタログのバージョン {{version}} には新しい Sextant が必要です。",
     "keyChanged": "カタログで発行元の鍵が変更されたため、更新は拒否されます。新しい鍵を信頼するには、拡張機能を削除してから再インストールしてください。",
     "repositoryChanged": "カタログで発行元のリポジトリが変更されたため、更新は拒否されます。信頼するには、拡張機能を削除してから再インストールしてください。",

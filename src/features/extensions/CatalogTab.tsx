@@ -7,7 +7,17 @@ import { api } from "../../api";
 import { Badge, Button, ErrorState, Icon, LoadingIndicator, type IconName } from "../../components";
 import { formatDateTime, formatNumber } from "../../i18n";
 import { formatBytes } from "../metrics/format";
-import { CATEGORIES, matches, offerOf, repositoryUrl, shownEntries, statusesOf, type CatalogState, type EntryOffer } from "./catalog";
+import {
+  CATEGORIES,
+  installableRelease,
+  matches,
+  offerOf,
+  repositoryUrl,
+  shownEntries,
+  statusesOf,
+  type CatalogState,
+  type EntryOffer,
+} from "./catalog";
 import { PermissionsView } from "./PermissionsView";
 
 const CONTRIBUTION_TYPES = ["pages", "detailsSections", "actions", "columns", "dockActions", "settings"] as const;
@@ -166,7 +176,9 @@ function CatalogEntryCard({ entry, offer, busy, onInstall }: { entry: CatalogEnt
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const detailsId = useId();
-  const latest = entry.latest;
+  // The release this Sextant would install: the newest it runs (ADR-0149).
+  const latest = installableRelease(entry) ?? entry.latest;
+  const newer = (offer.kind === "install" || offer.kind === "update") && offer.newer ? offer.newer : null;
   const counts = latest
     ? CONTRIBUTION_TYPES.filter((type) => latest.contributes[type] > 0).map((type) => ({
         type,
@@ -191,6 +203,11 @@ function CatalogEntryCard({ entry, offer, busy, onInstall }: { entry: CatalogEnt
           <div className="ext-row__description">{entry.description}</div>
         </div>
       </div>
+      {newer !== null && (
+        <p className="ext-row__alert" data-tone="info">
+          {t("extensions:catalog.newerNeedsSextant", { version: latest?.version ?? "", newer })}
+        </p>
+      )}
       {offer.kind === "withdrawn" && (
         <p className="ext-row__alert" data-tone="danger" role="alert">
           {t("extensions:catalogStatus.withdrawn", { reason: offer.reason })}

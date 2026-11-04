@@ -266,10 +266,12 @@
       "workloads": "Obciążenia",
       "developer": "Narzędzia deweloperskie",
       "other": "Inne"
-    }
+    },
+    "newerNeedsSextant": "Ten Sextant zainstaluje wersję {{version}}. Wersja {{newer}} wymaga nowszego Sextanta."
   },
   "catalogStatus": {
     "updateAvailable": "W katalogu jest dostępna wersja {{version}}.",
+    "updateAvailableNewer": "Wersja {{version}} jest dostępna w katalogu. Wersja {{newer}} wymaga nowszego Sextanta.",
     "needsNewerSextant": "Wersja {{version}} z katalogu wymaga nowszego programu Sextant.",
     "keyChanged": "Klucz wydawcy w katalogu się zmienił, dlatego aktualizacje są odrzucane. Aby zaufać nowemu kluczowi, usuń rozszerzenie i zainstaluj je ponownie.",
     "repositoryChanged": "Repozytorium wydawcy w katalogu się zmieniło, dlatego aktualizacje są odrzucane. Aby mu zaufać, usuń rozszerzenie i zainstaluj je ponownie.",

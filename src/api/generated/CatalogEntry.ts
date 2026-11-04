@@ -25,4 +25,10 @@ withdrawn: string | null,
 /**
  * `None`: no release passed the workflow's checks yet, or its block does not read.
  */
-latest: CatalogRelease | null, };
+latest: CatalogRelease | null, 
+/**
+ * The newest release for each extension API older than `latest`'s, newest first (the index's top-level
+ * `earlier`, ADR-0149): what a Sextant that cannot run `latest` installs. Each older and of a lower API than the
+ * one before it.
+ */
+earlier: Array<CatalogRelease>, };

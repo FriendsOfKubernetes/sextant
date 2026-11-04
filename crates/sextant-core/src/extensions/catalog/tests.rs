@@ -282,7 +282,8 @@ fn an_installed_catalog_extension_is_judged_against_its_pinned_repository_and_ke
     assert_eq!(
         status_of(&installed("0.9.0", pinned.clone()), &index),
         Some(CatalogStatus::UpdateAvailable {
-            version: "1.0.0".into()
+            version: "1.0.0".into(),
+            newer: None,
         })
     );
     // A pre-release of the listed version is not newer than it.
@@ -401,4 +402,84 @@ fn the_window_knows_the_api_versions_this_sextant_reads() {
     };
     assert_eq!(constant("MIN_API"), MIN_API);
     assert_eq!(constant("SUPPORTED_API"), SUPPORTED_API);
+}
+
+/// The fixture index whose demo entry's `latest` needs a newer Sextant, with `earlier` as given (ADR-0149).
+fn with_earlier(earlier: Value) -> CatalogIndex {
+    let mut value = index_value();
+    value["extensions"][0]["latest"]["sextantApi"] =
+        json!(crate::extensions::manifest::SUPPORTED_API + 1);
+    value["earlier"] = earlier;
+    parse_index(&serde_json::to_vec(&value).unwrap()).unwrap()
+}
+
+/// The demo entry's `latest` block with another version and extension API.
+fn release_as(version: &str, api: u64) -> Value {
+    let mut release = index_value()["extensions"][0]["latest"].clone();
+    release["version"] = json!(version);
+    release["sextantApi"] = json!(api);
+    release["asset"] = json!(format!("demo.catalog-{version}.sextant-ext"));
+    release["tag"] = json!(format!("v{version}"));
+    release
+}
+
+#[test]
+fn an_earlier_release_is_offered_where_latest_needs_a_newer_sextant() {
+    let index =
+        with_earlier(json!({ "demo.catalog": [release_as("0.9.0", 2), release_as("0.5.0", 1)] }));
+    let entry = &index.entries[0];
+    assert_eq!(
+        entry
+            .earlier
+            .iter()
+            .map(|r| r.version.as_str())
+            .collect::<Vec<_>>(),
+        ["0.9.0", "0.5.0"]
+    );
+    assert_eq!(entry.installable().unwrap().version, "0.9.0");
+    let pinned = catalog_source(entry);
+    // Not yet at the newest it can run: offered it, and told of the newer one.
+    assert_eq!(
+        status_of(&installed("0.5.0", pinned.clone()), &index),
+        Some(CatalogStatus::UpdateAvailable {
+            version: "0.9.0".into(),
+            newer: Some("1.0.0".into()),
+        })
+    );
+    // At it: only told of the newer one.
+    assert_eq!(
+        status_of(&installed("0.9.0", pinned), &index),
+        Some(CatalogStatus::NeedsNewerSextant {
+            version: "1.0.0".into()
+        })
+    );
+}
+
+#[test]
+fn earlier_releases_are_read_only_newest_first_older_and_of_lower_apis() {
+    // Not older than latest, the same API as the one before, or not readable: the list stops there.
+    for bad in [
+        json!({ "demo.catalog": [release_as("1.0.0", 2)] }),
+        json!({ "demo.catalog": [release_as("0.9.0", 2), release_as("0.8.0", 2)] }),
+        json!({ "demo.catalog": [{ "version": "0.9.0" }] }),
+    ] {
+        let index = with_earlier(bad);
+        assert!(
+            index.entries[0].earlier.len() <= 1,
+            "{:?}",
+            index.entries[0].earlier
+        );
+        assert!(
+            index.entries[0]
+                .earlier
+                .iter()
+                .all(|r| r.version == "0.9.0")
+        );
+    }
+    // Another entry's releases, or a key that is not an object, give nothing; the entry itself still reads.
+    let index = with_earlier(json!({ "other.extension": [release_as("0.9.0", 2)] }));
+    assert!(index.entries[0].earlier.is_empty());
+    let index = with_earlier(json!([1, 2]));
+    assert!(index.entries[0].earlier.is_empty());
+    assert!(index.entries[0].installable().is_none());
 }

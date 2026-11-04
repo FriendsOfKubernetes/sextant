@@ -3,4 +3,4 @@
 /**
  * Where an installed catalog extension stands against the index.
  */
-export type CatalogStatus = { "type": "upToDate" } | { "type": "updateAvailable", version: string, } | { "type": "needsNewerSextant", version: string, } | { "type": "keyChanged" } | { "type": "repositoryChanged" } | { "type": "withdrawn", reason: string, } | { "type": "notListed" };
+export type CatalogStatus = { "type": "upToDate" } | { "type": "updateAvailable", version: string, newer?: string, } | { "type": "needsNewerSextant", version: string, } | { "type": "keyChanged" } | { "type": "repositoryChanged" } | { "type": "withdrawn", reason: string, } | { "type": "notListed" };

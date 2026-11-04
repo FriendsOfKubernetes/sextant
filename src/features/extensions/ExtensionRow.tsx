@@ -110,7 +110,11 @@ export function ExtensionRow({ info, catalogStatus, onUpdate, busyInstall = fals
       )}
       {update !== null && (
         <div className="ext-row__alert" data-tone="info">
-          <span>{t("extensions:catalogStatus.updateAvailable", { version: update })}</span>
+          <span>
+            {catalogStatus?.type === "updateAvailable" && catalogStatus.newer
+              ? t("extensions:catalogStatus.updateAvailableNewer", { version: update, newer: catalogStatus.newer })
+              : t("extensions:catalogStatus.updateAvailable", { version: update })}
+          </span>
           <Button
             variant="primary"
             size="compact"

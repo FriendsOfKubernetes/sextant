@@ -25,6 +25,8 @@ use crate::{CoreError, CoreResult, ErrorCode};
 pub const INDEX_SCHEMA_VERSION: u64 = 1;
 /// The index is refused when larger.
 pub const MAX_INDEX_BYTES: u64 = 2 * 1024 * 1024;
+/// Earlier releases read at most per entry (`earlier`, ADR-0149): one for each extension API older than `latest`'s.
+pub const MAX_EARLIER: usize = 5;
 /// Entries read at most; the rest are left out.
 pub const MAX_ENTRIES: usize = 2000;
 /// A `.minisig` is refused when larger.
@@ -147,6 +149,22 @@ pub struct CatalogEntry {
     pub withdrawn: Option<String>,
     /// `None`: no release passed the workflow's checks yet, or its block does not read.
     pub latest: Option<CatalogRelease>,
+    /// The newest release for each extension API older than `latest`'s, newest first (the index's top-level
+    /// `earlier`, ADR-0149): what a Sextant that cannot run `latest` installs. Each older and of a lower API than the
+    /// one before it.
+    #[serde(default)]
+    pub earlier: Vec<CatalogRelease>,
+}
+
+impl CatalogEntry {
+    /// The newest release this Sextant can run: `latest`, else the newest of `earlier` whose API it supports.
+    pub fn installable(&self) -> Option<&CatalogRelease> {
+        let latest = self.latest.as_ref()?;
+        if supports_api(latest.sextant_api) {
+            return Some(latest);
+        }
+        self.earlier.iter().find(|r| supports_api(r.sextant_api))
+    }
 }
 
 /// The index as read.
@@ -167,8 +185,13 @@ pub struct CatalogIndex {
 pub enum CatalogStatus {
     /// The listed release is the installed one or older.
     UpToDate,
-    /// A newer release can be installed.
-    UpdateAvailable { version: String },
+    /// A newer release can be installed; `newer`: a still newer one needs a newer Sextant (ADR-0149).
+    UpdateAvailable {
+        version: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        newer: Option<String>,
+    },
     /// A newer release needs a newer Sextant (its `sextantApi`).
     NeedsNewerSextant { version: String },
     /// The entry now names another key: updates are refused until it is installed again.
@@ -421,7 +444,36 @@ fn read_entry(value: &Value) -> Option<CatalogEntry> {
         key_id,
         withdrawn,
         latest,
+        earlier: Vec::new(),
     })
+}
+
+/// The earlier releases of `entry` in the index's top-level `earlier` (ADR-0149): each one read like `latest`, kept
+/// only while it is older and of a lower API than the one before it (`latest` first), at most [`MAX_EARLIER`]. Sextant
+/// 0.26–0.28 never read this key (an entry with a field they do not know would be dropped by them, a top-level key
+/// is not): it is what lets this Sextant offer what it can run.
+fn read_earlier(entry: &CatalogEntry, earlier: Option<&Value>) -> Vec<CatalogRelease> {
+    let Some(latest) = &entry.latest else {
+        return Vec::new();
+    };
+    let Some(list) = earlier
+        .and_then(|e| e.get(&entry.id))
+        .and_then(Value::as_array)
+    else {
+        return Vec::new();
+    };
+    let mut out: Vec<CatalogRelease> = Vec::new();
+    for value in list.iter().take(MAX_EARLIER) {
+        let Some(release) = read_release(&entry.id, value) else {
+            break;
+        };
+        let before = out.last().unwrap_or(latest);
+        if !older(&release.version, &before.version) || release.sextant_api >= before.sextant_api {
+            break;
+        }
+        out.push(release);
+    }
+    out
 }
 
 /// Reads `index.json`. An index of a newer format is an error starting with [`NEWER_INDEX`]; an entry that does not
@@ -453,12 +505,14 @@ pub fn parse_index(bytes: &[u8]) -> CoreResult<CatalogIndex> {
         generated_at: value.get("generatedAt").and_then(|v| text_of(v, 64)),
         ..CatalogIndex::default()
     };
+    let earlier = value.get("earlier").filter(|e| e.is_object());
     for item in list {
         match read_entry(item) {
-            Some(entry)
+            Some(mut entry)
                 if index.entries.len() < MAX_ENTRIES
                     && !index.entries.iter().any(|e| e.id == entry.id) =>
             {
+                entry.earlier = read_earlier(&entry, earlier);
                 index.entries.push(entry);
             }
             _ => index.skipped = index.skipped.saturating_add(1),
@@ -623,10 +677,20 @@ pub fn status_of(installed: &InstalledExtension, index: &CatalogIndex) -> Option
             if supports_api(latest.sextant_api) {
                 CatalogStatus::UpdateAvailable {
                     version: latest.version.clone(),
+                    newer: None,
                 }
             } else {
-                CatalogStatus::NeedsNewerSextant {
-                    version: latest.version.clone(),
+                // The newest release this Sextant can run, when it is newer than the installed one (ADR-0149).
+                match entry.installable() {
+                    Some(release) if older(&installed.version, &release.version) => {
+                        CatalogStatus::UpdateAvailable {
+                            version: release.version.clone(),
+                            newer: Some(latest.version.clone()),
+                        }
+                    }
+                    _ => CatalogStatus::NeedsNewerSextant {
+                        version: latest.version.clone(),
+                    },
                 }
             }
         }

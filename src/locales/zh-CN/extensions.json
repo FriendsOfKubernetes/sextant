@@ -245,10 +245,12 @@
       "workloads": "工作负载",
       "developer": "开发者工具",
       "other": "其他"
-    }
+    },
+    "newerNeedsSextant": "此 Sextant 将安装版本 {{version}}。版本 {{newer}} 需要更新的 Sextant。"
   },
   "catalogStatus": {
     "updateAvailable": "目录中有可用的版本 {{version}}。",
+    "updateAvailableNewer": "目录中有版本 {{version}}。版本 {{newer}} 需要更新的 Sextant。",
     "needsNewerSextant": "目录中的版本 {{version}} 需要更新版本的 Sextant。",
     "keyChanged": "目录中发布者的密钥已更改，因此更新会被拒绝。要信任新密钥，请移除此扩展并重新安装。",
     "repositoryChanged": "目录中发布者的仓库已更改，因此更新会被拒绝。要信任它，请移除此扩展并重新安装。",

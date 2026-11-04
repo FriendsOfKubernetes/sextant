@@ -245,10 +245,12 @@
       "workloads": "工作負載",
       "developer": "開發人員工具",
       "other": "其他"
-    }
+    },
+    "newerNeedsSextant": "此 Sextant 將安裝版本 {{version}}。版本 {{newer}} 需要更新的 Sextant。"
   },
   "catalogStatus": {
     "updateAvailable": "目錄中有可用的版本 {{version}}。",
+    "updateAvailableNewer": "目錄中有版本 {{version}}。版本 {{newer}} 需要更新的 Sextant。",
     "needsNewerSextant": "目錄中的版本 {{version}} 需要較新版本的 Sextant。",
     "keyChanged": "目錄中發行者的金鑰已變更，因此會拒絕更新。若要信任新金鑰，請移除此擴充功能後重新安裝。",
     "repositoryChanged": "目錄中發行者的儲存庫已變更，因此會拒絕更新。若要信任它，請移除此擴充功能後重新安裝。",

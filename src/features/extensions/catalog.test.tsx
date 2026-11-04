@@ -32,6 +32,7 @@ const catalogEntry = (over: Partial<CatalogEntry> = {}): CatalogEntry => ({
   publisherKey: KEY,
   keyId: "C0F4B41AA942C166",
   withdrawn: null,
+  earlier: [],
   latest: {
     version: "1.1.0",
     sextantApi: 1,
@@ -161,6 +162,18 @@ describe("what an entry offers", () => {
     expect(offerOf(catalogEntry({ latest: { ...entry.latest!, sextantApi: 2 } }), undefined, undefined)).toEqual({ kind: "install" });
     expect(offerOf(catalogEntry({ latest: { ...entry.latest!, sextantApi: SUPPORTED_API + 1 } }), undefined, undefined)).toEqual({ kind: "needsNewer", version: "1.1.0" });
     expect(offerOf(entry, installedInfo(), status({ type: "updateAvailable", version: "1.1.0" }))).toEqual({ kind: "update", version: "1.1.0" });
+    // A newer release for a newer Sextant (ADR-0149): the newest one this Sextant runs is offered, the newer named.
+    const ahead = catalogEntry({
+      latest: { ...entry.latest!, version: "2.0.0", sextantApi: SUPPORTED_API + 1 },
+      earlier: [{ ...entry.latest!, version: "1.1.0" }],
+    });
+    expect(offerOf(ahead, undefined, undefined)).toEqual({ kind: "install", version: "1.1.0", newer: "2.0.0" });
+    expect(offerOf(ahead, installedInfo(), status({ type: "updateAvailable", version: "1.1.0", newer: "2.0.0" }))).toEqual({
+      kind: "update",
+      version: "1.1.0",
+      newer: "2.0.0",
+    });
+    expect(offerOf(catalogEntry({ ...ahead, earlier: [] }), undefined, undefined)).toEqual({ kind: "needsNewer", version: "2.0.0" });
     expect(offerOf(entry, installedInfo(), status({ type: "upToDate" }))).toEqual({ kind: "installed" });
     expect(offerOf(entry, installedInfo(), status({ type: "keyChanged" }))).toEqual({ kind: "pinnedElsewhere" });
     expect(offerOf(entry, installedInfo({ source: { type: "file", name: "q.sextant-ext" } }), undefined)).toEqual({ kind: "otherSource" });
@@ -251,6 +264,29 @@ describe("installed catalog extensions", () => {
     fireEvent.click(await within(row).findByRole("button", { name: "Update Quota board to 1.1.0" }));
     await screen.findByRole("dialog", { name: "Install Quota board?" });
     expect(calls("extension_inspect_catalog")[0]?.args).toEqual({ id: "acme.quota" });
+  });
+
+  it("offer the newest release this Sextant runs, and say a newer one needs a newer Sextant (ADR-0149)", async () => {
+    list = [];
+    const base = viewOf({});
+    const entry = base.index!.entries.find((e) => e.id === "acme.quota")!;
+    view = {
+      ...base,
+      index: {
+        ...base.index!,
+        entries: base.index!.entries.map((e) =>
+          e.id === entry.id
+            ? { ...e, latest: { ...e.latest!, version: "2.0.0", sextantApi: SUPPORTED_API + 1 }, earlier: [{ ...e.latest!, version: "1.1.0" }] }
+            : e,
+        ),
+      },
+    };
+    setup();
+    await openCatalog();
+    const card = await screen.findByRole("listitem", { name: "Quota board" });
+    expect(within(card).getByText("This Sextant installs version 1.1.0. Version 2.0.0 needs a newer Sextant.")).toBeInTheDocument();
+    expect(within(card).getByText("Version 1.1.0")).toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: "Install Quota board" })).toBeEnabled();
   });
 
   it("show an installed entry's state as a label at the buttons' height, never as a button (#325)", async () => {

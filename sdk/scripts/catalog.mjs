@@ -121,6 +121,15 @@ export function assetVersion(id, assetName) {
  * this id with its signature. Returns `{tag, asset, version, publishedAt, packageUrl, signatureUrl}` or `null`.
  */
 export function pickRelease(entry, releases) {
+  return pickReleases(entry, releases)[0] ?? null;
+}
+
+/**
+ * Every release `pickRelease` could choose, newest first (GitHub's order): what the workflow checks, `latest` first,
+ * then the earlier ones it looks at for `earlier` (ADR-0149 of Sextant).
+ */
+export function pickReleases(entry, releases) {
+  const out = [];
   for (const release of Array.isArray(releases) ? releases : []) {
     if (!release || release.draft || release.prerelease || !isReleaseTag(release.tag_name)) continue;
     const assets = Array.isArray(release.assets) ? release.assets : [];
@@ -129,17 +138,40 @@ export function pickRelease(entry, releases) {
     const pkg = packages[0];
     const sig = assets.find((asset) => asset?.name === `${pkg.name}${SIGNATURE_SUFFIX}`);
     if (!sig) continue;
-    return {
+    out.push({
       tag: release.tag_name,
       asset: pkg.name,
       version: assetVersion(entry.id, pkg.name),
       publishedAt: typeof release.published_at === "string" ? release.published_at : null,
       packageUrl: pkg.browser_download_url,
       signatureUrl: sig.browser_download_url,
-    };
+    });
   }
-  return null;
+  return out;
 }
+
+/** Earlier releases listed per entry at most (`MAX_EARLIER` in the core). */
+export const MAX_EARLIER = 5;
+
+/**
+ * The index's `earlier` of an entry (ADR-0149 of Sextant): of `checked` (releases that passed `checkRelease`, newest
+ * first), the newest one for each extension API older than `latest`'s — each older and of a lower API than the one
+ * before it — at most `MAX_EARLIER`. A Sextant that cannot run `latest` installs the newest of them it can.
+ */
+export function pickEarlier(latest, checked) {
+  const out = [];
+  let before = latest;
+  for (const release of checked) {
+    if (out.length >= MAX_EARLIER) break;
+    if (compareVersions(release.version, before.version) >= 0 || release.sextantApi >= before.sextantApi) continue;
+    out.push(release);
+    before = release;
+  }
+  return out;
+}
+
+/** Whether a workflow should look for earlier releases after `latest`: there is an older extension API to serve. */
+export const needsEarlier = (latest) => typeof latest?.sextantApi === "number" && latest.sextantApi > 1;
 
 /** The download URL the app builds for a release asset (`release_url` in the core); the workflow downloads the same. */
 export function releaseUrl(repository, tag, asset) {
@@ -227,8 +259,9 @@ export function checkRelease(entry, picked, packageBytes, signatureText) {
 }
 
 /**
- * The index to write. `entries` are checked entries; `results` maps an id to `{latest}` (a release that passed),
- * `{error}` (one that did not) or nothing (no release found); `previous` is the index now published (or `null`).
+ * The index to write. `entries` are checked entries; `results` maps an id to `{latest, earlier?}` (a release that
+ * passed, and the earlier releases that passed, newest first), `{error}` (one that did not) or nothing (no release
+ * found); `previous` is the index now published (or `null`). A builder that gives no `earlier` writes none.
  * An entry keeps its previous `latest` when its newest release fails or is older, as long as the key and repository
  * did not change. Returns `{index, notes}`: `notes` are the warnings to show in the workflow.
  */
@@ -239,6 +272,7 @@ export function buildIndex({ entries, results, previous, now = new Date() }) {
     if (old && typeof old.id === "string") before.set(old.id, old);
   }
   const notes = [];
+  const earlier = {};
   const extensions = [...entries]
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .map((entry) => {
@@ -257,10 +291,23 @@ export function buildIndex({ entries, results, previous, now = new Date() }) {
       } else {
         notes.push(`${entry.id}: no release with ${entry.id}-<X.Y.Z>${PACKAGE_SUFFIX} and its ${SIGNATURE_SUFFIX} was found`);
       }
+      // Earlier releases (ADR-0149) follow the listed `latest`: the result's when it is the one listed, else the
+      // previous index's while its key and repository are the same.
+      const fresh = latest && result.latest === latest && Array.isArray(result.earlier);
+      const keptEarlier = kept && latest === kept ? previous?.earlier?.[entry.id] : undefined;
+      const listed = fresh ? pickEarlier(latest, result.earlier) : Array.isArray(keptEarlier) ? keptEarlier : [];
+      if (latest && listed.length > 0) earlier[entry.id] = listed;
       return latest ? { ...entry, latest } : { ...entry };
     });
   // An index whose extensions did not change keeps its time, so the workflow has nothing to commit.
-  const same = previous && JSON.stringify(previous.extensions) === JSON.stringify(extensions);
+  const same =
+    previous &&
+    JSON.stringify(previous.extensions) === JSON.stringify(extensions) &&
+    JSON.stringify(previous.earlier ?? {}) === JSON.stringify(earlier);
   const generatedAt = same && typeof previous.generatedAt === "string" ? previous.generatedAt : now.toISOString();
-  return { index: { schemaVersion: SCHEMA_VERSION, generatedAt, extensions }, notes };
+  // `earlier` is a top-level key, never a field of an entry: Sextant 0.26–0.28 drop an entry with a field they do not
+  // know, but ignore a top-level key, so their catalog reads as before.
+  const index = { schemaVersion: SCHEMA_VERSION, generatedAt, extensions };
+  if (Object.keys(earlier).length > 0) index.earlier = earlier;
+  return { index, notes };
 }

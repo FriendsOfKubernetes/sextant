@@ -35,11 +35,19 @@ export function supportsApi(api: number): boolean {
   return api >= MIN_API && api <= SUPPORTED_API;
 }
 
+/** The newest release this Sextant runs: `latest`, else the newest of `earlier` it supports (`installable` in Rust). */
+export function installableRelease(entry: CatalogEntry): CatalogEntry["latest"] {
+  if (entry.latest === null) return null;
+  if (supportsApi(entry.latest.sextantApi)) return entry.latest;
+  return entry.earlier.find((r) => supportsApi(r.sextantApi)) ?? null;
+}
+
 /** What an entry offers next to what is installed. */
 export type EntryOffer =
-  | { kind: "install" }
+  /** `version`/`newer`: the newest release this Sextant runs, when a newer one needs a newer Sextant (ADR-0149). */
+  | { kind: "install"; version?: string; newer?: string }
   | { kind: "installed" }
-  | { kind: "update"; version: string }
+  | { kind: "update"; version: string; newer?: string }
   | { kind: "needsNewer"; version: string }
   | { kind: "otherSource" }
   | { kind: "pinnedElsewhere" }
@@ -49,13 +57,15 @@ export type EntryOffer =
 export function offerOf(entry: CatalogEntry, installed: ExtensionInfo | undefined, status: CatalogStatus | undefined): EntryOffer {
   if (entry.withdrawn !== null) return { kind: "withdrawn", reason: entry.withdrawn };
   if (installed === undefined) {
-    if (entry.latest !== null && !supportsApi(entry.latest.sextantApi)) return { kind: "needsNewer", version: entry.latest.version };
-    return { kind: "install" };
+    const latest = entry.latest;
+    if (latest === null || supportsApi(latest.sextantApi)) return { kind: "install" };
+    const runnable = installableRelease(entry);
+    return runnable ? { kind: "install", version: runnable.version, newer: latest.version } : { kind: "needsNewer", version: latest.version };
   }
   if (installed.source.type !== "catalog") return { kind: "otherSource" };
   switch (status?.type) {
     case "updateAvailable":
-      return { kind: "update", version: status.version };
+      return status.newer ? { kind: "update", version: status.version, newer: status.newer } : { kind: "update", version: status.version };
     case "needsNewerSextant":
       return { kind: "needsNewer", version: status.version };
     case "keyChanged":

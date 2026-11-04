@@ -259,10 +259,12 @@
       "workloads": "Carichi di lavoro",
       "developer": "Strumenti per sviluppatori",
       "other": "Altro"
-    }
+    },
+    "newerNeedsSextant": "Questo Sextant installa la versione {{version}}. La versione {{newer}} richiede un Sextant più recente."
   },
   "catalogStatus": {
     "updateAvailable": "La versione {{version}} è disponibile nel catalogo.",
+    "updateAvailableNewer": "La versione {{version}} è disponibile nel catalogo. La versione {{newer}} richiede un Sextant più recente.",
     "needsNewerSextant": "La versione {{version}} nel catalogo richiede un Sextant più recente.",
     "keyChanged": "La chiave dell'editore è cambiata nel catalogo, quindi gli aggiornamenti vengono rifiutati. Per fidarti della nuova chiave, rimuovi l'estensione e reinstallala.",
     "repositoryChanged": "Il repository dell'editore è cambiato nel catalogo, quindi gli aggiornamenti vengono rifiutati. Per fidarti del nuovo repository, rimuovi l'estensione e reinstallala.",

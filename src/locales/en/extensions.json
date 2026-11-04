@@ -252,10 +252,12 @@
       "workloads": "Workloads",
       "developer": "Developer tools",
       "other": "Other"
-    }
+    },
+    "newerNeedsSextant": "This Sextant installs version {{version}}. Version {{newer}} needs a newer Sextant."
   },
   "catalogStatus": {
     "updateAvailable": "Version {{version}} is available in the catalog.",
+    "updateAvailableNewer": "Version {{version}} is available in the catalog. Version {{newer}} needs a newer Sextant.",
     "needsNewerSextant": "Version {{version}} in the catalog needs a newer Sextant.",
     "keyChanged": "The publisher's key changed in the catalog, so updates are refused. To trust the new key, remove the extension and install it again.",
     "repositoryChanged": "The publisher's repository changed in the catalog, so updates are refused. To trust it, remove the extension and install it again.",

@@ -18,7 +18,6 @@ use serde::{Deserialize, Serialize};
 use sextant_core::extensions::catalog::{
     self, CatalogEntry, CatalogIndex, CatalogStatus, MAX_SIGNATURE_BYTES,
 };
-use sextant_core::extensions::supports_api;
 use sextant_core::{CoreError, CoreResult, ErrorCode};
 use tauri::State;
 use ts_rs::TS;
@@ -253,18 +252,19 @@ impl ExtensionHost {
                 format!("{} was withdrawn from the catalog: {reason}", entry.name),
             ));
         }
-        let release = entry.latest.clone().ok_or_else(|| {
+        let latest = entry.latest.clone().ok_or_else(|| {
             CoreError::new(
                 ErrorCode::NotFound,
                 format!("{} has no release in the catalog yet", entry.name),
             )
         })?;
-        if !supports_api(release.sextant_api) {
-            return Err(CoreError::new(
+        // The newest release this Sextant can run (ADR-0149): the backend chooses, the window names no version.
+        let release = entry.installable().cloned().ok_or_else(|| {
+            CoreError::new(
                 ErrorCode::Invalid,
-                format!("{} {} needs a newer Sextant", entry.name, release.version),
-            ));
-        }
+                format!("{} {} needs a newer Sextant", entry.name, latest.version),
+            )
+        })?;
         if let Some(existing) = self.installed_one(&entry.id) {
             catalog::check_update(&existing, &entry, &release)?;
         }
