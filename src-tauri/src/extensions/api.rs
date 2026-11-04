@@ -1574,6 +1574,8 @@ impl<'a> ExtCall<'a> {
             command.changes,
         )
         .await?;
+        // The journal names the filled words too: which OSD was marked out, not only that one was.
+        lock(&self.record).target = clip(&format!("{}: {}", summary.target, argv.join(" ")));
         let pod = self.command_pod(&cluster, &namespace, &command).await?;
         let output = sextant_core::exec::run_command(
             &self.api.clusters,

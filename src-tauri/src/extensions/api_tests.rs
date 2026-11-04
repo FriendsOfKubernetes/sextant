@@ -2174,6 +2174,14 @@ async fn a_declared_command_runs_in_its_pod_and_nothing_else_does() {
     assert_eq!(answer["stdout"], "hello\n");
     assert_eq!(answer["exitCode"], 0);
     assert_eq!(answer["pod"], "tools");
+    // The journal keeps the command's title and the words it ran, never what it printed.
+    let journal = live.state.ext_api.audit_list(Some("widgets"));
+    let last = journal.first().unwrap();
+    assert_eq!(last.tool, "exec.run");
+    assert_eq!(
+        last.target,
+        format!("Say a word in namespace {COMMAND_NS}: echo hello")
+    );
 
     // A value its type refuses, a command it does not have, words of its own: nothing runs.
     let err = live.call("exec.run", say("hello; id")).await.unwrap_err();
