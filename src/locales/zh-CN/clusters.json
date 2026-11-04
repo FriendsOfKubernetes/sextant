@@ -33,7 +33,9 @@
     "fileDialogTitle": "选择 kubeconfig 文件",
     "tabs": "添加方式",
     "kubeconfigTab": "Kubeconfig",
-    "cloudTab": "从云端"
+    "cloudTab": "从云端",
+    "folder": "添加 kubeconfig 文件夹",
+    "folderDialogTitle": "选择存放 kubeconfig 文件的文件夹"
   },
   "paste": {
     "title": "粘贴 kubeconfig",
@@ -48,7 +50,9 @@
       "env": "KUBECONFIG",
       "addedFile": "添加的文件",
       "pasted": "粘贴的",
-      "cloud": "云"
+      "cloud": "云",
+      "folder": "文件夹",
+      "folderFile": "文件夹中的文件"
     },
     "remove": "移除",
     "removeNamed": "移除 {{path}}",
@@ -58,7 +62,10 @@
     "problems": "部分 kubeconfig 文件无法读取",
     "problemsTitle": "Kubeconfig 问题",
     "problemsHint": "来自其他文件的集群仍可正常使用。请修复该文件，然后点击“刷新”。",
-    "confirmCloud": "其中的集群将从列表中消失，Sextant 为这些云集群生成的 kubeconfig 也将被删除。你的云 CLI 和 ~/.kube/config 不受影响。"
+    "confirmCloud": "其中的集群将从列表中消失，Sextant 为这些云集群生成的 kubeconfig 也将被删除。你的云 CLI 和 ~/.kube/config 不受影响。",
+    "confirmFolder": "其集群将从列表中消失。文件夹及其文件保留在磁盘上。",
+    "folderFiles_other": "{{count}} 个 kubeconfig 文件",
+    "folderWorkspaces": "将其子文件夹显示为工作区"
   },
   "welcome": {
     "loading": "正在读取 kubeconfig…",

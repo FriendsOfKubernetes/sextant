@@ -33,7 +33,9 @@
     "fileDialogTitle": "kubeconfig-Datei auswählen",
     "tabs": "Art des Hinzufügens",
     "kubeconfigTab": "Kubeconfig",
-    "cloudTab": "Aus der Cloud"
+    "cloudTab": "Aus der Cloud",
+    "folder": "Kubeconfig-Ordner hinzufügen",
+    "folderDialogTitle": "Einen Ordner mit Kubeconfig-Dateien wählen"
   },
   "paste": {
     "title": "kubeconfig einfügen",
@@ -48,7 +50,9 @@
       "env": "KUBECONFIG",
       "addedFile": "hinzugefügte Datei",
       "pasted": "eingefügt",
-      "cloud": "Cloud"
+      "cloud": "Cloud",
+      "folder": "Ordner",
+      "folderFile": "Datei in einem Ordner"
     },
     "remove": "Entfernen",
     "removeNamed": "{{path}} entfernen",
@@ -58,7 +62,11 @@
     "problems": "Einige kubeconfig-Dateien können nicht gelesen werden",
     "problemsTitle": "kubeconfig-Probleme",
     "problemsHint": "Cluster aus den anderen Dateien funktionieren weiter. Korrigieren Sie die Datei und klicken Sie dann auf „Neu laden“.",
-    "confirmCloud": "Ihre Cluster verschwinden aus der Liste, und die kubeconfig von Sextant für diese Cloud-Cluster wird gelöscht. Ihre Cloud-CLI und ~/.kube/config bleiben unverändert."
+    "confirmCloud": "Ihre Cluster verschwinden aus der Liste, und die kubeconfig von Sextant für diese Cloud-Cluster wird gelöscht. Ihre Cloud-CLI und ~/.kube/config bleiben unverändert.",
+    "confirmFolder": "Seine Cluster verschwinden aus der Liste. Der Ordner und seine Dateien bleiben auf der Festplatte.",
+    "folderFiles_one": "{{count}} Kubeconfig-Datei",
+    "folderFiles_other": "{{count}} Kubeconfig-Dateien",
+    "folderWorkspaces": "Unterordner als Arbeitsbereiche anzeigen"
   },
   "welcome": {
     "loading": "kubeconfig wird gelesen…",

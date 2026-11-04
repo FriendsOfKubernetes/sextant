@@ -76,7 +76,10 @@
     "inUse": "En uso",
     "save": "Guardar",
     "cancel": "Cancelar",
-    "delete_button": "Eliminar"
+    "delete_button": "Eliminar",
+    "folderWorkspaces": "Espacios de trabajo de carpetas de kubeconfig",
+    "folderWorkspacesHint": "Uno por subcarpeta, con los clústeres de sus archivos. Siguen a la carpeta y no se pueden editar aquí.",
+    "fromFolder": "de {{path}}"
   },
   "transfer": {
     "exportTitle": "Exportar",

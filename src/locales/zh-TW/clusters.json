@@ -33,7 +33,9 @@
     "fileDialogTitle": "選擇 kubeconfig 檔案",
     "tabs": "新增方式",
     "kubeconfigTab": "Kubeconfig",
-    "cloudTab": "從雲端"
+    "cloudTab": "從雲端",
+    "folder": "新增 kubeconfig 資料夾",
+    "folderDialogTitle": "選擇存放 kubeconfig 檔案的資料夾"
   },
   "paste": {
     "title": "貼上 kubeconfig",
@@ -48,7 +50,9 @@
       "env": "KUBECONFIG",
       "addedFile": "新增的檔案",
       "pasted": "貼上的",
-      "cloud": "雲端"
+      "cloud": "雲端",
+      "folder": "資料夾",
+      "folderFile": "資料夾中的檔案"
     },
     "remove": "移除",
     "removeNamed": "移除 {{path}}",
@@ -58,7 +62,10 @@
     "problems": "部分 kubeconfig 檔案無法讀取",
     "problemsTitle": "Kubeconfig 問題",
     "problemsHint": "來自其他檔案的叢集仍可正常使用。請修正該檔案，然後按「重新整理」。",
-    "confirmCloud": "其中的叢集會從清單中消失，Sextant 為這些雲端叢集產生的 kubeconfig 也會被刪除。您的雲端 CLI 與 ~/.kube/config 不受影響。"
+    "confirmCloud": "其中的叢集會從清單中消失，Sextant 為這些雲端叢集產生的 kubeconfig 也會被刪除。您的雲端 CLI 與 ~/.kube/config 不受影響。",
+    "confirmFolder": "其叢集將從清單中消失。資料夾及其檔案仍留在磁碟上。",
+    "folderFiles_other": "{{count}} 個 kubeconfig 檔案",
+    "folderWorkspaces": "將其子資料夾顯示為工作區"
   },
   "welcome": {
     "loading": "正在讀取 kubeconfig…",

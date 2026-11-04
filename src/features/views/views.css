@@ -244,3 +244,9 @@
 .views-pin-toggle--on svg {
   fill: currentColor;
 }
+
+/* Workspaces of kubeconfig folders' subfolders (ADR-0148): read-only, below the user's own. */
+.views-manager__subtitle {
+  margin: 16px 0 4px;
+  font-size: 1em;
+}

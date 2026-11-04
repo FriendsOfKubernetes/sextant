@@ -76,7 +76,10 @@
     "inUse": "W użyciu",
     "save": "Zapisz",
     "cancel": "Anuluj",
-    "delete_button": "Usuń"
+    "delete_button": "Usuń",
+    "folderWorkspaces": "Obszary robocze z folderów kubeconfig",
+    "folderWorkspacesHint": "Jeden na każdy podfolder, z klastrami jego plików. Podążają za folderem i nie można ich tu edytować.",
+    "fromFolder": "z {{path}}"
   },
   "transfer": {
     "exportTitle": "Eksport",

@@ -95,6 +95,8 @@ export function initClusters(): Promise<void> {
     teardown.push(startViewPersistence());
     const unlisten = events.onClusterState(({ clusterId, state }) => onStateEvent(clusterId, state));
     teardown.push(() => void unlisten.then((fn) => fn()));
+    const unlistenFolders = events.onKubeconfigFoldersChanged((moved) => void onFoldersChanged(moved));
+    teardown.push(() => void unlistenFolders.then((fn) => fn()));
     await refreshClusters();
 
     // The backend may already hold connections (e.g. the window was reloaded).
@@ -196,6 +198,28 @@ export async function addKubeconfigFile(path: string): Promise<KubeconfigSource>
   return source;
 }
 
+/** Adds a folder of kubeconfig files (ADR-0148). */
+export async function addKubeconfigFolder(path: string): Promise<KubeconfigSource> {
+  const source = await api.clusters.addFolder(path);
+  await refreshClusters();
+  return source;
+}
+
+/** Shows a folder's subfolders as workspaces, or not. */
+export async function setFolderWorkspaces(sourceId: string, enabled: boolean): Promise<void> {
+  await api.clusters.folderWorkspaces(sourceId, enabled);
+  await refreshClusters();
+}
+
+/**
+ * A kubeconfig folder's files changed: the clusters are read again; a cluster whose file moved to another subfolder
+ * takes its settings along, applied between the window's own settings writes (ADR-0148).
+ */
+async function onFoldersChanged(moved: boolean): Promise<void> {
+  if (moved) await withBackendSettingsChange(() => api.clusters.folderMovesApply()).catch(() => undefined);
+  await refreshClusters();
+}
+
 export async function addPastedKubeconfig(text: string): Promise<KubeconfigSource> {
   const source = await api.clusters.addPasted(text);
   await refreshClusters();
@@ -203,7 +227,11 @@ export async function addPastedKubeconfig(text: string): Promise<KubeconfigSourc
 }
 
 export async function removeKubeconfigSource(sourceId: string): Promise<void> {
-  const gone = useClustersStore.getState().clusters.filter((c) => c.sourceId === sourceId).map((c) => c.id);
+  // A folder's clusters go with it.
+  const gone = useClustersStore
+    .getState()
+    .clusters.filter((c) => c.sourceId === sourceId || c.folder?.sourceId === sourceId)
+    .map((c) => c.id);
   // The backend forgets that Sextant may edit the source: the settings are read again, so a stale copy cannot bring
   // the permission back.
   await withBackendSettingsChange(() => api.clusters.removeSource(sourceId));

@@ -76,7 +76,10 @@
     "inUse": "使用中",
     "save": "儲存",
     "cancel": "取消",
-    "delete_button": "刪除"
+    "delete_button": "刪除",
+    "folderWorkspaces": "kubeconfig 資料夾的工作區",
+    "folderWorkspacesHint": "每個子資料夾一個，包含其檔案中的叢集。它們跟隨資料夾，無法在此編輯。",
+    "fromFolder": "來自 {{path}}"
   },
   "transfer": {
     "exportTitle": "匯出",

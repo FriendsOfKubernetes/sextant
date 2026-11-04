@@ -33,7 +33,9 @@
     "fileDialogTitle": "kubeconfig 파일 선택",
     "tabs": "추가 방법",
     "kubeconfigTab": "Kubeconfig",
-    "cloudTab": "클라우드에서"
+    "cloudTab": "클라우드에서",
+    "folder": "kubeconfig 폴더 추가",
+    "folderDialogTitle": "kubeconfig 파일이 있는 폴더 선택"
   },
   "paste": {
     "title": "kubeconfig 붙여넣기",
@@ -48,7 +50,9 @@
       "env": "KUBECONFIG",
       "addedFile": "추가한 파일",
       "pasted": "붙여 넣음",
-      "cloud": "클라우드"
+      "cloud": "클라우드",
+      "folder": "폴더",
+      "folderFile": "폴더 안의 파일"
     },
     "remove": "제거",
     "removeNamed": "{{path}} 제거",
@@ -58,7 +62,10 @@
     "problems": "일부 kubeconfig 파일을 읽을 수 없습니다",
     "problemsTitle": "Kubeconfig 문제",
     "problemsHint": "다른 파일의 클러스터는 계속 작동합니다. 파일을 수정한 후 새로 고침을 누르세요.",
-    "confirmCloud": "해당 클러스터가 목록에서 사라지고, 이 클라우드 클러스터에 대한 Sextant의 kubeconfig가 삭제됩니다. 클라우드 CLI와 ~/.kube/config는 변경되지 않습니다."
+    "confirmCloud": "해당 클러스터가 목록에서 사라지고, 이 클라우드 클러스터에 대한 Sextant의 kubeconfig가 삭제됩니다. 클라우드 CLI와 ~/.kube/config는 변경되지 않습니다.",
+    "confirmFolder": "해당 클러스터가 목록에서 사라집니다. 폴더와 파일은 디스크에 남습니다.",
+    "folderFiles_other": "kubeconfig 파일 {{count}}개",
+    "folderWorkspaces": "하위 폴더를 작업 공간으로 표시"
   },
   "welcome": {
     "loading": "kubeconfig를 읽는 중…",

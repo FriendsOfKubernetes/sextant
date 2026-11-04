@@ -54,6 +54,8 @@ pub struct AppState {
     /// Virtual clusters connected through a port forward of their host cluster (#269, ADR-0122): each entry of
     /// this process's `kubeconfigs/vcluster-<pid>.yaml` lives as long as its forward in `forwarder`.
     pub vcluster: crate::commands::vcluster::VclusterLinks,
+    /// Moves of clusters between subfolders of a kubeconfig folder found and not yet applied (ADR-0148).
+    pub kubeconfig_folders: crate::kubeconfig_folders::FolderWatch,
     /// Grows with every [`AppState::reset_streams`]; a start that began before a reset does not register.
     streams_generation: AtomicU64,
 }
@@ -100,6 +102,7 @@ impl AppState {
             gitops: GitopsInstalls::default(),
             image_files: crate::image_files::ImageSessions::default(),
             vcluster: crate::commands::vcluster::VclusterLinks::default(),
+            kubeconfig_folders: crate::kubeconfig_folders::FolderWatch::default(),
             streams_generation: AtomicU64::new(0),
         }
     }

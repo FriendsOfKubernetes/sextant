@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { errorKey, useSettings, type ClusterInfo, type CoreError } from "../../api";
 import { EmptyState, SLOW_AFTER_S, useElapsedSeconds } from "../../components";
-import { AddFileButton, PasteButton, SourceError } from "./AddClusterDialog";
+import { AddFileButton, AddFolderButton, PasteButton, SourceError } from "./AddClusterDialog";
 import { CloudLoginHint } from "./CloudClusters";
 import {
   ExecLoginHint,
@@ -42,6 +42,7 @@ export function Welcome() {
         {error && <SourceError error={error} />}
         <div className="clusters-buttons">
           <AddFileButton className="btn btn--primary" />
+          <AddFolderButton />
           <PasteButton />
         </div>
       </div>

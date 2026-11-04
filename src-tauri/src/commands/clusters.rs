@@ -34,6 +34,46 @@ pub async fn kubeconfig_add_file(
     Ok(source)
 }
 
+/// Adds a folder of kubeconfig files (ADR-0148): its files, and those of its subfolders one level down, are sources.
+#[tauri::command]
+pub async fn kubeconfig_add_folder(
+    state: State<'_, AppState>,
+    path: PathBuf,
+) -> Result<KubeconfigSource, CoreError> {
+    let source = write_registry(&state).add_folder(path)?;
+    save_sources(&state)?;
+    Ok(source)
+}
+
+/// Whether a folder's subfolders are shown as workspaces.
+#[tauri::command]
+pub async fn kubeconfig_folder_workspaces(
+    state: State<'_, AppState>,
+    source_id: String,
+    enabled: bool,
+) -> Result<KubeconfigSource, CoreError> {
+    let source = write_registry(&state).set_folder_workspaces(&source_id, enabled)?;
+    save_sources(&state)?;
+    Ok(source)
+}
+
+/// Applies the moves of clusters between subfolders that Sextant found itself (`kubeconfig-folders-changed`): each
+/// cluster's settings follow its file. The window calls it between its own settings writes. How many moved.
+#[tauri::command]
+pub async fn kubeconfig_folder_moves_apply(state: State<'_, AppState>) -> Result<usize, CoreError> {
+    let moved = state.kubeconfig_folders.take();
+    if moved.is_empty() {
+        return Ok(0);
+    }
+    let count = moved.len();
+    state.settings.update(move |s| {
+        for m in &moved {
+            sextant_core::kubeconfig::edit::move_cluster_settings(s, &m.from, &m.to);
+        }
+    })?;
+    Ok(count)
+}
+
 #[tauri::command]
 pub async fn kubeconfig_add_pasted(
     state: State<'_, AppState>,
@@ -53,7 +93,10 @@ pub async fn kubeconfig_remove(
     let affected: Vec<ClusterId> = list_clusters(&state)
         .unwrap_or_default()
         .into_iter()
-        .filter(|c| c.source_id == source_id)
+        // A folder's clusters go with it.
+        .filter(|c| {
+            c.source_id == source_id || c.folder.as_ref().is_some_and(|f| f.source_id == source_id)
+        })
         .map(|c| c.id)
         .collect();
     write_registry(&state).remove_source(&source_id)?;

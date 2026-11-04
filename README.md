@@ -14,7 +14,7 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 
 ## Features
 
-- **Your kubeconfig** — every context is a cluster; several can be connected at once.
+- **Your kubeconfig** — every context is a cluster; several can be connected at once. Add files one by one, or a whole folder of them, whose subfolders become workspaces.
 - **Cloud clusters** — find your Amazon EKS, Google GKE, Azure AKS and Yandex Cloud clusters through the `aws`,
   `gcloud`, `az` and `yc` you already use, and add them in a few clicks.
 - **Every resource** in live tables, with details, a YAML editor, scale, restart, cordon, drain and CronJob actions;

@@ -33,7 +33,9 @@
     "fileDialogTitle": "Choose a kubeconfig file",
     "tabs": "How to add",
     "kubeconfigTab": "Kubeconfig",
-    "cloudTab": "From cloud"
+    "cloudTab": "From cloud",
+    "folder": "Add kubeconfig folder",
+    "folderDialogTitle": "Choose a folder of kubeconfig files"
   },
   "paste": {
     "title": "Paste kubeconfig",
@@ -48,7 +50,9 @@
       "env": "KUBECONFIG",
       "addedFile": "added file",
       "pasted": "pasted",
-      "cloud": "cloud"
+      "cloud": "cloud",
+      "folder": "folder",
+      "folderFile": "file in a folder"
     },
     "remove": "Remove",
     "removeNamed": "Remove {{path}}",
@@ -58,7 +62,11 @@
     "problems": "Some kubeconfig files cannot be read",
     "problemsTitle": "Kubeconfig problems",
     "problemsHint": "Clusters from the other files keep working. Fix the file, then press Refresh.",
-    "confirmCloud": "Its clusters disappear from the list and Sextant's kubeconfig of these cloud clusters is deleted. Your cloud CLI and ~/.kube/config are not touched."
+    "confirmCloud": "Its clusters disappear from the list and Sextant's kubeconfig of these cloud clusters is deleted. Your cloud CLI and ~/.kube/config are not touched.",
+    "confirmFolder": "Its clusters disappear from the list. The folder and its files stay on disk.",
+    "folderFiles_one": "{{count}} kubeconfig file",
+    "folderFiles_other": "{{count}} kubeconfig files",
+    "folderWorkspaces": "Show its subfolders as workspaces"
   },
   "welcome": {
     "loading": "Reading kubeconfig…",

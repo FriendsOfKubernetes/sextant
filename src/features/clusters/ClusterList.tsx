@@ -49,6 +49,7 @@ import { ExpiryBadge, useCredentialRefresh } from "./kubeconfig/ExpiryBadge";
 import { MergeDialog } from "./kubeconfig/MergeDialog";
 import { sourceKindLabelKey } from "./sources";
 // The active workspace (#149) filters which clusters the rail shows; nothing is connected or disconnected by it.
+import { useFolderWorkspaces } from "../views/folderWorkspaces";
 import { workspaceClusters } from "../views/model";
 import "./clusters.css";
 
@@ -93,7 +94,8 @@ export function ClusterList() {
   const [moved, setMoved] = useState<ClusterId[] | null>(null);
   const saving = useRef(0);
   const ordered = orderClusters(clusters, moved ?? settings?.clusterOrder);
-  const visible = workspaceClusters(ordered, settings, activeClusterId);
+  const folderWorkspaces = useFolderWorkspaces();
+  const visible = workspaceClusters(ordered, settings, activeClusterId, folderWorkspaces);
   const [announcement, setAnnouncement] = useState("");
   const hintId = useId();
   const listRef = useRef<HTMLUListElement>(null);

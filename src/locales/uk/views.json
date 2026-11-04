@@ -76,7 +76,10 @@
     "inUse": "Вибрано",
     "save": "Зберегти",
     "cancel": "Скасувати",
-    "delete_button": "Видалити"
+    "delete_button": "Видалити",
+    "folderWorkspaces": "Робочі простори з тек kubeconfig",
+    "folderWorkspacesHint": "По одному на підтеку, з кластерами її файлів. Вони слідують за текою, тут їх не змінити.",
+    "fromFolder": "з {{path}}"
   },
   "transfer": {
     "exportTitle": "Експорт",

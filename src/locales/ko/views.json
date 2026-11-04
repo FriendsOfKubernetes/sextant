@@ -76,7 +76,10 @@
     "inUse": "사용 중",
     "save": "저장",
     "cancel": "취소",
-    "delete_button": "삭제"
+    "delete_button": "삭제",
+    "folderWorkspaces": "kubeconfig 폴더의 작업 공간",
+    "folderWorkspacesHint": "하위 폴더마다 하나씩, 그 파일의 클러스터를 담습니다. 폴더를 따르며 여기서 편집할 수 없습니다.",
+    "fromFolder": "{{path}}에서"
   },
   "transfer": {
     "exportTitle": "내보내기",

@@ -19,6 +19,7 @@ use crate::error::{CoreError, CoreResult, ErrorCode};
 pub mod edit;
 pub mod exec_mode;
 pub mod expiry;
+pub mod folders;
 pub(crate) mod mask;
 pub mod validate;
 pub mod view;
@@ -46,6 +47,12 @@ pub enum SourceKind {
     /// through a port forward of their host cluster ([`crate::vcluster`], ADR-0122); an entry lives only as long as its
     /// forward, and the source is never stored in the settings.
     Vcluster,
+    /// A folder the user added (#329, ADR-0148): its kubeconfig files, and those of its subfolders one level down,
+    /// are sources of their own ([`SourceKind::FolderFile`]). The folder is what the settings keep.
+    Folder,
+    /// A kubeconfig file found in a [`SourceKind::Folder`] ([`KubeconfigSource::folder`] names it); listed while the
+    /// file is there, never stored.
+    FolderFile,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -59,6 +66,14 @@ pub struct KubeconfigSource {
     /// [`KubeconfigRegistry::sources`]; never stored in the settings.
     #[serde(default)]
     pub error: Option<CoreError>,
+    /// A [`SourceKind::FolderFile`]: the folder it was found in and its subfolder.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub folder: Option<folders::FolderPlace>,
+    /// A [`SourceKind::Folder`]: whether its subfolders are shown as workspaces (ADR-0148); on when left out.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub workspaces: Option<bool>,
 }
 
 /// Stable cluster id: hex `sha256(normalized source path + "\0" + context)[..16]` (see `normalized_path`).
@@ -113,6 +128,14 @@ pub struct ClusterInfo {
     pub user: String,
     pub namespace: Option<String>,
     pub source_id: String,
+    /// A context of a file in a kubeconfig folder (ADR-0148): the folder and the subfolder it is in.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub folder: Option<folders::FolderPlace>,
+    /// The file's name, for a context of a file in a kubeconfig folder (how a file moved between subfolders is known).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub file_name: Option<String>,
     /// The context's exec plugin when it cannot be found on this computer (checked offline when the sources are read,
     /// never run): the rail warns before connecting (#253). Absent when there is no exec plugin or it is found.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -176,19 +199,72 @@ impl KubeconfigRegistry {
                 .iter()
                 .find(|(id, _)| *id == source.id)
                 .map(|(_, err)| err.clone());
+            if source.kind == SourceKind::Folder && source.error.is_none() {
+                source.error = folder_error(&source.path);
+            }
         }
         sources
     }
 
-    /// Every source without reading the files.
+    /// Every source without reading the files; a folder's files after the folder.
     fn listed_sources(&self) -> Vec<KubeconfigSource> {
         let mut sources = self.default_sources();
         for extra in &self.extra_sources {
-            if !sources.iter().any(|s| s.path == extra.path) {
-                sources.push(extra.clone());
+            if sources.iter().any(|s| s.path == extra.path) {
+                continue;
+            }
+            sources.push(extra.clone());
+            if extra.kind == SourceKind::Folder {
+                let (files, _) = folders::file_sources(extra);
+                for file in files {
+                    // A file that is a source already (added on its own, or in another folder too) is read once.
+                    if !sources.iter().any(|s| s.path == file.path)
+                        && !self.extra_sources.iter().any(|s| s.path == file.path)
+                    {
+                        sources.push(file);
+                    }
+                }
             }
         }
         sources
+    }
+
+    /// Adds a folder of kubeconfig files chosen by the user (ADR-0148). Adding a folder that is a source already
+    /// returns that source. Its subfolders are workspaces unless turned off.
+    pub fn add_folder(&mut self, path: PathBuf) -> CoreResult<KubeconfigSource> {
+        let path = std::fs::canonicalize(&path).map_err(|e| {
+            CoreError::new(
+                ErrorCode::NotFound,
+                format!("cannot open {}: {e}", path.display()),
+            )
+        })?;
+        if !path.is_dir() {
+            return Err(CoreError::new(
+                ErrorCode::Invalid,
+                format!("{} is not a folder", path.display()),
+            ));
+        }
+        if let Some(existing) = self.extra_sources.iter().find(|s| s.path == path) {
+            return Ok(existing.clone());
+        }
+        let added = source(path, SourceKind::Folder);
+        self.extra_sources.push(added.clone());
+        Ok(added)
+    }
+
+    /// Whether the subfolders of the folder source `source_id` are shown as workspaces.
+    pub fn set_folder_workspaces(
+        &mut self,
+        source_id: &str,
+        on: bool,
+    ) -> CoreResult<KubeconfigSource> {
+        let folder = self
+            .extra_sources
+            .iter_mut()
+            .find(|s| s.id == source_id && s.kind == SourceKind::Folder)
+            .ok_or_else(|| CoreError::new(ErrorCode::NotFound, "no such kubeconfig folder"))?;
+        folder.workspaces = Some(on);
+        Ok(folder.clone())
     }
 
     /// Sources the user added or pasted — what the settings store. A [`SourceKind::Vcluster`] file is this process's
@@ -242,6 +318,10 @@ impl KubeconfigRegistry {
         let mut env_files: Vec<(KubeconfigSource, Kubeconfig)> = Vec::new();
 
         for src in self.listed_sources() {
+            // A folder is read through its files.
+            if src.kind == SourceKind::Folder {
+                continue;
+            }
             let is_default = matches!(src.kind, SourceKind::Default | SourceKind::Env);
             if is_default && !src.path.exists() {
                 continue;
@@ -481,6 +561,16 @@ impl KubeconfigRegistry {
     /// Forgets an added, pasted or cloud source; a pasted or cloud file (Sextant's own copy) is deleted. `KUBECONFIG` and `~/.kube/config` cannot
     /// be removed.
     pub fn remove_source(&mut self, source_id: &str) -> CoreResult<()> {
+        if self
+            .listed_sources()
+            .iter()
+            .any(|s| s.id == source_id && s.kind == SourceKind::FolderFile)
+        {
+            return Err(CoreError::new(
+                ErrorCode::Invalid,
+                "a file of a kubeconfig folder goes with the folder: remove the folder, or the file from it",
+            ));
+        }
         let Some(index) = self.extra_sources.iter().position(|s| s.id == source_id) else {
             return Err(
                 if self.default_sources().iter().any(|s| s.id == source_id) {
@@ -789,6 +879,13 @@ impl Loaded {
                     user: ctx.user.unwrap_or_default(),
                     namespace: ctx.namespace,
                     source_id: self.source.id.clone(),
+                    folder: self.source.folder.clone(),
+                    file_name: self
+                        .source
+                        .folder
+                        .as_ref()
+                        .and_then(|_| self.source.path.file_name())
+                        .map(|n| n.to_string_lossy().into_owned()),
                     exec_problem,
                 }
             })
@@ -840,7 +937,29 @@ pub(crate) fn source(path: PathBuf, kind: SourceKind) -> KubeconfigSource {
         path,
         kind,
         error: None,
+        folder: None,
+        workspaces: None,
     }
+}
+
+/// Why a folder source cannot be read in full right now: gone, not a folder, or more files than are read.
+fn folder_error(path: &Path) -> Option<CoreError> {
+    if !path.is_dir() {
+        return Some(CoreError::new(
+            ErrorCode::NotFound,
+            format!("the folder {} cannot be opened", path.display()),
+        ));
+    }
+    folders::scan(path).truncated.then(|| {
+        CoreError::new(
+            ErrorCode::Kubeconfig,
+            format!(
+                "the folder has more than {} kubeconfig files: the first {} by name are read",
+                folders::MAX_FILES,
+                folders::MAX_FILES
+            ),
+        )
+    })
 }
 
 fn ensure_contexts(config: &Kubeconfig) -> CoreResult<()> {
@@ -1892,5 +2011,200 @@ contexts:
         // A cluster without a problem has no field at all.
         let token = serde_json::to_value(clusters.iter().find(|c| c.context == "token")).unwrap();
         assert!(token.get("execProblem").is_none(), "{token}");
+    }
+
+    #[test]
+    fn a_folders_kubeconfig_files_and_its_subfolders_are_sources_of_their_own() {
+        let f = Fixture::new();
+        f.write(
+            "configs/prod.yaml",
+            &one_context("prod", "https://prod.example:6443"),
+        );
+        f.write(
+            "configs/team-a/dev",
+            &one_context("dev", "https://dev.example:6443"),
+        );
+        f.write(
+            "configs/team-a/stage.yml",
+            &one_context("stage", "https://stage.example:6443"),
+        );
+        // Not kubeconfig files: hidden, a backup, an editor's copy, another extension, two levels down.
+        f.write(
+            "configs/.hidden.yaml",
+            &one_context("hidden", "https://h:6443"),
+        );
+        f.write(
+            "configs/prod.yaml.bak-2026",
+            &one_context("bak", "https://b:6443"),
+        );
+        f.write(
+            "configs/prod.yaml~",
+            &one_context("tilde", "https://t:6443"),
+        );
+        f.write("configs/README.md", "# my clusters");
+        f.write(
+            "configs/team-a/deep/x.yaml",
+            &one_context("deep", "https://d:6443"),
+        );
+        // A file that does not parse is listed with its error and hides nothing else.
+        f.write("configs/team-b/broken.yaml", "clusters: [");
+        let mut reg = f.registry();
+        let folder = reg.add_folder(f.path("configs")).unwrap();
+        assert_eq!(folder.kind, SourceKind::Folder);
+        assert_eq!(
+            reg.add_folder(f.path("configs")).unwrap().id,
+            folder.id,
+            "added once"
+        );
+        assert_eq!(reg.added_sources().len(), 1, "only the folder is stored");
+
+        let clusters = reg.clusters().unwrap();
+        let mut seen: Vec<(String, Option<String>, Option<String>)> = clusters
+            .iter()
+            .map(|c| {
+                (
+                    c.context.clone(),
+                    c.folder.as_ref().and_then(|p| p.subfolder.clone()),
+                    c.file_name.clone(),
+                )
+            })
+            .collect();
+        seen.sort();
+        assert_eq!(
+            seen,
+            [
+                (
+                    "dev".to_owned(),
+                    Some("team-a".to_owned()),
+                    Some("dev".to_owned())
+                ),
+                ("prod".to_owned(), None, Some("prod.yaml".to_owned())),
+                (
+                    "stage".to_owned(),
+                    Some("team-a".to_owned()),
+                    Some("stage.yml".to_owned())
+                ),
+            ]
+        );
+        assert!(
+            clusters
+                .iter()
+                .all(|c| c.folder.as_ref().unwrap().source_id == folder.id)
+        );
+        // A file's cluster id is its path's, as for a file added on its own.
+        let prod = clusters.iter().find(|c| c.context == "prod").unwrap();
+        assert_eq!(
+            prod.id,
+            ClusterId::for_context(&f.path("configs/prod.yaml"), "prod")
+        );
+        let sources = reg.sources();
+        let broken = sources
+            .iter()
+            .find(|s| s.path.ends_with("broken.yaml"))
+            .unwrap();
+        assert_eq!(broken.kind, SourceKind::FolderFile);
+        assert!(broken.error.is_some());
+        assert!(
+            sources
+                .iter()
+                .find(|s| s.id == folder.id)
+                .unwrap()
+                .error
+                .is_none()
+        );
+        // A file goes with its folder; the folder goes with everything in it.
+        assert_eq!(
+            reg.remove_source(&broken.id).unwrap_err().code,
+            ErrorCode::Invalid
+        );
+        assert_eq!(
+            reg.set_folder_workspaces(&folder.id, false)
+                .unwrap()
+                .workspaces,
+            Some(false)
+        );
+        reg.remove_source(&folder.id).unwrap();
+        assert!(
+            reg.clusters()
+                .unwrap_or_default()
+                .iter()
+                .all(|c| c.folder.is_none())
+        );
+    }
+
+    #[test]
+    fn a_link_out_of_the_folder_and_a_folder_that_is_not_one_are_not_read() {
+        let f = Fixture::new();
+        let outside = f.write(
+            "elsewhere/secret.yaml",
+            &one_context("outside", "https://o:6443"),
+        );
+        f.write("configs/in.yaml", &one_context("inside", "https://i:6443"));
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(&outside, f.path("configs/link.yaml")).unwrap();
+        let mut reg = f.registry();
+        let folder = reg.add_folder(f.path("configs")).unwrap();
+        let contexts: Vec<String> = reg
+            .clusters()
+            .unwrap()
+            .into_iter()
+            .map(|c| c.context)
+            .collect();
+        assert_eq!(contexts, ["inside"]);
+        assert_eq!(
+            reg.add_folder(f.path("configs/in.yaml")).unwrap_err().code,
+            ErrorCode::Invalid
+        );
+        std::fs::remove_dir_all(f.path("configs")).unwrap();
+        let gone = reg
+            .sources()
+            .into_iter()
+            .find(|s| s.id == folder.id)
+            .unwrap();
+        assert_eq!(gone.error.unwrap().code, ErrorCode::NotFound);
+    }
+
+    #[test]
+    fn a_file_moved_between_subfolders_is_the_same_cluster_moved() {
+        let f = Fixture::new();
+        f.write(
+            "configs/team-a/web.yaml",
+            &one_context("web", "https://w:6443"),
+        );
+        f.write("configs/team-a/config", &one_context("x", "https://x:6443"));
+        f.write(
+            "configs/team-b/config",
+            &one_context("x", "https://x2:6443"),
+        );
+        let mut reg = f.registry();
+        reg.add_folder(f.path("configs")).unwrap();
+        let before = reg.clusters().unwrap();
+        std::fs::create_dir_all(f.path("configs/team-c")).unwrap();
+        std::fs::rename(
+            f.path("configs/team-a/web.yaml"),
+            f.path("configs/team-c/web.yaml"),
+        )
+        .unwrap();
+        // Two files named `config` with the same context both moved: which went where cannot be told.
+        std::fs::create_dir_all(f.path("configs/team-d")).unwrap();
+        std::fs::rename(
+            f.path("configs/team-a/config"),
+            f.path("configs/team-c/config"),
+        )
+        .unwrap();
+        std::fs::rename(
+            f.path("configs/team-b/config"),
+            f.path("configs/team-d/config"),
+        )
+        .unwrap();
+        let after = reg.clusters().unwrap();
+        let moved = folders::moved_clusters(&before, &after);
+        assert_eq!(
+            moved,
+            [folders::Moved {
+                from: ClusterId::for_context(&f.path("configs/team-a/web.yaml"), "web"),
+                to: ClusterId::for_context(&f.path("configs/team-c/web.yaml"), "web"),
+            }]
+        );
     }
 }

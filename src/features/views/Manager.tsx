@@ -8,6 +8,7 @@ import { formatList } from "../../i18n/format";
 import { findResourceDef } from "../../resources";
 import { displayNameOf } from "../clusters/clusterSettings";
 import { useClusters } from "../clusters/hooks";
+import { useFolderWorkspaces } from "./folderWorkspaces";
 import {
   activeWorkspace,
   cleanName,
@@ -182,7 +183,8 @@ function WorkspacesTab({ settings, clusters }: { settings: AppSettings; clusters
   const { t } = useTranslation();
   const [editing, setEditing] = useState<Workspace | null>(null);
   const [deleting, setDeleting] = useState<Workspace | null>(null);
-  const current = activeWorkspace(settings);
+  const folders = useFolderWorkspaces();
+  const current = activeWorkspace(settings, folders);
 
   if (editing) {
     const toggle = (id: string) =>
@@ -271,6 +273,33 @@ function WorkspacesTab({ settings, clusters }: { settings: AppSettings; clusters
       <Button icon="add" onClick={() => setEditing({ id: newId("w"), name: "", clusters: [] })}>
         {t("views:manager.newWorkspace")}
       </Button>
+      {folders.length > 0 && (
+        <>
+          <h3 className="views-manager__subtitle">{t("views:manager.folderWorkspaces")}</h3>
+          <p className="views-manager__empty">{t("views:manager.folderWorkspacesHint")}</p>
+          <ul className="views-manager__list" aria-label={t("views:manager.folderWorkspaces")}>
+            {folders.map((w) => (
+              <li key={w.id} className="views-manager__row">
+                <span className="views-manager__name">
+                  <Icon name="workspace" size={14} />
+                  <span>{w.name}</span>
+                  <small>{t("views:manager.workspaceClusterCount", { number: w.clusters.length })}</small>
+                  <small title={w.folder}>{t("views:manager.fromFolder", { path: w.folder })}</small>
+                </span>
+                <span className="views-manager__tools">
+                  <Button
+                    size="compact"
+                    disabled={current?.id === w.id}
+                    onClick={() => save((s) => switchWorkspace(s, w.id, folders))}
+                  >
+                    {current?.id === w.id ? t("views:manager.inUse") : t("views:manager.use")}
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       {deleting && (
         <ConfirmDialog
           open

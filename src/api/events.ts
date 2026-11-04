@@ -49,4 +49,7 @@ export const events = {
   /** The virtual clusters Sextant forwards for changed (ADR-0122): the full list; read the cluster list again. */
   onVclusterLinks: (handler: (links: VclusterLink[]) => void): Promise<Unsubscribe> =>
     subscribe("vcluster-links", handler),
+  /** A kubeconfig folder's files changed (ADR-0148); `moved`: a cluster moved between subfolders. */
+  onKubeconfigFoldersChanged: (handler: (moved: boolean) => void): Promise<Unsubscribe> =>
+    subscribe("kubeconfig-folders-changed", handler),
 };

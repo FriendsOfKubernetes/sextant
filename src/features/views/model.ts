@@ -111,18 +111,23 @@ export async function applyView(clusterId: ClusterId, view: SavedView): Promise<
 
 // ---- workspaces ----
 
-/** The active workspace, if the stored id names one. */
-export function activeWorkspace(settings: AppSettings | null): Workspace | null {
+/** The active workspace, if the stored id names one (of the user's, or of `folders`, the folders' own, ADR-0148). */
+export function activeWorkspace(settings: AppSettings | null, folders: readonly Workspace[] = []): Workspace | null {
   if (!settings?.activeWorkspace) return null;
-  return settings.workspaces.find((w) => w.id === settings.activeWorkspace) ?? null;
+  return [...settings.workspaces, ...folders].find((w) => w.id === settings.activeWorkspace) ?? null;
 }
 
 /**
  * Whether the rail shows `clusterId`: every cluster without an active workspace, otherwise the workspace's clusters
  * (and the active cluster, so the one in use never disappears; it stays connected either way).
  */
-export function inWorkspace(settings: AppSettings | null, clusterId: ClusterId, activeClusterId?: ClusterId | null): boolean {
-  const workspace = activeWorkspace(settings);
+export function inWorkspace(
+  settings: AppSettings | null,
+  clusterId: ClusterId,
+  activeClusterId?: ClusterId | null,
+  folders: readonly Workspace[] = [],
+): boolean {
+  const workspace = activeWorkspace(settings, folders);
   if (!workspace) return true;
   return clusterId === activeClusterId || workspace.clusters.includes(clusterId);
 }
@@ -132,9 +137,10 @@ export function workspaceClusters<T extends { id: ClusterId }>(
   clusters: T[],
   settings: AppSettings | null,
   activeClusterId: ClusterId | null,
+  folders: readonly Workspace[] = [],
 ): T[] {
-  if (!activeWorkspace(settings)) return clusters;
-  return clusters.filter((c) => inWorkspace(settings, c.id, activeClusterId));
+  if (!activeWorkspace(settings, folders)) return clusters;
+  return clusters.filter((c) => inWorkspace(settings, c.id, activeClusterId, folders));
 }
 
 /** Views offered in `clusterId`: its own and those for every cluster, in the user's order. */
@@ -245,8 +251,9 @@ export function deleteWorkspace(settings: AppSettings, id: string): AppSettings 
 }
 
 /** Switches the rail to a workspace (`null`: every cluster). Never connects or disconnects anything. */
-export function switchWorkspace(settings: AppSettings, id: string | null): AppSettings {
-  return { ...settings, activeWorkspace: id && settings.workspaces.some((w) => w.id === id) ? id : null };
+export function switchWorkspace(settings: AppSettings, id: string | null, folders: readonly Workspace[] = []): AppSettings {
+  const known = [...settings.workspaces, ...folders].some((w) => w.id === id);
+  return { ...settings, activeWorkspace: id && known ? id : null };
 }
 
 /** The `ObjectRef` a pinned object opens. */

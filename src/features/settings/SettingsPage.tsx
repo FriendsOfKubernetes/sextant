@@ -16,7 +16,7 @@ import {
 import { Button, Checkbox, ConfirmDialog, ErrorState, Radio, Tabs } from "../../components";
 import { availableLanguages, resolveLanguage, SYSTEM_LANGUAGE } from "../../i18n";
 import type { PageProps } from "../../layout/pages";
-import { AddFileButton, PasteButton, SourceError } from "../clusters/AddClusterDialog";
+import { AddFileButton, AddFolderButton, FolderDetails, listedSources, PasteButton, SourceError } from "../clusters/AddClusterDialog";
 import { removeKubeconfigSource } from "../clusters/clustersStore";
 import { useClusters } from "../clusters/hooks";
 import { isRemovableSource, removeConfirmKey, sourceKindLabelKey } from "../clusters/sources";
@@ -456,10 +456,11 @@ function KubeconfigSection() {
   return (
     <Section title={t("settings:kubeconfig.title")} hint={t("settings:kubeconfig.hint")}>
       <ul className="settings__sources" aria-label={t("clusters:sources.title")}>
-        {sources.map((source) => (
+        {listedSources(sources).map((source) => (
           <li key={source.id} className="settings__source">
             <span className="settings__source-path">{source.path}</span>
             <span className="settings__source-kind">{t(sourceKindLabelKey(source.kind))}</span>
+            {source.kind === "folder" && <FolderDetails source={source} sources={sources} />}
             <SourceWritable source={source} />
             {isRemovableSource(source.kind) && (
               <Button
@@ -476,6 +477,7 @@ function KubeconfigSection() {
       {error && <SourceError error={error} />}
       <div className="settings__row">
         <AddFileButton />
+        <AddFolderButton />
         <PasteButton />
       </div>
       <KubeconfigTools />

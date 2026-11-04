@@ -33,7 +33,9 @@
     "fileDialogTitle": "Wybierz plik kubeconfig",
     "tabs": "Sposób dodania",
     "kubeconfigTab": "Kubeconfig",
-    "cloudTab": "Z chmury"
+    "cloudTab": "Z chmury",
+    "folder": "Dodaj folder kubeconfig",
+    "folderDialogTitle": "Wybierz folder z plikami kubeconfig"
   },
   "paste": {
     "title": "Wklej kubeconfig",
@@ -48,7 +50,9 @@
       "env": "KUBECONFIG",
       "addedFile": "dodany plik",
       "pasted": "wklejone",
-      "cloud": "chmura"
+      "cloud": "chmura",
+      "folder": "folder",
+      "folderFile": "plik w folderze"
     },
     "remove": "Usuń",
     "removeNamed": "Usuń {{path}}",
@@ -58,7 +62,13 @@
     "problems": "Nie można odczytać niektórych plików kubeconfig",
     "problemsTitle": "Problemy z kubeconfig",
     "problemsHint": "Klastry z pozostałych plików nadal działają. Popraw plik, a następnie kliknij „Odśwież”.",
-    "confirmCloud": "Jego klastry znikną z listy, a kubeconfig programu Sextant dla tych klastrów w chmurze zostanie usunięty. Narzędzie CLI chmury i plik ~/.kube/config pozostaną nietknięte."
+    "confirmCloud": "Jego klastry znikną z listy, a kubeconfig programu Sextant dla tych klastrów w chmurze zostanie usunięty. Narzędzie CLI chmury i plik ~/.kube/config pozostaną nietknięte.",
+    "confirmFolder": "Jego klastry znikną z listy. Folder i jego pliki zostaną na dysku.",
+    "folderFiles_one": "{{count}} plik kubeconfig",
+    "folderFiles_few": "{{count}} pliki kubeconfig",
+    "folderFiles_many": "{{count}} plików kubeconfig",
+    "folderFiles_other": "{{count}} pliku kubeconfig",
+    "folderWorkspaces": "Pokazuj jego podfoldery jako obszary robocze"
   },
   "welcome": {
     "loading": "Odczytywanie kubeconfig…",

@@ -467,6 +467,8 @@ mod tests {
                         path: legacy.clone(),
                         kind: sextant_core::SourceKind::Vcluster,
                         error: None,
+                        folder: None,
+                        workspaces: None,
                     }]
                 })
                 .unwrap();

@@ -76,7 +76,10 @@
     "inUse": "Kullanımda",
     "save": "Kaydet",
     "cancel": "İptal",
-    "delete_button": "Sil"
+    "delete_button": "Sil",
+    "folderWorkspaces": "Kubeconfig klasörlerinin çalışma alanları",
+    "folderWorkspacesHint": "Her alt klasör için bir tane, dosyalarının kümeleriyle. Klasörü izlerler ve burada düzenlenemezler.",
+    "fromFolder": "{{path}} konumundan"
   },
   "transfer": {
     "exportTitle": "Dışa aktar",

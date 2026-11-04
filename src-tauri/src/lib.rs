@@ -10,6 +10,7 @@ pub mod events;
 pub mod extensions;
 pub mod gitops_install;
 pub mod image_files;
+pub mod kubeconfig_folders;
 pub mod malloc;
 pub mod mcp;
 pub mod mcp_proxy;
@@ -47,6 +48,9 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         clusters::clusters_list,
         clusters::kubeconfig_sources,
         clusters::kubeconfig_add_file,
+        clusters::kubeconfig_add_folder,
+        clusters::kubeconfig_folder_workspaces,
+        clusters::kubeconfig_folder_moves_apply,
         clusters::kubeconfig_add_pasted,
         clusters::kubeconfig_remove,
         commands::kubeconfig::kubeconfig_edit_preview,
@@ -455,6 +459,7 @@ pub fn run() {
             app.manage(extensions);
             app.manage(commands::timeline::TimelineDir(data_dir.join("timeline")));
             spawn_event_forwarders(app.handle());
+            kubeconfig_folders::spawn_poller(app.handle());
             start_mcp(app.handle());
             start_extensions(app.handle());
             window::restore_main_window(app.handle());

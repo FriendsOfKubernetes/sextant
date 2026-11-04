@@ -6,6 +6,7 @@ import { useAppStore } from "../../app/store";
 import { formatParts } from "../../i18n/format";
 import { displayNameOf } from "../clusters/clusterSettings";
 import type { NavigationInput, PaletteGroup, PaletteItem } from "../palette/items";
+import { currentFolderWorkspaces } from "./folderWorkspaces";
 import { inWorkspace, pinsFor, type Pin, type SavedView } from "./model";
 import { pinIcon } from "./SidebarViews";
 import { openPin, openSavedView } from "./ui";
@@ -19,6 +20,7 @@ function clusterLabel(t: TFunction, clusters: ClusterInfo[], settings: AppSettin
 export function viewGroups({ t, clusterId, clusters, settings }: NavigationInput): PaletteGroup[] {
   if (!settings) return [];
   const active = useAppStore.getState().activeClusterId;
+  const folders = currentFolderWorkspaces();
   const known = new Set(clusters.map((c) => c.id));
   const views: PaletteItem[] = [];
   for (const view of settings.views) {
@@ -28,11 +30,11 @@ export function viewGroups({ t, clusterId, clusters, settings }: NavigationInput
         ? clusterId
         : null
       : view.cluster;
-    if (!target || !known.has(target) || !inWorkspace(settings, target, active)) continue;
+    if (!target || !known.has(target) || !inWorkspace(settings, target, active, folders)) continue;
     views.push(viewItem(t, view, target, clusterLabel(t, clusters, settings, view.cluster)));
   }
   const pins: PaletteItem[] = [];
-  const pinClusters = clusterId ? [clusterId] : clusters.map((c) => c.id).filter((id) => inWorkspace(settings, id, active));
+  const pinClusters = clusterId ? [clusterId] : clusters.map((c) => c.id).filter((id) => inWorkspace(settings, id, active, folders));
   for (const id of pinClusters) {
     for (const pin of pinsFor(settings, id)) pins.push(pinItem(t, pin, settings, clusterLabel(t, clusters, settings, id)));
   }

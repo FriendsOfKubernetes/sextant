@@ -33,7 +33,9 @@
     "fileDialogTitle": "Bir kubeconfig dosyası seçin",
     "tabs": "Ekleme yöntemi",
     "kubeconfigTab": "Kubeconfig",
-    "cloudTab": "Buluttan"
+    "cloudTab": "Buluttan",
+    "folder": "Kubeconfig klasörü ekle",
+    "folderDialogTitle": "Kubeconfig dosyalarının olduğu bir klasör seçin"
   },
   "paste": {
     "title": "Kubeconfig yapıştır",
@@ -48,7 +50,9 @@
       "env": "KUBECONFIG",
       "addedFile": "eklenen dosya",
       "pasted": "yapıştırılan",
-      "cloud": "bulut"
+      "cloud": "bulut",
+      "folder": "klasör",
+      "folderFile": "klasördeki dosya"
     },
     "remove": "Kaldır",
     "removeNamed": "Kaldır: {{path}}",
@@ -58,7 +62,11 @@
     "problems": "Bazı kubeconfig dosyaları okunamıyor",
     "problemsTitle": "Kubeconfig sorunları",
     "problemsHint": "Diğer dosyalardaki kümeler çalışmaya devam eder. Dosyayı düzeltin, ardından Yenile'ye basın.",
-    "confirmCloud": "Kümeleri listeden kaybolur ve Sextant'ın bu bulut kümeleri için tuttuğu kubeconfig silinir. Bulut CLI'nıza ve ~/.kube/config dosyasına dokunulmaz."
+    "confirmCloud": "Kümeleri listeden kaybolur ve Sextant'ın bu bulut kümeleri için tuttuğu kubeconfig silinir. Bulut CLI'nıza ve ~/.kube/config dosyasına dokunulmaz.",
+    "confirmFolder": "Kümeleri listeden kaybolur. Klasör ve dosyaları diskte kalır.",
+    "folderFiles_one": "{{count}} kubeconfig dosyası",
+    "folderFiles_other": "{{count}} kubeconfig dosyası",
+    "folderWorkspaces": "Alt klasörlerini çalışma alanı olarak göster"
   },
   "welcome": {
     "loading": "Kubeconfig okunuyor…",

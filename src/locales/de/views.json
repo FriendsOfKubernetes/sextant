@@ -76,7 +76,10 @@
     "inUse": "Aktiv",
     "save": "Speichern",
     "cancel": "Abbrechen",
-    "delete_button": "Löschen"
+    "delete_button": "Löschen",
+    "folderWorkspaces": "Arbeitsbereiche aus Kubeconfig-Ordnern",
+    "folderWorkspacesHint": "Einer je Unterordner, mit den Clustern seiner Dateien. Sie folgen dem Ordner und lassen sich hier nicht bearbeiten.",
+    "fromFolder": "aus {{path}}"
   },
   "transfer": {
     "exportTitle": "Export",

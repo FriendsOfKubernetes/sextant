@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useSettings } from "../../api";
 import { useAppStore } from "../../app/store";
 import { Icon, usePopup, usePopupPosition } from "../../components";
+import { useFolderWorkspaces } from "./folderWorkspaces";
 import { activeWorkspace, switchWorkspace } from "./model";
 import { openManager, save } from "./ui";
 import "./views.css";
@@ -22,12 +23,14 @@ export function WorkspaceSwitcher() {
   usePopup(ref, () => setOpen(false), open);
   // Right of the rail button, top-aligned; flipped or shifted to stay inside the window.
   usePopupPosition(menuRef, buttonRef, { open, side: "right", gap: 4 });
-  const workspaces = settings?.workspaces ?? [];
-  const current = activeWorkspace(settings);
+  const folders = useFolderWorkspaces();
+  // The user's workspaces, then those of kubeconfig folders' subfolders (ADR-0148).
+  const workspaces = [...(settings?.workspaces ?? []), ...folders];
+  const current = activeWorkspace(settings, folders);
   const label = current ? t("views:workspace.current", { name: current.name }) : t("views:workspace.switcher");
   const choose = (id: string | null) => {
     setOpen(false);
-    save((s) => switchWorkspace(s, id));
+    save((s) => switchWorkspace(s, id, folders));
   };
   return (
     <div className="workspace-switch" ref={ref}>

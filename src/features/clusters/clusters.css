@@ -370,8 +370,23 @@
 
 .clusters-sources__item {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+/* Under a kubeconfig folder (ADR-0148): its file count, the workspaces switch and the files that cannot be read. */
+.clusters-folder {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-basis: 100%;
+}
+
+.clusters-folder__broken {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .clusters-sources__path {

@@ -18,6 +18,9 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("clusters_list", None),
     ("kubeconfig_sources", None),
     ("kubeconfig_add_file", Some("path")),
+    ("kubeconfig_add_folder", Some("path")),
+    ("kubeconfig_folder_workspaces", Some("sourceId")),
+    ("kubeconfig_folder_moves_apply", None),
     ("kubeconfig_add_pasted", Some("text")),
     ("kubeconfig_remove", Some("sourceId")),
     ("kubeconfig_edit_preview", Some("edit")),
@@ -1585,6 +1588,8 @@ fn settings_update_from_a_stale_copy_keeps_kubeconfig_sources_written_by_the_bac
         path: std::path::PathBuf::from("/home/user/extra.yaml"),
         kind: sextant_core::SourceKind::AddedFile,
         error: None,
+        folder: None,
+        workspaces: None,
     };
     state
         .settings

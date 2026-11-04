@@ -3,9 +3,16 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type CoreError, type KubeconfigSource } from "../../api";
-import { ConfirmDialog, Dialog, ErrorState, Tabs, type TabItem } from "../../components";
+import { Checkbox, ConfirmDialog, Dialog, ErrorState, Tabs, type TabItem } from "../../components";
 import { CloudClusters } from "./CloudClusters";
-import { addKubeconfigFile, addPastedKubeconfig, removeKubeconfigSource, useClustersStore } from "./clustersStore";
+import {
+  addKubeconfigFile,
+  addKubeconfigFolder,
+  addPastedKubeconfig,
+  removeKubeconfigSource,
+  setFolderWorkspaces,
+  useClustersStore,
+} from "./clustersStore";
 import { isRemovableSource, removeConfirmKey, sourceKindLabelKey } from "./sources";
 import { checkKubeconfig, hasProblems, ValidationDialog } from "./kubeconfig/ValidationDialog";
 import type { KubeconfigInput, KubeconfigValidation } from "../../api";
@@ -69,6 +76,60 @@ export function AddFileButton({ className = "btn" }: { className?: string }) {
         />
       )}
     </>
+  );
+}
+
+/** "Add kubeconfig folder": every kubeconfig file in it and in its subfolders one level down (ADR-0148). */
+export function AddFolderButton({ className = "btn" }: { className?: string }) {
+  const { t } = useTranslation();
+  const [error, setError] = useState<ApiError | null>(null);
+  const pick = async () => {
+    const path = await api.dialog.openFile({ title: t("clusters:add.folderDialogTitle"), directory: true });
+    if (!path) return;
+    try {
+      await addKubeconfigFolder(path);
+      setError(null);
+    } catch (err) {
+      setError(toApiError(err));
+    }
+  };
+  return (
+    <>
+      <button type="button" className={className} onClick={() => void pick()}>
+        {t("clusters:add.folder")}
+      </button>
+      {error && <SourceError error={error} />}
+    </>
+  );
+}
+
+/** The sources a list shows: a folder's files are shown under the folder (`FolderDetails`), not one by one. */
+export function listedSources(sources: readonly KubeconfigSource[]): KubeconfigSource[] {
+  return sources.filter((s) => s.kind !== "folderFile");
+}
+
+/** Under a folder source: how many kubeconfig files it has, the ones that cannot be read, and its workspaces switch. */
+export function FolderDetails({ source, sources }: { source: KubeconfigSource; sources: readonly KubeconfigSource[] }) {
+  const { t } = useTranslation();
+  const files = sources.filter((s) => s.kind === "folderFile" && s.folder?.sourceId === source.id);
+  const broken = files.filter((s) => s.error);
+  return (
+    <div className="clusters-folder">
+      <span className="clusters-hint">{t("clusters:sources.folderFiles", { count: files.length })}</span>
+      <label className="settings__choice">
+        <Checkbox
+          checked={source.workspaces !== false}
+          onChange={(e) => void setFolderWorkspaces(source.id, e.target.checked)}
+        />
+        {t("clusters:sources.folderWorkspaces")}
+      </label>
+      {broken.map((file) => (
+        <div key={file.id} className="clusters-folder__broken">
+          <span className="clusters-sources__path">{file.path}</span>
+          {file.error && <SourceError error={file.error} />}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -208,16 +269,18 @@ export function AddClusterDialog({ open, onClose }: { open: boolean; onClose: ()
           ) : (
             <div className="clusters-buttons">
               <AddFileButton className="btn btn--primary" />
+              <AddFolderButton />
               <PasteButton />
             </div>
           )}
         </Tabs>
         <h3 className="clusters-subtitle">{t("clusters:sources.title")}</h3>
         <ul className="clusters-sources" aria-label={t("clusters:sources.title")}>
-          {sources.map((source) => (
+          {listedSources(sources).map((source) => (
             <li key={source.id} className="clusters-sources__item">
               <span className="clusters-sources__path">{source.path}</span>
               <span className="clusters-sources__kind">{t(sourceKindLabelKey(source.kind))}</span>
+              {source.kind === "folder" && <FolderDetails source={source} sources={sources} />}
               {isRemovableSource(source.kind) && (
                 <button
                   type="button"

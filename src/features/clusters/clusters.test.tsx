@@ -408,6 +408,29 @@ describe("no clusters", () => {
     expect(commands("kubeconfig_add_file")[0]?.args).toEqual({ path: "/home/me/team.yaml" });
   });
 
+  it("adds a folder of kubeconfig files chosen in the folder dialog (ADR-0148)", async () => {
+    let asked: { directory?: boolean } | undefined;
+    const ctl = setup([], {
+      backend: {
+        openFile: (options) => {
+          asked = options;
+          return "/home/me/kube";
+        },
+      },
+    });
+    render(<AppShell />);
+    const main = screen.getByRole("main");
+    await within(main).findByRole("heading", { name: "No clusters found" });
+    backend.on("kubeconfig_add_folder", () => {
+      ctl.setClusters([cluster("eeee", "prod", "src-prod")]);
+      return { id: "src-kube", path: "/home/me/kube", kind: "folder", error: null };
+    });
+    fireEvent.click(within(main).getByRole("button", { name: "Add kubeconfig folder" }));
+    expect(await within(rail()).findByRole("button", { name: "prod" })).toBeInTheDocument();
+    expect(asked?.directory).toBe(true);
+    expect(commands("kubeconfig_add_folder")[0]?.args).toEqual({ path: "/home/me/kube" });
+  });
+
   it("pasted kubeconfig is sent to the backend; an invalid one shows the error and keeps the text", async () => {
     const ctl = setup([]);
     render(<AppShell />);

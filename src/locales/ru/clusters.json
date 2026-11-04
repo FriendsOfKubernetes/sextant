@@ -33,7 +33,9 @@
     "fileDialogTitle": "Выберите файл kubeconfig",
     "tabs": "Способ добавления",
     "kubeconfigTab": "Kubeconfig",
-    "cloudTab": "Из облака"
+    "cloudTab": "Из облака",
+    "folder": "Добавить папку kubeconfig",
+    "folderDialogTitle": "Выберите папку с файлами kubeconfig"
   },
   "paste": {
     "title": "Вставка kubeconfig",
@@ -48,7 +50,9 @@
       "env": "KUBECONFIG",
       "addedFile": "добавленный файл",
       "pasted": "вставлен",
-      "cloud": "облако"
+      "cloud": "облако",
+      "folder": "папка",
+      "folderFile": "файл в папке"
     },
     "remove": "Удалить",
     "removeNamed": "Удалить {{path}}",
@@ -58,7 +62,13 @@
     "problems": "Некоторые файлы kubeconfig не удается прочитать",
     "problemsTitle": "Проблемы с kubeconfig",
     "problemsHint": "Кластеры из остальных файлов продолжают работать. Исправьте файл и нажмите «Обновить».",
-    "confirmCloud": "Его кластеры исчезнут из списка, а kubeconfig Sextant для этих облачных кластеров будет удален. Ваш облачный CLI и ~/.kube/config не затрагиваются."
+    "confirmCloud": "Его кластеры исчезнут из списка, а kubeconfig Sextant для этих облачных кластеров будет удален. Ваш облачный CLI и ~/.kube/config не затрагиваются.",
+    "confirmFolder": "Её кластеры исчезнут из списка. Папка и её файлы останутся на диске.",
+    "folderFiles_one": "{{count}} файл kubeconfig",
+    "folderFiles_few": "{{count}} файла kubeconfig",
+    "folderFiles_many": "{{count}} файлов kubeconfig",
+    "folderFiles_other": "{{count}} файла kubeconfig",
+    "folderWorkspaces": "Показывать её подпапки как рабочие пространства"
   },
   "welcome": {
     "loading": "Чтение kubeconfig…",

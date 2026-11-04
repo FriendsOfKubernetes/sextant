@@ -33,7 +33,9 @@
     "fileDialogTitle": "Escolha um arquivo kubeconfig",
     "tabs": "Como adicionar",
     "kubeconfigTab": "Kubeconfig",
-    "cloudTab": "Da nuvem"
+    "cloudTab": "Da nuvem",
+    "folder": "Adicionar pasta de kubeconfig",
+    "folderDialogTitle": "Escolha uma pasta de arquivos kubeconfig"
   },
   "paste": {
     "title": "Colar kubeconfig",
@@ -48,7 +50,9 @@
       "env": "KUBECONFIG",
       "addedFile": "arquivo adicionado",
       "pasted": "colado",
-      "cloud": "nuvem"
+      "cloud": "nuvem",
+      "folder": "pasta",
+      "folderFile": "arquivo de uma pasta"
     },
     "remove": "Remover",
     "removeNamed": "Remover {{path}}",
@@ -58,7 +62,12 @@
     "problems": "Alguns arquivos kubeconfig não podem ser lidos",
     "problemsTitle": "Problemas no kubeconfig",
     "problemsHint": "Os clusters dos outros arquivos continuam funcionando. Corrija o arquivo e clique em Atualizar.",
-    "confirmCloud": "Os clusters dela somem da lista e o kubeconfig do Sextant para esses clusters na nuvem é excluído. A CLI da nuvem e o ~/.kube/config não são alterados."
+    "confirmCloud": "Os clusters dela somem da lista e o kubeconfig do Sextant para esses clusters na nuvem é excluído. A CLI da nuvem e o ~/.kube/config não são alterados.",
+    "confirmFolder": "Os clusters dela somem da lista. A pasta e os arquivos continuam no disco.",
+    "folderFiles_one": "{{count}} arquivo kubeconfig",
+    "folderFiles_many": "{{count}} de arquivos kubeconfig",
+    "folderFiles_other": "{{count}} arquivos kubeconfig",
+    "folderWorkspaces": "Mostrar as subpastas como espaços de trabalho"
   },
   "welcome": {
     "loading": "Lendo o kubeconfig…",

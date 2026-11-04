@@ -76,7 +76,10 @@
     "inUse": "Выбрано",
     "save": "Сохранить",
     "cancel": "Отмена",
-    "delete_button": "Удалить"
+    "delete_button": "Удалить",
+    "folderWorkspaces": "Рабочие пространства из папок kubeconfig",
+    "folderWorkspacesHint": "По одному на подпапку, с кластерами её файлов. Они следуют за папкой, здесь их не изменить.",
+    "fromFolder": "из {{path}}"
   },
   "transfer": {
     "exportTitle": "Экспорт",

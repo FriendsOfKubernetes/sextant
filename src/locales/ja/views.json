@@ -76,7 +76,10 @@
     "inUse": "使用中",
     "save": "保存",
     "cancel": "キャンセル",
-    "delete_button": "削除"
+    "delete_button": "削除",
+    "folderWorkspaces": "kubeconfig フォルダーのワークスペース",
+    "folderWorkspacesHint": "サブフォルダーごとに 1 つ、そのファイルのクラスターを含みます。フォルダーに従い、ここでは編集できません。",
+    "fromFolder": "{{path}} から"
   },
   "transfer": {
     "exportTitle": "エクスポート",

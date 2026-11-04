@@ -394,7 +394,12 @@ impl KubeconfigRegistry {
                  cluster's Virtual clusters page",
             ));
         }
-        if self.is_own(source) || writable.contains(&source.id) {
+        // A file of a kubeconfig folder (ADR-0148) is writable when the folder is.
+        let folder_allowed = source
+            .folder
+            .as_ref()
+            .is_some_and(|place| writable.contains(&place.source_id));
+        if self.is_own(source) || writable.contains(&source.id) || folder_allowed {
             return Ok(());
         }
         Err(CoreError::new(

@@ -33,7 +33,9 @@
     "fileDialogTitle": "kubeconfig ファイルを選択",
     "tabs": "追加方法",
     "kubeconfigTab": "Kubeconfig",
-    "cloudTab": "クラウドから"
+    "cloudTab": "クラウドから",
+    "folder": "kubeconfig フォルダーを追加",
+    "folderDialogTitle": "kubeconfig ファイルのフォルダーを選択"
   },
   "paste": {
     "title": "kubeconfig を貼り付け",
@@ -48,7 +50,9 @@
       "env": "KUBECONFIG",
       "addedFile": "追加したファイル",
       "pasted": "貼り付け",
-      "cloud": "クラウド"
+      "cloud": "クラウド",
+      "folder": "フォルダー",
+      "folderFile": "フォルダー内のファイル"
     },
     "remove": "削除",
     "removeNamed": "{{path}} を削除",
@@ -58,7 +62,10 @@
     "problems": "一部の kubeconfig ファイルを読み取れません",
     "problemsTitle": "kubeconfig の問題",
     "problemsHint": "他のファイルのクラスターは引き続き使用できます。ファイルを修正してから「再読み込み」を押してください。",
-    "confirmCloud": "このソースのクラスターは一覧から消え、これらのクラウドクラスター用に Sextant が作成した kubeconfig は削除されます。クラウド CLI と ~/.kube/config には手を加えません。"
+    "confirmCloud": "このソースのクラスターは一覧から消え、これらのクラウドクラスター用に Sextant が作成した kubeconfig は削除されます。クラウド CLI と ~/.kube/config には手を加えません。",
+    "confirmFolder": "そのクラスターは一覧から消えます。フォルダーとファイルはディスクに残ります。",
+    "folderFiles_other": "kubeconfig ファイル {{count}} 個",
+    "folderWorkspaces": "サブフォルダーをワークスペースとして表示"
   },
   "welcome": {
     "loading": "kubeconfig を読み取り中…",

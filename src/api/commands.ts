@@ -157,6 +157,13 @@ export const clusters = {
   sources: () => call<KubeconfigSource[]>("kubeconfig_sources"),
   addFile: (path: string) => call<KubeconfigSource>("kubeconfig_add_file", { path }),
   addPasted: (text: string) => call<KubeconfigSource>("kubeconfig_add_pasted", { text }),
+  /** A folder of kubeconfig files (ADR-0148): its files and those of its subfolders one level down. */
+  addFolder: (path: string) => call<KubeconfigSource>("kubeconfig_add_folder", { path }),
+  /** Whether the folder's subfolders are shown as workspaces. */
+  folderWorkspaces: (sourceId: string, enabled: boolean) =>
+    call<KubeconfigSource>("kubeconfig_folder_workspaces", { sourceId, enabled }),
+  /** Applies the moves of clusters between subfolders the backend found; how many moved. */
+  folderMovesApply: () => call<number>("kubeconfig_folder_moves_apply"),
   removeSource: (sourceId: string) => call<void>("kubeconfig_remove", { sourceId }),
   connect: (clusterId: ClusterId) => call<void>("cluster_connect", { clusterId }),
   disconnect: (clusterId: ClusterId) => call<void>("cluster_disconnect", { clusterId }),

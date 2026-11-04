@@ -17,6 +17,10 @@ const POLICY: Record<SourceKind, SourcePolicy> = {
   merged: { removable: true, confirmKey: "clusters:sources.confirmPasted" },
   // Sextant's own file of forwarded virtual clusters (#269): deleted, its forwards stopped.
   vcluster: { removable: true, confirmKey: "vcluster:source.confirmRemove" },
+  // A kubeconfig folder (ADR-0148) stays on disk; Sextant forgets it and its clusters.
+  folder: { removable: true, confirmKey: "clusters:sources.confirmFolder" },
+  // A file of a folder goes with the folder.
+  folderFile: { removable: false },
 };
 
 /** The translation key of a source kind's label. */
