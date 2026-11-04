@@ -4,7 +4,7 @@ import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CatalogCategory, CatalogEntry, ExtensionInfo } from "../../api";
 import { api } from "../../api";
-import { Badge, Button, ErrorState, LoadingIndicator } from "../../components";
+import { Badge, Button, ErrorState, Icon, LoadingIndicator, type IconName } from "../../components";
 import { formatDateTime, formatNumber } from "../../i18n";
 import { formatBytes } from "../metrics/format";
 import { CATEGORIES, matches, offerOf, repositoryUrl, shownEntries, statusesOf, type CatalogState, type EntryOffer } from "./catalog";
@@ -137,16 +137,29 @@ function OfferControl({ entry, offer, busy, onInstall }: { entry: CatalogEntry; 
         </Button>
       );
     case "installed":
-      return <Badge tone="success">{t("extensions:catalog.installed")}</Badge>;
+      return <OfferState tone="success" icon="installed" text={t("extensions:catalog.installed")} />;
     case "otherSource":
-      return <Badge tone="neutral">{t("extensions:catalog.otherSource")}</Badge>;
+      return <OfferState text={t("extensions:catalog.otherSource")} />;
     case "pinnedElsewhere":
-      return <Badge tone="warning">{t("extensions:catalog.pinnedElsewhere")}</Badge>;
+      return <OfferState tone="warning" icon="warning" text={t("extensions:catalog.pinnedElsewhere")} />;
     case "needsNewer":
-      return <Badge tone="neutral">{t("extensions:catalog.needsNewer", { version: offer.version })}</Badge>;
+      return <OfferState text={t("extensions:catalog.needsNewer", { version: offer.version })} />;
     case "withdrawn":
-      return <Badge tone="danger">{t("extensions:catalog.withdrawn")}</Badge>;
+      return <OfferState tone="danger" icon="warning" text={t("extensions:catalog.withdrawn")} />;
   }
+}
+
+/**
+ * Where a card offers nothing to do (#325): a state at the height and on the line of the buttons beside it, outlined
+ * and in text colours that pass the contrast check in both themes — never a filled chip that looks like a button.
+ */
+function OfferState({ text, tone, icon }: { text: string; tone?: "success" | "warning" | "danger"; icon?: IconName }) {
+  return (
+    <span className="ext-catalog__state" data-tone={tone}>
+      {icon && <Icon name={icon} size={14} />}
+      {text}
+    </span>
+  );
 }
 
 function CatalogEntryCard({ entry, offer, busy, onInstall }: { entry: CatalogEntry; offer: EntryOffer; busy: boolean; onInstall: () => void }) {

@@ -15,6 +15,7 @@ import {
 import { resetAppStore } from "../../app/store";
 import { ExtensionsHost, resetExtensionsStore, resetNotices } from "../../extensions";
 import { resetSettingsUi } from "../settings";
+import { axeViolations } from "../../test/axe";
 import { matches, offerOf, shownEntries, SUPPORTED_API } from "./catalog";
 import { ExtensionsPanel } from "./ExtensionsPanel";
 import "./index";
@@ -75,7 +76,7 @@ const manifest: ExtensionManifest = {
   sextantApi: 1,
   entry: "index.html",
   permissions: { clusters: { type: "all" }, rules: [] },
-  contributes: { pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [], metricQueries: [], sectionBadges: [] },
+  contributes: { pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [], metricQueries: [], sectionBadges: [], commands: [] },
 };
 
 const catalogSource = { type: "catalog" as const, repository: "acme/sextant-quota", keyId: "C0F4B41AA942C166", publicKey: KEY };
@@ -250,6 +251,19 @@ describe("installed catalog extensions", () => {
     fireEvent.click(await within(row).findByRole("button", { name: "Update Quota board to 1.1.0" }));
     await screen.findByRole("dialog", { name: "Install Quota board?" });
     expect(calls("extension_inspect_catalog")[0]?.args).toEqual({ id: "acme.quota" });
+  });
+
+  it("show an installed entry's state as a label at the buttons' height, never as a button (#325)", async () => {
+    list = [installedInfo({ version: "1.1.0" })];
+    view = viewOf({ installed: [{ id: "acme.quota", status: { type: "upToDate" } }] });
+    setup();
+    await openCatalog();
+    const card = await screen.findByRole("listitem", { name: "Quota board" });
+    const state = within(card).getByText("Installed");
+    expect(state).toHaveClass("ext-catalog__state");
+    expect(state).toHaveAttribute("data-tone", "success");
+    expect(within(card).queryByRole("button", { name: "Installed" })).toBeNull();
+    expect(await axeViolations(card)).toEqual([]);
   });
 
   it("say when the publisher's key changed or the entry was withdrawn", async () => {

@@ -145,6 +145,7 @@ import {
   Trash2,
   TrendingUp,
   TriangleAlert,
+  CircleCheck,
   UserCheck,
   UserCog,
   Waves,
@@ -382,6 +383,7 @@ const ICONS = {
   menu: Menu, // ☰
   add: Plus, // +
   warning: TriangleAlert, // !
+  installed: CircleCheck, // ✓ (a state, not an action: an extension installed from the catalog)
   download: Download,
   eye: Eye,
   eyeOff: EyeOff,
