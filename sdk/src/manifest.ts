@@ -14,8 +14,11 @@ export type { ExtensionManifest, KindPattern, DetailsPlacement, MetricParamType,
 /** The file name of the manifest, at the top of the package. */
 export const MANIFEST_FILE = "sextant-extension.json";
 
-/** The newest extension API major version this SDK speaks (`sextantApi`); 2 brought `contributes.problems`. */
-export const SEXTANT_API = 2;
+/**
+ * The newest extension API major version this SDK speaks (`sextantApi`); 2 brought `contributes.problems`, 3
+ * `contributes.sectionBadges`. Every older one stays readable (ADR-0142).
+ */
+export const SEXTANT_API = 3;
 
 /** What an extension may be allowed to do with objects (a subset of the agent's actions). */
 export type ExtensionAction = "read" | "modify" | "delete" | "logs" | "secretValues";
@@ -146,6 +149,17 @@ export interface ManifestContributions {
   problems?: ManifestProblem[];
   /** Metric queries; needs `sextantApi` 2. */
   metricQueries?: ManifestMetricQuery[];
+  /** Problem counters on the extension's own sidebar sections; needs `sextantApi` 3. */
+  sectionBadges?: ManifestSectionBadge[];
+}
+
+/**
+ * A counter on a sidebar section of the extension's own (one of its pages gives the section a `sectionTitle`):
+ * Sextant counts the objects with active problems of `rules` (left out: every rule) and shows the number.
+ */
+export interface ManifestSectionBadge {
+  section: string;
+  rules?: string[];
 }
 
 /** `sextant-extension.json` as written. */
@@ -157,8 +171,8 @@ export interface ManifestFile {
   version: string;
   description: string;
   author: string;
-  /** 1, or 2 for `contributes.problems`, `contributes.metricQueries` and `translations`. */
-  sextantApi: 1 | typeof SEXTANT_API;
+  /** 1; 2 for `contributes.problems`, `contributes.metricQueries` and `translations`; 3 for `contributes.sectionBadges`. */
+  sextantApi: 1 | 2 | typeof SEXTANT_API;
   /** The HTML file every view opens, relative to the package root. */
   entry: string;
   icon?: string;
@@ -207,6 +221,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       dockActions: c.dockActions ?? [],
       problems: (c.problems ?? []).map((p) => ({ ...p, graceMinutes: p.graceMinutes ?? 0, notify: p.notify ?? true })),
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
+      sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [] })),
     },
   };
   if (file.icon !== undefined) manifest.icon = file.icon;

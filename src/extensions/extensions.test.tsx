@@ -9,6 +9,7 @@ import { AppShell } from "../layout/AppShell";
 import { getDetailsSections } from "../layout/details/registry";
 import { getDockActions } from "../layout/dock/registry";
 import { getPage, registerPage, unregisterPage } from "../layout/pages";
+import { getSectionBadge } from "../layout/sectionBadges";
 import { i18n } from "../i18n";
 import { getResourceDef } from "../resources/registry";
 import { registerExtension, syncExtensions, unregisterExtension } from "./contributions";
@@ -58,6 +59,7 @@ const manifest: ExtensionManifest = {
     dockActions: [{ id: "console", title: "Widget console" }],
     problems: [],
     metricQueries: [],
+    sectionBadges: [],
     settings: { title: "Widget settings" },
   },
 };
@@ -474,6 +476,39 @@ describe("contributions of an extension", () => {
     expect(frameOf(container).getAttribute("src")).toBe("sextant-ext://demo.widgets/index.html?view=settings&id=settings");
     const none = render(<ExtensionSettingsFrame extensionId="unknown.ext" />);
     expect(none.container.querySelector("iframe")).toBeNull();
+  });
+
+  it("count problems on a section of their own, never on one of Sextant's", () => {
+    const rule = {
+      id: "broken",
+      title: "Broken widget",
+      kind: { group: "demo.sextant.dev", kind: "Widget" },
+      when: { type: "exists" as const, path: ".status.error" },
+      graceMinutes: 0,
+      notify: true,
+      message: "broken",
+    };
+    registerExtension(
+      info({
+        manifest: {
+          ...manifest,
+          sextantApi: 3,
+          contributes: {
+            ...manifest.contributes,
+            pages: [...manifest.contributes.pages, { id: "list", title: "Widget list", section: "workloads" }],
+            problems: [rule],
+            sectionBadges: [
+              { section: "widgets", rules: [] },
+              { section: "workloads", rules: [] },
+            ],
+          },
+        },
+      }),
+    );
+    expect(getSectionBadge("widgets")).toMatchObject({ tone: "danger", labelKey: "extensions:host.sectionBadge" });
+    expect(getSectionBadge("workloads")).toBeUndefined();
+    unregisterExtension("demo.widgets");
+    expect(getSectionBadge("widgets")).toBeUndefined();
   });
 
   it("are all removed by unregisterExtension and registered only for active extensions", () => {

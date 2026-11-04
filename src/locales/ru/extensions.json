@@ -9,7 +9,11 @@
     "overview": "Обзор",
     "detailsTabs": "Представления подробностей",
     "notice": "{{extension}}: {{text}}",
-    "dismiss": "Скрыть"
+    "dismiss": "Скрыть",
+    "sectionBadge_one": "{{count}} объект требует внимания",
+    "sectionBadge_few": "{{count}} объекта требуют внимания",
+    "sectionBadge_many": "{{count}} объектов требуют внимания",
+    "sectionBadge_other": "{{count}} объекта требуют внимания"
   },
   "install": {
     "file": "Установить из файла…",

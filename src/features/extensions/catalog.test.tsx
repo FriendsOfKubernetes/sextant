@@ -15,7 +15,7 @@ import {
 import { resetAppStore } from "../../app/store";
 import { ExtensionsHost, resetExtensionsStore, resetNotices } from "../../extensions";
 import { resetSettingsUi } from "../settings";
-import { matches, offerOf, shownEntries } from "./catalog";
+import { matches, offerOf, shownEntries, SUPPORTED_API } from "./catalog";
 import { ExtensionsPanel } from "./ExtensionsPanel";
 import "./index";
 
@@ -75,7 +75,7 @@ const manifest: ExtensionManifest = {
   sextantApi: 1,
   entry: "index.html",
   permissions: { clusters: { type: "all" }, rules: [] },
-  contributes: { pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [], metricQueries: [] },
+  contributes: { pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [], metricQueries: [], sectionBadges: [] },
 };
 
 const catalogSource = { type: "catalog" as const, repository: "acme/sextant-quota", keyId: "C0F4B41AA942C166", publicKey: KEY };
@@ -158,7 +158,7 @@ describe("what an entry offers", () => {
     expect(offerOf(entry, undefined, undefined)).toEqual({ kind: "install" });
     // Every API version this Sextant reads installs; only a newer one asks for a newer Sextant.
     expect(offerOf(catalogEntry({ latest: { ...entry.latest!, sextantApi: 2 } }), undefined, undefined)).toEqual({ kind: "install" });
-    expect(offerOf(catalogEntry({ latest: { ...entry.latest!, sextantApi: 3 } }), undefined, undefined)).toEqual({ kind: "needsNewer", version: "1.1.0" });
+    expect(offerOf(catalogEntry({ latest: { ...entry.latest!, sextantApi: SUPPORTED_API + 1 } }), undefined, undefined)).toEqual({ kind: "needsNewer", version: "1.1.0" });
     expect(offerOf(entry, installedInfo(), status({ type: "updateAvailable", version: "1.1.0" }))).toEqual({ kind: "update", version: "1.1.0" });
     expect(offerOf(entry, installedInfo(), status({ type: "upToDate" }))).toEqual({ kind: "installed" });
     expect(offerOf(entry, installedInfo(), status({ type: "keyChanged" }))).toEqual({ kind: "pinnedElsewhere" });

@@ -9,7 +9,10 @@
     "overview": "Panoramica",
     "detailsTabs": "Viste dei dettagli",
     "notice": "{{extension}}: {{text}}",
-    "dismiss": "Ignora"
+    "dismiss": "Ignora",
+    "sectionBadge_one": "{{count}} oggetto richiede attenzione",
+    "sectionBadge_many": "{{count}} di oggetti richiedono attenzione",
+    "sectionBadge_other": "{{count}} oggetti richiedono attenzione"
   },
   "install": {
     "file": "Installa da file…",

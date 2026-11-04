@@ -126,6 +126,16 @@ export function useProblemCount(clusterId: ClusterId): number {
   return useClusterProblems(clusterId, useCategoriesOn(categories)).active.filter((p) => p.notify).length;
 }
 
+/**
+ * The counter of an extension's own sidebar section (`contributes.sectionBadges`, ADR-0143): the objects with active
+ * problems of the extension's category, of `rules` only when it names some (a problem's `group` is its rule's id).
+ */
+export function useExtensionSectionCount(clusterId: ClusterId, category: ProblemCategory, rules: readonly string[]): number {
+  const categories = useMemo(() => [category], [category]);
+  const active = useClusterProblems(clusterId, categories).active;
+  return new Set(active.filter((p) => rules.length === 0 || rules.includes(p.group ?? "")).map((p) => p.uid)).size;
+}
+
 const EMPTY: readonly string[] = [];
 
 /**

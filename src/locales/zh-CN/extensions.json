@@ -9,7 +9,8 @@
     "overview": "概览",
     "detailsTabs": "详细信息视图",
     "notice": "{{extension}}：{{text}}",
-    "dismiss": "关闭"
+    "dismiss": "关闭",
+    "sectionBadge_other": "{{count}} 个对象需要关注"
   },
   "install": {
     "file": "从文件安装…",

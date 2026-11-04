@@ -10,7 +10,7 @@ import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../detai
 import { resetNamespaceRestore } from "../namespaces";
 import { resetNotifier } from "../notifications/notifier";
 import { registerExtensionProblems } from "./extensionCategories";
-import { useProblemCount } from "./hooks";
+import { useExtensionSectionCount, useProblemCount } from "./hooks";
 import "./index";
 import { ProblemsPage } from "./ProblemsPage";
 import { acquireSource, getSource, resetProblemSources } from "./store";
@@ -122,6 +122,20 @@ describe("problems of extensions", () => {
     const { result } = renderHook(() => useProblemCount("c1"));
     emitSnapshot(wb, await watchOf(wb, "CephCluster"), [ceph("HEALTH_ERR")]);
     await waitFor(() => expect(result.current).toBe(1));
+  });
+
+  it("count on the extension's own section: objects with problems of every rule, or of the rules it names", async () => {
+    unregister = registerExtensionProblems("rook-ceph-ext", "Rook Ceph", [
+      ...RULES,
+      { ...RULES[0]!, id: "health-error-again", title: "Ceph health error, again" },
+      { ...RULES[0]!, id: "warn", title: "Ceph health warning", when: { type: "equals", path: ".status.ceph.health", value: "HEALTH_WARN" } },
+    ]);
+    const every = renderHook(() => useExtensionSectionCount("c1", "ext:rook-ceph-ext", []));
+    const warnings = renderHook(() => useExtensionSectionCount("c1", "ext:rook-ceph-ext", ["warn"]));
+    emitSnapshot(wb, await watchOf(wb, "CephCluster"), [ceph("HEALTH_ERR")]);
+    // Two rules hold for the one cluster: it counts once.
+    await waitFor(() => expect(every.result.current).toBe(1));
+    expect(warnings.result.current).toBe(0);
   });
 
   it("run nowhere when Rust says the extension may read nothing there", async () => {

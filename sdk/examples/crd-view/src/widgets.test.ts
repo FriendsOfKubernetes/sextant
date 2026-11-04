@@ -1,5 +1,6 @@
 import { startTestHost, type TestHost, type TestHostOptions } from "@sextant/extension-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
+import { startList } from "./list";
 import { startScale } from "./scale";
 import { startSettings } from "./settings";
 import { startSummary } from "./summary";
@@ -140,5 +141,25 @@ describe("settings section", () => {
     button("Reset").click();
     await expect.poll(() => host.storage.has("scale")).toBe(false);
     expect(input("Step").value).toBe("1");
+  });
+});
+
+describe("page", () => {
+  it("lists the widgets of the selected namespaces live and opens one", async () => {
+    host = await startTestHost({ context: { view: "page", contribution: "widgets", namespaces: ["sextant-demo"] } });
+    root = document.createElement("main");
+    document.body.append(root);
+    startList(host.sextant, root);
+    await expect.poll(() => host.watches.length).toBe(1);
+    expect(host.watches[0]!.params).toMatchObject({ kind: { group: "demo.sextant.dev", kind: "Widget" }, namespaces: ["sextant-demo"] });
+    host.watches[0]!.emit({ type: "snapshot", items: [widget(0)] });
+    expect(root.textContent).toContain("1 widget");
+    expect(root.querySelector("td.bad")?.textContent).toBe("0");
+    button("demo-widget").click();
+    await expect.poll(() => host.calls.find((c) => c.method === "ui.openDetails")?.params).toEqual({
+      kind: { group: "demo.sextant.dev", kind: "Widget" },
+      namespace: "sextant-demo",
+      name: "demo-widget",
+    });
   });
 });

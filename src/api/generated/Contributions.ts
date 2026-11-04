@@ -6,6 +6,7 @@ import type { DockActionContribution } from "./DockActionContribution";
 import type { MetricQuery } from "./MetricQuery";
 import type { PageContribution } from "./PageContribution";
 import type { ProblemContribution } from "./ProblemContribution";
+import type { SectionBadgeContribution } from "./SectionBadgeContribution";
 import type { SettingsContribution } from "./SettingsContribution";
 
 /**
@@ -19,4 +20,8 @@ problems: Array<ProblemContribution>,
 /**
  * Prometheus-compatible queries the extension runs by id (ADR-0138); `sextantApi` 2.
  */
-metricQueries: Array<MetricQuery>, };
+metricQueries: Array<MetricQuery>, 
+/**
+ * Problem counters on the extension's own sidebar sections (ADR-0143); `sextantApi` 3.
+ */
+sectionBadges: Array<SectionBadgeContribution>, };

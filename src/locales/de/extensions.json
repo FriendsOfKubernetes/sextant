@@ -9,7 +9,9 @@
     "overview": "Übersicht",
     "detailsTabs": "Detailansichten",
     "notice": "{{extension}}: {{text}}",
-    "dismiss": "Ausblenden"
+    "dismiss": "Ausblenden",
+    "sectionBadge_one": "{{count}} Objekt erfordert Aufmerksamkeit",
+    "sectionBadge_other": "{{count}} Objekte erfordern Aufmerksamkeit"
   },
   "install": {
     "file": "Aus Datei installieren…",

@@ -290,7 +290,7 @@ fn an_installed_catalog_extension_is_judged_against_its_pinned_repository_and_ke
         Some(CatalogStatus::UpToDate)
     );
     let newer_api = with_entry(|e| {
-        e["latest"]["sextantApi"] = json!(3);
+        e["latest"]["sextantApi"] = json!(crate::extensions::manifest::SUPPORTED_API + 1);
     });
     assert_eq!(
         status_of(&installed("0.9.0", pinned.clone()), &newer_api),

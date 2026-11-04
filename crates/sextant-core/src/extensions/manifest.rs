@@ -14,6 +14,7 @@ use super::metric_queries::{self, MetricQuery};
 use super::permissions::ExtensionPermissions;
 use super::problems::{self, ProblemContribution};
 use super::schema::{self, JsonPath};
+use super::section_badges::{self, SectionBadgeContribution};
 use super::translations;
 use crate::access::KindPattern;
 use crate::error::{CoreError, ErrorCode};
@@ -22,8 +23,8 @@ use crate::error::{CoreError, ErrorCode};
 pub const MANIFEST_FILE: &str = "sextant-extension.json";
 
 /// The newest extension API major version this Sextant implements (`sextantApi`); 2 brought `contributes.problems`
-/// (ADR-0137).
-pub const SUPPORTED_API: u32 = 2;
+/// (ADR-0137), 3 `contributes.sectionBadges` (ADR-0143).
+pub const SUPPORTED_API: u32 = 3;
 /// The oldest one it still reads: every extension once accepted keeps working (ADR-0142).
 pub const MIN_API: u32 = 1;
 
@@ -143,6 +144,8 @@ pub struct Contributions {
     pub problems: Vec<ProblemContribution>,
     /// Prometheus-compatible queries the extension runs by id (ADR-0138); `sextantApi` 2.
     pub metric_queries: Vec<MetricQuery>,
+    /// Problem counters on the extension's own sidebar sections (ADR-0143); `sextantApi` 3.
+    pub section_badges: Vec<SectionBadgeContribution>,
 }
 
 /// A page in the cluster's sidebar (`view=page`).
@@ -283,6 +286,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     problems::check_problems(&manifest)?;
     metric_queries::check_metric_queries(&manifest)?;
     translations::check_translations(&manifest)?;
+    section_badges::check_section_badges(&manifest)?;
     Ok(manifest)
 }
 
@@ -942,7 +946,7 @@ mod tests {
 
     #[test]
     fn an_unsupported_api_version_is_its_own_error() {
-        for api in [0, 3, 99] {
+        for api in [0, 4, 99] {
             // Even with fields this Sextant does not know: the version is the reason.
             let value = with(
                 with(minimal(), "/sextantApi", json!(api)),
@@ -1406,7 +1410,7 @@ mod tests {
         let rejected = [
             with(minimal(), "/extra", json!(1)),
             without(minimal(), "/entry"),
-            with(minimal(), "/sextantApi", json!(3)),
+            with(minimal(), "/sextantApi", json!(4)),
             with(minimal(), "/id", json!("Bad Id")),
             with(full(), "/permissions/rules/0/actions", json!(["exec"])),
             with(full(), "/contributes/columns/0/jsonPath", json!("nope")),

@@ -9,7 +9,11 @@
     "overview": "Przegląd",
     "detailsTabs": "Widoki szczegółów",
     "notice": "{{extension}}: {{text}}",
-    "dismiss": "Odrzuć"
+    "dismiss": "Odrzuć",
+    "sectionBadge_one": "{{count}} obiekt wymaga uwagi",
+    "sectionBadge_few": "{{count}} obiekty wymagają uwagi",
+    "sectionBadge_many": "{{count}} obiektów wymaga uwagi",
+    "sectionBadge_other": "{{count}} obiektu wymaga uwagi"
   },
   "install": {
     "file": "Zainstaluj z pliku…",

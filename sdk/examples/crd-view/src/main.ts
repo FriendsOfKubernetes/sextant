@@ -1,4 +1,5 @@
 import { connect } from "@sextant/extension-sdk";
+import { startList } from "./list";
 import { startScale } from "./scale";
 import { startSettings } from "./settings";
 import { startSummary } from "./summary";
@@ -7,6 +8,9 @@ import { startSummary } from "./summary";
 const sextant = await connect();
 const root = document.getElementById("app")!;
 switch (sextant.context.view) {
+  case "page":
+    startList(sextant, root);
+    break;
   case "details":
     document.body.classList.add("compact");
     startSummary(sextant, root);

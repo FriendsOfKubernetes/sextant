@@ -9,7 +9,8 @@
     "overview": "개요",
     "detailsTabs": "세부 정보 보기",
     "notice": "{{extension}}: {{text}}",
-    "dismiss": "닫기"
+    "dismiss": "닫기",
+    "sectionBadge_other": "주의가 필요한 개체 {{count}}개"
   },
   "install": {
     "file": "파일에서 설치…",

@@ -9,8 +9,8 @@ import { fileURLToPath } from "node:url";
 import { TextDecoder, TextEncoder } from "node:util";
 
 export const MANIFEST_FILE = "sextant-extension.json";
-/** The newest extension API Sextant implements; 2 brought `contributes.problems` (ADR-0137). */
-export const SUPPORTED_API = 2;
+/** The newest extension API Sextant implements; 2 brought `contributes.problems` (ADR-0137), 3 `contributes.sectionBadges` (ADR-0143). */
+export const SUPPORTED_API = 3;
 /** The oldest one it still reads: every extension once accepted keeps working (ADR-0142). */
 export const MIN_API = 1;
 export const MAX_MANIFEST_BYTES = 256 * 1024;
@@ -627,6 +627,31 @@ function checkProblems(manifest) {
   });
 }
 
+// --- Section counters (`check_section_badges` in crates/sextant-core/src/extensions/section_badges.rs) ------------
+
+const SECTION_BADGES_API = 3;
+
+function checkSectionBadges(manifest) {
+  const badges = manifest.contributes?.sectionBadges ?? [];
+  const list = ["contributes", "sectionBadges"];
+  if (badges.length === 0) return;
+  if (manifest.sextantApi < SECTION_BADGES_API) fail(list, `needs sextantApi ${SECTION_BADGES_API} or later`);
+  const rules = manifest.contributes?.problems ?? [];
+  if (rules.length === 0) fail(list, "counts problems: needs `contributes.problems`");
+  const pages = manifest.contributes?.pages ?? [];
+  badges.forEach((badge, i) => {
+    const here = [...list, i];
+    if (!pages.some((page) => page.section === badge.section && page.sectionTitle !== undefined)) {
+      fail([...here, "section"], "must be a section of the extension's own: one of its pages with this section has a `sectionTitle`");
+    }
+    const first = badges.slice(0, i).findIndex((other) => other.section === badge.section);
+    if (first >= 0) fail([...here, "section"], `duplicate section (also ${pathText([...list, first])})`);
+    (badge.rules ?? []).forEach((rule, j) => {
+      if (!rules.some((r) => r.id === rule)) fail([...here, "rules", j], "is not the id of one of `contributes.problems`");
+    });
+  });
+}
+
 // --- Metric queries (`check_metric_queries` in crates/sextant-core/src/extensions/metric_queries.rs) -------------
 
 const METRIC_QUERIES_API = 2;
@@ -796,6 +821,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     checkProblems(value);
     checkMetricQueries(value);
     checkTranslations(value);
+    checkSectionBadges(value);
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };

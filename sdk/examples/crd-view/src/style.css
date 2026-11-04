@@ -47,3 +47,17 @@ label {
 .saved {
   color: var(--color-success);
 }
+.muted {
+  color: var(--color-text-muted);
+}
+td button.link {
+  height: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+td.bad {
+  color: var(--color-danger);
+}

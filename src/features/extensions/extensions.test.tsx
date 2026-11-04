@@ -56,6 +56,7 @@ const manifest: ExtensionManifest = {
     dockActions: [],
     problems: [],
     metricQueries: [],
+    sectionBadges: [],
     settings: { title: "Widget settings" },
   },
 };

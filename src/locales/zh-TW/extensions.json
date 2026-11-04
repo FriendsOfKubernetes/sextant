@@ -9,7 +9,8 @@
     "overview": "概觀",
     "detailsTabs": "詳細資料檢視",
     "notice": "{{extension}}：{{text}}",
-    "dismiss": "關閉"
+    "dismiss": "關閉",
+    "sectionBadge_other": "{{count}} 個物件需要注意"
   },
   "install": {
     "file": "從檔案安裝…",

@@ -9,7 +9,10 @@
     "overview": "Resumen",
     "detailsTabs": "Vistas de detalles",
     "notice": "{{extension}}: {{text}}",
-    "dismiss": "Descartar"
+    "dismiss": "Descartar",
+    "sectionBadge_one": "{{count}} objeto requiere atención",
+    "sectionBadge_many": "{{count}} de objetos requieren atención",
+    "sectionBadge_other": "{{count}} objetos requieren atención"
   },
   "install": {
     "file": "Instalar desde archivo…",

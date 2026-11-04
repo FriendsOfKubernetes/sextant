@@ -700,7 +700,8 @@
           }
         }
       }
-    }
+    },
+    {"name": "section counters (sextantApi 3), of every rule and of named rules", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/sectionBadges": [{"section": "ceph"}, {"section": "pools", "rules": ["health-error"]}], "/contributes/pages": [{"id": "overview", "title": "Overview", "section": "ceph", "sectionTitle": "Ceph"}, {"id": "pools", "title": "Pools", "section": "pools", "sectionTitle": "Pools"}], "/contributes/problems": [{"id": "health-error", "title": "Ceph health error", "kind": {"group": "ceph.rook.io", "kind": "CephCluster"}, "when": {"type": "equals", "path": ".status.ceph.health", "value": "HEALTH_ERR"}, "message": "Ceph reports {{.status.ceph.health}}"}]}}
   ],
   "invalid": [
     {
@@ -1613,10 +1614,10 @@
       "message": "supports 1"
     },
     {
-      "name": "sextantApi 3 with an unknown field",
+      "name": "sextantApi 4 with an unknown field",
       "base": "minimal",
       "set": {
-        "/sextantApi": 3,
+        "/sextantApi": 4,
         "/futureField": true
       },
       "path": "sextantApi",
@@ -3416,6 +3417,12 @@
       },
       "path": "translations",
       "message": "must have at most 30 entries"
-    }
+    },
+    {"name": "a section counter under sextantApi 2", "base": "minimal", "set": {"/sextantApi": 2, "/contributes/sectionBadges": [{"section": "ceph"}], "/contributes/pages": [{"id": "overview", "title": "Overview", "section": "ceph", "sectionTitle": "Ceph"}], "/contributes/problems": [{"id": "health-error", "title": "Ceph health error", "kind": {"group": "ceph.rook.io", "kind": "CephCluster"}, "when": {"type": "equals", "path": ".status.ceph.health", "value": "HEALTH_ERR"}, "message": "Ceph reports {{.status.ceph.health}}"}]}, "path": "contributes.sectionBadges", "message": "needs sextantApi 3"},
+    {"name": "a section counter without problem rules", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/sectionBadges": [{"section": "ceph"}], "/contributes/pages": [{"id": "overview", "title": "Overview", "section": "ceph", "sectionTitle": "Ceph"}]}, "path": "contributes.sectionBadges", "message": "needs `contributes.problems`"},
+    {"name": "a section counter on a section no page of the extension titles", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/sectionBadges": [{"section": "workloads"}], "/contributes/pages": [{"id": "overview", "title": "Overview", "section": "workloads"}], "/contributes/problems": [{"id": "health-error", "title": "Ceph health error", "kind": {"group": "ceph.rook.io", "kind": "CephCluster"}, "when": {"type": "equals", "path": ".status.ceph.health", "value": "HEALTH_ERR"}, "message": "Ceph reports {{.status.ceph.health}}"}]}, "path": "contributes.sectionBadges[0].section", "message": "section of the extension's own"},
+    {"name": "two section counters on one section", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/sectionBadges": [{"section": "ceph"}, {"section": "ceph"}], "/contributes/pages": [{"id": "overview", "title": "Overview", "section": "ceph", "sectionTitle": "Ceph"}], "/contributes/problems": [{"id": "health-error", "title": "Ceph health error", "kind": {"group": "ceph.rook.io", "kind": "CephCluster"}, "when": {"type": "equals", "path": ".status.ceph.health", "value": "HEALTH_ERR"}, "message": "Ceph reports {{.status.ceph.health}}"}]}, "path": "contributes.sectionBadges[1].section", "message": "duplicate section"},
+    {"name": "a section counter of a rule the extension does not have", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/sectionBadges": [{"section": "ceph", "rules": ["no-such-rule"]}], "/contributes/pages": [{"id": "overview", "title": "Overview", "section": "ceph", "sectionTitle": "Ceph"}], "/contributes/problems": [{"id": "health-error", "title": "Ceph health error", "kind": {"group": "ceph.rook.io", "kind": "CephCluster"}, "when": {"type": "equals", "path": ".status.ceph.health", "value": "HEALTH_ERR"}, "message": "Ceph reports {{.status.ceph.health}}"}]}, "path": "contributes.sectionBadges[0].rules[0]", "message": "is not the id of one of"},
+    {"name": "a section counter with an unknown field", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/sectionBadges": [{"section": "ceph", "tone": "warning"}], "/contributes/pages": [{"id": "overview", "title": "Overview", "section": "ceph", "sectionTitle": "Ceph"}], "/contributes/problems": [{"id": "health-error", "title": "Ceph health error", "kind": {"group": "ceph.rook.io", "kind": "CephCluster"}, "when": {"type": "equals", "path": ".status.ceph.health", "value": "HEALTH_ERR"}, "message": "Ceph reports {{.status.ceph.health}}"}]}, "path": "contributes.sectionBadges[0].tone", "message": "unknown field"}
   ]
 }

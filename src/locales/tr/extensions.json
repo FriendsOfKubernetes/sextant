@@ -9,7 +9,9 @@
     "overview": "Genel bakış",
     "detailsTabs": "Ayrıntı görünümleri",
     "notice": "{{extension}}: {{text}}",
-    "dismiss": "Kapat"
+    "dismiss": "Kapat",
+    "sectionBadge_one": "{{count}} nesne ilgi gerektiriyor",
+    "sectionBadge_other": "{{count}} nesne ilgi gerektiriyor"
   },
   "install": {
     "file": "Dosyadan yükle…",

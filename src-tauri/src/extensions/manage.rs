@@ -986,14 +986,19 @@ mod tests {
             host.inspect_file(&bad).unwrap_err().code,
             ErrorCode::Invalid
         );
-        let api3 = manifest("widgets", "1.0.0", read_all())
-            .replace("\"sextantApi\":1", "\"sextantApi\":3");
+        let newer = manifest("widgets", "1.0.0", read_all()).replace(
+            "\"sextantApi\":1",
+            &format!(
+                "\"sextantApi\":{}",
+                sextant_core::extensions::SUPPORTED_API + 1
+            ),
+        );
         let zip = stored_zip(&[
-            ("sextant-extension.json", api3.as_bytes()),
+            ("sextant-extension.json", newer.as_bytes()),
             ("index.html", b"x"),
         ]);
-        let api3 = write_package(dir.path(), "api3.zip", zip);
-        let err = host.inspect_file(&api3).unwrap_err();
+        let newer = write_package(dir.path(), "newer-api.zip", zip);
+        let err = host.inspect_file(&newer).unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid);
         assert!(err.message.contains("sextantApi"), "{}", err.message);
         assert_eq!(

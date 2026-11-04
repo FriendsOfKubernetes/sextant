@@ -13,7 +13,8 @@ import type { ActionContribution, ExtensionInfo, KindPattern, KindRef, KubeObjec
 import { useAppStore } from "../app/store";
 import { Dialog, isIconName, type IconName } from "../components";
 import { registerAction, type ActionContext } from "../features/actions/registry";
-import { registerExtensionProblems } from "../features/problems/extensionCategories";
+import { categoryOfExtension, registerExtensionProblems } from "../features/problems/extensionCategories";
+import { useExtensionSectionCount } from "../features/problems/hooks";
 import { registerDetailsSection, unregisterDetailsSection, type DetailsSectionProps } from "../layout/details/registry";
 import {
   getDockTabComponent,
@@ -24,8 +25,9 @@ import {
   type DockTabProps,
 } from "../layout/dock/registry";
 import { getPage, registerPage, unregisterPage, type PageProps } from "../layout/pages";
+import { getSectionBadge, registerSectionBadge } from "../layout/sectionBadges";
 import { evalJsonPath, formatJsonPathValues } from "../resources/jsonpath";
-import { DEFAULT_ENTRY_ICON, extendActions, extendColumns } from "../resources/registry";
+import { DEFAULT_ENTRY_ICON, extendActions, extendColumns, SIDEBAR_SECTIONS } from "../resources/registry";
 import { ExtensionFrame } from "./ExtensionFrame";
 import { contributionKey, VIEW } from "./protocol";
 
@@ -126,6 +128,20 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
   // Rust for the kinds the user agreed to.
   if (contributes.problems.length > 0) {
     removers.push(registerExtensionProblems(extensionId, info.name, contributes.problems));
+  }
+
+  // Counters on the extension's own sections (ADR-0143): the problems of its own rules, counted by the window. Never on
+  // a section of Sextant's, nor on one another extension already counts.
+  for (const badge of contributes.sectionBadges) {
+    if ((SIDEBAR_SECTIONS as readonly string[]).includes(badge.section) || getSectionBadge(badge.section)) continue;
+    const category = categoryOfExtension(extensionId);
+    const rules = badge.rules;
+    removers.push(
+      registerSectionBadge(badge.section, (clusterId) => useExtensionSectionCount(clusterId, category, rules), {
+        tone: "danger",
+        labelKey: "extensions:host.sectionBadge",
+      }),
+    );
   }
 
   for (const page of contributes.pages) {

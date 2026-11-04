@@ -9,7 +9,9 @@
     "overview": "Overview",
     "detailsTabs": "Details views",
     "notice": "{{extension}}: {{text}}",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "sectionBadge_one": "{{count}} object needs attention",
+    "sectionBadge_other": "{{count}} objects need attention"
   },
   "install": {
     "file": "Install from file…",

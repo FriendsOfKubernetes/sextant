@@ -15,6 +15,7 @@ import type {
   ManifestPermissions,
   ManifestProblem,
   ManifestRule,
+  ManifestSectionBadge,
   ManifestSettings,
 } from "../src/manifest";
 
@@ -72,6 +73,11 @@ export const MANIFEST_SHAPES = {
     settings: "optional",
     problems: "optional",
     metricQueries: "optional",
+    sectionBadges: "optional",
+  }),
+  ManifestSectionBadge: described<ManifestSectionBadge>(`${CONTRIBUTION}/sectionBadges/items`, {
+    section: "required",
+    rules: "optional",
   }),
   ManifestMetricQuery: described<ManifestMetricQuery>(`${CONTRIBUTION}/metricQueries/items`, {
     id: "required",
