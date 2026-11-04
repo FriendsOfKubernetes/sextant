@@ -14,6 +14,8 @@ import {
   CEPH_NFS,
   CEPH_OBJECT_STORE,
   CEPH_OBJECT_STORE_USER,
+  CEPH_RADOS_NAMESPACE,
+  CEPH_SUBVOLUME_GROUP,
   healthChecks,
   OBJECT_BUCKET_CLAIM,
   phaseTone,
@@ -35,6 +37,8 @@ const LISTS = {
   objectStores: CEPH_OBJECT_STORE,
   nfs: CEPH_NFS,
   clients: CEPH_CLIENT,
+  radosNamespaces: CEPH_RADOS_NAMESPACE,
+  subvolumeGroups: CEPH_SUBVOLUME_GROUP,
   users: CEPH_OBJECT_STORE_USER,
   buckets: OBJECT_BUCKET_CLAIM,
   classes: STORAGE_CLASS,
@@ -42,7 +46,7 @@ const LISTS = {
 } as const;
 type ListName = keyof typeof LISTS;
 /** Lists that follow the namespace filter. */
-const FILTERED: readonly ListName[] = ["clusters", "pools", "filesystems", "objectStores", "nfs", "clients", "users"];
+const FILTERED: readonly ListName[] = ["clusters", "pools", "filesystems", "objectStores", "nfs", "clients", "radosNamespaces", "subvolumeGroups", "users"];
 
 /** Health checks named on a cluster's card; the rest are in its details. */
 export const CARD_CHECKS = 3;
@@ -157,6 +161,8 @@ export function pageView(sextant: Sextant, lists: Record<ListName, LiveList>, no
     ...lists.nfs.items.map((o) => ({ object: o, kind: CEPH_NFS })),
     ...lists.users.items.map((o) => ({ object: o, kind: CEPH_OBJECT_STORE_USER })),
     ...lists.clients.items.map((o) => ({ object: o, kind: CEPH_CLIENT })),
+    ...lists.radosNamespaces.items.map((o) => ({ object: o, kind: CEPH_RADOS_NAMESPACE })),
+    ...lists.subvolumeGroups.items.map((o) => ({ object: o, kind: CEPH_SUBVOLUME_GROUP })),
   ];
   if (others.length) parts.push(element("h2", { textContent: t("page.othersTitle") }), phaseTable(sextant, others));
 

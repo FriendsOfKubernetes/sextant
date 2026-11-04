@@ -279,10 +279,12 @@ input[type="checkbox"] {
 }
 .preview summary,
 .create summary,
-.remove-osd summary {
+.remove-osd summary,
+.ceph-osd summary {
   cursor: pointer;
 }
-.preview pre {
+.preview pre,
+.command-output pre {
   max-height: 280px;
   overflow: auto;
   margin: 4px 0 0;
@@ -294,7 +296,8 @@ input[type="checkbox"] {
   white-space: pre;
 }
 .create,
-.remove-osd {
+.remove-osd,
+.ceph-osd {
   margin: 8px 0;
   padding: 8px 12px;
   border: 1px solid var(--color-border);
@@ -331,4 +334,39 @@ input::placeholder {
   color: var(--color-text-muted);
   font-style: italic;
   opacity: 0.7;
+}
+
+/* The Ceph commands tab and the ceph controls of an OSD. */
+.ceph-osd {
+  display: inline-block;
+  margin: 2px 0;
+  padding: 2px 8px;
+}
+.ceph-osd select {
+  height: var(--control-height-compact, 28px);
+}
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.command-output {
+  margin: 8px 0;
+}
+.command-output figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.command-output pre {
+  max-height: 480px;
+}
+.flag-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 4px 0;
 }

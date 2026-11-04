@@ -1,5 +1,6 @@
 import { connect } from "@sextant/extension-sdk";
 import { startAction } from "./actions";
+import { startCommands } from "./commandsView";
 import { startDaemons } from "./daemons";
 import { setLanguage, t } from "./i18n";
 import { startMetrics } from "./metrics";
@@ -24,6 +25,7 @@ function start(): () => void {
   if (view === "page") return startPage(sextant, root);
   if (view === "details" && contribution === "status") return startStatus(sextant, root);
   if (view === "details" && contribution === "daemons") return startDaemons(sextant, root);
+  if (view === "details" && contribution === "commands") return startCommands(sextant, root);
   if (view === "details" && contribution === "metrics") return startMetrics(sextant, root);
   if (view === "details" && contribution === "storage") return startStorage(sextant, root);
   if (view === "details" && contribution === "osds") return startOsds(sextant, root);

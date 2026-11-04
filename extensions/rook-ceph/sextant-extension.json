@@ -2,10 +2,10 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.rook-ceph",
   "name": "Rook Ceph",
-  "version": "1.1.1",
-  "description": "Rook Ceph clusters: Ceph health and its checks in plain words, capacity, daemons, the CRUSH tree and OSDs, pools, filesystems and object stores with their storage classes and claims, charts and problems; and managing them through Rook's own objects, every change shown first and confirmed.",
+  "version": "1.2.0",
+  "description": "Rook Ceph clusters: Ceph health and its checks in plain words, capacity, daemons, the CRUSH tree and OSDs, pools, filesystems and object stores with their storage classes and claims, charts and problems; managing them through Rook's own objects and through ceph commands in Rook's toolbox fixed in this manifest, every change shown first and confirmed.",
   "author": "Sextant",
-  "sextantApi": 2,
+  "sextantApi": 3,
   "entry": "index.html",
   "icon": "storage",
   "permissions": {
@@ -47,6 +47,14 @@
             {
               "group": "ceph.rook.io",
               "kind": "CephClient"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephBlockPoolRadosNamespace"
+            },
+            {
+              "group": "ceph.rook.io",
+              "kind": "CephFilesystemSubVolumeGroup"
             },
             {
               "group": "objectbucket.io",
@@ -185,8 +193,14 @@
       {
         "id": "overview",
         "title": "Rook Ceph",
-        "section": "storage",
+        "section": "rookCeph",
+        "sectionTitle": "Rook Ceph",
         "icon": "storage"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "rookCeph"
       }
     ],
     "detailsSections": [
@@ -213,6 +227,18 @@
         ],
         "placement": "tab",
         "order": 10
+      },
+      {
+        "id": "commands",
+        "title": "Ceph commands",
+        "kinds": [
+          {
+            "group": "ceph.rook.io",
+            "kind": "CephCluster"
+          }
+        ],
+        "placement": "tab",
+        "order": 30
       },
       {
         "id": "metrics",
@@ -527,6 +553,142 @@
         },
         "graceMinutes": 10,
         "message": "Rook has reported no phase for 10 minutes: is the Rook operator running?"
+      },
+      {
+        "id": "osd-prepare-failed",
+        "title": "OSD prepare Job failed",
+        "kind": {
+          "group": "batch",
+          "kind": "Job"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".metadata.labels.app",
+              "value": "rook-ceph-osd-prepare"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Failed",
+              "status": "True"
+            }
+          ]
+        },
+        "message": "The OSD prepare Job {{.metadata.name}} failed: Rook could not prepare a disk there as an OSD; the log of its pod tells why"
+      },
+      {
+        "id": "osd-purge-failed",
+        "title": "OSD purge Job failed",
+        "kind": {
+          "group": "batch",
+          "kind": "Job"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".metadata.labels.app",
+              "value": "rook-ceph-purge-osd"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Failed",
+              "status": "True"
+            }
+          ]
+        },
+        "message": "The OSD purge Job {{.metadata.name}} failed: Rook does not remove an OSD that is not safe to destroy; the log of its pod tells why"
+      },
+      {
+        "id": "daemon-unavailable",
+        "title": "Ceph daemon unavailable",
+        "kind": {
+          "group": "apps",
+          "kind": "Deployment"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "exists",
+              "path": ".metadata.labels.rook_cluster"
+            },
+            {
+              "type": "above",
+              "path": ".status.unavailableReplicas",
+              "value": 0
+            }
+          ]
+        },
+        "graceMinutes": 10,
+        "toldThroughOwner": true,
+        "message": "{{.metadata.name}} has {{.status.unavailableReplicas}} unavailable replicas"
+      },
+      {
+        "id": "object-user-store-missing",
+        "title": "Object store of the user missing",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephObjectStoreUser"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".spec.clusterNamespace"
+            },
+            {
+              "type": "missing",
+              "path": ".spec.store",
+              "kind": {
+                "group": "ceph.rook.io",
+                "kind": "CephObjectStore"
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "message": "The object store {{.spec.store}} this user names is not in its namespace"
+      },
+      {
+        "id": "subvolume-group-filesystem-missing",
+        "title": "Filesystem of the subvolume group missing",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephFilesystemSubVolumeGroup"
+        },
+        "when": {
+          "type": "missing",
+          "path": ".spec.filesystemName",
+          "kind": {
+            "group": "ceph.rook.io",
+            "kind": "CephFilesystem"
+          }
+        },
+        "graceMinutes": 2,
+        "message": "The filesystem {{.spec.filesystemName}} this subvolume group names is not in its namespace"
+      },
+      {
+        "id": "rados-namespace-pool-missing",
+        "title": "Pool of the RADOS namespace missing",
+        "kind": {
+          "group": "ceph.rook.io",
+          "kind": "CephBlockPoolRadosNamespace"
+        },
+        "when": {
+          "type": "missing",
+          "path": ".spec.blockPoolName",
+          "kind": {
+            "group": "ceph.rook.io",
+            "kind": "CephBlockPool"
+          }
+        },
+        "graceMinutes": 2,
+        "message": "The block pool {{.spec.blockPoolName}} this RADOS namespace names is not in its namespace"
       }
     ],
     "metricQueries": [
@@ -597,17 +759,343 @@
           }
         ]
       }
+    ],
+    "commands": [
+      {
+        "id": "status",
+        "title": "Ceph status",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "status"
+        ]
+      },
+      {
+        "id": "health-detail",
+        "title": "Health checks in detail",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "health",
+          "detail"
+        ]
+      },
+      {
+        "id": "osd-tree",
+        "title": "OSD tree",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "osd",
+          "tree"
+        ]
+      },
+      {
+        "id": "osd-df",
+        "title": "OSD usage by CRUSH tree",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "osd",
+          "df",
+          "tree"
+        ]
+      },
+      {
+        "id": "df",
+        "title": "Raw and pool usage",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "df"
+        ]
+      },
+      {
+        "id": "pg-stat",
+        "title": "Placement groups in short",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "pg",
+          "stat"
+        ]
+      },
+      {
+        "id": "versions",
+        "title": "Versions of the daemons",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "versions"
+        ]
+      },
+      {
+        "id": "crash-ls-new",
+        "title": "Crashes not archived yet",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "crash",
+          "ls-new"
+        ]
+      },
+      {
+        "id": "osd-dump",
+        "title": "The OSD map, to read its flags",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "osd",
+          "dump",
+          "--format",
+          "json"
+        ]
+      },
+      {
+        "id": "osd-ok-to-stop",
+        "title": "Whether an OSD can be stopped without making data unavailable",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "osd",
+          "ok-to-stop",
+          "{{osd}}"
+        ],
+        "params": [
+          {
+            "name": "osd",
+            "type": "int",
+            "min": 0,
+            "max": 100000
+          }
+        ]
+      },
+      {
+        "id": "osd-safe-to-destroy",
+        "title": "Whether an OSD can be destroyed without losing data",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "osd",
+          "safe-to-destroy",
+          "{{osd}}"
+        ],
+        "params": [
+          {
+            "name": "osd",
+            "type": "int",
+            "min": 0,
+            "max": 100000
+          }
+        ]
+      },
+      {
+        "id": "osd-out",
+        "title": "Mark an OSD out: Ceph moves its data to the other OSDs",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "osd",
+          "out",
+          "{{osd}}"
+        ],
+        "params": [
+          {
+            "name": "osd",
+            "type": "int",
+            "min": 0,
+            "max": 100000
+          }
+        ],
+        "changes": true
+      },
+      {
+        "id": "osd-in",
+        "title": "Mark an OSD in: Ceph places data on it again",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "osd",
+          "in",
+          "{{osd}}"
+        ],
+        "params": [
+          {
+            "name": "osd",
+            "type": "int",
+            "min": 0,
+            "max": 100000
+          }
+        ],
+        "changes": true
+      },
+      {
+        "id": "osd-reweight",
+        "title": "Reweight an OSD: Ceph moves part of its data to the other OSDs",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "osd",
+          "reweight",
+          "{{osd}}",
+          "{{weight}}"
+        ],
+        "params": [
+          {
+            "name": "osd",
+            "type": "int",
+            "min": 0,
+            "max": 100000
+          },
+          {
+            "name": "weight",
+            "type": "enum",
+            "values": [
+              "1.0",
+              "0.95",
+              "0.9",
+              "0.85",
+              "0.8",
+              "0.75",
+              "0.7",
+              "0.6",
+              "0.5",
+              "0.4",
+              "0.3",
+              "0.2",
+              "0.1"
+            ]
+          }
+        ],
+        "changes": true
+      },
+      {
+        "id": "osd-set",
+        "title": "Set a cluster-wide OSD flag",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "osd",
+          "set",
+          "{{flag}}"
+        ],
+        "params": [
+          {
+            "name": "flag",
+            "type": "enum",
+            "values": [
+              "noout",
+              "norebalance",
+              "nobackfill",
+              "norecover",
+              "noscrub",
+              "nodeep-scrub"
+            ]
+          }
+        ],
+        "changes": true
+      },
+      {
+        "id": "osd-unset",
+        "title": "Unset a cluster-wide OSD flag",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "osd",
+          "unset",
+          "{{flag}}"
+        ],
+        "params": [
+          {
+            "name": "flag",
+            "type": "enum",
+            "values": [
+              "noout",
+              "norebalance",
+              "nobackfill",
+              "norecover",
+              "noscrub",
+              "nodeep-scrub"
+            ]
+          }
+        ],
+        "changes": true
+      },
+      {
+        "id": "crash-archive-all",
+        "title": "Archive every crash report, which clears RECENT_CRASH",
+        "target": {
+          "labelSelector": "app=rook-ceph-tools",
+          "container": "rook-ceph-tools"
+        },
+        "argv": [
+          "ceph",
+          "crash",
+          "archive-all"
+        ],
+        "changes": true
+      }
     ]
   },
   "translations": {
     "ru": {
       "name": "Rook Ceph",
-      "description": "Кластеры Rook Ceph: исправность Ceph и её проверки простыми словами, ёмкость, демоны, дерево CRUSH и OSD, пулы, файловые системы и объектные хранилища с классами хранилища и запросами томов, графики и проблемы; а также управление ими через собственные объекты Rook, где каждое изменение сначала показывается и подтверждается.",
+      "description": "Кластеры Rook Ceph: исправность Ceph и её проверки простыми словами, ёмкость, демоны, дерево CRUSH и OSD, пулы, файловые системы и объектные хранилища с классами хранилища и запросами томов, графики и проблемы; управление ими через собственные объекты Rook и через заданные в этом манифесте команды ceph в toolbox Rook, где каждое изменение сначала показывается и подтверждается.",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Состояние Ceph",
       "detailsSections.daemons.title": "Демоны",
       "detailsSections.metrics.title": "Метрики",
       "detailsSections.osds.title": "CRUSH и OSD",
+      "detailsSections.commands.title": "Команды Ceph",
       "detailsSections.storage.title": "Классы хранилища и запросы томов",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Обновить Ceph…",
@@ -637,20 +1125,51 @@
       "problems.object-store-not-ready.message": "Фаза {{.status.phase}} уже 10 минут. {{.status.message}}",
       "problems.object-store-no-status.title": "Объектное хранилище Ceph без состояния",
       "problems.object-store-no-status.message": "Rook уже 10 минут не сообщает фазу: запущен ли оператор Rook?",
+      "problems.osd-prepare-failed.title": "Сбой Job подготовки OSD",
+      "problems.osd-prepare-failed.message": "Job подготовки OSD {{.metadata.name}} завершился сбоем: Rook не смог подготовить там диск как OSD; причину покажет лог его Pod",
+      "problems.osd-purge-failed.title": "Сбой Job очистки OSD",
+      "problems.osd-purge-failed.message": "Job очистки OSD {{.metadata.name}} завершился сбоем: Rook не удаляет OSD, который небезопасно уничтожать; причину покажет лог его Pod",
+      "problems.daemon-unavailable.title": "Демон Ceph недоступен",
+      "problems.daemon-unavailable.message": "У {{.metadata.name}} недоступных реплик: {{.status.unavailableReplicas}}",
+      "problems.object-user-store-missing.title": "Нет объектного хранилища пользователя",
+      "problems.object-user-store-missing.message": "Объектного хранилища {{.spec.store}}, которое указывает этот пользователь, нет в его namespace",
+      "problems.subvolume-group-filesystem-missing.title": "Нет файловой системы группы подтомов",
+      "problems.subvolume-group-filesystem-missing.message": "Файловой системы {{.spec.filesystemName}}, которую указывает эта группа подтомов, нет в её namespace",
+      "problems.rados-namespace-pool-missing.title": "Нет пула для RADOS namespace",
+      "problems.rados-namespace-pool-missing.message": "Блочного пула {{.spec.blockPoolName}}, который указывает этот RADOS namespace, нет в его namespace",
       "metricQueries.health.title": "Исправность Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Сырая ёмкость: всего и занято байт",
       "metricQueries.osds.title": "OSD: up, in и всего",
       "metricQueries.pgs.title": "Группы размещения по состояниям",
-      "metricQueries.osd-usage.title": "Каждый OSD: up, in, переопределённый вес, размер и занято байт"
+      "metricQueries.osd-usage.title": "Каждый OSD: up, in, переопределённый вес, размер и занято байт",
+      "commands.status.title": "Состояние Ceph",
+      "commands.health-detail.title": "Проверки исправности подробно",
+      "commands.osd-tree.title": "Дерево OSD",
+      "commands.osd-df.title": "Использование OSD по дереву CRUSH",
+      "commands.df.title": "Использование: сырое и по пулам",
+      "commands.pg-stat.title": "Группы размещения кратко",
+      "commands.versions.title": "Версии демонов",
+      "commands.crash-ls-new.title": "Ещё не архивированные сбои",
+      "commands.osd-dump.title": "Карта OSD, чтобы прочитать её флаги",
+      "commands.osd-ok-to-stop.title": "Можно ли остановить OSD, не сделав данные недоступными",
+      "commands.osd-safe-to-destroy.title": "Можно ли уничтожить OSD без потери данных",
+      "commands.osd-out.title": "Пометить OSD как out: Ceph перемещает его данные на другие OSD",
+      "commands.osd-in.title": "Пометить OSD как in: Ceph снова размещает на нём данные",
+      "commands.osd-reweight.title": "Изменить вес OSD (reweight): Ceph перемещает часть его данных на другие OSD",
+      "commands.osd-set.title": "Установить флаг OSD для всего кластера",
+      "commands.osd-unset.title": "Снять флаг OSD для всего кластера",
+      "commands.crash-archive-all.title": "Архивировать все отчёты о сбоях, что снимает RECENT_CRASH"
     },
     "uk": {
       "name": "Rook Ceph",
-      "description": "Кластери Rook Ceph: справність Ceph і її перевірки простими словами, ємність, демони, дерево CRUSH і OSD, пули, файлові системи та об'єктні сховища з класами сховища й запитами томів, графіки та проблеми; а також керування ними через власні об'єкти Rook, де кожну зміну спершу показано й підтверджено.",
+      "description": "Кластери Rook Ceph: справність Ceph і її перевірки простими словами, ємність, демони, дерево CRUSH і OSD, пули, файлові системи та об'єктні сховища з класами сховища й запитами томів, графіки та проблеми; керування ними через власні об'єкти Rook і через задані в цьому маніфесті команди ceph у toolbox Rook, де кожну зміну спершу показано й підтверджено.",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Стан Ceph",
       "detailsSections.daemons.title": "Демони",
       "detailsSections.metrics.title": "Метрики",
       "detailsSections.osds.title": "CRUSH і OSD",
+      "detailsSections.commands.title": "Команди Ceph",
       "detailsSections.storage.title": "Класи сховища та запити томів",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Оновити Ceph…",
@@ -680,20 +1199,51 @@
       "problems.object-store-not-ready.message": "Фаза {{.status.phase}} уже 10 хвилин. {{.status.message}}",
       "problems.object-store-no-status.title": "Об'єктне сховище Ceph без стану",
       "problems.object-store-no-status.message": "Rook уже 10 хвилин не повідомляє фазу: чи запущений оператор Rook?",
+      "problems.osd-prepare-failed.title": "Збій Job підготовки OSD",
+      "problems.osd-prepare-failed.message": "Job підготовки OSD {{.metadata.name}} завершився збоєм: Rook не зміг підготувати там диск як OSD; причину покаже лог його Pod",
+      "problems.osd-purge-failed.title": "Збій Job очищення OSD",
+      "problems.osd-purge-failed.message": "Job очищення OSD {{.metadata.name}} завершився збоєм: Rook не видаляє OSD, який небезпечно знищувати; причину покаже лог його Pod",
+      "problems.daemon-unavailable.title": "Демон Ceph недоступний",
+      "problems.daemon-unavailable.message": "У {{.metadata.name}} недоступних реплік: {{.status.unavailableReplicas}}",
+      "problems.object-user-store-missing.title": "Немає об'єктного сховища користувача",
+      "problems.object-user-store-missing.message": "Об'єктного сховища {{.spec.store}}, яке вказує цей користувач, немає в його namespace",
+      "problems.subvolume-group-filesystem-missing.title": "Немає файлової системи групи підтомів",
+      "problems.subvolume-group-filesystem-missing.message": "Файлової системи {{.spec.filesystemName}}, яку вказує ця група підтомів, немає в її namespace",
+      "problems.rados-namespace-pool-missing.title": "Немає пулу для RADOS namespace",
+      "problems.rados-namespace-pool-missing.message": "Блокового пулу {{.spec.blockPoolName}}, який вказує цей RADOS namespace, немає в його namespace",
       "metricQueries.health.title": "Справність Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Сира ємність: усього та зайнято байтів",
       "metricQueries.osds.title": "OSD: up, in і всього",
       "metricQueries.pgs.title": "Групи розміщення за станами",
-      "metricQueries.osd-usage.title": "Кожен OSD: up, in, перевизначена вага, розмір і зайнято байтів"
+      "metricQueries.osd-usage.title": "Кожен OSD: up, in, перевизначена вага, розмір і зайнято байтів",
+      "commands.status.title": "Стан Ceph",
+      "commands.health-detail.title": "Перевірки справності докладно",
+      "commands.osd-tree.title": "Дерево OSD",
+      "commands.osd-df.title": "Використання OSD за деревом CRUSH",
+      "commands.df.title": "Використання: сире та за пулами",
+      "commands.pg-stat.title": "Групи розміщення коротко",
+      "commands.versions.title": "Версії демонів",
+      "commands.crash-ls-new.title": "Ще не архівовані збої",
+      "commands.osd-dump.title": "Карта OSD, щоб прочитати її прапорці",
+      "commands.osd-ok-to-stop.title": "Чи можна зупинити OSD, не зробивши дані недоступними",
+      "commands.osd-safe-to-destroy.title": "Чи можна знищити OSD без втрати даних",
+      "commands.osd-out.title": "Позначити OSD як out: Ceph переміщує його дані на інші OSD",
+      "commands.osd-in.title": "Позначити OSD як in: Ceph знову розміщує на ньому дані",
+      "commands.osd-reweight.title": "Змінити вагу OSD (reweight): Ceph переміщує частину його даних на інші OSD",
+      "commands.osd-set.title": "Встановити прапорець OSD для всього кластера",
+      "commands.osd-unset.title": "Зняти прапорець OSD для всього кластера",
+      "commands.crash-archive-all.title": "Архівувати всі звіти про збої, що знімає RECENT_CRASH"
     },
     "de": {
       "name": "Rook Ceph",
-      "description": "Rook-Ceph-Cluster: der Ceph-Zustand und seine Prüfungen in einfachen Worten, Kapazität, Daemons, der CRUSH-Baum und die OSDs, Pools, Dateisysteme und Objektspeicher mit ihren Storage Classes und Claims, Diagramme und Probleme; dazu ihre Verwaltung über Rooks eigene Objekte, wobei jede Änderung zuerst angezeigt und bestätigt wird.",
+      "description": "Rook-Ceph-Cluster: der Ceph-Zustand und seine Prüfungen in einfachen Worten, Kapazität, Daemons, der CRUSH-Baum und die OSDs, Pools, Dateisysteme und Objektspeicher mit ihren Storage Classes und Claims, Diagramme und Probleme; ihre Verwaltung über Rooks eigene Objekte und über in diesem Manifest festgelegte ceph-Befehle in Rooks Toolbox, wobei jede Änderung zuerst angezeigt und bestätigt wird.",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Ceph-Status",
       "detailsSections.daemons.title": "Daemons",
       "detailsSections.metrics.title": "Metriken",
       "detailsSections.osds.title": "CRUSH und OSDs",
+      "detailsSections.commands.title": "Ceph-Befehle",
       "detailsSections.storage.title": "Storage Classes und Claims",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Ceph-Upgrade…",
@@ -723,20 +1273,51 @@
       "problems.object-store-not-ready.message": "Phase {{.status.phase}} seit 10 Minuten. {{.status.message}}",
       "problems.object-store-no-status.title": "Ceph-Objektspeicher ohne Status",
       "problems.object-store-no-status.message": "Rook hat seit 10 Minuten keine Phase gemeldet: Läuft der Rook-Operator?",
+      "problems.osd-prepare-failed.title": "OSD-Prepare-Job fehlgeschlagen",
+      "problems.osd-prepare-failed.message": "Der OSD-Prepare-Job {{.metadata.name}} ist fehlgeschlagen: Rook konnte dort keine Festplatte als OSD vorbereiten; das Log seines Pods nennt den Grund",
+      "problems.osd-purge-failed.title": "OSD-Purge-Job fehlgeschlagen",
+      "problems.osd-purge-failed.message": "Der OSD-Purge-Job {{.metadata.name}} ist fehlgeschlagen: Rook entfernt kein OSD, das nicht sicher zerstört werden kann; das Log seines Pods nennt den Grund",
+      "problems.daemon-unavailable.title": "Ceph-Daemon nicht verfügbar",
+      "problems.daemon-unavailable.message": "{{.metadata.name}} hat {{.status.unavailableReplicas}} nicht verfügbare Replikate",
+      "problems.object-user-store-missing.title": "Objektspeicher des Benutzers fehlt",
+      "problems.object-user-store-missing.message": "Der Objektspeicher {{.spec.store}}, den dieser Benutzer nennt, ist nicht in seinem Namespace",
+      "problems.subvolume-group-filesystem-missing.title": "Dateisystem der Subvolume-Gruppe fehlt",
+      "problems.subvolume-group-filesystem-missing.message": "Das Dateisystem {{.spec.filesystemName}}, das diese Subvolume-Gruppe nennt, ist nicht in ihrem Namespace",
+      "problems.rados-namespace-pool-missing.title": "Pool des RADOS-Namespace fehlt",
+      "problems.rados-namespace-pool-missing.message": "Der Block-Pool {{.spec.blockPoolName}}, den dieser RADOS-Namespace nennt, ist nicht in seinem Namespace",
       "metricQueries.health.title": "Ceph-Zustand (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Rohkapazität: Bytes gesamt und belegt",
       "metricQueries.osds.title": "OSDs up, in und insgesamt",
       "metricQueries.pgs.title": "Placement Groups nach Zustand",
-      "metricQueries.osd-usage.title": "Jedes OSD: up, in, Override-Gewicht, Größe und belegte Bytes"
+      "metricQueries.osd-usage.title": "Jedes OSD: up, in, Override-Gewicht, Größe und belegte Bytes",
+      "commands.status.title": "Ceph-Status",
+      "commands.health-detail.title": "Zustandsprüfungen im Detail",
+      "commands.osd-tree.title": "OSD-Baum",
+      "commands.osd-df.title": "OSD-Belegung nach CRUSH-Baum",
+      "commands.df.title": "Rohe Belegung und Belegung je Pool",
+      "commands.pg-stat.title": "Placement Groups in Kürze",
+      "commands.versions.title": "Versionen der Daemons",
+      "commands.crash-ls-new.title": "Noch nicht archivierte Abstürze",
+      "commands.osd-dump.title": "Die OSD-Map, um ihre Flags zu lesen",
+      "commands.osd-ok-to-stop.title": "Ob ein OSD angehalten werden kann, ohne Daten unzugänglich zu machen",
+      "commands.osd-safe-to-destroy.title": "Ob ein OSD ohne Datenverlust zerstört werden kann",
+      "commands.osd-out.title": "Ein OSD als out markieren: Ceph verschiebt seine Daten auf die anderen OSDs",
+      "commands.osd-in.title": "Ein OSD als in markieren: Ceph legt wieder Daten darauf ab",
+      "commands.osd-reweight.title": "OSD neu gewichten: Ceph verschiebt einen Teil seiner Daten auf andere OSDs",
+      "commands.osd-set.title": "Ein clusterweites OSD-Flag setzen",
+      "commands.osd-unset.title": "Ein clusterweites OSD-Flag entfernen",
+      "commands.crash-archive-all.title": "Alle Absturzberichte archivieren, was RECENT_CRASH beseitigt"
     },
     "fr": {
       "name": "Rook Ceph",
-      "description": "Les clusters Rook Ceph : la santé de Ceph et ses contrôles expliqués simplement, la capacité, les démons, l'arbre CRUSH et les OSD, les pools, systèmes de fichiers et magasins d'objets avec leurs storage classes et leurs demandes, des graphiques et des problèmes ; et leur gestion via les objets propres à Rook, chaque modification étant d'abord affichée puis confirmée.",
+      "description": "Les clusters Rook Ceph : la santé de Ceph et ses contrôles expliqués simplement, la capacité, les démons, l'arbre CRUSH et les OSD, les pools, systèmes de fichiers et magasins d'objets avec leurs storage classes et leurs demandes, des graphiques et des problèmes ; leur gestion via les objets propres à Rook et via des commandes ceph fixées dans ce manifeste, exécutées dans la toolbox de Rook, chaque modification étant d'abord affichée puis confirmée.",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Statut Ceph",
       "detailsSections.daemons.title": "Démons",
       "detailsSections.metrics.title": "Métriques",
       "detailsSections.osds.title": "CRUSH et OSD",
+      "detailsSections.commands.title": "Commandes Ceph",
       "detailsSections.storage.title": "Storage classes et demandes",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Mettre Ceph à niveau…",
@@ -766,20 +1347,51 @@
       "problems.object-store-not-ready.message": "Phase {{.status.phase}} depuis 10 minutes. {{.status.message}}",
       "problems.object-store-no-status.title": "Magasin d'objets Ceph sans statut",
       "problems.object-store-no-status.message": "Rook n'a signalé aucune phase depuis 10 minutes : l'opérateur Rook est-il en marche ?",
+      "problems.osd-prepare-failed.title": "Échec du Job de préparation d'OSD",
+      "problems.osd-prepare-failed.message": "Le Job de préparation d'OSD {{.metadata.name}} a échoué : Rook n'a pas pu y préparer un disque comme OSD ; le journal de son pod en donne la raison",
+      "problems.osd-purge-failed.title": "Échec du Job de purge d'OSD",
+      "problems.osd-purge-failed.message": "Le Job de purge d'OSD {{.metadata.name}} a échoué : Rook ne retire pas un OSD qui ne peut pas être détruit sans risque ; le journal de son pod en donne la raison",
+      "problems.daemon-unavailable.title": "Démon Ceph indisponible",
+      "problems.daemon-unavailable.message": "{{.metadata.name}} a {{.status.unavailableReplicas}} réplicas indisponibles",
+      "problems.object-user-store-missing.title": "Magasin d'objets de l'utilisateur absent",
+      "problems.object-user-store-missing.message": "Le magasin d'objets {{.spec.store}} que nomme cet utilisateur n'est pas dans son namespace",
+      "problems.subvolume-group-filesystem-missing.title": "Système de fichiers du groupe de sous-volumes absent",
+      "problems.subvolume-group-filesystem-missing.message": "Le système de fichiers {{.spec.filesystemName}} que nomme ce groupe de sous-volumes n'est pas dans son namespace",
+      "problems.rados-namespace-pool-missing.title": "Pool du namespace RADOS absent",
+      "problems.rados-namespace-pool-missing.message": "Le pool de blocs {{.spec.blockPoolName}} que nomme ce namespace RADOS n'est pas dans son namespace",
       "metricQueries.health.title": "Santé de Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Capacité brute : octets au total et utilisés",
       "metricQueries.osds.title": "OSD up, in et au total",
       "metricQueries.pgs.title": "Groupes de placement par état",
-      "metricQueries.osd-usage.title": "Chaque OSD : up, in, poids override, taille et octets utilisés"
+      "metricQueries.osd-usage.title": "Chaque OSD : up, in, poids override, taille et octets utilisés",
+      "commands.status.title": "Statut Ceph",
+      "commands.health-detail.title": "Contrôles de santé en détail",
+      "commands.osd-tree.title": "Arbre des OSD",
+      "commands.osd-df.title": "Utilisation des OSD selon l'arbre CRUSH",
+      "commands.df.title": "Utilisation brute et par pool",
+      "commands.pg-stat.title": "Groupes de placement en bref",
+      "commands.versions.title": "Versions des démons",
+      "commands.crash-ls-new.title": "Plantages pas encore archivés",
+      "commands.osd-dump.title": "L'OSD map, pour lire ses flags",
+      "commands.osd-ok-to-stop.title": "Si un OSD peut être arrêté sans rendre des données indisponibles",
+      "commands.osd-safe-to-destroy.title": "Si un OSD peut être détruit sans perte de données",
+      "commands.osd-out.title": "Marquer un OSD out : Ceph déplace ses données vers les autres OSD",
+      "commands.osd-in.title": "Marquer un OSD in : Ceph y replace des données",
+      "commands.osd-reweight.title": "Changer le poids d'un OSD : Ceph déplace une partie de ses données ailleurs",
+      "commands.osd-set.title": "Définir un flag OSD global du cluster",
+      "commands.osd-unset.title": "Retirer un flag OSD global du cluster",
+      "commands.crash-archive-all.title": "Archiver tous les rapports de plantage, ce qui efface RECENT_CRASH"
     },
     "es": {
       "name": "Rook Ceph",
-      "description": "Los clústeres de Rook Ceph: la salud de Ceph y sus comprobaciones en palabras sencillas, la capacidad, los demonios, el árbol CRUSH y los OSD, los pools, sistemas de archivos y almacenes de objetos con sus storage classes y solicitudes, gráficos y problemas; y su gestión mediante los propios objetos de Rook, con cada cambio mostrado primero y confirmado.",
+      "description": "Los clústeres de Rook Ceph: la salud de Ceph y sus comprobaciones en palabras sencillas, la capacidad, los demonios, el árbol CRUSH y los OSD, los pools, sistemas de archivos y almacenes de objetos con sus storage classes y solicitudes, gráficos y problemas; su gestión mediante los propios objetos de Rook y mediante comandos ceph fijados en este manifiesto, en la toolbox de Rook, con cada cambio mostrado primero y confirmado.",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Estado de Ceph",
       "detailsSections.daemons.title": "Demonios",
       "detailsSections.metrics.title": "Métricas",
       "detailsSections.osds.title": "CRUSH y OSD",
+      "detailsSections.commands.title": "Comandos de Ceph",
       "detailsSections.storage.title": "Storage classes y solicitudes",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Actualizar Ceph…",
@@ -809,20 +1421,51 @@
       "problems.object-store-not-ready.message": "Fase {{.status.phase}} durante 10 minutos. {{.status.message}}",
       "problems.object-store-no-status.title": "Almacén de objetos de Ceph sin estado",
       "problems.object-store-no-status.message": "Rook no ha informado de ninguna fase en 10 minutos: ¿está en ejecución el operador de Rook?",
+      "problems.osd-prepare-failed.title": "Falló el Job de preparación de OSD",
+      "problems.osd-prepare-failed.message": "El Job de preparación de OSD {{.metadata.name}} falló: Rook no pudo preparar allí un disco como OSD; el registro de su pod indica por qué",
+      "problems.osd-purge-failed.title": "Falló el Job de purga de OSD",
+      "problems.osd-purge-failed.message": "El Job de purga de OSD {{.metadata.name}} falló: Rook no quita un OSD que no es seguro destruir; el registro de su pod indica por qué",
+      "problems.daemon-unavailable.title": "Demonio de Ceph no disponible",
+      "problems.daemon-unavailable.message": "{{.metadata.name}} tiene {{.status.unavailableReplicas}} réplicas no disponibles",
+      "problems.object-user-store-missing.title": "Falta el almacén de objetos del usuario",
+      "problems.object-user-store-missing.message": "El almacén de objetos {{.spec.store}} que nombra este usuario no está en su namespace",
+      "problems.subvolume-group-filesystem-missing.title": "Falta el sistema de archivos del grupo de subvolúmenes",
+      "problems.subvolume-group-filesystem-missing.message": "El sistema de archivos {{.spec.filesystemName}} que nombra este grupo de subvolúmenes no está en su namespace",
+      "problems.rados-namespace-pool-missing.title": "Falta el pool del namespace de RADOS",
+      "problems.rados-namespace-pool-missing.message": "El pool de bloques {{.spec.blockPoolName}} que nombra este namespace de RADOS no está en su namespace",
       "metricQueries.health.title": "Salud de Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Capacidad bruta: bytes totales y usados",
       "metricQueries.osds.title": "OSD up, in y en total",
       "metricQueries.pgs.title": "Grupos de colocación por estado",
-      "metricQueries.osd-usage.title": "Cada OSD: up, in, peso override, tamaño y bytes usados"
+      "metricQueries.osd-usage.title": "Cada OSD: up, in, peso override, tamaño y bytes usados",
+      "commands.status.title": "Estado de Ceph",
+      "commands.health-detail.title": "Comprobaciones de salud en detalle",
+      "commands.osd-tree.title": "Árbol de OSD",
+      "commands.osd-df.title": "Uso de los OSD por árbol CRUSH",
+      "commands.df.title": "Uso bruto y por pool",
+      "commands.pg-stat.title": "Grupos de colocación en resumen",
+      "commands.versions.title": "Versiones de los demonios",
+      "commands.crash-ls-new.title": "Fallos aún no archivados",
+      "commands.osd-dump.title": "El mapa de OSD, para leer sus flags",
+      "commands.osd-ok-to-stop.title": "Si un OSD se puede detener sin dejar datos inaccesibles",
+      "commands.osd-safe-to-destroy.title": "Si un OSD se puede destruir sin perder datos",
+      "commands.osd-out.title": "Marcar un OSD como out: Ceph mueve sus datos a los demás OSD",
+      "commands.osd-in.title": "Marcar un OSD como in: Ceph vuelve a colocar datos en él",
+      "commands.osd-reweight.title": "Cambiar el peso de un OSD: Ceph mueve parte de sus datos a otros OSD",
+      "commands.osd-set.title": "Establecer un flag de OSD de todo el clúster",
+      "commands.osd-unset.title": "Quitar un flag de OSD de todo el clúster",
+      "commands.crash-archive-all.title": "Archivar todos los informes de fallos, lo que elimina RECENT_CRASH"
     },
     "pt-BR": {
       "name": "Rook Ceph",
-      "description": "Clusters Rook Ceph: a saúde do Ceph e as verificações dela em palavras simples, capacidade, daemons, a árvore CRUSH e os OSDs, pools, sistemas de arquivos e armazenamentos de objetos com as classes de armazenamento e claims deles, gráficos e problemas; e o gerenciamento deles pelos próprios objetos do Rook, com cada alteração mostrada antes e confirmada.",
+      "description": "Clusters Rook Ceph: a saúde do Ceph e as verificações dela em palavras simples, capacidade, daemons, a árvore CRUSH e os OSDs, pools, sistemas de arquivos e armazenamentos de objetos com as classes de armazenamento e claims deles, gráficos e problemas; o gerenciamento deles pelos próprios objetos do Rook e por comandos ceph fixados neste manifesto, no toolbox do Rook, com cada alteração mostrada antes e confirmada.",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Status do Ceph",
       "detailsSections.daemons.title": "Daemons",
       "detailsSections.metrics.title": "Métricas",
       "detailsSections.osds.title": "CRUSH e OSDs",
+      "detailsSections.commands.title": "Comandos do Ceph",
       "detailsSections.storage.title": "Classes de armazenamento e claims",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Atualizar o Ceph…",
@@ -852,20 +1495,51 @@
       "problems.object-store-not-ready.message": "Fase {{.status.phase}} há 10 minutos. {{.status.message}}",
       "problems.object-store-no-status.title": "Armazenamento de objetos do Ceph sem status",
       "problems.object-store-no-status.message": "O Rook não relata nenhuma fase há 10 minutos: o operador do Rook está em execução?",
+      "problems.osd-prepare-failed.title": "Job de preparação de OSD falhou",
+      "problems.osd-prepare-failed.message": "O Job de preparação de OSD {{.metadata.name}} falhou: o Rook não conseguiu preparar um disco ali como OSD; o log do pod dele diz por quê",
+      "problems.osd-purge-failed.title": "Job de purge de OSD falhou",
+      "problems.osd-purge-failed.message": "O Job de purge de OSD {{.metadata.name}} falhou: o Rook não remove um OSD que não é seguro destruir; o log do pod dele diz por quê",
+      "problems.daemon-unavailable.title": "Daemon do Ceph indisponível",
+      "problems.daemon-unavailable.message": "{{.metadata.name}} tem {{.status.unavailableReplicas}} réplicas indisponíveis",
+      "problems.object-user-store-missing.title": "Armazenamento de objetos do usuário ausente",
+      "problems.object-user-store-missing.message": "O armazenamento de objetos {{.spec.store}} que este usuário indica não está no namespace dele",
+      "problems.subvolume-group-filesystem-missing.title": "Sistema de arquivos do grupo de subvolumes ausente",
+      "problems.subvolume-group-filesystem-missing.message": "O sistema de arquivos {{.spec.filesystemName}} que este grupo de subvolumes indica não está no namespace dele",
+      "problems.rados-namespace-pool-missing.title": "Pool do namespace RADOS ausente",
+      "problems.rados-namespace-pool-missing.message": "O pool de blocos {{.spec.blockPoolName}} que este namespace RADOS indica não está no namespace dele",
       "metricQueries.health.title": "Saúde do Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Capacidade bruta: bytes totais e usados",
       "metricQueries.osds.title": "OSDs up, in e total",
       "metricQueries.pgs.title": "Grupos de posicionamento por estado",
-      "metricQueries.osd-usage.title": "Cada OSD: up, in, peso de reweight, tamanho e bytes usados"
+      "metricQueries.osd-usage.title": "Cada OSD: up, in, peso de reweight, tamanho e bytes usados",
+      "commands.status.title": "Status do Ceph",
+      "commands.health-detail.title": "Verificações de saúde em detalhes",
+      "commands.osd-tree.title": "Árvore de OSDs",
+      "commands.osd-df.title": "Uso dos OSDs pela árvore CRUSH",
+      "commands.df.title": "Uso bruto e por pool",
+      "commands.pg-stat.title": "Grupos de posicionamento em resumo",
+      "commands.versions.title": "Versões dos daemons",
+      "commands.crash-ls-new.title": "Falhas ainda não arquivadas",
+      "commands.osd-dump.title": "O mapa de OSDs, para ler as flags dele",
+      "commands.osd-ok-to-stop.title": "Se um OSD pode ser parado sem deixar dados indisponíveis",
+      "commands.osd-safe-to-destroy.title": "Se um OSD pode ser destruído sem perder dados",
+      "commands.osd-out.title": "Marcar um OSD como out: o Ceph move os dados dele para os outros OSDs",
+      "commands.osd-in.title": "Marcar um OSD como in: o Ceph volta a colocar dados nele",
+      "commands.osd-reweight.title": "Alterar o peso de um OSD: o Ceph move parte dos dados dele para outros OSDs",
+      "commands.osd-set.title": "Definir uma flag de OSD do cluster inteiro",
+      "commands.osd-unset.title": "Remover uma flag de OSD do cluster inteiro",
+      "commands.crash-archive-all.title": "Arquivar todos os relatórios de falhas, o que limpa RECENT_CRASH"
     },
     "it": {
       "name": "Rook Ceph",
-      "description": "I cluster Rook Ceph: lo stato di salute di Ceph e i suoi controlli in parole semplici, capacità, daemon, l'albero CRUSH e gli OSD, pool, file system e archivi di oggetti con le loro storage class e richieste, grafici e problemi; e la loro gestione tramite gli oggetti propri di Rook, con ogni modifica mostrata prima e confermata.",
+      "description": "I cluster Rook Ceph: lo stato di salute di Ceph e i suoi controlli in parole semplici, capacità, daemon, l'albero CRUSH e gli OSD, pool, file system e archivi di oggetti con le loro storage class e richieste, grafici e problemi; la loro gestione tramite gli oggetti propri di Rook e tramite comandi ceph fissati in questo manifest, nella toolbox di Rook, con ogni modifica mostrata prima e confermata.",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Stato di Ceph",
       "detailsSections.daemons.title": "Daemon",
       "detailsSections.metrics.title": "Metriche",
       "detailsSections.osds.title": "CRUSH e OSD",
+      "detailsSections.commands.title": "Comandi Ceph",
       "detailsSections.storage.title": "Storage class e richieste",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Aggiorna Ceph…",
@@ -895,20 +1569,51 @@
       "problems.object-store-not-ready.message": "Fase {{.status.phase}} da 10 minuti. {{.status.message}}",
       "problems.object-store-no-status.title": "Archivio di oggetti Ceph senza stato",
       "problems.object-store-no-status.message": "Rook non segnala alcuna fase da 10 minuti: l'operatore Rook è in esecuzione?",
+      "problems.osd-prepare-failed.title": "Job di preparazione OSD non riuscito",
+      "problems.osd-prepare-failed.message": "Il Job di preparazione OSD {{.metadata.name}} non è riuscito: Rook non ha potuto preparare lì un disco come OSD; il log del suo pod ne dice il motivo",
+      "problems.osd-purge-failed.title": "Job di purge OSD non riuscito",
+      "problems.osd-purge-failed.message": "Il Job di purge OSD {{.metadata.name}} non è riuscito: Rook non rimuove un OSD che non può essere distrutto in sicurezza; il log del suo pod ne dice il motivo",
+      "problems.daemon-unavailable.title": "Daemon Ceph non disponibile",
+      "problems.daemon-unavailable.message": "{{.metadata.name}} ha {{.status.unavailableReplicas}} repliche non disponibili",
+      "problems.object-user-store-missing.title": "Archivio di oggetti dell'utente mancante",
+      "problems.object-user-store-missing.message": "L'archivio di oggetti {{.spec.store}} indicato da questo utente non è nel suo namespace",
+      "problems.subvolume-group-filesystem-missing.title": "File system del gruppo di subvolumi mancante",
+      "problems.subvolume-group-filesystem-missing.message": "Il file system {{.spec.filesystemName}} indicato da questo gruppo di subvolumi non è nel suo namespace",
+      "problems.rados-namespace-pool-missing.title": "Pool del namespace RADOS mancante",
+      "problems.rados-namespace-pool-missing.message": "Il pool a blocchi {{.spec.blockPoolName}} indicato da questo namespace RADOS non è nel suo namespace",
       "metricQueries.health.title": "Stato di salute di Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Capacità grezza: byte totali e usati",
       "metricQueries.osds.title": "OSD up, in e in totale",
       "metricQueries.pgs.title": "Placement group per stato",
-      "metricQueries.osd-usage.title": "Ogni OSD: up, in, peso override, dimensione e byte usati"
+      "metricQueries.osd-usage.title": "Ogni OSD: up, in, peso override, dimensione e byte usati",
+      "commands.status.title": "Stato di Ceph",
+      "commands.health-detail.title": "Controlli di salute in dettaglio",
+      "commands.osd-tree.title": "Albero degli OSD",
+      "commands.osd-df.title": "Utilizzo degli OSD per albero CRUSH",
+      "commands.df.title": "Utilizzo grezzo e per pool",
+      "commands.pg-stat.title": "Placement group in breve",
+      "commands.versions.title": "Versioni dei daemon",
+      "commands.crash-ls-new.title": "Crash non ancora archiviati",
+      "commands.osd-dump.title": "La mappa degli OSD, per leggerne i flag",
+      "commands.osd-ok-to-stop.title": "Se un OSD può essere fermato senza rendere i dati non disponibili",
+      "commands.osd-safe-to-destroy.title": "Se un OSD può essere distrutto senza perdere dati",
+      "commands.osd-out.title": "Segna un OSD come out: Ceph sposta i suoi dati sugli altri OSD",
+      "commands.osd-in.title": "Segna un OSD come in: Ceph vi rimette dati",
+      "commands.osd-reweight.title": "Cambia il peso di un OSD: Ceph sposta parte dei suoi dati su altri OSD",
+      "commands.osd-set.title": "Imposta un flag OSD per l'intero cluster",
+      "commands.osd-unset.title": "Rimuovi un flag OSD per l'intero cluster",
+      "commands.crash-archive-all.title": "Archivia tutti i report dei crash, il che elimina RECENT_CRASH"
     },
     "pl": {
       "name": "Rook Ceph",
-      "description": "Klastry Rook Ceph: kondycja Ceph i jej kontrole prostymi słowami, pojemność, demony, drzewo CRUSH i OSD, pule, systemy plików i magazyny obiektów z klasami pamięci masowej i żądaniami woluminów, wykresy i problemy; a także zarządzanie nimi przez własne obiekty Rook, przy czym każda zmiana jest najpierw pokazywana i potwierdzana.",
+      "description": "Klastry Rook Ceph: kondycja Ceph i jej kontrole prostymi słowami, pojemność, demony, drzewo CRUSH i OSD, pule, systemy plików i magazyny obiektów z klasami pamięci masowej i żądaniami woluminów, wykresy i problemy; zarządzanie nimi przez własne obiekty Rook oraz przez ustalone w tym manifeście polecenia ceph w toolbox Rook, przy czym każda zmiana jest najpierw pokazywana i potwierdzana.",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Stan Ceph",
       "detailsSections.daemons.title": "Demony",
       "detailsSections.metrics.title": "Metryki",
       "detailsSections.osds.title": "CRUSH i OSD",
+      "detailsSections.commands.title": "Polecenia Ceph",
       "detailsSections.storage.title": "Klasy pamięci masowej i żądania woluminów",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Aktualizuj Ceph…",
@@ -938,20 +1643,51 @@
       "problems.object-store-not-ready.message": "Faza {{.status.phase}} od 10 minut. {{.status.message}}",
       "problems.object-store-no-status.title": "Magazyn obiektów Ceph bez stanu",
       "problems.object-store-no-status.message": "Rook od 10 minut nie zgłasza fazy: czy operator Rook działa?",
+      "problems.osd-prepare-failed.title": "Job przygotowania OSD nie powiódł się",
+      "problems.osd-prepare-failed.message": "Job przygotowania OSD {{.metadata.name}} nie powiódł się: Rook nie zdołał przygotować tam dysku jako OSD; przyczynę podaje log jego Poda",
+      "problems.osd-purge-failed.title": "Job czyszczący OSD nie powiódł się",
+      "problems.osd-purge-failed.message": "Job czyszczący OSD {{.metadata.name}} nie powiódł się: Rook nie usuwa OSD, którego zniszczenie nie jest bezpieczne; przyczynę podaje log jego Poda",
+      "problems.daemon-unavailable.title": "Demon Ceph niedostępny",
+      "problems.daemon-unavailable.message": "{{.metadata.name}} ma niedostępne repliki: {{.status.unavailableReplicas}}",
+      "problems.object-user-store-missing.title": "Brak magazynu obiektów użytkownika",
+      "problems.object-user-store-missing.message": "Magazynu obiektów {{.spec.store}}, który wskazuje ten użytkownik, nie ma w jego namespace",
+      "problems.subvolume-group-filesystem-missing.title": "Brak systemu plików grupy podwoluminów",
+      "problems.subvolume-group-filesystem-missing.message": "Systemu plików {{.spec.filesystemName}}, który wskazuje ta grupa podwoluminów, nie ma w jej namespace",
+      "problems.rados-namespace-pool-missing.title": "Brak puli RADOS namespace",
+      "problems.rados-namespace-pool-missing.message": "Puli blokowej {{.spec.blockPoolName}}, którą wskazuje ten RADOS namespace, nie ma w jego namespace",
       "metricQueries.health.title": "Kondycja Ceph (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Surowa pojemność: łącznie i zajęte bajty",
       "metricQueries.osds.title": "OSD: up, in i łącznie",
       "metricQueries.pgs.title": "Grupy rozmieszczenia według stanu",
-      "metricQueries.osd-usage.title": "Każdy OSD: up, in, waga nadpisująca, rozmiar i zajęte bajty"
+      "metricQueries.osd-usage.title": "Każdy OSD: up, in, waga nadpisująca, rozmiar i zajęte bajty",
+      "commands.status.title": "Stan Ceph",
+      "commands.health-detail.title": "Kontrole kondycji szczegółowo",
+      "commands.osd-tree.title": "Drzewo OSD",
+      "commands.osd-df.title": "Użycie OSD według drzewa CRUSH",
+      "commands.df.title": "Użycie surowe i według pul",
+      "commands.pg-stat.title": "Grupy rozmieszczenia w skrócie",
+      "commands.versions.title": "Wersje demonów",
+      "commands.crash-ls-new.title": "Awarie jeszcze niezarchiwizowane",
+      "commands.osd-dump.title": "Mapa OSD, aby odczytać jej flagi",
+      "commands.osd-ok-to-stop.title": "Czy OSD można zatrzymać bez utraty dostępu do danych",
+      "commands.osd-safe-to-destroy.title": "Czy OSD można zniszczyć bez utraty danych",
+      "commands.osd-out.title": "Oznacz OSD jako out: Ceph przenosi jego dane na pozostałe OSD",
+      "commands.osd-in.title": "Oznacz OSD jako in: Ceph ponownie umieszcza na nim dane",
+      "commands.osd-reweight.title": "Zmień wagę OSD (reweight): Ceph przenosi część jego danych na pozostałe OSD",
+      "commands.osd-set.title": "Ustaw flagę OSD dla całego klastra",
+      "commands.osd-unset.title": "Zdejmij flagę OSD dla całego klastra",
+      "commands.crash-archive-all.title": "Zarchiwizuj wszystkie raporty awarii, co usuwa RECENT_CRASH"
     },
     "tr": {
       "name": "Rook Ceph",
-      "description": "Rook Ceph kümeleri: Ceph'in sağlık durumu ve denetimleri sade bir dille, kapasite, daemon'lar, CRUSH ağacı ve OSD'ler, depolama sınıfları ve talepleriyle birlikte havuzlar, dosya sistemleri ve nesne depoları, grafikler ve sorunlar; ayrıca her değişikliği önce gösterip onay alarak Rook'un kendi nesneleriyle yönetim.",
+      "description": "Rook Ceph kümeleri: Ceph'in sağlık durumu ve denetimleri sade bir dille, kapasite, daemon'lar, CRUSH ağacı ve OSD'ler, depolama sınıfları ve talepleriyle birlikte havuzlar, dosya sistemleri ve nesne depoları, grafikler ve sorunlar; ayrıca her değişikliği önce gösterip onay alarak Rook'un kendi nesneleriyle ve bu manifestte sabitlenmiş, Rook'un toolbox'ında çalışan ceph komutlarıyla yönetim.",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Ceph durumu",
       "detailsSections.daemons.title": "Daemon'lar",
       "detailsSections.metrics.title": "Ölçümler",
       "detailsSections.osds.title": "CRUSH ve OSD'ler",
+      "detailsSections.commands.title": "Ceph komutları",
       "detailsSections.storage.title": "Depolama sınıfları ve talepler",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Ceph'i yükselt…",
@@ -981,20 +1717,51 @@
       "problems.object-store-not-ready.message": "10 dakikadır aşama: {{.status.phase}}. {{.status.message}}",
       "problems.object-store-no-status.title": "Ceph nesne deposunun durumu yok",
       "problems.object-store-no-status.message": "Rook 10 dakikadır hiçbir aşama bildirmedi: Rook operatörü çalışıyor mu?",
+      "problems.osd-prepare-failed.title": "OSD hazırlama Job'ı başarısız oldu",
+      "problems.osd-prepare-failed.message": "{{.metadata.name}} OSD hazırlama Job'ı başarısız oldu: Rook orada bir diski OSD olarak hazırlayamadı; nedenini Pod'unun günlüğü söyler",
+      "problems.osd-purge-failed.title": "OSD temizleme Job'ı başarısız oldu",
+      "problems.osd-purge-failed.message": "{{.metadata.name}} OSD temizleme Job'ı başarısız oldu: Rook, güvenle yok edilemeyen bir OSD'yi kaldırmaz; nedenini Pod'unun günlüğü söyler",
+      "problems.daemon-unavailable.title": "Ceph daemon'ı kullanılamıyor",
+      "problems.daemon-unavailable.message": "{{.metadata.name}} için kullanılamayan replika sayısı: {{.status.unavailableReplicas}}",
+      "problems.object-user-store-missing.title": "Kullanıcının nesne deposu eksik",
+      "problems.object-user-store-missing.message": "Bu kullanıcının belirttiği {{.spec.store}} nesne deposu, kullanıcının namespace'inde yok",
+      "problems.subvolume-group-filesystem-missing.title": "Alt birim grubunun dosya sistemi eksik",
+      "problems.subvolume-group-filesystem-missing.message": "Bu alt birim grubunun belirttiği {{.spec.filesystemName}} dosya sistemi, grubun namespace'inde yok",
+      "problems.rados-namespace-pool-missing.title": "RADOS namespace'inin havuzu eksik",
+      "problems.rados-namespace-pool-missing.message": "Bu RADOS namespace'inin belirttiği {{.spec.blockPoolName}} blok havuzu, onun namespace'inde yok",
       "metricQueries.health.title": "Ceph sağlığı (0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "Ham kapasite: toplam ve kullanılan bayt",
       "metricQueries.osds.title": "OSD'ler: up, in ve toplam",
       "metricQueries.pgs.title": "Duruma göre yerleşim grupları",
-      "metricQueries.osd-usage.title": "Her OSD: up, in, reweight ağırlığı, boyut ve kullanılan bayt"
+      "metricQueries.osd-usage.title": "Her OSD: up, in, reweight ağırlığı, boyut ve kullanılan bayt",
+      "commands.status.title": "Ceph durumu",
+      "commands.health-detail.title": "Ayrıntılı sağlık denetimleri",
+      "commands.osd-tree.title": "OSD ağacı",
+      "commands.osd-df.title": "CRUSH ağacına göre OSD kullanımı",
+      "commands.df.title": "Ham ve havuz başına kullanım",
+      "commands.pg-stat.title": "Kısaca yerleşim grupları",
+      "commands.versions.title": "Daemon sürümleri",
+      "commands.crash-ls-new.title": "Henüz arşivlenmemiş çökmeler",
+      "commands.osd-dump.title": "Bayraklarını okumak için OSD haritası",
+      "commands.osd-ok-to-stop.title": "Bir OSD'nin verileri erişilemez hâle getirmeden durdurulup durdurulamayacağı",
+      "commands.osd-safe-to-destroy.title": "Bir OSD'nin veri kaybı olmadan yok edilip edilemeyeceği",
+      "commands.osd-out.title": "Bir OSD'yi out olarak işaretle: Ceph verilerini diğer OSD'lere taşır",
+      "commands.osd-in.title": "Bir OSD'yi in olarak işaretle: Ceph üzerine yeniden veri yerleştirir",
+      "commands.osd-reweight.title": "OSD ağırlığını değiştir: Ceph verilerinin bir kısmını diğer OSD'lere taşır",
+      "commands.osd-set.title": "Küme genelinde bir OSD bayrağı ayarla",
+      "commands.osd-unset.title": "Küme genelindeki bir OSD bayrağını kaldır",
+      "commands.crash-archive-all.title": "Tüm çökme raporlarını arşivle; bu, RECENT_CRASH uyarısını temizler"
     },
     "zh-CN": {
       "name": "Rook Ceph",
-      "description": "Rook Ceph 集群：用通俗的话说明 Ceph 的健康状况及其检查项，以及容量、守护进程、CRUSH 树和 OSD、存储池、文件系统和对象存储及其 StorageClass 与申领、图表和问题；并通过 Rook 自己的对象管理它们，每项更改都会先显示，经确认后才发送。",
+      "description": "Rook Ceph 集群：用通俗的话说明 Ceph 的健康状况及其检查项，以及容量、守护进程、CRUSH 树和 OSD、存储池、文件系统和对象存储及其 StorageClass 与申领、图表和问题；并通过 Rook 自己的对象以及此清单中固定、在 Rook 工具箱中运行的 ceph 命令管理它们，每项更改都会先显示，经确认后才发送。",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Ceph 状态",
       "detailsSections.daemons.title": "守护进程",
       "detailsSections.metrics.title": "指标",
       "detailsSections.osds.title": "CRUSH 与 OSD",
+      "detailsSections.commands.title": "Ceph 命令",
       "detailsSections.storage.title": "StorageClass 与申领",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "升级 Ceph…",
@@ -1024,20 +1791,51 @@
       "problems.object-store-not-ready.message": "已处于 {{.status.phase}} 阶段 10 分钟。{{.status.message}}",
       "problems.object-store-no-status.title": "Ceph 对象存储没有状态",
       "problems.object-store-no-status.message": "Rook 已有 10 分钟未报告阶段：Rook operator 是否在运行？",
+      "problems.osd-prepare-failed.title": "OSD 准备 Job 失败",
+      "problems.osd-prepare-failed.message": "OSD 准备 Job {{.metadata.name}} 失败：Rook 无法在那里将磁盘准备为 OSD；其 Pod 的日志会说明原因",
+      "problems.osd-purge-failed.title": "OSD 清除 Job 失败",
+      "problems.osd-purge-failed.message": "OSD 清除 Job {{.metadata.name}} 失败：Rook 不会移除不能安全销毁的 OSD；其 Pod 的日志会说明原因",
+      "problems.daemon-unavailable.title": "Ceph 守护进程不可用",
+      "problems.daemon-unavailable.message": "{{.metadata.name}} 有 {{.status.unavailableReplicas}} 个不可用的副本",
+      "problems.object-user-store-missing.title": "用户的对象存储不存在",
+      "problems.object-user-store-missing.message": "此用户指定的对象存储 {{.spec.store}} 不在其 namespace 中",
+      "problems.subvolume-group-filesystem-missing.title": "子卷组的文件系统不存在",
+      "problems.subvolume-group-filesystem-missing.message": "此子卷组指定的文件系统 {{.spec.filesystemName}} 不在其 namespace 中",
+      "problems.rados-namespace-pool-missing.title": "RADOS namespace 的存储池不存在",
+      "problems.rados-namespace-pool-missing.message": "此 RADOS namespace 指定的块存储池 {{.spec.blockPoolName}} 不在其 namespace 中",
       "metricQueries.health.title": "Ceph 健康状况（0 OK，1 WARN，2 ERR）",
       "metricQueries.capacity.title": "原始容量：总字节数和已用字节数",
       "metricQueries.osds.title": "OSD：up、in 和总数",
       "metricQueries.pgs.title": "按状态统计的归置组",
-      "metricQueries.osd-usage.title": "每个 OSD：up、in、覆盖权重、大小和已用字节数"
+      "metricQueries.osd-usage.title": "每个 OSD：up、in、覆盖权重、大小和已用字节数",
+      "commands.status.title": "Ceph 状态",
+      "commands.health-detail.title": "健康检查详情",
+      "commands.osd-tree.title": "OSD 树",
+      "commands.osd-df.title": "按 CRUSH 树显示的 OSD 用量",
+      "commands.df.title": "原始用量与各存储池用量",
+      "commands.pg-stat.title": "归置组概况",
+      "commands.versions.title": "守护进程的版本",
+      "commands.crash-ls-new.title": "尚未归档的崩溃",
+      "commands.osd-dump.title": "OSD 映射，用于读取其标志",
+      "commands.osd-ok-to-stop.title": "OSD 能否在不导致数据不可用的情况下停止",
+      "commands.osd-safe-to-destroy.title": "OSD 能否在不丢失数据的情况下销毁",
+      "commands.osd-out.title": "将 OSD 标记为 out：Ceph 会把其数据迁移到其他 OSD",
+      "commands.osd-in.title": "将 OSD 标记为 in：Ceph 会重新在其上放置数据",
+      "commands.osd-reweight.title": "调整 OSD 权重（reweight）：Ceph 会把其部分数据迁移到其他 OSD",
+      "commands.osd-set.title": "设置集群范围的 OSD 标志",
+      "commands.osd-unset.title": "取消设置集群范围的 OSD 标志",
+      "commands.crash-archive-all.title": "归档所有崩溃报告，从而清除 RECENT_CRASH"
     },
     "zh-TW": {
       "name": "Rook Ceph",
-      "description": "Rook Ceph 叢集：以淺白的文字說明 Ceph 的健康狀態及其檢查項目，以及容量、常駐程式、CRUSH 樹與 OSD、儲存池、檔案系統與物件儲存及其 StorageClass 與宣告、圖表與問題；並透過 Rook 自己的物件管理它們，每項變更都會先顯示，經確認後才送出。",
+      "description": "Rook Ceph 叢集：以淺白的文字說明 Ceph 的健康狀態及其檢查項目，以及容量、常駐程式、CRUSH 樹與 OSD、儲存池、檔案系統與物件儲存及其 StorageClass 與宣告、圖表與問題；並透過 Rook 自己的物件以及此資訊清單中固定、在 Rook 工具箱中執行的 ceph 命令管理它們，每項變更都會先顯示，經確認後才送出。",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Ceph 狀態",
       "detailsSections.daemons.title": "常駐程式",
       "detailsSections.metrics.title": "指標",
       "detailsSections.osds.title": "CRUSH 與 OSD",
+      "detailsSections.commands.title": "Ceph 命令",
       "detailsSections.storage.title": "StorageClass 與宣告",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "升級 Ceph…",
@@ -1067,20 +1865,51 @@
       "problems.object-store-not-ready.message": "已處於 {{.status.phase}} 階段 10 分鐘。{{.status.message}}",
       "problems.object-store-no-status.title": "Ceph 物件儲存沒有狀態",
       "problems.object-store-no-status.message": "Rook 已有 10 分鐘未回報階段：Rook operator 是否在執行？",
+      "problems.osd-prepare-failed.title": "OSD 準備 Job 失敗",
+      "problems.osd-prepare-failed.message": "OSD 準備 Job {{.metadata.name}} 失敗：Rook 無法在那裡將磁碟準備為 OSD；其 Pod 的日誌會說明原因",
+      "problems.osd-purge-failed.title": "OSD 清除 Job 失敗",
+      "problems.osd-purge-failed.message": "OSD 清除 Job {{.metadata.name}} 失敗：Rook 不會移除無法安全銷毀的 OSD；其 Pod 的日誌會說明原因",
+      "problems.daemon-unavailable.title": "Ceph 常駐程式無法使用",
+      "problems.daemon-unavailable.message": "{{.metadata.name}} 有 {{.status.unavailableReplicas}} 個無法使用的複本",
+      "problems.object-user-store-missing.title": "使用者的物件儲存不存在",
+      "problems.object-user-store-missing.message": "此使用者指定的物件儲存 {{.spec.store}} 不在其 namespace 中",
+      "problems.subvolume-group-filesystem-missing.title": "子磁碟區群組的檔案系統不存在",
+      "problems.subvolume-group-filesystem-missing.message": "此子磁碟區群組指定的檔案系統 {{.spec.filesystemName}} 不在其 namespace 中",
+      "problems.rados-namespace-pool-missing.title": "RADOS namespace 的儲存池不存在",
+      "problems.rados-namespace-pool-missing.message": "此 RADOS namespace 指定的區塊儲存池 {{.spec.blockPoolName}} 不在其 namespace 中",
       "metricQueries.health.title": "Ceph 健康狀態（0 OK，1 WARN，2 ERR）",
       "metricQueries.capacity.title": "原始容量：總位元組數與已用位元組數",
       "metricQueries.osds.title": "OSD：up、in 與總數",
       "metricQueries.pgs.title": "依狀態統計的放置群組",
-      "metricQueries.osd-usage.title": "每個 OSD：up、in、覆寫權重、大小與已用位元組數"
+      "metricQueries.osd-usage.title": "每個 OSD：up、in、覆寫權重、大小與已用位元組數",
+      "commands.status.title": "Ceph 狀態",
+      "commands.health-detail.title": "健康檢查詳情",
+      "commands.osd-tree.title": "OSD 樹",
+      "commands.osd-df.title": "依 CRUSH 樹顯示的 OSD 用量",
+      "commands.df.title": "原始用量與各儲存池用量",
+      "commands.pg-stat.title": "放置群組概況",
+      "commands.versions.title": "常駐程式的版本",
+      "commands.crash-ls-new.title": "尚未封存的當機",
+      "commands.osd-dump.title": "OSD 映射，用於讀取其旗標",
+      "commands.osd-ok-to-stop.title": "OSD 能否在不導致資料無法使用的情況下停止",
+      "commands.osd-safe-to-destroy.title": "OSD 能否在不遺失資料的情況下銷毀",
+      "commands.osd-out.title": "將 OSD 標記為 out：Ceph 會把其資料搬移到其他 OSD",
+      "commands.osd-in.title": "將 OSD 標記為 in：Ceph 會重新在其上放置資料",
+      "commands.osd-reweight.title": "調整 OSD 權重（reweight）：Ceph 會把其部分資料搬移到其他 OSD",
+      "commands.osd-set.title": "設定叢集範圍的 OSD 旗標",
+      "commands.osd-unset.title": "取消設定叢集範圍的 OSD 旗標",
+      "commands.crash-archive-all.title": "封存所有當機報告，進而清除 RECENT_CRASH"
     },
     "ja": {
       "name": "Rook Ceph",
-      "description": "Rook Ceph クラスター: Ceph のヘルスとヘルスチェックをわかりやすい言葉で、容量、デーモン、CRUSH ツリーと OSD、プール、ファイルシステム、オブジェクトストアとそれらのストレージクラスと要求、グラフと問題を表示します。さらに Rook 自身のオブジェクトを通じて管理でき、すべての変更は事前に表示して確認します。",
+      "description": "Rook Ceph クラスター: Ceph のヘルスとヘルスチェックをわかりやすい言葉で、容量、デーモン、CRUSH ツリーと OSD、プール、ファイルシステム、オブジェクトストアとそれらのストレージクラスと要求、グラフと問題を表示します。さらに Rook 自身のオブジェクトと、このマニフェストで固定された Rook の toolbox での ceph コマンドを通じて管理でき、すべての変更は事前に表示して確認します。",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Ceph のステータス",
       "detailsSections.daemons.title": "デーモン",
       "detailsSections.metrics.title": "メトリクス",
       "detailsSections.osds.title": "CRUSH と OSD",
+      "detailsSections.commands.title": "Ceph コマンド",
       "detailsSections.storage.title": "ストレージクラスと要求",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Ceph をアップグレード…",
@@ -1110,20 +1939,51 @@
       "problems.object-store-not-ready.message": "10 分間フェーズ {{.status.phase}} のままです。{{.status.message}}",
       "problems.object-store-no-status.title": "Ceph オブジェクトストアにステータスがありません",
       "problems.object-store-no-status.message": "Rook が 10 分間フェーズを報告していません。Rook オペレーターは動作していますか？",
+      "problems.osd-prepare-failed.title": "OSD 準備 Job が失敗しました",
+      "problems.osd-prepare-failed.message": "OSD 準備 Job {{.metadata.name}} が失敗しました。Rook はそこでディスクを OSD として準備できませんでした。理由はその Pod のログでわかります",
+      "problems.osd-purge-failed.title": "OSD パージ Job が失敗しました",
+      "problems.osd-purge-failed.message": "OSD パージ Job {{.metadata.name}} が失敗しました。Rook は安全に破棄できない OSD を削除しません。理由はその Pod のログでわかります",
+      "problems.daemon-unavailable.title": "Ceph デーモンが利用できません",
+      "problems.daemon-unavailable.message": "{{.metadata.name}} に利用できないレプリカが {{.status.unavailableReplicas}} 個あります",
+      "problems.object-user-store-missing.title": "ユーザーのオブジェクトストアがありません",
+      "problems.object-user-store-missing.message": "このユーザーが指定するオブジェクトストア {{.spec.store}} が、その namespace にありません",
+      "problems.subvolume-group-filesystem-missing.title": "サブボリュームグループのファイルシステムがありません",
+      "problems.subvolume-group-filesystem-missing.message": "このサブボリュームグループが指定するファイルシステム {{.spec.filesystemName}} が、その namespace にありません",
+      "problems.rados-namespace-pool-missing.title": "RADOS namespace のプールがありません",
+      "problems.rados-namespace-pool-missing.message": "この RADOS namespace が指定するブロックプール {{.spec.blockPoolName}} が、その namespace にありません",
       "metricQueries.health.title": "Ceph のヘルス (0 OK、1 WARN、2 ERR)",
       "metricQueries.capacity.title": "RAW 容量: 合計と使用済みのバイト数",
       "metricQueries.osds.title": "OSD の up、in、合計",
       "metricQueries.pgs.title": "状態別の配置グループ",
-      "metricQueries.osd-usage.title": "各 OSD: up、in、reweight 値、サイズ、使用バイト数"
+      "metricQueries.osd-usage.title": "各 OSD: up、in、reweight 値、サイズ、使用バイト数",
+      "commands.status.title": "Ceph のステータス",
+      "commands.health-detail.title": "ヘルスチェックの詳細",
+      "commands.osd-tree.title": "OSD ツリー",
+      "commands.osd-df.title": "CRUSH ツリー別の OSD 使用量",
+      "commands.df.title": "RAW とプールごとの使用量",
+      "commands.pg-stat.title": "配置グループの概要",
+      "commands.versions.title": "デーモンのバージョン",
+      "commands.crash-ls-new.title": "まだアーカイブされていないクラッシュ",
+      "commands.osd-dump.title": "フラグを読み取るための OSD マップ",
+      "commands.osd-ok-to-stop.title": "データを利用不能にせずに OSD を停止できるか",
+      "commands.osd-safe-to-destroy.title": "データを失わずに OSD を破棄できるか",
+      "commands.osd-out.title": "OSD を out にする: Ceph はそのデータを他の OSD へ移動します",
+      "commands.osd-in.title": "OSD を in にする: Ceph は再びその OSD にデータを配置します",
+      "commands.osd-reweight.title": "OSD の重みを変更 (reweight): Ceph はそのデータの一部を他の OSD へ移動します",
+      "commands.osd-set.title": "クラスター全体の OSD フラグを設定",
+      "commands.osd-unset.title": "クラスター全体の OSD フラグを解除",
+      "commands.crash-archive-all.title": "すべてのクラッシュレポートをアーカイブ (RECENT_CRASH が解消されます)"
     },
     "ko": {
       "name": "Rook Ceph",
-      "description": "Rook Ceph 클러스터: Ceph 건강 상태와 상태 검사 항목을 쉬운 말로 설명하고, 용량, 데몬, CRUSH 트리와 OSD, 풀·파일 시스템·오브젝트 스토어와 그 스토리지 클래스 및 클레임, 차트와 문제를 보여 줍니다. 또한 Rook 자체 개체를 통해 이를 관리하며, 모든 변경 사항은 먼저 보여 주고 확인을 받습니다.",
+      "description": "Rook Ceph 클러스터: Ceph 건강 상태와 상태 검사 항목을 쉬운 말로 설명하고, 용량, 데몬, CRUSH 트리와 OSD, 풀·파일 시스템·오브젝트 스토어와 그 스토리지 클래스 및 클레임, 차트와 문제를 보여 줍니다. 또한 Rook 자체 개체와, 이 매니페스트에 고정되어 Rook 툴박스에서 실행되는 ceph 명령을 통해 이를 관리하며, 모든 변경 사항은 먼저 보여 주고 확인을 받습니다.",
       "pages.overview.title": "Rook Ceph",
+      "pages.overview.sectionTitle": "Rook Ceph",
       "detailsSections.status.title": "Ceph 상태",
       "detailsSections.daemons.title": "데몬",
       "detailsSections.metrics.title": "메트릭",
       "detailsSections.osds.title": "CRUSH와 OSD",
+      "detailsSections.commands.title": "Ceph 명령",
       "detailsSections.storage.title": "스토리지 클래스와 클레임",
       "detailsSections.topology.title": "Rook Ceph",
       "actions.upgrade.title": "Ceph 업그레이드…",
@@ -1153,11 +2013,40 @@
       "problems.object-store-not-ready.message": "10분 동안 {{.status.phase}} 단계입니다. {{.status.message}}",
       "problems.object-store-no-status.title": "상태가 없는 Ceph 오브젝트 스토어",
       "problems.object-store-no-status.message": "Rook이 10분 동안 단계를 보고하지 않았습니다. Rook 오퍼레이터가 실행 중입니까?",
+      "problems.osd-prepare-failed.title": "OSD 준비 Job 실패",
+      "problems.osd-prepare-failed.message": "OSD 준비 Job {{.metadata.name}}이(가) 실패했습니다. Rook이 그곳의 디스크를 OSD로 준비하지 못했습니다. 이유는 해당 Pod의 로그에서 알 수 있습니다",
+      "problems.osd-purge-failed.title": "OSD 퍼지 Job 실패",
+      "problems.osd-purge-failed.message": "OSD 퍼지 Job {{.metadata.name}}이(가) 실패했습니다. Rook은 안전하게 파기할 수 없는 OSD를 제거하지 않습니다. 이유는 해당 Pod의 로그에서 알 수 있습니다",
+      "problems.daemon-unavailable.title": "Ceph 데몬을 사용할 수 없음",
+      "problems.daemon-unavailable.message": "{{.metadata.name}}에 사용할 수 없는 복제본이 {{.status.unavailableReplicas}}개 있습니다",
+      "problems.object-user-store-missing.title": "사용자의 오브젝트 스토어 없음",
+      "problems.object-user-store-missing.message": "이 사용자가 지정한 오브젝트 스토어 {{.spec.store}}이(가) 해당 namespace에 없습니다",
+      "problems.subvolume-group-filesystem-missing.title": "하위 볼륨 그룹의 파일 시스템 없음",
+      "problems.subvolume-group-filesystem-missing.message": "이 하위 볼륨 그룹이 지정한 파일 시스템 {{.spec.filesystemName}}이(가) 해당 namespace에 없습니다",
+      "problems.rados-namespace-pool-missing.title": "RADOS namespace의 풀 없음",
+      "problems.rados-namespace-pool-missing.message": "이 RADOS namespace가 지정한 블록 풀 {{.spec.blockPoolName}}이(가) 해당 namespace에 없습니다",
       "metricQueries.health.title": "Ceph 건강 상태(0 OK, 1 WARN, 2 ERR)",
       "metricQueries.capacity.title": "원시 용량: 전체 및 사용된 바이트",
       "metricQueries.osds.title": "OSD: up, in, 전체",
       "metricQueries.pgs.title": "상태별 배치 그룹",
-      "metricQueries.osd-usage.title": "OSD별: up, in, override weight, 크기, 사용된 바이트"
+      "metricQueries.osd-usage.title": "OSD별: up, in, override weight, 크기, 사용된 바이트",
+      "commands.status.title": "Ceph 상태",
+      "commands.health-detail.title": "상태 검사 세부 정보",
+      "commands.osd-tree.title": "OSD 트리",
+      "commands.osd-df.title": "CRUSH 트리별 OSD 사용량",
+      "commands.df.title": "원시 및 풀별 사용량",
+      "commands.pg-stat.title": "배치 그룹 요약",
+      "commands.versions.title": "데몬 버전",
+      "commands.crash-ls-new.title": "아직 보관되지 않은 크래시",
+      "commands.osd-dump.title": "플래그를 읽기 위한 OSD 맵",
+      "commands.osd-ok-to-stop.title": "데이터를 사용할 수 없게 만들지 않고 OSD를 중지할 수 있는지 여부",
+      "commands.osd-safe-to-destroy.title": "데이터 손실 없이 OSD를 파기할 수 있는지 여부",
+      "commands.osd-out.title": "OSD를 out으로 표시: Ceph가 그 데이터를 다른 OSD로 옮깁니다",
+      "commands.osd-in.title": "OSD를 in으로 표시: Ceph가 다시 그 OSD에 데이터를 배치합니다",
+      "commands.osd-reweight.title": "OSD 가중치 변경(reweight): Ceph가 그 데이터 일부를 다른 OSD로 옮깁니다",
+      "commands.osd-set.title": "클러스터 전체 OSD 플래그 설정",
+      "commands.osd-unset.title": "클러스터 전체 OSD 플래그 해제",
+      "commands.crash-archive-all.title": "모든 크래시 보고서 보관(RECENT_CRASH 해제)"
     }
   }
 }

@@ -1,5 +1,8 @@
 # ADR-0141: Rook Ceph manages Rook only through Rook's own objects
 
+*Amended by ADR-0150 (Rook Ceph 1.2.0): it now also runs the `ceph` commands fixed in its manifest. The point "It
+never runs a `ceph` command" below no longer holds; the rest stands.*
+
 ## Context
 
 Rook Ceph 1.0.0 was read-only (ADR-0139). Issue #327 asks it to manage Rook as well:

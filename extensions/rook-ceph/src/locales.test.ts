@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import manifest from "../sextant-extension.json";
 import { RANGES } from "./charts";
 import { KNOWN_CHECKS } from "./checks";
+import { FLAGS, READ_COMMANDS } from "./commands";
 import { COMPONENTS } from "./components";
 import { CATALOGS } from "./i18n";
 import en from "./locales/en.json";
@@ -43,6 +44,8 @@ describe("catalogs", () => {
       ...COMPONENTS.map((c) => `components.${c.id}`),
       ...RANGES.map((r) => `chart.range.${r.id}`),
       ...["rbd", "cephfs", "bucket"].map((d) => `page.drivers.${d}`),
+      ...READ_COMMANDS.map((id) => `commands.read.${id}`),
+      ...FLAGS.map((flag) => `commands.flag.${flag}`),
       ...["health", "total", "used", "inCluster", "in", "up", "active", "clean", "degraded", "undersized", "down"].map(
         (id) => `chart.series.${id}`,
       ),
@@ -64,12 +67,13 @@ describe("the manifest's translations", () => {
     const keys = [
       "name",
       "description",
-      ...c.pages.map((p) => `pages.${p.id}.title`),
+      ...c.pages.flatMap((p) => [`pages.${p.id}.title`, `pages.${p.id}.sectionTitle`]),
       ...c.detailsSections.map((s) => `detailsSections.${s.id}.title`),
       ...c.actions.map((a) => `actions.${a.id}.title`),
       ...c.columns.map((col) => `columns.${col.id}.title`),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
       ...c.metricQueries.map((q) => `metricQueries.${q.id}.title`),
+      ...c.commands.map((command) => `commands.${command.id}.title`),
     ].sort();
     const translations = manifest.translations as Record<string, Record<string, string>>;
     expect(Object.keys(translations).sort()).toEqual(SEXTANT_LANGUAGES.filter((l) => l !== "en"));

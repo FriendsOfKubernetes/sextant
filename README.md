@@ -85,10 +85,15 @@ ship on their own versions. The first is **Rook Ceph**:
 - problems and notifications when Ceph is unhealthy or its status goes stale;
 - since 1.1.0, management through Rook's own objects: Ceph upgrades checked against the versions Rook supports, the
   CRUSH tree and OSDs (replace, stop, remove with Rook's purge Job), a node's CRUSH location, pool, MDS and gateway
-  settings, new pools, filesystems, object stores and StorageClasses, muted health checks and the toolbox.
+  settings, new pools, filesystems, object stores and StorageClasses, muted health checks and the toolbox;
+- since 1.2.0 (Sextant 0.29), `ceph` commands in Rook's toolbox fixed in its manifest: status, health detail, the OSD
+  tree and usage, the cluster's OSD flags, marking OSDs out or in and reweighting them, Ceph's own `ok-to-stop` and
+  `safe-to-destroy` checks before an OSD is stopped or removed, and a sidebar section of its own with a problem
+  counter.
 
-Every change is shown before it is sent and confirmed in Sextant; it never runs a `ceph` command. It speaks every
-language Sextant does.
+Every change is shown before it is sent and confirmed in Sextant. It speaks every language Sextant does. Each of
+Sextant's own extensions has its documentation in its folder: [Rook Ceph](extensions/rook-ceph/README.md),
+[all of them](extensions/README.md).
 
 **What an extension can add**:
 - a page in the sidebar;

@@ -2,7 +2,9 @@
 // what Rook lets change about it, the cluster's storage switches and device sets, and the purge Jobs of removed OSDs.
 // Removing follows Rook's documentation (ceph-osd-mgmt.md "Remove an OSD"): stop the OSD (its Deployment scaled to 0
 // with Rook's do-not-reconcile label, so the operator does not start it again), check the placement groups, then run
-// Rook's purge Job, never forced, which refuses an OSD that is not safe to destroy.
+// Rook's purge Job, never forced, which refuses an OSD that is not safe to destroy. With Rook's toolbox, Ceph itself is
+// asked too (commands.ts): `ceph osd ok-to-stop` before an OSD is stopped and `ceph osd safe-to-destroy` before it is
+// removed, and an OSD can be marked out or in and reweighted — each such command confirmed by Sextant.
 import type { KubeObject, MetricAnswer, ObjectRef, Sextant } from "@sextant/extension-sdk";
 import {
   asYaml,
@@ -14,12 +16,13 @@ import {
   replaceOsdPatch,
   storagePatch,
 } from "./changes";
+import { outputOf, run, verdictOf, WEIGHTS, type CommandId } from "./commands";
 import { crushTree, osdMetrics, osdOf, type CrushNode, type Osd, type OsdMetrics } from "./crush";
 import { badge, element, errorBox, formatBytes, formatPercent, objectLink, richText } from "./dom";
 import { t } from "./i18n";
 import { kindKey, servedKinds, watchLists, type LiveList } from "./live";
 import { POD, type CephCluster } from "./rook";
-import { changeButton, checkbox, field, numberInput, preview, readCount, showPreview, textInput } from "./ui";
+import { changeButton, checkbox, field, numberInput, preview, readCount, select, showPreview, textInput } from "./ui";
 
 export const DEPLOYMENT = { group: "apps", kind: "Deployment" };
 export const JOB = { group: "batch", kind: "Job" };
@@ -124,6 +127,33 @@ interface OsdContext {
   jobs: Job[];
   /** OSDs whose "Remove" box is open: kept open across redraws. */
   open: Set<number>;
+  /** OSDs whose "ceph" box is open, and the weight chosen in it: kept across redraws. */
+  cephOpen: Set<number>;
+  weights: Map<number, string>;
+  /** What `ceph osd safe-to-destroy` said per OSD (`null`: it could not be asked), kept across redraws. */
+  safe: Map<number, { verdict: boolean | null; text: string } | "asking">;
+  /** Draws the tab again (after a check answered). */
+  redraw: () => void;
+}
+
+/** Runs a changing ceph command for one OSD; Sextant asks first. A non-zero exit fails with Ceph's own words. */
+async function cephChange(c: OsdContext, id: CommandId, params: Record<string, string>): Promise<void> {
+  const outcome = await run(c.sextant, c.namespace, id, params);
+  if (outcome.kind === "noToolbox") throw new Error(t("commands.noToolboxShort"));
+  if (outcome.kind === "failed") throw outcome.error;
+  if (outcome.result.exitCode !== 0 || outcome.result.timedOut) throw new Error(outputOf(outcome.result) || t("commands.timedOut"));
+}
+
+/**
+ * Stops an OSD only when Ceph does not say stopping it would make data unavailable (`ceph osd ok-to-stop`). When Ceph
+ * cannot be asked (no toolbox), the OSD is stopped as before: Rook's guide stops it the same way.
+ */
+async function stopChecked(c: OsdContext, osd: Osd, stop: () => Promise<unknown>): Promise<unknown> {
+  const outcome = await run(c.sextant, c.namespace, "osd-ok-to-stop", { osd: String(osd.id) });
+  if (verdictOf(outcome) === false && outcome.kind === "ran") {
+    throw new Error(t("osds.notOkToStop", { id: osd.id, reason: outputOf(outcome.result) }));
+  }
+  return stop();
 }
 
 function osdState(osd: Osd, m: OsdMetrics | undefined): HTMLElement {
@@ -155,37 +185,99 @@ function osdActions(c: OsdContext, osd: Osd): HTMLElement {
     if (stopped) {
       add(t("osds.start"), () => patch({ ...daemonReconcilePatch(false, version), spec: { replicas: 1 } }));
     } else {
-      add(t("osds.stop"), () => patch({ ...daemonReconcilePatch(true, version), spec: { replicas: 0 } }));
+      add(t("osds.stop"), () => stopChecked(c, osd, () => patch({ ...daemonReconcilePatch(true, version), spec: { replicas: 0 } })));
       add(t(osd.reconcilePaused ? "manage.resume" : "manage.pause"), () => patch(daemonReconcilePatch(!osd.reconcilePaused, version)));
     }
   }
   const job = c.jobs.find((j) => j.metadata.name === purgeJobName(osd.id));
   if (stopped && !job) controls.push(removeControl(c, osd));
+  controls.push(cephControls(c, osd));
   return element("span", { className: "inline-change" }, ...controls);
+}
+
+/** Mark out or in (by what the metrics say; both when they cannot tell) and reweight, as ceph commands. */
+function cephControls(c: OsdContext, osd: Osd): HTMLElement {
+  const m = c.metrics?.get(osd.id);
+  const id = { osd: String(osd.id) };
+  const parts: HTMLElement[] = [];
+  const add = (label: string, command: CommandId, params: () => Record<string, string>) => {
+    const { button, status } = changeButton(label, () => cephChange(c, command, params()));
+    button.setAttribute("aria-label", `${label} osd.${osd.id}`);
+    parts.push(button, status);
+  };
+  if (m?.in !== 0) add(t("osds.markOut"), "osd-out", () => id);
+  if (m?.in !== 1) add(t("osds.markIn"), "osd-in", () => id);
+  const current = m?.reweight !== undefined ? WEIGHTS.find((w) => Number(w) === m.reweight) : undefined;
+  const weight = select(WEIGHTS.map((w) => ({ value: w, label: w })), c.weights.get(osd.id) ?? current ?? "1.0");
+  weight.setAttribute("aria-label", t("osds.reweightTo", { id: osd.id }));
+  weight.addEventListener("change", () => c.weights.set(osd.id, weight.value));
+  add(t("osds.reweightApply"), "osd-reweight", () => ({ ...id, weight: weight.value }));
+  // The weight sits right before its button.
+  parts.splice(parts.length - 2, 0, weight);
+  const box = element(
+    "details",
+    { className: "ceph-osd" },
+    element("summary", { textContent: t("osds.cephActions") }),
+    element("p", { className: "muted" }, ...richText(t("osds.cephActionsHint"))),
+    element("p", {}, ...parts),
+  );
+  box.open = c.cephOpen.has(osd.id);
+  box.addEventListener("toggle", () => (box.open ? c.cephOpen.add(osd.id) : c.cephOpen.delete(osd.id)));
+  return box;
+}
+
+/** Asks `ceph osd safe-to-destroy` once per opening of the Remove box; the answer is kept for the redraws. */
+function askSafe(c: OsdContext, osd: Osd): void {
+  if (c.safe.has(osd.id)) return;
+  c.safe.set(osd.id, "asking");
+  void run(c.sextant, c.namespace, "osd-safe-to-destroy", { osd: String(osd.id) }).then((outcome) => {
+    c.safe.set(osd.id, { verdict: verdictOf(outcome), text: outcome.kind === "ran" ? outputOf(outcome.result) : "" });
+    c.redraw();
+  });
 }
 
 /** Remove a stopped OSD with Rook's purge Job, after the checks Rook's documentation asks for. */
 function removeControl(c: OsdContext, osd: Osd): HTMLElement {
   const box = element("details", { className: "remove-osd" }, element("summary", { textContent: t("osds.remove") }));
   box.open = c.open.has(osd.id);
-  box.addEventListener("toggle", () => (box.open ? c.open.add(osd.id) : c.open.delete(osd.id)));
+  box.addEventListener("toggle", () => {
+    if (box.open) {
+      c.open.add(osd.id);
+      askSafe(c, osd);
+    } else {
+      c.open.delete(osd.id);
+      // Asked again on the next opening: the answer is Ceph's of that moment.
+      c.safe.delete(osd.id);
+    }
+  });
+  if (box.open) askSafe(c, osd);
   const checks: string[] = [];
   if (c.pgsClean === false) checks.push(t("osds.pgsNotClean"));
   if (c.pgsClean === null) checks.push(t("osds.pgsUnknown"));
+  const safe = c.safe.get(osd.id);
+  const safeLine =
+    safe === undefined || safe === "asking"
+      ? element("p", { className: "muted", textContent: t("osds.safeAsking", { id: osd.id }) })
+      : safe.verdict === true
+        ? element("p", { className: "ok-text", textContent: t("osds.safeYes", { id: osd.id }) })
+        : safe.verdict === false
+          ? element("p", { className: "warning-text", textContent: t("osds.safeNo", { id: osd.id, reason: safe.text }) })
+          : element("p", { className: "warning-text" }, ...richText(t("osds.safeUnknown")));
   if (!c.rookImage) checks.push(t("osds.noRookImage"));
   const job = c.rookImage ? purgeJobObject(c.namespace, osd.id, c.rookImage) : null;
-  const run = changeButton(t("osds.removeRun", { id: osd.id }), async () => {
+  const removal = changeButton(t("osds.removeRun", { id: osd.id }), async () => {
     if (!job) throw new Error(t("osds.noRookImage"));
     await c.sextant.resources.apply({ yaml: asYaml([job]) });
   }, { danger: true });
   // Not clean is refused; not known only warns, and Rook's Job (not forced) still refuses an OSD unsafe to destroy.
-  if (!job || c.pgsClean === false) run.button.disabled = true;
+  if (!job || c.pgsClean === false || (safe !== undefined && safe !== "asking" && safe.verdict === false)) removal.button.disabled = true;
   box.append(
     element("p", {}, ...richText(t("osds.removeIntro", { id: osd.id }))),
     element("p", { className: "warning-text", textContent: t(osd.onPvc ? "osds.removePvc" : "osds.removeHost") }),
     ...checks.map((text) => element("p", { className: "warning-text" }, ...richText(text))),
+    safeLine,
     ...(job ? [preview(asYaml([job]))] : []),
-    element("p", {}, run.button, run.status),
+    element("p", {}, removal.button, removal.status),
   );
   return box;
 }
@@ -298,7 +390,19 @@ export function startOsds(sextant: Sextant, root: HTMLElement): () => void {
   let stopWatches: () => void = () => undefined;
   let cluster: CephCluster | null = null;
   let lists: Record<"deployments" | "jobs", LiveList> | null = null;
-  const context: OsdContext = { sextant, namespace, metrics: null, pgsClean: null, rookImage: null, jobs: [], open: new Set() };
+  const context: OsdContext = {
+    sextant,
+    namespace,
+    metrics: null,
+    pgsClean: null,
+    rookImage: null,
+    jobs: [],
+    open: new Set(),
+    cephOpen: new Set(),
+    weights: new Map(),
+    safe: new Map(),
+    redraw: () => render(),
+  };
   let storage: { version: string | undefined; node: HTMLElement } | null = null;
   const render = () => {
     if (stopped || !cluster || !lists || !lists.deployments.ready) return;

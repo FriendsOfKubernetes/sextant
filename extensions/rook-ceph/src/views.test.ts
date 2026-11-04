@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
 import fixtures from "../fixtures/objects.json";
 import { startAction } from "./actions";
+import { flagsOf } from "./commands";
+import { startCommands } from "./commandsView";
 import { startDaemons } from "./daemons";
 import { startNodeTopology } from "./nodeTopology";
 import { startOsds } from "./osds";
@@ -439,6 +441,104 @@ describe("CRUSH and OSDs", () => {
     expect(job.metadata.name).toBe("rook-ceph-purge-osd-1");
     expect(job.spec.template.spec.containers[0].image).toBe("docker.io/rook/ceph:v1.21.1");
     expect(job.spec.template.spec.containers[0].args).toContain("--force-osd-removal");
+  });
+});
+
+describe("ceph commands for OSDs", () => {
+  const exec = (answers: Record<string, { exitCode: number; stdout?: string; stderr?: string }>) => ({
+    "exec.run": ({ id }: { id: string }) => {
+      const answer = answers[id];
+      if (!answer) throw new SextantError("notFound", "no ready pod with the labels app=rook-ceph-tools");
+      return { pod: "rook-ceph-tools-6c7d8e9f0-st45u", stdout: answer.stdout ?? "", stderr: answer.stderr ?? "", exitCode: answer.exitCode, truncated: false, timedOut: false };
+    },
+  });
+  const runs = () => host.calls.filter((c) => c.method === "exec.run").map((c) => c.params as { id: string; namespace: string; params?: Record<string, string> });
+
+  async function startTab(answers: Parameters<typeof exec>[0]) {
+    await start({
+      context: { view: "details", contribution: "osds", selection: [ref(CLUSTER)], resourceVersion: "4021" },
+      handlers: { ...CHANGE_HANDLERS, ...exec(answers), "metrics.query": () => null },
+    });
+    stop = startOsds(host.sextant, root);
+    await answerWatches();
+    await expect.poll(() => root.querySelectorAll(".crush-osd").length).toBe(2);
+  }
+
+  it("stops an OSD only when Ceph says it is OK to stop", async () => {
+    await startTab({ "osd-ok-to-stop": { exitCode: 16, stderr: "Error EBUSY: 12 PGs are already too degraded" } });
+    button("Stop osd.0")!.click();
+    await expect.poll(() => root.textContent).toContain("Ceph says osd.0 cannot be stopped now without making data unavailable: Error EBUSY");
+    expect(runs()[0]).toMatchObject({ id: "osd-ok-to-stop", namespace: "rook-ceph", params: { osd: "0" } });
+    expect(changes()).toEqual([]);
+  });
+
+  it("marks an OSD out and reweights it by the manifest's commands", async () => {
+    await startTab({ "osd-out": { exitCode: 0, stderr: "marked out osd.0." }, "osd-reweight": { exitCode: 0 } });
+    button("Mark out osd.0")!.click();
+    await expect.poll(() => runs()[0]).toMatchObject({ id: "osd-out", params: { osd: "0" } });
+    const weight = root.querySelector<HTMLSelectElement>('select[aria-label="Weight for osd.0"]')!;
+    weight.value = "0.8";
+    button("Reweight osd.0")!.click();
+    await expect.poll(() => runs()[1]).toMatchObject({ id: "osd-reweight", params: { osd: "0", weight: "0.8" } });
+  });
+
+  it("asks Ceph whether a stopped OSD is safe to destroy and refuses removal when it is not", async () => {
+    await startTab({ "osd-safe-to-destroy": { exitCode: 16, stderr: "Error EBUSY: OSD(s) 1 have 3 pgs currently mapped to them." } });
+    const box = root.querySelector<HTMLDetailsElement>(".remove-osd")!;
+    box.open = true;
+    box.dispatchEvent(new Event("toggle"));
+    await expect.poll(() => root.textContent).toContain("Ceph says osd.1 is not safe to destroy yet: Error EBUSY");
+    expect(runs()[0]).toMatchObject({ id: "osd-safe-to-destroy", params: { osd: "1" } });
+    expect(button("Remove osd.1")!.disabled).toBe(true);
+  });
+});
+
+describe("the Ceph commands tab", () => {
+  async function startTab(handlers: TestHostOptions["handlers"]) {
+    await start({ context: { view: "details", contribution: "commands", selection: [ref(CLUSTER)], resourceVersion: "4021" }, handlers });
+    stop = startCommands(host.sextant, root);
+  }
+  const ran = (stdout: string, exitCode = 0) => ({ pod: "rook-ceph-tools-6c7d8e9f0-st45u", stdout, stderr: "", exitCode, truncated: false, timedOut: false });
+
+  it("runs a reading command in the cluster's namespace and shows what Ceph printed", async () => {
+    await startTab({ "exec.run": ({ id }: { id: string }) => (id === "osd-dump" ? ran("{}") : ran("  cluster:\n    health: HEALTH_WARN")) });
+    button("Status")!.click();
+    await expect.poll(() => root.querySelector(".command-output pre")?.textContent).toContain("health: HEALTH_WARN");
+    expect(root.querySelector(".command-output figcaption")?.textContent).toContain("ceph status");
+    expect(host.calls.filter((c) => c.method === "exec.run").map((c) => c.params)).toContainEqual(expect.objectContaining({ id: "status", namespace: "rook-ceph" }));
+  });
+
+  it("reads the OSD map's flags and unsets one that is set", async () => {
+    await startTab({
+      "exec.run": ({ id }: { id: string }) => (id === "osd-dump" ? ran(JSON.stringify({ epoch: 9, flags: "noout,sortbitwise,recovery_deletes" })) : ran("")),
+    });
+    await expect.poll(() => root.querySelectorAll(".flag-row").length).toBe(6);
+    const noout = [...root.querySelectorAll(".flag-row")].find((r) => r.querySelector("code")?.textContent === "noout")!;
+    expect(noout.textContent).toContain("set");
+    expect(button("Set noout")).toBeUndefined();
+    button("Unset noout")!.click();
+    await expect.poll(() => host.calls.filter((c) => c.method === "exec.run").map((c) => c.params)).toContainEqual(
+      expect.objectContaining({ id: "osd-unset", params: { flag: "noout" } }),
+    );
+  });
+
+  it("says when no toolbox runs and offers to deploy one", async () => {
+    await startTab({});
+    await expect.poll(() => root.textContent).toContain("No toolbox runs in this namespace");
+    expect(root.querySelectorAll(".flag-row")).toHaveLength(0);
+  });
+});
+
+describe("flagsOf", () => {
+  const result = (stdout: string, more: object = {}) => ({ pod: "p", stdout, stderr: "", exitCode: 0, truncated: false, timedOut: false, ...more });
+  it("reads the flags text and the newer list", () => {
+    expect([...flagsOf(result(JSON.stringify({ flags: "noout,sortbitwise" })))!]).toEqual(["noout", "sortbitwise"]);
+    expect([...flagsOf(result(JSON.stringify({ flags_set: ["norebalance"] })))!]).toEqual(["norebalance"]);
+  });
+  it("cannot tell from a cut or failed answer", () => {
+    expect(flagsOf(result('{"flags": "noout"', { truncated: true }))).toBeNull();
+    expect(flagsOf(result("", { exitCode: 1 }))).toBeNull();
+    expect(flagsOf(result("not json"))).toBeNull();
   });
 });
 
