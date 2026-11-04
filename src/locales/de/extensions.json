@@ -301,5 +301,12 @@
     "heading": "Metriken",
     "queries": "Die Erweiterung darf diese festen Abfragen in der Prometheus-kompatiblen Quelle jedes Clusters ausführen, den sie erreichen darf; sie setzt nur Namen und Zeitspannen ein:",
     "scope": "Prometheus kann mit Daten aus jedem Namespace antworten, auch aus Namespaces, in denen die Erweiterung keine Objekte lesen darf."
+  },
+  "commands": {
+    "heading": "Befehle",
+    "list": "Die Erweiterung darf diese Programme ausführen, nie über eine Shell, und setzt nur Werte ein, die ihre Parameter erlauben:",
+    "changes": "Ändert etwas: Sextant fragt Sie jedes Mal. Läuft im Container {{container}} des neuesten bereiten Pods mit den Labels {{selector}}.",
+    "reads": "Liest nur. Läuft im Container {{container}} des neuesten bereiten Pods mit den Labels {{selector}}.",
+    "scope": "Nur in Namespaces, in denen die Erweiterung Pods lesen darf. Was die Befehle ausgeben, erhält die Erweiterung; das Aktivitätsprotokoll speichert den Befehl, nie seine Ausgabe."
   }
 }

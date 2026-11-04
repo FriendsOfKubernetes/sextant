@@ -294,5 +294,12 @@
     "heading": "指標",
     "queries": "擴充功能可以在其可存取的每個叢集的 Prometheus 相容資料來源中執行這些固定查詢；它只填入名稱與時長：",
     "scope": "Prometheus 可能回傳任何命名空間的資料，包括擴充功能無權讀取物件的命名空間。"
+  },
+  "commands": {
+    "heading": "命令",
+    "list": "擴充功能可以執行這些程式，絕不透過 shell，只填入其參數允許的值：",
+    "changes": "會變更內容：Sextant 每次都會詢問你。在帶有標籤 {{selector}} 的最新就緒 Pod 的容器 {{container}} 中執行。",
+    "reads": "只讀取。在帶有標籤 {{selector}} 的最新就緒 Pod 的容器 {{container}} 中執行。",
+    "scope": "僅在擴充功能可讀取 Pod 的命名空間中執行。命令的輸出交給擴充功能；活動記錄只記錄命令，從不記錄其輸出。"
   }
 }

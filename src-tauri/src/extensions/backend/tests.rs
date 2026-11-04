@@ -4,7 +4,7 @@
 use std::sync::{Arc, RwLock};
 
 use serde_json::{Value, json};
-use sextant_core::extensions::{BackendGrant, MANIFEST_FILE, asks_within, parse_manifest};
+use sextant_core::extensions::{BackendGrant, Granted, MANIFEST_FILE, asks_within, parse_manifest};
 use sextant_core::kubeconfig::{KubeconfigEnv, KubeconfigRegistry};
 use sextant_core::{ClusterManager, ErrorCode, SettingsStore};
 
@@ -316,12 +316,14 @@ async fn a_new_host_or_credential_brings_consent_back() {
         hosts: vec!["api.example.com".into()],
         credentials: vec!["token".into()],
     };
+    let with = |backend| Granted {
+        backend,
+        ..Granted::default()
+    };
     assert!(asks_within(
         &parsed,
         &parsed.permissions,
-        Some(&grant),
-        None,
-        None
+        with(Some(&grant))
     ));
-    assert!(!asks_within(&parsed, &parsed.permissions, None, None, None));
+    assert!(!asks_within(&parsed, &parsed.permissions, with(None)));
 }

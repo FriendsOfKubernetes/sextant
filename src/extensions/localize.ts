@@ -34,6 +34,7 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
         message: text(`problems.${r.id}.message`, r.message),
       })),
       metricQueries: c.metricQueries.map((q) => ({ ...q, title: text(`metricQueries.${q.id}.title`, q.title) })),
+      commands: c.commands.map((command) => ({ ...command, title: text(`commands.${command.id}.title`, command.title) })),
     },
   };
   if (c.settings) localized.contributes.settings = { title: text("settings.title", c.settings.title) };

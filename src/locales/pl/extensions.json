@@ -315,5 +315,12 @@
     "heading": "Metryki",
     "queries": "Rozszerzenie może uruchamiać te stałe zapytania w źródle zgodnym z Prometheusem w każdym klastrze, do którego ma dostęp; wstawia do nich tylko nazwy i czasy trwania:",
     "scope": "Prometheus może odpowiedzieć danymi z dowolnej przestrzeni nazw, także z tych, w których rozszerzenie nie może odczytywać obiektów."
+  },
+  "commands": {
+    "heading": "Polecenia",
+    "list": "Rozszerzenie może uruchamiać te programy, nigdy przez powłokę, wstawiając tylko wartości dozwolone przez ich parametry:",
+    "changes": "Coś zmienia: Sextant pyta Cię za każdym razem. Działa w kontenerze {{container}} najnowszego gotowego poda z etykietami {{selector}}.",
+    "reads": "Tylko odczytuje. Działa w kontenerze {{container}} najnowszego gotowego poda z etykietami {{selector}}.",
+    "scope": "Tylko w przestrzeniach nazw, w których rozszerzenie może odczytywać pody. To, co wypisują polecenia, trafia do rozszerzenia; dziennik aktywności zapisuje polecenie, nigdy jego wynik."
   }
 }

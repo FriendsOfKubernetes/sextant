@@ -71,6 +71,9 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
             Text::Message(&rule.message),
         );
     }
+    for command in &c.commands {
+        out.insert(format!("commands.{}.title", command.id), Text::Title);
+    }
     for query in &c.metric_queries {
         out.insert(format!("metricQueries.{}.title", query.id), Text::Title);
     }

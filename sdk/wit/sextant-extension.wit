@@ -15,10 +15,10 @@ interface host {
 
     /// One method of the extension API, with the extension's own grant, confirmations and activity log, as its frames
     /// call it: `clusters.list`, `kinds`, `resources.list`, `resources.get`, `resources.getMany`, `resources.apply`,
-    /// `resources.patch`, `resources.delete`, `logs.tail`, `secret.value`, `metrics.query`, `storage.get`,
-    /// `storage.set`, `storage.remove`, and `credentials.get` (`{ "name": "<credential>" }` → the value, or null when
-    /// the user entered none). `params` and the result are JSON text. New methods are new names of this one function:
-    /// the interface itself never changes (ADR-0142).
+    /// `resources.patch`, `resources.delete`, `logs.tail`, `secret.value`, `metrics.query`, `exec.run`,
+    /// `storage.get`, `storage.set`, `storage.remove`, and `credentials.get` (`{ "name": "<credential>" }` → the
+    /// value, or null when the user entered none). `params` and the result are JSON text. New methods are new names of
+    /// this one function: the interface itself never changes (ADR-0142).
     call: func(method: string, params: string) -> result<string, call-error>;
 
     enum level {

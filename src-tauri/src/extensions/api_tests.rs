@@ -165,6 +165,7 @@ fn install_into(dir: &Path, settings: &SettingsStore, id: &str, permissions: Val
                 granted_backend: None,
                 granted_problems: None,
                 granted_metric_queries: None,
+                granted_commands: None,
             });
         })
         .unwrap();
@@ -2116,4 +2117,112 @@ async fn a_metric_query_runs_only_when_agreed_to_and_is_journaled_without_its_an
     .await
     .unwrap_err();
     assert!(err.message.contains("instant query"), "{}", err.message);
+}
+
+/// The namespace of the command test (its own: the pod takes a while to go).
+const COMMAND_NS: &str = "sextant-ext-commands";
+
+#[tokio::test]
+async fn a_declared_command_runs_in_its_pod_and_nothing_else_does() {
+    let rules = json!({ "clusters": { "type": "all" }, "rules": [
+        { "namespaces": { "type": "only", "namespaces": [COMMAND_NS] }, "kinds": { "type": "all" },
+          "actions": ["read"], "confirm": false }
+    ] });
+    let Some(live) = live(rules).await else {
+        return;
+    };
+    admin_apply(
+        &live,
+        &format!(
+            "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: {COMMAND_NS}\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  \
+             name: tools\n  namespace: {COMMAND_NS}\n  labels:\n    app: tools\nspec:\n  terminationGracePeriodSeconds: 0\n  \
+             containers:\n  - name: tools\n    image: busybox:stable\n    command: [\"sleep\", \"3600\"]\n"
+        ),
+    )
+    .await;
+    let commands: Vec<commands::CommandContribution> = serde_json::from_value(json!([
+        { "id": "say", "title": "Say a word", "target": { "labelSelector": "app=tools", "container": "tools" },
+          "argv": ["echo", "{{word}}"], "params": [{ "name": "word", "type": "enum", "values": ["hello", "bye"] }] },
+        { "id": "wipe", "title": "Change something", "target": { "labelSelector": "app=tools", "container": "tools" },
+          "argv": ["true"], "changes": true }
+    ]))
+    .unwrap();
+    live.state
+        .settings
+        .update(|s| {
+            let entry = s.extensions.iter_mut().find(|e| e.id == "widgets").unwrap();
+            entry.granted_commands = Some(commands);
+        })
+        .unwrap();
+    let id = live.cluster.0.clone();
+    let say = |word: &str| json!({ "clusterId": id, "id": "say", "namespace": COMMAND_NS, "params": { "word": word } });
+    // The pod becomes ready.
+    let mut answer = None;
+    for _ in 0..120 {
+        match live.call("exec.run", say("hello")).await {
+            Ok(value) => {
+                answer = Some(value);
+                break;
+            }
+            Err(err) if err.code == ErrorCode::NotFound => {
+                tokio::time::sleep(Duration::from_millis(500)).await;
+            }
+            Err(err) => panic!("{err:?}"),
+        }
+    }
+    let answer = answer.expect("the pod never became ready");
+    assert_eq!(answer["stdout"], "hello\n");
+    assert_eq!(answer["exitCode"], 0);
+    assert_eq!(answer["pod"], "tools");
+
+    // A value its type refuses, a command it does not have, words of its own: nothing runs.
+    let err = live.call("exec.run", say("hello; id")).await.unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid);
+    let err = live
+        .call(
+            "exec.run",
+            json!({ "clusterId": id, "id": "shell", "namespace": COMMAND_NS }),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied);
+    let err = live
+        .call(
+            "exec.run",
+            json!({ "clusterId": id, "id": "say", "namespace": COMMAND_NS, "argv": ["sh"] }),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid);
+    // One that changes something asks the user, and with no window to ask it is declined.
+    let err = live
+        .call(
+            "exec.run",
+            json!({ "clusterId": id, "id": "wipe", "namespace": COMMAND_NS }),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied);
+    // Another namespace is not readable for the extension.
+    let err = live
+        .call("exec.run", json!({ "clusterId": id, "id": "say", "namespace": "default", "params": { "word": "bye" } }))
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied);
+
+    resources::delete(
+        &live.state.clusters,
+        &live.cluster,
+        &ObjectRef {
+            kind: KindRef {
+                group: String::new(),
+                version: "v1".into(),
+                kind: "Namespace".into(),
+            },
+            namespace: None,
+            name: COMMAND_NS.into(),
+        },
+    )
+    .await
+    .unwrap();
 }

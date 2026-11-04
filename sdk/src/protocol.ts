@@ -75,6 +75,7 @@ export const REMOTE_METHODS = [
   "storage.set",
   "storage.remove",
   "backend.call",
+  "exec.run",
 ] as const;
 
 /** Methods the window answers itself. */

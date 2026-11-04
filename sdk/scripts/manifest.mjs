@@ -483,7 +483,7 @@ function checkUniqueIds(manifest) {
       }
     });
   }
-  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries"]) {
+  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries", "commands"]) {
     const items = manifest.contributes?.[kind];
     if (!Array.isArray(items)) continue;
     items.forEach((item, i) => {
@@ -662,6 +662,85 @@ function checkProblems(manifest) {
   });
 }
 
+// --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
+
+const COMMANDS_API = 3;
+const COMMAND_WORD =
+  "must be a word without control characters and without `{{` or `}}`, or exactly `{{name}}` of a parameter";
+
+/** `name` when `word` is exactly `{{name}}`. */
+function commandPlaceholder(word) {
+  return word.startsWith("{{") && word.endsWith("}}") ? word.slice(2, -2).trim() : null;
+}
+
+const isCommandWord = (text) =>
+  Array.from(text).length <= 256 && !Array.from(text).some(isControl) && !text.includes("{{") && !text.includes("}}");
+
+const isLabelValue = (text) => text.length >= 1 && text.length <= 63 && /^[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$/.test(text);
+const isDnsName = (text, max, dots) =>
+  text.length >= 1 && text.length <= max && (dots ? /^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$/ : /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/).test(text);
+
+function isLabelSelector(text) {
+  return (
+    text.length > 0 &&
+    text.split(",").every((pair) => {
+      const at = pair.indexOf("=");
+      if (at < 0) return false;
+      const key = pair.slice(0, at);
+      const value = pair.slice(at + 1);
+      const slash = key.lastIndexOf("/");
+      const name = slash >= 0 ? key.slice(slash + 1) : key;
+      const prefix = slash >= 0 ? key.slice(0, slash) : null;
+      return isLabelValue(name) && (prefix === null || isDnsName(prefix, 253, true)) && isLabelValue(value);
+    })
+  );
+}
+
+function checkCommands(manifest) {
+  const commands = manifest.contributes?.commands ?? [];
+  const list = ["contributes", "commands"];
+  if (commands.length === 0) return;
+  if (manifest.sextantApi < COMMANDS_API) fail(list, `needs sextantApi ${COMMANDS_API} or later`);
+  commands.forEach((command, i) => {
+    const here = [...list, i];
+    if (!isLabelSelector(command.target.labelSelector)) {
+      fail([...here, "target", "labelSelector"], "must be `key=value` pairs separated by commas, such as `app=rook-ceph-tools`");
+    }
+    if (!isDnsName(command.target.container, 63, false)) fail([...here, "target", "container"], "must be a container name");
+    const params = command.params ?? [];
+    params.forEach((param, j) => {
+      const at = [...here, "params", j];
+      if (params.slice(0, j).some((p) => p.name === param.name)) fail([...at, "name"], "is the name of another parameter");
+      const values = param.values ?? [];
+      if (param.type === "enum") {
+        if (values.length === 0) fail([...at, "values"], "an `enum` lists its values");
+        values.forEach((value, k) => {
+          if (!isCommandWord(value)) fail([...at, "values", k], COMMAND_WORD);
+        });
+      } else if (values.length > 0) {
+        fail([...at, "values"], "only an `enum` has values");
+      }
+      if (param.type !== "int" && (param.min !== undefined || param.max !== undefined)) fail(at, "only an `int` has `min` and `max`");
+      if (param.min !== undefined && param.max !== undefined && param.min > param.max) fail([...at, "min"], "is above `max`");
+    });
+    const used = params.map(() => false);
+    command.argv.forEach((word, j) => {
+      const at = [...here, "argv", j];
+      const name = commandPlaceholder(word);
+      if (name !== null) {
+        if (j === 0) fail(at, "the program is a word of its own, never a parameter");
+        const k = params.findIndex((p) => p.name === name);
+        if (k < 0) fail(at, `names no parameter \`${name}\``);
+        used[k] = true;
+      } else if (!isCommandWord(word)) {
+        fail(at, COMMAND_WORD);
+      }
+    });
+    const unused = used.indexOf(false);
+    if (unused >= 0) fail([...here, "params", unused, "name"], "is not used by `argv`");
+  });
+}
+
 // --- Section counters (`check_section_badges` in crates/sextant-core/src/extensions/section_badges.rs) ------------
 
 const SECTION_BADGES_API = 3;
@@ -800,6 +879,7 @@ export function translatableTexts(manifest) {
     out.set(`problems.${rule.id}.title`, title);
     out.set(`problems.${rule.id}.message`, { max: 300, message: rule.message });
   }
+  for (const command of c.commands ?? []) out.set(`commands.${command.id}.title`, title);
   for (const query of c.metricQueries ?? []) out.set(`metricQueries.${query.id}.title`, title);
   for (const credential of manifest.backend?.credentials ?? []) out.set(`backend.credentials.${credential.id}.label`, title);
   return out;
@@ -857,6 +937,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     checkMetricQueries(value);
     checkTranslations(value);
     checkSectionBadges(value);
+    checkCommands(value);
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };

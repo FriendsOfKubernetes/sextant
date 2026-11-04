@@ -521,7 +521,7 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::extensions::installed::asks_within;
+    use crate::extensions::installed::{Granted, asks_within};
     use crate::extensions::parse_manifest;
 
     fn manifest(problems: serde_json::Value) -> ExtensionManifest {
@@ -592,12 +592,26 @@ mod tests {
         );
         let agreed = problem_kinds(&m);
         assert!(problems_within(&m, Some(&agreed)));
-        assert!(asks_within(&m, &m.permissions, None, Some(&agreed), None));
+        assert!(asks_within(
+            &m,
+            &m.permissions,
+            Granted {
+                problems: Some(&agreed),
+                ..Granted::default()
+            }
+        ));
         // A kind not agreed to (an update that judges Nodes now), or nothing agreed to: consent again.
         let fewer = [kind("ceph.rook.io", "CephCluster")];
         assert!(!problems_within(&m, Some(&fewer)));
-        assert!(!asks_within(&m, &m.permissions, None, Some(&fewer), None));
-        assert!(!asks_within(&m, &m.permissions, None, None, None));
+        assert!(!asks_within(
+            &m,
+            &m.permissions,
+            Granted {
+                problems: Some(&fewer),
+                ..Granted::default()
+            }
+        ));
+        assert!(!asks_within(&m, &m.permissions, Granted::default()));
         // Without rules nothing needs agreeing to.
         assert!(problems_within(&manifest(json!([])), None));
     }

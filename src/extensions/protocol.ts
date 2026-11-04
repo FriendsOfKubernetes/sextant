@@ -58,7 +58,7 @@
 //   ui.close()                            → null       closes the frame's window (action) or dock tab
 //   resources.unwatch({stream})           → null       stops a watch opened by `resources.watch`
 //   clusters.list, kinds, resources.list/get/getMany/watch/apply/patch/delete, logs.tail, secret.value, metrics.query,
-//   storage.get/set/remove
+//   storage.get/set/remove, exec.run
 //                                                      backend methods (`src-tauri/src/extensions/api.rs`)
 //
 // The host sends the frame no object data of its own: the context names the selected objects (`selection`) and the
@@ -206,6 +206,7 @@ export const REMOTE_METHODS: readonly string[] = [
   "storage.set",
   "storage.remove",
   "backend.call",
+  "exec.run",
 ];
 
 /** Methods the window answers itself. */

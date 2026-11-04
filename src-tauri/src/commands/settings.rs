@@ -97,6 +97,7 @@ mod tests {
             granted_backend: None,
             granted_problems: None,
             granted_metric_queries: None,
+            granted_commands: None,
         }
     }
 

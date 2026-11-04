@@ -110,6 +110,26 @@ export interface GetManyResult<T = KubeObject> {
   items: ({ object: T } | { error: { code: string; message: string } })[];
 }
 
+/** Runs a command of the manifest by id in `namespace` (`exec.run`, since Sextant 0.29). */
+export interface ExecParams extends OnCluster {
+  id: string;
+  namespace: string;
+  /** A value for each of its parameters. */
+  params?: Record<string, string>;
+}
+
+export interface ExecResult {
+  /** The pod it ran in. */
+  pod: string;
+  stdout: string;
+  stderr: string;
+  /** `null` when it did not end in time. */
+  exitCode: number | null;
+  /** stdout or stderr went past 256 KiB and was cut. */
+  truncated: boolean;
+  timedOut: boolean;
+}
+
 export interface WatchParams extends OnCluster {
   kind: KindInput;
   /** Only these namespaces; without them, every namespace the extension may read. */
@@ -181,6 +201,7 @@ export interface Methods {
   "logs.tail": { params: LogsParams & { clusterId: ClusterId }; result: string };
   "secret.value": { params: SecretParams & { clusterId: ClusterId }; result: string };
   "metrics.query": { params: MetricQueryParams & { clusterId: ClusterId }; result: MetricAnswer };
+  "exec.run": { params: ExecParams & { clusterId: ClusterId }; result: ExecResult };
   "storage.get": { params: { key: string }; result: JsonValue };
   "storage.set": { params: { key: string; value: JsonValue }; result: null };
   "storage.remove": { params: { key: string }; result: null };

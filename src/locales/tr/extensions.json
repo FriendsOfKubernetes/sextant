@@ -301,5 +301,12 @@
     "heading": "Metrikler",
     "queries": "Eklenti, erişebildiği her kümenin Prometheus uyumlu kaynağında bu sabit sorguları çalıştırabilir; yalnızca adları ve süreleri doldurur:",
     "scope": "Prometheus, eklentinin nesne okuyamadığı namespace'ler dahil herhangi bir namespace'in verileriyle yanıt verebilir."
+  },
+  "commands": {
+    "heading": "Komutlar",
+    "list": "Uzantı bu programları hiçbir zaman bir kabuk üzerinden değil, yalnızca parametrelerinin izin verdiği değerleri yerleştirerek çalıştırabilir:",
+    "changes": "Bir şeyi değiştirir: Sextant her seferinde size sorar. {{selector}} etiketli en yeni hazır pod'un {{container}} kapsayıcısında çalışır.",
+    "reads": "Yalnızca okur. {{selector}} etiketli en yeni hazır pod'un {{container}} kapsayıcısında çalışır.",
+    "scope": "Yalnızca uzantının pod'ları okuyabildiği ad alanlarında. Komutların çıktısı uzantıya gider; etkinlik günlüğü komutu tutar, çıktısını asla."
   }
 }

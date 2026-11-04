@@ -28,9 +28,9 @@ use sextant_core::SettingsStore;
 use sextant_core::access::KindPattern;
 use sextant_core::extensions::metric_queries::MetricQuery;
 use sextant_core::extensions::{
-    BackendGrant, ExtensionManifest, ExtensionPermissions, ExtensionSource, InstalledExtension,
-    MANIFEST_FILE, asks_within, inspect_folder, parse_manifest, resolve_package_file,
-    sweep_leftovers, version_dir,
+    BackendGrant, ExtensionManifest, ExtensionPermissions, ExtensionSource, Granted,
+    InstalledExtension, MANIFEST_FILE, asks_within, inspect_folder, parse_manifest,
+    resolve_package_file, sweep_leftovers, version_dir,
 };
 use ts_rs::TS;
 
@@ -97,7 +97,7 @@ type Emitter = Arc<dyn Fn(HostEvent) + Send + Sync>;
 struct Loaded {
     key: String,
     manifest: Result<ExtensionManifest, String>,
-    /// `asks_within(manifest, granted, granted_backend, granted_problems, granted_metric_queries)` for these grants.
+    /// `asks_within(manifest, granted, Granted::of(entry))` for these grants.
     granted: ExtensionPermissions,
     granted_backend: Option<BackendGrant>,
     granted_problems: Option<Vec<KindPattern>>,
@@ -431,15 +431,9 @@ impl ExtensionHost {
 }
 
 fn within(manifest: &Result<ExtensionManifest, String>, entry: &InstalledExtension) -> bool {
-    manifest.as_ref().is_ok_and(|m| {
-        asks_within(
-            m,
-            &entry.granted,
-            entry.granted_backend.as_ref(),
-            entry.granted_problems.as_deref(),
-            entry.granted_metric_queries.as_deref(),
-        )
-    })
+    manifest
+        .as_ref()
+        .is_ok_and(|m| asks_within(m, &entry.granted, Granted::of(entry)))
 }
 
 /// Backends' credentials: the OS keyring, or memory in tests.

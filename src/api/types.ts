@@ -262,6 +262,7 @@ export type { ProblemScope } from "./generated/ProblemScope";
 export type { MetricAnswer } from "./generated/MetricAnswer";
 export type { MetricParam } from "./generated/MetricParam";
 export type { MetricParamType } from "./generated/MetricParamType";
+export type { CommandContribution } from "./generated/CommandContribution";
 export type { MetricQuery } from "./generated/MetricQuery";
 export type { MetricQueryRange } from "./generated/MetricQueryRange";
 export type { MetricRange } from "./generated/MetricRange";

@@ -308,5 +308,12 @@
     "heading": "Métricas",
     "queries": "A extensão pode executar estas consultas fixas na fonte compatível com Prometheus de cada cluster que pode acessar; ela preenche apenas nomes e durações:",
     "scope": "O Prometheus pode responder com dados de qualquer namespace, inclusive daqueles em que a extensão não pode ler objetos."
+  },
+  "commands": {
+    "heading": "Comandos",
+    "list": "A extensão pode executar estes programas, nunca por meio de um shell, preenchendo só os valores que seus parâmetros permitem:",
+    "changes": "Altera algo: o Sextant pergunta a você toda vez. Executa no contêiner {{container}} do pod pronto mais recente com os rótulos {{selector}}.",
+    "reads": "Só lê. Executa no contêiner {{container}} do pod pronto mais recente com os rótulos {{selector}}.",
+    "scope": "Só em namespaces onde a extensão pode ler pods. O que os comandos imprimem vai para a extensão; o registro de atividades guarda o comando, nunca a saída."
   }
 }

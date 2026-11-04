@@ -294,5 +294,12 @@
     "heading": "指标",
     "queries": "扩展可以在其可访问的每个集群的 Prometheus 兼容数据源中运行这些固定查询；它只填入名称和时长：",
     "scope": "Prometheus 可能返回任何命名空间的数据，包括扩展无权读取对象的命名空间。"
+  },
+  "commands": {
+    "heading": "命令",
+    "list": "扩展可以运行这些程序，绝不通过 shell，只填入其参数允许的值：",
+    "changes": "会更改内容：Sextant 每次都会询问你。在带有标签 {{selector}} 的最新就绪 Pod 的容器 {{container}} 中运行。",
+    "reads": "只读取。在带有标签 {{selector}} 的最新就绪 Pod 的容器 {{container}} 中运行。",
+    "scope": "仅在扩展可读取 Pod 的命名空间中运行。命令的输出交给扩展；活动日志只记录命令，从不记录其输出。"
   }
 }

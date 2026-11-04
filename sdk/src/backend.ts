@@ -82,6 +82,7 @@ export const host = {
   logs: { tail: (params: Params<"logs.tail">) => callApi("logs.tail", params) },
   secret: { value: (params: Params<"secret.value">) => callApi("secret.value", params) },
   metrics: { query: (params: Params<"metrics.query">) => callApi("metrics.query", params) },
+  exec: { run: (params: Params<"exec.run">) => callApi("exec.run", params) },
   storage: {
     get: <T extends JsonValue = JsonValue>(key: string) => callApi("storage.get", { key }) as T | null,
     set: (key: string, value: JsonValue) => void callApi("storage.set", { key, value }),

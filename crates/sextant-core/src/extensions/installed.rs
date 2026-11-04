@@ -6,6 +6,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use super::commands::{CommandContribution, commands_within};
 use super::manifest::{BackendManifest, ExtensionManifest};
 use super::metric_queries::{MetricQuery, metric_queries_within};
 use super::permissions::ExtensionPermissions;
@@ -69,6 +70,10 @@ pub struct InstalledExtension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub granted_metric_queries: Option<Vec<MetricQuery>>,
+    /// The commands the user agreed to (ADR-0147), word for word; only these run. `None`: none were agreed to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub granted_commands: Option<Vec<CommandContribution>>,
 }
 
 /// The part of a backend the user agrees to: hosts and credential ids.
@@ -90,16 +95,42 @@ impl BackendGrant {
     }
 }
 
+/// What was granted to an extension beyond its permissions, as `asks_within` compares it.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Granted<'a> {
+    pub backend: Option<&'a BackendGrant>,
+    pub problems: Option<&'a [KindPattern]>,
+    pub metric_queries: Option<&'a [MetricQuery]>,
+    pub commands: Option<&'a [CommandContribution]>,
+}
+
+impl<'a> Granted<'a> {
+    /// What `installed` was granted.
+    pub fn of(installed: &'a InstalledExtension) -> Self {
+        Self {
+            backend: installed.granted_backend.as_ref(),
+            problems: installed.granted_problems.as_deref(),
+            metric_queries: installed.granted_metric_queries.as_deref(),
+            commands: installed.granted_commands.as_deref(),
+        }
+    }
+}
+
 /// Whether `manifest` asks for nothing beyond what was granted: its permissions within `granted`, its backend (if
-/// any) agreed to with every host and credential it names, every kind its problem rules judge and every metric query
-/// agreed to. A new backend, host, credential, judged kind or a new or changed metric query needs consent again.
+/// any) agreed to with every host and credential it names, every kind its problem rules judge, every metric query and
+/// every command agreed to. A new backend, host, credential, judged kind or a new or changed metric query or command
+/// needs consent again.
 pub fn asks_within(
     manifest: &ExtensionManifest,
     granted: &ExtensionPermissions,
-    granted_backend: Option<&BackendGrant>,
-    granted_problems: Option<&[KindPattern]>,
-    granted_metric_queries: Option<&[MetricQuery]>,
+    also: Granted<'_>,
 ) -> bool {
+    let Granted {
+        backend: granted_backend,
+        problems: granted_problems,
+        metric_queries: granted_metric_queries,
+        commands: granted_commands,
+    } = also;
     let backend_within = match (&manifest.backend, granted_backend) {
         (None, _) => true,
         (Some(_), None) => false,
@@ -118,6 +149,7 @@ pub fn asks_within(
     backend_within
         && problems_within(manifest, granted_problems)
         && metric_queries_within(manifest, granted_metric_queries)
+        && commands_within(manifest, granted_commands)
         && manifest.permissions.is_within(granted)
 }
 

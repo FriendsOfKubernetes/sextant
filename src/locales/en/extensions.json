@@ -301,5 +301,12 @@
     "heading": "Metrics",
     "queries": "The extension may run these fixed queries in the Prometheus-compatible source of each cluster it may reach; it fills in only names and durations:",
     "scope": "Prometheus may answer with data of any namespace, including namespaces where the extension may not read objects."
+  },
+  "commands": {
+    "heading": "Commands",
+    "list": "The extension may run these programs, never through a shell, filling in only the values its parameters allow:",
+    "changes": "Changes something: Sextant asks you every time. Runs in the container {{container}} of the newest ready pod with the labels {{selector}}.",
+    "reads": "Only reads. Runs in the container {{container}} of the newest ready pod with the labels {{selector}}.",
+    "scope": "Only in namespaces where the extension may read pods. What the commands print goes to the extension; the activity log keeps the command, never its output."
   }
 }

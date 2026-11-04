@@ -16,8 +16,9 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use sextant_core::extensions::problems::problem_kinds;
 use sextant_core::extensions::{
-    BackendGrant, ExtensionManifest, ExtensionSource, InstalledExtension, MAX_UNPACKED_BYTES,
-    Package, asks_within, inspect_folder, inspect_zip, prune_versions, remove, version_dir,
+    BackendGrant, ExtensionManifest, ExtensionSource, Granted, InstalledExtension,
+    MAX_UNPACKED_BYTES, Package, asks_within, inspect_folder, inspect_zip, prune_versions, remove,
+    version_dir,
 };
 use sextant_core::{CoreError, CoreResult, ErrorCode};
 use tauri::State;
@@ -241,11 +242,6 @@ impl ExtensionHost {
             .map_or_else(sextant_core::extensions::ExtensionPermissions::none, |e| {
                 e.granted.clone()
             });
-        let granted_backend = existing.as_ref().and_then(|e| e.granted_backend.clone());
-        let granted_problems = existing.as_ref().and_then(|e| e.granted_problems.clone());
-        let granted_metric_queries = existing
-            .as_ref()
-            .and_then(|e| e.granted_metric_queries.clone());
         let token = new_token()?;
         let listed_in_catalog = if matches!(source, ExtensionSource::Catalog { .. }) {
             None
@@ -258,13 +254,11 @@ impl ExtensionHost {
         };
         let shown = PendingInstall {
             token: token.clone(),
-            replaces: existing.map(|e| e.version),
+            replaces: existing.as_ref().map(|e| e.version.clone()),
             new_permissions: !asks_within(
                 &manifest,
                 &granted,
-                granted_backend.as_ref(),
-                granted_problems.as_deref(),
-                granted_metric_queries.as_deref(),
+                existing.as_ref().map(Granted::of).unwrap_or_default(),
             ),
             manifest: manifest.clone(),
             source: source.clone(),
@@ -435,6 +429,10 @@ impl ExtensionHost {
             granted_metric_queries: {
                 let queries = manifest.contributes.metric_queries.clone();
                 (!queries.is_empty()).then_some(queries)
+            },
+            granted_commands: {
+                let commands = manifest.contributes.commands.clone();
+                (!commands.is_empty()).then_some(commands)
             },
         };
         let saved = self.inner.settings.update(|settings| {

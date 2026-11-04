@@ -7,6 +7,7 @@ import { Badge, Button, Dialog, ErrorState } from "../../components";
 import { localizeManifest, pushNotice, refreshExtensions } from "../../extensions";
 import { BackendConsent } from "./BackendDialogs";
 import { ExtensionIcon } from "./ExtensionIcon";
+import { CommandsConsent } from "./CommandsConsent";
 import { MetricsConsent } from "./MetricsConsent";
 import { ProblemsConsent } from "./ProblemsConsent";
 import { installErrorTitle, sourceText } from "./install";
@@ -132,6 +133,7 @@ export function ConsentDialog({ pending, review = false, onClose }: ConsentDialo
         {manifest.backend && <BackendConsent backend={manifest.backend} />}
         {manifest.contributes.problems.length > 0 && <ProblemsConsent rules={manifest.contributes.problems} />}
         {manifest.contributes.metricQueries.length > 0 && <MetricsConsent queries={manifest.contributes.metricQueries} />}
+        {manifest.contributes.commands.length > 0 && <CommandsConsent commands={manifest.contributes.commands} />}
         {error && <ErrorState error={error} title={installErrorTitle(error, t)} className="settings__error" />}
       </div>
     </Dialog>

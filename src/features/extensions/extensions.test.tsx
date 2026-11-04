@@ -57,6 +57,7 @@ const manifest: ExtensionManifest = {
     problems: [],
     metricQueries: [],
     sectionBadges: [],
+    commands: [],
     settings: { title: "Widget settings" },
   },
 };

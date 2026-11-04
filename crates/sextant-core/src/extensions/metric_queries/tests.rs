@@ -1,7 +1,7 @@
 use serde_json::json;
 
 use super::*;
-use crate::extensions::installed::asks_within;
+use crate::extensions::installed::{Granted, asks_within};
 use crate::extensions::parse_manifest;
 use crate::fake_api::{FakeApi, Reply, Request, connected_to};
 use crate::metrics::PrometheusTarget;
@@ -239,11 +239,25 @@ fn an_update_with_a_new_or_changed_query_asks_again() {
     ))
     .unwrap();
     let agreed = m.contributes.metric_queries.clone();
-    assert!(asks_within(&m, &m.permissions, None, None, Some(&agreed)));
-    assert!(!asks_within(&m, &m.permissions, None, None, None));
+    assert!(asks_within(
+        &m,
+        &m.permissions,
+        Granted {
+            metric_queries: Some(&agreed),
+            ..Granted::default()
+        }
+    ));
+    assert!(!asks_within(&m, &m.permissions, Granted::default()));
     let mut changed = agreed.clone();
     changed[0].query = "up".into();
-    assert!(!asks_within(&m, &m.permissions, None, None, Some(&changed)));
+    assert!(!asks_within(
+        &m,
+        &m.permissions,
+        Granted {
+            metric_queries: Some(&changed),
+            ..Granted::default()
+        }
+    ));
 }
 
 #[tokio::test]

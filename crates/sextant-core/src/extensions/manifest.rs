@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use ts_rs::TS;
 
+use super::commands::{self, CommandContribution};
 use super::metric_queries::{self, MetricQuery};
 use super::permissions::ExtensionPermissions;
 use super::problems::{self, ProblemContribution};
@@ -23,7 +24,8 @@ use crate::error::{CoreError, ErrorCode};
 pub const MANIFEST_FILE: &str = "sextant-extension.json";
 
 /// The newest extension API major version this Sextant implements (`sextantApi`); 2 brought `contributes.problems`
-/// (ADR-0137), 3 `contributes.sectionBadges` (ADR-0143).
+/// (ADR-0137), 3 `contributes.sectionBadges`, rules across objects and `contributes.commands` (ADR-0143, ADR-0144,
+/// ADR-0147).
 pub const SUPPORTED_API: u32 = 3;
 /// The oldest one it still reads: every extension once accepted keeps working (ADR-0142).
 pub const MIN_API: u32 = 1;
@@ -146,6 +148,8 @@ pub struct Contributions {
     pub metric_queries: Vec<MetricQuery>,
     /// Problem counters on the extension's own sidebar sections (ADR-0143); `sextantApi` 3.
     pub section_badges: Vec<SectionBadgeContribution>,
+    /// Programs the extension runs by id in a container it names by labels (ADR-0147); `sextantApi` 3.
+    pub commands: Vec<CommandContribution>,
 }
 
 /// A page in the cluster's sidebar (`view=page`).
@@ -287,6 +291,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     metric_queries::check_metric_queries(&manifest)?;
     translations::check_translations(&manifest)?;
     section_badges::check_section_badges(&manifest)?;
+    commands::check_commands(&manifest)?;
     Ok(manifest)
 }
 
@@ -319,6 +324,7 @@ fn check_unique_ids(manifest: &Value) -> Result<(), ManifestError> {
         "dockActions",
         "problems",
         "metricQueries",
+        "commands",
     ] {
         let Some(items) = manifest
             .get("contributes")

@@ -8,8 +8,9 @@ import type { DetailsPlacement } from "./generated/DetailsPlacement";
 import type { ProblemCondition } from "./generated/ProblemCondition";
 import type { ProblemScalar } from "./generated/ProblemScalar";
 import type { MetricParamType } from "./generated/MetricParamType";
+import type { CommandParamType } from "./generated/CommandParamType";
 
-export type { ExtensionManifest, KindPattern, DetailsPlacement, MetricParamType, ProblemCondition, ProblemScalar };
+export type { ExtensionManifest, KindPattern, DetailsPlacement, MetricParamType, CommandParamType, ProblemCondition, ProblemScalar };
 
 /** The file name of the manifest, at the top of the package. */
 export const MANIFEST_FILE = "sextant-extension.json";
@@ -155,6 +156,37 @@ export interface ManifestContributions {
   metricQueries?: ManifestMetricQuery[];
   /** Problem counters on the extension's own sidebar sections; needs `sextantApi` 3. */
   sectionBadges?: ManifestSectionBadge[];
+  /** Programs run by id in a container named by labels (`sextant.exec.run`); needs `sextantApi` 3. */
+  commands?: ManifestCommand[];
+}
+
+/**
+ * A command (`sextantApi` 3, ADR-0147): a program fixed in the manifest that the extension runs by id with
+ * `sextant.exec.run`, never through a shell. An argument may be exactly `{{name}}` of a parameter, put in whole after
+ * its value is checked. Agreed to word for word at install; one that `changes` something asks the user every time.
+ */
+export interface ManifestCommand {
+  id: string;
+  /** What it does; shown at install and when it asks. */
+  title: string;
+  /** The newest ready pod with these labels, in the namespace the call names, and its container. */
+  target: { labelSelector: string; container: string };
+  argv: string[];
+  params?: ManifestCommandParam[];
+  /** It changes something: the user confirms it every time. Default `false`. */
+  changes?: boolean;
+  /** 1–60; default 30. */
+  timeoutSeconds?: number;
+}
+
+export interface ManifestCommandParam {
+  name: string;
+  type: CommandParamType;
+  /** `enum`: the values it may be. */
+  values?: string[];
+  /** `int`: the smallest and largest value. */
+  min?: number;
+  max?: number;
 }
 
 /**
@@ -226,6 +258,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       problems: (c.problems ?? []).map((p) => ({ ...p, graceMinutes: p.graceMinutes ?? 0, notify: p.notify ?? true, toldThroughOwner: p.toldThroughOwner ?? false })),
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
       sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [] })),
+      commands: (c.commands ?? []).map((command) => ({ ...command, params: command.params ?? [], changes: command.changes ?? false })),
     },
   };
   if (file.icon !== undefined) manifest.icon = file.icon;

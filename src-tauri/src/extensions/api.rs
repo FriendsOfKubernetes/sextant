@@ -37,6 +37,7 @@ use sextant_core::access::{
     self, AccessAction, AccessPreset, ClusterAccess, Decision, KindPattern, NamespaceScope,
 };
 use sextant_core::error::with_timeout;
+use sextant_core::extensions::commands::{self, MAX_OUTPUT_BYTES};
 use sextant_core::extensions::metric_queries::{MetricQueryRange, run_metric_query};
 use sextant_core::extensions::{ExtensionPermissions, InstalledExtension, decide_extension};
 use sextant_core::resources::{
@@ -86,7 +87,7 @@ pub const MAX_GET_MANY: usize = 50;
 pub const GET_MANY_AT_ONCE: usize = 4;
 
 /// The methods `extension_call` serves (`ui.*` and the context are the window's).
-pub const METHODS: [&str; 15] = [
+pub const METHODS: [&str; 16] = [
     "clusters.list",
     "kinds",
     "resources.list",
@@ -102,6 +103,7 @@ pub const METHODS: [&str; 15] = [
     "storage.set",
     "storage.remove",
     "backend.call",
+    "exec.run",
 ];
 
 const NODE_SHELL_REFUSAL: &str = "Sextant does not let extensions change or delete node shell pods";
@@ -464,6 +466,7 @@ impl ExtensionApi {
             "logs.tail" => call.logs(params).await,
             "secret.value" => call.secret_value(params).await,
             "metrics.query" => call.metric_query(params).await,
+            "exec.run" => call.exec_run(params).await,
             _ => Err(invalid(format!("unknown method {method}"))),
         };
         let record = call.record();
@@ -878,6 +881,19 @@ impl<'a> ExtCall<'a> {
         requirements: &[Requirement],
         summary: &CallSummary,
     ) -> CoreResult<()> {
+        self.check_asking(cluster, requirements, summary, false)
+            .await
+    }
+
+    /// [`ExtCall::check`], asking the user even where the rules would not (`always`): a command that changes
+    /// something (ADR-0147).
+    async fn check_asking(
+        &self,
+        cluster: &ExtCluster,
+        requirements: &[Requirement],
+        summary: &CallSummary,
+        always: bool,
+    ) -> CoreResult<()> {
         let target = clip(&summary.target);
         lock(&self.record).target = target.clone();
         let mut seen = Vec::with_capacity(requirements.len());
@@ -887,7 +903,7 @@ impl<'a> ExtCall<'a> {
                     .await;
             seen.push((namespace, kind.clone(), *action));
         }
-        let confirm = self.decide_all(cluster, &seen, summary).await?;
+        let confirm = self.decide_all(cluster, &seen, summary).await? || always;
         if !confirm {
             return Ok(());
         }
@@ -1512,6 +1528,140 @@ impl<'a> ExtCall<'a> {
         to_value(&answer)
     }
 
+    /// One of the commands of its manifest the user agreed to (ADR-0147), with its values put in, in the newest ready
+    /// pod of `namespace` its target's labels select (never a node shell or a debug copy). Read on Pods there is
+    /// needed to find it; one that changes something asks the user, the filled words shown. Journaled without output.
+    async fn exec_run(&self, params: Value) -> CoreResult<Value> {
+        let args: ExecArgs = parse(&self.method, params)?;
+        let namespace = required("namespace", &args.namespace)?.to_owned();
+        lock(&self.record).target = clip(&format!("command {} in {namespace}", args.id));
+        let entry = match active_off_runtime(self.host, &self.id).await? {
+            Some(entry) => entry,
+            None => {
+                self.decide(AuditDecision::Denied);
+                return Err(inactive(&self.id));
+            }
+        };
+        let Some(command) = entry
+            .granted_commands
+            .iter()
+            .flatten()
+            .find(|c| c.id == args.id)
+            .cloned()
+        else {
+            return Err(self.denied(format!(
+                "Sextant denied command {:?} for extension {}: it is not a command of its manifest the user agreed \
+                 to.",
+                args.id,
+                self.name()
+            )));
+        };
+        let argv = commands::fill(&command, &args.params)?;
+        let cluster = self.open(&args.cluster_id).await?;
+        let pods = KindPattern {
+            group: String::new(),
+            kind: "Pod".to_owned(),
+        };
+        let summary = CallSummary {
+            tool: self.method.clone(),
+            target: format!("{} in namespace {namespace}", command.title),
+            details: Some(argv.join(" ")),
+        };
+        self.check_asking(
+            &cluster,
+            &[(Some(namespace.clone()), pods, AccessAction::Read)],
+            &summary,
+            command.changes,
+        )
+        .await?;
+        let pod = self.command_pod(&cluster, &namespace, &command).await?;
+        let output = sextant_core::exec::run_command(
+            &self.api.clusters,
+            &cluster.id,
+            &pod,
+            Some(&command.target.container),
+            &argv,
+            commands::timeout_of(&command),
+            MAX_OUTPUT_BYTES,
+        )
+        .await?;
+        Ok(json!({
+            "pod": pod.name,
+            "stdout": output.stdout,
+            "stderr": output.stderr,
+            "exitCode": output.exit_code,
+            "truncated": output.truncated,
+            "timedOut": output.timed_out,
+        }))
+    }
+
+    /// The newest ready, running pod of `namespace` with the command's labels; never a node shell or a debug copy.
+    async fn command_pod(
+        &self,
+        cluster: &ExtCluster,
+        namespace: &str,
+        command: &commands::CommandContribution,
+    ) -> CoreResult<ObjectRef> {
+        let kind = KindRef {
+            group: String::new(),
+            version: "v1".to_owned(),
+            kind: "Pod".to_owned(),
+        };
+        let page = read(
+            "listing the pods",
+            resources::list(
+                &self.api.clusters,
+                &cluster.id,
+                &kind,
+                Some(namespace),
+                Some(&command.target.label_selector),
+                None,
+                200,
+            ),
+        )
+        .await?;
+        let ready = |pod: &Value| {
+            pod.pointer("/status/phase").and_then(Value::as_str) == Some("Running")
+                && pod
+                    .pointer("/status/conditions")
+                    .and_then(Value::as_array)
+                    .is_some_and(|c| {
+                        c.iter()
+                            .any(|c| c["type"] == "Ready" && c["status"] == "True")
+                    })
+                && pod.pointer("/metadata/deletionTimestamp").is_none()
+        };
+        let chosen = page
+            .items
+            .iter()
+            .filter(|pod| {
+                ready(pod)
+                    && !sextant_core::node_shell::is_node_shell_object(pod)
+                    && !sextant_core::debug::is_debug_copy_object(pod)
+            })
+            .max_by_key(|pod| {
+                pod.pointer("/metadata/creationTimestamp")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned()
+            })
+            .and_then(|pod| pod.pointer("/metadata/name").and_then(Value::as_str));
+        let Some(name) = chosen else {
+            return Err(CoreError::new(
+                ErrorCode::NotFound,
+                format!(
+                    "no ready pod with the labels {} in namespace {namespace}",
+                    command.target.label_selector
+                ),
+            ));
+        };
+        Ok(ObjectRef {
+            kind,
+            namespace: Some(namespace.to_owned()),
+            name: name.to_owned(),
+        })
+    }
+
     async fn find_kind(&self, cluster: &ExtCluster, kind: &KindArg) -> CoreResult<ResourceKind> {
         let name = kind.kind.trim();
         if name.is_empty() {
@@ -1743,6 +1893,16 @@ struct RefArg {
     #[serde(default)]
     namespace: Option<String>,
     name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ExecArgs {
+    cluster_id: String,
+    id: String,
+    namespace: String,
+    #[serde(default)]
+    params: std::collections::BTreeMap<String, String>,
 }
 
 #[derive(Deserialize)]

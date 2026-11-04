@@ -11,6 +11,7 @@
 //! - [`catalog`]: the catalog's index and the checks of a package downloaded from it (ADR-0130).
 
 pub mod catalog;
+pub mod commands;
 #[cfg(test)]
 mod compat_tests;
 pub mod installed;
@@ -23,7 +24,7 @@ mod schema;
 pub mod section_badges;
 pub mod translations;
 
-pub use installed::{BackendGrant, ExtensionSource, InstalledExtension, asks_within};
+pub use installed::{BackendGrant, ExtensionSource, Granted, InstalledExtension, asks_within};
 pub use manifest::{
     ActionContribution, BackendCredential, BackendManifest, BackendNetwork, ColumnContribution,
     Contributions, DetailsPlacement, DetailsSectionContribution, DockActionContribution,

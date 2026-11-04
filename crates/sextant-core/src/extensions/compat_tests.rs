@@ -88,13 +88,7 @@ fn grants_stored_by_earlier_sextants_are_read_and_still_cover_their_packages() {
                 });
             // The same package asks for nothing beyond what was granted then: no consent again.
             assert!(
-                asks_within(
-                    &package.manifest,
-                    &entry.granted,
-                    entry.granted_backend.as_ref(),
-                    entry.granted_problems.as_deref(),
-                    entry.granted_metric_queries.as_deref(),
-                ),
+                asks_within(&package.manifest, &entry.granted, Granted::of(entry)),
                 "{}: {} {} needs consent again",
                 file.display(),
                 entry.id,
