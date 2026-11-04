@@ -120,5 +120,9 @@
       "patch": "修补资源",
       "delete": "删除资源"
     }
+  },
+  "extensionProblems": {
+    "title": "提供给代理的扩展问题",
+    "hint": "代理在 get_problems 中获得这些扩展的问题，仅限其可读取的对象。在你勾选之前一个都不提供。"
   }
 }

@@ -1125,7 +1125,10 @@ fn the_mcp_server_starts_and_stops_with_settings_update() {
         .unwrap()
         .port();
     let mut settings = invoke(&h, "settings_get", json!({})).unwrap();
-    assert_eq!(settings["mcp"], json!({ "enabled": false, "port": 47391 }));
+    assert_eq!(
+        settings["mcp"],
+        json!({ "enabled": false, "port": 47391, "extensionProblems": [] })
+    );
     settings["mcp"] = json!({ "enabled": true, "port": port });
     invoke(
         &h,

@@ -121,5 +121,9 @@
       "patch": "Patch a resource",
       "delete": "Delete a resource"
     }
+  },
+  "extensionProblems": {
+    "title": "Problems of extensions for agents",
+    "hint": "Agents get these extensions' problems in get_problems, only for objects they may read. None until you tick one."
   }
 }

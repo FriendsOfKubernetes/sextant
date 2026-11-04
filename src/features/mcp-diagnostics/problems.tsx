@@ -17,6 +17,14 @@ import { useCategoriesOn } from "../problems/hooks";
 import { needsDiscovery, sourceKey, sourcesFor, type SourceDef } from "../problems/sources";
 import { acquireSource, epochOf, getSource, sourcesVersion, subscribeSources, type SourceState } from "../problems/store";
 import { VIRTUAL_SERVICE } from "../mesh/kinds";
+import {
+  extensionSourcesFor,
+  isExtensionCategory,
+  requestScopes,
+  scopesKnown,
+  useExtensionCategories,
+  useExtensionProblemsVersion,
+} from "../problems/extensionCategories";
 import { isActive, NODE, PROBLEM_CATEGORIES, PVC, resolve, startedAt, type Problem, type ProblemCategory } from "../problems/model";
 import { useSharedWatches } from "../resource-map/watches";
 import { en, iso, list } from "./english";
@@ -61,12 +69,26 @@ function clusterScoped(def: SourceDef, kinds: ResourceKind[] | null | undefined)
   return def.discovered && !!kinds && findKind(kinds, def.kind)?.namespaced === false;
 }
 
-/** The plan of `categories` (served ones, as `sourcesFor` gives them) for an agent that may read `reads`. */
+/** The lists an extension's problem says a name is absent from (`lookups`), as refs the agent must be able to read. */
+export function lookupRefs(p: Pick<Problem, "lookups" | "object">, kinds: ResourceKind[] | null | undefined): ListRef[] {
+  return (p.lookups ?? []).map((lookup) => {
+    const namespaced = kinds ? findKind(kinds, { group: lookup.group, kind: lookup.kind })?.namespaced !== false : true;
+    return { group: lookup.group, kind: lookup.kind, namespace: namespaced ? (p.object.namespace ?? null) : null };
+  });
+}
+
+/**
+ * The plan of `categories` (served ones, as `sourcesFor` gives them) for an agent that may read `reads`; `extensions`:
+ * the extension categories asked for and their sources (`extensionSourcesFor`), which the problems store judges as it
+ * does for the screen — kept where the agent may read their kind somewhere, each problem checked again when it is
+ * told.
+ */
 export function planProblems(
   categories: readonly ProblemCategory[],
   kinds: ResourceKind[] | null | undefined,
   reads: readonly ReadRule[],
   asked: string | null,
+  extensions: { categories: readonly ProblemCategory[]; defs: readonly SourceDef[] } = { categories: [], defs: [] },
 ): ProblemPlan {
   const { namespaces: ruled, truncated } = ruleNamespaces(reads);
   const may = (kind: Pick<KindRef, "group" | "kind">, ns: string | null) => canRead(reads, kind, ns);
@@ -116,6 +138,17 @@ export function planProblems(
     }
     if (!planned) plan.notChecked.push(category);
   }
+  for (const category of extensions.categories) {
+    const defs = extensions.defs.filter((d) => d.category === category);
+    const readable = defs.filter((def) =>
+      clusterScoped(def, kinds) ? !asked && may(def.kind, null) : may(def.kind, null) || scope.some((ns) => may(def.kind, ns)),
+    );
+    if (readable.length === 0) {
+      if (defs.length > 0) plan.notChecked.push(category);
+      continue;
+    }
+    plan.shared.push(...readable);
+  }
   return plan;
 }
 
@@ -150,15 +183,30 @@ export function ProblemsWorker(props: WorkerProps) {
     () => PROBLEM_CATEGORIES.filter((c) => args.categories.includes(c)) as ProblemCategory[],
     [args.categories],
   );
-  const categories = useCategoriesOn(asked);
+  const builtIn = useCategoriesOn(asked);
+  // An extension's category Rust let through (ADR-0146): only while the extension is active and has rules.
+  const registered = useExtensionCategories();
+  const extensions = useMemo(
+    () => registered.filter((c) => args.categories.includes(c)),
+    [registered, args.categories],
+  );
+  const categories = useMemo(() => [...builtIn, ...extensions], [builtIn, extensions]);
+  useEffect(() => requestScopes(request.clusterId, extensions), [request.clusterId, extensions]);
+  const scopesVersion = useExtensionProblemsVersion();
+  const extensionScopes = useMemo(() => {
+    void scopesVersion;
+    return scopesKnown(request.clusterId, extensions);
+  }, [scopesVersion, request.clusterId, extensions]);
   // The plan waits for discovery when a tool's kinds (or the mesh) are asked for.
   const discovery = useClusterKinds(needsDiscovery(categories) ? request.clusterId : null);
   const kinds = discovery.kinds ?? (discovery.error ? null : undefined);
-  const settled = !needsDiscovery(categories) || kinds !== undefined;
-  const plan = useMemo(
-    () => (settled ? planProblems(categories, kinds, request.reads, args.namespace) : null),
-    [settled, categories, kinds, request.reads, args.namespace],
-  );
+  const settled = (!needsDiscovery(categories) || kinds !== undefined) && (extensions.length === 0 || (kinds !== undefined && extensionScopes));
+  const plan = useMemo(() => {
+    void scopesVersion;
+    if (!settled) return null;
+    const extensionDefs = extensionSourcesFor(extensions, request.clusterId, kinds);
+    return planProblems(builtIn, kinds, request.reads, args.namespace, { categories: extensions, defs: extensionDefs });
+  }, [settled, builtIn, extensions, kinds, request.reads, args.namespace, request.clusterId, scopesVersion]);
   const shared = useStoreSources(request.clusterId, plan?.shared ?? EMPTY);
   const watched = plan?.watched ?? EMPTY;
   const watchedStates = useSharedWatches(
@@ -198,8 +246,12 @@ export function ProblemsWorker(props: WorkerProps) {
         refs,
       });
     };
-    const refsOf = (p: Problem): ListRef[] =>
-      p.category === "practices" ? practiceRefs(String(p.messageParams?.check ?? ""), p.object.namespace ?? "") : [];
+    const refsOf = (p: Problem): ListRef[] => {
+      if (p.category === "practices") return practiceRefs(String(p.messageParams?.check ?? ""), p.object.namespace ?? "");
+      // An extension's `missing` (ADR-0144) says a name is absent from a list: the agent must be able to read it.
+      if (isExtensionCategory(p.category)) return lookupRefs(p, kinds);
+      return [];
+    };
     for (const source of shared) for (const p of source.problems) push(p, source.def.kind, refsOf(p));
     watched.forEach(({ def }, i) => {
       const state = watchedStates[i];

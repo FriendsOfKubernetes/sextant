@@ -139,7 +139,7 @@ function sensitiveSettings(): AppSettings {
     ...s,
     kubeconfigSources: [{ id: "s9", path: "/secret/kubeconfig-with-token", kind: "pasted", error: null }],
     helmPath: "/opt/helm-TOKEN-PATH",
-    mcp: { enabled: true, port: 47391 },
+    mcp: { enabled: true, port: 47391, extensionProblems: [] },
     extensions: [
       {
         id: "leaky-ext",

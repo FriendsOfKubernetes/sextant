@@ -10,6 +10,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sextant_core::access::{self, AccessAction, ClusterAccess, KindPattern};
+use sextant_core::extensions::manifest::is_extension_id;
 use sextant_core::{ClusterId, CoreError, ErrorCode};
 
 use super::audit::clip;
@@ -287,11 +288,46 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "alerts",
 ];
 
-/// Whether an agent may get problems of `category` now (`enabled`: `notifications.enabledCategories`).
+/// Whether an agent may get problems of `category` now. `enabled`: the opt-in categories turned on
+/// (`notifications.enabledCategories`) and the extensions' categories (`ext:<id>`) the user lets agents get
+/// (`mcp.extensionProblems`, ADR-0146; see [`agent_categories`]).
 pub fn category_for_agents(category: &str, enabled: &[String]) -> bool {
+    if let Some(id) = category.strip_prefix("ext:") {
+        return is_extension_id(id) && enabled.iter().any(|c| c == category);
+    }
     PROBLEM_CATEGORIES.contains(&category)
         && !NEVER_FOR_AGENTS.contains(&category)
         && (!OPT_IN_CATEGORIES.contains(&category) || enabled.iter().any(|c| c == category))
+}
+
+/// What [`category_for_agents`] takes as `enabled` from the settings: the opt-in categories turned on, and `ext:<id>`
+/// for every extension the user lets agents get the problems of.
+pub fn agent_categories(settings: &sextant_core::settings::AppSettings) -> Vec<String> {
+    let mut enabled = settings.notifications.enabled_categories.clone();
+    enabled.extend(
+        settings
+            .mcp
+            .extension_problems
+            .iter()
+            .filter(|id| is_extension_id(id))
+            .map(|id| format!("ext:{id}")),
+    );
+    enabled
+}
+
+/// Longest message of an extension's problem an agent gets: the window's own limit (`MAX_MESSAGE_CHARS`).
+pub const MAX_EXTENSION_MESSAGE_CHARS: usize = 300;
+
+/// An extension's problem message as an agent gets it: text its manifest wrote, filled from the cluster, already
+/// cleaned and clipped by the window, and again here — no control characters, at most
+/// [`MAX_EXTENSION_MESSAGE_CHARS`].
+fn extension_message(message: String) -> String {
+    let text: String = message
+        .chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .take(MAX_EXTENSION_MESSAGE_CHARS)
+        .collect();
+    text.trim().to_owned()
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -443,6 +479,11 @@ pub async fn problems(
         if kept.len() >= limit {
             truncated = true;
             break;
+        }
+        let mut p = p;
+        if p.category.starts_with("ext:") {
+            p.message = p.message.map(extension_message).filter(|m| !m.is_empty());
+            p.reason = extension_message(p.reason);
         }
         kept.push(p);
     }

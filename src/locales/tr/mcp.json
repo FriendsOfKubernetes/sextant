@@ -121,5 +121,9 @@
       "patch": "Bir kaynağa yama uygula",
       "delete": "Bir kaynağı sil"
     }
+  },
+  "extensionProblems": {
+    "title": "Ajanlar için uzantı sorunları",
+    "hint": "Ajanlar bu uzantıların sorunlarını get_problems içinde, yalnızca okuyabildikleri nesneler için alır. Siz işaretleyene kadar hiçbiri."
   }
 }

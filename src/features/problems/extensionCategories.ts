@@ -148,6 +148,16 @@ export function requestScopes(clusterId: ClusterId, categories: readonly Problem
   }
 }
 
+/** Whether Rust has answered where the rules of each extension category among `categories` run in the cluster. */
+export function scopesKnown(clusterId: ClusterId, categories: readonly ProblemCategory[]): boolean {
+  return categories.every((category) => {
+    const entry = isExtensionCategory(category) ? entries.get(category) : undefined;
+    if (!entry) return true;
+    const scope = scopes.get(`${clusterId}|${entry.extensionId}`);
+    return scope !== undefined && scope !== "loading";
+  });
+}
+
 /** Forgets the scopes of a cluster (a connection that ended or began: its context may differ). */
 export function forgetClusterScopes(clusterId: ClusterId): void {
   let any = false;

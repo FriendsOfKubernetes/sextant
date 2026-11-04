@@ -23,7 +23,7 @@ import { CATEGORY_SOURCES } from "../problems/sources";
 import { agentMeshProblems, meshRefs, MESH_KINDS, type MeshList } from "./mesh";
 import { restrictWorld } from "./netpol";
 import { rbacNeeds } from "./permissions";
-import { planProblems } from "./problems";
+import { lookupRefs, planProblems } from "./problems";
 import { canRead } from "./scope";
 
 const TEAM_A: ReadRule[] = [{ namespaces: { type: "only", namespaces: ["team-a"] }, kinds: { type: "all" } }];
@@ -117,6 +117,29 @@ describe("problems judged across objects for an agent", () => {
     expect(all.notChecked).toEqual([]);
     // One namespace asked: nodes are not in it, so not "not checked".
     expect(planProblems(["nodes"], kinds, TEAM_A, "team-a").notChecked).toEqual([]);
+  });
+
+  it("plans an extension's category on the store's sources where the agent may read its kind, else not checked", () => {
+    const queue = { group: "kueue.x-k8s.io", version: "v1beta1", kind: "LocalQueue" };
+    const kinds = [
+      { kindRef: queue, plural: "localqueues", namespaced: true, verbs: ["list", "watch"], printerColumns: [] },
+      { kindRef: { ...queue, kind: "ClusterQueue" }, plural: "clusterqueues", namespaced: false, verbs: ["list", "watch"], printerColumns: [] },
+    ];
+    const defs = [{ category: "ext:sextant.kueue" as const, kind: queue, fieldSelector: null, discovered: true }];
+    const extensions = { categories: ["ext:sextant.kueue" as const], defs };
+    expect(planProblems([], kinds, TEAM_A, null, extensions).shared).toEqual(defs);
+    const nothing: ReadRule[] = [{ namespaces: { type: "all" }, kinds: { type: "only", kinds: [{ group: "", kind: "Pod" }] } }];
+    const plan = planProblems([], kinds, nothing, null, extensions);
+    expect(plan.shared).toEqual([]);
+    expect(plan.notChecked).toEqual(["ext:sextant.kueue"]);
+    // A `missing` said of a cluster-scoped kind: the agent must be able to read that list everywhere.
+    const object = { kind: queue, namespace: "team-a", name: "lq" };
+    expect(lookupRefs({ object, lookups: [{ group: "kueue.x-k8s.io", kind: "ClusterQueue", name: "gpu" }] }, kinds)).toEqual([
+      { group: "kueue.x-k8s.io", kind: "ClusterQueue", namespace: null },
+    ]);
+    expect(lookupRefs({ object, lookups: [{ group: "kueue.x-k8s.io", kind: "LocalQueue", name: "x" }] }, kinds)).toEqual([
+      { group: "kueue.x-k8s.io", kind: "LocalQueue", namespace: "team-a" },
+    ]);
   });
 });
 

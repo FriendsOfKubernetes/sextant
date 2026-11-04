@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, type AppSettings, type McpStatus } from "../../api";
 import { Button, Checkbox, ConfirmDialog, Tabs } from "../../components";
+import { useExtensions } from "../../extensions";
 import "./mcp.css";
 import { mcpUrl, parsePort, SNIPPET_KINDS, snippet, snippetHasToken, type SnippetKind } from "./snippets";
 import { useMcpUi } from "./store";
@@ -38,12 +39,48 @@ export function McpPanel({ settings, save }: McpPanelProps) {
       <StatusLine enabled={enabled} status={status} />
       <PortField settings={settings} save={save} />
       {enabled && <TokenAndSnippets port={settings?.mcp.port ?? 0} />}
+      <ExtensionProblems settings={settings} save={save} />
       <div className="settings__row">
         <Button icon="agent" onClick={openActivity}>
           {t("mcp:activity.openLog")}
         </Button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Which extensions' problems agents get in `get_problems` (ADR-0146): none until the user ticks one. Only extensions
+ * with problem rules are listed; agents still get only the objects they may read.
+ */
+function ExtensionProblems({ settings, save }: McpPanelProps) {
+  const { t } = useTranslation();
+  const { extensions } = useExtensions();
+  const withRules = extensions.filter((e) => (e.manifest?.contributes.problems.length ?? 0) > 0);
+  if (withRules.length === 0) return null;
+  const chosen = settings?.mcp.extensionProblems ?? [];
+  const toggle = (id: string, on: boolean) =>
+    void save((s) => {
+      const rest = s.mcp.extensionProblems.filter((x) => x !== id);
+      return { ...s, mcp: { ...s.mcp, extensionProblems: on ? [...rest, id] : rest } };
+    });
+  return (
+    <fieldset className="mcp__extensions">
+      <legend className="settings__label">{t("mcp:extensionProblems.title")}</legend>
+      <div className="settings__choices settings__choices--column">
+        {withRules.map((extension) => (
+          <label key={extension.id} className="settings__choice">
+            <Checkbox
+              checked={chosen.includes(extension.id)}
+              disabled={!settings}
+              onChange={(e) => toggle(extension.id, e.target.checked)}
+            />
+            {extension.name}
+          </label>
+        ))}
+      </div>
+      <p className="settings__hint">{t("mcp:extensionProblems.hint")}</p>
+    </fieldset>
   );
 }
 

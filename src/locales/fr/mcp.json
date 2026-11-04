@@ -122,5 +122,9 @@
       "patch": "Patcher une ressource",
       "delete": "Supprimer une ressource"
     }
+  },
+  "extensionProblems": {
+    "title": "Problèmes des extensions pour les agents",
+    "hint": "Les agents reçoivent les problèmes de ces extensions dans get_problems, uniquement pour les objets qu’ils peuvent lire. Aucune tant que vous n’en cochez pas."
   }
 }

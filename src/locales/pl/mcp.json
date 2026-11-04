@@ -123,5 +123,9 @@
       "patch": "Zmiana zasobu (patch)",
       "delete": "Usunięcie zasobu"
     }
+  },
+  "extensionProblems": {
+    "title": "Problemy rozszerzeń dla agentów",
+    "hint": "Agenci otrzymują problemy tych rozszerzeń w get_problems, tylko dla obiektów, które mogą odczytać. Żadne, dopóki nie zaznaczysz któregoś."
   }
 }

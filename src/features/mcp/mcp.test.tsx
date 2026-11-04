@@ -63,7 +63,7 @@ const request = (over: Partial<ConfirmRequest> = {}): ConfirmRequest => ({
   ...over,
 });
 
-function setup(mcp = { enabled: true, port: 47391 }, handlers: Record<string, (args: Record<string, unknown>) => unknown> = {}) {
+function setup(mcp: { enabled: boolean; port: number; extensionProblems?: string[] } = { enabled: true, port: 47391 }, handlers: Record<string, (args: Record<string, unknown>) => unknown> = {}) {
   backend = mockBackend(
     {
       clusters_list: () => [prod, staging],
@@ -79,7 +79,7 @@ function setup(mcp = { enabled: true, port: 47391 }, handlers: Record<string, (a
       mcp_confirm_answer: () => undefined,
       ...handlers,
     },
-    { settings: { mcp } },
+    { settings: { mcp: { extensionProblems: [], ...mcp } } },
   );
 }
 
@@ -133,6 +133,45 @@ describe("Settings → AI agents (MCP)", () => {
     fireEvent.click(toggle);
     await waitFor(() => expect(backend.settings.mcp.enabled).toBe(true));
     expect(backend.settings.mcp.port).toBe(47391);
+  });
+
+  it("lets agents get the problems of the extensions the user ticks, only of extensions with rules", async () => {
+    const extension = (id: string, name: string, rules: number) => ({
+      id,
+      name,
+      version: "1.0.0",
+      source: { type: "folder", path: `/x/${id}` },
+      dev: true,
+      enabled: true,
+      state: "active",
+      needsConsent: false,
+      error: null,
+      manifest: {
+        contributes: {
+          pages: [],
+          detailsSections: [],
+          actions: [],
+          columns: [],
+          dockActions: [],
+          problems: Array.from({ length: rules }, (_, i) => ({ id: `r${i}` })),
+          metricQueries: [],
+          sectionBadges: [],
+        },
+      },
+      granted: { clusters: { type: "all" }, rules: [] },
+      installedAt: 0,
+      baseUrl: null,
+      entryUrl: null,
+    });
+    setup({ enabled: true, port: 47391 }, { extensions_list: () => [extension("sextant.kueue", "Kueue", 2), extension("plain", "Plain page", 0)] });
+    renderSettings();
+    const box = await screen.findByRole("checkbox", { name: "Kueue" });
+    expect(screen.queryByRole("checkbox", { name: "Plain page" })).toBeNull();
+    expect(box).not.toBeChecked();
+    fireEvent.click(box);
+    await waitFor(() => expect(backend.settings.mcp.extensionProblems).toEqual(["sextant.kueue"]));
+    fireEvent.click(box);
+    await waitFor(() => expect(backend.settings.mcp.extensionProblems).toEqual([]));
   });
 
   it("shows the address while running and the backend's text when the port is taken", async () => {

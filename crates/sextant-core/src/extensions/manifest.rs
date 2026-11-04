@@ -358,7 +358,7 @@ pub(crate) fn apply_defaults(manifest: &mut Value) {
 
 /// `id`: `[a-z0-9][a-z0-9.-]{2,63}`, not ending with `.`, without `..`, and not a Windows device name (`nul`,
 /// `con.tools`, …) — it is a folder name on every OS.
-pub(crate) fn is_extension_id(text: &str) -> bool {
+pub fn is_extension_id(text: &str) -> bool {
     let bytes = text.as_bytes();
     (3..=64).contains(&bytes.len())
         && bytes[0].is_ascii_lowercase() | bytes[0].is_ascii_digit()

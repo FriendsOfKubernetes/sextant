@@ -122,5 +122,9 @@
       "patch": "Applica patch a una risorsa",
       "delete": "Elimina una risorsa"
     }
+  },
+  "extensionProblems": {
+    "title": "Problemi delle estensioni per gli agenti",
+    "hint": "Gli agenti ricevono i problemi di queste estensioni in get_problems, solo per gli oggetti che possono leggere. Nessuna finché non ne selezioni una."
   }
 }

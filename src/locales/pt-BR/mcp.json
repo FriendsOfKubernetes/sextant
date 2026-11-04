@@ -122,5 +122,9 @@
       "patch": "Aplicar patch a um recurso",
       "delete": "Excluir um recurso"
     }
+  },
+  "extensionProblems": {
+    "title": "Problemas de extensões para agentes",
+    "hint": "Os agentes recebem os problemas destas extensões em get_problems, só dos objetos que podem ler. Nenhuma até você marcar uma."
   }
 }

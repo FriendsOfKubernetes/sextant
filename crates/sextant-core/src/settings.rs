@@ -237,6 +237,9 @@ pub struct McpSettings {
     pub enabled: bool,
     /// Port on 127.0.0.1.
     pub port: u16,
+    /// The extensions (ids) whose problems agents may get in `get_problems` (ADR-0146); none by default. An id that
+    /// is not an extension id is ignored where it is read.
+    pub extension_problems: Vec<String>,
 }
 
 impl Default for McpSettings {
@@ -244,6 +247,7 @@ impl Default for McpSettings {
         Self {
             enabled: false,
             port: DEFAULT_MCP_PORT,
+            extension_problems: Vec::new(),
         }
     }
 }
@@ -1508,6 +1512,7 @@ mod tests {
                 s.mcp = McpSettings {
                     enabled: true,
                     port: 50123,
+                    ..McpSettings::default()
                 };
                 s.clusters.insert(
                     "c1".to_owned(),
@@ -1523,7 +1528,7 @@ mod tests {
             serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(
             json["mcp"],
-            serde_json::json!({ "enabled": true, "port": 50123 })
+            serde_json::json!({ "enabled": true, "port": 50123, "extensionProblems": [] })
         );
         assert_eq!(json["clusters"]["c1"]["agentAccess"]["preset"], "custom");
         assert_eq!(
@@ -1536,7 +1541,8 @@ mod tests {
             s.mcp,
             McpSettings {
                 enabled: true,
-                port: 50123
+                port: 50123,
+                ..McpSettings::default()
             }
         );
         assert_eq!(s.clusters["c1"].agent_access, access);

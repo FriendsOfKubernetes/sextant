@@ -245,6 +245,53 @@ async fn problems_keep_the_agents_namespaces_and_the_categories_that_are_on() {
 }
 
 #[tokio::test]
+async fn an_extensions_problems_reach_agents_only_when_the_user_lets_them_and_cleaned() {
+    let long = format!("Queue {} is missing\u{7}\n{}", "gpu", "x".repeat(400));
+    let answer: answers::ProblemsAnswer = serde_json::from_value(json!({
+        "problems": [
+            { "category": "ext:sextant.kueue", "reason": "ClusterQueue missing", "message": long,
+              "object": obj("kueue.x-k8s.io", "LocalQueue", Some("team-a"), "lq"),
+              "source": { "group": "kueue.x-k8s.io", "kind": "LocalQueue" }, "needsAttention": true,
+              "refs": [{ "group": "kueue.x-k8s.io", "kind": "ClusterQueue", "namespace": null }] },
+            { "category": "ext:other.ext", "reason": "Broken", "object": obj("", "Pod", Some("team-a"), "p"),
+              "source": { "group": "", "kind": "Pod" } },
+        ],
+        "categories": ["ext:sextant.kueue", "ext:other.ext"],
+    }))
+    .unwrap();
+    // Not let through: nothing of it.
+    let mut everything = filter(custom(vec![rule(&[], &[], &[AccessAction::Read])]));
+    let none = answers::problems(answer.clone(), &mut everything, &[], None, 100).await;
+    assert!(none.problems.is_empty() && none.categories.is_empty());
+
+    let mut settings = sextant_core::settings::AppSettings::default();
+    settings.mcp.extension_problems = vec!["sextant.kueue".into(), "Not An Id".into()];
+    let on = answers::agent_categories(&settings);
+    assert_eq!(on, ["ext:sextant.kueue"]);
+    let kept = answers::problems(answer.clone(), &mut everything, &on, None, 100).await;
+    assert_eq!(kept.categories, ["ext:sextant.kueue"]);
+    let [p] = kept.problems.as_slice() else {
+        panic!("{kept:?}")
+    };
+    let message = p.message.as_deref().unwrap();
+    assert!(message.starts_with("Queue gpu is missing"), "{message}");
+    assert!(!message.chars().any(char::is_control));
+    assert_eq!(
+        message.chars().count(),
+        answers::MAX_EXTENSION_MESSAGE_CHARS
+    );
+
+    // Its refs are checked like any other: an agent that may not read ClusterQueues gets nothing of it.
+    let mut queues_only = filter(custom(vec![rule(
+        &[],
+        &[("kueue.x-k8s.io", "LocalQueue")],
+        &[AccessAction::Read],
+    )]));
+    let kept = answers::problems(answer, &mut queues_only, &on, None, 100).await;
+    assert!(kept.problems.is_empty());
+}
+
+#[tokio::test]
 async fn failed_lists_are_told_only_where_the_agent_may_read() {
     let answer: answers::ProblemsAnswer = serde_json::from_value(json!({
         "problems": [],

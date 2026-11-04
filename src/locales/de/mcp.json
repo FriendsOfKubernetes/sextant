@@ -121,5 +121,9 @@
       "patch": "Ressource patchen",
       "delete": "Ressource löschen"
     }
+  },
+  "extensionProblems": {
+    "title": "Probleme von Erweiterungen für Agenten",
+    "hint": "Agenten erhalten die Probleme dieser Erweiterungen in get_problems, nur für Objekte, die sie lesen dürfen. Keine, bis Sie eine ankreuzen."
   }
 }

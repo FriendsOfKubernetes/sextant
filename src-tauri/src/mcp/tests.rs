@@ -349,6 +349,7 @@ async fn turn_on(state: &AppState, port: u16) {
             s.mcp = McpSettings {
                 enabled: true,
                 port,
+                ..McpSettings::default()
             }
         })
         .unwrap();
@@ -1339,6 +1340,7 @@ async fn start_probe(probe: &Probe) -> u16 {
             mcp: McpSettings {
                 enabled: true,
                 port,
+                ..McpSettings::default()
             },
             ..Default::default()
         };
@@ -1438,6 +1440,7 @@ async fn a_start_that_ends_after_a_stop_leaves_no_listener() {
             s.mcp = McpSettings {
                 enabled: true,
                 port,
+                ..McpSettings::default()
             }
         })
         .unwrap();

@@ -1100,6 +1100,7 @@ mod tests {
                     s.mcp = McpSettings {
                         enabled: true,
                         port,
+                        ..McpSettings::default()
                     }
                 })
                 .unwrap();
