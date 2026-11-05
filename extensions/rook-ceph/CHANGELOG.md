@@ -1,6 +1,6 @@
 # Changes of Rook Ceph
 
-## 1.2.0 — unreleased
+## 1.2.0 — 2026-11-05
 
 Needs Sextant 0.29 (`sextantApi` 3). Older Sextants keep 1.1.1. The update asks for consent again: it adds commands
 and reads two more kinds.
