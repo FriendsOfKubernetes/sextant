@@ -14,6 +14,7 @@ import { useAppStore } from "../app/store";
 import { Dialog, isIconName, type IconName } from "../components";
 import { registerAction, type ActionContext } from "../features/actions/registry";
 import { categoryOfExtension, registerExtensionProblems } from "../features/problems/extensionCategories";
+import { NamespaceFilter } from "../features/namespaces";
 import { useExtensionSectionCount } from "../features/problems/hooks";
 import { registerDetailsSection, unregisterDetailsSection, type DetailsSectionProps } from "../layout/details/registry";
 import {
@@ -235,16 +236,23 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
 }
 
 function pageComponent(extensionId: string, contribution: string, title: string): ComponentType<PageProps> {
+  // A page is told the namespace filter (`HostContext.namespaces`), so the filter is shown above it: otherwise a choice
+  // made in a table would narrow the page with no way to change it there.
   return function ExtensionPage({ clusterId }: PageProps) {
     return (
-      <ExtensionFrame
-        extensionId={extensionId}
-        view={VIEW.page}
-        contribution={contribution}
-        title={title}
-        clusterId={clusterId}
-        className="ext-frame--page"
-      />
+      <div className="ext-page">
+        <div className="ext-page__toolbar">
+          <NamespaceFilter clusterId={clusterId} />
+        </div>
+        <ExtensionFrame
+          extensionId={extensionId}
+          view={VIEW.page}
+          contribution={contribution}
+          title={title}
+          clusterId={clusterId}
+          className="ext-frame--page"
+        />
+      </div>
     );
   };
 }

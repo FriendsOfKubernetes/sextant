@@ -208,6 +208,16 @@ describe("extension frames", () => {
     expect(posted.at(-1)).toMatchObject({ type: "context", context: { namespaces: null } });
   });
 
+  it("show the namespace filter the page follows above its frame", async () => {
+    await renderShell();
+    act(() => useAppStore.getState().setNamespaces("c1", ["default"]));
+    act(() => useAppStore.getState().setView("c1", "ext:demo.widgets:board"));
+    const main = screen.getByRole("main");
+    // A choice made in a table narrows the page too, and the page is where it can be changed.
+    expect(within(main).getByRole("button", { name: "Namespaces: default" })).toBeInTheDocument();
+    expect(frameOf(main)).toBeInTheDocument();
+  });
+
   it("keep the live document's context and watches when the extension is renamed", async () => {
     backend.on("extension_call", () => null);
     backend.on("extension_watch_stop", () => undefined);
