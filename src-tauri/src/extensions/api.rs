@@ -94,7 +94,7 @@ pub const MAX_GET_MANY: usize = 50;
 pub const GET_MANY_AT_ONCE: usize = 4;
 
 /// The methods `extension_call` serves (`ui.*` and the context are the window's).
-pub const METHODS: [&str; 22] = [
+pub const METHODS: [&str; 23] = [
     "clusters.list",
     "kinds",
     "resources.list",
@@ -103,6 +103,7 @@ pub const METHODS: [&str; 22] = [
     "resources.watch",
     "resources.apply",
     "resources.patch",
+    "resources.patchMany",
     "resources.delete",
     "logs.tail",
     "secret.value",
@@ -509,6 +510,7 @@ impl ExtensionApi {
             "resources.watch" => call.watch(params, watch).await,
             "resources.apply" => call.apply(params).await,
             "resources.patch" => call.patch(params).await,
+            "resources.patchMany" => call.patch_many(params).await,
             "resources.delete" => call.delete(params).await,
             "logs.tail" => call.logs(params).await,
             "secret.value" => call.secret_value(params).await,
@@ -1470,24 +1472,76 @@ impl<'a> ExtCall<'a> {
 
     async fn patch(&self, params: Value) -> CoreResult<Value> {
         let args: PatchArgs = parse(&self.method, params)?;
-        match args.patch_type {
-            PatchType::Merge if !args.patch.is_object() => {
-                return Err(invalid("a merge patch is a JSON object"));
-            }
-            PatchType::Json => check_json_patch(&args.patch)?,
-            PatchType::Merge => {}
-        }
-        let status = match args.subresource.as_deref() {
-            None => false,
-            Some("status") => true,
-            Some(other) => {
-                return Err(invalid(format!(
-                    "subresource {other:?}: only \"status\" can be patched"
-                )));
-            }
+        let item = PatchItem {
+            object: args.object,
+            patch: args.patch,
+            patch_type: args.patch_type,
+            subresource: args.subresource,
         };
+        patch_shape(&item)?;
         let cluster = self.open(&args.cluster_id).await?;
-        let object = self.object(&cluster, &args.object).await?;
+        let planned = self.plan_patch(&cluster, item).await?;
+        let summary = CallSummary {
+            tool: self.method.clone(),
+            target: planned.target(),
+            details: Some(first_lines(&planned.shown())),
+        };
+        self.check(&cluster, &planned.needs, &summary).await?;
+        self.send_patch(&cluster, &planned).await
+    }
+
+    /// Several patches under one decision and one confirmation (#363, ADR-0161): every item is checked first, then
+    /// they are sent in order; the first failure stops the rest. The answer has each sent item's object, the error of
+    /// the one that failed, and `sent`.
+    async fn patch_many(&self, params: Value) -> CoreResult<Value> {
+        let args: PatchManyArgs = parse(&self.method, params)?;
+        if args.items.is_empty() || args.items.len() > MAX_PATCH_MANY {
+            return Err(invalid(format!("give 1 to {MAX_PATCH_MANY} items")));
+        }
+        for item in &args.items {
+            patch_shape(item)?;
+        }
+        let cluster = self.open(&args.cluster_id).await?;
+        let mut planned = Vec::with_capacity(args.items.len());
+        for item in args.items {
+            planned.push(self.plan_patch(&cluster, item).await?);
+        }
+        let needs: Vec<Requirement> = planned.iter().flat_map(|p| p.needs.clone()).collect();
+        let targets: Vec<String> = planned.iter().map(PlannedPatch::target).collect();
+        let shown: Vec<String> = planned
+            .iter()
+            .map(|p| format!("{}:\n{}", p.target(), p.shown()))
+            .collect();
+        let summary = CallSummary {
+            tool: self.method.clone(),
+            target: targets.join(", "),
+            details: Some(first_lines(&shown.join("\n"))),
+        };
+        self.check(&cluster, &needs, &summary).await?;
+        let mut results = Vec::with_capacity(planned.len());
+        let mut sent = 0;
+        for item in &planned {
+            match self.send_patch(&cluster, item).await {
+                Ok(object) => {
+                    results.push(json!({ "object": object }));
+                    sent += 1;
+                }
+                Err(err) => {
+                    let err = err.without_plugin_output();
+                    results.push(
+                        json!({ "error": { "code": code_name(err.code), "message": err.message } }),
+                    );
+                    break;
+                }
+            }
+        }
+        Ok(json!({ "items": results, "sent": sent }))
+    }
+
+    /// One patch checked for its object, with what it needs (its shape was checked by [`patch_shape`]).
+    async fn plan_patch(&self, cluster: &ExtCluster, item: PatchItem) -> CoreResult<PlannedPatch> {
+        let status = patch_shape(&item)?;
+        let object = self.object(cluster, &item.object).await?;
         refuse_named_node_shell(&object, None)?;
         if status
             && !self
@@ -1505,34 +1559,34 @@ impl<'a> ExtCall<'a> {
         let mut needs = vec![requirement(&object, AccessAction::Modify)];
         // On a Secret, a JSON patch other than add/replace/remove may read its values: only with "Secret values".
         if is_core_secret(&object.kind)
-            && args.patch_type == PatchType::Json
-            && reads_secret_values(&args.patch)
+            && item.patch_type == PatchType::Json
+            && reads_secret_values(&item.patch)
         {
             needs.push(requirement(&object, AccessAction::SecretValues));
         }
-        let shown = serde_json::to_string_pretty(&args.patch).unwrap_or_default();
-        let summary = CallSummary {
-            tool: self.method.clone(),
-            target: if status {
-                format!("status of {}", describe(&object))
-            } else {
-                describe(&object)
-            },
-            details: Some(first_lines(&shown)),
-        };
-        self.check(&cluster, &needs, &summary).await?;
-        self.refuse_live_node_shell(&cluster, &object, false)
+        Ok(PlannedPatch {
+            object,
+            patch: item.patch,
+            patch_type: item.patch_type,
+            status,
+            needs,
+        })
+    }
+
+    /// Sends a checked patch, right after the last look that the object is no node shell.
+    async fn send_patch(&self, cluster: &ExtCluster, planned: &PlannedPatch) -> CoreResult<Value> {
+        self.refuse_live_node_shell(cluster, &planned.object, false)
             .await?;
-        if status {
+        if planned.status {
             return with_timeout(
                 CHANGE_TIMEOUT,
                 "patching the status",
                 resources::patch_custom_status(
                     &self.api.clusters,
                     &cluster.id,
-                    &object,
-                    &args.patch,
-                    args.patch_type,
+                    &planned.object,
+                    &planned.patch,
+                    planned.patch_type,
                 ),
             )
             .await
@@ -1544,9 +1598,9 @@ impl<'a> ExtCall<'a> {
             resources::patch(
                 &self.api.clusters,
                 &cluster.id,
-                &object,
-                &args.patch,
-                args.patch_type,
+                &planned.object,
+                &planned.patch,
+                planned.patch_type,
             ),
         )
         .await
@@ -2878,6 +2932,68 @@ struct ServiceRequestArgs {
     /// A field path of the JSON answer holding a token: Sextant keeps it as the session and takes it out of the answer.
     #[serde(default)]
     capture: Option<String>,
+}
+
+/// A patch's shape, checked before any cluster is touched; whether it patches the status.
+fn patch_shape(item: &PatchItem) -> CoreResult<bool> {
+    match item.patch_type {
+        PatchType::Merge if !item.patch.is_object() => {
+            return Err(invalid("a merge patch is a JSON object"));
+        }
+        PatchType::Json => check_json_patch(&item.patch)?,
+        PatchType::Merge => {}
+    }
+    match item.subresource.as_deref() {
+        None => Ok(false),
+        Some("status") => Ok(true),
+        Some(other) => Err(invalid(format!(
+            "subresource {other:?}: only \"status\" can be patched"
+        ))),
+    }
+}
+
+/// Items one `resources.patchMany` sends at most.
+pub const MAX_PATCH_MANY: usize = 50;
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PatchItem {
+    #[serde(rename = "ref")]
+    object: RefArg,
+    patch: Value,
+    patch_type: PatchType,
+    #[serde(default)]
+    subresource: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PatchManyArgs {
+    cluster_id: String,
+    items: Vec<PatchItem>,
+}
+
+/// A patch checked for its shape and object.
+struct PlannedPatch {
+    object: ObjectRef,
+    patch: Value,
+    patch_type: PatchType,
+    status: bool,
+    needs: Vec<Requirement>,
+}
+
+impl PlannedPatch {
+    fn target(&self) -> String {
+        if self.status {
+            format!("status of {}", describe(&self.object))
+        } else {
+            describe(&self.object)
+        }
+    }
+
+    fn shown(&self) -> String {
+        serde_json::to_string_pretty(&self.patch).unwrap_or_default()
+    }
 }
 
 /// How a service request is authenticated.

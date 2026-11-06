@@ -159,6 +159,17 @@ export interface PatchParams extends OnCluster {
   subresource?: "status";
 }
 
+/** Several patches under one decision and one confirmation (`resources.patchMany`, since Sextant 0.30), at most 50. */
+export interface PatchManyParams extends OnCluster {
+  items: Omit<PatchParams, "clusterId">[];
+}
+
+/** Each item sent in order: its object, or the error that stopped the rest; `sent` counts the items sent. */
+export interface PatchManyResult<T = KubeObject> {
+  items: ({ object: T } | { error: { code: string; message: string } })[];
+  sent: number;
+}
+
 /** A port forward to a Pod or Service (`portForward.start`, sextantApi 4 with the `portForward` permission). */
 export interface ForwardStartParams extends OnCluster {
   namespace: string;
@@ -251,6 +262,7 @@ export interface Methods {
   "resources.watch": { params: WatchParams & { clusterId: ClusterId }; result: { stream: string | number } };
   "resources.apply": { params: ApplyParams & { clusterId: ClusterId }; result: ObjectRef[] };
   "resources.patch": { params: PatchParams & { clusterId: ClusterId }; result: KubeObject };
+  "resources.patchMany": { params: PatchManyParams & { clusterId: ClusterId }; result: PatchManyResult };
   "resources.delete": { params: DeleteParams & { clusterId: ClusterId }; result: null };
   "logs.tail": { params: LogsParams & { clusterId: ClusterId }; result: string };
   "secret.value": { params: SecretParams & { clusterId: ClusterId }; result: string };

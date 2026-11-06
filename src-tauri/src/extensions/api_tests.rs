@@ -2729,3 +2729,52 @@ async fn a_secret_key_a_service_declares_needs_no_secret_values_on_the_namespace
             == "Service argocd/app.kubernetes.io/name=argocd-server: POST /api/v1/session")
     );
 }
+
+#[tokio::test]
+async fn several_patches_are_decided_together_under_one_confirmation_and_stop_at_the_first_failure()
+{
+    let env = Env::at(&fake_cluster().await);
+    env.install(
+        "widgets",
+        perms(all_clusters(), &["team-a"], &["read", "modify"], true),
+    );
+    let seen = env.answer_with(true);
+    let pod = |name: &str, ns: &str| json!({ "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": ns, "name": name });
+    let item = |name: &str, ns: &str| json!({ "ref": pod(name, ns), "patch": { "metadata": { "labels": { "a": "b" } } }, "patchType": "merge" });
+    // One item outside the grant: nothing is asked, nothing sent.
+    let err = env
+        .api
+        .call(&env.host, "widgets", "resources.patchMany",
+              json!({ "clusterId": "ctx-a", "items": [item("web-1", "team-a"), item("web-2", "team-b")] }), None)
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied, "{}", err.message);
+    assert!(seen.lock().unwrap().is_empty());
+    // Both granted: one question for both; the fake cluster has no such pod, so the first fails and the rest is not sent.
+    let answer = env
+        .api
+        .call(&env.host, "widgets", "resources.patchMany",
+              json!({ "clusterId": "ctx-a", "items": [item("web-1", "team-a"), item("web-2", "team-a")] }), None)
+        .await
+        .unwrap();
+    assert_eq!(seen.lock().unwrap().len(), 1);
+    assert!(
+        seen.lock().unwrap()[0].target.contains("web-1")
+            && seen.lock().unwrap()[0].target.contains("web-2")
+    );
+    assert_eq!(answer["sent"], json!(0));
+    assert_eq!(answer["items"].as_array().unwrap().len(), 1);
+    assert_eq!(answer["items"][0]["error"]["code"], json!("notFound"));
+    let none = env
+        .api
+        .call(
+            &env.host,
+            "widgets",
+            "resources.patchMany",
+            json!({ "clusterId": "ctx-a", "items": [] }),
+            None,
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(none.code, ErrorCode::Invalid);
+}

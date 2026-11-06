@@ -206,6 +206,11 @@ describe("calls", () => {
         { clusterId: "c1", namespace: "argocd", kind: "Service", name: "argocd-server", port: 443 },
       ],
       [() => sextant.portForward.list(), "portForward.list", {}],
+      [
+        () => sextant.resources.patchMany({ items: [{ ref, patch: { spec: {} }, patchType: "merge" }] }),
+        "resources.patchMany",
+        { clusterId: "c1", items: [{ ref, patch: { spec: {} }, patchType: "merge" }] },
+      ],
       [() => sextant.portForward.stop("pf-1"), "portForward.stop", { id: "pf-1" }],
       [() => sextant.ui.openLogs({ namespace: "ns", pod: "p", container: "c" }), "ui.openLogs", { namespace: "ns", pod: "p", container: "c" }],
       [() => sextant.ui.openUrl("https://localhost:8443/"), "ui.openUrl", { url: "https://localhost:8443/" }],
@@ -216,6 +221,7 @@ describe("calls", () => {
       "portForward.list": { forwards: [] },
       "ui.openUrl": { opened: true },
       "ui.signIn": { signedIn: true },
+      "resources.patchMany": { items: [], sent: 0 },
     };
     for (const [call, method, params] of calls) {
       const count = requests().length;

@@ -30,6 +30,8 @@ import type {
   MetricQueryParams,
   ObjectRef,
   OpenLogsParams,
+  PatchManyParams,
+  PatchManyResult,
   PatchParams,
   ServiceAnswer,
   ServiceRequestParams,
@@ -115,6 +117,11 @@ export interface Sextant {
     /** Applies YAML documents (server-side apply); the objects applied. */
     apply(params: ApplyParams, options?: CallOptions): Promise<ObjectRef[]>;
     patch<T = KubeObject>(params: PatchParams, options?: CallOptions): Promise<T>;
+    /**
+     * Several patches (at most 50) under one decision and one confirmation, sent in order; the first failure stops
+     * the rest (since Sextant 0.30).
+     */
+    patchMany<T = KubeObject>(params: PatchManyParams, options?: CallOptions): Promise<PatchManyResult<T>>;
     delete(params: DeleteParams, options?: CallOptions): Promise<void>;
   };
   logs: { tail(params: LogsParams, options?: CallOptions): Promise<string> };
@@ -209,6 +216,7 @@ const AUTO_HEIGHT_VIEWS: ReadonlySet<string> = new Set(["details", "settings"]);
 const CHANGES: ReadonlySet<string> = new Set([
   "resources.apply",
   "resources.patch",
+  "resources.patchMany",
   "resources.delete",
   "portForward.start",
   "ui.openLogs",
@@ -563,6 +571,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       watch,
       apply: (params, o) => onCluster("resources.apply", params, o),
       patch: (params, o) => onCluster("resources.patch", params, o),
+      patchMany: (params, o) => onCluster("resources.patchMany", params, o),
       delete: (params, o) => onCluster<unknown>("resources.delete", params, o).then(() => undefined),
     },
     logs: { tail: (params, o) => onCluster("logs.tail", params, o) },
