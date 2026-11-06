@@ -42,6 +42,7 @@ import {
   isInsecure,
   loginOptionsOf,
   managedResourcesRequest,
+  serviceOf,
   typedSignIn,
   uiPort,
   userInfo,
@@ -114,15 +115,23 @@ describe("the patches", () => {
     });
   });
 
-  it("refreshes every selected Application one after another", async () => {
-    const calls: unknown[] = [];
-    const sextant = { resources: { patch: async (p: unknown) => void calls.push(p) } } as never;
-    const refs: ObjectRef[] = [
-      { kind: APPLICATION, namespace: "argocd", name: "a" },
-      { kind: APPLICATION, namespace: "argocd", name: "b" },
-    ];
+  it("refreshes every selected Application under one confirmation per 50, stopping at the first failure", async () => {
+    const calls: { items: unknown[] }[] = [];
+    let fail = false;
+    const sextant = {
+      resources: {
+        patchMany: async (p: { items: unknown[] }) => {
+          calls.push(p);
+          return fail ? { items: [{ error: { code: "conflict", message: "changed" } }], sent: 1 } : { items: p.items.map(() => ({ object: {} })), sent: p.items.length };
+        },
+      },
+    } as never;
+    const refs: ObjectRef[] = Array.from({ length: 51 }, (_, i) => ({ kind: APPLICATION, namespace: "argocd", name: `app-${i}` }));
     await refreshAll(sextant, refs, "hard");
-    expect(calls).toEqual(refs.map((ref) => patchCall(ref, refreshPatch("hard"))));
+    expect(calls.map((c) => c.items.length)).toEqual([50, 1]);
+    expect(calls[0]!.items[0]).toEqual(patchCall(refs[0]!, refreshPatch("hard")));
+    fail = true;
+    await expect(refreshAll(sextant, refs.slice(0, 2), "normal")).rejects.toThrow("changed");
   });
 });
 
@@ -199,20 +208,34 @@ describe("the requests to Argo CD's API", () => {
     // Plain HTTP only when the installation says its server runs without TLS.
     expect(adminSignIn(server(true)).service).toBe("argocd-server-http");
     const services = manifest.contributes.services;
-    expect(services.map((s) => [s.id, s.name, s.port, s.scheme])).toEqual([
-      ["argocd-server", "argocd-server", "https", "https"],
-      ["argocd-server-http", "argocd-server", "http", "http"],
+    expect(services.map((s) => [s.id, s.labelSelector, s.port, s.scheme])).toEqual([
+      ["argocd-server", "app.kubernetes.io/name=argocd-server", "https", "https"],
+      ["argocd-server-http", "app.kubernetes.io/name=argocd-server", "http", "http"],
+      ["argocd-server-token", "app.kubernetes.io/name=argocd-server", "https", "https"],
+      ["argocd-server-token-http", "app.kubernetes.io/name=argocd-server", "http", "http"],
     ]);
+    // Only the password services receive the admin Secret's key; each asks for its own sign-in in Sextant's dialog.
+    expect(services.map((s) => ("secrets" in s ? s.secrets : []))).toEqual([
+      [{ name: "argocd-initial-admin-secret", key: "password" }],
+      [{ name: "argocd-initial-admin-secret", key: "password" }],
+      [],
+      [],
+    ]);
+    expect(services.map((s) => s.signIn.fields.map((f) => f.id))).toEqual([["username", "password"], ["username", "password"], ["token"], ["token"]]);
+    expect(serviceOf(server(), "token")).toBe("argocd-server-token");
+    expect(serviceOf(server(true), "token")).toBe("argocd-server-token-http");
   });
 
-  it("sign in with a typed user, and read the diff and the user with the session", () => {
-    expect(typedSignIn(server(), "alice", "s3cret")).toMatchObject({
+  it("sign in with what was typed in Sextant's dialog, never with a value of the extension's", () => {
+    expect(typedSignIn(server())).toEqual({
+      clusterId: "kind",
+      namespace: "argocd",
+      service: "argocd-server",
       method: "POST",
       path: "/api/v1/session",
-      body: { username: "alice", password: "s3cret" },
+      body: { username: "{{signIn:username}}", password: "{{signIn:password}}" },
       capture: ".token",
     });
-    expect(typedSignIn(server(), "alice", "s3cret")).not.toHaveProperty("auth");
     expect(managedResourcesRequest(server(), { namespace: "team-a", name: "guestbook" })).toEqual({
       clusterId: "kind",
       namespace: "argocd",
@@ -222,7 +245,13 @@ describe("the requests to Argo CD's API", () => {
       query: { appNamespace: "team-a" },
       auth: "session",
     });
+    // An API token goes as the bearer of each request, through its own service.
+    expect(managedResourcesRequest(server(), { namespace: "argocd", name: "guestbook" }, "token")).toMatchObject({
+      service: "argocd-server-token",
+      auth: "signIn:token",
+    });
     expect(userInfo(server())).toMatchObject({ method: "GET", path: "/api/v1/session/userinfo", auth: "session" });
+    expect(userInfo(server(), "token")).toMatchObject({ service: "argocd-server-token", auth: "signIn:token" });
     expect(userOf({ loggedIn: true, username: "admin" })).toBe("admin");
     expect(userOf({})).toBeNull();
   });
@@ -259,10 +288,10 @@ describe("the requests to Argo CD's API", () => {
     expect(signInNotes({ ...server(true), options: { localUsers: false, admin: false, sso: true } }, { expired: true })).toEqual([
       "login.expired",
       "login.insecure",
-      "login.noLocalUsersExtension",
+      "login.noLocalUsers",
       "login.sso",
-      "login.typed",
     ]);
+    expect(signInNotes(server(), { savedRefused: true, adminRefused: true })).toEqual(["login.refused.saved", "login.refused.adminSecret"]);
   });
 
   it("opens the UI on the Application's page through a forward of its UI port", () => {

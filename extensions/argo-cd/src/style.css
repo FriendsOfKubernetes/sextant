@@ -1,4 +1,5 @@
-/* Sextant's variables (--color-*, --control-height, …) and base styles come from the SDK's theme helper. */
+/* Sextant's variables (--color-*, --control-height, …) and base styles come from the SDK's theme helper, the details
+   blocks (fields, tables, status words, chips, links) from its UI kit; these are the extension's own views. */
 body.compact {
   padding: 8px 0;
 }
@@ -16,57 +17,6 @@ p {
   margin: 4px 0;
 }
 
-dl.fields {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 6px 16px;
-  margin: 0;
-}
-dl.fields dt {
-  color: var(--color-text-muted);
-}
-dl.fields dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.badge {
-  display: inline-block;
-  padding: 0 6px;
-  margin-right: 6px;
-  border-radius: 4px;
-  border: 1px solid currentColor;
-  font-size: 12px;
-  line-height: 18px;
-  white-space: nowrap;
-}
-.badge.ok {
-  color: var(--color-success);
-}
-.badge.warning {
-  color: var(--color-warning);
-}
-.badge.error {
-  color: var(--color-danger);
-}
-.badge.neutral {
-  color: var(--color-text-muted);
-}
-.with-message,
-.links,
-.chips {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 8px;
-}
-.chip {
-  padding: 0 6px;
-  border-radius: 4px;
-  background: var(--color-hover);
-  font-size: 12px;
-  line-height: 18px;
-}
 .revision {
   font-family: var(--font-mono, monospace);
 }
@@ -85,9 +35,6 @@ button.link:hover:not(:disabled) {
   background: none;
 }
 
-table.grid td {
-  overflow-wrap: anywhere;
-}
 .tree-kind {
   display: inline-block;
   white-space: nowrap;
@@ -143,13 +90,9 @@ input[type="radio"] {
   background: var(--color-hover);
 }
 
-/* The sign-in form. */
-.login-fields {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 320px);
-  align-items: center;
-  gap: 6px 12px;
-  margin: 8px 0;
+/* The choice of how to sign in (Sextant's own dialog asks for the login). */
+.login-error p {
+  color: var(--color-danger);
 }
 
 /* The diff. */

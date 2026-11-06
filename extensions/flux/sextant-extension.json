@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.flux",
   "name": "Flux",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Flux CD's objects in a sidebar section of their own: sources, Kustomizations, HelmReleases, image automation and notifications with their readiness, revision and source; what each one applied and which objects use a source; problems of what fails to reconcile; Reconcile, Suspend and Resume.",
   "author": "Sextant",
   "sextantApi": 4,
@@ -191,15 +191,23 @@
     ]
   },
   "contributes": {
+    "sections": [
+      {
+        "section": "flux",
+        "title": "Flux",
+        "icon": "flux",
+        "after": "velero"
+      }
+    ],
     "kinds": [
       {
         "group": "source.toolkit.fluxcd.io",
         "kind": "GitRepository",
         "section": "flux",
-        "sectionTitle": "Flux",
         "title": "Git Repositories",
         "icon": "gitRepository",
-        "order": 10
+        "order": 10,
+        "printerColumns": false
       },
       {
         "group": "source.toolkit.fluxcd.io",
@@ -207,7 +215,8 @@
         "section": "flux",
         "title": "OCI Repositories",
         "icon": "ociRepository",
-        "order": 11
+        "order": 11,
+        "printerColumns": false
       },
       {
         "group": "source.toolkit.fluxcd.io",
@@ -215,7 +224,8 @@
         "section": "flux",
         "title": "Helm Repositories",
         "icon": "helmRepository",
-        "order": 12
+        "order": 12,
+        "printerColumns": false
       },
       {
         "group": "source.toolkit.fluxcd.io",
@@ -223,7 +233,8 @@
         "section": "flux",
         "title": "Helm Charts",
         "icon": "fluxHelmChart",
-        "order": 13
+        "order": 13,
+        "printerColumns": false
       },
       {
         "group": "source.toolkit.fluxcd.io",
@@ -231,7 +242,8 @@
         "section": "flux",
         "title": "Buckets",
         "icon": "bucket",
-        "order": 14
+        "order": 14,
+        "printerColumns": false
       },
       {
         "group": "kustomize.toolkit.fluxcd.io",
@@ -239,7 +251,12 @@
         "section": "flux",
         "title": "Kustomizations",
         "icon": "kustomization",
-        "order": 20
+        "order": 20,
+        "printerColumns": false,
+        "aliases": [
+          "ks"
+        ],
+        "searchByDefault": true
       },
       {
         "group": "helm.toolkit.fluxcd.io",
@@ -247,7 +264,12 @@
         "section": "flux",
         "title": "Helm Releases",
         "icon": "fluxHelmRelease",
-        "order": 30
+        "order": 30,
+        "printerColumns": false,
+        "aliases": [
+          "hr"
+        ],
+        "searchByDefault": true
       },
       {
         "group": "image.toolkit.fluxcd.io",
@@ -255,7 +277,8 @@
         "section": "flux",
         "title": "Image Repositories",
         "icon": "imageRepository",
-        "order": 40
+        "order": 40,
+        "printerColumns": false
       },
       {
         "group": "image.toolkit.fluxcd.io",
@@ -263,7 +286,8 @@
         "section": "flux",
         "title": "Image Policies",
         "icon": "imagePolicy",
-        "order": 41
+        "order": 41,
+        "printerColumns": false
       },
       {
         "group": "image.toolkit.fluxcd.io",
@@ -271,7 +295,8 @@
         "section": "flux",
         "title": "Image Update Automations",
         "icon": "imageUpdateAutomation",
-        "order": 42
+        "order": 42,
+        "printerColumns": false
       },
       {
         "group": "notification.toolkit.fluxcd.io",
@@ -279,7 +304,8 @@
         "section": "flux",
         "title": "Alerts",
         "icon": "alert",
-        "order": 50
+        "order": 50,
+        "printerColumns": false
       },
       {
         "group": "notification.toolkit.fluxcd.io",
@@ -287,7 +313,8 @@
         "section": "flux",
         "title": "Providers",
         "icon": "provider",
-        "order": 51
+        "order": 51,
+        "printerColumns": false
       },
       {
         "group": "notification.toolkit.fluxcd.io",
@@ -295,7 +322,8 @@
         "section": "flux",
         "title": "Receivers",
         "icon": "receiver",
-        "order": 52
+        "order": 52,
+        "printerColumns": false
       }
     ],
     "sectionBadges": [
@@ -656,36 +684,31 @@
           "group": "source.toolkit.fluxcd.io",
           "kind": "GitRepository"
         },
-        "id": "suspended-gitrepository",
-        "title": "Suspended",
-        "after": "Namespace",
+        "id": "ready-gitrepository",
+        "title": "Ready",
+        "afterColumn": "namespace",
         "paths": [
-          ".spec.suspend"
+          ".status.conditions[type=\"Ready\"].status"
         ],
         "tones": {
-          "Yes": "warning",
-          "No": "neutral"
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "source.toolkit.fluxcd.io",
+          "kind": "GitRepository"
         },
-        "cases": [
-          {
-            "when": {
-              "type": "equals",
-              "path": ".spec.suspend",
-              "value": true
-            },
-            "text": "Yes"
-          },
-          {
-            "when": {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".spec.suspend",
-                "value": true
-              }
-            },
-            "text": "No"
-          }
+        "id": "status-gitrepository",
+        "title": "Status",
+        "afterColumn": "ready-gitrepository",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
         ]
       },
       {
@@ -695,7 +718,7 @@
         },
         "id": "revision-gitrepository",
         "title": "Revision",
-        "after": "Namespace",
+        "afterColumn": "status-gitrepository",
         "paths": [
           ".status.artifact.revision",
           ".status.lastAppliedRevision",
@@ -722,69 +745,12 @@
           "group": "source.toolkit.fluxcd.io",
           "kind": "GitRepository"
         },
-        "id": "status-gitrepository",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "source.toolkit.fluxcd.io",
-          "kind": "GitRepository"
-        },
-        "id": "ready-gitrepository",
-        "title": "Ready",
-        "after": "Namespace",
-        "paths": [
-          ".status.conditions[0].status"
-        ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
-        "cases": [
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
-            },
-            "text": "True"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
-          }
-        ]
-      },
-      {
-        "kind": {
-          "group": "source.toolkit.fluxcd.io",
-          "kind": "OCIRepository"
-        },
-        "id": "suspended-ocirepository",
+        "id": "suspended-gitrepository",
         "title": "Suspended",
-        "after": "Namespace",
+        "afterColumn": "revision-gitrepository",
         "paths": [
           ".spec.suspend"
         ],
-        "tones": {
-          "Yes": "warning",
-          "No": "neutral"
-        },
         "cases": [
           {
             "when": {
@@ -792,7 +758,8 @@
               "path": ".spec.suspend",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
@@ -803,8 +770,41 @@
                 "value": true
               }
             },
-            "text": "No"
+            "text": "No",
+            "tone": "neutral"
           }
+        ]
+      },
+      {
+        "kind": {
+          "group": "source.toolkit.fluxcd.io",
+          "kind": "OCIRepository"
+        },
+        "id": "ready-ocirepository",
+        "title": "Ready",
+        "afterColumn": "namespace",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "source.toolkit.fluxcd.io",
+          "kind": "OCIRepository"
+        },
+        "id": "status-ocirepository",
+        "title": "Status",
+        "afterColumn": "ready-ocirepository",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
         ]
       },
       {
@@ -814,7 +814,7 @@
         },
         "id": "revision-ocirepository",
         "title": "Revision",
-        "after": "Namespace",
+        "afterColumn": "status-ocirepository",
         "paths": [
           ".status.artifact.revision",
           ".status.lastAppliedRevision",
@@ -841,69 +841,12 @@
           "group": "source.toolkit.fluxcd.io",
           "kind": "OCIRepository"
         },
-        "id": "status-ocirepository",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "source.toolkit.fluxcd.io",
-          "kind": "OCIRepository"
-        },
-        "id": "ready-ocirepository",
-        "title": "Ready",
-        "after": "Namespace",
-        "paths": [
-          ".status.conditions[0].status"
-        ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
-        "cases": [
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
-            },
-            "text": "True"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
-          }
-        ]
-      },
-      {
-        "kind": {
-          "group": "source.toolkit.fluxcd.io",
-          "kind": "HelmRepository"
-        },
-        "id": "suspended-helmrepository",
+        "id": "suspended-ocirepository",
         "title": "Suspended",
-        "after": "Namespace",
+        "afterColumn": "revision-ocirepository",
         "paths": [
           ".spec.suspend"
         ],
-        "tones": {
-          "Yes": "warning",
-          "No": "neutral"
-        },
         "cases": [
           {
             "when": {
@@ -911,7 +854,8 @@
               "path": ".spec.suspend",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
@@ -922,8 +866,41 @@
                 "value": true
               }
             },
-            "text": "No"
+            "text": "No",
+            "tone": "neutral"
           }
+        ]
+      },
+      {
+        "kind": {
+          "group": "source.toolkit.fluxcd.io",
+          "kind": "HelmRepository"
+        },
+        "id": "ready-helmrepository",
+        "title": "Ready",
+        "afterColumn": "namespace",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "source.toolkit.fluxcd.io",
+          "kind": "HelmRepository"
+        },
+        "id": "status-helmrepository",
+        "title": "Status",
+        "afterColumn": "ready-helmrepository",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
         ]
       },
       {
@@ -933,7 +910,7 @@
         },
         "id": "revision-helmrepository",
         "title": "Revision",
-        "after": "Namespace",
+        "afterColumn": "status-helmrepository",
         "paths": [
           ".status.artifact.revision",
           ".status.lastAppliedRevision",
@@ -960,69 +937,12 @@
           "group": "source.toolkit.fluxcd.io",
           "kind": "HelmRepository"
         },
-        "id": "status-helmrepository",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "source.toolkit.fluxcd.io",
-          "kind": "HelmRepository"
-        },
-        "id": "ready-helmrepository",
-        "title": "Ready",
-        "after": "Namespace",
-        "paths": [
-          ".status.conditions[0].status"
-        ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
-        "cases": [
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
-            },
-            "text": "True"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
-          }
-        ]
-      },
-      {
-        "kind": {
-          "group": "source.toolkit.fluxcd.io",
-          "kind": "HelmChart"
-        },
-        "id": "suspended-helmchart",
+        "id": "suspended-helmrepository",
         "title": "Suspended",
-        "after": "Namespace",
+        "afterColumn": "revision-helmrepository",
         "paths": [
           ".spec.suspend"
         ],
-        "tones": {
-          "Yes": "warning",
-          "No": "neutral"
-        },
         "cases": [
           {
             "when": {
@@ -1030,7 +950,8 @@
               "path": ".spec.suspend",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
@@ -1041,8 +962,41 @@
                 "value": true
               }
             },
-            "text": "No"
+            "text": "No",
+            "tone": "neutral"
           }
+        ]
+      },
+      {
+        "kind": {
+          "group": "source.toolkit.fluxcd.io",
+          "kind": "HelmChart"
+        },
+        "id": "ready-helmchart",
+        "title": "Ready",
+        "afterColumn": "namespace",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "source.toolkit.fluxcd.io",
+          "kind": "HelmChart"
+        },
+        "id": "status-helmchart",
+        "title": "Status",
+        "afterColumn": "ready-helmchart",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
         ]
       },
       {
@@ -1052,7 +1006,7 @@
         },
         "id": "revision-helmchart",
         "title": "Revision",
-        "after": "Namespace",
+        "afterColumn": "status-helmchart",
         "paths": [
           ".status.artifact.revision",
           ".status.lastAppliedRevision",
@@ -1079,69 +1033,12 @@
           "group": "source.toolkit.fluxcd.io",
           "kind": "HelmChart"
         },
-        "id": "status-helmchart",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "source.toolkit.fluxcd.io",
-          "kind": "HelmChart"
-        },
-        "id": "ready-helmchart",
-        "title": "Ready",
-        "after": "Namespace",
-        "paths": [
-          ".status.conditions[0].status"
-        ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
-        "cases": [
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
-            },
-            "text": "True"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
-          }
-        ]
-      },
-      {
-        "kind": {
-          "group": "source.toolkit.fluxcd.io",
-          "kind": "Bucket"
-        },
-        "id": "suspended-bucket",
+        "id": "suspended-helmchart",
         "title": "Suspended",
-        "after": "Namespace",
+        "afterColumn": "revision-helmchart",
         "paths": [
           ".spec.suspend"
         ],
-        "tones": {
-          "Yes": "warning",
-          "No": "neutral"
-        },
         "cases": [
           {
             "when": {
@@ -1149,7 +1046,8 @@
               "path": ".spec.suspend",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
@@ -1160,8 +1058,41 @@
                 "value": true
               }
             },
-            "text": "No"
+            "text": "No",
+            "tone": "neutral"
           }
+        ]
+      },
+      {
+        "kind": {
+          "group": "source.toolkit.fluxcd.io",
+          "kind": "Bucket"
+        },
+        "id": "ready-bucket",
+        "title": "Ready",
+        "afterColumn": "namespace",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "source.toolkit.fluxcd.io",
+          "kind": "Bucket"
+        },
+        "id": "status-bucket",
+        "title": "Status",
+        "afterColumn": "ready-bucket",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
         ]
       },
       {
@@ -1171,7 +1102,7 @@
         },
         "id": "revision-bucket",
         "title": "Revision",
-        "after": "Namespace",
+        "afterColumn": "status-bucket",
         "paths": [
           ".status.artifact.revision",
           ".status.lastAppliedRevision",
@@ -1198,69 +1129,12 @@
           "group": "source.toolkit.fluxcd.io",
           "kind": "Bucket"
         },
-        "id": "status-bucket",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "source.toolkit.fluxcd.io",
-          "kind": "Bucket"
-        },
-        "id": "ready-bucket",
-        "title": "Ready",
-        "after": "Namespace",
-        "paths": [
-          ".status.conditions[0].status"
-        ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
-        "cases": [
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
-            },
-            "text": "True"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
-          }
-        ]
-      },
-      {
-        "kind": {
-          "group": "kustomize.toolkit.fluxcd.io",
-          "kind": "Kustomization"
-        },
-        "id": "suspended-kustomization",
+        "id": "suspended-bucket",
         "title": "Suspended",
-        "after": "Namespace",
+        "afterColumn": "revision-bucket",
         "paths": [
           ".spec.suspend"
         ],
-        "tones": {
-          "Yes": "warning",
-          "No": "neutral"
-        },
         "cases": [
           {
             "when": {
@@ -1268,7 +1142,8 @@
               "path": ".spec.suspend",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
@@ -1279,89 +1154,8 @@
                 "value": true
               }
             },
-            "text": "No"
-          }
-        ]
-      },
-      {
-        "kind": {
-          "group": "kustomize.toolkit.fluxcd.io",
-          "kind": "Kustomization"
-        },
-        "id": "revision-kustomization",
-        "title": "Revision",
-        "after": "Namespace",
-        "paths": [
-          ".status.artifact.revision",
-          ".status.lastAppliedRevision",
-          ".status.history[0].chartVersion",
-          ".status.latestImage",
-          ".status.latestRef.tag",
-          ".status.lastScanResult.revision",
-          ".status.lastPushCommit",
-          ".status.observedSourceRevision"
-        ],
-        "tooltipPaths": [
-          ".status.artifact.revision",
-          ".status.lastAppliedRevision",
-          ".status.history[0].chartVersion",
-          ".status.latestImage",
-          ".status.latestRef.tag",
-          ".status.lastScanResult.revision",
-          ".status.lastPushCommit",
-          ".status.observedSourceRevision"
-        ]
-      },
-      {
-        "kind": {
-          "group": "kustomize.toolkit.fluxcd.io",
-          "kind": "Kustomization"
-        },
-        "id": "status-kustomization",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "kustomize.toolkit.fluxcd.io",
-          "kind": "Kustomization"
-        },
-        "id": "ready-kustomization",
-        "title": "Ready",
-        "after": "Namespace",
-        "paths": [
-          ".status.conditions[0].status"
-        ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
-        "cases": [
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
-            },
-            "text": "True"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
+            "text": "No",
+            "tone": "neutral"
           }
         ]
       },
@@ -1372,7 +1166,7 @@
         },
         "id": "source-kustomization",
         "title": "Source",
-        "after": "Namespace",
+        "afterColumn": "namespace",
         "paths": [
           ".spec.sourceRef.name",
           ".spec.chart.spec.sourceRef.name",
@@ -1386,49 +1180,44 @@
       },
       {
         "kind": {
-          "group": "helm.toolkit.fluxcd.io",
-          "kind": "HelmRelease"
+          "group": "kustomize.toolkit.fluxcd.io",
+          "kind": "Kustomization"
         },
-        "id": "suspended-helmrelease",
-        "title": "Suspended",
-        "after": "Namespace",
+        "id": "ready-kustomization",
+        "title": "Ready",
+        "afterColumn": "source-kustomization",
         "paths": [
-          ".spec.suspend"
+          ".status.conditions[type=\"Ready\"].status"
         ],
         "tones": {
-          "Yes": "warning",
-          "No": "neutral"
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "kustomize.toolkit.fluxcd.io",
+          "kind": "Kustomization"
         },
-        "cases": [
-          {
-            "when": {
-              "type": "equals",
-              "path": ".spec.suspend",
-              "value": true
-            },
-            "text": "Yes"
-          },
-          {
-            "when": {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".spec.suspend",
-                "value": true
-              }
-            },
-            "text": "No"
-          }
+        "id": "status-kustomization",
+        "title": "Status",
+        "afterColumn": "ready-kustomization",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
         ]
       },
       {
         "kind": {
-          "group": "helm.toolkit.fluxcd.io",
-          "kind": "HelmRelease"
+          "group": "kustomize.toolkit.fluxcd.io",
+          "kind": "Kustomization"
         },
-        "id": "revision-helmrelease",
+        "id": "revision-kustomization",
         "title": "Revision",
-        "after": "Namespace",
+        "afterColumn": "status-kustomization",
         "paths": [
           ".status.artifact.revision",
           ".status.lastAppliedRevision",
@@ -1452,54 +1241,36 @@
       },
       {
         "kind": {
-          "group": "helm.toolkit.fluxcd.io",
-          "kind": "HelmRelease"
+          "group": "kustomize.toolkit.fluxcd.io",
+          "kind": "Kustomization"
         },
-        "id": "status-helmrelease",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "helm.toolkit.fluxcd.io",
-          "kind": "HelmRelease"
-        },
-        "id": "ready-helmrelease",
-        "title": "Ready",
-        "after": "Namespace",
+        "id": "suspended-kustomization",
+        "title": "Suspended",
+        "afterColumn": "revision-kustomization",
         "paths": [
-          ".status.conditions[0].status"
+          ".spec.suspend"
         ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
         "cases": [
           {
             "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
+              "type": "equals",
+              "path": ".spec.suspend",
+              "value": true
             },
-            "text": "True"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.suspend",
+                "value": true
+              }
             },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
+            "text": "No",
+            "tone": "neutral"
           }
         ]
       },
@@ -1510,7 +1281,7 @@
         },
         "id": "source-helmrelease",
         "title": "Source",
-        "after": "Namespace",
+        "afterColumn": "namespace",
         "paths": [
           ".spec.sourceRef.name",
           ".spec.chart.spec.sourceRef.name",
@@ -1524,19 +1295,76 @@
       },
       {
         "kind": {
-          "group": "image.toolkit.fluxcd.io",
-          "kind": "ImageRepository"
+          "group": "helm.toolkit.fluxcd.io",
+          "kind": "HelmRelease"
         },
-        "id": "suspended-imagerepository",
+        "id": "ready-helmrelease",
+        "title": "Ready",
+        "afterColumn": "source-helmrelease",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "helm.toolkit.fluxcd.io",
+          "kind": "HelmRelease"
+        },
+        "id": "status-helmrelease",
+        "title": "Status",
+        "afterColumn": "ready-helmrelease",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ]
+      },
+      {
+        "kind": {
+          "group": "helm.toolkit.fluxcd.io",
+          "kind": "HelmRelease"
+        },
+        "id": "revision-helmrelease",
+        "title": "Revision",
+        "afterColumn": "status-helmrelease",
+        "paths": [
+          ".status.artifact.revision",
+          ".status.lastAppliedRevision",
+          ".status.history[0].chartVersion",
+          ".status.latestImage",
+          ".status.latestRef.tag",
+          ".status.lastScanResult.revision",
+          ".status.lastPushCommit",
+          ".status.observedSourceRevision"
+        ],
+        "tooltipPaths": [
+          ".status.artifact.revision",
+          ".status.lastAppliedRevision",
+          ".status.history[0].chartVersion",
+          ".status.latestImage",
+          ".status.latestRef.tag",
+          ".status.lastScanResult.revision",
+          ".status.lastPushCommit",
+          ".status.observedSourceRevision"
+        ]
+      },
+      {
+        "kind": {
+          "group": "helm.toolkit.fluxcd.io",
+          "kind": "HelmRelease"
+        },
+        "id": "suspended-helmrelease",
         "title": "Suspended",
-        "after": "Namespace",
+        "afterColumn": "revision-helmrelease",
         "paths": [
           ".spec.suspend"
         ],
-        "tones": {
-          "Yes": "warning",
-          "No": "neutral"
-        },
         "cases": [
           {
             "when": {
@@ -1544,7 +1372,8 @@
               "path": ".spec.suspend",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
@@ -1555,8 +1384,41 @@
                 "value": true
               }
             },
-            "text": "No"
+            "text": "No",
+            "tone": "neutral"
           }
+        ]
+      },
+      {
+        "kind": {
+          "group": "image.toolkit.fluxcd.io",
+          "kind": "ImageRepository"
+        },
+        "id": "ready-imagerepository",
+        "title": "Ready",
+        "afterColumn": "namespace",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "image.toolkit.fluxcd.io",
+          "kind": "ImageRepository"
+        },
+        "id": "status-imagerepository",
+        "title": "Status",
+        "afterColumn": "ready-imagerepository",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
         ]
       },
       {
@@ -1566,7 +1428,7 @@
         },
         "id": "revision-imagerepository",
         "title": "Revision",
-        "after": "Namespace",
+        "afterColumn": "status-imagerepository",
         "paths": [
           ".status.artifact.revision",
           ".status.lastAppliedRevision",
@@ -1593,69 +1455,12 @@
           "group": "image.toolkit.fluxcd.io",
           "kind": "ImageRepository"
         },
-        "id": "status-imagerepository",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "image.toolkit.fluxcd.io",
-          "kind": "ImageRepository"
-        },
-        "id": "ready-imagerepository",
-        "title": "Ready",
-        "after": "Namespace",
-        "paths": [
-          ".status.conditions[0].status"
-        ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
-        "cases": [
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
-            },
-            "text": "True"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
-          }
-        ]
-      },
-      {
-        "kind": {
-          "group": "image.toolkit.fluxcd.io",
-          "kind": "ImagePolicy"
-        },
-        "id": "suspended-imagepolicy",
+        "id": "suspended-imagerepository",
         "title": "Suspended",
-        "after": "Namespace",
+        "afterColumn": "revision-imagerepository",
         "paths": [
           ".spec.suspend"
         ],
-        "tones": {
-          "Yes": "warning",
-          "No": "neutral"
-        },
         "cases": [
           {
             "when": {
@@ -1663,7 +1468,8 @@
               "path": ".spec.suspend",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
@@ -1674,8 +1480,41 @@
                 "value": true
               }
             },
-            "text": "No"
+            "text": "No",
+            "tone": "neutral"
           }
+        ]
+      },
+      {
+        "kind": {
+          "group": "image.toolkit.fluxcd.io",
+          "kind": "ImagePolicy"
+        },
+        "id": "ready-imagepolicy",
+        "title": "Ready",
+        "afterColumn": "namespace",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "image.toolkit.fluxcd.io",
+          "kind": "ImagePolicy"
+        },
+        "id": "status-imagepolicy",
+        "title": "Status",
+        "afterColumn": "ready-imagepolicy",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
         ]
       },
       {
@@ -1685,7 +1524,7 @@
         },
         "id": "revision-imagepolicy",
         "title": "Revision",
-        "after": "Namespace",
+        "afterColumn": "status-imagepolicy",
         "paths": [
           ".status.artifact.revision",
           ".status.lastAppliedRevision",
@@ -1712,69 +1551,12 @@
           "group": "image.toolkit.fluxcd.io",
           "kind": "ImagePolicy"
         },
-        "id": "status-imagepolicy",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "image.toolkit.fluxcd.io",
-          "kind": "ImagePolicy"
-        },
-        "id": "ready-imagepolicy",
-        "title": "Ready",
-        "after": "Namespace",
-        "paths": [
-          ".status.conditions[0].status"
-        ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
-        "cases": [
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
-            },
-            "text": "True"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
-          }
-        ]
-      },
-      {
-        "kind": {
-          "group": "image.toolkit.fluxcd.io",
-          "kind": "ImageUpdateAutomation"
-        },
-        "id": "suspended-imageupdateautomation",
+        "id": "suspended-imagepolicy",
         "title": "Suspended",
-        "after": "Namespace",
+        "afterColumn": "revision-imagepolicy",
         "paths": [
           ".spec.suspend"
         ],
-        "tones": {
-          "Yes": "warning",
-          "No": "neutral"
-        },
         "cases": [
           {
             "when": {
@@ -1782,7 +1564,8 @@
               "path": ".spec.suspend",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
@@ -1793,8 +1576,41 @@
                 "value": true
               }
             },
-            "text": "No"
+            "text": "No",
+            "tone": "neutral"
           }
+        ]
+      },
+      {
+        "kind": {
+          "group": "image.toolkit.fluxcd.io",
+          "kind": "ImageUpdateAutomation"
+        },
+        "id": "ready-imageupdateautomation",
+        "title": "Ready",
+        "afterColumn": "namespace",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "image.toolkit.fluxcd.io",
+          "kind": "ImageUpdateAutomation"
+        },
+        "id": "status-imageupdateautomation",
+        "title": "Status",
+        "afterColumn": "ready-imageupdateautomation",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
         ]
       },
       {
@@ -1804,7 +1620,7 @@
         },
         "id": "revision-imageupdateautomation",
         "title": "Revision",
-        "after": "Namespace",
+        "afterColumn": "status-imageupdateautomation",
         "paths": [
           ".status.artifact.revision",
           ".status.lastAppliedRevision",
@@ -1831,51 +1647,33 @@
           "group": "image.toolkit.fluxcd.io",
           "kind": "ImageUpdateAutomation"
         },
-        "id": "status-imageupdateautomation",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "image.toolkit.fluxcd.io",
-          "kind": "ImageUpdateAutomation"
-        },
-        "id": "ready-imageupdateautomation",
-        "title": "Ready",
-        "after": "Namespace",
+        "id": "suspended-imageupdateautomation",
+        "title": "Suspended",
+        "afterColumn": "revision-imageupdateautomation",
         "paths": [
-          ".status.conditions[0].status"
+          ".spec.suspend"
         ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
         "cases": [
           {
             "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
+              "type": "equals",
+              "path": ".spec.suspend",
+              "value": true
             },
-            "text": "True"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.suspend",
+                "value": true
+              }
             },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
+            "text": "No",
+            "tone": "neutral"
           }
         ]
       },
@@ -1886,14 +1684,10 @@
         },
         "id": "suspended-alert",
         "title": "Suspended",
-        "after": "Namespace",
+        "afterColumn": "namespace",
         "paths": [
           ".spec.suspend"
         ],
-        "tones": {
-          "Yes": "warning",
-          "No": "neutral"
-        },
         "cases": [
           {
             "when": {
@@ -1901,7 +1695,8 @@
               "path": ".spec.suspend",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
@@ -1912,7 +1707,8 @@
                 "value": true
               }
             },
-            "text": "No"
+            "text": "No",
+            "tone": "neutral"
           }
         ]
       },
@@ -1923,14 +1719,10 @@
         },
         "id": "suspended-provider",
         "title": "Suspended",
-        "after": "Namespace",
+        "afterColumn": "namespace",
         "paths": [
           ".spec.suspend"
         ],
-        "tones": {
-          "Yes": "warning",
-          "No": "neutral"
-        },
         "cases": [
           {
             "when": {
@@ -1938,7 +1730,8 @@
               "path": ".spec.suspend",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
@@ -1949,7 +1742,8 @@
                 "value": true
               }
             },
-            "text": "No"
+            "text": "No",
+            "tone": "neutral"
           }
         ]
       },
@@ -1958,36 +1752,31 @@
           "group": "notification.toolkit.fluxcd.io",
           "kind": "Receiver"
         },
-        "id": "suspended-receiver",
-        "title": "Suspended",
-        "after": "Namespace",
+        "id": "ready-receiver",
+        "title": "Ready",
+        "afterColumn": "namespace",
         "paths": [
-          ".spec.suspend"
+          ".status.conditions[type=\"Ready\"].status"
         ],
         "tones": {
-          "Yes": "warning",
-          "No": "neutral"
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "notification.toolkit.fluxcd.io",
+          "kind": "Receiver"
         },
-        "cases": [
-          {
-            "when": {
-              "type": "equals",
-              "path": ".spec.suspend",
-              "value": true
-            },
-            "text": "Yes"
-          },
-          {
-            "when": {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".spec.suspend",
-                "value": true
-              }
-            },
-            "text": "No"
-          }
+        "id": "status-receiver",
+        "title": "Status",
+        "afterColumn": "ready-receiver",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
         ]
       },
       {
@@ -1997,7 +1786,7 @@
         },
         "id": "revision-receiver",
         "title": "Revision",
-        "after": "Namespace",
+        "afterColumn": "status-receiver",
         "paths": [
           ".status.artifact.revision",
           ".status.lastAppliedRevision",
@@ -2024,51 +1813,33 @@
           "group": "notification.toolkit.fluxcd.io",
           "kind": "Receiver"
         },
-        "id": "status-receiver",
-        "title": "Status",
-        "after": "Namespace",
-        "jsonPath": ".status.conditions[?(@.type==\"Ready\")].message"
-      },
-      {
-        "kind": {
-          "group": "notification.toolkit.fluxcd.io",
-          "kind": "Receiver"
-        },
-        "id": "ready-receiver",
-        "title": "Ready",
-        "after": "Namespace",
+        "id": "suspended-receiver",
+        "title": "Suspended",
+        "afterColumn": "revision-receiver",
         "paths": [
-          ".status.conditions[0].status"
+          ".spec.suspend"
         ],
-        "tones": {
-          "True": "ok",
-          "False": "error",
-          "Unknown": "warning"
-        },
         "cases": [
           {
             "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "True"
+              "type": "equals",
+              "path": ".spec.suspend",
+              "value": true
             },
-            "text": "True"
+            "text": "Yes",
+            "tone": "warning"
           },
           {
             "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.suspend",
+                "value": true
+              }
             },
-            "text": "False"
-          },
-          {
-            "when": {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "Unknown"
-            },
-            "text": "Unknown"
+            "text": "No",
+            "tone": "neutral"
           }
         ]
       }
@@ -2137,7 +1908,9 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "Ready is False. First condition, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "group": "not-ready"
       },
       {
         "id": "not-ready-ocirepository",
@@ -2202,7 +1975,9 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "Ready is False. First condition, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "group": "not-ready"
       },
       {
         "id": "not-ready-helmrepository",
@@ -2267,7 +2042,9 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "Ready is False. First condition, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "group": "not-ready"
       },
       {
         "id": "not-ready-bucket",
@@ -2332,7 +2109,9 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "Ready is False. First condition, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "group": "not-ready"
       },
       {
         "id": "not-ready-kustomization",
@@ -2397,7 +2176,9 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "Ready is False. First condition, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "group": "not-ready"
       },
       {
         "id": "not-ready-helmrelease",
@@ -2462,7 +2243,9 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "Ready is False. First condition, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "group": "not-ready"
       }
     ]
   },
@@ -2470,8 +2253,8 @@
     "ru": {
       "name": "Flux",
       "description": "Объекты Flux CD в отдельном разделе боковой панели: источники, Kustomization, HelmRelease, автоматизация образов и уведомления с готовностью, ревизией и источником; что каждый из них применил и какие объекты используют источник; проблемы того, что не удаётся синхронизировать; синхронизация, приостановка и возобновление.",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -2495,98 +2278,98 @@
       "actions.suspend.whyNot": "Уже приостановлен.",
       "actions.resume.title": "Возобновить",
       "actions.resume.whyNot": "Не приостановлен.",
+      "columns.ready-gitrepository.title": "Готов",
+      "columns.status-gitrepository.title": "Состояние",
+      "columns.revision-gitrepository.title": "Ревизия",
       "columns.suspended-gitrepository.title": "Приостановлен",
       "columns.suspended-gitrepository.cases.0.text": "Да",
       "columns.suspended-gitrepository.cases.1.text": "Нет",
-      "columns.revision-gitrepository.title": "Ревизия",
-      "columns.status-gitrepository.title": "Состояние",
-      "columns.ready-gitrepository.title": "Готов",
+      "columns.ready-ocirepository.title": "Готов",
+      "columns.status-ocirepository.title": "Состояние",
+      "columns.revision-ocirepository.title": "Ревизия",
       "columns.suspended-ocirepository.title": "Приостановлен",
       "columns.suspended-ocirepository.cases.0.text": "Да",
       "columns.suspended-ocirepository.cases.1.text": "Нет",
-      "columns.revision-ocirepository.title": "Ревизия",
-      "columns.status-ocirepository.title": "Состояние",
-      "columns.ready-ocirepository.title": "Готов",
+      "columns.ready-helmrepository.title": "Готов",
+      "columns.status-helmrepository.title": "Состояние",
+      "columns.revision-helmrepository.title": "Ревизия",
       "columns.suspended-helmrepository.title": "Приостановлен",
       "columns.suspended-helmrepository.cases.0.text": "Да",
       "columns.suspended-helmrepository.cases.1.text": "Нет",
-      "columns.revision-helmrepository.title": "Ревизия",
-      "columns.status-helmrepository.title": "Состояние",
-      "columns.ready-helmrepository.title": "Готов",
+      "columns.ready-helmchart.title": "Готов",
+      "columns.status-helmchart.title": "Состояние",
+      "columns.revision-helmchart.title": "Ревизия",
       "columns.suspended-helmchart.title": "Приостановлен",
       "columns.suspended-helmchart.cases.0.text": "Да",
       "columns.suspended-helmchart.cases.1.text": "Нет",
-      "columns.revision-helmchart.title": "Ревизия",
-      "columns.status-helmchart.title": "Состояние",
-      "columns.ready-helmchart.title": "Готов",
+      "columns.ready-bucket.title": "Готов",
+      "columns.status-bucket.title": "Состояние",
+      "columns.revision-bucket.title": "Ревизия",
       "columns.suspended-bucket.title": "Приостановлен",
       "columns.suspended-bucket.cases.0.text": "Да",
       "columns.suspended-bucket.cases.1.text": "Нет",
-      "columns.revision-bucket.title": "Ревизия",
-      "columns.status-bucket.title": "Состояние",
-      "columns.ready-bucket.title": "Готов",
+      "columns.source-kustomization.title": "Источник",
+      "columns.ready-kustomization.title": "Готов",
+      "columns.status-kustomization.title": "Состояние",
+      "columns.revision-kustomization.title": "Ревизия",
       "columns.suspended-kustomization.title": "Приостановлен",
       "columns.suspended-kustomization.cases.0.text": "Да",
       "columns.suspended-kustomization.cases.1.text": "Нет",
-      "columns.revision-kustomization.title": "Ревизия",
-      "columns.status-kustomization.title": "Состояние",
-      "columns.ready-kustomization.title": "Готов",
-      "columns.source-kustomization.title": "Источник",
+      "columns.source-helmrelease.title": "Источник",
+      "columns.ready-helmrelease.title": "Готов",
+      "columns.status-helmrelease.title": "Состояние",
+      "columns.revision-helmrelease.title": "Ревизия",
       "columns.suspended-helmrelease.title": "Приостановлен",
       "columns.suspended-helmrelease.cases.0.text": "Да",
       "columns.suspended-helmrelease.cases.1.text": "Нет",
-      "columns.revision-helmrelease.title": "Ревизия",
-      "columns.status-helmrelease.title": "Состояние",
-      "columns.ready-helmrelease.title": "Готов",
-      "columns.source-helmrelease.title": "Источник",
+      "columns.ready-imagerepository.title": "Готов",
+      "columns.status-imagerepository.title": "Состояние",
+      "columns.revision-imagerepository.title": "Ревизия",
       "columns.suspended-imagerepository.title": "Приостановлен",
       "columns.suspended-imagerepository.cases.0.text": "Да",
       "columns.suspended-imagerepository.cases.1.text": "Нет",
-      "columns.revision-imagerepository.title": "Ревизия",
-      "columns.status-imagerepository.title": "Состояние",
-      "columns.ready-imagerepository.title": "Готов",
+      "columns.ready-imagepolicy.title": "Готов",
+      "columns.status-imagepolicy.title": "Состояние",
+      "columns.revision-imagepolicy.title": "Ревизия",
       "columns.suspended-imagepolicy.title": "Приостановлен",
       "columns.suspended-imagepolicy.cases.0.text": "Да",
       "columns.suspended-imagepolicy.cases.1.text": "Нет",
-      "columns.revision-imagepolicy.title": "Ревизия",
-      "columns.status-imagepolicy.title": "Состояние",
-      "columns.ready-imagepolicy.title": "Готов",
+      "columns.ready-imageupdateautomation.title": "Готов",
+      "columns.status-imageupdateautomation.title": "Состояние",
+      "columns.revision-imageupdateautomation.title": "Ревизия",
       "columns.suspended-imageupdateautomation.title": "Приостановлен",
       "columns.suspended-imageupdateautomation.cases.0.text": "Да",
       "columns.suspended-imageupdateautomation.cases.1.text": "Нет",
-      "columns.revision-imageupdateautomation.title": "Ревизия",
-      "columns.status-imageupdateautomation.title": "Состояние",
-      "columns.ready-imageupdateautomation.title": "Готов",
       "columns.suspended-alert.title": "Приостановлен",
       "columns.suspended-alert.cases.0.text": "Да",
       "columns.suspended-alert.cases.1.text": "Нет",
       "columns.suspended-provider.title": "Приостановлен",
       "columns.suspended-provider.cases.0.text": "Да",
       "columns.suspended-provider.cases.1.text": "Нет",
+      "columns.ready-receiver.title": "Готов",
+      "columns.status-receiver.title": "Состояние",
+      "columns.revision-receiver.title": "Ревизия",
       "columns.suspended-receiver.title": "Приостановлен",
       "columns.suspended-receiver.cases.0.text": "Да",
       "columns.suspended-receiver.cases.1.text": "Нет",
-      "columns.revision-receiver.title": "Ревизия",
-      "columns.status-receiver.title": "Состояние",
-      "columns.ready-receiver.title": "Готов",
       "problems.not-ready-gitrepository.title": "GitRepository не готов",
-      "problems.not-ready-gitrepository.message": "Ready равно False. Первое условие, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository не готов",
-      "problems.not-ready-ocirepository.message": "Ready равно False. Первое условие, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository не готов",
-      "problems.not-ready-helmrepository.message": "Ready равно False. Первое условие, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket не готов",
-      "problems.not-ready-bucket.message": "Ready равно False. Первое условие, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization не готов",
-      "problems.not-ready-kustomization.message": "Ready равно False. Первое условие, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease не готов",
-      "problems.not-ready-helmrelease.message": "Ready равно False. Первое условие, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "uk": {
       "name": "Flux",
       "description": "Об'єкти Flux CD в окремому розділі бічної панелі: джерела, Kustomization, HelmRelease, автоматизація образів і сповіщення з готовністю, ревізією та джерелом; що кожен із них застосував і які об'єкти використовують джерело; проблеми того, що не вдається синхронізувати; синхронізація, призупинення та відновлення.",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -2610,98 +2393,98 @@
       "actions.suspend.whyNot": "Уже призупинено.",
       "actions.resume.title": "Відновити",
       "actions.resume.whyNot": "Не призупинено.",
+      "columns.ready-gitrepository.title": "Готовий",
+      "columns.status-gitrepository.title": "Стан",
+      "columns.revision-gitrepository.title": "Ревізія",
       "columns.suspended-gitrepository.title": "Призупинено",
       "columns.suspended-gitrepository.cases.0.text": "Так",
       "columns.suspended-gitrepository.cases.1.text": "Ні",
-      "columns.revision-gitrepository.title": "Ревізія",
-      "columns.status-gitrepository.title": "Стан",
-      "columns.ready-gitrepository.title": "Готовий",
+      "columns.ready-ocirepository.title": "Готовий",
+      "columns.status-ocirepository.title": "Стан",
+      "columns.revision-ocirepository.title": "Ревізія",
       "columns.suspended-ocirepository.title": "Призупинено",
       "columns.suspended-ocirepository.cases.0.text": "Так",
       "columns.suspended-ocirepository.cases.1.text": "Ні",
-      "columns.revision-ocirepository.title": "Ревізія",
-      "columns.status-ocirepository.title": "Стан",
-      "columns.ready-ocirepository.title": "Готовий",
+      "columns.ready-helmrepository.title": "Готовий",
+      "columns.status-helmrepository.title": "Стан",
+      "columns.revision-helmrepository.title": "Ревізія",
       "columns.suspended-helmrepository.title": "Призупинено",
       "columns.suspended-helmrepository.cases.0.text": "Так",
       "columns.suspended-helmrepository.cases.1.text": "Ні",
-      "columns.revision-helmrepository.title": "Ревізія",
-      "columns.status-helmrepository.title": "Стан",
-      "columns.ready-helmrepository.title": "Готовий",
+      "columns.ready-helmchart.title": "Готовий",
+      "columns.status-helmchart.title": "Стан",
+      "columns.revision-helmchart.title": "Ревізія",
       "columns.suspended-helmchart.title": "Призупинено",
       "columns.suspended-helmchart.cases.0.text": "Так",
       "columns.suspended-helmchart.cases.1.text": "Ні",
-      "columns.revision-helmchart.title": "Ревізія",
-      "columns.status-helmchart.title": "Стан",
-      "columns.ready-helmchart.title": "Готовий",
+      "columns.ready-bucket.title": "Готовий",
+      "columns.status-bucket.title": "Стан",
+      "columns.revision-bucket.title": "Ревізія",
       "columns.suspended-bucket.title": "Призупинено",
       "columns.suspended-bucket.cases.0.text": "Так",
       "columns.suspended-bucket.cases.1.text": "Ні",
-      "columns.revision-bucket.title": "Ревізія",
-      "columns.status-bucket.title": "Стан",
-      "columns.ready-bucket.title": "Готовий",
+      "columns.source-kustomization.title": "Джерело",
+      "columns.ready-kustomization.title": "Готовий",
+      "columns.status-kustomization.title": "Стан",
+      "columns.revision-kustomization.title": "Ревізія",
       "columns.suspended-kustomization.title": "Призупинено",
       "columns.suspended-kustomization.cases.0.text": "Так",
       "columns.suspended-kustomization.cases.1.text": "Ні",
-      "columns.revision-kustomization.title": "Ревізія",
-      "columns.status-kustomization.title": "Стан",
-      "columns.ready-kustomization.title": "Готовий",
-      "columns.source-kustomization.title": "Джерело",
+      "columns.source-helmrelease.title": "Джерело",
+      "columns.ready-helmrelease.title": "Готовий",
+      "columns.status-helmrelease.title": "Стан",
+      "columns.revision-helmrelease.title": "Ревізія",
       "columns.suspended-helmrelease.title": "Призупинено",
       "columns.suspended-helmrelease.cases.0.text": "Так",
       "columns.suspended-helmrelease.cases.1.text": "Ні",
-      "columns.revision-helmrelease.title": "Ревізія",
-      "columns.status-helmrelease.title": "Стан",
-      "columns.ready-helmrelease.title": "Готовий",
-      "columns.source-helmrelease.title": "Джерело",
+      "columns.ready-imagerepository.title": "Готовий",
+      "columns.status-imagerepository.title": "Стан",
+      "columns.revision-imagerepository.title": "Ревізія",
       "columns.suspended-imagerepository.title": "Призупинено",
       "columns.suspended-imagerepository.cases.0.text": "Так",
       "columns.suspended-imagerepository.cases.1.text": "Ні",
-      "columns.revision-imagerepository.title": "Ревізія",
-      "columns.status-imagerepository.title": "Стан",
-      "columns.ready-imagerepository.title": "Готовий",
+      "columns.ready-imagepolicy.title": "Готовий",
+      "columns.status-imagepolicy.title": "Стан",
+      "columns.revision-imagepolicy.title": "Ревізія",
       "columns.suspended-imagepolicy.title": "Призупинено",
       "columns.suspended-imagepolicy.cases.0.text": "Так",
       "columns.suspended-imagepolicy.cases.1.text": "Ні",
-      "columns.revision-imagepolicy.title": "Ревізія",
-      "columns.status-imagepolicy.title": "Стан",
-      "columns.ready-imagepolicy.title": "Готовий",
+      "columns.ready-imageupdateautomation.title": "Готовий",
+      "columns.status-imageupdateautomation.title": "Стан",
+      "columns.revision-imageupdateautomation.title": "Ревізія",
       "columns.suspended-imageupdateautomation.title": "Призупинено",
       "columns.suspended-imageupdateautomation.cases.0.text": "Так",
       "columns.suspended-imageupdateautomation.cases.1.text": "Ні",
-      "columns.revision-imageupdateautomation.title": "Ревізія",
-      "columns.status-imageupdateautomation.title": "Стан",
-      "columns.ready-imageupdateautomation.title": "Готовий",
       "columns.suspended-alert.title": "Призупинено",
       "columns.suspended-alert.cases.0.text": "Так",
       "columns.suspended-alert.cases.1.text": "Ні",
       "columns.suspended-provider.title": "Призупинено",
       "columns.suspended-provider.cases.0.text": "Так",
       "columns.suspended-provider.cases.1.text": "Ні",
+      "columns.ready-receiver.title": "Готовий",
+      "columns.status-receiver.title": "Стан",
+      "columns.revision-receiver.title": "Ревізія",
       "columns.suspended-receiver.title": "Призупинено",
       "columns.suspended-receiver.cases.0.text": "Так",
       "columns.suspended-receiver.cases.1.text": "Ні",
-      "columns.revision-receiver.title": "Ревізія",
-      "columns.status-receiver.title": "Стан",
-      "columns.ready-receiver.title": "Готовий",
       "problems.not-ready-gitrepository.title": "GitRepository не готовий",
-      "problems.not-ready-gitrepository.message": "Ready дорівнює False. Перша умова, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository не готовий",
-      "problems.not-ready-ocirepository.message": "Ready дорівнює False. Перша умова, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository не готовий",
-      "problems.not-ready-helmrepository.message": "Ready дорівнює False. Перша умова, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket не готовий",
-      "problems.not-ready-bucket.message": "Ready дорівнює False. Перша умова, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization не готовий",
-      "problems.not-ready-kustomization.message": "Ready дорівнює False. Перша умова, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease не готовий",
-      "problems.not-ready-helmrelease.message": "Ready дорівнює False. Перша умова, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "de": {
       "name": "Flux",
       "description": "Die Objekte von Flux CD in einem eigenen Abschnitt der Seitenleiste: Quellen, Kustomizations, HelmReleases, Image-Automatisierung und Benachrichtigungen mit Bereitschaft, Revision und Quelle; was jedes angewendet hat und welche Objekte eine Quelle verwenden; Probleme dessen, was sich nicht abgleichen lässt; Abgleichen, Anhalten und Fortsetzen.",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -2725,98 +2508,98 @@
       "actions.suspend.whyNot": "Bereits angehalten.",
       "actions.resume.title": "Fortsetzen",
       "actions.resume.whyNot": "Nicht angehalten.",
+      "columns.ready-gitrepository.title": "Bereit",
+      "columns.status-gitrepository.title": "Status",
+      "columns.revision-gitrepository.title": "Revision",
       "columns.suspended-gitrepository.title": "Angehalten",
       "columns.suspended-gitrepository.cases.0.text": "Ja",
       "columns.suspended-gitrepository.cases.1.text": "Nein",
-      "columns.revision-gitrepository.title": "Revision",
-      "columns.status-gitrepository.title": "Status",
-      "columns.ready-gitrepository.title": "Bereit",
+      "columns.ready-ocirepository.title": "Bereit",
+      "columns.status-ocirepository.title": "Status",
+      "columns.revision-ocirepository.title": "Revision",
       "columns.suspended-ocirepository.title": "Angehalten",
       "columns.suspended-ocirepository.cases.0.text": "Ja",
       "columns.suspended-ocirepository.cases.1.text": "Nein",
-      "columns.revision-ocirepository.title": "Revision",
-      "columns.status-ocirepository.title": "Status",
-      "columns.ready-ocirepository.title": "Bereit",
+      "columns.ready-helmrepository.title": "Bereit",
+      "columns.status-helmrepository.title": "Status",
+      "columns.revision-helmrepository.title": "Revision",
       "columns.suspended-helmrepository.title": "Angehalten",
       "columns.suspended-helmrepository.cases.0.text": "Ja",
       "columns.suspended-helmrepository.cases.1.text": "Nein",
-      "columns.revision-helmrepository.title": "Revision",
-      "columns.status-helmrepository.title": "Status",
-      "columns.ready-helmrepository.title": "Bereit",
+      "columns.ready-helmchart.title": "Bereit",
+      "columns.status-helmchart.title": "Status",
+      "columns.revision-helmchart.title": "Revision",
       "columns.suspended-helmchart.title": "Angehalten",
       "columns.suspended-helmchart.cases.0.text": "Ja",
       "columns.suspended-helmchart.cases.1.text": "Nein",
-      "columns.revision-helmchart.title": "Revision",
-      "columns.status-helmchart.title": "Status",
-      "columns.ready-helmchart.title": "Bereit",
+      "columns.ready-bucket.title": "Bereit",
+      "columns.status-bucket.title": "Status",
+      "columns.revision-bucket.title": "Revision",
       "columns.suspended-bucket.title": "Angehalten",
       "columns.suspended-bucket.cases.0.text": "Ja",
       "columns.suspended-bucket.cases.1.text": "Nein",
-      "columns.revision-bucket.title": "Revision",
-      "columns.status-bucket.title": "Status",
-      "columns.ready-bucket.title": "Bereit",
+      "columns.source-kustomization.title": "Quelle",
+      "columns.ready-kustomization.title": "Bereit",
+      "columns.status-kustomization.title": "Status",
+      "columns.revision-kustomization.title": "Revision",
       "columns.suspended-kustomization.title": "Angehalten",
       "columns.suspended-kustomization.cases.0.text": "Ja",
       "columns.suspended-kustomization.cases.1.text": "Nein",
-      "columns.revision-kustomization.title": "Revision",
-      "columns.status-kustomization.title": "Status",
-      "columns.ready-kustomization.title": "Bereit",
-      "columns.source-kustomization.title": "Quelle",
+      "columns.source-helmrelease.title": "Quelle",
+      "columns.ready-helmrelease.title": "Bereit",
+      "columns.status-helmrelease.title": "Status",
+      "columns.revision-helmrelease.title": "Revision",
       "columns.suspended-helmrelease.title": "Angehalten",
       "columns.suspended-helmrelease.cases.0.text": "Ja",
       "columns.suspended-helmrelease.cases.1.text": "Nein",
-      "columns.revision-helmrelease.title": "Revision",
-      "columns.status-helmrelease.title": "Status",
-      "columns.ready-helmrelease.title": "Bereit",
-      "columns.source-helmrelease.title": "Quelle",
+      "columns.ready-imagerepository.title": "Bereit",
+      "columns.status-imagerepository.title": "Status",
+      "columns.revision-imagerepository.title": "Revision",
       "columns.suspended-imagerepository.title": "Angehalten",
       "columns.suspended-imagerepository.cases.0.text": "Ja",
       "columns.suspended-imagerepository.cases.1.text": "Nein",
-      "columns.revision-imagerepository.title": "Revision",
-      "columns.status-imagerepository.title": "Status",
-      "columns.ready-imagerepository.title": "Bereit",
+      "columns.ready-imagepolicy.title": "Bereit",
+      "columns.status-imagepolicy.title": "Status",
+      "columns.revision-imagepolicy.title": "Revision",
       "columns.suspended-imagepolicy.title": "Angehalten",
       "columns.suspended-imagepolicy.cases.0.text": "Ja",
       "columns.suspended-imagepolicy.cases.1.text": "Nein",
-      "columns.revision-imagepolicy.title": "Revision",
-      "columns.status-imagepolicy.title": "Status",
-      "columns.ready-imagepolicy.title": "Bereit",
+      "columns.ready-imageupdateautomation.title": "Bereit",
+      "columns.status-imageupdateautomation.title": "Status",
+      "columns.revision-imageupdateautomation.title": "Revision",
       "columns.suspended-imageupdateautomation.title": "Angehalten",
       "columns.suspended-imageupdateautomation.cases.0.text": "Ja",
       "columns.suspended-imageupdateautomation.cases.1.text": "Nein",
-      "columns.revision-imageupdateautomation.title": "Revision",
-      "columns.status-imageupdateautomation.title": "Status",
-      "columns.ready-imageupdateautomation.title": "Bereit",
       "columns.suspended-alert.title": "Angehalten",
       "columns.suspended-alert.cases.0.text": "Ja",
       "columns.suspended-alert.cases.1.text": "Nein",
       "columns.suspended-provider.title": "Angehalten",
       "columns.suspended-provider.cases.0.text": "Ja",
       "columns.suspended-provider.cases.1.text": "Nein",
+      "columns.ready-receiver.title": "Bereit",
+      "columns.status-receiver.title": "Status",
+      "columns.revision-receiver.title": "Revision",
       "columns.suspended-receiver.title": "Angehalten",
       "columns.suspended-receiver.cases.0.text": "Ja",
       "columns.suspended-receiver.cases.1.text": "Nein",
-      "columns.revision-receiver.title": "Revision",
-      "columns.status-receiver.title": "Status",
-      "columns.ready-receiver.title": "Bereit",
       "problems.not-ready-gitrepository.title": "GitRepository nicht bereit",
-      "problems.not-ready-gitrepository.message": "Ready ist False. Erste Bedingung, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository nicht bereit",
-      "problems.not-ready-ocirepository.message": "Ready ist False. Erste Bedingung, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository nicht bereit",
-      "problems.not-ready-helmrepository.message": "Ready ist False. Erste Bedingung, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket nicht bereit",
-      "problems.not-ready-bucket.message": "Ready ist False. Erste Bedingung, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization nicht bereit",
-      "problems.not-ready-kustomization.message": "Ready ist False. Erste Bedingung, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease nicht bereit",
-      "problems.not-ready-helmrelease.message": "Ready ist False. Erste Bedingung, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "fr": {
       "name": "Flux",
       "description": "Les objets de Flux CD dans une section de la barre latérale qui leur est propre : sources, Kustomizations, HelmReleases, automatisation des images et notifications, avec leur état Ready, leur révision et leur source ; ce que chacun a appliqué et quels objets utilisent une source ; les problèmes de ce qui ne se réconcilie pas ; Réconcilier, Suspendre et Reprendre.",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -2840,98 +2623,98 @@
       "actions.suspend.whyNot": "Déjà suspendu.",
       "actions.resume.title": "Reprendre",
       "actions.resume.whyNot": "Pas suspendu.",
+      "columns.ready-gitrepository.title": "Prêt",
+      "columns.status-gitrepository.title": "État",
+      "columns.revision-gitrepository.title": "Révision",
       "columns.suspended-gitrepository.title": "Suspendu",
       "columns.suspended-gitrepository.cases.0.text": "Oui",
       "columns.suspended-gitrepository.cases.1.text": "Non",
-      "columns.revision-gitrepository.title": "Révision",
-      "columns.status-gitrepository.title": "État",
-      "columns.ready-gitrepository.title": "Prêt",
+      "columns.ready-ocirepository.title": "Prêt",
+      "columns.status-ocirepository.title": "État",
+      "columns.revision-ocirepository.title": "Révision",
       "columns.suspended-ocirepository.title": "Suspendu",
       "columns.suspended-ocirepository.cases.0.text": "Oui",
       "columns.suspended-ocirepository.cases.1.text": "Non",
-      "columns.revision-ocirepository.title": "Révision",
-      "columns.status-ocirepository.title": "État",
-      "columns.ready-ocirepository.title": "Prêt",
+      "columns.ready-helmrepository.title": "Prêt",
+      "columns.status-helmrepository.title": "État",
+      "columns.revision-helmrepository.title": "Révision",
       "columns.suspended-helmrepository.title": "Suspendu",
       "columns.suspended-helmrepository.cases.0.text": "Oui",
       "columns.suspended-helmrepository.cases.1.text": "Non",
-      "columns.revision-helmrepository.title": "Révision",
-      "columns.status-helmrepository.title": "État",
-      "columns.ready-helmrepository.title": "Prêt",
+      "columns.ready-helmchart.title": "Prêt",
+      "columns.status-helmchart.title": "État",
+      "columns.revision-helmchart.title": "Révision",
       "columns.suspended-helmchart.title": "Suspendu",
       "columns.suspended-helmchart.cases.0.text": "Oui",
       "columns.suspended-helmchart.cases.1.text": "Non",
-      "columns.revision-helmchart.title": "Révision",
-      "columns.status-helmchart.title": "État",
-      "columns.ready-helmchart.title": "Prêt",
+      "columns.ready-bucket.title": "Prêt",
+      "columns.status-bucket.title": "État",
+      "columns.revision-bucket.title": "Révision",
       "columns.suspended-bucket.title": "Suspendu",
       "columns.suspended-bucket.cases.0.text": "Oui",
       "columns.suspended-bucket.cases.1.text": "Non",
-      "columns.revision-bucket.title": "Révision",
-      "columns.status-bucket.title": "État",
-      "columns.ready-bucket.title": "Prêt",
+      "columns.source-kustomization.title": "Source",
+      "columns.ready-kustomization.title": "Prêt",
+      "columns.status-kustomization.title": "État",
+      "columns.revision-kustomization.title": "Révision",
       "columns.suspended-kustomization.title": "Suspendu",
       "columns.suspended-kustomization.cases.0.text": "Oui",
       "columns.suspended-kustomization.cases.1.text": "Non",
-      "columns.revision-kustomization.title": "Révision",
-      "columns.status-kustomization.title": "État",
-      "columns.ready-kustomization.title": "Prêt",
-      "columns.source-kustomization.title": "Source",
+      "columns.source-helmrelease.title": "Source",
+      "columns.ready-helmrelease.title": "Prêt",
+      "columns.status-helmrelease.title": "État",
+      "columns.revision-helmrelease.title": "Révision",
       "columns.suspended-helmrelease.title": "Suspendu",
       "columns.suspended-helmrelease.cases.0.text": "Oui",
       "columns.suspended-helmrelease.cases.1.text": "Non",
-      "columns.revision-helmrelease.title": "Révision",
-      "columns.status-helmrelease.title": "État",
-      "columns.ready-helmrelease.title": "Prêt",
-      "columns.source-helmrelease.title": "Source",
+      "columns.ready-imagerepository.title": "Prêt",
+      "columns.status-imagerepository.title": "État",
+      "columns.revision-imagerepository.title": "Révision",
       "columns.suspended-imagerepository.title": "Suspendu",
       "columns.suspended-imagerepository.cases.0.text": "Oui",
       "columns.suspended-imagerepository.cases.1.text": "Non",
-      "columns.revision-imagerepository.title": "Révision",
-      "columns.status-imagerepository.title": "État",
-      "columns.ready-imagerepository.title": "Prêt",
+      "columns.ready-imagepolicy.title": "Prêt",
+      "columns.status-imagepolicy.title": "État",
+      "columns.revision-imagepolicy.title": "Révision",
       "columns.suspended-imagepolicy.title": "Suspendu",
       "columns.suspended-imagepolicy.cases.0.text": "Oui",
       "columns.suspended-imagepolicy.cases.1.text": "Non",
-      "columns.revision-imagepolicy.title": "Révision",
-      "columns.status-imagepolicy.title": "État",
-      "columns.ready-imagepolicy.title": "Prêt",
+      "columns.ready-imageupdateautomation.title": "Prêt",
+      "columns.status-imageupdateautomation.title": "État",
+      "columns.revision-imageupdateautomation.title": "Révision",
       "columns.suspended-imageupdateautomation.title": "Suspendu",
       "columns.suspended-imageupdateautomation.cases.0.text": "Oui",
       "columns.suspended-imageupdateautomation.cases.1.text": "Non",
-      "columns.revision-imageupdateautomation.title": "Révision",
-      "columns.status-imageupdateautomation.title": "État",
-      "columns.ready-imageupdateautomation.title": "Prêt",
       "columns.suspended-alert.title": "Suspendu",
       "columns.suspended-alert.cases.0.text": "Oui",
       "columns.suspended-alert.cases.1.text": "Non",
       "columns.suspended-provider.title": "Suspendu",
       "columns.suspended-provider.cases.0.text": "Oui",
       "columns.suspended-provider.cases.1.text": "Non",
+      "columns.ready-receiver.title": "Prêt",
+      "columns.status-receiver.title": "État",
+      "columns.revision-receiver.title": "Révision",
       "columns.suspended-receiver.title": "Suspendu",
       "columns.suspended-receiver.cases.0.text": "Oui",
       "columns.suspended-receiver.cases.1.text": "Non",
-      "columns.revision-receiver.title": "Révision",
-      "columns.status-receiver.title": "État",
-      "columns.ready-receiver.title": "Prêt",
       "problems.not-ready-gitrepository.title": "GitRepository non prêt",
-      "problems.not-ready-gitrepository.message": "Ready vaut False. Première condition, {{.status.conditions[0].type}} : {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository non prêt",
-      "problems.not-ready-ocirepository.message": "Ready vaut False. Première condition, {{.status.conditions[0].type}} : {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository non prêt",
-      "problems.not-ready-helmrepository.message": "Ready vaut False. Première condition, {{.status.conditions[0].type}} : {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket non prêt",
-      "problems.not-ready-bucket.message": "Ready vaut False. Première condition, {{.status.conditions[0].type}} : {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization non prêt",
-      "problems.not-ready-kustomization.message": "Ready vaut False. Première condition, {{.status.conditions[0].type}} : {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease non prêt",
-      "problems.not-ready-helmrelease.message": "Ready vaut False. Première condition, {{.status.conditions[0].type}} : {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "es": {
       "name": "Flux",
       "description": "Los objetos de Flux CD en una sección propia de la barra lateral: orígenes, Kustomizations, HelmReleases, automatización de imágenes y notificaciones con su disponibilidad, revisión y origen; lo que aplicó cada uno y qué objetos usan un origen; problemas de lo que no logra reconciliarse; Reconciliar, Suspender y Reanudar.",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -2955,98 +2738,98 @@
       "actions.suspend.whyNot": "Ya está suspendido.",
       "actions.resume.title": "Reanudar",
       "actions.resume.whyNot": "No está suspendido.",
+      "columns.ready-gitrepository.title": "Listo",
+      "columns.status-gitrepository.title": "Estado",
+      "columns.revision-gitrepository.title": "Revisión",
       "columns.suspended-gitrepository.title": "Suspendido",
       "columns.suspended-gitrepository.cases.0.text": "Sí",
       "columns.suspended-gitrepository.cases.1.text": "No",
-      "columns.revision-gitrepository.title": "Revisión",
-      "columns.status-gitrepository.title": "Estado",
-      "columns.ready-gitrepository.title": "Listo",
+      "columns.ready-ocirepository.title": "Listo",
+      "columns.status-ocirepository.title": "Estado",
+      "columns.revision-ocirepository.title": "Revisión",
       "columns.suspended-ocirepository.title": "Suspendido",
       "columns.suspended-ocirepository.cases.0.text": "Sí",
       "columns.suspended-ocirepository.cases.1.text": "No",
-      "columns.revision-ocirepository.title": "Revisión",
-      "columns.status-ocirepository.title": "Estado",
-      "columns.ready-ocirepository.title": "Listo",
+      "columns.ready-helmrepository.title": "Listo",
+      "columns.status-helmrepository.title": "Estado",
+      "columns.revision-helmrepository.title": "Revisión",
       "columns.suspended-helmrepository.title": "Suspendido",
       "columns.suspended-helmrepository.cases.0.text": "Sí",
       "columns.suspended-helmrepository.cases.1.text": "No",
-      "columns.revision-helmrepository.title": "Revisión",
-      "columns.status-helmrepository.title": "Estado",
-      "columns.ready-helmrepository.title": "Listo",
+      "columns.ready-helmchart.title": "Listo",
+      "columns.status-helmchart.title": "Estado",
+      "columns.revision-helmchart.title": "Revisión",
       "columns.suspended-helmchart.title": "Suspendido",
       "columns.suspended-helmchart.cases.0.text": "Sí",
       "columns.suspended-helmchart.cases.1.text": "No",
-      "columns.revision-helmchart.title": "Revisión",
-      "columns.status-helmchart.title": "Estado",
-      "columns.ready-helmchart.title": "Listo",
+      "columns.ready-bucket.title": "Listo",
+      "columns.status-bucket.title": "Estado",
+      "columns.revision-bucket.title": "Revisión",
       "columns.suspended-bucket.title": "Suspendido",
       "columns.suspended-bucket.cases.0.text": "Sí",
       "columns.suspended-bucket.cases.1.text": "No",
-      "columns.revision-bucket.title": "Revisión",
-      "columns.status-bucket.title": "Estado",
-      "columns.ready-bucket.title": "Listo",
+      "columns.source-kustomization.title": "Origen",
+      "columns.ready-kustomization.title": "Listo",
+      "columns.status-kustomization.title": "Estado",
+      "columns.revision-kustomization.title": "Revisión",
       "columns.suspended-kustomization.title": "Suspendido",
       "columns.suspended-kustomization.cases.0.text": "Sí",
       "columns.suspended-kustomization.cases.1.text": "No",
-      "columns.revision-kustomization.title": "Revisión",
-      "columns.status-kustomization.title": "Estado",
-      "columns.ready-kustomization.title": "Listo",
-      "columns.source-kustomization.title": "Origen",
+      "columns.source-helmrelease.title": "Origen",
+      "columns.ready-helmrelease.title": "Listo",
+      "columns.status-helmrelease.title": "Estado",
+      "columns.revision-helmrelease.title": "Revisión",
       "columns.suspended-helmrelease.title": "Suspendido",
       "columns.suspended-helmrelease.cases.0.text": "Sí",
       "columns.suspended-helmrelease.cases.1.text": "No",
-      "columns.revision-helmrelease.title": "Revisión",
-      "columns.status-helmrelease.title": "Estado",
-      "columns.ready-helmrelease.title": "Listo",
-      "columns.source-helmrelease.title": "Origen",
+      "columns.ready-imagerepository.title": "Listo",
+      "columns.status-imagerepository.title": "Estado",
+      "columns.revision-imagerepository.title": "Revisión",
       "columns.suspended-imagerepository.title": "Suspendido",
       "columns.suspended-imagerepository.cases.0.text": "Sí",
       "columns.suspended-imagerepository.cases.1.text": "No",
-      "columns.revision-imagerepository.title": "Revisión",
-      "columns.status-imagerepository.title": "Estado",
-      "columns.ready-imagerepository.title": "Listo",
+      "columns.ready-imagepolicy.title": "Listo",
+      "columns.status-imagepolicy.title": "Estado",
+      "columns.revision-imagepolicy.title": "Revisión",
       "columns.suspended-imagepolicy.title": "Suspendido",
       "columns.suspended-imagepolicy.cases.0.text": "Sí",
       "columns.suspended-imagepolicy.cases.1.text": "No",
-      "columns.revision-imagepolicy.title": "Revisión",
-      "columns.status-imagepolicy.title": "Estado",
-      "columns.ready-imagepolicy.title": "Listo",
+      "columns.ready-imageupdateautomation.title": "Listo",
+      "columns.status-imageupdateautomation.title": "Estado",
+      "columns.revision-imageupdateautomation.title": "Revisión",
       "columns.suspended-imageupdateautomation.title": "Suspendido",
       "columns.suspended-imageupdateautomation.cases.0.text": "Sí",
       "columns.suspended-imageupdateautomation.cases.1.text": "No",
-      "columns.revision-imageupdateautomation.title": "Revisión",
-      "columns.status-imageupdateautomation.title": "Estado",
-      "columns.ready-imageupdateautomation.title": "Listo",
       "columns.suspended-alert.title": "Suspendido",
       "columns.suspended-alert.cases.0.text": "Sí",
       "columns.suspended-alert.cases.1.text": "No",
       "columns.suspended-provider.title": "Suspendido",
       "columns.suspended-provider.cases.0.text": "Sí",
       "columns.suspended-provider.cases.1.text": "No",
+      "columns.ready-receiver.title": "Listo",
+      "columns.status-receiver.title": "Estado",
+      "columns.revision-receiver.title": "Revisión",
       "columns.suspended-receiver.title": "Suspendido",
       "columns.suspended-receiver.cases.0.text": "Sí",
       "columns.suspended-receiver.cases.1.text": "No",
-      "columns.revision-receiver.title": "Revisión",
-      "columns.status-receiver.title": "Estado",
-      "columns.ready-receiver.title": "Listo",
       "problems.not-ready-gitrepository.title": "GitRepository no está listo",
-      "problems.not-ready-gitrepository.message": "Ready es False. Primera condición, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository no está listo",
-      "problems.not-ready-ocirepository.message": "Ready es False. Primera condición, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository no está listo",
-      "problems.not-ready-helmrepository.message": "Ready es False. Primera condición, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket no está listo",
-      "problems.not-ready-bucket.message": "Ready es False. Primera condición, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization no está listo",
-      "problems.not-ready-kustomization.message": "Ready es False. Primera condición, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease no está listo",
-      "problems.not-ready-helmrelease.message": "Ready es False. Primera condición, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "pt-BR": {
       "name": "Flux",
       "description": "Os objetos do Flux CD em uma seção própria da barra lateral: fontes, Kustomizations, HelmReleases, automação de imagens e notificações com sua prontidão, revisão e fonte; o que cada um aplicou e quais objetos usam uma fonte; problemas do que não consegue ser reconciliado; Reconciliar, Suspender e Retomar.",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -3070,98 +2853,98 @@
       "actions.suspend.whyNot": "Já está suspenso.",
       "actions.resume.title": "Retomar",
       "actions.resume.whyNot": "Não está suspenso.",
+      "columns.ready-gitrepository.title": "Pronto",
+      "columns.status-gitrepository.title": "Status",
+      "columns.revision-gitrepository.title": "Revisão",
       "columns.suspended-gitrepository.title": "Suspenso",
       "columns.suspended-gitrepository.cases.0.text": "Sim",
       "columns.suspended-gitrepository.cases.1.text": "Não",
-      "columns.revision-gitrepository.title": "Revisão",
-      "columns.status-gitrepository.title": "Status",
-      "columns.ready-gitrepository.title": "Pronto",
+      "columns.ready-ocirepository.title": "Pronto",
+      "columns.status-ocirepository.title": "Status",
+      "columns.revision-ocirepository.title": "Revisão",
       "columns.suspended-ocirepository.title": "Suspenso",
       "columns.suspended-ocirepository.cases.0.text": "Sim",
       "columns.suspended-ocirepository.cases.1.text": "Não",
-      "columns.revision-ocirepository.title": "Revisão",
-      "columns.status-ocirepository.title": "Status",
-      "columns.ready-ocirepository.title": "Pronto",
+      "columns.ready-helmrepository.title": "Pronto",
+      "columns.status-helmrepository.title": "Status",
+      "columns.revision-helmrepository.title": "Revisão",
       "columns.suspended-helmrepository.title": "Suspenso",
       "columns.suspended-helmrepository.cases.0.text": "Sim",
       "columns.suspended-helmrepository.cases.1.text": "Não",
-      "columns.revision-helmrepository.title": "Revisão",
-      "columns.status-helmrepository.title": "Status",
-      "columns.ready-helmrepository.title": "Pronto",
+      "columns.ready-helmchart.title": "Pronto",
+      "columns.status-helmchart.title": "Status",
+      "columns.revision-helmchart.title": "Revisão",
       "columns.suspended-helmchart.title": "Suspenso",
       "columns.suspended-helmchart.cases.0.text": "Sim",
       "columns.suspended-helmchart.cases.1.text": "Não",
-      "columns.revision-helmchart.title": "Revisão",
-      "columns.status-helmchart.title": "Status",
-      "columns.ready-helmchart.title": "Pronto",
+      "columns.ready-bucket.title": "Pronto",
+      "columns.status-bucket.title": "Status",
+      "columns.revision-bucket.title": "Revisão",
       "columns.suspended-bucket.title": "Suspenso",
       "columns.suspended-bucket.cases.0.text": "Sim",
       "columns.suspended-bucket.cases.1.text": "Não",
-      "columns.revision-bucket.title": "Revisão",
-      "columns.status-bucket.title": "Status",
-      "columns.ready-bucket.title": "Pronto",
+      "columns.source-kustomization.title": "Fonte",
+      "columns.ready-kustomization.title": "Pronto",
+      "columns.status-kustomization.title": "Status",
+      "columns.revision-kustomization.title": "Revisão",
       "columns.suspended-kustomization.title": "Suspenso",
       "columns.suspended-kustomization.cases.0.text": "Sim",
       "columns.suspended-kustomization.cases.1.text": "Não",
-      "columns.revision-kustomization.title": "Revisão",
-      "columns.status-kustomization.title": "Status",
-      "columns.ready-kustomization.title": "Pronto",
-      "columns.source-kustomization.title": "Fonte",
+      "columns.source-helmrelease.title": "Fonte",
+      "columns.ready-helmrelease.title": "Pronto",
+      "columns.status-helmrelease.title": "Status",
+      "columns.revision-helmrelease.title": "Revisão",
       "columns.suspended-helmrelease.title": "Suspenso",
       "columns.suspended-helmrelease.cases.0.text": "Sim",
       "columns.suspended-helmrelease.cases.1.text": "Não",
-      "columns.revision-helmrelease.title": "Revisão",
-      "columns.status-helmrelease.title": "Status",
-      "columns.ready-helmrelease.title": "Pronto",
-      "columns.source-helmrelease.title": "Fonte",
+      "columns.ready-imagerepository.title": "Pronto",
+      "columns.status-imagerepository.title": "Status",
+      "columns.revision-imagerepository.title": "Revisão",
       "columns.suspended-imagerepository.title": "Suspenso",
       "columns.suspended-imagerepository.cases.0.text": "Sim",
       "columns.suspended-imagerepository.cases.1.text": "Não",
-      "columns.revision-imagerepository.title": "Revisão",
-      "columns.status-imagerepository.title": "Status",
-      "columns.ready-imagerepository.title": "Pronto",
+      "columns.ready-imagepolicy.title": "Pronto",
+      "columns.status-imagepolicy.title": "Status",
+      "columns.revision-imagepolicy.title": "Revisão",
       "columns.suspended-imagepolicy.title": "Suspenso",
       "columns.suspended-imagepolicy.cases.0.text": "Sim",
       "columns.suspended-imagepolicy.cases.1.text": "Não",
-      "columns.revision-imagepolicy.title": "Revisão",
-      "columns.status-imagepolicy.title": "Status",
-      "columns.ready-imagepolicy.title": "Pronto",
+      "columns.ready-imageupdateautomation.title": "Pronto",
+      "columns.status-imageupdateautomation.title": "Status",
+      "columns.revision-imageupdateautomation.title": "Revisão",
       "columns.suspended-imageupdateautomation.title": "Suspenso",
       "columns.suspended-imageupdateautomation.cases.0.text": "Sim",
       "columns.suspended-imageupdateautomation.cases.1.text": "Não",
-      "columns.revision-imageupdateautomation.title": "Revisão",
-      "columns.status-imageupdateautomation.title": "Status",
-      "columns.ready-imageupdateautomation.title": "Pronto",
       "columns.suspended-alert.title": "Suspenso",
       "columns.suspended-alert.cases.0.text": "Sim",
       "columns.suspended-alert.cases.1.text": "Não",
       "columns.suspended-provider.title": "Suspenso",
       "columns.suspended-provider.cases.0.text": "Sim",
       "columns.suspended-provider.cases.1.text": "Não",
+      "columns.ready-receiver.title": "Pronto",
+      "columns.status-receiver.title": "Status",
+      "columns.revision-receiver.title": "Revisão",
       "columns.suspended-receiver.title": "Suspenso",
       "columns.suspended-receiver.cases.0.text": "Sim",
       "columns.suspended-receiver.cases.1.text": "Não",
-      "columns.revision-receiver.title": "Revisão",
-      "columns.status-receiver.title": "Status",
-      "columns.ready-receiver.title": "Pronto",
       "problems.not-ready-gitrepository.title": "GitRepository não está pronto",
-      "problems.not-ready-gitrepository.message": "Ready é False. Primeira condição, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository não está pronto",
-      "problems.not-ready-ocirepository.message": "Ready é False. Primeira condição, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository não está pronto",
-      "problems.not-ready-helmrepository.message": "Ready é False. Primeira condição, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket não está pronto",
-      "problems.not-ready-bucket.message": "Ready é False. Primeira condição, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization não está pronto",
-      "problems.not-ready-kustomization.message": "Ready é False. Primeira condição, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease não está pronto",
-      "problems.not-ready-helmrelease.message": "Ready é False. Primeira condição, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "it": {
       "name": "Flux",
       "description": "Gli oggetti di Flux CD in una sezione propria della barra laterale: origini, Kustomization, HelmRelease, automazione delle immagini e notifiche con prontezza, revisione e origine; cosa ha applicato ciascuno e quali oggetti usano un'origine; i problemi di ciò che non riesce a riconciliarsi; Riconcilia, Sospendi e Riprendi.",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -3185,98 +2968,98 @@
       "actions.suspend.whyNot": "Già sospeso.",
       "actions.resume.title": "Riprendi",
       "actions.resume.whyNot": "Non è sospeso.",
+      "columns.ready-gitrepository.title": "Pronto",
+      "columns.status-gitrepository.title": "Stato",
+      "columns.revision-gitrepository.title": "Revisione",
       "columns.suspended-gitrepository.title": "Sospeso",
       "columns.suspended-gitrepository.cases.0.text": "Sì",
       "columns.suspended-gitrepository.cases.1.text": "No",
-      "columns.revision-gitrepository.title": "Revisione",
-      "columns.status-gitrepository.title": "Stato",
-      "columns.ready-gitrepository.title": "Pronto",
+      "columns.ready-ocirepository.title": "Pronto",
+      "columns.status-ocirepository.title": "Stato",
+      "columns.revision-ocirepository.title": "Revisione",
       "columns.suspended-ocirepository.title": "Sospeso",
       "columns.suspended-ocirepository.cases.0.text": "Sì",
       "columns.suspended-ocirepository.cases.1.text": "No",
-      "columns.revision-ocirepository.title": "Revisione",
-      "columns.status-ocirepository.title": "Stato",
-      "columns.ready-ocirepository.title": "Pronto",
+      "columns.ready-helmrepository.title": "Pronto",
+      "columns.status-helmrepository.title": "Stato",
+      "columns.revision-helmrepository.title": "Revisione",
       "columns.suspended-helmrepository.title": "Sospeso",
       "columns.suspended-helmrepository.cases.0.text": "Sì",
       "columns.suspended-helmrepository.cases.1.text": "No",
-      "columns.revision-helmrepository.title": "Revisione",
-      "columns.status-helmrepository.title": "Stato",
-      "columns.ready-helmrepository.title": "Pronto",
+      "columns.ready-helmchart.title": "Pronto",
+      "columns.status-helmchart.title": "Stato",
+      "columns.revision-helmchart.title": "Revisione",
       "columns.suspended-helmchart.title": "Sospeso",
       "columns.suspended-helmchart.cases.0.text": "Sì",
       "columns.suspended-helmchart.cases.1.text": "No",
-      "columns.revision-helmchart.title": "Revisione",
-      "columns.status-helmchart.title": "Stato",
-      "columns.ready-helmchart.title": "Pronto",
+      "columns.ready-bucket.title": "Pronto",
+      "columns.status-bucket.title": "Stato",
+      "columns.revision-bucket.title": "Revisione",
       "columns.suspended-bucket.title": "Sospeso",
       "columns.suspended-bucket.cases.0.text": "Sì",
       "columns.suspended-bucket.cases.1.text": "No",
-      "columns.revision-bucket.title": "Revisione",
-      "columns.status-bucket.title": "Stato",
-      "columns.ready-bucket.title": "Pronto",
+      "columns.source-kustomization.title": "Origine",
+      "columns.ready-kustomization.title": "Pronto",
+      "columns.status-kustomization.title": "Stato",
+      "columns.revision-kustomization.title": "Revisione",
       "columns.suspended-kustomization.title": "Sospeso",
       "columns.suspended-kustomization.cases.0.text": "Sì",
       "columns.suspended-kustomization.cases.1.text": "No",
-      "columns.revision-kustomization.title": "Revisione",
-      "columns.status-kustomization.title": "Stato",
-      "columns.ready-kustomization.title": "Pronto",
-      "columns.source-kustomization.title": "Origine",
+      "columns.source-helmrelease.title": "Origine",
+      "columns.ready-helmrelease.title": "Pronto",
+      "columns.status-helmrelease.title": "Stato",
+      "columns.revision-helmrelease.title": "Revisione",
       "columns.suspended-helmrelease.title": "Sospeso",
       "columns.suspended-helmrelease.cases.0.text": "Sì",
       "columns.suspended-helmrelease.cases.1.text": "No",
-      "columns.revision-helmrelease.title": "Revisione",
-      "columns.status-helmrelease.title": "Stato",
-      "columns.ready-helmrelease.title": "Pronto",
-      "columns.source-helmrelease.title": "Origine",
+      "columns.ready-imagerepository.title": "Pronto",
+      "columns.status-imagerepository.title": "Stato",
+      "columns.revision-imagerepository.title": "Revisione",
       "columns.suspended-imagerepository.title": "Sospeso",
       "columns.suspended-imagerepository.cases.0.text": "Sì",
       "columns.suspended-imagerepository.cases.1.text": "No",
-      "columns.revision-imagerepository.title": "Revisione",
-      "columns.status-imagerepository.title": "Stato",
-      "columns.ready-imagerepository.title": "Pronto",
+      "columns.ready-imagepolicy.title": "Pronto",
+      "columns.status-imagepolicy.title": "Stato",
+      "columns.revision-imagepolicy.title": "Revisione",
       "columns.suspended-imagepolicy.title": "Sospeso",
       "columns.suspended-imagepolicy.cases.0.text": "Sì",
       "columns.suspended-imagepolicy.cases.1.text": "No",
-      "columns.revision-imagepolicy.title": "Revisione",
-      "columns.status-imagepolicy.title": "Stato",
-      "columns.ready-imagepolicy.title": "Pronto",
+      "columns.ready-imageupdateautomation.title": "Pronto",
+      "columns.status-imageupdateautomation.title": "Stato",
+      "columns.revision-imageupdateautomation.title": "Revisione",
       "columns.suspended-imageupdateautomation.title": "Sospeso",
       "columns.suspended-imageupdateautomation.cases.0.text": "Sì",
       "columns.suspended-imageupdateautomation.cases.1.text": "No",
-      "columns.revision-imageupdateautomation.title": "Revisione",
-      "columns.status-imageupdateautomation.title": "Stato",
-      "columns.ready-imageupdateautomation.title": "Pronto",
       "columns.suspended-alert.title": "Sospeso",
       "columns.suspended-alert.cases.0.text": "Sì",
       "columns.suspended-alert.cases.1.text": "No",
       "columns.suspended-provider.title": "Sospeso",
       "columns.suspended-provider.cases.0.text": "Sì",
       "columns.suspended-provider.cases.1.text": "No",
+      "columns.ready-receiver.title": "Pronto",
+      "columns.status-receiver.title": "Stato",
+      "columns.revision-receiver.title": "Revisione",
       "columns.suspended-receiver.title": "Sospeso",
       "columns.suspended-receiver.cases.0.text": "Sì",
       "columns.suspended-receiver.cases.1.text": "No",
-      "columns.revision-receiver.title": "Revisione",
-      "columns.status-receiver.title": "Stato",
-      "columns.ready-receiver.title": "Pronto",
       "problems.not-ready-gitrepository.title": "GitRepository non pronto",
-      "problems.not-ready-gitrepository.message": "Ready è False. Prima condizione, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository non pronto",
-      "problems.not-ready-ocirepository.message": "Ready è False. Prima condizione, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository non pronto",
-      "problems.not-ready-helmrepository.message": "Ready è False. Prima condizione, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket non pronto",
-      "problems.not-ready-bucket.message": "Ready è False. Prima condizione, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization non pronto",
-      "problems.not-ready-kustomization.message": "Ready è False. Prima condizione, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease non pronto",
-      "problems.not-ready-helmrelease.message": "Ready è False. Prima condizione, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "pl": {
       "name": "Flux",
       "description": "Obiekty Flux CD we własnej sekcji paska bocznego: źródła, Kustomization, HelmRelease, automatyzacja obrazów i powiadomienia z gotowością, rewizją i źródłem; co każdy z nich zastosował i które obiekty używają źródła; problemy z tym, czego nie da się uzgodnić; uzgadnianie, wstrzymywanie i wznawianie.",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -3300,98 +3083,98 @@
       "actions.suspend.whyNot": "Już wstrzymany.",
       "actions.resume.title": "Wznów",
       "actions.resume.whyNot": "Nie jest wstrzymany.",
+      "columns.ready-gitrepository.title": "Gotowe",
+      "columns.status-gitrepository.title": "Stan",
+      "columns.revision-gitrepository.title": "Rewizja",
       "columns.suspended-gitrepository.title": "Wstrzymane",
       "columns.suspended-gitrepository.cases.0.text": "Tak",
       "columns.suspended-gitrepository.cases.1.text": "Nie",
-      "columns.revision-gitrepository.title": "Rewizja",
-      "columns.status-gitrepository.title": "Stan",
-      "columns.ready-gitrepository.title": "Gotowe",
+      "columns.ready-ocirepository.title": "Gotowe",
+      "columns.status-ocirepository.title": "Stan",
+      "columns.revision-ocirepository.title": "Rewizja",
       "columns.suspended-ocirepository.title": "Wstrzymane",
       "columns.suspended-ocirepository.cases.0.text": "Tak",
       "columns.suspended-ocirepository.cases.1.text": "Nie",
-      "columns.revision-ocirepository.title": "Rewizja",
-      "columns.status-ocirepository.title": "Stan",
-      "columns.ready-ocirepository.title": "Gotowe",
+      "columns.ready-helmrepository.title": "Gotowe",
+      "columns.status-helmrepository.title": "Stan",
+      "columns.revision-helmrepository.title": "Rewizja",
       "columns.suspended-helmrepository.title": "Wstrzymane",
       "columns.suspended-helmrepository.cases.0.text": "Tak",
       "columns.suspended-helmrepository.cases.1.text": "Nie",
-      "columns.revision-helmrepository.title": "Rewizja",
-      "columns.status-helmrepository.title": "Stan",
-      "columns.ready-helmrepository.title": "Gotowe",
+      "columns.ready-helmchart.title": "Gotowe",
+      "columns.status-helmchart.title": "Stan",
+      "columns.revision-helmchart.title": "Rewizja",
       "columns.suspended-helmchart.title": "Wstrzymane",
       "columns.suspended-helmchart.cases.0.text": "Tak",
       "columns.suspended-helmchart.cases.1.text": "Nie",
-      "columns.revision-helmchart.title": "Rewizja",
-      "columns.status-helmchart.title": "Stan",
-      "columns.ready-helmchart.title": "Gotowe",
+      "columns.ready-bucket.title": "Gotowe",
+      "columns.status-bucket.title": "Stan",
+      "columns.revision-bucket.title": "Rewizja",
       "columns.suspended-bucket.title": "Wstrzymane",
       "columns.suspended-bucket.cases.0.text": "Tak",
       "columns.suspended-bucket.cases.1.text": "Nie",
-      "columns.revision-bucket.title": "Rewizja",
-      "columns.status-bucket.title": "Stan",
-      "columns.ready-bucket.title": "Gotowe",
+      "columns.source-kustomization.title": "Źródło",
+      "columns.ready-kustomization.title": "Gotowe",
+      "columns.status-kustomization.title": "Stan",
+      "columns.revision-kustomization.title": "Rewizja",
       "columns.suspended-kustomization.title": "Wstrzymane",
       "columns.suspended-kustomization.cases.0.text": "Tak",
       "columns.suspended-kustomization.cases.1.text": "Nie",
-      "columns.revision-kustomization.title": "Rewizja",
-      "columns.status-kustomization.title": "Stan",
-      "columns.ready-kustomization.title": "Gotowe",
-      "columns.source-kustomization.title": "Źródło",
+      "columns.source-helmrelease.title": "Źródło",
+      "columns.ready-helmrelease.title": "Gotowe",
+      "columns.status-helmrelease.title": "Stan",
+      "columns.revision-helmrelease.title": "Rewizja",
       "columns.suspended-helmrelease.title": "Wstrzymane",
       "columns.suspended-helmrelease.cases.0.text": "Tak",
       "columns.suspended-helmrelease.cases.1.text": "Nie",
-      "columns.revision-helmrelease.title": "Rewizja",
-      "columns.status-helmrelease.title": "Stan",
-      "columns.ready-helmrelease.title": "Gotowe",
-      "columns.source-helmrelease.title": "Źródło",
+      "columns.ready-imagerepository.title": "Gotowe",
+      "columns.status-imagerepository.title": "Stan",
+      "columns.revision-imagerepository.title": "Rewizja",
       "columns.suspended-imagerepository.title": "Wstrzymane",
       "columns.suspended-imagerepository.cases.0.text": "Tak",
       "columns.suspended-imagerepository.cases.1.text": "Nie",
-      "columns.revision-imagerepository.title": "Rewizja",
-      "columns.status-imagerepository.title": "Stan",
-      "columns.ready-imagerepository.title": "Gotowe",
+      "columns.ready-imagepolicy.title": "Gotowe",
+      "columns.status-imagepolicy.title": "Stan",
+      "columns.revision-imagepolicy.title": "Rewizja",
       "columns.suspended-imagepolicy.title": "Wstrzymane",
       "columns.suspended-imagepolicy.cases.0.text": "Tak",
       "columns.suspended-imagepolicy.cases.1.text": "Nie",
-      "columns.revision-imagepolicy.title": "Rewizja",
-      "columns.status-imagepolicy.title": "Stan",
-      "columns.ready-imagepolicy.title": "Gotowe",
+      "columns.ready-imageupdateautomation.title": "Gotowe",
+      "columns.status-imageupdateautomation.title": "Stan",
+      "columns.revision-imageupdateautomation.title": "Rewizja",
       "columns.suspended-imageupdateautomation.title": "Wstrzymane",
       "columns.suspended-imageupdateautomation.cases.0.text": "Tak",
       "columns.suspended-imageupdateautomation.cases.1.text": "Nie",
-      "columns.revision-imageupdateautomation.title": "Rewizja",
-      "columns.status-imageupdateautomation.title": "Stan",
-      "columns.ready-imageupdateautomation.title": "Gotowe",
       "columns.suspended-alert.title": "Wstrzymane",
       "columns.suspended-alert.cases.0.text": "Tak",
       "columns.suspended-alert.cases.1.text": "Nie",
       "columns.suspended-provider.title": "Wstrzymane",
       "columns.suspended-provider.cases.0.text": "Tak",
       "columns.suspended-provider.cases.1.text": "Nie",
+      "columns.ready-receiver.title": "Gotowe",
+      "columns.status-receiver.title": "Stan",
+      "columns.revision-receiver.title": "Rewizja",
       "columns.suspended-receiver.title": "Wstrzymane",
       "columns.suspended-receiver.cases.0.text": "Tak",
       "columns.suspended-receiver.cases.1.text": "Nie",
-      "columns.revision-receiver.title": "Rewizja",
-      "columns.status-receiver.title": "Stan",
-      "columns.ready-receiver.title": "Gotowe",
       "problems.not-ready-gitrepository.title": "GitRepository niegotowy",
-      "problems.not-ready-gitrepository.message": "Ready ma wartość False. Pierwszy warunek, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository niegotowy",
-      "problems.not-ready-ocirepository.message": "Ready ma wartość False. Pierwszy warunek, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository niegotowy",
-      "problems.not-ready-helmrepository.message": "Ready ma wartość False. Pierwszy warunek, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket niegotowy",
-      "problems.not-ready-bucket.message": "Ready ma wartość False. Pierwszy warunek, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization niegotowy",
-      "problems.not-ready-kustomization.message": "Ready ma wartość False. Pierwszy warunek, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease niegotowy",
-      "problems.not-ready-helmrelease.message": "Ready ma wartość False. Pierwszy warunek, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "tr": {
       "name": "Flux",
       "description": "Flux CD nesneleri kenar çubuğunda kendi bölümlerinde: kaynaklar, Kustomization'lar, HelmRelease'ler, imaj otomasyonu ve bildirimler, hazır olma durumları, revizyonları ve kaynaklarıyla; her birinin neyi uyguladığı ve bir kaynağı hangi nesnelerin kullandığı; uzlaştırılamayanların sorunları; uzlaştırma, askıya alma ve sürdürme.",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -3415,98 +3198,98 @@
       "actions.suspend.whyNot": "Zaten askıya alınmış.",
       "actions.resume.title": "Sürdür",
       "actions.resume.whyNot": "Askıya alınmamış.",
+      "columns.ready-gitrepository.title": "Hazır",
+      "columns.status-gitrepository.title": "Durum",
+      "columns.revision-gitrepository.title": "Revizyon",
       "columns.suspended-gitrepository.title": "Askıda",
       "columns.suspended-gitrepository.cases.0.text": "Evet",
       "columns.suspended-gitrepository.cases.1.text": "Hayır",
-      "columns.revision-gitrepository.title": "Revizyon",
-      "columns.status-gitrepository.title": "Durum",
-      "columns.ready-gitrepository.title": "Hazır",
+      "columns.ready-ocirepository.title": "Hazır",
+      "columns.status-ocirepository.title": "Durum",
+      "columns.revision-ocirepository.title": "Revizyon",
       "columns.suspended-ocirepository.title": "Askıda",
       "columns.suspended-ocirepository.cases.0.text": "Evet",
       "columns.suspended-ocirepository.cases.1.text": "Hayır",
-      "columns.revision-ocirepository.title": "Revizyon",
-      "columns.status-ocirepository.title": "Durum",
-      "columns.ready-ocirepository.title": "Hazır",
+      "columns.ready-helmrepository.title": "Hazır",
+      "columns.status-helmrepository.title": "Durum",
+      "columns.revision-helmrepository.title": "Revizyon",
       "columns.suspended-helmrepository.title": "Askıda",
       "columns.suspended-helmrepository.cases.0.text": "Evet",
       "columns.suspended-helmrepository.cases.1.text": "Hayır",
-      "columns.revision-helmrepository.title": "Revizyon",
-      "columns.status-helmrepository.title": "Durum",
-      "columns.ready-helmrepository.title": "Hazır",
+      "columns.ready-helmchart.title": "Hazır",
+      "columns.status-helmchart.title": "Durum",
+      "columns.revision-helmchart.title": "Revizyon",
       "columns.suspended-helmchart.title": "Askıda",
       "columns.suspended-helmchart.cases.0.text": "Evet",
       "columns.suspended-helmchart.cases.1.text": "Hayır",
-      "columns.revision-helmchart.title": "Revizyon",
-      "columns.status-helmchart.title": "Durum",
-      "columns.ready-helmchart.title": "Hazır",
+      "columns.ready-bucket.title": "Hazır",
+      "columns.status-bucket.title": "Durum",
+      "columns.revision-bucket.title": "Revizyon",
       "columns.suspended-bucket.title": "Askıda",
       "columns.suspended-bucket.cases.0.text": "Evet",
       "columns.suspended-bucket.cases.1.text": "Hayır",
-      "columns.revision-bucket.title": "Revizyon",
-      "columns.status-bucket.title": "Durum",
-      "columns.ready-bucket.title": "Hazır",
+      "columns.source-kustomization.title": "Kaynak",
+      "columns.ready-kustomization.title": "Hazır",
+      "columns.status-kustomization.title": "Durum",
+      "columns.revision-kustomization.title": "Revizyon",
       "columns.suspended-kustomization.title": "Askıda",
       "columns.suspended-kustomization.cases.0.text": "Evet",
       "columns.suspended-kustomization.cases.1.text": "Hayır",
-      "columns.revision-kustomization.title": "Revizyon",
-      "columns.status-kustomization.title": "Durum",
-      "columns.ready-kustomization.title": "Hazır",
-      "columns.source-kustomization.title": "Kaynak",
+      "columns.source-helmrelease.title": "Kaynak",
+      "columns.ready-helmrelease.title": "Hazır",
+      "columns.status-helmrelease.title": "Durum",
+      "columns.revision-helmrelease.title": "Revizyon",
       "columns.suspended-helmrelease.title": "Askıda",
       "columns.suspended-helmrelease.cases.0.text": "Evet",
       "columns.suspended-helmrelease.cases.1.text": "Hayır",
-      "columns.revision-helmrelease.title": "Revizyon",
-      "columns.status-helmrelease.title": "Durum",
-      "columns.ready-helmrelease.title": "Hazır",
-      "columns.source-helmrelease.title": "Kaynak",
+      "columns.ready-imagerepository.title": "Hazır",
+      "columns.status-imagerepository.title": "Durum",
+      "columns.revision-imagerepository.title": "Revizyon",
       "columns.suspended-imagerepository.title": "Askıda",
       "columns.suspended-imagerepository.cases.0.text": "Evet",
       "columns.suspended-imagerepository.cases.1.text": "Hayır",
-      "columns.revision-imagerepository.title": "Revizyon",
-      "columns.status-imagerepository.title": "Durum",
-      "columns.ready-imagerepository.title": "Hazır",
+      "columns.ready-imagepolicy.title": "Hazır",
+      "columns.status-imagepolicy.title": "Durum",
+      "columns.revision-imagepolicy.title": "Revizyon",
       "columns.suspended-imagepolicy.title": "Askıda",
       "columns.suspended-imagepolicy.cases.0.text": "Evet",
       "columns.suspended-imagepolicy.cases.1.text": "Hayır",
-      "columns.revision-imagepolicy.title": "Revizyon",
-      "columns.status-imagepolicy.title": "Durum",
-      "columns.ready-imagepolicy.title": "Hazır",
+      "columns.ready-imageupdateautomation.title": "Hazır",
+      "columns.status-imageupdateautomation.title": "Durum",
+      "columns.revision-imageupdateautomation.title": "Revizyon",
       "columns.suspended-imageupdateautomation.title": "Askıda",
       "columns.suspended-imageupdateautomation.cases.0.text": "Evet",
       "columns.suspended-imageupdateautomation.cases.1.text": "Hayır",
-      "columns.revision-imageupdateautomation.title": "Revizyon",
-      "columns.status-imageupdateautomation.title": "Durum",
-      "columns.ready-imageupdateautomation.title": "Hazır",
       "columns.suspended-alert.title": "Askıda",
       "columns.suspended-alert.cases.0.text": "Evet",
       "columns.suspended-alert.cases.1.text": "Hayır",
       "columns.suspended-provider.title": "Askıda",
       "columns.suspended-provider.cases.0.text": "Evet",
       "columns.suspended-provider.cases.1.text": "Hayır",
+      "columns.ready-receiver.title": "Hazır",
+      "columns.status-receiver.title": "Durum",
+      "columns.revision-receiver.title": "Revizyon",
       "columns.suspended-receiver.title": "Askıda",
       "columns.suspended-receiver.cases.0.text": "Evet",
       "columns.suspended-receiver.cases.1.text": "Hayır",
-      "columns.revision-receiver.title": "Revizyon",
-      "columns.status-receiver.title": "Durum",
-      "columns.ready-receiver.title": "Hazır",
       "problems.not-ready-gitrepository.title": "GitRepository hazır değil",
-      "problems.not-ready-gitrepository.message": "Ready False. İlk koşul, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository hazır değil",
-      "problems.not-ready-ocirepository.message": "Ready False. İlk koşul, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository hazır değil",
-      "problems.not-ready-helmrepository.message": "Ready False. İlk koşul, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket hazır değil",
-      "problems.not-ready-bucket.message": "Ready False. İlk koşul, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization hazır değil",
-      "problems.not-ready-kustomization.message": "Ready False. İlk koşul, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease hazır değil",
-      "problems.not-ready-helmrelease.message": "Ready False. İlk koşul, {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "zh-CN": {
       "name": "Flux",
       "description": "在侧边栏独立分区中显示 Flux CD 的对象：来源、Kustomization、HelmRelease、镜像自动化和通知，以及它们的就绪状态、修订版本和来源；每个对象应用了什么、哪些对象使用某个来源；协调失败的问题；以及协调、暂停和恢复。",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -3530,98 +3313,98 @@
       "actions.suspend.whyNot": "已暂停。",
       "actions.resume.title": "恢复",
       "actions.resume.whyNot": "未暂停。",
+      "columns.ready-gitrepository.title": "就绪",
+      "columns.status-gitrepository.title": "状态",
+      "columns.revision-gitrepository.title": "修订版本",
       "columns.suspended-gitrepository.title": "已暂停",
       "columns.suspended-gitrepository.cases.0.text": "是",
       "columns.suspended-gitrepository.cases.1.text": "否",
-      "columns.revision-gitrepository.title": "修订版本",
-      "columns.status-gitrepository.title": "状态",
-      "columns.ready-gitrepository.title": "就绪",
+      "columns.ready-ocirepository.title": "就绪",
+      "columns.status-ocirepository.title": "状态",
+      "columns.revision-ocirepository.title": "修订版本",
       "columns.suspended-ocirepository.title": "已暂停",
       "columns.suspended-ocirepository.cases.0.text": "是",
       "columns.suspended-ocirepository.cases.1.text": "否",
-      "columns.revision-ocirepository.title": "修订版本",
-      "columns.status-ocirepository.title": "状态",
-      "columns.ready-ocirepository.title": "就绪",
+      "columns.ready-helmrepository.title": "就绪",
+      "columns.status-helmrepository.title": "状态",
+      "columns.revision-helmrepository.title": "修订版本",
       "columns.suspended-helmrepository.title": "已暂停",
       "columns.suspended-helmrepository.cases.0.text": "是",
       "columns.suspended-helmrepository.cases.1.text": "否",
-      "columns.revision-helmrepository.title": "修订版本",
-      "columns.status-helmrepository.title": "状态",
-      "columns.ready-helmrepository.title": "就绪",
+      "columns.ready-helmchart.title": "就绪",
+      "columns.status-helmchart.title": "状态",
+      "columns.revision-helmchart.title": "修订版本",
       "columns.suspended-helmchart.title": "已暂停",
       "columns.suspended-helmchart.cases.0.text": "是",
       "columns.suspended-helmchart.cases.1.text": "否",
-      "columns.revision-helmchart.title": "修订版本",
-      "columns.status-helmchart.title": "状态",
-      "columns.ready-helmchart.title": "就绪",
+      "columns.ready-bucket.title": "就绪",
+      "columns.status-bucket.title": "状态",
+      "columns.revision-bucket.title": "修订版本",
       "columns.suspended-bucket.title": "已暂停",
       "columns.suspended-bucket.cases.0.text": "是",
       "columns.suspended-bucket.cases.1.text": "否",
-      "columns.revision-bucket.title": "修订版本",
-      "columns.status-bucket.title": "状态",
-      "columns.ready-bucket.title": "就绪",
+      "columns.source-kustomization.title": "来源",
+      "columns.ready-kustomization.title": "就绪",
+      "columns.status-kustomization.title": "状态",
+      "columns.revision-kustomization.title": "修订版本",
       "columns.suspended-kustomization.title": "已暂停",
       "columns.suspended-kustomization.cases.0.text": "是",
       "columns.suspended-kustomization.cases.1.text": "否",
-      "columns.revision-kustomization.title": "修订版本",
-      "columns.status-kustomization.title": "状态",
-      "columns.ready-kustomization.title": "就绪",
-      "columns.source-kustomization.title": "来源",
+      "columns.source-helmrelease.title": "来源",
+      "columns.ready-helmrelease.title": "就绪",
+      "columns.status-helmrelease.title": "状态",
+      "columns.revision-helmrelease.title": "修订版本",
       "columns.suspended-helmrelease.title": "已暂停",
       "columns.suspended-helmrelease.cases.0.text": "是",
       "columns.suspended-helmrelease.cases.1.text": "否",
-      "columns.revision-helmrelease.title": "修订版本",
-      "columns.status-helmrelease.title": "状态",
-      "columns.ready-helmrelease.title": "就绪",
-      "columns.source-helmrelease.title": "来源",
+      "columns.ready-imagerepository.title": "就绪",
+      "columns.status-imagerepository.title": "状态",
+      "columns.revision-imagerepository.title": "修订版本",
       "columns.suspended-imagerepository.title": "已暂停",
       "columns.suspended-imagerepository.cases.0.text": "是",
       "columns.suspended-imagerepository.cases.1.text": "否",
-      "columns.revision-imagerepository.title": "修订版本",
-      "columns.status-imagerepository.title": "状态",
-      "columns.ready-imagerepository.title": "就绪",
+      "columns.ready-imagepolicy.title": "就绪",
+      "columns.status-imagepolicy.title": "状态",
+      "columns.revision-imagepolicy.title": "修订版本",
       "columns.suspended-imagepolicy.title": "已暂停",
       "columns.suspended-imagepolicy.cases.0.text": "是",
       "columns.suspended-imagepolicy.cases.1.text": "否",
-      "columns.revision-imagepolicy.title": "修订版本",
-      "columns.status-imagepolicy.title": "状态",
-      "columns.ready-imagepolicy.title": "就绪",
+      "columns.ready-imageupdateautomation.title": "就绪",
+      "columns.status-imageupdateautomation.title": "状态",
+      "columns.revision-imageupdateautomation.title": "修订版本",
       "columns.suspended-imageupdateautomation.title": "已暂停",
       "columns.suspended-imageupdateautomation.cases.0.text": "是",
       "columns.suspended-imageupdateautomation.cases.1.text": "否",
-      "columns.revision-imageupdateautomation.title": "修订版本",
-      "columns.status-imageupdateautomation.title": "状态",
-      "columns.ready-imageupdateautomation.title": "就绪",
       "columns.suspended-alert.title": "已暂停",
       "columns.suspended-alert.cases.0.text": "是",
       "columns.suspended-alert.cases.1.text": "否",
       "columns.suspended-provider.title": "已暂停",
       "columns.suspended-provider.cases.0.text": "是",
       "columns.suspended-provider.cases.1.text": "否",
+      "columns.ready-receiver.title": "就绪",
+      "columns.status-receiver.title": "状态",
+      "columns.revision-receiver.title": "修订版本",
       "columns.suspended-receiver.title": "已暂停",
       "columns.suspended-receiver.cases.0.text": "是",
       "columns.suspended-receiver.cases.1.text": "否",
-      "columns.revision-receiver.title": "修订版本",
-      "columns.status-receiver.title": "状态",
-      "columns.ready-receiver.title": "就绪",
       "problems.not-ready-gitrepository.title": "GitRepository 未就绪",
-      "problems.not-ready-gitrepository.message": "Ready 为 False。第一个条件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository 未就绪",
-      "problems.not-ready-ocirepository.message": "Ready 为 False。第一个条件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository 未就绪",
-      "problems.not-ready-helmrepository.message": "Ready 为 False。第一个条件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket 未就绪",
-      "problems.not-ready-bucket.message": "Ready 为 False。第一个条件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization 未就绪",
-      "problems.not-ready-kustomization.message": "Ready 为 False。第一个条件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease 未就绪",
-      "problems.not-ready-helmrelease.message": "Ready 为 False。第一个条件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "zh-TW": {
       "name": "Flux",
       "description": "在側邊欄獨立區段中顯示 Flux CD 的物件：來源、Kustomization、HelmRelease、映像自動化與通知，以及它們的就緒狀態、修訂版本與來源；每個物件套用了什麼、哪些物件使用某個來源；調和失敗的問題；以及調和、暫停與繼續。",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -3645,98 +3428,98 @@
       "actions.suspend.whyNot": "已暫停。",
       "actions.resume.title": "繼續",
       "actions.resume.whyNot": "未暫停。",
+      "columns.ready-gitrepository.title": "就緒",
+      "columns.status-gitrepository.title": "狀態",
+      "columns.revision-gitrepository.title": "修訂版本",
       "columns.suspended-gitrepository.title": "已暫停",
       "columns.suspended-gitrepository.cases.0.text": "是",
       "columns.suspended-gitrepository.cases.1.text": "否",
-      "columns.revision-gitrepository.title": "修訂版本",
-      "columns.status-gitrepository.title": "狀態",
-      "columns.ready-gitrepository.title": "就緒",
+      "columns.ready-ocirepository.title": "就緒",
+      "columns.status-ocirepository.title": "狀態",
+      "columns.revision-ocirepository.title": "修訂版本",
       "columns.suspended-ocirepository.title": "已暫停",
       "columns.suspended-ocirepository.cases.0.text": "是",
       "columns.suspended-ocirepository.cases.1.text": "否",
-      "columns.revision-ocirepository.title": "修訂版本",
-      "columns.status-ocirepository.title": "狀態",
-      "columns.ready-ocirepository.title": "就緒",
+      "columns.ready-helmrepository.title": "就緒",
+      "columns.status-helmrepository.title": "狀態",
+      "columns.revision-helmrepository.title": "修訂版本",
       "columns.suspended-helmrepository.title": "已暫停",
       "columns.suspended-helmrepository.cases.0.text": "是",
       "columns.suspended-helmrepository.cases.1.text": "否",
-      "columns.revision-helmrepository.title": "修訂版本",
-      "columns.status-helmrepository.title": "狀態",
-      "columns.ready-helmrepository.title": "就緒",
+      "columns.ready-helmchart.title": "就緒",
+      "columns.status-helmchart.title": "狀態",
+      "columns.revision-helmchart.title": "修訂版本",
       "columns.suspended-helmchart.title": "已暫停",
       "columns.suspended-helmchart.cases.0.text": "是",
       "columns.suspended-helmchart.cases.1.text": "否",
-      "columns.revision-helmchart.title": "修訂版本",
-      "columns.status-helmchart.title": "狀態",
-      "columns.ready-helmchart.title": "就緒",
+      "columns.ready-bucket.title": "就緒",
+      "columns.status-bucket.title": "狀態",
+      "columns.revision-bucket.title": "修訂版本",
       "columns.suspended-bucket.title": "已暫停",
       "columns.suspended-bucket.cases.0.text": "是",
       "columns.suspended-bucket.cases.1.text": "否",
-      "columns.revision-bucket.title": "修訂版本",
-      "columns.status-bucket.title": "狀態",
-      "columns.ready-bucket.title": "就緒",
+      "columns.source-kustomization.title": "來源",
+      "columns.ready-kustomization.title": "就緒",
+      "columns.status-kustomization.title": "狀態",
+      "columns.revision-kustomization.title": "修訂版本",
       "columns.suspended-kustomization.title": "已暫停",
       "columns.suspended-kustomization.cases.0.text": "是",
       "columns.suspended-kustomization.cases.1.text": "否",
-      "columns.revision-kustomization.title": "修訂版本",
-      "columns.status-kustomization.title": "狀態",
-      "columns.ready-kustomization.title": "就緒",
-      "columns.source-kustomization.title": "來源",
+      "columns.source-helmrelease.title": "來源",
+      "columns.ready-helmrelease.title": "就緒",
+      "columns.status-helmrelease.title": "狀態",
+      "columns.revision-helmrelease.title": "修訂版本",
       "columns.suspended-helmrelease.title": "已暫停",
       "columns.suspended-helmrelease.cases.0.text": "是",
       "columns.suspended-helmrelease.cases.1.text": "否",
-      "columns.revision-helmrelease.title": "修訂版本",
-      "columns.status-helmrelease.title": "狀態",
-      "columns.ready-helmrelease.title": "就緒",
-      "columns.source-helmrelease.title": "來源",
+      "columns.ready-imagerepository.title": "就緒",
+      "columns.status-imagerepository.title": "狀態",
+      "columns.revision-imagerepository.title": "修訂版本",
       "columns.suspended-imagerepository.title": "已暫停",
       "columns.suspended-imagerepository.cases.0.text": "是",
       "columns.suspended-imagerepository.cases.1.text": "否",
-      "columns.revision-imagerepository.title": "修訂版本",
-      "columns.status-imagerepository.title": "狀態",
-      "columns.ready-imagerepository.title": "就緒",
+      "columns.ready-imagepolicy.title": "就緒",
+      "columns.status-imagepolicy.title": "狀態",
+      "columns.revision-imagepolicy.title": "修訂版本",
       "columns.suspended-imagepolicy.title": "已暫停",
       "columns.suspended-imagepolicy.cases.0.text": "是",
       "columns.suspended-imagepolicy.cases.1.text": "否",
-      "columns.revision-imagepolicy.title": "修訂版本",
-      "columns.status-imagepolicy.title": "狀態",
-      "columns.ready-imagepolicy.title": "就緒",
+      "columns.ready-imageupdateautomation.title": "就緒",
+      "columns.status-imageupdateautomation.title": "狀態",
+      "columns.revision-imageupdateautomation.title": "修訂版本",
       "columns.suspended-imageupdateautomation.title": "已暫停",
       "columns.suspended-imageupdateautomation.cases.0.text": "是",
       "columns.suspended-imageupdateautomation.cases.1.text": "否",
-      "columns.revision-imageupdateautomation.title": "修訂版本",
-      "columns.status-imageupdateautomation.title": "狀態",
-      "columns.ready-imageupdateautomation.title": "就緒",
       "columns.suspended-alert.title": "已暫停",
       "columns.suspended-alert.cases.0.text": "是",
       "columns.suspended-alert.cases.1.text": "否",
       "columns.suspended-provider.title": "已暫停",
       "columns.suspended-provider.cases.0.text": "是",
       "columns.suspended-provider.cases.1.text": "否",
+      "columns.ready-receiver.title": "就緒",
+      "columns.status-receiver.title": "狀態",
+      "columns.revision-receiver.title": "修訂版本",
       "columns.suspended-receiver.title": "已暫停",
       "columns.suspended-receiver.cases.0.text": "是",
       "columns.suspended-receiver.cases.1.text": "否",
-      "columns.revision-receiver.title": "修訂版本",
-      "columns.status-receiver.title": "狀態",
-      "columns.ready-receiver.title": "就緒",
       "problems.not-ready-gitrepository.title": "GitRepository 未就緒",
-      "problems.not-ready-gitrepository.message": "Ready 為 False。第一個條件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository 未就緒",
-      "problems.not-ready-ocirepository.message": "Ready 為 False。第一個條件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository 未就緒",
-      "problems.not-ready-helmrepository.message": "Ready 為 False。第一個條件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket 未就緒",
-      "problems.not-ready-bucket.message": "Ready 為 False。第一個條件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization 未就緒",
-      "problems.not-ready-kustomization.message": "Ready 為 False。第一個條件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease 未就緒",
-      "problems.not-ready-helmrelease.message": "Ready 為 False。第一個條件 {{.status.conditions[0].type}}：{{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "ja": {
       "name": "Flux",
       "description": "Flux CD のオブジェクトをサイドバーの専用セクションに表示します。ソース、Kustomization、HelmRelease、イメージ自動化、通知と、その準備状態・リビジョン・ソース。各オブジェクトが適用したもの、ソースを使用するオブジェクト、調整に失敗しているものの問題、そして調整・一時停止・再開。",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "GitRepository",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCIRepository",
       "kinds.2.title": "HelmRepository",
       "kinds.3.title": "HelmChart",
@@ -3760,98 +3543,98 @@
       "actions.suspend.whyNot": "すでに一時停止されています。",
       "actions.resume.title": "再開",
       "actions.resume.whyNot": "一時停止されていません。",
+      "columns.ready-gitrepository.title": "準備完了",
+      "columns.status-gitrepository.title": "状態",
+      "columns.revision-gitrepository.title": "リビジョン",
       "columns.suspended-gitrepository.title": "一時停止",
       "columns.suspended-gitrepository.cases.0.text": "はい",
       "columns.suspended-gitrepository.cases.1.text": "いいえ",
-      "columns.revision-gitrepository.title": "リビジョン",
-      "columns.status-gitrepository.title": "状態",
-      "columns.ready-gitrepository.title": "準備完了",
+      "columns.ready-ocirepository.title": "準備完了",
+      "columns.status-ocirepository.title": "状態",
+      "columns.revision-ocirepository.title": "リビジョン",
       "columns.suspended-ocirepository.title": "一時停止",
       "columns.suspended-ocirepository.cases.0.text": "はい",
       "columns.suspended-ocirepository.cases.1.text": "いいえ",
-      "columns.revision-ocirepository.title": "リビジョン",
-      "columns.status-ocirepository.title": "状態",
-      "columns.ready-ocirepository.title": "準備完了",
+      "columns.ready-helmrepository.title": "準備完了",
+      "columns.status-helmrepository.title": "状態",
+      "columns.revision-helmrepository.title": "リビジョン",
       "columns.suspended-helmrepository.title": "一時停止",
       "columns.suspended-helmrepository.cases.0.text": "はい",
       "columns.suspended-helmrepository.cases.1.text": "いいえ",
-      "columns.revision-helmrepository.title": "リビジョン",
-      "columns.status-helmrepository.title": "状態",
-      "columns.ready-helmrepository.title": "準備完了",
+      "columns.ready-helmchart.title": "準備完了",
+      "columns.status-helmchart.title": "状態",
+      "columns.revision-helmchart.title": "リビジョン",
       "columns.suspended-helmchart.title": "一時停止",
       "columns.suspended-helmchart.cases.0.text": "はい",
       "columns.suspended-helmchart.cases.1.text": "いいえ",
-      "columns.revision-helmchart.title": "リビジョン",
-      "columns.status-helmchart.title": "状態",
-      "columns.ready-helmchart.title": "準備完了",
+      "columns.ready-bucket.title": "準備完了",
+      "columns.status-bucket.title": "状態",
+      "columns.revision-bucket.title": "リビジョン",
       "columns.suspended-bucket.title": "一時停止",
       "columns.suspended-bucket.cases.0.text": "はい",
       "columns.suspended-bucket.cases.1.text": "いいえ",
-      "columns.revision-bucket.title": "リビジョン",
-      "columns.status-bucket.title": "状態",
-      "columns.ready-bucket.title": "準備完了",
+      "columns.source-kustomization.title": "ソース",
+      "columns.ready-kustomization.title": "準備完了",
+      "columns.status-kustomization.title": "状態",
+      "columns.revision-kustomization.title": "リビジョン",
       "columns.suspended-kustomization.title": "一時停止",
       "columns.suspended-kustomization.cases.0.text": "はい",
       "columns.suspended-kustomization.cases.1.text": "いいえ",
-      "columns.revision-kustomization.title": "リビジョン",
-      "columns.status-kustomization.title": "状態",
-      "columns.ready-kustomization.title": "準備完了",
-      "columns.source-kustomization.title": "ソース",
+      "columns.source-helmrelease.title": "ソース",
+      "columns.ready-helmrelease.title": "準備完了",
+      "columns.status-helmrelease.title": "状態",
+      "columns.revision-helmrelease.title": "リビジョン",
       "columns.suspended-helmrelease.title": "一時停止",
       "columns.suspended-helmrelease.cases.0.text": "はい",
       "columns.suspended-helmrelease.cases.1.text": "いいえ",
-      "columns.revision-helmrelease.title": "リビジョン",
-      "columns.status-helmrelease.title": "状態",
-      "columns.ready-helmrelease.title": "準備完了",
-      "columns.source-helmrelease.title": "ソース",
+      "columns.ready-imagerepository.title": "準備完了",
+      "columns.status-imagerepository.title": "状態",
+      "columns.revision-imagerepository.title": "リビジョン",
       "columns.suspended-imagerepository.title": "一時停止",
       "columns.suspended-imagerepository.cases.0.text": "はい",
       "columns.suspended-imagerepository.cases.1.text": "いいえ",
-      "columns.revision-imagerepository.title": "リビジョン",
-      "columns.status-imagerepository.title": "状態",
-      "columns.ready-imagerepository.title": "準備完了",
+      "columns.ready-imagepolicy.title": "準備完了",
+      "columns.status-imagepolicy.title": "状態",
+      "columns.revision-imagepolicy.title": "リビジョン",
       "columns.suspended-imagepolicy.title": "一時停止",
       "columns.suspended-imagepolicy.cases.0.text": "はい",
       "columns.suspended-imagepolicy.cases.1.text": "いいえ",
-      "columns.revision-imagepolicy.title": "リビジョン",
-      "columns.status-imagepolicy.title": "状態",
-      "columns.ready-imagepolicy.title": "準備完了",
+      "columns.ready-imageupdateautomation.title": "準備完了",
+      "columns.status-imageupdateautomation.title": "状態",
+      "columns.revision-imageupdateautomation.title": "リビジョン",
       "columns.suspended-imageupdateautomation.title": "一時停止",
       "columns.suspended-imageupdateautomation.cases.0.text": "はい",
       "columns.suspended-imageupdateautomation.cases.1.text": "いいえ",
-      "columns.revision-imageupdateautomation.title": "リビジョン",
-      "columns.status-imageupdateautomation.title": "状態",
-      "columns.ready-imageupdateautomation.title": "準備完了",
       "columns.suspended-alert.title": "一時停止",
       "columns.suspended-alert.cases.0.text": "はい",
       "columns.suspended-alert.cases.1.text": "いいえ",
       "columns.suspended-provider.title": "一時停止",
       "columns.suspended-provider.cases.0.text": "はい",
       "columns.suspended-provider.cases.1.text": "いいえ",
+      "columns.ready-receiver.title": "準備完了",
+      "columns.status-receiver.title": "状態",
+      "columns.revision-receiver.title": "リビジョン",
       "columns.suspended-receiver.title": "一時停止",
       "columns.suspended-receiver.cases.0.text": "はい",
       "columns.suspended-receiver.cases.1.text": "いいえ",
-      "columns.revision-receiver.title": "リビジョン",
-      "columns.status-receiver.title": "状態",
-      "columns.ready-receiver.title": "準備完了",
       "problems.not-ready-gitrepository.title": "GitRepository が準備できていません",
-      "problems.not-ready-gitrepository.message": "Ready が False です。最初の条件 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository が準備できていません",
-      "problems.not-ready-ocirepository.message": "Ready が False です。最初の条件 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository が準備できていません",
-      "problems.not-ready-helmrepository.message": "Ready が False です。最初の条件 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket が準備できていません",
-      "problems.not-ready-bucket.message": "Ready が False です。最初の条件 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization が準備できていません",
-      "problems.not-ready-kustomization.message": "Ready が False です。最初の条件 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease が準備できていません",
-      "problems.not-ready-helmrelease.message": "Ready が False です。最初の条件 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     },
     "ko": {
       "name": "Flux",
       "description": "사이드바의 전용 섹션에 Flux CD 개체를 표시합니다. 소스, Kustomization, HelmRelease, 이미지 자동화와 알림, 그리고 준비 상태·리비전·소스. 각 개체가 적용한 것과 소스를 사용하는 개체, 조정에 실패한 항목의 문제, 그리고 조정·일시 중단·재개.",
+      "sections.flux.title": "Flux",
       "kinds.0.title": "Git Repositories",
-      "kinds.0.sectionTitle": "Flux",
       "kinds.1.title": "OCI Repositories",
       "kinds.2.title": "Helm Repositories",
       "kinds.3.title": "Helm Charts",
@@ -3875,92 +3658,92 @@
       "actions.suspend.whyNot": "이미 일시 중단되었습니다.",
       "actions.resume.title": "재개",
       "actions.resume.whyNot": "일시 중단되지 않았습니다.",
+      "columns.ready-gitrepository.title": "준비",
+      "columns.status-gitrepository.title": "상태",
+      "columns.revision-gitrepository.title": "리비전",
       "columns.suspended-gitrepository.title": "일시 중단됨",
       "columns.suspended-gitrepository.cases.0.text": "예",
       "columns.suspended-gitrepository.cases.1.text": "아니요",
-      "columns.revision-gitrepository.title": "리비전",
-      "columns.status-gitrepository.title": "상태",
-      "columns.ready-gitrepository.title": "준비",
+      "columns.ready-ocirepository.title": "준비",
+      "columns.status-ocirepository.title": "상태",
+      "columns.revision-ocirepository.title": "리비전",
       "columns.suspended-ocirepository.title": "일시 중단됨",
       "columns.suspended-ocirepository.cases.0.text": "예",
       "columns.suspended-ocirepository.cases.1.text": "아니요",
-      "columns.revision-ocirepository.title": "리비전",
-      "columns.status-ocirepository.title": "상태",
-      "columns.ready-ocirepository.title": "준비",
+      "columns.ready-helmrepository.title": "준비",
+      "columns.status-helmrepository.title": "상태",
+      "columns.revision-helmrepository.title": "리비전",
       "columns.suspended-helmrepository.title": "일시 중단됨",
       "columns.suspended-helmrepository.cases.0.text": "예",
       "columns.suspended-helmrepository.cases.1.text": "아니요",
-      "columns.revision-helmrepository.title": "리비전",
-      "columns.status-helmrepository.title": "상태",
-      "columns.ready-helmrepository.title": "준비",
+      "columns.ready-helmchart.title": "준비",
+      "columns.status-helmchart.title": "상태",
+      "columns.revision-helmchart.title": "리비전",
       "columns.suspended-helmchart.title": "일시 중단됨",
       "columns.suspended-helmchart.cases.0.text": "예",
       "columns.suspended-helmchart.cases.1.text": "아니요",
-      "columns.revision-helmchart.title": "리비전",
-      "columns.status-helmchart.title": "상태",
-      "columns.ready-helmchart.title": "준비",
+      "columns.ready-bucket.title": "준비",
+      "columns.status-bucket.title": "상태",
+      "columns.revision-bucket.title": "리비전",
       "columns.suspended-bucket.title": "일시 중단됨",
       "columns.suspended-bucket.cases.0.text": "예",
       "columns.suspended-bucket.cases.1.text": "아니요",
-      "columns.revision-bucket.title": "리비전",
-      "columns.status-bucket.title": "상태",
-      "columns.ready-bucket.title": "준비",
+      "columns.source-kustomization.title": "소스",
+      "columns.ready-kustomization.title": "준비",
+      "columns.status-kustomization.title": "상태",
+      "columns.revision-kustomization.title": "리비전",
       "columns.suspended-kustomization.title": "일시 중단됨",
       "columns.suspended-kustomization.cases.0.text": "예",
       "columns.suspended-kustomization.cases.1.text": "아니요",
-      "columns.revision-kustomization.title": "리비전",
-      "columns.status-kustomization.title": "상태",
-      "columns.ready-kustomization.title": "준비",
-      "columns.source-kustomization.title": "소스",
+      "columns.source-helmrelease.title": "소스",
+      "columns.ready-helmrelease.title": "준비",
+      "columns.status-helmrelease.title": "상태",
+      "columns.revision-helmrelease.title": "리비전",
       "columns.suspended-helmrelease.title": "일시 중단됨",
       "columns.suspended-helmrelease.cases.0.text": "예",
       "columns.suspended-helmrelease.cases.1.text": "아니요",
-      "columns.revision-helmrelease.title": "리비전",
-      "columns.status-helmrelease.title": "상태",
-      "columns.ready-helmrelease.title": "준비",
-      "columns.source-helmrelease.title": "소스",
+      "columns.ready-imagerepository.title": "준비",
+      "columns.status-imagerepository.title": "상태",
+      "columns.revision-imagerepository.title": "리비전",
       "columns.suspended-imagerepository.title": "일시 중단됨",
       "columns.suspended-imagerepository.cases.0.text": "예",
       "columns.suspended-imagerepository.cases.1.text": "아니요",
-      "columns.revision-imagerepository.title": "리비전",
-      "columns.status-imagerepository.title": "상태",
-      "columns.ready-imagerepository.title": "준비",
+      "columns.ready-imagepolicy.title": "준비",
+      "columns.status-imagepolicy.title": "상태",
+      "columns.revision-imagepolicy.title": "리비전",
       "columns.suspended-imagepolicy.title": "일시 중단됨",
       "columns.suspended-imagepolicy.cases.0.text": "예",
       "columns.suspended-imagepolicy.cases.1.text": "아니요",
-      "columns.revision-imagepolicy.title": "리비전",
-      "columns.status-imagepolicy.title": "상태",
-      "columns.ready-imagepolicy.title": "준비",
+      "columns.ready-imageupdateautomation.title": "준비",
+      "columns.status-imageupdateautomation.title": "상태",
+      "columns.revision-imageupdateautomation.title": "리비전",
       "columns.suspended-imageupdateautomation.title": "일시 중단됨",
       "columns.suspended-imageupdateautomation.cases.0.text": "예",
       "columns.suspended-imageupdateautomation.cases.1.text": "아니요",
-      "columns.revision-imageupdateautomation.title": "리비전",
-      "columns.status-imageupdateautomation.title": "상태",
-      "columns.ready-imageupdateautomation.title": "준비",
       "columns.suspended-alert.title": "일시 중단됨",
       "columns.suspended-alert.cases.0.text": "예",
       "columns.suspended-alert.cases.1.text": "아니요",
       "columns.suspended-provider.title": "일시 중단됨",
       "columns.suspended-provider.cases.0.text": "예",
       "columns.suspended-provider.cases.1.text": "아니요",
+      "columns.ready-receiver.title": "준비",
+      "columns.status-receiver.title": "상태",
+      "columns.revision-receiver.title": "리비전",
       "columns.suspended-receiver.title": "일시 중단됨",
       "columns.suspended-receiver.cases.0.text": "예",
       "columns.suspended-receiver.cases.1.text": "아니요",
-      "columns.revision-receiver.title": "리비전",
-      "columns.status-receiver.title": "상태",
-      "columns.ready-receiver.title": "준비",
       "problems.not-ready-gitrepository.title": "GitRepository 준비되지 않음",
-      "problems.not-ready-gitrepository.message": "Ready가 False입니다. 첫 번째 조건 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository 준비되지 않음",
-      "problems.not-ready-ocirepository.message": "Ready가 False입니다. 첫 번째 조건 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository 준비되지 않음",
-      "problems.not-ready-helmrepository.message": "Ready가 False입니다. 첫 번째 조건 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket 준비되지 않음",
-      "problems.not-ready-bucket.message": "Ready가 False입니다. 첫 번째 조건 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization 준비되지 않음",
-      "problems.not-ready-kustomization.message": "Ready가 False입니다. 첫 번째 조건 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease 준비되지 않음",
-      "problems.not-ready-helmrelease.message": "Ready가 False입니다. 첫 번째 조건 {{.status.conditions[0].type}}: {{.status.conditions[0].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
     }
   }
 }

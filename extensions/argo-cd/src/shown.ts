@@ -1,7 +1,20 @@
 // The object a details frame shows: read once, and again whenever Sextant says it changed (its resourceVersion).
-import type { KubeObject, ObjectRef, Sextant } from "@sextant/extension-sdk";
-import { element, errorBox } from "./dom";
+import { ui, type KubeObject, type ObjectRef, type Sextant } from "@sextant/extension-sdk";
+import { errorBox } from "./dom";
 import { t } from "./i18n";
+
+/**
+ * A details section hides itself, title included, while it has nothing to show (`ui.setHidden`, ADR-0161), as the
+ * built-in view drew nothing then. In a tab Sextant ignores it.
+ */
+export function setHidden(sextant: Sextant, hidden: boolean): void {
+  if (hiddenNow.get(sextant) === hidden) return;
+  hiddenNow.set(sextant, hidden);
+  void sextant.ui.setHidden(hidden).catch(() => undefined);
+}
+
+/** What each client last asked, so an unchanged state is not sent again (a frame starts shown). */
+const hiddenNow = new WeakMap<Sextant, boolean>();
 
 /**
  * Calls `render(obj, ref)` with the shown object, now and after each change; a failed read shows the error. Returns
@@ -14,7 +27,7 @@ export function followShown(sextant: Sextant, root: HTMLElement, render: (obj: K
   const load = async () => {
     const ref = sextant.context.selection[0];
     if (!ref) {
-      root.replaceChildren(element("p", { className: "muted", textContent: t("common.nothingToShow") }));
+      root.replaceChildren(ui.empty(t("common.nothingToShow")));
       return;
     }
     const id = ++request;
@@ -22,10 +35,13 @@ export function followShown(sextant: Sextant, root: HTMLElement, render: (obj: K
       const obj = await sextant.resources.get({ ref });
       if (!stopped && id === request) render(obj, ref);
     } catch (err) {
-      if (!stopped && id === request) root.replaceChildren(errorBox(err));
+      if (!stopped && id === request) {
+        setHidden(sextant, false);
+        root.replaceChildren(errorBox(err));
+      }
     }
   };
-  root.replaceChildren(element("p", { className: "muted", textContent: t("common.loading") }));
+  root.replaceChildren(ui.loading(t("common.loading")));
   version = sextant.context.resourceVersion;
   void load();
   const off = sextant.onContextChange((context) => {

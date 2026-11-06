@@ -1,14 +1,14 @@
 // The choice of the Argo CD installation when several namespaces of a cluster have an argocd-server Service: the
 // extension picks none by itself. The user's choice is kept for the cluster (`sextant.storage`) and taken only while
 // that namespace still has such a Service.
-import type { ClusterId, Sextant } from "@sextant/extension-sdk";
+import { ui, type ClusterId, type Sextant } from "@sextant/extension-sdk";
 import { element, errorBox } from "./dom";
 import { t } from "./i18n";
 import { rememberInstallation } from "./server";
 
 export function installationPicker(sextant: Sextant, clusterId: ClusterId, namespaces: readonly string[], onChosen: () => void): HTMLElement {
   let chosen: string | null = null;
-  const use = element("button", { type: "button", className: "primary", textContent: t("installation.use"), disabled: true });
+  const use = ui.button(t("installation.use"), () => void choose(), { variant: "primary", disabled: true });
   const slot = element("div");
   const choices = element("div", { className: "choices" });
   choices.setAttribute("role", "radiogroup");
@@ -21,7 +21,7 @@ export function installationPicker(sextant: Sextant, clusterId: ClusterId, names
     });
     choices.append(element("label", { className: "check" }, radio, ` ${namespace}`));
   }
-  use.addEventListener("click", async () => {
+  async function choose(): Promise<void> {
     if (chosen === null) return;
     use.disabled = true;
     use.textContent = t("installation.using");
@@ -34,7 +34,7 @@ export function installationPicker(sextant: Sextant, clusterId: ClusterId, names
       use.disabled = false;
       use.textContent = t("installation.use");
     }
-  });
+  }
   const intro = element("p", { textContent: t("installation.several", { namespaces: namespaces.join(", ") }) });
   intro.setAttribute("role", "alert");
   const form = element(

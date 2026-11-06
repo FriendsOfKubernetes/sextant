@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.argo-cd",
   "name": "Argo CD",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Argo CD's Applications, ApplicationSets and AppProjects in a section of their own: sync, health, revision and destination, the resources each application manages with their health, the sync history; Sync, Refresh, Terminate, the diff of desired and live states from Argo CD's API, and the Argo CD UI.",
   "author": "Sextant",
   "sextantApi": 4,
@@ -112,39 +112,32 @@
         "actions": [
           "portForward"
         ]
-      },
-      {
-        "namespaces": {
-          "type": "only",
-          "namespaces": [
-            "argocd"
-          ]
-        },
-        "kinds": {
-          "type": "only",
-          "kinds": [
-            {
-              "group": "",
-              "kind": "Secret"
-            }
-          ]
-        },
-        "actions": [
-          "secretValues"
-        ]
       }
     ]
   },
   "contributes": {
+    "sections": [
+      {
+        "section": "argocd",
+        "title": "Argo CD",
+        "icon": "argocd",
+        "after": "velero"
+      }
+    ],
     "kinds": [
       {
         "group": "argoproj.io",
         "kind": "Application",
         "section": "argocd",
-        "sectionTitle": "Argo CD",
         "title": "Applications",
         "icon": "argoApplication",
-        "order": 10
+        "order": 10,
+        "printerColumns": false,
+        "aliases": [
+          "app",
+          "apps"
+        ],
+        "searchByDefault": true
       },
       {
         "group": "argoproj.io",
@@ -152,7 +145,8 @@
         "section": "argocd",
         "title": "ApplicationSets",
         "icon": "argoApplicationSet",
-        "order": 20
+        "order": 20,
+        "printerColumns": false
       },
       {
         "group": "argoproj.io",
@@ -160,7 +154,8 @@
         "section": "argocd",
         "title": "AppProjects",
         "icon": "argoAppProject",
-        "order": 30
+        "order": 30,
+        "printerColumns": false
       }
     ],
     "sectionBadges": [
@@ -179,7 +174,7 @@
         "paths": [
           ".spec.project"
         ],
-        "after": "Namespace"
+        "afterColumn": "namespace"
       },
       {
         "kind": {
@@ -191,23 +186,11 @@
         "paths": [
           ".status.sync.status"
         ],
-        "after": "Project",
+        "afterColumn": "project",
         "tones": {
           "Synced": "ok",
           "OutOfSync": "warning",
-          "Unknown": "neutral",
-          "Eşitleniyor": "warning",
-          "Sincronizando": "warning",
-          "Sincronizzazione": "warning",
-          "Synchronisation": "warning",
-          "Synchronizowanie": "warning",
-          "Syncing": "warning",
-          "Wird synchronisiert": "warning",
-          "Синхронизация": "warning",
-          "Синхронізація": "warning",
-          "同期中": "warning",
-          "正在同步": "warning",
-          "동기화 중": "warning"
+          "Unknown": "neutral"
         },
         "tooltipPaths": [
           ".status.operationState.message"
@@ -231,7 +214,8 @@
                 }
               ]
             },
-            "text": "Syncing"
+            "text": "Syncing",
+            "tone": "warning"
           }
         ]
       },
@@ -245,7 +229,7 @@
         "paths": [
           ".status.health.status"
         ],
-        "after": "Sync",
+        "afterColumn": "sync",
         "tones": {
           "Healthy": "ok",
           "Degraded": "error",
@@ -269,7 +253,7 @@
           ".status.sync.revision",
           ".status.sync.revisions[0]"
         ],
-        "after": "Health",
+        "afterColumn": "health",
         "tooltipPaths": [
           ".status.sync.revision",
           ".status.sync.revisions[0]"
@@ -286,7 +270,7 @@
           ".spec.destination.name",
           ".spec.destination.server"
         ],
-        "after": "Revision",
+        "afterColumn": "revision",
         "cases": [
           {
             "when": {
@@ -317,7 +301,7 @@
         "paths": [
           ".spec.destination.namespace"
         ],
-        "after": "Destination"
+        "afterColumn": "destination"
       },
       {
         "kind": {
@@ -327,10 +311,11 @@
         "id": "applications",
         "title": "Applications",
         "paths": [
-          ".status.resourcesCount"
+          ".status.resourcesCount",
+          ".status.resources"
         ],
         "format": "number",
-        "after": "Namespace"
+        "afterColumn": "namespace"
       },
       {
         "kind": {
@@ -343,7 +328,7 @@
           ".spec.destinations[0].name",
           ".spec.destinations[0].server"
         ],
-        "after": "Namespace",
+        "afterColumn": "namespace",
         "tooltipPaths": [
           ".spec.destinations[0].namespace"
         ]
@@ -358,7 +343,7 @@
         "paths": [
           ".spec.sourceRepos[0]"
         ],
-        "after": "First destination"
+        "afterColumn": "first-destination"
       }
     ],
     "detailsSections": [
@@ -531,16 +516,86 @@
       {
         "id": "argocd-server",
         "title": "Argo CD API (argocd-server, HTTPS)",
-        "name": "argocd-server",
+        "labelSelector": "app.kubernetes.io/name=argocd-server",
         "port": "https",
-        "scheme": "https"
+        "scheme": "https",
+        "secrets": [
+          {
+            "name": "argocd-initial-admin-secret",
+            "key": "password"
+          }
+        ],
+        "signIn": {
+          "fields": [
+            {
+              "id": "username",
+              "label": "User"
+            },
+            {
+              "id": "password",
+              "label": "Password",
+              "secret": true
+            }
+          ]
+        }
       },
       {
         "id": "argocd-server-http",
         "title": "Argo CD API without TLS (server.insecure)",
-        "name": "argocd-server",
+        "labelSelector": "app.kubernetes.io/name=argocd-server",
         "port": "http",
-        "scheme": "http"
+        "scheme": "http",
+        "secrets": [
+          {
+            "name": "argocd-initial-admin-secret",
+            "key": "password"
+          }
+        ],
+        "signIn": {
+          "fields": [
+            {
+              "id": "username",
+              "label": "User"
+            },
+            {
+              "id": "password",
+              "label": "Password",
+              "secret": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "argocd-server-token",
+        "title": "Argo CD API with an API token (argocd-server, HTTPS)",
+        "labelSelector": "app.kubernetes.io/name=argocd-server",
+        "port": "https",
+        "scheme": "https",
+        "signIn": {
+          "fields": [
+            {
+              "id": "token",
+              "label": "API token",
+              "secret": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "argocd-server-token-http",
+        "title": "Argo CD API with an API token, without TLS (server.insecure)",
+        "labelSelector": "app.kubernetes.io/name=argocd-server",
+        "port": "http",
+        "scheme": "http",
+        "signIn": {
+          "fields": [
+            {
+              "id": "token",
+              "label": "API token",
+              "secret": true
+            }
+          ]
+        }
       }
     ],
     "problems": [
@@ -603,7 +658,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "История синхронизаций",
       "detailsSections.resources.title": "Ресурсы",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -612,7 +666,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "Пароль",
+      "services.argocd-server-http.signIn.username.label": "Пользователь",
       "services.argocd-server-http.title": "API Argo CD без TLS (server.insecure)",
+      "services.argocd-server-token-http.signIn.token.label": "API-токен",
+      "services.argocd-server-token-http.title": "API Argo CD с API-токеном, без TLS (server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "API-токен",
+      "services.argocd-server-token.title": "API Argo CD с API-токеном (argocd-server, HTTPS)",
+      "services.argocd-server.signIn.password.label": "Пароль",
+      "services.argocd-server.signIn.username.label": "Пользователь",
       "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)"
     },
     "uk": {
@@ -639,7 +702,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "Історія синхронізацій",
       "detailsSections.resources.title": "Ресурси",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -648,7 +710,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "Пароль",
+      "services.argocd-server-http.signIn.username.label": "Користувач",
       "services.argocd-server-http.title": "API Argo CD без TLS (server.insecure)",
+      "services.argocd-server-token-http.signIn.token.label": "API-токен",
+      "services.argocd-server-token-http.title": "API Argo CD з API-токеном, без TLS (server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "API-токен",
+      "services.argocd-server-token.title": "API Argo CD з API-токеном (argocd-server, HTTPS)",
+      "services.argocd-server.signIn.password.label": "Пароль",
+      "services.argocd-server.signIn.username.label": "Користувач",
       "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)"
     },
     "de": {
@@ -675,7 +746,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "Sync-Verlauf",
       "detailsSections.resources.title": "Ressourcen",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -684,7 +754,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "Passwort",
+      "services.argocd-server-http.signIn.username.label": "Benutzer",
       "services.argocd-server-http.title": "Argo-CD-API ohne TLS (server.insecure)",
+      "services.argocd-server-token-http.signIn.token.label": "API-Token",
+      "services.argocd-server-token-http.title": "Argo-CD-API mit einem API-Token, ohne TLS (server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "API-Token",
+      "services.argocd-server-token.title": "Argo-CD-API mit einem API-Token (argocd-server, HTTPS)",
+      "services.argocd-server.signIn.password.label": "Passwort",
+      "services.argocd-server.signIn.username.label": "Benutzer",
       "services.argocd-server.title": "Argo-CD-API (argocd-server, HTTPS)"
     },
     "fr": {
@@ -711,7 +790,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "Historique de synchronisation",
       "detailsSections.resources.title": "Ressources",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -720,7 +798,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "Mot de passe",
+      "services.argocd-server-http.signIn.username.label": "Utilisateur",
       "services.argocd-server-http.title": "API d'Argo CD sans TLS (server.insecure)",
+      "services.argocd-server-token-http.signIn.token.label": "Jeton d'API",
+      "services.argocd-server-token-http.title": "API d'Argo CD avec un jeton d'API, sans TLS (server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "Jeton d'API",
+      "services.argocd-server-token.title": "API d'Argo CD avec un jeton d'API (argocd-server, HTTPS)",
+      "services.argocd-server.signIn.password.label": "Mot de passe",
+      "services.argocd-server.signIn.username.label": "Utilisateur",
       "services.argocd-server.title": "API d'Argo CD (argocd-server, HTTPS)"
     },
     "es": {
@@ -747,7 +834,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "Historial de sincronización",
       "detailsSections.resources.title": "Recursos",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -756,7 +842,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "Contraseña",
+      "services.argocd-server-http.signIn.username.label": "Usuario",
       "services.argocd-server-http.title": "API de Argo CD sin TLS (server.insecure)",
+      "services.argocd-server-token-http.signIn.token.label": "Token de API",
+      "services.argocd-server-token-http.title": "API de Argo CD con un token de API, sin TLS (server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "Token de API",
+      "services.argocd-server-token.title": "API de Argo CD con un token de API (argocd-server, HTTPS)",
+      "services.argocd-server.signIn.password.label": "Contraseña",
+      "services.argocd-server.signIn.username.label": "Usuario",
       "services.argocd-server.title": "API de Argo CD (argocd-server, HTTPS)"
     },
     "pt-BR": {
@@ -783,7 +878,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "Histórico de sincronização",
       "detailsSections.resources.title": "Recursos",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -792,7 +886,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "Senha",
+      "services.argocd-server-http.signIn.username.label": "Usuário",
       "services.argocd-server-http.title": "API do Argo CD sem TLS (server.insecure)",
+      "services.argocd-server-token-http.signIn.token.label": "Token de API",
+      "services.argocd-server-token-http.title": "API do Argo CD com um token de API, sem TLS (server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "Token de API",
+      "services.argocd-server-token.title": "API do Argo CD com um token de API (argocd-server, HTTPS)",
+      "services.argocd-server.signIn.password.label": "Senha",
+      "services.argocd-server.signIn.username.label": "Usuário",
       "services.argocd-server.title": "API do Argo CD (argocd-server, HTTPS)"
     },
     "it": {
@@ -819,7 +922,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "Cronologia delle sincronizzazioni",
       "detailsSections.resources.title": "Risorse",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -828,7 +930,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "Password",
+      "services.argocd-server-http.signIn.username.label": "Utente",
       "services.argocd-server-http.title": "API di Argo CD senza TLS (server.insecure)",
+      "services.argocd-server-token-http.signIn.token.label": "Token API",
+      "services.argocd-server-token-http.title": "API di Argo CD con un token API, senza TLS (server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "Token API",
+      "services.argocd-server-token.title": "API di Argo CD con un token API (argocd-server, HTTPS)",
+      "services.argocd-server.signIn.password.label": "Password",
+      "services.argocd-server.signIn.username.label": "Utente",
       "services.argocd-server.title": "API di Argo CD (argocd-server, HTTPS)"
     },
     "pl": {
@@ -855,7 +966,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "Historia synchronizacji",
       "detailsSections.resources.title": "Zasoby",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -864,7 +974,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "Hasło",
+      "services.argocd-server-http.signIn.username.label": "Użytkownik",
       "services.argocd-server-http.title": "API Argo CD bez TLS (server.insecure)",
+      "services.argocd-server-token-http.signIn.token.label": "Token API",
+      "services.argocd-server-token-http.title": "API Argo CD z tokenem API, bez TLS (server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "Token API",
+      "services.argocd-server-token.title": "API Argo CD z tokenem API (argocd-server, HTTPS)",
+      "services.argocd-server.signIn.password.label": "Hasło",
+      "services.argocd-server.signIn.username.label": "Użytkownik",
       "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)"
     },
     "tr": {
@@ -891,7 +1010,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "Eşitleme geçmişi",
       "detailsSections.resources.title": "Kaynaklar",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -900,7 +1018,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "Parola",
+      "services.argocd-server-http.signIn.username.label": "Kullanıcı",
       "services.argocd-server-http.title": "TLS'siz Argo CD API'si (server.insecure)",
+      "services.argocd-server-token-http.signIn.token.label": "API belirteci",
+      "services.argocd-server-token-http.title": "API belirteciyle Argo CD API'si, TLS olmadan (server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "API belirteci",
+      "services.argocd-server-token.title": "API belirteciyle Argo CD API'si (argocd-server, HTTPS)",
+      "services.argocd-server.signIn.password.label": "Parola",
+      "services.argocd-server.signIn.username.label": "Kullanıcı",
       "services.argocd-server.title": "Argo CD API'si (argocd-server, HTTPS)"
     },
     "zh-CN": {
@@ -927,7 +1054,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "同步历史记录",
       "detailsSections.resources.title": "资源",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -936,7 +1062,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "密码",
+      "services.argocd-server-http.signIn.username.label": "用户",
       "services.argocd-server-http.title": "无 TLS 的 Argo CD API（server.insecure）",
+      "services.argocd-server-token-http.signIn.token.label": "API 令牌",
+      "services.argocd-server-token-http.title": "使用 API 令牌、不使用 TLS 的 Argo CD API（server.insecure）",
+      "services.argocd-server-token.signIn.token.label": "API 令牌",
+      "services.argocd-server-token.title": "使用 API 令牌的 Argo CD API（argocd-server，HTTPS）",
+      "services.argocd-server.signIn.password.label": "密码",
+      "services.argocd-server.signIn.username.label": "用户",
       "services.argocd-server.title": "Argo CD API（argocd-server，HTTPS）"
     },
     "zh-TW": {
@@ -963,7 +1098,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "同步歷程記錄",
       "detailsSections.resources.title": "資源",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -972,7 +1106,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "密碼",
+      "services.argocd-server-http.signIn.username.label": "使用者",
       "services.argocd-server-http.title": "無 TLS 的 Argo CD API（server.insecure）",
+      "services.argocd-server-token-http.signIn.token.label": "API 權杖",
+      "services.argocd-server-token-http.title": "使用 API 權杖、不使用 TLS 的 Argo CD API（server.insecure）",
+      "services.argocd-server-token.signIn.token.label": "API 權杖",
+      "services.argocd-server-token.title": "使用 API 權杖的 Argo CD API（argocd-server，HTTPS）",
+      "services.argocd-server.signIn.password.label": "密碼",
+      "services.argocd-server.signIn.username.label": "使用者",
       "services.argocd-server.title": "Argo CD API（argocd-server，HTTPS）"
     },
     "ja": {
@@ -999,7 +1142,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "同期履歴",
       "detailsSections.resources.title": "リソース",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Application",
       "kinds.1.title": "ApplicationSet",
       "kinds.2.title": "AppProject",
@@ -1008,7 +1150,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "パスワード",
+      "services.argocd-server-http.signIn.username.label": "ユーザー",
       "services.argocd-server-http.title": "TLS なしの Argo CD API（server.insecure）",
+      "services.argocd-server-token-http.signIn.token.label": "API トークン",
+      "services.argocd-server-token-http.title": "API トークンを使う TLS なしの Argo CD API (server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "API トークン",
+      "services.argocd-server-token.title": "API トークンを使う Argo CD API (argocd-server、HTTPS)",
+      "services.argocd-server.signIn.password.label": "パスワード",
+      "services.argocd-server.signIn.username.label": "ユーザー",
       "services.argocd-server.title": "Argo CD API（argocd-server、HTTPS）"
     },
     "ko": {
@@ -1035,7 +1186,6 @@
       "detailsSections.fields.title": "Argo CD",
       "detailsSections.history.title": "동기화 기록",
       "detailsSections.resources.title": "리소스",
-      "kinds.0.sectionTitle": "Argo CD",
       "kinds.0.title": "Applications",
       "kinds.1.title": "ApplicationSets",
       "kinds.2.title": "AppProjects",
@@ -1044,7 +1194,16 @@
       "problems.degraded.title": "Degraded",
       "problems.sync-failed.message": "{{.status.operationState.message}}",
       "problems.sync-failed.title": "SyncFailed",
+      "sections.argocd.title": "Argo CD",
+      "services.argocd-server-http.signIn.password.label": "암호",
+      "services.argocd-server-http.signIn.username.label": "사용자",
       "services.argocd-server-http.title": "TLS 없는 Argo CD API(server.insecure)",
+      "services.argocd-server-token-http.signIn.token.label": "API 토큰",
+      "services.argocd-server-token-http.title": "API 토큰을 사용하는 TLS 없는 Argo CD API(server.insecure)",
+      "services.argocd-server-token.signIn.token.label": "API 토큰",
+      "services.argocd-server-token.title": "API 토큰을 사용하는 Argo CD API(argocd-server, HTTPS)",
+      "services.argocd-server.signIn.password.label": "암호",
+      "services.argocd-server.signIn.username.label": "사용자",
       "services.argocd-server.title": "Argo CD API(argocd-server, HTTPS)"
     }
   }

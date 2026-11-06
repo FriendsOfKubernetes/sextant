@@ -1,24 +1,15 @@
 // The action windows: Sync (revision, prune, dry run; sets `operation`), Refresh / Hard refresh (the refresh
-// annotation), Terminate (sets the running operation's phase to Terminating) and "Open Argo CD UI" (a port forward to
-// argocd-server, then the browser after the user agrees). Every change is a merge patch of the Application that
-// Sextant checks and confirms (the manifest's Modify rule asks every time); the window shows the outcome.
-import type { ClusterId, ForwardInfo, ObjectRef, Sextant } from "@sextant/extension-sdk";
+// annotation, every selected Application under one confirmation), Terminate (sets the running operation's phase to
+// Terminating) and "Open Argo CD UI" (a port forward to argocd-server, then the browser after the user agrees). Every
+// change is a merge patch of the Application that Sextant checks and confirms (the manifest's Modify rule asks every
+// time); the window shows the outcome.
+import { ui, type ClusterId, type ForwardInfo, type ObjectRef, type Sextant } from "@sextant/extension-sdk";
 import { defaultRevision, isApplication, isMultiSource, patchCall, refreshPatch, syncPatch, terminatePatch, type RefreshKind } from "./argo";
-import { button, element, errorBox } from "./dom";
+import { buttons, element, errorBox } from "./dom";
 import { t } from "./i18n";
 import { describeServer, findInstallation, uiPort } from "./server";
 import { installationPicker } from "./picker";
 import { startDiff } from "./diff";
-
-function buttons(...nodes: HTMLElement[]): HTMLElement {
-  return element("div", { className: "buttons" }, ...nodes);
-}
-
-function status(): HTMLElement {
-  const node = element("p", { className: "status" });
-  node.setAttribute("role", "status");
-  return node;
-}
 
 /** Runs `send` from `confirm`: disabled while it runs (Sextant may be asking the user), the error under it. */
 function runFrom(confirm: HTMLButtonElement, slot: HTMLElement, send: () => Promise<void>): void {
@@ -35,7 +26,8 @@ function runFrom(confirm: HTMLButtonElement, slot: HTMLElement, send: () => Prom
   });
 }
 
-const cancel = (sextant: Sextant) => button(t("common.cancel"), () => void sextant.ui.close());
+const cancel = (sextant: Sextant) => ui.button(t("common.cancel"), () => void sextant.ui.close());
+const close = (sextant: Sextant) => ui.button(t("common.close"), () => void sextant.ui.close());
 
 async function startSync(sextant: Sextant, root: HTMLElement, ref: ObjectRef): Promise<void> {
   const app = await sextant.resources.get({ ref });
@@ -43,7 +35,7 @@ async function startSync(sextant: Sextant, root: HTMLElement, ref: ObjectRef): P
   const revision = element("input", { type: "text", value: defaultRevision(app), spellcheck: false, id: "revision" });
   const prune = element("input", { type: "checkbox", id: "prune" });
   const dryRun = element("input", { type: "checkbox", id: "dry-run" });
-  const confirm = element("button", { type: "button", className: "primary", textContent: t("sync.confirm") });
+  const confirm = ui.button(t("sync.confirm"), () => undefined, { variant: "primary" });
   const slot = element("div");
   const valid = () => multiSource || revision.value.trim() !== "";
   revision.addEventListener("input", () => (confirm.disabled = !valid()));
@@ -56,7 +48,7 @@ async function startSync(sextant: Sextant, root: HTMLElement, ref: ObjectRef): P
   root.replaceChildren(
     element("h3", { textContent: t("sync.title", { name: ref.name }) }),
     multiSource
-      ? element("p", { className: "muted", textContent: t("sync.multiSource") })
+      ? element("p", {}, ui.muted(t("sync.multiSource")))
       : element(
           "div",
           { className: "field" },
@@ -72,25 +64,34 @@ async function startSync(sextant: Sextant, root: HTMLElement, ref: ObjectRef): P
   if (!multiSource) revision.focus();
 }
 
-/** Refresh or Hard refresh of every selected Application, one after another; the window closes after the last. */
+/** At most this many patches go in one `resources.patchMany` (Sextant's limit). */
+export const PATCH_BATCH = 50;
+
+/**
+ * Refresh or Hard refresh of every selected Application: one `resources.patchMany` (one confirmation) per 50, sent in
+ * order; the first failure stops the rest and is thrown.
+ */
 export async function refreshAll(sextant: Sextant, refs: readonly ObjectRef[], kind: RefreshKind): Promise<void> {
-  for (const ref of refs) if (isApplication(ref.kind)) await sextant.resources.patch(patchCall(ref, refreshPatch(kind)));
+  const items = refs.filter((ref) => isApplication(ref.kind)).map((ref) => patchCall(ref, refreshPatch(kind)));
+  for (let i = 0; i < items.length; i += PATCH_BATCH) {
+    const answer = await sextant.resources.patchMany({ items: items.slice(i, i + PATCH_BATCH) });
+    const failed = answer.items.find((item) => "error" in item);
+    if (failed && "error" in failed) throw new Error(failed.error.message);
+  }
 }
 
 async function startRefresh(sextant: Sextant, root: HTMLElement, refs: readonly ObjectRef[], kind: RefreshKind): Promise<void> {
-  const note = status();
-  note.textContent = t("refresh.running");
-  root.replaceChildren(note);
+  root.replaceChildren(ui.loading(t("refresh.running")));
   try {
     await refreshAll(sextant, refs, kind);
     await sextant.ui.close();
   } catch (err) {
-    root.replaceChildren(errorBox(err), buttons(button(t("common.close"), () => void sextant.ui.close())));
+    root.replaceChildren(errorBox(err), buttons(close(sextant)));
   }
 }
 
 function startTerminate(sextant: Sextant, root: HTMLElement, ref: ObjectRef): void {
-  const confirm = element("button", { type: "button", className: "danger", textContent: t("terminate.confirm") });
+  const confirm = ui.button(t("terminate.confirm"), () => undefined, { variant: "danger" });
   const slot = element("div");
   runFrom(confirm, slot, async () => {
     await sextant.resources.patch(patchCall(ref, terminatePatch()));
@@ -130,12 +131,10 @@ export function runningForward(forwards: readonly ForwardInfo[], clusterId: Clus
  * after the user agrees in Sextant's own dialog.
  */
 async function startOpenUi(sextant: Sextant, root: HTMLElement, clusterId: ClusterId, ref: ObjectRef | undefined): Promise<void> {
-  const note = status();
-  note.textContent = t("openUi.opening");
-  root.replaceChildren(note);
+  root.replaceChildren(ui.loading(t("openUi.opening")));
   const lookup = await findInstallation(sextant, clusterId);
   if (lookup.type === "none") {
-    root.replaceChildren(element("p", { className: "error", textContent: t("diff.errors.notFound") }));
+    root.replaceChildren(ui.errorState(t("diff.errors.notFound")));
     return;
   }
   if (lookup.type === "several") {
@@ -153,7 +152,7 @@ async function startOpenUi(sextant: Sextant, root: HTMLElement, clusterId: Clust
     await sextant.ui.close();
     return;
   }
-  root.replaceChildren(element("p", { textContent: t("openUi.declined", { url }) }), buttons(button(t("common.close"), () => void sextant.ui.close())));
+  root.replaceChildren(element("p", { textContent: t("openUi.declined", { url }) }), buttons(close(sextant)));
 }
 
 /** The window of the action `contribution` on the selected objects. */
@@ -161,13 +160,13 @@ export function startAction(sextant: Sextant, root: HTMLElement, contribution: s
   const refs = sextant.context.selection;
   const ref = refs[0];
   const clusterId = sextant.context.clusterId;
-  const fail = (err: unknown) => root.replaceChildren(errorBox(err), buttons(button(t("common.close"), () => void sextant.ui.close())));
+  const fail = (err: unknown) => root.replaceChildren(errorBox(err), buttons(close(sextant)));
   if (contribution === "open-ui") {
     if (clusterId) startOpenUi(sextant, root, clusterId, ref).catch(fail);
     return () => undefined;
   }
   if (!ref) {
-    root.replaceChildren(element("p", { className: "muted", textContent: t("common.nothingToShow") }));
+    root.replaceChildren(ui.empty(t("common.nothingToShow")));
     return () => undefined;
   }
   switch (contribution) {
@@ -186,7 +185,7 @@ export function startAction(sextant: Sextant, root: HTMLElement, contribution: s
     case "diff":
       return startDiff(sextant, root, ref);
     default:
-      root.replaceChildren(element("p", { className: "muted", textContent: t("common.nothingToShow") }));
+      root.replaceChildren(ui.empty(t("common.nothingToShow")));
   }
   return () => undefined;
 }

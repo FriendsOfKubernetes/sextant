@@ -20,12 +20,12 @@
 //                 but on a canary pause step the controller counts the step completed once no pause condition is
 //                 left (pause.go `CompletedCanaryPauseStep`) and moves on, as after `promote`
 //
-// A status patch goes to the status subresource first (`resources.patch` with `subresource: "status"`, granted by
-// `permissions.statusPatches`, ADR-0155); an API server that answers `notFound` there has no status subresource (Argo
-// Rollouts v0.9), and the plugin then sends the "unified" patch (spec and status together) to the object itself — so
-// does the extension. All are JSON merge patches, each sent once. Restart (`spec.restartAt`) is Sextant's own generic
-// action and not here.
-import { isSextantError, type JsonValue, type KubeObject, type ObjectRef, type Sextant } from "@sextant/extension-sdk";
+// The status patch goes to the status subresource (`subresource: "status"`, granted by `permissions.statusPatches`,
+// ADR-0155) and the spec patch to the object, in that order and under one confirmation (`resources.patchMany`,
+// ADR-0161). An API server that answers `notFound` for the status has no status subresource (Argo Rollouts v0.9), and
+// the plugin then sends the "unified" patch (spec and status together) to the object itself — so does the extension.
+// All are JSON merge patches, each sent once. Restart (`spec.restartAt`) is Sextant's own generic action and not here.
+import { SextantError, type JsonValue, type KubeObject, type ObjectRef, type PatchManyParams, type ErrorCode, type Sextant } from "@sextant/extension-sdk";
 import {
   canarySteps,
   currentHash,
@@ -149,8 +149,10 @@ export const canResume = (ro: KubeObject): boolean => specPaused(ro) || pauseCon
 
 /**
  * Exactly when each action applies, as the built-in view decided it. The manifest's `when` (judged by Sextant without
- * extension code) cannot compare two fields, so for Promote, Promote fully and Abort it is a little wider; the
- * action's window checks this on a fresh read and says `whyNot` instead of offering the patches.
+ * extension code) is exact for Abort, Retry, Pause and Resume; for Promote and Promote fully "an update is under way"
+ * (the current template is not the stable one) is one alternative among several, which Sextant's conditions cannot
+ * nest that deep, so theirs is a little wider. The action's window checks this on a fresh read and says `whyNot`
+ * instead of offering the patches.
  */
 export const APPLIES: Record<RolloutAction, (ro: KubeObject) => boolean> = {
   promote: canPromote,
@@ -162,16 +164,28 @@ export const APPLIES: Record<RolloutAction, (ro: KubeObject) => boolean> = {
   resume: canResume,
 };
 
-/** Sends `plan` as the plugin does: the status first, then the spec (the unified patch when status is not served). */
+/** The items of `plan` in the plugin's order: the status first, then the spec. */
+export function itemsOf(ref: ObjectRef, plan: PatchPlan): PatchManyParams["items"] {
+  return [
+    ...(plan.status ? [{ ref, patch: plan.status as JsonValue, patchType: "merge" as const, subresource: "status" as const }] : []),
+    ...(plan.spec ? [{ ref, patch: plan.spec as JsonValue, patchType: "merge" as const }] : []),
+  ];
+}
+
+/**
+ * Sends `plan` as the plugin does: the status first, then the spec, in one `resources.patchMany` so Sextant asks once
+ * for both. An API server without the status subresource (v0.9) answers the status item `notFound`, which stops the
+ * spec item; the unified patch then goes to the object alone (a second question), as the plugin's fallback.
+ */
 export async function sendPlan(sextant: Sextant, ref: ObjectRef, plan: PatchPlan): Promise<void> {
-  let spec = plan.spec;
-  if (plan.status) {
-    try {
-      await sextant.resources.patch({ ref, patch: plan.status as JsonValue, patchType: "merge", subresource: "status" });
-    } catch (err) {
-      if (!isSextantError(err, "notFound") || !plan.unified) throw err;
-      spec = plan.unified;
-    }
+  const items = itemsOf(ref, plan);
+  if (items.length === 0) return;
+  const answer = await sextant.resources.patchMany({ items });
+  const failed = answer.items.find((item): item is { error: { code: string; message: string } } => "error" in item);
+  if (!failed) return;
+  const statusRefused = plan.status !== undefined && answer.sent === 0;
+  if (!statusRefused || failed.error.code !== "notFound" || !plan.unified) {
+    throw new SextantError(failed.error.code as ErrorCode, failed.error.message);
   }
-  if (spec) await sextant.resources.patch({ ref, patch: spec as JsonValue, patchType: "merge" });
+  await sextant.resources.patch({ ref, patch: plan.unified as JsonValue, patchType: "merge" });
 }

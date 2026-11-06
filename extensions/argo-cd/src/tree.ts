@@ -2,8 +2,9 @@
 // health) and, below each, what they own (Deployment → ReplicaSet → Pod, Job → Pod, …), found by `ownerReferences`
 // among live lists of those kinds in the app's namespaces. Every row opens its object. Resources in another cluster
 // (the app deploys elsewhere) are listed without links or descendants: this cluster cannot show them. For a resource
-// the Application gives no health for (Argo CD 3.x), the health is computed the way Argo CD does (`./health`).
-import { trackObjects, type KindRef, type KubeObject, type Sextant, type Watch } from "@sextant/extension-sdk";
+// the Application gives no health for (Argo CD 3.x), the health is computed the way Argo CD does (`./health`). An
+// Application that manages nothing hides the section, as the built-in view showed nothing then.
+import { trackObjects, ui, type KindRef, type KubeObject, type Sextant, type Watch } from "@sextant/extension-sdk";
 import {
   applicationDestination,
   descendantKinds,
@@ -18,11 +19,11 @@ import {
   type Needs,
   type TreeNode,
 } from "./argo";
-import { badge, button, element, errorBox, objectLink } from "./dom";
+import { badge, element, errorBox } from "./dom";
 import { podStatus, readyOfDesired, statusTone, trueConditions } from "./fields";
 import { HEALTH_KINDS, healthWatchKinds, resourceHealth, type Health } from "./health";
 import { t } from "./i18n";
-import { followShown } from "./shown";
+import { followShown, setHidden } from "./shown";
 
 /** One live list the tree needs. */
 export interface LiveList {
@@ -84,29 +85,25 @@ function healthCell(node: TreeNode, computed: Health | undefined): Node | string
   return ref.kind.kind === "Pod" ? badge(live, statusTone(live)) : live;
 }
 
-/** The tree as a table. */
-export function treeTable(sextant: Sextant, tree: TreeNode[], computed: ReadonlyMap<string, Health>, linked: boolean): HTMLTableElement {
+/** The tree as a table, each row with its level (`aria-level`) and the kind indented by it. */
+export function treeTable(sextant: Sextant, tree: TreeNode[], computed: ReadonlyMap<string, Health>, linked: boolean): HTMLElement {
   const headers = [t("tree.kind"), t("tree.name"), t("tree.namespace"), t("tree.sync"), t("tree.health")];
-  const body = element("tbody");
-  for (const { level, node } of flattenTree(tree)) {
+  const flat = flattenTree(tree);
+  const rows = flat.map(({ level, node }) => {
     const { ref, managed } = node;
     const kind = element("span", { className: "tree-kind", textContent: ref.kind.kind });
     kind.style.paddingLeft = `${(level - 1) * 16}px`;
-    const name = linked ? objectLink(sextant, ref) : ref.name;
-    const row = element(
-      "tr",
-      {},
-      element("td", {}, kind),
-      element("td", {}, name),
-      element("td", { textContent: ref.namespace ?? "" }),
-      element("td", {}, managed?.sync ? badge(managed.sync, syncTone(managed.sync)) : null),
-      element("td", {}, healthCell(node, managed ? computed.get(managedKey(managed)) : undefined)),
-    );
-    row.setAttribute("aria-level", String(level));
-    body.append(row);
-  }
-  const node = element("table", { className: "grid tree" }, element("thead", {}, element("tr", {}, ...headers.map((h) => element("th", { textContent: h })))), body);
-  node.setAttribute("aria-label", t("tree.title"));
+    return [
+      kind,
+      linked ? ui.objectLink(sextant, ref) : ref.name,
+      ref.namespace ?? "",
+      managed?.sync ? badge(managed.sync, syncTone(managed.sync)) : null,
+      healthCell(node, managed ? computed.get(managedKey(managed)) : undefined),
+    ];
+  });
+  const node = ui.table(headers, rows, { label: t("tree.title") });
+  node.querySelector("table")?.classList.add("tree");
+  node.querySelectorAll("tbody tr").forEach((row, i) => row.setAttribute("aria-level", String(flat[i]!.level)));
   return node;
 }
 
@@ -119,8 +116,9 @@ export function startTree(sextant: Sextant, root: HTMLElement): () => void {
   const render = () => {
     if (!app) return;
     const resources = managedResources(app);
+    setHidden(sextant, resources.length === 0);
     if (resources.length === 0) {
-      root.replaceChildren(element("p", { className: "muted", textContent: t("diff.empty") }));
+      root.replaceChildren(ui.empty(t("diff.empty")));
       return;
     }
     const local = isInCluster(applicationDestination(app));
@@ -133,14 +131,10 @@ export function startTree(sextant: Sextant, root: HTMLElement): () => void {
     const failed = ofDescendants.find((l) => l.status === "error");
     const loading = ofDescendants.some((l) => l.status === "loading");
     const nodes: Node[] = [];
-    if (!local) nodes.push(element("p", { className: "muted", textContent: t("tree.remote") }));
+    if (!local) nodes.push(ui.empty(t("tree.remote")));
     nodes.push(treeTable(sextant, tree, computed, local));
-    if (failed) nodes.push(element("div", { className: "error-row" }, errorBox(failed.error), button(t("diff.retry"), () => restart())));
-    else if (loading) {
-      const note = element("p", { className: "muted", textContent: t("tree.loading") });
-      note.setAttribute("role", "status");
-      nodes.push(note);
-    }
+    if (failed) nodes.push(element("div", { className: "error-row" }, errorBox(failed.error), ui.button(t("diff.retry"), () => restart())));
+    else if (loading) nodes.push(ui.loading(t("tree.loading")));
     root.replaceChildren(...nodes);
   };
   const schedule = () => {

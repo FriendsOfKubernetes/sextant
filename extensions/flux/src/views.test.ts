@@ -52,7 +52,8 @@ async function start(options: TestHostOptions = {}) {
     handlers: {
       kinds: () => SERVED,
       "resources.get": ({ ref }) => ALL.find((o) => o.kind === ref.kind.kind && o.metadata.name === ref.name),
-      "resources.patch": ({ ref }) => ALL.find((o) => o.kind === ref.kind.kind) ?? {},
+      "resources.patchMany": ({ items }) => ({ items: (items as unknown[]).map(() => ({ object: {} })), sent: (items as unknown[]).length }),
+      "ui.setHidden": () => null,
       ...options.handlers,
     },
   });
@@ -78,6 +79,8 @@ async function answerWatches(count: number, skip: (params: WatchParams) => boole
   }
 }
 const text = () => root.textContent ?? "";
+/** What the frame asked of `ui.setHidden`, in order. */
+const hiding = () => host.calls.filter((c) => c.method === "ui.setHidden").map((c) => (c.params as { hidden: boolean }).hidden);
 
 afterEach(() => {
   setLanguage("en");
@@ -98,8 +101,11 @@ describe("the Flux section of the details", () => {
     expect(rows.Interval).toBe("10m");
     expect(rows.Prune).toBe("true");
     expect(rows["Last attempted revision"]).toBeUndefined();
-    expect(root.querySelector(".status.ok")?.textContent).toBe("True");
-    const source = [...root.querySelectorAll("button.link")].find((b) => b.textContent === "GitRepository podinfo") as HTMLButtonElement;
+    // Sextant's own look: the UI kit's fields, status word and link.
+    expect(root.querySelector("dl.sx-fields")).not.toBeNull();
+    expect(root.querySelector(".sx-status--success")?.textContent).toBe("True");
+    expect(hiding()).toEqual([false]);
+    const source = [...root.querySelectorAll("button.sx-link")].find((b) => b.textContent === "GitRepository podinfo") as HTMLButtonElement;
     source.click();
     await expect.poll(() => host.calls.find((c) => c.method === "ui.openDetails")?.params).toEqual({
       kind: { group: "source.toolkit.fluxcd.io", kind: "GitRepository" },
@@ -114,7 +120,7 @@ describe("the Flux section of the details", () => {
     stop = startFields(host.sextant, root);
     await expect.poll(text).toContain("BucketOperationFailed");
     expect([...root.querySelectorAll("dt")].map((dt) => dt.textContent)).toContain("Endpunkt");
-    expect(root.querySelector(".status.error")?.textContent).toBe("False");
+    expect(root.querySelector(".sx-status--danger")?.textContent).toBe("False");
     const reads = () => host.calls.filter((c) => c.method === "resources.get").length;
     expect(reads()).toBe(1);
     host.setContext({ resourceVersion: "2" });
@@ -132,6 +138,29 @@ describe("related objects", () => {
       "Deploymentpodinfosextant-flux",
       "HorizontalPodAutoscalerpodinfosextant-flux",
     ]);
+    expect(hiding()).toEqual([false]);
+    // A link opens the object in the version its inventory entry names.
+    (root.querySelectorAll("tbody button.sx-link")[2] as HTMLButtonElement).click();
+    await expect.poll(() => host.calls.find((c) => c.method === "ui.openDetails")?.params).toEqual({
+      kind: { group: "autoscaling", version: "v2", kind: "HorizontalPodAutoscaler" },
+      namespace: "sextant-flux",
+      name: "podinfo",
+    });
+  });
+
+  it("a Kustomization that applied nothing hides the section, as the built-in view showed none", async () => {
+    const empty = { ...KUSTOMIZATION, metadata: { ...KUSTOMIZATION.metadata, name: "empty" }, status: { ...KUSTOMIZATION.status, inventory: { entries: [] } } };
+    await start({
+      context: { view: "details", contribution: "inventory", selection: [refOf(empty)], resourceVersion: "1" },
+      handlers: { "resources.get": () => empty },
+    });
+    stop = startInventory(host.sextant, root);
+    await expect.poll(hiding).toEqual([true]);
+    // Applied something since: shown again.
+    host.setContext({ resourceVersion: "2" });
+    (empty.status as { inventory: { entries: unknown[] } }).inventory.entries = [{ id: "sextant-flux_podinfo__Service", v: "v1" }];
+    await expect.poll(hiding).toEqual([true, false]);
+    await expect.poll(() => root.querySelectorAll("tbody tr").length).toBe(1);
   });
 
   it("a source lists the Kustomizations and HelmReleases that use it, from every namespace", async () => {
@@ -150,6 +179,7 @@ describe("related objects", () => {
     await answerWatches(2, (p) => p.kind.kind === "HelmRelease");
     host.watches[1]!.emit({ type: "error", code: "other", message: "the cluster cannot be reached" });
     await expect.poll(text).toContain("the cluster cannot be reached");
+    expect(root.querySelector(".failure .sx-error")?.getAttribute("role")).toBe("alert");
     (root.querySelector(".failure button") as HTMLButtonElement).click();
     await answerWatches(4);
     await expect.poll(text).toContain(t("related.notUsed"));
@@ -182,7 +212,10 @@ describe("related objects", () => {
 });
 
 describe("the action windows", () => {
-  const patches = () => host.calls.filter((c) => c.method === "resources.patch").map((c) => c.params as { ref: { kind: { kind: string }; name: string }; patch: unknown; patchType: string });
+  type Item = { ref: { kind: { kind: string }; name: string }; patch: unknown; patchType: string };
+  /** The `resources.patchMany` calls: one confirmation each. */
+  const batches = () => host.calls.filter((c) => c.method === "resources.patchMany").map((c) => (c.params as { items: Item[] }).items);
+  const patches = () => batches().flat();
   const press = (label: string) => ([...root.querySelectorAll("button")].find((b) => b.textContent === label) as HTMLButtonElement).click();
 
   it("Reconcile now sets reconcile.fluxcd.io/requestedAt on each selected object by a merge patch, then closes", async () => {
@@ -194,6 +227,9 @@ describe("the action windows", () => {
     expect(patches()).toEqual([]);
     press("Reconcile now");
     await expect.poll(() => host.closedByFrame).toBe(true);
+    // Both objects in one call, so Sextant asks once.
+    expect(batches()).toHaveLength(1);
+    expect(host.calls.some((c) => c.method === "resources.patch")).toBe(false);
     expect(patches().map((p) => [p.ref.kind.kind, p.ref.name, p.patchType, p.patch])).toEqual(
       ["Kustomization", "GitRepository"].map((kind) => [
         kind,
@@ -211,6 +247,7 @@ describe("the action windows", () => {
     await expect.poll(text).toContain("the source first");
     press("Reconcile with source");
     await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(batches()).toHaveLength(1);
     expect(patches().map((p) => `${p.ref.kind.kind}/${p.ref.name}`)).toEqual([
       "HelmRepository/podinfo",
       "HelmChart/sextant-flux-podinfo-helm",
@@ -229,24 +266,39 @@ describe("the action windows", () => {
     expect(patches()[0]!.patch).toEqual({ spec: { suspend: true } });
   });
 
-  it("Resume clears spec.suspend; a refusal stops before the next object and names the one refused", async () => {
+  it("Resume clears spec.suspend; a failure stops before the next object and names the one that failed", async () => {
     await start({
-      context: { view: "action", contribution: "resume", selection: [refOf(KUSTOMIZATION), refOf(GIT)] },
+      context: { view: "action", contribution: "resume", selection: [refOf(KUSTOMIZATION), refOf(GIT), refOf(BUCKET)] },
       handlers: {
-        "resources.patch": ({ ref }) => {
-          if (ref.kind.kind === "Kustomization") throw new SextantError("denied", "the user said no");
-          return {};
-        },
+        // The Kustomization is sent, the GitRepository refused by the cluster, the Bucket never sent.
+        "resources.patchMany": () => ({ items: [{ object: {} }, { error: { code: "forbidden", message: "no" } }], sent: 1 }),
       },
     });
     stop = startAction(host.sextant, root, "resume");
     await expect.poll(text).toContain(t("resume.intro"));
     press("Resume");
-    await expect.poll(() => root.querySelector(".change-status.error")?.textContent).toBe(
-      "Kustomization podinfo: Sextant refused: the user said no",
+    await expect.poll(() => root.querySelector(".change-status.sx-status--danger")?.textContent).toBe(
+      `GitRepository podinfo: ${t("error.forbidden", { message: "no" })}`,
     );
-    expect(patches()).toHaveLength(1);
-    expect(patches()[0]!.patch).toEqual({ spec: { suspend: false } });
+    expect(batches()).toHaveLength(1);
+    expect(patches().map((p) => p.patch)).toEqual([0, 1, 2].map(() => ({ spec: { suspend: false } })));
     expect(host.closedByFrame).toBe(false);
+  });
+
+  it("a refusal of the whole change says so and closes nothing", async () => {
+    await start({
+      context: { view: "action", contribution: "reconcile", selection: [refOf(KUSTOMIZATION), refOf(GIT)] },
+      handlers: {
+        "resources.patchMany": () => {
+          throw new SextantError("denied", "the user said no");
+        },
+      },
+    });
+    stop = startAction(host.sextant, root, "reconcile");
+    await expect.poll(text).toContain("reconcile.fluxcd.io/requestedAt");
+    press("Reconcile now");
+    await expect.poll(() => root.querySelector(".change-status.sx-status--danger")?.textContent).toBe("Sextant refused: the user said no");
+    expect(host.closedByFrame).toBe(false);
+    expect(host.notices).toEqual([]);
   });
 });

@@ -21,7 +21,10 @@ export interface FluxKind {
   icon: string;
   /** A source of artifacts (a Kustomization or HelmRelease may refer to it). */
   source?: boolean;
-  /** It has a status with a Ready condition (notification Providers and Alerts have none). */
+  /**
+   * It has a status with a Ready condition (notification Providers and Alerts have none in v1beta3): Ready, Status and
+   * Revision columns, and a manifest has at most 50 columns.
+   */
   status: boolean;
 }
 
@@ -54,6 +57,10 @@ export const fluxKind = (group: string | undefined, kind: string | undefined): F
 /** The API group of an `apiVersion` (`""` for the core group). */
 export const groupOf = (apiVersion: string | undefined): string =>
   apiVersion && apiVersion.includes("/") ? apiVersion.slice(0, apiVersion.indexOf("/")) : "";
+
+/** The version of an `apiVersion` (`v1` of `apps/v1` and of `v1`), or `undefined`. */
+export const versionOf = (apiVersion: string | undefined): string | undefined =>
+  apiVersion ? apiVersion.slice(apiVersion.indexOf("/") + 1) || undefined : undefined;
 
 export const isKind = (obj: KubeObject, group: string, kind: string): boolean =>
   groupOf(obj.apiVersion) === group && obj.kind === kind;
@@ -97,10 +104,11 @@ export const readyReason = (obj: KubeObject): string | undefined => str(get(read
 /** The message of the Ready condition: what was applied, or what failed. */
 export const readyMessage = (obj: KubeObject): string | undefined => str(get(readyCondition(obj), "message"));
 
-export type Tone = "ok" | "warning" | "error" | "neutral";
+/** A tone of Sextant's UI kit (`ui.status`). */
+export type Tone = "success" | "warning" | "danger";
 
-/** True green, False red, Unknown (reconciling) yellow. */
-export const readyTone = (value: string): Tone => (value === "True" ? "ok" : value === "False" ? "error" : "warning");
+/** True green, False red, Unknown (reconciling) yellow, as the built-in view and the Ready column tone it. */
+export const readyTone = (value: string): Tone => (value === "True" ? "success" : value === "False" ? "danger" : "warning");
 
 /**
  * The fields the revision is read from, the first with a value: a source's artifact, what a Kustomization applied, the
@@ -140,15 +148,20 @@ export const isSuspended = (obj: KubeObject): boolean => get(obj, "spec", "suspe
 
 // ---------- References between objects ----------
 
-/** An object another one names. */
+/** An object another one names; its version when the reference gives one (else Sextant takes the kind's own). */
 export interface FluxRef {
   group: string;
+  version?: string;
   kind: string;
   name: string;
   namespace: string | null;
 }
 
-export const refInput = (r: FluxRef): RefInput => ({ kind: { group: r.group, kind: r.kind }, namespace: r.namespace, name: r.name });
+export const refInput = (r: FluxRef): RefInput => ({
+  kind: r.version ? { group: r.group, version: r.version, kind: r.kind } : { group: r.group, kind: r.kind },
+  namespace: r.namespace,
+  name: r.name,
+});
 
 /** A `sourceRef`/`chartRef`-like field as a reference; the namespace defaults to the object's own. */
 function refFrom(field: unknown, obj: KubeObject, group: string): FluxRef | undefined {
@@ -156,8 +169,10 @@ function refFrom(field: unknown, obj: KubeObject, group: string): FluxRef | unde
   const name = str(get(field, "name"));
   if (!kind || !name) return undefined;
   const apiVersion = str(get(field, "apiVersion"));
+  const version = versionOf(apiVersion);
   return {
     group: apiVersion ? groupOf(apiVersion) : group,
+    ...(version ? { version } : {}),
     kind,
     name,
     namespace: str(get(field, "namespace")) ?? obj.metadata.namespace ?? null,
@@ -210,7 +225,7 @@ export function localRef(obj: KubeObject, group: string, kind: string, field: un
 /**
  * The objects listed in `status.inventory.entries` (Kustomization; HelmRelease since Flux 2.8). An entry id is
  * `<namespace>_<name>_<group>_<Kind>` (cli-utils' object metadata: an empty namespace for cluster-scoped objects, an
- * empty group for the core API, ":" of a name written as "__"); `v` is the version.
+ * empty group for the core API, ":" of a name written as "__"); `v` is the version, which the links open.
  */
 export function inventoryOf(obj: KubeObject): FluxRef[] {
   const refs: FluxRef[] = [];
@@ -223,7 +238,8 @@ export function inventoryOf(obj: KubeObject): FluxRef[] {
     // "a__b" (a colon) splits into "a", "", "b": joined back, then turned into ":".
     const name = fields.slice(1, -2).join("_").replaceAll("__", ":");
     if (!name || !kind) continue;
-    refs.push({ group, kind, namespace: namespace || null, name });
+    const version = str(get(entry, "v"));
+    refs.push({ group, ...(version ? { version } : {}), kind, namespace: namespace || null, name });
   }
   return refs;
 }
@@ -260,11 +276,13 @@ export const LABELLED_KINDS: readonly { group: string; kind: string }[] = [
   { group: "networking.k8s.io", kind: "Ingress" },
 ];
 
+/** The same object whatever version names it. */
 export const refKey = (r: FluxRef): string => `${r.group}/${r.kind}/${r.namespace ?? ""}/${r.name}`;
 
 /** The object as a reference. */
 export const refOf = (obj: KubeObject, fallback: { group: string; kind: string }): FluxRef => ({
   group: obj.apiVersion ? groupOf(obj.apiVersion) : fallback.group,
+  ...(versionOf(obj.apiVersion) ? { version: versionOf(obj.apiVersion) } : {}),
   kind: obj.kind ?? fallback.kind,
   namespace: obj.metadata.namespace ?? null,
   name: obj.metadata.name,

@@ -4,7 +4,7 @@
 // pkg/kubectl-argo-rollouts/info/rollout_info.go computes it), its ReplicaSets by `rollouts-pod-template-hash`, its
 // AnalysisRuns and their failing measurements. Ported from Sextant's former built-in view (src/features/argo-rollouts);
 // no DOM here. The patches of the actions are in ./patches.ts.
-import type { KubeObject } from "@sextant/extension-sdk";
+import type { KubeObject, UiTone } from "@sextant/extension-sdk";
 
 export const ROLLOUTS_GROUP = "argoproj.io";
 export const ROLLOUT = { group: ROLLOUTS_GROUP, kind: "Rollout" } as const;
@@ -21,8 +21,8 @@ export const POD_TEMPLATE_HASH_LABEL = "rollouts-pod-template-hash";
 export const REVISION_ANNOTATION = "rollout.argoproj.io/revision";
 const WORKLOAD_GENERATION_ANNOTATION = "rollout.argoproj.io/workload-generation";
 
-/** The tone of a status word: drawn as a coloured badge. */
-export type Tone = "ok" | "warning" | "error" | "neutral" | "muted";
+/** The tone of a status word, as the SDK's UI kit colours it (`ui.status`). */
+export type Tone = UiTone;
 
 // ---------- Reading fields ----------
 
@@ -57,10 +57,10 @@ export interface PhaseOf {
 const PHASES = new Set<string>(["Healthy", "Progressing", "Paused", "Degraded"]);
 
 export const PHASE_TONE: Record<RolloutPhase, Tone> = {
-  Healthy: "ok",
+  Healthy: "success",
   Progressing: "neutral",
   Paused: "warning",
-  Degraded: "error",
+  Degraded: "danger",
 };
 
 /** `status.observedGeneration` is a string; an old (v0.9) one is a hash, which counts as observed. */
@@ -310,9 +310,9 @@ export function canaryAvailable(ro: KubeObject, sets: readonly RolloutReplicaSet
 export const ANALYSIS_TONE: Record<string, Tone> = {
   Pending: "neutral",
   Running: "neutral",
-  Successful: "ok",
-  Failed: "error",
-  Error: "error",
+  Successful: "success",
+  Failed: "danger",
+  Error: "danger",
   Inconclusive: "warning",
 };
 

@@ -7,8 +7,8 @@
 //   template-metrics  — the metrics of an (Cluster)AnalysisTemplate and their providers.
 // Each frame reads the shown object again whenever its resourceVersion changes. Conditions and YAML are Sextant's own
 // sections. The actions are in ./actions.ts.
-import type { KubeObject, ObjectRef, Sextant } from "@sextant/extension-sdk";
-import { ago, badge, block, element, errorBox, fields, objectLink, table } from "./dom";
+import { ui, type KubeObject, type ObjectRef, type RefInput, type Sextant, type UiContent } from "@sextant/extension-sdk";
+import { ago, element, errorText } from "./dom";
 import { t } from "./i18n";
 import { watchRolloutLists, type RolloutLists } from "./live";
 import {
@@ -45,7 +45,30 @@ import {
   strategyOf,
   STRATEGY_TEXT,
   templateMetrics,
+  type Tone,
 } from "./model";
+
+/** A link to an object's details in Sextant's panel. */
+const link = (sextant: Sextant, ref: RefInput, text?: string) => ui.objectLink(sextant, ref as ObjectRef, text ?? ref.name);
+
+/** A status word in its tone, with an explanation on hover. */
+function badge(text: string, tone: Tone, title?: string): HTMLElement {
+  const node = ui.status(text, tone);
+  if (title) node.title = title;
+  return node;
+}
+
+/** `ui.fields`, or nothing when no row has a value. */
+function fieldsOf(rows: readonly (readonly [string, UiContent])[]): HTMLElement | null {
+  const list = ui.fields(rows);
+  return list.childElementCount > 0 ? list : null;
+}
+
+/** `ui.table`, or nothing without rows. */
+const tableOf = (headers: string[], rows: UiContent[][], label: string): HTMLElement | null =>
+  rows.length > 0 ? ui.table(headers, rows, { label }) : null;
+
+const present = (nodes: (Node | null)[]): Node[] => nodes.filter((n): n is Node => n !== null);
 
 /** The explanation of a phase: the controller's message, else the extension's own reason. */
 function phaseExplanation(ro: KubeObject): string | undefined {
@@ -66,16 +89,16 @@ function statusView(sextant: Sextant, ro: KubeObject, weight: number | undefined
   const bg = blueGreenServices(ro);
   const cs = canaryServices(ro);
   const service = (name: string | undefined, hash?: string) =>
-    name ? objectLink(sextant, { kind: SERVICE, namespace: ns, name }, hash ? t("selects", { service: name, hash }) : name) : undefined;
+    name ? link(sextant, { kind: SERVICE, namespace: ns, name }, hash ? t("selects", { service: name, hash }) : name) : undefined;
   const pausedBy = pauseConditions(ro)
     .map((p) => str(get(p, "reason")))
     .filter(Boolean)
     .join(", ");
   const explanation = phaseExplanation(ro);
-  return [
+  return present([
     explanation ? element("p", { className: "explain", textContent: explanation }) : null,
     isAborted(ro) ? element("p", { className: "explain error", textContent: t("abortedText") }) : null,
-    fields([
+    fieldsOf([
       [t("fields.phase"), rolloutStatusBadge(ro)],
       [t("fields.strategy"), strategy ? STRATEGY_TEXT[strategy] : undefined],
       [t("fields.step"), stepProgress(ro)],
@@ -89,7 +112,7 @@ function statusView(sextant: Sextant, ro: KubeObject, weight: number | undefined
       [t("fields.stableHash"), stableHash(ro)],
       [t("fields.currentHash"), currentHash(ro)],
     ]),
-  ].filter((n): n is HTMLElement => n !== null);
+  ]);
 }
 
 function stepsView(ro: KubeObject): HTMLElement | null {
@@ -111,30 +134,31 @@ function stepsView(ro: KubeObject): HTMLElement | null {
       return item;
     }),
   );
-  return block(
-    t("sections.steps"),
+  return ui.block(t("sections.steps"), [
     list,
     current >= steps.length ? element("p", { className: "explain", textContent: t("stepsDoneAll") }) : null,
-  );
+  ]);
+}
+
+/** A list's table, or why it has no rows yet; and why it is not whole. */
+function listBlock(title: string, table: HTMLElement | null, list: { ready: boolean; error: string | null } | undefined, none: string): HTMLElement {
+  return ui.block(title, [
+    table ?? (list?.ready ? ui.empty(t(none)) : ui.loading(t("loading"))),
+    list?.error ? ui.errorState(list.error) : null,
+  ]);
 }
 
 function replicaSetsView(sextant: Sextant, ro: KubeObject, lists: RolloutLists | null): HTMLElement {
   const ns = ro.metadata.namespace ?? null;
   const list = lists?.replicaSets;
-  const sets = replicaSetsOf(ro, list?.items ?? []);
-  const rows = sets.map((s) => [
-    objectLink(sextant, { kind: REPLICA_SET, namespace: ns, name: s.name }),
-    badge(t(`roles.${s.role}`), s.role === "old" ? "muted" : "neutral"),
+  const rows = replicaSetsOf(ro, list?.items ?? []).map((s) => [
+    link(sextant, { kind: REPLICA_SET, namespace: ns, name: s.name }),
+    ui.status(t(`roles.${s.role}`), s.role === "old" ? "muted" : "neutral"),
     s.revision === undefined ? null : String(s.revision),
     t("availableOf", { available: s.available, desired: s.desired }),
   ]);
   const headers = ["name", "role", "revision", "available"].map((h) => t(`table.${h}`));
-  const content = table(headers, rows, t("sections.replicaSets"));
-  return block(
-    t("sections.replicaSets"),
-    content ?? element("p", { className: "muted", textContent: t(list?.ready ? "noReplicaSets" : "loading") }),
-    list?.error ? element("p", { className: "error", textContent: list.error }) : null,
-  );
+  return listBlock(t("sections.replicaSets"), tableOf(headers, rows, t("sections.replicaSets")), list, "noReplicaSets");
 }
 
 function analysisRunsView(sextant: Sextant, ro: KubeObject, lists: RolloutLists | null, now: number): HTMLElement {
@@ -144,31 +168,26 @@ function analysisRunsView(sextant: Sextant, ro: KubeObject, lists: RolloutLists 
     const phase = analysisPhase(run);
     const failure = phase === "Successful" ? undefined : analysisFailure(run);
     return [
-      objectLink(sextant, { kind: ANALYSIS_RUN, namespace: ns, name: run.metadata.name }),
-      phase ? badge(phase, analysisTone(phase)) : null,
+      link(sextant, { kind: ANALYSIS_RUN, namespace: ns, name: run.metadata.name }),
+      phase ? ui.status(phase, analysisTone(phase)) : null,
       ago(runStarted(run), now),
       failure ?? null,
     ];
   });
   const headers = ["name", "phase", "started", "message"].map((h) => t(`table.${h}`));
-  const content = table(headers, rows, t("sections.analysisRuns"));
-  return block(
-    t("sections.analysisRuns"),
-    content ?? element("p", { className: "muted", textContent: t(list?.ready ? "noAnalysisRuns" : "loading") }),
-    list?.error ? element("p", { className: "error", textContent: list.error }) : null,
-  );
+  return listBlock(t("sections.analysisRuns"), tableOf(headers, rows, t("sections.analysisRuns")), list, "noAnalysisRuns");
 }
 
 /** The whole Rollout section: what the lists say so far (`null` before they start). */
 export function rolloutView(sextant: Sextant, ro: KubeObject, lists: RolloutLists | null, now = Date.now()): Node[] {
   const sets = replicaSetsOf(ro, lists?.replicaSets.items ?? []);
   const weight = actualWeight(ro, lists?.replicaSets.ready ? (canaryAvailable(ro, sets) ?? 0) : undefined);
-  return [
+  return present([
     ...statusView(sextant, ro, weight),
     stepsView(ro),
     replicaSetsView(sextant, ro, lists),
     analysisRunsView(sextant, ro, lists, now),
-  ].filter((n): n is HTMLElement => n !== null);
+  ]);
 }
 
 export function analysisRunView(sextant: Sextant, run: KubeObject): Node[] {
@@ -177,7 +196,7 @@ export function analysisRunView(sextant: Sextant, run: KubeObject): Node[] {
   const owner = ownerRollout(run);
   const metrics = metricResults(run).map((m) => [
     m.name,
-    m.phase ? badge(m.phase, analysisTone(m.phase)) : null,
+    m.phase ? ui.status(m.phase, analysisTone(m.phase)) : null,
     String(m.successful),
     String(m.failed),
     String(m.inconclusive),
@@ -186,15 +205,15 @@ export function analysisRunView(sextant: Sextant, run: KubeObject): Node[] {
     m.failing?.message || m.message || null,
   ]);
   const headers = ["metric", "phase", "successful", "failed", "inconclusive", "error", "lastValue", "message"].map((h) => t(`table.${h}`));
-  const content = table(headers, metrics, t("sections.metrics"));
-  return [
-    fields([
-      [t("fields.phase"), phase ? badge(phase, analysisTone(phase)) : undefined],
-      [t("fields.rollout"), owner ? objectLink(sextant, { kind: ROLLOUT, namespace: ns, name: owner }) : undefined],
+  const content = tableOf(headers, metrics, t("sections.metrics"));
+  return present([
+    fieldsOf([
+      [t("fields.phase"), phase ? ui.status(phase, analysisTone(phase)) : undefined],
+      [t("fields.rollout"), owner ? link(sextant, { kind: ROLLOUT, namespace: ns, name: owner }) : undefined],
       [t("fields.failure"), phase === "Successful" ? undefined : analysisFailure(run)],
     ]),
-    content ? block(t("sections.metrics"), content) : null,
-  ].filter((n): n is HTMLElement => n !== null);
+    content ? ui.block(t("sections.metrics"), content) : null,
+  ]);
 }
 
 export function experimentView(sextant: Sextant, exp: KubeObject): Node[] {
@@ -203,36 +222,35 @@ export function experimentView(sextant: Sextant, exp: KubeObject): Node[] {
   const owner = ownerRollout(exp);
   const templates = arr(get(exp, "status", "templateStatuses")).map((s) => {
     const value = str(get(s, "status"));
-    return [str(get(s, "name")) ?? null, value ? badge(value, analysisTone(value)) : null, str(get(s, "message")) ?? null];
+    return [str(get(s, "name")) ?? null, value ? ui.status(value, analysisTone(value)) : null, str(get(s, "message")) ?? null];
   });
   const analyses = arr(get(exp, "status", "analysisRuns")).map((a) => {
     const value = str(get(a, "phase"));
     const run = str(get(a, "analysisRun"));
     const label = str(get(a, "name")) ?? run;
     return [
-      run ? objectLink(sextant, { kind: ANALYSIS_RUN, namespace: ns, name: run }, label) : (label ?? null),
-      value ? badge(value, analysisTone(value)) : null,
+      run ? link(sextant, { kind: ANALYSIS_RUN, namespace: ns, name: run }, label) : (label ?? null),
+      value ? ui.status(value, analysisTone(value)) : null,
       str(get(a, "message")) ?? null,
     ];
   });
   const head = (keys: string[]) => keys.map((h) => t(`table.${h}`));
-  const templateTable = table(head(["template", "status", "message"]), templates, t("sections.templates"));
-  const analysisTable = table(head(["name", "phase", "message"]), analyses, t("sections.analysisRuns"));
-  return [
-    fields([
-      [t("fields.phase"), phase ? badge(phase, analysisTone(phase)) : undefined],
+  const templateTable = tableOf(head(["template", "status", "message"]), templates, t("sections.templates"));
+  const analysisTable = tableOf(head(["name", "phase", "message"]), analyses, t("sections.analysisRuns"));
+  return present([
+    fieldsOf([
+      [t("fields.phase"), phase ? ui.status(phase, analysisTone(phase)) : undefined],
       [t("fields.message"), str(get(exp, "status", "message"))],
-      [t("fields.rollout"), owner ? objectLink(sextant, { kind: ROLLOUT, namespace: ns, name: owner }) : undefined],
+      [t("fields.rollout"), owner ? link(sextant, { kind: ROLLOUT, namespace: ns, name: owner }) : undefined],
     ]),
-    templateTable ? block(t("sections.templates"), templateTable) : null,
-    analysisTable ? block(t("sections.analysisRuns"), analysisTable) : null,
-  ].filter((n): n is HTMLElement => n !== null);
+    templateTable ? ui.block(t("sections.templates"), templateTable) : null,
+    analysisTable ? ui.block(t("sections.analysisRuns"), analysisTable) : null,
+  ]);
 }
 
 export function templateView(obj: KubeObject): Node[] {
   const rows = templateMetrics(obj).map((m) => [m.name, m.provider ?? null]);
-  const content = table([t("table.metric"), t("table.provider")], rows, t("sections.metrics"));
-  return content ? [content] : [];
+  return present([tableOf([t("table.metric"), t("table.provider")], rows, t("sections.metrics"))]);
 }
 
 const VIEWS: Record<string, (sextant: Sextant, obj: KubeObject) => Node[]> = {
@@ -243,7 +261,8 @@ const VIEWS: Record<string, (sextant: Sextant, obj: KubeObject) => Node[]> = {
 
 /**
  * Starts the details section `contribution` on the object in the context: read again whenever its resourceVersion
- * changes; a Rollout also watches its namespace's ReplicaSets and AnalysisRuns while shown.
+ * changes; a Rollout also watches its namespace's ReplicaSets and AnalysisRuns while shown. A section with nothing to
+ * show (a template without metrics) hides itself, title included, until it has something (`ui.setHidden`).
  */
 export function startDetails(sextant: Sextant, root: HTMLElement, contribution: string): () => void {
   let shownVersion: string | null | undefined;
@@ -252,11 +271,20 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
   let object: KubeObject | null = null;
   let lists: RolloutLists | null = null;
   let stopLists: () => void = () => undefined;
+  let hidden = false;
+
+  /** Shows `nodes`, hiding the section while there are none. */
+  const show = (nodes: Node[]) => {
+    root.replaceChildren(...nodes);
+    const empty = nodes.length === 0;
+    if (empty === hidden) return;
+    hidden = empty;
+    void sextant.ui.setHidden(empty).catch(() => undefined);
+  };
 
   const render = () => {
     if (!object) return;
-    if (contribution === "rollout") root.replaceChildren(...rolloutView(sextant, object, lists));
-    else root.replaceChildren(...(VIEWS[contribution]?.(sextant, object) ?? []));
+    show(contribution === "rollout" ? rolloutView(sextant, object, lists) : (VIEWS[contribution]?.(sextant, object) ?? []));
   };
 
   const read = async (ref: ObjectRef) => {
@@ -267,14 +295,14 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
       object = fresh;
       render();
     } catch (err) {
-      if (attempt === reading) root.replaceChildren(errorBox(err));
+      if (attempt === reading) show([ui.errorState(errorText(err))]);
     }
   };
 
   const follow = () => {
     const ref = sextant.context.selection[0];
     if (!ref) {
-      root.replaceChildren(element("p", { className: "muted", textContent: t("common.nothingSelected") }));
+      show([ui.empty(t("common.nothingSelected"))]);
       return;
     }
     const key = JSON.stringify([ref.kind.group, ref.kind.kind, ref.namespace, ref.name]);
@@ -284,7 +312,7 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
       object = null;
       stopLists();
       lists = null;
-      root.replaceChildren(element("p", { className: "muted", textContent: t("loading") }));
+      show([ui.loading(t("loading"))]);
       if (contribution === "rollout" && ref.namespace) {
         stopLists = watchRolloutLists(sextant, ref.namespace, (now) => {
           lists = now;

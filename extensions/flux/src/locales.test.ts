@@ -46,12 +46,13 @@ describe("the manifest's translations", () => {
     const keys = [
       "name",
       "description",
-      ...c.kinds.flatMap((k, i) => [`kinds.${i}.title`, ...(k.sectionTitle ? [`kinds.${i}.sectionTitle`] : [])]),
+      ...c.sections.map((s) => `sections.${s.section}.title`),
+      ...c.kinds.map((_, i) => `kinds.${i}.title`),
       ...c.detailsSections.map((s) => `detailsSections.${s.id}.title`),
       ...c.actions.flatMap((a) => [`actions.${a.id}.title`, ...("whyNot" in a ? [`actions.${a.id}.whyNot`] : [])]),
       ...c.columns.map((col) => `columns.${col.id}.title`),
-      // The Suspended column's Yes and No. The Ready column's cases are Kubernetes' condition statuses (True, False,
-      // Unknown), kept as Sextant's own Flux table kept them, and its tones are keyed by them.
+      // The Suspended column's Yes and No, toned by their cases. The Ready column shows Kubernetes' condition statuses
+      // (True, False, Unknown) as they are, as Sextant's own Flux table did, toned by them.
       ...c.columns.filter((col) => col.id.startsWith("suspended-")).flatMap((col) => [`columns.${col.id}.cases.0.text`, `columns.${col.id}.cases.1.text`]),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
     ].sort();

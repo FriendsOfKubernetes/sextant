@@ -2,9 +2,10 @@
 // Rollout and lists exactly the patches it will send (./patches.ts, as `kubectl argo rollouts` builds them from the
 // Rollout as it is now). On confirm the Rollout is read once more: if the action no longer applies, or the patches
 // would differ from the ones shown, nothing is sent and the window shows why, or the new patches to confirm. Each
-// patch is sent once (ADR-0055); Sextant asks its own confirmation of every change (the manifest's `confirm`).
-import type { KubeObject, ObjectRef, Sextant } from "@sextant/extension-sdk";
-import { element, errorBox, errorText } from "./dom";
+// patch is sent once (ADR-0055); Sextant asks its own confirmation once for all of them (the manifest's `confirm`,
+// `resources.patchMany`).
+import { ui, type KubeObject, type ObjectRef, type Sextant } from "@sextant/extension-sdk";
+import { element, errorText } from "./dom";
 import { t } from "./i18n";
 import { actionOf, APPLIES, changesSomething, fallbackOf, planFor, sendPlan, type PatchPlan, type RolloutAction } from "./patches";
 
@@ -20,17 +21,22 @@ const NOTHING: Record<RolloutAction, string> = {
   resume: "dialog.nothingResume",
 };
 
+/** A patch as the window lists it. */
+const patchText = (patch: unknown) => {
+  const node = ui.pre(json(patch));
+  node.classList.add("patch");
+  return node;
+};
+
 /** What the window shows of a plan: the patches, or why there is none. */
 export function planView(action: RolloutAction, ro: KubeObject, plan: PatchPlan): Node[] {
   if (!APPLIES[action](ro)) return [element("p", { className: "explain", textContent: t(`whyNot.${action}`) })];
   if (!changesSomething(plan)) return [element("p", { className: "explain", textContent: t(NOTHING[action]) })];
   const fallback = fallbackOf(plan);
   return [
-    ...(plan.status ? [element("p", { textContent: t("dialog.statusPatch") }), element("pre", { className: "patch", textContent: json(plan.status) })] : []),
-    ...(plan.spec ? [element("p", { textContent: t("dialog.specPatch") }), element("pre", { className: "patch", textContent: json(plan.spec) })] : []),
-    ...(fallback
-      ? [element("p", { className: "muted", textContent: t("dialog.fallbackPatch") }), element("pre", { className: "patch", textContent: json(fallback) })]
-      : []),
+    ...(plan.status ? [element("p", { textContent: t("dialog.statusPatch") }), patchText(plan.status)] : []),
+    ...(plan.spec ? [element("p", { textContent: t("dialog.specPatch") }), patchText(plan.spec)] : []),
+    ...(fallback ? [element("p", { className: "sx-muted", textContent: t("dialog.fallbackPatch") }), patchText(fallback)] : []),
   ];
 }
 
@@ -42,14 +48,14 @@ export function startAction(sextant: Sextant, root: HTMLElement, contribution: s
   const ref = sextant.context.selection[0];
   const action = actionOf(contribution);
   if (!ref || !action) {
-    root.replaceChildren(element("p", { className: "muted", textContent: t("common.nothingSelected") }));
+    root.replaceChildren(ui.empty(t("common.nothingSelected")));
     return () => undefined;
   }
-  root.replaceChildren(element("p", { className: "muted", textContent: t("dialog.loading") }));
+  root.replaceChildren(ui.loading(t("dialog.loading")));
   void sextant.resources
     .get({ ref })
     .then((ro) => actionWindow(sextant, root, ref, action, ro))
-    .catch((err: unknown) => root.replaceChildren(errorBox(err)));
+    .catch((err: unknown) => root.replaceChildren(ui.errorState(errorText(err))));
   return () => undefined;
 }
 
@@ -58,17 +64,14 @@ function actionWindow(sextant: Sextant, root: HTMLElement, ref: ObjectRef, actio
   const planSlot = element("div", { className: "plan" }, ...planView(action, first, shown));
   const status = element("p", { className: "change-status" });
   status.setAttribute("role", "status");
-  const confirm = element("button", {
-    type: "button",
-    textContent: t(`actions.${action}`),
-    className: action === "abort" ? "danger" : "primary",
+  const confirm = ui.button(t(`actions.${action}`), () => void send(), {
+    variant: action === "abort" ? "danger" : "primary",
     disabled: !sendable(action, first, shown),
   });
-  const cancel = element("button", { type: "button", textContent: t("change.cancel") });
-  cancel.addEventListener("click", () => void sextant.ui.close().catch(() => undefined));
-  confirm.addEventListener("click", async () => {
+  const cancel = ui.button(t("change.cancel"), () => void sextant.ui.close().catch(() => undefined));
+  async function send(): Promise<void> {
     confirm.disabled = true;
-    status.className = "change-status muted";
+    status.className = "change-status sx-muted";
     status.textContent = t("change.waiting");
     try {
       const ro = await sextant.resources.get({ ref });
@@ -77,21 +80,21 @@ function actionWindow(sextant: Sextant, root: HTMLElement, ref: ObjectRef, actio
         // Nothing is sent: the window shows the Rollout as it is now.
         shown = fresh;
         planSlot.replaceChildren(...planView(action, ro, fresh));
-        status.className = "change-status error";
+        status.className = "change-status sx-status--danger";
         status.textContent = t("dialog.changed");
         confirm.disabled = !sendable(action, ro, fresh);
         return;
       }
       await sendPlan(sextant, ref, fresh);
-      status.className = "change-status ok-text";
+      status.className = "change-status sx-status--success";
       status.textContent = t("change.done");
       await sextant.ui.close().catch(() => undefined);
     } catch (err) {
-      status.className = "change-status error";
+      status.className = "change-status sx-status--danger";
       status.textContent = errorText(err);
       confirm.disabled = false;
     }
-  });
+  }
   root.replaceChildren(
     element("p", { className: "question", textContent: t(`dialog.${action}Title`, { name: ref.name }) }),
     element("p", { textContent: t(`dialog.${action}Text`) }),

@@ -13,8 +13,10 @@ import canaryJson from "../fixtures/rollout-canary-paused.json";
 import replicaSetsJson from "../fixtures/replicasets.json";
 import {
   actualWeight,
+  analysisFailure,
   canaryAvailable,
   metricResults,
+  ownerRollout,
   replicaSetsOf,
   rolloutPhase,
   rolloutProblems,
@@ -46,7 +48,8 @@ interface Verdict {
 interface Engine {
   evaluate(condition: unknown, obj: KubeObject): Verdict;
   valueAt(obj: unknown, path: string): unknown;
-  detectRule(rule: unknown, obj: KubeObject): { reason: string; message?: string; graceMs?: number; notify: boolean }[];
+  numberOf(value: unknown): number | undefined;
+  detectRule(rule: unknown, obj: KubeObject): { reason: string; group: string; message?: string; graceMs?: number; notify: boolean }[];
 }
 let engine: Engine;
 const here = dirname(fileURLToPath(import.meta.url));
@@ -60,20 +63,32 @@ const holdsNow = (condition: unknown, obj: KubeObject, now = Date.now()) => {
   return v.holds && (v.activeFrom === undefined || v.activeFrom <= now) && (v.until === undefined || v.until > now);
 };
 
-/** What a computed column shows (as src/extensions/columns.tsx draws text, number and ratio cells). */
-function cell(id: string, obj: KubeObject): string | undefined {
-  const column = manifest.contributes.columns.find((c) => c.id === id)!;
-  for (const c of (column as { cases?: { when: unknown; text: string }[] }).cases ?? []) if (holdsNow(c.when, obj)) return c.text;
+interface Column {
+  id: string;
+  paths: string[];
+  format?: string;
+  totalPaths?: string[];
+  tones?: Record<string, string>;
+  cases?: { when: unknown; text: string; tone?: string }[];
+}
+const columnOf = (id: string) => manifest.contributes.columns.find((c) => c.id === id)! as Column;
+
+/** What a computed column shows and its tone (as src/extensions/columns.tsx draws text, number and ratio cells). */
+function shown(id: string, obj: KubeObject): { text?: string; tone?: string } {
+  const column = columnOf(id);
+  for (const c of column.cases ?? []) if (holdsNow(c.when, obj)) return { text: c.text, tone: c.tone ?? column.tones?.[c.text] };
   const first = (paths: string[] | undefined) =>
     (paths ?? []).map((p) => engine.valueAt(obj, p)).find((v) => v !== undefined && v !== null);
   const value = first(column.paths);
-  const scalar = typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? String(value) : undefined;
-  if ((column as { format?: string }).format === "ratio") {
-    const whole = first((column as { totalPaths?: string[] }).totalPaths);
-    return scalar === undefined || whole === undefined ? undefined : `${scalar}/${String(whole)}`;
+  if (column.format === "ratio") {
+    const part = engine.numberOf(value);
+    const whole = engine.numberOf(first(column.totalPaths));
+    return part === undefined || whole === undefined ? {} : { text: `${part}/${whole}` };
   }
-  return scalar;
+  const scalar = typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? String(value) : undefined;
+  return { text: scalar, tone: scalar === undefined ? undefined : column.tones?.[scalar] };
 }
+const cell = (id: string, obj: KubeObject) => shown(id, obj).text;
 
 const rules = manifest.contributes.problems;
 /** The reasons the manifest's rules find, as Sextant judges them (grace not applied). */
@@ -242,18 +257,45 @@ function states(): Record<string, KubeObject> {
   st(running).phase = "Progressing";
   const old = copy(canary);
   delete st(old).phase;
-  return { canary, aborted, blueGreen, promoted, byHand, running, old };
+  // Promoted, but scaling: Progressing with nothing to promote.
+  const scaling = copy(promoted);
+  st(scaling).phase = "Progressing";
+  // A new Rollout the controller has not reconciled: no hashes yet.
+  const fresh = copy(canary);
+  delete st(fresh).currentPodHash;
+  delete st(fresh).stableRS;
+  st(fresh).pauseConditions = null;
+  st(fresh).controllerPause = false;
+  st(fresh).phase = "Progressing";
+  const bgPromoted = copy(blueGreen);
+  st(bgPromoted).currentPodHash = st(bgPromoted).stableRS;
+  st(bgPromoted).pauseConditions = null;
+  st(bgPromoted).phase = "Healthy";
+  return { canary, aborted, blueGreen, promoted, byHand, running, old, scaling, fresh, bgPromoted };
 }
 
+/** The actions whose `when` is exactly the built-in condition; Promote and Promote fully are a little wider. */
+const EXACT: RolloutAction[] = ["abort", "retry", "pause", "resume"];
+
 describe("the manifest's action conditions", () => {
-  it("offer each action wherever it applies, and Retry, Pause and Resume exactly there", () => {
+  it("offer each action wherever it applies, and Abort, Retry, Pause and Resume exactly there", () => {
     for (const [name, ro] of Object.entries(states())) {
       for (const action of ACTIONS) {
         const offered = holdsNow(actionOf(action).when, ro);
         if (APPLIES[action](ro)) expect(offered, `${action} on ${name}`).toBe(true);
-        if (action === "retry" || action === "pause" || action === "resume") expect(offered, `${action} on ${name}`).toBe(APPLIES[action](ro));
+        if (EXACT.includes(action)) expect(offered, `${action} on ${name}`).toBe(APPLIES[action](ro));
       }
     }
+  });
+
+  it("compare the current template with the stable one: Abort only while an update is under way", () => {
+    const { promoted, scaling, fresh, running } = states();
+    const abort = actionOf("abort").when;
+    expect(holdsNow(abort, running!)).toBe(true);
+    // The phase says Progressing, but the templates are the same: nothing to abort.
+    expect(holdsNow(abort, scaling!)).toBe(false);
+    expect(holdsNow(abort, promoted!)).toBe(false);
+    expect(holdsNow(abort, fresh!)).toBe(false);
   });
 
   it("offer what the built-in view offered on the fixtures", () => {
@@ -262,6 +304,7 @@ describe("the manifest's action conditions", () => {
     expect(offered(aborted)).toEqual(["retry", "pause"]);
     // A promoted, running Rollout: only Pause.
     expect(offered(states().promoted!)).toEqual(["pause"]);
+    expect(offered(states().bgPromoted!)).toEqual(["pause"]);
   });
 
   it("are primary as the built-in buttons were, and Abort is dangerous", () => {
@@ -284,6 +327,11 @@ describe("the manifest's problem rules", () => {
     expect(found.every((p) => p.notify)).toBe(true);
   });
 
+  it("share the group `rollout`, so an analysis that fails and aborts the update notifies once", () => {
+    expect(new Set(rules.map((r) => (r as { group?: string }).group))).toEqual(new Set(["rollout"]));
+    expect(detected(aborted).map((p) => p.group)).toEqual(["rollout", "rollout"]);
+  });
+
   it("tell a Degraded rollout after a minute, also from an older controller's conditions", () => {
     const degraded = copy(canary);
     st(degraded).phase = "Degraded";
@@ -298,6 +346,46 @@ describe("the manifest's problem rules", () => {
     expect(detected(old).map((p) => p.reason)).toEqual(["Degraded"]);
   });
 
+  it("tell Degraded exactly where the phase reading says so", () => {
+    const variants: Record<string, (ro: KubeObject) => void> = {
+      degraded: (ro) => void (st(ro).phase = "Degraded"),
+      // A stale condition of a controller that writes a phase: the phase decides.
+      healthyWithOldCondition: (ro) => {
+        st(ro).phase = "Healthy";
+        st(ro).conditions = [{ type: "InvalidSpec", status: "False" }];
+      },
+      oldInvalidSpec: (ro) => {
+        delete st(ro).phase;
+        st(ro).conditions = [{ type: "InvalidSpec", status: "True", message: "bad" }];
+      },
+      // The controller lifted its pause and has not reconciled yet: Progressing.
+      unpausing: (ro) => {
+        st(ro).phase = "Degraded";
+        st(ro).pauseConditions = null;
+        st(ro).controllerPause = true;
+      },
+      // The workload the template comes from is not observed yet: Progressing.
+      workloadNotObserved: (ro) => {
+        st(ro).phase = "Degraded";
+        spec(ro).templateResolvedFromRef = true;
+        ro.metadata.annotations = { "rollout.argoproj.io/workload-generation": "4" };
+        st(ro).workloadObservedGeneration = "3";
+      },
+      workloadObserved: (ro) => {
+        st(ro).phase = "Degraded";
+        spec(ro).templateResolvedFromRef = true;
+        ro.metadata.annotations = { "rollout.argoproj.io/workload-generation": "4" };
+        st(ro).workloadObservedGeneration = "4";
+      },
+    };
+    for (const [name, change] of Object.entries(variants)) {
+      const ro = copy(canary);
+      change(ro);
+      const builtIn = rolloutProblems(ro).some((p) => p.reason === "Degraded");
+      expect(detected(ro).some((p) => p.reason === "Degraded"), name).toBe(builtIn);
+    }
+  });
+
   it("tell each failed or errored analysis the Rollout reports", () => {
     const bg = copy(blueGreen);
     st(bg).blueGreen = { ...(st(bg).blueGreen as object), prePromotionAnalysisRunStatus: { name: "pre", status: "Error", message: "no data" } };
@@ -310,30 +398,79 @@ describe("the manifest's problem rules", () => {
   });
 });
 
+describe("the manifest's section", () => {
+  it("has the built-in section's title and icon, in its old place (after Velero, ADR-0162), and leaves the CRDs' printer columns out", () => {
+    expect(manifest.contributes.sections).toEqual([{ section: "argoRollouts", title: "Argo Rollouts", icon: "argoRollouts", after: "velero" }]);
+    expect(manifest.contributes.kinds.every((k) => k.section === "argoRollouts" && k.printerColumns === false)).toBe(true);
+  });
+});
+
 describe("the manifest's columns", () => {
   it("show the status, strategy, step and readiness", () => {
     for (const ro of [canary, aborted, blueGreen]) {
       expect(cell("rollout-status", ro)).toBe(rolloutPhase(ro).phase);
       expect(cell("rollout-strategy", ro)).toBe(STRATEGY_TEXT[strategyOf(ro)!]);
     }
-    expect(cell("rollout-step", canary)).toBe("1");
+    expect(cell("rollout-step", canary)).toBe(stepProgress(canary));
+    expect(cell("rollout-step", canary)).toBe("1/8");
+    expect(cell("rollout-step", blueGreen)).toBeUndefined();
     expect(cell("rollout-ready", canary)).toBe("5/5");
     expect(cell("rollout-weight", aborted)).toBe("0");
+  });
+
+  it("show the phase the plugin shows, in its tone, also where it is computed", () => {
+    const tone = { Healthy: "ok", Progressing: "neutral", Paused: "warning", Degraded: "error" } as const;
     const unpausing = copy(canary);
     st(unpausing).pauseConditions = null;
-    expect(cell("rollout-status", unpausing)).toBe(rolloutPhase(unpausing).phase);
-    // An older controller: the phase where the fields tell it.
+    const workload = copy(canary);
+    spec(workload).templateResolvedFromRef = true;
+    workload.metadata.annotations = { "rollout.argoproj.io/workload-generation": "4" };
+    st(workload).workloadObservedGeneration = "3";
     const old = copy(aborted);
     delete st(old).phase;
-    expect(cell("rollout-status", old)).toBe("Degraded");
     const oldPaused = copy(canary);
     delete st(oldPaused).phase;
-    expect(cell("rollout-status", oldPaused)).toBe("Paused");
+    const oldUpdating = copy(canary);
+    delete st(oldUpdating).phase;
+    st(oldUpdating).pauseConditions = null;
+    st(oldUpdating).controllerPause = false;
+    for (const [name, ro] of Object.entries({ canary, aborted, blueGreen, unpausing, workload, old, oldPaused, oldUpdating })) {
+      const { phase } = rolloutPhase(ro);
+      expect(shown("rollout-status", ro), name).toEqual({ text: phase, tone: tone[phase] });
+    }
+  });
+
+  it("keep the case texts the API's own words in every language", () => {
+    const translations = manifest.translations as Record<string, Record<string, string>>;
+    for (const column of manifest.contributes.columns as Column[]) {
+      (column.cases ?? []).forEach((c, i) => {
+        expect(c.tone, `${column.id} case ${i}`).toBeDefined();
+        for (const texts of Object.values(translations)) expect(texts[`columns.${column.id}.cases.${i}.text`]).toBe(c.text);
+      });
+    }
   });
 
   it("show an AnalysisRun's phase, Rollout and why it failed", () => {
     expect(cell("run-phase", analysisRun)).toBe("Failed");
     expect(cell("run-rollout", analysisRun)).toBe("rollout-analysis");
     expect(cell("run-message", analysisRun)).toMatch(/assessed Failed/);
+    expect(cell("run-message", analysisRun)).toBe(analysisFailure(analysisRun));
+  });
+
+  it("name the owning Rollout among other owners, and a failing metric's message, as the built-in view", () => {
+    const run = copy(analysisRun);
+    const owners = run.metadata.ownerReferences as unknown[] | undefined;
+    run.metadata.ownerReferences = [{ apiVersion: "v1", kind: "ConfigMap", name: "other", uid: "1" }, ...(owners ?? [])] as never;
+    expect(cell("run-rollout", run)).toBe(ownerRollout(run));
+    delete st(run).message;
+    st(run).metricResults = [
+      { name: "ok", phase: "Successful", message: "fine" },
+      { name: "bad", phase: "Error", measurements: [{ phase: "Error", message: "no data" }] },
+    ];
+    expect(cell("run-message", run)).toBe("no data");
+    expect(analysisFailure(run)).toBe("no data");
+    st(run).metricResults = [{ name: "ok", phase: "Successful", message: "fine" }];
+    expect(cell("run-message", run)).toBeUndefined();
+    expect(analysisFailure(run)).toBeUndefined();
   });
 });

@@ -63,7 +63,8 @@ describe("catalogs", () => {
     const built = [
       ...FIELDS.map((id) => `fields.${id}`),
       ...["changed", "inSync", "missingLive", "missingTarget"].map((state) => `diff.state.${state}`),
-      ...["secret", "manual"].map((source) => `diff.source.${source}`),
+      ...["secret"].map((source) => `diff.source.${source}`),
+      ...["password", "token"].map((mode) => `login.mode.${mode}`),
     ];
     const missing = [...new Set([...literal, ...built])].filter((key) => !has(key));
     expect(missing).toEqual([]);
@@ -76,11 +77,12 @@ describe("the manifest's translations", () => {
     const keys = [
       "name",
       "description",
+      ...c.sections.map((s) => `sections.${s.section}.title`),
       ...c.kinds.flatMap((k, i) => [`kinds.${i}.title`, ...("sectionTitle" in k ? [`kinds.${i}.sectionTitle`] : [])]),
       ...c.detailsSections.map((s) => `detailsSections.${s.id}.title`),
       ...c.actions.flatMap((a) => [`actions.${a.id}.title`, ...("whyNot" in a ? [`actions.${a.id}.whyNot`] : [])]),
       ...c.columns.flatMap((col) => [`columns.${col.id}.title`, ...(col.cases ?? []).map((_, i) => `columns.${col.id}.cases.${i}.text`)]),
-      ...c.services.map((s) => `services.${s.id}.title`),
+      ...c.services.flatMap((s) => [`services.${s.id}.title`, ...s.signIn.fields.map((f) => `services.${s.id}.signIn.${f.id}.label`)]),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
     ].sort();
     const translations = manifest.translations as Record<string, Record<string, string>>;
@@ -90,12 +92,8 @@ describe("the manifest's translations", () => {
     }
   });
 
-  it("tone the translated Syncing of the Sync column as a warning", () => {
+  it("tone the Sync column's Syncing as a warning in every language (the case's own tone)", () => {
     const sync = manifest.contributes.columns.find((c) => c.id === "sync")!;
-    const tones = sync.tones as unknown as Record<string, string>;
-    for (const texts of Object.values(manifest.translations as Record<string, Record<string, string>>)) {
-      expect(tones[texts["columns.sync.cases.0.text"]!]).toBe("warning");
-    }
-    expect(tones.Syncing).toBe("warning");
+    expect((sync.cases ?? []).map((c) => ("tone" in c ? c.tone : undefined))).toEqual(["warning"]);
   });
 });

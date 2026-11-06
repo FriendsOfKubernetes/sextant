@@ -1,5 +1,5 @@
 // The details sections and the action windows, driven through the SDK's stand-in for Sextant's window.
-import { SextantError, type KubeObject, type WatchParams } from "@sextant/extension-sdk";
+import { type KubeObject, type WatchParams } from "@sextant/extension-sdk";
 import { startTestHost, type TestHost, type TestHostOptions } from "@sextant/extension-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import abortedJson from "../fixtures/rollout-aborted.json";
@@ -86,7 +86,7 @@ describe("a Rollout's details", () => {
     stop = startDetails(host.sextant, root, "rollout");
     await answerWatches(2);
     await expect.poll(() => root.querySelectorAll("tbody tr").length).toBe(2);
-    expect(root.querySelector(".badge.warning")?.textContent).toBe("Paused");
+    expect(root.querySelector(".sx-status--warning")?.textContent).toBe("Paused");
     expect(text()).toContain("CanaryPauseStep");
     const steps = [...root.querySelectorAll(".steps li")];
     expect(steps).toHaveLength(8);
@@ -115,7 +115,7 @@ describe("a Rollout's details", () => {
     await expect.poll(text).toContain("rollout-analysis-84c5f9d7b-3-1");
     expect(text()).toContain("The update was aborted");
     expect(text()).toContain("failureLimit (2)");
-    const service = [...root.querySelectorAll("button.link")].find((b) => b.textContent === "rollout-analysis-canary") as HTMLButtonElement;
+    const service = [...root.querySelectorAll("button.sx-link")].find((b) => b.textContent === "rollout-analysis-canary") as HTMLButtonElement;
     service.click();
     await expect.poll(() => host.calls.find((c) => c.method === "ui.openDetails")?.params).toEqual({
       kind: { group: "", kind: "Service" },
@@ -151,8 +151,29 @@ describe("other details", () => {
     await expect.poll(text).toContain("success-rate");
     expect(text()).toContain("[0.62]");
     expect(text()).toContain("result[0] >= 0.95 is false");
-    expect([...root.querySelectorAll("button.link")].map((b) => b.textContent)).toEqual(["rollout-analysis"]);
+    expect([...root.querySelectorAll("button.sx-link")].map((b) => b.textContent)).toEqual(["rollout-analysis"]);
     expect(host.watches).toHaveLength(0);
+  });
+
+  it("hides a section with nothing to show, and shows it again when it has something", async () => {
+    const empty = { apiVersion: "argoproj.io/v1alpha1", kind: "AnalysisTemplate", metadata: { name: "empty", namespace: "shop" }, spec: {} };
+    const full = { ...empty, spec: analysisRunJson.spec };
+    let current: object = empty;
+    const hidden: boolean[] = [];
+    await start({
+      context: { view: "details", contribution: "template-metrics", selection: [ref(empty as unknown as KubeObject)], resourceVersion: "1" },
+      handlers: {
+        "resources.get": () => structuredClone(current),
+        "ui.setHidden": ({ hidden: value }) => void hidden.push(value as boolean),
+      },
+    });
+    stop = startDetails(host.sextant, root, "template-metrics");
+    await expect.poll(() => hidden).toEqual([true]);
+    expect(root.childElementCount).toBe(0);
+    current = full;
+    host.setContext({ resourceVersion: "2" });
+    await expect.poll(() => hidden).toEqual([true, false]);
+    expect(text()).toContain("success-rate");
   });
 
   it("an AnalysisTemplate: its metrics and providers", async () => {
@@ -167,10 +188,15 @@ describe("other details", () => {
 });
 
 describe("an action's window", () => {
-  const patches = () => host.calls.filter((c) => c.method === "resources.patch").map((c) => c.params);
+  /** What each `resources.patchMany` and `resources.patch` call sent. */
+  const sent = () =>
+    host.calls
+      .filter((c) => c.method === "resources.patchMany" || c.method === "resources.patch")
+      .map((c) => ({ method: c.method, params: c.params }));
+  const answerAll = ({ items }: { items: unknown[] }) => ({ items: items.map(() => ({ object: canary })), sent: items.length });
 
   it("Promote lists the exact patch, then sends it to the status subresource once", async () => {
-    await start({ context: { view: "action", contribution: "promote", selection: [ref(canary)] }, handlers: { "resources.patch": () => canary } });
+    await start({ context: { view: "action", contribution: "promote", selection: [ref(canary)] }, handlers: { "resources.patchMany": answerAll } });
     stop = startAction(host.sextant, root, "promote");
     await expect.poll(() => [...root.querySelectorAll("pre")].map((p) => p.textContent)).toEqual([
       '{"status":{"pauseConditions":null}}',
@@ -181,8 +207,35 @@ describe("an action's window", () => {
     expect(confirm.textContent).toBe("Promote");
     confirm.click();
     await expect.poll(() => host.closedByFrame).toBe(true);
-    expect(patches()).toEqual([
-      { clusterId: "test-cluster", ref: ref(canary), patch: { status: { pauseConditions: null } }, patchType: "merge", subresource: "status" },
+    expect(sent()).toEqual([
+      {
+        method: "resources.patchMany",
+        params: {
+          clusterId: "test-cluster",
+          items: [{ ref: ref(canary), patch: { status: { pauseConditions: null } }, patchType: "merge", subresource: "status" }],
+        },
+      },
+    ]);
+  });
+
+  it("sends the status and the spec patch under one confirmation, in the plugin's order", async () => {
+    const paused = structuredClone(canary);
+    (paused.spec as Record<string, unknown>).paused = true;
+    await start({
+      objects: [paused],
+      context: { view: "action", contribution: "promote", selection: [ref(canary)] },
+      handlers: { "resources.patchMany": answerAll },
+    });
+    stop = startAction(host.sextant, root, "promote");
+    await expect.poll(() => root.querySelectorAll("pre").length).toBe(3);
+    (root.querySelector("button.primary") as HTMLButtonElement).click();
+    await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(sent()).toHaveLength(1);
+    const [call] = sent();
+    expect(call?.method).toBe("resources.patchMany");
+    expect((call?.params as { items: unknown[] }).items).toEqual([
+      { ref: ref(canary), patch: { status: { pauseConditions: null } }, patchType: "merge", subresource: "status" },
+      { ref: ref(canary), patch: { spec: { paused: false } }, patchType: "merge" },
     ]);
   });
 
@@ -190,18 +243,31 @@ describe("an action's window", () => {
     await start({
       context: { view: "action", contribution: "abort", selection: [ref(canary)] },
       handlers: {
-        "resources.patch": ({ subresource }) => {
-          if (subresource === "status") throw new SextantError("notFound", "the server could not find the requested resource");
-          return canary;
-        },
+        "resources.patchMany": () => ({ items: [{ error: { code: "notFound", message: "the server could not find the requested resource" } }], sent: 0 }),
+        "resources.patch": () => canary,
       },
     });
     stop = startAction(host.sextant, root, "abort");
     await expect.poll(() => root.querySelectorAll("pre").length).toBe(2);
     const confirm = root.querySelector("button.danger") as HTMLButtonElement;
     confirm.click();
-    await expect.poll(() => patches()).toHaveLength(2);
-    expect(patches()[1]).toEqual({ clusterId: "test-cluster", ref: ref(canary), patch: { status: { abort: true } }, patchType: "merge" });
+    await expect.poll(() => sent()).toHaveLength(2);
+    expect(sent()[1]).toEqual({
+      method: "resources.patch",
+      params: { clusterId: "test-cluster", ref: ref(canary), patch: { status: { abort: true } }, patchType: "merge" },
+    });
+  });
+
+  it("says why when a patch fails, and sends no fallback for another error", async () => {
+    await start({
+      context: { view: "action", contribution: "abort", selection: [ref(canary)] },
+      handlers: { "resources.patchMany": () => ({ items: [{ error: { code: "conflict", message: "the object was modified" } }], sent: 0 }) },
+    });
+    stop = startAction(host.sextant, root, "abort");
+    await expect.poll(() => root.querySelectorAll("pre").length).toBe(2);
+    (root.querySelector("button.danger") as HTMLButtonElement).click();
+    await expect.poll(text).toContain("the object was modified");
+    expect(sent()).toHaveLength(1);
   });
 
   it("sends nothing when the Rollout changed since the patches were shown, and shows the new ones", async () => {
@@ -210,18 +276,19 @@ describe("an action's window", () => {
     (paused.spec as Record<string, unknown>).paused = true;
     await start({
       context: { view: "action", contribution: "promote", selection: [ref(canary)] },
-      handlers: { "resources.get": () => (++reads === 1 ? canary : paused), "resources.patch": () => canary },
+      handlers: { "resources.get": () => (++reads === 1 ? canary : paused), "resources.patchMany": answerAll },
     });
     stop = startAction(host.sextant, root, "promote");
     await expect.poll(() => root.querySelectorAll("pre").length).toBe(2);
     (root.querySelector("button.primary") as HTMLButtonElement).click();
     await expect.poll(text).toContain("The rollout changed while this dialog was open");
-    expect(patches()).toEqual([]);
+    expect(sent()).toEqual([]);
     expect([...root.querySelectorAll("pre")].map((p) => p.textContent)).toContain('{"spec":{"paused":false}}');
-    // Confirmed again, the new patches go: the status first, then the spec.
+    // Confirmed again, the new patches go together: the status first, then the spec.
     (root.querySelector("button.primary") as HTMLButtonElement).click();
-    await expect.poll(() => patches()).toHaveLength(2);
-    expect(patches().map((p) => (p as { subresource?: string }).subresource)).toEqual(["status", undefined]);
+    await expect.poll(() => sent()).toHaveLength(1);
+    const items = (sent()[0]?.params as { items: { subresource?: string }[] }).items;
+    expect(items.map((i) => i.subresource)).toEqual(["status", undefined]);
   });
 
   it("says why an action no longer applies and offers nothing to send", async () => {
@@ -233,11 +300,14 @@ describe("an action's window", () => {
   });
 
   it("Pause sends the plugin's spec patch to the rollout once", async () => {
-    await start({ context: { view: "action", contribution: "pause", selection: [ref(canary)] }, handlers: { "resources.patch": () => canary } });
+    await start({ context: { view: "action", contribution: "pause", selection: [ref(canary)] }, handlers: { "resources.patchMany": answerAll } });
     stop = startAction(host.sextant, root, "pause");
     await expect.poll(() => [...root.querySelectorAll("pre")].map((p) => p.textContent)).toEqual(['{"spec":{"paused":true}}']);
     (root.querySelector("button.primary") as HTMLButtonElement).click();
-    await expect.poll(() => patches()).toHaveLength(1);
-    expect(patches()[0]).toEqual({ clusterId: "test-cluster", ref: ref(canary), patch: { spec: { paused: true } }, patchType: "merge" });
+    await expect.poll(() => sent()).toHaveLength(1);
+    expect(sent()[0]?.params).toEqual({
+      clusterId: "test-cluster",
+      items: [{ ref: ref(canary), patch: { spec: { paused: true } }, patchType: "merge" }],
+    });
   });
 });

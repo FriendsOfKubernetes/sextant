@@ -61,15 +61,16 @@ describe("catalogs", () => {
 describe("the manifest's translations", () => {
   it("translate every text of the manifest into every language Sextant has", () => {
     const c = manifest.contributes;
-    // Column cases are the API's own words (Paused, Degraded, Canary, …), shown as written in every language: the
-    // columns' tones are keyed by them.
+    // Column cases are the API's own words (Paused, Degraded, Canary, …) and a number, beside `.status.phase` values
+    // shown as written: "translated" as themselves in every language (model.test.ts checks it).
     const keys = [
       "name",
       "description",
       ...c.kinds.flatMap((k, i) => [`kinds.${i}.title`, ...("sectionTitle" in k ? [`kinds.${i}.sectionTitle`] : [])]),
       ...c.detailsSections.map((s) => `detailsSections.${s.id}.title`),
       ...c.actions.flatMap((a) => [`actions.${a.id}.title`, `actions.${a.id}.whyNot`]),
-      ...c.columns.map((col) => `columns.${col.id}.title`),
+      ...c.sections.flatMap((s) => (s.title === undefined ? [] : [`sections.${s.section}.title`])),
+      ...c.columns.flatMap((col) => [`columns.${col.id}.title`, ...((col as { cases?: unknown[] }).cases ?? []).map((_, i) => `columns.${col.id}.cases.${i}.text`)]),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
     ].sort();
     const translations = manifest.translations as Record<string, Record<string, string>>;

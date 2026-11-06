@@ -1,5 +1,23 @@
 # Changes of Flux
 
+## 1.1.0 — 2026-11-07
+
+Needs Sextant 0.30 (`sextantApi` 4). Closer to Sextant's former built-in Flux view, through the extension API's
+additions of ADR-0160 and ADR-0161.
+
+- **The Flux section** has Flux's icon and comes right after Velero, where the built-in section was.
+- **The command palette** searches Kustomizations and HelmReleases by default and takes `ks` and `hr` as their short
+  names.
+- **Columns:** the CRDs' printer columns are left out, so Ready and Status show once; the columns are placed by id in
+  the built-in order in every language; Ready and Status read the Ready condition by its type; Status has the whole
+  message as a tooltip; Suspended keeps its tones when translated.
+- **Problems:** the message is the Ready condition's reason and message (it named the first condition); the grace
+  counts from the Ready condition's last transition; the six rules share one notification group.
+- **Actions:** Reconcile now and Resume on several objects, and Reconcile with source, send every patch in one call, so
+  Sextant asks once; a refusal sends nothing.
+- **Details** are drawn with the SDK's UI kit, as Sextant's details are; a Kustomization that applied nothing has no
+  "Applied resources" section; inventory links open the version the inventory names.
+
 ## 1.0.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's built-in Flux view as an extension.

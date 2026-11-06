@@ -1,30 +1,37 @@
 // Where Argo CD runs in a cluster, and the requests the extension sends to its API through Sextant
-// (`sextant.service.request`, ADR-0158). No DOM here.
+// (`sextant.service.request`, ADR-0158, ADR-0160, ADR-0161). No DOM here.
 //
-// The installation is the namespace of the `argocd-server` Service (by its label). With several, the extension picks
-// none by itself: the user chooses one, and the choice is kept per cluster (`sextant.storage`) and taken only while
-// that namespace still has such a Service. The API is one of the manifest's services: `argocd-server` over HTTPS,
-// or `argocd-server-http` in plain HTTP when `argocd-cmd-params-cm` says `server.insecure: "true"` — never a fallback
-// after an error. Sextant keeps the session token (`capture`, `auth: "session"`); the extension never holds it, and
-// the admin password of `argocd-initial-admin-secret` is put into the sign-in by Sextant, never read here.
+// The installation is the namespace of the `argocd-server` Service (by its label, so a Helm release's
+// `<release>-argocd-server` is found too). With several, the extension picks none by itself: the user chooses one,
+// and the choice is kept per cluster (`sextant.storage`) and taken only while that namespace still has such a Service.
+// The API is one of the manifest's services, each the one Service of that label in the namespace: over HTTPS, or in
+// plain HTTP when `argocd-cmd-params-cm` says `server.insecure: "true"` — never a fallback after an error.
+//
+// Nothing secret passes through the extension. Sextant keeps the session token (`capture`, `auth: "session"`), puts
+// the admin password of `argocd-initial-admin-secret` into the sign-in itself (a key the services declare), and asks
+// for a user and password, or an API token, in its own dialog (`ui.signIn`), filling them in as `{{signIn:…}}` or
+// sending the token as the bearer (`auth: "signIn:token"`).
 import type { ClusterId, JsonValue, KubeObject, ObjectRef, Sextant, ServiceAnswer, ServiceRequestParams } from "@sextant/extension-sdk";
 import { arr, get, num, record, str } from "./fields";
 
 /** Label of the `argocd-server` Service in the official manifests and the Helm chart. */
 export const SERVER_SELECTOR = "app.kubernetes.io/name=argocd-server";
-/** The only Service name the manifest's services reach (`contributes.services`). */
-export const SERVER_NAME = "argocd-server";
-/** The manifest's services: TLS (Argo CD's default) or plain HTTP (`server.insecure`). */
-export const SERVICE_HTTPS = "argocd-server";
-export const SERVICE_HTTP = "argocd-server-http";
+/**
+ * The manifest's services: a user and password (with the admin Secret) or an API token, each over TLS (Argo CD's
+ * default) or plain HTTP (`server.insecure`).
+ */
+export const SERVICES = {
+  password: { https: "argocd-server", http: "argocd-server-http" },
+  token: { https: "argocd-server-token", http: "argocd-server-token-http" },
+} as const;
+/** How the extension is signed in: a session Sextant keeps, or an API token Sextant sends with each request. */
+export type SignInMode = keyof typeof SERVICES;
 /** Argo CD's settings: `admin.enabled`, local `accounts.*`, SSO (`dex.config`, `oidc.config`). */
 export const SETTINGS_CONFIG_MAP = "argocd-cm";
 /** Parameters of Argo CD's components; `server.insecure: "true"` runs `argocd-server` without TLS. */
 export const PARAMS_CONFIG_MAP = "argocd-cmd-params-cm";
 /** The Secret Argo CD creates at installation with the first password of `admin` (key `password`). */
 export const ADMIN_SECRET = "argocd-initial-admin-secret";
-/** The namespaces where the manifest lets Sextant put that password into a sign-in ("Secret values"). */
-export const ADMIN_SECRET_NAMESPACES: readonly string[] = ["argocd"];
 
 const SERVICE_KIND = { group: "", version: "v1", kind: "Service" };
 const CONFIG_MAP_KIND = { group: "", version: "v1", kind: "ConfigMap" };
@@ -132,10 +139,15 @@ export async function describeServer(sextant: Sextant, clusterId: ClusterId, nam
   return { clusterId, namespace, server, insecure: isInsecure(params), options: loginOptionsOf(settings) };
 }
 
-/** The manifest's service for the installation's scheme. */
-export const serviceOf = (server: Pick<ArgoServer, "insecure">): string => (server.insecure ? SERVICE_HTTP : SERVICE_HTTPS);
+/** The manifest's service for the installation's scheme and the way of signing in. */
+export const serviceOf = (server: Pick<ArgoServer, "insecure">, mode: SignInMode = "password"): string =>
+  SERVICES[mode][server.insecure ? "http" : "https"];
 
-const base = (server: ArgoServer) => ({ clusterId: server.clusterId, namespace: server.namespace, service: serviceOf(server) });
+const base = (server: ArgoServer, mode: SignInMode = "password") => ({
+  clusterId: server.clusterId,
+  namespace: server.namespace,
+  service: serviceOf(server, mode),
+});
 
 /** The placeholder Sextant replaces with the admin password; the extension never sees the value. */
 export const ADMIN_PASSWORD = `{{secret:${ADMIN_SECRET}/password}}`;
@@ -145,23 +157,39 @@ export function adminSignIn(server: ArgoServer): ServiceRequestParams {
   return { ...base(server), method: "POST", path: "/api/v1/session", body: { username: "admin", password: ADMIN_PASSWORD }, capture: ".token" };
 }
 
-/** Signs in with a typed local user and password, Sextant keeping the token. */
-export function typedSignIn(server: ArgoServer, username: string, password: string): ServiceRequestParams {
-  return { ...base(server), method: "POST", path: "/api/v1/session", body: { username, password }, capture: ".token" };
+/**
+ * Signs in with the user and password typed in Sextant's dialog (this run's, or the one remembered for the cluster),
+ * Sextant filling them in and keeping the token. Sextant refuses (`unauthorized`) without one, sending nothing.
+ */
+export function typedSignIn(server: ArgoServer): ServiceRequestParams {
+  return {
+    ...base(server),
+    method: "POST",
+    path: "/api/v1/session",
+    body: { username: "{{signIn:username}}", password: "{{signIn:password}}" },
+    capture: ".token",
+  };
 }
 
-/** Who the session belongs to. */
-export function userInfo(server: ArgoServer): ServiceRequestParams {
-  return { ...base(server), method: "GET", path: "/api/v1/session/userinfo", auth: "session" };
+/** How a request is authorized: the session, or the API token typed in Sextant's dialog. */
+const authOf = (mode: SignInMode) => (mode === "token" ? ({ auth: "signIn:token" } as const) : ({ auth: "session" } as const));
+
+/** Who the session (or the token) belongs to. */
+export function userInfo(server: ArgoServer, mode: SignInMode = "password"): ServiceRequestParams {
+  return { ...base(server, mode), method: "GET", path: "/api/v1/session/userinfo", ...authOf(mode) };
 }
 
 /** The desired and live states of an Application's resources (the app's own namespace as `appNamespace`). */
-export function managedResourcesRequest(server: ArgoServer, app: Pick<ObjectRef, "namespace" | "name">): ServiceRequestParams {
+export function managedResourcesRequest(
+  server: ArgoServer,
+  app: Pick<ObjectRef, "namespace" | "name">,
+  mode: SignInMode = "password",
+): ServiceRequestParams {
   const request: ServiceRequestParams = {
-    ...base(server),
+    ...base(server, mode),
     method: "GET",
     path: `/api/v1/applications/${encodeURIComponent(app.name)}/managed-resources`,
-    auth: "session",
+    ...authOf(mode),
   };
   if (app.namespace) request.query = { appNamespace: app.namespace };
   return request;

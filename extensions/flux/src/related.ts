@@ -4,9 +4,10 @@
 //   namespace, of the kinds a chart usually creates, only in its target and storage namespaces, metadata only;
 // - "Used by" of a source: the Kustomizations and HelmReleases, in any namespace the extension may read, that take
 //   their artifact from it.
-// A kind the user may not list is said so and the other kinds stay; any other failure is shown with Retry.
-import type { KubeObject, Sextant, WatchParams } from "@sextant/extension-sdk";
-import { element, errorBox, muted, objectLink } from "./dom";
+// A kind the user may not list is said so and the other kinds stay; any other failure is shown with Retry. Drawn by the
+// SDK's UI kit, as Sextant's details are; an empty inventory hides its section, as the built-in view showed none.
+import { ui, type KubeObject, type Sextant, type WatchParams } from "@sextant/extension-sdk";
+import { element, errorBox, objectLink, sectionHider } from "./dom";
 import { followObject } from "./fields";
 import {
   helmReleaseNamespaces,
@@ -27,57 +28,33 @@ const byKey = (a: FluxRef, b: FluxRef) => refKey(a).localeCompare(refKey(b));
 
 /** Kind, name (a link to its details) and namespace of each object. */
 export function refTable(sextant: Sextant, refs: FluxRef[]): HTMLElement {
-  return element(
-    "table",
-    {},
-    element(
-      "thead",
-      {},
-      element(
-        "tr",
-        {},
-        element("th", { textContent: t("related.kind") }),
-        element("th", { textContent: t("related.name") }),
-        element("th", { textContent: t("related.namespace") }),
-      ),
-    ),
-    element(
-      "tbody",
-      {},
-      ...refs.map((r) =>
-        element(
-          "tr",
-          {},
-          element("td", { textContent: r.kind }),
-          element("td", {}, objectLink(sextant, r)),
-          element("td", { textContent: r.namespace ?? "" }),
-        ),
-      ),
-    ),
+  return ui.table(
+    [t("related.kind"), t("related.name"), t("related.namespace")],
+    refs.map((r) => [r.kind, objectLink(sextant, r), r.namespace ?? ""]),
   );
 }
 
 function retryBox(message: string, retry: () => void): HTMLElement {
-  const button = element("button", { type: "button", textContent: t("related.retry") });
-  button.addEventListener("click", retry);
-  return element("div", { className: "failure" }, element("p", { className: "error", textContent: message }), button);
+  return element("div", { className: "failure" }, ui.errorState(message), ui.button(t("related.retry"), retry));
 }
 
-const loadingLine = () => {
-  const line = muted(t("related.loading"));
-  line.setAttribute("role", "status");
-  return line;
-};
+const loadingLine = () => ui.loading(t("related.loading"));
+const note = (text: string) => ui.empty(text);
 
 // ---------- A Kustomization's inventory ----------
 
 export function inventoryView(sextant: Sextant, obj: KubeObject): HTMLElement {
   const refs = inventoryOf(obj);
-  return refs.length > 0 ? refTable(sextant, refs) : muted(t("related.nothingApplied"));
+  return refs.length > 0 ? refTable(sextant, refs) : note(t("related.nothingApplied"));
 }
 
+/** What a Kustomization applied; the section hides while it applied nothing. */
 export function startInventory(sextant: Sextant, root: HTMLElement): () => void {
-  return followObject(sextant, root, (obj) => root.replaceChildren(inventoryView(sextant, obj)));
+  const hide = sectionHider(sextant);
+  return followObject(sextant, root, (obj) => {
+    hide(inventoryOf(obj).length === 0);
+    root.replaceChildren(inventoryView(sextant, obj));
+  });
 }
 
 // ---------- A HelmRelease's resources ----------
@@ -102,8 +79,8 @@ export function resourcesView(sextant: Sextant, obj: KubeObject, lists: Record<s
     "div",
     {},
     rows.length > 0 ? refTable(sextant, rows) : null,
-    ...(notAllowed.length > 0 ? [muted(t("related.forbidden", { kind: i18n().formatList(notAllowed) }))] : []),
-    ...partly.map((line) => muted(line)),
+    ...(notAllowed.length > 0 ? [note(t("related.forbidden", { kind: i18n().formatList(notAllowed) }))] : []),
+    ...partly.map((line) => note(line)),
     failure ? retryBox(failure.message, retry) : results.length < LABELLED_KINDS.length ? loadingLine() : null,
   );
 }
@@ -174,7 +151,7 @@ export function usedByView(sextant: Sextant, source: KubeObject, lists: { kustom
     "div",
     {},
     using.length > 0 ? refTable(sextant, using) : null,
-    failed ? retryBox(failed.message, retry) : loading ? loadingLine() : using.length === 0 ? muted(t("related.notUsed")) : null,
+    failed ? retryBox(failed.message, retry) : loading ? loadingLine() : using.length === 0 ? note(t("related.notUsed")) : null,
   );
 }
 

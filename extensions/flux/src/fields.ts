@@ -1,9 +1,10 @@
 // The "Flux" section of every Flux object's details: Ready with its reason and message, the revision, interval and
 // timeout, the source and HelmChart as links, the kind's own fields (URL, reference, path, chart, image, provider, …)
-// and the last reconcile request — the fields Sextant's built-in Flux view showed. A field without a value is left
-// out. The object is read again whenever Sextant says it changed (the context's `resourceVersion`).
-import type { KubeObject, ObjectRef, Sextant } from "@sextant/extension-sdk";
-import { badge, element, errorBox, muted, objectLink } from "./dom";
+// and the last reconcile request — the fields Sextant's built-in Flux view showed, drawn by the SDK's UI kit as
+// Sextant's details are. A field without a value is left out. The object is read again whenever Sextant says it
+// changed (the context's `resourceVersion`).
+import { ui, type KubeObject, type ObjectRef, type Sextant, type UiContent } from "@sextant/extension-sdk";
+import { errorBox, objectLink, sectionHider } from "./dom";
 import {
   arr,
   get,
@@ -27,7 +28,7 @@ import {
 } from "./flux";
 import { t } from "./i18n";
 
-type Value = Node | string | null | undefined;
+type Value = UiContent;
 
 /** `spec.ref` of a GitRepository / OCIRepository: "branch master", "tag v1.2.3", "semver 6.x", … */
 export function sourceRevisionRef(obj: KubeObject): string | undefined {
@@ -49,24 +50,13 @@ export function chartText(obj: KubeObject): string | undefined {
 
 const link = (sextant: Sextant, ref: FluxRef | undefined, label?: string): Value => (ref ? objectLink(sextant, ref, label) : null);
 
-/** Links separated by commas. */
+/** Links side by side, as the built-in view's `dt-links`. */
 function links(sextant: Sextant, refs: FluxRef[]): Value {
-  if (refs.length === 0) return null;
-  const span = element("span", { className: "links" });
-  refs.forEach((r, i) => {
-    if (i > 0) span.append(", ");
-    span.append(objectLink(sextant, r));
-  });
-  return span;
-}
-
-function chips(values: string[]): Value {
-  if (values.length === 0) return null;
-  return element("span", { className: "chips" }, ...values.map((v) => element("span", { className: "chip", textContent: v })));
+  return refs.length > 0 ? ui.inline(refs.map((r) => objectLink(sextant, r))) : null;
 }
 
 /** The rows of the section, by the key of their label (`fields.<key>`), in order; a row without a value is left out. */
-export function fieldRows(sextant: Sextant, obj: KubeObject): [string, Node | string][] {
+export function fieldRows(sextant: Sextant, obj: KubeObject): [string, Value][] {
   const ready = readyStatus(obj);
   const reason = readyReason(obj);
   const revision = revisionOf(obj);
@@ -85,7 +75,7 @@ export function fieldRows(sextant: Sextant, obj: KubeObject): [string, Node | st
         .filter((r): r is FluxRef => r !== undefined),
     );
   const rows: [string, Value][] = [
-    ["ready", ready ? element("span", {}, badge(ready, readyTone(ready)), reason ? ` ${reason}` : null) : null],
+    ["ready", ready ? [ui.status(ready, readyTone(ready)), reason ? ` ${reason}` : null] : null],
     ["message", readyMessage(obj)],
     ["revision", revision],
     ["lastAttemptedRevision", attempted && attempted !== revision ? attempted : null],
@@ -113,28 +103,28 @@ export function fieldRows(sextant: Sextant, obj: KubeObject): [string, Node | st
     ["eventSeverity", alert ? str(get(obj, "spec", "eventSeverity")) : null],
     [
       "eventSources",
-      alert ? chips(arr(get(obj, "spec", "eventSources")).map((s) => `${str(get(s, "kind")) ?? ""}/${str(get(s, "name")) ?? ""}`)) : null,
+      alert ? ui.chips(arr(get(obj, "spec", "eventSources")).map((s) => `${str(get(s, "kind")) ?? ""}/${str(get(s, "name")) ?? ""}`)) : null,
     ],
     ["type", provider || receiver ? str(get(obj, "spec", "type")) : null],
     ["channel", provider ? str(get(obj, "spec", "channel")) : null],
     ["webhookPath", receiver ? str(get(obj, "status", "webhookPath")) : null],
     ["lastHandledReconcileAt", str(get(obj, "status", "lastHandledReconcileAt"))],
   ];
-  return rows.filter((row): row is [string, Node | string] => row[1] !== null && row[1] !== undefined && row[1] !== "");
+  return rows.filter((row) => row[1] !== null && row[1] !== undefined && row[1] !== false && row[1] !== "");
 }
 
-export function fieldsView(sextant: Sextant, obj: KubeObject): HTMLElement {
-  const rows = fieldRows(sextant, obj);
-  return element(
-    "dl",
-    {},
-    ...rows.flatMap(([key, value]) => [element("dt", { textContent: t(`fields.${key}`) }), element("dd", {}, value)]),
-  );
+export function fieldsView(rows: readonly [string, Value][]): HTMLElement {
+  return ui.fields(rows.map(([key, value]) => [t(`fields.${key}`), value] as const));
 }
 
-/** Shows the fields of the object in the context, read again after every change of it. */
+/** Shows the fields of the object in the context, read again after every change of it; hidden while it has none. */
 export function startFields(sextant: Sextant, root: HTMLElement): () => void {
-  return followObject(sextant, root, (obj) => root.replaceChildren(fieldsView(sextant, obj)));
+  const hide = sectionHider(sextant);
+  return followObject(sextant, root, (obj) => {
+    const rows = fieldRows(sextant, obj);
+    hide(rows.length === 0);
+    root.replaceChildren(fieldsView(rows));
+  });
 }
 
 /**
@@ -144,10 +134,10 @@ export function startFields(sextant: Sextant, root: HTMLElement): () => void {
 export function followObject(sextant: Sextant, root: HTMLElement, show: (obj: KubeObject, ref: ObjectRef) => void): () => void {
   const ref: ObjectRef | undefined = sextant.context.selection[0];
   if (!ref) {
-    root.replaceChildren(muted(t("common.nothingSelected")));
+    root.replaceChildren(ui.empty(t("common.nothingSelected")));
     return () => undefined;
   }
-  root.replaceChildren(muted(t("common.loading")));
+  root.replaceChildren(ui.loading(t("common.loading")));
   let stopped = false;
   let shown: string | null | undefined;
   const follow = () => {

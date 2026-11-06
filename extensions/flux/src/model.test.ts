@@ -41,27 +41,22 @@ const ALL = readdirSync(FIXTURES)
   .filter((f) => f.endsWith(".json") && f !== "helm-deployment.json")
   .map((f) => fixture(f.replace(/\.json$/, "")));
 
-// Sextant's own evaluator of extension conditions and field paths (src/extensions/problemRules.ts), and its JSONPath
-// of printer columns (src/resources/jsonpath.ts): what the window runs for this manifest.
+// Sextant's own evaluator of extension conditions and field paths (src/extensions/problemRules.ts): what the window
+// runs for this manifest.
 type Verdict = { holds: boolean; since?: string; activeFrom?: number; until?: number };
-type Detected = { reason: string; message?: string; since?: string; graceMs?: number; notify: boolean };
+type Detected = { reason: string; group?: string; message?: string; since?: string; graceMs?: number; notify: boolean };
 const rulesPath = join(here, "../../../src/extensions/problemRules.ts");
-const jsonPathPath = join(here, "../../../src/resources/jsonpath.ts");
 const host = (await import(/* @vite-ignore */ rulesPath)) as {
   evaluate: (condition: unknown, obj: KubeObject) => Verdict;
   valueAt: (obj: unknown, path: string) => unknown;
   detectRule: (rule: unknown, obj: KubeObject) => Detected[];
 };
-const { evalJsonPath, formatJsonPathValues } = (await import(/* @vite-ignore */ jsonPathPath)) as {
-  evalJsonPath: (obj: unknown, path: string) => unknown[];
-  formatJsonPathValues: (values: unknown[]) => string;
-};
 
 type Column = (typeof manifest.contributes.columns)[number] & {
-  paths?: string[];
-  cases?: { when: unknown; text: string }[];
+  paths: string[];
+  afterColumn: string;
+  cases?: { when: unknown; text: string; tone: string }[];
   tooltipPaths?: string[];
-  jsonPath?: string;
   tones?: Record<string, string>;
 };
 const columns = manifest.contributes.columns as Column[];
@@ -70,10 +65,6 @@ const columnOf = (obj: KubeObject, name: string) =>
 
 /** A computed cell's text as the window draws it (`cellOf` in src/extensions/columns.tsx): the first case, else the first path. */
 function cell(column: Column, obj: KubeObject): string | undefined {
-  if (column.jsonPath) {
-    const values = evalJsonPath(obj, column.jsonPath);
-    return values.length > 0 ? formatJsonPathValues(values) : undefined;
-  }
   for (const c of column.cases ?? []) if (host.evaluate(c.when, obj).holds) return c.text;
   for (const path of column.paths ?? []) {
     const value = host.valueAt(obj, path);
@@ -87,7 +78,8 @@ describe("the kinds", () => {
     expect(manifest.contributes.kinds.map((k) => [k.group, k.kind, k.order, k.icon, k.section])).toEqual(
       FLUX_KINDS.map((k) => [k.group, k.kind, k.order, k.icon, "flux"]),
     );
-    expect(manifest.contributes.kinds[0]?.sectionTitle).toBe("Flux");
+    // The section has the built-in one's title, icon and place (after Velero in Sextant's SIDEBAR_SECTIONS).
+    expect(manifest.contributes.sections).toEqual([{ section: "flux", title: "Flux", icon: "flux", after: "velero" }]);
     expect(manifest.contributes.kinds.map((k) => k.title)).toEqual([
       "Git Repositories",
       "OCI Repositories",
@@ -106,6 +98,17 @@ describe("the kinds", () => {
     expect(manifest.contributes.sectionBadges).toEqual([{ section: "flux" }]);
   });
 
+  it("leave the CRDs' printer columns out, and the palette finds `hr` and `ks` as it did, without being asked", () => {
+    type Kind = (typeof manifest.contributes.kinds)[number] & { aliases?: string[]; searchByDefault?: boolean; printerColumns?: boolean };
+    const kinds = manifest.contributes.kinds as Kind[];
+    expect(kinds.every((k) => k.printerColumns === false)).toBe(true);
+    expect(kinds.filter((k) => k.aliases).map((k) => [k.kind, k.aliases, k.searchByDefault])).toEqual([
+      ["Kustomization", ["ks"], true],
+      ["HelmRelease", ["hr"], true],
+    ]);
+    expect(kinds.filter((k) => k.searchByDefault).length).toBe(2);
+  });
+
   it("every fixture is one of them", () => {
     for (const obj of ALL) expect(fluxKind(groupOf(obj.apiVersion), obj.kind), obj.kind).toBeDefined();
   });
@@ -114,20 +117,27 @@ describe("the kinds", () => {
 const TITLES: Record<string, string> = { source: "Source", ready: "Ready", status: "Status", revision: "Revision", suspended: "Suspended" };
 
 describe("the columns", () => {
-  it("are, after Namespace, Source (Kustomization, HelmRelease), Ready, Status, Revision, Suspended", () => {
+  it("are, after Namespace, Source (Kustomization, HelmRelease), Ready, Status, Revision, Suspended, by column id", () => {
+    expect(columns.length).toBeLessThanOrEqual(50);
     for (const kind of FLUX_KINDS) {
       const own = columns.filter((c) => c.kind.group === kind.group && c.kind.kind === kind.kind);
-      // Each goes right after "Namespace", so the last one listed is shown first.
-      expect(own.every((c) => c.after === "Namespace")).toBe(true);
-      const shown = own.map((c) => c.id.split("-")[0]).reverse();
       const expected = [
         ...(["Kustomization", "HelmRelease"].includes(kind.kind) ? ["source"] : []),
         ...(kind.status ? ["ready", "status", "revision"] : []),
         "suspended",
       ];
-      expect(shown, kind.kind).toEqual(expected);
-      expect(own.map((c) => c.title).reverse()).toEqual(expected.map((id) => TITLES[id]));
+      expect(own.map((c) => c.id.split("-")[0]), kind.kind).toEqual(expected);
+      expect(own.map((c) => c.title)).toEqual(expected.map((id) => TITLES[id]));
+      // Each goes right after the one before it, the first after Namespace: the same in every language.
+      expect(own.map((c) => c.afterColumn)).toEqual(["namespace", ...own.slice(0, -1).map((c) => c.id)]);
+      expect(own.every((c) => !("after" in c) && !("jsonPath" in c))).toBe(true);
     }
+  });
+
+  it("read the Ready condition by its type, never the first condition", () => {
+    const text = JSON.stringify(manifest.contributes);
+    expect(text).not.toContain("conditions[0]");
+    expect(text).not.toContain("conditions[?(");
   });
 
   it("Ready shows the Ready condition's status, toned as the built-in table toned it", () => {
@@ -138,20 +148,23 @@ describe("the columns", () => {
         expect(["Alert", "Provider"]).toContain(obj.kind);
         continue;
       }
+      expect(column.paths).toEqual(['.status.conditions[type="Ready"].status']);
       expect(cell(column, obj), obj.kind).toBe(readyStatus(obj));
       expect(column.tones).toEqual(tones);
     }
     const bucket = fixture("bucket");
-    // Its first condition is Reconciling: the case finds Ready all the same.
+    // Its first condition is Reconciling: the path finds Ready all the same.
     expect(cell(columnOf(bucket, "ready")!, bucket)).toBe("False");
     const unknown = withReady(fixture("kustomization"), { status: "Unknown", reason: "Progressing" });
     expect(cell(columnOf(unknown, "ready")!, unknown)).toBe("Unknown");
   });
 
-  it("Status is the Ready condition's message", () => {
+  it("Status is the Ready condition's message, whole in its tooltip", () => {
     for (const obj of ALL) {
       const column = columnOf(obj, "status");
-      if (column) expect(cell(column, obj), obj.kind).toBe(readyMessage(obj));
+      if (!column) continue;
+      expect(cell(column, obj), obj.kind).toBe(readyMessage(obj));
+      expect(column.tooltipPaths).toEqual(column.paths);
     }
   });
 
@@ -173,9 +186,14 @@ describe("the columns", () => {
     expect(revisionOf(fixture("helmrelease"))).toBe("6.15.0");
   });
 
-  it("Suspended says Yes or No", () => {
+  it("Suspended says Yes or No, toned by the case so a translated word keeps its tone", () => {
     for (const obj of ALL) {
       const column = columnOf(obj, "suspended")!;
+      expect(column.cases?.map((c) => [c.text, c.tone])).toEqual([
+        ["Yes", "warning"],
+        ["No", "neutral"],
+      ]);
+      expect(column.tones).toBeUndefined();
       expect(cell(column, obj), obj.kind).toBe(isSuspended(obj) ? "Yes" : "No");
       const suspended = { ...obj, spec: { ...obj.spec, suspend: true } };
       expect(cell(column, suspended)).toBe("Yes");
@@ -201,6 +219,9 @@ function withReady(obj: KubeObject, change: Record<string, string>): KubeObject 
   return { ...obj, status: { ...obj.status, conditions } };
 }
 
+/** A placeholder's value as a problem message shows it: at most 100 characters (`MAX_VALUE_CHARS`). */
+const clipped = (text = "") => (Array.from(text).length > 100 ? `${Array.from(text).slice(0, 100).join("")}…` : text);
+
 /** What Sextant's built-in rule (`fluxProblems` in src/features/problems/model.ts) said of an object. */
 function builtIn(obj: KubeObject): { reason: string } | null {
   if (isSuspended(obj) || readyStatus(obj) !== "False") return null;
@@ -213,11 +234,13 @@ describe("the problem rules", () => {
   const rules = manifest.contributes.problems;
   const ruleOf = (obj: KubeObject) => rules.find((r) => r.kind.group === groupOf(obj.apiVersion) && r.kind.kind === obj.kind);
 
-  it("judge the kinds the built-in rule judged, after 2 minutes, notifying", () => {
+  it("judge the kinds the built-in rule judged, after 2 minutes, notifying once per object as its group did", () => {
     expect(rules.map((r) => r.kind.kind)).toEqual([...PROBLEM_KINDS]);
     for (const rule of rules) {
       expect(rule.graceMinutes).toBe(2);
       expect(rule.notify).toBe(true);
+      expect(rule.group).toBe("not-ready");
+      expect(rule.since).toBe('.status.conditions[type="Ready"].lastTransitionTime');
     }
   });
 
@@ -242,6 +265,8 @@ describe("the problem rules", () => {
         expect(found[0]!.since).toBe(ready.lastTransitionTime);
         expect(found[0]!.graceMs).toBe(2 * 60_000);
         expect(found[0]!.reason).toBe(`${obj.kind} not ready`);
+        expect(found[0]!.group).toBe("not-ready");
+        expect(found[0]!.message).toBe(`${expected.reason}: ${clipped(readyMessage(variant))}`);
       }
     }
   });
@@ -251,8 +276,9 @@ describe("the problem rules", () => {
     const found = host.detectRule(ruleOf(bucket), bucket);
     expect(builtIn(bucket)).toEqual({ reason: "BucketOperationFailed" });
     expect(found).toHaveLength(1);
-    // The message names the first condition, which a field path can reach (here Reconciling, before Ready).
-    expect(found[0]!.message).toBe("Ready is False. First condition, Reconciling: building artifact");
+    // The Ready condition's reason and message (its first 100 characters), though Reconciling comes first in the list.
+    expect(found[0]!.message).toBe(`BucketOperationFailed: ${clipped(readyMessage(bucket))}`);
+    expect(found[0]!.message).toContain("failed to confirm existence of 'assets' bucket");
   });
 });
 
@@ -309,12 +335,16 @@ describe("the actions", () => {
 describe("relations", () => {
   it("read a Kustomization's inventory", () => {
     expect(inventoryOf(fixture("kustomization"))).toEqual([
-      { group: "", kind: "Service", namespace: "sextant-flux", name: "podinfo" },
-      { group: "apps", kind: "Deployment", namespace: "sextant-flux", name: "podinfo" },
-      { group: "autoscaling", kind: "HorizontalPodAutoscaler", namespace: "sextant-flux", name: "podinfo" },
+      { group: "", version: "v1", kind: "Service", namespace: "sextant-flux", name: "podinfo" },
+      { group: "apps", version: "v1", kind: "Deployment", namespace: "sextant-flux", name: "podinfo" },
+      { group: "autoscaling", version: "v2", kind: "HorizontalPodAutoscaler", namespace: "sextant-flux", name: "podinfo" },
     ]);
-    const odd = { ...fixture("kustomization"), status: { inventory: { entries: [{ id: "_system__admin_rbac.authorization.k8s.io_ClusterRole", v: "v1" }, { id: "bad" }] } } };
-    expect(inventoryOf(odd as KubeObject)).toEqual([{ group: "rbac.authorization.k8s.io", kind: "ClusterRole", namespace: null, name: "system:admin" }]);
+    const odd = { ...fixture("kustomization"), status: { inventory: { entries: [{ id: "_system__admin_rbac.authorization.k8s.io_ClusterRole", v: "v1" }, { id: "bad" }, { id: "ns_x_apps_Deployment" }] } } };
+    expect(inventoryOf(odd as KubeObject)).toEqual([
+      { group: "rbac.authorization.k8s.io", version: "v1", kind: "ClusterRole", namespace: null, name: "system:admin" },
+      // No version: Sextant takes the kind's own when the link is opened.
+      { group: "apps", kind: "Deployment", namespace: "ns", name: "x" },
+    ]);
   });
 
   it("find who uses a source, by group, kind, name and namespace", () => {

@@ -9,6 +9,7 @@ import replicaSetJson from "../fixtures/replicaset.json";
 import { startAction } from "./actions";
 import { APPLICATION } from "./argo";
 import { startFields } from "./details";
+import { startHistory } from "./history";
 import { setLanguage, t } from "./i18n";
 import { installationKey } from "./server";
 import { startTree } from "./tree";
@@ -54,7 +55,9 @@ const settle = async (rounds = 20) => {
   for (let i = 0; i < rounds; i++) await new Promise((resolve) => setTimeout(resolve, 0));
 };
 const requests = (h: TestHost) =>
-  h.calls.filter((c) => c.method === "service.request").map((c) => c.params as { method: string; path: string; body?: unknown; capture?: string; auth?: string });
+  h.calls
+    .filter((c) => c.method === "service.request")
+    .map((c) => c.params as { method: string; path: string; service: string; body?: unknown; capture?: string; auth?: string });
 
 async function open(contribution: string, handlers: TestHostOptions["handlers"], selection: ObjectRef[] = [REF]) {
   host = await startTestHost({ context: { view: "action", contribution, selection, clusterId: "kind" }, handlers });
@@ -73,26 +76,36 @@ const installation = (extra: TestHostOptions["handlers"] = {}): TestHostOptions[
   ...extra,
 });
 
+/** Sextant refusing a request it has nothing to send for (no session, no sign-in typed or remembered). */
+const nothingToSend = () => {
+  throw new SextantError("unauthorized", "sign in first");
+};
+const isTyped = (p: { body?: unknown }) => JSON.stringify(p.body ?? null).includes("{{signIn:");
+const byText = (text: string) => [...root.querySelectorAll("button")].find((b) => b.textContent === text)!;
+
 describe("Diff", () => {
-  it("signs in by itself with the admin Secret Sextant fills in, then shows desired ↔ live", async () => {
+  it("tries the saved login, then signs in with the admin Secret Sextant fills in, then shows desired ↔ live", async () => {
     let signedIn = false;
     const h = await open(
       "diff",
       installation({
         "service.request": (p) => {
+          if (p.auth === "signIn:token" || isTyped(p)) return nothingToSend();
           if (p.path === "/api/v1/session") {
             signedIn = true;
             return { status: 200, body: { token: "<hidden>" } };
           }
           if (p.path === "/api/v1/session/userinfo") return { status: 200, body: { loggedIn: true, username: "admin" } };
-          if (!signedIn) throw new SextantError("unauthorized", "no session for this service: sign in first");
+          if (!signedIn) return nothingToSend();
           return { status: 200, body: MANAGED };
         },
       }),
     );
     const sent = requests(h);
     expect(sent[0]).toMatchObject({ method: "GET", path: "/api/v1/applications/guestbook/managed-resources", auth: "session" });
-    expect(sent[1]).toMatchObject({
+    expect(sent[1]).toMatchObject({ method: "POST", path: "/api/v1/session", body: { username: "{{signIn:username}}", password: "{{signIn:password}}" } });
+    expect(sent[2]).toMatchObject({ method: "GET", service: "argocd-server-token", auth: "signIn:token" });
+    expect(sent[3]).toMatchObject({
       method: "POST",
       path: "/api/v1/session",
       body: { username: "admin", password: "{{secret:argocd-initial-admin-secret/password}}" },
@@ -105,49 +118,89 @@ describe("Diff", () => {
     expect(root.querySelector("td.added")?.textContent).toContain("replicas: 1");
   });
 
-  it("asks for a user and password when Argo CD refuses the admin Secret, and signs in with exactly those", async () => {
-    let typed = false;
+  it("asks in Sextant's dialog when Argo CD refuses the admin Secret, and never sees what was typed", async () => {
+    const typed: (string | null)[] = [];
+    let password: string | null = null;
+    let session = false;
     const h = await open(
       "diff",
       installation({
+        "ui.signIn": () => {
+          password = typed.shift() ?? null;
+          return { signedIn: password !== null };
+        },
         "service.request": (p) => {
+          if (p.auth === "signIn:token") return nothingToSend();
           if (p.path === "/api/v1/session") {
-            if (p.body.password === "right") {
-              typed = true;
-              return { status: 200, body: { token: "<hidden>" } };
-            }
-            return { status: 401, body: { error: "Invalid username or password" } };
+            if (!isTyped(p)) return { status: 401, body: { error: "Invalid username or password" } };
+            if (password === null) return nothingToSend();
+            if (password !== "right") return { status: 401, body: { error: "Invalid username or password" } };
+            session = true;
+            return { status: 200, body: { token: "<hidden>" } };
           }
           if (p.path === "/api/v1/session/userinfo") return { status: 200, body: { loggedIn: true, username: "alice" } };
-          return typed ? { status: 200, body: MANAGED } : { status: 401, body: {} };
+          return session ? { status: 200, body: MANAGED } : nothingToSend();
         },
       }),
     );
     expect(root.textContent).toContain(t("login.refused.adminSecret"));
-    expect(root.textContent).toContain(t("login.typed"));
-    const form = root.querySelector("form")!;
-    (root.querySelector("#username") as HTMLInputElement).value = "alice";
-    const password = root.querySelector("#password") as HTMLInputElement;
-    password.value = "wrong";
-    password.dispatchEvent(new Event("input"));
-    form.dispatchEvent(new Event("submit", { cancelable: true }));
+    expect(root.querySelector("section.login")).not.toBeNull();
+    // Cancelled in Sextant's dialog: asked again, nothing sent.
+    byText(t("login.mode.password")).click();
+    await settle();
+    expect(root.querySelector("section.login")).not.toBeNull();
+    typed.push("wrong");
+    byText(t("login.mode.password")).click();
     await settle();
     expect(root.textContent).toContain(t("login.errors.invalid"));
-    password.value = "right";
-    password.dispatchEvent(new Event("input"));
-    form.dispatchEvent(new Event("submit", { cancelable: true }));
+    typed.push("right");
+    byText(t("login.mode.password")).click();
     await settle();
-    const typedSignIns = requests(h).filter((r) => r.path === "/api/v1/session").slice(1);
-    expect(typedSignIns.map((r) => r.body)).toEqual([
-      { username: "alice", password: "wrong" },
-      { username: "alice", password: "right" },
+    expect(h.calls.filter((c) => c.method === "ui.signIn").map((c) => c.params)).toEqual([
+      { clusterId: "kind", namespace: "argocd", service: "argocd-server" },
+      { clusterId: "kind", namespace: "argocd", service: "argocd-server" },
+      { clusterId: "kind", namespace: "argocd", service: "argocd-server" },
     ]);
+    // Every sign-in the extension sent is a placeholder Sextant fills in.
+    const bodies = requests(h).filter((r) => r.path === "/api/v1/session").map((r) => JSON.stringify(r.body));
+    expect(bodies.every((b) => b.includes("{{signIn:") || b.includes("{{secret:"))).toBe(true);
     expect(root.textContent).toContain(t("diff.signedInAs", { user: "alice" }));
-    expect(root.textContent).toContain(t("diff.source.manual"));
-    expect(h.storage.get("session/kind/argocd")).toBe("manual");
+    expect(root.textContent).not.toContain(t("diff.source.secret"));
   });
 
-  it("signs out by asking Sextant to forget the session", async () => {
+  it("signs in with an API token typed in Sextant's dialog, sent as the bearer of each request", async () => {
+    let token = false;
+    const h = await open(
+      "diff",
+      installation({
+        "resources.get": ({ ref }) => {
+          if (ref.kind.kind === "ConfigMap" && ref.name === "argocd-cm") return { metadata: { name: ref.name }, data: { "admin.enabled": "false" } };
+          if (ref.kind.kind === "ConfigMap") throw new SextantError("notFound", "no");
+          return app;
+        },
+        "ui.signIn": () => {
+          token = true;
+          return { signedIn: true };
+        },
+        "service.request": (p) => {
+          if (p.auth !== "signIn:token" || !token) return nothingToSend();
+          if (p.path.endsWith("userinfo")) return { status: 200, body: { loggedIn: true, username: "ci" } };
+          return { status: 200, body: MANAGED };
+        },
+      }),
+    );
+    // Without local users, the token is the way offered first.
+    expect(root.textContent).toContain(t("login.noLocalUsers"));
+    expect(byText(t("login.mode.token")).className).toContain("primary");
+    expect(requests(h).some((r) => r.body !== undefined && !isTyped(r))).toBe(false);
+    byText(t("login.mode.token")).click();
+    await settle();
+    expect(h.calls.find((c) => c.method === "ui.signIn")?.params).toMatchObject({ service: "argocd-server-token" });
+    expect(requests(h).at(-2)).toMatchObject({ path: "/api/v1/applications/guestbook/managed-resources", auth: "signIn:token" });
+    expect(root.textContent).toContain(t("diff.signedInAs", { user: "ci" }));
+  });
+
+  it("signs out by asking Sextant to forget the sessions and the remembered sign-ins", async () => {
     const h = await open(
       "diff",
       installation({
@@ -155,11 +208,13 @@ describe("Diff", () => {
         "service.forget": () => null,
       }),
     );
-    const signOut = [...root.querySelectorAll("button")].find((b) => b.textContent === t("diff.signOut"))!;
-    signOut.click();
+    byText(t("diff.signOut")).click();
     await settle();
-    expect(h.calls.find((c) => c.method === "service.forget")?.params).toMatchObject({ namespace: "argocd", service: "argocd-server" });
-    expect(root.querySelector("form")).not.toBeNull();
+    expect(h.calls.filter((c) => c.method === "service.forget").map((c) => c.params)).toEqual([
+      { clusterId: "kind", namespace: "argocd", service: "argocd-server" },
+      { clusterId: "kind", namespace: "argocd", service: "argocd-server-token" },
+    ]);
+    expect(root.querySelector("section.login")).not.toBeNull();
   });
 
   it("does not choose between several installations, and remembers the user's choice", async () => {
@@ -176,11 +231,24 @@ describe("Diff", () => {
     const radio = root.querySelector<HTMLInputElement>('input[value="team-a"]')!;
     radio.checked = true;
     radio.dispatchEvent(new Event("change"));
-    [...root.querySelectorAll("button")].find((b) => b.textContent === t("installation.use"))!.click();
+    byText(t("installation.use")).click();
     await settle();
     expect(h.storage.get(installationKey("kind"))).toBe("team-a");
     expect(requests(h)[0]).toMatchObject({ path: "/api/v1/applications/guestbook/managed-resources" });
     expect((h.calls.find((c) => c.method === "service.request")?.params as { namespace: string }).namespace).toBe("team-a");
+  });
+
+  it("reaches a Helm release's server, whatever its Service is named", async () => {
+    const helm = { ...SERVER, metadata: { ...SERVER.metadata, name: "gitops-argocd-server" } };
+    const h = await open(
+      "diff",
+      installation({
+        "resources.list": () => ({ items: [helm], truncated: false }),
+        "service.request": () => ({ status: 200, body: MANAGED }),
+      }),
+    );
+    expect(requests(h)[0]).toMatchObject({ service: "argocd-server", path: "/api/v1/applications/guestbook/managed-resources" });
+    expect(root.textContent).toContain("Deployment sextant-argo/guestbook-ui");
   });
 
   it("talks plain HTTP only when the installation's server runs without TLS", async () => {
@@ -267,5 +335,24 @@ describe("details", () => {
     expect(rows[0]).toContain("Missing");
     expect(rows[1]).toContain("Healthy");
     expect(rows[3]).toContain("Running");
+  });
+
+  it("hides the Resources and Sync history sections while the Application has none, as the built-in view did", async () => {
+    const bare = { ...app, status: {} } as KubeObject;
+    for (const [contribution, start] of [
+      ["resources", startTree],
+      ["history", startHistory],
+    ] as const) {
+      host = await startTestHost({
+        context: { view: "details", contribution, selection: [REF], resourceVersion: "1" },
+        handlers: { "resources.get": () => bare, "ui.setHidden": () => null },
+      });
+      stop = start(host.sextant, root);
+      await settle();
+      expect(host.calls.filter((c) => c.method === "ui.setHidden").map((c) => c.params), contribution).toEqual([{ hidden: true }]);
+      stop();
+      host.close();
+      host = null;
+    }
   });
 });

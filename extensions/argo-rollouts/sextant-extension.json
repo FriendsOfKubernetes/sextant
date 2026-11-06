@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.argo-rollouts",
   "name": "Argo Rollouts",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Argo Rollouts: rollouts with their steps, weights, ReplicaSets and analysis runs; promote, abort, retry, pause and resume with the exact patches of kubectl argo rollouts, shown first; problems of degraded and aborted rollouts and failed analyses.",
   "author": "Sextant",
   "sextantApi": 4,
@@ -82,10 +82,10 @@
         "group": "argoproj.io",
         "kind": "Rollout",
         "section": "argoRollouts",
-        "sectionTitle": "Argo Rollouts",
         "title": "Rollouts",
         "icon": "argoRollout",
-        "order": 10
+        "order": 10,
+        "printerColumns": false
       },
       {
         "group": "argoproj.io",
@@ -93,7 +93,8 @@
         "section": "argoRollouts",
         "title": "Analysis Runs",
         "icon": "argoAnalysisRun",
-        "order": 20
+        "order": 20,
+        "printerColumns": false
       },
       {
         "group": "argoproj.io",
@@ -101,7 +102,8 @@
         "section": "argoRollouts",
         "title": "Analysis Templates",
         "icon": "argoAnalysisTemplate",
-        "order": 30
+        "order": 30,
+        "printerColumns": false
       },
       {
         "group": "argoproj.io",
@@ -109,7 +111,8 @@
         "section": "argoRollouts",
         "title": "Cluster Analysis Templates",
         "icon": "argoClusterAnalysisTemplate",
-        "order": 40
+        "order": 40,
+        "printerColumns": false
       },
       {
         "group": "argoproj.io",
@@ -117,7 +120,16 @@
         "section": "argoRollouts",
         "title": "Experiments",
         "icon": "argoExperiment",
-        "order": 50
+        "order": 50,
+        "printerColumns": false
+      }
+    ],
+    "sections": [
+      {
+        "section": "argoRollouts",
+        "title": "Argo Rollouts",
+        "icon": "argoRollouts",
+        "after": "velero"
       }
     ],
     "sectionBadges": [
@@ -275,6 +287,14 @@
                   "value": true
                 },
                 {
+                  "type": "absent",
+                  "path": ".status.stableRS"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.currentPodHash"
+                },
+                {
                   "type": "in",
                   "path": ".status.phase",
                   "values": [
@@ -323,26 +343,16 @@
               ]
             },
             {
-              "type": "any",
-              "of": [
-                {
-                  "type": "in",
-                  "path": ".status.phase",
-                  "values": [
-                    "Progressing",
-                    "Paused",
-                    "Degraded"
-                  ]
-                },
-                {
-                  "type": "absent",
-                  "path": ".status.phase"
-                }
-              ]
-            },
-            {
               "type": "exists",
               "path": ".status.currentPodHash"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "same",
+                "path": ".status.currentPodHash",
+                "otherPath": ".status.stableRS"
+              }
             }
           ]
         },
@@ -422,96 +432,8 @@
           "group": "argoproj.io",
           "kind": "Rollout"
         },
-        "id": "rollout-ready",
-        "paths": [
-          ".status.readyReplicas"
-        ],
-        "format": "ratio",
-        "totalPaths": [
-          ".spec.replicas"
-        ],
-        "after": "Available",
-        "title": "Ready"
-      },
-      {
-        "kind": {
-          "group": "argoproj.io",
-          "kind": "Rollout"
-        },
-        "id": "rollout-weight",
-        "paths": [
-          ".status.canary.weights.canary.weight"
-        ],
-        "format": "number",
-        "cases": [
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".status.abort",
-                  "value": true
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.strategy.canary"
-                }
-              ]
-            },
-            "text": "0"
-          }
-        ],
-        "after": "Available",
-        "title": "Weight"
-      },
-      {
-        "kind": {
-          "group": "argoproj.io",
-          "kind": "Rollout"
-        },
-        "id": "rollout-step",
-        "paths": [
-          ".status.currentStepIndex"
-        ],
-        "format": "number",
-        "after": "Available",
-        "title": "Step"
-      },
-      {
-        "kind": {
-          "group": "argoproj.io",
-          "kind": "Rollout"
-        },
-        "id": "rollout-strategy",
-        "paths": [
-          ".spec.strategy"
-        ],
-        "cases": [
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.strategy.canary"
-            },
-            "text": "Canary"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.strategy.blueGreen"
-            },
-            "text": "BlueGreen"
-          }
-        ],
-        "after": "Available",
-        "title": "Strategy"
-      },
-      {
-        "kind": {
-          "group": "argoproj.io",
-          "kind": "Rollout"
-        },
         "id": "rollout-status",
+        "title": "Status",
         "paths": [
           ".status.phase"
         ],
@@ -540,7 +462,38 @@
                 }
               ]
             },
-            "text": "Progressing"
+            "text": "Progressing",
+            "tone": "neutral"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.templateResolvedFromRef",
+                  "value": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.annotations[\"rollout.argoproj.io/workload-generation\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.workloadObservedGeneration"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".metadata.annotations[\"rollout.argoproj.io/workload-generation\"]",
+                    "otherPath": ".status.workloadObservedGeneration"
+                  }
+                }
+              ]
+            },
+            "text": "Progressing",
+            "tone": "neutral"
           },
           {
             "when": {
@@ -551,49 +504,26 @@
                   "path": ".status.phase"
                 },
                 {
-                  "type": "condition",
-                  "conditionType": "InvalidSpec",
-                  "status": "True"
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".status.conditions[type=\"InvalidSpec\"]"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".status.conditions[reason=\"RolloutAborted\"]"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".status.conditions[reason=\"ProgressDeadlineExceeded\"]"
+                    }
+                  ]
                 }
               ]
             },
-            "text": "Degraded"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.phase"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "Progressing",
-                  "status": "False",
-                  "reason": "RolloutAborted"
-                }
-              ]
-            },
-            "text": "Degraded"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.phase"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "Progressing",
-                  "status": "False",
-                  "reason": "ProgressDeadlineExceeded"
-                }
-              ]
-            },
-            "text": "Degraded"
+            "text": "Degraded",
+            "tone": "error"
           },
           {
             "when": {
@@ -610,7 +540,8 @@
                 }
               ]
             },
-            "text": "Paused"
+            "text": "Paused",
+            "tone": "warning"
           },
           {
             "when": {
@@ -626,44 +557,127 @@
                 }
               ]
             },
-            "text": "Paused"
+            "text": "Paused",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.phase"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.stableRS",
+                    "otherPath": ".status.currentPodHash"
+                  }
+                }
+              ]
+            },
+            "text": "Progressing",
+            "tone": "neutral"
           }
         ],
-        "after": "Available",
-        "title": "Status"
+        "afterColumn": "namespace"
       },
       {
         "kind": {
           "group": "argoproj.io",
-          "kind": "AnalysisRun"
+          "kind": "Rollout"
         },
-        "id": "run-message",
+        "id": "rollout-strategy",
+        "title": "Strategy",
         "paths": [
-          ".status.message",
-          ".status.metricResults[0].message",
-          ".status.metricResults[1].message",
-          ".status.metricResults[2].message"
+          ".spec.strategy"
         ],
-        "tooltipPaths": [
-          ".status.message",
-          ".status.metricResults[0].message",
-          ".status.metricResults[1].message",
-          ".status.metricResults[2].message"
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.strategy.canary"
+            },
+            "text": "Canary",
+            "tone": "neutral"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.strategy.blueGreen"
+            },
+            "text": "BlueGreen",
+            "tone": "neutral"
+          }
         ],
-        "after": "Status",
-        "title": "Message"
+        "afterColumn": "rollout-status"
       },
       {
         "kind": {
           "group": "argoproj.io",
-          "kind": "AnalysisRun"
+          "kind": "Rollout"
         },
-        "id": "run-rollout",
+        "id": "rollout-step",
+        "title": "Step",
         "paths": [
-          ".metadata.ownerReferences[0].name"
+          ".status.currentStepIndex"
         ],
-        "after": "Status",
-        "title": "Rollout"
+        "format": "ratio",
+        "totalPaths": [
+          ".spec.strategy.canary.steps"
+        ],
+        "afterColumn": "rollout-strategy"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "id": "rollout-weight",
+        "title": "Weight",
+        "paths": [
+          ".status.canary.weights.canary.weight"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.abort",
+                  "value": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.strategy.canary"
+                }
+              ]
+            },
+            "text": "0",
+            "tone": "neutral"
+          }
+        ],
+        "afterColumn": "rollout-step"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "id": "rollout-ready",
+        "title": "Ready",
+        "paths": [
+          ".status.readyReplicas"
+        ],
+        "format": "ratio",
+        "totalPaths": [
+          ".spec.replicas"
+        ],
+        "afterColumn": "rollout-weight"
       },
       {
         "kind": {
@@ -671,6 +685,7 @@
           "kind": "AnalysisRun"
         },
         "id": "run-phase",
+        "title": "Phase",
         "paths": [
           ".status.phase"
         ],
@@ -682,35 +697,46 @@
           "Error": "error",
           "Inconclusive": "warning"
         },
-        "after": "Status",
-        "title": "Phase"
+        "afterColumn": "namespace"
       },
       {
         "kind": {
           "group": "argoproj.io",
-          "kind": "Experiment"
+          "kind": "AnalysisRun"
         },
-        "id": "experiment-message",
+        "id": "run-rollout",
+        "title": "Rollout",
         "paths": [
-          ".status.message"
+          ".metadata.ownerReferences[kind=\"Rollout\"].name"
+        ],
+        "afterColumn": "run-phase"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AnalysisRun"
+        },
+        "id": "run-message",
+        "title": "Message",
+        "paths": [
+          ".status.message",
+          ".status.metricResults[phase=\"Failed\"].message",
+          ".status.metricResults[phase=\"Error\"].message",
+          ".status.metricResults[phase=\"Inconclusive\"].message",
+          ".status.metricResults[phase=\"Failed\"].measurements[phase=\"Failed\"].message",
+          ".status.metricResults[phase=\"Error\"].measurements[phase=\"Error\"].message",
+          ".status.metricResults[phase=\"Inconclusive\"].measurements[phase=\"Inconclusive\"].message"
         ],
         "tooltipPaths": [
-          ".status.message"
+          ".status.message",
+          ".status.metricResults[phase=\"Failed\"].message",
+          ".status.metricResults[phase=\"Error\"].message",
+          ".status.metricResults[phase=\"Inconclusive\"].message",
+          ".status.metricResults[phase=\"Failed\"].measurements[phase=\"Failed\"].message",
+          ".status.metricResults[phase=\"Error\"].measurements[phase=\"Error\"].message",
+          ".status.metricResults[phase=\"Inconclusive\"].measurements[phase=\"Inconclusive\"].message"
         ],
-        "after": "Status",
-        "title": "Message"
-      },
-      {
-        "kind": {
-          "group": "argoproj.io",
-          "kind": "Experiment"
-        },
-        "id": "experiment-rollout",
-        "paths": [
-          ".metadata.ownerReferences[0].name"
-        ],
-        "after": "Status",
-        "title": "Rollout"
+        "afterColumn": "run-rollout"
       },
       {
         "kind": {
@@ -718,6 +744,7 @@
           "kind": "Experiment"
         },
         "id": "experiment-phase",
+        "title": "Phase",
         "paths": [
           ".status.phase"
         ],
@@ -729,8 +756,34 @@
           "Error": "error",
           "Inconclusive": "warning"
         },
-        "after": "Status",
-        "title": "Phase"
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Experiment"
+        },
+        "id": "experiment-rollout",
+        "title": "Rollout",
+        "paths": [
+          ".metadata.ownerReferences[kind=\"Rollout\"].name"
+        ],
+        "afterColumn": "experiment-phase"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Experiment"
+        },
+        "id": "experiment-message",
+        "title": "Message",
+        "paths": [
+          ".status.message"
+        ],
+        "tooltipPaths": [
+          ".status.message"
+        ],
+        "afterColumn": "experiment-rollout"
       },
       {
         "kind": {
@@ -738,10 +791,11 @@
           "kind": "AnalysisTemplate"
         },
         "id": "template-metric",
+        "title": "Metric",
         "paths": [
           ".spec.metrics[0].name"
         ],
-        "title": "Metric"
+        "afterColumn": "namespace"
       },
       {
         "kind": {
@@ -749,10 +803,11 @@
           "kind": "ClusterAnalysisTemplate"
         },
         "id": "cluster-template-metric",
+        "title": "Metric",
         "paths": [
           ".spec.metrics[0].name"
         ],
-        "title": "Metric"
+        "afterColumn": "name"
       }
     ],
     "problems": [
@@ -767,18 +822,24 @@
           "type": "all",
           "of": [
             {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.abort"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.abort",
-                  "value": false
-                }
-              ]
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.abort",
+                "value": true
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "in",
+                "path": ".status.phase",
+                "values": [
+                  "Healthy",
+                  "Progressing",
+                  "Paused"
+                ]
+              }
             },
             {
               "type": "any",
@@ -789,22 +850,69 @@
                   "value": "Degraded"
                 },
                 {
-                  "type": "condition",
-                  "conditionType": "InvalidSpec",
-                  "status": "True"
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"InvalidSpec\"]"
                 },
                 {
-                  "type": "condition",
-                  "conditionType": "Progressing",
-                  "status": "False",
-                  "reason": "ProgressDeadlineExceeded"
+                  "type": "exists",
+                  "path": ".status.conditions[reason=\"RolloutAborted\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[reason=\"ProgressDeadlineExceeded\"]"
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.controllerPause"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.controllerPause",
+                  "value": false
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.pauseConditions[0]"
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.templateResolvedFromRef"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.templateResolvedFromRef",
+                  "value": false
+                },
+                {
+                  "type": "absent",
+                  "path": ".metadata.annotations[\"rollout.argoproj.io/workload-generation\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.workloadObservedGeneration"
+                },
+                {
+                  "type": "same",
+                  "path": ".metadata.annotations[\"rollout.argoproj.io/workload-generation\"]",
+                  "otherPath": ".status.workloadObservedGeneration"
                 }
               ]
             }
           ]
         },
         "graceMinutes": 1,
-        "message": "The rollout is Degraded: {{.status.message}}"
+        "message": "The rollout is Degraded: {{.status.message}}",
+        "group": "rollout"
       },
       {
         "id": "aborted",
@@ -818,7 +926,8 @@
           "path": ".status.abort",
           "value": true
         },
-        "message": "The update was aborted: {{.status.message}}"
+        "message": "The update was aborted: {{.status.message}}",
+        "group": "rollout"
       },
       {
         "id": "step-analysis-failed",
@@ -835,7 +944,8 @@
             "Error"
           ]
         },
-        "message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} ended {{.status.canary.currentStepAnalysisRunStatus.status}}: {{.status.canary.currentStepAnalysisRunStatus.message}}"
+        "message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} ended {{.status.canary.currentStepAnalysisRunStatus.status}}: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+        "group": "rollout"
       },
       {
         "id": "background-analysis-failed",
@@ -852,7 +962,8 @@
             "Error"
           ]
         },
-        "message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} ended {{.status.canary.currentBackgroundAnalysisRunStatus.status}}: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}"
+        "message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} ended {{.status.canary.currentBackgroundAnalysisRunStatus.status}}: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+        "group": "rollout"
       },
       {
         "id": "pre-promotion-analysis-failed",
@@ -869,7 +980,8 @@
             "Error"
           ]
         },
-        "message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} ended {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}"
+        "message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} ended {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+        "group": "rollout"
       },
       {
         "id": "post-promotion-analysis-failed",
@@ -886,7 +998,8 @@
             "Error"
           ]
         },
-        "message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} ended {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+        "message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} ended {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+        "group": "rollout"
       }
     ]
   },
@@ -895,11 +1008,11 @@
       "name": "Argo Rollouts",
       "description": "Argo Rollouts: rollout с шагами, весами, ReplicaSet и запусками анализа; продвижение, прерывание, повтор, пауза и возобновление ровно теми патчами, что шлёт kubectl argo rollouts, с показом перед отправкой; проблемы деградировавших и прерванных rollout и проваленных анализов.",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -940,17 +1053,26 @@
       "problems.pre-promotion-analysis-failed.title": "Анализ перед продвижением провален",
       "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} завершился как {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "Анализ после продвижения провален",
-      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} завершился как {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} завершился как {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "uk": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts: rollout із кроками, вагами, ReplicaSet і запусками аналізу; просування, переривання, повтор, пауза й відновлення саме тими патчами, що надсилає kubectl argo rollouts, із показом перед надсиланням; проблеми деградованих і перерваних rollout і провалених аналізів.",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -991,17 +1113,26 @@
       "problems.pre-promotion-analysis-failed.title": "Аналіз перед просуванням провалено",
       "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} завершився як {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "Аналіз після просування провалено",
-      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} завершився як {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} завершився як {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "de": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts: Rollouts mit ihren Schritten, Gewichten, ReplicaSets und Analyseläufen; Promoten, Abbrechen, erneut Versuchen, Pausieren und Fortsetzen mit genau den Patches von kubectl argo rollouts, vorher angezeigt; Probleme beeinträchtigter und abgebrochener Rollouts und fehlgeschlagener Analysen.",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1042,17 +1173,26 @@
       "problems.pre-promotion-analysis-failed.title": "Analyse vor dem Promoten fehlgeschlagen",
       "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} endete mit {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "Analyse nach dem Promoten fehlgeschlagen",
-      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} endete mit {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} endete mit {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "fr": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts : les rollouts avec leurs étapes, poids, ReplicaSets et analyses ; promouvoir, interrompre, réessayer, mettre en pause et reprendre avec exactement les patchs de kubectl argo rollouts, montrés d'abord ; problèmes des rollouts dégradés ou interrompus et des analyses échouées.",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1093,17 +1233,26 @@
       "problems.pre-promotion-analysis-failed.title": "Analyse avant promotion échouée",
       "problems.pre-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} s'est terminé en {{.status.blueGreen.prePromotionAnalysisRunStatus.status}} : {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "Analyse après promotion échouée",
-      "problems.post-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} s'est terminé en {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} : {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} s'est terminé en {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} : {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "es": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts: rollouts con sus pasos, pesos, ReplicaSets y ejecuciones de análisis; promover, interrumpir, reintentar, pausar y reanudar con exactamente los parches de kubectl argo rollouts, mostrados antes; problemas de rollouts degradados o interrumpidos y de análisis fallidos.",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1144,17 +1293,26 @@
       "problems.pre-promotion-analysis-failed.title": "Análisis previo a la promoción fallido",
       "problems.pre-promotion-analysis-failed.message": "El AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} terminó como {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "Análisis posterior a la promoción fallido",
-      "problems.post-promotion-analysis-failed.message": "El AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} terminó como {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "El AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} terminó como {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "pt-BR": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts: rollouts com seus passos, pesos, ReplicaSets e execuções de análise; promover, interromper, tentar novamente, pausar e retomar com exatamente os patches do kubectl argo rollouts, mostrados antes; problemas de rollouts degradados ou interrompidos e de análises com falha.",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1195,17 +1353,26 @@
       "problems.pre-promotion-analysis-failed.title": "Análise antes da promoção falhou",
       "problems.pre-promotion-analysis-failed.message": "O AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} terminou como {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "Análise após a promoção falhou",
-      "problems.post-promotion-analysis-failed.message": "O AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} terminou como {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "O AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} terminou como {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "it": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts: i rollout con passi, pesi, ReplicaSet ed esecuzioni di analisi; promuovere, interrompere, riprovare, mettere in pausa e riprendere con esattamente le patch di kubectl argo rollouts, mostrate prima; problemi di rollout degradati o interrotti e di analisi fallite.",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1246,17 +1413,26 @@
       "problems.pre-promotion-analysis-failed.title": "Analisi prima della promozione fallita",
       "problems.pre-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} è terminato come {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "Analisi dopo la promozione fallita",
-      "problems.post-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} è terminato come {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} è terminato come {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "pl": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts: rollouty z ich krokami, wagami, ReplicaSetami i przebiegami analiz; promowanie, przerywanie, ponawianie, wstrzymywanie i wznawianie dokładnie tymi łatkami, które wysyła kubectl argo rollouts, pokazanymi najpierw; problemy zdegradowanych i przerwanych rolloutów oraz nieudanych analiz.",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1297,17 +1473,26 @@
       "problems.pre-promotion-analysis-failed.title": "Analiza przed promowaniem nie powiodła się",
       "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} zakończył się jako {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "Analiza po promowaniu nie powiodła się",
-      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} zakończył się jako {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} zakończył się jako {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "tr": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts: adımları, ağırlıkları, ReplicaSet'leri ve analiz çalıştırmalarıyla rollout'lar; kubectl argo rollouts'un tam yamalarıyla, önce gösterilerek yükseltme, iptal etme, yeniden deneme, duraklatma ve sürdürme; bozulmuş ve iptal edilmiş rollout'ların ve başarısız analizlerin sorunları.",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1348,17 +1533,26 @@
       "problems.pre-promotion-analysis-failed.title": "Yükseltme öncesi analiz başarısız",
       "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} {{.status.blueGreen.prePromotionAnalysisRunStatus.status}} olarak bitti: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "Yükseltme sonrası analiz başarısız",
-      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} olarak bitti: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} olarak bitti: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "zh-CN": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts：rollout 及其步骤、权重、ReplicaSet 和分析运行；以 kubectl argo rollouts 的原样补丁晋级、中止、重试、暂停和恢复，发送前先展示；降级和中止的 rollout 以及失败的分析会列为问题。",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1399,17 +1593,26 @@
       "problems.pre-promotion-analysis-failed.title": "晋级前分析失败",
       "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.prePromotionAnalysisRunStatus.status}} 结束：{{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "晋级后分析失败",
-      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} 结束：{{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} 结束：{{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "zh-TW": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts：rollout 及其步驟、權重、ReplicaSet 與分析執行；以 kubectl argo rollouts 的原樣修補升級、中止、重試、暫停與繼續，送出前先顯示；降級與中止的 rollout 以及失敗的分析會列為問題。",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1450,17 +1653,26 @@
       "problems.pre-promotion-analysis-failed.title": "升級前分析失敗",
       "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.prePromotionAnalysisRunStatus.status}} 結束：{{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "升級後分析失敗",
-      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} 結束：{{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} 結束：{{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "ja": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts: ステップ、重み、ReplicaSet、分析実行を含む Rollout。kubectl argo rollouts と同じパッチを先に表示してから、プロモート、中止、再試行、一時停止、再開を行います。劣化・中止した Rollout と失敗した分析を問題として表示します。",
       "kinds.0.title": "Rollout",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "AnalysisRun",
       "kinds.2.title": "AnalysisTemplate",
       "kinds.3.title": "ClusterAnalysisTemplate",
       "kinds.4.title": "Experiment",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1501,17 +1713,26 @@
       "problems.pre-promotion-analysis-failed.title": "プロモート前の分析が失敗しました",
       "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} は {{.status.blueGreen.prePromotionAnalysisRunStatus.status}} で終了しました: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "プロモート後の分析が失敗しました",
-      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} は {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} で終了しました: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} は {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} で終了しました: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     },
     "ko": {
       "name": "Argo Rollouts",
       "description": "Argo Rollouts: 단계, 가중치, ReplicaSet, 분석 실행이 있는 rollout. kubectl argo rollouts와 똑같은 패치를 먼저 보여 준 뒤 승격, 중단, 다시 시도, 일시 중지, 재개를 수행합니다. 저하되거나 중단된 rollout과 실패한 분석을 문제로 표시합니다.",
       "kinds.0.title": "Rollouts",
-      "kinds.0.sectionTitle": "Argo Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
       "kinds.3.title": "Cluster Analysis Templates",
       "kinds.4.title": "Experiments",
+      "sections.argoRollouts.title": "Argo Rollouts",
       "detailsSections.rollout.title": "Rollout",
       "detailsSections.analysis-run.title": "AnalysisRun",
       "detailsSections.experiment.title": "Experiment",
@@ -1552,7 +1773,16 @@
       "problems.pre-promotion-analysis-failed.title": "승격 전 분석 실패",
       "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}}이(가) {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}(으)로 끝났습니다: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
       "problems.post-promotion-analysis-failed.title": "승격 후 분석 실패",
-      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}}이(가) {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}(으)로 끝났습니다: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}}이(가) {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}(으)로 끝났습니다: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
+      "columns.rollout-status.cases.0.text": "Progressing",
+      "columns.rollout-status.cases.1.text": "Progressing",
+      "columns.rollout-status.cases.2.text": "Degraded",
+      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.4.text": "Paused",
+      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-strategy.cases.0.text": "Canary",
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "columns.rollout-weight.cases.0.text": "0"
     }
   }
 }
