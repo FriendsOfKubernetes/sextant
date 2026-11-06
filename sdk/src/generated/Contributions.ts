@@ -11,6 +11,7 @@ import type { MetricQuery } from "./MetricQuery";
 import type { PageContribution } from "./PageContribution";
 import type { ProblemContribution } from "./ProblemContribution";
 import type { SectionBadgeContribution } from "./SectionBadgeContribution";
+import type { SectionContribution } from "./SectionContribution";
 import type { ServiceContribution } from "./ServiceContribution";
 import type { SettingsContribution } from "./SettingsContribution";
 
@@ -49,4 +50,12 @@ services: Array<ServiceContribution>,
 /**
  * Tools for AI agents in Sextant's MCP server, answered by the backend (ADR-0159); `sextantApi` 4.
  */
-agentTools: Array<AgentToolContribution>, };
+agentTools: Array<AgentToolContribution>, 
+/**
+ * The extension's own sidebar sections: title, icon and place (ADR-0160); `sextantApi` 4.
+ */
+sections: Array<SectionContribution>, 
+/**
+ * A tab of the extension's in a cluster's settings (ADR-0160); `sextantApi` 4.
+ */
+clusterSettings?: SettingsContribution, };

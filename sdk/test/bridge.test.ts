@@ -26,7 +26,14 @@ let frameElement: HTMLIFrameElement;
 let hostElement: HTMLIFrameElement;
 let context: HostSideContext;
 let sextant: Sextant | null;
-const ui = { openDetails: vi.fn(), navigate: vi.fn(), notify: vi.fn(), close: vi.fn() };
+const ui = {
+  openDetails: vi.fn(),
+  navigate: vi.fn(),
+  notify: vi.fn(),
+  close: vi.fn(),
+  openLogs: vi.fn(() => Promise.resolve()),
+  openUrl: vi.fn(() => Promise.resolve({ opened: false })),
+};
 const onFrameError = vi.fn();
 const onResize = vi.fn();
 

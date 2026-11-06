@@ -12,4 +12,12 @@ section: string, sectionTitle?: string,
 /**
  * The plural label in the sidebar and the table's title; the kind's name when `None`.
  */
-title?: string, icon?: string, order?: number, };
+title?: string, icon?: string, order?: number, 
+/**
+ * Short names the command palette takes as a kind prefix (`hr web`), lowercase (ADR-0160).
+ */
+aliases?: Array<string>, 
+/**
+ * The command palette searches the kind without being asked to (ADR-0160).
+ */
+searchByDefault: boolean, };

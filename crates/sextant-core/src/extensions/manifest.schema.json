@@ -493,7 +493,15 @@
               "sectionTitle": { "$ref": "#/$defs/title" },
               "title": { "$ref": "#/$defs/title" },
               "icon": { "$ref": "#/$defs/icon" },
-              "order": { "$ref": "#/$defs/order" }
+              "order": { "$ref": "#/$defs/order" },
+              "aliases": {
+                "description": "Short names the command palette takes as a kind prefix (`hr web`).",
+                "type": "array",
+                "maxItems": 5,
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1, "maxLength": 20 }
+              },
+              "searchByDefault": { "description": "The command palette searches the kind without being asked to.", "type": "boolean" }
             }
           }
         },
@@ -556,6 +564,29 @@
               "readOnly": { "description": "It only reads (default false).", "type": "boolean" }
             }
           }
+        },
+        "sections": {
+          "description": "The extension's own sidebar sections: a title, an icon on the header and a place after one of Sextant's sections (sextantApi 4).",
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["section"],
+            "properties": {
+              "section": { "type": "string", "minLength": 1, "maxLength": 40, "format": "identifier", "pattern": "^[A-Za-z][A-Za-z0-9-]{0,39}$" },
+              "title": { "$ref": "#/$defs/title" },
+              "icon": { "$ref": "#/$defs/icon" },
+              "after": { "description": "One of Sextant's sections (`workloads`, `network`, `customResources`, …): this one comes right after it.", "type": "string", "minLength": 1, "maxLength": 40, "format": "identifier", "pattern": "^[A-Za-z][A-Za-z0-9-]{0,39}$" }
+            }
+          }
+        },
+        "clusterSettings": {
+          "description": "A tab of the extension's in a cluster's settings (`view=clusterSettings`, the cluster in the context; sextantApi 4).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["title"],
+          "properties": { "title": { "$ref": "#/$defs/title" } }
         },
         "sectionBadges": {
           "description": "Counters on the extension's own sidebar sections (ADR-0143); needs `sextantApi` 3. Sextant counts the objects with active problems of the extension's rules and shows the number on the section's header.",

@@ -162,6 +162,31 @@ pub struct Contributions {
     pub services: Vec<ServiceContribution>,
     /// Tools for AI agents in Sextant's MCP server, answered by the backend (ADR-0159); `sextantApi` 4.
     pub agent_tools: Vec<AgentToolContribution>,
+    /// The extension's own sidebar sections: title, icon and place (ADR-0160); `sextantApi` 4.
+    pub sections: Vec<SectionContribution>,
+    /// A tab of the extension's in a cluster's settings (ADR-0160); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub cluster_settings: Option<SettingsContribution>,
+}
+
+/// One of the extension's own sidebar sections.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SectionContribution {
+    pub section: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub title: Option<String>,
+    /// An icon of Sextant's set on the section's header.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub icon: Option<String>,
+    /// One of Sextant's sections: this one comes right after it; at the end when `None` or unknown.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub after: Option<String>,
 }
 
 /// An item of one of Sextant's menus (`view=action`, with the menu's subject in the context).
@@ -374,6 +399,13 @@ pub struct KindContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub order: Option<i32>,
+    /// Short names the command palette takes as a kind prefix (`hr web`), lowercase (ADR-0160).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[ts(as = "Option<Vec<String>>", optional)]
+    pub aliases: Vec<String>,
+    /// The command palette searches the kind without being asked to (ADR-0160).
+    #[serde(default)]
+    pub search_by_default: bool,
 }
 
 /// A dock button that opens a dock tab (`view=dock`).
@@ -442,6 +474,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     contributions::check_menu_items(&manifest)?;
     services::check_services(&manifest)?;
     agent_tools::check_agent_tools(&manifest)?;
+    contributions::check_sections(&manifest)?;
     Ok(manifest)
 }
 

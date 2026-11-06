@@ -29,7 +29,7 @@ import {
 import { getPage, registerPage, unregisterPage, type PageProps } from "../layout/pages";
 import { getSectionBadge, registerSectionBadge } from "../layout/sectionBadges";
 import { evalJsonPath, formatJsonPathValues } from "../resources/jsonpath";
-import { DEFAULT_ENTRY_ICON, extendActions, extendColumns, placeKind, SIDEBAR_SECTIONS } from "../resources/registry";
+import { DEFAULT_ENTRY_ICON, extendActions, extendColumns, placeKind, placeSection, SIDEBAR_SECTIONS } from "../resources/registry";
 import { computedColumn } from "./columns";
 import { ExtensionFrame } from "./ExtensionFrame";
 import { evaluate, kindKeyOf } from "./problemRules";
@@ -188,6 +188,20 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
         icon: entry.icon === undefined ? undefined : iconOf(entry.icon, extensionIcon),
         order: entry.order ?? 0,
         problem: problemOf(extensionId, entry, contributes.problems),
+        aliases: entry.aliases ?? [],
+        searchByDefault: entry.searchByDefault,
+      }),
+    );
+  }
+
+  // The extension's own sections: header, icon, place (ADR-0160).
+  for (const section of contributes.sections) {
+    removers.push(
+      placeSection(section.section, {
+        owner: extensionId,
+        title: section.title,
+        icon: section.icon === undefined ? undefined : iconOf(section.icon, extensionIcon),
+        after: section.after,
       }),
     );
   }

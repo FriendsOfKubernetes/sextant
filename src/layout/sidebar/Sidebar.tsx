@@ -25,7 +25,14 @@ import {
   viewIdOf,
 } from "../../resources";
 // Not re-exported from src/resources/index.ts: only the sidebar uses them.
-import { DEFAULT_ENTRY_ICON, DISCOVERED_SECTIONS, kindPlacement, placedSections, SECTION_ICONS } from "../../resources/registry";
+import {
+  DEFAULT_ENTRY_ICON,
+  DISCOVERED_SECTIONS,
+  kindPlacement,
+  placedSections,
+  SECTION_ICONS,
+  sectionPlacement,
+} from "../../resources/registry";
 import { formatCount, SIDEBAR_COUNT_CAP, useObjectCount } from "../../resources/counts";
 import { watchCrdChanges } from "../../resources/useKinds";
 import { getPages, usePagesVersion } from "../pages";
@@ -257,7 +264,28 @@ function countedSection(id: string): boolean {
 }
 
 function sectionIcon(id: string): IconName | undefined {
-  return (SECTION_ICONS as Record<string, IconName | undefined>)[id];
+  return (SECTION_ICONS as Record<string, IconName | undefined>)[id] ?? sectionPlacement(id)?.icon;
+}
+
+/** Sextant's sections, then the others: each right after the section of Sextant's it names (`after`), else at the end. */
+function sectionOrder(ids: readonly string[]): string[] {
+  const known = SIDEBAR_SECTIONS as readonly string[];
+  const order: string[] = [...known];
+  const rest = ids.filter((s) => !known.includes(s));
+  const tail: string[] = [];
+  for (const id of rest) {
+    const after = sectionPlacement(id)?.after;
+    const at = after === undefined ? -1 : order.indexOf(after);
+    if (at < 0) {
+      tail.push(id);
+      continue;
+    }
+    // After the named section and the extension sections already placed after it.
+    let index = at + 1;
+    while (index < order.length && !known.includes(order[index]!)) index++;
+    order.splice(index, 0, id);
+  }
+  return [...order, ...tail];
 }
 
 function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _registryVersion: number): Section[] {
@@ -311,14 +339,14 @@ function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _regi
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([group, entries]) => ({ group, entries: entries.sort((a, b) => (a.label ?? "").localeCompare(b.label ?? "")) }));
 
-  const order = [...SIDEBAR_SECTIONS, ...[...bySection.keys()].filter((s) => !(SIDEBAR_SECTIONS as readonly string[]).includes(s))];
+  const order = sectionOrder([...bySection.keys()]);
   const sections: Section[] = [];
   for (const id of order) {
     const entries = (bySection.get(id) ?? []).sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
     const sectionGroups = id === "customResources" ? crGroups : undefined;
     if (entries.length === 0 && !sectionGroups?.length) continue;
     const known = (SIDEBAR_SECTIONS as readonly string[]).includes(id) || id === "settings";
-    sections.push({ id, title: known ? undefined : titles.get(id), entries, groups: sectionGroups });
+    sections.push({ id, title: known ? undefined : (sectionPlacement(id)?.title ?? titles.get(id)), entries, groups: sectionGroups });
   }
   return sections;
 }

@@ -28,6 +28,7 @@ import {
   type WatchUpdate,
 } from "../../api";
 import { findKind, getResourceDefs, kindKey, SIDEBAR_SECTIONS } from "../../resources";
+import { kindPlacement } from "../../resources/registry";
 import { useRestrictedScope } from "../namespaces/accessStore";
 import { queryWords } from "./fuzzy";
 
@@ -151,13 +152,21 @@ export function searchKinds(kinds: ResourceKind[], first?: Pick<KindRef, "group"
 export function defaultSearchKinds(all: SearchKind[], first?: Pick<KindRef, "group" | "kind"> | null): SearchKind[] {
   const firstKey = first ? kindKey(first) : null;
   const byKey = new Map(all.map((k) => [kindKey(k.kind), k]));
-  const keys = firstKey ? [firstKey, ...COMMON_KINDS.filter((k) => k !== firstKey)] : COMMON_KINDS;
+  // Kinds an extension asks to be searched by default (ADR-0160), after Sextant's own.
+  const placed = all.filter((k) => kindPlacement(k.kind)?.searchByDefault).map((k) => kindKey(k.kind));
+  const common = [...COMMON_KINDS, ...placed.filter((k) => !COMMON_KINDS.includes(k))];
+  const keys = firstKey ? [firstKey, ...common.filter((k) => k !== firstKey)] : common;
   return keys.map((k) => byKey.get(k)).filter((k): k is SearchKind => k !== undefined);
 }
 
+/** Short names Sextant itself gives kinds: an extension's alias that is one of these is ignored. */
+const TAKEN_SHORT_NAMES = new Set(Object.values(SHORT_NAMES).flat());
+
 /** The names a query can give a kind: its short names, the kind and its plural, ignoring case. */
 function aliasesOf(k: SearchKind): string[] {
-  return [...(SHORT_NAMES[kindKey(k.kind)] ?? []), k.kind.kind.toLowerCase(), k.resourceKind.plural.toLowerCase()];
+  const own = SHORT_NAMES[kindKey(k.kind)];
+  const placed = own ? [] : (kindPlacement(k.kind)?.aliases ?? []).filter((a) => !TAKEN_SHORT_NAMES.has(a));
+  return [...(own ?? []), ...placed, k.kind.kind.toLowerCase(), k.resourceKind.plural.toLowerCase()];
 }
 
 export interface KindQuery {

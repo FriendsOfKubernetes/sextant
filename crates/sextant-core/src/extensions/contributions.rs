@@ -174,6 +174,18 @@ pub(crate) fn check_kinds(manifest: &ExtensionManifest) -> Result<(), ManifestEr
                 "must be a section of the extension's own: a kind or page of it with this section has a `sectionTitle`",
             ));
         }
+        for (j, alias) in entry.aliases.iter().enumerate() {
+            let ok = (1..=20).contains(&alias.len())
+                && alias
+                    .bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-');
+            if !ok {
+                return Err(at(
+                    &here.key("aliases").index(j),
+                    "a short name has 1 to 20 lowercase letters, digits and `-`",
+                ));
+            }
+        }
     }
     Ok(())
 }
@@ -253,6 +265,48 @@ pub(crate) fn own_section(manifest: &ExtensionManifest, section: &str) -> bool {
         || c.kinds
             .iter()
             .any(|kind| kind.section == section && kind.section_title.is_some())
+        || c.sections
+            .iter()
+            .any(|s| s.section == section && s.title.is_some())
+}
+
+/// `contributes.sections` and `clusterSettings` (ADR-0160): `sextantApi` 4, each section once and the extension's own.
+pub(crate) fn check_sections(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
+    let c = &manifest.contributes;
+    if c.cluster_settings.is_some() && manifest.sextant_api < WINDOW_API {
+        return Err(at(
+            &JsonPath::default()
+                .key("contributes")
+                .key("clusterSettings"),
+            format!("needs sextantApi {WINDOW_API} or later"),
+        ));
+    }
+    let list = JsonPath::default().key("contributes").key("sections");
+    if c.sections.is_empty() {
+        return Ok(());
+    }
+    if manifest.sextant_api < WINDOW_API {
+        return Err(at(&list, format!("needs sextantApi {WINDOW_API} or later")));
+    }
+    for (i, entry) in c.sections.iter().enumerate() {
+        let here = list.index(i);
+        if let Some(first) = c.sections[..i]
+            .iter()
+            .position(|o| o.section == entry.section)
+        {
+            return Err(at(
+                &here.key("section"),
+                format!("duplicate section (also {})", list.index(first)),
+            ));
+        }
+        if !own_section(manifest, &entry.section) {
+            return Err(at(
+                &here.key("section"),
+                "must be a section of the extension's own: it, or a kind or page of it with this section, has a title",
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// The kinds the extension lists in its own sections: where its actions may be `primary` (ADR-0154).

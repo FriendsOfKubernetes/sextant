@@ -142,6 +142,10 @@ export interface ManifestKind {
   title?: string;
   icon?: string;
   order?: number;
+  /** Short names the command palette takes as a kind prefix (`hr web`), lowercase. */
+  aliases?: string[];
+  /** The command palette searches the kind without being asked to. Default `false`. */
+  searchByDefault?: boolean;
 }
 
 export interface ManifestDockAction {
@@ -223,6 +227,21 @@ export interface ManifestContributions {
   services?: ManifestService[];
   /** Tools for AI agents in Sextant's MCP server, answered by the backend; needs `sextantApi` 4 and a `backend`. */
   agentTools?: ManifestAgentTool[];
+  /** The extension's own sidebar sections: title, header icon, place; needs `sextantApi` 4. */
+  sections?: ManifestSection[];
+  /** A tab in a cluster's settings (`view=clusterSettings`, that cluster in the context); needs `sextantApi` 4. */
+  clusterSettings?: ManifestSettings;
+}
+
+/** One of the extension's own sidebar sections (sextantApi 4, ADR-0160). */
+export interface ManifestSection {
+  section: string;
+  /** Its header; makes it the extension's own. */
+  title?: string;
+  /** An icon of Sextant's set on the header. */
+  icon?: string;
+  /** One of Sextant's sections (`workloads`, `customResources`, …): this one comes right after it. */
+  after?: string;
 }
 
 /**
@@ -384,7 +403,8 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
       sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [] })),
       commands: (c.commands ?? []).map((command) => ({ ...command, params: command.params ?? [], changes: command.changes ?? false })),
-      kinds: c.kinds ?? [],
+      kinds: (c.kinds ?? []).map((k) => ({ ...k, searchByDefault: k.searchByDefault ?? false })),
+      sections: c.sections ?? [],
       menuItems: c.menuItems ?? [],
       services: c.services ?? [],
       agentTools: (c.agentTools ?? []).map((tool) => ({ ...tool, readOnly: tool.readOnly ?? false })),
@@ -392,6 +412,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
   };
   if (file.icon !== undefined) manifest.icon = file.icon;
   if (c.settings !== undefined) manifest.contributes.settings = c.settings;
+  if (c.clusterSettings !== undefined) manifest.contributes.clusterSettings = c.clusterSettings;
   if (file.backend !== undefined) {
     manifest.backend = {
       module: file.backend.module,

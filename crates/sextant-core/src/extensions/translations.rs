@@ -67,6 +67,14 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
             out.insert(format!("columns.{}.cases.{i}.text", column.id), Text::Title);
         }
     }
+    for section in &c.sections {
+        if section.title.is_some() {
+            out.insert(format!("sections.{}.title", section.section), Text::Title);
+        }
+    }
+    if c.cluster_settings.is_some() {
+        out.insert("clusterSettings.title".to_owned(), Text::Title);
+    }
     for tool in &c.agent_tools {
         out.insert(format!("agentTools.{}.title", tool.id), Text::Title);
     }

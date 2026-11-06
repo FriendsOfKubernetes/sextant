@@ -421,6 +421,10 @@ export interface KindPlacement {
   order: number;
   /** Whether an object has a problem of the owner's rules. */
   problem?: (obj: KubeObject) => boolean;
+  /** Short names the command palette takes as a kind prefix (ADR-0160). */
+  aliases?: readonly string[];
+  /** The command palette searches the kind without being asked to. */
+  searchByDefault?: boolean;
 }
 
 const placements = new Map<string, KindPlacement[]>();
@@ -442,6 +446,35 @@ export function placeKind(kind: Pick<KindRef, "group" | "kind">, placement: Kind
 export function kindPlacement(kind: Pick<KindRef, "group" | "kind">): KindPlacement | undefined {
   if (defs.has(kindKey(kind))) return undefined;
   return placements.get(extensionKey(kind))?.[0];
+}
+
+/** An extension's own sidebar section (`contributes.sections`, ADR-0160): its header, icon and place. */
+export interface SectionPlacement {
+  owner: string;
+  title?: string;
+  icon?: IconName;
+  /** One of Sextant's sections it comes right after. */
+  after?: string;
+}
+
+const sectionPlacements = new Map<string, SectionPlacement[]>();
+
+/** Describes an extension's own section. Returns a function that removes it again. */
+export function placeSection(section: string, placement: SectionPlacement): () => void {
+  sectionPlacements.set(section, [...(sectionPlacements.get(section) ?? []), placement].sort((a, b) => a.owner.localeCompare(b.owner)));
+  changed();
+  return () => {
+    const list = sectionPlacements.get(section)?.filter((p) => p !== placement) ?? [];
+    if (list.length > 0) sectionPlacements.set(section, list);
+    else sectionPlacements.delete(section);
+    changed();
+  };
+}
+
+/** How an extension describes `section`, unless it is one of Sextant's. */
+export function sectionPlacement(section: string): SectionPlacement | undefined {
+  if ((SIDEBAR_SECTIONS as readonly string[]).includes(section)) return undefined;
+  return sectionPlacements.get(section)?.[0];
 }
 
 /** The sections extensions list kinds in (a page of one shows only while one of its kinds is served). */

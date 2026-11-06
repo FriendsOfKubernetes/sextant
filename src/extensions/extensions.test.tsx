@@ -67,6 +67,7 @@ const manifest: ExtensionManifest = {
     menuItems: [],
     services: [],
     agentTools: [],
+    sections: [],
     settings: { title: "Widget settings" },
   },
 };
@@ -531,7 +532,7 @@ describe("contributions of an extension", () => {
           sextantApi: 4,
           contributes: {
             ...manifest.contributes,
-            kinds: [{ ...own, section: "widgets", sectionTitle: "Widget tools" }],
+            kinds: [{ ...own, section: "widgets", sectionTitle: "Widget tools", searchByDefault: false }],
             actions: [
               {
                 id: "resume",
@@ -596,9 +597,9 @@ describe("contributions of an extension", () => {
             ...manifest.contributes,
             pages: [{ id: "board", title: "Widget board", section: "tools", sectionTitle: "Widget tools" }],
             kinds: [
-              { group: "demo.sextant.dev", kind: "Widget", section: "tools", title: "Widgets of the demo", order: 1 },
+              { group: "demo.sextant.dev", kind: "Widget", section: "tools", title: "Widgets of the demo", order: 1, searchByDefault: false },
               // Not served by the cluster: never listed.
-              { group: "demo.sextant.dev", kind: "Missing", section: "tools", order: 2 },
+              { group: "demo.sextant.dev", kind: "Missing", section: "tools", order: 2, searchByDefault: false },
             ],
             problems: [rule],
           },

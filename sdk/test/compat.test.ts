@@ -150,7 +150,14 @@ function openPage(html: string, context: HostContext): Document {
     extensionId: context.extensionId,
     frame: () => frameWindow,
     context: () => bridgeContext?.() ?? context,
-    ui: { openDetails: vi.fn(), navigate: vi.fn(), notify: vi.fn(), close: vi.fn() },
+    ui: {
+      openDetails: vi.fn(),
+      navigate: vi.fn(),
+      notify: vi.fn(),
+      close: vi.fn(),
+      openLogs: vi.fn(() => Promise.resolve()),
+      openUrl: vi.fn(() => Promise.resolve({ opened: false })),
+    },
     onFrameError,
     onResize: vi.fn(),
   });

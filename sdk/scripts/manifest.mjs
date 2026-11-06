@@ -968,6 +968,8 @@ export function translatableTexts(manifest) {
     out.set(`columns.${column.id}.title`, title);
     (column.cases ?? []).forEach((_, i) => out.set(`columns.${column.id}.cases.${i}.text`, title));
   }
+  for (const section of c.sections ?? []) if (section.title !== undefined) out.set(`sections.${section.section}.title`, title);
+  if (c.clusterSettings !== undefined) out.set("clusterSettings.title", title);
   for (const tool of c.agentTools ?? []) out.set(`agentTools.${tool.id}.title`, title);
   for (const service of c.services ?? []) out.set(`services.${service.id}.title`, title);
   for (const item of c.menuItems ?? []) out.set(`menuItems.${item.id}.title`, title);
@@ -1186,13 +1188,35 @@ function checkAgentTools(manifest) {
   });
 }
 
-/** Whether `section` is the extension's own: a page or listed kind with this section gives it a title (`own_section`). */
+/** Whether `section` is the extension's own: a page or listed kind with this section gives it a title, or `sections`
+ * lists it with one (`own_section`). */
 function ownSection(manifest, section) {
   const c = manifest.contributes ?? {};
   return (
     (c.pages ?? []).some((page) => page.section === section && page.sectionTitle !== undefined) ||
-    (c.kinds ?? []).some((kind) => kind.section === section && kind.sectionTitle !== undefined)
+    (c.kinds ?? []).some((kind) => kind.section === section && kind.sectionTitle !== undefined) ||
+    (c.sections ?? []).some((s) => s.section === section && s.title !== undefined)
   );
+}
+
+/** `contributes.sections` and `clusterSettings` (`check_sections`). */
+function checkSections(manifest) {
+  const c = manifest.contributes ?? {};
+  if (c.clusterSettings !== undefined && manifest.sextantApi < WINDOW_API) {
+    fail(["contributes", "clusterSettings"], `needs sextantApi ${WINDOW_API} or later`);
+  }
+  const sections = c.sections ?? [];
+  const list = ["contributes", "sections"];
+  if (sections.length === 0) return;
+  if (manifest.sextantApi < WINDOW_API) fail(list, `needs sextantApi ${WINDOW_API} or later`);
+  sections.forEach((entry, i) => {
+    const here = [...list, i];
+    const first = sections.slice(0, i).findIndex((o) => o.section === entry.section);
+    if (first >= 0) fail([...here, "section"], `duplicate section (also ${pathText([...list, first])})`);
+    if (!ownSection(manifest, entry.section)) {
+      fail([...here, "section"], "must be a section of the extension's own: it, or a kind or page of it with this section, has a title");
+    }
+  });
 }
 
 /** A condition of an action or a column (`check_object_condition`): no `missing`, no secret of any of `kinds`. */
@@ -1259,6 +1283,11 @@ function checkKinds(manifest) {
     if (!ownSection(manifest, entry.section)) {
       fail([...here, "section"], "must be a section of the extension's own: a kind or page of it with this section has a `sectionTitle`");
     }
+    (entry.aliases ?? []).forEach((alias, j) => {
+      if (!(alias.length >= 1 && alias.length <= 20 && /^[a-z0-9-]+$/.test(alias))) {
+        fail([...here, "aliases", j], "a short name has 1 to 20 lowercase letters, digits and `-`");
+      }
+    });
   });
 }
 
@@ -1286,6 +1315,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     }
     checkServices(value);
     checkAgentTools(value);
+    checkSections(value);
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };

@@ -14,6 +14,7 @@ import type {
   ManifestKind,
   ManifestMenuItem,
   ManifestService,
+  ManifestSection,
   ManifestAgentTool,
   ManifestFile,
   ManifestMetricQuery,
@@ -86,6 +87,8 @@ export const MANIFEST_SHAPES = {
     menuItems: "optional",
     services: "optional",
     agentTools: "optional",
+    sections: "optional",
+    clusterSettings: "optional",
   }),
   ManifestAgentTool: described<ManifestAgentTool>(`${CONTRIBUTION}/agentTools/items`, {
     id: "required",
@@ -195,6 +198,14 @@ export const MANIFEST_SHAPES = {
     title: "optional",
     icon: "optional",
     order: "optional",
+    aliases: "optional",
+    searchByDefault: "optional",
+  }),
+  ManifestSection: described<ManifestSection>(`${CONTRIBUTION}/sections/items`, {
+    section: "required",
+    title: "optional",
+    icon: "optional",
+    after: "optional",
   }),
   ManifestDockAction: described<ManifestDockAction>(`${CONTRIBUTION}/dockActions/items`, {
     id: "required",
