@@ -100,7 +100,9 @@ export const MANIFEST_SHAPES = {
   ManifestService: described<ManifestService>(`${CONTRIBUTION}/services/items`, {
     id: "required",
     title: "required",
-    name: "required",
+    name: "optional",
+    labelSelector: "optional",
+    secrets: "optional",
     port: "required",
     scheme: "required",
     signIn: "optional",

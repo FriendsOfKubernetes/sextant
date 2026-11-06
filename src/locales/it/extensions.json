@@ -336,7 +336,8 @@
   "services": {
     "heading": "Servizi nel cluster",
     "list": "L’estensione può inviare richieste a questi Service tramite un inoltro di porta di Sextant:",
-    "scope": "Solo nei namespace in cui può leggere i Service e inoltrare verso di essi. Un token di sessione preso da una risposta resta in Sextant fino alla disconnessione; il registro attività conserva metodo e percorso, mai query, corpo o risposta."
+    "scope": "Solo nei namespace in cui può leggere i Service e inoltrare verso di essi. Un token di sessione preso da una risposta resta in Sextant fino alla disconnessione; il registro attività conserva metodo e percorso, mai query, corpo o risposta.",
+    "secrets": "Riceve queste chiavi di Secret: {{keys}}"
   },
   "agentTools": {
     "heading": "Strumenti per agenti IA",

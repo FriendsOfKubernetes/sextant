@@ -536,11 +536,26 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["id", "title", "name", "port", "scheme"],
+            "required": ["id", "title", "port", "scheme"],
             "properties": {
               "id": { "$ref": "#/$defs/contributionId" },
               "title": { "$ref": "#/$defs/title" },
-              "name": { "description": "The Service's name, in the namespace each request names.", "type": "string", "minLength": 1, "maxLength": 63 },
+              "name": { "description": "The Service's name, in the namespace each request names; or `labelSelector`.", "type": "string", "minLength": 1, "maxLength": 63 },
+              "labelSelector": { "description": "A label selector picking exactly one Service in the namespace, instead of `name`.", "type": "string", "minLength": 1, "maxLength": 1000 },
+              "secrets": {
+                "description": "Keys of Secrets of the namespace the service may receive in `{{secret:<name>/<key>}}`, agreed to with it.",
+                "type": "array",
+                "maxItems": 5,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "key"],
+                  "properties": {
+                    "name": { "type": "string", "minLength": 1, "maxLength": 63 },
+                    "key": { "type": "string", "minLength": 1, "maxLength": 253 }
+                  }
+                }
+              },
               "port": {
                 "description": "The Service's port: its number or its name.",
                 "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 65535 }, { "type": "string", "minLength": 1, "maxLength": 15 }]

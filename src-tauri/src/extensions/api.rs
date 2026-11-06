@@ -1767,11 +1767,20 @@ impl<'a> ExtCall<'a> {
         services::check_path(&args.path)?;
         let query: Vec<(String, String)> = args.query.into_iter().collect();
         let encoded = services::encode_query(&query)?;
-        let session = match args.auth.as_deref() {
-            None => false,
-            Some("session") => true,
-            Some(other) => return Err(invalid(format!("auth {other:?}: only \"session\""))),
+        // `session`: the token a `capture` kept; `signIn:<field>`: that sign-in field as the bearer token (ADR-0161).
+        let auth = match args.auth.as_deref() {
+            None => Auth::None,
+            Some("session") => Auth::Session,
+            Some(other) => match other.strip_prefix("signIn:") {
+                Some(field) if !field.is_empty() => Auth::SignIn(field.to_owned()),
+                _ => {
+                    return Err(invalid(format!(
+                        "auth {other:?}: \"session\" or \"signIn:<field>\""
+                    )));
+                }
+            },
         };
+        let session = matches!(auth, Auth::Session);
         let capture = match args.capture.as_deref().map(str::trim) {
             Some(path) => Some(
                 parse_field_path(path)
@@ -1809,6 +1818,11 @@ impl<'a> ExtCall<'a> {
             .flat_map(|s| &s.fields)
             .map(|f| f.id.as_str())
             .collect();
+        if let Auth::SignIn(field) = &auth
+            && !sign_in_fields.contains(field)
+        {
+            sign_in_fields.push(field.clone());
+        }
         if let Some(unknown) = sign_in_fields
             .iter()
             .find(|f| !declared.contains(&f.as_str()))
@@ -1831,7 +1845,8 @@ impl<'a> ExtCall<'a> {
                 AccessAction::PortForward,
             ),
         ];
-        if !secrets.is_empty() {
+        // Keys the service declares were agreed to with it; any other needs "Secret values" there (ADR-0161).
+        if secrets.iter().any(|(n, k)| !service.receives_secret(n, k)) {
             needs.push((
                 Some(namespace.clone()),
                 KindPattern::new("", "Secret"),
@@ -1842,7 +1857,7 @@ impl<'a> ExtCall<'a> {
             tool: self.method.clone(),
             target: format!(
                 "Service {namespace}/{}: {} {}",
-                service.name,
+                service.shown_name(),
                 args.method.as_str(),
                 args.path
             ),
@@ -1874,31 +1889,49 @@ impl<'a> ExtCall<'a> {
             }
         }
         let key = session_key(&self.id, &cluster.id.0, &namespace, &service.id);
-        if !sign_in_fields.is_empty()
-            && let Some(body) = body.as_mut()
-        {
+        let mut signed_in = None;
+        if !sign_in_fields.is_empty() {
             let values = self
                 .sign_in_values(&cluster, &namespace, &service.id, &key)
                 .await?;
-            for field in &sign_in_fields {
-                let value = values.get(field).ok_or_else(|| {
-                    CoreError::new(ErrorCode::Unauthorized, "sign in first (ui.signIn)")
-                })?;
-                fill_placeholder(body, &format!("{{{{signIn:{field}}}}}"), value);
+            if let Some(body) = body.as_mut() {
+                for field in &sign_in_fields {
+                    let value = values.get(field).ok_or_else(|| {
+                        CoreError::new(ErrorCode::Unauthorized, "sign in first (ui.signIn)")
+                    })?;
+                    fill_placeholder(body, &format!("{{{{signIn:{field}}}}}"), value);
+                }
             }
+            signed_in = Some(values);
         }
+        let service_name = self.service_name(&cluster, &namespace, &service).await?;
         let forward = self
-            .service_forward(&cluster, &namespace, &service, &key, entry.granted)
+            .service_forward(
+                &cluster,
+                &namespace,
+                &service,
+                &service_name,
+                &key,
+                entry.granted,
+            )
             .await?;
-        let bearer = if session {
-            Some(self.api.sessions.token(&key, &forward.id).ok_or_else(|| {
+        let bearer = match &auth {
+            Auth::None => None,
+            Auth::Session => Some(self.api.sessions.token(&key, &forward.id).ok_or_else(|| {
                 CoreError::new(
                     ErrorCode::Unauthorized,
                     "no session for this service: sign in first (a request with `capture`)",
                 )
-            })?)
-        } else {
-            None
+            })?),
+            Auth::SignIn(field) => Some(
+                signed_in
+                    .as_ref()
+                    .and_then(|values| values.get(field))
+                    .cloned()
+                    .ok_or_else(|| {
+                        CoreError::new(ErrorCode::Unauthorized, "sign in first (ui.signIn)")
+                    })?,
+            ),
         };
         let path_and_query = if encoded.is_empty() {
             args.path.clone()
@@ -1908,7 +1941,7 @@ impl<'a> ExtCall<'a> {
         let answer = services::send(LoopbackRequest {
             port: forward.local_port,
             scheme: service.scheme,
-            host: format!("{}.{namespace}.svc", service.name),
+            host: format!("{service_name}.{namespace}.svc"),
             method: args.method,
             path_and_query,
             body,
@@ -1993,11 +2026,60 @@ impl<'a> ExtCall<'a> {
     }
 
     /// Sextant's own forward to `service` for this extension, started when there is none (never listed to it).
+    /// The name of the Service: the manifest's, or the one Service its label selector picks in `namespace`.
+    async fn service_name(
+        &self,
+        cluster: &ExtCluster,
+        namespace: &str,
+        service: &ServiceContribution,
+    ) -> CoreResult<String> {
+        if let Some(name) = &service.name {
+            return Ok(name.clone());
+        }
+        let selector = service.label_selector.as_deref().unwrap_or_default();
+        let kind = KindRef {
+            group: String::new(),
+            version: "v1".into(),
+            kind: "Service".into(),
+        };
+        let page = read(
+            "listing the Services",
+            resources::list(
+                &self.api.clusters,
+                &cluster.id,
+                &kind,
+                Some(namespace),
+                Some(selector),
+                None,
+                2,
+            ),
+        )
+        .await?;
+        let names: Vec<String> = page
+            .items
+            .iter()
+            .filter_map(|s| s["metadata"]["name"].as_str().map(str::to_owned))
+            .collect();
+        match names.as_slice() {
+            [one] => Ok(one.clone()),
+            [] => Err(CoreError::new(
+                ErrorCode::NotFound,
+                format!("no Service {selector} in {namespace}"),
+            )),
+            _ => Err(CoreError::new(
+                ErrorCode::Conflict,
+                format!("more than one Service {selector} in {namespace}"),
+            )),
+        }
+    }
+
+    /// Sextant's own forward to `service` for this extension, started when there is none (never listed to it).
     async fn service_forward(
         &self,
         cluster: &ExtCluster,
         namespace: &str,
         service: &ServiceContribution,
+        service_name: &str,
         key: &str,
         granted: ExtensionPermissions,
     ) -> CoreResult<ForwardInfo> {
@@ -2014,7 +2096,7 @@ impl<'a> ExtCall<'a> {
                         kind: "Service".into(),
                     },
                     namespace: Some(namespace.to_owned()),
-                    name: service.name.clone(),
+                    name: service_name.to_owned(),
                 };
                 let found = read(
                     "reading the Service",
@@ -2031,7 +2113,7 @@ impl<'a> ExtCall<'a> {
                     .ok_or_else(|| {
                         CoreError::new(
                             ErrorCode::NotFound,
-                            format!("Service {namespace}/{} has no port {name}", service.name),
+                            format!("Service {namespace}/{service_name} has no port {name}"),
                         )
                     })?
             }
@@ -2048,7 +2130,7 @@ impl<'a> ExtCall<'a> {
                 &cluster.id,
                 ForwardTarget::Service {
                     namespace: namespace.to_owned(),
-                    name: service.name.clone(),
+                    name: service_name.to_owned(),
                 },
                 port,
                 None,
@@ -2796,6 +2878,15 @@ struct ServiceRequestArgs {
     /// A field path of the JSON answer holding a token: Sextant keeps it as the session and takes it out of the answer.
     #[serde(default)]
     capture: Option<String>,
+}
+
+/// How a service request is authenticated.
+enum Auth {
+    None,
+    /// The token a `capture` kept.
+    Session,
+    /// A sign-in field as the bearer token.
+    SignIn(String),
 }
 
 #[derive(Deserialize)]

@@ -3,6 +3,7 @@
 // again.
 import { useTranslation } from "react-i18next";
 import type { ServiceContribution } from "../../api";
+import { formatList } from "../../i18n/format";
 
 export function ServicesConsent({ services }: { services: readonly ServiceContribution[] }) {
   const { t } = useTranslation();
@@ -15,7 +16,15 @@ export function ServicesConsent({ services }: { services: readonly ServiceContri
           <li key={service.id}>
             {service.title}
             <br />
-            <code>{`${service.scheme}://${service.name}:${String(service.port)}`}</code>
+            <code>{`${service.scheme}://${service.name ?? service.labelSelector ?? ""}:${String(service.port)}`}</code>
+            {(service.secrets ?? []).length > 0 && (
+              <>
+                <br />
+                <span className="settings__hint">
+                  {t("extensions:services.secrets", { keys: formatList((service.secrets ?? []).map((s) => `${s.name}/${s.key}`)) })}
+                </span>
+              </>
+            )}
           </li>
         ))}
       </ul>

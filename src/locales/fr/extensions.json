@@ -336,7 +336,8 @@
   "services": {
     "heading": "Services dans le cluster",
     "list": "L’extension peut envoyer des requêtes à ces Services par une redirection de port propre à Sextant :",
-    "scope": "Uniquement dans les namespaces où elle peut lire les Services et rediriger vers eux. Un jeton de session tiré d’une réponse reste dans Sextant jusqu’à la déconnexion ; le journal d’activité garde la méthode et le chemin, jamais la requête, le corps ni la réponse."
+    "scope": "Uniquement dans les namespaces où elle peut lire les Services et rediriger vers eux. Un jeton de session tiré d’une réponse reste dans Sextant jusqu’à la déconnexion ; le journal d’activité garde la méthode et le chemin, jamais la requête, le corps ni la réponse.",
+    "secrets": "Reçoit ces clés de Secret : {{keys}}"
   },
   "agentTools": {
     "heading": "Outils pour les agents IA",

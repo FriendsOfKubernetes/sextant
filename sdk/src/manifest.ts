@@ -278,8 +278,12 @@ export interface ManifestService {
   id: string;
   /** What it is, at consent: "Argo CD API". */
   title: string;
-  /** The Service's name. */
-  name: string;
+  /** The Service's name; or `labelSelector`. */
+  name?: string;
+  /** A label selector picking exactly one Service in the namespace (a Helm release's prefixed name), instead of `name`. */
+  labelSelector?: string;
+  /** Keys of Secrets of the namespace it may receive in `{{secret:<name>/<key>}}`, agreed to with it: no namespace-wide "Secret values" needed. */
+  secrets?: { name: string; key: string }[];
   /** Its port: a number or a port name. */
   port: number | string;
   /** `https`: TLS without checking the certificate (the loopback end of Sextant's forward); `http`: plain. */

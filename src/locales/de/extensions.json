@@ -329,7 +329,8 @@
   "services": {
     "heading": "Services im Cluster",
     "list": "Die Erweiterung darf über eine eigene Portweiterleitung von Sextant Anfragen an diese Services senden:",
-    "scope": "Nur in Namespaces, in denen sie Services lesen und an sie weiterleiten darf. Ein Sitzungstoken aus einer Antwort behält Sextant bis zur Trennung; das Aktivitätsprotokoll enthält Methode und Pfad, nie Abfrage, Inhalt oder Antwort."
+    "scope": "Nur in Namespaces, in denen sie Services lesen und an sie weiterleiten darf. Ein Sitzungstoken aus einer Antwort behält Sextant bis zur Trennung; das Aktivitätsprotokoll enthält Methode und Pfad, nie Abfrage, Inhalt oder Antwort.",
+    "secrets": "Erhält diese Secret-Schlüssel: {{keys}}"
   },
   "agentTools": {
     "heading": "Werkzeuge für KI-Agenten",

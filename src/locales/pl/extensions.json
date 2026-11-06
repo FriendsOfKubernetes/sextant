@@ -343,7 +343,8 @@
   "services": {
     "heading": "Usługi w klastrze",
     "list": "Rozszerzenie może wysyłać żądania do tych Service przez własne przekierowanie portów Sextant:",
-    "scope": "Tylko w przestrzeniach nazw, w których może odczytywać Service i przekierowywać do nich porty. Token sesji z odpowiedzi Sextant przechowuje do rozłączenia; dziennik aktywności zapisuje metodę i ścieżkę, nigdy zapytania, treści ani odpowiedzi."
+    "scope": "Tylko w przestrzeniach nazw, w których może odczytywać Service i przekierowywać do nich porty. Token sesji z odpowiedzi Sextant przechowuje do rozłączenia; dziennik aktywności zapisuje metodę i ścieżkę, nigdy zapytania, treści ani odpowiedzi.",
+    "secrets": "Otrzymuje te klucze Secret: {{keys}}"
   },
   "agentTools": {
     "heading": "Narzędzia dla agentów AI",

@@ -336,7 +336,8 @@
   "services": {
     "heading": "Serviços no cluster",
     "list": "A extensão pode enviar solicitações a estes Services por um redirecionamento de porta do próprio Sextant:",
-    "scope": "Somente nos namespaces em que ela pode ler Services e redirecionar para eles. Um token de sessão tirado de uma resposta fica no Sextant até você desconectar; o registro de atividades guarda o método e o caminho, nunca a consulta, o corpo ou a resposta."
+    "scope": "Somente nos namespaces em que ela pode ler Services e redirecionar para eles. Um token de sessão tirado de uma resposta fica no Sextant até você desconectar; o registro de atividades guarda o método e o caminho, nunca a consulta, o corpo ou a resposta.",
+    "secrets": "Recebe estas chaves de Secret: {{keys}}"
   },
   "agentTools": {
     "heading": "Ferramentas para agentes de IA",

@@ -1094,7 +1094,20 @@ function checkServices(manifest) {
   if (manifest.sextantApi < WINDOW_API) fail(list, `needs sextantApi ${WINDOW_API} or later`);
   services.forEach((service, i) => {
     const here = [...list, i];
-    if (!isDnsLabel(service.name)) fail([...here, "name"], "must be a Service name: lowercase letters, digits and `-`, at most 63");
+    if (service.name !== undefined && service.labelSelector === undefined) {
+      if (!isDnsLabel(service.name)) fail([...here, "name"], "must be a Service name: lowercase letters, digits and `-`, at most 63");
+    } else if (service.name === undefined && service.labelSelector !== undefined) {
+      if (!isSetSelector(service.labelSelector)) {
+        fail([...here, "labelSelector"], "must be a Kubernetes label selector such as `app.kubernetes.io/name=argocd-server`");
+      }
+    } else {
+      fail(here, "names the Service by `name` or `labelSelector`, one of them");
+    }
+    (service.secrets ?? []).forEach((secret, j) => {
+      if (!isDnsLabel(secret.name) || !/^[A-Za-z0-9._-]{1,253}$/.test(secret.key)) {
+        fail([...here, "secrets", j], "names a Secret (a DNS name) and a key (letters, digits, `-`, `_`, `.`)");
+      }
+    });
     const port = service.port;
     const ok = isNumber(port) ? !isFloat(port) && port >= 1 && port <= 65535 : typeof port === "string" && isPortName(port);
     if (!ok) fail([...here, "port"], "must be a port number (1–65535) or a port name");

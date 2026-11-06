@@ -185,8 +185,8 @@ export interface ServiceRequestParams extends OnCluster {
   query?: Record<string, string>;
   /** JSON. A string value exactly `{{secret:<name>/<key>}}` is that key of a Secret of `namespace`, put in by Sextant. */
   body?: JsonValue;
-  /** `session`: Sextant adds the token it keeps for this service (see `capture`). */
-  auth?: "session";
+  /** `session`: the token a `capture` kept; `signIn:<field>`: that sign-in field (an API token) as the bearer token. */
+  auth?: "session" | `signIn:${string}`;
   /** A field path of the JSON answer holding a token: Sextant keeps it as the session, the answer shows `<hidden>`. */
   capture?: string;
 }

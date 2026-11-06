@@ -2687,3 +2687,45 @@ async fn a_sign_in_typed_in_sextants_dialog_fills_the_request_and_never_comes_ba
         ErrorCode::Unauthorized
     );
 }
+
+#[tokio::test]
+async fn a_secret_key_a_service_declares_needs_no_secret_values_on_the_namespace() {
+    let env = Env::at(&fake_cluster().await);
+    env.install(
+        "argo",
+        perms(all_clusters(), &["argocd"], &["read", "portForward"], false),
+    );
+    grant_services(
+        &env,
+        "argo",
+        json!([{ "id": "api", "title": "Argo CD API", "labelSelector": "app.kubernetes.io/name=argocd-server", "port": 443,
+                 "scheme": "https", "secrets": [{ "name": "argocd-initial-admin-secret", "key": "password" }] }]),
+    );
+    let login = |secret: &str| {
+        json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": "api", "method": "POST", "path": "/api/v1/session",
+                "capture": ".token", "body": { "username": "admin", "password": format!("{{{{secret:{secret}}}}}") } })
+    };
+    let call = |params: Value| {
+        env.api
+            .call(&env.host, "argo", "service.request", params, None)
+    };
+    // The declared key: allowed without "Secret values" (the fake cluster has no such Secret: not found, not denied).
+    let err = call(login("argocd-initial-admin-secret/password"))
+        .await
+        .unwrap_err();
+    assert_ne!(err.code, ErrorCode::Denied, "{}", err.message);
+    // Another key: "Secret values" on the namespace, which this extension does not have.
+    let err = call(login("argocd-initial-admin-secret/other"))
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied, "{}", err.message);
+    // A token from a sign-in field the service does not declare: invalid.
+    let mut token = login("argocd-initial-admin-secret/password");
+    token["auth"] = json!("signIn:token");
+    assert_eq!(call(token).await.unwrap_err().code, ErrorCode::Invalid);
+    let journal = env.api.audit_list(Some("argo"));
+    assert!(
+        journal.iter().any(|e| e.target
+            == "Service argocd/app.kubernetes.io/name=argocd-server: POST /api/v1/session")
+    );
+}

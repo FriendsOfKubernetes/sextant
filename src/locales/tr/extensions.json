@@ -329,7 +329,8 @@
   "services": {
     "heading": "Kümedeki servisler",
     "list": "Uzantı, Sextant'ın kendi port yönlendirmesi üzerinden bu Service'lere istek gönderebilir:",
-    "scope": "Yalnızca Service'leri okuyabildiği ve onlara yönlendirme yapabildiği namespace'lerde. Bir yanıttan alınan oturum belirteci bağlantı kesilene kadar Sextant'ta kalır; etkinlik günlüğü yöntemi ve yolu tutar, sorguyu, gövdeyi veya yanıtı asla tutmaz."
+    "scope": "Yalnızca Service'leri okuyabildiği ve onlara yönlendirme yapabildiği namespace'lerde. Bir yanıttan alınan oturum belirteci bağlantı kesilene kadar Sextant'ta kalır; etkinlik günlüğü yöntemi ve yolu tutar, sorguyu, gövdeyi veya yanıtı asla tutmaz.",
+    "secrets": "Şu Secret anahtarlarını alır: {{keys}}"
   },
   "agentTools": {
     "heading": "Yapay zekâ ajanları için araçlar",

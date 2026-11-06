@@ -55,8 +55,20 @@ pub struct ServiceContribution {
     pub id: String,
     /// What it is, at consent: "Argo CD API".
     pub title: String,
-    /// The Service's name, in the namespace each call names.
-    pub name: String,
+    /// The Service's name, in the namespace each call names; or `label_selector`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub name: Option<String>,
+    /// A label selector picking exactly one Service in the namespace (a Helm release's prefixed name), instead of
+    /// `name` (ADR-0161).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub label_selector: Option<String>,
+    /// Keys of Secrets of the namespace the service may receive in `{{secret:<name>/<key>}}`, agreed to with it: no
+    /// "Secret values" on the whole namespace is needed for them (ADR-0161).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[ts(as = "Option<Vec<ServiceSecret>>", optional)]
+    pub secrets: Vec<ServiceSecret>,
     /// The Service's port: its number or its name.
     #[ts(type = "number | string")]
     pub port: Value,
@@ -67,6 +79,30 @@ pub struct ServiceContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub sign_in: Option<SignIn>,
+}
+
+/// A key of a Secret a service may receive.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ServiceSecret {
+    pub name: String,
+    pub key: String,
+}
+
+impl ServiceContribution {
+    /// The Service as the journal names it: its name, or its label selector.
+    pub fn shown_name(&self) -> &str {
+        self.name
+            .as_deref()
+            .or(self.label_selector.as_deref())
+            .unwrap_or_default()
+    }
+
+    /// Whether the service may receive `key` of the Secret `name` without "Secret values".
+    pub fn receives_secret(&self, name: &str, key: &str) -> bool {
+        self.secrets.iter().any(|s| s.name == name && s.key == key)
+    }
 }
 
 /// The fields of a service's sign-in.
@@ -112,11 +148,43 @@ pub(crate) fn check_services(manifest: &ExtensionManifest) -> Result<(), Manifes
     }
     for (i, service) in services.iter().enumerate() {
         let here = list.index(i);
-        if !is_dns_label(&service.name) {
-            return Err(at(
-                &here.key("name"),
-                "must be a Service name: lowercase letters, digits and `-`, at most 63",
-            ));
+        match (&service.name, &service.label_selector) {
+            (Some(name), None) => {
+                if !is_dns_label(name) {
+                    return Err(at(
+                        &here.key("name"),
+                        "must be a Service name: lowercase letters, digits and `-`, at most 63",
+                    ));
+                }
+            }
+            (None, Some(selector)) => {
+                if !super::problems::is_set_selector(selector) {
+                    return Err(at(
+                        &here.key("labelSelector"),
+                        "must be a Kubernetes label selector such as `app.kubernetes.io/name=argocd-server`",
+                    ));
+                }
+            }
+            _ => {
+                return Err(at(
+                    &here,
+                    "names the Service by `name` or `labelSelector`, one of them",
+                ));
+            }
+        }
+        for (j, secret) in service.secrets.iter().enumerate() {
+            let ok_key = !secret.key.is_empty()
+                && secret.key.len() <= 253
+                && secret
+                    .key
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'));
+            if !is_dns_label(&secret.name) || !ok_key {
+                return Err(at(
+                    &here.key("secrets").index(j),
+                    "names a Secret (a DNS name) and a key (letters, digits, `-`, `_`, `.`)",
+                ));
+            }
         }
         let port_ok = match &service.port {
             Value::Number(n) => n.as_u64().is_some_and(|p| (1..=65535).contains(&p)),
