@@ -532,6 +532,18 @@ export function parseFieldPath(path) {
         if (/[\\\u0000-\u001f\u007f-\u009f]/.test(key)) return null;
         steps.push({ key });
         i = end + 2;
+      } else if (chars.slice(i + 1, chars.indexOf("]", i + 1) < 0 ? chars.length : chars.indexOf("]", i + 1)).includes("=")) {
+        // `[field="value"]` (`PathStep::Match` in Rust).
+        const eq = chars.indexOf("=", i + 1);
+        const field = chars.slice(i + 1, eq).join("");
+        if (!/^[A-Za-z0-9_-]+$/.test(field) || chars[eq + 1] !== '"') return null;
+        const close = chars.indexOf('"', eq + 2);
+        if (close < 0 || chars[close + 1] !== "]") return null;
+        const value = chars.slice(eq + 2, close).join("");
+        // eslint-disable-next-line no-control-regex
+        if (/[\\\u0000-\u001f\u007f-\u009f]/.test(value)) return null;
+        steps.push({ field, value });
+        i = close + 2;
       } else {
         const end = chars.indexOf("]", i + 1);
         if (end < 0) return null;

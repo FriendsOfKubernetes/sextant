@@ -22,7 +22,8 @@ export const MAX_TITLE_CHARS = 64;
 /** Longest text a cell shows; an object or a long list is clipped. */
 export const MAX_CELL_CHARS = 200;
 
-export type PathStep = { key: string } | { index: number };
+/** A step: a key, a list index, or the first list item whose `field` is the string `value` (ADR-0161). */
+export type PathStep = { key: string } | { index: number } | { field: string; value: string };
 
 const NAME = /^[A-Za-z0-9_-]+/;
 const LABEL_NAME = /^[A-Za-z0-9]([A-Za-z0-9_.-]*[A-Za-z0-9])?$/;
@@ -59,6 +60,21 @@ export function parseFieldPath(path: string): PathStep[] | null {
       } else {
         const end = path.indexOf("]", i + 1);
         if (end < 0) return null;
+        const eq = path.slice(i + 1, end).indexOf("=");
+        if (eq >= 0) {
+          // `[field="value"]`: the value may hold `]`, so the step ends at its closing quote.
+          const field = path.slice(i + 1, i + 1 + eq);
+          const open = i + 1 + eq + 1;
+          if (!NAME.test(field) || NAME.exec(field)?.[0] !== field || path[open] !== '"') return null;
+          const close = path.indexOf('"', open + 1);
+          if (close < 0 || path[close + 1] !== "]") return null;
+          const value = path.slice(open + 1, close);
+          if (value.includes("\\") || CONTROL.test(value)) return null;
+          steps.push({ field, value });
+          i = close + 2;
+          expectName = false;
+          continue;
+        }
         const digits = path.slice(i + 1, end);
         if (!/^[0-9]{1,6}$/.test(digits)) return null;
         steps.push({ index: Number(digits) });
@@ -83,7 +99,15 @@ export function parseFieldPath(path: string): PathStep[] | null {
 /** The canonical text of a path: `.name` for plain names, `[n]` for indexes, `["key"]` for other keys. */
 export function formatFieldPath(steps: readonly PathStep[]): string {
   return steps
-    .map((s) => ("index" in s ? `[${s.index}]` : /^[A-Za-z0-9_-]+$/.test(s.key) ? `.${s.key}` : `["${s.key}"]`))
+    .map((s) =>
+      "index" in s
+        ? `[${s.index}]`
+        : "field" in s
+          ? `[${s.field}="${s.value}"]`
+          : /^[A-Za-z0-9_-]+$/.test(s.key)
+            ? `.${s.key}`
+            : `["${s.key}"]`,
+    )
     .join("");
 }
 
@@ -154,7 +178,7 @@ export function checkSpec(
   const steps = parseFieldPath(raw);
   if (!steps) return { problem: "pathInvalid" };
   if (isSecretDataPath(target.group, target.kind, steps)) return { problem: "secretData" };
-  if (readsInlineSecret(target.group, target.kind, steps.map((s) => ("index" in s ? "*" : s.key)))) return { problem: "inlineSecret" };
+  if (readsInlineSecret(target.group, target.kind, steps.map((s) => ("key" in s ? s.key : "*")))) return { problem: "inlineSecret" };
   const first = steps[0];
   if (target.metadataOnly && !(first && "key" in first && first.key === "metadata")) return { problem: "metadataOnly" };
   return { spec: { source, path: formatFieldPath(steps), title: cleanTitle } };
@@ -179,12 +203,20 @@ export function readColumn(obj: KubeObject, source: ColumnSource, steps: readonl
     if ("index" in step) {
       if (!Array.isArray(current)) return undefined;
       current = current[step.index];
+    } else if ("field" in step) {
+      current = pickItem(current, step);
     } else {
       if (Array.isArray(current) || !Object.prototype.hasOwnProperty.call(current, step.key)) return undefined;
       current = (current as Record<string, unknown>)[step.key];
     }
   }
   return current;
+}
+
+/** The first item of a list whose `field` is the string `value`; `undefined` for anything else. */
+export function pickItem(list: unknown, step: { field: string; value: string }): unknown {
+  if (!Array.isArray(list)) return undefined;
+  return list.find((item) => item !== null && typeof item === "object" && (item as Record<string, unknown>)[step.field] === step.value);
 }
 
 function clip(text: string): string {

@@ -209,3 +209,41 @@ fn a_saved_view_carries_its_columns_and_reads_without_them() {
     let written = serde_json::to_value(&settings.views[0]).unwrap();
     assert!(written.get("customColumns").is_none());
 }
+
+#[test]
+fn a_step_picks_a_list_item_by_a_field() {
+    use PathStep::{Key, Match};
+    assert_eq!(
+        parse_field_path(".status.conditions[type=\"Ready\"].message"),
+        Some(vec![
+            Key("status".into()),
+            Key("conditions".into()),
+            Match {
+                field: "type".into(),
+                value: "Ready".into()
+            },
+            Key("message".into()),
+        ])
+    );
+    // A value may hold `]` and `=`; the step ends at its closing quote.
+    assert_eq!(
+        parse_field_path("spec.items[name=\"a]=b\"]"),
+        Some(vec![
+            Key("spec".into()),
+            Key("items".into()),
+            Match {
+                field: "name".into(),
+                value: "a]=b".into()
+            },
+        ])
+    );
+    for bad in [
+        "a[type=Ready]",
+        "a[=\"x\"]",
+        "a[ty pe=\"x\"]",
+        "a[type=\"x\\\\y\"]",
+        "a[type=\"x\"",
+    ] {
+        assert_eq!(parse_field_path(bad), None, "{bad}");
+    }
+}

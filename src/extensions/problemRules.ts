@@ -6,7 +6,7 @@
 //   compileRules(rules)          // per kind: (obj) => Detected[]
 //   renderMessage(template, obj) // `{{path}}` placeholders filled with scalar values, cleaned and capped
 import type { KubeObject, ProblemCondition, ProblemContribution, ProblemScalar } from "../api";
-import { parseFieldPath, type PathStep } from "../features/custom-columns/path";
+import { parseFieldPath, pickItem, type PathStep } from "../features/custom-columns/path";
 import type { Detected } from "../features/problems/model";
 import { cleanText } from "../resources/uri";
 
@@ -30,6 +30,8 @@ function walk(obj: unknown, steps: readonly PathStep[]): unknown {
     if ("index" in step) {
       if (!Array.isArray(at)) return undefined;
       at = at[step.index];
+    } else if ("field" in step) {
+      at = pickItem(at, step);
     } else {
       if (Array.isArray(at) || !Object.prototype.hasOwnProperty.call(at, step.key)) return undefined;
       at = (at as Record<string, unknown>)[step.key];

@@ -678,7 +678,7 @@ pub fn reads_secret(kind: &KindPattern, steps: &[PathStep]) -> bool {
                 secret.iter().zip(steps).all(|(want, got)| match got {
                     _ if *want == "*" => true,
                     PathStep::Key(key) => key == want,
-                    PathStep::Index(_) => false,
+                    PathStep::Index(_) | PathStep::Match { .. } => false,
                 })
             })
 }

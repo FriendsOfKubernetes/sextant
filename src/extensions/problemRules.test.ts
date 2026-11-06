@@ -28,6 +28,10 @@ describe("problem rules of extensions", () => {
     expect(valueAt(cluster, ".status.items[9].name")).toBeUndefined();
     // No wildcards or filters: such a path leads nowhere (Rust refuses the manifest before).
     expect(valueAt(cluster, ".status.items[*].name")).toBeUndefined();
+    // A list item by a field (ADR-0161).
+    expect(valueAt(cluster, '.status.conditions[type="Ready"].reason')).toBe("ReconcileFailed");
+    expect(valueAt(cluster, '.status.conditions[type="Missing"].reason')).toBeUndefined();
+    expect(valueAt(cluster, '.status[type="Ready"]')).toBeUndefined();
     // An array is not walked by a key, an object not by an index.
     expect(valueAt(cluster, ".status.items.name")).toBeUndefined();
     expect(valueAt(cluster, ".status.ceph[0]")).toBeUndefined();

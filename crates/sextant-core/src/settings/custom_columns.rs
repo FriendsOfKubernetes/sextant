@@ -102,14 +102,20 @@ pub fn is_metadata_key(key: &str) -> bool {
 pub enum PathStep {
     Key(String),
     Index(usize),
+    /// `[field="value"]`: the first item of a list whose `field` is the string `value` (ADR-0161).
+    Match {
+        field: String,
+        value: String,
+    },
 }
 
 fn is_name_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || c == '_' || c == '-'
 }
 
-/// Parses a field path of the grammar of ADR-0099: `["."] name ("." name | "[" digits "]" | "[\"" key "\"]")*`, where
-/// a name is `[A-Za-z0-9_-]+` and a quoted key has no `"`, `\` or control character. `None` for anything else.
+/// Parses a field path of the grammar of ADR-0099: `["."] name ("." name | "[" digits "]" | "[\"" key "\"]" |
+/// "[" name "=\"" value "\"]")*`, where a name is `[A-Za-z0-9_-]+` and a quoted key or value has no `"`, `\` or
+/// control character (the last step picks a list item by a field, ADR-0161). `None` for anything else.
 pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
     if path.is_empty() || path.chars().count() > MAX_FIELD_PATH_CHARS {
         return None;
@@ -131,6 +137,28 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
                 }
                 steps.push(PathStep::Key(key));
                 i = end + 2;
+            } else if let Some(eq) = (i + 1..chars.len())
+                .take_while(|&j| chars[j] != ']')
+                .find(|&j| chars[j] == '=')
+            {
+                // `[field="value"]`
+                let field: String = chars[i + 1..eq].iter().collect();
+                if field.is_empty()
+                    || !field.chars().all(is_name_char)
+                    || chars.get(eq + 1) != Some(&'"')
+                {
+                    return None;
+                }
+                let close = (eq + 2..chars.len()).find(|&j| chars[j] == '"')?;
+                if chars.get(close + 1) != Some(&']') {
+                    return None;
+                }
+                let value: String = chars[eq + 2..close].iter().collect();
+                if value.chars().any(|c| c == '\\' || c.is_control()) {
+                    return None;
+                }
+                steps.push(PathStep::Match { field, value });
+                i = close + 2;
             } else {
                 let end = (i + 1..chars.len()).find(|&j| chars[j] == ']')?;
                 let digits: String = chars[i + 1..end].iter().collect();

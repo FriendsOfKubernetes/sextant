@@ -51,6 +51,11 @@ fn at<'a>(value: &'a Value, steps: &[PathStep]) -> Option<&'a Value> {
     steps.iter().try_fold(value, |v, step| match step {
         PathStep::Key(key) => v.get(key),
         PathStep::Index(i) => v.get(*i),
+        PathStep::Match { field, value } => v.as_array().and_then(|items| {
+            items
+                .iter()
+                .find(|item| item.get(field).and_then(Value::as_str) == Some(value))
+        }),
     })
 }
 
