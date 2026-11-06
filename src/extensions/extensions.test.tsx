@@ -12,6 +12,7 @@ import { getPage, registerPage, unregisterPage } from "../layout/pages";
 import { getSectionBadge } from "../layout/sectionBadges";
 import { i18n } from "../i18n";
 import { getResourceDef } from "../resources/registry";
+import { resetClusterKinds } from "../resources/useKinds";
 import { registerExtension, syncExtensions, unregisterExtension } from "./contributions";
 import { ExtensionSettingsFrame } from "./ExtensionFrame";
 import { resetExtensionsStore } from "./store";
@@ -61,6 +62,7 @@ const manifest: ExtensionManifest = {
     metricQueries: [],
     sectionBadges: [],
     commands: [],
+    kinds: [],
     settings: { title: "Widget settings" },
   },
 };
@@ -465,6 +467,154 @@ describe("contributions of an extension", () => {
     expect(columns[at - 1]?.id).toBe("name");
     expect(columns[at]).toMatchObject({ title: "Size" });
     expect(columns[at]!.value(widget)).toBe("large");
+  });
+
+  it("add computed columns: the first path with a value, tones, cases, ages, durations and ratios (ADR-0153)", () => {
+    const kind = { group: "demo.sextant.dev", kind: "Widget" };
+    registerExtension(
+      info({
+        manifest: {
+          ...manifest,
+          sextantApi: 4,
+          contributes: {
+            ...manifest.contributes,
+            columns: [
+              { kind, id: "rev", title: "Revision", paths: [".status.lastApplied", ".status.artifact.revision"] },
+              {
+                kind,
+                id: "ready",
+                title: "Ready",
+                paths: [".status.ready"],
+                tones: { True: "ok", False: "error" },
+                tooltipPaths: [".status.message"],
+                cases: [{ when: { type: "equals", path: ".spec.suspend", value: true }, text: "Suspended" }],
+              },
+              { kind, id: "took", title: "Took", paths: [".status.startedAt"], format: "duration", endPaths: [".status.finishedAt"] },
+              { kind, id: "step", title: "Step", paths: [".status.step"], format: "ratio", totalPaths: [".spec.steps"] },
+            ],
+          },
+        },
+      }),
+    );
+    const columns = getResourceDef(WIDGET).columns;
+    const col = (id: string) => columns.find((c) => c.id === `ext:demo.widgets:${id}`)!;
+    const obj = (spec: object, status: object): KubeObject => ({ ...widget, spec, status });
+    const ctx = { clusterId: "c1", kind: WIDGET, now: Date.parse("2026-11-06T12:00:00Z") };
+    const one = obj({ steps: 4 }, { artifact: { revision: "main@sha1:abc" }, ready: "False", message: "fetch failed", step: 2 });
+    expect(col("rev").value(one)).toBe("main@sha1:abc");
+    expect(col("rev").value(obj({}, { lastApplied: "v2", artifact: { revision: "v1" } }))).toBe("v2");
+    const cell = render(<>{col("ready").render!(one, ctx)}</>);
+    expect(cell.container.querySelector(".rt-status--danger")?.textContent).toBe("False");
+    expect(cell.container.querySelector("[title]")?.getAttribute("title")).toBe("fetch failed");
+    cell.unmount();
+    const suspended = render(<>{col("ready").render!(obj({ suspend: true }, { ready: "True" }), ctx)}</>);
+    expect(suspended.container.textContent).toBe("Suspended");
+    suspended.unmount();
+    expect(col("step").value(one)).toBe(0.5);
+    expect(col("step").searchText!(one, { now: ctx.now, t: i18n.t })).toBe("2/4");
+    const run = obj({}, { startedAt: "2026-11-06T11:00:00Z", finishedAt: "2026-11-06T11:30:00Z" });
+    expect(col("took").value(run)).toBe(30 * 60_000);
+    expect(col("took").filter?.type).toBe("number");
+  });
+
+  it("offer an action only where its condition holds, saying why not, as a button only on kinds of its own (ADR-0154)", () => {
+    const own = { group: "demo.sextant.dev", kind: "Widget" };
+    const gadget = { group: "demo.sextant.dev", version: "v1", kind: "Gadget" };
+    registerExtension(
+      info({
+        manifest: {
+          ...manifest,
+          sextantApi: 4,
+          contributes: {
+            ...manifest.contributes,
+            kinds: [{ ...own, section: "widgets", sectionTitle: "Widget tools" }],
+            actions: [
+              {
+                id: "resume",
+                title: "Resume",
+                kinds: [own, { group: "demo.sextant.dev", kind: "Gadget" }],
+                danger: false,
+                multiple: true,
+                when: { type: "equals", path: ".spec.suspend", value: true },
+                whyNot: "It is not suspended.",
+                placement: "primary",
+              },
+            ],
+          },
+        },
+      }),
+    );
+    const suspended: KubeObject = { ...widget, spec: { suspend: true } };
+    expect(getActionsFor([suspended], WIDGET, ["ext:demo.widgets:resume"])).toHaveLength(1);
+    expect(getActionsFor([widget], WIDGET, ["ext:demo.widgets:resume"])).toHaveLength(0);
+    const [action] = getActionsFor([suspended], WIDGET, ["ext:demo.widgets:resume"]);
+    expect(action!.notApplicableReason?.(widget, WIDGET)).toBe("It is not suspended.");
+    expect(action!.notApplicableReason?.(suspended, WIDGET)).toBeUndefined();
+    // A button on the kind it lists in its own section; in the "Actions" menu on another kind.
+    const bar = render(<ActionBar clusterId="c1" kind={WIDGET} obj={suspended} />);
+    expect(within(bar.container).getByRole("button", { name: "Resume" })).toBeInTheDocument();
+    bar.unmount();
+    const other = render(<ActionBar clusterId="c1" kind={gadget} obj={{ ...suspended, kind: "Gadget" }} />);
+    expect(within(other.container).queryByRole("button", { name: "Resume" })).toBeNull();
+    other.unmount();
+  });
+
+  it("list kinds in a section of its own with Sextant's table, titled and filtered by its rules (ADR-0152)", async () => {
+    resetClusterKinds();
+    backend.on("cluster_kinds", () => [
+      { kindRef: WIDGET, plural: "widgets", namespaced: true, verbs: ["list", "watch", "get"], printerColumns: [], shortNames: [] },
+      {
+        kindRef: { group: "demo.sextant.dev", version: "v1", kind: "Gizmo" },
+        plural: "gizmos",
+        namespaced: true,
+        verbs: ["list", "watch", "get"],
+        printerColumns: [],
+        shortNames: [],
+      },
+    ]);
+    const rule = {
+      id: "broken",
+      title: "Broken widget",
+      kind: { group: "demo.sextant.dev", kind: "Widget" },
+      when: { type: "exists" as const, path: ".status.error" },
+      graceMinutes: 0,
+      notify: true,
+      toldThroughOwner: false,
+      message: "broken",
+      source: { labelSelector: "tier=web", metadataOnly: false },
+    };
+    list = [
+      info({
+        manifest: {
+          ...manifest,
+          sextantApi: 4,
+          contributes: {
+            ...manifest.contributes,
+            pages: [{ id: "board", title: "Widget board", section: "tools", sectionTitle: "Widget tools" }],
+            kinds: [
+              { group: "demo.sextant.dev", kind: "Widget", section: "tools", title: "Widgets of the demo", order: 1 },
+              // Not served by the cluster: never listed.
+              { group: "demo.sextant.dev", kind: "Missing", section: "tools", order: 2 },
+            ],
+            problems: [rule],
+          },
+        },
+      }),
+    ];
+    await renderShell();
+    const sidebar = screen.getByRole("navigation", { name: "Sections" });
+    fireEvent.click(await within(sidebar).findByRole("button", { name: "Widget tools" }));
+    expect(within(sidebar).getByRole("button", { name: "Widgets of the demo" })).toBeInTheDocument();
+    expect(within(sidebar).queryByRole("button", { name: "Missing" })).toBeNull();
+    const def = getResourceDef(WIDGET);
+    expect(def.title).toBe("Widgets of the demo");
+    const broken = { ...widget, metadata: { ...widget.metadata, labels: { tier: "web" } }, status: { error: "x" } };
+    expect(def.problem?.(broken)).toBe(true);
+    // An object its rules' source does not pick is never a problem of them.
+    expect(def.problem?.({ ...broken, metadata: widget.metadata })).toBe(false);
+    expect(def.problem?.({ ...broken, status: {} })).toBe(false);
+    // Another custom kind of the group stays under "Custom resources".
+    expect(getResourceDef({ group: "demo.sextant.dev", version: "v1", kind: "Gizmo" }).problem).toBeUndefined();
   });
 
   it("add a dock button that opens a dock tab with the extension, closed when the extension goes", async () => {

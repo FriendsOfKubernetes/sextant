@@ -25,8 +25,23 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
         ...(p.sectionTitle !== undefined ? { sectionTitle: text(`pages.${p.id}.sectionTitle`, p.sectionTitle) } : {}),
       })),
       detailsSections: c.detailsSections.map((s) => ({ ...s, title: text(`detailsSections.${s.id}.title`, s.title) })),
-      actions: c.actions.map((a) => ({ ...a, title: text(`actions.${a.id}.title`, a.title) })),
-      columns: c.columns.map((col) => ({ ...col, title: text(`columns.${col.id}.title`, col.title) })),
+      actions: c.actions.map((a) => ({
+        ...a,
+        title: text(`actions.${a.id}.title`, a.title),
+        ...(a.whyNot !== undefined ? { whyNot: text(`actions.${a.id}.whyNot`, a.whyNot) } : {}),
+      })),
+      columns: c.columns.map((col) => ({
+        ...col,
+        title: text(`columns.${col.id}.title`, col.title),
+        ...(col.cases !== undefined
+          ? { cases: col.cases.map((cs, i) => ({ ...cs, text: text(`columns.${col.id}.cases.${i}.text`, cs.text) })) }
+          : {}),
+      })),
+      kinds: c.kinds.map((k, i) => ({
+        ...k,
+        ...(k.title !== undefined ? { title: text(`kinds.${i}.title`, k.title) } : {}),
+        ...(k.sectionTitle !== undefined ? { sectionTitle: text(`kinds.${i}.sectionTitle`, k.sectionTitle) } : {}),
+      })),
       dockActions: c.dockActions.map((d) => ({ ...d, title: text(`dockActions.${d.id}.title`, d.title) })),
       problems: c.problems.map((r) => ({
         ...r,

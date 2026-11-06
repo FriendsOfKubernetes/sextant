@@ -405,6 +405,50 @@ function extensionKey(kind: Pick<KindRef, "group" | "kind">): string {
   return kindKey(kind).toLowerCase();
 }
 
+/**
+ * Where an extension lists a custom kind (`contributes.kinds`, ADR-0152): a sidebar section of its own instead of
+ * "Custom resources", the table's title and the "Only problems" filter from its problem rules. A kind Sextant
+ * describes itself (`registerResource`) keeps its own place; of several extensions listing a kind, the first by id.
+ */
+export interface KindPlacement {
+  /** The extension's id: of several, the smallest wins. */
+  owner: string;
+  section: string;
+  sectionTitle?: string;
+  /** The plural label and the table's title as shown (never translated by i18next). */
+  label?: string;
+  icon?: IconName;
+  order: number;
+  /** Whether an object has a problem of the owner's rules. */
+  problem?: (obj: KubeObject) => boolean;
+}
+
+const placements = new Map<string, KindPlacement[]>();
+
+/** Lists a custom kind in an extension's section. Returns a function that removes it again. */
+export function placeKind(kind: Pick<KindRef, "group" | "kind">, placement: KindPlacement): () => void {
+  const key = extensionKey(kind);
+  placements.set(key, [...(placements.get(key) ?? []), placement].sort((a, b) => a.owner.localeCompare(b.owner)));
+  changed();
+  return () => {
+    const list = placements.get(key)?.filter((p) => p !== placement) ?? [];
+    if (list.length > 0) placements.set(key, list);
+    else placements.delete(key);
+    changed();
+  };
+}
+
+/** Where an extension lists `kind`, unless Sextant describes it itself. */
+export function kindPlacement(kind: Pick<KindRef, "group" | "kind">): KindPlacement | undefined {
+  if (defs.has(kindKey(kind))) return undefined;
+  return placements.get(extensionKey(kind))?.[0];
+}
+
+/** The sections extensions list kinds in (a page of one shows only while one of its kinds is served). */
+export function placedSections(): ReadonlySet<string> {
+  return new Set([...placements.values()].map((list) => list[0]!.section));
+}
+
 /** The registered description of a kind (without column extensions), if any. */
 export function findResourceDef(kind: Pick<KindRef, "group" | "kind">): ResourceDef | undefined {
   return defs.get(kindKey(kind));
@@ -421,9 +465,13 @@ export function getResourceDefs(): ResourceDef[] {
  */
 export function getResourceDef(kind: KindRef, resourceKind?: ResourceKind | null): ResourceDef {
   const registered = defs.get(kindKey(kind));
+  const placed = registered ? undefined : kindPlacement(kind);
+  const generic = registered ? undefined : genericResourceDef(kind, resourceKind ?? null);
   const base: ResourceDef = registered
     ? { ...registered, kind: { ...registered.kind, version: kind.version || registered.kind.version } }
-    : genericResourceDef(kind, resourceKind ?? null);
+    : placed
+      ? { ...generic!, title: placed.label ?? generic!.title, ...(placed.problem ? { problem: placed.problem } : {}) }
+      : generic!;
   const key = extensionKey(kind);
   const extra = extensions.get(key);
   const actions = extraActions.get(key);

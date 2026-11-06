@@ -65,6 +65,11 @@ export interface ActionDef {
    */
   placement?: ActionPlacement;
   /**
+   * An extension's action asking for `primary` gets it only on the kinds it lists in a section of its own (ADR-0154):
+   * never among the buttons of Sextant's own kinds or another extension's.
+   */
+  primaryOn?: (kind: KindRef) => boolean;
+  /**
    * `false` keeps the action out of the details panel altogether, because the panel's header offers it itself (copy
    * and pin next to the name, #274); the table's row menu still lists it. Default true.
    */
@@ -137,9 +142,13 @@ export function isExtensionAction(id: ActionId): boolean {
   return id.startsWith("ext:");
 }
 
-/** Where the details panel shows `action`: an extension's is always `more`, an undeclared one too. */
-export function placementOf(action: RegisteredAction): ActionPlacement {
-  return isExtensionAction(action.id) ? "more" : (action.placement ?? "more");
+/**
+ * Where the details panel shows `action` for `kind`: an undeclared one in `more`; an extension's in `more` unless it
+ * asked for `primary` on a kind of its own section (`primaryOn`).
+ */
+export function placementOf(action: RegisteredAction, kind: KindRef): ActionPlacement {
+  if (isExtensionAction(action.id)) return action.primaryOn?.(kind) ? "primary" : "more";
+  return action.placement ?? "more";
 }
 
 /**
@@ -152,11 +161,11 @@ export function detailsActions(
   ids: readonly ActionId[],
 ): { primary: RegisteredAction[]; more: RegisteredAction[] } {
   const shown = getActionsFor(objects, kind, ids).filter((a) => a.inDetails !== false);
-  const primary = shown.filter((a) => placementOf(a) === "primary");
+  const primary = shown.filter((a) => placementOf(a, kind) === "primary");
   const last = primary.filter((a) => a.id === "delete");
   return {
     primary: [...primary.filter((a) => a.id !== "delete"), ...last],
-    more: shown.filter((a) => placementOf(a) === "more"),
+    more: shown.filter((a) => placementOf(a, kind) === "more"),
   };
 }
 

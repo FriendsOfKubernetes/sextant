@@ -14,6 +14,7 @@ pub mod catalog;
 pub mod commands;
 #[cfg(test)]
 mod compat_tests;
+pub mod contributions;
 pub mod installed;
 pub mod manifest;
 pub mod metric_queries;

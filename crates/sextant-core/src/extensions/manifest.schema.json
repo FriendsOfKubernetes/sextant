@@ -336,7 +336,24 @@
               "icon": { "$ref": "#/$defs/icon" },
               "kinds": { "$ref": "#/$defs/kinds" },
               "danger": { "type": "boolean", "default": false },
-              "multiple": { "type": "boolean", "default": false }
+              "multiple": { "type": "boolean", "default": false },
+              "when": {
+                "description": "Offered only for objects for which this holds, as a problem rule's condition without `missing` (sextantApi 4).",
+                "$ref": "#/$defs/problemCondition"
+              },
+              "whyNot": {
+                "description": "Why the action is not offered where `when` does not hold (sextantApi 4).",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "format": "non-blank",
+                "pattern": "\\S"
+              },
+              "placement": {
+                "description": "`primary`: a button of the details bar on kinds of the extension's own section (`contributes.kinds`); `more` (default): the \"Actions\" menu (sextantApi 4).",
+                "type": "string",
+                "enum": ["primary", "more"]
+              }
             }
           }
         },
@@ -346,7 +363,7 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["kind", "id", "title", "jsonPath"],
+            "required": ["kind", "id", "title"],
             "properties": {
               "kind": { "$ref": "#/$defs/kind" },
               "id": { "$ref": "#/$defs/contributionId" },
@@ -363,6 +380,47 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 80
+              },
+              "paths": {
+                "description": "Field paths, the first with a value giving the cell; instead of `jsonPath` (sextantApi 4).",
+                "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/fieldPath" }
+              },
+              "format": {
+                "description": "How the value is shown, sorted and filtered: `text` (default), `number`, `age` (a time), `duration` (from the time to `endPaths` or now), `ratio` (`value/totalPaths`).",
+                "type": "string",
+                "enum": ["text", "number", "age", "duration", "ratio"]
+              },
+              "endPaths": {
+                "description": "`duration`: the end time, the first with a value; now without one.",
+                "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/fieldPath" }
+              },
+              "totalPaths": {
+                "description": "`ratio`: the whole, the first with a value.",
+                "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/fieldPath" }
+              },
+              "tones": {
+                "description": "A tone per shown value: `ok`, `warning`, `error` or `neutral`.",
+                "type": "object",
+                "maxProperties": 20,
+                "additionalProperties": { "type": "string", "enum": ["ok", "warning", "error", "neutral"] }
+              },
+              "tooltipPaths": {
+                "description": "The cell's tooltip, the first with a value.",
+                "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/fieldPath" }
+              },
+              "cases": {
+                "description": "Texts shown instead of the value where a condition holds, the first that holds.",
+                "type": "array",
+                "maxItems": 10,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["when", "text"],
+                  "properties": {
+                    "when": { "$ref": "#/$defs/problemCondition" },
+                    "text": { "$ref": "#/$defs/title" }
+                  }
+                }
               }
             }
           }
@@ -406,6 +464,32 @@
           "type": "array",
           "maxItems": 20,
           "items": { "$ref": "#/$defs/command" }
+        },
+        "kinds": {
+          "description": "Kinds listed in a sidebar section of the extension's own with Sextant's tables, details and actions (sextantApi 4).",
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["group", "kind", "section"],
+            "properties": {
+              "group": { "type": "string", "minLength": 1, "maxLength": 253 },
+              "kind": { "type": "string", "minLength": 1, "maxLength": 100, "format": "non-blank", "pattern": "\\S" },
+              "section": {
+                "description": "A section of the extension's own: it, a page or another kind of it with this section has a `sectionTitle`.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "format": "identifier",
+                "pattern": "^[A-Za-z][A-Za-z0-9-]{0,39}$"
+              },
+              "sectionTitle": { "$ref": "#/$defs/title" },
+              "title": { "$ref": "#/$defs/title" },
+              "icon": { "$ref": "#/$defs/icon" },
+              "order": { "$ref": "#/$defs/order" }
+            }
+          }
         },
         "sectionBadges": {
           "description": "Counters on the extension's own sidebar sections (ADR-0143); needs `sextantApi` 3. Sextant counts the objects with active problems of the extension's rules and shows the number on the section's header.",

@@ -58,6 +58,7 @@ const manifest: ExtensionManifest = {
     metricQueries: [],
     sectionBadges: [],
     commands: [],
+    kinds: [],
     settings: { title: "Widget settings" },
   },
 };

@@ -626,6 +626,7 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     return;
   }
   if (condition.type === "missing") {
+    if (counter.single) fail([...segments, "type"], "`missing` judges across objects: only problem rules may use it");
     if (counter.api < ACROSS_API) fail([...segments, "type"], `\`missing\` needs sextantApi ${ACROSS_API} or later`);
     if (inside === "any") fail([...segments, "type"], "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown");
     if (inside === "not") fail([...segments, "type"], "`missing` cannot be inside `not`: a list not read would make it unknown");
@@ -841,11 +842,10 @@ function checkSectionBadges(manifest) {
   if (manifest.sextantApi < SECTION_BADGES_API) fail(list, `needs sextantApi ${SECTION_BADGES_API} or later`);
   const rules = manifest.contributes?.problems ?? [];
   if (rules.length === 0) fail(list, "counts problems: needs `contributes.problems`");
-  const pages = manifest.contributes?.pages ?? [];
   badges.forEach((badge, i) => {
     const here = [...list, i];
-    if (!pages.some((page) => page.section === badge.section && page.sectionTitle !== undefined)) {
-      fail([...here, "section"], "must be a section of the extension's own: one of its pages with this section has a `sectionTitle`");
+    if (!ownSection(manifest, badge.section)) {
+      fail([...here, "section"], "must be a section of the extension's own: one of its pages (or kinds) with this section has a `sectionTitle`");
     }
     const first = badges.slice(0, i).findIndex((other) => other.section === badge.section);
     if (first >= 0) fail([...here, "section"], `duplicate section (also ${pathText([...list, first])})`);
@@ -960,8 +960,18 @@ export function translatableTexts(manifest) {
     if (page.sectionTitle !== undefined) out.set(`pages.${page.id}.sectionTitle`, title);
   }
   for (const section of c.detailsSections ?? []) out.set(`detailsSections.${section.id}.title`, title);
-  for (const action of c.actions ?? []) out.set(`actions.${action.id}.title`, title);
-  for (const column of c.columns ?? []) out.set(`columns.${column.id}.title`, title);
+  for (const action of c.actions ?? []) {
+    out.set(`actions.${action.id}.title`, title);
+    if (action.whyNot !== undefined) out.set(`actions.${action.id}.whyNot`, { max: 200 });
+  }
+  for (const column of c.columns ?? []) {
+    out.set(`columns.${column.id}.title`, title);
+    (column.cases ?? []).forEach((_, i) => out.set(`columns.${column.id}.cases.${i}.text`, title));
+  }
+  (c.kinds ?? []).forEach((kind, i) => {
+    if (kind.title !== undefined) out.set(`kinds.${i}.title`, title);
+    if (kind.sectionTitle !== undefined) out.set(`kinds.${i}.sectionTitle`, title);
+  });
   for (const dock of c.dockActions ?? []) out.set(`dockActions.${dock.id}.title`, title);
   if (c.settings !== undefined) out.set("settings.title", title);
   for (const rule of c.problems ?? []) {
@@ -1012,6 +1022,87 @@ function checkTranslations(manifest) {
   }
 }
 
+// --- Window contributions of sextantApi 4 (crates/sextant-core/src/extensions/contributions.rs) --------------------
+
+const WINDOW_API = 4;
+const MAX_TONE_VALUE_CHARS = 100;
+
+/** Whether `section` is the extension's own: a page or listed kind with this section gives it a title (`own_section`). */
+function ownSection(manifest, section) {
+  const c = manifest.contributes ?? {};
+  return (
+    (c.pages ?? []).some((page) => page.section === section && page.sectionTitle !== undefined) ||
+    (c.kinds ?? []).some((kind) => kind.section === section && kind.sectionTitle !== undefined)
+  );
+}
+
+/** A condition of an action or a column (`check_object_condition`): no `missing`, no secret of any of `kinds`. */
+function checkObjectCondition(condition, kinds, segments, api) {
+  for (const kind of kinds) checkCondition(condition, kind, segments, 1, { count: 0, api, kinds: [], metadataOnly: false, single: true });
+}
+
+function checkActions(manifest) {
+  const list = ["contributes", "actions"];
+  (manifest.contributes?.actions ?? []).forEach((action, i) => {
+    const here = [...list, i];
+    for (const field of ["when", "whyNot", "placement"]) {
+      if (action[field] !== undefined && manifest.sextantApi < WINDOW_API) fail([...here, field], `needs sextantApi ${WINDOW_API} or later`);
+    }
+    if (action.whyNot !== undefined && action.when === undefined) fail([...here, "whyNot"], "explains `when`: the action needs a `when`");
+    if (action.when !== undefined) checkObjectCondition(action.when, action.kinds, [...here, "when"], manifest.sextantApi);
+  });
+}
+
+const COLUMN_FIELDS = ["paths", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
+
+function checkColumns(manifest) {
+  const list = ["contributes", "columns"];
+  (manifest.contributes?.columns ?? []).forEach((column, i) => {
+    const here = [...list, i];
+    for (const field of COLUMN_FIELDS) {
+      if (column[field] !== undefined && manifest.sextantApi < WINDOW_API) fail([...here, field], `needs sextantApi ${WINDOW_API} or later`);
+    }
+    if (column.jsonPath === undefined && column.paths === undefined) fail(here, "needs a `jsonPath` or `paths`");
+    if (column.jsonPath !== undefined && column.paths !== undefined) fail([...here, "paths"], "a column has a `jsonPath` or `paths`, not both");
+    if (column.jsonPath !== undefined) {
+      const extra = COLUMN_FIELDS.slice(1).find((field) => column[field] !== undefined);
+      if (extra !== undefined) fail([...here, extra], "goes with `paths`, not `jsonPath`");
+      return;
+    }
+    const format = column.format ?? "text";
+    if (column.endPaths !== undefined && format !== "duration") fail([...here, "endPaths"], 'goes with `format: "duration"`');
+    if (format === "ratio" && column.totalPaths === undefined) fail([...here, "totalPaths"], '`format: "ratio"` needs `totalPaths`');
+    if (format !== "ratio" && column.totalPaths !== undefined) fail([...here, "totalPaths"], 'goes with `format: "ratio"`');
+    for (const field of ["paths", "endPaths", "totalPaths", "tooltipPaths"]) {
+      (column[field] ?? []).forEach((text, j) => checkPath(text, column.kind, [...here, field, j]));
+    }
+    for (const value of sortedKeys(column.tones ?? {})) {
+      if (value.trim() === "" || Array.from(value).length > MAX_TONE_VALUE_CHARS) {
+        fail([...here, "tones"], `names values of 1 to ${MAX_TONE_VALUE_CHARS} characters`);
+      }
+    }
+    (column.cases ?? []).forEach((c, j) => checkObjectCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi));
+  });
+}
+
+function checkKinds(manifest) {
+  const kinds = manifest.contributes?.kinds ?? [];
+  const list = ["contributes", "kinds"];
+  if (kinds.length === 0) return;
+  if (manifest.sextantApi < WINDOW_API) fail(list, `needs sextantApi ${WINDOW_API} or later`);
+  kinds.forEach((entry, i) => {
+    const here = [...list, i];
+    if (entry.group.trim() === "" || entry.group.includes("*") || entry.kind.includes("*")) {
+      fail([...here, "group"], "must be the API group of a custom resource: Sextant lists the core API's kinds itself");
+    }
+    const first = kinds.slice(0, i).findIndex((other) => sameKind(other, entry));
+    if (first >= 0) fail([...here, "kind"], `duplicate kind (also ${pathText([...list, first])})`);
+    if (!ownSection(manifest, entry.section)) {
+      fail([...here, "section"], "must be a section of the extension's own: a kind or page of it with this section has a `sectionTitle`");
+    }
+  });
+}
+
 /** The problem with a parsed manifest (see `readJson`) as `{path, message}`, or `null` when Sextant accepts it. */
 export function validateManifest(value, schema = manifestSchema()) {
   try {
@@ -1027,6 +1118,9 @@ export function validateManifest(value, schema = manifestSchema()) {
     checkTranslations(value);
     checkSectionBadges(value);
     checkCommands(value);
+    checkActions(value);
+    checkColumns(value);
+    checkKinds(value);
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };

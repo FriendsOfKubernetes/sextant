@@ -212,6 +212,7 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             kinds: &mut kinds,
             count: &mut count,
             metadata_only,
+            single: false,
         };
         check_condition(
             &rule.when,
@@ -311,6 +312,31 @@ struct ConditionChecks<'a, 'k> {
     count: &'a mut usize,
     /// The rule's source watches metadata only: every path is under `.metadata`.
     metadata_only: bool,
+    /// A condition the window evaluates on one object (an action's `when`, a column's case): no `missing`.
+    single: bool,
+}
+
+/// A condition of an action or a column (ADR-0153, ADR-0154): the grammar of problem rules without `missing`, its
+/// paths reading no secret of any of `kinds`, within the same nesting and size limits.
+pub(crate) fn check_object_condition(
+    condition: &ProblemCondition,
+    kinds: &[KindPattern],
+    path: &JsonPath,
+    api: u32,
+) -> Result<(), ManifestError> {
+    for kind in kinds {
+        let mut seen = Vec::new();
+        let mut count = 0;
+        let mut checks = ConditionChecks {
+            api,
+            kinds: &mut seen,
+            count: &mut count,
+            metadata_only: false,
+            single: true,
+        };
+        check_condition(condition, kind, path, 1, Inside::Top, &mut checks)?;
+    }
+    Ok(())
 }
 
 /// What a condition is inside of: `missing` is refused inside `any` and `not`.
@@ -356,6 +382,12 @@ fn check_condition<'k>(
             path: field,
             kind: target,
         } => {
+            if checks.single {
+                return Err(at(
+                    &path.key("type"),
+                    "`missing` judges across objects: only problem rules may use it",
+                ));
+            }
             if checks.api < ACROSS_API {
                 return Err(at(
                     &path.key("type"),
@@ -483,7 +515,11 @@ fn looked_up<'c>(condition: &'c ProblemCondition, out: &mut Vec<&'c KindPattern>
 }
 
 /// A field path of the custom columns' grammar that reads no secret of `kind`.
-fn check_path(text: &str, kind: &KindPattern, path: &JsonPath) -> Result<(), ManifestError> {
+pub(crate) fn check_path(
+    text: &str,
+    kind: &KindPattern,
+    path: &JsonPath,
+) -> Result<(), ManifestError> {
     let Some(steps) = parse_field_path(text) else {
         return Err(at(
             path,

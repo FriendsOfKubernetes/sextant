@@ -11,9 +11,10 @@ use serde_json::Value;
 use ts_rs::TS;
 
 use super::commands::{self, CommandContribution};
+use super::contributions;
 use super::metric_queries::{self, MetricQuery};
 use super::permissions::ExtensionPermissions;
-use super::problems::{self, ProblemContribution};
+use super::problems::{self, ProblemCondition, ProblemContribution};
 use super::schema::{self, JsonPath};
 use super::section_badges::{self, SectionBadgeContribution};
 use super::translations;
@@ -151,6 +152,8 @@ pub struct Contributions {
     pub section_badges: Vec<SectionBadgeContribution>,
     /// Programs the extension runs by id in a container it names by labels (ADR-0147); `sextantApi` 3.
     pub commands: Vec<CommandContribution>,
+    /// Kinds listed in a sidebar section of the extension's own with Sextant's tables (ADR-0152); `sextantApi` 4.
+    pub kinds: Vec<KindContribution>,
 }
 
 /// A page in the cluster's sidebar (`view=page`).
@@ -216,9 +219,31 @@ pub struct ActionContribution {
     /// Offered for several selected objects at once.
     #[serde(default)]
     pub multiple: bool,
+    /// Offered only for objects for which this holds, evaluated by the window (ADR-0154); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub when: Option<ProblemCondition>,
+    /// Why the action is not offered where `when` does not hold (selection bar, ADR-0126); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub why_not: Option<String>,
+    /// `primary`: a button of the details bar, but only on kinds the extension lists in a section of its own
+    /// (`contributes.kinds`); elsewhere, and by default, in the "Actions" menu (ADR-0154); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub placement: Option<ActionPlacement>,
 }
 
-/// A table column of one kind, from a JSONPath (no code runs).
+/// Where an extension's action asks to be shown in the details bar.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ActionPlacement {
+    Primary,
+    More,
+}
+
+/// A table column of one kind, from a JSONPath or from field paths with a format (no code runs).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -226,12 +251,99 @@ pub struct ColumnContribution {
     pub kind: KindPattern,
     pub id: String,
     pub title: String,
-    /// The JSONPath subset of CRD printer columns.
-    pub json_path: String,
+    /// The JSONPath subset of CRD printer columns; a column has it or `paths`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub json_path: Option<String>,
     /// Title of the column this one goes after; at the end when `None` or unknown.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub after: Option<String>,
+    /// Field paths, the first with a value giving the cell (ADR-0153); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub paths: Option<Vec<String>>,
+    /// How the value is shown, sorted and filtered; `text` by default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub format: Option<ColumnFormat>,
+    /// `duration`: the end time (the first with a value); without one, now.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub end_paths: Option<Vec<String>>,
+    /// `ratio`: the whole (`value/whole`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub total_paths: Option<Vec<String>>,
+    /// A tone per shown value, drawn as Sextant's status text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub tones: Option<BTreeMap<String, ColumnTone>>,
+    /// The cell's tooltip (the first with a value).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub tooltip_paths: Option<Vec<String>>,
+    /// Texts shown instead of the value where a condition holds, the first that holds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub cases: Option<Vec<ColumnCase>>,
+}
+
+/// How a computed column shows its value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ColumnFormat {
+    Text,
+    Number,
+    Age,
+    Duration,
+    Ratio,
+}
+
+/// The tone of a shown value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ColumnTone {
+    Ok,
+    Warning,
+    Error,
+    Neutral,
+}
+
+/// A text a column shows where `when` holds.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ColumnCase {
+    pub when: ProblemCondition,
+    pub text: String,
+}
+
+/// A kind the extension lists in a sidebar section of its own, with Sextant's table, details and actions (ADR-0152).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct KindContribution {
+    pub group: String,
+    pub kind: String,
+    /// The section: one of the extension's own (it, a page or another kind of it with this section, has a
+    /// `sectionTitle`).
+    pub section: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub section_title: Option<String>,
+    /// The plural label in the sidebar and the table's title; the kind's name when `None`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub icon: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub order: Option<i32>,
 }
 
 /// A dock button that opens a dock tab (`view=dock`).
@@ -293,6 +405,9 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     translations::check_translations(&manifest)?;
     section_badges::check_section_badges(&manifest)?;
     commands::check_commands(&manifest)?;
+    contributions::check_actions(&manifest)?;
+    contributions::check_columns(&manifest)?;
+    contributions::check_kinds(&manifest)?;
     Ok(manifest)
 }
 
@@ -766,6 +881,9 @@ mod tests {
                 kinds: vec![widget()],
                 danger: false,
                 multiple: false,
+                when: None,
+                why_not: None,
+                placement: None,
             }
         );
         assert!(c.actions[1].danger && c.actions[1].multiple);
@@ -775,13 +893,20 @@ mod tests {
                 kind: widget(),
                 id: "size".into(),
                 title: "Size".into(),
-                json_path: ".spec.size".into(),
+                json_path: Some(".spec.size".into()),
                 after: Some("Name".into()),
+                paths: None,
+                format: None,
+                end_paths: None,
+                total_paths: None,
+                tones: None,
+                tooltip_paths: None,
+                cases: None,
             }
         );
         assert_eq!(
-            c.columns[2].json_path,
-            "{.metadata.labels['app\\.kubernetes\\.io/name']}"
+            c.columns[2].json_path.as_deref(),
+            Some("{.metadata.labels['app\\.kubernetes\\.io/name']}")
         );
         assert_eq!(c.dock_actions[0].id, "console");
         assert_eq!(c.settings.as_ref().unwrap().title, "Widgets");
@@ -927,8 +1052,8 @@ mod tests {
                 "contributes.actions[0].kinds",
             ),
             (
-                "/contributes/columns/1/jsonPath",
-                "contributes.columns[1].jsonPath",
+                "/contributes/columns/1/title",
+                "contributes.columns[1].title",
             ),
             (
                 "/contributes/columns/1/kind/group",
@@ -949,6 +1074,14 @@ mod tests {
                 "{pointer}"
             );
         }
+        // A column without its JSONPath has no `paths` either (sextantApi 4).
+        assert_eq!(
+            fails(&without(full(), "/contributes/columns/1/jsonPath")),
+            (
+                "contributes.columns[1]".to_owned(),
+                "needs a `jsonPath` or `paths`".to_owned()
+            )
+        );
     }
 
     #[test]

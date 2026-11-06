@@ -46,15 +46,10 @@ pub(crate) fn check_section_badges(manifest: &ExtensionManifest) -> Result<(), M
     }
     for (i, badge) in badges.iter().enumerate() {
         let here = list.index(i);
-        let own = manifest
-            .contributes
-            .pages
-            .iter()
-            .any(|page| page.section == badge.section && page.section_title.is_some());
-        if !own {
+        if !super::contributions::own_section(manifest, &badge.section) {
             return Err(at(
                 &here.key("section"),
-                "must be a section of the extension's own: one of its pages with this section has a `sectionTitle`",
+                "must be a section of the extension's own: one of its pages (or kinds) with this section has a `sectionTitle`",
             ));
         }
         if let Some(first) = badges[..i]

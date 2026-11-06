@@ -82,16 +82,60 @@ export interface ManifestAction {
   danger?: boolean;
   /** Runs on several selected objects at once. Default `false`. */
   multiple?: boolean;
+  /** Offered only for objects for which this holds (a problem rule's condition without `missing`); sextantApi 4. */
+  when?: ProblemCondition;
+  /** Why it is not offered where `when` does not hold; sextantApi 4. */
+  whyNot?: string;
+  /**
+   * `primary`: a button of the details bar on the kinds the extension lists in a section of its own
+   * (`contributes.kinds`); elsewhere, and by default, the "Actions" menu; sextantApi 4.
+   */
+  placement?: "primary" | "more";
 }
+
+/** How a computed column shows its value (sextantApi 4). */
+export type ColumnFormat = "text" | "number" | "age" | "duration" | "ratio";
+/** The tone of a value, drawn as Sextant's status text. */
+export type ColumnTone = "ok" | "warning" | "error" | "neutral";
 
 export interface ManifestColumn {
   kind: KindPattern;
   id: string;
   title: string;
-  /** JSONPath as in CRD printer columns, e.g. `.spec.size`. */
-  jsonPath: string;
+  /** JSONPath as in CRD printer columns, e.g. `.spec.size`; a column has it or `paths`. */
+  jsonPath?: string;
   /** Title of the column this one goes after. */
   after?: string;
+  /** Field paths, the first with a value giving the cell; sextantApi 4. */
+  paths?: string[];
+  /** Default `text`. */
+  format?: ColumnFormat;
+  /** `duration`: the end time; now without one. */
+  endPaths?: string[];
+  /** `ratio`: the whole. */
+  totalPaths?: string[];
+  /** A tone per shown value. */
+  tones?: Record<string, ColumnTone>;
+  /** The cell's tooltip. */
+  tooltipPaths?: string[];
+  /** Texts shown instead of the value where a condition holds, the first that holds. */
+  cases?: { when: ProblemCondition; text: string }[];
+}
+
+/**
+ * A kind listed in a sidebar section of the extension's own with Sextant's table, details and actions
+ * (sextantApi 4, ADR-0152). Kinds of the core API group are Sextant's.
+ */
+export interface ManifestKind {
+  group: string;
+  kind: string;
+  /** A section of the extension's own: it, or a page or kind of it with this section, has a `sectionTitle`. */
+  section: string;
+  sectionTitle?: string;
+  /** The plural label and the table's title; the kind's name by default. */
+  title?: string;
+  icon?: string;
+  order?: number;
 }
 
 export interface ManifestDockAction {
@@ -165,6 +209,8 @@ export interface ManifestContributions {
   sectionBadges?: ManifestSectionBadge[];
   /** Programs run by id in a container named by labels (`sextant.exec.run`); needs `sextantApi` 3. */
   commands?: ManifestCommand[];
+  /** Kinds in a sidebar section of the extension's own; needs `sextantApi` 4. */
+  kinds?: ManifestKind[];
 }
 
 /**

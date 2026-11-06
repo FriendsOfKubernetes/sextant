@@ -9,11 +9,11 @@
 // consent) is removed with everything it showed — an open page of it falls back to the cluster overview, its dock tabs
 // and action windows close.
 import type { ComponentType } from "react";
-import type { ActionContribution, ExtensionInfo, KindPattern, KindRef, KubeObject } from "../api";
+import type { ActionContribution, ExtensionInfo, KindContribution, KindPattern, KindRef, KubeObject, ProblemContribution } from "../api";
 import { useAppStore } from "../app/store";
 import { Dialog, isIconName, type IconName } from "../components";
 import { registerAction, type ActionContext } from "../features/actions/registry";
-import { categoryOfExtension, registerExtensionProblems } from "../features/problems/extensionCategories";
+import { categoryOfExtension, detectExtension, registerExtensionProblems } from "../features/problems/extensionCategories";
 import { NamespaceFilter } from "../features/namespaces";
 import { useExtensionSectionCount } from "../features/problems/hooks";
 import { registerDetailsSection, unregisterDetailsSection, type DetailsSectionProps } from "../layout/details/registry";
@@ -28,8 +28,11 @@ import {
 import { getPage, registerPage, unregisterPage, type PageProps } from "../layout/pages";
 import { getSectionBadge, registerSectionBadge } from "../layout/sectionBadges";
 import { evalJsonPath, formatJsonPathValues } from "../resources/jsonpath";
-import { DEFAULT_ENTRY_ICON, extendActions, extendColumns, SIDEBAR_SECTIONS } from "../resources/registry";
+import { DEFAULT_ENTRY_ICON, extendActions, extendColumns, placeKind, SIDEBAR_SECTIONS } from "../resources/registry";
+import { computedColumn } from "./columns";
 import { ExtensionFrame } from "./ExtensionFrame";
+import { evaluate, kindKeyOf } from "./problemRules";
+import { matchesSelector } from "./selector";
 import { contributionKey, VIEW } from "./protocol";
 
 /** Default position of an extension's details section: after Sextant's conditions (30), before YAML (90). */
@@ -172,18 +175,41 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
     removers.push(() => unregisterDetailsSection(id));
   }
 
+  // Kinds listed in a section of the extension's own (ADR-0152): Sextant's table there, "Only problems" from its rules.
+  const listed: readonly KindContribution[] = contributes.kinds;
+  for (const entry of listed) {
+    removers.push(
+      placeKind(entry, {
+        owner: extensionId,
+        section: entry.section,
+        sectionTitle: entry.sectionTitle,
+        label: entry.title,
+        icon: entry.icon === undefined ? undefined : iconOf(entry.icon, extensionIcon),
+        order: entry.order ?? 0,
+        problem: problemOf(extensionId, entry, contributes.problems),
+      }),
+    );
+  }
+
   for (const action of contributes.actions) {
     const id = contributionKey(extensionId, action.id);
+    const when = action.when;
     removers.push(
       registerAction(id, {
         // Shown as written: never through i18next, so `{{…}}` or `$t(…)` in a title stay text.
         label: action.title,
         icon: iconOf(action.icon, extensionIcon),
-        // Always in the details panel's "Actions" dropdown (#275); `registerAction` enforces it too.
+        // In the details panel's "Actions" dropdown (#275), unless it asks for a button on a kind of its own section
+        // (ADR-0154): `registerAction` and `placementOf` enforce it.
         placement: "more",
+        primaryOn: action.placement === "primary" ? (kind) => matches(listed, kind) : undefined,
         danger: action.danger,
         multiple: action.multiple,
-        appliesTo: (_obj, kind) => matches(action.kinds, kind),
+        appliesTo: (obj, kind) => matches(action.kinds, kind) && (when === undefined || holdsNow(when, obj)),
+        notApplicableReason:
+          when === undefined
+            ? undefined
+            : (obj, kind) => (matches(action.kinds, kind) && !holdsNow(when, obj) ? action.whyNot : undefined),
         run: (ctx) => openActionWindow(extensionId, action, ctx),
       }),
     );
@@ -191,7 +217,13 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
   }
 
   for (const column of contributes.columns) {
-    const values = (obj: KubeObject) => evalJsonPath(obj, column.jsonPath);
+    // Computed from field paths (ADR-0153), or the JSONPath of CRD printer columns.
+    if (column.paths !== undefined || column.jsonPath === undefined) {
+      removers.push(extendColumns(column.kind, [computedColumn(contributionKey(extensionId, column.id), column)]));
+      continue;
+    }
+    const jsonPath = column.jsonPath;
+    const values = (obj: KubeObject) => evalJsonPath(obj, jsonPath);
     removers.push(
       extendColumns(column.kind, [
         {
@@ -233,6 +265,39 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
   });
 
   return removers;
+}
+
+/** Whether a condition of an action holds for `obj` now (one that holds from or until a time counts within it). */
+function holdsNow(condition: NonNullable<ActionContribution["when"]>, obj: KubeObject): boolean {
+  const verdict = evaluate(condition, obj);
+  const now = Date.now();
+  return (
+    verdict.holds && (verdict.activeFrom === undefined || verdict.activeFrom <= now) && (verdict.until === undefined || verdict.until > now)
+  );
+}
+
+/**
+ * A listed kind's "Only problems": an object has a problem of the extension's rules for the kind now (grace not
+ * counted), and is one its rules' source picks.
+ */
+function problemOf(
+  extensionId: string,
+  kind: Pick<KindRef, "group" | "kind">,
+  rules: readonly ProblemContribution[],
+): ((obj: KubeObject) => boolean) | undefined {
+  const own = rules.filter((rule) => kindKeyOf(rule.kind) === kindKeyOf(kind));
+  if (own.length === 0) return undefined;
+  const selector = own[0]!.source?.labelSelector;
+  const category = categoryOfExtension(extensionId);
+  return (obj) => {
+    if (selector !== undefined && !matchesSelector(obj.metadata?.labels as Record<string, string> | undefined, selector)) {
+      return false;
+    }
+    const now = Date.now();
+    return detectExtension(category, kind, obj).some(
+      (d) => (d.activeFrom === undefined || d.activeFrom <= now) && (d.until === undefined || d.until > now),
+    );
+  };
 }
 
 function pageComponent(extensionId: string, contribution: string, title: string): ComponentType<PageProps> {

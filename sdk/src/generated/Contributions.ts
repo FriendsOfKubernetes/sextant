@@ -4,6 +4,7 @@ import type { ColumnContribution } from "./ColumnContribution";
 import type { CommandContribution } from "./CommandContribution";
 import type { DetailsSectionContribution } from "./DetailsSectionContribution";
 import type { DockActionContribution } from "./DockActionContribution";
+import type { KindContribution } from "./KindContribution";
 import type { MetricQuery } from "./MetricQuery";
 import type { PageContribution } from "./PageContribution";
 import type { ProblemContribution } from "./ProblemContribution";
@@ -29,4 +30,8 @@ sectionBadges: Array<SectionBadgeContribution>,
 /**
  * Programs the extension runs by id in a container it names by labels (ADR-0147); `sextantApi` 3.
  */
-commands: Array<CommandContribution>, };
+commands: Array<CommandContribution>, 
+/**
+ * Kinds listed in a sidebar section of the extension's own with Sextant's tables (ADR-0152); `sextantApi` 4.
+ */
+kinds: Array<KindContribution>, };

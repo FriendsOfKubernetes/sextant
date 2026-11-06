@@ -23,6 +23,8 @@ enum Text<'a> {
     Title,
     /// The description: up to 500 characters.
     Description,
+    /// A sentence such as an action's `whyNot`: up to 200 characters.
+    Sentence,
     /// A problem message: up to 300 characters with the English message's placeholders.
     Message(&'a str),
 }
@@ -32,6 +34,7 @@ impl Text<'_> {
         match self {
             Text::Title => 80,
             Text::Description => 500,
+            Text::Sentence => 200,
             Text::Message(_) => 300,
         }
     }
@@ -54,9 +57,23 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
     }
     for action in &c.actions {
         out.insert(format!("actions.{}.title", action.id), Text::Title);
+        if action.why_not.is_some() {
+            out.insert(format!("actions.{}.whyNot", action.id), Text::Sentence);
+        }
     }
     for column in &c.columns {
         out.insert(format!("columns.{}.title", column.id), Text::Title);
+        for i in 0..column.cases.as_ref().map_or(0, Vec::len) {
+            out.insert(format!("columns.{}.cases.{i}.text", column.id), Text::Title);
+        }
+    }
+    for (i, kind) in c.kinds.iter().enumerate() {
+        if kind.title.is_some() {
+            out.insert(format!("kinds.{i}.title"), Text::Title);
+        }
+        if kind.section_title.is_some() {
+            out.insert(format!("kinds.{i}.sectionTitle"), Text::Title);
+        }
     }
     for dock in &c.dock_actions {
         out.insert(format!("dockActions.{}.title", dock.id), Text::Title);

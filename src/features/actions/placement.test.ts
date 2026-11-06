@@ -59,7 +59,7 @@ describe("the details panel's placement of every built-in action", () => {
   it.each(PRIMARY)("%s is a button", (id) => {
     const action = getAction(id);
     expect(action, id).toBeDefined();
-    expect(placementOf(action!)).toBe("primary");
+    expect(placementOf(action!, { group: "", version: "v1", kind: "Pod" })).toBe("primary");
     expect(action!.inDetails).not.toBe(false);
   });
 

@@ -32,6 +32,7 @@ const manifest: ExtensionManifest = {
     metricQueries: [{ id: "health", title: "Ceph health", query: "max(ceph_health_status)", params: [] }],
     sectionBadges: [],
     commands: [],
+    kinds: [],
     settings: { title: "Rook Ceph" },
   },
   backend: { module: "b.wasm", network: { hosts: [] }, credentials: [{ id: "token", label: "Token" }] },

@@ -25,7 +25,7 @@ import {
   viewIdOf,
 } from "../../resources";
 // Not re-exported from src/resources/index.ts: only the sidebar uses them.
-import { DEFAULT_ENTRY_ICON, DISCOVERED_SECTIONS, SECTION_ICONS } from "../../resources/registry";
+import { DEFAULT_ENTRY_ICON, DISCOVERED_SECTIONS, kindPlacement, placedSections, SECTION_ICONS } from "../../resources/registry";
 import { formatCount, SIDEBAR_COUNT_CAP, useObjectCount } from "../../resources/counts";
 import { watchCrdChanges } from "../../resources/useKinds";
 import { getPages, usePagesVersion } from "../pages";
@@ -273,12 +273,25 @@ function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _regi
     if (kinds ? !findKind(kinds, def.kind) : DISCOVERED_SECTIONS.has(def.sidebar.section)) continue;
     add(def.sidebar.section, { id: viewIdOf(def.kind), order: def.sidebar.order, labelKey: def.sidebar.labelKey, icon: def.sidebar.icon });
   }
-  // Header of a section of its own: the first `sectionTitle` its pages give.
+  // Header of a section of its own: the first `sectionTitle` its kinds or pages give.
   const titles = new Map<string, string>();
-  // A page of an installed tool's section shows only while the cluster serves one of the section's kinds.
+  // Custom kinds an extension lists in a section of its own (ADR-0152), served ones only.
+  const placedKinds = new Set<string>();
+  for (const k of customResourceKinds(kinds)) {
+    const { group, kind } = k.kindRef;
+    const placed = findResourceDef({ group, kind }) ? undefined : kindPlacement({ group, kind });
+    if (!placed) continue;
+    placedKinds.add(viewIdOf({ group, kind }));
+    add(placed.section, { id: viewIdOf({ group, kind }), order: placed.order, label: placed.label ?? kind, icon: placed.icon ?? "customResource" });
+    if (placed.sectionTitle && !titles.has(placed.section)) titles.set(placed.section, placed.sectionTitle);
+  }
+  // A page of an installed tool's section, or of a section an extension lists kinds in, shows only while the cluster
+  // serves one of the section's kinds.
   const served = new Set(bySection.keys());
+  const placedSectionIds = placedSections();
   for (const page of getPages()) {
-    if (DISCOVERED_SECTIONS.has(page.section as SidebarSection) && !served.has(page.section)) continue;
+    const discovered = DISCOVERED_SECTIONS.has(page.section as SidebarSection) || placedSectionIds.has(page.section);
+    if (discovered && !served.has(page.section)) continue;
     add(page.section, { id: page.id, order: page.order, labelKey: page.labelKey, label: page.label, icon: page.icon });
     if (page.sectionTitle && !titles.has(page.section)) titles.set(page.section, page.sectionTitle);
   }
@@ -292,7 +305,7 @@ function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _regi
   };
   for (const k of customResourceKinds(kinds)) {
     const { group, kind } = k.kindRef;
-    if (!findResourceDef({ group, kind })) addCustom(group, kind);
+    if (!findResourceDef({ group, kind }) && !placedKinds.has(viewIdOf({ group, kind }))) addCustom(group, kind);
   }
   const crGroups = [...groups.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
