@@ -1,7 +1,8 @@
 // What counts as a problem in a cluster: the rules shared by the problems screen (#136) and the background
 // notifications (#135). Pure functions over watched objects, no React and no clock: a rule says when a problem
 // starts to count (`since` + `graceMs`, or `activeFrom`) and, for one that passes by itself, until when (`until`);
-// `isActive(problem, now)` reads it. Flux, Argo CD and Gateway API objects are judged by their sections' own helpers.
+// `isActive(problem, now)` reads it. Gateway API objects and others are judged by their sections' own helpers; Flux,
+// Argo CD and Argo Rollouts by their extensions' rules (ADR-0162).
 //
 //   detect(kind, obj)          // the problems of one object of `kind` (an empty list: none)
 //   resolve(detected, before)  // with keys and the time each was first seen (kept across updates of the object)
@@ -9,11 +10,7 @@
 import type { KindRef, KubeObject, ObjectRef } from "../../api";
 import { status } from "../../resources";
 import { kindFromApiVersion } from "../../resources/refs";
-import { APPLICATION, healthStatus, operationPhase } from "../argocd/model";
 import { eventTimestamp, involvedObject } from "../events/model";
-import { isSuspended, readyMessage, readyReason, readyStatus } from "../flux/model";
-import { ROLLOUT } from "../argo-rollouts/model";
-import { rolloutProblemsDetected } from "../argo-rollouts/problemRules";
 import { knativeProblems } from "../knative/problemRules";
 import { contourProblems } from "../contour/problemRules";
 import { policyProblems } from "../kyverno/problemRules";
@@ -60,9 +57,6 @@ export const PROBLEM_CATEGORIES = [
   "vpa",
   "volumes",
   "certificates",
-  "flux",
-  "argocd",
-  "rollouts",
   "workflows",
   "gateway",
   "mesh",
@@ -269,12 +263,6 @@ export const REPLICASET = k("apps", "v1", "ReplicaSet");
 /** cert-manager's Certificate. */
 export const CERTIFICATE = k("cert-manager.io", "v1", "Certificate");
 
-const FLUX_GROUPS = new Set([
-  "source.toolkit.fluxcd.io",
-  "kustomize.toolkit.fluxcd.io",
-  "helm.toolkit.fluxcd.io",
-  "image.toolkit.fluxcd.io",
-]);
 const KNATIVE_EVENTING_GROUPS = new Set(["eventing.knative.dev", "messaging.knative.dev", "flows.knative.dev", "sources.knative.dev"]);
 
 function time(value: string | undefined): number | undefined {
@@ -303,10 +291,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (same(kind, PVC)) return "volumes";
   if (same(kind, EVENT)) return "events";
   if (same(kind, CERTIFICATE)) return "certificates";
-  if (same(kind, APPLICATION)) return "argocd";
-  // Argo Rollouts (#213); Workflows come from the provider of features/argo-workflows.
-  if (same(kind, ROLLOUT)) return "rollouts";
-  if (FLUX_GROUPS.has(kind.group)) return "flux";
   if (kind.group === "gateway.networking.k8s.io") return "gateway";
   // Knative Services and Configurations (#213); Kyverno policy reports (#213, opt-in).
   if (kind.group === "serving.knative.dev" && (kind.kind === "Service" || kind.kind === "Configuration")) return "knative";
@@ -661,43 +645,6 @@ function certificateProblems(cert: KubeObject): Detected[] {
   return found;
 }
 
-/** Ready=False reasons of a Flux object still working (waiting for a dependency, reconciling), not of a failure. */
-const FLUX_IN_PROGRESS = new Set(["DependencyNotReady", "Progressing", "ProgressingWithRetry", "ReconciliationInProgress"]);
-
-function fluxProblems(obj: KubeObject): Detected[] {
-  if (isSuspended(obj) || readyStatus(obj) !== "False") return [];
-  const reason = readyReason(obj);
-  if (FLUX_IN_PROGRESS.has(reason ?? "")) return [];
-  return [
-    {
-      reason: reason ?? "NotReady",
-      group: "notReady",
-      message: readyMessage(obj),
-      since: transition(condition(obj, "Ready")),
-      // A failure the next retry fixes (a source briefly unreachable) passes quietly.
-      graceMs: SHORT_GRACE_MS,
-      notify: true,
-    },
-  ];
-}
-
-function argoProblems(app: KubeObject): Detected[] {
-  const found: Detected[] = [];
-  if (healthStatus(app) === "Degraded") {
-    found.push({ reason: "Degraded", message: str(get(app, "status", "health", "message")), notify: true });
-  }
-  const phase = operationPhase(app);
-  if (phase === "Failed" || phase === "Error") {
-    found.push({
-      reason: "SyncFailed",
-      message: str(get(app, "status", "operationState", "message")),
-      since: str(get(app, "status", "operationState", "finishedAt")),
-      notify: true,
-    });
-  }
-  return found;
-}
-
 function gatewayProblems(obj: KubeObject, kind: KindRef): Detected[] {
   if (!isGatewayProblem(obj, kind)) return [];
   const judged = same(kind, GATEWAY_CLASS)
@@ -778,12 +725,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return eventProblems(obj);
     case "certificates":
       return certificateProblems(obj);
-    case "flux":
-      return fluxProblems(obj);
-    case "argocd":
-      return argoProblems(obj);
-    case "rollouts":
-      return rolloutProblemsDetected(kind, obj);
     case "workflows": // Recent failed Workflows: the provider of features/argo-workflows finds them.
       return [];
     case "gateway":

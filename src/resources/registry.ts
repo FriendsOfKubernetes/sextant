@@ -42,25 +42,6 @@ export type BuiltInActionId =
   | "rolloutUndo"
   // Set image (src/features/set-image)
   | "setImage"
-  // Flux (src/features/flux)
-  | "reconcile"
-  | "reconcileWithSource"
-  | "fluxSuspend"
-  | "fluxResume"
-  // Argo CD (src/features/argocd)
-  | "argoSync"
-  | "argoRefresh"
-  | "argoHardRefresh"
-  | "argoTerminate"
-  | "argoDiff"
-  | "argoOpenUi"
-  // Argo Rollouts (src/features/argo-rollouts)
-  | "rolloutPromote"
-  | "rolloutPromoteFull"
-  | "rolloutAbort"
-  | "rolloutRetry"
-  | "rolloutPause"
-  | "rolloutResume"
   // Argo Workflows (src/features/argo-workflows)
   | "workflowSuspend"
   | "workflowResume"
@@ -150,8 +131,8 @@ export type ColumnFilterValue =
   | readonly (string | number | boolean | null | undefined)[];
 
 /**
- * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `gatewayApi`, `flux` and
- * `argocd` belong to APIs and tools installed in the cluster: see `DISCOVERED_SECTIONS`.
+ * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `gatewayApi`, `certManager` and
+ * others belong to APIs and tools installed in the cluster: see `DISCOVERED_SECTIONS`.
  */
 export const SIDEBAR_SECTIONS = [
   "cluster",
@@ -172,9 +153,6 @@ export const SIDEBAR_SECTIONS = [
   "vpa",
   "volumeSnapshots",
   "velero",
-  "flux",
-  "argocd",
-  "argoRollouts",
   "argoWorkflows",
   "istio",
   "linkerd",
@@ -205,15 +183,22 @@ export const SIDEBAR_SECTIONS = [
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
 
 /**
+ * Places kept for the sections of Sextant's own extensions (ADR-0162), which were Sextant's sections before 0.30: the
+ * section comes where it always was, after the Sextant section named here, whatever its manifest's `after` says.
+ */
+export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, after: SidebarSection])[] = [
+  ["flux", "velero"],
+  ["argocd", "velero"],
+  ["argoRollouts", "velero"],
+];
+
+/**
  * Sections of APIs and tools a cluster may or may not have (Gateway API, Flux, Argo CD): their kinds are listed only
  * once discovery says the cluster serves them, never before it comes, so a section without served kinds — the CRDs
  * are not installed — is not drawn at all.
  */
 export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>([
   "gatewayApi",
-  "flux",
-  "argocd",
-  "argoRollouts",
   "argoWorkflows",
   "certManager",
   "trivy",
@@ -268,9 +253,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   vpa: "vpa",
   volumeSnapshots: "volumeSnapshots",
   velero: "velero",
-  flux: "flux",
-  argocd: "argocd",
-  argoRollouts: "argoRollouts",
   argoWorkflows: "argoWorkflows",
   istio: "istio",
   linkerd: "linkerd",

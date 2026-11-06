@@ -31,8 +31,6 @@ import type { ObjectManagers } from "./generated/ObjectManagers";
 import type { PartialHistory } from "./generated/PartialHistory";
 import type { AccessRule } from "./generated/AccessRule";
 import type { AppSettings } from "./generated/AppSettings";
-import type { ArgoLogin } from "./generated/ArgoLogin";
-import type { ArgoStatus } from "./generated/ArgoStatus";
 import type { AuditEntry } from "./generated/AuditEntry";
 import type { ChartHit } from "./generated/ChartHit";
 import type { DryRunMode } from "./generated/DryRunMode";
@@ -90,7 +88,6 @@ import type { InstallPreview } from "./generated/InstallPreview";
 import type { KubeconfigSource } from "./generated/KubeconfigSource";
 import type { LogOptions } from "./generated/LogOptions";
 import type { LogUpdate } from "./generated/LogUpdate";
-import type { ManagedResource } from "./generated/ManagedResource";
 import type { McpStatus } from "./generated/McpStatus";
 import type { DiagnosticAnswer } from "./generated/DiagnosticAnswer";
 import type { MetricsStatus } from "./generated/MetricsStatus";
@@ -245,12 +242,6 @@ export const resources = {
    */
   patch: (clusterId: ClusterId, ref: ObjectRef, patch: unknown, patchType: PatchType) =>
     call<KubeObject>("resource_patch", { clusterId, ref, patch, patchType }),
-  /**
-   * Patch of the `status` subresource of an Argo Rollouts Rollout (promote, abort, retry, ADR-0097); any other kind is
-   * `invalid`. Resolves to the object as saved.
-   */
-  patchStatus: (clusterId: ClusterId, ref: ObjectRef, patch: unknown, patchType: PatchType) =>
-    call<KubeObject>("resource_patch_status", { clusterId, ref, patch, patchType }),
 };
 
 export const actions = {
@@ -565,25 +556,6 @@ export const imageFiles = {
   resolve: (sessionId: string, path: string) => call<string | null>("image_files_resolve", { sessionId, path }),
   /** Stops a stream and closes the image opened under that id. */
   stop: (streamId: string) => call<void>("image_files_stop", { streamId }),
-};
-
-/**
- * Argo CD API through a port forward to `argocd-server`. Passwords and tokens only go in (`login`); nothing the
- * backend answers carries one.
- */
-export const argocd = {
-  /** Whether Argo CD is signed in for the cluster (does not sign in). */
-  status: (clusterId: ClusterId) => call<ArgoStatus>("argocd_status", { clusterId }),
-  /** Signs in with a user name and password or an API token; `remember` saves it in the OS credential store. */
-  login: (clusterId: ClusterId, login: ArgoLogin) => call<ArgoStatus>("argocd_login", { clusterId, login }),
-  /** Ends the session; `forget` also deletes the saved login. */
-  logout: (clusterId: ClusterId, forget: boolean) =>
-    call<ArgoStatus>("argocd_logout", { clusterId, options: { forget } }),
-  /**
-   * Desired (Git) and live states of an Application's resources; Secret values are `""`. Signs in by itself from the
-   * saved login or the standard secrets; rejects with `unauthorized` when none works (show the sign-in window).
-   */
-  diff: (clusterId: ClusterId, app: ObjectRef) => call<ManagedResource[]>("argocd_diff", { clusterId, app }),
 };
 
 /**

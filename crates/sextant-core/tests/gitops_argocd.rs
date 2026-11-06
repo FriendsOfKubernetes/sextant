@@ -1,4 +1,4 @@
-//! The Argo CD actions of the window (`src/features/argocd`) against the kind test cluster with Argo CD: the merge
+//! The Argo CD actions of the Argo CD extension (`extensions/argo-cd`, ADR-0162) against the kind test cluster with Argo CD: the merge
 //! patches it sends through `resources::patch` start a sync, ask for a refresh and terminate a running operation;
 //! the web UI answers through a port forwarded to `argocd-server`, which is found by its label.
 //!
@@ -36,7 +36,7 @@ use tokio::net::TcpStream;
 
 /// Where `up --gitops` installs Argo CD.
 const ARGOCD_NAMESPACE: &str = "argocd";
-/// The label the window finds argocd-server by (`ARGOCD_SERVER_SELECTOR` in `src/features/argocd/server.ts`).
+/// The label the Argo CD extension finds argocd-server by (its services' `labelSelector`).
 const SERVER_SELECTOR: &str = "app.kubernetes.io/name=argocd-server";
 const REFRESH_ANNOTATION: &str = "argocd.argoproj.io/refresh";
 

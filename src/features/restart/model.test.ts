@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { KindRef, KubeObject } from "../../api";
-import { ROLLOUT } from "../argo-rollouts/model";
-import { restartPatch, rfc3339Seconds } from "../argo-rollouts/patches";
-import { canRestart, planRestart, POD, REPLICA_SET, whyNotRestart } from "./model";
+import { ARGO_ROLLOUT as ROLLOUT } from "../../resources/gitopsKinds";
+import { canRestart, planRestart, POD, REPLICA_SET, restartPatch, rfc3339Seconds, whyNotRestart } from "./model";
 
 const DEPLOYMENT: KindRef = { group: "apps", version: "v1", kind: "Deployment" };
 const STATEFUL_SET: KindRef = { group: "apps", version: "v1", kind: "StatefulSet" };

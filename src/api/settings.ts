@@ -10,7 +10,7 @@ export function defaultAppSettings(): AppSettings {
   return {
     theme: "system",
     language: "system",
-    settingsVersion: 2,
+    settingsVersion: 3,
     kubeconfigSources: [],
     clusters: {},
     window: {
@@ -67,7 +67,7 @@ export function defaultAppSettings(): AppSettings {
     practices: { disabledChecks: [], excludedNamespaces: ["kube-system", "kube-public", "kube-node-lease"] },
     customColumns: [],
     imageFiles: { dockerCredentials: false },
-    extensionCatalog: { enabled: true },
+    extensionCatalog: { enabled: true, declinedOffers: [] },
     terminalTools: { offerKubectl: true },
   };
 }

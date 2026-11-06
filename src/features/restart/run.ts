@@ -18,7 +18,6 @@ import {
 } from "../../api";
 import { i18n } from "../../i18n";
 import { status } from "../../resources";
-import { restartPatch } from "../argo-rollouts/patches";
 import { labelSelectorOf } from "../logs/selector";
 import {
   controllerOf,
@@ -31,6 +30,7 @@ import {
   objectLabel,
   ownedPods,
   POD,
+  restartPatch,
   podController,
   REPLACEMENT_TIMEOUT_MS,
   replicaSetOwner,

@@ -67,10 +67,6 @@
     "applied": "適用済み ({{count}})",
     "notApplied": "未適用 ({{count}})"
   },
-  "argo": {
-    "login": "Sextant は argocd-initial-admin-secret を使って Argo CD に自動でサインインします。Argo CD で admin のパスワードを変更してから、その Secret を削除してください。",
-    "openUi": "Argo CD UI を開く"
-  },
   "confirmStop": {
     "title": "インストールを停止しますか?",
     "text": "適用中のオブジェクトの後でインストールが停止します。適用したものはクラスターに残ります。",

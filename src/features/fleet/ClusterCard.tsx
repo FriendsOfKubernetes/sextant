@@ -1,7 +1,7 @@
 // The health card of one cluster in the overview: its connection (Connect / Reconnect only on a click, the error
 // inline), and once connected the nodes' version, ready nodes, CPU and memory against allocatable capacity, problems
-// by category (the problems screen's rules and shared watches) and the state of Flux, Argo CD and Gateway API when
-// the cluster serves them.
+// by category (the problems screen's rules and shared watches) and the state of Gateway API and of the tools active
+// extensions judge (Flux, Argo CD, …; their problem rules, ADR-0162) when the cluster serves them.
 import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { AppSettings, ClusterId, ClusterInfo } from "../../api";
@@ -14,6 +14,7 @@ import { connectionErrorText } from "../clusters/Welcome";
 import { formatBytes, formatCpu, percentKey, percentOf } from "../metrics/format";
 import { useMetricsStatus, useNodeUsage } from "../metrics/hooks";
 import { usageUnavailable } from "../metrics/components";
+import { extensionCategoryTitle, isExtensionCategory, useExtensionCategories } from "../problems/extensionCategories";
 import { useClusterProblems } from "../problems/hooks";
 import { OPT_IN_CATEGORIES, PROBLEM_CATEGORIES, type ProblemCategory } from "../problems/model";
 import { sourcesFor } from "../problems/sources";
@@ -26,8 +27,11 @@ import type { RowsState } from "./rowsStore";
  * which only the problems screen turns on.
  */
 export const FLEET_CATEGORIES: readonly ProblemCategory[] = PROBLEM_CATEGORIES.filter((c) => !OPT_IN_CATEGORIES.includes(c));
-/** Categories shown as "installed tools" (only when the cluster serves their kinds), apart from the other problems. */
-const TOOLS: readonly ProblemCategory[] = ["flux", "argocd", "gateway"];
+/**
+ * Categories shown as "installed tools" (only when the cluster serves their kinds), apart from the other problems; every
+ * active extension's category is one too, where its rules have a source in the cluster.
+ */
+const TOOLS: readonly ProblemCategory[] = ["gateway"];
 /** The other categories, listed when they have problems. Warning events have a line of their own. */
 const LISTED = FLEET_CATEGORIES.filter((c) => !TOOLS.includes(c) && c !== "events");
 
@@ -107,7 +111,9 @@ export function ClusterCard({
 
 function Health({ clusterId, nodes }: { clusterId: ClusterId; nodes: RowsState<NodeRow> | undefined }) {
   const { t } = useTranslation();
-  const problems = useClusterProblems(clusterId, FLEET_CATEGORIES);
+  const extensions = useExtensionCategories();
+  const categories = useMemo((): readonly ProblemCategory[] => [...FLEET_CATEGORIES, ...extensions], [extensions]);
+  const problems = useClusterProblems(clusterId, categories);
   const discovery = useClusterKinds(clusterId);
   const metricsStatus = useMetricsStatus(clusterId);
   const usage = useNodeUsage(clusterId);
@@ -115,8 +121,11 @@ function Health({ clusterId, nodes }: { clusterId: ClusterId; nodes: RowsState<N
   const summary = useMemo(() => summarizeNodes(nodes?.rows.values() ?? []), [nodes]);
   const counts = useMemo(() => countByCategory(problems.active, Date.now()), [problems.active]);
   const served = useMemo(
-    () => TOOLS.filter((tool) => discovery.kinds && sourcesFor([tool], discovery.kinds).length > 0),
-    [discovery.kinds],
+    () => [
+      ...TOOLS.filter((tool) => discovery.kinds && sourcesFor([tool], discovery.kinds).length > 0),
+      ...extensions.filter((category) => problems.sources.some((s) => s.def.category === category)),
+    ],
+    [discovery.kinds, extensions, problems.sources],
   );
 
   const nodesLoading = !nodes || nodes.status === "loading";
@@ -200,7 +209,7 @@ function Health({ clusterId, nodes }: { clusterId: ClusterId; nodes: RowsState<N
             const count = counts.get(tool) ?? 0;
             return (
               <li key={tool} data-tool={tool} data-problems={count}>
-                <span>{t(`problems:categories.${tool}`)}</span>
+                <span>{isExtensionCategory(tool) ? (extensionCategoryTitle(tool) ?? tool) : t(`problems:categories.${tool}`)}</span>
                 <span className={count > 0 ? "fleet-card__bad" : "fleet-card__good"}>
                   {count > 0 ? t("problems:total", { count }) : t("fleet:card.toolOk")}
                 </span>

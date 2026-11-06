@@ -468,8 +468,8 @@ async fn send_now(request: LoopbackRequest) -> CoreResult<LoopbackAnswer> {
     let (status, bytes) = match request.scheme {
         ServiceScheme::Http => exchange(tcp, http).await?,
         ServiceScheme::Https => {
-            let tls = crate::argocd::loopback_tls_connector()
-                .connect(crate::argocd::loopback_server_name(), tcp)
+            let tls = crate::loopback_tls::loopback_tls_connector()
+                .connect(crate::loopback_tls::loopback_server_name(), tcp)
                 .await
                 .map_err(|err| unreachable(&err))?;
             exchange(tls, http).await?

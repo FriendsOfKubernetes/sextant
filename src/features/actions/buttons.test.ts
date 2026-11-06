@@ -36,8 +36,6 @@ describe("button standard", () => {
   it("registers every resource action with an icon of the set, not a text glyph", () => {
     const ids = [
       "edit", "delete", "scale", "restart", "cordon", "drain", "trigger", "suspend", "logs", "exec", "portForward",
-      "reconcile", "reconcileWithSource", "fluxSuspend", "fluxResume", "argoSync", "argoRefresh", "argoHardRefresh",
-      "argoTerminate", "argoOpenUi", "argoDiff",
     ] as const;
     for (const id of ids) {
       const action = getAction(id as never);

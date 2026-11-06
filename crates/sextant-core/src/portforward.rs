@@ -63,7 +63,6 @@ pub enum ForwardSource {
     User,
     Agent,
     Vcluster,
-    ArgoCd,
     /// Started by an extension's `portForward.start` (ADR-0156): the user's to stop like their own.
     Extension,
     /// Opened by Sextant for an extension's service requests (ADR-0158): internal, never stopped in bulk.
@@ -618,7 +617,13 @@ mod tests {
 
     #[test]
     fn forward_source_survives_wire_round_trip() {
-        for source in ["user", "agent", "vcluster", "argoCd"] {
+        for source in [
+            "user",
+            "agent",
+            "vcluster",
+            "extension",
+            "extensionInternal",
+        ] {
             let value = serde_json::json!({
                 "id": "pf-1", "cluster": "c1",
                 "target": { "type": "service", "namespace": "ns", "name": "web" },
@@ -761,11 +766,7 @@ mod tests {
     async fn provenance_is_present_in_the_first_event_and_does_not_change_pod_access() {
         let api = server().await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
-        for source in [
-            ForwardSource::Agent,
-            ForwardSource::Vcluster,
-            ForwardSource::ArgoCd,
-        ] {
+        for source in [ForwardSource::Agent, ForwardSource::Vcluster] {
             let forwarder = PortForwarder::new();
             let mut events = forwarder.subscribe();
             let info = forwarder

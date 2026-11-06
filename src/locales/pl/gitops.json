@@ -73,10 +73,6 @@
     "applied": "Zastosowane ({{count}})",
     "notApplied": "Niezastosowane ({{count}})"
   },
-  "argo": {
-    "login": "Sextant loguje się do Argo CD samodzielnie przy użyciu argocd-initial-admin-secret. Zmień hasło administratora w Argo CD, a następnie usuń ten Secret.",
-    "openUi": "Otwórz interfejs Argo CD"
-  },
   "confirmStop": {
     "title": "Zatrzymać instalację?",
     "text": "Instalacja zatrzyma się po aktualnie stosowanym obiekcie. Zastosowane obiekty pozostaną w klastrze.",

@@ -2,7 +2,7 @@
 //
 //   Deployment, StatefulSet, DaemonSet   `kubectl rollout restart`: the pod template's restartedAt annotation (the
 //                                        existing `workload_restart`); a paused Deployment is refused as kubectl does
-//   Argo Rollouts Rollout                `kubectl argo rollouts restart`: `spec.restartAt` (argo-rollouts/patches.ts)
+//   Argo Rollouts Rollout                `kubectl argo rollouts restart`: `spec.restartAt` (run.ts `restartPatch`)
 //   ReplicaSet owned by a Deployment     its Deployment is restarted (a ReplicaSet has no rollout restart, and an old
 //   or by a Rollout                      ReplicaSet of a Deployment would only be scaled down again)
 //   ReplicaSet without a controller      its pods are deleted one at a time, each after the previous one's
@@ -16,7 +16,7 @@
 import type { KindRef, KubeObject, ObjectRef } from "../../api";
 import { status } from "../../resources";
 import { kindFromApiVersion, refOf } from "../../resources/refs";
-import { isKind, ROLLOUT } from "../argo-rollouts/model";
+import { ARGO_ROLLOUT, isKindOf } from "../../resources/gitopsKinds";
 
 const { arr, get, str } = status;
 
@@ -33,7 +33,7 @@ const is = (kind: Pick<KindRef, "group" | "kind">, group: string, ...kinds: stri
 
 /** Kinds `kubectl rollout restart` restarts. */
 export const isRolloutKind = (kind: Pick<KindRef, "group" | "kind">) => is(kind, "apps", "Deployment", "StatefulSet", "DaemonSet");
-export const isArgoRollout = (kind: Pick<KindRef, "group" | "kind">) => isKind(kind, ROLLOUT);
+export const isArgoRollout = (kind: Pick<KindRef, "group" | "kind">) => isKindOf(kind, ARGO_ROLLOUT);
 
 /** Controllers that recreate a deleted pod of theirs. */
 const POD_CONTROLLERS: readonly [string, string][] = [
@@ -225,4 +225,14 @@ export function deletablePods(pods: Iterable<KubeObject>, rsUid: string): KubeOb
 /** "Deployment demo/web": a kind and a name as data, for the sentences that name objects. */
 export function objectLabel(r: ObjectRef): string {
   return `${r.kind.kind} ${r.namespace ? `${r.namespace}/${r.name}` : r.name}`;
+}
+
+/** `kubectl argo rollouts restart`'s patch: `spec.restartAt` now (the plugin's `RestartRollout`). */
+export function restartPatch(at: Date): { spec: { restartAt: string } } {
+  return { spec: { restartAt: rfc3339Seconds(at) } };
+}
+
+/** `at` in UTC with whole seconds and `Z`, the format of Go's `time.RFC3339` (and of `kubectl rollout restart`). */
+export function rfc3339Seconds(at: Date): string {
+  return at.toISOString().replace(/\.\d{3}Z$/, "Z");
 }

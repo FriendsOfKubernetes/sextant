@@ -5,7 +5,6 @@ pub mod about;
 pub mod access;
 pub mod actions;
 pub mod alerts;
-pub mod argocd;
 pub mod cleanup;
 pub mod cloud;
 pub mod clusters;

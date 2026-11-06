@@ -102,7 +102,7 @@ The part of the app that knows everything about clusters and nothing about the w
 _Avoid_: backend, service
 
 **GitOps section**:
-The "Flux" or "Argo CD" section in the tree on the left. It appears only if the tool is found by CRDs in discovery: for Flux, at least one `*.toolkit.fluxcd.io` group; for Argo CD, the Application from `argoproj.io`. Kinds that are not in the cluster are not in the section; the section also appears without reconnecting if the tool was installed while the connection was open, including by Sextant's own GitOps install. Without the tool the section stays hidden; the offer to install lives in the cluster's menu and settings.
+The "Flux" or "Argo CD" section in the tree on the left. It appears only if the tool is found by CRDs in discovery: for Flux, at least one `*.toolkit.fluxcd.io` group; for Argo CD, the Application from `argoproj.io`. Kinds that are not in the cluster are not in the section; the section also appears without reconnecting if the tool was installed while the connection was open, including by Sextant's own GitOps install. Without the tool the section stays hidden; the offer to install lives in the cluster's menu and settings. Since 0.30 the sections belong to Sextant's own extensions (Flux, Argo CD, Argo Rollouts) and stay in the same place; where a tool runs and its extension is not installed, the sidebar offers the extension.
 _Avoid_: plugin, integration, module
 
 **Flux source**:

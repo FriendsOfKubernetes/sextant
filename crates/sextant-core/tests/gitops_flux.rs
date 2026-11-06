@@ -1,4 +1,4 @@
-//! What the Flux section of the frontend (`src/features/flux`) does to a cluster, against the kind test cluster with
+//! What the Flux extension (`extensions/flux`, ADR-0162) does to a cluster, against the kind test cluster with
 //! Flux (`scripts/test-cluster.sh up --gitops`): its actions are merge patches through `resources::patch` —
 //! "Reconcile now" sets the annotation `reconcile.fluxcd.io/requestedAt`, "Reconcile with source" sets it on the
 //! source and then on the object, Suspend / Resume set `spec.suspend` — and the Flux controllers act on them
@@ -201,7 +201,7 @@ async fn flux_kinds_are_served_at_the_versions_the_section_registers() {
     };
     let (_tmp, mgr, id) = connected(&cluster.kubeconfig).await;
     let kinds = mgr.kinds(&id).await.unwrap();
-    // `FLUX_KINDS` in src/features/flux/model.ts; discovery keeps the version the cluster prefers.
+    // the kinds of `extensions/flux/sextant-extension.json`; discovery keeps the version the cluster prefers.
     for (group, version, kind) in [
         ("source.toolkit.fluxcd.io", "v1", "GitRepository"),
         ("source.toolkit.fluxcd.io", "v1", "OCIRepository"),

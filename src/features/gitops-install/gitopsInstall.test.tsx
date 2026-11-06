@@ -16,6 +16,7 @@ import "../clusters";
 import { openClusterSettings, resetClustersStore } from "../clusters/clustersStore";
 import "./index";
 import { closeInstall } from "./store";
+import { useInstallRequest } from "../extensions/installRequest";
 
 const alpha: ClusterInfo = {
   id: "aaaa",
@@ -520,7 +521,7 @@ describe("the install dialog", () => {
     expect(backend.listenerCount("gitops-install:install-1")).toBe(0);
   });
 
-  it("after Argo CD it says how to sign in and opens the Argo CD UI", async () => {
+  it("after Argo CD it offers the Argo CD extension from the catalog (ADR-0162)", async () => {
     setup({
       gitops_install_prepare: () =>
         fluxPreview({
@@ -531,7 +532,7 @@ describe("the install dialog", () => {
           sourceUrl: "https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.5/manifests/install.yaml",
           checksumVerified: false,
         }),
-      argocd_status: () => ({ namespace: "argocd", signedIn: false, saved: false }),
+      extensions_list: () => [],
     });
     await connect();
     const menu = await openMenu();
@@ -542,13 +543,15 @@ describe("the install dialog", () => {
     await within(dialog).findByText(SHA);
     await install(dialog);
     emit({ type: "done", workloads: [{ kind: "StatefulSet", name: "argocd-application-controller", ready: true, reason: null }] });
-    expect(await within(dialog).findByText(/argocd-initial-admin-secret/)).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Open Argo CD UI" })).toBeInTheDocument();
+    fireEvent.click(await within(dialog).findByRole("button", { name: "Install the Argo CD extension" }));
+    expect(useInstallRequest.getState().id).toBe("sextant.argo-cd");
+    useInstallRequest.setState({ id: null });
   });
-  it("after an Argo CD install whose wait timed out it still says how to sign in", async () => {
+  it("after an Argo CD install whose wait timed out it says the extension shows Argo CD, once installed", async () => {
     setup({
       gitops_install_prepare: () =>
         fluxPreview({ token: "tok-argo", tool: "argoCd", version: "v3.5.5", namespace: "argocd", checksumVerified: false }),
+      extensions_list: () => [{ id: "sextant.argo-cd", name: "Argo CD", version: "1.1.0", enabled: true }],
     });
     await connect();
     const menu = await openMenu();
@@ -562,7 +565,7 @@ describe("the install dialog", () => {
       type: "timedOut",
       workloads: [{ kind: "Deployment", name: "argocd-server", ready: false, reason: "pod argocd-server-1: ImagePullBackOff" }],
     });
-    expect(await within(dialog).findByText(/argocd-initial-admin-secret/)).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Open Argo CD UI" })).toBeInTheDocument();
+    expect(await within(dialog).findByText("Sextant shows Argo CD through its Argo CD extension.")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Install the Argo CD extension" })).toBeNull();
   });
 });

@@ -85,12 +85,6 @@ pub struct ClusterSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub agent_access_unrecognised: Option<serde_json::Value>,
-    /// The namespace of the Argo CD installation the user chose when several namespaces looked like one. Owned by
-    /// the frontend; the backend takes it only when it is one of the candidates it found itself (ADR-0032). Left out
-    /// of the file when there is none.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional = nullable)]
-    pub argocd_namespace: Option<String>,
     /// "Preview changes before applying" (#141): the editor's save, Apply YAML and a Helm upgrade or install show the
     /// server's dry run first. `None` follows the cluster's name (on for a production-looking name, see the frontend's
     /// `previewByDefault`). Owned by the frontend; left out of the file when there is none.
@@ -149,7 +143,6 @@ struct StoredClusterSettings {
     icon: Option<ClusterIcon>,
     agent_access: Option<serde_json::Value>,
     agent_access_unrecognised: Option<serde_json::Value>,
-    argocd_namespace: Option<String>,
     preview_changes: Option<bool>,
     alertmanager: Option<serde_json::Value>,
     loki: Option<serde_json::Value>,
@@ -185,7 +178,6 @@ impl<'de> Deserialize<'de> for ClusterSettings {
             icon: stored.icon,
             agent_access,
             agent_access_unrecognised,
-            argocd_namespace: stored.argocd_namespace,
             preview_changes: stored.preview_changes,
             alertmanager: stored
                 .alertmanager
@@ -470,7 +462,7 @@ pub const SYSTEM_LANGUAGE: &str = "system";
 
 /// `AppSettings.settings_version` this version writes. 1: `language` "en" is a choice (before, it was the only
 /// language and the default, so it said nothing; see [`migrate`]).
-pub const SETTINGS_VERSION: u32 = 2;
+pub const SETTINGS_VERSION: u32 = 3;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
@@ -723,6 +715,9 @@ impl SettingsStore {
 /// (the OS language when Sextant has it). An `en` stored from version 1 on is the user's and stays. Version 1 → 2:
 /// sidebar indentation became the default in 0.25; 0.24.1, which added it switched off, wrote that default into
 /// every saved file, so a version-1 `sidebarIndent: false` was not a choice and turns on. From version 2 on it is.
+/// Version 2 → 3: Flux, Argo CD and Argo Rollouts moved into Sextant's own extensions (ADR-0162); a notification
+/// category the user turned off stays off under the extension's category, and agents, which got Flux and Argo CD
+/// problems by default, keep getting them from the extensions ([`MOVED_PROBLEM_CATEGORIES`]).
 pub fn migrate(settings: &mut AppSettings) {
     if settings.settings_version < 1 {
         if settings.language == "en" {
@@ -734,7 +729,32 @@ pub fn migrate(settings: &mut AppSettings) {
         settings.appearance.sidebar_indent = true;
         settings.settings_version = 2;
     }
+    if settings.settings_version < 3 {
+        for category in &mut settings.notifications.disabled_categories {
+            if let Some((_, extension, _)) = MOVED_PROBLEM_CATEGORIES
+                .iter()
+                .find(|(old, _, _)| old == category)
+            {
+                *category = format!("ext:{extension}");
+            }
+        }
+        for (_, extension, for_agents) in MOVED_PROBLEM_CATEGORIES {
+            let id = extension.to_owned();
+            if for_agents && !settings.mcp.extension_problems.contains(&id) {
+                settings.mcp.extension_problems.push(id);
+            }
+        }
+        settings.settings_version = 3;
+    }
 }
+
+/// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
+/// the extension, and whether agents got the category by default.
+pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 3] = [
+    ("flux", "sextant.flux", true),
+    ("argocd", "sextant.argo-cd", true),
+    ("rollouts", "sextant.argo-rollouts", false),
+];
 
 /// Reads the settings file and decides whether it may be written.
 fn load(path: &Path) -> (AppSettings, SettingsFileStatus) {
@@ -1279,6 +1299,43 @@ mod tests {
     }
 
     #[test]
+    fn flux_and_argo_categories_move_to_their_extensions_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(
+            &path,
+            r#"{ "settingsVersion": 2,
+                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts"] },
+                 "mcp": { "extensionProblems": ["sextant.argo-cd", "acme.widgets"] } }"#,
+        )
+        .unwrap();
+        let store = SettingsStore::open(path.clone());
+        let s = store.get();
+        assert_eq!(s.settings_version, SETTINGS_VERSION);
+        assert_eq!(
+            s.notifications.disabled_categories,
+            ["ext:sextant.flux", "pods", "ext:sextant.argo-rollouts"]
+        );
+        assert_eq!(
+            s.mcp.extension_problems,
+            ["sextant.argo-cd", "acme.widgets", "sextant.flux"]
+        );
+        // Taken away afterwards: the user's choice, not undone by a reopen.
+        store.update(|s| s.mcp.extension_problems.clear()).unwrap();
+        assert!(
+            SettingsStore::open(path)
+                .get()
+                .mcp
+                .extension_problems
+                .is_empty()
+        );
+        // A new install lets agents have no extension's problems (ADR-0146).
+        let fresh = tempfile::tempdir().unwrap();
+        let (_, store) = store_in(&fresh);
+        assert!(store.get().mcp.extension_problems.is_empty());
+    }
+
+    #[test]
     fn an_old_default_english_follows_the_system_and_a_chosen_language_stays() {
         let dir = tempfile::tempdir().unwrap();
         // A file of an older version: its "en" was the only language and the default, never a choice.
@@ -1396,35 +1453,6 @@ mod tests {
                 data_url: "data:image/png;base64,iVBORw0KGgo=".to_owned()
             })
         );
-    }
-
-    #[test]
-    fn the_chosen_argocd_namespace_round_trips_through_the_file() {
-        let dir = tempfile::tempdir().unwrap();
-        let (path, store) = store_in(&dir);
-        store
-            .update(|s| {
-                s.clusters.insert(
-                    "c1".to_owned(),
-                    ClusterSettings {
-                        argocd_namespace: Some("gitops".to_owned()),
-                        ..Default::default()
-                    },
-                );
-                s.clusters
-                    .insert("c2".to_owned(), ClusterSettings::default());
-            })
-            .unwrap();
-
-        let json: serde_json::Value =
-            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
-        assert_eq!(json["clusters"]["c1"]["argocdNamespace"], "gitops");
-
-        assert!(json["clusters"]["c2"].get("argocdNamespace").is_none());
-
-        let s = SettingsStore::open(path).get();
-        assert_eq!(s.clusters["c1"].argocd_namespace.as_deref(), Some("gitops"));
-        assert_eq!(s.clusters["c2"].argocd_namespace, None);
     }
 
     #[test]
@@ -1570,7 +1598,16 @@ mod tests {
         );
         assert!(!s.mcp.enabled);
         assert_eq!(s.mcp.port, 47391);
-        assert_eq!(AppSettings::default().mcp, s.mcp);
+        // A file of an older version: agents keep the Flux and Argo CD problems they had (ADR-0162), and nothing else.
+        assert_eq!(
+            s.mcp.extension_problems,
+            ["sextant.flux", "sextant.argo-cd"]
+        );
+        let mcp = McpSettings {
+            extension_problems: Vec::new(),
+            ..s.mcp.clone()
+        };
+        assert_eq!(AppSettings::default().mcp, mcp);
     }
 
     #[test]

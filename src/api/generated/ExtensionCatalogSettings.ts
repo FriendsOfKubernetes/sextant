@@ -4,4 +4,9 @@ export type ExtensionCatalogSettings = {
 /**
  * `false`: no request to the catalog, and its tab and update notices are hidden.
  */
-enabled: boolean, };
+enabled: boolean, 
+/**
+ * Extensions the user answered "Don't offer again" for: the sidebar no longer offers them where a cluster runs
+ * their tool. Extension ids, at most [`MAX_DECLINED_OFFERS`].
+ */
+declinedOffers: Array<string>, };

@@ -57,9 +57,6 @@ export const COMMON_KINDS: readonly string[] = [
   "/PersistentVolumeClaim",
   "gateway.networking.k8s.io/Gateway",
   "gateway.networking.k8s.io/HTTPRoute",
-  "helm.toolkit.fluxcd.io/HelmRelease",
-  "kustomize.toolkit.fluxcd.io/Kustomization",
-  "argoproj.io/Application",
 ];
 
 /** Short names a query may start with to name a kind (as kubectl knows them), besides the kind and its plural. */
@@ -84,9 +81,6 @@ const SHORT_NAMES: Record<string, string[]> = {
   "autoscaling/HorizontalPodAutoscaler": ["hpa"],
   "policy/PodDisruptionBudget": ["pdb"],
   "apiextensions.k8s.io/CustomResourceDefinition": ["crd", "crds"],
-  "helm.toolkit.fluxcd.io/HelmRelease": ["hr"],
-  "kustomize.toolkit.fluxcd.io/Kustomization": ["ks"],
-  "argoproj.io/Application": ["app", "apps"],
 };
 
 /** Kinds never searched: events are many, short-lived and named after other objects. */

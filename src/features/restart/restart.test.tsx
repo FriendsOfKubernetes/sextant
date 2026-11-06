@@ -5,7 +5,7 @@ import { resetAppStore } from "../../app/store";
 import { ActionDialogHost } from "../../layout/main/ActionDialogHost";
 import { axeViolations } from "../../test/axe";
 import { getAction, runAction } from "../actions/registry";
-import { ROLLOUT } from "../argo-rollouts/model";
+import { ARGO_ROLLOUT as ROLLOUT } from "../../resources/gitopsKinds";
 import { emitDelta, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import "./index";
 import { planRestart, POD, REPLICA_SET } from "./model";

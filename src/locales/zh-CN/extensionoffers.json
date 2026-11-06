@@ -1,0 +1,9 @@
+{
+  "label": "{{tool}} 扩展",
+  "text": "此集群运行着 {{tool}}。Sextant 通过目录中的 {{tool}} 扩展来显示它。",
+  "install": "安装",
+  "notNow": "暂不",
+  "never": "不再提示",
+  "installed": "Sextant 通过 {{tool}} 扩展来显示 {{tool}}。",
+  "installExtension": "安装 {{tool}} 扩展"
+}

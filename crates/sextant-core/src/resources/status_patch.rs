@@ -1,8 +1,7 @@
-//! A patch of the `status` subresource, for the few kinds whose tools change their objects there: Argo Rollouts'
+//! A patch of the `status` subresource, for the custom kinds whose tools change their objects there (Argo Rollouts'
 //! `kubectl argo rollouts promote|abort|retry` set `status.pauseConditions`, `status.currentStepIndex`,
-//! `status.promoteFull` and `status.abort` through it (ADR-0097). The window patches [`STATUS_PATCH_KINDS`]; an
-//! extension the custom kinds the user granted it (`statusPatches`, ADR-0155) through [`patch_custom_status`]. The MCP
-//! server does not offer it.
+//! `status.promoteFull` and `status.abort` through it, ADR-0097): only for an extension, only of the custom kinds the
+//! user granted it (`statusPatches`, ADR-0155). Neither the window nor the MCP server offers it.
 
 use serde_json::Value;
 
@@ -12,31 +11,6 @@ use super::{ObjectRef, PatchType};
 use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 use crate::kubeconfig::ClusterId;
-
-/// `(group, kind)` whose status the window may patch. Any other kind is `invalid` before a request is sent.
-pub const STATUS_PATCH_KINDS: &[(&str, &str)] = &[("argoproj.io", "Rollout")];
-
-/// Patches the `status` subresource of one object of a kind of [`STATUS_PATCH_KINDS`], signed by `sextant`; returns
-/// the object as saved. Sent once: a change is never repeated (ADR-0055). An API server without the subresource for
-/// the kind answers `notFound`, as for a missing object.
-pub async fn patch_status(
-    mgr: &ClusterManager,
-    cluster: &ClusterId,
-    r: &ObjectRef,
-    patch: &Value,
-    patch_type: PatchType,
-) -> CoreResult<Value> {
-    let allowed = STATUS_PATCH_KINDS
-        .iter()
-        .any(|(group, kind)| r.kind.group == *group && r.kind.kind == *kind);
-    if !allowed {
-        return Err(CoreError::new(
-            ErrorCode::Invalid,
-            format!("the status of {} cannot be patched here", r.kind.kind),
-        ));
-    }
-    send_status_patch(mgr, cluster, r, patch, patch_type).await
-}
 
 /// Patches the `status` subresource of a custom resource (an API group with a dot that is not Kubernetes' own), for an
 /// extension granted that kind (ADR-0155); anything else is `invalid` before a request is sent. Sent once.
@@ -133,7 +107,7 @@ mod tests {
         let api = FakeApi::start(argo).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         let patch = json!({ "status": { "abort": true } });
-        let saved = patch_status(
+        let saved = patch_custom_status(
             &mgr,
             &id,
             &reference("Rollout", "web"),
@@ -158,23 +132,26 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn another_kind_or_a_hidden_values_marker_sends_nothing() {
+    async fn a_built_in_kind_or_a_hidden_values_marker_sends_nothing() {
         let api = FakeApi::start(argo).await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
         let patch = json!({ "status": { "phase": "Succeeded" } });
-        let err = patch_status(
-            &mgr,
-            &id,
-            &reference("Workflow", "w"),
-            &patch,
-            PatchType::Merge,
-        )
-        .await
-        .unwrap_err();
+        let pod = ObjectRef {
+            kind: KindRef {
+                group: String::new(),
+                version: "v1".into(),
+                kind: "Pod".into(),
+            },
+            namespace: Some("shop".into()),
+            name: "p".into(),
+        };
+        let err = patch_custom_status(&mgr, &id, &pod, &patch, PatchType::Merge)
+            .await
+            .unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid);
         let hidden =
             json!({ "metadata": { "annotations": { "sextant.dev/values-hidden": "true" } } });
-        let err = patch_status(
+        let err = patch_custom_status(
             &mgr,
             &id,
             &reference("Rollout", "web"),

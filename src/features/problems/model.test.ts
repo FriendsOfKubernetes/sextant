@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { KindRef, KubeObject } from "../../api";
-import { APPLICATION } from "../argocd/model";
-import { KUSTOMIZATION } from "../flux/model";
+import { KUSTOMIZATION } from "../../resources/gitopsKinds";
 import { HTTP_ROUTE } from "../gateway-api/model";
 import {
   CERT_EXPIRY_WARNING_MS,
@@ -25,6 +24,7 @@ import {
 
 const T0 = "2026-10-18T10:00:00Z";
 const SELECTED = "volume.kubernetes.io/selected-node";
+const APPLICATION = { group: "argoproj.io", version: "v1alpha1", kind: "Application" };
 const T0_MS = Date.parse(T0);
 
 const meta = (name = "x", namespace: string | null = "demo") => ({
@@ -322,43 +322,18 @@ const CASES: Case[] = [
   { name: "a Normal event is not a problem", kind: EVENT, obj: { metadata: meta("e"), type: "Normal", reason: "Pulled" }, reasons: [] },
   // ---- tools ----
   {
-    name: "a Flux Kustomization not ready",
+    name: "a Flux Kustomization not ready is left to the Flux extension (ADR-0162)",
     kind: KUSTOMIZATION,
     obj: { metadata: meta("apps"), status: { conditions: [cond("Ready", "False", { reason: "BuildFailed", message: "kustomize build failed" })] } },
-    reasons: ["BuildFailed"],
-    notify: [true],
-  },
-  {
-    name: "a suspended Flux object is left alone",
-    kind: KUSTOMIZATION,
-    obj: { metadata: meta("apps"), spec: { suspend: true }, status: { conditions: [cond("Ready", "False")] } },
     reasons: [],
   },
   {
-    name: "a Flux object waiting for a dependency is not a problem",
-    kind: KUSTOMIZATION,
-    obj: { metadata: meta("apps"), status: { conditions: [cond("Ready", "False", { reason: "DependencyNotReady" })] } },
-    reasons: [],
-  },
-  {
-    name: "a Flux object reconciling (Unknown) is not a problem",
-    kind: KUSTOMIZATION,
-    obj: { metadata: meta("apps"), status: { conditions: [cond("Ready", "Unknown")] } },
-    reasons: [],
-  },
-  {
-    name: "an Argo CD Application degraded whose last sync failed",
+    name: "a degraded Argo CD Application is left to the Argo CD extension (ADR-0162)",
     kind: APPLICATION,
     obj: {
       metadata: meta("shop"),
       status: { health: { status: "Degraded" }, operationState: { phase: "Failed", message: "one or more objects failed" } },
     },
-    reasons: ["Degraded", "SyncFailed"],
-  },
-  {
-    name: "a healthy Argo CD Application",
-    kind: APPLICATION,
-    obj: { metadata: meta("shop"), status: { health: { status: "Healthy" }, sync: { status: "Synced" } } },
     reasons: [],
   },
   {
@@ -454,12 +429,6 @@ describe("when a problem counts", () => {
     const later = resolve(STATEFULSET, obj, T0_MS + 60_000, first);
     expect(later[0]!.firstSeen).toBe(T0_MS);
     expect(later[0]!.activeAt).toBe(T0_MS + LONG_GRACE_MS);
-  });
-
-  it("a Flux failure counts only after a short grace", () => {
-    const flux = resolve(KUSTOMIZATION, CASES.find((c) => c.name === "a Flux Kustomization not ready")!.obj, T0_MS)[0]!;
-    expect(isActive(flux, T0_MS + 1000)).toBe(false);
-    expect(isActive(flux, T0_MS + SHORT_GRACE_MS)).toBe(true);
   });
 
   it("a stalled rollout waits from its last progress", () => {

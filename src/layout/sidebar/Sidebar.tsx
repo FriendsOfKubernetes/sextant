@@ -28,6 +28,7 @@ import {
 import {
   DEFAULT_ENTRY_ICON,
   DISCOVERED_SECTIONS,
+  EXTENSION_SECTION_PLACES,
   kindPlacement,
   placedSections,
   SECTION_ICONS,
@@ -271,6 +272,10 @@ function sectionIcon(id: string): IconName | undefined {
 function sectionOrder(ids: readonly string[]): string[] {
   const known = SIDEBAR_SECTIONS as readonly string[];
   const order: string[] = [...known];
+  // The places of Sextant's own extensions' sections, in their order (sections without entries are left out later).
+  for (const [section, after] of [...EXTENSION_SECTION_PLACES].reverse()) order.splice(order.indexOf(after) + 1, 0, section);
+  const reserved = EXTENSION_SECTION_PLACES.map(([section]) => section);
+  ids = ids.filter((s) => !reserved.includes(s));
   const rest = ids.filter((s) => !known.includes(s));
   const tail: string[] = [];
   for (const id of rest) {

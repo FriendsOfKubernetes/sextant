@@ -1,21 +1,31 @@
-//! The extension catalog (ADR-0130): whether Sextant may read it at all. Written by the frontend (Settings →
-//! Extensions); the backend reads it before every catalog request. Read leniently: a value of the wrong type keeps the
-//! default (on) and the rest of the file still reads.
+//! The extension catalog (ADR-0130): whether Sextant may read it at all, and the extensions the user does not want
+//! offered (ADR-0162). Written by the frontend (Settings → Extensions, the offers in the sidebar); the backend reads it
+//! before every catalog request. Read leniently: a value of the wrong type keeps the default (on, nothing declined)
+//! and the rest of the file still reads.
 
 use serde::{Deserialize, Deserializer, Serialize};
 use ts_rs::TS;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(default, rename_all = "camelCase")]
 #[ts(export)]
 pub struct ExtensionCatalogSettings {
     /// `false`: no request to the catalog, and its tab and update notices are hidden.
     pub enabled: bool,
+    /// Extensions the user answered "Don't offer again" for: the sidebar no longer offers them where a cluster runs
+    /// their tool. Extension ids, at most [`MAX_DECLINED_OFFERS`].
+    pub declined_offers: Vec<String>,
 }
+
+/// Declined offers kept at most.
+pub const MAX_DECLINED_OFFERS: usize = 50;
 
 impl Default for ExtensionCatalogSettings {
     fn default() -> Self {
-        Self { enabled: true }
+        Self {
+            enabled: true,
+            declined_offers: Vec::new(),
+        }
     }
 }
 
@@ -39,6 +49,18 @@ pub(crate) mod extension_catalog_field {
                 .get("enabled")
                 .and_then(serde_json::Value::as_bool)
                 .unwrap_or(ExtensionCatalogSettings::default().enabled),
+            declined_offers: value
+                .get("declinedOffers")
+                .and_then(serde_json::Value::as_array)
+                .map(|ids| {
+                    ids.iter()
+                        .filter_map(serde_json::Value::as_str)
+                        .filter(|id| crate::extensions::manifest::is_extension_id(id))
+                        .take(MAX_DECLINED_OFFERS)
+                        .map(str::to_owned)
+                        .collect()
+                })
+                .unwrap_or_default(),
         })
     }
 }
@@ -60,7 +82,22 @@ mod tests {
         assert!(wrong.extension_catalog.enabled);
         assert!(wrong.close_to_tray, "the rest of the file still reads");
         assert!(read(json!("off")).extension_catalog.enabled);
+        let declined =
+            read(json!({ "declinedOffers": ["sextant.flux", 3, "Not An Id", "sextant.argo-cd"] }));
+        assert_eq!(
+            declined.extension_catalog.declined_offers,
+            ["sextant.flux", "sextant.argo-cd"]
+        );
+        assert!(
+            read(json!({ "declinedOffers": "all" }))
+                .extension_catalog
+                .declined_offers
+                .is_empty()
+        );
         let written = serde_json::to_value(read(json!({ "enabled": false }))).unwrap();
-        assert_eq!(written["extensionCatalog"], json!({ "enabled": false }));
+        assert_eq!(
+            written["extensionCatalog"],
+            json!({ "enabled": false, "declinedOffers": [] })
+        );
     }
 }

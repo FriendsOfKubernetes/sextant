@@ -144,24 +144,6 @@ pub async fn resource_patch(
     .await
 }
 
-/// Patch of the `status` subresource of an Argo Rollouts Rollout (promote, abort, retry, as `kubectl argo rollouts`
-/// sends them; `resources::STATUS_PATCH_KINDS`), signed by `sextant`; returns the object as saved. Window only.
-#[tauri::command]
-pub async fn resource_patch_status(
-    state: State<'_, AppState>,
-    cluster_id: ClusterId,
-    _ref: ObjectRef,
-    patch: serde_json::Value,
-    patch_type: PatchType,
-) -> Result<serde_json::Value, CoreError> {
-    with_timeout(
-        CHANGE_TIMEOUT,
-        "patching the status",
-        resources::patch_status(&state.clusters, &cluster_id, &_ref, &patch, patch_type),
-    )
-    .await
-}
-
 #[cfg(test)]
 mod tests {
     #[test]

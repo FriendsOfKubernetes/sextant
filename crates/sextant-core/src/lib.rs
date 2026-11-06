@@ -10,7 +10,6 @@
 pub mod access;
 pub mod alerts;
 pub mod applog;
-pub mod argocd;
 #[cfg(feature = "desktop")]
 pub mod cloud;
 pub mod cluster;
@@ -29,6 +28,7 @@ pub mod image_fs;
 pub mod kubeconfig;
 pub mod logs;
 pub mod loki;
+mod loopback_tls;
 pub mod metrics;
 pub mod node_shell;
 pub mod openapi;

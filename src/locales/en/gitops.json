@@ -69,10 +69,6 @@
     "applied": "Applied ({{count}})",
     "notApplied": "Not applied ({{count}})"
   },
-  "argo": {
-    "login": "Sextant signs in to Argo CD by itself with the argocd-initial-admin-secret. Change the admin password in Argo CD, then delete that secret.",
-    "openUi": "Open Argo CD UI"
-  },
   "confirmStop": {
     "title": "Stop the install?",
     "text": "The install stops after the object being applied. What was applied stays in the cluster.",

@@ -71,10 +71,6 @@
     "applied": "Appliqués ({{count}})",
     "notApplied": "Non appliqués ({{count}})"
   },
-  "argo": {
-    "login": "Sextant se connecte lui-même à Argo CD avec argocd-initial-admin-secret. Changez le mot de passe admin dans Argo CD, puis supprimez ce secret.",
-    "openUi": "Ouvrir l'interface d'Argo CD"
-  },
   "confirmStop": {
     "title": "Arrêter l'installation ?",
     "text": "L'installation s'arrête après l'objet en cours d'application. Ce qui a été appliqué reste dans le cluster.",

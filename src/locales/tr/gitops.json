@@ -69,10 +69,6 @@
     "applied": "Uygulandı ({{count}})",
     "notApplied": "Uygulanmadı ({{count}})"
   },
-  "argo": {
-    "login": "Sextant, Argo CD'de argocd-initial-admin-secret ile kendiliğinden oturum açar. Argo CD'de admin parolasını değiştirin, ardından bu Secret'ı silin.",
-    "openUi": "Argo CD arayüzünü aç"
-  },
   "confirmStop": {
     "title": "Yükleme durdurulsun mu?",
     "text": "Yükleme, uygulanmakta olan nesneden sonra durur. Uygulananlar kümede kalır.",

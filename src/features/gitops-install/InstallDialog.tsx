@@ -18,6 +18,7 @@ import {
 } from "../../api";
 import { Badge, Button, ConfirmDialog, Dialog, ErrorState, LoadingIndicator } from "../../components";
 import { refreshClusterKinds } from "../../resources";
+import { ToolExtensionOffer } from "../extension-offers/ExtensionOffers";
 import { initialRun, reduceRun, type RunState } from "./run";
 import "./gitopsInstall.css";
 import { formatList } from "../../i18n";
@@ -171,7 +172,7 @@ export function InstallDialog({ clusterId, tool, onClose }: InstallDialogProps) 
       </>
     );
   } else {
-    body = <Progress clusterId={clusterId} preview={step.preview} run={run} toolName={toolName} />;
+    body = <Progress preview={step.preview} run={run} toolName={toolName} />;
     footer = running ? (
       <Button variant="danger" disabled={run.stopping} onClick={stop}>
         {t("gitops:stop")}
@@ -333,18 +334,15 @@ function Workloads({ workloads }: { workloads: WorkloadState[] }) {
 }
 
 function Progress({
-  clusterId,
   preview,
   run,
   toolName,
 }: {
-  clusterId: ClusterId;
   preview: InstallPreview;
   run: RunState;
   toolName: string;
 }) {
   const { t } = useTranslation();
-  const [uiError, setUiError] = useState<unknown>(null);
   const total = preview.summary.objects.length;
   const applied = new Set(run.applied.map((o) => `${o.kind}/${o.name}`));
   const notApplied = preview.summary.objects.filter((o) => !applied.has(`${o.kind}/${o.name}`));
@@ -389,24 +387,8 @@ function Progress({
         </>
       )}
       {run.workloads && <Workloads workloads={run.workloads} />}
-      {(outcome === "done" || outcome === "timedOut") && preview.tool === "argoCd" && (
-        <div className="gitops-install__argo">
-          <p className="gitops-install__text">{t("gitops:argo.login")}</p>
-          <Button
-            icon="external"
-            onClick={() => {
-              setUiError(null);
-              // Loaded on use: the window shell mounts this dialog, and the Argo CD feature registers its kinds and
-              // actions when its modules load.
-              import("../argocd/server")
-                .then(({ openArgoUi }) => openArgoUi(clusterId, "/applications"))
-                .catch((err: unknown) => setUiError(err));
-            }}
-          >
-            {t("gitops:argo.openUi")}
-          </Button>
-          {uiError !== null && <ErrorState error={uiError} className="gitops-install__error" />}
-        </div>
+      {(outcome === "done" || outcome === "timedOut") && (
+        <ToolExtensionOffer id={preview.tool === "argoCd" ? "sextant.argo-cd" : "sextant.flux"} />
       )}
       <details className="gitops-install__objects" open={outcome === "error" || outcome === "stopped"}>
         <summary>{t("gitops:result.applied", { count: run.applied.length })}</summary>

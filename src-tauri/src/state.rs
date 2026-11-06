@@ -15,7 +15,6 @@ use sextant_core::{
 use tokio::sync::mpsc;
 use tokio::task::AbortHandle;
 
-use crate::commands::argocd::{ArgoSessions, KeyringStore};
 use crate::extensions::api::ExtensionApi;
 use crate::gitops_install::GitopsInstalls;
 use crate::mcp::{McpContext, McpServer};
@@ -35,8 +34,6 @@ pub struct AppState {
     /// whose guard calls the start off), debug containers (the same, with the pod's debug copy, if any, as the guard)
     /// and local shells.
     pub sessions: Sessions,
-    /// Argo CD sessions (tokens in memory only) and their port forwards to `argocd-server`.
-    pub argocd: ArgoSessions,
     /// The MCP server for AI agents (off unless `settings.mcp.enabled`); its token is `<config_dir>/mcp-token`, its
     /// journal `<data_dir>/mcp-audit.jsonl`.
     pub mcp: McpServer,
@@ -96,7 +93,6 @@ impl AppState {
             settings,
             subscriptions: Subscriptions::default(),
             sessions: Sessions::default(),
-            argocd: ArgoSessions::new(Arc::new(KeyringStore::os())),
             mcp,
             ext_api,
             tools: crate::tools::Tools::new(data_dir),
@@ -109,7 +105,7 @@ impl AppState {
     }
 
     /// Stops every subscription (extensions' streams too), session, Flux / Argo CD install and port forward of a
-    /// cluster (on disconnect), and forgets its Argo CD session.
+    /// cluster (on disconnect).
     pub fn close_cluster(&self, cluster: &ClusterId) {
         self.subscriptions.stop_cluster(cluster);
         self.gitops.stop_cluster(cluster);
@@ -117,7 +113,6 @@ impl AppState {
         self.ext_api.streams.stop_cluster(cluster);
         self.sessions.stop_cluster(cluster);
         self.forwarder.stop_cluster(cluster);
-        self.argocd.close_cluster(cluster);
     }
 
     /// Stops everything (window closed, application exiting): the MCP server first (no agent starts anything new,
@@ -131,7 +126,6 @@ impl AppState {
         self.forwarder.stop_all();
         // The virtual clusters' entries end with their forwards; their file goes now, not at the next start.
         crate::commands::vcluster::close_all(self);
-        self.argocd.close_all();
         let started = std::time::Instant::now();
         sextant_core::node_shell::wait_for_deletions(NODE_SHELL_DELETE_WAIT);
         sextant_core::debug::wait_for_deletions(

@@ -1,0 +1,9 @@
+{
+  "label": "{{tool}} extension",
+  "text": "This cluster runs {{tool}}. Sextant shows it through its {{tool}} extension from the catalog.",
+  "install": "Install",
+  "notNow": "Not now",
+  "never": "Don't offer again",
+  "installed": "Sextant shows {{tool}} through its {{tool}} extension.",
+  "installExtension": "Install the {{tool}} extension"
+}

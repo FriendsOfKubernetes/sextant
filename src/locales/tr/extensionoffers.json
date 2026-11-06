@@ -1,0 +1,9 @@
+{
+  "label": "{{tool}} uzantısı",
+  "text": "Bu kümede {{tool}} çalışıyor. Sextant onu katalogdaki {{tool}} uzantısıyla gösterir.",
+  "install": "Yükle",
+  "notNow": "Şimdi değil",
+  "never": "Bir daha önerme",
+  "installed": "Sextant {{tool}} aracını {{tool}} uzantısıyla gösterir.",
+  "installExtension": "{{tool}} uzantısını yükle"
+}

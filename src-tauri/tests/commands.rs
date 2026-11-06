@@ -60,7 +60,6 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("cronjob_trigger", Some("clusterId")),
     ("cronjob_suspend", Some("clusterId")),
     ("resource_patch", Some("clusterId")),
-    ("resource_patch_status", Some("clusterId")),
     ("logs_start", Some("clusterId")),
     ("logs_stop", Some("streamId")),
     ("exec_start", Some("clusterId")),
@@ -130,10 +129,6 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("image_files_search", Some("sessionId")),
     ("image_files_resolve", Some("sessionId")),
     ("image_files_stop", Some("streamId")),
-    ("argocd_status", Some("clusterId")),
-    ("argocd_login", Some("clusterId")),
-    ("argocd_logout", Some("clusterId")),
-    ("argocd_diff", Some("clusterId")),
     ("access_preset_rules", Some("preset")),
     ("rbac_can_i", Some("clusterId")),
     ("rbac_rules_review", Some("clusterId")),
@@ -771,45 +766,6 @@ fn optional_arguments_of_changed_commands_may_be_left_out() {
 }
 
 #[test]
-fn argocd_commands_on_a_cluster_that_is_not_connected_fail_without_echoing_the_password() {
-    let h = harness();
-    let login = json!({ "username": "admin", "password": "pw-echo-42", "remember": true });
-    let app = json!({ "kind": { "group": "argoproj.io", "version": "v1alpha1", "kind": "Application" }, "namespace": "argocd", "name": "a" });
-
-    let status = invoke(&h, "argocd_status", json!({ "clusterId": "nope" })).unwrap_err();
-    let signed = invoke(
-        &h,
-        "argocd_login",
-        json!({ "clusterId": "nope", "login": login }),
-    )
-    .unwrap_err();
-    let out = invoke(
-        &h,
-        "argocd_logout",
-        json!({ "clusterId": "nope", "options": { "forget": true } }),
-    )
-    .unwrap_err();
-    let diff = invoke(
-        &h,
-        "argocd_diff",
-        json!({ "clusterId": "nope", "app": app }),
-    )
-    .unwrap_err();
-    let empty = invoke(
-        &h,
-        "argocd_login",
-        json!({ "clusterId": "nope", "login": { "remember": false } }),
-    )
-    .unwrap_err();
-
-    for err in [&status, &signed, &out, &diff] {
-        assert_eq!(err["code"], "notFound", "{err}");
-    }
-    assert_eq!(empty["code"], "invalid", "{empty}");
-    assert!(!signed.to_string().contains("pw-echo-42"));
-}
-
-#[test]
 fn unknown_cluster_cannot_connect_and_is_disconnected() {
     let h = harness();
     let err = invoke(&h, "cluster_connect", json!({ "clusterId": "abc" })).unwrap_err();
@@ -1433,7 +1389,6 @@ fn later_argument_names_match_the_frontend() {
         ),
         ("node_drain_preview", json!({ "clusterId": "c" }), "name"),
         ("resource_patch", json!({ "clusterId": "c" }), "ref"),
-        ("resource_patch_status", json!({ "clusterId": "c" }), "ref"),
         (
             "openshift_rollout_latest",
             json!({ "clusterId": "c" }),
@@ -1455,9 +1410,6 @@ fn later_argument_names_match_the_frontend() {
             json!({ "clusterId": "c", "name": "n" }),
             "options",
         ),
-        ("argocd_login", json!({ "clusterId": "c" }), "login"),
-        ("argocd_logout", json!({ "clusterId": "c" }), "options"),
-        ("argocd_diff", json!({ "clusterId": "c" }), "app"),
         ("mcp_confirm_answer", json!({ "id": "x" }), "approved"),
         ("mcp_diagnostic_answer", json!({ "id": "x" }), "answer"),
         (

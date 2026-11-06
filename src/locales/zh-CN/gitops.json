@@ -67,10 +67,6 @@
     "applied": "已应用（{{count}}）",
     "notApplied": "未应用（{{count}}）"
   },
-  "argo": {
-    "login": "Sextant 会使用 argocd-initial-admin-secret 自行登录 Argo CD。请在 Argo CD 中更改管理员密码，然后删除该 Secret。",
-    "openUi": "打开 Argo CD 界面"
-  },
   "confirmStop": {
     "title": "停止安装？",
     "text": "安装将在正在应用的对象完成后停止。已应用的内容会保留在集群中。",

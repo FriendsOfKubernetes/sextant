@@ -67,10 +67,6 @@
     "applied": "적용됨({{count}})",
     "notApplied": "적용되지 않음({{count}})"
   },
-  "argo": {
-    "login": "Sextant는 argocd-initial-admin-secret을 사용하여 Argo CD에 자동으로 로그인합니다. Argo CD에서 관리자 암호를 변경한 후 이 Secret을 삭제하세요.",
-    "openUi": "Argo CD UI 열기"
-  },
   "confirmStop": {
     "title": "설치를 중지하시겠습니까?",
     "text": "적용 중인 개체가 처리된 후 설치가 중지됩니다. 적용된 항목은 클러스터에 남습니다.",

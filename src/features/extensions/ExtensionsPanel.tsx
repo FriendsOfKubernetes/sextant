@@ -2,7 +2,7 @@
 // link to a GitHub release, an unpacked folder), and the catalog (ADR-0130) in its own tab. Every way ends in the
 // window of consent; nothing runs before it. The catalog is read only while its tab is open or a catalog extension is
 // installed, and never while "Use the extension catalog" is off.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, toApiError, useSettings, type ApiError, type PendingInstall } from "../../api";
 import { Button, Checkbox, ErrorState, LoadingIndicator, Tabs } from "../../components";
@@ -14,6 +14,7 @@ import { ExtensionActivityDialog } from "./ExtensionActivityDialog";
 import { ExtensionRow } from "./ExtensionRow";
 import { InstallUrlDialog } from "./InstallUrlDialog";
 import { installErrorTitle } from "./install";
+import { takeInstallRequest, useInstallRequest } from "./installRequest";
 import "./extensions.css";
 
 const PACKAGE_EXTENSIONS = ["sextant-ext", "zip"];
@@ -69,6 +70,18 @@ export function ExtensionsPanel() {
   const fromUrl = (url: string) => inspect(() => api.extensions.inspectUrl(url), true);
   const fromCatalog = (id: string) => inspect(() => api.extensions.inspectCatalog(id));
   const shownTab: Tab = catalogOn ? tab : "installed";
+
+  // An install asked from elsewhere (an offer, the end of a Flux or Argo CD install): the catalog's own flow, once the
+  // catalog may be read; with the catalog off the request waits for the user to turn it on.
+  const requested = useInstallRequest((s) => s.id);
+  useEffect(() => {
+    if (requested === null || !catalogOn || checking) return;
+    const id = takeInstallRequest();
+    if (id === null) return;
+    setTab("catalog");
+    void fromCatalog(id);
+    // `fromCatalog` is a new function each render; the request is what starts it.
+  }, [requested, catalogOn, checking]);
 
   const installedList = (
     <>

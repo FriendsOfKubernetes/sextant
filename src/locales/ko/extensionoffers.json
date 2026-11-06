@@ -1,0 +1,9 @@
+{
+  "label": "{{tool}} 확장",
+  "text": "이 클러스터에서 {{tool}}이(가) 실행 중입니다. Sextant는 카탈로그의 {{tool}} 확장으로 이를 보여 줍니다.",
+  "install": "설치",
+  "notNow": "나중에",
+  "never": "다시 제안하지 않기",
+  "installed": "Sextant는 {{tool}} 확장으로 {{tool}}을(를) 보여 줍니다.",
+  "installExtension": "{{tool}} 확장 설치"
+}

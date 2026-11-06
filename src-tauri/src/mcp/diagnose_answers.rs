@@ -194,9 +194,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "vpa",
     "volumes",
     "certificates",
-    "flux",
-    "argocd",
-    "rollouts",
     "workflows",
     "gateway",
     "mesh",
@@ -243,9 +240,8 @@ pub const OPT_IN_CATEGORIES: [&str; 11] = [
 /// Never given to agents: expiring kubeconfig credentials are the app user's, not the cluster's (ADR-0084).
 /// Knative, Crossplane and Kyverno policy problems (#213) are window views of this build: agents get nothing new.
 /// So are External Secrets, CloudNativePG, Strimzi and Prometheus Operator problems (#213).
-/// And Argo Rollouts and Argo Workflows problems (#213, ADR-0097).
+/// And Argo Workflows problems (#213, ADR-0097).
 pub const NEVER_FOR_AGENTS: &[&str] = &[
-    "rollouts",
     "workflows",
     "credentials",
     // Traefik references (#232): a window view of 0.20.0.
@@ -298,6 +294,17 @@ pub fn category_for_agents(category: &str, enabled: &[String]) -> bool {
     PROBLEM_CATEGORIES.contains(&category)
         && !NEVER_FOR_AGENTS.contains(&category)
         && (!OPT_IN_CATEGORIES.contains(&category) || enabled.iter().any(|c| c == category))
+}
+
+/// `category`, or the extension's category it moved into (`flux`, `argocd`, `rollouts`; ADR-0162).
+pub fn moved_category(category: &str) -> String {
+    sextant_core::settings::MOVED_PROBLEM_CATEGORIES
+        .iter()
+        .find(|(old, _, _)| *old == category)
+        .map_or_else(
+            || category.to_owned(),
+            |(_, extension, _)| format!("ext:{extension}"),
+        )
 }
 
 /// What [`category_for_agents`] takes as `enabled` from the settings: the opt-in categories turned on, and `ext:<id>`

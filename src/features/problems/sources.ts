@@ -1,12 +1,9 @@
 // Which kinds are watched for each category of problems. Built-in kinds are watched without discovery; the kinds of
-// installed tools (cert-manager, Flux, Argo CD, Gateway API) only once discovery says the cluster serves them, at the
+// installed tools (cert-manager, Gateway API, …) only once discovery says the cluster serves them, at the
 // version it serves.
 import type { KindRef, KubeObject, ResourceKind } from "../../api";
 import { findKind } from "../../resources";
-import { APPLICATION } from "../argocd/model";
-import { ROLLOUT } from "../argo-rollouts/model";
 import { WORKFLOW } from "../argo-workflows/model";
-import { BUCKET, GIT_REPOSITORY, HELM_RELEASE, HELM_REPOSITORY, KUSTOMIZATION, OCI_REPOSITORY } from "../flux/model";
 import { COUNTED_KINDS } from "../gateway-api/problems";
 import { CONFIGURATION as KNATIVE_CONFIGURATION, KSERVICE } from "../knative/model";
 import { CONTOUR_ACROSS } from "../contour/across";
@@ -151,9 +148,6 @@ const tool = (category: ProblemCategory, kind: KindRef, maxObjects?: number): So
   ...(maxObjects !== undefined ? { maxObjects } : {}),
 });
 
-/** Flux kinds with a Ready condition worth watching: the sources and what applies them. */
-const FLUX_WATCHED = [GIT_REPOSITORY, OCI_REPOSITORY, HELM_REPOSITORY, BUCKET, KUSTOMIZATION, HELM_RELEASE];
-
 export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   nodes: [builtIn("nodes", NODE)],
   pods: [builtIn("pods", POD)],
@@ -173,10 +167,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   vpa: [{ category: "vpa", kind: VPA, fieldSelector: null, discovered: true, external: true }],
   volumes: [builtIn("volumes", PVC)],
   certificates: [tool("certificates", CERTIFICATE)],
-  flux: FLUX_WATCHED.map((kind) => tool("flux", kind)),
-  argocd: [tool("argocd", APPLICATION)],
-  // Argo Rollouts (#213): Degraded or aborted Rollouts and the failed analyses they report.
-  rollouts: [tool("rollouts", ROLLOUT)],
   // Recent failed Workflows (#213): the provider of features/argo-workflows watches only failed ones, metadata only,
   // by their phase label (`external`), held only where Workflows are served.
   workflows: [{ category: "workflows", kind: WORKFLOW, fieldSelector: null, discovered: true, external: true }],

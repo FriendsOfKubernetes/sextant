@@ -1,0 +1,9 @@
+{
+  "label": "{{tool}}-Erweiterung",
+  "text": "In diesem Cluster läuft {{tool}}. Sextant zeigt es über seine {{tool}}-Erweiterung aus dem Katalog an.",
+  "install": "Installieren",
+  "notNow": "Nicht jetzt",
+  "never": "Nicht mehr anbieten",
+  "installed": "Sextant zeigt {{tool}} über seine {{tool}}-Erweiterung an.",
+  "installExtension": "{{tool}}-Erweiterung installieren"
+}

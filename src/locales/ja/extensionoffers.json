@@ -1,0 +1,9 @@
+{
+  "label": "{{tool}} 拡張機能",
+  "text": "このクラスターでは {{tool}} が動いています。Sextant はカタログの {{tool}} 拡張機能でそれを表示します。",
+  "install": "インストール",
+  "notNow": "今はしない",
+  "never": "今後表示しない",
+  "installed": "Sextant は {{tool}} 拡張機能で {{tool}} を表示します。",
+  "installExtension": "{{tool}} 拡張機能をインストール"
+}

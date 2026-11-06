@@ -17,7 +17,7 @@ import {
   OCI_REPOSITORY,
   PROVIDER,
   RECEIVER,
-} from "../flux/model";
+} from "../../resources/gitopsKinds";
 import { BACKEND_TLS_POLICY, REFERENCE_GRANT } from "../gateway-api/model";
 import {
   CONFIG_MAP,

@@ -685,6 +685,35 @@ describe("contributions of an extension", () => {
     await waitFor(() => expect(getClusterSettingsTabs().some((t) => t.label === "Widget setup")).toBe(false));
   });
 
+  it("a section of Sextant's own extensions keeps the place the built-in section had (ADR-0162)", async () => {
+    list = [
+      info({
+        manifest: {
+          ...manifest,
+          sextantApi: 4,
+          contributes: {
+            ...manifest.contributes,
+            pages: [...manifest.contributes.pages, { id: "apps", title: "Apps", section: "argocd" }],
+            sections: [
+              { section: "widgets", title: "Widget tools", after: "velero" },
+              { section: "argocd", title: "Argo CD", icon: "argocd", after: "workloads" },
+            ],
+          },
+        },
+      }),
+    ];
+    await renderShell();
+    const sidebar = screen.getByRole("navigation", { name: "Sections" });
+    const names = within(sidebar)
+      .getAllByRole("button")
+      .map((b) => b.textContent);
+    // Not right after Workloads, as its manifest asks, but where Argo CD always was: after Velero, before the other
+    // sections placed after Velero.
+    expect(names.indexOf("Argo CD")).toBeGreaterThan(names.indexOf("Workloads") + 1);
+    expect(names.indexOf("Argo CD")).toBeLessThan(names.indexOf("Widget tools"));
+    await changeList([]);
+  });
+
   it("leave a listed kind's printer columns out, tone a case, place by column id, hide an empty section (ADR-0161)", async () => {
     const kind = { group: "demo.sextant.dev", kind: "Widget" };
     list = [

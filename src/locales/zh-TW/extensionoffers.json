@@ -1,0 +1,9 @@
+{
+  "label": "{{tool}} 擴充功能",
+  "text": "此叢集執行著 {{tool}}。Sextant 透過目錄中的 {{tool}} 擴充功能來顯示它。",
+  "install": "安裝",
+  "notNow": "暫不",
+  "never": "不再提示",
+  "installed": "Sextant 透過 {{tool}} 擴充功能來顯示 {{tool}}。",
+  "installExtension": "安裝 {{tool}} 擴充功能"
+}

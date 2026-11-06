@@ -16,6 +16,7 @@ import process from "node:process";
 import { browser } from "@wdio/globals";
 import { APP, ensureApp } from "./build";
 import { ROOT, setUpCluster, tearDownCluster, testKubeconfig, toolPath } from "./cluster";
+import { buildOwnExtensions, installedEntry, OWN_EXTENSIONS } from "./extensions";
 
 const DRIVER_PORT = 4444;
 let driver: ChildProcess | null = null;
@@ -74,7 +75,10 @@ export const config: WebdriverIO.Config = {
     // would follow the system). `settingsVersion` 1 marks "en" as a choice, not the old default (settings.rs `migrate`).
     const config = path.join(home, "config", "dev.sextant.app");
     mkdirSync(config, { recursive: true });
-    writeFileSync(path.join(config, "settings.json"), `${JSON.stringify({ language: "en", settingsVersion: 1 }, null, 2)}\n`);
+    // Flux, Argo CD and Argo Rollouts are Sextant's own extensions (ADR-0162): installed as the user would have them.
+    buildOwnExtensions();
+    const extensions = OWN_EXTENSIONS.map(installedEntry);
+    writeFileSync(path.join(config, "settings.json"), `${JSON.stringify({ language: "en", settingsVersion: 1, extensions }, null, 2)}\n`);
     process.env.SEXTANT_E2E_HOME = home;
     process.env.SEXTANT_TEST_KUBECONFIG = testKubeconfig();
 

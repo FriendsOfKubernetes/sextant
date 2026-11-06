@@ -27,15 +27,15 @@ const served = (group: string, version: string, kind: string): ResourceKind => (
   printerColumns: [],
 });
 
-// Kinds a GitOps feature registers under its section (labels without translations render as their key).
+// Stand-in kinds registered under two discovered sections (labels without translations render as their key).
 const GITOPS: ResourceDef[] = [
-  ["flux", "source.toolkit.fluxcd.io", "GitRepository", "GitRepositories"],
-  ["flux", "source.toolkit.fluxcd.io", "Bucket", "Buckets"],
-  ["flux", "kustomize.toolkit.fluxcd.io", "Kustomization", "Kustomizations"],
-  ["argocd", "argoproj.io", "Application", "Applications"],
+  ["argoWorkflows", "source.toolkit.fluxcd.io", "GitRepository", "GitRepositories"],
+  ["argoWorkflows", "source.toolkit.fluxcd.io", "Bucket", "Buckets"],
+  ["argoWorkflows", "kustomize.toolkit.fluxcd.io", "Kustomization", "Kustomizations"],
+  ["velero", "argoproj.io", "Application", "Applications"],
 ].map(([section, group, kind, label], order) => ({
   kind: { group: group!, version: "v1", kind: kind! },
-  sidebar: { section: section as "flux" | "argocd", order, labelKey: label! },
+  sidebar: { section: section as "argoWorkflows" | "velero", order, labelKey: label! },
   columns: [],
   actions: [],
 }));
@@ -79,15 +79,15 @@ const sections = () =>
 
 const crd = (uid: string): KubeObject => ({ metadata: { name: uid, uid, generation: 1 } });
 
-describe("Flux and Argo CD sections", () => {
+describe("discovered sections", () => {
   it("show only the kinds the cluster serves, before Custom Resources; a section without kinds is not drawn", async () => {
     render(<Sidebar clusterId="c1" />);
-    await waitFor(() => expect(sections()).toContain("Flux"));
-    expect(sections()).not.toContain("Argo CD");
-    expect(sections().indexOf("Flux")).toBe(sections().indexOf("Custom Resources") - 1);
+    await waitFor(() => expect(sections()).toContain("Argo Workflows"));
+    expect(sections()).not.toContain("Velero");
+    expect(sections().indexOf("Argo Workflows")).toBe(sections().indexOf("Custom Resources") - 1);
 
-    fireEvent.click(screen.getByRole("button", { name: /Flux/ }));
-    const flux = screen.getByRole("button", { name: /Flux/ }).closest("li")!;
+    fireEvent.click(screen.getByRole("button", { name: /Argo Workflows/ }));
+    const flux = screen.getByRole("button", { name: /Argo Workflows/ }).closest("li")!;
     expect(within(flux).getByRole("button", { name: "GitRepositories" })).toBeInTheDocument();
     expect(within(flux).getByRole("button", { name: "Kustomizations" })).toBeInTheDocument();
     expect(within(flux).queryByRole("button", { name: "Buckets" })).toBeNull();
@@ -100,14 +100,14 @@ describe("Flux and Argo CD sections", () => {
     // Built-in kinds are shown before discovery; the GitOps sections are not, under any title.
     const titles = sections().map((s) => s?.toLowerCase());
     expect(titles).toContain("workloads");
-    expect(titles).not.toContain("flux");
-    expect(titles).not.toContain("argocd");
+    expect(titles).not.toContain("argo workflows");
+    expect(titles).not.toContain("velero");
   });
 
   it("a section appears when its CRD is created while connected", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     render(<Sidebar clusterId="c1" />);
-    await waitFor(() => expect(sections()).toContain("Flux"));
+    await waitFor(() => expect(sections()).toContain("Argo Workflows"));
     await waitFor(() => expect(backend.listenerCount("watch:crds")).toBe(1));
     act(() => backend.emit("watch:crds", { type: "snapshot", items: [crd("gitrepositories")] }));
 
@@ -115,21 +115,21 @@ describe("Flux and Argo CD sections", () => {
     act(() => backend.emit("watch:crds", { type: "delta", upserted: [crd("applications")], deleted: [] }));
     await act(async () => void vi.advanceTimersByTime(CRD_REFRESH_DELAY));
 
-    await waitFor(() => expect(sections()).toContain("Argo CD"));
-    expect(sections().indexOf("Argo CD")).toBe(sections().indexOf("Flux") + 1);
+    await waitFor(() => expect(sections()).toContain("Velero"));
+    expect(sections().indexOf("Velero")).toBe(sections().indexOf("Argo Workflows") - 1);
     expect(backend.calls.filter((c) => c.cmd === "cluster_kinds_refresh")).toHaveLength(1);
   });
 
   it("show their pages only while the section has served kinds", async () => {
     const Page = () => null;
-    registerPage({ id: "t-flux-page", section: "flux", order: 99, labelKey: "FluxPage", Component: Page });
-    registerPage({ id: "t-argo-page", section: "argocd", order: 99, labelKey: "ArgoPage", Component: Page });
+    registerPage({ id: "t-flux-page", section: "argoWorkflows", order: 99, labelKey: "FluxPage", Component: Page });
+    registerPage({ id: "t-argo-page", section: "velero", order: 99, labelKey: "ArgoPage", Component: Page });
     try {
       render(<Sidebar clusterId="c1" />);
-      await waitFor(() => expect(sections()).toContain("Flux"));
-      // Argo CD is not served: its page alone does not draw the section.
-      expect(sections()).not.toContain("Argo CD");
-      fireEvent.click(screen.getByRole("button", { name: /Flux/ }));
+      await waitFor(() => expect(sections()).toContain("Argo Workflows"));
+      // Velero is not served: its page alone does not draw the section.
+      expect(sections()).not.toContain("Velero");
+      fireEvent.click(screen.getByRole("button", { name: /Argo Workflows/ }));
       expect(screen.getByRole("button", { name: "FluxPage" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "ArgoPage" })).toBeNull();
     } finally {
@@ -142,19 +142,19 @@ describe("Flux and Argo CD sections", () => {
 describe("section badges", () => {
   it("a feature's counter shows on its section header while above zero", async () => {
     let count = 3;
-    const remove = registerSectionBadge("flux", () => count, { tone: "danger", labelKey: "gateway:problems.count" });
+    const remove = registerSectionBadge("argoWorkflows", () => count, { tone: "danger", labelKey: "gateway:problems.count" });
     try {
       const { rerender } = render(<Sidebar clusterId="c1" />);
       await waitFor(() => expect(screen.getByTitle("3 problems")).toHaveTextContent("3"));
       expect(screen.getByTitle("3 problems").querySelector(".badge--danger")).not.toBeNull();
       // The number does not change the header's name; its label describes the header.
-      const header = screen.getByRole("button", { name: "Flux" });
+      const header = screen.getByRole("button", { name: "Argo Workflows" });
       expect(header).toContainElement(screen.getByTitle("3 problems"));
       expect(header).toHaveAccessibleDescription("3 problems");
       count = 0;
       rerender(<Sidebar clusterId="c1" />);
       expect(screen.queryByTitle(/problems/)).toBeNull();
-      expect(sections()).toContain("Flux");
+      expect(sections()).toContain("Argo Workflows");
     } finally {
       remove();
     }
@@ -167,7 +167,7 @@ describe("icons", () => {
   it("every section header, entry, custom resource group and custom resource has a hidden icon, and the names are unchanged", async () => {
     render(<Sidebar clusterId="c1" />);
     await waitFor(() => expect(sections()).toContain("Custom Resources"));
-    for (const name of [/Workloads/, /Flux/, /Custom Resources/]) fireEvent.click(screen.getByRole("button", { name }));
+    for (const name of [/Workloads/, /Argo Workflows/, /Custom Resources/]) fireEvent.click(screen.getByRole("button", { name }));
     fireEvent.click(await screen.findByRole("button", { name: /demo\.sextant\.dev/ }));
 
     const buttons = screen.getAllByRole("button");
@@ -184,7 +184,7 @@ describe("icons", () => {
     expect(screen.getByRole("button", { name: "Pods" })).toHaveTextContent(/^Pods$/);
     // A section and a group of custom resources keep a chevron next to the icon: an SVG of the set that adds no
     // text either, so their whole text is the label (e2e clicks `button[aria-expanded]=<label>`).
-    for (const name of ["Flux", "demo.sextant.dev"]) {
+    for (const name of ["Argo Workflows", "demo.sextant.dev"]) {
       const group = screen.getByRole("button", { name });
       expect(group, name).toHaveTextContent(new RegExp(`^${name.replace(/\./g, "\\.")}$`));
       const chevron = group.querySelector(".sidebar__chevron");
@@ -236,9 +236,9 @@ describe("long labels", () => {
   it("a custom resource group, a section and an entry keep the full name in a tooltip", async () => {
     render(<Sidebar clusterId="c1" />);
     await waitFor(() => expect(sections()).toContain("Custom Resources"));
-    for (const name of [/Flux/, /Custom Resources/]) fireEvent.click(screen.getByRole("button", { name }));
+    for (const name of [/Argo Workflows/, /Custom Resources/]) fireEvent.click(screen.getByRole("button", { name }));
     expect(await screen.findByRole("button", { name: "demo.sextant.dev" })).toHaveAttribute("title", "demo.sextant.dev");
-    expect(screen.getByRole("button", { name: "Flux" })).toHaveAttribute("title", "Flux");
+    expect(screen.getByRole("button", { name: "Argo Workflows" })).toHaveAttribute("title", "Argo Workflows");
     expect(screen.getByRole("button", { name: "GitRepositories" })).toHaveAttribute("title", "GitRepositories");
   });
 

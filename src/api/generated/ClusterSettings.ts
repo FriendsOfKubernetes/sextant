@@ -40,12 +40,6 @@ agentAccess: ClusterAccess,
  */
 agentAccessUnrecognised?: JsonValue, 
 /**
- * The namespace of the Argo CD installation the user chose when several namespaces looked like one. Owned by
- * the frontend; the backend takes it only when it is one of the candidates it found itself (ADR-0032). Left out
- * of the file when there is none.
- */
-argocdNamespace?: string | null, 
-/**
  * "Preview changes before applying" (#141): the editor's save, Apply YAML and a Helm upgrade or install show the
  * server's dry run first. `None` follows the cluster's name (on for a production-looking name, see the frontend's
  * `previewByDefault`). Owned by the frontend; left out of the file when there is none.

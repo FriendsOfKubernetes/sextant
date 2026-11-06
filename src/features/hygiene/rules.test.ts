@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { KindRef, KubeObject } from "../../api";
 import { CERTIFICATE, CLUSTER_ISSUER } from "../cert-manager/model";
-import { GIT_REPOSITORY, HELM_RELEASE } from "../flux/model";
+import { GIT_REPOSITORY, HELM_RELEASE } from "../../resources/gitopsKinds";
 import { GATEWAY, REFERENCE_GRANT } from "../gateway-api/model";
 import {
   CONFIG_MAP,

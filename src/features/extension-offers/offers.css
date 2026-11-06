@@ -1,0 +1,29 @@
+.ext-offers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ext-offers__card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.ext-offers__text {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text);
+}
+
+.ext-offers__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}

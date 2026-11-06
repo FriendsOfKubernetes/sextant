@@ -10,8 +10,7 @@ import { useTranslation } from "react-i18next";
 import type { ClusterId } from "../../api";
 import { Button, Checkbox, Dialog, ErrorState } from "../../components";
 import { formatList } from "../../i18n/format";
-import { rfc3339Seconds } from "../argo-rollouts/patches";
-import { isArgoRollout, isRolloutKind, MAX_LISTED, objectLabel, sharedControllers, type RestartStep } from "./model";
+import { isArgoRollout, isRolloutKind, MAX_LISTED, objectLabel, rfc3339Seconds, sharedControllers, type RestartStep } from "./model";
 import type { RunControl, StepOutcome } from "./run";
 import { forgetRestartRun, newRestartRunId, restartRunOf } from "./runStore";
 

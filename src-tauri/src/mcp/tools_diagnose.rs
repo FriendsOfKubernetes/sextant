@@ -43,7 +43,7 @@ pub fn register_diagnostic_tools(tools: &mut ToolSet) {
         .add(
             "get_problems",
             "What is broken in a cluster, as Sextant's problems screen sees it: nodes not ready, crash-looping or \
-             pending pods, workloads without their replicas, failed Jobs, volume claims, certificates, Flux, Argo CD, \
+             pending pods, workloads without their replicas, failed Jobs, volume claims, certificates, \
              Gateway API and Istio objects, and Warning events; opt-in categories (security, best practices, disk) \
              only while the user has turned them on, and an extension's problems (category `ext:<extension id>`) \
              only for extensions the user lets agents see. For a namespace, or every namespace the agent may read. Needs \
@@ -237,6 +237,9 @@ async fn get_problems(call: ToolCall, args: ProblemsArgs) -> ToolResult {
     let enabled = answers::agent_categories(&settings);
     let requested: Vec<String> = match &args.categories {
         Some(list) => {
+            // Flux and Argo CD were categories of Sextant's own until they moved into extensions (ADR-0162): the old
+            // names ask for the extensions' categories.
+            let list: Vec<String> = list.iter().map(|c| answers::moved_category(c)).collect();
             // An extension's category (`ext:<id>`) is known; whether the agent gets it is the user's choice.
             let unknown: Vec<&String> = list
                 .iter()
@@ -252,10 +255,10 @@ async fn get_problems(call: ToolCall, args: ProblemsArgs) -> ToolResult {
             if !unknown.is_empty() {
                 return Err(invalid(format!(
                     "unknown problem categories {unknown:?}; known: nodes, pods, workloads, jobs, volumes, \
-                     certificates, flux, argocd, gateway, mesh, security, practices, disk, events"
+                     certificates, gateway, mesh, security, practices, disk, events, ext:<extension id>"
                 )));
             }
-            list.clone()
+            list
         }
         None => answers::PROBLEM_CATEGORIES
             .iter()

@@ -18,6 +18,7 @@ import { resetSettingsUi } from "../settings";
 import { axeViolations } from "../../test/axe";
 import { matches, offerOf, shownEntries, SUPPORTED_API } from "./catalog";
 import { ExtensionsPanel } from "./ExtensionsPanel";
+import { requestCatalogInstall, useInstallRequest } from "./installRequest";
 import "./index";
 
 const KEY = "RWRmwUKpGrT0wCM6r495TOHPsMcYy+xUdj3/1RXckiwRpEFye9nj9GjJ";
@@ -119,7 +120,7 @@ function setup(settings: { catalog?: boolean } = {}) {
       },
       extension_audit_list: () => [],
     },
-    { settings: { extensionCatalog: { enabled: settings.catalog ?? true } } },
+    { settings: { extensionCatalog: { enabled: settings.catalog ?? true, declinedOffers: [] } } },
   );
   render(
     <>
@@ -335,5 +336,25 @@ describe("a package from elsewhere with a catalog id", () => {
     expect(
       within(consent).getByText("The catalog lists an extension with this id: Quota board by Acme. This package is not from the catalog."),
     ).toBeInTheDocument();
+  });
+});
+
+describe("an install asked from elsewhere (ADR-0162)", () => {
+  it("opens the catalog's own install once: the package checked, then the consent window", async () => {
+    requestCatalogInstall("acme.quota");
+    setup();
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(calls("extension_inspect_catalog").map((c) => c.args)).toEqual([{ id: "acme.quota" }]);
+    expect(screen.getByRole("tab", { name: "Catalog" })).toHaveAttribute("aria-selected", "true");
+    expect(useInstallRequest.getState().id).toBeNull();
+  });
+
+  it("waits while the catalog is off", async () => {
+    requestCatalogInstall("acme.quota");
+    setup({ catalog: false });
+    await screen.findByText("Use the extension catalog");
+    expect(calls("extension_inspect_catalog")).toEqual([]);
+    expect(useInstallRequest.getState().id).toBe("acme.quota");
+    useInstallRequest.setState({ id: null });
   });
 });

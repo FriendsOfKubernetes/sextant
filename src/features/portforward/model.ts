@@ -8,7 +8,7 @@ export const PORT_FORWARD_PAGE = "portforward";
 
 /** Internal connections must not be stopped as part of a bulk user action. */
 export function isInternal(forward: ForwardInfo): boolean {
-  return forward.source === "vcluster" || forward.source === "argoCd" || forward.source === "extensionInternal";
+  return forward.source === "vcluster" || forward.source === "extensionInternal";
 }
 
 /** Pods and Services of the core group are the only things that can be forwarded to. */

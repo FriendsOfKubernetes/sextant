@@ -1,0 +1,9 @@
+{
+  "label": "Rozszerzenie {{tool}}",
+  "text": "W tym klastrze działa {{tool}}. Sextant pokazuje go przez swoje rozszerzenie {{tool}} z katalogu.",
+  "install": "Zainstaluj",
+  "notNow": "Nie teraz",
+  "never": "Nie proponuj ponownie",
+  "installed": "Sextant pokazuje {{tool}} przez swoje rozszerzenie {{tool}}.",
+  "installExtension": "Zainstaluj rozszerzenie {{tool}}"
+}

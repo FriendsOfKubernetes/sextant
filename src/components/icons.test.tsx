@@ -76,7 +76,7 @@ describe("Icon", () => {
 });
 
 describe("the set", () => {
-  it("has no unused names: every name is used by the app outside icons.tsx", () => {
+  it("has no unused names: every name is used by the app outside icons.tsx or by Sextant's own extensions", () => {
     const names = namesOfTheSet();
     expect(names.length).toBeGreaterThan(50);
     for (const name of names) expect(isIconName(name), name).toBe(true);
@@ -85,7 +85,15 @@ describe("the set", () => {
       import: "default",
       eager: true,
     });
-    const text = Object.values(sources).join("\n");
+    // Sextant's own extensions name icons of the set in their manifests and code (ADR-0162: Flux, Argo CD and Argo
+    // Rollouts moved there), and an extension API name is never removed (ADR-0142).
+    const extensions = import.meta.glob<string>(["/extensions/*/sextant-extension.json", "/extensions/*/src/**/*.ts", "!/extensions/**/*.test.ts"], {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    });
+    expect(Object.keys(extensions).length).toBeGreaterThan(3);
+    const text = [...Object.values(sources), ...Object.values(extensions)].join("\n");
     const unused = names.filter((name) => !new RegExp(`["'\`]${name}["'\`]`).test(text));
     expect(unused).toEqual([]);
     // "default" is a common word in the sources, so the search above cannot tell; the set has no such name.
