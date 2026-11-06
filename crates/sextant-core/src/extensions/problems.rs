@@ -20,6 +20,10 @@ use crate::settings::custom_columns::{PathStep, parse_field_path};
 pub const PROBLEMS_API: u32 = 2;
 /// The extension API version that brought rules across objects: `missing`, `toldThroughOwner`, `newestPer` (ADR-0144).
 pub const ACROSS_API: u32 = 3;
+/// The extension API version that brought `not` and a rule's `source` (ADR-0152).
+pub const SOURCES_API: u32 = 4;
+/// Longest label selector of a rule's source (the schema's `maxLength`).
+pub const MAX_SELECTOR_CHARS: usize = 1000;
 /// Rules per extension (the schema's `maxItems`).
 pub const MAX_RULES: usize = 20;
 /// Kinds the rules of one extension judge.
@@ -62,6 +66,25 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub newest_per: Option<String>,
+    /// Which objects of the kind the rule sees: those a label selector picks, and only their metadata (ADR-0152);
+    /// `sextantApi` 4. Every rule of a kind has the same source.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub source: Option<RuleSource>,
+}
+
+/// The objects a rule's kind is watched for (`ProblemContribution.source`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RuleSource {
+    /// A Kubernetes label selector the watch passes to the API server.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub label_selector: Option<String>,
+    /// Only `apiVersion`, `kind` and `metadata` are watched; every path of the rule is under `.metadata`.
+    #[serde(default)]
+    pub metadata_only: bool,
 }
 
 fn yes() -> bool {
@@ -130,6 +153,11 @@ pub enum ProblemCondition {
     Any {
         of: Vec<ProblemCondition>,
     },
+    /// Holds where `of` does not (ADR-0152); `sextantApi` 4. Never around `missing`. Around a condition that holds
+    /// only from a time on (`olderThan`), it holds until that time.
+    Not {
+        of: Box<ProblemCondition>,
+    },
 }
 
 /// A value a condition compares with.
@@ -177,18 +205,20 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 ));
             }
         }
+        let metadata_only = check_source(rule, rules, manifest.sextant_api, &list, &here)?;
         let mut count = 0;
         let mut checks = ConditionChecks {
             api: manifest.sextant_api,
             kinds: &mut kinds,
             count: &mut count,
+            metadata_only,
         };
         check_condition(
             &rule.when,
             &rule.kind,
             &here.key("when"),
             1,
-            false,
+            Inside::Top,
             &mut checks,
         )?;
         if rule.told_through_owner && manifest.sextant_api < ACROSS_API {
@@ -212,11 +242,65 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             }
         }
         if let Some(since) = &rule.since {
-            check_path(since, &rule.kind, &here.key("since"))?;
+            check_rule_path(since, &rule.kind, &here.key("since"), metadata_only)?;
         }
-        check_message(&rule.message, &rule.kind, &here.key("message"))?;
+        check_message(
+            &rule.message,
+            &rule.kind,
+            &here.key("message"),
+            metadata_only,
+        )?;
     }
     Ok(())
+}
+
+/// A rule's `source`: written only from `sextantApi` 4, with at least one field, a label selector Kubernetes reads,
+/// and the same on every rule of the kind. Whether it watches metadata only.
+fn check_source(
+    rule: &ProblemContribution,
+    rules: &[ProblemContribution],
+    api: u32,
+    list: &JsonPath,
+    here: &JsonPath,
+) -> Result<bool, ManifestError> {
+    if let Some(source) = &rule.source {
+        let path = here.key("source");
+        if api < SOURCES_API {
+            return Err(at(
+                &path,
+                format!("needs sextantApi {SOURCES_API} or later"),
+            ));
+        }
+        if source.label_selector.is_none() && !source.metadata_only {
+            return Err(at(
+                &path,
+                "names a `labelSelector`, `metadataOnly: true` or both",
+            ));
+        }
+        if let Some(selector) = &source.label_selector
+            && !is_set_selector(selector)
+        {
+            return Err(at(
+                &path.key("labelSelector"),
+                "must be a Kubernetes label selector such as `app=web`, `tier in (a,b)` or `!canary`",
+            ));
+        }
+    }
+    if let Some(first) = rules
+        .iter()
+        .position(|other| same_kind(&other.kind, &rule.kind))
+        && rules[first].source != rule.source
+    {
+        return Err(at(
+            &here.key("source"),
+            format!(
+                "every rule of {} has the same source (as {})",
+                kind_name(&rule.kind),
+                list.index(first)
+            ),
+        ));
+    }
+    Ok(rule.source.as_ref().is_some_and(|s| s.metadata_only))
 }
 
 /// What checking one rule's conditions keeps across them.
@@ -225,6 +309,16 @@ struct ConditionChecks<'a, 'k> {
     /// The kinds the rules judge or look up so far (`missing` adds its kind).
     kinds: &'a mut Vec<&'k KindPattern>,
     count: &'a mut usize,
+    /// The rule's source watches metadata only: every path is under `.metadata`.
+    metadata_only: bool,
+}
+
+/// What a condition is inside of: `missing` is refused inside `any` and `not`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Inside {
+    Top,
+    Any,
+    Not,
 }
 
 fn check_condition<'k>(
@@ -232,7 +326,7 @@ fn check_condition<'k>(
     kind: &KindPattern,
     path: &JsonPath,
     depth: usize,
-    in_any: bool,
+    inside: Inside,
     checks: &mut ConditionChecks<'_, 'k>,
 ) -> Result<(), ManifestError> {
     *checks.count += 1;
@@ -251,8 +345,12 @@ fn check_condition<'k>(
         | ProblemCondition::Above { path: field, .. }
         | ProblemCondition::Below { path: field, .. }
         | ProblemCondition::OlderThan { path: field, .. } => {
-            check_path(field, kind, &path.key("path"))
+            check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
         }
+        ProblemCondition::Condition { .. } if checks.metadata_only => Err(at(
+            &path.key("type"),
+            "`condition` reads `.status.conditions`, which a `metadataOnly` source does not watch",
+        )),
         ProblemCondition::Condition { .. } => Ok(()),
         ProblemCondition::Missing {
             path: field,
@@ -264,16 +362,25 @@ fn check_condition<'k>(
                     format!("`missing` needs sextantApi {ACROSS_API} or later"),
                 ));
             }
-            if in_any {
-                return Err(at(
-                    &path.key("type"),
-                    "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown",
-                ));
+            match inside {
+                Inside::Any => {
+                    return Err(at(
+                        &path.key("type"),
+                        "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown",
+                    ));
+                }
+                Inside::Not => {
+                    return Err(at(
+                        &path.key("type"),
+                        "`missing` cannot be inside `not`: a list not read would make it unknown",
+                    ));
+                }
+                Inside::Top => {}
             }
             if target.group.is_empty() && target.kind.eq_ignore_ascii_case("Secret") {
                 return Err(at(&path.key("kind"), "Secrets are never listed for rules"));
             }
-            check_path(field, kind, &path.key("path"))?;
+            check_rule_path(field, kind, &path.key("path"), checks.metadata_only)?;
             if !checks.kinds.iter().any(|k| same_kind(k, target)) {
                 checks.kinds.push(target);
                 if checks.kinds.len() > MAX_KINDS {
@@ -292,18 +399,36 @@ fn check_condition<'k>(
                     format!("`all` and `any` nest at most {MAX_DEPTH} deep"),
                 ));
             }
-            let any = in_any || matches!(condition, ProblemCondition::Any { .. });
+            let inner_inside = match (inside, condition) {
+                (Inside::Top, ProblemCondition::Any { .. }) => Inside::Any,
+                _ => inside,
+            };
             for (i, inner) in of.iter().enumerate() {
                 check_condition(
                     inner,
                     kind,
                     &path.key("of").index(i),
                     depth + 1,
-                    any,
+                    inner_inside,
                     checks,
                 )?;
             }
             Ok(())
+        }
+        ProblemCondition::Not { of } => {
+            if checks.api < SOURCES_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`not` needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            if depth >= MAX_DEPTH {
+                return Err(at(
+                    path,
+                    format!("`all`, `any` and `not` nest at most {MAX_DEPTH} deep"),
+                ));
+            }
+            check_condition(of, kind, &path.key("of"), depth + 1, Inside::Not, checks)
         }
     }
 }
@@ -352,6 +477,7 @@ fn looked_up<'c>(condition: &'c ProblemCondition, out: &mut Vec<&'c KindPattern>
                 looked_up(inner, out);
             }
         }
+        ProblemCondition::Not { of } => looked_up(of, out),
         _ => {}
     }
 }
@@ -376,8 +502,93 @@ fn check_path(text: &str, kind: &KindPattern, path: &JsonPath) -> Result<(), Man
     Ok(())
 }
 
+/// A path of a rule: [`check_path`], and under `.metadata` when the rule's source watches metadata only.
+fn check_rule_path(
+    text: &str,
+    kind: &KindPattern,
+    path: &JsonPath,
+    metadata_only: bool,
+) -> Result<(), ManifestError> {
+    check_path(text, kind, path)?;
+    if metadata_only
+        && !matches!(parse_field_path(text).as_deref(), Some([PathStep::Key(first), ..]) if first == "metadata")
+    {
+        return Err(at(
+            path,
+            "must be under `.metadata`: the rule's source watches metadata only",
+        ));
+    }
+    Ok(())
+}
+
+/// A Kubernetes label selector (`labels.Parse`): requirements separated by commas, each `key`, `!key`, `key=value`,
+/// `key==value`, `key!=value`, `key in (v, …)` or `key notin (v, …)`; keys and values as Kubernetes allows them
+/// (a value may be empty).
+pub fn is_set_selector(text: &str) -> bool {
+    if text.is_empty() || text.chars().count() > MAX_SELECTOR_CHARS {
+        return false;
+    }
+    let mut requirements = Vec::new();
+    let mut depth = 0usize;
+    let mut start = 0;
+    for (i, c) in text.char_indices() {
+        match c {
+            '(' => depth += 1,
+            ')' => {
+                if depth == 0 {
+                    return false;
+                }
+                depth -= 1;
+            }
+            ',' if depth == 0 => {
+                requirements.push(&text[start..i]);
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return false;
+    }
+    requirements.push(&text[start..]);
+    requirements.into_iter().all(is_requirement)
+}
+
+fn is_requirement(text: &str) -> bool {
+    let text = text.trim();
+    if let Some(key) = text.strip_prefix('!') {
+        return is_label_key(key.trim());
+    }
+    for op in ["!=", "==", "="] {
+        if let Some((key, value)) = text.split_once(op) {
+            return is_label_key(key.trim()) && is_selector_value(value.trim());
+        }
+    }
+    for op in [" notin ", " in "] {
+        if let Some((key, values)) = text.split_once(op) {
+            let values = values.trim();
+            let Some(inner) = values.strip_prefix('(').and_then(|v| v.strip_suffix(')')) else {
+                return false;
+            };
+            return is_label_key(key.trim())
+                && inner.split(',').all(|v| is_selector_value(v.trim()));
+        }
+    }
+    is_label_key(text)
+}
+
+/// A label value or nothing.
+fn is_selector_value(text: &str) -> bool {
+    text.is_empty() || (is_label_key(text) && !text.contains('/'))
+}
+
 /// The placeholders of a message: each `{{…}}` a field path that reads no secret; no `{{` without its `}}`.
-fn check_message(text: &str, kind: &KindPattern, path: &JsonPath) -> Result<(), ManifestError> {
+fn check_message(
+    text: &str,
+    kind: &KindPattern,
+    path: &JsonPath,
+    metadata_only: bool,
+) -> Result<(), ManifestError> {
     let placeholders = placeholders(text).ok_or_else(|| at(path, "has a `{{` without its `}}`"))?;
     if placeholders.len() > MAX_PLACEHOLDERS {
         return Err(at(
@@ -386,7 +597,7 @@ fn check_message(text: &str, kind: &KindPattern, path: &JsonPath) -> Result<(), 
         ));
     }
     for field in placeholders {
-        check_path(field.trim(), kind, path)?;
+        check_rule_path(field.trim(), kind, path, metadata_only)?;
     }
     Ok(())
 }

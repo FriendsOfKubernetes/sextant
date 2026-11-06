@@ -72,6 +72,8 @@ export interface Verdict {
   lookups?: Lookup[];
   /** It holds only from this time (ms): an `olderThan` that is not yet old enough counts from then. */
   activeFrom?: number;
+  /** It holds only until this time (ms): a `not` around an `olderThan` that is not yet old enough. */
+  until?: number;
   /** When the state began, as an entry of `.status.conditions` says (its `lastTransitionTime`). */
   since?: string;
 }
@@ -126,29 +128,50 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject): Verdict 
     }
     case "all": {
       let activeFrom: number | undefined;
+      let until: number | undefined;
       let since: string | undefined;
       let lookups: Lookup[] | undefined;
       for (const inner of condition.of) {
         const v = evaluate(inner, obj);
         if (!v.holds) return NO;
         if (v.activeFrom !== undefined) activeFrom = Math.max(activeFrom ?? v.activeFrom, v.activeFrom);
+        if (v.until !== undefined) until = Math.min(until ?? v.until, v.until);
         since ??= v.since;
         if (v.lookups) lookups = [...(lookups ?? []), ...v.lookups];
       }
-      return lookups ? { holds: true, activeFrom, since, lookups } : { holds: true, activeFrom, since };
+      // A window that closes before it opens never holds.
+      if (activeFrom !== undefined && until !== undefined && until <= activeFrom) return NO;
+      const verdict: Verdict = { holds: true, activeFrom, since };
+      if (until !== undefined) verdict.until = until;
+      if (lookups) verdict.lookups = lookups;
+      return verdict;
     }
     case "any": {
-      // The earliest branch counts: one that holds now (no `activeFrom`) before one that holds later.
+      // The branch that counts longest: one that holds now and for good, else now until the latest end, else the one
+      // that holds earliest.
       let best: Verdict | undefined;
       for (const inner of condition.of) {
         const v = evaluate(inner, obj);
         if (!v.holds) continue;
-        if (v.activeFrom === undefined) return v;
-        if (!best || (best.activeFrom ?? Infinity) > v.activeFrom) best = v;
+        if (v.activeFrom === undefined && v.until === undefined) return v;
+        if (!best || rank(v) < rank(best)) best = v;
       }
       return best ?? NO;
     }
+    case "not": {
+      const v = evaluate(condition.of, obj);
+      if (!v.holds) return { holds: true };
+      // It holds from some time on: until then, `not` holds; past an end, it holds again (not modelled: never).
+      if (v.activeFrom !== undefined && v.until === undefined) return { holds: true, until: v.activeFrom };
+      return NO;
+    }
   }
+}
+
+/** Orders the branches of `any`: holding now with a later end first, then holding earlier. */
+function rank(v: Verdict): number {
+  if (v.activeFrom === undefined) return -(v.until ?? Infinity);
+  return v.activeFrom;
 }
 
 function sameScalar(value: unknown, expected: ProblemScalar): boolean {
@@ -182,6 +205,7 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject): Detected
       since: typeof since === "string" && timeOf(since) !== undefined ? since : undefined,
       graceMs: rule.graceMinutes > 0 ? rule.graceMinutes * MINUTE_MS : undefined,
       activeFrom: verdict.activeFrom,
+      ...(verdict.until !== undefined ? { until: verdict.until } : {}),
       notify: rule.notify,
       ...(verdict.lookups ? { lookups: verdict.lookups } : {}),
       ...(rule.toldThroughOwner ? controllerOf(obj) : {}),

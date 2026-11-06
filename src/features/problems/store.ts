@@ -460,8 +460,9 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
       const watched = (spec ??= {
         kind: def.kind,
         namespaces: narrowed(restrictedScope(clusterId), def.namespaces),
-        labelSelector: null,
+        labelSelector: def.labelSelector ?? null,
         fieldSelector: def.fieldSelector,
+        ...(def.metadataOnly ? { metadataOnly: true } : {}),
       });
       created.watched = watched.namespaces;
       // A source of its own namespaces none of which is accessible reads nothing: an empty list would mean every

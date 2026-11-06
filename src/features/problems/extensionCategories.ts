@@ -6,7 +6,16 @@
 // These categories are not `PROBLEM_CATEGORIES`: agents never get them (`get_problems` takes only those), the fleet
 // cards do not watch them and the timeline does not correlate them.
 import { useSyncExternalStore } from "react";
-import { api, type ClusterId, type KindRef, type KubeObject, type ProblemContribution, type ProblemScope, type ResourceKind } from "../../api";
+import {
+  api,
+  type ClusterId,
+  type KindRef,
+  type KubeObject,
+  type ProblemContribution,
+  type ProblemScope,
+  type ResourceKind,
+  type RuleSource,
+} from "../../api";
 import { compileRules, kindKeyOf } from "../../extensions/problemRules";
 import { judgeAcross, judgedAcross, lookedUp, rowOf, type AcrossTarget } from "../../extensions/problemsAcross";
 import { setExtensionDetector, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
@@ -23,6 +32,8 @@ interface Entry {
   across: ReadonlySet<string>;
   /** `group/kind` → the labels `newestPer` of its rules names. */
   newestLabels: ReadonlyMap<string, readonly string[]>;
+  /** `group/kind` → the `source` its rules share (ADR-0152). */
+  sources: ReadonlyMap<string, RuleSource>;
 }
 
 /** The tap id of a source judged across objects (`SourceDef.judge`): the same on every source of a category. */
@@ -54,6 +65,8 @@ export function registerExtensionProblems(extensionId: string, title: string, ru
     for (const target of lookedUp(rule.when)) across.add(kindKeyOf(target));
     if (rule.newestPer !== undefined) newestLabels.set(key, [...new Set([...(newestLabels.get(key) ?? []), rule.newestPer])]);
   }
+  const sources = new Map<string, RuleSource>();
+  for (const rule of rules) if (rule.source) sources.set(kindKeyOf(rule.kind), rule.source);
   const entry: Entry = {
     category,
     extensionId,
@@ -62,6 +75,7 @@ export function registerExtensionProblems(extensionId: string, title: string, ru
     rules: new Map(rules.map((r) => [r.id, r])),
     across,
     newestLabels,
+    sources,
   };
   entries.set(category, entry);
   forgetScopes(extensionId);
@@ -195,6 +209,7 @@ export function extensionSourcesFor(
       if (!served) continue;
       const everywhere = namespaces.type === "all";
       if (!served.namespaced && !everywhere) continue;
+      const source = entry.sources.get(key);
       const def: SourceDef = {
         category,
         kind: served.kindRef,
@@ -202,6 +217,8 @@ export function extensionSourcesFor(
         discovered: true,
         maxObjects: MAX_SOURCE_OBJECTS,
         ...(everywhere || !served.namespaced ? {} : { namespaces: namespaces.namespaces }),
+        ...(source?.labelSelector ? { labelSelector: source.labelSelector } : {}),
+        ...(source?.metadataOnly ? { metadataOnly: true } : {}),
       };
       out.push(def);
       if (entry.across.has(key)) {

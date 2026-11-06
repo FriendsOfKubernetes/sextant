@@ -116,6 +116,7 @@ export const MANIFEST_SHAPES = {
     message: "required",
     toldThroughOwner: "optional",
     newestPer: "optional",
+    source: "optional",
   }),
   ManifestPage: described<ManifestPage>(`${CONTRIBUTION}/pages/items`, {
     id: "required",

@@ -80,6 +80,10 @@ export interface SourceDef {
    * may read (ADR-0137). `undefined`: every namespace.
    */
   namespaces?: readonly string[];
+  /** Only the objects this label selector picks (an extension rule's `source`, ADR-0152). */
+  labelSelector?: string;
+  /** Only `apiVersion`, `kind` and `metadata` of each object (an extension rule's `source`, ADR-0152). */
+  metadataOnly?: boolean;
   /**
    * Problems judged across the objects of the source: the store keeps a row tap of the watch while the source is held
    * and passes every problem list through `keep` with the rows (an HTTPProxy orphaned because the root that includes
@@ -352,12 +356,14 @@ function builtInSources(category: ProblemCategory): readonly SourceDef[] {
 /** The store's key of a source in a cluster. */
 export function sourceKey(
   clusterId: string,
-  def: Pick<SourceDef, "kind" | "fieldSelector" | "namespaces"> & { category?: ProblemCategory },
+  def: Pick<SourceDef, "kind" | "fieldSelector" | "namespaces" | "labelSelector" | "metadataOnly"> & { category?: ProblemCategory },
 ): string {
   const { group, version, kind } = def.kind;
   const key = `${clusterId}|${group}/${version}/${kind}|${def.fieldSelector ?? ""}`;
-  // An extension's rules judge their own sources, over the namespaces the extension may read.
-  if (def.category?.startsWith("ext:")) return `${key}|${def.category}|${def.namespaces?.join(",") ?? "*"}`;
+  // An extension's rules judge their own sources, over the namespaces the extension may read, with their rules' source.
+  if (def.category?.startsWith("ext:")) {
+    return `${key}|${def.category}|${def.namespaces?.join(",") ?? "*"}|${def.labelSelector ?? ""}|${def.metadataOnly ? "meta" : ""}`;
+  }
   // A security source judges the same kinds as pods and workloads by other rules: a source of its own; so is the
   // provider's source of full claims, which watches nothing.
   if (def.category === "practices") return `${key}|${def.category}`;

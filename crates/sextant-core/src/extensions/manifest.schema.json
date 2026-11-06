@@ -40,9 +40,9 @@
       "pattern": "\\S"
     },
     "sextantApi": {
-      "description": "Major version of the extension API the extension is written for; Sextant supports 1 to 3 (2 adds `contributes.problems`, `contributes.metricQueries` and `translations`, 3 adds `contributes.sectionBadges`). A newer Sextant keeps reading every version it once read (ADR-0142).",
+      "description": "Major version of the extension API the extension is written for; Sextant supports 1 to 4 (2 adds `contributes.problems`, `contributes.metricQueries` and `translations`, 3 adds `contributes.sectionBadges` and `contributes.commands`, 4 adds sources and `not` in problem rules, computed columns, action conditions, `contributes.kinds`, status patches, port-forwards, `contributes.menuItems`, `contributes.services` and `contributes.agentTools`). A newer Sextant keeps reading every version it once read (ADR-0142).",
       "type": "integer",
-      "enum": [1, 2, 3]
+      "enum": [1, 2, 3, 4]
     },
     "entry": {
       "description": "The HTML file every view opens, relative to the package root, e.g. index.html or dist/index.html; no part may start with `.`, be `node_modules` (any case), end with `.` or a space, or be a Windows device name.",
@@ -472,6 +472,23 @@
           "minLength": 1,
           "maxLength": 317
         },
+        "source": {
+          "description": "Which objects of the kind the rule sees (sextantApi 4): those a label selector picks, and only their metadata. Every rule of a kind has the same source.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "labelSelector": {
+              "description": "A Kubernetes label selector: `key`, `!key`, `key=value`, `key!=value`, `key in (a,b)`, `key notin (a,b)`, separated by commas.",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "metadataOnly": {
+              "description": "Only `apiVersion`, `kind` and `metadata` are watched; every path of the rule is then under `.metadata`.",
+              "type": "boolean"
+            }
+          }
+        },
         "message": {
           "description": "Text with at most 5 `{{<field path>}}` placeholders.",
           "type": "string",
@@ -681,6 +698,16 @@
           "properties": {
             "type": { "const": "any" },
             "of": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "$ref": "#/$defs/problemCondition" } }
+          }
+        },
+        {
+          "description": "Holds where `of` does not (sextantApi 4); never around `missing`.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "of"],
+          "properties": {
+            "type": { "const": "not" },
+            "of": { "$ref": "#/$defs/problemCondition" }
           }
         }
       ]

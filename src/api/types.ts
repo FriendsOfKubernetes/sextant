@@ -257,6 +257,7 @@ export type { BackendLogLevel } from "./generated/BackendLogLevel";
 export type { BackendLogLine } from "./generated/BackendLogLine";
 export type { ProblemCondition } from "./generated/ProblemCondition";
 export type { ProblemContribution } from "./generated/ProblemContribution";
+export type { RuleSource } from "./generated/RuleSource";
 export type { ProblemScalar } from "./generated/ProblemScalar";
 export type { ProblemScope } from "./generated/ProblemScope";
 export type { MetricAnswer } from "./generated/MetricAnswer";

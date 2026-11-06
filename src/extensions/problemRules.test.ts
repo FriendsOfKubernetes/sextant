@@ -70,6 +70,40 @@ describe("problem rules of extensions", () => {
     expect(holds({ type: "all", of: [now, { type: "absent", path: ".status" }] })).toBe(false);
   });
 
+  it("negate with not: the other branches, and a time not yet old enough counts until it is (ADR-0152)", () => {
+    expect(holds({ type: "not", of: { type: "in", path: ".status.phase", values: ["Progressing", "Pending"] } })).toBe(true);
+    expect(holds({ type: "not", of: { type: "equals", path: ".status.phase", value: "Ready" } })).toBe(false);
+    // A missing field is no match, so `not` holds: `not equals .spec.suspend true` holds where suspend is unset.
+    expect(holds({ type: "not", of: { type: "equals", path: ".spec.suspend", value: true } })).toBe(true);
+    const recent = { type: "not", of: { type: "olderThan", path: ".status.ceph.lastChanged", minutes: 1440 } } as const;
+    expect(evaluate(recent, cluster)).toEqual({ holds: true, until: Date.parse("2026-10-31T10:00:00Z") });
+    // Within all: from the latest start to the earliest end; a window closing before it opens never holds.
+    const old = { type: "olderThan", path: ".status.ceph.lastChanged", minutes: 60 } as const;
+    expect(evaluate({ type: "all", of: [recent, old] }, cluster)).toEqual({
+      holds: true,
+      activeFrom: Date.parse("2026-10-30T11:00:00Z"),
+      until: Date.parse("2026-10-31T10:00:00Z"),
+    });
+    const tooOld = { type: "olderThan", path: ".status.ceph.lastChanged", minutes: 2000 } as const;
+    expect(holds({ type: "all", of: [recent, tooOld] })).toBe(false);
+    // Within any: holding for good wins, then the later end.
+    const shorter = { type: "not", of: { type: "olderThan", path: ".status.ceph.lastChanged", minutes: 60 } } as const;
+    expect(evaluate({ type: "any", of: [shorter, recent] }, cluster).until).toBe(Date.parse("2026-10-31T10:00:00Z"));
+    expect(evaluate({ type: "any", of: [recent, { type: "exists", path: ".status" }] }, cluster)).toEqual({ holds: true });
+    // The problem stops counting at the end.
+    const rule: ProblemContribution = {
+      id: "recent",
+      title: "Recent",
+      kind: { group: "ceph.rook.io", kind: "CephCluster" },
+      when: recent,
+      graceMinutes: 0,
+      notify: true,
+      message: "x",
+      toldThroughOwner: false,
+    };
+    expect(detectRule(rule, cluster)[0]!.until).toBe(Date.parse("2026-10-31T10:00:00Z"));
+  });
+
   it("fill a message with scalar values only, clipped and cleaned like other cluster text", () => {
     expect(renderMessage("Ceph reports {{.status.ceph.health}}: {{ .status.message }}", cluster)).toBe(
       "Ceph reports HEALTH_ERR: Cluster created successfully",

@@ -119,6 +119,26 @@ describe("problems of extensions", () => {
     await waitFor(() => expect(screen.queryByRole("region", { name: "Rook Ceph" })).not.toBeInTheDocument());
   });
 
+  it("watch only what a rule's source picks: by its label selector, metadata only (ADR-0152)", async () => {
+    const sourced = RULES.map((rule) =>
+      rule.kind.kind === "CephCluster"
+        ? {
+            ...rule,
+            source: { labelSelector: "app in (ceph,rook)", metadataOnly: true },
+            when: { type: "exists", path: ".metadata.name" } as const,
+            message: "{{.metadata.name}}",
+          }
+        : rule,
+    );
+    unregister = registerExtensionProblems("rook-ceph-ext", "Rook Ceph", sourced);
+    render(<ProblemsPage clusterId="c1" />);
+    const id = await watchOf(wb, "CephCluster");
+    expect(wb.specs.get(id)).toMatchObject({ namespaces: ["rook-ceph"], labelSelector: "app in (ceph,rook)", metadataOnly: true });
+    emitSnapshot(wb, id, [{ apiVersion: "ceph.rook.io/v1", kind: "CephCluster", metadata: { name: "rook-ceph", namespace: "rook-ceph", uid: "m1" } }]);
+    const section = await screen.findByRole("region", { name: "Rook Ceph" });
+    expect(within(section).getAllByText("rook-ceph").length).toBeGreaterThan(0);
+  });
+
   it("count in the sidebar badge like Sextant's own", async () => {
     unregister = registerExtensionProblems("rook-ceph-ext", "Rook Ceph", RULES);
     const { result } = renderHook(() => useProblemCount("c1"));

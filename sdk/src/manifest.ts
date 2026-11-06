@@ -17,9 +17,11 @@ export const MANIFEST_FILE = "sextant-extension.json";
 
 /**
  * The newest extension API major version this SDK speaks (`sextantApi`); 2 brought `contributes.problems`, 3
- * `contributes.sectionBadges`. Every older one stays readable (ADR-0142).
+ * `contributes.sectionBadges` and `contributes.commands`, 4 sources and `not` in problem rules, computed columns,
+ * action conditions, `contributes.kinds`, status patches, port-forwards, `contributes.menuItems`,
+ * `contributes.services` and `contributes.agentTools`. Every older one stays readable (ADR-0142).
  */
-export const SEXTANT_API = 3;
+export const SEXTANT_API = 4;
 
 /** What an extension may be allowed to do with objects (a subset of the agent's actions). */
 export type ExtensionAction = "read" | "modify" | "delete" | "logs" | "secretValues";
@@ -125,6 +127,11 @@ export interface ManifestProblem {
   toldThroughOwner?: boolean;
   /** A label key: of one namespace's objects with the same value of it, only the newest has the problem (sextantApi 3). */
   newestPer?: string;
+  /**
+   * Which objects of the kind the rule sees (sextantApi 4): those a Kubernetes label selector picks, and only their
+   * metadata (then every path is under `.metadata`). Every rule of a kind has the same source.
+   */
+  source?: { labelSelector?: string; metadataOnly?: boolean };
 }
 
 /**

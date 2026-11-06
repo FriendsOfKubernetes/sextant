@@ -10,7 +10,7 @@ import { TextDecoder, TextEncoder } from "node:util";
 
 export const MANIFEST_FILE = "sextant-extension.json";
 /** The newest extension API Sextant implements; 2 brought `contributes.problems` (ADR-0137), 3 `contributes.sectionBadges` (ADR-0143). */
-export const SUPPORTED_API = 3;
+export const SUPPORTED_API = 4;
 /** The oldest one it still reads: every extension once accepted keeps working (ADR-0142). */
 export const MIN_API = 1;
 export const MAX_MANIFEST_BYTES = 256 * 1024;
@@ -592,32 +592,120 @@ export function placeholders(text) {
 }
 
 const ACROSS_API = 3;
+const SOURCES_API = 4;
+const MAX_SELECTOR_CHARS = 1000;
 
-function checkCondition(condition, kind, segments, depth, counter, inAny = false) {
+/** A rule's path: no secret, and under `.metadata` when its source watches metadata only (`check_rule_path`). */
+function checkRulePath(text, kind, segments, metadataOnly) {
+  checkPath(text, kind, segments);
+  const steps = parseFieldPath(text);
+  if (metadataOnly && !(steps && steps.length > 0 && steps[0].key === "metadata")) {
+    fail(segments, "must be under `.metadata`: the rule's source watches metadata only");
+  }
+}
+
+function checkCondition(condition, kind, segments, depth, counter, inside = "top") {
   counter.count += 1;
   if (counter.count > MAX_CONDITIONS) fail(segments, `a rule has at most ${MAX_CONDITIONS} conditions`);
-  if (condition.type === "condition") return;
+  if (condition.type === "condition") {
+    if (counter.metadataOnly) {
+      fail([...segments, "type"], "`condition` reads `.status.conditions`, which a `metadataOnly` source does not watch");
+    }
+    return;
+  }
   if (condition.type === "all" || condition.type === "any") {
     if (depth >= MAX_DEPTH) fail(segments, `\`all\` and \`any\` nest at most ${MAX_DEPTH} deep`);
-    const any = inAny || condition.type === "any";
-    condition.of.forEach((inner, i) => checkCondition(inner, kind, [...segments, "of", i], depth + 1, counter, any));
+    const innerInside = inside === "top" && condition.type === "any" ? "any" : inside;
+    condition.of.forEach((inner, i) => checkCondition(inner, kind, [...segments, "of", i], depth + 1, counter, innerInside));
+    return;
+  }
+  if (condition.type === "not") {
+    if (counter.api < SOURCES_API) fail([...segments, "type"], `\`not\` needs sextantApi ${SOURCES_API} or later`);
+    if (depth >= MAX_DEPTH) fail(segments, `\`all\`, \`any\` and \`not\` nest at most ${MAX_DEPTH} deep`);
+    checkCondition(condition.of, kind, [...segments, "of"], depth + 1, counter, "not");
     return;
   }
   if (condition.type === "missing") {
     if (counter.api < ACROSS_API) fail([...segments, "type"], `\`missing\` needs sextantApi ${ACROSS_API} or later`);
-    if (inAny) fail([...segments, "type"], "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown");
+    if (inside === "any") fail([...segments, "type"], "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown");
+    if (inside === "not") fail([...segments, "type"], "`missing` cannot be inside `not`: a list not read would make it unknown");
     if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret") {
       fail([...segments, "kind"], "Secrets are never listed for rules");
     }
-    checkPath(condition.path, kind, [...segments, "path"]);
+    checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
     if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
       counter.kinds.push(condition.kind);
       if (counter.kinds.length > MAX_KINDS) fail([...segments, "kind"], `the rules judge at most ${MAX_KINDS} kinds`);
     }
     return;
   }
-  checkPath(condition.path, kind, [...segments, "path"]);
+  checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
 }
+
+/** A Kubernetes label selector (`is_set_selector` in Rust): `key`, `!key`, `key=value`, `key==value`, `key!=value`,
+ * `key in (…)`, `key notin (…)`, separated by commas outside parentheses; a value may be empty. */
+export function isSetSelector(text) {
+  if (text.length === 0 || Array.from(text).length > MAX_SELECTOR_CHARS) return false;
+  const requirements = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === "(") depth += 1;
+    else if (c === ")") {
+      if (depth === 0) return false;
+      depth -= 1;
+    } else if (c === "," && depth === 0) {
+      requirements.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  if (depth !== 0) return false;
+  requirements.push(text.slice(start));
+  return requirements.every(isRequirement);
+}
+
+const isSelectorValue = (text) => text === "" || (isLabelKey(text) && !text.includes("/"));
+
+function isRequirement(raw) {
+  const text = raw.trim();
+  if (text.startsWith("!")) return isLabelKey(text.slice(1).trim());
+  for (const op of ["!=", "==", "="]) {
+    const at = text.indexOf(op);
+    if (at >= 0) return isLabelKey(text.slice(0, at).trim()) && isSelectorValue(text.slice(at + op.length).trim());
+  }
+  for (const op of [" notin ", " in "]) {
+    const at = text.indexOf(op);
+    if (at >= 0) {
+      const values = text.slice(at + op.length).trim();
+      if (!values.startsWith("(") || !values.endsWith(")")) return false;
+      return isLabelKey(text.slice(0, at).trim()) && values.slice(1, -1).split(",").every((v) => isSelectorValue(v.trim()));
+    }
+  }
+  return isLabelKey(text);
+}
+
+/** A rule's `source` (`check_source` in Rust); whether it watches metadata only. */
+function checkSource(rule, rules, api, list, here) {
+  if (rule.source !== undefined) {
+    const path = [...here, "source"];
+    if (api < SOURCES_API) fail(path, `needs sextantApi ${SOURCES_API} or later`);
+    if (rule.source.labelSelector === undefined && rule.source.metadataOnly !== true) {
+      fail(path, "names a `labelSelector`, `metadataOnly: true` or both");
+    }
+    if (rule.source.labelSelector !== undefined && !isSetSelector(rule.source.labelSelector)) {
+      fail([...path, "labelSelector"], "must be a Kubernetes label selector such as `app=web`, `tier in (a,b)` or `!canary`");
+    }
+  }
+  const first = rules.findIndex((other) => sameKind(other.kind, rule.kind));
+  if (first >= 0 && !sameSource(rules[first].source, rule.source)) {
+    fail([...here, "source"], `every rule of ${kindName(rule.kind)} has the same source (as ${pathText([...list, first])})`);
+  }
+  return rule.source?.metadataOnly === true;
+}
+
+const sameSource = (a, b) =>
+  (a?.labelSelector ?? null) === (b?.labelSelector ?? null) && (a?.metadataOnly === true) === (b?.metadataOnly === true);
 
 /** A label key: an optional DNS subdomain prefix and `/`, then a name of 1–63 characters (`is_label_key` in Rust). */
 function isLabelKey(text) {
@@ -646,7 +734,8 @@ function checkProblems(manifest) {
       kinds.push(rule.kind);
       if (kinds.length > MAX_KINDS) fail([...here, "kind"], `the rules judge at most ${MAX_KINDS} kinds`);
     }
-    checkCondition(rule.when, rule.kind, [...here, "when"], 1, { count: 0, api: manifest.sextantApi, kinds });
+    const metadataOnly = checkSource(rule, rules, manifest.sextantApi, list, here);
+    checkCondition(rule.when, rule.kind, [...here, "when"], 1, { count: 0, api: manifest.sextantApi, kinds, metadataOnly });
     if (rule.toldThroughOwner === true && manifest.sextantApi < ACROSS_API) {
       fail([...here, "toldThroughOwner"], `needs sextantApi ${ACROSS_API} or later`);
     }
@@ -654,11 +743,11 @@ function checkProblems(manifest) {
       if (manifest.sextantApi < ACROSS_API) fail([...here, "newestPer"], `needs sextantApi ${ACROSS_API} or later`);
       if (!isLabelKey(rule.newestPer)) fail([...here, "newestPer"], "must be a label key such as `app` or `example.com/name`");
     }
-    if (rule.since !== undefined) checkPath(rule.since, rule.kind, [...here, "since"]);
+    if (rule.since !== undefined) checkRulePath(rule.since, rule.kind, [...here, "since"], metadataOnly);
     const found = placeholders(rule.message);
     if (found === null) fail([...here, "message"], "has a `{{` without its `}}`");
     if (found.length > MAX_PLACEHOLDERS) fail([...here, "message"], `has at most ${MAX_PLACEHOLDERS} placeholders`);
-    for (const field of found) checkPath(field.trim(), rule.kind, [...here, "message"]);
+    for (const field of found) checkRulePath(field.trim(), rule.kind, [...here, "message"], metadataOnly);
   });
 }
 
