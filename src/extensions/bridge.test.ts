@@ -22,7 +22,12 @@ let frame: HTMLIFrameElement;
 let other: HTMLIFrameElement;
 let posted: unknown[];
 type Fn = (arg?: unknown) => void;
-let ui: { [K in keyof BridgeUi]: ReturnType<typeof vi.fn<Fn>> };
+let ui: {
+  [K in Exclude<keyof BridgeUi, "openLogs" | "openUrl">]: ReturnType<typeof vi.fn<Fn>>;
+} & {
+  openLogs: ReturnType<typeof vi.fn<(params: unknown) => Promise<void>>>;
+  openUrl: ReturnType<typeof vi.fn<(params: unknown) => Promise<{ opened: boolean }>>>;
+};
 let bridge: Bridge;
 let onResize: ReturnType<typeof vi.fn<(height: number) => void>>;
 let onFrameError: ReturnType<typeof vi.fn<(message: string) => void>>;
@@ -54,7 +59,14 @@ beforeEach(() => {
   document.body.append(frame, other);
   posted = [];
   vi.spyOn(frame.contentWindow!, "postMessage").mockImplementation((message: unknown) => void posted.push(message));
-  ui = { openDetails: vi.fn<Fn>(), navigate: vi.fn<Fn>(), notify: vi.fn<Fn>(), close: vi.fn<Fn>() };
+  ui = {
+    openDetails: vi.fn<Fn>(),
+    navigate: vi.fn<Fn>(),
+    notify: vi.fn<Fn>(),
+    close: vi.fn<Fn>(),
+    openLogs: vi.fn<(params: unknown) => Promise<void>>(() => Promise.resolve()),
+    openUrl: vi.fn<(params: unknown) => Promise<{ opened: boolean }>>(() => Promise.resolve({ opened: true })),
+  };
   onResize = vi.fn<(height: number) => void>();
   onFrameError = vi.fn<(message: string) => void>();
   bridge = createBridge({
@@ -155,6 +167,25 @@ describe("extension message bridge", () => {
     expect(ui.close).toHaveBeenCalled();
     expect(posted).toEqual([1, 2, 3, 4].map((id) => ({ sextant: 1, doc: DOC_A, id, result: null })));
     expect(calls("extension_call")).toHaveLength(0);
+  });
+
+  it("answers ui.openLogs and ui.openUrl when the window is done, with the error when it fails (ADR-0156)", async () => {
+    let finish: () => void = () => {};
+    ui.openLogs.mockImplementation(() => new Promise<void>((resolve) => (finish = resolve)));
+    ui.openUrl.mockImplementation(() => Promise.reject(new ApiError("invalid", "ui.openUrl: only http and https addresses open")));
+    send({ sextant: 1, doc: DOC_A, id: 1, method: "ui.openLogs", params: { namespace: "a", pod: "web-1" } });
+    send({ sextant: 1, doc: DOC_A, id: 2, method: "ui.openUrl", params: { url: "file:///x" } });
+    await postedCount(1);
+    expect(posted[0]).toEqual({
+      sextant: 1,
+      doc: DOC_A,
+      id: 2,
+      error: { code: "invalid", message: "ui.openUrl: only http and https addresses open" },
+    });
+    finish();
+    await postedCount(2);
+    expect(posted[1]).toEqual({ sextant: 1, doc: DOC_A, id: 1, result: null });
+    expect(ui.openLogs).toHaveBeenCalledWith({ namespace: "a", pod: "web-1" });
   });
 
   it("answers a failing ui method with the error", async () => {

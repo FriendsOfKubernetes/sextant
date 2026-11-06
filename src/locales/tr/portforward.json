@@ -72,7 +72,9 @@
     "user": "Elle",
     "agent": "Yapay zekâ aracısı",
     "vcluster": "Dahili · vcluster",
-    "argoCd": "Dahili · Argo CD"
+    "argoCd": "Dahili · Argo CD",
+    "extension": "Uzantı",
+    "extensionInternal": "Dahili · uzantı"
   },
   "selection": "Seçilen: {{value}}",
   "selectAll": "Görünen kullanıcı yönlendirmelerini seç",

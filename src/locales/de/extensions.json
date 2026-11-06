@@ -11,7 +11,12 @@
     "notice": "{{extension}}: {{text}}",
     "dismiss": "Ausblenden",
     "sectionBadge_one": "{{count}} Objekt erfordert Aufmerksamkeit",
-    "sectionBadge_other": "{{count}} Objekte erfordern Aufmerksamkeit"
+    "sectionBadge_other": "{{count}} Objekte erfordern Aufmerksamkeit",
+    "openUrl": {
+      "title": "Link öffnen?",
+      "text": "Die Erweiterung {{extension}} möchte diese Adresse in Ihrem Browser öffnen:",
+      "open": "Öffnen"
+    }
   },
   "install": {
     "file": "Aus Datei installieren…",

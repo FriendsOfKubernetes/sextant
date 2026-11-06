@@ -865,6 +865,7 @@ async fn host_events_are_forwarded_at_once_and_streams_are_checked_off_the_emitt
     let forwarded_in = Arc::clone(&forwarded);
     let emit = host_emitter(
         Arc::clone(&env.api.streams),
+        Arc::clone(&env.api.forwards),
         env.host.downgrade(),
         move |_event| {
             forwarded_in
@@ -2233,4 +2234,143 @@ async fn a_declared_command_runs_in_its_pod_and_nothing_else_does() {
     )
     .await
     .unwrap();
+}
+
+#[tokio::test]
+async fn opening_logs_is_decided_as_logs_on_the_pod_or_the_namespace() {
+    let env = Env::new();
+    env.install(
+        "widgets",
+        perms(all_clusters(), &["team-a"], &["read", "logs"], false),
+    );
+    let call = |params: Value| {
+        env.api
+            .call(&env.host, "widgets", "logs.open", params, None)
+    };
+    let ok = call(
+        json!({ "clusterId": "ctx-a", "namespace": "team-a", "pod": "web-1", "container": "app" }),
+    )
+    .await
+    .unwrap();
+    assert_eq!(ok, Value::Null);
+    let selected =
+        call(json!({ "clusterId": "ctx-a", "namespace": "team-a", "labelSelector": "app=web" }))
+            .await;
+    assert!(selected.is_ok(), "{selected:?}");
+    let err = call(json!({ "clusterId": "ctx-a", "namespace": "team-b", "pod": "web-1" }))
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied, "{}", err.message);
+    let err = call(json!({ "clusterId": "ctx-a", "namespace": "team-a" }))
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid, "{}", err.message);
+    let journal = env.api.audit_list(Some("widgets"));
+    // Newest first.
+    assert_eq!(journal[3].target, "Pod team-a/web-1 container app");
+    assert_eq!(journal[2].target, "pods app=web in team-a");
+}
+
+#[tokio::test]
+async fn port_forwards_need_the_action_and_belong_to_their_extension() {
+    let env = Env::at(&fake_cluster().await);
+    env.install(
+        "widgets",
+        perms(all_clusters(), &["team-a"], &["read"], false),
+    );
+    env.install(
+        "gadgets",
+        perms(all_clusters(), &["team-a"], &["read", "portForward"], false),
+    );
+    let start = json!({ "clusterId": "ctx-a", "namespace": "team-a", "kind": "Service", "name": "web", "port": 80 });
+    let err = env
+        .api
+        .call(
+            &env.host,
+            "widgets",
+            "portForward.start",
+            start.clone(),
+            None,
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied, "{}", err.message);
+    let bad = json!({ "clusterId": "ctx-a", "namespace": "team-a", "kind": "Service", "name": "web", "port": 0 });
+    let err = env
+        .api
+        .call(&env.host, "gadgets", "portForward.start", bad, None)
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid, "{}", err.message);
+    // A node shell pod is refused by name before anything is asked.
+    let shell = json!({ "clusterId": "ctx-a", "namespace": "kube-system", "kind": "Pod",
+                        "name": "sextant-node-shell-worker-abc12", "port": 22 });
+    let err = env
+        .api
+        .call(&env.host, "gadgets", "portForward.start", shell, None)
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied, "{}", err.message);
+    // Nothing of another extension (or nothing at all) can be listed or stopped.
+    let listed = env
+        .api
+        .call(&env.host, "gadgets", "portForward.list", json!({}), None)
+        .await
+        .unwrap();
+    assert_eq!(listed, json!({ "forwards": [] }));
+    let err = env
+        .api
+        .call(
+            &env.host,
+            "gadgets",
+            "portForward.stop",
+            json!({ "id": "pf-1" }),
+            None,
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::NotFound, "{}", err.message);
+}
+
+#[tokio::test]
+async fn a_status_patch_needs_its_kind_granted_and_is_the_only_subresource() {
+    let env = Env::at(&fake_cluster().await);
+    env.install(
+        "widgets",
+        perms(all_clusters(), &[], &["read", "modify"], false),
+    );
+    let pod = json!({ "kind": { "group": "", "version": "v1", "kind": "Pod" }, "namespace": "team-a", "name": "web" });
+    let patch = |subresource: &str| {
+        json!({ "clusterId": "ctx-a", "ref": pod, "patch": { "status": { "phase": "x" } }, "patchType": "merge",
+                "subresource": subresource })
+    };
+    let err = env
+        .api
+        .call(
+            &env.host,
+            "widgets",
+            "resources.patch",
+            patch("scale"),
+            None,
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid, "{}", err.message);
+    let err = env
+        .api
+        .call(
+            &env.host,
+            "widgets",
+            "resources.patch",
+            patch("status"),
+            None,
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied, "{}", err.message);
+    assert!(
+        err.message.contains("status of Pod team-a/web"),
+        "{}",
+        err.message
+    );
 }

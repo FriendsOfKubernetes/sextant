@@ -40,6 +40,7 @@ use sextant_core::error::with_timeout;
 use sextant_core::extensions::commands::{self, MAX_OUTPUT_BYTES};
 use sextant_core::extensions::metric_queries::{MetricQueryRange, run_metric_query};
 use sextant_core::extensions::{ExtensionPermissions, InstalledExtension, decide_extension};
+use sextant_core::portforward::{ForwardSource, ForwardTarget, PodFilter};
 use sextant_core::resources::{
     self, KindRef, PatchType, ResourceKind, WatchUpdate, inline_secrets,
 };
@@ -51,6 +52,7 @@ use tauri::ipc::JavaScriptChannelId;
 use tauri::{Runtime, State, Webview};
 use tokio::task::AbortHandle;
 
+use super::forwards::{ExtensionForwards, MAX_FORWARDS_PER_EXTENSION};
 use super::watch_hub::WatchHub;
 use super::{ExtensionHost, HostEvent, WeakExtensionHost};
 use crate::access_guard::audit::{AuditDecision, AuditEntry, AuditLog, clip};
@@ -87,7 +89,7 @@ pub const MAX_GET_MANY: usize = 50;
 pub const GET_MANY_AT_ONCE: usize = 4;
 
 /// The methods `extension_call` serves (`ui.*` and the context are the window's).
-pub const METHODS: [&str; 16] = [
+pub const METHODS: [&str; 20] = [
     "clusters.list",
     "kinds",
     "resources.list",
@@ -104,6 +106,10 @@ pub const METHODS: [&str; 16] = [
     "storage.remove",
     "backend.call",
     "exec.run",
+    "logs.open",
+    "portForward.start",
+    "portForward.list",
+    "portForward.stop",
 ];
 
 const NODE_SHELL_REFUSAL: &str = "Sextant does not let extensions change or delete node shell pods";
@@ -309,6 +315,7 @@ pub fn wire_host_events(
 ) {
     host.set_emitter(host_emitter(
         Arc::clone(&api.streams),
+        Arc::clone(&api.forwards),
         host.downgrade(),
         forward,
     ));
@@ -319,12 +326,15 @@ pub fn wire_host_events(
 /// event at once, on the emitting thread. Holds the host weakly (the host keeps its emitter).
 fn host_emitter(
     streams: Arc<ExtensionStreams>,
+    forwards: Arc<ExtensionForwards>,
     host: WeakExtensionHost,
     forward: impl Fn(HostEvent) + Send + Sync + 'static,
 ) -> Arc<dyn Fn(HostEvent) + Send + Sync> {
     Arc::new(move |event| {
         if let Some(host) = host.upgrade() {
             streams.stop_changed(&host);
+            // The installed list is held in memory: the look is cheap; stopping goes to the runtime.
+            forwards.stop_changed(&host);
         }
         forward(event);
     })
@@ -348,6 +358,8 @@ pub struct ExtensionApi {
     emitter: RwLock<Option<ApiEmitter>>,
     /// One `storage` change at a time.
     storage: Arc<Mutex<()>>,
+    /// The port forwards extensions started (ADR-0156).
+    pub forwards: Arc<ExtensionForwards>,
 }
 
 impl ExtensionApi {
@@ -380,6 +392,7 @@ impl ExtensionApi {
             watches: Arc::new(WatchHub::default()),
             emitter: RwLock::new(None),
             storage: Arc::new(Mutex::new(())),
+            forwards: Arc::new(ExtensionForwards::default()),
         }
     }
 
@@ -467,6 +480,10 @@ impl ExtensionApi {
             "secret.value" => call.secret_value(params).await,
             "metrics.query" => call.metric_query(params).await,
             "exec.run" => call.exec_run(params).await,
+            "logs.open" => call.logs_open(params).await,
+            "portForward.start" => call.port_forward_start(params).await,
+            "portForward.list" => call.port_forward_list(params).await,
+            "portForward.stop" => call.port_forward_stop(params).await,
             _ => Err(invalid(format!("unknown method {method}"))),
         };
         let record = call.record();
@@ -1363,9 +1380,31 @@ impl<'a> ExtCall<'a> {
             PatchType::Json => check_json_patch(&args.patch)?,
             PatchType::Merge => {}
         }
+        let status = match args.subresource.as_deref() {
+            None => false,
+            Some("status") => true,
+            Some(other) => {
+                return Err(invalid(format!(
+                    "subresource {other:?}: only \"status\" can be patched"
+                )));
+            }
+        };
         let cluster = self.open(&args.cluster_id).await?;
         let object = self.object(&cluster, &args.object).await?;
         refuse_named_node_shell(&object, None)?;
+        if status
+            && !self
+                .granted()
+                .await?
+                .may_patch_status(&pattern_of(&object.kind))
+        {
+            return Err(self.denied(format!(
+                "Sextant denied patching the status of {} for extension {}: the user did not grant it for this kind. {}",
+                describe(&object),
+                self.name(),
+                self.where_to_allow()
+            )));
+        }
         let mut needs = vec![requirement(&object, AccessAction::Modify)];
         // On a Secret, a JSON patch other than add/replace/remove may read its values: only with "Secret values".
         if is_core_secret(&object.kind)
@@ -1377,12 +1416,31 @@ impl<'a> ExtCall<'a> {
         let shown = serde_json::to_string_pretty(&args.patch).unwrap_or_default();
         let summary = CallSummary {
             tool: self.method.clone(),
-            target: describe(&object),
+            target: if status {
+                format!("status of {}", describe(&object))
+            } else {
+                describe(&object)
+            },
             details: Some(first_lines(&shown)),
         };
         self.check(&cluster, &needs, &summary).await?;
         self.refuse_live_node_shell(&cluster, &object, false)
             .await?;
+        if status {
+            return with_timeout(
+                CHANGE_TIMEOUT,
+                "patching the status",
+                resources::patch_custom_status(
+                    &self.api.clusters,
+                    &cluster.id,
+                    &object,
+                    &args.patch,
+                    args.patch_type,
+                ),
+            )
+            .await
+            .map(without_inline_secrets);
+        }
         with_timeout(
             CHANGE_TIMEOUT,
             "patching the object",
@@ -1451,6 +1509,156 @@ impl<'a> ExtCall<'a> {
         )
         .await?;
         Ok(Value::String(text))
+    }
+
+    /// Whether the window may open its logs tab for the extension (`ui.openLogs`, ADR-0156): Logs on the pod, or on
+    /// pods of the namespace for a label selector; nothing is read here, the tab reads as the user's own.
+    async fn logs_open(&self, params: Value) -> CoreResult<Value> {
+        let args: LogsOpenArgs = parse(&self.method, params)?;
+        let namespace = required("namespace", &args.namespace)?;
+        let target = match (
+            non_empty(args.pod.as_deref()),
+            non_empty(args.label_selector.as_deref()),
+        ) {
+            (Some(pod), None) => format!("Pod {namespace}/{pod}"),
+            (None, Some(selector)) => format!("pods {selector} in {namespace}"),
+            _ => return Err(invalid("give `pod` or `labelSelector`")),
+        };
+        let target = match non_empty(args.container.as_deref()) {
+            Some(container) => format!("{target} container {container}"),
+            None => target,
+        };
+        let cluster = self.target(&args.cluster_id).await?;
+        let need = (
+            Some(namespace.to_owned()),
+            KindPattern::new("", "Pod"),
+            AccessAction::Logs,
+        );
+        self.check(&cluster, &[need], &summary(target)).await?;
+        Ok(Value::Null)
+    }
+
+    /// Starts a forward to a Pod or Service (ADR-0156), listed on the port-forward page as the extension's: never to a
+    /// node shell or a pod on the node's network.
+    async fn port_forward_start(&self, params: Value) -> CoreResult<Value> {
+        let args: ForwardStartArgs = parse(&self.method, params)?;
+        if args.port == 0 {
+            return Err(invalid("port must be 1–65535"));
+        }
+        let namespace = required("namespace", &args.namespace)?.to_owned();
+        let name = required("name", &args.name)?.to_owned();
+        let (kind, target) = match args.kind {
+            ForwardKindArg::Pod => (
+                "Pod",
+                ForwardTarget::Pod {
+                    namespace: namespace.clone(),
+                    name: name.clone(),
+                },
+            ),
+            ForwardKindArg::Service => (
+                "Service",
+                ForwardTarget::Service {
+                    namespace: namespace.clone(),
+                    name: name.clone(),
+                },
+            ),
+        };
+        let cluster = self.open(&args.cluster_id).await?;
+        if args.kind == ForwardKindArg::Pod {
+            let pod = ObjectRef {
+                kind: KindRef {
+                    group: String::new(),
+                    version: "v1".into(),
+                    kind: "Pod".into(),
+                },
+                namespace: Some(namespace.clone()),
+                name: name.clone(),
+            };
+            refuse_named_node_shell(&pod, None)?;
+        }
+        let local = match args.local_port {
+            Some(port) if port != 0 => format!("local port {port}"),
+            _ => "a free local port".to_owned(),
+        };
+        let summary = CallSummary {
+            tool: self.method.clone(),
+            target: format!("{kind} {namespace}/{name}"),
+            details: Some(format!(
+                "{local} on 127.0.0.1 → port {} of the {}",
+                args.port,
+                kind.to_lowercase()
+            )),
+        };
+        let need = (
+            Some(namespace.clone()),
+            KindPattern::new("", kind),
+            AccessAction::PortForward,
+        );
+        self.check(&cluster, &[need], &summary).await?;
+        let forwards = &self.api.forwards;
+        if !forwards.room_for(&self.id) {
+            return Err(self.denied(format!(
+                "Extension {} already has {MAX_FORWARDS_PER_EXTENSION} port forwards; stop one first.",
+                self.name()
+            )));
+        }
+        let granted = self.granted().await?;
+        let info = with_timeout(
+            CHANGE_TIMEOUT,
+            "starting the port forward",
+            forwards.forwarder()?.start_with_source(
+                &self.api.clusters,
+                &cluster.id,
+                target,
+                args.port,
+                args.local_port.filter(|p| *p != 0),
+                PodFilter::NoNodeAccess,
+                ForwardSource::Extension,
+            ),
+        )
+        .await?;
+        forwards.add(info.id.clone(), &self.id, granted);
+        let mut out = to_value(&info)?;
+        out["address"] = json!(format!("127.0.0.1:{}", info.local_port));
+        Ok(out)
+    }
+
+    /// The extension's own running forwards (of one cluster when named).
+    async fn port_forward_list(&self, params: Value) -> CoreResult<Value> {
+        let args: ForwardListArgs = parse(&self.method, params)?;
+        self.granted().await?;
+        let cluster = match non_empty(args.cluster_id.as_deref()) {
+            Some(cluster) => Some(self.target(cluster).await?),
+            None => None,
+        };
+        lock(&self.record).target = "own port forwards".to_owned();
+        self.decide(AuditDecision::Allowed);
+        let forwards: Vec<Value> = self
+            .api
+            .forwards
+            .of(&self.id)
+            .into_iter()
+            .filter(|f| cluster.as_ref().is_none_or(|c| c.id == f.cluster))
+            .map(|f| to_value(&f))
+            .collect::<CoreResult<_>>()?;
+        Ok(json!({ "forwards": forwards }))
+    }
+
+    /// Stops one of the extension's own forwards.
+    async fn port_forward_stop(&self, params: Value) -> CoreResult<Value> {
+        let args: ForwardStopArgs = parse(&self.method, params)?;
+        let id = args.id.trim();
+        lock(&self.record).target = clip(&format!("port forward {id}"));
+        if !self.api.forwards.is_of(id, &self.id) {
+            return Err(CoreError::new(
+                ErrorCode::NotFound,
+                format!("no port forward {id} of this extension; portForward.list lists them"),
+            ));
+        }
+        self.decide(AuditDecision::Allowed);
+        self.api.forwards.forwarder()?.stop(id).await?;
+        self.api.forwards.forget(id);
+        Ok(Value::Null)
     }
 
     async fn secret_value(&self, params: Value) -> CoreResult<Value> {
@@ -1999,6 +2207,54 @@ struct PatchArgs {
     object: RefArg,
     patch: Value,
     patch_type: PatchType,
+    /// `status`: the status subresource of a kind granted in `statusPatches` (ADR-0155).
+    #[serde(default)]
+    subresource: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct LogsOpenArgs {
+    cluster_id: String,
+    namespace: String,
+    /// One pod, or the pods `label_selector` picks.
+    #[serde(default)]
+    pod: Option<String>,
+    #[serde(default)]
+    label_selector: Option<String>,
+    #[serde(default)]
+    container: Option<String>,
+}
+
+#[derive(Deserialize, Clone, Copy, PartialEq, Eq)]
+enum ForwardKindArg {
+    Pod,
+    Service,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ForwardStartArgs {
+    cluster_id: String,
+    namespace: String,
+    kind: ForwardKindArg,
+    name: String,
+    port: u16,
+    #[serde(default)]
+    local_port: Option<u16>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ForwardListArgs {
+    #[serde(default)]
+    cluster_id: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ForwardStopArgs {
+    id: String,
 }
 
 #[derive(Deserialize)]

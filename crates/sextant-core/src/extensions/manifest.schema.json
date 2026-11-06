@@ -199,6 +199,12 @@
             }
           ]
         },
+        "statusPatches": {
+          "description": "Kinds whose status subresource the extension may patch where the rules allow Modify (sextantApi 4): custom resources only.",
+          "type": "array",
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/kind" }
+        },
         "rules": {
           "type": "array",
           "maxItems": 100,
@@ -269,7 +275,7 @@
           "uniqueItems": true,
           "items": {
             "type": "string",
-            "enum": ["read", "modify", "delete", "logs", "secretValues"]
+            "enum": ["read", "modify", "delete", "logs", "secretValues", "portForward"]
           }
         },
         "confirm": {

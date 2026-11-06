@@ -72,7 +72,9 @@
     "user": "Manuell",
     "agent": "KI-Agent",
     "vcluster": "Intern · vcluster",
-    "argoCd": "Intern · Argo CD"
+    "argoCd": "Intern · Argo CD",
+    "extension": "Erweiterung",
+    "extensionInternal": "Intern · Erweiterung"
   },
   "selection": "Ausgewählt: {{value}}",
   "selectAll": "Sichtbare Benutzerweiterleitungen auswählen",

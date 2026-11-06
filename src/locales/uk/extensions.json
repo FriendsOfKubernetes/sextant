@@ -13,7 +13,12 @@
     "sectionBadge_one": "{{count}} об’єкт потребує уваги",
     "sectionBadge_few": "{{count}} об’єкти потребують уваги",
     "sectionBadge_many": "{{count}} об’єктів потребують уваги",
-    "sectionBadge_other": "{{count}} об’єкта потребують уваги"
+    "sectionBadge_other": "{{count}} об’єкта потребують уваги",
+    "openUrl": {
+      "title": "Відкрити посилання?",
+      "text": "Розширення {{extension}} хоче відкрити цю адресу в браузері:",
+      "open": "Відкрити"
+    }
   },
   "install": {
     "file": "Установити з файлу…",

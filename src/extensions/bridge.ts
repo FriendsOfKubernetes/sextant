@@ -25,6 +25,10 @@ export interface BridgeUi {
   navigate(params: unknown): void;
   notify(params: unknown): void;
   close(): void;
+  /** Opens Sextant's logs tab once the backend allowed it (ADR-0156). */
+  openLogs(params: unknown): Promise<void>;
+  /** Opens an address in the browser once the user said so (ADR-0156); `{opened}`. */
+  openUrl(params: unknown): Promise<{ opened: boolean }>;
 }
 
 export interface BridgeOptions {
@@ -147,6 +151,10 @@ export function createBridge(options: BridgeOptions): Bridge {
         return ui.notify(request.params);
       case "ui.close":
         return ui.close();
+      case "ui.openLogs":
+        return ui.openLogs(request.params);
+      case "ui.openUrl":
+        return ui.openUrl(request.params);
       case "resources.unwatch": {
         const stream = (request.params as { stream?: unknown } | null | undefined)?.stream;
         if (typeof stream !== "string" && typeof stream !== "number") {
@@ -192,7 +200,16 @@ export function createBridge(options: BridgeOptions): Bridge {
     const from = request.doc;
     if (LOCAL.has(request.method)) {
       try {
-        reply(from, request.id, local(doc, request));
+        const result = local(doc, request);
+        // `ui.openLogs` and `ui.openUrl` answer later; everything else at once.
+        if (result instanceof Promise) {
+          result.then(
+            (value) => reply(from, request.id, value ?? null),
+            (err: unknown) => fail(from, request.id, err),
+          );
+        } else {
+          reply(from, request.id, result);
+        }
       } catch (err) {
         fail(from, request.id, err);
       }

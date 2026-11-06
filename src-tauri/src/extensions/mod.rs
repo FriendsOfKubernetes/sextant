@@ -14,6 +14,7 @@ pub mod api;
 pub mod backend;
 pub mod catalog;
 pub mod dev;
+pub mod forwards;
 pub mod manage;
 pub mod problems;
 pub mod protocol;
@@ -473,9 +474,16 @@ pub(crate) mod test_support {
     }
 
     pub fn manifest(id: &str, version: &str, permissions: Value) -> String {
+        // Port forwards and status patches came with sextantApi 4.
+        let text = permissions.to_string();
+        let api = if text.contains("portForward") || text.contains("statusPatches") {
+            4
+        } else {
+            1
+        };
         json!({
             "id": id, "name": format!("Ext {id}"), "version": version, "description": "", "author": "Me",
-            "sextantApi": 1, "entry": "index.html", "permissions": permissions, "contributes": {}
+            "sextantApi": api, "entry": "index.html", "permissions": permissions, "contributes": {}
         })
         .to_string()
     }

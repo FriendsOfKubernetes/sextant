@@ -72,7 +72,9 @@
     "user": "Manual",
     "agent": "AI agent",
     "vcluster": "Internal · vcluster",
-    "argoCd": "Internal · Argo CD"
+    "argoCd": "Internal · Argo CD",
+    "extension": "Extension",
+    "extensionInternal": "Internal · extension"
   },
   "selection": "Selected: {{value}}",
   "selectAll": "Select visible user forwards",

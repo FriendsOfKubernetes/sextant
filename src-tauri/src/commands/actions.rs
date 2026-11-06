@@ -168,7 +168,9 @@ mod tests {
     fn neither_agents_nor_extensions_get_the_status_patch() {
         let tools = crate::mcp::server::all_tools().names();
         assert!(tools.len() > 10, "{tools:?}");
-        // `patch_resource` (agents) and `resources.patch` (extensions) patch the object, never its status.
+        // `patch_resource` (agents) patches the object, never its status; `resources.patch` (extensions) reaches the
+        // status only of the custom kinds the user granted (`subresource: "status"`, ADR-0155), never through a method
+        // of its own.
         assert!(
             !tools
                 .iter()

@@ -72,7 +72,9 @@
     "user": "手动",
     "agent": "AI 代理",
     "vcluster": "内部连接 · vcluster",
-    "argoCd": "内部连接 · Argo CD"
+    "argoCd": "内部连接 · Argo CD",
+    "extension": "扩展",
+    "extensionInternal": "内部连接 · 扩展"
   },
   "selection": "已选：{{value}}",
   "selectAll": "选择可见的用户转发",

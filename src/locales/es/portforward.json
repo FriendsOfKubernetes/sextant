@@ -72,7 +72,9 @@
     "user": "Manual",
     "agent": "Agente de IA",
     "vcluster": "Interno · vcluster",
-    "argoCd": "Interno · Argo CD"
+    "argoCd": "Interno · Argo CD",
+    "extension": "Extensión",
+    "extensionInternal": "Interno · extensión"
   },
   "selection": "Seleccionados: {{value}}",
   "selectAll": "Seleccionar reenvíos de usuario visibles",

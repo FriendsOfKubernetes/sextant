@@ -408,6 +408,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     contributions::check_actions(&manifest)?;
     contributions::check_columns(&manifest)?;
     contributions::check_kinds(&manifest)?;
+    contributions::check_permissions(&manifest)?;
     Ok(manifest)
 }
 
@@ -1260,7 +1261,7 @@ mod tests {
                     json!(["read", "exec"]),
                 ),
                 "permissions.rules[0].actions[1]",
-                "must be one of: `read`, `modify`, `delete`, `logs`, `secretValues`",
+                "must be one of: `read`, `modify`, `delete`, `logs`, `secretValues`, `portForward`",
             ),
             (
                 with(
@@ -1269,7 +1270,7 @@ mod tests {
                     json!(["portForward"]),
                 ),
                 "permissions.rules[0].actions[0]",
-                "must be one of",
+                "`portForward` needs sextantApi 4",
             ),
             (
                 with(full(), "/permissions/rules/0/actions", json!([])),

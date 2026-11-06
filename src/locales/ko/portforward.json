@@ -72,7 +72,9 @@
     "user": "수동",
     "agent": "AI 에이전트",
     "vcluster": "내부 연결 · vcluster",
-    "argoCd": "내부 연결 · Argo CD"
+    "argoCd": "내부 연결 · Argo CD",
+    "extension": "확장 프로그램",
+    "extensionInternal": "내부 연결 · 확장 프로그램"
   },
   "selection": "선택됨: {{value}}",
   "selectAll": "표시된 사용자 포워딩 선택",

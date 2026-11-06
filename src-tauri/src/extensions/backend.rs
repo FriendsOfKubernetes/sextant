@@ -678,7 +678,8 @@ impl Host for BackendHost {
                     .map_err(call_error)?;
                 return Ok(json!(value).to_string());
             }
-            if matches!(method, "resources.watch" | "backend.call") {
+            // `logs.open` is the window's check before it opens its logs tab for a frame.
+            if matches!(method, "resources.watch" | "backend.call" | "logs.open") {
                 return Err(CallError {
                     code: "invalid".to_owned(),
                     message: format!("{method} is not available to a backend"),

@@ -26,12 +26,12 @@ export function containersOf(pod: KubeObject): LogContainer[] {
   ];
 }
 
-/** Opens (or re-activates) the dock tab with the logs of `pod`. */
-export function openLogsTab(clusterId: ClusterId, pod: KubeObject): string {
+/** Opens (or re-activates) the dock tab with the logs of `pod`, of `wanted` when it is a container of the pod. */
+export function openLogsTab(clusterId: ClusterId, pod: KubeObject, wanted?: string): string {
   const ref = refOf(pod, POD_KIND);
   const annotations = pod.metadata?.annotations as Record<string, string> | undefined;
   const containers = containersOf(pod);
-  const fallback = annotations?.[DEFAULT_CONTAINER_ANNOTATION];
+  const fallback = wanted ?? annotations?.[DEFAULT_CONTAINER_ANNOTATION];
   const container = fallback && containers.some((c) => c.name === fallback) ? fallback : undefined;
   const payload: LogsPayload = { clusterId, pod: ref, containers, ...(container ? { container } : {}) };
   return useAppStore.getState().openDockTab({

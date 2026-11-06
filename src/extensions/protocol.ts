@@ -207,6 +207,9 @@ export const REMOTE_METHODS: readonly string[] = [
   "storage.remove",
   "backend.call",
   "exec.run",
+  "portForward.start",
+  "portForward.list",
+  "portForward.stop",
 ];
 
 /** Methods the window answers itself. */
@@ -217,6 +220,8 @@ export const LOCAL_METHODS: readonly string[] = [
   "ui.notify",
   "ui.close",
   "resources.unwatch",
+  "ui.openLogs",
+  "ui.openUrl",
 ];
 
 /** Longest `ui.notify` text shown. */

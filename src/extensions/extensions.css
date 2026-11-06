@@ -99,3 +99,9 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
+
+/* `ui.openUrl`: the whole address, never cut. */
+.ext-open-url {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}

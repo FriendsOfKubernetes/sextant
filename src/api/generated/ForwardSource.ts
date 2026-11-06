@@ -3,4 +3,4 @@
 /**
  * The feature that created a forward. Display metadata, independent of its pod access policy.
  */
-export type ForwardSource = "user" | "agent" | "vcluster" | "argoCd";
+export type ForwardSource = "user" | "agent" | "vcluster" | "argoCd" | "extension" | "extensionInternal";

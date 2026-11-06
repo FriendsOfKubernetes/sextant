@@ -10,7 +10,12 @@
     "detailsTabs": "详细信息视图",
     "notice": "{{extension}}：{{text}}",
     "dismiss": "关闭",
-    "sectionBadge_other": "{{count}} 个对象需要关注"
+    "sectionBadge_other": "{{count}} 个对象需要关注",
+    "openUrl": {
+      "title": "打开链接？",
+      "text": "扩展 {{extension}} 想在浏览器中打开此地址：",
+      "open": "打开"
+    }
   },
   "install": {
     "file": "从文件安装…",

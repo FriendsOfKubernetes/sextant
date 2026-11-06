@@ -13,7 +13,12 @@
     "sectionBadge_one": "{{count}} obiekt wymaga uwagi",
     "sectionBadge_few": "{{count}} obiekty wymagają uwagi",
     "sectionBadge_many": "{{count}} obiektów wymaga uwagi",
-    "sectionBadge_other": "{{count}} obiektu wymaga uwagi"
+    "sectionBadge_other": "{{count}} obiektu wymaga uwagi",
+    "openUrl": {
+      "title": "Otworzyć link?",
+      "text": "Rozszerzenie {{extension}} chce otworzyć ten adres w przeglądarce:",
+      "open": "Otwórz"
+    }
   },
   "install": {
     "file": "Zainstaluj z pliku…",

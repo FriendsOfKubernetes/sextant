@@ -10,7 +10,12 @@
     "detailsTabs": "詳細ビュー",
     "notice": "{{extension}}: {{text}}",
     "dismiss": "閉じる",
-    "sectionBadge_other": "対応が必要なオブジェクトが {{count}} 件あります"
+    "sectionBadge_other": "対応が必要なオブジェクトが {{count}} 件あります",
+    "openUrl": {
+      "title": "リンクを開きますか？",
+      "text": "拡張機能 {{extension}} がこのアドレスをブラウザーで開こうとしています:",
+      "open": "開く"
+    }
   },
   "install": {
     "file": "ファイルからインストール…",

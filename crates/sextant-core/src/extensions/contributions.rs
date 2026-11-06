@@ -8,7 +8,7 @@ use super::manifest::{
 };
 use super::problems::{check_object_condition, check_path};
 use super::schema::JsonPath;
-use crate::access::KindPattern;
+use crate::access::{AccessAction, KindPattern};
 
 /// The extension API version that brought computed columns, action conditions and `contributes.kinds`.
 pub const WINDOW_API: u32 = 4;
@@ -176,6 +176,61 @@ pub(crate) fn check_kinds(manifest: &ExtensionManifest) -> Result<(), ManifestEr
         }
     }
     Ok(())
+}
+
+/// The permissions `sextantApi` 4 brought: the `portForward` action (ADR-0156) and `statusPatches` of custom kinds
+/// only, each once (ADR-0155).
+pub(crate) fn check_permissions(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
+    let permissions = JsonPath::default().key("permissions");
+    if manifest.sextant_api < WINDOW_API {
+        for (i, rule) in manifest.permissions.rules.iter().enumerate() {
+            if let Some(j) = rule
+                .actions
+                .iter()
+                .position(|a| *a == AccessAction::PortForward)
+            {
+                return Err(at(
+                    &permissions.key("rules").index(i).key("actions").index(j),
+                    format!("`portForward` needs sextantApi {WINDOW_API} or later"),
+                ));
+            }
+        }
+    }
+    let list = permissions.key("statusPatches");
+    let kinds = &manifest.permissions.status_patches;
+    if kinds.is_empty() {
+        return Ok(());
+    }
+    if manifest.sextant_api < WINDOW_API {
+        return Err(at(&list, format!("needs sextantApi {WINDOW_API} or later")));
+    }
+    for (i, kind) in kinds.iter().enumerate() {
+        let here = list.index(i);
+        if !is_custom_group(&kind.group) || kind.kind.contains('*') {
+            return Err(at(
+                &here.key("group"),
+                "must be the API group of a custom resource: Kubernetes' own kinds' status is never patched",
+            ));
+        }
+        if let Some(first) = kinds[..i].iter().position(|other| same_kind(other, kind)) {
+            return Err(at(
+                &here.key("kind"),
+                format!("duplicate kind (also {})", list.index(first)),
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// A custom resource's API group: a DNS name with a dot, not one of Kubernetes' own (`*.k8s.io`, `*.kubernetes.io`).
+fn is_custom_group(group: &str) -> bool {
+    let group = group.to_ascii_lowercase();
+    group.contains('.')
+        && !group.contains('*')
+        && !group.trim().is_empty()
+        && group != "k8s.io"
+        && !group.ends_with(".k8s.io")
+        && !group.ends_with(".kubernetes.io")
 }
 
 /// Whether `section` is the extension's own: one of its pages or listed kinds with this section gives it a title.

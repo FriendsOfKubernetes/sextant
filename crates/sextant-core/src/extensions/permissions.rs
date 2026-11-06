@@ -3,8 +3,8 @@
 //! at install ([`InstalledExtension::granted`]), and every API call of the extension is decided by
 //! [`decide_extension`] against what was granted.
 //!
-//! An extension never gets Exec or Port forward: only [`EXTENSION_ACTIONS`]. Secret values are their own action, as for
-//! the agent.
+//! An extension never gets Exec: only [`EXTENSION_ACTIONS`] (Port forward since `sextantApi` 4, ADR-0156). Secret values
+//! are their own action, as for the agent. Status patches are granted per kind (`statusPatches`, ADR-0155).
 //!
 //! [`ExtensionManifest::permissions`]: super::ExtensionManifest::permissions
 //! [`InstalledExtension::granted`]: super::InstalledExtension::granted
@@ -18,12 +18,13 @@ use crate::access::{
 };
 
 /// The actions an extension may ask for. Exec and Port forward are not available to extensions.
-pub const EXTENSION_ACTIONS: [AccessAction; 5] = [
+pub const EXTENSION_ACTIONS: [AccessAction; 6] = [
     AccessAction::Read,
     AccessAction::Modify,
     AccessAction::Delete,
     AccessAction::Logs,
     AccessAction::SecretValues,
+    AccessAction::PortForward,
 ];
 
 /// Clusters an extension may reach, by kubeconfig context name.
@@ -61,6 +62,11 @@ pub struct ExtensionPermissions {
     pub clusters: ClusterScope,
     /// Rules as in AI agent access; `confirm` asks the user before the rule's Modify and Delete.
     pub rules: Vec<AccessRule>,
+    /// Kinds whose status subresource the extension may patch, where the rules allow Modify on them (ADR-0155);
+    /// `sextantApi` 4. Custom resources only.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[ts(as = "Option<Vec<KindPattern>>", optional)]
+    pub status_patches: Vec<KindPattern>,
 }
 
 impl ExtensionPermissions {
@@ -69,7 +75,13 @@ impl ExtensionPermissions {
         Self {
             clusters: ClusterScope::Only { names: Vec::new() },
             rules: Vec::new(),
+            status_patches: Vec::new(),
         }
+    }
+
+    /// Whether the extension may patch the status of `kind` (it still needs Modify on the object).
+    pub fn may_patch_status(&self, kind: &KindPattern) -> bool {
+        self.status_patches.iter().any(|k| same_kind(k, kind))
     }
 
     /// Whether everything `self` asks for is already given by `granted`: for every cluster, namespace, kind and action,
@@ -80,10 +92,15 @@ impl ExtensionPermissions {
     /// namespace. Permissions too large to compare that way (more than [`MAX_COMPARED_POINTS`]) count as wider, so the
     /// user is asked again.
     pub fn is_within(&self, granted: &ExtensionPermissions) -> bool {
+        let status_within = self
+            .status_patches
+            .iter()
+            .all(|k| granted.may_patch_status(k));
         if !self.grants_anything() {
-            return true;
+            return status_within;
         }
-        clusters_within(&self.clusters, &granted.clusters)
+        status_within
+            && clusters_within(&self.clusters, &granted.clusters)
             && rules_within(&self.rules, &granted.rules)
     }
 
@@ -221,10 +238,12 @@ fn same_kind(a: &KindPattern, b: &KindPattern) -> bool {
 
 /// Same shape as [`ExtensionPermissions`]; the strict reading behind its lenient `Deserialize`.
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct PermissionsRepr {
     clusters: ClusterScope,
     rules: Vec<AccessRule>,
+    #[serde(default)]
+    status_patches: Vec<KindPattern>,
 }
 
 impl<'de> Deserialize<'de> for ExtensionPermissions {
@@ -238,12 +257,19 @@ impl ExtensionPermissions {
     /// `value` read exactly: `None` for an unknown field, action or shape (where settings read [`Self::none`]). The
     /// catalog shows such permissions as unreadable rather than as asking for nothing.
     pub fn read_strict(value: &serde_json::Value) -> Option<Self> {
-        let Ok(PermissionsRepr { clusters, rules }) =
-            serde_json::from_value::<PermissionsRepr>(value.clone())
+        let Ok(PermissionsRepr {
+            clusters,
+            rules,
+            status_patches,
+        }) = serde_json::from_value::<PermissionsRepr>(value.clone())
         else {
             return None;
         };
-        let permissions = Self { clusters, rules };
+        let permissions = Self {
+            clusters,
+            rules,
+            status_patches,
+        };
         let only_extension_actions = permissions
             .rules
             .iter()
@@ -340,7 +366,11 @@ mod tests {
     }
 
     fn perms(clusters: ClusterScope, rules: Vec<AccessRule>) -> ExtensionPermissions {
-        ExtensionPermissions { clusters, rules }
+        ExtensionPermissions {
+            clusters,
+            rules,
+            status_patches: Vec::new(),
+        }
     }
 
     fn only_clusters(names: &[&str]) -> ClusterScope {
@@ -488,7 +518,7 @@ mod tests {
     }
 
     #[test]
-    fn exec_and_port_forward_are_denied_even_if_a_rule_names_them() {
+    fn exec_is_denied_even_if_a_rule_names_it_and_port_forward_is_allowed_since_api_4() {
         let p = perms(
             ClusterScope::All,
             vec![rule(
@@ -504,7 +534,7 @@ mod tests {
         );
         assert_eq!(
             decide_extension(&p, "c", Some("a"), &pod(), PortForward),
-            Decision::Denied
+            Decision::Allowed { confirm: false }
         );
         assert_eq!(
             decide_extension(&p, "c", Some("a"), &pod(), Logs),

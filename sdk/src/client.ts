@@ -8,10 +8,14 @@
 import type {
   ApplyParams,
   CallOptions,
+  ClusterId,
   ClusterSummary,
   DeleteParams,
   ExecParams,
   ExecResult,
+  ForwardInfo,
+  ForwardResult,
+  ForwardStartParams,
   GetManyParams,
   GetManyResult,
   GetParams,
@@ -25,6 +29,7 @@ import type {
   MetricAnswer,
   MetricQueryParams,
   ObjectRef,
+  OpenLogsParams,
   PatchParams,
   RefInput,
   ResourceKind,
@@ -121,6 +126,17 @@ export interface Sextant {
    */
   exec: { run(params: ExecParams, options?: CallOptions): Promise<ExecResult> };
   /**
+   * Port forwards to a Pod or Service (sextantApi 4 with the `portForward` permission, since Sextant 0.30): listed on
+   * Sextant's port-forward page as the extension's, never to a node shell or a pod on the node's network; at most 8 at
+   * once; they end when the extension is disabled, removed or granted anything else.
+   */
+  portForward: {
+    start(params: ForwardStartParams, options?: CallOptions): Promise<ForwardResult>;
+    /** The extension's own forwards still running (of one cluster when `clusterId` is given). */
+    list(params?: { clusterId?: ClusterId }, options?: CallOptions): Promise<ForwardInfo[]>;
+    stop(id: string, options?: CallOptions): Promise<void>;
+  };
+  /**
    * The extension's own backend (ADR-0131), when its manifest declares one: `handle(method, params)` of its
    * WebAssembly component, with the answer it returns. A call is limited to 10 s and 1 MB each way.
    */
@@ -142,6 +158,16 @@ export interface Sextant {
     notify(text: string, options?: CallOptions): Promise<void>;
     /** Closes the action's window or the dock tab. */
     close(options?: CallOptions): Promise<void>;
+    /**
+     * Opens Sextant's logs tab of a pod (one container), or the merged logs of the pods a label selector picks, when
+     * the extension may read their logs (since Sextant 0.30).
+     */
+    openLogs(params: OpenLogsParams, options?: CallOptions): Promise<void>;
+    /**
+     * Asks the user to open an http(s) address in the browser; `true` when they did (since Sextant 0.30). Sextant shows
+     * the whole address and asks every time; one question per extension at a time.
+     */
+    openUrl(url: string, options?: CallOptions): Promise<boolean>;
   };
   /** Any method, by name. */
   call<M extends keyof Methods>(method: M, params: Methods[M]["params"], options?: CallOptions): Promise<Methods[M]["result"]>;
@@ -160,7 +186,15 @@ const DEFAULT_TIMEOUT = 60_000;
 const DEFAULT_CHANGE_TIMEOUT = 180_000;
 /** Views whose frame Sextant sizes by the content (`resize`); a details tab fills the panel and ignores it. */
 const AUTO_HEIGHT_VIEWS: ReadonlySet<string> = new Set(["details", "settings"]);
-const CHANGES: ReadonlySet<string> = new Set(["resources.apply", "resources.patch", "resources.delete"]);
+const CHANGES: ReadonlySet<string> = new Set([
+  "resources.apply",
+  "resources.patch",
+  "resources.delete",
+  "portForward.start",
+  "ui.openLogs",
+]);
+/** `ui.openUrl` waits for the user's answer to Sextant's own dialog, which has no time limit. */
+const CONFIRM_TIMEOUT = 600_000;
 /** `ready` is said again after these delays (ms) until a context comes; then every 2 s. */
 const READY_RETRIES = [100, 250, 500, 1000];
 
@@ -514,6 +548,12 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
     secret: { value: (params, o) => onCluster("secret.value", params, o) },
     metrics: { query: (params, o) => onCluster("metrics.query", params, o) },
     exec: { run: (params, o) => onCluster("exec.run", params, o) },
+    portForward: {
+      start: (params, o) => onCluster("portForward.start", params, o),
+      list: (params, o) =>
+        send<{ forwards: ForwardInfo[] }>("portForward.list", params ?? {}, o).then((r) => r.forwards),
+      stop: (id, o) => send<unknown>("portForward.stop", { id }, o).then(() => undefined),
+    },
     backend: {
       call: (method, params, o) => send("backend.call", params === undefined ? { method } : { method, params }, o),
     },
@@ -526,6 +566,10 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       openDetails: (ref, o) => send<unknown>("ui.openDetails", ref, o).then(() => undefined),
       navigate: (page, o) => send<unknown>("ui.navigate", { page }, o).then(() => undefined),
       notify: (text, o) => send<unknown>("ui.notify", { text }, o).then(() => undefined),
+      // The user answers these: no timeout of the default length.
+      openLogs: (params, o) => send<unknown>("ui.openLogs", params, o).then(() => undefined),
+      openUrl: (url, o) =>
+        send<{ opened: boolean }>("ui.openUrl", { url }, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.opened),
       close: (o) => send<unknown>("ui.close", undefined, o).then(() => undefined),
     },
     call: (method, params, o) => send(method, params, o),

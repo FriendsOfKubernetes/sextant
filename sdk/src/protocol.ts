@@ -76,6 +76,9 @@ export const REMOTE_METHODS = [
   "storage.remove",
   "backend.call",
   "exec.run",
+  "portForward.start",
+  "portForward.list",
+  "portForward.stop",
 ] as const;
 
 /** Methods the window answers itself. */
@@ -86,6 +89,8 @@ export const LOCAL_METHODS = [
   "ui.notify",
   "ui.close",
   "resources.unwatch",
+  "ui.openLogs",
+  "ui.openUrl",
 ] as const;
 
 export type MethodName = (typeof REMOTE_METHODS)[number] | (typeof LOCAL_METHODS)[number];

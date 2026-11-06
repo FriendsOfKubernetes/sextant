@@ -1,7 +1,10 @@
 // What the window does for a frame's `ui.*` calls (src/extensions/protocol.ts). A malformed call is refused with
 // `invalid`, a page that does not exist with `notFound`.
-import { ApiError, type ObjectRef } from "../api";
+import { api, ApiError, type ClusterId, type ObjectRef } from "../api";
 import { useAppStore } from "../app/store";
+import { openLogsTab, POD_KIND } from "../features/logs/openLogsTab";
+import { openSelectorLogsTab } from "../features/logs/multi/open";
+import { askOpenUrl } from "./openUrl";
 import { getPage } from "../layout/pages";
 import { findResourceDef, parseViewId } from "../resources/registry";
 import type { BridgeUi } from "./bridge";
@@ -14,7 +17,12 @@ export interface HostUiOptions {
   extensionName: () => string;
   /** `ui.close`: closes the frame's window or dock tab; nothing for frames that cannot be closed. */
   close?: () => void;
+  /** The cluster of the frame's context; the active cluster when it has none. */
+  clusterId?: () => ClusterId | null;
 }
+
+/** Longest label selector `ui.openLogs` takes (as a problem rule's source). */
+const MAX_SELECTOR_CHARS = 1000;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -46,6 +54,38 @@ export function hostUi(options: HostUiOptions): BridgeUi {
     },
     close() {
       options.close?.();
+    },
+    async openLogs(params) {
+      const bad = () =>
+        new ApiError("invalid", "ui.openLogs needs {namespace, pod, container?} or {namespace, labelSelector}");
+      if (!isRecord(params)) throw bad();
+      const { namespace, pod, container, labelSelector } = params;
+      if (typeof namespace !== "string" || namespace === "") throw bad();
+      const named = typeof pod === "string" && pod !== "";
+      const selected = typeof labelSelector === "string" && labelSelector.trim() !== "";
+      if (named === selected) throw bad();
+      if (selected && (labelSelector as string).length > MAX_SELECTOR_CHARS) throw bad();
+      if (container !== undefined && (typeof container !== "string" || container === "")) throw bad();
+      const clusterId = options.clusterId?.() ?? useAppStore.getState().activeClusterId;
+      if (!clusterId) throw new ApiError("invalid", "no cluster is open");
+      // Rust decides and journals it as the extension's; the tab then reads as the user's own does.
+      await api.extensions.call(options.extensionId, "logs.open", {
+        clusterId,
+        namespace,
+        ...(named ? { pod } : { labelSelector: (labelSelector as string).trim() }),
+        ...(typeof container === "string" ? { container } : {}),
+      });
+      if (selected) {
+        const selector = (labelSelector as string).trim();
+        openSelectorLogsTab(clusterId, namespace, selector, selector);
+        return;
+      }
+      const object = await api.resources.get(clusterId, { kind: POD_KIND, namespace, name: pod as string });
+      openLogsTab(clusterId, object, typeof container === "string" ? container : undefined);
+    },
+    async openUrl(params) {
+      const url = typeof params === "string" ? params : isRecord(params) ? params.url : undefined;
+      return { opened: await askOpenUrl(options.extensionId, options.extensionName(), url) };
     },
   };
 }

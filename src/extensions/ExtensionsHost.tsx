@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "../components";
 import { syncExtensions } from "./contributions";
 import { dismissNotice, useNotices } from "./notices";
+import { OpenUrlHost } from "./openUrl";
 import { useExtensions } from "./store";
 import "./extensions.css";
 
@@ -13,7 +14,12 @@ export function ExtensionsHost() {
   useEffect(() => syncExtensions(extensions), [extensions]);
   // Leaving (tests, a new window shell) takes every contribution along.
   useEffect(() => () => syncExtensions([]), []);
-  return <ExtensionNotices />;
+  return (
+    <>
+      <ExtensionNotices />
+      <OpenUrlHost />
+    </>
+  );
 }
 
 function ExtensionNotices() {

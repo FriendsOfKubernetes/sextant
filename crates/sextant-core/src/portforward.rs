@@ -64,6 +64,10 @@ pub enum ForwardSource {
     Agent,
     Vcluster,
     ArgoCd,
+    /// Started by an extension's `portForward.start` (ADR-0156): the user's to stop like their own.
+    Extension,
+    /// Opened by Sextant for an extension's service requests (ADR-0158): internal, never stopped in bulk.
+    ExtensionInternal,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

@@ -12,7 +12,12 @@
     "dismiss": "Ignora",
     "sectionBadge_one": "{{count}} oggetto richiede attenzione",
     "sectionBadge_many": "{{count}} di oggetti richiedono attenzione",
-    "sectionBadge_other": "{{count}} oggetti richiedono attenzione"
+    "sectionBadge_other": "{{count}} oggetti richiedono attenzione",
+    "openUrl": {
+      "title": "Aprire il link?",
+      "text": "L’estensione {{extension}} vuole aprire questo indirizzo nel browser:",
+      "open": "Apri"
+    }
   },
   "install": {
     "file": "Installa da file…",

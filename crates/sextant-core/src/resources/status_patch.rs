@@ -1,7 +1,8 @@
 //! A patch of the `status` subresource, for the few kinds whose tools change their objects there: Argo Rollouts'
 //! `kubectl argo rollouts promote|abort|retry` set `status.pauseConditions`, `status.currentStepIndex`,
-//! `status.promoteFull` and `status.abort` through it (ADR-0097). Window only: the MCP server and the extension API do
-//! not offer it.
+//! `status.promoteFull` and `status.abort` through it (ADR-0097). The window patches [`STATUS_PATCH_KINDS`]; an
+//! extension the custom kinds the user granted it (`statusPatches`, ADR-0155) through [`patch_custom_status`]. The MCP
+//! server does not offer it.
 
 use serde_json::Value;
 
@@ -34,6 +35,42 @@ pub async fn patch_status(
             format!("the status of {} cannot be patched here", r.kind.kind),
         ));
     }
+    send_status_patch(mgr, cluster, r, patch, patch_type).await
+}
+
+/// Patches the `status` subresource of a custom resource (an API group with a dot that is not Kubernetes' own), for an
+/// extension granted that kind (ADR-0155); anything else is `invalid` before a request is sent. Sent once.
+pub async fn patch_custom_status(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    r: &ObjectRef,
+    patch: &Value,
+    patch_type: PatchType,
+) -> CoreResult<Value> {
+    let group = r.kind.group.to_ascii_lowercase();
+    let custom = group.contains('.')
+        && group != "k8s.io"
+        && !group.ends_with(".k8s.io")
+        && !group.ends_with(".kubernetes.io");
+    if !custom {
+        return Err(CoreError::new(
+            ErrorCode::Invalid,
+            format!(
+                "the status of {} cannot be patched: not a custom resource",
+                r.kind.kind
+            ),
+        ));
+    }
+    send_status_patch(mgr, cluster, r, patch, patch_type).await
+}
+
+async fn send_status_patch(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    r: &ObjectRef,
+    patch: &Value,
+    patch_type: PatchType,
+) -> CoreResult<Value> {
     let body = patch_body(patch, patch_type)?;
     let (api, kind) = object_api(mgr, cluster, r).await?;
     let saved = api.patch_status(&r.name, &patch_params(), &body).await?;

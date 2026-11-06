@@ -10,7 +10,12 @@
     "detailsTabs": "세부 정보 보기",
     "notice": "{{extension}}: {{text}}",
     "dismiss": "닫기",
-    "sectionBadge_other": "주의가 필요한 개체 {{count}}개"
+    "sectionBadge_other": "주의가 필요한 개체 {{count}}개",
+    "openUrl": {
+      "title": "링크를 열까요?",
+      "text": "확장 프로그램 {{extension}}이(가) 브라우저에서 이 주소를 열려고 합니다:",
+      "open": "열기"
+    }
   },
   "install": {
     "file": "파일에서 설치…",

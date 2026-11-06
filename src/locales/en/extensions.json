@@ -11,7 +11,12 @@
     "notice": "{{extension}}: {{text}}",
     "dismiss": "Dismiss",
     "sectionBadge_one": "{{count}} object needs attention",
-    "sectionBadge_other": "{{count}} objects need attention"
+    "sectionBadge_other": "{{count}} objects need attention",
+    "openUrl": {
+      "title": "Open a link?",
+      "text": "Extension {{extension}} wants to open this address in your browser:",
+      "open": "Open"
+    }
   },
   "install": {
     "file": "Install from file…",

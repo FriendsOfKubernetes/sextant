@@ -12,7 +12,12 @@
     "dismiss": "Dispensar",
     "sectionBadge_one": "{{count}} objeto precisa de atenção",
     "sectionBadge_many": "{{count}} de objetos precisam de atenção",
-    "sectionBadge_other": "{{count}} objetos precisam de atenção"
+    "sectionBadge_other": "{{count}} objetos precisam de atenção",
+    "openUrl": {
+      "title": "Abrir o link?",
+      "text": "A extensão {{extension}} quer abrir este endereço no seu navegador:",
+      "open": "Abrir"
+    }
   },
   "install": {
     "file": "Instalar de um arquivo…",

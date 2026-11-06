@@ -1027,6 +1027,35 @@ function checkTranslations(manifest) {
 const WINDOW_API = 4;
 const MAX_TONE_VALUE_CHARS = 100;
 
+/** A custom resource's API group (`is_custom_group`): with a dot, not Kubernetes' own. */
+function isCustomGroup(group) {
+  const g = group.toLowerCase();
+  return g.includes(".") && !g.includes("*") && g.trim() !== "" && g !== "k8s.io" && !g.endsWith(".k8s.io") && !g.endsWith(".kubernetes.io");
+}
+
+/** `portForward` and `statusPatches` (`check_permissions`). */
+function checkPermissions(manifest) {
+  const permissions = manifest.permissions ?? {};
+  if (manifest.sextantApi < WINDOW_API) {
+    (permissions.rules ?? []).forEach((rule, i) => {
+      const j = (rule.actions ?? []).indexOf("portForward");
+      if (j >= 0) fail(["permissions", "rules", i, "actions", j], `\`portForward\` needs sextantApi ${WINDOW_API} or later`);
+    });
+  }
+  const kinds = permissions.statusPatches ?? [];
+  const list = ["permissions", "statusPatches"];
+  if (kinds.length === 0) return;
+  if (manifest.sextantApi < WINDOW_API) fail(list, `needs sextantApi ${WINDOW_API} or later`);
+  kinds.forEach((kind, i) => {
+    const here = [...list, i];
+    if (!isCustomGroup(kind.group) || kind.kind.includes("*")) {
+      fail([...here, "group"], "must be the API group of a custom resource: Kubernetes' own kinds' status is never patched");
+    }
+    const first = kinds.slice(0, i).findIndex((other) => sameKind(other, kind));
+    if (first >= 0) fail([...here, "kind"], `duplicate kind (also ${pathText([...list, first])})`);
+  });
+}
+
 /** Whether `section` is the extension's own: a page or listed kind with this section gives it a title (`own_section`). */
 function ownSection(manifest, section) {
   const c = manifest.contributes ?? {};
@@ -1121,6 +1150,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     checkActions(value);
     checkColumns(value);
     checkKinds(value);
+    checkPermissions(value);
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };

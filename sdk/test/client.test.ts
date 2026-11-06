@@ -195,7 +195,26 @@ describe("calls", () => {
       [() => sextant.ui.notify("Scaled"), "ui.notify", { text: "Scaled" }],
       [() => sextant.ui.close(), "ui.close", undefined],
       [() => sextant.refreshContext(), "context.get", undefined],
+      [
+        () => sextant.resources.patch({ ref, patch: { status: { abort: true } }, patchType: "merge", subresource: "status" }),
+        "resources.patch",
+        { clusterId: "c1", ref, patch: { status: { abort: true } }, patchType: "merge", subresource: "status" },
+      ],
+      [
+        () => sextant.portForward.start({ namespace: "argocd", kind: "Service", name: "argocd-server", port: 443 }),
+        "portForward.start",
+        { clusterId: "c1", namespace: "argocd", kind: "Service", name: "argocd-server", port: 443 },
+      ],
+      [() => sextant.portForward.list(), "portForward.list", {}],
+      [() => sextant.portForward.stop("pf-1"), "portForward.stop", { id: "pf-1" }],
+      [() => sextant.ui.openLogs({ namespace: "ns", pod: "p", container: "c" }), "ui.openLogs", { namespace: "ns", pod: "p", container: "c" }],
+      [() => sextant.ui.openUrl("https://localhost:8443/"), "ui.openUrl", { url: "https://localhost:8443/" }],
     ];
+    const answers: Record<string, unknown> = {
+      "context.get": CONTEXT,
+      "portForward.list": { forwards: [] },
+      "ui.openUrl": { opened: true },
+    };
     for (const [call, method, params] of calls) {
       const count = requests().length;
       const pending = call();
@@ -203,7 +222,7 @@ describe("calls", () => {
       expect(request.method).toBe(method);
       expect(request.params).toEqual(params);
       if (params === undefined) expect("params" in request).toBe(false);
-      answer(request.id, method === "context.get" ? CONTEXT : null);
+      answer(request.id, answers[method] ?? null);
       await pending;
     }
   });

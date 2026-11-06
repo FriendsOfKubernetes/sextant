@@ -24,7 +24,7 @@ export const MANIFEST_FILE = "sextant-extension.json";
 export const SEXTANT_API = 4;
 
 /** What an extension may be allowed to do with objects (a subset of the agent's actions). */
-export type ExtensionAction = "read" | "modify" | "delete" | "logs" | "secretValues";
+export type ExtensionAction = "read" | "modify" | "delete" | "logs" | "secretValues" | "portForward";
 
 /** The actions, in the order Sextant lists them. */
 export const EXTENSION_ACTIONS = [
@@ -33,6 +33,7 @@ export const EXTENSION_ACTIONS = [
   "delete",
   "logs",
   "secretValues",
+  "portForward",
 ] as const satisfies readonly ExtensionAction[];
 
 /** Clusters by kubeconfig context name. */
@@ -52,6 +53,11 @@ export interface ManifestRule {
 
 export interface ManifestPermissions {
   clusters: ManifestClusterScope;
+  /**
+   * Custom kinds whose status subresource the extension may patch (`resources.patch` with `subresource: "status"`)
+   * where the rules allow Modify; sextantApi 4.
+   */
+  statusPatches?: KindPattern[];
   rules: ManifestRule[];
 }
 
@@ -301,6 +307,9 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
     permissions: {
       clusters: file.permissions.clusters,
       rules: file.permissions.rules.map((rule) => ({ ...rule, confirm: rule.confirm ?? true })),
+      ...(file.permissions.statusPatches !== undefined && file.permissions.statusPatches.length > 0
+        ? { statusPatches: file.permissions.statusPatches }
+        : {}),
     },
     contributes: {
       pages: c.pages ?? [],
@@ -308,10 +317,20 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       actions: (c.actions ?? []).map((a) => ({ ...a, danger: a.danger ?? false, multiple: a.multiple ?? false })),
       columns: c.columns ?? [],
       dockActions: c.dockActions ?? [],
-      problems: (c.problems ?? []).map((p) => ({ ...p, graceMinutes: p.graceMinutes ?? 0, notify: p.notify ?? true, toldThroughOwner: p.toldThroughOwner ?? false })),
+      problems: (c.problems ?? []).map((p) => {
+        const { source, ...rule } = p;
+        return {
+          ...rule,
+          graceMinutes: p.graceMinutes ?? 0,
+          notify: p.notify ?? true,
+          toldThroughOwner: p.toldThroughOwner ?? false,
+          ...(source !== undefined ? { source: { ...source, metadataOnly: source.metadataOnly ?? false } } : {}),
+        };
+      }),
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
       sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [] })),
       commands: (c.commands ?? []).map((command) => ({ ...command, params: command.params ?? [], changes: command.changes ?? false })),
+      kinds: c.kinds ?? [],
     },
   };
   if (file.icon !== undefined) manifest.icon = file.icon;

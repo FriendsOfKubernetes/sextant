@@ -11,7 +11,12 @@
     "notice": "{{extension}}: {{text}}",
     "dismiss": "Kapat",
     "sectionBadge_one": "{{count}} nesne ilgi gerektiriyor",
-    "sectionBadge_other": "{{count}} nesne ilgi gerektiriyor"
+    "sectionBadge_other": "{{count}} nesne ilgi gerektiriyor",
+    "openUrl": {
+      "title": "Bağlantı açılsın mı?",
+      "text": "{{extension}} uzantısı bu adresi tarayıcınızda açmak istiyor:",
+      "open": "Aç"
+    }
   },
   "install": {
     "file": "Dosyadan yükle…",

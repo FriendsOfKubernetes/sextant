@@ -88,6 +88,7 @@ impl AppState {
             Arc::clone(&mcp.context().confirmations),
             data_dir,
         ));
+        ext_api.forwards.set_forwarder(Arc::clone(&forwarder));
         Self {
             clusters,
             registry,

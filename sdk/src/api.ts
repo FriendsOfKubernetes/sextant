@@ -2,6 +2,7 @@
 // strictly: an unknown field is `invalid`). `clusterId` may be left out: it is the cluster of the frame's context.
 import type { ClusterId } from "./generated/ClusterId";
 import type { ConnectionState } from "./generated/ConnectionState";
+import type { ForwardInfo } from "./generated/ForwardInfo";
 import type { KindRef } from "./generated/KindRef";
 import type { MetricAnswer } from "./generated/MetricAnswer";
 import type { MetricQueryRange } from "./generated/MetricQueryRange";
@@ -15,6 +16,7 @@ import type { HostContext } from "./protocol";
 export type {
   ClusterId,
   ConnectionState,
+  ForwardInfo,
   JsonValue,
   KindRef,
   MetricAnswer,
@@ -150,7 +152,31 @@ export interface PatchParams extends OnCluster {
   /** A merge patch (an object) or a JSON patch (a list of operations). */
   patch: JsonValue;
   patchType: PatchType;
+  /**
+   * `status`: the status subresource of a custom kind the manifest lists in `permissions.statusPatches` (sextantApi 4,
+   * since Sextant 0.30).
+   */
+  subresource?: "status";
 }
+
+/** A port forward to a Pod or Service (`portForward.start`, sextantApi 4 with the `portForward` permission). */
+export interface ForwardStartParams extends OnCluster {
+  namespace: string;
+  kind: "Pod" | "Service";
+  name: string;
+  /** The port of the pod or service. */
+  port: number;
+  /** A local port of 127.0.0.1; a free one when left out. */
+  localPort?: number;
+}
+
+/** A running forward of the extension, with `address` (`127.0.0.1:<local port>`) when just started. */
+export type ForwardResult = ForwardInfo & { address?: string };
+
+/** What `ui.openLogs` opens in Sextant's logs tab: one pod (and container), or the pods a label selector picks. */
+export type OpenLogsParams =
+  | { namespace: string; pod: string; container?: string }
+  | { namespace: string; labelSelector: string };
 
 export interface DeleteParams extends OnCluster {
   ref: RefInput;
@@ -188,6 +214,8 @@ export interface Methods {
   "ui.navigate": { params: { page: string }; result: null };
   "ui.notify": { params: { text: string }; result: null };
   "ui.close": { params: undefined; result: null };
+  "ui.openLogs": { params: OpenLogsParams; result: null };
+  "ui.openUrl": { params: { url: string }; result: { opened: boolean } };
   "resources.unwatch": { params: { stream: string | number }; result: null };
   "clusters.list": { params: undefined; result: ClusterSummary[] };
   kinds: { params: { clusterId: ClusterId }; result: ResourceKind[] };
@@ -206,6 +234,9 @@ export interface Methods {
   "storage.set": { params: { key: string; value: JsonValue }; result: null };
   "storage.remove": { params: { key: string }; result: null };
   "backend.call": { params: { method: string; params?: JsonValue }; result: JsonValue };
+  "portForward.start": { params: ForwardStartParams & { clusterId: ClusterId }; result: ForwardResult };
+  "portForward.list": { params: { clusterId?: ClusterId }; result: { forwards: ForwardInfo[] } };
+  "portForward.stop": { params: { id: string }; result: null };
 }
 
 /** Options of one call. */

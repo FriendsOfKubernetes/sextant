@@ -191,6 +191,7 @@ function FrameView({
       ui: hostUi({
         extensionId: info.id,
         extensionName: () => latest.current.name,
+        clusterId: () => latest.current.context.clusterId,
         close: () => latest.current.onClose?.(),
       }),
       onResize: (next) => {

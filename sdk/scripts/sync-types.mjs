@@ -25,6 +25,7 @@ export const ROOTS = [
   "CoreError",
   "MetricAnswer",
   "MetricQueryRange",
+  "ForwardInfo",
 ];
 
 /** Updates only the window's own watches get (`WatchOptions`, #157): an extension never receives them. */

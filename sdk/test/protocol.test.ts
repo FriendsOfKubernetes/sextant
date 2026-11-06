@@ -73,7 +73,7 @@ describe("protocol", () => {
 
 describe("manifest types", () => {
   it("are Sextant's, with the defaults Sextant fills left optional", () => {
-    expectTypeOf<ExtensionAction>().toEqualTypeOf<Exclude<AccessAction, "exec" | "portForward">>();
+    expectTypeOf<ExtensionAction>().toEqualTypeOf<Exclude<AccessAction, "exec">>();
     expectTypeOf<ManifestClusterScope>().toEqualTypeOf<ClusterScope>();
     expectTypeOf<ManifestNamespaceScope>().toEqualTypeOf<NamespaceScope>();
     expectTypeOf<ManifestKindScope>().toEqualTypeOf<KindScope>();
