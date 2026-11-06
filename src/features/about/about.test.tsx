@@ -218,3 +218,22 @@ describe("Copy version info", () => {
     expect(clipboard[0]).toBe(["Sextant 0.6.1 (not installed from a release package)", "OS: unknown"].join("\n"));
   });
 });
+
+describe("Open logs folder", () => {
+  it("asks the backend to open the folder it knows, naming no path", async () => {
+    setup({}, { app: { version: "0.29.2" } });
+    render(<AboutHost />);
+    const dialog = await openFromTray();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Open logs folder" }));
+    await waitFor(() => expect(backend.calls.some((c) => c.cmd === "about_open_logs_folder")).toBe(true));
+    expect(backend.calls.find((c) => c.cmd === "about_open_logs_folder")?.args ?? {}).toEqual({});
+  });
+
+  it("says so when the folder cannot be opened", async () => {
+    setup({ about_open_logs_folder: () => Promise.reject({ code: "notFound", message: "no log" }) }, { app: { version: "0.29.2" } });
+    render(<AboutHost />);
+    const dialog = await openFromTray();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Open logs folder" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Could not open the logs folder");
+  });
+});

@@ -147,6 +147,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         commands::tray::tray_set_texts,
         commands::tray::window_close,
         commands::about::about_info,
+        commands::about::about_open_logs_folder,
         commands::fonts::system_fonts,
         commands::gitops_install::gitops_install_versions,
         commands::gitops_install::gitops_install_prepare,
@@ -431,8 +432,17 @@ fn reveal_on_notification_click<R: Runtime>(app: &tauri::AppHandle<R>) {
     });
 }
 
+/// The folder of Sextant's log in the app data directory (`sextant_core::applog`).
+pub const LOGS_DIR: &str = "logs";
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // First of all, so that a panic of the start is written too (#343, ADR-0151). The directory is Tauri's
+    // `app_data_dir`, found without Tauri (`mcp::paths`, kept equal by a test).
+    if let Err(err) = sextant_core::applog::init(&mcp::paths::data_dir().join(LOGS_DIR)) {
+        eprintln!("Sextant: the log cannot be written: {err}");
+    }
+    sextant_core::applog::install_panic_hook();
     let context = tauri::generate_context!();
     let builder = with_single_instance(tauri::Builder::default());
     let builder = extensions::protocol::register(with_commands(builder))
@@ -448,6 +458,13 @@ pub fn run() {
     let builder = builder.on_menu_event(app_menu::on_menu_event);
     with_updates(builder, context.config())
         .setup(|app| {
+            // Here, after the single-instance check: a second launch that only reveals the first is not a run.
+            sextant_core::applog!(
+                "Sextant {} started ({} {})",
+                env!("CARGO_PKG_VERSION"),
+                std::env::consts::OS,
+                std::env::consts::ARCH
+            );
             // Temporary kubeconfigs of a Sextant that crashed or was killed: no session owns them now.
             sextant_core::kubeconfig::remove_stale_temp_kubeconfigs(&std::env::temp_dir());
             let paths = app.path();

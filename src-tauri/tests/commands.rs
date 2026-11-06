@@ -110,6 +110,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("tray_set_texts", Some("texts")),
     ("window_close", None),
     ("about_info", None),
+    ("about_open_logs_folder", None),
     ("system_fonts", None),
     ("gitops_install_versions", Some("tool")),
     ("gitops_install_prepare", Some("clusterId")),
@@ -341,6 +342,14 @@ fn system_fonts_lists_family_names_only() {
     }
     // The second call is answered from the cache, the same list.
     assert_eq!(invoke(&h, "system_fonts", json!({})).unwrap(), fonts);
+}
+
+#[test]
+fn about_open_logs_folder_opens_nothing_without_a_log() {
+    // A test run never opens the app's log (`run` is not called), so the folder is unknown and nothing is opened.
+    let h = harness();
+    let err = invoke(&h, "about_open_logs_folder", json!({})).unwrap_err();
+    assert_eq!(err["code"], "notFound", "{err}");
 }
 
 #[test]

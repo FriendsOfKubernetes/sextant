@@ -30,5 +30,7 @@
   "copy": "Kopiuj informacje o wersji",
   "copied": "Skopiowano",
   "copyFailed": "Nie można skopiować do schowka",
+  "openLogs": "Otwórz folder dzienników",
+  "openLogsFailed": "Nie udało się otworzyć folderu dzienników",
   "fonts": "Czcionki: Fira Sans i Fira Mono, SIL Open Font License 1.1"
 }

@@ -382,7 +382,9 @@ impl ExtensionHost {
                             std::fs::rename(&temp, &cache)
                         });
                     if let Err(err) = written {
-                        eprintln!("Sextant: a compiled extension backend could not be kept: {err}");
+                        sextant_core::applog!(
+                            "a compiled extension backend could not be kept: {err}"
+                        );
                     }
                 }
                 backend

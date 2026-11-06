@@ -249,8 +249,8 @@ fn log_refusal(root: &Path, file: &str, reason: &str) -> bool {
         logged.len() < MAX_LOGGED_REFUSALS && logged.insert(key)
     };
     if first {
-        eprintln!(
-            "sextant: extension file `{file}` in {} is not served: {reason}",
+        sextant_core::applog!(
+            "extension file `{file}` in {} is not served: {reason}",
             root.display()
         );
     }

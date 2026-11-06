@@ -3,7 +3,7 @@
 //! to reproduce a problem.
 
 use serde::Serialize;
-use sextant_core::CoreError;
+use sextant_core::{CoreError, ErrorCode};
 use ts_rs::TS;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
@@ -39,6 +39,18 @@ pub async fn about_info() -> Result<AboutInfo, CoreError> {
             .filter(|v| !v.is_empty()),
         tauri_version: tauri::VERSION.to_string(),
     })
+}
+
+/// Opens the folder of Sextant's log (#343) in the system's file manager. The window names no path: the folder is the
+/// one the log was opened in at start; `notFound` when there is none (the log could not be written).
+#[tauri::command]
+pub async fn about_open_logs_folder() -> Result<(), CoreError> {
+    let dir = sextant_core::applog::dir()
+        .ok_or_else(|| CoreError::new(ErrorCode::NotFound, "Sextant writes no log in this run"))?;
+    tauri::async_runtime::spawn_blocking(move || tauri_plugin_opener::open_path(&dir, None::<&str>))
+        .await
+        .map_err(|_| CoreError::other("the logs folder could not be opened"))?
+        .map_err(|_| CoreError::other("the logs folder could not be opened"))
 }
 
 /// The OS as people write it.

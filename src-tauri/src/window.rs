@@ -172,6 +172,7 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
                 tauri::async_runtime::spawn_blocking(move || {
                     let app = window.app_handle();
                     if hides_on_close(close_to_tray, crate::tray::available(app)) {
+                        sextant_core::applog!("the window was hidden to the tray");
                         let _ = window.hide();
                         crate::tray::show_label(app, crate::tray::WindowToggle::Show);
                     } else {
@@ -181,6 +182,7 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
             }
         }
         WindowEvent::Destroyed => {
+            sextant_core::applog!("the main window was closed");
             if let Some(state) = window.try_state::<AppState>() {
                 state.close_all();
             }
@@ -194,6 +196,11 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
 /// before the process ends.
 /// On macOS a click on the Dock icon (`Reopen`) brings a hidden window back.
 pub fn on_run_event<R: Runtime>(app: &AppHandle<R>, event: &RunEvent) {
+    // The last line of a run that ended as it should; a log without it after "started" means the process died
+    // (a crash, the OS ending it, power) — #343.
+    if let RunEvent::Exit = event {
+        sextant_core::applog!("Sextant exited");
+    }
     if let RunEvent::Exit | RunEvent::ExitRequested { .. } = event
         && let Some(state) = app.try_state::<AppState>()
     {

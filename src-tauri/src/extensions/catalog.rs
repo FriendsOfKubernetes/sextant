@@ -127,7 +127,7 @@ impl CatalogCache {
             .and_then(|()| std::fs::rename(&temp, self.dir.join(CACHE_FILE)));
         if let Err(err) = written {
             let _ = std::fs::remove_file(&temp);
-            eprintln!("Sextant: the extension catalog could not be cached on disk: {err}");
+            sextant_core::applog!("the extension catalog could not be cached on disk: {err}");
         }
         *lock(&self.cached) = Some(Cached { index, fetched_at });
         self.stored

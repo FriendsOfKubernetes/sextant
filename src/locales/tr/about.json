@@ -30,5 +30,7 @@
   "copy": "Sürüm bilgilerini kopyala",
   "copied": "Kopyalandı",
   "copyFailed": "Panoya kopyalanamadı",
+  "openLogs": "Günlük klasörünü aç",
+  "openLogsFailed": "Günlük klasörü açılamadı",
   "fonts": "Yazı tipleri: Fira Sans ve Fira Mono, SIL Open Font License 1.1"
 }

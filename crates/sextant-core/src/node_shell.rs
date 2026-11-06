@@ -563,8 +563,8 @@ async fn remove_unconfirmed(client: &kube::Client, name: &str, sent: tokio::time
     };
     if !absent {
         unconfirmed().insert(name.to_owned());
-        eprintln!(
-            "sextant: the node shell pod {NAMESPACE}/{name} may exist although its creation failed; it could not \
+        crate::applog!(
+            "the node shell pod {NAMESPACE}/{name} may exist although its creation failed; it could not \
              be looked up and is deleted when the cluster connects next"
         );
     }

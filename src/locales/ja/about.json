@@ -30,5 +30,7 @@
   "copy": "バージョン情報をコピー",
   "copied": "コピーしました",
   "copyFailed": "クリップボードにコピーできませんでした",
+  "openLogs": "ログフォルダーを開く",
+  "openLogsFailed": "ログフォルダーを開けませんでした",
   "fonts": "フォント: Fira Sans と Fira Mono、SIL Open Font License 1.1"
 }

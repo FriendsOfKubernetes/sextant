@@ -200,11 +200,11 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> bool {
     let items = match std::panic::catch_unwind(AssertUnwindSafe(|| build(app))) {
         Ok(Ok(items)) => Some(items),
         Ok(Err(e)) => {
-            eprintln!("Sextant: no tray icon: {e}");
+            sextant_core::applog!("no tray icon: {e}");
             None
         }
         Err(_) => {
-            eprintln!("Sextant: no tray icon: the system tray library could not be loaded");
+            sextant_core::applog!("no tray icon: the system tray library could not be loaded");
             None
         }
     };
@@ -460,7 +460,10 @@ fn on_menu<R: Runtime>(app: &AppHandle<R>, id: &str) {
             let _ = app.emit(events::OPEN_ABOUT, ());
         }
         // The usual way out: `ExitRequested`/`Exit` close everything (`AppState::close_all`).
-        QUIT => app.exit(0),
+        QUIT => {
+            sextant_core::applog!("Quit chosen in the tray");
+            app.exit(0);
+        }
         _ => {}
     }
 }

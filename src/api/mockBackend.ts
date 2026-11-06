@@ -173,6 +173,8 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
     webviewVersion: "2.44.1",
     tauriVersion: "2.12.3",
   }));
+  // Opening the logs folder shows nothing in tests.
+  table.set("about_open_logs_folder", () => undefined);
   table.set("settings_get", () => structuredClone(settings));
   table.set("settings_update", (args) => {
     settings = structuredClone(args.settings as AppSettings);

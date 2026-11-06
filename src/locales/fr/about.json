@@ -30,5 +30,7 @@
   "copy": "Copier les informations de version",
   "copied": "Copié",
   "copyFailed": "Impossible de copier dans le presse-papiers",
+  "openLogs": "Ouvrir le dossier des journaux",
+  "openLogsFailed": "Impossible d’ouvrir le dossier des journaux",
   "fonts": "Polices : Fira Sans et Fira Mono, SIL Open Font License 1.1"
 }

@@ -30,5 +30,7 @@
   "copy": "复制版本信息",
   "copied": "已复制",
   "copyFailed": "无法复制到剪贴板",
+  "openLogs": "打开日志文件夹",
+  "openLogsFailed": "无法打开日志文件夹",
   "fonts": "字体：Fira Sans 和 Fira Mono，SIL Open Font License 1.1"
 }

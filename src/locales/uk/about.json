@@ -30,5 +30,7 @@
   "copy": "Копіювати відомості про версію",
   "copied": "Скопійовано",
   "copyFailed": "Не вдалося скопіювати в буфер обміну",
+  "openLogs": "Відкрити теку журналів",
+  "openLogsFailed": "Не вдалося відкрити теку журналів",
   "fonts": "Шрифти: Fira Sans і Fira Mono, SIL Open Font License 1.1"
 }

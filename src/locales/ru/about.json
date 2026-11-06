@@ -30,5 +30,7 @@
   "copy": "Скопировать сведения о версии",
   "copied": "Скопировано",
   "copyFailed": "Не удалось скопировать в буфер обмена",
+  "openLogs": "Открыть папку журналов",
+  "openLogsFailed": "Не удалось открыть папку журналов",
   "fonts": "Шрифты: Fira Sans и Fira Mono, SIL Open Font License 1.1"
 }

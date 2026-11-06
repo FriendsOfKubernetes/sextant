@@ -30,5 +30,7 @@
   "copy": "Copiar informações da versão",
   "copied": "Copiado",
   "copyFailed": "Não foi possível copiar para a área de transferência",
+  "openLogs": "Abrir a pasta de logs",
+  "openLogsFailed": "Não foi possível abrir a pasta de logs",
   "fonts": "Fontes: Fira Sans e Fira Mono, SIL Open Font License 1.1"
 }

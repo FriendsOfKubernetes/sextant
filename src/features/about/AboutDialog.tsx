@@ -85,6 +85,14 @@ function AboutBody() {
     }
   };
 
+  const openLogs = async () => {
+    try {
+      await api.about.openLogsFolder();
+    } catch {
+      setFeedback({ kind: "error", text: t("about:openLogsFailed") });
+    }
+  };
+
   return (
     <div className="about">
       <div className="about__head">
@@ -145,6 +153,8 @@ function AboutBody() {
         <Button disabled={!app || !machine} onClick={() => void copy()}>
           {t("about:copy")}
         </Button>
+        {/* Sextant's own log: start, exit and every crash, for a report of an app that closed by itself (#343). */}
+        <Button onClick={() => void openLogs()}>{t("about:openLogs")}</Button>
         {feedback && (
           <span className="updates__status" role={feedback.kind === "error" ? "alert" : "status"}>
             {feedback.text}

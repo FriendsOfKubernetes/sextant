@@ -30,5 +30,7 @@
   "copy": "Copia informazioni sulla versione",
   "copied": "Copiato",
   "copyFailed": "Impossibile copiare negli appunti",
+  "openLogs": "Apri la cartella dei log",
+  "openLogsFailed": "Impossibile aprire la cartella dei log",
   "fonts": "Caratteri: Fira Sans e Fira Mono, SIL Open Font License 1.1"
 }

@@ -9,6 +9,7 @@
 
 pub mod access;
 pub mod alerts;
+pub mod applog;
 pub mod argocd;
 #[cfg(feature = "desktop")]
 pub mod cloud;

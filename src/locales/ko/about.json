@@ -30,5 +30,7 @@
   "copy": "버전 정보 복사",
   "copied": "복사됨",
   "copyFailed": "클립보드에 복사할 수 없습니다",
+  "openLogs": "로그 폴더 열기",
+  "openLogsFailed": "로그 폴더를 열 수 없습니다",
   "fonts": "글꼴: Fira Sans 및 Fira Mono, SIL Open Font License 1.1"
 }

@@ -488,6 +488,8 @@ export const settings = {
 /** What "About Sextant" shows about the machine (no paths, no user names). */
 export const about = {
   info: () => call<AboutInfo>("about_info"),
+  /** Opens the folder of Sextant's log in the file manager (the backend knows the folder). */
+  openLogsFolder: () => call<void>("about_open_logs_folder"),
 };
 
 /** The font families installed on this computer (names only, read once per run), for Settings -> Appearance. */
