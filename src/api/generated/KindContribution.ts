@@ -20,4 +20,8 @@ aliases?: Array<string>,
 /**
  * The command palette searches the kind without being asked to (ADR-0160).
  */
-searchByDefault: boolean, };
+searchByDefault: boolean, 
+/**
+ * `false`: the CRD's printer columns are left out of the table, the extension's own take their place (ADR-0161).
+ */
+printerColumns: boolean, };

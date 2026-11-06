@@ -414,6 +414,12 @@
                 "description": "The cell's tooltip, the first with a value.",
                 "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/fieldPath" }
               },
+              "afterColumn": {
+                "description": "The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own column ids); the same in every language.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
               "cases": {
                 "description": "Texts shown instead of the value where a condition holds, the first that holds.",
                 "type": "array",
@@ -424,7 +430,8 @@
                   "required": ["when", "text"],
                   "properties": {
                     "when": { "$ref": "#/$defs/problemCondition" },
-                    "text": { "$ref": "#/$defs/title" }
+                    "text": { "$ref": "#/$defs/title" },
+                    "tone": { "type": "string", "enum": ["ok", "warning", "error", "neutral"] }
                   }
                 }
               }
@@ -501,7 +508,8 @@
                 "uniqueItems": true,
                 "items": { "type": "string", "minLength": 1, "maxLength": 20 }
               },
-              "searchByDefault": { "description": "The command palette searches the kind without being asked to.", "type": "boolean" }
+              "searchByDefault": { "description": "The command palette searches the kind without being asked to.", "type": "boolean" },
+              "printerColumns": { "description": "`false`: the CRD's printer columns are left out of the table (default true).", "type": "boolean" }
             }
           }
         },
@@ -675,6 +683,10 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 317
+        },
+        "group": {
+          "description": "Rules with the same group notify once per object for all of them (sextantApi 4).",
+          "$ref": "#/$defs/contributionId"
         },
         "source": {
           "description": "Which objects of the kind the rule sees (sextantApi 4): those a label selector picks, and only their metadata. Every rule of a kind has the same source.",

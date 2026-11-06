@@ -94,6 +94,7 @@ export const LOCAL_METHODS = [
   "ui.openLogs",
   "ui.openUrl",
   "ui.signIn",
+  "ui.setHidden",
 ] as const;
 
 export type MethodName = (typeof REMOTE_METHODS)[number] | (typeof LOCAL_METHODS)[number];

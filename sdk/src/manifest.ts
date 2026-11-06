@@ -124,8 +124,10 @@ export interface ManifestColumn {
   tones?: Record<string, ColumnTone>;
   /** The cell's tooltip. */
   tooltipPaths?: string[];
-  /** Texts shown instead of the value where a condition holds, the first that holds. */
-  cases?: { when: ProblemCondition; text: string }[];
+  /** Texts shown instead of the value where a condition holds, the first that holds, each with its tone. */
+  cases?: { when: ProblemCondition; text: string; tone?: ColumnTone }[];
+  /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
+  afterColumn?: string;
 }
 
 /**
@@ -146,6 +148,8 @@ export interface ManifestKind {
   aliases?: string[];
   /** The command palette searches the kind without being asked to. Default `false`. */
   searchByDefault?: boolean;
+  /** `false`: the CRD's printer columns are left out of the table (the extension's columns take their place). Default `true`. */
+  printerColumns?: boolean;
 }
 
 export interface ManifestDockAction {
@@ -186,6 +190,8 @@ export interface ManifestProblem {
    * metadata (then every path is under `.metadata`). Every rule of a kind has the same source.
    */
   source?: { labelSelector?: string; metadataOnly?: boolean };
+  /** Rules with the same group notify once per object for all of them (sextantApi 4). */
+  group?: string;
 }
 
 /**
@@ -408,7 +414,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
       sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [] })),
       commands: (c.commands ?? []).map((command) => ({ ...command, params: command.params ?? [], changes: command.changes ?? false })),
-      kinds: (c.kinds ?? []).map((k) => ({ ...k, searchByDefault: k.searchByDefault ?? false })),
+      kinds: (c.kinds ?? []).map((k) => ({ ...k, searchByDefault: k.searchByDefault ?? false, printerColumns: k.printerColumns ?? true })),
       sections: c.sections ?? [],
       menuItems: c.menuItems ?? [],
       services: (c.services ?? []).map(({ signIn, ...service }) =>

@@ -200,7 +200,8 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject): Detected
   return [
     {
       reason: rule.title,
-      group: rule.id,
+      // Rules of one group notify once per object (ADR-0161).
+      group: rule.group ?? rule.id,
       message: renderMessage(rule.message, obj),
       since: typeof since === "string" && timeOf(since) !== undefined ? since : undefined,
       graceMs: rule.graceMinutes > 0 ? rule.graceMinutes * MINUTE_MS : undefined,

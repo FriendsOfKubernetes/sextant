@@ -54,6 +54,20 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
     let list = JsonPath::default().key("contributes").key("columns");
     for (i, column) in manifest.contributes.columns.iter().enumerate() {
         let here = list.index(i);
+        if let Some(id) = &column.after_column {
+            if manifest.sextant_api < WINDOW_API {
+                return Err(at(
+                    &here.key("afterColumn"),
+                    format!("needs sextantApi {WINDOW_API} or later"),
+                ));
+            }
+            if !is_column_id(id) {
+                return Err(at(
+                    &here.key("afterColumn"),
+                    "must be a column id: letters, digits, `-`, `_` and `:`",
+                ));
+            }
+        }
         let computed = fields_of_column(column);
         for (field, set) in computed {
             if set && manifest.sextant_api < WINDOW_API {
@@ -126,6 +140,14 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
         }
     }
     Ok(())
+}
+
+/// `afterColumn`: a column id of letters, digits, `-`, `_` and `:`.
+fn is_column_id(text: &str) -> bool {
+    (1..=80).contains(&text.len())
+        && text
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b':'))
 }
 
 fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 7] {

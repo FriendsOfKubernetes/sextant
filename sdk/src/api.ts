@@ -240,6 +240,7 @@ export interface Methods {
   "ui.close": { params: undefined; result: null };
   "ui.openLogs": { params: OpenLogsParams; result: null };
   "ui.openUrl": { params: { url: string }; result: { opened: boolean } };
+  "ui.setHidden": { params: { hidden: boolean }; result: null };
   "ui.signIn": { params: { clusterId?: ClusterId; namespace: string; service: string }; result: { signedIn: boolean } };
   "resources.unwatch": { params: { stream: string | number }; result: null };
   "clusters.list": { params: undefined; result: ClusterSummary[] };

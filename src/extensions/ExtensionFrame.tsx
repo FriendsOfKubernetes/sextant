@@ -43,6 +43,8 @@ export interface ExtensionFrameProps {
   autoHeight?: boolean;
   /** `ui.close`. */
   onClose?: () => void;
+  /** `ui.setHidden`: a details section hides itself while it has nothing to show (ADR-0161); others ignore it. */
+  onHidden?: (hidden: boolean) => void;
   className?: string;
 }
 
@@ -166,6 +168,7 @@ function FrameView({
   resourceVersion = null,
   autoHeight = false,
   onClose,
+  onHidden,
   className,
   onFailed,
 }: ExtensionFrameProps & { info: ExtensionInfo; entryUrl: string; onFailed: (message: string) => void }) {
@@ -197,8 +200,8 @@ function FrameView({
     [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion],
   );
   const services = info.manifest?.contributes.services ?? [];
-  const latest = useRef({ context, name: info.name, autoHeight, onClose, onFailed, services });
-  latest.current = { context, name: info.name, autoHeight, onClose, onFailed, services };
+  const latest = useRef({ context, name: info.name, autoHeight, onClose, onFailed, services, onHidden });
+  latest.current = { context, name: info.name, autoHeight, onClose, onFailed, services, onHidden };
 
   // The bridge must live as long as the frame's documents: a new bridge would end their watches and never send them
   // the context. So it is rebuilt only with the extension (another id is another entry URL: the frame reloads), and
@@ -213,6 +216,7 @@ function FrameView({
         extensionName: () => latest.current.name,
         clusterId: () => latest.current.context.clusterId,
         services: () => latest.current.services,
+        setHidden: (hidden) => latest.current.onHidden?.(hidden),
         close: () => latest.current.onClose?.(),
       }),
       onResize: (next) => {

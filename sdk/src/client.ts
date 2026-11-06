@@ -186,6 +186,8 @@ export interface Sextant {
      * body as `{{signIn:<field id>}}`. "Remember" keeps it for that cluster in the keyring.
      */
     signIn(params: { clusterId?: ClusterId; namespace: string; service: string }, options?: CallOptions): Promise<boolean>;
+    /** A details section hides itself (title included) while it has nothing to show, and shows again (since 0.30). */
+    setHidden(hidden: boolean, options?: CallOptions): Promise<void>;
   };
   /** Any method, by name. */
   call<M extends keyof Methods>(method: M, params: Methods[M]["params"], options?: CallOptions): Promise<Methods[M]["result"]>;
@@ -593,6 +595,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       openLogs: (params, o) => send<unknown>("ui.openLogs", params, o).then(() => undefined),
       openUrl: (url, o) =>
         send<{ opened: boolean }>("ui.openUrl", { url }, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.opened),
+      setHidden: (hidden, o) => send<unknown>("ui.setHidden", { hidden }, o).then(() => undefined),
       signIn: (params, o) =>
         onCluster<{ signedIn: boolean }>("ui.signIn", params, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.signedIn),
       close: (o) => send<unknown>("ui.close", undefined, o).then(() => undefined),

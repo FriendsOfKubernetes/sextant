@@ -8,7 +8,7 @@
 // list: what is new is registered, what changed is registered again, what is gone (disabled, removed, waiting for
 // consent) is removed with everything it showed — an open page of it falls back to the cluster overview, its dock tabs
 // and action windows close.
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import type { ActionContribution, ExtensionInfo, KindContribution, KindPattern, KindRef, KubeObject, ProblemContribution } from "../api";
 import { useAppStore } from "../app/store";
 import { Dialog, isIconName, type IconName } from "../components";
@@ -30,7 +30,7 @@ import { getPage, registerPage, unregisterPage, type PageProps } from "../layout
 import { getSectionBadge, registerSectionBadge } from "../layout/sectionBadges";
 import { evalJsonPath, formatJsonPathValues } from "../resources/jsonpath";
 import { DEFAULT_ENTRY_ICON, extendActions, extendColumns, placeKind, placeSection, SIDEBAR_SECTIONS } from "../resources/registry";
-import { computedColumn } from "./columns";
+import { computedColumn, placement } from "./columns";
 import {
   registerClusterSettingsSection,
   registerClusterSettingsTab,
@@ -198,6 +198,7 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
         problem: problemOf(extensionId, entry, contributes.problems),
         aliases: entry.aliases ?? [],
         searchByDefault: entry.searchByDefault,
+        printerColumns: entry.printerColumns,
       }),
     );
   }
@@ -239,10 +240,12 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
     for (const kind of action.kinds) removers.push(extendActions(kind, [id]));
   }
 
+  // A column placed after one of the extension's own columns names it by its manifest id (ADR-0161).
+  const ownColumn = (id: string) => (contributes.columns.some((c) => c.id === id) ? contributionKey(extensionId, id) : undefined);
   for (const column of contributes.columns) {
     // Computed from field paths (ADR-0153), or the JSONPath of CRD printer columns.
     if (column.paths !== undefined || column.jsonPath === undefined) {
-      removers.push(extendColumns(column.kind, [computedColumn(contributionKey(extensionId, column.id), column)]));
+      removers.push(extendColumns(column.kind, [computedColumn(contributionKey(extensionId, column.id), column, ownColumn)]));
       continue;
     }
     const jsonPath = column.jsonPath;
@@ -257,7 +260,7 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
             if (found.length === 0) return undefined;
             return found.length === 1 && typeof found[0] === "number" ? found[0] : formatJsonPathValues(found);
           },
-          afterTitle: column.after,
+          ...placement(column, ownColumn),
           fallback: "end",
         },
       ]),
@@ -381,6 +384,8 @@ function detailsComponent(
   tab: boolean,
 ): ComponentType<DetailsSectionProps> {
   return function ExtensionDetails({ clusterId, objectRef, obj }: DetailsSectionProps) {
+    // `ui.setHidden` (ADR-0161): a section with nothing to show hides, title included; the frame keeps running.
+    const [hidden, setHidden] = useState(false);
     const frame = (
       <ExtensionFrame
         extensionId={extensionId}
@@ -392,11 +397,12 @@ function detailsComponent(
         resourceVersion={typeof obj?.metadata?.resourceVersion === "string" ? obj.metadata.resourceVersion : null}
         autoHeight={!tab}
         className={tab ? "ext-frame--tab" : "ext-frame--section"}
+        onHidden={tab ? undefined : setHidden}
       />
     );
     if (tab) return frame;
     return (
-      <div className="ext-section">
+      <div className="ext-section" hidden={hidden}>
         <h3 className="ext-section__title">{title}</h3>
         {frame}
       </div>

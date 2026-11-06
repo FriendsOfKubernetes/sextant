@@ -102,6 +102,9 @@ describe("problem rules of extensions", () => {
       toldThroughOwner: false,
     };
     expect(detectRule(rule, cluster)[0]!.until).toBe(Date.parse("2026-10-31T10:00:00Z"));
+    // Rules of one group notify as one (ADR-0161); a rule alone is its own group.
+    expect(detectRule(rule, cluster)[0]!.group).toBe("recent");
+    expect(detectRule({ ...rule, group: "rollout" }, cluster)[0]!.group).toBe("rollout");
   });
 
   it("fill a message with scalar values only, clipped and cleaned like other cluster text", () => {

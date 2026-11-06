@@ -533,7 +533,7 @@ describe("contributions of an extension", () => {
           sextantApi: 4,
           contributes: {
             ...manifest.contributes,
-            kinds: [{ ...own, section: "widgets", sectionTitle: "Widget tools", searchByDefault: false }],
+            kinds: [{ ...own, section: "widgets", sectionTitle: "Widget tools", searchByDefault: false, printerColumns: true }],
             actions: [
               {
                 id: "resume",
@@ -598,9 +598,9 @@ describe("contributions of an extension", () => {
             ...manifest.contributes,
             pages: [{ id: "board", title: "Widget board", section: "tools", sectionTitle: "Widget tools" }],
             kinds: [
-              { group: "demo.sextant.dev", kind: "Widget", section: "tools", title: "Widgets of the demo", order: 1, searchByDefault: false },
+              { group: "demo.sextant.dev", kind: "Widget", section: "tools", title: "Widgets of the demo", order: 1, searchByDefault: false, printerColumns: true },
               // Not served by the cluster: never listed.
-              { group: "demo.sextant.dev", kind: "Missing", section: "tools", order: 2, searchByDefault: false },
+              { group: "demo.sextant.dev", kind: "Missing", section: "tools", order: 2, searchByDefault: false, printerColumns: true },
             ],
             problems: [rule],
           },
@@ -683,6 +683,67 @@ describe("contributions of an extension", () => {
     expect(at).toBeGreaterThan(names.indexOf("Workloads"));
     await changeList([]);
     await waitFor(() => expect(getClusterSettingsTabs().some((t) => t.label === "Widget setup")).toBe(false));
+  });
+
+  it("leave a listed kind's printer columns out, tone a case, place by column id, hide an empty section (ADR-0161)", async () => {
+    const kind = { group: "demo.sextant.dev", kind: "Widget" };
+    list = [
+      info({
+        manifest: {
+          ...manifest,
+          sextantApi: 4,
+          contributes: {
+            ...manifest.contributes,
+            kinds: [{ ...kind, section: "tools", sectionTitle: "Widget tools", searchByDefault: false, printerColumns: false }],
+            columns: [
+              {
+                kind,
+                id: "ready",
+                title: "Ready",
+                paths: [".status.ready"],
+                afterColumn: "namespace",
+                cases: [{ when: { type: "equals", path: ".spec.suspend", value: true }, text: "Angehalten", tone: "warning" }],
+              },
+              { kind, id: "rev", title: "Rev", paths: [".status.rev"], afterColumn: "ready" },
+            ],
+          },
+        },
+      }),
+    ];
+    await renderShell();
+    const withPrinter = {
+      kindRef: WIDGET,
+      plural: "widgets",
+      namespaced: true,
+      verbs: ["list", "watch"],
+      printerColumns: [{ name: "Size", jsonPath: ".spec.size", type: "string", priority: 0 }],
+      shortNames: [],
+    } as never;
+    const columns = getResourceDef(WIDGET, withPrinter).columns.map((c) => c.id);
+    expect(columns.some((id) => id.startsWith("crd:") || id === "Size")).toBe(false);
+    const at = columns.indexOf("namespace");
+    expect(columns.slice(at + 1, at + 3)).toEqual(["ext:demo.widgets:ready", "ext:demo.widgets:rev"]);
+    const ready = getResourceDef(WIDGET).columns.find((c) => c.id === "ext:demo.widgets:ready")!;
+    const cell = render(<>{ready.render!({ ...widget, spec: { suspend: true } }, { clusterId: "c1", kind: WIDGET, now: 0 })}</>);
+    expect(cell.container.querySelector(".rt-status--warning")?.textContent).toBe("Angehalten");
+  });
+
+  it("hide a details section, title included, while its frame says so (ADR-0161)", async () => {
+    await renderShell();
+    const section = getDetailsSections(WIDGET).find((s) => s.id === "ext:demo.widgets:info")!;
+    const Section = section.Component;
+    const view = render(<Section clusterId="c1" objectRef={widgetRef} obj={widget} />);
+    const frame = frameOf(view.container);
+    const send = (method: string, params: unknown) =>
+      act(() => {
+        window.dispatchEvent(
+          new MessageEvent("message", { data: { sextant: 1, doc: DOC, id: 1, method, params }, source: frame.contentWindow }),
+        );
+      });
+    send("ui.setHidden", { hidden: true });
+    expect(view.container.querySelector(".ext-section")).toHaveAttribute("hidden");
+    send("ui.setHidden", { hidden: false });
+    expect(view.container.querySelector(".ext-section")).not.toHaveAttribute("hidden");
   });
 
   it("add a dock button that opens a dock tab with the extension, closed when the extension goes", async () => {

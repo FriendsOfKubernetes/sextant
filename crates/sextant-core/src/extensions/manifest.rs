@@ -342,6 +342,11 @@ pub struct ColumnContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub cases: Option<Vec<ColumnCase>>,
+    /// The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own column
+    /// ids): unlike `after`, the same in every language (ADR-0161).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub after_column: Option<String>,
 }
 
 /// How a computed column shows its value.
@@ -374,6 +379,14 @@ pub enum ColumnTone {
 pub struct ColumnCase {
     pub when: ProblemCondition,
     pub text: String,
+    /// The tone of the text (a translated text has no entry in `tones`, ADR-0161).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub tone: Option<ColumnTone>,
+}
+
+fn yes() -> bool {
+    true
 }
 
 /// A kind the extension lists in a sidebar section of its own, with Sextant's table, details and actions (ADR-0152).
@@ -406,6 +419,9 @@ pub struct KindContribution {
     /// The command palette searches the kind without being asked to (ADR-0160).
     #[serde(default)]
     pub search_by_default: bool,
+    /// `false`: the CRD's printer columns are left out of the table, the extension's own take their place (ADR-0161).
+    #[serde(default = "yes")]
+    pub printer_columns: bool,
 }
 
 /// A dock button that opens a dock tab (`view=dock`).
@@ -972,6 +988,7 @@ mod tests {
                 tones: None,
                 tooltip_paths: None,
                 cases: None,
+                after_column: None,
             }
         );
         assert_eq!(

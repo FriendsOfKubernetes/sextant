@@ -43,4 +43,9 @@ tooltipPaths?: Array<string>,
 /**
  * Texts shown instead of the value where a condition holds, the first that holds.
  */
-cases?: Array<ColumnCase>, };
+cases?: Array<ColumnCase>, 
+/**
+ * The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own column
+ * ids): unlike `after`, the same in every language (ADR-0161).
+ */
+afterColumn?: string, };

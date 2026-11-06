@@ -41,4 +41,8 @@ newestPer?: string,
  * Which objects of the kind the rule sees: those a label selector picks, and only their metadata (ADR-0152);
  * `sextantApi` 4. Every rule of a kind has the same source.
  */
-source?: RuleSource, };
+source?: RuleSource, 
+/**
+ * Rules with the same group notify once per object for all of them (ADR-0161); `sextantApi` 4.
+ */
+group?: string, };

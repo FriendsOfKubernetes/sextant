@@ -425,6 +425,8 @@ export interface KindPlacement {
   aliases?: readonly string[];
   /** The command palette searches the kind without being asked to. */
   searchByDefault?: boolean;
+  /** `false`: the CRD's printer columns are left out of the table (ADR-0161). */
+  printerColumns?: boolean;
 }
 
 const placements = new Map<string, KindPlacement[]>();
@@ -499,7 +501,9 @@ export function getResourceDefs(): ResourceDef[] {
 export function getResourceDef(kind: KindRef, resourceKind?: ResourceKind | null): ResourceDef {
   const registered = defs.get(kindKey(kind));
   const placed = registered ? undefined : kindPlacement(kind);
-  const generic = registered ? undefined : genericResourceDef(kind, resourceKind ?? null);
+  // A listed kind whose extension draws its own columns leaves the CRD's printer columns out (ADR-0161).
+  const shown = placed?.printerColumns === false && resourceKind ? { ...resourceKind, printerColumns: [] } : resourceKind;
+  const generic = registered ? undefined : genericResourceDef(kind, shown ?? null);
   const base: ResourceDef = registered
     ? { ...registered, kind: { ...registered.kind, version: kind.version || registered.kind.version } }
     : placed

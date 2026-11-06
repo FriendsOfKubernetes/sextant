@@ -52,9 +52,9 @@ function holdsNow(c: ColumnCase, obj: KubeObject, now: number): boolean {
   return verdict.until === undefined || verdict.until > now;
 }
 
-/** The case text that replaces the value, if one holds. */
-function caseText(column: ColumnContribution, obj: KubeObject, now: number): string | undefined {
-  for (const c of column.cases ?? []) if (holdsNow(c, obj, now)) return c.text;
+/** The case that replaces the value, if one holds. */
+function caseOf(column: ColumnContribution, obj: KubeObject, now: number): ColumnCase | undefined {
+  for (const c of column.cases ?? []) if (holdsNow(c, obj, now)) return c;
   return undefined;
 }
 
@@ -66,13 +66,16 @@ interface Cell {
 }
 
 function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell {
-  const replaced = caseText(column, obj, now);
+  const replaced = caseOf(column, obj, now);
   const tone = (value: string | undefined): Tone | undefined => {
     const named = value !== undefined ? column.tones?.[value] : undefined;
     return named ? TONES[named] : undefined;
   };
   if (replaced !== undefined) {
-    return { sort: replaced, text: replaced, draw: column.tones ? <StatusText value={replaced} tone={tone(replaced) ?? "neutral"} /> : replaced };
+    const { text } = replaced;
+    // A case's own tone (it is translated, so `tones` cannot name it), else the tone `tones` gives its text.
+    const toned = replaced.tone ? TONES[replaced.tone] : tone(text);
+    return { sort: text, text, draw: toned || column.tones ? <StatusText value={text} tone={toned ?? "neutral"} /> : text };
   }
   const value = firstValue(obj, column.paths);
   switch (column.format ?? "text") {
@@ -114,15 +117,24 @@ function DurationText({ ms }: { ms: number }) {
   return <>{t(`common:age.${unit}`, { count })}</>;
 }
 
+/**
+ * Where a column goes: after the column with the id `afterColumn` (one of the extension's own ids is its registry id,
+ * `ext:<extension>:<id>`), else after the title `after`.
+ */
+export function placement(column: Pick<ColumnContribution, "after" | "afterColumn">, ownIds?: (id: string) => string | undefined): Pick<ColumnDef, "after" | "afterTitle"> {
+  if (column.afterColumn !== undefined) return { after: ownIds?.(column.afterColumn) ?? column.afterColumn };
+  return column.after !== undefined ? { afterTitle: column.after } : {};
+}
+
 /** The table column of a computed contribution, under the registry id `id`. */
-export function computedColumn(id: string, column: ColumnContribution): ColumnDef {
+export function computedColumn(id: string, column: ColumnContribution, ownIds?: (id: string) => string | undefined): ColumnDef {
   const format = column.format ?? "text";
   const timed = format === "age" || format === "duration" || (column.cases ?? []).length > 0;
   const tooltip = (obj: KubeObject) => textOf(firstValue(obj, column.tooltipPaths));
   return {
     id,
     title: column.title,
-    afterTitle: column.after,
+    ...placement(column, ownIds),
     fallback: "end",
     // Sorting and the default text; a time-dependent cell sorts as of now.
     value: (obj) => cellOf(column, obj, Date.now()).sort,

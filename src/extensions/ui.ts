@@ -22,6 +22,8 @@ export interface HostUiOptions {
   clusterId?: () => ClusterId | null;
   /** The services the extension's manifest declares (localized), for `ui.signIn`. */
   services?: () => readonly ServiceContribution[];
+  /** `ui.setHidden`: hides or shows the frame's details section. */
+  setHidden?: (hidden: boolean) => void;
 }
 
 /** Longest label selector `ui.openLogs` takes (as a problem rule's source). */
@@ -57,6 +59,11 @@ export function hostUi(options: HostUiOptions): BridgeUi {
     },
     close() {
       options.close?.();
+    },
+    setHidden(params) {
+      const hidden = typeof params === "boolean" ? params : isRecord(params) ? params.hidden : undefined;
+      if (typeof hidden !== "boolean") throw new ApiError("invalid", "ui.setHidden needs {hidden: true|false}");
+      options.setHidden?.(hidden);
     },
     async openLogs(params) {
       const bad = () =>

@@ -71,6 +71,10 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub source: Option<RuleSource>,
+    /// Rules with the same group notify once per object for all of them (ADR-0161); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub group: Option<String>,
 }
 
 /// The objects a rule's kind is watched for (`ProblemContribution.source`).
@@ -241,6 +245,12 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                     "must be a label key such as `app` or `example.com/name`",
                 ));
             }
+        }
+        if rule.group.is_some() && manifest.sextant_api < SOURCES_API {
+            return Err(at(
+                &here.key("group"),
+                format!("needs sextantApi {SOURCES_API} or later"),
+            ));
         }
         if let Some(since) = &rule.since {
             check_rule_path(since, &rule.kind, &here.key("since"), metadata_only)?;

@@ -150,6 +150,7 @@ export const MANIFEST_SHAPES = {
     toldThroughOwner: "optional",
     newestPer: "optional",
     source: "optional",
+    group: "optional",
   }),
   ManifestPage: described<ManifestPage>(`${CONTRIBUTION}/pages/items`, {
     id: "required",
@@ -190,6 +191,7 @@ export const MANIFEST_SHAPES = {
     tones: "optional",
     tooltipPaths: "optional",
     cases: "optional",
+    afterColumn: "optional",
   }),
   ManifestKind: described<ManifestKind>(`${CONTRIBUTION}/kinds/items`, {
     group: "required",
@@ -201,6 +203,7 @@ export const MANIFEST_SHAPES = {
     order: "optional",
     aliases: "optional",
     searchByDefault: "optional",
+    printerColumns: "optional",
   }),
   ManifestSection: described<ManifestSection>(`${CONTRIBUTION}/sections/items`, {
     section: "required",

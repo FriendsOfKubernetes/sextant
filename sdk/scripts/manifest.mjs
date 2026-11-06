@@ -744,6 +744,7 @@ function checkProblems(manifest) {
       if (manifest.sextantApi < ACROSS_API) fail([...here, "newestPer"], `needs sextantApi ${ACROSS_API} or later`);
       if (!isLabelKey(rule.newestPer)) fail([...here, "newestPer"], "must be a label key such as `app` or `example.com/name`");
     }
+    if (rule.group !== undefined && manifest.sextantApi < SOURCES_API) fail([...here, "group"], `needs sextantApi ${SOURCES_API} or later`);
     if (rule.since !== undefined) checkRulePath(rule.since, rule.kind, [...here, "since"], metadataOnly);
     const found = placeholders(rule.message);
     if (found === null) fail([...here, "message"], "has a `{{` without its `}}`");
@@ -1252,6 +1253,10 @@ function checkColumns(manifest) {
   const list = ["contributes", "columns"];
   (manifest.contributes?.columns ?? []).forEach((column, i) => {
     const here = [...list, i];
+    if (column.afterColumn !== undefined) {
+      if (manifest.sextantApi < WINDOW_API) fail([...here, "afterColumn"], `needs sextantApi ${WINDOW_API} or later`);
+      if (!/^[A-Za-z0-9:_-]{1,80}$/.test(column.afterColumn)) fail([...here, "afterColumn"], "must be a column id: letters, digits, `-`, `_` and `:`");
+    }
     for (const field of COLUMN_FIELDS) {
       if (column[field] !== undefined && manifest.sextantApi < WINDOW_API) fail([...here, field], `needs sextantApi ${WINDOW_API} or later`);
     }

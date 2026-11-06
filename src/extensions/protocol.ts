@@ -231,6 +231,7 @@ export const LOCAL_METHODS: readonly string[] = [
   "ui.openLogs",
   "ui.openUrl",
   "ui.signIn",
+  "ui.setHidden",
 ];
 
 /** Longest `ui.notify` text shown. */

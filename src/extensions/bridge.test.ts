@@ -65,6 +65,7 @@ beforeEach(() => {
     navigate: vi.fn<Fn>(),
     notify: vi.fn<Fn>(),
     close: vi.fn<Fn>(),
+    setHidden: vi.fn<Fn>(),
     openLogs: vi.fn<(params: unknown) => Promise<void>>(() => Promise.resolve()),
     openUrl: vi.fn<(params: unknown) => Promise<{ opened: boolean }>>(() => Promise.resolve({ opened: true })),
     signIn: vi.fn<(params: unknown) => Promise<{ signedIn: boolean }>>(() => Promise.resolve({ signedIn: true })),
