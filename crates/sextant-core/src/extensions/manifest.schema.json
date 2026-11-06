@@ -917,6 +917,17 @@
           }
         },
         {
+          "description": "The values at `path` and `otherPath` are the same scalar (sextantApi 4).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path", "otherPath"],
+          "properties": {
+            "type": { "const": "same" },
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "otherPath": { "$ref": "#/$defs/fieldPath" }
+          }
+        },
+        {
           "description": "Holds where `of` does not (sextantApi 4); never around `missing`.",
           "type": "object",
           "additionalProperties": false,

@@ -139,6 +139,12 @@ pub enum ProblemCondition {
         #[ts(type = "number")]
         value: serde_json::Number,
     },
+    /// The values at `path` and `otherPath` are the same scalar (ADR-0161); `sextantApi` 4. With `not`: they differ.
+    Same {
+        path: String,
+        #[serde(rename = "otherPath")]
+        other_path: String,
+    },
     /// The time at `path` (RFC 3339) is more than `minutes` ago.
     OlderThan {
         path: String,
@@ -382,6 +388,24 @@ fn check_condition<'k>(
         | ProblemCondition::Below { path: field, .. }
         | ProblemCondition::OlderThan { path: field, .. } => {
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
+        }
+        ProblemCondition::Same {
+            path: field,
+            other_path,
+        } => {
+            if checks.api < SOURCES_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`same` needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            check_rule_path(field, kind, &path.key("path"), checks.metadata_only)?;
+            check_rule_path(
+                other_path,
+                kind,
+                &path.key("otherPath"),
+                checks.metadata_only,
+            )
         }
         ProblemCondition::Condition { .. } if checks.metadata_only => Err(at(
             &path.key("type"),

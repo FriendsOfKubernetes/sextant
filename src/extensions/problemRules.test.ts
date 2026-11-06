@@ -74,6 +74,16 @@ describe("problem rules of extensions", () => {
     expect(holds({ type: "all", of: [now, { type: "absent", path: ".status" }] })).toBe(false);
   });
 
+  it("compare two fields with same, and count a list as its length (ADR-0161)", () => {
+    const rollout = { ...cluster, status: { currentPodHash: "abc", stableRS: "abc", steps: [{}, {}, {}] } } as KubeObject;
+    expect(evaluate({ type: "same", path: ".status.currentPodHash", otherPath: ".status.stableRS" }, rollout).holds).toBe(true);
+    expect(holds({ type: "same", path: ".status.phase", otherPath: ".status.message" })).toBe(false);
+    // Two missing fields are not the same value.
+    expect(holds({ type: "same", path: ".status.none", otherPath: ".status.nothing" })).toBe(false);
+    expect(evaluate({ type: "above", path: ".status.steps", value: 2 }, rollout).holds).toBe(true);
+    expect(holds({ type: "below", path: ".status.items", value: 2 })).toBe(false);
+  });
+
   it("negate with not: the other branches, and a time not yet old enough counts until it is (ADR-0152)", () => {
     expect(holds({ type: "not", of: { type: "in", path: ".status.phase", values: ["Progressing", "Pending"] } })).toBe(true);
     expect(holds({ type: "not", of: { type: "equals", path: ".status.phase", value: "Ready" } })).toBe(false);

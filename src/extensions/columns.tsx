@@ -8,7 +8,7 @@ import { Age, ageParts } from "../components";
 import type { ColumnDef } from "../resources/registry";
 import { StatusText } from "../resources/columns";
 import type { Tone } from "../resources/status";
-import { evaluate, valueAt } from "./problemRules";
+import { evaluate, numberOf, valueAt } from "./problemRules";
 
 /** Longest text a computed cell shows. */
 export const MAX_CELL_CHARS = 200;
@@ -31,12 +31,7 @@ function textOf(value: unknown): string | undefined {
   return chars.length > MAX_CELL_CHARS ? `${chars.slice(0, MAX_CELL_CHARS).join("")}…` : chars.join("");
 }
 
-function numberOf(value: unknown): number | undefined {
-  if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
-  if (typeof value !== "string" || value.trim() === "") return undefined;
-  const n = Number(value.trim());
-  return Number.isFinite(n) ? n : undefined;
-}
+
 
 function timeOf(value: unknown): number | undefined {
   if (typeof value !== "string") return undefined;

@@ -637,6 +637,12 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     checkCondition(condition.of, kind, [...segments, "of"], depth + 1, counter, "not");
     return;
   }
+  if (condition.type === "same") {
+    if (counter.api < SOURCES_API) fail([...segments, "type"], `\`same\` needs sextantApi ${SOURCES_API} or later`);
+    checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
+    checkRulePath(condition.otherPath, kind, [...segments, "otherPath"], counter.metadataOnly);
+    return;
+  }
   if (condition.type === "missing") {
     if (counter.single) fail([...segments, "type"], "`missing` judges across objects: only problem rules may use it");
     if (counter.api < ACROSS_API) fail([...segments, "type"], `\`missing\` needs sextantApi ${ACROSS_API} or later`);

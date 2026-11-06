@@ -43,8 +43,9 @@ function walk(obj: unknown, steps: readonly PathStep[]): unknown {
 const isScalar = (v: unknown): v is string | number | boolean =>
   typeof v === "string" || typeof v === "number" || typeof v === "boolean";
 
-/** A number, or a string that is nothing but one (`"85.5"`); `undefined` otherwise. */
-function numberOf(value: unknown): number | undefined {
+/** A number, a string that is nothing but one (`"85.5"`), or a list's length (ADR-0161); `undefined` otherwise. */
+export function numberOf(value: unknown): number | undefined {
+  if (Array.isArray(value)) return value.length;
   if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
   if (typeof value !== "string" || value.trim() === "") return undefined;
   const n = Number(value.trim());
@@ -117,6 +118,11 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject): Verdict 
     case "below": {
       const n = numberOf(valueAt(obj, condition.path));
       return { holds: n !== undefined && n < condition.value };
+    }
+    case "same": {
+      const a = valueAt(obj, condition.path);
+      const b = valueAt(obj, condition.otherPath);
+      return { holds: isScalar(a) && isScalar(b) && a === b };
     }
     case "olderThan": {
       const t = timeOf(valueAt(obj, condition.path));
