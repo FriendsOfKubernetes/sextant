@@ -2549,7 +2549,6 @@ async fn a_call_for_an_ai_agent_needs_the_agents_own_access_too() {
                     actions: vec![AccessAction::Read, AccessAction::Logs],
                     confirm: false,
                 }],
-                ..ClusterAccess::default()
             };
         })
         .unwrap();

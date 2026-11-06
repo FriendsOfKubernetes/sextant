@@ -1531,7 +1531,7 @@ mod tests {
             serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(
             json["mcp"],
-            serde_json::json!({ "enabled": true, "port": 50123, "extensionProblems": [] })
+            serde_json::json!({ "enabled": true, "port": 50123, "extensionProblems": [], "extensionTools": [] })
         );
         assert_eq!(json["clusters"]["c1"]["agentAccess"]["preset"], "custom");
         assert_eq!(

@@ -29,7 +29,7 @@ pub const MANIFEST_FILE: &str = "sextant-extension.json";
 /// The newest extension API major version this Sextant implements (`sextantApi`); 2 brought `contributes.problems`
 /// (ADR-0137), 3 `contributes.sectionBadges`, rules across objects and `contributes.commands` (ADR-0143, ADR-0144,
 /// ADR-0147), 4 sources and `not` in problem rules, computed columns, action conditions, kinds in a section of their
-/// own, status patches, port-forwards, cluster menu items, services and agent tools (ADR-0152 to ADR-0158).
+/// own, status patches, port-forwards, cluster menu items, services and agent tools (ADR-0152 to ADR-0159).
 pub const SUPPORTED_API: u32 = 4;
 /// The oldest one it still reads: every extension once accepted keeps working (ADR-0142).
 pub const MIN_API: u32 = 1;
