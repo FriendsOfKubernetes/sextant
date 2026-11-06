@@ -72,16 +72,19 @@ export function ExtensionsPanel() {
   const shownTab: Tab = catalogOn ? tab : "installed";
 
   // An install asked from elsewhere (an offer, the end of a Flux or Argo CD install): the catalog's own flow, once the
-  // catalog may be read; with the catalog off the request waits for the user to turn it on.
+  // catalog has been read (the backend installs only what its copy lists); with the catalog off the request waits for
+  // the user to turn it on.
   const requested = useInstallRequest((s) => s.id);
+  const catalogRead = catalog.view !== null;
   useEffect(() => {
     if (requested === null || !catalogOn || checking) return;
+    setTab("catalog");
+    if (!catalogRead) return;
     const id = takeInstallRequest();
     if (id === null) return;
-    setTab("catalog");
     void fromCatalog(id);
     // `fromCatalog` is a new function each render; the request is what starts it.
-  }, [requested, catalogOn, checking]);
+  }, [requested, catalogOn, checking, catalogRead]);
 
   const installedList = (
     <>

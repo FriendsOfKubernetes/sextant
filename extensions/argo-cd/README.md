@@ -98,7 +98,8 @@ At install the user agrees to these rules (every cluster):
   Application.
 - **Port forward** to Services, all namespaces: "Open Argo CD UI" forwards a port to the installation's
   `argocd-server` Service, and every request to Argo CD's API goes through a forward of Sextant's own (Read and Port
-  forward on Services in the installation's namespace).
+  forward on Services in the installation's namespace). Not asked each time (`confirm: false`): a forward and a
+  request reach only the services agreed to below, as Sextant's former built-in view did.
 - **Services**, agreed to word for word. Each is the one Service labelled `app.kubernetes.io/name=argocd-server` in
   the installation's namespace, so a Helm release's `<release>-argocd-server` is reached too:
   - `argocd-server`: port `https`, HTTPS whose certificate is not checked because the other end is Sextant's own

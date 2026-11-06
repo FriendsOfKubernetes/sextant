@@ -11,6 +11,8 @@ extension any more.
 - API token sign-in, sent by Sextant as the bearer of each request.
 - Argo CD is reached by the label `app.kubernetes.io/name=argocd-server`, so a Helm release's
   `<release>-argocd-server` works too.
+- Requests to Argo CD's API (the diff, sign-in) and "Open Argo CD UI" are no longer confirmed each time: the
+  Port forward rule on Services has `confirm: false`, as Sextant's former built-in view never asked.
 - The admin password of `argocd-initial-admin-secret` is a key the services declare: the extension no longer asks for
   "Secret values" on Secrets in `argocd`, and signs in by itself in any namespace.
 - The section "Argo CD" has its icon and sits after Velero, where the built-in one was; the palette searches

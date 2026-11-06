@@ -111,7 +111,8 @@
         },
         "actions": [
           "portForward"
-        ]
+        ],
+        "confirm": false
       }
     ]
   },

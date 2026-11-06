@@ -340,11 +340,14 @@ describe("a package from elsewhere with a catalog id", () => {
 });
 
 describe("an install asked from elsewhere (ADR-0162)", () => {
-  it("opens the catalog's own install once: the package checked, then the consent window", async () => {
+  it("opens the catalog's own install once, after the catalog was read: the package checked, then the consent window", async () => {
     requestCatalogInstall("acme.quota");
     setup();
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(calls("extension_inspect_catalog").map((c) => c.args)).toEqual([{ id: "acme.quota" }]);
+    // The backend installs only what its copy of the catalog lists: it is read first.
+    const order = backend!.calls.map((c) => c.cmd).filter((c) => c === "extension_catalog" || c === "extension_inspect_catalog");
+    expect(order[0]).toBe("extension_catalog");
     expect(screen.getByRole("tab", { name: "Catalog" })).toHaveAttribute("aria-selected", "true");
     expect(useInstallRequest.getState().id).toBeNull();
   });
