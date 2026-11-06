@@ -33,6 +33,7 @@ const ui = {
   close: vi.fn(),
   openLogs: vi.fn(() => Promise.resolve()),
   openUrl: vi.fn(() => Promise.resolve({ opened: false })),
+  signIn: vi.fn(() => Promise.resolve({ signedIn: false })),
 };
 const onFrameError = vi.fn();
 const onResize = vi.fn();

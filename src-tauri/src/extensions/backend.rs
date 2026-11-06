@@ -240,7 +240,7 @@ fn compile_error(err: impl std::fmt::Display) -> CoreError {
 }
 
 impl ExtensionHost {
-    fn backends(&self) -> &Backends {
+    pub(super) fn backends(&self) -> &Backends {
         &self.inner.backends
     }
 

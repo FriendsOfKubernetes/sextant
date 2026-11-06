@@ -6,6 +6,7 @@ import { Button } from "../components";
 import { syncExtensions } from "./contributions";
 import { dismissNotice, useNotices } from "./notices";
 import { OpenUrlHost } from "./openUrl";
+import { SignInHost } from "./signIn";
 import { useExtensions } from "./store";
 import "./extensions.css";
 
@@ -18,6 +19,7 @@ export function ExtensionsHost() {
     <>
       <ExtensionNotices />
       <OpenUrlHost />
+      <SignInHost />
     </>
   );
 }

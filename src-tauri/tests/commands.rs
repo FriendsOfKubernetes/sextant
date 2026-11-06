@@ -197,6 +197,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("extension_remove", Some("id")),
     ("extension_reload", Some("id")),
     ("extension_call", Some("extensionId")),
+    ("extension_service_sign_in", Some("extensionId")),
     ("extension_watch_stop", Some("extensionId")),
     ("extension_audit_list", None),
     ("extension_audit_clear", None),

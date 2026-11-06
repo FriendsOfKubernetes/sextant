@@ -157,6 +157,7 @@ function openPage(html: string, context: HostContext): Document {
       close: vi.fn(),
       openLogs: vi.fn(() => Promise.resolve()),
       openUrl: vi.fn(() => Promise.resolve({ opened: false })),
+  signIn: vi.fn(() => Promise.resolve({ signedIn: false })),
     },
     onFrameError,
     onResize: vi.fn(),

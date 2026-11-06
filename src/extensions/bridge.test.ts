@@ -23,10 +23,11 @@ let other: HTMLIFrameElement;
 let posted: unknown[];
 type Fn = (arg?: unknown) => void;
 let ui: {
-  [K in Exclude<keyof BridgeUi, "openLogs" | "openUrl">]: ReturnType<typeof vi.fn<Fn>>;
+  [K in Exclude<keyof BridgeUi, "openLogs" | "openUrl" | "signIn">]: ReturnType<typeof vi.fn<Fn>>;
 } & {
   openLogs: ReturnType<typeof vi.fn<(params: unknown) => Promise<void>>>;
   openUrl: ReturnType<typeof vi.fn<(params: unknown) => Promise<{ opened: boolean }>>>;
+  signIn: ReturnType<typeof vi.fn<(params: unknown) => Promise<{ signedIn: boolean }>>>;
 };
 let bridge: Bridge;
 let onResize: ReturnType<typeof vi.fn<(height: number) => void>>;
@@ -66,6 +67,7 @@ beforeEach(() => {
     close: vi.fn<Fn>(),
     openLogs: vi.fn<(params: unknown) => Promise<void>>(() => Promise.resolve()),
     openUrl: vi.fn<(params: unknown) => Promise<{ opened: boolean }>>(() => Promise.resolve({ opened: true })),
+    signIn: vi.fn<(params: unknown) => Promise<{ signedIn: boolean }>>(() => Promise.resolve({ signedIn: true })),
   };
   onResize = vi.fn<(height: number) => void>();
   onFrameError = vi.fn<(message: string) => void>();

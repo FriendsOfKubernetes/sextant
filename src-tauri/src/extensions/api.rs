@@ -57,7 +57,7 @@ use tauri::{Runtime, State, Webview};
 use tokio::task::AbortHandle;
 
 use super::forwards::{ExtensionForwards, MAX_FORWARDS_PER_EXTENSION};
-use super::sessions::{ServiceSessions, session_key};
+use super::sessions::{RememberedSignIn, ServiceSessions, session_key, sign_in_credential};
 use super::watch_hub::WatchHub;
 use super::{ExtensionHost, HostEvent, WeakExtensionHost};
 use crate::access_guard::audit::{AuditDecision, AuditEntry, AuditLog, clip};
@@ -1780,8 +1780,10 @@ impl<'a> ExtCall<'a> {
             None => None,
         };
         let mut secrets = Vec::new();
+        let mut sign_in_fields = Vec::new();
         if let Some(body) = &args.body {
             secret_placeholders(body, &mut secrets)?;
+            sign_in_placeholders(body, &mut sign_in_fields)?;
         }
         let entry = active_off_runtime(self.host, &self.id)
             .await?
@@ -1801,6 +1803,21 @@ impl<'a> ExtCall<'a> {
                     format!("no service {:?} the user agreed to", args.service),
                 )
             })?;
+        let declared: Vec<&str> = service
+            .sign_in
+            .iter()
+            .flat_map(|s| &s.fields)
+            .map(|f| f.id.as_str())
+            .collect();
+        if let Some(unknown) = sign_in_fields
+            .iter()
+            .find(|f| !declared.contains(&f.as_str()))
+        {
+            return Err(invalid(format!(
+                "`{{{{signIn:{unknown}}}}}` is no sign-in field of service {}",
+                service.id
+            )));
+        }
         let cluster = self.open(&args.cluster_id).await?;
         let mut needs = vec![
             (
@@ -1829,13 +1846,20 @@ impl<'a> ExtCall<'a> {
                 args.method.as_str(),
                 args.path
             ),
-            details: (!secrets.is_empty()).then(|| {
-                let names: Vec<String> = secrets
-                    .iter()
-                    .map(|(n, k)| format!("{n} key {k}"))
-                    .collect();
-                format!("sends values of Secrets: {}", names.join(", "))
-            }),
+            details: {
+                let mut lines = Vec::new();
+                if !secrets.is_empty() {
+                    let names: Vec<String> = secrets
+                        .iter()
+                        .map(|(n, k)| format!("{n} key {k}"))
+                        .collect();
+                    lines.push(format!("sends values of Secrets: {}", names.join(", ")));
+                }
+                if !sign_in_fields.is_empty() {
+                    lines.push(format!("sends the sign-in: {}", sign_in_fields.join(", ")));
+                }
+                (!lines.is_empty()).then(|| lines.join("\n"))
+            },
         };
         self.check(&cluster, &needs, &summary).await?;
         let mut body = args.body;
@@ -1850,6 +1874,19 @@ impl<'a> ExtCall<'a> {
             }
         }
         let key = session_key(&self.id, &cluster.id.0, &namespace, &service.id);
+        if !sign_in_fields.is_empty()
+            && let Some(body) = body.as_mut()
+        {
+            let values = self
+                .sign_in_values(&cluster, &namespace, &service.id, &key)
+                .await?;
+            for field in &sign_in_fields {
+                let value = values.get(field).ok_or_else(|| {
+                    CoreError::new(ErrorCode::Unauthorized, "sign in first (ui.signIn)")
+                })?;
+                fill_placeholder(body, &format!("{{{{signIn:{field}}}}}"), value);
+            }
+        }
         let forward = self
             .service_forward(&cluster, &namespace, &service, &key, entry.granted)
             .await?;
@@ -1904,13 +1941,55 @@ impl<'a> ExtCall<'a> {
             args.service, args.namespace
         ));
         self.decide(AuditDecision::Allowed);
-        self.api.sessions.forget(&session_key(
-            &self.id,
-            &cluster.id.0,
-            &args.namespace,
-            &args.service,
-        ));
+        let key = session_key(&self.id, &cluster.id.0, &args.namespace, &args.service);
+        self.api.sessions.forget(&key);
+        self.api.sessions.forget_sign_in(&key);
+        let (store, id) = (
+            Arc::clone(&self.host.backends().credentials),
+            self.id.clone(),
+        );
+        let name = sign_in_credential(&args.service, &cluster.id.0, &args.namespace);
+        blocking(move || store.remove(&id, &name)).await?;
         Ok(Value::Null)
+    }
+
+    /// The sign-in typed for this service in this run, else one remembered for the same API server and CA.
+    async fn sign_in_values(
+        &self,
+        cluster: &ExtCluster,
+        namespace: &str,
+        service: &str,
+        key: &str,
+    ) -> CoreResult<HashMap<String, String>> {
+        if let Some(values) = self.api.sessions.sign_in(key) {
+            return Ok(values);
+        }
+        let (store, id) = (
+            Arc::clone(&self.host.backends().credentials),
+            self.id.clone(),
+        );
+        let name = sign_in_credential(service, &cluster.id.0, namespace);
+        let stored = blocking(move || store.get(&id, &name)).await?;
+        let binding = self.api.clusters.server_binding(&cluster.id).ok().flatten();
+        let remembered = stored
+            .and_then(|text| serde_json::from_str::<RememberedSignIn>(&text).ok())
+            .filter(|r| {
+                binding
+                    .as_ref()
+                    .is_some_and(|b| b.server == r.server && b.ca_sha256 == r.ca_sha256)
+            });
+        match remembered {
+            Some(r) => {
+                self.api
+                    .sessions
+                    .set_sign_in(key.to_owned(), r.values.clone());
+                Ok(r.values)
+            }
+            None => Err(CoreError::new(
+                ErrorCode::Unauthorized,
+                "sign in first (ui.signIn): nothing was typed or remembered for this cluster",
+            )),
+        }
     }
 
     /// Sextant's own forward to `service` for this extension, started when there is none (never listed to it).
@@ -2315,17 +2394,49 @@ fn secret_placeholders(body: &Value, out: &mut Vec<(String, String)>) -> CoreRes
 
 /// Puts `value` where the body says `{{secret:<name>/<key>}}`.
 fn fill_secret(body: &mut Value, name: &str, key: &str, value: &str) {
-    let wanted = format!("{{{{secret:{name}/{key}}}}}");
+    fill_placeholder(body, &format!("{{{{secret:{name}/{key}}}}}"), value);
+}
+
+/// Puts `value` where a body string is exactly `wanted`.
+fn fill_placeholder(body: &mut Value, wanted: &str, value: &str) {
     match body {
         Value::String(text) if *text == wanted => *text = value.to_owned(),
         Value::Array(items) => items
             .iter_mut()
-            .for_each(|item| fill_secret(item, name, key, value)),
+            .for_each(|item| fill_placeholder(item, wanted, value)),
         Value::Object(map) => map
             .values_mut()
-            .for_each(|item| fill_secret(item, name, key, value)),
+            .for_each(|item| fill_placeholder(item, wanted, value)),
         _ => {}
     }
+}
+
+/// The `{{signIn:<field>}}` string values of a request body, each once.
+fn sign_in_placeholders(body: &Value, out: &mut Vec<String>) -> CoreResult<()> {
+    match body {
+        Value::String(text) => {
+            if let Some(field) = text
+                .strip_prefix("{{signIn:")
+                .and_then(|t| t.strip_suffix("}}"))
+            {
+                if !out.iter().any(|f| f == field) {
+                    out.push(field.to_owned());
+                }
+            } else if text.contains("{{signIn:") {
+                return Err(invalid(
+                    "`{{signIn:…}}` is a body value of its own, never inside other text",
+                ));
+            }
+        }
+        Value::Array(items) => items
+            .iter()
+            .try_for_each(|item| sign_in_placeholders(item, out))?,
+        Value::Object(map) => map
+            .values()
+            .try_for_each(|item| sign_in_placeholders(item, out))?,
+        _ => {}
+    }
+    Ok(())
 }
 
 /// Takes the non-empty string at `steps` out of `value` (replaced by `<hidden>`).
@@ -2765,6 +2876,130 @@ pub async fn extension_call<R: Runtime>(
 
 /// Stops a watch stream of `extensionId`; a stream of another extension is not touched, and one that already ended
 /// (or never existed) is not an error.
+/// What the user typed in Sextant's own sign-in dialog for an extension's service (`ui.signIn`, ADR-0160): kept for
+/// this run, and in the keyring bound to the cluster's API server when `remember` is set. The window's only: the frame
+/// never sees the values, and the command is no extension method.
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn extension_service_sign_in(
+    state: State<'_, AppState>,
+    host: State<'_, ExtensionHost>,
+    extension_id: String,
+    cluster_id: String,
+    namespace: String,
+    service: String,
+    values: HashMap<String, String>,
+    remember: bool,
+) -> CoreResult<()> {
+    state
+        .ext_api
+        .sign_in(
+            host.inner(),
+            &extension_id,
+            &cluster_id,
+            &namespace,
+            &service,
+            values,
+            remember,
+        )
+        .await
+}
+
+/// Longest sign-in value.
+pub const MAX_SIGN_IN_CHARS: usize = 4096;
+
+impl ExtensionApi {
+    /// See [`extension_service_sign_in`].
+    #[allow(clippy::too_many_arguments)]
+    pub async fn sign_in(
+        &self,
+        host: &ExtensionHost,
+        extension_id: &str,
+        cluster_id: &str,
+        namespace: &str,
+        service: &str,
+        values: HashMap<String, String>,
+        remember: bool,
+    ) -> CoreResult<()> {
+        let entry = active_off_runtime(host, extension_id)
+            .await?
+            .ok_or_else(|| inactive(extension_id))?;
+        let fields: Vec<String> = entry
+            .granted_services
+            .iter()
+            .flatten()
+            .find(|s| s.id == service)
+            .and_then(|s| s.sign_in.as_ref())
+            .map(|s| s.fields.iter().map(|f| f.id.clone()).collect())
+            .ok_or_else(|| {
+                invalid(format!(
+                    "service {service:?} of {extension_id} has no sign-in"
+                ))
+            })?;
+        let mut given: Vec<&String> = values.keys().collect();
+        given.sort();
+        let mut wanted: Vec<&String> = fields.iter().collect();
+        wanted.sort();
+        if given != wanted
+            || values
+                .values()
+                .any(|v| v.chars().count() > MAX_SIGN_IN_CHARS)
+        {
+            return Err(invalid(
+                "the sign-in has other fields than the service declares",
+            ));
+        }
+        let cluster = self
+            .cluster_list()
+            .into_iter()
+            .find(|c| c.id.0 == cluster_id)
+            .ok_or_else(|| CoreError::new(ErrorCode::NotFound, "no such cluster"))?;
+        let key = session_key(extension_id, &cluster.id.0, namespace, service);
+        // A new sign-in replaces the session it made.
+        self.sessions.forget(&key);
+        let store = Arc::clone(&host.backends().credentials);
+        let (id, name) = (
+            extension_id.to_owned(),
+            sign_in_credential(service, &cluster.id.0, namespace),
+        );
+        if remember {
+            let binding = self.clusters.server_binding(&cluster.id)?.ok_or_else(|| {
+                CoreError::new(
+                    ErrorCode::Unreachable,
+                    "connect the cluster to remember a sign-in",
+                )
+            })?;
+            let text = serde_json::to_string(&RememberedSignIn {
+                values: values.clone(),
+                server: binding.server,
+                ca_sha256: binding.ca_sha256,
+            })
+            .map_err(|_| CoreError::other("the sign-in cannot be stored"))?;
+            blocking(move || store.set(&id, &name, &text)).await?;
+        } else {
+            blocking(move || store.remove(&id, &name)).await?;
+        }
+        self.sessions.set_sign_in(key, values);
+        self.journal(AuditEntry {
+            at: now_ms(),
+            source: ConfirmSource::Extension,
+            principal: clip(&format!("Extension {extension_id}")),
+            client: clip(extension_id),
+            cluster_id: Some(cluster.id.clone()),
+            cluster_name: Some(self.cluster_name(&cluster.id, &cluster.context)),
+            tool: "ui.signIn".to_owned(),
+            target: clip(&format!(
+                "sign-in of service {service} in {namespace}{}",
+                if remember { ", remembered" } else { "" }
+            )),
+            decision: AuditDecision::Allowed,
+            result: "ok".to_owned(),
+            duration_ms: 0,
+        });
+        Ok(())
+    }
+}
+
 #[tauri::command]
 pub async fn extension_watch_stop(
     state: State<'_, AppState>,

@@ -17,6 +17,13 @@
       "title": "¿Abrir el enlace?",
       "text": "La extensión {{extension}} quiere abrir esta dirección en su navegador:",
       "open": "Abrir"
+    },
+    "signIn": {
+      "title": "Iniciar sesión en {{service}}",
+      "text": "La extensión {{extension}} le pide iniciar sesión (namespace {{namespace}}).",
+      "submit": "Iniciar sesión",
+      "remember": "Recordar para este clúster",
+      "hint": "Sextant guarda lo que escribe y solo lo envía a este servicio; la extensión nunca lo ve. Los inicios de sesión recordados se guardan en el llavero de su sistema."
     }
   },
   "install": {

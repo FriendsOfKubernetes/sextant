@@ -17,6 +17,13 @@
       "title": "Aprire il link?",
       "text": "L’estensione {{extension}} vuole aprire questo indirizzo nel browser:",
       "open": "Apri"
+    },
+    "signIn": {
+      "title": "Accedi a {{service}}",
+      "text": "L’estensione {{extension}} chiede di accedere (namespace {{namespace}}).",
+      "submit": "Accedi",
+      "remember": "Ricorda per questo cluster",
+      "hint": "Sextant conserva ciò che digiti e lo invia solo a questo servizio; l’estensione non lo vede mai. Gli accessi ricordati sono nel portachiavi del sistema."
     }
   },
   "install": {

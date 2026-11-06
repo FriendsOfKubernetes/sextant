@@ -80,6 +80,12 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
     }
     for service in &c.services {
         out.insert(format!("services.{}.title", service.id), Text::Title);
+        for field in service.sign_in.iter().flat_map(|s| &s.fields) {
+            out.insert(
+                format!("services.{}.signIn.{}.label", service.id, field.id),
+                Text::Title,
+            );
+        }
     }
     for item in &c.menu_items {
         out.insert(format!("menuItems.{}.title", item.id), Text::Title);

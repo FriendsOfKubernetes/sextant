@@ -1,10 +1,11 @@
 // What the window does for a frame's `ui.*` calls (src/extensions/protocol.ts). A malformed call is refused with
 // `invalid`, a page that does not exist with `notFound`.
-import { api, ApiError, type ClusterId, type ObjectRef } from "../api";
+import { api, ApiError, type ClusterId, type ObjectRef, type ServiceContribution } from "../api";
 import { useAppStore } from "../app/store";
 import { openLogsTab, POD_KIND } from "../features/logs/openLogsTab";
 import { openSelectorLogsTab } from "../features/logs/multi/open";
 import { askOpenUrl } from "./openUrl";
+import { askSignIn } from "./signIn";
 import { getPage } from "../layout/pages";
 import { findResourceDef, parseViewId } from "../resources/registry";
 import type { BridgeUi } from "./bridge";
@@ -19,6 +20,8 @@ export interface HostUiOptions {
   close?: () => void;
   /** The cluster of the frame's context; the active cluster when it has none. */
   clusterId?: () => ClusterId | null;
+  /** The services the extension's manifest declares (localized), for `ui.signIn`. */
+  services?: () => readonly ServiceContribution[];
 }
 
 /** Longest label selector `ui.openLogs` takes (as a problem rule's source). */
@@ -82,6 +85,25 @@ export function hostUi(options: HostUiOptions): BridgeUi {
       }
       const object = await api.resources.get(clusterId, { kind: POD_KIND, namespace, name: pod as string });
       openLogsTab(clusterId, object, typeof container === "string" ? container : undefined);
+    },
+    async signIn(params) {
+      const bad = () => new ApiError("invalid", "ui.signIn needs {namespace, service, clusterId?}");
+      if (!isRecord(params)) throw bad();
+      const { namespace, service } = params;
+      if (typeof namespace !== "string" || namespace === "" || typeof service !== "string") throw bad();
+      const clusterId =
+        (typeof params.clusterId === "string" && params.clusterId) || options.clusterId?.() || useAppStore.getState().activeClusterId;
+      if (!clusterId) throw new ApiError("invalid", "no cluster is open");
+      const declared = options.services?.().find((s) => s.id === service);
+      if (!declared) throw new ApiError("notFound", `no service ${service} the user agreed to`);
+      const signedIn = await askSignIn({
+        extensionId: options.extensionId,
+        extensionName: options.extensionName(),
+        clusterId,
+        namespace,
+        service: declared,
+      });
+      return { signedIn };
     },
     async openUrl(params) {
       const url = typeof params === "string" ? params : isRecord(params) ? params.url : undefined;

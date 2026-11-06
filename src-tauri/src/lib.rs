@@ -226,6 +226,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         extensions::manage::extension_remove,
         extensions::manage::extension_reload,
         extensions::api::extension_call,
+        extensions::api::extension_service_sign_in,
         extensions::api::extension_watch_stop,
         extensions::api::extension_audit_list,
         extensions::api::extension_audit_clear,

@@ -180,6 +180,12 @@ export interface Sextant {
      * the whole address and asks every time; one question per extension at a time.
      */
     openUrl(url: string, options?: CallOptions): Promise<boolean>;
+    /**
+     * Asks the user to sign in to a service of the manifest that declares `signIn`, in Sextant's own dialog (since
+     * Sextant 0.30); `true` once they did. What they type goes to Sextant, never to the extension: use it in a request
+     * body as `{{signIn:<field id>}}`. "Remember" keeps it for that cluster in the keyring.
+     */
+    signIn(params: { clusterId?: ClusterId; namespace: string; service: string }, options?: CallOptions): Promise<boolean>;
   };
   /** Any method, by name. */
   call<M extends keyof Methods>(method: M, params: Methods[M]["params"], options?: CallOptions): Promise<Methods[M]["result"]>;
@@ -587,6 +593,8 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       openLogs: (params, o) => send<unknown>("ui.openLogs", params, o).then(() => undefined),
       openUrl: (url, o) =>
         send<{ opened: boolean }>("ui.openUrl", { url }, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.opened),
+      signIn: (params, o) =>
+        onCluster<{ signedIn: boolean }>("ui.signIn", params, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.signedIn),
       close: (o) => send<unknown>("ui.close", undefined, o).then(() => undefined),
     },
     call: (method, params, o) => send(method, params, o),

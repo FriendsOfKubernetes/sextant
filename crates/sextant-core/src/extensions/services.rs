@@ -62,6 +62,30 @@ pub struct ServiceContribution {
     pub port: Value,
     /// `https` (the certificate is not checked: the loopback end of Sextant's forward) or `http`.
     pub scheme: ServiceScheme,
+    /// What the user types to sign in, in Sextant's own dialog (`ui.signIn`, ADR-0160): put into a request body by
+    /// `{{signIn:<field>}}`, never shown to the extension, remembered per cluster on request.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub sign_in: Option<SignIn>,
+}
+
+/// The fields of a service's sign-in.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SignIn {
+    pub fields: Vec<SignInField>,
+}
+
+/// One field of a sign-in: its id (`{{signIn:<id>}}`), its label and whether its value is hidden while typed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SignInField {
+    pub id: String,
+    pub label: String,
+    #[serde(default)]
+    pub secret: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -104,6 +128,16 @@ pub(crate) fn check_services(manifest: &ExtensionManifest) -> Result<(), Manifes
                 &here.key("port"),
                 "must be a port number (1–65535) or a port name",
             ));
+        }
+        for (j, field) in service.sign_in.iter().flat_map(|s| &s.fields).enumerate() {
+            let fields = &service.sign_in.as_ref().map_or(&[][..], |s| &s.fields[..]);
+            if let Some(first) = fields[..j].iter().position(|f| f.id == field.id) {
+                let list = here.key("signIn").key("fields");
+                return Err(at(
+                    &list.index(j).key("id"),
+                    format!("duplicate id `{}` (also {})", field.id, list.index(first)),
+                ));
+            }
         }
     }
     Ok(())

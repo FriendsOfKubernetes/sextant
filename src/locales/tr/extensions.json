@@ -16,6 +16,13 @@
       "title": "Bağlantı açılsın mı?",
       "text": "{{extension}} uzantısı bu adresi tarayıcınızda açmak istiyor:",
       "open": "Aç"
+    },
+    "signIn": {
+      "title": "{{service}} oturumu aç",
+      "text": "{{extension}} uzantısı oturum açmanızı istiyor (namespace {{namespace}}).",
+      "submit": "Oturum aç",
+      "remember": "Bu küme için hatırla",
+      "hint": "Sextant yazdıklarınızı saklar ve yalnızca bu servise gönderir; uzantı bunları asla görmez. Hatırlanan oturumlar sisteminizin anahtarlığında tutulur."
     }
   },
   "install": {

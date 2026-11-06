@@ -230,6 +230,7 @@ export const LOCAL_METHODS: readonly string[] = [
   "resources.unwatch",
   "ui.openLogs",
   "ui.openUrl",
+  "ui.signIn",
 ];
 
 /** Longest `ui.notify` text shown. */

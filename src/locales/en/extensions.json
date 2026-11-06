@@ -16,6 +16,13 @@
       "title": "Open a link?",
       "text": "Extension {{extension}} wants to open this address in your browser:",
       "open": "Open"
+    },
+    "signIn": {
+      "title": "Sign in to {{service}}",
+      "text": "Extension {{extension}} asks you to sign in (namespace {{namespace}}).",
+      "submit": "Sign in",
+      "remember": "Remember for this cluster",
+      "hint": "Sextant keeps what you type and sends it only to this service; the extension never sees it. Remembered sign-ins are kept in your system's keyring."
     }
   },
   "install": {

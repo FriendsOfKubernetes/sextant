@@ -971,7 +971,10 @@ export function translatableTexts(manifest) {
   for (const section of c.sections ?? []) if (section.title !== undefined) out.set(`sections.${section.section}.title`, title);
   if (c.clusterSettings !== undefined) out.set("clusterSettings.title", title);
   for (const tool of c.agentTools ?? []) out.set(`agentTools.${tool.id}.title`, title);
-  for (const service of c.services ?? []) out.set(`services.${service.id}.title`, title);
+  for (const service of c.services ?? []) {
+    out.set(`services.${service.id}.title`, title);
+    for (const field of service.signIn?.fields ?? []) out.set(`services.${service.id}.signIn.${field.id}.label`, title);
+  }
   for (const item of c.menuItems ?? []) out.set(`menuItems.${item.id}.title`, title);
   (c.kinds ?? []).forEach((kind, i) => {
     if (kind.title !== undefined) out.set(`kinds.${i}.title`, title);
@@ -1076,6 +1079,13 @@ function checkServices(manifest) {
     const port = service.port;
     const ok = isNumber(port) ? !isFloat(port) && port >= 1 && port <= 65535 : typeof port === "string" && isPortName(port);
     if (!ok) fail([...here, "port"], "must be a port number (1–65535) or a port name");
+    const fields = service.signIn?.fields ?? [];
+    fields.forEach((field, j) => {
+      const first = fields.slice(0, j).findIndex((f) => f.id === field.id);
+      if (first >= 0) {
+        fail([...here, "signIn", "fields", j, "id"], `duplicate id \`${field.id}\` (also ${pathText([...here, "signIn", "fields", first])})`);
+      }
+    });
   });
 }
 

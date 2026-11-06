@@ -42,7 +42,17 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
         ...s,
         ...(s.title !== undefined ? { title: text(`sections.${s.section}.title`, s.title) } : {}),
       })),
-      services: c.services.map((s) => ({ ...s, title: text(`services.${s.id}.title`, s.title) })),
+      services: c.services.map((s) => ({
+        ...s,
+        title: text(`services.${s.id}.title`, s.title),
+        ...(s.signIn
+          ? {
+              signIn: {
+                fields: s.signIn.fields.map((f) => ({ ...f, label: text(`services.${s.id}.signIn.${f.id}.label`, f.label) })),
+              },
+            }
+          : {}),
+      })),
       kinds: c.kinds.map((k, i) => ({
         ...k,
         ...(k.title !== undefined ? { title: text(`kinds.${i}.title`, k.title) } : {}),

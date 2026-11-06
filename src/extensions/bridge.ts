@@ -29,6 +29,8 @@ export interface BridgeUi {
   openLogs(params: unknown): Promise<void>;
   /** Opens an address in the browser once the user said so (ADR-0156); `{opened}`. */
   openUrl(params: unknown): Promise<{ opened: boolean }>;
+  /** Asks the user to sign in to a service of the extension in Sextant's own dialog (ADR-0160); `{signedIn}`. */
+  signIn(params: unknown): Promise<{ signedIn: boolean }>;
 }
 
 export interface BridgeOptions {
@@ -155,6 +157,8 @@ export function createBridge(options: BridgeOptions): Bridge {
         return ui.openLogs(request.params);
       case "ui.openUrl":
         return ui.openUrl(request.params);
+      case "ui.signIn":
+        return ui.signIn(request.params);
       case "resources.unwatch": {
         const stream = (request.params as { stream?: unknown } | null | undefined)?.stream;
         if (typeof stream !== "string" && typeof stream !== "number") {

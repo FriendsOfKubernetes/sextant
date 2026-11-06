@@ -105,3 +105,17 @@
   font-family: var(--font-mono);
   overflow-wrap: anywhere;
 }
+
+/* `ui.signIn`: Sextant's own sign-in for an extension's service. */
+.ext-sign-in {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: min(360px, 80vw);
+}
+
+.ext-sign-in__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

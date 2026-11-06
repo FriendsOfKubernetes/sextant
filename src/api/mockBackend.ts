@@ -175,6 +175,7 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   }));
   // Opening the logs folder shows nothing in tests.
   table.set("about_open_logs_folder", () => undefined);
+  table.set("extension_service_sign_in", () => undefined);
   table.set("settings_get", () => structuredClone(settings));
   table.set("settings_update", (args) => {
     settings = structuredClone(args.settings as AppSettings);

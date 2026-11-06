@@ -93,6 +93,7 @@ export const LOCAL_METHODS = [
   "resources.unwatch",
   "ui.openLogs",
   "ui.openUrl",
+  "ui.signIn",
 ] as const;
 
 export type MethodName = (typeof REMOTE_METHODS)[number] | (typeof LOCAL_METHODS)[number];

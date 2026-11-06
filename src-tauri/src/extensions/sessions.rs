@@ -13,10 +13,12 @@ struct Session {
     token: String,
 }
 
-/// The tokens, by `extension|cluster|namespace|service`.
+/// The tokens, by `extension|cluster|namespace|service`, and the sign-in values the user typed in Sextant's own dialog
+/// (`ui.signIn`, ADR-0160) for this run.
 #[derive(Default)]
 pub struct ServiceSessions {
     map: Mutex<HashMap<String, Session>>,
+    sign_ins: Mutex<HashMap<String, HashMap<String, String>>>,
 }
 
 impl fmt::Debug for ServiceSessions {
@@ -59,10 +61,44 @@ impl ServiceSessions {
         lock(&self.map).remove(key).is_some()
     }
 
-    /// Drops every token of `extension`.
+    /// Drops every token and sign-in of `extension`.
     pub fn forget_extension(&self, extension: &str) {
         let prefix = format!("{extension}|");
         lock(&self.map).retain(|key, _| !key.starts_with(&prefix));
+        lock(&self.sign_ins).retain(|key, _| !key.starts_with(&prefix));
+    }
+
+    /// The sign-in values typed for `key` in this run.
+    pub fn sign_in(&self, key: &str) -> Option<HashMap<String, String>> {
+        lock(&self.sign_ins).get(key).cloned()
+    }
+
+    pub fn set_sign_in(&self, key: String, values: HashMap<String, String>) {
+        lock(&self.sign_ins).insert(key, values);
+    }
+
+    pub fn forget_sign_in(&self, key: &str) {
+        lock(&self.sign_ins).remove(key);
+    }
+}
+
+/// The keyring entry (`extension:<id>:<this>`) of a remembered sign-in: per service, cluster and namespace.
+pub fn sign_in_credential(service: &str, cluster: &str, namespace: &str) -> String {
+    format!("service-sign-in:{service}@{cluster}/{namespace}")
+}
+
+/// What a remembered sign-in holds: the values and the API server they were typed for (ADR-0029's binding).
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct RememberedSignIn {
+    pub values: HashMap<String, String>,
+    pub server: String,
+    #[serde(default)]
+    pub ca_sha256: Option<String>,
+}
+
+impl fmt::Debug for RememberedSignIn {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "RememberedSignIn {{ <hidden> }}")
     }
 }
 

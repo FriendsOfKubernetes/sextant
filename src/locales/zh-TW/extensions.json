@@ -15,6 +15,13 @@
       "title": "開啟連結？",
       "text": "擴充功能 {{extension}} 想在瀏覽器中開啟此位址：",
       "open": "開啟"
+    },
+    "signIn": {
+      "title": "登入 {{service}}",
+      "text": "擴充功能 {{extension}} 請你登入（命名空間 {{namespace}}）。",
+      "submit": "登入",
+      "remember": "為此叢集記住",
+      "hint": "Sextant 保存你輸入的內容，只傳送給此服務；擴充功能永遠看不到。記住的登入保存在系統鑰匙圈中。"
     }
   },
   "install": {

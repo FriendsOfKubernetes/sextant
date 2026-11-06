@@ -16,6 +16,13 @@
       "title": "Link öffnen?",
       "text": "Die Erweiterung {{extension}} möchte diese Adresse in Ihrem Browser öffnen:",
       "open": "Öffnen"
+    },
+    "signIn": {
+      "title": "Bei {{service}} anmelden",
+      "text": "Die Erweiterung {{extension}} bittet Sie, sich anzumelden (Namespace {{namespace}}).",
+      "submit": "Anmelden",
+      "remember": "Für diesen Cluster merken",
+      "hint": "Sextant behält, was Sie eingeben, und sendet es nur an diesen Service; die Erweiterung sieht es nie. Gemerkte Anmeldungen liegen im Schlüsselbund Ihres Systems."
     }
   },
   "install": {

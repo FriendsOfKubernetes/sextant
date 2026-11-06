@@ -2616,3 +2616,74 @@ async fn an_agent_tool_runs_only_when_the_user_lets_agents_have_the_extensions_t
     );
     assert_eq!(entry.decision, AuditDecision::Denied);
 }
+
+#[tokio::test]
+async fn a_sign_in_typed_in_sextants_dialog_fills_the_request_and_never_comes_back() {
+    let env = Env::at(&fake_cluster().await);
+    env.install(
+        "argo",
+        perms(all_clusters(), &["argocd"], &["read", "portForward"], false),
+    );
+    grant_services(
+        &env,
+        "argo",
+        json!([{ "id": "api", "title": "Argo CD API", "name": "argocd-server", "port": 443, "scheme": "https",
+                 "signIn": { "fields": [{ "id": "username", "label": "User" }, { "id": "password", "label": "Password", "secret": true }] } }]),
+    );
+    let login = |field: &str| {
+        json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": "api", "method": "POST", "path": "/api/v1/session",
+                "capture": ".token", "body": { "username": "{{signIn:username}}", "password": format!("{{{{signIn:{field}}}}}") } })
+    };
+    let call = |params: Value| {
+        env.api
+            .call(&env.host, "argo", "service.request", params, None)
+    };
+    // A field the service does not declare: invalid.
+    assert_eq!(
+        call(login("token")).await.unwrap_err().code,
+        ErrorCode::Invalid
+    );
+    // Nothing typed yet: the extension is told to ask for it.
+    let err = call(login("password")).await.unwrap_err();
+    assert_eq!(err.code, ErrorCode::Unauthorized, "{}", err.message);
+    // Other fields than the service declares are refused.
+    let id = env.cluster_id("ctx-a").0;
+    let partial: HashMap<String, String> = [("username".to_owned(), "admin".to_owned())].into();
+    assert!(
+        env.api
+            .sign_in(&env.host, "argo", &id, "argocd", "api", partial, false)
+            .await
+            .is_err()
+    );
+    let values: HashMap<String, String> = [
+        ("username".to_owned(), "admin".to_owned()),
+        ("password".to_owned(), "hunter2".to_owned()),
+    ]
+    .into();
+    env.api
+        .sign_in(&env.host, "argo", &id, "argocd", "api", values, false)
+        .await
+        .unwrap();
+    // Signed in: the request goes on to the forward (none in this test), past the sign-in.
+    let err = call(login("password")).await.unwrap_err();
+    assert_ne!(err.code, ErrorCode::Unauthorized, "{}", err.message);
+    assert!(!err.message.contains("hunter2"));
+    let journal = env.api.audit_list(Some("argo"));
+    assert!(journal.iter().any(|e| e.tool == "ui.signIn"));
+    assert!(journal.iter().all(|e| !e.target.contains("hunter2")));
+    // Signing out drops it.
+    env.api
+        .call(
+            &env.host,
+            "argo",
+            "service.forget",
+            json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": "api" }),
+            None,
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        call(login("password")).await.unwrap_err().code,
+        ErrorCode::Unauthorized
+    );
+}

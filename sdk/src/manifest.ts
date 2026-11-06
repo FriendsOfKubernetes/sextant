@@ -278,6 +278,11 @@ export interface ManifestService {
   port: number | string;
   /** `https`: TLS without checking the certificate (the loopback end of Sextant's forward); `http`: plain. */
   scheme: "https" | "http";
+  /**
+   * What the user types to sign in, in Sextant's own dialog (`sextant.ui.signIn`): a request body value
+   * `{{signIn:<field id>}}` gets it, and the extension never sees it; remembered per cluster in the keyring on request.
+   */
+  signIn?: { fields: { id: string; label: string; secret?: boolean }[] };
 }
 
 /**
@@ -406,7 +411,9 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       kinds: (c.kinds ?? []).map((k) => ({ ...k, searchByDefault: k.searchByDefault ?? false })),
       sections: c.sections ?? [],
       menuItems: c.menuItems ?? [],
-      services: c.services ?? [],
+      services: (c.services ?? []).map(({ signIn, ...service }) =>
+        signIn ? { ...service, signIn: { fields: signIn.fields.map((f) => ({ ...f, secret: f.secret ?? false })) } } : service,
+      ),
       agentTools: (c.agentTools ?? []).map((tool) => ({ ...tool, readOnly: tool.readOnly ?? false })),
     },
   };

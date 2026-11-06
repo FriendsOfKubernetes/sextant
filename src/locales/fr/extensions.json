@@ -17,6 +17,13 @@
       "title": "Ouvrir le lien ?",
       "text": "L’extension {{extension}} veut ouvrir cette adresse dans votre navigateur :",
       "open": "Ouvrir"
+    },
+    "signIn": {
+      "title": "Se connecter à {{service}}",
+      "text": "L’extension {{extension}} vous demande de vous connecter (namespace {{namespace}}).",
+      "submit": "Se connecter",
+      "remember": "Mémoriser pour ce cluster",
+      "hint": "Sextant garde ce que vous saisissez et ne l’envoie qu’à ce service ; l’extension ne le voit jamais. Les connexions mémorisées sont dans le trousseau de votre système."
     }
   },
   "install": {

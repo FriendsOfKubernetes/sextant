@@ -18,6 +18,13 @@
       "title": "Otworzyć link?",
       "text": "Rozszerzenie {{extension}} chce otworzyć ten adres w przeglądarce:",
       "open": "Otwórz"
+    },
+    "signIn": {
+      "title": "Logowanie: {{service}}",
+      "text": "Rozszerzenie {{extension}} prosi o zalogowanie się (przestrzeń nazw {{namespace}}).",
+      "submit": "Zaloguj",
+      "remember": "Zapamiętaj dla tego klastra",
+      "hint": "Sextant przechowuje to, co wpiszesz, i wysyła tylko do tej usługi; rozszerzenie nigdy tego nie widzi. Zapamiętane logowania są w systemowym magazynie kluczy."
     }
   },
   "install": {

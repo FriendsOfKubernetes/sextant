@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mockBackend, type KubeObject, type MockBackend } from "../api";
 import { resetAppStore, useAppStore } from "../app/store";
 import { checkedUrl, OpenUrlHost, resetOpenUrl } from "./openUrl";
+import { resetSignIns, SignInHost } from "./signIn";
 import { hostUi } from "./ui";
 
 let backend: MockBackend;
@@ -17,6 +18,7 @@ const pod: KubeObject = {
 beforeEach(() => {
   resetAppStore();
   resetOpenUrl();
+  resetSignIns();
   backend = mockBackend({ resource_get: () => pod, extension_call: () => null });
 });
 
@@ -83,5 +85,59 @@ describe("ui.openUrl", () => {
     for (const bad of ["file:///etc/passwd", "javascript:alert(1)", "https://user:pw@example.com/", "", 42, "not a url"]) {
       expect(() => checkedUrl(bad), String(bad)).toThrow();
     }
+  });
+});
+
+describe("ui.signIn", () => {
+  const service = {
+    id: "api",
+    title: "Argo CD API",
+    name: "argocd-server",
+    port: "https",
+    scheme: "https" as const,
+    signIn: {
+      fields: [
+        { id: "username", label: "Username", secret: false },
+        { id: "password", label: "Password", secret: true },
+      ],
+    },
+  };
+  const withServices = () =>
+    hostUi({ extensionId: "demo.ext", extensionName: () => "Demo", clusterId: () => "c1", services: () => [service] });
+
+  it("asks in Sextant's own dialog and sends the values to Rust, never back to the frame", async () => {
+    render(<SignInHost />);
+    let answer: Promise<{ signedIn: boolean }> | undefined;
+    act(() => {
+      answer = withServices().signIn({ namespace: "argocd", service: "api" });
+    });
+    const dialog = await screen.findByRole("dialog", { name: "Sign in to Argo CD API" });
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByLabelText("Password")).toHaveAttribute("type", "password");
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "admin" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "hunter2" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Remember for this cluster" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await expect(answer).resolves.toEqual({ signedIn: true });
+    const sent = backend.calls.find((c) => c.cmd === "extension_service_sign_in")!;
+    expect(sent.args).toMatchObject({
+      extensionId: "demo.ext",
+      clusterId: "c1",
+      namespace: "argocd",
+      service: "api",
+      values: { username: "admin", password: "hunter2" },
+      remember: true,
+    });
+  });
+
+  it("answers false when the user cancels, and refuses a service without a sign-in", async () => {
+    render(<SignInHost />);
+    let answer: Promise<{ signedIn: boolean }> | undefined;
+    act(() => {
+      answer = withServices().signIn({ namespace: "argocd", service: "api" });
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    await expect(answer).resolves.toEqual({ signedIn: false });
+    await expect(withServices().signIn({ namespace: "argocd", service: "other" })).rejects.toMatchObject({ code: "notFound" });
   });
 });

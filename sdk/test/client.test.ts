@@ -209,11 +209,13 @@ describe("calls", () => {
       [() => sextant.portForward.stop("pf-1"), "portForward.stop", { id: "pf-1" }],
       [() => sextant.ui.openLogs({ namespace: "ns", pod: "p", container: "c" }), "ui.openLogs", { namespace: "ns", pod: "p", container: "c" }],
       [() => sextant.ui.openUrl("https://localhost:8443/"), "ui.openUrl", { url: "https://localhost:8443/" }],
+      [() => sextant.ui.signIn({ namespace: "argocd", service: "api" }), "ui.signIn", { clusterId: "c1", namespace: "argocd", service: "api" }],
     ];
     const answers: Record<string, unknown> = {
       "context.get": CONTEXT,
       "portForward.list": { forwards: [] },
       "ui.openUrl": { opened: true },
+      "ui.signIn": { signedIn: true },
     };
     for (const [call, method, params] of calls) {
       const count = requests().length;

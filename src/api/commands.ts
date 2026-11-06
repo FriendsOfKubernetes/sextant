@@ -905,6 +905,15 @@ export const extensions = {
   ) => call<unknown>("extension_call", { extensionId, method, params, streamId, onEvent }),
   /** Stops a `resources.watch` stream of the extension; an ended one is not an error. */
   watchStop: (extensionId: string, streamId: string) => call<void>("extension_watch_stop", { extensionId, streamId }),
+  /** What the user typed in Sextant's sign-in dialog for an extension's service (`ui.signIn`, ADR-0160); window only. */
+  serviceSignIn: (
+    extensionId: string,
+    clusterId: ClusterId,
+    namespace: string,
+    service: string,
+    values: Record<string, string>,
+    remember: boolean,
+  ) => call<void>("extension_service_sign_in", { extensionId, clusterId, namespace, service, values, remember }),
   /** Calls of extensions, newest first; one extension's only when `extensionId` is given. */
   auditList: (extensionId: string | null = null) => call<AuditEntry[]>("extension_audit_list", { extensionId }),
   auditClear: () => call<void>("extension_audit_clear"),

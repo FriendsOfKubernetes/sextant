@@ -103,6 +103,7 @@ export const MANIFEST_SHAPES = {
     name: "required",
     port: "required",
     scheme: "required",
+    signIn: "optional",
   }),
   ManifestMenuItem: described<ManifestMenuItem>(`${CONTRIBUTION}/menuItems/items`, {
     id: "required",
