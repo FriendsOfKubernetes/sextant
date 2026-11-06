@@ -102,7 +102,7 @@ export function ExtensionClusterSettingsFrame({ extensionId, clusterId }: { exte
   return (
     <ExtensionFrame
       extensionId={extensionId}
-      view={VIEW.clusterSettings}
+      view={VIEW.settings}
       contribution={CLUSTER_SETTINGS_CONTRIBUTION}
       title={tab.title}
       clusterId={clusterId}

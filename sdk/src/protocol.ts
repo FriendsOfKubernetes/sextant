@@ -9,7 +9,7 @@ import type { ObjectRef } from "./generated/ObjectRef";
 export const PROTOCOL_VERSION = 1;
 
 /** Where a frame is shown; also the `view` query parameter of its URL. */
-export type FrameView = "page" | "details" | "action" | "dock" | "settings" | "clusterSettings";
+export type FrameView = "page" | "details" | "action" | "dock" | "settings";
 
 export type RequestId = string | number;
 

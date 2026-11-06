@@ -197,7 +197,7 @@ const DEFAULT_CONNECT_TIMEOUT = 10_000;
 const DEFAULT_TIMEOUT = 60_000;
 const DEFAULT_CHANGE_TIMEOUT = 180_000;
 /** Views whose frame Sextant sizes by the content (`resize`); a details tab fills the panel and ignores it. */
-const AUTO_HEIGHT_VIEWS: ReadonlySet<string> = new Set(["details", "settings", "clusterSettings"]);
+const AUTO_HEIGHT_VIEWS: ReadonlySet<string> = new Set(["details", "settings"]);
 const CHANGES: ReadonlySet<string> = new Set([
   "resources.apply",
   "resources.patch",

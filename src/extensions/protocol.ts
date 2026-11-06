@@ -70,7 +70,7 @@ import type { ClusterId, ErrorCode, ObjectRef } from "../api";
 export const PROTOCOL_VERSION = 1;
 
 /** Where a frame is shown; also the `view` query parameter of its URL. */
-export type FrameView = "page" | "details" | "action" | "dock" | "settings" | "clusterSettings";
+export type FrameView = "page" | "details" | "action" | "dock" | "settings";
 
 /** The views by name (for JSX props). */
 export const VIEW = {
@@ -79,10 +79,12 @@ export const VIEW = {
   action: "action",
   dock: "dock",
   settings: "settings",
-  clusterSettings: "clusterSettings",
 } as const satisfies Record<FrameView, FrameView>;
 
-/** The contribution id of a cluster settings tab (`contributes.clusterSettings` has none of its own, ADR-0160). */
+/**
+ * The contribution id of a cluster settings tab (`contributes.clusterSettings`, ADR-0160): shown with the view
+ * `settings` (the views only grow by contribution ids, ADR-0142), the cluster in the context.
+ */
 export const CLUSTER_SETTINGS_CONTRIBUTION = "clusterSettings";
 
 /** The contribution id of the settings section (`contributes.settings` has none of its own). */

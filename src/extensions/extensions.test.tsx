@@ -672,7 +672,7 @@ describe("contributions of an extension", () => {
     const Section = tab.sections[0]!.Component;
     const { container } = render(<Section clusterId="c2" cluster={{ id: "c2" } as never} />);
     expect(frameOf(container).getAttribute("src")).toBe(
-      "sextant-ext://demo.widgets/index.html?view=clusterSettings&id=clusterSettings",
+      "sextant-ext://demo.widgets/index.html?view=settings&id=clusterSettings",
     );
     const sidebar = screen.getByRole("navigation", { name: "Sections" });
     const names = within(sidebar)

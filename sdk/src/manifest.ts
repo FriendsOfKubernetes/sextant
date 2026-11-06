@@ -229,7 +229,7 @@ export interface ManifestContributions {
   agentTools?: ManifestAgentTool[];
   /** The extension's own sidebar sections: title, header icon, place; needs `sextantApi` 4. */
   sections?: ManifestSection[];
-  /** A tab in a cluster's settings (`view=clusterSettings`, that cluster in the context); needs `sextantApi` 4. */
+  /** A tab in a cluster's settings (`view=settings` with the contribution `clusterSettings`, that cluster in the context); needs `sextantApi` 4. */
   clusterSettings?: ManifestSettings;
 }
 

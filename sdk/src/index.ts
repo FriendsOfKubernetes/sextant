@@ -10,3 +10,5 @@ export type { HostContext, FrameView, RequestId } from "./protocol";
 export { PROTOCOL_VERSION, THEME_TOKENS } from "./protocol";
 export * from "./manifest";
 export type { ErrorCode } from "./generated/ErrorCode";
+export * as ui from "./ui";
+export type { UiTone, FieldRow, UiContent } from "./ui";
