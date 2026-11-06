@@ -39,6 +39,7 @@ import {
   useClustersStore,
 } from "./clustersStore";
 import { InstallMenuItems } from "../gitops-install/InstallMenuItems";
+import { useClusterMenuItems } from "./menuItems";
 import { useClusters } from "./hooks";
 import { gapTarget, moveCluster, orderClusters, stepTarget, type MoveStep } from "./order";
 import { useRailDrag } from "./railDrag";
@@ -366,6 +367,7 @@ function ClusterMenu({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const extensionItems = useClusterMenuItems();
   const ref = useRef<HTMLUListElement>(null);
   const id = menu.cluster.id;
 
@@ -402,6 +404,13 @@ function ClusterMenu({
         </li>
       )}
       <InstallMenuItems clusterId={id} run={run} />
+      {extensionItems.map((item) => (
+        <li key={item.id} role="none">
+          <button type="button" role="menuitem" onClick={run(() => item.run(id))}>
+            {item.label}
+          </button>
+        </li>
+      ))}
       <li role="none">
         <button type="button" role="menuitem" onClick={run(() => openClusterSettings(id))}>
           {t("clusters:menu.settings")}

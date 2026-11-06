@@ -12,6 +12,7 @@ import type {
   ManifestDetailsSection,
   ManifestDockAction,
   ManifestKind,
+  ManifestMenuItem,
   ManifestFile,
   ManifestMetricQuery,
   ManifestPage,
@@ -80,6 +81,13 @@ export const MANIFEST_SHAPES = {
     sectionBadges: "optional",
     commands: "optional",
     kinds: "optional",
+    menuItems: "optional",
+  }),
+  ManifestMenuItem: described<ManifestMenuItem>(`${CONTRIBUTION}/menuItems/items`, {
+    id: "required",
+    title: "required",
+    icon: "optional",
+    menu: "required",
   }),
   ManifestCommand: described<ManifestCommand>(`${CONTRIBUTION}/commands/items`, {
     id: "required",

@@ -59,6 +59,7 @@ const manifest: ExtensionManifest = {
     sectionBadges: [],
     commands: [],
     kinds: [],
+    menuItems: [],
     settings: { title: "Widget settings" },
   },
 };

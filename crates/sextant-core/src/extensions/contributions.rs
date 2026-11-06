@@ -178,6 +178,17 @@ pub(crate) fn check_kinds(manifest: &ExtensionManifest) -> Result<(), ManifestEr
     Ok(())
 }
 
+/// `contributes.menuItems` came with `sextantApi` 4 (ADR-0157).
+pub(crate) fn check_menu_items(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
+    if !manifest.contributes.menu_items.is_empty() && manifest.sextant_api < WINDOW_API {
+        return Err(at(
+            &JsonPath::default().key("contributes").key("menuItems"),
+            format!("needs sextantApi {WINDOW_API} or later"),
+        ));
+    }
+    Ok(())
+}
+
 /// The permissions `sextantApi` 4 brought: the `portForward` action (ADR-0156) and `statusPatches` of custom kinds
 /// only, each once (ADR-0155).
 pub(crate) fn check_permissions(manifest: &ExtensionManifest) -> Result<(), ManifestError> {

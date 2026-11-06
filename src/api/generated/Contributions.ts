@@ -5,6 +5,7 @@ import type { CommandContribution } from "./CommandContribution";
 import type { DetailsSectionContribution } from "./DetailsSectionContribution";
 import type { DockActionContribution } from "./DockActionContribution";
 import type { KindContribution } from "./KindContribution";
+import type { MenuItemContribution } from "./MenuItemContribution";
 import type { MetricQuery } from "./MetricQuery";
 import type { PageContribution } from "./PageContribution";
 import type { ProblemContribution } from "./ProblemContribution";
@@ -34,4 +35,8 @@ commands: Array<CommandContribution>,
 /**
  * Kinds listed in a sidebar section of the extension's own with Sextant's tables (ADR-0152); `sextantApi` 4.
  */
-kinds: Array<KindContribution>, };
+kinds: Array<KindContribution>, 
+/**
+ * Items of Sextant's menus that open the extension's window (ADR-0157); `sextantApi` 4.
+ */
+menuItems: Array<MenuItemContribution>, };

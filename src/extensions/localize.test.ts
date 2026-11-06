@@ -33,6 +33,7 @@ const manifest: ExtensionManifest = {
     sectionBadges: [],
     commands: [],
     kinds: [],
+    menuItems: [],
     settings: { title: "Rook Ceph" },
   },
   backend: { module: "b.wasm", network: { hosts: [] }, credentials: [{ id: "token", label: "Token" }] },

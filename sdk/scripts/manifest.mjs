@@ -483,7 +483,7 @@ function checkUniqueIds(manifest) {
       }
     });
   }
-  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries", "commands"]) {
+  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries", "commands", "menuItems"]) {
     const items = manifest.contributes?.[kind];
     if (!Array.isArray(items)) continue;
     items.forEach((item, i) => {
@@ -968,6 +968,7 @@ export function translatableTexts(manifest) {
     out.set(`columns.${column.id}.title`, title);
     (column.cases ?? []).forEach((_, i) => out.set(`columns.${column.id}.cases.${i}.text`, title));
   }
+  for (const item of c.menuItems ?? []) out.set(`menuItems.${item.id}.title`, title);
   (c.kinds ?? []).forEach((kind, i) => {
     if (kind.title !== undefined) out.set(`kinds.${i}.title`, title);
     if (kind.sectionTitle !== undefined) out.set(`kinds.${i}.sectionTitle`, title);
@@ -1151,6 +1152,9 @@ export function validateManifest(value, schema = manifestSchema()) {
     checkColumns(value);
     checkKinds(value);
     checkPermissions(value);
+    if ((value.contributes?.menuItems ?? []).length > 0 && value.sextantApi < WINDOW_API) {
+      fail(["contributes", "menuItems"], `needs sextantApi ${WINDOW_API} or later`);
+    }
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };

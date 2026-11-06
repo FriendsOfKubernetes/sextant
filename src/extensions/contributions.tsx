@@ -12,7 +12,8 @@ import type { ComponentType } from "react";
 import type { ActionContribution, ExtensionInfo, KindContribution, KindPattern, KindRef, KubeObject, ProblemContribution } from "../api";
 import { useAppStore } from "../app/store";
 import { Dialog, isIconName, type IconName } from "../components";
-import { registerAction, type ActionContext } from "../features/actions/registry";
+import { openActionDialog, registerAction, type ActionContext } from "../features/actions/registry";
+import { registerClusterMenuItem } from "../features/clusters/menuItems";
 import { categoryOfExtension, detectExtension, registerExtensionProblems } from "../features/problems/extensionCategories";
 import { NamespaceFilter } from "../features/namespaces";
 import { useExtensionSectionCount } from "../features/problems/hooks";
@@ -210,7 +211,7 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
           when === undefined
             ? undefined
             : (obj, kind) => (matches(action.kinds, kind) && !holdsNow(when, obj) ? action.whyNot : undefined),
-        run: (ctx) => openActionWindow(extensionId, action, ctx),
+        run: (ctx) => openActionWindow(extensionId, action.id, action.title, ctx),
       }),
     );
     for (const kind of action.kinds) removers.push(extendActions(kind, [id]));
@@ -238,6 +239,19 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
           fallback: "end",
         },
       ]),
+    );
+  }
+
+  // Items of a cluster's context menu (ADR-0157): the extension's window with that cluster in its context.
+  for (const item of contributes.menuItems) {
+    removers.push(
+      registerClusterMenuItem({
+        id: contributionKey(extensionId, item.id),
+        label: item.title,
+        icon: item.icon === undefined ? undefined : iconOf(item.icon, extensionIcon),
+        run: (clusterId) =>
+          openActionWindow(extensionId, item.id, item.title, { clusterId, refs: [], openDialog: openActionDialog }),
+      }),
     );
   }
 
@@ -352,7 +366,12 @@ function detailsComponent(
   };
 }
 
-function openActionWindow(extensionId: string, action: ActionContribution, ctx: ActionContext): void {
+function openActionWindow(
+  extensionId: string,
+  contribution: string,
+  title: string,
+  ctx: Pick<ActionContext, "clusterId" | "refs" | "openDialog">,
+): void {
   const windows = openWindows.get(extensionId) ?? new Set<() => void>();
   openWindows.set(extensionId, windows);
   let tracked = () => {};
@@ -362,12 +381,12 @@ function openActionWindow(extensionId: string, action: ActionContribution, ctx: 
       done();
     };
     return (
-      <Dialog open title={action.title} onClose={finish}>
+      <Dialog open title={title} onClose={finish}>
         <ExtensionFrame
           extensionId={extensionId}
           view={VIEW.action}
-          contribution={action.id}
-          title={action.title}
+          contribution={contribution}
+          title={title}
           clusterId={ctx.clusterId}
           selection={ctx.refs}
           onClose={finish}

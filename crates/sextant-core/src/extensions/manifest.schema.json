@@ -497,6 +497,22 @@
             }
           }
         },
+        "menuItems": {
+          "description": "Items of Sextant's menus that open the extension's window (sextantApi 4): `cluster` is a cluster's context menu.",
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title", "menu"],
+            "properties": {
+              "id": { "$ref": "#/$defs/contributionId" },
+              "title": { "$ref": "#/$defs/title" },
+              "icon": { "$ref": "#/$defs/icon" },
+              "menu": { "type": "string", "enum": ["cluster"] }
+            }
+          }
+        },
         "sectionBadges": {
           "description": "Counters on the extension's own sidebar sections (ADR-0143); needs `sextantApi` 3. Sextant counts the objects with active problems of the extension's rules and shows the number on the section's header.",
           "type": "array",

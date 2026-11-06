@@ -154,6 +154,30 @@ pub struct Contributions {
     pub commands: Vec<CommandContribution>,
     /// Kinds listed in a sidebar section of the extension's own with Sextant's tables (ADR-0152); `sextantApi` 4.
     pub kinds: Vec<KindContribution>,
+    /// Items of Sextant's menus that open the extension's window (ADR-0157); `sextantApi` 4.
+    pub menu_items: Vec<MenuItemContribution>,
+}
+
+/// An item of one of Sextant's menus (`view=action`, with the menu's subject in the context).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct MenuItemContribution {
+    pub id: String,
+    pub title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub icon: Option<String>,
+    /// The menu: `cluster`, a cluster's context menu (the cluster is the window's `clusterId`).
+    pub menu: MenuPlace,
+}
+
+/// Which of Sextant's menus.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum MenuPlace {
+    Cluster,
 }
 
 /// A page in the cluster's sidebar (`view=page`).
@@ -409,6 +433,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     contributions::check_columns(&manifest)?;
     contributions::check_kinds(&manifest)?;
     contributions::check_permissions(&manifest)?;
+    contributions::check_menu_items(&manifest)?;
     Ok(manifest)
 }
 
@@ -442,6 +467,7 @@ fn check_unique_ids(manifest: &Value) -> Result<(), ManifestError> {
         "problems",
         "metricQueries",
         "commands",
+        "menuItems",
     ] {
         let Some(items) = manifest
             .get("contributes")

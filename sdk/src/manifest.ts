@@ -217,6 +217,20 @@ export interface ManifestContributions {
   commands?: ManifestCommand[];
   /** Kinds in a sidebar section of the extension's own; needs `sextantApi` 4. */
   kinds?: ManifestKind[];
+  /** Items of Sextant's menus opening the extension's window; needs `sextantApi` 4. */
+  menuItems?: ManifestMenuItem[];
+}
+
+/**
+ * An item of one of Sextant's menus (sextantApi 4, ADR-0157): a click opens the extension's window (`view=action`, the
+ * item's id as the contribution) with the menu's subject in the context — for `cluster`, the cluster's context menu,
+ * that cluster as `clusterId`.
+ */
+export interface ManifestMenuItem {
+  id: string;
+  title: string;
+  icon?: string;
+  menu: "cluster";
 }
 
 /**
@@ -331,6 +345,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [] })),
       commands: (c.commands ?? []).map((command) => ({ ...command, params: command.params ?? [], changes: command.changes ?? false })),
       kinds: c.kinds ?? [],
+      menuItems: c.menuItems ?? [],
     },
   };
   if (file.icon !== undefined) manifest.icon = file.icon;

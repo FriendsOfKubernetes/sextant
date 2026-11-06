@@ -1,8 +1,9 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type ExtensionInfo, type ExtensionManifest, type KubeObject, type MockBackend } from "../api";
 import { resetAppStore, useAppStore } from "../app/store";
 import { getActionsFor, resetActions, runAction } from "../features/actions/registry";
+import { useClusterMenuItems } from "../features/clusters/menuItems";
 import { ActionBar } from "../features/details/ActionBar";
 import { ActionDialogHost } from "../layout/main/ActionDialogHost";
 import { AppShell } from "../layout/AppShell";
@@ -63,6 +64,7 @@ const manifest: ExtensionManifest = {
     sectionBadges: [],
     commands: [],
     kinds: [],
+    menuItems: [],
     settings: { title: "Widget settings" },
   },
 };
@@ -615,6 +617,35 @@ describe("contributions of an extension", () => {
     expect(def.problem?.({ ...broken, status: {} })).toBe(false);
     // Another custom kind of the group stays under "Custom resources".
     expect(getResourceDef({ group: "demo.sextant.dev", version: "v1", kind: "Gizmo" }).problem).toBeUndefined();
+  });
+
+  it("add an item to a cluster's context menu that opens its window for that cluster (ADR-0157)", async () => {
+    list = [
+      info({
+        manifest: {
+          ...manifest,
+          sextantApi: 4,
+          contributes: { ...manifest.contributes, menuItems: [{ id: "install", title: "Install widgets…", menu: "cluster" }] },
+        },
+      }),
+    ];
+    await renderShell();
+    const { result } = renderHook(() => useClusterMenuItems());
+    const item = result.current.find((i) => i.id === "ext:demo.widgets:install")!;
+    expect(item.label).toBe("Install widgets…");
+    act(() => item.run("c2"));
+    const dialog = screen.getByRole("dialog", { name: "Install widgets…" });
+    const frame = frameOf(dialog);
+    expect(frame.getAttribute("src")).toBe("sextant-ext://demo.widgets/index.html?view=action&id=install");
+    const posted: unknown[] = [];
+    vi.spyOn(frame.contentWindow!, "postMessage").mockImplementation((m: unknown) => void posted.push(m));
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", { data: { sextant: 1, doc: DOC, type: "ready" }, source: frame.contentWindow }));
+    });
+    expect(posted.at(-1)).toMatchObject({ context: { view: "action", clusterId: "c2", selection: [] } });
+    await changeList([]);
+    await waitFor(() => expect(result.current.some((i) => i.id === "ext:demo.widgets:install")).toBe(false));
+    expect(screen.queryByRole("dialog", { name: "Install widgets…" })).toBeNull();
   });
 
   it("add a dock button that opens a dock tab with the extension, closed when the extension goes", async () => {

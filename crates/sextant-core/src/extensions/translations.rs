@@ -67,6 +67,9 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
             out.insert(format!("columns.{}.cases.{i}.text", column.id), Text::Title);
         }
     }
+    for item in &c.menu_items {
+        out.insert(format!("menuItems.{}.title", item.id), Text::Title);
+    }
     for (i, kind) in c.kinds.iter().enumerate() {
         if kind.title.is_some() {
             out.insert(format!("kinds.{i}.title"), Text::Title);
