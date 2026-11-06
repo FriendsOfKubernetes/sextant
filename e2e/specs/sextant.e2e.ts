@@ -127,13 +127,15 @@ describe("Sextant against sextant-test", () => {
     const dialog = $('[role="dialog"]');
     await expect(dialog).toBeDisplayed();
     await click("Start forwarding", dialog);
+    // The started forward is shown by another dialog (ForwardResult): look it up again.
+    const result = () => $('[role="dialog"]');
     const text = await eventually(async () => {
-      const match = /localhost:(\d+)/.exec(await textOf(dialog));
+      const match = /localhost:(\d+)/.exec(await textOf(result()));
       return match ? match[1] : null;
     }, "the forwarded port");
     const body = await httpGet(Number(text));
     expect(body).toContain("Welcome to nginx");
-    await dialog.$("footer").$("button=Close").click();
+    await result().$("footer").$("button=Close").click();
     await click("Close details");
   });
 

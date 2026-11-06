@@ -38,6 +38,12 @@ function problemKinds(problems: Json[]): Json[] {
   return out;
 }
 
+/** The manifest's permissions as Sextant reads them: a rule's `confirm` is `true` unless written (`manifest.rs`). */
+function permissionsAsRead(permissions: Json): Json {
+  const rules = (permissions.rules as Json[]).map((rule) => ({ confirm: true, ...rule }));
+  return { ...permissions, rules };
+}
+
 /** The settings entry of a folder install of `extensions/<name>/dist`, granted what its manifest asks. */
 export function installedEntry(name: (typeof OWN_EXTENSIONS)[number]): Json {
   const folder = path.join(ROOT, "extensions", name, "dist");
@@ -51,7 +57,7 @@ export function installedEntry(name: (typeof OWN_EXTENSIONS)[number]): Json {
     name: manifest.name,
     source: { type: "folder", path: folder },
     enabled: true,
-    granted: manifest.permissions,
+    granted: permissionsAsRead(manifest.permissions as Json),
     installedAt: 0,
   };
   if (backend) entry.grantedBackend = { hosts: backend.hosts ?? [], credentials: backend.credentials ?? [] };

@@ -143,3 +143,44 @@ export async function actionOfRow(target: Element, action: string): Promise<void
   await menu.waitForDisplayed();
   await menu.$(`[role='menuitem']*=${action}`).click();
 }
+
+/**
+ * The text of `el` with the text of the extension frames in it (an extension's details sections, ADR-0047): each frame
+ * is entered by WebDriver and left again, so the page stays the current browsing context.
+ */
+export async function textWithFrames(el: Element): Promise<string> {
+  let text = await textOf(el);
+  const frames = await el.$$("iframe").getElements();
+  for (const frame of frames) {
+    try {
+      await browser.switchFrame(frame);
+      text += `\n${await browser.execute(() => document.body?.innerText ?? "")}`;
+    } finally {
+      await browser.switchFrame(null);
+    }
+  }
+  return text;
+}
+
+/** Clicks the button `label` inside the first extension frame of `el`. */
+export async function clickInFrame(el: Element, label: string): Promise<void> {
+  const frame = el.$("iframe");
+  await frame.waitForExist({ timeout: 20_000 });
+  await browser.switchFrame(await frame.getElement());
+  try {
+    const button = $(`button=${label}`);
+    await button.waitForClickable({ timeout: 20_000 });
+    await button.click();
+  } finally {
+    await browser.switchFrame(null);
+  }
+}
+
+/** Allows the change Sextant asks about for an extension or an agent (its "Allow" ignores clicks for a moment). */
+export async function allowChange(): Promise<void> {
+  const allow = $("button=Allow");
+  await allow.waitForClickable({ timeout: 20_000 });
+  await browser.pause(500);
+  await allow.click();
+  await allow.waitForDisplayed({ reverse: true, timeout: 20_000 });
+}

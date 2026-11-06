@@ -1,10 +1,14 @@
 // GitOps scenarios against the fixtures of `scripts/test-cluster.sh up --gitops` (scripts/fixtures/gitops/): the
-// Flux Kustomization `sextant-flux/podinfo` and the Argo CD Application `argocd/guestbook`. Each part is skipped
-// when the cluster does not serve its kinds (a cluster brought up without --gitops).
+// Flux Kustomization `sextant-flux/podinfo` and the Argo CD Application `argocd/guestbook`, through Sextant's own Flux
+// and Argo CD extensions, which the e2e profile installs (`e2e/extensions.ts`, ADR-0162): their details are extension
+// frames, their actions extension windows whose changes Sextant confirms. Each part is skipped when the cluster does
+// not serve its kinds (a cluster brought up without --gitops).
 import { $, browser, expect } from "@wdio/globals";
 import { after, before, describe, it } from "mocha";
 import {
   actionOfRow,
+  allowChange,
+  clickInFrame,
   closeDetails,
   connectTo,
   detailsPanel,
@@ -13,6 +17,7 @@ import {
   rowWith,
   searchTable,
   textOf,
+  textWithFrames,
 } from "../app";
 import { CONTEXT, hasCrd, kubectl } from "../cluster";
 
@@ -50,7 +55,8 @@ describe("GitOps on sextant-test", () => {
       await searchTable(KUSTOMIZATION);
       const target = rowWith(KUSTOMIZATION, FLUX_NS);
       await expect(target).toBeDisplayed({ wait: 30_000 });
-      await eventually(async () => (await textOf(target)).includes("GitRepository/podinfo"), "the source column");
+      // The extension's columns: Source (the name; the kind in its tooltip) and Ready from the Ready condition.
+      await eventually(async () => /\bTrue\b/.test(await textOf(target)), "the Ready column");
     });
 
     it("opens the details of a Kustomization", async () => {
@@ -58,7 +64,7 @@ describe("GitOps on sextant-test", () => {
       const panel = detailsPanel();
       await expect(panel).toBeDisplayed();
       await expect(panel.$("h2")).toHaveText(KUSTOMIZATION);
-      await eventually(async () => (await textOf(panel)).includes("./kustomize"), "the path of the Kustomization");
+      await eventually(async () => (await textWithFrames(panel)).includes("./kustomize"), "the path of the Kustomization");
       await closeDetails();
     });
 
@@ -67,12 +73,17 @@ describe("GitOps on sextant-test", () => {
       await actionOfRow(target, "Suspend");
       const dialog = $('[role="dialog"]');
       await expect(dialog).toBeDisplayed();
-      await dialog.$("button=Suspend").click();
+      await clickInFrame(dialog, "Suspend");
+      await allowChange();
       await eventually(() => suspendedInCluster() === "true", "spec.suspend=true in the cluster");
+      await browser.keys("Escape");
       await eventually(async () => /\bYes\b/.test(await textOf(target)), "Suspended: Yes in the table");
 
       await actionOfRow(target, "Resume");
+      await clickInFrame($('[role="dialog"]'), "Resume");
+      await allowChange();
       await eventually(() => suspendedInCluster() === "false", "spec.suspend=false in the cluster");
+      await browser.keys("Escape");
       await eventually(async () => !/\bYes\b/.test(await textOf(target)), "Suspended: No in the table");
     });
   });
@@ -97,7 +108,7 @@ describe("GitOps on sextant-test", () => {
       await expect(panel).toBeDisplayed();
       await expect(panel.$("h2")).toHaveText(APPLICATION);
       const text = await eventually(async () => {
-        const t = await textOf(panel);
+        const t = await textWithFrames(panel);
         return t.includes("argocd-example-apps") ? t : "";
       }, "the source of the Application");
       expect(text).toContain("Sync status");
