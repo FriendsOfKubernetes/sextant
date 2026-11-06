@@ -99,6 +99,7 @@ mod tests {
             granted_metric_queries: None,
             granted_commands: None,
             granted_services: None,
+            granted_agent_tools: None,
         }
     }
 

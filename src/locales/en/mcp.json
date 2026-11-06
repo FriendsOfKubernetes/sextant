@@ -125,5 +125,10 @@
   "extensionProblems": {
     "title": "Problems of extensions for agents",
     "hint": "Agents get these extensions' problems in get_problems, only for objects they may read. None until you tick one."
+  },
+  "extensionTools": {
+    "title": "Tools of extensions for agents",
+    "item": "{{extension}}: {{tools}}",
+    "hint": "Agents get these extensions' tools. Whatever a tool does in a cluster needs both the extension's permissions and the agent's own access there, and asks you when either asks. None until you tick one."
   }
 }

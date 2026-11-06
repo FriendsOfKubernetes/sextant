@@ -233,6 +233,7 @@ export type { ColumnFormat } from "./generated/ColumnFormat";
 export type { ColumnTone } from "./generated/ColumnTone";
 export type { KindContribution } from "./generated/KindContribution";
 export type { ServiceContribution } from "./generated/ServiceContribution";
+export type { AgentToolContribution } from "./generated/AgentToolContribution";
 export type { MenuItemContribution } from "./generated/MenuItemContribution";
 export type { ActionPlacement as ExtensionActionPlacement } from "./generated/ActionPlacement";
 export type { ConfirmSource } from "./generated/ConfirmSource";

@@ -121,6 +121,15 @@ pub const METHODS: [&str; 22] = [
 
 const NODE_SHELL_REFUSAL: &str = "Sextant does not let extensions change or delete node shell pods";
 
+/// An AI agent on whose behalf an extension's backend runs (an agent tool, ADR-0159): every call is decided against
+/// the extension's grant and the agent's own access rules in that cluster both, and the user is asked when either
+/// asks. The agent never gets more through an extension than its own rules give it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AgentLimit {
+    /// The MCP client's name, as the agent's activity log shows it.
+    pub client: String,
+}
+
 /// Something the API tells the window.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ApiEvent {
@@ -353,7 +362,7 @@ fn host_emitter(
 /// The extensions' API: kept in `AppState::ext_api`.
 pub struct ExtensionApi {
     clusters: ClusterManager,
-    settings: Arc<SettingsStore>,
+    pub(super) settings: Arc<SettingsStore>,
     kinds: Arc<dyn KindLookup>,
     /// Shared with the MCP server: one pending map, one answer command.
     confirmations: Arc<Confirmations>,
@@ -454,6 +463,20 @@ impl ExtensionApi {
         params: Value,
         watch: Option<(String, UpdateSink)>,
     ) -> CoreResult<Value> {
+        self.call_as(host, extension_id, method, params, watch, None)
+            .await
+    }
+
+    /// [`ExtensionApi::call`] made by the extension's backend while it answers an AI agent (`agent`).
+    pub async fn call_as(
+        self: &Arc<Self>,
+        host: &ExtensionHost,
+        extension_id: &str,
+        method: &str,
+        params: Value,
+        watch: Option<(String, UpdateSink)>,
+        agent: Option<AgentLimit>,
+    ) -> CoreResult<Value> {
         let params = if params.is_null() { json!({}) } else { params };
         // Files are read and written off the async runtime: `storage` syncs to disk, and the manifest of a
         // development folder is read by walking the folder. It is kept afterwards, but a `forget` (the folder changed)
@@ -475,7 +498,8 @@ impl ExtensionApi {
         let name = blocking(move || Ok(blocking_host.info(&id).map(|i| i.name))).await?;
         let at = now_ms();
         let started = Instant::now();
-        let call = ExtCall::new(self, host, extension_id, method, name);
+        let mut call = ExtCall::new(self, host, extension_id, method, name);
+        call.agent = agent;
         let result = match method {
             "clusters.list" => call.clusters_list(params).await,
             "kinds" => call.kinds(params).await,
@@ -782,6 +806,8 @@ struct ExtCall<'a> {
     name: String,
     method: String,
     record: Mutex<CallRecord>,
+    /// The AI agent the backend answers, when it does (ADR-0159).
+    agent: Option<AgentLimit>,
 }
 
 impl<'a> ExtCall<'a> {
@@ -799,6 +825,7 @@ impl<'a> ExtCall<'a> {
             name: name.unwrap_or_else(|| id.to_owned()),
             method: method.to_owned(),
             record: Mutex::new(CallRecord::default()),
+            agent: None,
         }
     }
 
@@ -816,9 +843,42 @@ impl<'a> ExtCall<'a> {
         self.name.clone()
     }
 
-    /// `Extension <name>`: who asks, in the dialog and the journal.
+    /// `Extension <name>` (or `AI agent <client> through extension <name>`): who asks, in the dialog and the journal.
     fn principal(&self) -> String {
-        clip(&format!("Extension {}", self.name()))
+        match &self.agent {
+            Some(agent) => clip(&format!(
+                "AI agent {} through extension {}",
+                agent.client,
+                self.name()
+            )),
+            None => clip(&format!("Extension {}", self.name())),
+        }
+    }
+
+    /// The agent's own rules in the cluster (its "AI agent access"), when the call is made for an agent.
+    fn agent_access(&self, cluster: &ExtCluster) -> Option<ClusterAccess> {
+        self.agent.as_ref().map(|_| {
+            self.api
+                .settings
+                .get()
+                .clusters
+                .get(&cluster.id.0)
+                .map(|c| c.agent_access.clone())
+                .unwrap_or_default()
+        })
+    }
+
+    /// What the agent needs for `action` on `kind`: running a command in a pod is the agent's Exec, not Read.
+    fn agent_action(&self, kind: &KindPattern, action: AccessAction) -> AccessAction {
+        if self.method == "exec.run"
+            && action == AccessAction::Read
+            && kind.group.is_empty()
+            && kind.kind.eq_ignore_ascii_case("Pod")
+        {
+            AccessAction::Exec
+        } else {
+            action
+        }
     }
 
     /// What was granted, read fresh (on the blocking pool): refused unless the extension is active now.
@@ -1012,6 +1072,7 @@ impl<'a> ExtCall<'a> {
         summary: &CallSummary,
     ) -> CoreResult<bool> {
         let granted = self.granted().await?;
+        let agent_access = self.agent_access(cluster);
         let mut confirm = false;
         for (namespace, kind, action) in requirements {
             match decide_extension(
@@ -1033,6 +1094,24 @@ impl<'a> ExtCall<'a> {
                     )));
                 }
             }
+            if let (Some(access), Some(agent)) = (&agent_access, &self.agent) {
+                let action = self.agent_action(kind, *action);
+                match access::decide(access, namespace.as_deref(), kind, action) {
+                    Decision::Allowed { confirm: ask } => confirm |= ask,
+                    Decision::Denied => {
+                        return Err(self.denied(format!(
+                            "Sextant denied {} on {} in cluster {} for AI agent {} (through extension {}): the \
+                             agent's own access does not allow it. Allow it in the cluster's settings → AI agent \
+                             access.",
+                            action_name(action),
+                            refused_object(&summary.target, namespace.as_deref(), kind),
+                            cluster.name,
+                            agent.client,
+                            self.name()
+                        )));
+                    }
+                }
+            }
         }
         self.decide(AuditDecision::Allowed);
         Ok(confirm)
@@ -1049,13 +1128,19 @@ impl<'a> ExtCall<'a> {
     ) -> CoreResult<NamespaceScope> {
         lock(&self.record).target = clip(&summary.target);
         let granted = self.granted().await?;
-        let scope = if granted.clusters.covers(&cluster.context) {
+        let mut scope = if granted.clusters.covers(&cluster.context) {
             access::allowed_namespaces(&rules_of(&granted), kind, action)
         } else {
             NamespaceScope::Only {
                 namespaces: Vec::new(),
             }
         };
+        // For an agent: only where its own rules allow it too.
+        if let Some(agent_access) = self.agent_access(cluster) {
+            let theirs =
+                access::allowed_namespaces(&agent_access, kind, self.agent_action(kind, action));
+            scope = intersect(scope, theirs);
+        }
         if matches!(&scope, NamespaceScope::Only { namespaces } if namespaces.is_empty()) {
             return Err(self.denied(format!(
                 "Sextant denied {} on {} in cluster {} for extension {}. {}",
@@ -2262,6 +2347,21 @@ fn take_at(value: &mut Value, steps: &[PathStep]) -> Option<String> {
 fn without_inline_secrets(mut value: Value) -> Value {
     inline_secrets::hide_inline_secrets(&mut value);
     value
+}
+
+/// The namespaces both scopes cover.
+fn intersect(a: NamespaceScope, b: NamespaceScope) -> NamespaceScope {
+    match (a, b) {
+        (NamespaceScope::All, other) | (other, NamespaceScope::All) => other,
+        (NamespaceScope::Only { namespaces }, NamespaceScope::Only { namespaces: other }) => {
+            NamespaceScope::Only {
+                namespaces: namespaces
+                    .into_iter()
+                    .filter(|n| other.contains(n))
+                    .collect(),
+            }
+        }
+    }
 }
 
 /// The rules an extension was granted, as the agent's access model reads them.

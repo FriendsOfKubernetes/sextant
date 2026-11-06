@@ -3,6 +3,7 @@
 // shows or copies it, and is forgotten when hidden again.
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { formatList } from "../../i18n/format";
 import { api, toApiError, type AppSettings, type McpStatus } from "../../api";
 import { Button, Checkbox, ConfirmDialog, Tabs } from "../../components";
 import { useExtensions } from "../../extensions";
@@ -40,6 +41,7 @@ export function McpPanel({ settings, save }: McpPanelProps) {
       <PortField settings={settings} save={save} />
       {enabled && <TokenAndSnippets port={settings?.mcp.port ?? 0} />}
       <ExtensionProblems settings={settings} save={save} />
+      <ExtensionTools settings={settings} save={save} />
       <div className="settings__row">
         <Button icon="agent" onClick={openActivity}>
           {t("mcp:activity.openLog")}
@@ -80,6 +82,44 @@ function ExtensionProblems({ settings, save }: McpPanelProps) {
         ))}
       </div>
       <p className="settings__hint">{t("mcp:extensionProblems.hint")}</p>
+    </fieldset>
+  );
+}
+
+/**
+ * Which extensions' tools agents get (ADR-0159): none until the user ticks one. Only extensions with agent tools are
+ * listed; whatever a tool does is decided for the extension and the agent both.
+ */
+function ExtensionTools({ settings, save }: McpPanelProps) {
+  const { t } = useTranslation();
+  const { extensions } = useExtensions();
+  const withTools = extensions.filter((e) => (e.manifest?.contributes.agentTools.length ?? 0) > 0);
+  if (withTools.length === 0) return null;
+  const chosen = settings?.mcp.extensionTools ?? [];
+  const toggle = (id: string, on: boolean) =>
+    void save((s) => {
+      const rest = s.mcp.extensionTools.filter((x) => x !== id);
+      return { ...s, mcp: { ...s.mcp, extensionTools: on ? [...rest, id] : rest } };
+    });
+  return (
+    <fieldset className="mcp__extensions">
+      <legend className="settings__label">{t("mcp:extensionTools.title")}</legend>
+      <div className="settings__choices settings__choices--column">
+        {withTools.map((extension) => (
+          <label key={extension.id} className="settings__choice">
+            <Checkbox
+              checked={chosen.includes(extension.id)}
+              disabled={!settings}
+              onChange={(e) => toggle(extension.id, e.target.checked)}
+            />
+            {t("mcp:extensionTools.item", {
+              extension: extension.name,
+              tools: formatList(extension.manifest?.contributes.agentTools.map((tool) => tool.title) ?? []),
+            })}
+          </label>
+        ))}
+      </div>
+      <p className="settings__hint">{t("mcp:extensionTools.hint")}</p>
     </fieldset>
   );
 }

@@ -79,7 +79,7 @@ function setup(mcp: { enabled: boolean; port: number; extensionProblems?: string
       mcp_confirm_answer: () => undefined,
       ...handlers,
     },
-    { settings: { mcp: { extensionProblems: [], ...mcp } } },
+    { settings: { mcp: { extensionProblems: [], extensionTools: [], ...mcp } } },
   );
 }
 
@@ -136,7 +136,7 @@ describe("Settings → AI agents (MCP)", () => {
   });
 
   it("lets agents get the problems of the extensions the user ticks, only of extensions with rules", async () => {
-    const extension = (id: string, name: string, rules: number) => ({
+    const extension = (id: string, name: string, rules: number, tools = 0) => ({
       id,
       name,
       version: "1.0.0",
@@ -156,6 +156,7 @@ describe("Settings → AI agents (MCP)", () => {
           problems: Array.from({ length: rules }, (_, i) => ({ id: `r${i}` })),
           metricQueries: [],
           sectionBadges: [],
+          agentTools: Array.from({ length: tools }, (_, i) => ({ id: `t${i}`, title: `Tool ${i}` })),
         },
       },
       granted: { clusters: { type: "all" }, rules: [] },
@@ -172,6 +173,38 @@ describe("Settings → AI agents (MCP)", () => {
     await waitFor(() => expect(backend.settings.mcp.extensionProblems).toEqual(["sextant.kueue"]));
     fireEvent.click(box);
     await waitFor(() => expect(backend.settings.mcp.extensionProblems).toEqual([]));
+    // No extension has agent tools: no such choice.
+    expect(screen.queryByText("Tools of extensions for agents")).toBeNull();
+  });
+
+  it("lets agents get the tools of the extensions the user ticks (ADR-0159)", async () => {
+    const extension = (id: string, name: string, tools: number) => ({
+      id,
+      name,
+      version: "1.0.0",
+      source: { type: "folder", path: `/x/${id}` },
+      dev: true,
+      enabled: true,
+      state: "active",
+      needsConsent: false,
+      error: null,
+      manifest: {
+        contributes: {
+          problems: [],
+          agentTools: Array.from({ length: tools }, (_, i) => ({ id: `t${i}`, title: `Tool ${i}` })),
+        },
+      },
+      granted: { clusters: { type: "all" }, rules: [] },
+      installedAt: 0,
+      baseUrl: null,
+      entryUrl: null,
+    });
+    setup({ enabled: true, port: 47391 }, { extensions_list: () => [extension("sextant.argo-cd", "Argo CD", 2), extension("plain", "Plain", 0)] });
+    renderSettings();
+    const box = await screen.findByRole("checkbox", { name: "Argo CD: Tool 0, Tool 1" });
+    expect(screen.queryByRole("checkbox", { name: /^Plain/ })).toBeNull();
+    fireEvent.click(box);
+    await waitFor(() => expect(backend.settings.mcp.extensionTools).toEqual(["sextant.argo-cd"]));
   });
 
   it("shows the address while running and the backend's text when the port is taken", async () => {

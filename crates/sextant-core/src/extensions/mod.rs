@@ -10,6 +10,7 @@
 //! - [`installed`]: what is installed and what was granted (`AppSettings::extensions`, written only by the backend);
 //! - [`catalog`]: the catalog's index and the checks of a package downloaded from it (ADR-0130).
 
+pub mod agent_tools;
 pub mod catalog;
 pub mod commands;
 #[cfg(test)]

@@ -438,6 +438,10 @@ impl ExtensionHost {
                 let services = manifest.contributes.services.clone();
                 (!services.is_empty()).then_some(services)
             },
+            granted_agent_tools: {
+                let tools = manifest.contributes.agent_tools.clone();
+                (!tools.is_empty()).then_some(tools)
+            },
         };
         let saved = self.inner.settings.update(|settings| {
             match settings.extensions.iter_mut().find(|e| e.id == entry.id) {

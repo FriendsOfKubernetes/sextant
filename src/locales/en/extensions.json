@@ -323,5 +323,10 @@
     "heading": "Services in the cluster",
     "list": "The extension may send requests to these Services through a port forward of Sextant's own:",
     "scope": "Only in namespaces where it may read and forward to Services. A session token Sextant takes from an answer stays in Sextant until you disconnect; the activity log keeps the method and path, never the query, body or answer."
+  },
+  "agentTools": {
+    "heading": "Tools for AI agents",
+    "list": "The extension offers these tools to AI agents in Sextant's MCP server, answered by its backend:",
+    "scope": "Agents get them only after you turn this extension on for agents in the AI agents settings, and never more than their own access allows."
   }
 }

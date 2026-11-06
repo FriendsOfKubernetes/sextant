@@ -16,4 +16,8 @@ port: number,
  * The extensions (ids) whose problems agents may get in `get_problems` (ADR-0146); none by default. An id that
  * is not an extension id is ignored where it is read.
  */
-extensionProblems: Array<string>, };
+extensionProblems: Array<string>, 
+/**
+ * The extensions (ids) whose agent tools agents get (ADR-0159); none by default.
+ */
+extensionTools: Array<string>, };

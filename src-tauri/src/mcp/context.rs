@@ -50,6 +50,22 @@ pub struct McpContext {
     /// The token requests must carry; read on every request, so a new token works (and the old one stops) at once.
     token: RwLock<Option<Token>>,
     emitter: RwLock<Option<Emitter>>,
+    /// The tools extensions give agents (ADR-0159), set once the extensions start.
+    extension_tools: RwLock<Option<Arc<dyn ExtensionToolSource>>>,
+}
+
+/// Where the tools of extensions come from (`extensions::agent_tools`): listed with Sextant's own and run by the
+/// extension's backend. Read on every list and call, so a change of the settings or the extensions counts at once.
+pub trait ExtensionToolSource: Send + Sync {
+    /// The tools agents may have now.
+    fn tools(&self) -> futures::future::BoxFuture<'static, Vec<rmcp::model::Tool>>;
+    /// Runs the tool `name` for `client`; `None` when no extension offers it.
+    fn call(
+        &self,
+        client: String,
+        name: String,
+        arguments: rmcp::model::JsonObject,
+    ) -> futures::future::BoxFuture<'static, Option<super::tools::ToolResult>>;
 }
 
 impl McpContext {
@@ -74,10 +90,26 @@ impl McpContext {
             token_path: paths::token_path(config_dir),
             token: RwLock::new(None),
             emitter: RwLock::new(None),
+            extension_tools: RwLock::new(None),
         }
     }
 
     /// Where events go from now on (the window; tests capture them).
+    /// Where the tools of extensions come from.
+    pub fn set_extension_tools(&self, source: Arc<dyn ExtensionToolSource>) {
+        *self
+            .extension_tools
+            .write()
+            .unwrap_or_else(|e| e.into_inner()) = Some(source);
+    }
+
+    pub fn extension_tools(&self) -> Option<Arc<dyn ExtensionToolSource>> {
+        self.extension_tools
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
+    }
+
     pub fn set_emitter(&self, emitter: Emitter) {
         *self.emitter.write().unwrap_or_else(|e| e.into_inner()) = Some(emitter);
     }

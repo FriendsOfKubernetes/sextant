@@ -430,7 +430,7 @@ impl ExtensionApi {
             .as_ref()
             .map(|p| p.method.clone())
             .unwrap_or_default();
-        let result = self.run_backend(host, extension_id, parsed).await;
+        let result = self.run_backend(host, extension_id, parsed, None).await;
         self.journal(AuditEntry {
             at,
             source: ConfirmSource::Extension,
@@ -454,11 +454,87 @@ impl ExtensionApi {
         result
     }
 
+    /// Runs one of the extension's agent tools for an AI agent (ADR-0159): the backend's `agentTool:<id>`, with the
+    /// agent's arguments, only when the user agreed to the tool and lets agents have the extension's tools. Every call
+    /// the backend makes meanwhile is decided as the extension's and the agent's both ([`super::api::AgentLimit`]).
+    pub async fn agent_tool_call(
+        self: &Arc<Self>,
+        host: &ExtensionHost,
+        extension_id: &str,
+        tool_id: &str,
+        arguments: Value,
+        client: &str,
+    ) -> CoreResult<Value> {
+        let at = now_ms();
+        let started = Instant::now();
+        let (blocking_host, id) = (host.clone(), extension_id.to_owned());
+        let entry = tauri::async_runtime::spawn_blocking(move || blocking_host.active(&id))
+            .await
+            .map_err(|e| CoreError::other(e.to_string()))?;
+        let offered = self
+            .settings
+            .get()
+            .mcp
+            .extension_tools
+            .iter()
+            .any(|e| e == extension_id);
+        let agreed = entry
+            .as_ref()
+            .and_then(|e| e.granted_agent_tools.as_ref())
+            .is_some_and(|tools| tools.iter().any(|t| t.id == tool_id));
+        let result = if offered && agreed {
+            let call = BackendCallParams {
+                method: format!(
+                    "{}{tool_id}",
+                    sextant_core::extensions::agent_tools::METHOD_PREFIX
+                ),
+                params: arguments,
+            };
+            let agent = super::api::AgentLimit {
+                client: client.to_owned(),
+            };
+            self.run_backend(host, extension_id, Ok(call), Some(agent))
+                .await
+        } else {
+            Err(CoreError::new(
+                ErrorCode::Denied,
+                format!(
+                    "the tool {tool_id} of extension {extension_id} is not offered to agents: the user turns an \
+                     extension's tools on in Settings → AI agents (MCP)"
+                ),
+            ))
+        };
+        self.journal(AuditEntry {
+            at,
+            source: ConfirmSource::Extension,
+            principal: clip(&format!(
+                "AI agent {client} through extension {extension_id}"
+            )),
+            client: clip(extension_id),
+            cluster_id: None,
+            cluster_name: None,
+            tool: "agentTool".to_owned(),
+            target: clip(tool_id),
+            decision: if offered && agreed {
+                AuditDecision::Allowed
+            } else {
+                AuditDecision::Denied
+            },
+            result: match &result {
+                Ok(_) => "ok".to_owned(),
+                Err(e) => super::api::code_name(e.code),
+            },
+            duration_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+        });
+        result
+    }
+
     async fn run_backend(
         self: &Arc<Self>,
         host: &ExtensionHost,
         extension_id: &str,
         parsed: Result<BackendCallParams, serde_json::Error>,
+        agent: Option<super::api::AgentLimit>,
     ) -> CoreResult<Value> {
         let call = parsed.map_err(|e| invalid(format!("backend.call: {e}")))?;
         if !is_method_name(&call.method) {
@@ -543,6 +619,7 @@ impl ExtensionApi {
                 .map(|c| c.id.clone())
                 .filter(|c| granted.credentials.contains(c))
                 .collect(),
+            agent,
         });
         let params = serde_json::to_string(&call.params).map_err(|e| invalid(e.to_string()))?;
         let answer = runtime
@@ -595,6 +672,8 @@ struct BackendHost {
     name: String,
     hosts: Vec<String>,
     credentials: Vec<String>,
+    /// The AI agent the backend answers, when it does: its calls are decided for the agent too.
+    agent: Option<super::api::AgentLimit>,
 }
 
 fn call_error(err: CoreError) -> CallError {
@@ -687,7 +766,14 @@ impl Host for BackendHost {
             }
             let answer = self
                 .api
-                .call(&self.host, &self.id, method, params, None)
+                .call_as(
+                    &self.host,
+                    &self.id,
+                    method,
+                    params,
+                    None,
+                    self.agent.clone(),
+                )
                 .await
                 .map_err(call_error)?;
             Ok(answer.to_string())
@@ -713,6 +799,7 @@ impl Host for BackendHost {
             name: self.name.clone(),
             hosts: self.hosts.clone(),
             credentials: Vec::new(),
+            agent: self.agent.clone(),
         };
         Box::pin(async move {
             let started = Instant::now();

@@ -126,5 +126,10 @@
   "extensionProblems": {
     "title": "Problemas de extensões para agentes",
     "hint": "Os agentes recebem os problemas destas extensões em get_problems, só dos objetos que podem ler. Nenhuma até você marcar uma."
+  },
+  "extensionTools": {
+    "title": "Ferramentas de extensões para agentes",
+    "item": "{{extension}}: {{tools}}",
+    "hint": "Os agentes recebem as ferramentas destas extensões. Tudo o que uma ferramenta faz em um cluster exige as permissões da extensão e o acesso próprio do agente ali, e pergunta a você se qualquer um dos dois perguntar. Nenhuma até você marcar uma."
   }
 }

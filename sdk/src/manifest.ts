@@ -221,6 +221,28 @@ export interface ManifestContributions {
   menuItems?: ManifestMenuItem[];
   /** Services inside a cluster the extension sends requests to (`sextant.service.request`); needs `sextantApi` 4. */
   services?: ManifestService[];
+  /** Tools for AI agents in Sextant's MCP server, answered by the backend; needs `sextantApi` 4 and a `backend`. */
+  agentTools?: ManifestAgentTool[];
+}
+
+/**
+ * A tool for AI agents (sextantApi 4, ADR-0159): listed by Sextant's MCP server as `ext_<extension id, dots as _>__<id>`
+ * only when the user lets agents have the extension's tools, and answered by the backend's `handle("agentTool:<id>",
+ * arguments)`. Everything the backend does then is decided for the extension and the agent both.
+ */
+export interface ManifestAgentTool {
+  id: string;
+  /** Shown to the user. */
+  title: string;
+  /** What the agent reads to choose the tool. */
+  description: string;
+  /**
+   * The JSON Schema of the arguments: an object, with `type`, `description`, `properties`, `required`,
+   * `additionalProperties`, `items`, `enum` and the bounds only, at most 4 deep and 8 KiB.
+   */
+  inputSchema: Record<string, unknown>;
+  /** It only reads. Default `false`. */
+  readOnly?: boolean;
 }
 
 /**
@@ -365,6 +387,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       kinds: c.kinds ?? [],
       menuItems: c.menuItems ?? [],
       services: c.services ?? [],
+      agentTools: (c.agentTools ?? []).map((tool) => ({ ...tool, readOnly: tool.readOnly ?? false })),
     },
   };
   if (file.icon !== undefined) manifest.icon = file.icon;

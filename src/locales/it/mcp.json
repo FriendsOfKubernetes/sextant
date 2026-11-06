@@ -126,5 +126,10 @@
   "extensionProblems": {
     "title": "Problemi delle estensioni per gli agenti",
     "hint": "Gli agenti ricevono i problemi di queste estensioni in get_problems, solo per gli oggetti che possono leggere. Nessuna finché non ne selezioni una."
+  },
+  "extensionTools": {
+    "title": "Strumenti delle estensioni per gli agenti",
+    "item": "{{extension}}: {{tools}}",
+    "hint": "Gli agenti ricevono gli strumenti di queste estensioni. Tutto ciò che uno strumento fa in un cluster richiede sia i permessi dell’estensione sia l’accesso proprio dell’agente, e ti chiede conferma se uno dei due lo chiede. Nessuna finché non ne selezioni una."
   }
 }

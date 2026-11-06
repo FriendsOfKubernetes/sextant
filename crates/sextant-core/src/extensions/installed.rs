@@ -6,6 +6,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use super::agent_tools::{AgentToolContribution, agent_tools_within};
 use super::commands::{CommandContribution, commands_within};
 use super::manifest::{BackendManifest, ExtensionManifest};
 use super::metric_queries::{MetricQuery, metric_queries_within};
@@ -79,6 +80,11 @@ pub struct InstalledExtension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub granted_services: Option<Vec<ServiceContribution>>,
+    /// The agent tools the user agreed to (ADR-0159), word for word; only these are offered. `None`: none were agreed
+    /// to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub granted_agent_tools: Option<Vec<AgentToolContribution>>,
 }
 
 /// The part of a backend the user agrees to: hosts and credential ids.
@@ -108,6 +114,7 @@ pub struct Granted<'a> {
     pub metric_queries: Option<&'a [MetricQuery]>,
     pub commands: Option<&'a [CommandContribution]>,
     pub services: Option<&'a [ServiceContribution]>,
+    pub agent_tools: Option<&'a [AgentToolContribution]>,
 }
 
 impl<'a> Granted<'a> {
@@ -119,6 +126,7 @@ impl<'a> Granted<'a> {
             metric_queries: installed.granted_metric_queries.as_deref(),
             commands: installed.granted_commands.as_deref(),
             services: installed.granted_services.as_deref(),
+            agent_tools: installed.granted_agent_tools.as_deref(),
         }
     }
 }
@@ -138,6 +146,7 @@ pub fn asks_within(
         metric_queries: granted_metric_queries,
         commands: granted_commands,
         services: granted_services,
+        agent_tools: granted_agent_tools,
     } = also;
     let backend_within = match (&manifest.backend, granted_backend) {
         (None, _) => true,
@@ -159,6 +168,7 @@ pub fn asks_within(
         && metric_queries_within(manifest, granted_metric_queries)
         && commands_within(manifest, granted_commands)
         && services_within(manifest, granted_services)
+        && agent_tools_within(manifest, granted_agent_tools)
         && manifest.permissions.is_within(granted)
 }
 

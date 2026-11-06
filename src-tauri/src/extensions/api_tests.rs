@@ -167,6 +167,7 @@ fn install_into(dir: &Path, settings: &SettingsStore, id: &str, permissions: Val
                 granted_metric_queries: None,
                 granted_commands: None,
                 granted_services: None,
+                granted_agent_tools: None,
             });
         })
         .unwrap();
@@ -2493,4 +2494,126 @@ fn secret_values_go_only_where_the_body_names_them_and_a_captured_token_never_co
     assert_eq!(take_at(&mut answer, &steps).as_deref(), Some("t0k"));
     assert_eq!(answer, json!({ "token": "<hidden>", "user": "admin" }));
     assert_eq!(take_at(&mut json!({ "token": "" }), &steps), None);
+}
+
+#[tokio::test]
+async fn a_call_for_an_ai_agent_needs_the_agents_own_access_too() {
+    use sextant_core::access::{AccessRule, KindScope};
+    let env = Env::new();
+    env.install(
+        "argo",
+        perms(all_clusters(), &["team-a"], &["read", "logs"], false),
+    );
+    let agent = || {
+        Some(AgentLimit {
+            client: "claude-code".into(),
+        })
+    };
+    let open_logs = json!({ "clusterId": "ctx-a", "namespace": "team-a", "pod": "web-1" });
+    // The agent's access is closed by default: the extension's grant alone is not enough.
+    let err = env
+        .api
+        .call_as(
+            &env.host,
+            "argo",
+            "logs.open",
+            open_logs.clone(),
+            None,
+            agent(),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied, "{}", err.message);
+    assert!(
+        err.message.contains("AI agent claude-code"),
+        "{}",
+        err.message
+    );
+    let journal = env.api.audit_list(Some("argo"));
+    assert_eq!(
+        journal[0].principal,
+        "AI agent claude-code through extension Ext argo"
+    );
+    // The agent may read logs in team-a: allowed, as the extension may too.
+    let id = env.cluster_id("ctx-a");
+    env.settings
+        .update(|s| {
+            let cluster = s.clusters.entry(id.0.clone()).or_default();
+            cluster.agent_access = ClusterAccess {
+                preset: AccessPreset::Custom,
+                rules: vec![AccessRule {
+                    namespaces: NamespaceScope::Only {
+                        namespaces: vec!["team-a".into()],
+                    },
+                    kinds: KindScope::All,
+                    actions: vec![AccessAction::Read, AccessAction::Logs],
+                    confirm: false,
+                }],
+                ..ClusterAccess::default()
+            };
+        })
+        .unwrap();
+    let ok = env
+        .api
+        .call_as(&env.host, "argo", "logs.open", open_logs, None, agent())
+        .await;
+    assert!(ok.is_ok(), "{ok:?}");
+    // Never more than the extension may: another namespace the agent may not read either way.
+    let err = env
+        .api
+        .call_as(
+            &env.host,
+            "argo",
+            "logs.open",
+            json!({ "clusterId": "ctx-a", "namespace": "team-b", "pod": "web-1" }),
+            None,
+            agent(),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied);
+    // Without the agent, the extension alone decides.
+    assert!(
+        env.api
+            .call(
+                &env.host,
+                "argo",
+                "logs.open",
+                json!({ "clusterId": "ctx-a", "namespace": "team-a", "pod": "x" }),
+                None
+            )
+            .await
+            .is_ok()
+    );
+    assert_eq!(
+        intersect(
+            NamespaceScope::Only {
+                namespaces: vec!["a".into(), "b".into()]
+            },
+            NamespaceScope::Only {
+                namespaces: vec!["b".into(), "c".into()]
+            }
+        ),
+        NamespaceScope::Only {
+            namespaces: vec!["b".into()]
+        }
+    );
+}
+
+#[tokio::test]
+async fn an_agent_tool_runs_only_when_the_user_lets_agents_have_the_extensions_tools() {
+    let env = Env::new();
+    env.install("argo", perms(all_clusters(), &[], &["read"], false));
+    let err = env
+        .api
+        .agent_tool_call(&env.host, "argo", "sync", json!({}), "claude-code")
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied, "{}", err.message);
+    let entry = &env.api.audit_list(Some("argo"))[0];
+    assert_eq!(
+        (entry.tool.as_str(), entry.target.as_str()),
+        ("agentTool", "sync")
+    );
+    assert_eq!(entry.decision, AuditDecision::Denied);
 }

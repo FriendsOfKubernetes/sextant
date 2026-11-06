@@ -41,7 +41,7 @@ export function defaultAppSettings(): AppSettings {
     },
     checkForUpdates: true,
     closeToTray: false,
-    mcp: { enabled: false, port: 47391, extensionProblems: [] },
+    mcp: { enabled: false, port: 47391, extensionProblems: [], extensionTools: [] },
     nodeShellImage: "busybox:stable",
     debugImage: "busybox:stable",
     extensions: [],

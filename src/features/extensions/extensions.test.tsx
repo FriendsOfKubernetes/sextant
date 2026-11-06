@@ -61,6 +61,7 @@ const manifest: ExtensionManifest = {
     kinds: [],
     menuItems: [],
     services: [],
+    agentTools: [],
     settings: { title: "Widget settings" },
   },
 };

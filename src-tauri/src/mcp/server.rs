@@ -19,7 +19,7 @@ use sextant_core::{AppSettings, CoreError, ErrorCode};
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
-use super::audit::{AuditDecision, AuditEntry};
+use super::audit::{AuditDecision, AuditEntry, clip};
 use super::confirm::ConfirmSource;
 use super::context::{Emitter, McpContext, McpEvent};
 use super::guard::{ClusterKinds, Guard, KindLookup, Refusal};
@@ -151,13 +151,38 @@ impl SextantMcp {
         .in_session(self.session.clone());
         let client = guard.client().to_owned();
         let record = guard.record_handle();
+        let ctx = Arc::clone(&self.ctx);
+        let extension_record = Arc::clone(&record);
         let run = async {
             match self.tools.find(tool).cloned() {
                 Some(def) => def.run(ToolCall { guard }, arguments).await,
-                None => Err(ToolError::Failed(CoreError::new(
-                    ErrorCode::Invalid,
-                    format!("unknown tool {tool}"),
-                ))),
+                None => {
+                    // An extension's tool (ADR-0159): its backend's calls are decided and journaled in the extension
+                    // layer, for the extension and the agent both; here the outcome.
+                    let found = match ctx.extension_tools() {
+                        Some(source) => {
+                            source
+                                .call(client.clone(), tool.to_owned(), arguments)
+                                .await
+                        }
+                        None => None,
+                    };
+                    match found {
+                        Some(result) => {
+                            let mut record = lock(&extension_record);
+                            record.target = clip(tool);
+                            record.decision = Some(match &result {
+                                Err(e) if e.code() == ErrorCode::Denied => AuditDecision::Denied,
+                                _ => AuditDecision::Allowed,
+                            });
+                            result
+                        }
+                        None => Err(ToolError::Failed(CoreError::new(
+                            ErrorCode::Invalid,
+                            format!("unknown tool {tool}"),
+                        ))),
+                    }
+                }
             }
         };
         let result = tokio::select! {
@@ -275,7 +300,11 @@ impl ServerHandler for SextantMcp {
         _request: Option<PaginatedRequestParams>,
         _context: RequestContext<RoleServer>,
     ) -> Result<ListToolsResult, ErrorData> {
-        Ok(ListToolsResult::with_all_items(self.tools.tools()))
+        let mut tools = self.tools.tools();
+        if let Some(source) = self.ctx.extension_tools() {
+            tools.extend(source.tools().await);
+        }
+        Ok(ListToolsResult::with_all_items(tools))
     }
 
     async fn call_tool(

@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use ts_rs::TS;
 
+use super::agent_tools::{self, AgentToolContribution};
 use super::commands::{self, CommandContribution};
 use super::contributions;
 use super::metric_queries::{self, MetricQuery};
@@ -159,6 +160,8 @@ pub struct Contributions {
     pub menu_items: Vec<MenuItemContribution>,
     /// Services inside a cluster the extension sends requests to (ADR-0158); `sextantApi` 4.
     pub services: Vec<ServiceContribution>,
+    /// Tools for AI agents in Sextant's MCP server, answered by the backend (ADR-0159); `sextantApi` 4.
+    pub agent_tools: Vec<AgentToolContribution>,
 }
 
 /// An item of one of Sextant's menus (`view=action`, with the menu's subject in the context).
@@ -438,6 +441,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     contributions::check_permissions(&manifest)?;
     contributions::check_menu_items(&manifest)?;
     services::check_services(&manifest)?;
+    agent_tools::check_agent_tools(&manifest)?;
     Ok(manifest)
 }
 
@@ -473,6 +477,7 @@ fn check_unique_ids(manifest: &Value) -> Result<(), ManifestError> {
         "commands",
         "menuItems",
         "services",
+        "agentTools",
     ] {
         let Some(items) = manifest
             .get("contributes")

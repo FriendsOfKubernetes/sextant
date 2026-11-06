@@ -67,6 +67,9 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
             out.insert(format!("columns.{}.cases.{i}.text", column.id), Text::Title);
         }
     }
+    for tool in &c.agent_tools {
+        out.insert(format!("agentTools.{}.title", tool.id), Text::Title);
+    }
     for service in &c.services {
         out.insert(format!("services.{}.title", service.id), Text::Title);
     }

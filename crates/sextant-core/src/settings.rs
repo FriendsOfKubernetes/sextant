@@ -240,6 +240,8 @@ pub struct McpSettings {
     /// The extensions (ids) whose problems agents may get in `get_problems` (ADR-0146); none by default. An id that
     /// is not an extension id is ignored where it is read.
     pub extension_problems: Vec<String>,
+    /// The extensions (ids) whose agent tools agents get (ADR-0159); none by default.
+    pub extension_tools: Vec<String>,
 }
 
 impl Default for McpSettings {
@@ -248,6 +250,7 @@ impl Default for McpSettings {
             enabled: false,
             port: DEFAULT_MCP_PORT,
             extension_problems: Vec::new(),
+            extension_tools: Vec::new(),
         }
     }
 }
@@ -1773,6 +1776,7 @@ mod tests {
             granted_metric_queries: None,
             granted_commands: None,
             granted_services: None,
+            granted_agent_tools: None,
         };
         store
             .update(|s| s.extensions.push(installed.clone()))

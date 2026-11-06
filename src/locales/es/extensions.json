@@ -330,5 +330,10 @@
     "heading": "Servicios en el clúster",
     "list": "La extensión puede enviar solicitudes a estos Services a través de un reenvío de puertos propio de Sextant:",
     "scope": "Solo en los namespaces donde puede leer los Services y reenviar a ellos. Un token de sesión tomado de una respuesta queda en Sextant hasta que se desconecte; el registro de actividad guarda el método y la ruta, nunca la consulta, el cuerpo ni la respuesta."
+  },
+  "agentTools": {
+    "heading": "Herramientas para agentes de IA",
+    "list": "La extensión ofrece estas herramientas a los agentes de IA en el servidor MCP de Sextant; las responde su backend:",
+    "scope": "Los agentes las reciben solo cuando active esta extensión para ellos en los ajustes de agentes de IA, y nunca más de lo que permite su propio acceso."
   }
 }

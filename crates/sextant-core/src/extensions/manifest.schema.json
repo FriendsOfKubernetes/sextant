@@ -533,6 +533,30 @@
             }
           }
         },
+        "agentTools": {
+          "description": "Tools for AI agents in Sextant's MCP server, answered by the extension's backend (sextantApi 4); agents get them only when the user turns the extension on in Settings → AI agents.",
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title", "description", "inputSchema"],
+            "properties": {
+              "id": { "$ref": "#/$defs/contributionId" },
+              "title": { "$ref": "#/$defs/title" },
+              "description": {
+                "description": "What the agent reads to choose the tool.",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000,
+                "format": "non-blank",
+                "pattern": "\\S"
+              },
+              "inputSchema": { "description": "The JSON Schema of the arguments: an object, in a small subset Sextant checks.", "type": "object" },
+              "readOnly": { "description": "It only reads (default false).", "type": "boolean" }
+            }
+          }
+        },
         "sectionBadges": {
           "description": "Counters on the extension's own sidebar sections (ADR-0143); needs `sextantApi` 3. Sextant counts the objects with active problems of the extension's rules and shows the number on the section's header.",
           "type": "array",

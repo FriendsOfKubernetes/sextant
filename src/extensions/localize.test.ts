@@ -35,6 +35,7 @@ const manifest: ExtensionManifest = {
     kinds: [],
     menuItems: [],
     services: [],
+    agentTools: [],
     settings: { title: "Rook Ceph" },
   },
   backend: { module: "b.wasm", network: { hosts: [] }, credentials: [{ id: "token", label: "Token" }] },

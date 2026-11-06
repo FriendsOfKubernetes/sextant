@@ -14,6 +14,7 @@ import type {
   ManifestKind,
   ManifestMenuItem,
   ManifestService,
+  ManifestAgentTool,
   ManifestFile,
   ManifestMetricQuery,
   ManifestPage,
@@ -84,6 +85,14 @@ export const MANIFEST_SHAPES = {
     kinds: "optional",
     menuItems: "optional",
     services: "optional",
+    agentTools: "optional",
+  }),
+  ManifestAgentTool: described<ManifestAgentTool>(`${CONTRIBUTION}/agentTools/items`, {
+    id: "required",
+    title: "required",
+    description: "required",
+    inputSchema: "required",
+    readOnly: "optional",
   }),
   ManifestService: described<ManifestService>(`${CONTRIBUTION}/services/items`, {
     id: "required",

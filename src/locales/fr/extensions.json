@@ -330,5 +330,10 @@
     "heading": "Services dans le cluster",
     "list": "L’extension peut envoyer des requêtes à ces Services par une redirection de port propre à Sextant :",
     "scope": "Uniquement dans les namespaces où elle peut lire les Services et rediriger vers eux. Un jeton de session tiré d’une réponse reste dans Sextant jusqu’à la déconnexion ; le journal d’activité garde la méthode et le chemin, jamais la requête, le corps ni la réponse."
+  },
+  "agentTools": {
+    "heading": "Outils pour les agents IA",
+    "list": "L’extension propose ces outils aux agents IA dans le serveur MCP de Sextant ; son backend y répond :",
+    "scope": "Les agents ne les reçoivent qu’une fois cette extension activée pour eux dans les paramètres des agents IA, et jamais au-delà de leur propre accès."
   }
 }

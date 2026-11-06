@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { api, toApiError, type ApiError, type PendingInstall } from "../../api";
 import { Badge, Button, Dialog, ErrorState } from "../../components";
 import { localizeManifest, pushNotice, refreshExtensions } from "../../extensions";
+import { AgentToolsConsent } from "./AgentToolsConsent";
 import { BackendConsent } from "./BackendDialogs";
 import { ExtensionIcon } from "./ExtensionIcon";
 import { CommandsConsent } from "./CommandsConsent";
@@ -136,6 +137,7 @@ export function ConsentDialog({ pending, review = false, onClose }: ConsentDialo
         {manifest.contributes.metricQueries.length > 0 && <MetricsConsent queries={manifest.contributes.metricQueries} />}
         {manifest.contributes.commands.length > 0 && <CommandsConsent commands={manifest.contributes.commands} />}
         {manifest.contributes.services.length > 0 && <ServicesConsent services={manifest.contributes.services} />}
+        {manifest.contributes.agentTools.length > 0 && <AgentToolsConsent tools={manifest.contributes.agentTools} />}
         {error && <ErrorState error={error} title={installErrorTitle(error, t)} className="settings__error" />}
       </div>
     </Dialog>

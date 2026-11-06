@@ -126,5 +126,10 @@
   "extensionProblems": {
     "title": "Problèmes des extensions pour les agents",
     "hint": "Les agents reçoivent les problèmes de ces extensions dans get_problems, uniquement pour les objets qu’ils peuvent lire. Aucune tant que vous n’en cochez pas."
+  },
+  "extensionTools": {
+    "title": "Outils des extensions pour les agents",
+    "item": "{{extension}} : {{tools}}",
+    "hint": "Les agents reçoivent les outils de ces extensions. Tout ce qu’un outil fait dans un cluster exige à la fois les permissions de l’extension et l’accès propre de l’agent, et vous demande si l’un des deux le demande. Aucune tant que vous n’en cochez pas."
   }
 }

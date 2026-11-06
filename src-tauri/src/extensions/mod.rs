@@ -10,6 +10,7 @@
 //! granted. A development folder whose manifest starts asking for more is paused (`needsConsent`) until the user
 //! agrees again (`extension_inspect_folder` + `extension_install`).
 
+pub mod agent_tools;
 pub mod api;
 pub mod backend;
 pub mod catalog;

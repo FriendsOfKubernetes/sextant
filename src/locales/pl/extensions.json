@@ -337,5 +337,10 @@
     "heading": "Usługi w klastrze",
     "list": "Rozszerzenie może wysyłać żądania do tych Service przez własne przekierowanie portów Sextant:",
     "scope": "Tylko w przestrzeniach nazw, w których może odczytywać Service i przekierowywać do nich porty. Token sesji z odpowiedzi Sextant przechowuje do rozłączenia; dziennik aktywności zapisuje metodę i ścieżkę, nigdy zapytania, treści ani odpowiedzi."
+  },
+  "agentTools": {
+    "heading": "Narzędzia dla agentów AI",
+    "list": "Rozszerzenie udostępnia agentom AI te narzędzia w serwerze MCP Sextant; odpowiada na nie jego backend:",
+    "scope": "Agenci dostają je dopiero po włączeniu tego rozszerzenia dla agentów w ustawieniach agentów AI i nigdy ponad własny dostęp."
   }
 }

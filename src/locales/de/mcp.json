@@ -125,5 +125,10 @@
   "extensionProblems": {
     "title": "Probleme von Erweiterungen für Agenten",
     "hint": "Agenten erhalten die Probleme dieser Erweiterungen in get_problems, nur für Objekte, die sie lesen dürfen. Keine, bis Sie eine ankreuzen."
+  },
+  "extensionTools": {
+    "title": "Werkzeuge von Erweiterungen für Agenten",
+    "item": "{{extension}}: {{tools}}",
+    "hint": "Agenten erhalten die Werkzeuge dieser Erweiterungen. Alles, was ein Werkzeug in einem Cluster tut, braucht die Berechtigungen der Erweiterung und den eigenen Zugriff des Agenten dort und fragt Sie, wenn eines von beiden fragt. Keine, bis Sie eine ankreuzen."
   }
 }

@@ -323,5 +323,10 @@
     "heading": "Kümedeki servisler",
     "list": "Uzantı, Sextant'ın kendi port yönlendirmesi üzerinden bu Service'lere istek gönderebilir:",
     "scope": "Yalnızca Service'leri okuyabildiği ve onlara yönlendirme yapabildiği namespace'lerde. Bir yanıttan alınan oturum belirteci bağlantı kesilene kadar Sextant'ta kalır; etkinlik günlüğü yöntemi ve yolu tutar, sorguyu, gövdeyi veya yanıtı asla tutmaz."
+  },
+  "agentTools": {
+    "heading": "Yapay zekâ ajanları için araçlar",
+    "list": "Uzantı, Sextant'ın MCP sunucusunda yapay zekâ ajanlarına bu araçları sunar; bunları arka ucu yanıtlar:",
+    "scope": "Ajanlar bunları ancak bu uzantıyı yapay zekâ ajanları ayarlarında ajanlar için açtığınızda alır, kendi erişimlerinin izin verdiğinden fazlasını asla almaz."
   }
 }

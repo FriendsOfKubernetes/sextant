@@ -125,5 +125,10 @@
   "extensionProblems": {
     "title": "Ajanlar için uzantı sorunları",
     "hint": "Ajanlar bu uzantıların sorunlarını get_problems içinde, yalnızca okuyabildikleri nesneler için alır. Siz işaretleyene kadar hiçbiri."
+  },
+  "extensionTools": {
+    "title": "Ajanlar için uzantı araçları",
+    "item": "{{extension}}: {{tools}}",
+    "hint": "Ajanlar bu uzantıların araçlarını alır. Bir aracın kümede yaptığı her şey hem uzantının izinlerini hem de ajanın oradaki kendi erişimini gerektirir ve ikisinden biri sorarsa size sorar. Siz işaretleyene kadar hiçbiri."
   }
 }

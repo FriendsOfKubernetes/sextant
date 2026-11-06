@@ -323,5 +323,10 @@
     "heading": "Services im Cluster",
     "list": "Die Erweiterung darf über eine eigene Portweiterleitung von Sextant Anfragen an diese Services senden:",
     "scope": "Nur in Namespaces, in denen sie Services lesen und an sie weiterleiten darf. Ein Sitzungstoken aus einer Antwort behält Sextant bis zur Trennung; das Aktivitätsprotokoll enthält Methode und Pfad, nie Abfrage, Inhalt oder Antwort."
+  },
+  "agentTools": {
+    "heading": "Werkzeuge für KI-Agenten",
+    "list": "Die Erweiterung bietet KI-Agenten diese Werkzeuge im MCP-Server von Sextant an, beantwortet von ihrem Backend:",
+    "scope": "Agenten erhalten sie erst, wenn Sie diese Erweiterung in den Einstellungen für KI-Agenten für Agenten einschalten, und nie mehr, als ihr eigener Zugriff erlaubt."
   }
 }

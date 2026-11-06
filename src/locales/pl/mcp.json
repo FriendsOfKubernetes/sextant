@@ -127,5 +127,10 @@
   "extensionProblems": {
     "title": "Problemy rozszerzeń dla agentów",
     "hint": "Agenci otrzymują problemy tych rozszerzeń w get_problems, tylko dla obiektów, które mogą odczytać. Żadne, dopóki nie zaznaczysz któregoś."
+  },
+  "extensionTools": {
+    "title": "Narzędzia rozszerzeń dla agentów",
+    "item": "{{extension}}: {{tools}}",
+    "hint": "Agenci otrzymują narzędzia tych rozszerzeń. Wszystko, co narzędzie robi w klastrze, wymaga zarówno uprawnień rozszerzenia, jak i własnego dostępu agenta, i pyta Cię, jeśli pyta którekolwiek z nich. Żadne, dopóki nie zaznaczysz."
   }
 }

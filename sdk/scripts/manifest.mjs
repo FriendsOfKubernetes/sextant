@@ -483,7 +483,7 @@ function checkUniqueIds(manifest) {
       }
     });
   }
-  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries", "commands", "menuItems", "services"]) {
+  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries", "commands", "menuItems", "services", "agentTools"]) {
     const items = manifest.contributes?.[kind];
     if (!Array.isArray(items)) continue;
     items.forEach((item, i) => {
@@ -968,6 +968,7 @@ export function translatableTexts(manifest) {
     out.set(`columns.${column.id}.title`, title);
     (column.cases ?? []).forEach((_, i) => out.set(`columns.${column.id}.cases.${i}.text`, title));
   }
+  for (const tool of c.agentTools ?? []) out.set(`agentTools.${tool.id}.title`, title);
   for (const service of c.services ?? []) out.set(`services.${service.id}.title`, title);
   for (const item of c.menuItems ?? []) out.set(`menuItems.${item.id}.title`, title);
   (c.kinds ?? []).forEach((kind, i) => {
@@ -1076,6 +1077,115 @@ function checkServices(manifest) {
   });
 }
 
+// --- Agent tools (`check_agent_tools` in crates/sextant-core/src/extensions/agent_tools.rs) ------------------------
+
+const MAX_TOOL_NAME_CHARS = 64;
+const MAX_SCHEMA_BYTES = 8 * 1024;
+const MAX_SCHEMA_DEPTH = 4;
+const SCHEMA_KEYWORDS = [
+  "type",
+  "description",
+  "properties",
+  "required",
+  "additionalProperties",
+  "items",
+  "enum",
+  "minimum",
+  "maximum",
+  "minLength",
+  "maxLength",
+  "minItems",
+  "maxItems",
+];
+const SCHEMA_TYPES = ["object", "string", "number", "integer", "boolean", "array"];
+
+/** The MCP name of an extension's tool (`mcp_tool_name`). */
+export const mcpToolName = (extensionId, toolId) => `ext_${extensionId.replaceAll(".", "_")}__${toolId}`;
+
+/** JSON text as serde_json writes it (no spaces): to measure a schema as Sextant does. */
+function compactJson(value) {
+  if (isFloat(value)) return String(value.value);
+  if (Array.isArray(value)) return `[${value.map(compactJson).join(",")}]`;
+  if (isObject(value)) return `{${Object.keys(value).map((k) => `${JSON.stringify(k)}:${compactJson(value[k])}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+
+function checkSchemaNode(node, path, depth) {
+  if (!isObject(node)) fail(path, "must be a schema object");
+  if (depth > MAX_SCHEMA_DEPTH) fail(path, `schemas nest at most ${MAX_SCHEMA_DEPTH} deep`);
+  const unknown = sortedKeys(node).find((k) => !SCHEMA_KEYWORDS.includes(k));
+  if (unknown !== undefined) fail([...path, unknown], `\`${unknown}\` is not a keyword Sextant reads in an argument schema`);
+  const kind = typeof node.type === "string" ? node.type : undefined;
+  if (kind === undefined || !SCHEMA_TYPES.includes(kind)) {
+    fail([...path, "type"], "must be one of: `object`, `string`, `number`, `integer`, `boolean`, `array`");
+  }
+  if (node.description !== undefined && !(typeof node.description === "string" && Array.from(node.description).length <= 500)) {
+    fail([...path, "description"], "must be text of at most 500 characters");
+  }
+  for (const bound of ["minimum", "maximum"]) {
+    if (node[bound] !== undefined && !isNumber(node[bound])) fail([...path, bound], "must be a number");
+  }
+  for (const bound of ["minLength", "maxLength", "minItems", "maxItems"]) {
+    const v = node[bound];
+    if (v !== undefined && !(typeof v === "number" && Number.isInteger(v) && v >= 0)) fail([...path, bound], "must be a whole number of 0 or more");
+  }
+  if (node.enum !== undefined) {
+    const ok =
+      Array.isArray(node.enum) &&
+      node.enum.length > 0 &&
+      node.enum.length <= 50 &&
+      node.enum.every((v) => typeof v === "string" || isNumber(v) || typeof v === "boolean");
+    if (!ok) fail([...path, "enum"], "must list 1 to 50 strings, numbers or booleans");
+  }
+  if (node.additionalProperties !== undefined && typeof node.additionalProperties !== "boolean") {
+    fail([...path, "additionalProperties"], "must be true or false");
+  }
+  if (kind !== "object") {
+    for (const key of ["properties", "required", "additionalProperties"]) {
+      if (node[key] !== undefined) fail([...path, key], 'goes only with `"type": "object"`');
+    }
+  }
+  if (kind !== "array" && node.items !== undefined) fail([...path, "items"], 'goes only with `"type": "array"`');
+  let properties;
+  if (node.properties !== undefined) {
+    if (!isObject(node.properties)) fail([...path, "properties"], "must be an object of schemas");
+    properties = node.properties;
+    for (const name of sortedKeys(properties)) {
+      if (!(name.length >= 1 && name.length <= 64 && /^[A-Za-z0-9_-]+$/.test(name))) {
+        fail([...path, "properties", name], "a property name has 1 to 64 letters, digits, `_` and `-`");
+      }
+      checkSchemaNode(properties[name], [...path, "properties", name], depth + 1);
+    }
+  }
+  if (node.required !== undefined) {
+    if (!Array.isArray(node.required) || !node.required.every((n) => typeof n === "string")) fail([...path, "required"], "must list property names");
+    node.required.forEach((name, i) => {
+      if (!(properties !== undefined && Object.hasOwn(properties, name))) fail([...path, "required", i], "is not one of `properties`");
+    });
+  }
+  if (node.items !== undefined) checkSchemaNode(node.items, [...path, "items"], depth + 1);
+}
+
+function checkAgentTools(manifest) {
+  const tools = manifest.contributes?.agentTools ?? [];
+  const list = ["contributes", "agentTools"];
+  if (tools.length === 0) return;
+  if (manifest.sextantApi < WINDOW_API) fail(list, `needs sextantApi ${WINDOW_API} or later`);
+  if (manifest.backend === undefined) fail(list, "needs a `backend`: the extension's backend answers the tools");
+  tools.forEach((tool, i) => {
+    const here = [...list, i];
+    const name = mcpToolName(manifest.id, tool.id);
+    if (Array.from(name).length > MAX_TOOL_NAME_CHARS) {
+      fail([...here, "id"], `with the extension's id the tool's name \`${name}\` is longer than ${MAX_TOOL_NAME_CHARS} characters`);
+    }
+    if (new TextEncoder().encode(compactJson(tool.inputSchema)).length > MAX_SCHEMA_BYTES) {
+      fail([...here, "inputSchema"], `is larger than ${MAX_SCHEMA_BYTES} bytes`);
+    }
+    if (tool.inputSchema.type !== "object") fail([...here, "inputSchema", "type"], 'the arguments are an object: `"type": "object"`');
+    checkSchemaNode(tool.inputSchema, [...here, "inputSchema"], 1);
+  });
+}
+
 /** Whether `section` is the extension's own: a page or listed kind with this section gives it a title (`own_section`). */
 function ownSection(manifest, section) {
   const c = manifest.contributes ?? {};
@@ -1175,6 +1285,7 @@ export function validateManifest(value, schema = manifestSchema()) {
       fail(["contributes", "menuItems"], `needs sextantApi ${WINDOW_API} or later`);
     }
     checkServices(value);
+    checkAgentTools(value);
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };

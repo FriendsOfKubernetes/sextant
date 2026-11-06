@@ -340,6 +340,14 @@ fn start_extensions<R: Runtime>(app: &tauri::AppHandle<R>) {
                 ApiEvent::Confirm(request) => ask_in_window(&handle, request),
             }
         }));
+    // The tools extensions give agents (ADR-0159), listed and run by the MCP server.
+    let state = app.state::<AppState>();
+    state.mcp.context().set_extension_tools(std::sync::Arc::new(
+        extensions::agent_tools::ExtensionAgentTools {
+            host: host.clone(),
+            api: std::sync::Arc::clone(&state.ext_api),
+        },
+    ));
     extensions::dev::spawn_poller(host);
 }
 
