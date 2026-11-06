@@ -83,7 +83,9 @@
     "dockActions": "Dock-Schaltflächen",
     "settings": "Abschnitt in den Einstellungen",
     "problems": "Problemregeln",
-    "metricQueries": "Metrikabfragen"
+    "metricQueries": "Metrikabfragen",
+    "menuItems": "Menüeinträge",
+    "kinds": "Ressourcenarten in einem eigenen Bereich"
   },
   "permissions": {
     "clusters": "Cluster",
@@ -116,7 +118,8 @@
       "logs": "Logs lesen",
       "exec": "Befehle ausführen",
       "portForward": "Ports weiterleiten"
-    }
+    },
+    "statusPatches": "Darf den Status ändern von: {{kinds}} (wo sie diese ändern darf)."
   },
   "state": {
     "active": "Aktiv",
@@ -315,5 +318,10 @@
     "changes": "Ändert etwas: Sextant fragt Sie jedes Mal. Läuft im Container {{container}} des neuesten bereiten Pods mit den Labels {{selector}}.",
     "reads": "Liest nur. Läuft im Container {{container}} des neuesten bereiten Pods mit den Labels {{selector}}.",
     "scope": "Nur in Namespaces, in denen die Erweiterung Pods lesen darf. Was die Befehle ausgeben, erhält die Erweiterung; das Aktivitätsprotokoll speichert den Befehl, nie seine Ausgabe."
+  },
+  "services": {
+    "heading": "Services im Cluster",
+    "list": "Die Erweiterung darf über eine eigene Portweiterleitung von Sextant Anfragen an diese Services senden:",
+    "scope": "Nur in Namespaces, in denen sie Services lesen und an sie weiterleiten darf. Ein Sitzungstoken aus einer Antwort behält Sextant bis zur Trennung; das Aktivitätsprotokoll enthält Methode und Pfad, nie Abfrage, Inhalt oder Antwort."
   }
 }

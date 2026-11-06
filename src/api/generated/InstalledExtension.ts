@@ -5,6 +5,7 @@ import type { ExtensionPermissions } from "./ExtensionPermissions";
 import type { ExtensionSource } from "./ExtensionSource";
 import type { KindPattern } from "./KindPattern";
 import type { MetricQuery } from "./MetricQuery";
+import type { ServiceContribution } from "./ServiceContribution";
 
 /**
  * One installed extension (`AppSettings::extensions`).
@@ -51,4 +52,8 @@ grantedMetricQueries?: Array<MetricQuery>,
 /**
  * The commands the user agreed to (ADR-0147), word for word; only these run. `None`: none were agreed to.
  */
-grantedCommands?: Array<CommandContribution>, };
+grantedCommands?: Array<CommandContribution>, 
+/**
+ * The services the user agreed to (ADR-0158), word for word; only these are reached. `None`: none were agreed to.
+ */
+grantedServices?: Array<ServiceContribution>, };

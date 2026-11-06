@@ -89,11 +89,27 @@ export function PermissionsView({ permissions }: { permissions: ExtensionPermiss
         </ul>
       )}
       {rules.length > 0 && <p className="settings__hint">{t("extensions:permissions.clusterWide")}</p>}
+      {(permissions.statusPatches ?? []).length > 0 && (
+        <p className="ext-perms__line">
+          {t("extensions:permissions.statusPatches", {
+            kinds: formatList((permissions.statusPatches ?? []).map((k) => `${k.kind} (${k.group})`)),
+          })}
+        </p>
+      )}
     </div>
   );
 }
 
-const CONTRIBUTION_KINDS = ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries"] as const;
+const CONTRIBUTION_KINDS = [
+  "pages",
+  "detailsSections",
+  "actions",
+  "columns",
+  "dockActions",
+  "problems",
+  "metricQueries",
+  "menuItems",
+] as const;
 
 /** Titles of what the extension adds, by kind of contribution. */
 export function contributionLines(contributes: Contributions): { kind: string; titles: string[] }[] {
@@ -101,6 +117,9 @@ export function contributionLines(contributes: Contributions): { kind: string; t
     kind,
     titles: contributes[kind].map((item) => item.title),
   }));
+  if (contributes.kinds.length > 0) {
+    lines.push({ kind: "kinds", titles: contributes.kinds.map((k) => k.title ?? k.kind) });
+  }
   if (contributes.settings) lines.push({ kind: "settings", titles: [contributes.settings.title] });
   return lines.filter((line) => line.titles.length > 0);
 }

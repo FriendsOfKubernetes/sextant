@@ -10,6 +10,7 @@ import type { MetricQuery } from "./MetricQuery";
 import type { PageContribution } from "./PageContribution";
 import type { ProblemContribution } from "./ProblemContribution";
 import type { SectionBadgeContribution } from "./SectionBadgeContribution";
+import type { ServiceContribution } from "./ServiceContribution";
 import type { SettingsContribution } from "./SettingsContribution";
 
 /**
@@ -39,4 +40,8 @@ kinds: Array<KindContribution>,
 /**
  * Items of Sextant's menus that open the extension's window (ADR-0157); `sextantApi` 4.
  */
-menuItems: Array<MenuItemContribution>, };
+menuItems: Array<MenuItemContribution>, 
+/**
+ * Services inside a cluster the extension sends requests to (ADR-0158); `sextantApi` 4.
+ */
+services: Array<ServiceContribution>, };

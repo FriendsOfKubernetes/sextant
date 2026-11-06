@@ -82,7 +82,9 @@
     "dockActions": "底部面板按鈕",
     "settings": "「設定」中的區段",
     "problems": "問題規則",
-    "metricQueries": "指標查詢"
+    "metricQueries": "指標查詢",
+    "menuItems": "選單項目",
+    "kinds": "其自有區段中的資源類型"
   },
   "permissions": {
     "clusters": "叢集",
@@ -111,7 +113,8 @@
       "logs": "讀取日誌",
       "exec": "執行命令",
       "portForward": "轉送連接埠"
-    }
+    },
+    "statusPatches": "可以變更下列資源的 status：{{kinds}}（在允許修改的位置）。"
   },
   "state": {
     "active": "已啟用",
@@ -308,5 +311,10 @@
     "changes": "會變更內容：Sextant 每次都會詢問你。在帶有標籤 {{selector}} 的最新就緒 Pod 的容器 {{container}} 中執行。",
     "reads": "只讀取。在帶有標籤 {{selector}} 的最新就緒 Pod 的容器 {{container}} 中執行。",
     "scope": "僅在擴充功能可讀取 Pod 的命名空間中執行。命令的輸出交給擴充功能；活動記錄只記錄命令，從不記錄其輸出。"
+  },
+  "services": {
+    "heading": "叢集中的服務",
+    "list": "擴充功能可透過 Sextant 自己的連接埠轉送向這些 Service 傳送要求：",
+    "scope": "僅限於它可讀取 Service 並轉送至其中的命名空間。從回應中取得的工作階段權杖會保留在 Sextant 中，直到中斷連線；活動記錄只保留方法和路徑，從不保留查詢、內文或回應。"
   }
 }

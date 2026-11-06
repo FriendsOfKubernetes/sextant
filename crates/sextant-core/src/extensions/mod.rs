@@ -23,6 +23,7 @@ pub mod permissions;
 pub mod problems;
 mod schema;
 pub mod section_badges;
+pub mod services;
 pub mod translations;
 
 pub use installed::{BackendGrant, ExtensionSource, Granted, InstalledExtension, asks_within};

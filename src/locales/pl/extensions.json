@@ -85,7 +85,9 @@
     "dockActions": "Przyciski panelu dolnego",
     "settings": "Sekcja w Ustawieniach",
     "problems": "Reguły problemów",
-    "metricQueries": "Zapytania o metryki"
+    "metricQueries": "Zapytania o metryki",
+    "menuItems": "Pozycje menu",
+    "kinds": "Rodzaje zasobów we własnej sekcji"
   },
   "permissions": {
     "clusters": "Klastry",
@@ -126,7 +128,8 @@
       "logs": "odczyt logów",
       "exec": "uruchamianie poleceń",
       "portForward": "przekierowanie portów"
-    }
+    },
+    "statusPatches": "Może zmieniać status: {{kinds}} (tam, gdzie może je modyfikować)."
   },
   "state": {
     "active": "Aktywne",
@@ -329,5 +332,10 @@
     "changes": "Coś zmienia: Sextant pyta Cię za każdym razem. Działa w kontenerze {{container}} najnowszego gotowego poda z etykietami {{selector}}.",
     "reads": "Tylko odczytuje. Działa w kontenerze {{container}} najnowszego gotowego poda z etykietami {{selector}}.",
     "scope": "Tylko w przestrzeniach nazw, w których rozszerzenie może odczytywać pody. To, co wypisują polecenia, trafia do rozszerzenia; dziennik aktywności zapisuje polecenie, nigdy jego wynik."
+  },
+  "services": {
+    "heading": "Usługi w klastrze",
+    "list": "Rozszerzenie może wysyłać żądania do tych Service przez własne przekierowanie portów Sextant:",
+    "scope": "Tylko w przestrzeniach nazw, w których może odczytywać Service i przekierowywać do nich porty. Token sesji z odpowiedzi Sextant przechowuje do rozłączenia; dziennik aktywności zapisuje metodę i ścieżkę, nigdy zapytania, treści ani odpowiedzi."
   }
 }

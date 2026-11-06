@@ -219,6 +219,24 @@ export interface ManifestContributions {
   kinds?: ManifestKind[];
   /** Items of Sextant's menus opening the extension's window; needs `sextantApi` 4. */
   menuItems?: ManifestMenuItem[];
+  /** Services inside a cluster the extension sends requests to (`sextant.service.request`); needs `sextantApi` 4. */
+  services?: ManifestService[];
+}
+
+/**
+ * A Service inside a cluster (sextantApi 4, ADR-0158), agreed to at install: `sextant.service.request` reaches it in
+ * the namespace each call names, through Sextant's own port forward, with Read and Port forward on Services there.
+ */
+export interface ManifestService {
+  id: string;
+  /** What it is, at consent: "Argo CD API". */
+  title: string;
+  /** The Service's name. */
+  name: string;
+  /** Its port: a number or a port name. */
+  port: number | string;
+  /** `https`: TLS without checking the certificate (the loopback end of Sextant's forward); `http`: plain. */
+  scheme: "https" | "http";
 }
 
 /**
@@ -346,6 +364,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       commands: (c.commands ?? []).map((command) => ({ ...command, params: command.params ?? [], changes: command.changes ?? false })),
       kinds: c.kinds ?? [],
       menuItems: c.menuItems ?? [],
+      services: c.services ?? [],
     },
   };
   if (file.icon !== undefined) manifest.icon = file.icon;

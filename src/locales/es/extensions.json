@@ -84,7 +84,9 @@
     "dockActions": "Botones del panel inferior",
     "settings": "Sección en Configuración",
     "problems": "Reglas de problemas",
-    "metricQueries": "Consultas de métricas"
+    "metricQueries": "Consultas de métricas",
+    "menuItems": "Elementos de menú",
+    "kinds": "Tipos en una sección propia"
   },
   "permissions": {
     "clusters": "Clústeres",
@@ -121,7 +123,8 @@
       "logs": "lectura de registros",
       "exec": "ejecución de comandos",
       "portForward": "reenvío de puertos"
-    }
+    },
+    "statusPatches": "Puede cambiar el status de: {{kinds}} (donde puede modificarlos)."
   },
   "state": {
     "active": "Activa",
@@ -322,5 +325,10 @@
     "changes": "Cambia algo: Sextant te pregunta cada vez. Se ejecuta en el contenedor {{container}} del pod listo más reciente con las etiquetas {{selector}}.",
     "reads": "Solo lee. Se ejecuta en el contenedor {{container}} del pod listo más reciente con las etiquetas {{selector}}.",
     "scope": "Solo en espacios de nombres donde la extensión puede leer pods. Lo que imprimen los comandos va a la extensión; el registro de actividad guarda el comando, nunca su salida."
+  },
+  "services": {
+    "heading": "Servicios en el clúster",
+    "list": "La extensión puede enviar solicitudes a estos Services a través de un reenvío de puertos propio de Sextant:",
+    "scope": "Solo en los namespaces donde puede leer los Services y reenviar a ellos. Un token de sesión tomado de una respuesta queda en Sextant hasta que se desconecte; el registro de actividad guarda el método y la ruta, nunca la consulta, el cuerpo ni la respuesta."
   }
 }

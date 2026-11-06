@@ -17,6 +17,7 @@ use super::permissions::ExtensionPermissions;
 use super::problems::{self, ProblemCondition, ProblemContribution};
 use super::schema::{self, JsonPath};
 use super::section_badges::{self, SectionBadgeContribution};
+use super::services::{self, ServiceContribution};
 use super::translations;
 use crate::access::KindPattern;
 use crate::error::{CoreError, ErrorCode};
@@ -156,6 +157,8 @@ pub struct Contributions {
     pub kinds: Vec<KindContribution>,
     /// Items of Sextant's menus that open the extension's window (ADR-0157); `sextantApi` 4.
     pub menu_items: Vec<MenuItemContribution>,
+    /// Services inside a cluster the extension sends requests to (ADR-0158); `sextantApi` 4.
+    pub services: Vec<ServiceContribution>,
 }
 
 /// An item of one of Sextant's menus (`view=action`, with the menu's subject in the context).
@@ -434,6 +437,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     contributions::check_kinds(&manifest)?;
     contributions::check_permissions(&manifest)?;
     contributions::check_menu_items(&manifest)?;
+    services::check_services(&manifest)?;
     Ok(manifest)
 }
 
@@ -468,6 +472,7 @@ fn check_unique_ids(manifest: &Value) -> Result<(), ManifestError> {
         "metricQueries",
         "commands",
         "menuItems",
+        "services",
     ] {
         let Some(items) = manifest
             .get("contributes")

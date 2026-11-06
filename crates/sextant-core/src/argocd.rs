@@ -617,20 +617,32 @@ impl fmt::Debug for ArgoClient {
     }
 }
 
+/// A TLS connector that skips the certificate only of a server at the loopback address (the local end of one of
+/// Sextant's own port forwards), HTTP/1.1; the handshake's signatures are still checked. Shared with an extension's
+/// service requests (ADR-0158).
+pub(crate) fn loopback_tls_connector() -> tokio_rustls::TlsConnector {
+    let provider = Arc::new(rustls::crypto::ring::default_provider());
+    let mut config = rustls::ClientConfig::builder_with_provider(Arc::clone(&provider))
+        .with_safe_default_protocol_versions()
+        .expect("ring supports the default TLS versions")
+        .dangerous()
+        .with_custom_certificate_verifier(Arc::new(LoopbackVerifier(provider)))
+        .with_no_client_auth();
+    config.alpn_protocols = vec![b"http/1.1".to_vec()];
+    tokio_rustls::TlsConnector::from(Arc::new(config))
+}
+
+/// The server name of the loopback end: `127.0.0.1`, the only one [`LoopbackVerifier`] accepts.
+pub(crate) fn loopback_server_name() -> ServerName<'static> {
+    ServerName::IpAddress(IpAddr::V4(Ipv4Addr::LOCALHOST).into())
+}
+
 impl ArgoClient {
     /// A client of the API forwarded to `127.0.0.1:<local_port>`, over TLS.
     pub fn new(local_port: u16) -> Self {
-        let provider = Arc::new(rustls::crypto::ring::default_provider());
-        let mut config = rustls::ClientConfig::builder_with_provider(Arc::clone(&provider))
-            .with_safe_default_protocol_versions()
-            .expect("ring supports the default TLS versions")
-            .dangerous()
-            .with_custom_certificate_verifier(Arc::new(LoopbackVerifier(provider)))
-            .with_no_client_auth();
-        config.alpn_protocols = vec![b"http/1.1".to_vec()];
         Self {
             port: local_port,
-            tls: tokio_rustls::TlsConnector::from(Arc::new(config)),
+            tls: loopback_tls_connector(),
             plain: false,
         }
     }

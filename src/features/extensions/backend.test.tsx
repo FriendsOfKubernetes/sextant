@@ -26,7 +26,7 @@ const manifest: ExtensionManifest = {
   sextantApi: 1,
   entry: "index.html",
   permissions: { clusters: { type: "all" }, rules: [] },
-  contributes: { pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [], metricQueries: [], sectionBadges: [], commands: [], kinds: [], menuItems: [] },
+  contributes: { pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [], metricQueries: [], sectionBadges: [], commands: [], kinds: [], menuItems: [], services: [] },
   backend: {
     module: "backend.wasm",
     network: { hosts: ["api.pager.example.com"] },

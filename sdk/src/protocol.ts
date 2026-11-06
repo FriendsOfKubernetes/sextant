@@ -79,6 +79,8 @@ export const REMOTE_METHODS = [
   "portForward.start",
   "portForward.list",
   "portForward.stop",
+  "service.request",
+  "service.forget",
 ] as const;
 
 /** Methods the window answers itself. */

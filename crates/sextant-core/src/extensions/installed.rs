@@ -11,6 +11,7 @@ use super::manifest::{BackendManifest, ExtensionManifest};
 use super::metric_queries::{MetricQuery, metric_queries_within};
 use super::permissions::ExtensionPermissions;
 use super::problems::problems_within;
+use super::services::{ServiceContribution, services_within};
 use crate::access::KindPattern;
 
 /// Where an installed extension came from.
@@ -74,6 +75,10 @@ pub struct InstalledExtension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub granted_commands: Option<Vec<CommandContribution>>,
+    /// The services the user agreed to (ADR-0158), word for word; only these are reached. `None`: none were agreed to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub granted_services: Option<Vec<ServiceContribution>>,
 }
 
 /// The part of a backend the user agrees to: hosts and credential ids.
@@ -102,6 +107,7 @@ pub struct Granted<'a> {
     pub problems: Option<&'a [KindPattern]>,
     pub metric_queries: Option<&'a [MetricQuery]>,
     pub commands: Option<&'a [CommandContribution]>,
+    pub services: Option<&'a [ServiceContribution]>,
 }
 
 impl<'a> Granted<'a> {
@@ -112,6 +118,7 @@ impl<'a> Granted<'a> {
             problems: installed.granted_problems.as_deref(),
             metric_queries: installed.granted_metric_queries.as_deref(),
             commands: installed.granted_commands.as_deref(),
+            services: installed.granted_services.as_deref(),
         }
     }
 }
@@ -130,6 +137,7 @@ pub fn asks_within(
         problems: granted_problems,
         metric_queries: granted_metric_queries,
         commands: granted_commands,
+        services: granted_services,
     } = also;
     let backend_within = match (&manifest.backend, granted_backend) {
         (None, _) => true,
@@ -150,6 +158,7 @@ pub fn asks_within(
         && problems_within(manifest, granted_problems)
         && metric_queries_within(manifest, granted_metric_queries)
         && commands_within(manifest, granted_commands)
+        && services_within(manifest, granted_services)
         && manifest.permissions.is_within(granted)
 }
 

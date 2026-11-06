@@ -83,7 +83,9 @@
     "dockActions": "Alt panel düğmeleri",
     "settings": "Ayarlar'daki bölüm",
     "problems": "Sorun kuralları",
-    "metricQueries": "Metrik sorguları"
+    "metricQueries": "Metrik sorguları",
+    "menuItems": "Menü öğeleri",
+    "kinds": "Kendi bölümündeki türler"
   },
   "permissions": {
     "clusters": "Kümeler",
@@ -116,7 +118,8 @@
       "logs": "günlükleri okuma",
       "exec": "komut çalıştırma",
       "portForward": "bağlantı noktası yönlendirme"
-    }
+    },
+    "statusPatches": "Şunların status'unu değiştirebilir: {{kinds}} (değiştirebildiği yerlerde)."
   },
   "state": {
     "active": "Etkin",
@@ -315,5 +318,10 @@
     "changes": "Bir şeyi değiştirir: Sextant her seferinde size sorar. {{selector}} etiketli en yeni hazır pod'un {{container}} kapsayıcısında çalışır.",
     "reads": "Yalnızca okur. {{selector}} etiketli en yeni hazır pod'un {{container}} kapsayıcısında çalışır.",
     "scope": "Yalnızca uzantının pod'ları okuyabildiği ad alanlarında. Komutların çıktısı uzantıya gider; etkinlik günlüğü komutu tutar, çıktısını asla."
+  },
+  "services": {
+    "heading": "Kümedeki servisler",
+    "list": "Uzantı, Sextant'ın kendi port yönlendirmesi üzerinden bu Service'lere istek gönderebilir:",
+    "scope": "Yalnızca Service'leri okuyabildiği ve onlara yönlendirme yapabildiği namespace'lerde. Bir yanıttan alınan oturum belirteci bağlantı kesilene kadar Sextant'ta kalır; etkinlik günlüğü yöntemi ve yolu tutar, sorguyu, gövdeyi veya yanıtı asla tutmaz."
   }
 }

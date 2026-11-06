@@ -18,6 +18,9 @@ pub const MAX_FORWARDS_PER_EXTENSION: usize = 8;
 struct Owned {
     extension: String,
     granted: ExtensionPermissions,
+    /// Sextant's own forward for the extension's service requests (ADR-0158): the key it serves; never listed to
+    /// the extension or counted against its limit.
+    internal: Option<String>,
 }
 
 /// The extensions' forwards, by forward id.
@@ -51,8 +54,41 @@ impl ExtensionForwards {
         // Forwards stopped elsewhere (the page, a disconnect) are forgotten here.
         owned.retain(|id, _| live.iter().any(|f| &f.id == id));
         live.into_iter()
-            .filter(|f| owned.get(&f.id).is_some_and(|o| o.extension == extension))
+            .filter(|f| {
+                owned
+                    .get(&f.id)
+                    .is_some_and(|o| o.extension == extension && o.internal.is_none())
+            })
             .collect()
+    }
+
+    /// The running internal forward of `extension` for `key`, if any.
+    pub fn internal(&self, extension: &str, key: &str) -> Option<ForwardInfo> {
+        let forwarder = self.forwarder().ok()?;
+        let owned = lock(&self.owned);
+        forwarder.list().into_iter().find(|f| {
+            owned
+                .get(&f.id)
+                .is_some_and(|o| o.extension == extension && o.internal.as_deref() == Some(key))
+        })
+    }
+
+    /// Remembers Sextant's own forward for `extension`'s requests to `key`.
+    pub fn add_internal(
+        &self,
+        id: String,
+        extension: &str,
+        granted: ExtensionPermissions,
+        key: String,
+    ) {
+        lock(&self.owned).insert(
+            id,
+            Owned {
+                extension: extension.to_owned(),
+                granted,
+                internal: Some(key),
+            },
+        );
     }
 
     /// Whether `extension` may start one more.
@@ -66,6 +102,7 @@ impl ExtensionForwards {
             Owned {
                 extension: extension.to_owned(),
                 granted,
+                internal: None,
             },
         );
     }

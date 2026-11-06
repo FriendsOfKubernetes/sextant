@@ -39,11 +39,15 @@ use sextant_core::access::{
 use sextant_core::error::with_timeout;
 use sextant_core::extensions::commands::{self, MAX_OUTPUT_BYTES};
 use sextant_core::extensions::metric_queries::{MetricQueryRange, run_metric_query};
+use sextant_core::extensions::services::{
+    self, LoopbackRequest, ServiceContribution, ServiceMethod,
+};
 use sextant_core::extensions::{ExtensionPermissions, InstalledExtension, decide_extension};
-use sextant_core::portforward::{ForwardSource, ForwardTarget, PodFilter};
+use sextant_core::portforward::{ForwardInfo, ForwardSource, ForwardTarget, PodFilter};
 use sextant_core::resources::{
     self, KindRef, PatchType, ResourceKind, WatchUpdate, inline_secrets,
 };
+use sextant_core::settings::custom_columns::{PathStep, parse_field_path};
 use sextant_core::{
     ClusterId, ClusterManager, ConnectionState, CoreError, CoreResult, ErrorCode, ObjectRef,
     SettingsStore, WatchSpec, logs,
@@ -53,6 +57,7 @@ use tauri::{Runtime, State, Webview};
 use tokio::task::AbortHandle;
 
 use super::forwards::{ExtensionForwards, MAX_FORWARDS_PER_EXTENSION};
+use super::sessions::{ServiceSessions, session_key};
 use super::watch_hub::WatchHub;
 use super::{ExtensionHost, HostEvent, WeakExtensionHost};
 use crate::access_guard::audit::{AuditDecision, AuditEntry, AuditLog, clip};
@@ -89,7 +94,7 @@ pub const MAX_GET_MANY: usize = 50;
 pub const GET_MANY_AT_ONCE: usize = 4;
 
 /// The methods `extension_call` serves (`ui.*` and the context are the window's).
-pub const METHODS: [&str; 20] = [
+pub const METHODS: [&str; 22] = [
     "clusters.list",
     "kinds",
     "resources.list",
@@ -110,6 +115,8 @@ pub const METHODS: [&str; 20] = [
     "portForward.start",
     "portForward.list",
     "portForward.stop",
+    "service.request",
+    "service.forget",
 ];
 
 const NODE_SHELL_REFUSAL: &str = "Sextant does not let extensions change or delete node shell pods";
@@ -358,8 +365,10 @@ pub struct ExtensionApi {
     emitter: RwLock<Option<ApiEmitter>>,
     /// One `storage` change at a time.
     storage: Arc<Mutex<()>>,
-    /// The port forwards extensions started (ADR-0156).
+    /// The port forwards extensions started (ADR-0156), and Sextant's own for their service requests (ADR-0158).
     pub forwards: Arc<ExtensionForwards>,
+    /// Session tokens of service requests (ADR-0158), in memory only.
+    pub sessions: Arc<ServiceSessions>,
 }
 
 impl ExtensionApi {
@@ -393,6 +402,7 @@ impl ExtensionApi {
             emitter: RwLock::new(None),
             storage: Arc::new(Mutex::new(())),
             forwards: Arc::new(ExtensionForwards::default()),
+            sessions: Arc::new(ServiceSessions::default()),
         }
     }
 
@@ -484,6 +494,8 @@ impl ExtensionApi {
             "portForward.start" => call.port_forward_start(params).await,
             "portForward.list" => call.port_forward_list(params).await,
             "portForward.stop" => call.port_forward_stop(params).await,
+            "service.request" => call.service_request(params).await,
+            "service.forget" => call.service_forget(params).await,
             _ => Err(invalid(format!("unknown method {method}"))),
         };
         let record = call.record();
@@ -1661,6 +1673,232 @@ impl<'a> ExtCall<'a> {
         Ok(Value::Null)
     }
 
+    /// One request to a Service the user agreed to (ADR-0158), through Sextant's own forward: Read and Port forward on
+    /// the Service, "Secret values" on each Secret a `{{secret:<name>/<key>}}` body value names. Journaled with the
+    /// method and path only; the session token never leaves the backend.
+    async fn service_request(&self, params: Value) -> CoreResult<Value> {
+        let args: ServiceRequestArgs = parse(&self.method, params)?;
+        let namespace = required("namespace", &args.namespace)?.to_owned();
+        services::check_path(&args.path)?;
+        let query: Vec<(String, String)> = args.query.into_iter().collect();
+        let encoded = services::encode_query(&query)?;
+        let session = match args.auth.as_deref() {
+            None => false,
+            Some("session") => true,
+            Some(other) => return Err(invalid(format!("auth {other:?}: only \"session\""))),
+        };
+        let capture = match args.capture.as_deref().map(str::trim) {
+            Some(path) => Some(
+                parse_field_path(path)
+                    .ok_or_else(|| invalid("capture must be a field path such as `.token`"))?,
+            ),
+            None => None,
+        };
+        let mut secrets = Vec::new();
+        if let Some(body) = &args.body {
+            secret_placeholders(body, &mut secrets)?;
+        }
+        let entry = active_off_runtime(self.host, &self.id)
+            .await?
+            .ok_or_else(|| {
+                self.decide(AuditDecision::Denied);
+                inactive(&self.id)
+            })?;
+        let service = entry
+            .granted_services
+            .iter()
+            .flatten()
+            .find(|s| s.id == args.service)
+            .cloned()
+            .ok_or_else(|| {
+                CoreError::new(
+                    ErrorCode::NotFound,
+                    format!("no service {:?} the user agreed to", args.service),
+                )
+            })?;
+        let cluster = self.open(&args.cluster_id).await?;
+        let mut needs = vec![
+            (
+                Some(namespace.clone()),
+                KindPattern::new("", "Service"),
+                AccessAction::Read,
+            ),
+            (
+                Some(namespace.clone()),
+                KindPattern::new("", "Service"),
+                AccessAction::PortForward,
+            ),
+        ];
+        if !secrets.is_empty() {
+            needs.push((
+                Some(namespace.clone()),
+                KindPattern::new("", "Secret"),
+                AccessAction::SecretValues,
+            ));
+        }
+        let summary = CallSummary {
+            tool: self.method.clone(),
+            target: format!(
+                "Service {namespace}/{}: {} {}",
+                service.name,
+                args.method.as_str(),
+                args.path
+            ),
+            details: (!secrets.is_empty()).then(|| {
+                let names: Vec<String> = secrets
+                    .iter()
+                    .map(|(n, k)| format!("{n} key {k}"))
+                    .collect();
+                format!("sends values of Secrets: {}", names.join(", "))
+            }),
+        };
+        self.check(&cluster, &needs, &summary).await?;
+        let mut body = args.body;
+        if let Some(body) = body.as_mut() {
+            for (name, key) in &secrets {
+                let value = read(
+                    "reading the Secret",
+                    resources::secret_value(&self.api.clusters, &cluster.id, &namespace, name, key),
+                )
+                .await?;
+                fill_secret(body, name, key, &value);
+            }
+        }
+        let key = session_key(&self.id, &cluster.id.0, &namespace, &service.id);
+        let forward = self
+            .service_forward(&cluster, &namespace, &service, &key, entry.granted)
+            .await?;
+        let bearer = if session {
+            Some(self.api.sessions.token(&key, &forward.id).ok_or_else(|| {
+                CoreError::new(
+                    ErrorCode::Unauthorized,
+                    "no session for this service: sign in first (a request with `capture`)",
+                )
+            })?)
+        } else {
+            None
+        };
+        let path_and_query = if encoded.is_empty() {
+            args.path.clone()
+        } else {
+            format!("{}?{encoded}", args.path)
+        };
+        let answer = services::send(LoopbackRequest {
+            port: forward.local_port,
+            scheme: service.scheme,
+            host: format!("{}.{namespace}.svc", service.name),
+            method: args.method,
+            path_and_query,
+            body,
+            bearer,
+        })
+        .await?;
+        let mut out = answer.body;
+        let ok = (200..300).contains(&answer.status);
+        if session && answer.status == 401 {
+            self.api.sessions.forget(&key);
+        }
+        if let (true, Some(steps)) = (ok, capture.as_deref()) {
+            let token = take_at(&mut out, steps).ok_or_else(|| {
+                CoreError::new(
+                    ErrorCode::Invalid,
+                    "the answer has no token at the capture path",
+                )
+            })?;
+            self.api.sessions.set(key, &forward.id, token);
+        }
+        Ok(json!({ "status": answer.status, "body": out }))
+    }
+
+    /// Forgets the session token of a service; nothing is sent.
+    async fn service_forget(&self, params: Value) -> CoreResult<Value> {
+        let args: ServiceForgetArgs = parse(&self.method, params)?;
+        let cluster = self.target(&args.cluster_id).await?;
+        lock(&self.record).target = clip(&format!(
+            "session of service {} in {}",
+            args.service, args.namespace
+        ));
+        self.decide(AuditDecision::Allowed);
+        self.api.sessions.forget(&session_key(
+            &self.id,
+            &cluster.id.0,
+            &args.namespace,
+            &args.service,
+        ));
+        Ok(Value::Null)
+    }
+
+    /// Sextant's own forward to `service` for this extension, started when there is none (never listed to it).
+    async fn service_forward(
+        &self,
+        cluster: &ExtCluster,
+        namespace: &str,
+        service: &ServiceContribution,
+        key: &str,
+        granted: ExtensionPermissions,
+    ) -> CoreResult<ForwardInfo> {
+        if let Some(info) = self.api.forwards.internal(&self.id, key) {
+            return Ok(info);
+        }
+        let port = match &service.port {
+            Value::Number(n) => n.as_u64().and_then(|p| u16::try_from(p).ok()).unwrap_or(0),
+            Value::String(name) => {
+                let object = ObjectRef {
+                    kind: KindRef {
+                        group: String::new(),
+                        version: "v1".into(),
+                        kind: "Service".into(),
+                    },
+                    namespace: Some(namespace.to_owned()),
+                    name: service.name.clone(),
+                };
+                let found = read(
+                    "reading the Service",
+                    resources::get(&self.api.clusters, &cluster.id, &object),
+                )
+                .await?;
+                found["spec"]["ports"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .find(|p| p["name"].as_str() == Some(name.as_str()))
+                    .and_then(|p| p["port"].as_u64())
+                    .and_then(|p| u16::try_from(p).ok())
+                    .ok_or_else(|| {
+                        CoreError::new(
+                            ErrorCode::NotFound,
+                            format!("Service {namespace}/{} has no port {name}", service.name),
+                        )
+                    })?
+            }
+            _ => 0,
+        };
+        if port == 0 {
+            return Err(invalid("the service's port is not a port"));
+        }
+        let info = with_timeout(
+            CHANGE_TIMEOUT,
+            "starting the port forward",
+            self.api.forwards.forwarder()?.start_with_source(
+                &self.api.clusters,
+                &cluster.id,
+                ForwardTarget::Service {
+                    namespace: namespace.to_owned(),
+                    name: service.name.clone(),
+                },
+                port,
+                None,
+                PodFilter::NoNodeAccess,
+                ForwardSource::ExtensionInternal,
+            ),
+        )
+        .await?;
+        self.api
+            .forwards
+            .add_internal(info.id.clone(), &self.id, granted, key.to_owned());
+        Ok(info)
+    }
+
     async fn secret_value(&self, params: Value) -> CoreResult<Value> {
         let args: SecretArgs = parse(&self.method, params)?;
         let namespace = required("namespace", &args.namespace)?;
@@ -1949,6 +2187,74 @@ impl<'a> ExtCall<'a> {
             }
         })
     }
+}
+
+/// The `{{secret:<name>/<key>}}` string values of a request body (Secrets of the request's namespace), each once.
+fn secret_placeholders(body: &Value, out: &mut Vec<(String, String)>) -> CoreResult<()> {
+    match body {
+        Value::String(text) => {
+            if let Some(inner) = text
+                .strip_prefix("{{secret:")
+                .and_then(|t| t.strip_suffix("}}"))
+            {
+                let (name, key) = inner
+                    .split_once('/')
+                    .filter(|(n, k)| services::is_dns_label(n) && !k.is_empty() && k.len() <= 253)
+                    .ok_or_else(|| {
+                        invalid("a body value `{{secret:<name>/<key>}}` names a Secret and a key")
+                    })?;
+                let pair = (name.to_owned(), key.to_owned());
+                if !out.contains(&pair) {
+                    out.push(pair);
+                }
+            } else if text.contains("{{secret:") {
+                return Err(invalid(
+                    "`{{secret:…}}` is a body value of its own, never inside other text",
+                ));
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                secret_placeholders(item, out)?;
+            }
+        }
+        Value::Object(map) => {
+            for value in map.values() {
+                secret_placeholders(value, out)?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+/// Puts `value` where the body says `{{secret:<name>/<key>}}`.
+fn fill_secret(body: &mut Value, name: &str, key: &str, value: &str) {
+    let wanted = format!("{{{{secret:{name}/{key}}}}}");
+    match body {
+        Value::String(text) if *text == wanted => *text = value.to_owned(),
+        Value::Array(items) => items
+            .iter_mut()
+            .for_each(|item| fill_secret(item, name, key, value)),
+        Value::Object(map) => map
+            .values_mut()
+            .for_each(|item| fill_secret(item, name, key, value)),
+        _ => {}
+    }
+}
+
+/// Takes the non-empty string at `steps` out of `value` (replaced by `<hidden>`).
+fn take_at(value: &mut Value, steps: &[PathStep]) -> Option<String> {
+    let mut at = value;
+    for step in steps {
+        at = match step {
+            PathStep::Key(key) => at.get_mut(key.as_str())?,
+            PathStep::Index(i) => at.get_mut(*i)?,
+        };
+    }
+    let token = at.as_str().filter(|t| !t.is_empty())?.to_owned();
+    *at = Value::String("<hidden>".into());
+    Some(token)
 }
 
 /// An object as an extension gets it: the secret material its kind holds inline emptied
@@ -2255,6 +2561,35 @@ struct ForwardListArgs {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct ForwardStopArgs {
     id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ServiceRequestArgs {
+    cluster_id: String,
+    namespace: String,
+    /// The id of one of the services the user agreed to.
+    service: String,
+    method: ServiceMethod,
+    path: String,
+    #[serde(default)]
+    query: BTreeMap<String, String>,
+    #[serde(default)]
+    body: Option<Value>,
+    /// `session`: Sextant adds the session token it holds for this service.
+    #[serde(default)]
+    auth: Option<String>,
+    /// A field path of the JSON answer holding a token: Sextant keeps it as the session and takes it out of the answer.
+    #[serde(default)]
+    capture: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ServiceForgetArgs {
+    cluster_id: String,
+    namespace: String,
+    service: String,
 }
 
 #[derive(Deserialize)]

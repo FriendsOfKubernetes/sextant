@@ -60,6 +60,7 @@ const manifest: ExtensionManifest = {
     commands: [],
     kinds: [],
     menuItems: [],
+    services: [],
     settings: { title: "Widget settings" },
   },
 };

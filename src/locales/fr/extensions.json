@@ -84,7 +84,9 @@
     "dockActions": "Boutons du panneau inférieur",
     "settings": "Section dans les Paramètres",
     "problems": "Règles de problèmes",
-    "metricQueries": "Requêtes de métriques"
+    "metricQueries": "Requêtes de métriques",
+    "menuItems": "Éléments de menu",
+    "kinds": "Types dans une section à elle"
   },
   "permissions": {
     "clusters": "Clusters",
@@ -121,7 +123,8 @@
       "logs": "lecture des journaux",
       "exec": "exécution de commandes",
       "portForward": "redirection de ports"
-    }
+    },
+    "statusPatches": "Peut modifier le status de : {{kinds}} (là où elle peut les modifier)."
   },
   "state": {
     "active": "Active",
@@ -322,5 +325,10 @@
     "changes": "Modifie quelque chose : Sextant vous demande à chaque fois. S’exécute dans le conteneur {{container}} du pod prêt le plus récent portant les labels {{selector}}.",
     "reads": "Lit seulement. S’exécute dans le conteneur {{container}} du pod prêt le plus récent portant les labels {{selector}}.",
     "scope": "Uniquement dans les espaces de noms où l’extension peut lire les pods. Ce qu’affichent les commandes va à l’extension ; le journal d’activité garde la commande, jamais sa sortie."
+  },
+  "services": {
+    "heading": "Services dans le cluster",
+    "list": "L’extension peut envoyer des requêtes à ces Services par une redirection de port propre à Sextant :",
+    "scope": "Uniquement dans les namespaces où elle peut lire les Services et rediriger vers eux. Un jeton de session tiré d’une réponse reste dans Sextant jusqu’à la déconnexion ; le journal d’activité garde la méthode et le chemin, jamais la requête, le corps ni la réponse."
   }
 }

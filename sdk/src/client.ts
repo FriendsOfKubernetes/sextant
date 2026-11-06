@@ -31,6 +31,8 @@ import type {
   ObjectRef,
   OpenLogsParams,
   PatchParams,
+  ServiceAnswer,
+  ServiceRequestParams,
   RefInput,
   ResourceKind,
   SecretParams,
@@ -130,6 +132,16 @@ export interface Sextant {
    * Sextant's port-forward page as the extension's, never to a node shell or a pod on the node's network; at most 8 at
    * once; they end when the extension is disabled, removed or granted anything else.
    */
+  /**
+   * Requests to a Service of the manifest (`contributes.services`, sextantApi 4, since Sextant 0.30) through Sextant's
+   * own port forward, with Read and Port forward on Services in the namespace. Sextant keeps a session token taken
+   * with `capture` and adds it with `auth: "session"`; the extension never holds it.
+   */
+  service: {
+    request<T = JsonValue>(params: ServiceRequestParams, options?: CallOptions): Promise<ServiceAnswer<T>>;
+    /** Drops the session token Sextant keeps for the service in `namespace` (signing out). */
+    forget(params: { clusterId?: ClusterId; namespace: string; service: string }, options?: CallOptions): Promise<void>;
+  };
   portForward: {
     start(params: ForwardStartParams, options?: CallOptions): Promise<ForwardResult>;
     /** The extension's own forwards still running (of one cluster when `clusterId` is given). */
@@ -192,6 +204,7 @@ const CHANGES: ReadonlySet<string> = new Set([
   "resources.delete",
   "portForward.start",
   "ui.openLogs",
+  "service.request",
 ]);
 /** `ui.openUrl` waits for the user's answer to Sextant's own dialog, which has no time limit. */
 const CONFIRM_TIMEOUT = 600_000;
@@ -548,6 +561,10 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
     secret: { value: (params, o) => onCluster("secret.value", params, o) },
     metrics: { query: (params, o) => onCluster("metrics.query", params, o) },
     exec: { run: (params, o) => onCluster("exec.run", params, o) },
+    service: {
+      request: (params, o) => onCluster("service.request", params, o),
+      forget: (params, o) => onCluster<unknown>("service.forget", params, o).then(() => undefined),
+    },
     portForward: {
       start: (params, o) => onCluster("portForward.start", params, o),
       list: (params, o) =>

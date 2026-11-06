@@ -38,6 +38,7 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
           : {}),
       })),
       menuItems: c.menuItems.map((m) => ({ ...m, title: text(`menuItems.${m.id}.title`, m.title) })),
+      services: c.services.map((s) => ({ ...s, title: text(`services.${s.id}.title`, s.title) })),
       kinds: c.kinds.map((k, i) => ({
         ...k,
         ...(k.title !== undefined ? { title: text(`kinds.${i}.title`, k.title) } : {}),

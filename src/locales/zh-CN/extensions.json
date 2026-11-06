@@ -82,7 +82,9 @@
     "dockActions": "底部面板按钮",
     "settings": "“设置”中的分区",
     "problems": "问题规则",
-    "metricQueries": "指标查询"
+    "metricQueries": "指标查询",
+    "menuItems": "菜单项",
+    "kinds": "其自有分区中的资源类型"
   },
   "permissions": {
     "clusters": "集群",
@@ -111,7 +113,8 @@
       "logs": "读取日志",
       "exec": "运行命令",
       "portForward": "转发端口"
-    }
+    },
+    "statusPatches": "可以更改以下资源的 status：{{kinds}}（在允许修改的位置）。"
   },
   "state": {
     "active": "已启用",
@@ -308,5 +311,10 @@
     "changes": "会更改内容：Sextant 每次都会询问你。在带有标签 {{selector}} 的最新就绪 Pod 的容器 {{container}} 中运行。",
     "reads": "只读取。在带有标签 {{selector}} 的最新就绪 Pod 的容器 {{container}} 中运行。",
     "scope": "仅在扩展可读取 Pod 的命名空间中运行。命令的输出交给扩展；活动日志只记录命令，从不记录其输出。"
+  },
+  "services": {
+    "heading": "集群中的服务",
+    "list": "扩展可以通过 Sextant 自己的端口转发向这些 Service 发送请求：",
+    "scope": "仅限于它可以读取 Service 并转发到其中的命名空间。从响应中取得的会话令牌保存在 Sextant 中，直到断开连接；活动日志只记录方法和路径，从不记录查询、正文或响应。"
   }
 }

@@ -18,6 +18,7 @@ pub mod forwards;
 pub mod manage;
 pub mod problems;
 pub mod protocol;
+pub mod sessions;
 pub mod watch_hub;
 
 use std::collections::HashMap;

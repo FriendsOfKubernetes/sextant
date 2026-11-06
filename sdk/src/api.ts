@@ -173,6 +173,30 @@ export interface ForwardStartParams extends OnCluster {
 /** A running forward of the extension, with `address` (`127.0.0.1:<local port>`) when just started. */
 export type ForwardResult = ForwardInfo & { address?: string };
 
+/** One request to a service of the manifest (`service.request`, sextantApi 4, since Sextant 0.30). */
+export interface ServiceRequestParams extends OnCluster {
+  namespace: string;
+  /** The id of one of the manifest's `contributes.services`. */
+  service: string;
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  /** A plain absolute path: no query (that goes in `query`), `#`, `.` or `..` segment. */
+  path: string;
+  /** Encoded by Sextant. */
+  query?: Record<string, string>;
+  /** JSON. A string value exactly `{{secret:<name>/<key>}}` is that key of a Secret of `namespace`, put in by Sextant. */
+  body?: JsonValue;
+  /** `session`: Sextant adds the token it keeps for this service (see `capture`). */
+  auth?: "session";
+  /** A field path of the JSON answer holding a token: Sextant keeps it as the session, the answer shows `<hidden>`. */
+  capture?: string;
+}
+
+/** The service's answer: any status (a 401 is an answer, not an error), JSON or text, Secrets in it emptied. */
+export interface ServiceAnswer<T = JsonValue> {
+  status: number;
+  body: T;
+}
+
 /** What `ui.openLogs` opens in Sextant's logs tab: one pod (and container), or the pods a label selector picks. */
 export type OpenLogsParams =
   | { namespace: string; pod: string; container?: string }
@@ -237,6 +261,8 @@ export interface Methods {
   "portForward.start": { params: ForwardStartParams & { clusterId: ClusterId }; result: ForwardResult };
   "portForward.list": { params: { clusterId?: ClusterId }; result: { forwards: ForwardInfo[] } };
   "portForward.stop": { params: { id: string }; result: null };
+  "service.request": { params: ServiceRequestParams & { clusterId: ClusterId }; result: ServiceAnswer };
+  "service.forget": { params: { clusterId: ClusterId; namespace: string; service: string }; result: null };
 }
 
 /** Options of one call. */

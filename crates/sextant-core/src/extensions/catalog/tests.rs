@@ -50,6 +50,7 @@ fn installed(version: &str, source: ExtensionSource) -> InstalledExtension {
         granted_problems: None,
         granted_metric_queries: None,
         granted_commands: None,
+        granted_services: None,
     }
 }
 

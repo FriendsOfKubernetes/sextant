@@ -28,7 +28,7 @@ impl KindLookup for FakeKinds {
         Box::pin(async move {
             match kind.kind.as_str() {
                 "Node" | "Namespace" => Some(false),
-                "Pod" | "Secret" | "ConfigMap" => Some(true),
+                "Pod" | "Secret" | "ConfigMap" | "Service" => Some(true),
                 _ => None,
             }
         })
@@ -166,6 +166,7 @@ fn install_into(dir: &Path, settings: &SettingsStore, id: &str, permissions: Val
                 granted_problems: None,
                 granted_metric_queries: None,
                 granted_commands: None,
+                granted_services: None,
             });
         })
         .unwrap();
@@ -2373,4 +2374,123 @@ async fn a_status_patch_needs_its_kind_granted_and_is_the_only_subresource() {
         "{}",
         err.message
     );
+}
+
+fn grant_services(env: &Env, id: &str, services: Value) {
+    let services: Vec<sextant_core::extensions::services::ServiceContribution> =
+        serde_json::from_value(services).unwrap();
+    env.settings
+        .update(|s| {
+            let entry = s.extensions.iter_mut().find(|e| e.id == id).unwrap();
+            entry.granted_services = Some(services);
+        })
+        .unwrap();
+    env.host.forget(id);
+}
+
+#[tokio::test]
+async fn a_service_request_reaches_only_agreed_services_with_read_and_port_forward() {
+    let env = Env::at(&fake_cluster().await);
+    env.install("argo", perms(all_clusters(), &["argocd"], &["read"], false));
+    grant_services(
+        &env,
+        "argo",
+        json!([{ "id": "api", "title": "Argo CD API", "name": "argocd-server", "port": "https", "scheme": "https" }]),
+    );
+    let call = |params: Value| {
+        env.api
+            .call(&env.host, "argo", "service.request", params, None)
+    };
+    let request = |service: &str, path: &str| json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": service, "method": "GET", "path": path });
+    // Not agreed to: not found, before the cluster is touched.
+    let err = call(request("other", "/api/version")).await.unwrap_err();
+    assert_eq!(err.code, ErrorCode::NotFound, "{}", err.message);
+    // A path with a query, a `..` or a `#`: invalid.
+    for path in ["/api?x=1", "/a/../b", "api"] {
+        let err = call(request("api", path)).await.unwrap_err();
+        assert_eq!(err.code, ErrorCode::Invalid, "{path}: {}", err.message);
+    }
+    let mut bad = request("api", "/api/v1/session");
+    bad["body"] = json!({ "password": "x {{secret:argocd-initial-admin-secret/password}}" });
+    let err = call(bad).await.unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid, "{}", err.message);
+    let mut bad = request("api", "/api/v1/session");
+    bad["auth"] = json!("basic");
+    assert_eq!(call(bad).await.unwrap_err().code, ErrorCode::Invalid);
+    // Without Port forward on Services there: denied.
+    let err = call(request("api", "/api/version")).await.unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied, "{}", err.message);
+    let journal = env.api.audit_list(Some("argo"));
+    assert_eq!(
+        journal[0].target,
+        "Service argocd/argocd-server: GET /api/version"
+    );
+}
+
+#[tokio::test]
+async fn a_secret_a_service_request_sends_needs_secret_values() {
+    let env = Env::at(&fake_cluster().await);
+    env.install(
+        "argo",
+        perms(all_clusters(), &["argocd"], &["read", "portForward"], false),
+    );
+    grant_services(
+        &env,
+        "argo",
+        json!([{ "id": "api", "title": "Argo CD API", "name": "argocd-server", "port": 443, "scheme": "https" }]),
+    );
+    let login = json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": "api", "method": "POST",
+        "path": "/api/v1/session", "capture": ".token",
+        "body": { "username": "admin", "password": "{{secret:argocd-initial-admin-secret/password}}" } });
+    let err = env
+        .api
+        .call(&env.host, "argo", "service.request", login, None)
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Denied, "{}", err.message);
+    assert!(err.message.contains("Secret"), "{}", err.message);
+    // Signing out needs nothing and sends nothing.
+    let forget = json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": "api" });
+    assert_eq!(
+        env.api
+            .call(&env.host, "argo", "service.forget", forget, None)
+            .await
+            .unwrap(),
+        Value::Null
+    );
+}
+
+#[test]
+fn secret_values_go_only_where_the_body_names_them_and_a_captured_token_never_comes_back() {
+    let mut body = json!({ "username": "admin", "password": "{{secret:argocd-initial-admin-secret/password}}",
+                           "list": ["{{secret:argocd-initial-admin-secret/password}}", "x"] });
+    let mut found = Vec::new();
+    secret_placeholders(&body, &mut found).unwrap();
+    assert_eq!(
+        found,
+        vec![(
+            "argocd-initial-admin-secret".to_owned(),
+            "password".to_owned()
+        )]
+    );
+    fill_secret(
+        &mut body,
+        "argocd-initial-admin-secret",
+        "password",
+        "hunter2",
+    );
+    assert_eq!(body["password"], json!("hunter2"));
+    assert_eq!(body["list"], json!(["hunter2", "x"]));
+    for bad in [
+        json!("{{secret:Bad_Name/key}}"),
+        json!("{{secret:name}}"),
+        json!("pre {{secret:a/b}}"),
+    ] {
+        assert!(secret_placeholders(&bad, &mut Vec::new()).is_err(), "{bad}");
+    }
+    let mut answer = json!({ "token": "t0k", "user": "admin" });
+    let steps = parse_field_path(".token").unwrap();
+    assert_eq!(take_at(&mut answer, &steps).as_deref(), Some("t0k"));
+    assert_eq!(answer, json!({ "token": "<hidden>", "user": "admin" }));
+    assert_eq!(take_at(&mut json!({ "token": "" }), &steps), None);
 }

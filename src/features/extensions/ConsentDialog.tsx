@@ -10,6 +10,7 @@ import { ExtensionIcon } from "./ExtensionIcon";
 import { CommandsConsent } from "./CommandsConsent";
 import { MetricsConsent } from "./MetricsConsent";
 import { ProblemsConsent } from "./ProblemsConsent";
+import { ServicesConsent } from "./ServicesConsent";
 import { installErrorTitle, sourceText } from "./install";
 import { ContributionsView, PermissionsView, readsSecretValues } from "./PermissionsView";
 
@@ -134,6 +135,7 @@ export function ConsentDialog({ pending, review = false, onClose }: ConsentDialo
         {manifest.contributes.problems.length > 0 && <ProblemsConsent rules={manifest.contributes.problems} />}
         {manifest.contributes.metricQueries.length > 0 && <MetricsConsent queries={manifest.contributes.metricQueries} />}
         {manifest.contributes.commands.length > 0 && <CommandsConsent commands={manifest.contributes.commands} />}
+        {manifest.contributes.services.length > 0 && <ServicesConsent services={manifest.contributes.services} />}
         {error && <ErrorState error={error} title={installErrorTitle(error, t)} className="settings__error" />}
       </div>
     </Dialog>

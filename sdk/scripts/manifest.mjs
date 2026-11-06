@@ -483,7 +483,7 @@ function checkUniqueIds(manifest) {
       }
     });
   }
-  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries", "commands", "menuItems"]) {
+  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries", "commands", "menuItems", "services"]) {
     const items = manifest.contributes?.[kind];
     if (!Array.isArray(items)) continue;
     items.forEach((item, i) => {
@@ -968,6 +968,7 @@ export function translatableTexts(manifest) {
     out.set(`columns.${column.id}.title`, title);
     (column.cases ?? []).forEach((_, i) => out.set(`columns.${column.id}.cases.${i}.text`, title));
   }
+  for (const service of c.services ?? []) out.set(`services.${service.id}.title`, title);
   for (const item of c.menuItems ?? []) out.set(`menuItems.${item.id}.title`, title);
   (c.kinds ?? []).forEach((kind, i) => {
     if (kind.title !== undefined) out.set(`kinds.${i}.title`, title);
@@ -1054,6 +1055,24 @@ function checkPermissions(manifest) {
     }
     const first = kinds.slice(0, i).findIndex((other) => sameKind(other, kind));
     if (first >= 0) fail([...here, "kind"], `duplicate kind (also ${pathText([...list, first])})`);
+  });
+}
+
+const isDnsLabel = (text) => text.length >= 1 && text.length <= 63 && /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/.test(text);
+const isPortName = (text) => text.length <= 15 && isDnsLabel(text) && /[a-z]/.test(text) && !text.includes("--");
+
+/** `contributes.services` (`check_services` in crates/sextant-core/src/extensions/services.rs). */
+function checkServices(manifest) {
+  const services = manifest.contributes?.services ?? [];
+  const list = ["contributes", "services"];
+  if (services.length === 0) return;
+  if (manifest.sextantApi < WINDOW_API) fail(list, `needs sextantApi ${WINDOW_API} or later`);
+  services.forEach((service, i) => {
+    const here = [...list, i];
+    if (!isDnsLabel(service.name)) fail([...here, "name"], "must be a Service name: lowercase letters, digits and `-`, at most 63");
+    const port = service.port;
+    const ok = isNumber(port) ? !isFloat(port) && port >= 1 && port <= 65535 : typeof port === "string" && isPortName(port);
+    if (!ok) fail([...here, "port"], "must be a port number (1–65535) or a port name");
   });
 }
 
@@ -1155,6 +1174,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     if ((value.contributes?.menuItems ?? []).length > 0 && value.sextantApi < WINDOW_API) {
       fail(["contributes", "menuItems"], `needs sextantApi ${WINDOW_API} or later`);
     }
+    checkServices(value);
     return null;
   } catch (err) {
     if (err instanceof ManifestError) return { path: err.path, message: err.message };

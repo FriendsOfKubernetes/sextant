@@ -83,7 +83,9 @@
     "dockActions": "Dock buttons",
     "settings": "Section in Settings",
     "problems": "Problem rules",
-    "metricQueries": "Metric queries"
+    "metricQueries": "Metric queries",
+    "menuItems": "Items in menus",
+    "kinds": "Kinds in a section of its own"
   },
   "permissions": {
     "clusters": "Clusters",
@@ -116,7 +118,8 @@
       "logs": "read logs",
       "exec": "run commands",
       "portForward": "forward ports"
-    }
+    },
+    "statusPatches": "May change the status of: {{kinds}} (where it may modify them)."
   },
   "state": {
     "active": "Active",
@@ -315,5 +318,10 @@
     "changes": "Changes something: Sextant asks you every time. Runs in the container {{container}} of the newest ready pod with the labels {{selector}}.",
     "reads": "Only reads. Runs in the container {{container}} of the newest ready pod with the labels {{selector}}.",
     "scope": "Only in namespaces where the extension may read pods. What the commands print goes to the extension; the activity log keeps the command, never its output."
+  },
+  "services": {
+    "heading": "Services in the cluster",
+    "list": "The extension may send requests to these Services through a port forward of Sextant's own:",
+    "scope": "Only in namespaces where it may read and forward to Services. A session token Sextant takes from an answer stays in Sextant until you disconnect; the activity log keeps the method and path, never the query, body or answer."
   }
 }

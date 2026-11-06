@@ -13,6 +13,7 @@ import type {
   ManifestDockAction,
   ManifestKind,
   ManifestMenuItem,
+  ManifestService,
   ManifestFile,
   ManifestMetricQuery,
   ManifestPage,
@@ -82,6 +83,14 @@ export const MANIFEST_SHAPES = {
     commands: "optional",
     kinds: "optional",
     menuItems: "optional",
+    services: "optional",
+  }),
+  ManifestService: described<ManifestService>(`${CONTRIBUTION}/services/items`, {
+    id: "required",
+    title: "required",
+    name: "required",
+    port: "required",
+    scheme: "required",
   }),
   ManifestMenuItem: described<ManifestMenuItem>(`${CONTRIBUTION}/menuItems/items`, {
     id: "required",

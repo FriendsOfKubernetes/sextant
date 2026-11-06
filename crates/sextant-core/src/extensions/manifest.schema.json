@@ -513,6 +513,26 @@
             }
           }
         },
+        "services": {
+          "description": "Services inside a cluster the extension sends requests to through Sextant's own port forward (sextantApi 4), each agreed to at install.",
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title", "name", "port", "scheme"],
+            "properties": {
+              "id": { "$ref": "#/$defs/contributionId" },
+              "title": { "$ref": "#/$defs/title" },
+              "name": { "description": "The Service's name, in the namespace each request names.", "type": "string", "minLength": 1, "maxLength": 63 },
+              "port": {
+                "description": "The Service's port: its number or its name.",
+                "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 65535 }, { "type": "string", "minLength": 1, "maxLength": 15 }]
+              },
+              "scheme": { "type": "string", "enum": ["https", "http"] }
+            }
+          }
+        },
         "sectionBadges": {
           "description": "Counters on the extension's own sidebar sections (ADR-0143); needs `sextantApi` 3. Sextant counts the objects with active problems of the extension's rules and shows the number on the section's header.",
           "type": "array",
