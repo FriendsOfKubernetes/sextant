@@ -31,13 +31,21 @@ import { getSectionBadge, registerSectionBadge } from "../layout/sectionBadges";
 import { evalJsonPath, formatJsonPathValues } from "../resources/jsonpath";
 import { DEFAULT_ENTRY_ICON, extendActions, extendColumns, placeKind, placeSection, SIDEBAR_SECTIONS } from "../resources/registry";
 import { computedColumn } from "./columns";
-import { ExtensionFrame } from "./ExtensionFrame";
+import {
+  registerClusterSettingsSection,
+  registerClusterSettingsTab,
+  unregisterClusterSettingsSection,
+  unregisterClusterSettingsTab,
+} from "../features/clusters/settingsRegistry";
+import { ExtensionClusterSettingsFrame, ExtensionFrame } from "./ExtensionFrame";
 import { evaluate, kindKeyOf } from "./problemRules";
 import { matchesSelector } from "./selector";
 import { contributionKey, VIEW } from "./protocol";
 
 /** Default position of an extension's details section: after Sextant's conditions (30), before YAML (90). */
 const DETAILS_ORDER = 50;
+/** Extension tabs in a cluster's settings come after Sextant's own, before "More". */
+const CLUSTER_SETTINGS_ORDER = 500;
 /** Extension dock buttons come after Sextant's own. */
 const DOCK_ORDER = 100;
 
@@ -267,6 +275,22 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
           openActionWindow(extensionId, item.id, item.title, { clusterId, refs: [], openDialog: openActionDialog }),
       }),
     );
+  }
+
+  // A tab in a cluster's settings (ADR-0160): the frame with that cluster in its context.
+  if (contributes.clusterSettings) {
+    const id = contributionKey(extensionId, "cluster-settings");
+    registerClusterSettingsTab({ id, order: CLUSTER_SETTINGS_ORDER, labelKey: "", label: contributes.clusterSettings.title });
+    registerClusterSettingsSection({
+      id,
+      order: 0,
+      tab: id,
+      Component: ({ clusterId }) => <ExtensionClusterSettingsFrame extensionId={extensionId} clusterId={clusterId} />,
+    });
+    removers.push(() => {
+      unregisterClusterSettingsSection(id);
+      unregisterClusterSettingsTab(id);
+    });
   }
 
   contributes.dockActions.forEach((dock, index) => {

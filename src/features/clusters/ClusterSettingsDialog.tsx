@@ -57,7 +57,7 @@ export function ClusterSettingsDialog() {
         {selected && (
           <Tabs
             label={t("clustersettings:tabsLabel")}
-            tabs={tabs.map((tab) => ({ id: tab.id, label: t(tab.labelKey) }))}
+            tabs={tabs.map((tab) => ({ id: tab.id, label: tab.label ?? t(tab.labelKey) }))}
             selected={selected.id}
             onSelect={selectClusterSettingsTab}
             idPrefix={ID_PREFIX}

@@ -30,6 +30,8 @@ export interface ClusterSettingsTabDef {
   order: number;
   /** i18n key of the tab's label. */
   labelKey: string;
+  /** The label as shown, never translated by i18next (an extension's title); takes precedence over `labelKey`. */
+  label?: string;
 }
 
 export interface ClusterSettingsTab extends ClusterSettingsTabDef {

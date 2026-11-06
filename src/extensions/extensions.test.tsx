@@ -4,6 +4,7 @@ import { mockBackend, type ExtensionInfo, type ExtensionManifest, type KubeObjec
 import { resetAppStore, useAppStore } from "../app/store";
 import { getActionsFor, resetActions, runAction } from "../features/actions/registry";
 import { useClusterMenuItems } from "../features/clusters/menuItems";
+import { getClusterSettingsTabs } from "../features/clusters/settingsRegistry";
 import { ActionBar } from "../features/details/ActionBar";
 import { ActionDialogHost } from "../layout/main/ActionDialogHost";
 import { AppShell } from "../layout/AppShell";
@@ -649,6 +650,39 @@ describe("contributions of an extension", () => {
     await changeList([]);
     await waitFor(() => expect(result.current.some((i) => i.id === "ext:demo.widgets:install")).toBe(false));
     expect(screen.queryByRole("dialog", { name: "Install widgets…" })).toBeNull();
+  });
+
+  it("add a tab to a cluster's settings, a section header with an icon and a place, and palette names (ADR-0160)", async () => {
+    list = [
+      info({
+        manifest: {
+          ...manifest,
+          sextantApi: 4,
+          contributes: {
+            ...manifest.contributes,
+            clusterSettings: { title: "Widget setup" },
+            sections: [{ section: "widgets", title: "Widget tools", icon: "flux", after: "workloads" }],
+          },
+        },
+      }),
+    ];
+    await renderShell();
+    const tab = getClusterSettingsTabs().find((t) => t.label === "Widget setup")!;
+    expect(tab).toBeDefined();
+    const Section = tab.sections[0]!.Component;
+    const { container } = render(<Section clusterId="c2" cluster={{ id: "c2" } as never} />);
+    expect(frameOf(container).getAttribute("src")).toBe(
+      "sextant-ext://demo.widgets/index.html?view=clusterSettings&id=clusterSettings",
+    );
+    const sidebar = screen.getByRole("navigation", { name: "Sections" });
+    const names = within(sidebar)
+      .getAllByRole("button")
+      .map((b) => b.textContent);
+    // Right after Workloads, before Sextant's next section.
+    const at = names.indexOf("Widget tools");
+    expect(at).toBeGreaterThan(names.indexOf("Workloads"));
+    await changeList([]);
+    await waitFor(() => expect(getClusterSettingsTabs().some((t) => t.label === "Widget setup")).toBe(false));
   });
 
   it("add a dock button that opens a dock tab with the extension, closed when the extension goes", async () => {

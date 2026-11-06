@@ -11,6 +11,7 @@ import { createBridge, type Bridge } from "./bridge";
 import {
   frameUrl,
   PROTOCOL_VERSION,
+  CLUSTER_SETTINGS_CONTRIBUTION,
   SETTINGS_CONTRIBUTION,
   VIEW,
   type FrameView,
@@ -86,6 +87,24 @@ export function ExtensionSettingsFrame({ extensionId }: { extensionId: string })
       view={VIEW.settings}
       contribution={SETTINGS_CONTRIBUTION}
       title={settings.title}
+      clusterId={clusterId}
+      className="ext-frame--settings"
+      autoHeight
+    />
+  );
+}
+
+/** An extension's tab in a cluster's settings (`contributes.clusterSettings`, ADR-0160): the frame with that cluster. */
+export function ExtensionClusterSettingsFrame({ extensionId, clusterId }: { extensionId: string; clusterId: ClusterId }) {
+  const info = useExtension(extensionId);
+  const tab = info?.manifest?.contributes.clusterSettings;
+  if (!tab) return null;
+  return (
+    <ExtensionFrame
+      extensionId={extensionId}
+      view={VIEW.clusterSettings}
+      contribution={CLUSTER_SETTINGS_CONTRIBUTION}
+      title={tab.title}
       clusterId={clusterId}
       className="ext-frame--settings"
       autoHeight

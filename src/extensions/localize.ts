@@ -59,6 +59,7 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
     },
   };
   if (c.settings) localized.contributes.settings = { title: text("settings.title", c.settings.title) };
+  if (c.clusterSettings) localized.contributes.clusterSettings = { title: text("clusterSettings.title", c.clusterSettings.title) };
   if (manifest.backend) {
     localized.backend = {
       ...manifest.backend,
