@@ -1,0 +1,38 @@
+{
+  "apiVersion": "argoproj.io/v1alpha1",
+  "kind": "AppProject",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"argoproj.io/v1alpha1\",\"kind\":\"AppProject\",\"metadata\":{\"annotations\":{},\"name\":\"sextant-team\",\"namespace\":\"argocd\"},\"spec\":{\"clusterResourceWhitelist\":[{\"group\":\"\",\"kind\":\"Namespace\"}],\"description\":\"Team project of the Sextant tests\",\"destinations\":[{\"namespace\":\"sextant-team-*\",\"server\":\"https://kubernetes.default.svc\"},{\"name\":\"in-cluster\",\"namespace\":\"sextant-shared\"}],\"sourceRepos\":[\"https://github.com/argoproj/argocd-example-apps\",\"https://github.com/stefanprodan/podinfo\"]}}\n"
+    },
+    "creationTimestamp": "2026-10-12T17:09:06Z",
+    "generation": 1,
+    "name": "sextant-team",
+    "namespace": "argocd",
+    "resourceVersion": "143732",
+    "uid": "c108564d-2c0f-4255-9f05-8658c8c254e4"
+  },
+  "spec": {
+    "clusterResourceWhitelist": [
+      {
+        "group": "",
+        "kind": "Namespace"
+      }
+    ],
+    "description": "Team project of the Sextant tests",
+    "destinations": [
+      {
+        "namespace": "sextant-team-*",
+        "server": "https://kubernetes.default.svc"
+      },
+      {
+        "name": "in-cluster",
+        "namespace": "sextant-shared"
+      }
+    ],
+    "sourceRepos": [
+      "https://github.com/argoproj/argocd-example-apps",
+      "https://github.com/stefanprodan/podinfo"
+    ]
+  }
+}

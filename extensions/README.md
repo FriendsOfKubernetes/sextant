@@ -7,6 +7,9 @@ for other authors. The guide to writing one is the wiki page
 
 | Extension | Folder | Version | Needs | What it is |
 |---|---|---|---|---|
+| Argo Rollouts (`sextant.argo-rollouts`) | [`argo-rollouts/`](argo-rollouts/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Rollouts, their analysis and experiments, with promote, abort, retry, pause and resume |
+| Flux (`sextant.flux`) | [`flux/`](flux/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Flux CD's sources, Kustomizations, HelmReleases, image automation and notifications, with Reconcile, Suspend and Resume |
+| Argo CD (`sextant.argo-cd`) | [`argo-cd/`](argo-cd/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Argo CD's Applications, ApplicationSets and AppProjects: sync, health, resources, history, actions, diff and UI |
 | Rook Ceph (`sextant.rook-ceph`) | [`rook-ceph/`](rook-ceph/README.md) | 1.2.0 | Sextant 0.29 (`sextantApi` 3) | A view and control panel of Rook Ceph clusters |
 
 ## The documents of an extension

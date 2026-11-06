@@ -1,0 +1,50 @@
+{
+  "apiVersion": "source.toolkit.fluxcd.io/v1",
+  "kind": "HelmRepository",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T16:51:54Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "name": "podinfo",
+    "namespace": "sextant-flux",
+    "resourceVersion": "139631",
+    "uid": "02bf4a4c-0255-4eac-9737-06853d168543"
+  },
+  "spec": {
+    "interval": "10m",
+    "provider": "generic",
+    "url": "https://stefanprodan.github.io/podinfo"
+  },
+  "status": {
+    "artifact": {
+      "digest": "sha256:11752bf8beeb6dc33feac6184c4910334db1d698dd177f1bd23340ca0ea46203",
+      "lastUpdateTime": "2026-10-12T16:51:55Z",
+      "path": "helmrepository/sextant-flux/podinfo/index-e7dc68a4dec90a35c2c6d8cdfedb7eaaee17fde45dced5898289df85069ec089.yaml",
+      "revision": "sha256:e7dc68a4dec90a35c2c6d8cdfedb7eaaee17fde45dced5898289df85069ec089",
+      "size": 81804,
+      "url": "http://source-controller.flux-system.svc.cluster.local./helmrepository/sextant-flux/podinfo/index-e7dc68a4dec90a35c2c6d8cdfedb7eaaee17fde45dced5898289df85069ec089.yaml"
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T16:51:55Z",
+        "message": "stored artifact: revision 'sha256:e7dc68a4dec90a35c2c6d8cdfedb7eaaee17fde45dced5898289df85069ec089'",
+        "observedGeneration": 1,
+        "reason": "Succeeded",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2026-10-12T16:51:55Z",
+        "message": "stored artifact: revision 'sha256:e7dc68a4dec90a35c2c6d8cdfedb7eaaee17fde45dced5898289df85069ec089'",
+        "observedGeneration": 1,
+        "reason": "Succeeded",
+        "status": "True",
+        "type": "ArtifactInStorage"
+      }
+    ],
+    "observedGeneration": 1,
+    "url": "http://source-controller.flux-system.svc.cluster.local./helmrepository/sextant-flux/podinfo/index.yaml"
+  }
+}

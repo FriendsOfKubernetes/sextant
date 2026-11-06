@@ -1,0 +1,252 @@
+// The details sections and the action windows against a stand-in for Sextant's window (the SDK's test host).
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { SextantError, type KubeObject, type ObjectRef, type WatchParams } from "@sextant/extension-sdk";
+import { startTestHost, type TestHost, type TestHostOptions } from "@sextant/extension-sdk/testing";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { startAction } from "./actions";
+import { startFields } from "./fields";
+import { setLanguage, t } from "./i18n";
+import { startInventory, startResources, startUsedBy } from "./related";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const fixture = (name: string) => JSON.parse(readFileSync(join(here, `../fixtures/${name}.json`), "utf8")) as KubeObject;
+const KUSTOMIZATION = fixture("kustomization");
+const RELEASE = fixture("helmrelease");
+const GIT = fixture("gitrepository");
+const BUCKET = fixture("bucket");
+const DEPLOYMENT = fixture("helm-deployment");
+const EXTRA = {
+  apiVersion: "v1",
+  kind: "ConfigMap",
+  metadata: { name: "podinfo-helm-extra", namespace: "sextant-flux", uid: "cm-1", labels: DEPLOYMENT.metadata.labels },
+} as KubeObject;
+const ALL = [KUSTOMIZATION, RELEASE, GIT, BUCKET, DEPLOYMENT, EXTRA];
+
+const refOf = (obj: KubeObject): ObjectRef => {
+  const [group, version] = obj.apiVersion!.includes("/") ? obj.apiVersion!.split("/") : ["", obj.apiVersion!];
+  return { kind: { group: group!, version: version!, kind: obj.kind! }, namespace: obj.metadata.namespace ?? null, name: obj.metadata.name };
+};
+
+const SERVED = [
+  ["source.toolkit.fluxcd.io", "GitRepository"],
+  ["source.toolkit.fluxcd.io", "HelmRepository"],
+  ["source.toolkit.fluxcd.io", "HelmChart"],
+  ["source.toolkit.fluxcd.io", "Bucket"],
+  ["kustomize.toolkit.fluxcd.io", "Kustomization"],
+  ["helm.toolkit.fluxcd.io", "HelmRelease"],
+  ["apps", "Deployment"],
+  ["", "ConfigMap"],
+  ["", "Service"],
+  ["networking.k8s.io", "Ingress"],
+].map(([group, kind]) => ({ kindRef: { group: group!, version: "v1", kind: kind! }, plural: "", namespaced: true, verbs: ["list", "watch"], printerColumns: [] }));
+
+let host: TestHost;
+let root: HTMLElement;
+let stop: () => void = () => undefined;
+
+async function start(options: TestHostOptions = {}) {
+  host = await startTestHost({
+    ...options,
+    handlers: {
+      kinds: () => SERVED,
+      "resources.get": ({ ref }) => ALL.find((o) => o.kind === ref.kind.kind && o.metadata.name === ref.name),
+      "resources.patch": ({ ref }) => ALL.find((o) => o.kind === ref.kind.kind) ?? {},
+      ...options.handlers,
+    },
+  });
+  root = document.createElement("main");
+  document.body.append(root);
+}
+
+/** Answers each watch with the fixtures of its kind (and labels). */
+function answer(params: WatchParams): KubeObject[] {
+  const selector = params.labelSelector?.split(",").map((pair) => pair.split("=") as [string, string]);
+  return ALL.filter(
+    (o) =>
+      o.kind === params.kind.kind &&
+      (!params.namespaces || params.namespaces.includes(o.metadata.namespace ?? "")) &&
+      (!selector || selector.every(([k, v]) => o.metadata.labels?.[k] === v)),
+  );
+}
+async function answerWatches(count: number, skip: (params: WatchParams) => boolean = () => false) {
+  await expect.poll(() => host.watches.length).toBe(count);
+  for (const watch of host.watches) {
+    const params = watch.params as WatchParams;
+    if (!skip(params)) watch.emit({ type: "snapshot", items: answer(params) as never[] });
+  }
+}
+const text = () => root.textContent ?? "";
+
+afterEach(() => {
+  setLanguage("en");
+  stop();
+  root?.remove();
+  host?.close();
+  vi.useRealTimers();
+});
+
+describe("the Flux section of the details", () => {
+  it("shows Ready, the revision, the interval and the source as a link", async () => {
+    await start({ context: { view: "details", contribution: "fields", selection: [refOf(KUSTOMIZATION)], resourceVersion: "1" } });
+    stop = startFields(host.sextant, root);
+    await expect.poll(text).toContain("ReconciliationSucceeded");
+    const rows = Object.fromEntries([...root.querySelectorAll("dt")].map((dt) => [dt.textContent, dt.nextElementSibling?.textContent]));
+    expect(rows.Ready).toBe("True ReconciliationSucceeded");
+    expect(rows.Revision).toBe("master@sha1:3e0ff8ae123b710bc91de1315cba0f996a8896c2");
+    expect(rows.Interval).toBe("10m");
+    expect(rows.Prune).toBe("true");
+    expect(rows["Last attempted revision"]).toBeUndefined();
+    expect(root.querySelector(".status.ok")?.textContent).toBe("True");
+    const source = [...root.querySelectorAll("button.link")].find((b) => b.textContent === "GitRepository podinfo") as HTMLButtonElement;
+    source.click();
+    await expect.poll(() => host.calls.find((c) => c.method === "ui.openDetails")?.params).toEqual({
+      kind: { group: "source.toolkit.fluxcd.io", kind: "GitRepository" },
+      namespace: "sextant-flux",
+      name: "podinfo",
+    });
+  });
+
+  it("reads the object again when Sextant says it changed, and speaks the UI language", async () => {
+    setLanguage("de");
+    await start({ context: { view: "details", contribution: "fields", selection: [refOf(BUCKET)], resourceVersion: "1", language: "de" } });
+    stop = startFields(host.sextant, root);
+    await expect.poll(text).toContain("BucketOperationFailed");
+    expect([...root.querySelectorAll("dt")].map((dt) => dt.textContent)).toContain("Endpunkt");
+    expect(root.querySelector(".status.error")?.textContent).toBe("False");
+    const reads = () => host.calls.filter((c) => c.method === "resources.get").length;
+    expect(reads()).toBe(1);
+    host.setContext({ resourceVersion: "2" });
+    await expect.poll(reads).toBe(2);
+  });
+});
+
+describe("related objects", () => {
+  it("a Kustomization lists what it applied as links", async () => {
+    await start({ context: { view: "details", contribution: "inventory", selection: [refOf(KUSTOMIZATION)], resourceVersion: "1" } });
+    stop = startInventory(host.sextant, root);
+    await expect.poll(() => root.querySelectorAll("tbody tr").length).toBe(3);
+    expect([...root.querySelectorAll("tbody tr")].map((tr) => tr.textContent)).toEqual([
+      "Servicepodinfosextant-flux",
+      "Deploymentpodinfosextant-flux",
+      "HorizontalPodAutoscalerpodinfosextant-flux",
+    ]);
+  });
+
+  it("a source lists the Kustomizations and HelmReleases that use it, from every namespace", async () => {
+    await start({ context: { view: "details", contribution: "used-by", selection: [refOf(GIT)], resourceVersion: "1" } });
+    stop = startUsedBy(host.sextant, root);
+    await expect.poll(text).toContain(t("related.loading"));
+    await answerWatches(2);
+    await expect.poll(() => root.querySelectorAll("tbody tr").length).toBe(1);
+    expect(root.querySelector("tbody tr")?.textContent).toBe("Kustomizationpodinfosextant-flux");
+    expect(host.watches.map((w) => (w.params as WatchParams).namespaces)).toEqual([undefined, undefined]);
+  });
+
+  it("a source nobody uses says so; a failed list is shown with Retry, which lists again", async () => {
+    await start({ context: { view: "details", contribution: "used-by", selection: [refOf(BUCKET)], resourceVersion: "1" } });
+    stop = startUsedBy(host.sextant, root);
+    await answerWatches(2, (p) => p.kind.kind === "HelmRelease");
+    host.watches[1]!.emit({ type: "error", code: "other", message: "the cluster cannot be reached" });
+    await expect.poll(text).toContain("the cluster cannot be reached");
+    (root.querySelector(".failure button") as HTMLButtonElement).click();
+    await answerWatches(4);
+    await expect.poll(text).toContain(t("related.notUsed"));
+  });
+
+  it("a HelmRelease lists its inventory and its labelled objects, only in its namespaces, metadata only", async () => {
+    await start({ context: { view: "details", contribution: "resources", selection: [refOf(RELEASE)], resourceVersion: "1" } });
+    stop = startResources(host.sextant, root);
+    // Of the labelled kinds, the four the cluster serves.
+    await answerWatches(4, (p) => p.kind.kind === "Ingress");
+    for (const watch of host.watches) {
+      expect(watch.params).toMatchObject({
+        namespaces: ["sextant-flux"],
+        labelSelector: "helm.toolkit.fluxcd.io/name=podinfo-helm,helm.toolkit.fluxcd.io/namespace=sextant-flux",
+        metadataOnly: true,
+      });
+    }
+    await expect.poll(() => root.querySelectorAll("tbody tr").length).toBe(3);
+    // The Deployment is in the inventory already: it is listed once.
+    expect([...root.querySelectorAll("tbody tr")].map((tr) => tr.textContent)).toEqual([
+      "Servicepodinfo-helmsextant-flux",
+      "Deploymentpodinfo-helmsextant-flux",
+      "ConfigMappodinfo-helm-extrasextant-flux",
+    ]);
+    expect(text()).toContain(t("related.loading"));
+    host.watches.find((w) => (w.params as WatchParams).kind.kind === "Ingress")!.emit({ type: "error", code: "forbidden", message: "no" });
+    await expect.poll(text).toContain(t("related.forbidden", { kind: "Ingress" }));
+    expect(text()).not.toContain(t("related.loading"));
+  });
+});
+
+describe("the action windows", () => {
+  const patches = () => host.calls.filter((c) => c.method === "resources.patch").map((c) => c.params as { ref: { kind: { kind: string }; name: string }; patch: unknown; patchType: string });
+  const press = (label: string) => ([...root.querySelectorAll("button")].find((b) => b.textContent === label) as HTMLButtonElement).click();
+
+  it("Reconcile now sets reconcile.fluxcd.io/requestedAt on each selected object by a merge patch, then closes", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.parse("2026-11-06T10:00:00Z"));
+    await start({ context: { view: "action", contribution: "reconcile", selection: [refOf(KUSTOMIZATION), refOf(GIT)] } });
+    stop = startAction(host.sextant, root, "reconcile");
+    await expect.poll(text).toContain("reconcile.fluxcd.io/requestedAt");
+    expect(patches()).toEqual([]);
+    press("Reconcile now");
+    await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(patches().map((p) => [p.ref.kind.kind, p.ref.name, p.patchType, p.patch])).toEqual(
+      ["Kustomization", "GitRepository"].map((kind) => [
+        kind,
+        "podinfo",
+        "merge",
+        { metadata: { annotations: { "reconcile.fluxcd.io/requestedAt": "2026-11-06T10:00:00.000Z" } } },
+      ]),
+    );
+    expect(host.notices).toEqual(["Flux was asked to reconcile Kustomization podinfo and GitRepository podinfo."]);
+  });
+
+  it("Reconcile with source asks a HelmRelease's repository, then its HelmChart, then the release", async () => {
+    await start({ context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(RELEASE)] } });
+    stop = startAction(host.sextant, root, "reconcile-with-source");
+    await expect.poll(text).toContain("the source first");
+    press("Reconcile with source");
+    await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(patches().map((p) => `${p.ref.kind.kind}/${p.ref.name}`)).toEqual([
+      "HelmRepository/podinfo",
+      "HelmChart/sextant-flux-podinfo-helm",
+      "HelmRelease/podinfo-helm",
+    ]);
+  });
+
+  it("Suspend asks first and sends spec.suspend only when confirmed", async () => {
+    await start({ context: { view: "action", contribution: "suspend", selection: [refOf(KUSTOMIZATION)] } });
+    stop = startAction(host.sextant, root, "suspend");
+    await expect.poll(() => root.querySelector("h2")?.textContent).toBe("Suspend Kustomization podinfo?");
+    expect(text()).toContain("Flux stops reconciling Kustomization podinfo until it is resumed");
+    expect(patches()).toEqual([]);
+    press("Suspend");
+    await expect.poll(() => patches().length).toBe(1);
+    expect(patches()[0]!.patch).toEqual({ spec: { suspend: true } });
+  });
+
+  it("Resume clears spec.suspend; a refusal stops before the next object and names the one refused", async () => {
+    await start({
+      context: { view: "action", contribution: "resume", selection: [refOf(KUSTOMIZATION), refOf(GIT)] },
+      handlers: {
+        "resources.patch": ({ ref }) => {
+          if (ref.kind.kind === "Kustomization") throw new SextantError("denied", "the user said no");
+          return {};
+        },
+      },
+    });
+    stop = startAction(host.sextant, root, "resume");
+    await expect.poll(text).toContain(t("resume.intro"));
+    press("Resume");
+    await expect.poll(() => root.querySelector(".change-status.error")?.textContent).toBe(
+      "Kustomization podinfo: Sextant refused: the user said no",
+    );
+    expect(patches()).toHaveLength(1);
+    expect(patches()[0]!.patch).toEqual({ spec: { suspend: false } });
+    expect(host.closedByFrame).toBe(false);
+  });
+});

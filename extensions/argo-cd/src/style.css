@@ -1,0 +1,253 @@
+/* Sextant's variables (--color-*, --control-height, …) and base styles come from the SDK's theme helper. */
+body.compact {
+  padding: 8px 0;
+}
+h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+h4 {
+  margin: 8px 0 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+p {
+  margin: 4px 0;
+}
+
+dl.fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+dl.fields dt {
+  color: var(--color-text-muted);
+}
+dl.fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0 6px;
+  margin-right: 6px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.badge.ok {
+  color: var(--color-success);
+}
+.badge.warning {
+  color: var(--color-warning);
+}
+.badge.error {
+  color: var(--color-danger);
+}
+.badge.neutral {
+  color: var(--color-text-muted);
+}
+.with-message,
+.links,
+.chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.chip {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--color-hover);
+  font-size: 12px;
+  line-height: 18px;
+}
+.revision {
+  font-family: var(--font-mono, monospace);
+}
+
+button.link {
+  height: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+button.link:hover:not(:disabled) {
+  background: none;
+}
+
+table.grid td {
+  overflow-wrap: anywhere;
+}
+.tree-kind {
+  display: inline-block;
+  white-space: nowrap;
+}
+.error-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Action windows. */
+.field {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0;
+}
+.field label {
+  font-weight: 500;
+}
+.field input {
+  width: 100%;
+  max-width: 360px;
+}
+.hint {
+  font-size: 12px;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  height: auto;
+  padding: 0;
+  margin: 0;
+}
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.session .buttons {
+  margin-top: 0;
+}
+.note {
+  padding: 6px 8px;
+  border-left: 3px solid var(--color-warning);
+  background: var(--color-hover);
+}
+
+/* The sign-in form. */
+.login-fields {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 320px);
+  align-items: center;
+  gap: 6px 12px;
+  margin: 8px 0;
+}
+
+/* The diff. */
+.session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.diff {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 3fr;
+  gap: 12px;
+  min-height: 360px;
+}
+@media (max-width: 640px) {
+  .diff {
+    grid-template-columns: 1fr;
+  }
+}
+.diff-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow: auto;
+}
+.diff-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  height: auto;
+  padding: 4px 8px;
+  border: none;
+  border-left: 3px solid transparent;
+  background: none;
+  text-align: left;
+}
+.diff-item[aria-current="true"] {
+  background: var(--color-selected);
+}
+.diff-item.changed {
+  border-left-color: var(--color-warning);
+}
+.diff-item.missingLive,
+.diff-item.missingTarget {
+  border-left-color: var(--color-danger);
+}
+.diff-item.inSync {
+  border-left-color: var(--color-success);
+}
+.diff-name {
+  overflow-wrap: anywhere;
+}
+.diff-state {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.diff-resource {
+  min-width: 0;
+  max-height: 70vh;
+  overflow: auto;
+}
+table.lines {
+  table-layout: fixed;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+}
+table.lines td {
+  height: auto;
+  padding: 0 6px;
+  border: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+table.lines tr:hover td {
+  background: none;
+}
+table.lines td.no {
+  width: 3em;
+  color: var(--color-text-muted);
+  text-align: right;
+  user-select: none;
+}
+table.lines td.removed {
+  background: color-mix(in srgb, var(--color-danger) 16%, transparent);
+}
+table.lines td.added {
+  background: color-mix(in srgb, var(--color-success) 16%, transparent);
+}
+table.lines td.empty {
+  background: var(--color-hover);
+}
+table.lines tr.fold td {
+  padding: 2px 6px;
+  text-align: center;
+}

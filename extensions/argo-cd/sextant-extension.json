@@ -1,0 +1,1051 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.argo-cd",
+  "name": "Argo CD",
+  "version": "1.0.0",
+  "description": "Argo CD's Applications, ApplicationSets and AppProjects in a section of their own: sync, health, revision and destination, the resources each application manages with their health, the sync history; Sync, Refresh, Terminate, the diff of desired and live states from Argo CD's API, and the Argo CD UI.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "argoApplication",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "argoproj.io",
+              "kind": "Application"
+            },
+            {
+              "group": "argoproj.io",
+              "kind": "ApplicationSet"
+            },
+            {
+              "group": "argoproj.io",
+              "kind": "AppProject"
+            },
+            {
+              "group": "apps",
+              "kind": "Deployment"
+            },
+            {
+              "group": "apps",
+              "kind": "StatefulSet"
+            },
+            {
+              "group": "apps",
+              "kind": "DaemonSet"
+            },
+            {
+              "group": "apps",
+              "kind": "ReplicaSet"
+            },
+            {
+              "group": "",
+              "kind": "Pod"
+            },
+            {
+              "group": "batch",
+              "kind": "Job"
+            },
+            {
+              "group": "",
+              "kind": "PersistentVolumeClaim"
+            },
+            {
+              "group": "",
+              "kind": "Service"
+            },
+            {
+              "group": "networking.k8s.io",
+              "kind": "Ingress"
+            },
+            {
+              "group": "",
+              "kind": "ConfigMap"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      },
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "argoproj.io",
+              "kind": "Application"
+            }
+          ]
+        },
+        "actions": [
+          "modify"
+        ],
+        "confirm": true
+      },
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "",
+              "kind": "Service"
+            }
+          ]
+        },
+        "actions": [
+          "portForward"
+        ]
+      },
+      {
+        "namespaces": {
+          "type": "only",
+          "namespaces": [
+            "argocd"
+          ]
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "",
+              "kind": "Secret"
+            }
+          ]
+        },
+        "actions": [
+          "secretValues"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "argoproj.io",
+        "kind": "Application",
+        "section": "argocd",
+        "sectionTitle": "Argo CD",
+        "title": "Applications",
+        "icon": "argoApplication",
+        "order": 10
+      },
+      {
+        "group": "argoproj.io",
+        "kind": "ApplicationSet",
+        "section": "argocd",
+        "title": "ApplicationSets",
+        "icon": "argoApplicationSet",
+        "order": 20
+      },
+      {
+        "group": "argoproj.io",
+        "kind": "AppProject",
+        "section": "argocd",
+        "title": "AppProjects",
+        "icon": "argoAppProject",
+        "order": 30
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "argocd"
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Application"
+        },
+        "id": "project",
+        "title": "Project",
+        "paths": [
+          ".spec.project"
+        ],
+        "after": "Namespace"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Application"
+        },
+        "id": "sync",
+        "title": "Sync",
+        "paths": [
+          ".status.sync.status"
+        ],
+        "after": "Project",
+        "tones": {
+          "Synced": "ok",
+          "OutOfSync": "warning",
+          "Unknown": "neutral",
+          "Eşitleniyor": "warning",
+          "Sincronizando": "warning",
+          "Sincronizzazione": "warning",
+          "Synchronisation": "warning",
+          "Synchronizowanie": "warning",
+          "Syncing": "warning",
+          "Wird synchronisiert": "warning",
+          "Синхронизация": "warning",
+          "Синхронізація": "warning",
+          "同期中": "warning",
+          "正在同步": "warning",
+          "동기화 중": "warning"
+        },
+        "tooltipPaths": [
+          ".status.operationState.message"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "in",
+                  "path": ".status.operationState.phase",
+                  "values": [
+                    "Running",
+                    "Terminating"
+                  ]
+                },
+                {
+                  "type": "exists",
+                  "path": ".operation"
+                }
+              ]
+            },
+            "text": "Syncing"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Application"
+        },
+        "id": "health",
+        "title": "Health",
+        "paths": [
+          ".status.health.status"
+        ],
+        "after": "Sync",
+        "tones": {
+          "Healthy": "ok",
+          "Degraded": "error",
+          "Progressing": "warning",
+          "Missing": "warning",
+          "Suspended": "neutral",
+          "Unknown": "neutral"
+        },
+        "tooltipPaths": [
+          ".status.health.message"
+        ]
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Application"
+        },
+        "id": "revision",
+        "title": "Revision",
+        "paths": [
+          ".status.sync.revision",
+          ".status.sync.revisions[0]"
+        ],
+        "after": "Health",
+        "tooltipPaths": [
+          ".status.sync.revision",
+          ".status.sync.revisions[0]"
+        ]
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Application"
+        },
+        "id": "destination",
+        "title": "Destination",
+        "paths": [
+          ".spec.destination.name",
+          ".spec.destination.server"
+        ],
+        "after": "Revision",
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.destination.name"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.destination.server",
+                  "value": "https://kubernetes.default.svc"
+                }
+              ]
+            },
+            "text": "in-cluster"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Application"
+        },
+        "id": "target-namespace",
+        "title": "Target namespace",
+        "paths": [
+          ".spec.destination.namespace"
+        ],
+        "after": "Destination"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "ApplicationSet"
+        },
+        "id": "applications",
+        "title": "Applications",
+        "paths": [
+          ".status.resourcesCount"
+        ],
+        "format": "number",
+        "after": "Namespace"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AppProject"
+        },
+        "id": "first-destination",
+        "title": "First destination",
+        "paths": [
+          ".spec.destinations[0].name",
+          ".spec.destinations[0].server"
+        ],
+        "after": "Namespace",
+        "tooltipPaths": [
+          ".spec.destinations[0].namespace"
+        ]
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AppProject"
+        },
+        "id": "first-source",
+        "title": "First source",
+        "paths": [
+          ".spec.sourceRepos[0]"
+        ],
+        "after": "First destination"
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "fields",
+        "title": "Argo CD",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Application"
+          },
+          {
+            "group": "argoproj.io",
+            "kind": "ApplicationSet"
+          },
+          {
+            "group": "argoproj.io",
+            "kind": "AppProject"
+          }
+        ],
+        "placement": "section",
+        "order": 21
+      },
+      {
+        "id": "resources",
+        "title": "Resources",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Application"
+          }
+        ],
+        "placement": "section",
+        "order": 35
+      },
+      {
+        "id": "history",
+        "title": "Sync history",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Application"
+          }
+        ],
+        "placement": "section",
+        "order": 36
+      }
+    ],
+    "actions": [
+      {
+        "id": "sync",
+        "title": "Sync…",
+        "icon": "sync",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Application"
+          }
+        ],
+        "placement": "primary",
+        "when": {
+          "type": "not",
+          "of": {
+            "type": "any",
+            "of": [
+              {
+                "type": "in",
+                "path": ".status.operationState.phase",
+                "values": [
+                  "Running",
+                  "Terminating"
+                ]
+              },
+              {
+                "type": "exists",
+                "path": ".operation"
+              }
+            ]
+          }
+        },
+        "whyNot": "An operation is running: wait for it to end, or terminate it."
+      },
+      {
+        "id": "refresh",
+        "title": "Refresh",
+        "icon": "refresh",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Application"
+          }
+        ],
+        "multiple": true,
+        "placement": "primary"
+      },
+      {
+        "id": "hard-refresh",
+        "title": "Hard refresh",
+        "icon": "hardRefresh",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Application"
+          }
+        ],
+        "multiple": true
+      },
+      {
+        "id": "terminate",
+        "title": "Terminate…",
+        "icon": "terminate",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Application"
+          }
+        ],
+        "danger": true,
+        "when": {
+          "type": "any",
+          "of": [
+            {
+              "type": "in",
+              "path": ".status.operationState.phase",
+              "values": [
+                "Running",
+                "Terminating"
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".operation"
+            }
+          ]
+        },
+        "whyNot": "No operation is running."
+      },
+      {
+        "id": "diff",
+        "title": "Diff",
+        "icon": "diff",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Application"
+          }
+        ]
+      },
+      {
+        "id": "open-ui",
+        "title": "Open Argo CD UI",
+        "icon": "external",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Application"
+          },
+          {
+            "group": "argoproj.io",
+            "kind": "ApplicationSet"
+          },
+          {
+            "group": "argoproj.io",
+            "kind": "AppProject"
+          }
+        ]
+      }
+    ],
+    "services": [
+      {
+        "id": "argocd-server",
+        "title": "Argo CD API (argocd-server, HTTPS)",
+        "name": "argocd-server",
+        "port": "https",
+        "scheme": "https"
+      },
+      {
+        "id": "argocd-server-http",
+        "title": "Argo CD API without TLS (server.insecure)",
+        "name": "argocd-server",
+        "port": "http",
+        "scheme": "http"
+      }
+    ],
+    "problems": [
+      {
+        "id": "degraded",
+        "title": "Degraded",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Application"
+        },
+        "when": {
+          "type": "equals",
+          "path": ".status.health.status",
+          "value": "Degraded"
+        },
+        "message": "{{.status.health.message}}"
+      },
+      {
+        "id": "sync-failed",
+        "title": "SyncFailed",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Application"
+        },
+        "when": {
+          "type": "in",
+          "path": ".status.operationState.phase",
+          "values": [
+            "Failed",
+            "Error"
+          ]
+        },
+        "since": ".status.operationState.finishedAt",
+        "message": "{{.status.operationState.message}}"
+      }
+    ]
+  },
+  "translations": {
+    "ru": {
+      "actions.diff.title": "Различия",
+      "actions.hard-refresh.title": "Полное обновление",
+      "actions.open-ui.title": "Открыть интерфейс Argo CD",
+      "actions.refresh.title": "Обновить",
+      "actions.sync.title": "Синхронизировать…",
+      "actions.sync.whyNot": "Выполняется операция: дождитесь её окончания или прервите её.",
+      "actions.terminate.title": "Прервать…",
+      "actions.terminate.whyNot": "Никакая операция не выполняется.",
+      "columns.applications.title": "Приложения",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "Назначение",
+      "columns.first-destination.title": "Первое назначение",
+      "columns.first-source.title": "Первый источник",
+      "columns.health.title": "Исправность",
+      "columns.project.title": "Проект",
+      "columns.revision.title": "Ревизия",
+      "columns.sync.cases.0.text": "Синхронизация",
+      "columns.sync.title": "Синхронизация",
+      "columns.target-namespace.title": "Целевое пространство имён",
+      "description": "Applications, ApplicationSets и AppProjects Argo CD в отдельном разделе: синхронизация, состояние, ревизия и назначение, ресурсы каждого приложения с их состоянием, история синхронизаций; Sync, Refresh, Terminate, сравнение желаемого и текущего состояния через API Argo CD и интерфейс Argo CD.",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "История синхронизаций",
+      "detailsSections.resources.title": "Ресурсы",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "API Argo CD без TLS (server.insecure)",
+      "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)"
+    },
+    "uk": {
+      "actions.diff.title": "Відмінності",
+      "actions.hard-refresh.title": "Повне оновлення",
+      "actions.open-ui.title": "Відкрити інтерфейс Argo CD",
+      "actions.refresh.title": "Оновити",
+      "actions.sync.title": "Синхронізувати…",
+      "actions.sync.whyNot": "Виконується операція: дочекайтеся її завершення або перервіть її.",
+      "actions.terminate.title": "Перервати…",
+      "actions.terminate.whyNot": "Жодна операція не виконується.",
+      "columns.applications.title": "Застосунки",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "Призначення",
+      "columns.first-destination.title": "Перше призначення",
+      "columns.first-source.title": "Перше джерело",
+      "columns.health.title": "Справність",
+      "columns.project.title": "Проєкт",
+      "columns.revision.title": "Ревізія",
+      "columns.sync.cases.0.text": "Синхронізація",
+      "columns.sync.title": "Синхронізація",
+      "columns.target-namespace.title": "Цільовий простір імен",
+      "description": "Applications, ApplicationSets і AppProjects Argo CD в окремому розділі: синхронізація, стан, ревізія та призначення, ресурси кожного застосунку з їхнім станом, історія синхронізацій; Sync, Refresh, Terminate, порівняння бажаного й поточного стану через API Argo CD та інтерфейс Argo CD.",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "Історія синхронізацій",
+      "detailsSections.resources.title": "Ресурси",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "API Argo CD без TLS (server.insecure)",
+      "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)"
+    },
+    "de": {
+      "actions.diff.title": "Diff",
+      "actions.hard-refresh.title": "Vollständig aktualisieren",
+      "actions.open-ui.title": "Argo CD-UI öffnen",
+      "actions.refresh.title": "Aktualisieren",
+      "actions.sync.title": "Synchronisieren…",
+      "actions.sync.whyNot": "Ein Vorgang läuft: Warten Sie, bis er endet, oder brechen Sie ihn ab.",
+      "actions.terminate.title": "Abbrechen…",
+      "actions.terminate.whyNot": "Es läuft kein Vorgang.",
+      "columns.applications.title": "Anwendungen",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "Ziel",
+      "columns.first-destination.title": "Erstes Ziel",
+      "columns.first-source.title": "Erste Quelle",
+      "columns.health.title": "Zustand",
+      "columns.project.title": "Projekt",
+      "columns.revision.title": "Revision",
+      "columns.sync.cases.0.text": "Wird synchronisiert",
+      "columns.sync.title": "Sync",
+      "columns.target-namespace.title": "Ziel-Namespace",
+      "description": "Applications, ApplicationSets und AppProjects von Argo CD in einem eigenen Bereich: Synchronisierung, Zustand, Revision und Ziel, die Ressourcen jeder Anwendung mit ihrem Zustand, der Synchronisierungsverlauf; Sync, Refresh, Terminate, der Vergleich von Soll- und Ist-Zustand über die API von Argo CD und die Argo-CD-Oberfläche.",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "Sync-Verlauf",
+      "detailsSections.resources.title": "Ressourcen",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "Argo-CD-API ohne TLS (server.insecure)",
+      "services.argocd-server.title": "Argo-CD-API (argocd-server, HTTPS)"
+    },
+    "fr": {
+      "actions.diff.title": "Différences",
+      "actions.hard-refresh.title": "Actualisation forcée",
+      "actions.open-ui.title": "Ouvrir l'interface d'Argo CD",
+      "actions.refresh.title": "Actualiser",
+      "actions.sync.title": "Synchroniser…",
+      "actions.sync.whyNot": "Une opération est en cours : attendez qu'elle se termine ou interrompez-la.",
+      "actions.terminate.title": "Interrompre…",
+      "actions.terminate.whyNot": "Aucune opération n'est en cours.",
+      "columns.applications.title": "Applications",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "Destination",
+      "columns.first-destination.title": "Première destination",
+      "columns.first-source.title": "Première source",
+      "columns.health.title": "Santé",
+      "columns.project.title": "Projet",
+      "columns.revision.title": "Révision",
+      "columns.sync.cases.0.text": "Synchronisation",
+      "columns.sync.title": "Synchro",
+      "columns.target-namespace.title": "Namespace cible",
+      "description": "Les Applications, ApplicationSets et AppProjects d'Argo CD dans une section à part : synchronisation, santé, révision et destination, les ressources de chaque application avec leur santé, l'historique des synchronisations ; Sync, Refresh, Terminate, la comparaison des états souhaité et réel via l'API d'Argo CD, et l'interface d'Argo CD.",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "Historique de synchronisation",
+      "detailsSections.resources.title": "Ressources",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "API d'Argo CD sans TLS (server.insecure)",
+      "services.argocd-server.title": "API d'Argo CD (argocd-server, HTTPS)"
+    },
+    "es": {
+      "actions.diff.title": "Diferencias",
+      "actions.hard-refresh.title": "Actualización completa",
+      "actions.open-ui.title": "Abrir la interfaz de Argo CD",
+      "actions.refresh.title": "Actualizar",
+      "actions.sync.title": "Sincronizar…",
+      "actions.sync.whyNot": "Hay una operación en curso: espere a que termine o interrúmpala.",
+      "actions.terminate.title": "Terminar…",
+      "actions.terminate.whyNot": "No hay ninguna operación en curso.",
+      "columns.applications.title": "Aplicaciones",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "Destino",
+      "columns.first-destination.title": "Primer destino",
+      "columns.first-source.title": "Primer origen",
+      "columns.health.title": "Salud",
+      "columns.project.title": "Proyecto",
+      "columns.revision.title": "Revisión",
+      "columns.sync.cases.0.text": "Sincronizando",
+      "columns.sync.title": "Sincronización",
+      "columns.target-namespace.title": "Namespace de destino",
+      "description": "Las Applications, ApplicationSets y AppProjects de Argo CD en una sección propia: sincronización, salud, revisión y destino, los recursos de cada aplicación con su salud, el historial de sincronizaciones; Sync, Refresh, Terminate, la comparación de los estados deseado y real mediante la API de Argo CD, y la interfaz de Argo CD.",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "Historial de sincronización",
+      "detailsSections.resources.title": "Recursos",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "API de Argo CD sin TLS (server.insecure)",
+      "services.argocd-server.title": "API de Argo CD (argocd-server, HTTPS)"
+    },
+    "pt-BR": {
+      "actions.diff.title": "Diff",
+      "actions.hard-refresh.title": "Atualização completa",
+      "actions.open-ui.title": "Abrir a interface do Argo CD",
+      "actions.refresh.title": "Atualizar",
+      "actions.sync.title": "Sincronizar…",
+      "actions.sync.whyNot": "Há uma operação em andamento: espere terminar ou interrompa-a.",
+      "actions.terminate.title": "Encerrar…",
+      "actions.terminate.whyNot": "Nenhuma operação está em andamento.",
+      "columns.applications.title": "Aplicações",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "Destino",
+      "columns.first-destination.title": "Primeiro destino",
+      "columns.first-source.title": "Primeira origem",
+      "columns.health.title": "Integridade",
+      "columns.project.title": "Projeto",
+      "columns.revision.title": "Revisão",
+      "columns.sync.cases.0.text": "Sincronizando",
+      "columns.sync.title": "Sincronização",
+      "columns.target-namespace.title": "Namespace de destino",
+      "description": "Applications, ApplicationSets e AppProjects do Argo CD em uma seção própria: sincronização, saúde, revisão e destino, os recursos de cada aplicativo com sua saúde, o histórico de sincronizações; Sync, Refresh, Terminate, a comparação dos estados desejado e real pela API do Argo CD e a interface do Argo CD.",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "Histórico de sincronização",
+      "detailsSections.resources.title": "Recursos",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "API do Argo CD sem TLS (server.insecure)",
+      "services.argocd-server.title": "API do Argo CD (argocd-server, HTTPS)"
+    },
+    "it": {
+      "actions.diff.title": "Differenze",
+      "actions.hard-refresh.title": "Aggiornamento forzato",
+      "actions.open-ui.title": "Apri interfaccia di Argo CD",
+      "actions.refresh.title": "Aggiorna",
+      "actions.sync.title": "Sincronizza…",
+      "actions.sync.whyNot": "È in corso un'operazione: attendi che finisca o interrompila.",
+      "actions.terminate.title": "Termina…",
+      "actions.terminate.whyNot": "Nessuna operazione in corso.",
+      "columns.applications.title": "Applicazioni",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "Destinazione",
+      "columns.first-destination.title": "Prima destinazione",
+      "columns.first-source.title": "Prima sorgente",
+      "columns.health.title": "Integrità",
+      "columns.project.title": "Progetto",
+      "columns.revision.title": "Revisione",
+      "columns.sync.cases.0.text": "Sincronizzazione",
+      "columns.sync.title": "Sincronizzazione",
+      "columns.target-namespace.title": "Namespace di destinazione",
+      "description": "Applications, ApplicationSets e AppProjects di Argo CD in una sezione propria: sincronizzazione, salute, revisione e destinazione, le risorse di ogni applicazione con la loro salute, la cronologia delle sincronizzazioni; Sync, Refresh, Terminate, il confronto tra stato desiderato e reale tramite l'API di Argo CD e l'interfaccia di Argo CD.",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "Cronologia delle sincronizzazioni",
+      "detailsSections.resources.title": "Risorse",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "API di Argo CD senza TLS (server.insecure)",
+      "services.argocd-server.title": "API di Argo CD (argocd-server, HTTPS)"
+    },
+    "pl": {
+      "actions.diff.title": "Różnice",
+      "actions.hard-refresh.title": "Twarde odświeżenie",
+      "actions.open-ui.title": "Otwórz interfejs Argo CD",
+      "actions.refresh.title": "Odśwież",
+      "actions.sync.title": "Synchronizuj…",
+      "actions.sync.whyNot": "Trwa operacja: poczekaj na jej koniec albo ją przerwij.",
+      "actions.terminate.title": "Przerwij…",
+      "actions.terminate.whyNot": "Żadna operacja nie trwa.",
+      "columns.applications.title": "Aplikacje",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "Cel",
+      "columns.first-destination.title": "Pierwsze miejsce docelowe",
+      "columns.first-source.title": "Pierwsze źródło",
+      "columns.health.title": "Kondycja",
+      "columns.project.title": "Projekt",
+      "columns.revision.title": "Rewizja",
+      "columns.sync.cases.0.text": "Synchronizowanie",
+      "columns.sync.title": "Synchronizacja",
+      "columns.target-namespace.title": "Docelowa przestrzeń nazw",
+      "description": "Applications, ApplicationSets i AppProjects Argo CD we własnej sekcji: synchronizacja, kondycja, rewizja i miejsce docelowe, zasoby każdej aplikacji z ich kondycją, historia synchronizacji; Sync, Refresh, Terminate, porównanie stanu pożądanego i bieżącego przez API Argo CD oraz interfejs Argo CD.",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "Historia synchronizacji",
+      "detailsSections.resources.title": "Zasoby",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "API Argo CD bez TLS (server.insecure)",
+      "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)"
+    },
+    "tr": {
+      "actions.diff.title": "Fark",
+      "actions.hard-refresh.title": "Tam yenile",
+      "actions.open-ui.title": "Argo CD arayüzünü aç",
+      "actions.refresh.title": "Yenile",
+      "actions.sync.title": "Eşitle…",
+      "actions.sync.whyNot": "Bir işlem sürüyor: bitmesini bekleyin ya da sonlandırın.",
+      "actions.terminate.title": "Sonlandır…",
+      "actions.terminate.whyNot": "Süren bir işlem yok.",
+      "columns.applications.title": "Uygulamalar",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "Hedef",
+      "columns.first-destination.title": "İlk hedef",
+      "columns.first-source.title": "İlk kaynak",
+      "columns.health.title": "Sağlık",
+      "columns.project.title": "Proje",
+      "columns.revision.title": "Revizyon",
+      "columns.sync.cases.0.text": "Eşitleniyor",
+      "columns.sync.title": "Eşitleme",
+      "columns.target-namespace.title": "Hedef ad alanı",
+      "description": "Argo CD'nin Applications, ApplicationSets ve AppProjects nesneleri kendi bölümlerinde: eşitleme, sağlık, revizyon ve hedef, her uygulamanın kaynakları ve sağlıkları, eşitleme geçmişi; Sync, Refresh, Terminate, istenen ve canlı durumların Argo CD API'si üzerinden karşılaştırması ve Argo CD arayüzü.",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "Eşitleme geçmişi",
+      "detailsSections.resources.title": "Kaynaklar",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "TLS'siz Argo CD API'si (server.insecure)",
+      "services.argocd-server.title": "Argo CD API'si (argocd-server, HTTPS)"
+    },
+    "zh-CN": {
+      "actions.diff.title": "差异",
+      "actions.hard-refresh.title": "硬刷新",
+      "actions.open-ui.title": "打开 Argo CD 界面",
+      "actions.refresh.title": "刷新",
+      "actions.sync.title": "同步…",
+      "actions.sync.whyNot": "有操作正在运行：请等待其结束，或终止它。",
+      "actions.terminate.title": "终止…",
+      "actions.terminate.whyNot": "没有正在运行的操作。",
+      "columns.applications.title": "应用",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "目标",
+      "columns.first-destination.title": "第一个目标",
+      "columns.first-source.title": "第一个来源",
+      "columns.health.title": "健康状况",
+      "columns.project.title": "项目",
+      "columns.revision.title": "修订版本",
+      "columns.sync.cases.0.text": "正在同步",
+      "columns.sync.title": "同步",
+      "columns.target-namespace.title": "目标命名空间",
+      "description": "Argo CD 的 Applications、ApplicationSets 和 AppProjects 位于独立的分区：同步、健康、修订和目标，每个应用管理的资源及其健康，同步历史；Sync、Refresh、Terminate，通过 Argo CD API 比较期望状态与实时状态，以及 Argo CD 界面。",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "同步历史记录",
+      "detailsSections.resources.title": "资源",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "无 TLS 的 Argo CD API（server.insecure）",
+      "services.argocd-server.title": "Argo CD API（argocd-server，HTTPS）"
+    },
+    "zh-TW": {
+      "actions.diff.title": "差異",
+      "actions.hard-refresh.title": "強制重新整理",
+      "actions.open-ui.title": "開啟 Argo CD 介面",
+      "actions.refresh.title": "重新整理",
+      "actions.sync.title": "同步…",
+      "actions.sync.whyNot": "有操作正在執行：請等待其結束，或終止它。",
+      "actions.terminate.title": "終止…",
+      "actions.terminate.whyNot": "沒有正在執行的操作。",
+      "columns.applications.title": "應用程式",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "目的地",
+      "columns.first-destination.title": "第一個目標",
+      "columns.first-source.title": "第一個來源",
+      "columns.health.title": "健康狀態",
+      "columns.project.title": "專案",
+      "columns.revision.title": "修訂版本",
+      "columns.sync.cases.0.text": "正在同步",
+      "columns.sync.title": "同步",
+      "columns.target-namespace.title": "目標命名空間",
+      "description": "Argo CD 的 Applications、ApplicationSets 和 AppProjects 位於獨立的區段：同步、健康、修訂和目標，每個應用程式管理的資源及其健康，同步歷程；Sync、Refresh、Terminate，透過 Argo CD API 比較期望狀態與即時狀態，以及 Argo CD 介面。",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "同步歷程記錄",
+      "detailsSections.resources.title": "資源",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "無 TLS 的 Argo CD API（server.insecure）",
+      "services.argocd-server.title": "Argo CD API（argocd-server，HTTPS）"
+    },
+    "ja": {
+      "actions.diff.title": "差分",
+      "actions.hard-refresh.title": "ハードリフレッシュ",
+      "actions.open-ui.title": "Argo CD UI を開く",
+      "actions.refresh.title": "更新",
+      "actions.sync.title": "同期…",
+      "actions.sync.whyNot": "操作が実行中です。終了を待つか、終了させてください。",
+      "actions.terminate.title": "終了…",
+      "actions.terminate.whyNot": "実行中の操作はありません。",
+      "columns.applications.title": "Application",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "デプロイ先",
+      "columns.first-destination.title": "最初の宛先",
+      "columns.first-source.title": "最初のソース",
+      "columns.health.title": "ヘルス",
+      "columns.project.title": "プロジェクト",
+      "columns.revision.title": "リビジョン",
+      "columns.sync.cases.0.text": "同期中",
+      "columns.sync.title": "同期",
+      "columns.target-namespace.title": "宛先の名前空間",
+      "description": "Argo CD の Applications、ApplicationSets、AppProjects を専用のセクションに表示します。同期、ヘルス、リビジョンと宛先、各アプリケーションが管理するリソースとそのヘルス、同期履歴。Sync、Refresh、Terminate、Argo CD の API による望ましい状態とライブ状態の差分、そして Argo CD の UI。",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "同期履歴",
+      "detailsSections.resources.title": "リソース",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Application",
+      "kinds.1.title": "ApplicationSet",
+      "kinds.2.title": "AppProject",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "TLS なしの Argo CD API（server.insecure）",
+      "services.argocd-server.title": "Argo CD API（argocd-server、HTTPS）"
+    },
+    "ko": {
+      "actions.diff.title": "차이",
+      "actions.hard-refresh.title": "강제 새로 고침",
+      "actions.open-ui.title": "Argo CD UI 열기",
+      "actions.refresh.title": "새로 고침",
+      "actions.sync.title": "동기화…",
+      "actions.sync.whyNot": "작업이 실행 중입니다. 끝날 때까지 기다리거나 종료하세요.",
+      "actions.terminate.title": "종료…",
+      "actions.terminate.whyNot": "실행 중인 작업이 없습니다.",
+      "columns.applications.title": "애플리케이션",
+      "columns.destination.cases.0.text": "in-cluster",
+      "columns.destination.title": "대상",
+      "columns.first-destination.title": "첫 번째 대상",
+      "columns.first-source.title": "첫 번째 소스",
+      "columns.health.title": "건강 상태",
+      "columns.project.title": "프로젝트",
+      "columns.revision.title": "리비전",
+      "columns.sync.cases.0.text": "동기화 중",
+      "columns.sync.title": "동기화",
+      "columns.target-namespace.title": "대상 네임스페이스",
+      "description": "Argo CD의 Applications, ApplicationSets, AppProjects를 별도의 섹션에 표시합니다. 동기화, 상태, 리비전과 대상, 각 애플리케이션이 관리하는 리소스와 그 상태, 동기화 기록, Sync, Refresh, Terminate, Argo CD API를 통한 원하는 상태와 실제 상태의 비교, 그리고 Argo CD UI.",
+      "detailsSections.fields.title": "Argo CD",
+      "detailsSections.history.title": "동기화 기록",
+      "detailsSections.resources.title": "리소스",
+      "kinds.0.sectionTitle": "Argo CD",
+      "kinds.0.title": "Applications",
+      "kinds.1.title": "ApplicationSets",
+      "kinds.2.title": "AppProjects",
+      "name": "Argo CD",
+      "problems.degraded.message": "{{.status.health.message}}",
+      "problems.degraded.title": "Degraded",
+      "problems.sync-failed.message": "{{.status.operationState.message}}",
+      "problems.sync-failed.title": "SyncFailed",
+      "services.argocd-server-http.title": "TLS 없는 Argo CD API(server.insecure)",
+      "services.argocd-server.title": "Argo CD API(argocd-server, HTTPS)"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "apiVersion": "notification.toolkit.fluxcd.io/v1beta3",
+  "kind": "Alert",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T17:08:28Z",
+    "generation": 1,
+    "name": "on-error",
+    "namespace": "sextant-flux-fx",
+    "resourceVersion": "143539",
+    "uid": "b21d4035-617b-4e40-a3e6-265d48f51ce8"
+  },
+  "spec": {
+    "eventSeverity": "error",
+    "eventSources": [
+      {
+        "kind": "Kustomization",
+        "name": "*"
+      }
+    ],
+    "providerRef": {
+      "name": "webhook"
+    }
+  }
+}

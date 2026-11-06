@@ -1,0 +1,64 @@
+{
+  "apiVersion": "argoproj.io/v1alpha1",
+  "kind": "Rollout",
+  "metadata": {
+    "name": "rollout-bluegreen",
+    "namespace": "shop",
+    "uid": "9a1b2c3d-0000-4000-8000-000000000003",
+    "generation": 2,
+    "creationTimestamp": "2026-10-20T08:00:00Z"
+  },
+  "spec": {
+    "replicas": 2,
+    "revisionHistoryLimit": 2,
+    "selector": {
+      "matchLabels": {
+        "app": "rollout-bluegreen"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "rollout-bluegreen"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "rollouts-demo",
+            "image": "argoproj/rollouts-demo:green"
+          }
+        ]
+      }
+    },
+    "strategy": {
+      "blueGreen": {
+        "activeService": "rollout-bluegreen-active",
+        "previewService": "rollout-bluegreen-preview",
+        "autoPromotionEnabled": false
+      }
+    }
+  },
+  "status": {
+    "observedGeneration": "2",
+    "phase": "Paused",
+    "message": "BlueGreenPause",
+    "currentPodHash": "55d6b9f8c",
+    "stableRS": "7b9f6c4d8",
+    "controllerPause": true,
+    "pauseConditions": [
+      {
+        "reason": "BlueGreenPause",
+        "startTime": "2026-10-20T09:00:00Z"
+      }
+    ],
+    "blueGreen": {
+      "activeSelector": "7b9f6c4d8",
+      "previewSelector": "55d6b9f8c"
+    },
+    "replicas": 4,
+    "updatedReplicas": 2,
+    "readyReplicas": 4,
+    "availableReplicas": 4
+  }
+}

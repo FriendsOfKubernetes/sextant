@@ -1,0 +1,71 @@
+{
+  "apiVersion": "kustomize.toolkit.fluxcd.io/v1",
+  "kind": "Kustomization",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T16:51:54Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "name": "podinfo",
+    "namespace": "sextant-flux",
+    "resourceVersion": "142204",
+    "uid": "7072f387-c6b1-4d97-a9ee-d4295575d70a"
+  },
+  "spec": {
+    "force": false,
+    "interval": "10m",
+    "path": "./kustomize",
+    "prune": true,
+    "sourceRef": {
+      "kind": "GitRepository",
+      "name": "podinfo"
+    },
+    "targetNamespace": "sextant-flux",
+    "wait": false
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T17:01:58Z",
+        "message": "Applied revision: master@sha1:3e0ff8ae123b710bc91de1315cba0f996a8896c2",
+        "observedGeneration": 1,
+        "reason": "ReconciliationSucceeded",
+        "status": "True",
+        "type": "Ready"
+      }
+    ],
+    "history": [
+      {
+        "digest": "sha256:b6d530f988818da47914fae8129a68f52c89d226239bf5ee4ea7e8471635ac39",
+        "firstReconciled": "2026-10-12T16:51:56Z",
+        "lastReconciled": "2026-10-12T17:01:58Z",
+        "lastReconciledDuration": "229.461286ms",
+        "lastReconciledStatus": "ReconciliationSucceeded",
+        "metadata": {
+          "revision": "master@sha1:3e0ff8ae123b710bc91de1315cba0f996a8896c2"
+        },
+        "totalReconciliations": 2
+      }
+    ],
+    "inventory": {
+      "entries": [
+        {
+          "id": "sextant-flux_podinfo__Service",
+          "v": "v1"
+        },
+        {
+          "id": "sextant-flux_podinfo_apps_Deployment",
+          "v": "v1"
+        },
+        {
+          "id": "sextant-flux_podinfo_autoscaling_HorizontalPodAutoscaler",
+          "v": "v2"
+        }
+      ]
+    },
+    "lastAppliedRevision": "master@sha1:3e0ff8ae123b710bc91de1315cba0f996a8896c2",
+    "lastAttemptedRevision": "master@sha1:3e0ff8ae123b710bc91de1315cba0f996a8896c2",
+    "observedGeneration": 1
+  }
+}

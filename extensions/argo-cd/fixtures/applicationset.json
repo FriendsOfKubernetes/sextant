@@ -1,0 +1,97 @@
+{
+  "apiVersion": "argoproj.io/v1alpha1",
+  "kind": "ApplicationSet",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"argoproj.io/v1alpha1\",\"kind\":\"ApplicationSet\",\"metadata\":{\"annotations\":{},\"name\":\"sextant-guestbooks\",\"namespace\":\"argocd\"},\"spec\":{\"generators\":[{\"list\":{\"elements\":[{\"env\":\"dev\"},{\"env\":\"qa\"}]}}],\"goTemplate\":true,\"template\":{\"metadata\":{\"name\":\"sextant-guestbook-{{.env}}\"},\"spec\":{\"destination\":{\"namespace\":\"sextant-exp-{{.env}}\",\"server\":\"https://kubernetes.default.svc\"},\"project\":\"default\",\"source\":{\"path\":\"guestbook\",\"repoURL\":\"https://github.com/argoproj/argocd-example-apps\",\"targetRevision\":\"HEAD\"}}}}}\n"
+    },
+    "creationTimestamp": "2026-10-12T17:08:50Z",
+    "generation": 1,
+    "name": "sextant-guestbooks",
+    "namespace": "argocd",
+    "resourceVersion": "143670",
+    "uid": "795ce423-fed3-4248-bffb-fc114c08c913"
+  },
+  "spec": {
+    "generators": [
+      {
+        "list": {
+          "elements": [
+            {
+              "env": "dev"
+            },
+            {
+              "env": "qa"
+            }
+          ]
+        }
+      }
+    ],
+    "goTemplate": true,
+    "template": {
+      "metadata": {
+        "name": "sextant-guestbook-{{.env}}"
+      },
+      "spec": {
+        "destination": {
+          "namespace": "sextant-exp-{{.env}}",
+          "server": "https://kubernetes.default.svc"
+        },
+        "project": "default",
+        "source": {
+          "path": "guestbook",
+          "repoURL": "https://github.com/argoproj/argocd-example-apps",
+          "targetRevision": "HEAD"
+        }
+      }
+    }
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T17:08:50Z",
+        "message": "All applications have been generated successfully",
+        "reason": "ApplicationSetUpToDate",
+        "status": "False",
+        "type": "ErrorOccurred"
+      },
+      {
+        "lastTransitionTime": "2026-10-12T17:08:50Z",
+        "message": "Successfully generated parameters for all Applications",
+        "reason": "ParametersGenerated",
+        "status": "True",
+        "type": "ParametersGenerated"
+      },
+      {
+        "lastTransitionTime": "2026-10-12T17:08:50Z",
+        "message": "All applications have been generated successfully",
+        "reason": "ApplicationSetUpToDate",
+        "status": "True",
+        "type": "ResourcesUpToDate"
+      }
+    ],
+    "health": {
+      "message": "All applications have been generated successfully",
+      "status": "Healthy"
+    },
+    "resources": [
+      {
+        "group": "argoproj.io",
+        "health": {},
+        "kind": "Application",
+        "name": "sextant-guestbook-dev",
+        "namespace": "argocd",
+        "version": "v1alpha1"
+      },
+      {
+        "group": "argoproj.io",
+        "health": {},
+        "kind": "Application",
+        "name": "sextant-guestbook-qa",
+        "namespace": "argocd",
+        "version": "v1alpha1"
+      }
+    ],
+    "resourcesCount": 2
+  }
+}

@@ -1,0 +1,101 @@
+[
+  {
+    "apiVersion": "apps/v1",
+    "kind": "ReplicaSet",
+    "metadata": {
+      "name": "rollout-canary-6c9f8b5d4",
+      "namespace": "shop",
+      "uid": "rs-6c9f8b5d4",
+      "labels": {
+        "app": "rollout-canary",
+        "rollouts-pod-template-hash": "6c9f8b5d4"
+      },
+      "annotations": {
+        "rollout.argoproj.io/revision": "1"
+      },
+      "ownerReferences": [
+        {
+          "apiVersion": "argoproj.io/v1alpha1",
+          "kind": "Rollout",
+          "name": "rollout-canary",
+          "uid": "5f0c1b2a-8a43-4c6e-9c1e-3b1d2a7f9e01",
+          "controller": true
+        }
+      ],
+      "creationTimestamp": "2026-10-20T01:00:00Z"
+    },
+    "spec": {
+      "replicas": 4
+    },
+    "status": {
+      "replicas": 4,
+      "availableReplicas": 4
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "ReplicaSet",
+    "metadata": {
+      "name": "rollout-canary-7d8c6f9b5",
+      "namespace": "shop",
+      "uid": "rs-7d8c6f9b5",
+      "labels": {
+        "app": "rollout-canary",
+        "rollouts-pod-template-hash": "7d8c6f9b5"
+      },
+      "annotations": {
+        "rollout.argoproj.io/revision": "2"
+      },
+      "ownerReferences": [
+        {
+          "apiVersion": "argoproj.io/v1alpha1",
+          "kind": "Rollout",
+          "name": "rollout-canary",
+          "uid": "5f0c1b2a-8a43-4c6e-9c1e-3b1d2a7f9e01",
+          "controller": true
+        }
+      ],
+      "creationTimestamp": "2026-10-20T02:00:00Z"
+    },
+    "spec": {
+      "replicas": 1
+    },
+    "status": {
+      "replicas": 1,
+      "availableReplicas": 1
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "ReplicaSet",
+    "metadata": {
+      "name": "other-5c5c5c5c5",
+      "namespace": "shop",
+      "uid": "rs-5c5c5c5c5",
+      "labels": {
+        "app": "rollout-canary",
+        "rollouts-pod-template-hash": "5c5c5c5c5"
+      },
+      "annotations": {
+        "rollout.argoproj.io/revision": "1"
+      },
+      "ownerReferences": [
+        {
+          "apiVersion": "argoproj.io/v1alpha1",
+          "kind": "Rollout",
+          "name": "rollout-canary",
+          "uid": "someone-else",
+          "controller": true
+        }
+      ],
+      "creationTimestamp": "2026-10-20T01:00:00Z"
+    },
+    "spec": {
+      "replicas": 2
+    },
+    "status": {
+      "replicas": 2,
+      "availableReplicas": 2
+    }
+  }
+]

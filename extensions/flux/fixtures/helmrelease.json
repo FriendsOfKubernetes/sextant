@@ -1,0 +1,89 @@
+{
+  "apiVersion": "helm.toolkit.fluxcd.io/v2",
+  "kind": "HelmRelease",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T16:51:54Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "name": "podinfo-helm",
+    "namespace": "sextant-flux",
+    "resourceVersion": "142238",
+    "uid": "6098ba39-3695-4ae8-955f-c7a01b78870c"
+  },
+  "spec": {
+    "chart": {
+      "spec": {
+        "chart": "podinfo",
+        "reconcileStrategy": "ChartVersion",
+        "sourceRef": {
+          "kind": "HelmRepository",
+          "name": "podinfo"
+        },
+        "version": "6.x"
+      }
+    },
+    "interval": "10m",
+    "values": {
+      "replicaCount": 1
+    }
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T16:52:06Z",
+        "message": "Helm install succeeded for release sextant-flux/podinfo-helm.v1 with chart podinfo@6.15.0",
+        "observedGeneration": 1,
+        "reason": "InstallSucceeded",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2026-10-12T16:52:06Z",
+        "message": "Helm install succeeded for release sextant-flux/podinfo-helm.v1 with chart podinfo@6.15.0",
+        "observedGeneration": 1,
+        "reason": "InstallSucceeded",
+        "status": "True",
+        "type": "Released"
+      }
+    ],
+    "helmChart": "sextant-flux/sextant-flux-podinfo-helm",
+    "history": [
+      {
+        "action": "install",
+        "apiVersion": "v2",
+        "appVersion": "6.15.0",
+        "chartName": "podinfo",
+        "chartVersion": "6.15.0",
+        "configDigest": "sha256:5495eb6991f7c134fc9ab2dce6c3a537e06a3f39dd229ee4202343f5e5ddb04c",
+        "digest": "sha256:d939cde9791f43924791a3aff159b5252ec0c637d28a78148714cf851aa87fb5",
+        "firstDeployed": "2026-10-12T16:51:55Z",
+        "lastDeployed": "2026-10-12T16:51:55Z",
+        "name": "podinfo-helm",
+        "namespace": "sextant-flux",
+        "status": "deployed",
+        "version": 1
+      }
+    ],
+    "inventory": {
+      "entries": [
+        {
+          "id": "sextant-flux_podinfo-helm__Service",
+          "v": "v1"
+        },
+        {
+          "id": "sextant-flux_podinfo-helm_apps_Deployment",
+          "v": "v1"
+        }
+      ]
+    },
+    "lastAttemptedConfigDigest": "sha256:5495eb6991f7c134fc9ab2dce6c3a537e06a3f39dd229ee4202343f5e5ddb04c",
+    "lastAttemptedGeneration": 1,
+    "lastAttemptedReleaseAction": "install",
+    "lastAttemptedReleaseActionDuration": "10.266863246s",
+    "lastAttemptedRevision": "6.15.0",
+    "observedGeneration": 1,
+    "storageNamespace": "sextant-flux"
+  }
+}

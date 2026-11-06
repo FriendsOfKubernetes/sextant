@@ -1,0 +1,1558 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.argo-rollouts",
+  "name": "Argo Rollouts",
+  "version": "1.0.0",
+  "description": "Argo Rollouts: rollouts with their steps, weights, ReplicaSets and analysis runs; promote, abort, retry, pause and resume with the exact patches of kubectl argo rollouts, shown first; problems of degraded and aborted rollouts and failed analyses.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "argoRollouts",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "statusPatches": [
+      {
+        "group": "argoproj.io",
+        "kind": "Rollout"
+      }
+    ],
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "argoproj.io",
+              "kind": "Rollout"
+            },
+            {
+              "group": "argoproj.io",
+              "kind": "AnalysisRun"
+            },
+            {
+              "group": "argoproj.io",
+              "kind": "AnalysisTemplate"
+            },
+            {
+              "group": "argoproj.io",
+              "kind": "ClusterAnalysisTemplate"
+            },
+            {
+              "group": "argoproj.io",
+              "kind": "Experiment"
+            },
+            {
+              "group": "apps",
+              "kind": "ReplicaSet"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      },
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "argoproj.io",
+              "kind": "Rollout"
+            }
+          ]
+        },
+        "actions": [
+          "modify"
+        ],
+        "confirm": true
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "argoproj.io",
+        "kind": "Rollout",
+        "section": "argoRollouts",
+        "sectionTitle": "Argo Rollouts",
+        "title": "Rollouts",
+        "icon": "argoRollout",
+        "order": 10
+      },
+      {
+        "group": "argoproj.io",
+        "kind": "AnalysisRun",
+        "section": "argoRollouts",
+        "title": "Analysis Runs",
+        "icon": "argoAnalysisRun",
+        "order": 20
+      },
+      {
+        "group": "argoproj.io",
+        "kind": "AnalysisTemplate",
+        "section": "argoRollouts",
+        "title": "Analysis Templates",
+        "icon": "argoAnalysisTemplate",
+        "order": 30
+      },
+      {
+        "group": "argoproj.io",
+        "kind": "ClusterAnalysisTemplate",
+        "section": "argoRollouts",
+        "title": "Cluster Analysis Templates",
+        "icon": "argoClusterAnalysisTemplate",
+        "order": 40
+      },
+      {
+        "group": "argoproj.io",
+        "kind": "Experiment",
+        "section": "argoRollouts",
+        "title": "Experiments",
+        "icon": "argoExperiment",
+        "order": 50
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "argoRollouts"
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "rollout",
+        "title": "Rollout",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Rollout"
+          }
+        ],
+        "placement": "section",
+        "order": 25
+      },
+      {
+        "id": "analysis-run",
+        "title": "AnalysisRun",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "AnalysisRun"
+          }
+        ],
+        "placement": "section",
+        "order": 25
+      },
+      {
+        "id": "experiment",
+        "title": "Experiment",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Experiment"
+          }
+        ],
+        "placement": "section",
+        "order": 25
+      },
+      {
+        "id": "template-metrics",
+        "title": "Metrics",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "AnalysisTemplate"
+          },
+          {
+            "group": "argoproj.io",
+            "kind": "ClusterAnalysisTemplate"
+          }
+        ],
+        "placement": "section",
+        "order": 25
+      }
+    ],
+    "actions": [
+      {
+        "id": "promote",
+        "title": "Promote",
+        "icon": "rolloutPromote",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Rollout"
+          }
+        ],
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.abort"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.abort",
+                  "value": false
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.paused",
+                  "value": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.pauseConditions[0]"
+                },
+                {
+                  "type": "in",
+                  "path": ".status.phase",
+                  "values": [
+                    "Progressing",
+                    "Paused",
+                    "Degraded"
+                  ]
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.phase"
+                }
+              ]
+            }
+          ]
+        },
+        "whyNot": "Only a paused rollout, or one in the middle of an update, can be promoted; an aborted one is retried first.",
+        "placement": "primary"
+      },
+      {
+        "id": "promote-full",
+        "title": "Promote fully",
+        "icon": "rolloutPromoteFull",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Rollout"
+          }
+        ],
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.abort"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.abort",
+                  "value": false
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.paused",
+                  "value": true
+                },
+                {
+                  "type": "in",
+                  "path": ".status.phase",
+                  "values": [
+                    "Progressing",
+                    "Paused",
+                    "Degraded"
+                  ]
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.phase"
+                }
+              ]
+            }
+          ]
+        },
+        "whyNot": "The rollout is already fully promoted and not paused, or its update was aborted.",
+        "placement": "more"
+      },
+      {
+        "id": "abort",
+        "title": "Abort",
+        "icon": "rolloutAbort",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Rollout"
+          }
+        ],
+        "danger": true,
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.abort"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.abort",
+                  "value": false
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "in",
+                  "path": ".status.phase",
+                  "values": [
+                    "Progressing",
+                    "Paused",
+                    "Degraded"
+                  ]
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.phase"
+                }
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.currentPodHash"
+            }
+          ]
+        },
+        "whyNot": "Only an update that is under way can be aborted.",
+        "placement": "primary"
+      },
+      {
+        "id": "retry",
+        "title": "Retry",
+        "icon": "rolloutRetry",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Rollout"
+          }
+        ],
+        "when": {
+          "type": "equals",
+          "path": ".status.abort",
+          "value": true
+        },
+        "whyNot": "Only an aborted rollout can be retried.",
+        "placement": "more"
+      },
+      {
+        "id": "pause",
+        "title": "Pause",
+        "icon": "suspend",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Rollout"
+          }
+        ],
+        "when": {
+          "type": "not",
+          "of": {
+            "type": "equals",
+            "path": ".spec.paused",
+            "value": true
+          }
+        },
+        "whyNot": "The rollout is already paused by hand.",
+        "placement": "primary"
+      },
+      {
+        "id": "resume",
+        "title": "Resume",
+        "icon": "resume",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Rollout"
+          }
+        ],
+        "when": {
+          "type": "any",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".spec.paused",
+              "value": true
+            },
+            {
+              "type": "exists",
+              "path": ".status.pauseConditions[0]"
+            }
+          ]
+        },
+        "whyNot": "The rollout is not paused.",
+        "placement": "primary"
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "id": "rollout-ready",
+        "paths": [
+          ".status.readyReplicas"
+        ],
+        "format": "ratio",
+        "totalPaths": [
+          ".spec.replicas"
+        ],
+        "after": "Available",
+        "title": "Ready"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "id": "rollout-weight",
+        "paths": [
+          ".status.canary.weights.canary.weight"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.abort",
+                  "value": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.strategy.canary"
+                }
+              ]
+            },
+            "text": "0"
+          }
+        ],
+        "after": "Available",
+        "title": "Weight"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "id": "rollout-step",
+        "paths": [
+          ".status.currentStepIndex"
+        ],
+        "format": "number",
+        "after": "Available",
+        "title": "Step"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "id": "rollout-strategy",
+        "paths": [
+          ".spec.strategy"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.strategy.canary"
+            },
+            "text": "Canary"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.strategy.blueGreen"
+            },
+            "text": "BlueGreen"
+          }
+        ],
+        "after": "Available",
+        "title": "Strategy"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "id": "rollout-status",
+        "paths": [
+          ".status.phase"
+        ],
+        "tones": {
+          "Healthy": "ok",
+          "Progressing": "neutral",
+          "Paused": "warning",
+          "Degraded": "error"
+        },
+        "tooltipPaths": [
+          ".status.message"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.controllerPause",
+                  "value": true
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.pauseConditions[0]"
+                }
+              ]
+            },
+            "text": "Progressing"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.phase"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "InvalidSpec",
+                  "status": "True"
+                }
+              ]
+            },
+            "text": "Degraded"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.phase"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Progressing",
+                  "status": "False",
+                  "reason": "RolloutAborted"
+                }
+              ]
+            },
+            "text": "Degraded"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.phase"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Progressing",
+                  "status": "False",
+                  "reason": "ProgressDeadlineExceeded"
+                }
+              ]
+            },
+            "text": "Degraded"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.phase"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.paused",
+                  "value": true
+                }
+              ]
+            },
+            "text": "Paused"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.phase"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.pauseConditions[0]"
+                }
+              ]
+            },
+            "text": "Paused"
+          }
+        ],
+        "after": "Available",
+        "title": "Status"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AnalysisRun"
+        },
+        "id": "run-message",
+        "paths": [
+          ".status.message",
+          ".status.metricResults[0].message",
+          ".status.metricResults[1].message",
+          ".status.metricResults[2].message"
+        ],
+        "tooltipPaths": [
+          ".status.message",
+          ".status.metricResults[0].message",
+          ".status.metricResults[1].message",
+          ".status.metricResults[2].message"
+        ],
+        "after": "Status",
+        "title": "Message"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AnalysisRun"
+        },
+        "id": "run-rollout",
+        "paths": [
+          ".metadata.ownerReferences[0].name"
+        ],
+        "after": "Status",
+        "title": "Rollout"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AnalysisRun"
+        },
+        "id": "run-phase",
+        "paths": [
+          ".status.phase"
+        ],
+        "tones": {
+          "Pending": "neutral",
+          "Running": "neutral",
+          "Successful": "ok",
+          "Failed": "error",
+          "Error": "error",
+          "Inconclusive": "warning"
+        },
+        "after": "Status",
+        "title": "Phase"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Experiment"
+        },
+        "id": "experiment-message",
+        "paths": [
+          ".status.message"
+        ],
+        "tooltipPaths": [
+          ".status.message"
+        ],
+        "after": "Status",
+        "title": "Message"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Experiment"
+        },
+        "id": "experiment-rollout",
+        "paths": [
+          ".metadata.ownerReferences[0].name"
+        ],
+        "after": "Status",
+        "title": "Rollout"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Experiment"
+        },
+        "id": "experiment-phase",
+        "paths": [
+          ".status.phase"
+        ],
+        "tones": {
+          "Pending": "neutral",
+          "Running": "neutral",
+          "Successful": "ok",
+          "Failed": "error",
+          "Error": "error",
+          "Inconclusive": "warning"
+        },
+        "after": "Status",
+        "title": "Phase"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AnalysisTemplate"
+        },
+        "id": "template-metric",
+        "paths": [
+          ".spec.metrics[0].name"
+        ],
+        "title": "Metric"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "ClusterAnalysisTemplate"
+        },
+        "id": "cluster-template-metric",
+        "paths": [
+          ".spec.metrics[0].name"
+        ],
+        "title": "Metric"
+      }
+    ],
+    "problems": [
+      {
+        "id": "degraded",
+        "title": "Degraded",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.abort"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.abort",
+                  "value": false
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.phase",
+                  "value": "Degraded"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "InvalidSpec",
+                  "status": "True"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Progressing",
+                  "status": "False",
+                  "reason": "ProgressDeadlineExceeded"
+                }
+              ]
+            }
+          ]
+        },
+        "graceMinutes": 1,
+        "message": "The rollout is Degraded: {{.status.message}}"
+      },
+      {
+        "id": "aborted",
+        "title": "Aborted",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "equals",
+          "path": ".status.abort",
+          "value": true
+        },
+        "message": "The update was aborted: {{.status.message}}"
+      },
+      {
+        "id": "step-analysis-failed",
+        "title": "Step analysis failed",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "in",
+          "path": ".status.canary.currentStepAnalysisRunStatus.status",
+          "values": [
+            "Failed",
+            "Error"
+          ]
+        },
+        "message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} ended {{.status.canary.currentStepAnalysisRunStatus.status}}: {{.status.canary.currentStepAnalysisRunStatus.message}}"
+      },
+      {
+        "id": "background-analysis-failed",
+        "title": "Background analysis failed",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "in",
+          "path": ".status.canary.currentBackgroundAnalysisRunStatus.status",
+          "values": [
+            "Failed",
+            "Error"
+          ]
+        },
+        "message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} ended {{.status.canary.currentBackgroundAnalysisRunStatus.status}}: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}"
+      },
+      {
+        "id": "pre-promotion-analysis-failed",
+        "title": "Pre-promotion analysis failed",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "in",
+          "path": ".status.blueGreen.prePromotionAnalysisRunStatus.status",
+          "values": [
+            "Failed",
+            "Error"
+          ]
+        },
+        "message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} ended {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}"
+      },
+      {
+        "id": "post-promotion-analysis-failed",
+        "title": "Post-promotion analysis failed",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "in",
+          "path": ".status.blueGreen.postPromotionAnalysisRunStatus.status",
+          "values": [
+            "Failed",
+            "Error"
+          ]
+        },
+        "message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} ended {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+      }
+    ]
+  },
+  "translations": {
+    "ru": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts: rollout с шагами, весами, ReplicaSet и запусками анализа; продвижение, прерывание, повтор, пауза и возобновление ровно теми патчами, что шлёт kubectl argo rollouts, с показом перед отправкой; проблемы деградировавших и прерванных rollout и проваленных анализов.",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "Метрики",
+      "actions.promote.title": "Продвинуть",
+      "actions.promote.whyNot": "Продвинуть можно только rollout на паузе или посреди обновления; прерванный сначала запускают снова.",
+      "actions.promote-full.title": "Продвинуть полностью",
+      "actions.promote-full.whyNot": "Rollout уже полностью продвинут и не на паузе, или его обновление прервано.",
+      "actions.abort.title": "Прервать",
+      "actions.abort.whyNot": "Прервать можно только идущее обновление.",
+      "actions.retry.title": "Повторить",
+      "actions.retry.whyNot": "Повторить можно только прерванный rollout.",
+      "actions.pause.title": "Приостановить",
+      "actions.pause.whyNot": "Rollout уже приостановлен вручную.",
+      "actions.resume.title": "Возобновить",
+      "actions.resume.whyNot": "Rollout не на паузе.",
+      "columns.rollout-ready.title": "Готово",
+      "columns.rollout-weight.title": "Вес",
+      "columns.rollout-step.title": "Шаг",
+      "columns.rollout-strategy.title": "Стратегия",
+      "columns.rollout-status.title": "Статус",
+      "columns.run-message.title": "Сообщение",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "Фаза",
+      "columns.experiment-message.title": "Сообщение",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "Фаза",
+      "columns.template-metric.title": "Метрика",
+      "columns.cluster-template-metric.title": "Метрика",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "Rollout в состоянии Degraded: {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "Обновление прервано: {{.status.message}}",
+      "problems.step-analysis-failed.title": "Анализ шага провален",
+      "problems.step-analysis-failed.message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} завершился как {{.status.canary.currentStepAnalysisRunStatus.status}}: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "Фоновый анализ провален",
+      "problems.background-analysis-failed.message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} завершился как {{.status.canary.currentBackgroundAnalysisRunStatus.status}}: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "Анализ перед продвижением провален",
+      "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} завершился как {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "Анализ после продвижения провален",
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} завершился как {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "uk": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts: rollout із кроками, вагами, ReplicaSet і запусками аналізу; просування, переривання, повтор, пауза й відновлення саме тими патчами, що надсилає kubectl argo rollouts, із показом перед надсиланням; проблеми деградованих і перерваних rollout і провалених аналізів.",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "Метрики",
+      "actions.promote.title": "Просунути",
+      "actions.promote.whyNot": "Просунути можна лише rollout на паузі або посеред оновлення; перерваний спершу запускають знову.",
+      "actions.promote-full.title": "Просунути повністю",
+      "actions.promote-full.whyNot": "Rollout уже повністю просунуто й не на паузі, або його оновлення перервано.",
+      "actions.abort.title": "Перервати",
+      "actions.abort.whyNot": "Перервати можна лише оновлення, що триває.",
+      "actions.retry.title": "Повторити",
+      "actions.retry.whyNot": "Повторити можна лише перерваний rollout.",
+      "actions.pause.title": "Призупинити",
+      "actions.pause.whyNot": "Rollout уже призупинено вручну.",
+      "actions.resume.title": "Відновити",
+      "actions.resume.whyNot": "Rollout не на паузі.",
+      "columns.rollout-ready.title": "Готово",
+      "columns.rollout-weight.title": "Вага",
+      "columns.rollout-step.title": "Крок",
+      "columns.rollout-strategy.title": "Стратегія",
+      "columns.rollout-status.title": "Статус",
+      "columns.run-message.title": "Повідомлення",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "Фаза",
+      "columns.experiment-message.title": "Повідомлення",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "Фаза",
+      "columns.template-metric.title": "Метрика",
+      "columns.cluster-template-metric.title": "Метрика",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "Rollout у стані Degraded: {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "Оновлення перервано: {{.status.message}}",
+      "problems.step-analysis-failed.title": "Аналіз кроку провалено",
+      "problems.step-analysis-failed.message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} завершився як {{.status.canary.currentStepAnalysisRunStatus.status}}: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "Фоновий аналіз провалено",
+      "problems.background-analysis-failed.message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} завершився як {{.status.canary.currentBackgroundAnalysisRunStatus.status}}: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "Аналіз перед просуванням провалено",
+      "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} завершився як {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "Аналіз після просування провалено",
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} завершився як {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "de": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts: Rollouts mit ihren Schritten, Gewichten, ReplicaSets und Analyseläufen; Promoten, Abbrechen, erneut Versuchen, Pausieren und Fortsetzen mit genau den Patches von kubectl argo rollouts, vorher angezeigt; Probleme beeinträchtigter und abgebrochener Rollouts und fehlgeschlagener Analysen.",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "Metriken",
+      "actions.promote.title": "Promoten",
+      "actions.promote.whyNot": "Nur ein pausierter Rollout oder einer mitten in einem Update kann promotet werden; ein abgebrochener wird zuerst erneut versucht.",
+      "actions.promote-full.title": "Vollständig promoten",
+      "actions.promote-full.whyNot": "Der Rollout ist bereits vollständig promotet und nicht pausiert, oder sein Update wurde abgebrochen.",
+      "actions.abort.title": "Abbrechen",
+      "actions.abort.whyNot": "Nur ein laufendes Update kann abgebrochen werden.",
+      "actions.retry.title": "Erneut versuchen",
+      "actions.retry.whyNot": "Nur ein abgebrochener Rollout kann erneut versucht werden.",
+      "actions.pause.title": "Pausieren",
+      "actions.pause.whyNot": "Der Rollout ist bereits von Hand pausiert.",
+      "actions.resume.title": "Fortsetzen",
+      "actions.resume.whyNot": "Der Rollout ist nicht pausiert.",
+      "columns.rollout-ready.title": "Bereit",
+      "columns.rollout-weight.title": "Gewicht",
+      "columns.rollout-step.title": "Schritt",
+      "columns.rollout-strategy.title": "Strategie",
+      "columns.rollout-status.title": "Status",
+      "columns.run-message.title": "Meldung",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "Phase",
+      "columns.experiment-message.title": "Meldung",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "Phase",
+      "columns.template-metric.title": "Metrik",
+      "columns.cluster-template-metric.title": "Metrik",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "Der Rollout ist Degraded: {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "Das Update wurde abgebrochen: {{.status.message}}",
+      "problems.step-analysis-failed.title": "Schrittanalyse fehlgeschlagen",
+      "problems.step-analysis-failed.message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} endete mit {{.status.canary.currentStepAnalysisRunStatus.status}}: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "Hintergrundanalyse fehlgeschlagen",
+      "problems.background-analysis-failed.message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} endete mit {{.status.canary.currentBackgroundAnalysisRunStatus.status}}: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "Analyse vor dem Promoten fehlgeschlagen",
+      "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} endete mit {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "Analyse nach dem Promoten fehlgeschlagen",
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} endete mit {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "fr": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts : les rollouts avec leurs étapes, poids, ReplicaSets et analyses ; promouvoir, interrompre, réessayer, mettre en pause et reprendre avec exactement les patchs de kubectl argo rollouts, montrés d'abord ; problèmes des rollouts dégradés ou interrompus et des analyses échouées.",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "Métriques",
+      "actions.promote.title": "Promouvoir",
+      "actions.promote.whyNot": "Seul un rollout en pause ou en pleine mise à jour peut être promu ; un rollout interrompu doit d'abord être réessayé.",
+      "actions.promote-full.title": "Promouvoir entièrement",
+      "actions.promote-full.whyNot": "Le rollout est déjà entièrement promu et n'est pas en pause, ou sa mise à jour a été interrompue.",
+      "actions.abort.title": "Interrompre",
+      "actions.abort.whyNot": "Seule une mise à jour en cours peut être interrompue.",
+      "actions.retry.title": "Réessayer",
+      "actions.retry.whyNot": "Seul un rollout interrompu peut être réessayé.",
+      "actions.pause.title": "Mettre en pause",
+      "actions.pause.whyNot": "Le rollout est déjà mis en pause à la main.",
+      "actions.resume.title": "Reprendre",
+      "actions.resume.whyNot": "Le rollout n'est pas en pause.",
+      "columns.rollout-ready.title": "Prêts",
+      "columns.rollout-weight.title": "Poids",
+      "columns.rollout-step.title": "Étape",
+      "columns.rollout-strategy.title": "Stratégie",
+      "columns.rollout-status.title": "Statut",
+      "columns.run-message.title": "Message",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "Phase",
+      "columns.experiment-message.title": "Message",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "Phase",
+      "columns.template-metric.title": "Métrique",
+      "columns.cluster-template-metric.title": "Métrique",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "Le rollout est Degraded : {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "La mise à jour a été interrompue : {{.status.message}}",
+      "problems.step-analysis-failed.title": "Analyse d'étape échouée",
+      "problems.step-analysis-failed.message": "L'AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} s'est terminé en {{.status.canary.currentStepAnalysisRunStatus.status}} : {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "Analyse en arrière-plan échouée",
+      "problems.background-analysis-failed.message": "L'AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} s'est terminé en {{.status.canary.currentBackgroundAnalysisRunStatus.status}} : {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "Analyse avant promotion échouée",
+      "problems.pre-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} s'est terminé en {{.status.blueGreen.prePromotionAnalysisRunStatus.status}} : {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "Analyse après promotion échouée",
+      "problems.post-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} s'est terminé en {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} : {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "es": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts: rollouts con sus pasos, pesos, ReplicaSets y ejecuciones de análisis; promover, interrumpir, reintentar, pausar y reanudar con exactamente los parches de kubectl argo rollouts, mostrados antes; problemas de rollouts degradados o interrumpidos y de análisis fallidos.",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "Métricas",
+      "actions.promote.title": "Promover",
+      "actions.promote.whyNot": "Solo se puede promover un rollout en pausa o en medio de una actualización; uno interrumpido se reintenta primero.",
+      "actions.promote-full.title": "Promover por completo",
+      "actions.promote-full.whyNot": "El rollout ya está promovido por completo y no está en pausa, o su actualización se interrumpió.",
+      "actions.abort.title": "Interrumpir",
+      "actions.abort.whyNot": "Solo se puede interrumpir una actualización en curso.",
+      "actions.retry.title": "Reintentar",
+      "actions.retry.whyNot": "Solo se puede reintentar un rollout interrumpido.",
+      "actions.pause.title": "Pausar",
+      "actions.pause.whyNot": "El rollout ya está pausado a mano.",
+      "actions.resume.title": "Reanudar",
+      "actions.resume.whyNot": "El rollout no está en pausa.",
+      "columns.rollout-ready.title": "Listos",
+      "columns.rollout-weight.title": "Peso",
+      "columns.rollout-step.title": "Paso",
+      "columns.rollout-strategy.title": "Estrategia",
+      "columns.rollout-status.title": "Estado",
+      "columns.run-message.title": "Mensaje",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "Fase",
+      "columns.experiment-message.title": "Mensaje",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "Fase",
+      "columns.template-metric.title": "Métrica",
+      "columns.cluster-template-metric.title": "Métrica",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "El rollout está Degraded: {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "La actualización se interrumpió: {{.status.message}}",
+      "problems.step-analysis-failed.title": "Análisis de paso fallido",
+      "problems.step-analysis-failed.message": "El AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} terminó como {{.status.canary.currentStepAnalysisRunStatus.status}}: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "Análisis en segundo plano fallido",
+      "problems.background-analysis-failed.message": "El AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} terminó como {{.status.canary.currentBackgroundAnalysisRunStatus.status}}: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "Análisis previo a la promoción fallido",
+      "problems.pre-promotion-analysis-failed.message": "El AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} terminó como {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "Análisis posterior a la promoción fallido",
+      "problems.post-promotion-analysis-failed.message": "El AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} terminó como {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "pt-BR": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts: rollouts com seus passos, pesos, ReplicaSets e execuções de análise; promover, interromper, tentar novamente, pausar e retomar com exatamente os patches do kubectl argo rollouts, mostrados antes; problemas de rollouts degradados ou interrompidos e de análises com falha.",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "Métricas",
+      "actions.promote.title": "Promover",
+      "actions.promote.whyNot": "Só um rollout pausado ou no meio de uma atualização pode ser promovido; um interrompido é tentado novamente primeiro.",
+      "actions.promote-full.title": "Promover totalmente",
+      "actions.promote-full.whyNot": "O rollout já está totalmente promovido e não está pausado, ou sua atualização foi interrompida.",
+      "actions.abort.title": "Interromper",
+      "actions.abort.whyNot": "Só uma atualização em andamento pode ser interrompida.",
+      "actions.retry.title": "Tentar novamente",
+      "actions.retry.whyNot": "Só um rollout interrompido pode ser tentado novamente.",
+      "actions.pause.title": "Pausar",
+      "actions.pause.whyNot": "O rollout já está pausado manualmente.",
+      "actions.resume.title": "Retomar",
+      "actions.resume.whyNot": "O rollout não está pausado.",
+      "columns.rollout-ready.title": "Prontos",
+      "columns.rollout-weight.title": "Peso",
+      "columns.rollout-step.title": "Etapa",
+      "columns.rollout-strategy.title": "Estratégia",
+      "columns.rollout-status.title": "Status",
+      "columns.run-message.title": "Mensagem",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "Fase",
+      "columns.experiment-message.title": "Mensagem",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "Fase",
+      "columns.template-metric.title": "Métrica",
+      "columns.cluster-template-metric.title": "Métrica",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "O rollout está Degraded: {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "A atualização foi interrompida: {{.status.message}}",
+      "problems.step-analysis-failed.title": "Análise do passo falhou",
+      "problems.step-analysis-failed.message": "O AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} terminou como {{.status.canary.currentStepAnalysisRunStatus.status}}: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "Análise em segundo plano falhou",
+      "problems.background-analysis-failed.message": "O AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} terminou como {{.status.canary.currentBackgroundAnalysisRunStatus.status}}: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "Análise antes da promoção falhou",
+      "problems.pre-promotion-analysis-failed.message": "O AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} terminou como {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "Análise após a promoção falhou",
+      "problems.post-promotion-analysis-failed.message": "O AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} terminou como {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "it": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts: i rollout con passi, pesi, ReplicaSet ed esecuzioni di analisi; promuovere, interrompere, riprovare, mettere in pausa e riprendere con esattamente le patch di kubectl argo rollouts, mostrate prima; problemi di rollout degradati o interrotti e di analisi fallite.",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "Metriche",
+      "actions.promote.title": "Promuovi",
+      "actions.promote.whyNot": "Si può promuovere solo un rollout in pausa o a metà di un aggiornamento; uno interrotto va prima ritentato.",
+      "actions.promote-full.title": "Promuovi completamente",
+      "actions.promote-full.whyNot": "Il rollout è già promosso completamente e non è in pausa, oppure il suo aggiornamento è stato interrotto.",
+      "actions.abort.title": "Interrompi",
+      "actions.abort.whyNot": "Si può interrompere solo un aggiornamento in corso.",
+      "actions.retry.title": "Riprova",
+      "actions.retry.whyNot": "Si può ritentare solo un rollout interrotto.",
+      "actions.pause.title": "Metti in pausa",
+      "actions.pause.whyNot": "Il rollout è già messo in pausa a mano.",
+      "actions.resume.title": "Riprendi",
+      "actions.resume.whyNot": "Il rollout non è in pausa.",
+      "columns.rollout-ready.title": "Pronti",
+      "columns.rollout-weight.title": "Peso",
+      "columns.rollout-step.title": "Passo",
+      "columns.rollout-strategy.title": "Strategia",
+      "columns.rollout-status.title": "Stato",
+      "columns.run-message.title": "Messaggio",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "Fase",
+      "columns.experiment-message.title": "Messaggio",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "Fase",
+      "columns.template-metric.title": "Metrica",
+      "columns.cluster-template-metric.title": "Metrica",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "Il rollout è Degraded: {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "L'aggiornamento è stato interrotto: {{.status.message}}",
+      "problems.step-analysis-failed.title": "Analisi del passo fallita",
+      "problems.step-analysis-failed.message": "L'AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} è terminato come {{.status.canary.currentStepAnalysisRunStatus.status}}: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "Analisi in background fallita",
+      "problems.background-analysis-failed.message": "L'AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} è terminato come {{.status.canary.currentBackgroundAnalysisRunStatus.status}}: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "Analisi prima della promozione fallita",
+      "problems.pre-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} è terminato come {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "Analisi dopo la promozione fallita",
+      "problems.post-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} è terminato come {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "pl": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts: rollouty z ich krokami, wagami, ReplicaSetami i przebiegami analiz; promowanie, przerywanie, ponawianie, wstrzymywanie i wznawianie dokładnie tymi łatkami, które wysyła kubectl argo rollouts, pokazanymi najpierw; problemy zdegradowanych i przerwanych rolloutów oraz nieudanych analiz.",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "Metryki",
+      "actions.promote.title": "Promuj",
+      "actions.promote.whyNot": "Promować można tylko wstrzymany rollout albo taki w trakcie aktualizacji; przerwany najpierw się ponawia.",
+      "actions.promote-full.title": "Promuj w pełni",
+      "actions.promote-full.whyNot": "Rollout jest już w pełni promowany i nie jest wstrzymany albo jego aktualizacja została przerwana.",
+      "actions.abort.title": "Przerwij",
+      "actions.abort.whyNot": "Przerwać można tylko trwającą aktualizację.",
+      "actions.retry.title": "Ponów",
+      "actions.retry.whyNot": "Ponowić można tylko przerwany rollout.",
+      "actions.pause.title": "Wstrzymaj",
+      "actions.pause.whyNot": "Rollout jest już wstrzymany ręcznie.",
+      "actions.resume.title": "Wznów",
+      "actions.resume.whyNot": "Rollout nie jest wstrzymany.",
+      "columns.rollout-ready.title": "Gotowe",
+      "columns.rollout-weight.title": "Waga",
+      "columns.rollout-step.title": "Krok",
+      "columns.rollout-strategy.title": "Strategia",
+      "columns.rollout-status.title": "Stan",
+      "columns.run-message.title": "Komunikat",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "Faza",
+      "columns.experiment-message.title": "Komunikat",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "Faza",
+      "columns.template-metric.title": "Metryka",
+      "columns.cluster-template-metric.title": "Metryka",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "Rollout jest w stanie Degraded: {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "Aktualizacja została przerwana: {{.status.message}}",
+      "problems.step-analysis-failed.title": "Analiza kroku nie powiodła się",
+      "problems.step-analysis-failed.message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} zakończył się jako {{.status.canary.currentStepAnalysisRunStatus.status}}: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "Analiza w tle nie powiodła się",
+      "problems.background-analysis-failed.message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} zakończył się jako {{.status.canary.currentBackgroundAnalysisRunStatus.status}}: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "Analiza przed promowaniem nie powiodła się",
+      "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} zakończył się jako {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "Analiza po promowaniu nie powiodła się",
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} zakończył się jako {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "tr": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts: adımları, ağırlıkları, ReplicaSet'leri ve analiz çalıştırmalarıyla rollout'lar; kubectl argo rollouts'un tam yamalarıyla, önce gösterilerek yükseltme, iptal etme, yeniden deneme, duraklatma ve sürdürme; bozulmuş ve iptal edilmiş rollout'ların ve başarısız analizlerin sorunları.",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "Metrikler",
+      "actions.promote.title": "Yükselt",
+      "actions.promote.whyNot": "Yalnızca duraklatılmış ya da güncellemenin ortasındaki bir rollout yükseltilebilir; iptal edilmiş olan önce yeniden denenir.",
+      "actions.promote-full.title": "Tamamen yükselt",
+      "actions.promote-full.whyNot": "Rollout zaten tamamen yükseltilmiş ve duraklatılmamış ya da güncellemesi iptal edilmiş.",
+      "actions.abort.title": "İptal et",
+      "actions.abort.whyNot": "Yalnızca süren bir güncelleme iptal edilebilir.",
+      "actions.retry.title": "Yeniden dene",
+      "actions.retry.whyNot": "Yalnızca iptal edilmiş bir rollout yeniden denenebilir.",
+      "actions.pause.title": "Duraklat",
+      "actions.pause.whyNot": "Rollout zaten elle duraklatılmış.",
+      "actions.resume.title": "Sürdür",
+      "actions.resume.whyNot": "Rollout duraklatılmamış.",
+      "columns.rollout-ready.title": "Hazır",
+      "columns.rollout-weight.title": "Ağırlık",
+      "columns.rollout-step.title": "Adım",
+      "columns.rollout-strategy.title": "Strateji",
+      "columns.rollout-status.title": "Durum",
+      "columns.run-message.title": "İleti",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "Aşama",
+      "columns.experiment-message.title": "İleti",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "Aşama",
+      "columns.template-metric.title": "Metrik",
+      "columns.cluster-template-metric.title": "Metrik",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "Rollout Degraded durumunda: {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "Güncelleme iptal edildi: {{.status.message}}",
+      "problems.step-analysis-failed.title": "Adım analizi başarısız",
+      "problems.step-analysis-failed.message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} {{.status.canary.currentStepAnalysisRunStatus.status}} olarak bitti: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "Arka plan analizi başarısız",
+      "problems.background-analysis-failed.message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} {{.status.canary.currentBackgroundAnalysisRunStatus.status}} olarak bitti: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "Yükseltme öncesi analiz başarısız",
+      "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} {{.status.blueGreen.prePromotionAnalysisRunStatus.status}} olarak bitti: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "Yükseltme sonrası analiz başarısız",
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} olarak bitti: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "zh-CN": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts：rollout 及其步骤、权重、ReplicaSet 和分析运行；以 kubectl argo rollouts 的原样补丁晋级、中止、重试、暂停和恢复，发送前先展示；降级和中止的 rollout 以及失败的分析会列为问题。",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "指标",
+      "actions.promote.title": "晋级",
+      "actions.promote.whyNot": "只有已暂停或正在更新的 rollout 才能晋级；已中止的需要先重试。",
+      "actions.promote-full.title": "完全晋级",
+      "actions.promote-full.whyNot": "rollout 已完全晋级且未暂停，或其更新已被中止。",
+      "actions.abort.title": "中止",
+      "actions.abort.whyNot": "只有正在进行的更新才能中止。",
+      "actions.retry.title": "重试",
+      "actions.retry.whyNot": "只有已中止的 rollout 才能重试。",
+      "actions.pause.title": "暂停",
+      "actions.pause.whyNot": "rollout 已被手动暂停。",
+      "actions.resume.title": "恢复",
+      "actions.resume.whyNot": "rollout 未暂停。",
+      "columns.rollout-ready.title": "就绪",
+      "columns.rollout-weight.title": "权重",
+      "columns.rollout-step.title": "步骤",
+      "columns.rollout-strategy.title": "策略",
+      "columns.rollout-status.title": "状态",
+      "columns.run-message.title": "消息",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "阶段",
+      "columns.experiment-message.title": "消息",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "阶段",
+      "columns.template-metric.title": "指标",
+      "columns.cluster-template-metric.title": "指标",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "rollout 处于 Degraded 状态：{{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "更新已中止：{{.status.message}}",
+      "problems.step-analysis-failed.title": "步骤分析失败",
+      "problems.step-analysis-failed.message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} 以 {{.status.canary.currentStepAnalysisRunStatus.status}} 结束：{{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "后台分析失败",
+      "problems.background-analysis-failed.message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} 以 {{.status.canary.currentBackgroundAnalysisRunStatus.status}} 结束：{{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "晋级前分析失败",
+      "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.prePromotionAnalysisRunStatus.status}} 结束：{{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "晋级后分析失败",
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} 结束：{{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "zh-TW": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts：rollout 及其步驟、權重、ReplicaSet 與分析執行；以 kubectl argo rollouts 的原樣修補升級、中止、重試、暫停與繼續，送出前先顯示；降級與中止的 rollout 以及失敗的分析會列為問題。",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "指標",
+      "actions.promote.title": "升級",
+      "actions.promote.whyNot": "只有已暫停或正在更新的 rollout 才能升級；已中止的需要先重試。",
+      "actions.promote-full.title": "完全升級",
+      "actions.promote-full.whyNot": "rollout 已完全升級且未暫停，或其更新已被中止。",
+      "actions.abort.title": "中止",
+      "actions.abort.whyNot": "只有進行中的更新才能中止。",
+      "actions.retry.title": "重試",
+      "actions.retry.whyNot": "只有已中止的 rollout 才能重試。",
+      "actions.pause.title": "暫停",
+      "actions.pause.whyNot": "rollout 已被手動暫停。",
+      "actions.resume.title": "繼續",
+      "actions.resume.whyNot": "rollout 未暫停。",
+      "columns.rollout-ready.title": "就緒",
+      "columns.rollout-weight.title": "權重",
+      "columns.rollout-step.title": "步驟",
+      "columns.rollout-strategy.title": "策略",
+      "columns.rollout-status.title": "狀態",
+      "columns.run-message.title": "訊息",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "階段",
+      "columns.experiment-message.title": "訊息",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "階段",
+      "columns.template-metric.title": "指標",
+      "columns.cluster-template-metric.title": "指標",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "rollout 處於 Degraded 狀態：{{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "更新已中止：{{.status.message}}",
+      "problems.step-analysis-failed.title": "步驟分析失敗",
+      "problems.step-analysis-failed.message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} 以 {{.status.canary.currentStepAnalysisRunStatus.status}} 結束：{{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "背景分析失敗",
+      "problems.background-analysis-failed.message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} 以 {{.status.canary.currentBackgroundAnalysisRunStatus.status}} 結束：{{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "升級前分析失敗",
+      "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.prePromotionAnalysisRunStatus.status}} 結束：{{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "升級後分析失敗",
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} 結束：{{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "ja": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts: ステップ、重み、ReplicaSet、分析実行を含む Rollout。kubectl argo rollouts と同じパッチを先に表示してから、プロモート、中止、再試行、一時停止、再開を行います。劣化・中止した Rollout と失敗した分析を問題として表示します。",
+      "kinds.0.title": "Rollout",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "AnalysisRun",
+      "kinds.2.title": "AnalysisTemplate",
+      "kinds.3.title": "ClusterAnalysisTemplate",
+      "kinds.4.title": "Experiment",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "メトリクス",
+      "actions.promote.title": "プロモート",
+      "actions.promote.whyNot": "プロモートできるのは、一時停止中または更新途中の Rollout だけです。中止された Rollout は先に再試行します。",
+      "actions.promote-full.title": "完全にプロモート",
+      "actions.promote-full.whyNot": "Rollout はすでに完全にプロモートされていて一時停止していないか、更新が中止されています。",
+      "actions.abort.title": "中止",
+      "actions.abort.whyNot": "中止できるのは進行中の更新だけです。",
+      "actions.retry.title": "再試行",
+      "actions.retry.whyNot": "再試行できるのは中止された Rollout だけです。",
+      "actions.pause.title": "一時停止",
+      "actions.pause.whyNot": "Rollout はすでに手動で一時停止しています。",
+      "actions.resume.title": "再開",
+      "actions.resume.whyNot": "Rollout は一時停止していません。",
+      "columns.rollout-ready.title": "準備完了",
+      "columns.rollout-weight.title": "重み",
+      "columns.rollout-step.title": "ステップ",
+      "columns.rollout-strategy.title": "戦略",
+      "columns.rollout-status.title": "ステータス",
+      "columns.run-message.title": "メッセージ",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "フェーズ",
+      "columns.experiment-message.title": "メッセージ",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "フェーズ",
+      "columns.template-metric.title": "メトリクス",
+      "columns.cluster-template-metric.title": "メトリクス",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "Rollout は Degraded です: {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "更新は中止されました: {{.status.message}}",
+      "problems.step-analysis-failed.title": "ステップ分析が失敗しました",
+      "problems.step-analysis-failed.message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}} は {{.status.canary.currentStepAnalysisRunStatus.status}} で終了しました: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "バックグラウンド分析が失敗しました",
+      "problems.background-analysis-failed.message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}} は {{.status.canary.currentBackgroundAnalysisRunStatus.status}} で終了しました: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "プロモート前の分析が失敗しました",
+      "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}} は {{.status.blueGreen.prePromotionAnalysisRunStatus.status}} で終了しました: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "プロモート後の分析が失敗しました",
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} は {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} で終了しました: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    },
+    "ko": {
+      "name": "Argo Rollouts",
+      "description": "Argo Rollouts: 단계, 가중치, ReplicaSet, 분석 실행이 있는 rollout. kubectl argo rollouts와 똑같은 패치를 먼저 보여 준 뒤 승격, 중단, 다시 시도, 일시 중지, 재개를 수행합니다. 저하되거나 중단된 rollout과 실패한 분석을 문제로 표시합니다.",
+      "kinds.0.title": "Rollouts",
+      "kinds.0.sectionTitle": "Argo Rollouts",
+      "kinds.1.title": "Analysis Runs",
+      "kinds.2.title": "Analysis Templates",
+      "kinds.3.title": "Cluster Analysis Templates",
+      "kinds.4.title": "Experiments",
+      "detailsSections.rollout.title": "Rollout",
+      "detailsSections.analysis-run.title": "AnalysisRun",
+      "detailsSections.experiment.title": "Experiment",
+      "detailsSections.template-metrics.title": "메트릭",
+      "actions.promote.title": "승격",
+      "actions.promote.whyNot": "일시 중지되었거나 업데이트 중인 rollout만 승격할 수 있습니다. 중단된 rollout은 먼저 다시 시도합니다.",
+      "actions.promote-full.title": "완전 승격",
+      "actions.promote-full.whyNot": "rollout이 이미 완전히 승격되었고 일시 중지되지 않았거나, 업데이트가 중단되었습니다.",
+      "actions.abort.title": "중단",
+      "actions.abort.whyNot": "진행 중인 업데이트만 중단할 수 있습니다.",
+      "actions.retry.title": "다시 시도",
+      "actions.retry.whyNot": "중단된 rollout만 다시 시도할 수 있습니다.",
+      "actions.pause.title": "일시 중지",
+      "actions.pause.whyNot": "rollout이 이미 수동으로 일시 중지되었습니다.",
+      "actions.resume.title": "재개",
+      "actions.resume.whyNot": "rollout이 일시 중지되지 않았습니다.",
+      "columns.rollout-ready.title": "준비됨",
+      "columns.rollout-weight.title": "가중치",
+      "columns.rollout-step.title": "단계",
+      "columns.rollout-strategy.title": "전략",
+      "columns.rollout-status.title": "상태",
+      "columns.run-message.title": "메시지",
+      "columns.run-rollout.title": "Rollout",
+      "columns.run-phase.title": "단계 상태",
+      "columns.experiment-message.title": "메시지",
+      "columns.experiment-rollout.title": "Rollout",
+      "columns.experiment-phase.title": "단계 상태",
+      "columns.template-metric.title": "메트릭",
+      "columns.cluster-template-metric.title": "메트릭",
+      "problems.degraded.title": "Degraded",
+      "problems.degraded.message": "rollout이 Degraded 상태입니다: {{.status.message}}",
+      "problems.aborted.title": "Aborted",
+      "problems.aborted.message": "업데이트가 중단되었습니다: {{.status.message}}",
+      "problems.step-analysis-failed.title": "단계 분석 실패",
+      "problems.step-analysis-failed.message": "AnalysisRun {{.status.canary.currentStepAnalysisRunStatus.name}}이(가) {{.status.canary.currentStepAnalysisRunStatus.status}}(으)로 끝났습니다: {{.status.canary.currentStepAnalysisRunStatus.message}}",
+      "problems.background-analysis-failed.title": "백그라운드 분석 실패",
+      "problems.background-analysis-failed.message": "AnalysisRun {{.status.canary.currentBackgroundAnalysisRunStatus.name}}이(가) {{.status.canary.currentBackgroundAnalysisRunStatus.status}}(으)로 끝났습니다: {{.status.canary.currentBackgroundAnalysisRunStatus.message}}",
+      "problems.pre-promotion-analysis-failed.title": "승격 전 분석 실패",
+      "problems.pre-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.prePromotionAnalysisRunStatus.name}}이(가) {{.status.blueGreen.prePromotionAnalysisRunStatus.status}}(으)로 끝났습니다: {{.status.blueGreen.prePromotionAnalysisRunStatus.message}}",
+      "problems.post-promotion-analysis-failed.title": "승격 후 분석 실패",
+      "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}}이(가) {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}(으)로 끝났습니다: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}"
+    }
+  }
+}

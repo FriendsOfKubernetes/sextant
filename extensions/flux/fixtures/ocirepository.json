@@ -1,0 +1,59 @@
+{
+  "apiVersion": "source.toolkit.fluxcd.io/v1",
+  "kind": "OCIRepository",
+  "metadata": {
+    "creationTimestamp": "2026-10-12T17:08:28Z",
+    "finalizers": [
+      "finalizers.fluxcd.io"
+    ],
+    "generation": 1,
+    "name": "podinfo",
+    "namespace": "sextant-flux-fx",
+    "resourceVersion": "143585",
+    "uid": "ad80a553-04a9-4267-bad2-1b9f226ba664"
+  },
+  "spec": {
+    "interval": "1h",
+    "provider": "generic",
+    "ref": {
+      "tag": "latest"
+    },
+    "timeout": "60s",
+    "url": "oci://ghcr.io/stefanprodan/manifests/podinfo"
+  },
+  "status": {
+    "artifact": {
+      "digest": "sha256:1034e35fc4362f6fd7002e5cc3e4253d4e1f2d438c9d0ee1c7bb9cfbe9f44a9d",
+      "lastUpdateTime": "2026-10-12T17:08:31Z",
+      "metadata": {
+        "org.opencontainers.image.created": "2026-08-31T15:40:18Z",
+        "org.opencontainers.image.revision": "6.15.0@sha1:dd507173b7b75b2312a36cabe0de5f09c1ce69c8",
+        "org.opencontainers.image.source": "https://github.com/stefanprodan/podinfo"
+      },
+      "path": "ocirepository/sextant-flux-fx/podinfo/sha256:87815bbd58f5bfd5ad9deabb76dbd0615562cd0df288759c6e50ee54b2860b0c.tar.gz",
+      "revision": "latest@sha256:87815bbd58f5bfd5ad9deabb76dbd0615562cd0df288759c6e50ee54b2860b0c",
+      "size": 1112,
+      "url": "http://source-controller.flux-system.svc.cluster.local./ocirepository/sextant-flux-fx/podinfo/sha256:87815bbd58f5bfd5ad9deabb76dbd0615562cd0df288759c6e50ee54b2860b0c.tar.gz"
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T17:08:31Z",
+        "message": "stored artifact for digest 'latest@sha256:87815bbd58f5bfd5ad9deabb76dbd0615562cd0df288759c6e50ee54b2860b0c'",
+        "observedGeneration": 1,
+        "reason": "Succeeded",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2026-10-12T17:08:31Z",
+        "message": "stored artifact for digest 'latest@sha256:87815bbd58f5bfd5ad9deabb76dbd0615562cd0df288759c6e50ee54b2860b0c'",
+        "observedGeneration": 1,
+        "reason": "Succeeded",
+        "status": "True",
+        "type": "ArtifactInStorage"
+      }
+    ],
+    "observedGeneration": 1,
+    "url": "http://source-controller.flux-system.svc.cluster.local./ocirepository/sextant-flux-fx/podinfo/latest.tar.gz"
+  }
+}

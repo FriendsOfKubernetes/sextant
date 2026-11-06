@@ -1,0 +1,90 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "annotations": {
+      "argocd.argoproj.io/tracking-id": "guestbook:apps/Deployment:sextant-argo/guestbook-ui",
+      "deployment.kubernetes.io/revision": "1",
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{\"argocd.argoproj.io/tracking-id\":\"guestbook:apps/Deployment:sextant-argo/guestbook-ui\"},\"name\":\"guestbook-ui\",\"namespace\":\"sextant-argo\"},\"spec\":{\"replicas\":1,\"revisionHistoryLimit\":3,\"selector\":{\"matchLabels\":{\"app\":\"guestbook-ui\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"guestbook-ui\"}},\"spec\":{\"containers\":[{\"image\":\"gcr.io/google-samples/gb-frontend:v5\",\"name\":\"guestbook-ui\",\"ports\":[{\"containerPort\":80}]}]}}}}\n"
+    },
+    "creationTimestamp": "2026-10-12T16:51:57Z",
+    "generation": 1,
+    "name": "guestbook-ui",
+    "namespace": "sextant-argo",
+    "resourceVersion": "139916",
+    "uid": "73fe1ffb-fc9b-4ffb-aebd-64da31a1940f"
+  },
+  "spec": {
+    "progressDeadlineSeconds": 600,
+    "replicas": 1,
+    "revisionHistoryLimit": 3,
+    "selector": {
+      "matchLabels": {
+        "app": "guestbook-ui"
+      }
+    },
+    "strategy": {
+      "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+      },
+      "type": "RollingUpdate"
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "guestbook-ui"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "image": "gcr.io/google-samples/gb-frontend:v5",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "guestbook-ui",
+            "ports": [
+              {
+                "containerPort": 80,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {},
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File"
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30
+      }
+    }
+  },
+  "status": {
+    "availableReplicas": 1,
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-10-12T16:52:31Z",
+        "lastUpdateTime": "2026-10-12T16:52:31Z",
+        "message": "Deployment has minimum availability.",
+        "reason": "MinimumReplicasAvailable",
+        "status": "True",
+        "type": "Available"
+      },
+      {
+        "lastTransitionTime": "2026-10-12T16:51:57Z",
+        "lastUpdateTime": "2026-10-12T16:52:31Z",
+        "message": "ReplicaSet \"guestbook-ui-6d476cf4df\" has successfully progressed.",
+        "reason": "NewReplicaSetAvailable",
+        "status": "True",
+        "type": "Progressing"
+      }
+    ],
+    "observedGeneration": 1,
+    "readyReplicas": 1,
+    "replicas": 1,
+    "terminatingReplicas": 0,
+    "updatedReplicas": 1
+  }
+}
