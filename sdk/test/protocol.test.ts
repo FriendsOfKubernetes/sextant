@@ -83,7 +83,13 @@ describe("manifest types", () => {
     expectTypeOf<ManifestDetailsSection>().toEqualTypeOf<DetailsSectionContribution>();
     expectTypeOf<Simplify<Omit<ManifestAction, "danger" | "multiple" | "headless"> & { danger: boolean; multiple: boolean; headless: boolean }>>()
       .toEqualTypeOf<ActionContribution>();
-    expectTypeOf<ManifestColumn>().toEqualTypeOf<ColumnContribution>();
+    expectTypeOf<
+      Simplify<
+        Omit<ManifestColumn, "lookup"> & {
+          lookup?: Simplify<Omit<NonNullable<ManifestColumn["lookup"]>, "nearestBefore"> & { nearestBefore: boolean }>;
+        }
+      >
+    >().toEqualTypeOf<ColumnContribution>();
     expectTypeOf<ManifestDockAction>().toEqualTypeOf<DockActionContribution>();
     expectTypeOf<ManifestSettings>().toEqualTypeOf<SettingsContribution>();
     expectTypeOf<keyof ManifestContributions>().toEqualTypeOf<keyof Contributions>();

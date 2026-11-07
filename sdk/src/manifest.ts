@@ -447,7 +447,10 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
         multiple: a.multiple ?? false,
         headless: a.headless ?? false,
       })),
-      columns: c.columns ?? [],
+      columns: (c.columns ?? []).map((col) => {
+        const { lookup, ...rest } = col;
+        return lookup === undefined ? rest : { ...rest, lookup: { ...lookup, nearestBefore: lookup.nearestBefore ?? false } };
+      }),
       dockActions: c.dockActions ?? [],
       problems: (c.problems ?? []).map((p) => {
         const { source, ...rule } = p;
