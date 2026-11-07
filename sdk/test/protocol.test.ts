@@ -81,7 +81,7 @@ describe("manifest types", () => {
       .toEqualTypeOf<AccessRule>();
     expectTypeOf<ManifestPage>().toEqualTypeOf<PageContribution>();
     expectTypeOf<ManifestDetailsSection>().toEqualTypeOf<DetailsSectionContribution>();
-    expectTypeOf<Simplify<Omit<ManifestAction, "danger" | "multiple"> & { danger: boolean; multiple: boolean }>>()
+    expectTypeOf<Simplify<Omit<ManifestAction, "danger" | "multiple" | "headless"> & { danger: boolean; multiple: boolean; headless: boolean }>>()
       .toEqualTypeOf<ActionContribution>();
     expectTypeOf<ManifestColumn>().toEqualTypeOf<ColumnContribution>();
     expectTypeOf<ManifestDockAction>().toEqualTypeOf<DockActionContribution>();

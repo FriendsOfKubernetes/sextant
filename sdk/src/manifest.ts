@@ -433,7 +433,12 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
     contributes: {
       pages: c.pages ?? [],
       detailsSections: c.detailsSections ?? [],
-      actions: (c.actions ?? []).map((a) => ({ ...a, danger: a.danger ?? false, multiple: a.multiple ?? false })),
+      actions: (c.actions ?? []).map((a) => ({
+        ...a,
+        danger: a.danger ?? false,
+        multiple: a.multiple ?? false,
+        headless: a.headless ?? false,
+      })),
       columns: c.columns ?? [],
       dockActions: c.dockActions ?? [],
       problems: (c.problems ?? []).map((p) => {
