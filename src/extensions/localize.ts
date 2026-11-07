@@ -44,7 +44,13 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
         ...col,
         title: text(`columns.${col.id}.title`, col.title),
         ...(col.cases !== undefined
-          ? { cases: col.cases.map((cs, i) => ({ ...cs, text: text(`columns.${col.id}.cases.${i}.text`, cs.text) })) }
+          ? {
+              cases: col.cases.map((cs, i) => ({
+                ...cs,
+                text: text(`columns.${col.id}.cases.${i}.text`, cs.text),
+                ...(cs.tooltip !== undefined ? { tooltip: text(`columns.${col.id}.cases.${i}.tooltip`, cs.tooltip) } : {}),
+              })),
+            }
           : {}),
       })),
       menuItems: c.menuItems.map((m) => ({ ...m, title: text(`menuItems.${m.id}.title`, m.title) })),

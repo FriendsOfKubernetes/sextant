@@ -183,6 +183,7 @@ export const MANIFEST_SHAPES = {
     patch: "optional",
     ask: "optional",
     done: "optional",
+    headless: "optional",
   }),
   ManifestColumn: described<ManifestColumn>(`${CONTRIBUTION}/columns/items`, {
     kind: "required",

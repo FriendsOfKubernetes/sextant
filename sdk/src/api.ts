@@ -216,6 +216,12 @@ export interface ServiceAnswer<T = JsonValue> {
   notSent?: boolean;
 }
 
+/**
+ * Whether a service's sign-in is saved in the keyring for this cluster (`saved`), typed for this run only (`session`)
+ * or neither (`none`): `service.signInState`, since Sextant 0.30.
+ */
+export type SignInState = "saved" | "session" | "none";
+
 /** A Secret a service may receive by its labels (`service.secrets`): its name and the key. */
 export interface ServiceSecretRef {
   name: string;
@@ -292,6 +298,7 @@ export interface Methods {
   "service.request": { params: ServiceRequestParams & { clusterId: ClusterId }; result: ServiceAnswer };
   "service.forget": { params: { clusterId: ClusterId; namespace: string; service: string }; result: null };
   "service.secrets": { params: { clusterId: ClusterId; namespace: string; service: string }; result: { secrets: ServiceSecretRef[] } };
+  "service.signInState": { params: { clusterId: ClusterId; namespace: string; service: string }; result: { state: SignInState } };
 }
 
 /** Options of one call. */

@@ -39,6 +39,7 @@ import {
 } from "../features/clusters/settingsRegistry";
 import { ExtensionClusterSettingsFrame, ExtensionFrame } from "./ExtensionFrame";
 import { evaluate, kindKeyOf } from "./problemRules";
+import { endHeadlessActionsOf, startHeadlessAction } from "./headless";
 import { runPatchAction } from "./patchAction";
 import { matchesSelector } from "./selector";
 import { contributionKey, VIEW } from "./protocol";
@@ -108,6 +109,7 @@ function removeRegistration(extensionId: string): void {
   const windows = openWindows.get(extensionId);
   openWindows.delete(extensionId);
   for (const close of windows ?? []) close();
+  endHeadlessActionsOf(extensionId);
 }
 
 /** An open page, dock tab of a contribution that is gone. */
@@ -236,10 +238,20 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
             ? undefined
             : (obj, kind) => (matches(action.kinds, kind) && !holdsNow(when, obj) ? action.whyNot : undefined),
         // A fixed patch is sent by Sextant without the extension's window (#367).
+        // An action without a window runs its frame out of sight (#379).
         run: (ctx) =>
           action.patch !== undefined
             ? runPatchAction(extensionId, action, ctx)
-            : openActionWindow(extensionId, action.id, action.title, ctx),
+            : action.headless === true
+              ? startHeadlessAction({
+                  extensionId,
+                  extension: info.name,
+                  contribution: action.id,
+                  title: action.title,
+                  clusterId: ctx.clusterId,
+                  refs: ctx.refs,
+                })
+              : openActionWindow(extensionId, action.id, action.title, ctx),
       }),
     );
     for (const kind of action.kinds) removers.push(extendActions(kind, [id]));

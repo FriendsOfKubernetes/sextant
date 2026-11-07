@@ -26,7 +26,9 @@
     "action": {
       "failed": "{{action}}: {{message}}",
       "stoppedAt": "{{action}}이(가) {{kind}} {{name}}에서 중지됨: {{message}}",
-      "objects": "개체"
+      "objects": "개체",
+      "timedOut": "{{action}}이(가) 2분 안에 끝나지 않아 중지되었습니다.",
+      "notLoaded": "{{action}}을(를) 시작할 수 없습니다."
     }
   },
   "install": {

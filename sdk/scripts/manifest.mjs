@@ -502,6 +502,11 @@ const PROBLEMS_API = 2;
 const MAX_KINDS = 10;
 const MAX_CONDITIONS = 20;
 const MAX_DEPTH = 3;
+/** From sextantApi 4 (#381): an older Sextant reads only older manifests, so the limits grow with the version. */
+const MAX_CONDITIONS_4 = 30;
+const MAX_DEPTH_4 = 4;
+/** `condition_limits`: the limits of a rule's conditions for a manifest of `api`. */
+const conditionLimits = (api) => (api >= 4 ? [MAX_CONDITIONS_4, MAX_DEPTH_4] : [MAX_CONDITIONS, MAX_DEPTH]);
 const MAX_PLACEHOLDERS = 5;
 const MAX_FIELD_PATH_CHARS = 256;
 
@@ -618,7 +623,8 @@ function checkRulePath(text, kind, segments, metadataOnly) {
 
 function checkCondition(condition, kind, segments, depth, counter, inside = "top") {
   counter.count += 1;
-  if (counter.count > MAX_CONDITIONS) fail(segments, `a rule has at most ${MAX_CONDITIONS} conditions`);
+  const [maxConditions, maxDepth] = conditionLimits(counter.api);
+  if (counter.count > maxConditions) fail(segments, `a rule has at most ${maxConditions} conditions`);
   if (condition.type === "condition") {
     if (counter.metadataOnly) {
       fail([...segments, "type"], "`condition` reads `.status.conditions`, which a `metadataOnly` source does not watch");
@@ -626,14 +632,14 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     return;
   }
   if (condition.type === "all" || condition.type === "any") {
-    if (depth >= MAX_DEPTH) fail(segments, `\`all\` and \`any\` nest at most ${MAX_DEPTH} deep`);
+    if (depth >= maxDepth) fail(segments, `\`all\` and \`any\` nest at most ${maxDepth} deep`);
     const innerInside = inside === "top" && condition.type === "any" ? "any" : inside;
     condition.of.forEach((inner, i) => checkCondition(inner, kind, [...segments, "of", i], depth + 1, counter, innerInside));
     return;
   }
   if (condition.type === "not") {
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`not\` needs sextantApi ${SOURCES_API} or later`);
-    if (depth >= MAX_DEPTH) fail(segments, `\`all\`, \`any\` and \`not\` nest at most ${MAX_DEPTH} deep`);
+    if (depth >= maxDepth) fail(segments, `\`all\`, \`any\` and \`not\` nest at most ${maxDepth} deep`);
     checkCondition(condition.of, kind, [...segments, "of"], depth + 1, counter, "not");
     return;
   }
@@ -992,7 +998,7 @@ export function translatableTexts(manifest) {
     out.set(`actions.${action.id}.title`, title);
     if (action.whyNot !== undefined) out.set(`actions.${action.id}.whyNot`, { max: 200 });
     if (action.ask !== undefined) {
-      out.set(`actions.${action.id}.ask.title`, title);
+      out.set(`actions.${action.id}.ask.title`, { max: 80, message: action.ask.title });
       out.set(`actions.${action.id}.ask.text`, { max: 300, message: action.ask.text });
       out.set(`actions.${action.id}.ask.confirm`, { max: 40, message: action.ask.confirm });
     }
@@ -1000,7 +1006,10 @@ export function translatableTexts(manifest) {
   }
   for (const column of c.columns ?? []) {
     out.set(`columns.${column.id}.title`, title);
-    (column.cases ?? []).forEach((c, i) => out.set(`columns.${column.id}.cases.${i}.text`, { max: 200, message: c.text }));
+    (column.cases ?? []).forEach((c, i) => {
+      out.set(`columns.${column.id}.cases.${i}.text`, { max: 200, message: c.text });
+      if (c.tooltip !== undefined) out.set(`columns.${column.id}.cases.${i}.tooltip`, { max: 300, message: c.tooltip });
+    });
   }
   for (const section of c.sections ?? []) if (section.title !== undefined) out.set(`sections.${section.section}.title`, title);
   if (c.clusterSettings !== undefined) out.set("clusterSettings.title", title);
@@ -1292,7 +1301,7 @@ function checkActions(manifest) {
   const list = ["contributes", "actions"];
   (manifest.contributes?.actions ?? []).forEach((action, i) => {
     const here = [...list, i];
-    for (const field of ["when", "whyNot", "placement", "patch", "ask", "done"]) {
+    for (const field of ["headless", "when", "whyNot", "placement", "patch", "ask", "done"]) {
       if (action[field] !== undefined && manifest.sextantApi < WINDOW_API) fail([...here, field], `needs sextantApi ${WINDOW_API} or later`);
     }
     if (action.whyNot !== undefined && action.when === undefined) fail([...here, "whyNot"], "explains `when`: the action needs a `when`");
@@ -1300,8 +1309,30 @@ function checkActions(manifest) {
     for (const field of ["ask", "done"]) {
       if (action[field] !== undefined && action.patch === undefined) fail([...here, field], "goes with `patch`: the action needs a `patch`");
     }
-    if (action.patch !== undefined) checkActionPatch(action.patch, [...here, "patch"]);
+    if (action.patch !== undefined) {
+      if (action.headless === true) fail([...here, "headless"], "a `patch` is sent by Sextant without any frame: leave `headless` out");
+      checkActionPatch(action.patch, [...here, "patch"]);
+    }
+    if (action.ask !== undefined) {
+      for (const field of ["title", "text", "confirm"]) checkAskText(action.ask[field], action.multiple === true, [...here, "ask", field]);
+    }
   });
+}
+
+/** `ASK_PLACEHOLDERS`: what Sextant fills in an action's question (#378). */
+const ASK_PLACEHOLDERS = ["count", "kind", "namespace", "name"];
+
+/** `check_ask_text`: `{{count}}`, and `{{kind}}`, `{{namespace}}`, `{{name}}` only on an action of one object. */
+function checkAskText(text, multiple, segments) {
+  const found = placeholders(text);
+  if (found === null) fail(segments, "has a `{{` without its `}}`");
+  for (const raw of found) {
+    const name = raw.trim();
+    if (!ASK_PLACEHOLDERS.includes(name)) {
+      fail(segments, `\`{{${name}}}\`: Sextant fills only \`{{count}}\`, \`{{kind}}\`, \`{{namespace}}\` and \`{{name}}\``);
+    }
+    if (multiple && name !== "count") fail(segments, `\`{{${name}}}\` names one object: the action runs on several (\`multiple\`)`);
+  }
 }
 
 /** An action's `patch`, serialized, at most (`MAX_ACTION_PATCH_BYTES`, #367). */
@@ -1366,6 +1397,7 @@ function checkColumns(manifest) {
       checkObjectCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi);
       // Field values in the text, as a problem message has them (#368).
       checkMessage(c.text, column.kind, [...here, "cases", j, "text"], false);
+      if (c.tooltip !== undefined) checkMessage(c.tooltip, column.kind, [...here, "cases", j, "tooltip"], false);
     });
   });
 }

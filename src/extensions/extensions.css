@@ -128,3 +128,15 @@
   overflow: auto;
   overflow-wrap: anywhere;
 }
+
+/* Frames of actions that run without a window (#379): loaded and running, out of sight and out of reach. */
+.ext-headless {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}

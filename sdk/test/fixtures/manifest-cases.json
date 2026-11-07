@@ -850,6 +850,266 @@
           }
         }
       }
+    },
+    {
+      "name": "conditions four deep and up to 30 of them (sextantApi 4)",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 4,
+        "/contributes/problems": [
+          {
+            "id": "a",
+            "title": "A",
+            "kind": {
+              "group": "example.dev",
+              "kind": "Widget"
+            },
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "all",
+                      "of": [
+                        {
+                          "type": "exists",
+                          "path": ".a"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "message": "x"
+          },
+          {
+            "id": "b",
+            "title": "B",
+            "kind": {
+              "group": "example.dev",
+              "kind": "Widget"
+            },
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".a0"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a1"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a2"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a3"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a4"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a5"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a6"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a7"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a8"
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".a9"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a10"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a11"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a12"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a13"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a14"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a15"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a16"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a17"
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".a18"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a19"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a20"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a21"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a22"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a23"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a24"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".a25"
+                    }
+                  ]
+                }
+              ]
+            },
+            "message": "x"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a question naming its object, a headless action and a case tooltip (sextantApi 4)",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 4,
+        "/contributes/actions": [
+          {
+            "id": "suspend",
+            "title": "Suspend",
+            "kinds": [
+              {
+                "group": "kustomize.toolkit.fluxcd.io",
+                "kind": "Kustomization"
+              }
+            ],
+            "patch": {
+              "spec": {
+                "suspend": true
+              }
+            },
+            "ask": {
+              "title": "Suspend {{kind}} {{name}}?",
+              "text": "{{kind}} {{namespace}}/{{name}} stops.",
+              "confirm": "Suspend"
+            }
+          },
+          {
+            "id": "resume-all",
+            "title": "Resume",
+            "kinds": [
+              {
+                "group": "kustomize.toolkit.fluxcd.io",
+                "kind": "Kustomization"
+              }
+            ],
+            "multiple": true,
+            "patch": {
+              "spec": {
+                "suspend": false
+              }
+            },
+            "ask": {
+              "title": "Resume {{count}} objects?",
+              "text": "They reconcile again.",
+              "confirm": "Resume"
+            }
+          },
+          {
+            "id": "with-source",
+            "title": "Reconcile with source",
+            "kinds": [
+              {
+                "group": "kustomize.toolkit.fluxcd.io",
+                "kind": "Kustomization"
+              }
+            ],
+            "headless": true
+          }
+        ],
+        "/contributes/columns": [
+          {
+            "kind": {
+              "group": "kustomize.toolkit.fluxcd.io",
+              "kind": "Kustomization"
+            },
+            "id": "ready",
+            "title": "Ready",
+            "paths": [
+              ".status.phase"
+            ],
+            "cases": [
+              {
+                "when": {
+                  "type": "exists",
+                  "path": ".status.waiting"
+                },
+                "text": "Waiting",
+                "tooltip": "Waiting for {{.status.waiting}}"
+              }
+            ]
+          }
+        ],
+        "/translations": {
+          "de": {
+            "actions.suspend.ask.title": "{{kind}} {{name}} anhalten?",
+            "columns.ready.cases.0.tooltip": "Wartet auf {{.status.waiting}}"
+          }
+        }
+      }
     }
   ],
   "invalid": [
@@ -3597,7 +3857,7 @@
     {"name": "a command with a timeout over a minute", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/commands": [{"id": "osd-out", "title": "Mark an OSD out", "target": {"labelSelector": "app=rook-ceph-tools", "container": "rook-ceph-tools"}, "argv": ["ceph", "osd", "out", "{{osd}}"], "params": [{"name": "osd", "type": "int", "min": 0, "max": 9999}], "changes": true, "timeoutSeconds": 61}]}, "path": "contributes.commands[0].timeoutSeconds", "message": "at most 60"},
     {"name": "not under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "when": {"type": "not", "of": {"type": "exists", "path": ".a"}}, "message": "x"}]}, "path": "contributes.problems[0].when.type", "message": "needs sextantApi 4"},
     {"name": "missing inside not", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "when": {"type": "not", "of": {"type": "missing", "path": ".spec.ref", "kind": {"group": "example.dev", "kind": "Gadget"}}}, "message": "x"}]}, "path": "contributes.problems[0].when.of.type", "message": "cannot be inside `not`"},
-    {"name": "not nested past three levels", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "when": {"type": "all", "of": [{"type": "any", "of": [{"type": "not", "of": {"type": "exists", "path": ".a"}}]}]}, "message": "x"}]}, "path": "contributes.problems[0].when.of[0].of[0]", "message": "nest at most 3 deep"},
+    {"name": "not nested past four levels (sextantApi 4)", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "when": {"type": "all", "of": [{"type": "any", "of": [{"type": "all", "of": [{"type": "not", "of": {"type": "exists", "path": ".a"}}]}]}]}, "message": "x"}]}, "path": "contributes.problems[0].when.of[0].of[0].of[0]", "message": "nest at most 4 deep"},
     {"name": "a rule source under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "source": {"metadataOnly": true}, "when": {"type": "exists", "path": ".metadata.name"}, "message": "x"}]}, "path": "contributes.problems[0].source", "message": "needs sextantApi 4"},
     {"name": "an empty rule source", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "source": {}, "when": {"type": "exists", "path": ".a"}, "message": "x"}]}, "path": "contributes.problems[0].source", "message": "names a `labelSelector`"},
     {"name": "a rule source with metadataOnly false only", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "source": {"metadataOnly": false}, "when": {"type": "exists", "path": ".a"}, "message": "x"}]}, "path": "contributes.problems[0].source", "message": "names a `labelSelector`"},
@@ -3688,6 +3948,15 @@
     {"name": "a case text reading a Secret's values", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "", "kind": "Secret"}, "id": "a", "title": "A", "paths": [".metadata.name"], "cases": [{"when": {"type": "exists", "path": ".metadata.name"}, "text": "{{.data.password}}"}]}]}, "path": "contributes.columns[0].cases[0].text", "message": "reads secret values"},
     {"name": "a case text with an unclosed placeholder", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}, "id": "a", "title": "A", "paths": [".x"], "cases": [{"when": {"type": "exists", "path": ".y"}, "text": "{{.spec.x"}]}]}, "path": "contributes.columns[0].cases[0].text", "message": "without its `}}`"},
     {"name": "a translated case text with other placeholders", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}, "id": "a", "title": "A", "paths": [".x"], "cases": [{"when": {"type": "exists", "path": ".y"}, "text": "{{.spec.x}}"}]}], "/translations": {"de": {"columns.a.cases.0.text": "{{.spec.y}}"}}}, "path": "translations.de.columns.a.cases.0.text", "message": "must have the same"},
-    {"name": "a translated question adding a placeholder", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"spec": {"suspend": true}}, "ask": {"title": "Sure?", "text": "It stops.", "confirm": "Go"}}], "/translations": {"de": {"actions.reconcile.ask.text": "{{.metadata.name}} hält an."}}}, "path": "translations.de.actions.reconcile.ask.text", "message": "must have the same"}
+    {"name": "a translated question adding a placeholder", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"spec": {"suspend": true}}, "ask": {"title": "Sure?", "text": "It stops.", "confirm": "Go"}}], "/translations": {"de": {"actions.reconcile.ask.text": "{{.metadata.name}} hält an."}}}, "path": "translations.de.actions.reconcile.ask.text", "message": "must have the same"},
+    {"name": "all and any nested four deep under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "when": {"type": "all", "of": [{"type": "any", "of": [{"type": "all", "of": [{"type": "any", "of": [{"type": "exists", "path": ".a"}]}]}]}]}, "message": "x"}]}, "path": "contributes.problems[0].when.of[0].of[0]", "message": "nest at most 3 deep"},
+    {"name": "a rule with 31 conditions (sextantApi 4)", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "when": {"type": "all", "of": [{"type": "all", "of": [{"type": "exists", "path": ".a0"}, {"type": "exists", "path": ".a1"}, {"type": "exists", "path": ".a2"}, {"type": "exists", "path": ".a3"}, {"type": "exists", "path": ".a4"}, {"type": "exists", "path": ".a5"}, {"type": "exists", "path": ".a6"}, {"type": "exists", "path": ".a7"}, {"type": "exists", "path": ".a8"}]}, {"type": "all", "of": [{"type": "exists", "path": ".a9"}, {"type": "exists", "path": ".a10"}, {"type": "exists", "path": ".a11"}, {"type": "exists", "path": ".a12"}, {"type": "exists", "path": ".a13"}, {"type": "exists", "path": ".a14"}, {"type": "exists", "path": ".a15"}, {"type": "exists", "path": ".a16"}, {"type": "exists", "path": ".a17"}]}, {"type": "all", "of": [{"type": "exists", "path": ".a18"}, {"type": "exists", "path": ".a19"}, {"type": "exists", "path": ".a20"}, {"type": "exists", "path": ".a21"}, {"type": "exists", "path": ".a22"}, {"type": "exists", "path": ".a23"}, {"type": "exists", "path": ".a24"}, {"type": "exists", "path": ".a25"}, {"type": "exists", "path": ".a26"}]}]}, "message": "x"}]}, "path": "contributes.problems[0].when.of[2].of[8]", "message": "at most 30 conditions"},
+    {"name": "a question with a placeholder Sextant does not fill", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "suspend", "title": "Suspend", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"spec": {"suspend": true}}, "ask": {"title": "Suspend {{.metadata.name}}?", "text": "x", "confirm": "Go"}}]}, "path": "contributes.actions[0].ask.title", "message": "Sextant fills only"},
+    {"name": "a question naming one object on an action of several", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "suspend", "title": "Suspend", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "multiple": true, "patch": {"spec": {"suspend": true}}, "ask": {"title": "Suspend?", "text": "{{name}} stops.", "confirm": "Go"}}]}, "path": "contributes.actions[0].ask.text", "message": "names one object"},
+    {"name": "a headless action under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/actions": [{"id": "suspend", "title": "Suspend", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "headless": true}]}, "path": "contributes.actions[0].headless", "message": "needs sextantApi 4"},
+    {"name": "a headless action with a patch", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "suspend", "title": "Suspend", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "headless": true, "patch": {"spec": {"suspend": true}}}]}, "path": "contributes.actions[0].headless", "message": "leave `headless` out"},
+    {"name": "a case tooltip reading a Secret's values", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "", "kind": "Secret"}, "id": "a", "title": "A", "paths": [".metadata.name"], "cases": [{"when": {"type": "exists", "path": ".metadata.name"}, "text": "x", "tooltip": "{{.data.password}}"}]}]}, "path": "contributes.columns[0].cases[0].tooltip", "message": "reads secret values"},
+    {"name": "a translated case tooltip with other placeholders", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}, "id": "a", "title": "A", "paths": [".x"], "cases": [{"when": {"type": "exists", "path": ".y"}, "text": "Y", "tooltip": "{{.spec.x}}"}]}], "/translations": {"de": {"columns.a.cases.0.tooltip": "{{.spec.y}}"}}}, "path": "translations.de.columns.a.cases.0.tooltip", "message": "must have the same"},
+    {"name": "a translated question dropping its placeholder", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "suspend", "title": "Suspend", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"spec": {"suspend": true}}, "ask": {"title": "Suspend {{name}}?", "text": "x", "confirm": "Go"}}], "/translations": {"de": {"actions.suspend.ask.title": "Anhalten?"}}}, "path": "translations.de.actions.suspend.ask.title", "message": "must have the same"}
   ]
 }

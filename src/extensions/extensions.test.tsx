@@ -56,6 +56,7 @@ const manifest: ExtensionManifest = {
         kinds: [{ group: "demo.sextant.dev", kind: "Widget" }],
         danger: false,
         multiple: false,
+        headless: false,
       },
     ],
     columns: [{ kind: { group: "demo.sextant.dev", kind: "Widget" }, id: "size", title: "Size", jsonPath: ".spec.size", after: "name" }],
@@ -493,7 +494,13 @@ describe("contributions of an extension", () => {
                 paths: [".status.ready"],
                 tones: { True: "ok", False: "error" },
                 tooltipPaths: [".status.message"],
-                cases: [{ when: { type: "equals", path: ".spec.suspend", value: true }, text: "Suspended" }],
+                cases: [
+                  {
+                    when: { type: "equals", path: ".spec.suspend", value: true },
+                    text: "Suspended",
+                    tooltip: "Suspended by {{.spec.suspendedBy}}",
+                  },
+                ],
               },
               { kind, id: "took", title: "Took", paths: [".status.startedAt"], format: "duration", endPaths: [".status.finishedAt"] },
               { kind, id: "step", title: "Step", paths: [".status.step"], format: "ratio", totalPaths: [".spec.steps"] },
@@ -525,7 +532,12 @@ describe("contributions of an extension", () => {
     cell.unmount();
     const suspended = render(<>{col("ready").render!(obj({ suspend: true }, { ready: "True" }), ctx)}</>);
     expect(suspended.container.textContent).toBe("Suspended");
+    // Without the tooltip's value, the column's own tooltip (#380); with it, the case's.
+    expect(suspended.container.querySelector("[title]")).toBeNull();
     suspended.unmount();
+    const by = render(<>{col("ready").render!(obj({ suspend: true, suspendedBy: "ops" }, { ready: "True", message: "m" }), ctx)}</>);
+    expect(by.container.querySelector("[title]")?.getAttribute("title")).toBe("Suspended by ops");
+    by.unmount();
     expect(col("step").value(one)).toBe(0.5);
     expect(col("step").searchText!(one, { now: ctx.now, t: i18n.t })).toBe("2/4");
     const run = obj({}, { startedAt: "2026-11-06T11:00:00Z", finishedAt: "2026-11-06T11:30:00Z" });
@@ -558,6 +570,7 @@ describe("contributions of an extension", () => {
                 kinds: [own, { group: "demo.sextant.dev", kind: "Gadget" }],
                 danger: false,
                 multiple: true,
+                headless: false,
                 when: { type: "equals", path: ".spec.suspend", value: true },
                 whyNot: "It is not suspended.",
                 placement: "primary",
@@ -598,6 +611,7 @@ describe("contributions of an extension", () => {
                 kinds: [own],
                 danger: false,
                 multiple: true,
+                headless: false,
                 patch: { metadata: { annotations: { "demo/requestedAt": "{{now}}" } } },
                 done: "Poked",
               },
@@ -607,8 +621,9 @@ describe("contributions of an extension", () => {
                 kinds: [own],
                 danger: true,
                 multiple: false,
+                headless: false,
                 patch: { spec: { stopped: true } },
-                ask: { title: "Stop the widget?", text: "It stops until resumed.", confirm: "Stop it" },
+                ask: { title: "Stop {{kind}} {{name}}?", text: "It stops until resumed.", confirm: "Stop it" },
               },
             ],
           },
@@ -636,7 +651,8 @@ describe("contributions of an extension", () => {
     // With a question: nothing goes before "Stop it".
     const [stop] = getActionsFor([widget], WIDGET, ["ext:demo.widgets:stop"]);
     await act(() => runAction(stop!, "c1", WIDGET, [widget]));
-    const dialog = screen.getByRole("dialog", { name: "Stop the widget?" });
+    // Sextant fills the object's kind and name into its question (#378).
+    const dialog = screen.getByRole("dialog", { name: "Stop Widget w1?" });
     expect(within(dialog).getByText("It stops until resumed.")).toBeInTheDocument();
     expect(within(dialog).getByRole("list", { name: "Objects" })).toHaveTextContent("Widget team-a/w1");
     expect(backend.calls.filter((c) => c.cmd === "extension_call")).toHaveLength(1);
@@ -644,6 +660,52 @@ describe("contributions of an extension", () => {
     await waitFor(() => expect(backend.calls.filter((c) => c.cmd === "extension_call")).toHaveLength(2));
     const second = backend.calls.filter((c) => c.cmd === "extension_call")[1]!.args as { params: { items: { patch: unknown }[] } };
     expect(second.params.items[0]!.patch).toEqual({ spec: { stopped: true } });
+  });
+
+  it("run an action without a window: its frame out of sight until it closes, its failure told as a notice (#379)", async () => {
+    await renderShell();
+    registerExtension(
+      info({
+        manifest: {
+          ...manifest,
+          sextantApi: 4,
+          contributes: {
+            ...manifest.contributes,
+            actions: [{ id: "sync", title: "Sync now", kinds: [{ group: "demo.sextant.dev", kind: "Widget" }], danger: false, multiple: false, headless: true }],
+          },
+        },
+      }),
+    );
+    const [sync] = getActionsFor([widget], WIDGET, ["ext:demo.widgets:sync"]);
+    await act(() => runAction(sync!, "c1", WIDGET, [widget]));
+    // No window: the frame is loaded out of sight, with the action's context.
+    expect(screen.queryByRole("dialog", { name: "Sync now" })).toBeNull();
+    const frame = document.querySelector<HTMLIFrameElement>(".ext-headless iframe")!;
+    expect(frame.getAttribute("src")).toBe("sextant-ext://demo.widgets/index.html?view=action&id=sync");
+    const posted: unknown[] = [];
+    vi.spyOn(frame.contentWindow!, "postMessage").mockImplementation((m: unknown) => void posted.push(m));
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", { data: { sextant: 1, doc: DOC, type: "ready" }, source: frame.contentWindow }));
+    });
+    expect(posted.at(-1)).toMatchObject({ context: { view: "action", selection: [widgetRef] } });
+    // `ui.close` ends it.
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", { data: { sextant: 1, doc: DOC, id: 1, method: "ui.close" }, source: frame.contentWindow }),
+      );
+    });
+    expect(document.querySelector(".ext-headless iframe")).toBeNull();
+
+    // A frame that reports an error is ended and told as the extension's notice.
+    await act(() => runAction(sync!, "c1", WIDGET, [widget]));
+    const second = document.querySelector<HTMLIFrameElement>(".ext-headless iframe")!;
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", { data: { sextant: 1, doc: DOC, type: "error", message: "no source" }, source: second.contentWindow }),
+      );
+    });
+    expect(document.querySelector(".ext-headless iframe")).toBeNull();
+    expect(screen.getByText("Widgets: Sync now: no source")).toBeInTheDocument();
   });
 
   it("list kinds in a section of its own with Sextant's table, titled and filtered by its rules (ADR-0152)", async () => {

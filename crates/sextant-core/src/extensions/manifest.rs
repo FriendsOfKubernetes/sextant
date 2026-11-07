@@ -300,6 +300,9 @@ pub struct ActionContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub done: Option<String>,
+    /// The action's frame runs out of sight, with no window (#379); `sextantApi` 4.
+    #[serde(default)]
+    pub headless: bool,
 }
 
 /// The question Sextant asks before an action's `patch` (#367): a title, a sentence and the button's label.
@@ -406,6 +409,10 @@ pub struct ColumnCase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub tone: Option<ColumnTone>,
+    /// Shown on hover while the case holds, in place of `tooltipPaths` (#380): text with the text's placeholders.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub tooltip: Option<String>,
 }
 
 fn yes() -> bool {
@@ -996,6 +1003,7 @@ mod tests {
                 patch: None,
                 ask: None,
                 done: None,
+                headless: false,
             }
         );
         assert!(c.actions[1].danger && c.actions[1].multiple);

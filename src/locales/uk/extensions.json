@@ -29,7 +29,9 @@
     "action": {
       "failed": "{{action}}: {{message}}",
       "stoppedAt": "{{action}}: зупинено на {{kind}} {{name}}: {{message}}",
-      "objects": "Об’єкти"
+      "objects": "Об’єкти",
+      "timedOut": "{{action}}: не завершилося за 2 хвилини й зупинено.",
+      "notLoaded": "{{action}}: не вдалося запустити."
     }
   },
   "install": {

@@ -36,6 +36,7 @@ import type {
   ServiceAnswer,
   ServiceRequestParams,
   ServiceSecretRef,
+  SignInState,
   RefInput,
   ResourceKind,
   SecretParams,
@@ -154,6 +155,8 @@ export interface Sextant {
      * `{{secret:<name>/<key>}}` or `auth: "secret:<name>/<key>"` (since Sextant 0.30).
      */
     secrets(params: { clusterId?: ClusterId; namespace: string; service: string }, options?: CallOptions): Promise<ServiceSecretRef[]>;
+    /** Whether the service's sign-in is saved for this cluster, typed for this run only, or none; never a value (since Sextant 0.30). */
+    signInState(params: { clusterId?: ClusterId; namespace: string; service: string }, options?: CallOptions): Promise<SignInState>;
   };
   portForward: {
     start(params: ForwardStartParams, options?: CallOptions): Promise<ForwardResult>;
@@ -588,6 +591,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       request: (params, o) => onCluster("service.request", params, o),
       forget: (params, o) => onCluster<unknown>("service.forget", params, o).then(() => undefined),
       secrets: (params, o) => onCluster<{ secrets: ServiceSecretRef[] }>("service.secrets", params, o).then((r) => r.secrets),
+      signInState: (params, o) => onCluster<{ state: SignInState }>("service.signInState", params, o).then((r) => r.state),
     },
     portForward: {
       start: (params, o) => onCluster("portForward.start", params, o),

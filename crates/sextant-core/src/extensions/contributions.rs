@@ -54,14 +54,30 @@ pub(crate) fn check_actions(manifest: &ExtensionManifest) -> Result<(), Manifest
             }
         }
         if let Some(patch) = &action.patch {
+            if action.headless {
+                return Err(at(
+                    &here.key("headless"),
+                    "a `patch` is sent by Sextant without any frame: leave `headless` out",
+                ));
+            }
             check_action_patch(patch, &here.key("patch"))?;
+        }
+        if let Some(ask) = &action.ask {
+            for (field, text) in [
+                ("title", &ask.title),
+                ("text", &ask.text),
+                ("confirm", &ask.confirm),
+            ] {
+                check_ask_text(text, action.multiple, &here.key("ask").key(field))?;
+            }
         }
     }
     Ok(())
 }
 
-fn fields_of_action(action: &ActionContribution) -> [(&'static str, bool); 6] {
+fn fields_of_action(action: &ActionContribution) -> [(&'static str, bool); 7] {
     [
+        ("headless", action.headless),
         ("when", action.when.is_some()),
         ("whyNot", action.why_not.is_some()),
         ("placement", action.placement.is_some()),
@@ -69,6 +85,35 @@ fn fields_of_action(action: &ActionContribution) -> [(&'static str, bool); 6] {
         ("ask", action.ask.is_some()),
         ("done", action.done.is_some()),
     ]
+}
+
+/// The placeholders Sextant fills in an action's question (#378): `{{count}}`, and the object's `{{kind}}`,
+/// `{{namespace}}` and `{{name}}` on an action of one object.
+pub const ASK_PLACEHOLDERS: [&str; 4] = ["count", "kind", "namespace", "name"];
+
+fn check_ask_text(text: &str, multiple: bool, path: &JsonPath) -> Result<(), ManifestError> {
+    let found = super::problems::placeholders(text)
+        .ok_or_else(|| at(path, "has a `{{` without its `}}`"))?;
+    for name in found {
+        let name = name.trim();
+        if !ASK_PLACEHOLDERS.contains(&name) {
+            return Err(at(
+                path,
+                format!(
+                    "`{{{{{name}}}}}`: Sextant fills only `{{{{count}}}}`, `{{{{kind}}}}`, `{{{{namespace}}}}` and `{{{{name}}}}`"
+                ),
+            ));
+        }
+        if multiple && name != "count" {
+            return Err(at(
+                path,
+                format!(
+                    "`{{{{{name}}}}}` names one object: the action runs on several (`multiple`)"
+                ),
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// An action's `patch` (#367): at most [`MAX_ACTION_PATCH_BYTES`], `{{now}}` only as a whole string value, no key with
@@ -199,13 +244,21 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 &here.key("cases").index(j).key("when"),
                 manifest.sextant_api,
             )?;
-            // Field values in the text, as a problem message has them (#368).
+            // Field values in the text, as a problem message has them (#368), and in its tooltip (#380).
             check_message(
                 &case.text,
                 &column.kind,
                 &here.key("cases").index(j).key("text"),
                 false,
             )?;
+            if let Some(tooltip) = &case.tooltip {
+                check_message(
+                    tooltip,
+                    &column.kind,
+                    &here.key("cases").index(j).key("tooltip"),
+                    false,
+                )?;
+            }
         }
     }
     Ok(())

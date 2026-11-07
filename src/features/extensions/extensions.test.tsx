@@ -51,7 +51,7 @@ const manifest: ExtensionManifest = {
   contributes: {
     pages: [{ id: "board", title: "Widget board", section: "widgets" }],
     detailsSections: [],
-    actions: [{ id: "scale", title: "Scale widget", kinds: [{ group: "demo.dev", kind: "Widget" }], danger: false, multiple: false }],
+    actions: [{ id: "scale", title: "Scale widget", kinds: [{ group: "demo.dev", kind: "Widget" }], danger: false, multiple: false, headless: false }],
     columns: [{ kind: { group: "demo.dev", kind: "Widget" }, id: "size", title: "Size", jsonPath: ".spec.size" }],
     dockActions: [],
     problems: [],

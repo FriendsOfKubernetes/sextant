@@ -45,6 +45,8 @@ export interface ExtensionFrameProps {
   onClose?: () => void;
   /** `ui.setHidden`: a details section hides itself while it has nothing to show (ADR-0161); others ignore it. */
   onHidden?: (hidden: boolean) => void;
+  /** The frame reported an error or did not load (a hidden action's frame tells it here, #379). */
+  onFailed?: (message: string) => void;
   className?: string;
 }
 
@@ -71,7 +73,10 @@ export function ExtensionFrame(props: ExtensionFrameProps) {
         {...props}
         info={info}
         entryUrl={info.entryUrl}
-        onFailed={(message) => setFailure({ attempt, message })}
+        onFailed={(message) => {
+          setFailure({ attempt, message });
+          props.onFailed?.(message);
+        }}
       />
     </FrameBoundary>
   );

@@ -220,6 +220,7 @@ export const REMOTE_METHODS: readonly string[] = [
   "service.request",
   "service.forget",
   "service.secrets",
+  "service.signInState",
 ];
 
 /** Methods the window answers itself. */

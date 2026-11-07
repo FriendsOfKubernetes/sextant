@@ -64,7 +64,10 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
             out.insert(format!("actions.{}.whyNot", action.id), Text::Sentence);
         }
         if let Some(ask) = &action.ask {
-            out.insert(format!("actions.{}.ask.title", action.id), Text::Title);
+            out.insert(
+                format!("actions.{}.ask.title", action.id),
+                Text::Template(&ask.title, 80),
+            );
             out.insert(
                 format!("actions.{}.ask.text", action.id),
                 Text::Template(&ask.text, 300),
@@ -85,6 +88,12 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
                 format!("columns.{}.cases.{i}.text", column.id),
                 Text::Template(&case.text, 200),
             );
+            if let Some(tooltip) = &case.tooltip {
+                out.insert(
+                    format!("columns.{}.cases.{i}.tooltip", column.id),
+                    Text::Template(tooltip, 300),
+                );
+            }
         }
     }
     for section in &c.sections {

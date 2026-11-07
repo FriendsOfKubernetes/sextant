@@ -94,7 +94,7 @@ pub const MAX_GET_MANY: usize = 50;
 pub const GET_MANY_AT_ONCE: usize = 4;
 
 /// The methods `extension_call` serves (`ui.*` and the context are the window's).
-pub const METHODS: [&str; 24] = [
+pub const METHODS: [&str; 25] = [
     "clusters.list",
     "kinds",
     "resources.list",
@@ -119,6 +119,7 @@ pub const METHODS: [&str; 24] = [
     "service.request",
     "service.forget",
     "service.secrets",
+    "service.signInState",
 ];
 
 const NODE_SHELL_REFUSAL: &str = "Sextant does not let extensions change or delete node shell pods";
@@ -524,6 +525,7 @@ impl ExtensionApi {
             "service.request" => call.service_request(params).await,
             "service.forget" => call.service_forget(params).await,
             "service.secrets" => call.service_secrets(params).await,
+            "service.signInState" => call.service_sign_in_state(params).await,
             _ => Err(invalid(format!("unknown method {method}"))),
         };
         let record = call.record();
@@ -2205,6 +2207,93 @@ impl<'a> ExtCall<'a> {
         Ok(names)
     }
 
+    /// The sign-in remembered in the keyring for this service, cluster and namespace, if it was saved for the same API
+    /// server and CA.
+    async fn remembered_sign_in(
+        &self,
+        cluster: &ExtCluster,
+        namespace: &str,
+        service: &str,
+    ) -> CoreResult<Option<RememberedSignIn>> {
+        let (store, id) = (
+            Arc::clone(&self.host.backends().credentials),
+            self.id.clone(),
+        );
+        let name = sign_in_credential(service, &cluster.id.0, namespace);
+        let stored = blocking(move || store.get(&id, &name)).await?;
+        let binding = self.api.clusters.server_binding(&cluster.id).ok().flatten();
+        Ok(stored
+            .and_then(|text| serde_json::from_str::<RememberedSignIn>(&text).ok())
+            .filter(|r| {
+                binding
+                    .as_ref()
+                    .is_some_and(|b| b.server == r.server && b.ca_sha256 == r.ca_sha256)
+            }))
+    }
+
+    /// Whether a service's sign-in is saved in the keyring for this cluster (`saved`), typed for this run only
+    /// (`session`) or neither (`none`), so the extension can say how it signed in (#382). Never a value; Read on the
+    /// Service there.
+    async fn service_sign_in_state(&self, params: Value) -> CoreResult<Value> {
+        let args: ServiceForgetArgs = parse(&self.method, params)?;
+        let namespace = required("namespace", &args.namespace)?.to_owned();
+        let entry = active_off_runtime(self.host, &self.id)
+            .await?
+            .ok_or_else(|| {
+                self.decide(AuditDecision::Denied);
+                inactive(&self.id)
+            })?;
+        let service = entry
+            .granted_services
+            .iter()
+            .flatten()
+            .find(|s| s.id == args.service)
+            .cloned()
+            .ok_or_else(|| {
+                CoreError::new(
+                    ErrorCode::NotFound,
+                    format!("no service {:?} the user agreed to", args.service),
+                )
+            })?;
+        let cluster = self.open(&args.cluster_id).await?;
+        let needs = vec![(
+            Some(namespace.clone()),
+            KindPattern::new("", "Service"),
+            AccessAction::Read,
+        )];
+        let summary = CallSummary {
+            tool: self.method.clone(),
+            target: format!(
+                "sign-in state of Service {namespace}/{}",
+                service.shown_name()
+            ),
+            details: None,
+        };
+        self.check(&cluster, &needs, &summary).await?;
+        let state = if self
+            .remembered_sign_in(&cluster, &namespace, &service.id)
+            .await?
+            .is_some()
+        {
+            "saved"
+        } else if self
+            .api
+            .sessions
+            .sign_in(&session_key(
+                &self.id,
+                &cluster.id.0,
+                &namespace,
+                &service.id,
+            ))
+            .is_some()
+        {
+            "session"
+        } else {
+            "none"
+        };
+        Ok(json!({ "state": state }))
+    }
+
     /// The sign-in typed for this service in this run, else one remembered for the same API server and CA.
     async fn sign_in_values(
         &self,
@@ -2216,25 +2305,11 @@ impl<'a> ExtCall<'a> {
         if let Some(values) = self.api.sessions.sign_in(key) {
             return Ok(values);
         }
-        let (store, id) = (
-            Arc::clone(&self.host.backends().credentials),
-            self.id.clone(),
-        );
-        let name = sign_in_credential(service, &cluster.id.0, namespace);
-        let stored = blocking(move || store.get(&id, &name)).await?;
-        let binding = self.api.clusters.server_binding(&cluster.id).ok().flatten();
-        let remembered = stored
-            .and_then(|text| serde_json::from_str::<RememberedSignIn>(&text).ok())
-            .filter(|r| {
-                binding
-                    .as_ref()
-                    .is_some_and(|b| b.server == r.server && b.ca_sha256 == r.ca_sha256)
-            });
-        match remembered {
+        match self.remembered_sign_in(cluster, namespace, service).await? {
             Some(r) => {
                 self.api
                     .sessions
-                    .set_sign_in(key.to_owned(), r.values.clone());
+                    .restore_sign_in(key.to_owned(), r.values.clone());
                 Ok(r.values)
             }
             None => Err(CoreError::new(

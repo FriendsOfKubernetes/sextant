@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../components";
 import { syncExtensions } from "./contributions";
+import { HeadlessActions } from "./headless";
 import { dismissNotice, useNotices } from "./notices";
 import { OpenUrlHost } from "./openUrl";
 import { SignInHost } from "./signIn";
@@ -20,6 +21,7 @@ export function ExtensionsHost() {
       <ExtensionNotices />
       <OpenUrlHost />
       <SignInHost />
+      <HeadlessActions />
     </>
   );
 }

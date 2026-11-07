@@ -29,7 +29,9 @@
     "action": {
       "failed": "{{action}}: {{message}}",
       "stoppedAt": "{{action}}: остановлено на {{kind}} {{name}}: {{message}}",
-      "objects": "Объекты"
+      "objects": "Объекты",
+      "timedOut": "{{action}}: не завершилось за 2 минуты и остановлено.",
+      "notLoaded": "{{action}}: не удалось запустить."
     }
   },
   "install": {

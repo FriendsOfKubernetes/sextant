@@ -41,4 +41,8 @@ ask?: ActionAsk,
 /**
  * With `patch`: what Sextant says once every object got it.
  */
-done?: string, };
+done?: string, 
+/**
+ * The action's frame runs out of sight, with no window (#379); `sextantApi` 4.
+ */
+headless: boolean, };

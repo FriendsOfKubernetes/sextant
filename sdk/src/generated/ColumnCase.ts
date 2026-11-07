@@ -9,4 +9,8 @@ export type ColumnCase = { when: ProblemCondition, text: string,
 /**
  * The tone of the text (a translated text has no entry in `tones`, ADR-0161).
  */
-tone?: ColumnTone, };
+tone?: ColumnTone, 
+/**
+ * Shown on hover while the case holds, in place of `tooltipPaths` (#380): text with the text's placeholders.
+ */
+tooltip?: string, };

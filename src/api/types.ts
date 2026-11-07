@@ -223,6 +223,7 @@ export type { WatchOptions } from "./generated/WatchOptions";
 export type { ObjectCount } from "./generated/ObjectCount";
 export type { WindowLayout } from "./generated/WindowLayout";
 export type { ActionContribution } from "./generated/ActionContribution";
+export type { ActionAsk } from "./generated/ActionAsk";
 export type { ColumnContribution } from "./generated/ColumnContribution";
 export type { ColumnCase } from "./generated/ColumnCase";
 export type { ColumnFormat } from "./generated/ColumnFormat";

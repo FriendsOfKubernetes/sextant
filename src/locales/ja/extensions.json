@@ -26,7 +26,9 @@
     "action": {
       "failed": "{{action}}: {{message}}",
       "stoppedAt": "{{action}} は {{kind}} {{name}} で停止しました: {{message}}",
-      "objects": "オブジェクト"
+      "objects": "オブジェクト",
+      "timedOut": "{{action}} は 2 分以内に終わらなかったため停止しました。",
+      "notLoaded": "{{action}} を開始できませんでした。"
     }
   },
   "install": {

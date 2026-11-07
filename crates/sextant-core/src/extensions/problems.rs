@@ -30,8 +30,21 @@ pub const MAX_RULES: usize = 20;
 pub const MAX_KINDS: usize = 10;
 /// Conditions of one rule, `all`/`any` counted.
 pub const MAX_CONDITIONS: usize = 20;
+/// Conditions of one rule from `sextantApi` 4 (#381).
+pub const MAX_CONDITIONS_4: usize = 30;
 /// Nesting of `all`/`any`: the rule's own condition is level 1.
 pub const MAX_DEPTH: usize = 3;
+/// Nesting from `sextantApi` 4 (#381): an older Sextant reads only older manifests, so the limits grow with the version.
+pub const MAX_DEPTH_4: usize = 4;
+
+/// The limits of a rule's conditions for a manifest of `api`: (conditions, nesting).
+pub fn condition_limits(api: u32) -> (usize, usize) {
+    if api >= SOURCES_API {
+        (MAX_CONDITIONS_4, MAX_DEPTH_4)
+    } else {
+        (MAX_CONDITIONS, MAX_DEPTH)
+    }
+}
 /// `{{path}}` placeholders in a message.
 pub const MAX_PLACEHOLDERS: usize = 5;
 
@@ -388,10 +401,11 @@ fn check_condition<'k>(
 ) -> Result<(), ManifestError> {
     *checks.count += 1;
     let count = &*checks.count;
-    if *count > MAX_CONDITIONS {
+    let (max_conditions, max_depth) = condition_limits(checks.api);
+    if *count > max_conditions {
         return Err(at(
             path,
-            format!("a rule has at most {MAX_CONDITIONS} conditions"),
+            format!("a rule has at most {max_conditions} conditions"),
         ));
     }
     match condition {
@@ -474,10 +488,10 @@ fn check_condition<'k>(
             Ok(())
         }
         ProblemCondition::All { of } | ProblemCondition::Any { of } => {
-            if depth >= MAX_DEPTH {
+            if depth >= max_depth {
                 return Err(at(
                     path,
-                    format!("`all` and `any` nest at most {MAX_DEPTH} deep"),
+                    format!("`all` and `any` nest at most {max_depth} deep"),
                 ));
             }
             let inner_inside = match (inside, condition) {
@@ -503,10 +517,10 @@ fn check_condition<'k>(
                     format!("`not` needs sextantApi {SOURCES_API} or later"),
                 ));
             }
-            if depth >= MAX_DEPTH {
+            if depth >= max_depth {
                 return Err(at(
                     path,
-                    format!("`all`, `any` and `not` nest at most {MAX_DEPTH} deep"),
+                    format!("`all`, `any` and `not` nest at most {max_depth} deep"),
                 ));
             }
             check_condition(of, kind, &path.key("of"), depth + 1, Inside::Not, checks)

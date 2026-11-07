@@ -55,10 +55,15 @@ function holdsNow(c: ColumnCase, obj: KubeObject, now: number): boolean {
 function caseOf(column: ColumnContribution, obj: KubeObject, now: number): ColumnCase | undefined {
   for (const c of column.cases ?? []) {
     if (!holdsNow(c, obj, now)) continue;
-    if (!c.text.includes("{{")) return c;
-    const filled = fillTemplate(c.text, obj);
+    const filled = c.text.includes("{{") ? fillTemplate(c.text, obj) : c.text;
     if (filled === null) continue;
-    return { ...c, text: textOf(cleanText(filled) ?? "") ?? "" };
+    // A tooltip whose placeholder has no value leaves the column's own tooltip (#380).
+    const tooltip = c.tooltip === undefined ? undefined : fillTemplate(c.tooltip, obj);
+    return {
+      ...c,
+      text: filled === c.text ? c.text : (textOf(cleanText(filled) ?? "") ?? ""),
+      tooltip: tooltip === null || tooltip === undefined ? undefined : (textOf(cleanText(tooltip) ?? "") ?? undefined),
+    };
   }
   return undefined;
 }
@@ -147,7 +152,7 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
     value: (obj) => cellOf(column, obj, Date.now()).sort,
     render: (obj, ctx) => {
       const cell = cellOf(column, obj, ctx.now);
-      const title = tooltip(obj);
+      const title = caseOf(column, obj, ctx.now)?.tooltip ?? tooltip(obj);
       return title === undefined ? cell.draw : <span title={title}>{cell.draw}</span>;
     },
     searchText: (obj, ctx) => {

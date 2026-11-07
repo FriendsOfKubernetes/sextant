@@ -102,10 +102,18 @@ export interface ManifestAction {
    * sextantApi 4): its only placeholder is a whole string value `{{now}}` (the time, RFC 3339); at most 4 KiB.
    */
   patch?: Record<string, unknown>;
-  /** With `patch`: Sextant's question before sending it (the objects are listed under `text`). */
+  /**
+   * With `patch`: Sextant's question before sending it (the objects are listed under `text`). Sextant fills
+   * `{{count}}`, and on an action of one object `{{kind}}`, `{{namespace}}` and `{{name}}` (since Sextant 0.30).
+   */
   ask?: { title: string; text: string; confirm: string };
   /** With `patch`: what Sextant says once every object got it. */
   done?: string;
+  /**
+   * The action's frame runs out of sight, without a window: it ends with `ui.close`, tells the user with `ui.notify`,
+   * and an error it reports is shown as a notice; ended after 2 minutes. Not with `patch` (since Sextant 0.30).
+   */
+  headless?: boolean;
 }
 
 /** How a computed column shows its value (sextantApi 4). */
@@ -137,7 +145,13 @@ export interface ManifestColumn {
    * Texts shown instead of the value where a condition holds, the first that holds, each with its tone; a text may hold
    * `{{<field path>}}` placeholders (since Sextant 0.30), and a case whose placeholder has no value does not hold.
    */
-  cases?: { when: ProblemCondition; text: string; tone?: ColumnTone }[];
+  cases?: {
+    when: ProblemCondition;
+    text: string;
+    tone?: ColumnTone;
+    /** Shown on hover while the case holds, instead of `tooltipPaths`; the text's placeholders (since Sextant 0.30). */
+    tooltip?: string;
+  }[];
   /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
   afterColumn?: string;
 }

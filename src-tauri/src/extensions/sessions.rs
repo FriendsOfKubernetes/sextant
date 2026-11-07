@@ -136,6 +136,11 @@ impl ServiceSessions {
         lock(&self.sign_ins).insert(key, values);
     }
 
+    /// Keeps a sign-in read back from the keyring for this run: not a new try, so a refusal remembered stays.
+    pub fn restore_sign_in(&self, key: String, values: HashMap<String, String>) {
+        lock(&self.sign_ins).insert(key, values);
+    }
+
     pub fn forget_sign_in(&self, key: &str) {
         lock(&self.sign_ins).remove(key);
     }

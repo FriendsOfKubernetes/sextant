@@ -4,7 +4,7 @@
 // `resources.patchMany` in the extension's name, so Rust decides it against the user's grant, asks where a rule says
 // `confirm`, and journals it, as for a patch the extension's frame sends. `ask` is Sextant's question before it;
 // `done` what Sextant says after.
-import type { ActionContribution, ObjectRef } from "../api";
+import type { ActionAsk, ActionContribution, ObjectRef } from "../api";
 import { api, toApiError } from "../api";
 import { ConfirmDialog } from "../components";
 import { showToast } from "../features/copy-name/toast";
@@ -84,7 +84,7 @@ export function runPatchAction(
       showToast(t("extensions:host.action.failed", { action: action.title, message: error.message }), "error");
     }
   };
-  const ask = action.ask;
+  const ask = action.ask === undefined ? undefined : fillAsk(action.ask, ctx.refs);
   if (ask === undefined) {
     void send();
     return;
@@ -109,6 +109,23 @@ export function runPatchAction(
       </ul>
     </ConfirmDialog>
   ));
+}
+
+/**
+ * The question with what Sextant fills in it (#378): `{{count}}`, and the first object's `{{kind}}`, `{{namespace}}`
+ * and `{{name}}` (Rust allows those only on an action of one object). Anything else stays as written.
+ */
+export function fillAsk(ask: ActionAsk, refs: readonly ObjectRef[]): ActionAsk {
+  const first = refs[0];
+  const values: Record<string, string> = {
+    count: String(refs.length),
+    kind: first?.kind.kind ?? "",
+    namespace: first?.namespace ?? "",
+    name: first?.name ?? "",
+  };
+  const fill = (text: string) =>
+    text.replace(/\{\{\s*(count|kind|namespace|name)\s*\}\}/g, (_, key: string) => values[key] ?? "");
+  return { title: fill(ask.title), text: fill(ask.text), confirm: fill(ask.confirm) };
 }
 
 /** `Kind namespace/name`, as the confirmation lists an object. */

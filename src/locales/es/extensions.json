@@ -28,7 +28,9 @@
     "action": {
       "failed": "{{action}}: {{message}}",
       "stoppedAt": "{{action}} se detuvo en {{kind}} {{name}}: {{message}}",
-      "objects": "Objetos"
+      "objects": "Objetos",
+      "timedOut": "{{action}} no terminó en 2 minutos y se detuvo.",
+      "notLoaded": "{{action}} no pudo iniciarse."
     }
   },
   "install": {

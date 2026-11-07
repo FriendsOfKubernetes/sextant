@@ -365,7 +365,7 @@
                 "type": "object"
               },
               "ask": {
-                "description": "With `patch`: a question Sextant asks before sending it, listing the objects (sextantApi 4).",
+                "description": "With `patch`: a question Sextant asks before sending it, listing the objects; its texts may hold `{{count}}` and, on an action of one object, `{{kind}}`, `{{namespace}}` and `{{name}}` (sextantApi 4).",
                 "type": "object",
                 "additionalProperties": false,
                 "required": ["title", "text", "confirm"],
@@ -374,6 +374,11 @@
                   "text": { "type": "string", "minLength": 1, "maxLength": 300, "format": "non-blank", "pattern": "\\S" },
                   "confirm": { "type": "string", "minLength": 1, "maxLength": 40, "format": "non-blank", "pattern": "\\S" }
                 }
+              },
+              "headless": {
+                "description": "The action's frame runs out of sight, without a window: it ends with `ui.close` and tells the user with `ui.notify` (sextantApi 4). Not with `patch`.",
+                "type": "boolean",
+                "default": false
               },
               "done": {
                 "description": "With `patch`: what Sextant says once every object got it (sextantApi 4).",
@@ -461,7 +466,15 @@
                       "format": "non-blank",
                       "pattern": "\\S"
                     },
-                    "tone": { "type": "string", "enum": ["ok", "warning", "error", "neutral"] }
+                    "tone": { "type": "string", "enum": ["ok", "warning", "error", "neutral"] },
+                    "tooltip": {
+                      "description": "Shown on hover while the case holds, instead of `tooltipPaths`: text with up to 5 `{{<field path>}}` placeholders (sextantApi 4).",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300,
+                      "format": "non-blank",
+                      "pattern": "\\S"
+                    }
                   }
                 }
               }
@@ -860,7 +873,7 @@
       }
     },
     "problemCondition": {
-      "description": "A condition of a problem rule, by `type`; `all` and `any` nest at most 3 deep, 20 conditions per rule.",
+      "description": "A condition of a problem rule, by `type`; `all` and `any` nest at most 3 deep (4 from sextantApi 4), 20 conditions per rule.",
       "oneOf": [
         {
           "type": "object",

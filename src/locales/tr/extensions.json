@@ -27,7 +27,9 @@
     "action": {
       "failed": "{{action}}: {{message}}",
       "stoppedAt": "{{action}}, {{kind}} {{name}} üzerinde durdu: {{message}}",
-      "objects": "Nesneler"
+      "objects": "Nesneler",
+      "timedOut": "{{action}} 2 dakika içinde bitmedi ve durduruldu.",
+      "notLoaded": "{{action}} başlatılamadı."
     }
   },
   "install": {

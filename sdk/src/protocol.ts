@@ -83,6 +83,7 @@ export const REMOTE_METHODS = [
   "service.request",
   "service.forget",
   "service.secrets",
+  "service.signInState",
 ] as const;
 
 /** Methods the window answers itself. */

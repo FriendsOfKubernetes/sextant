@@ -26,7 +26,9 @@
     "action": {
       "failed": "{{action}}：{{message}}",
       "stoppedAt": "{{action}} 在 {{kind}} {{name}} 处停止：{{message}}",
-      "objects": "对象"
+      "objects": "对象",
+      "timedOut": "{{action}} 未在 2 分钟内完成，已停止。",
+      "notLoaded": "{{action}} 无法启动。"
     }
   },
   "install": {
