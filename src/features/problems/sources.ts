@@ -3,7 +3,6 @@
 // version it serves.
 import type { KindRef, KubeObject, ResourceKind } from "../../api";
 import { findKind } from "../../resources";
-import { WORKFLOW } from "../argo-workflows/model";
 import { COUNTED_KINDS } from "../gateway-api/problems";
 import { CONFIGURATION as KNATIVE_CONFIGURATION, KSERVICE } from "../knative/model";
 import { CONTOUR_ACROSS } from "../contour/across";
@@ -167,9 +166,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   vpa: [{ category: "vpa", kind: VPA, fieldSelector: null, discovered: true, external: true }],
   volumes: [builtIn("volumes", PVC)],
   certificates: [tool("certificates", CERTIFICATE)],
-  // Recent failed Workflows (#213): the provider of features/argo-workflows watches only failed ones, metadata only,
-  // by their phase label (`external`), held only where Workflows are served.
-  workflows: [{ category: "workflows", kind: WORKFLOW, fieldSelector: null, discovered: true, external: true }],
   gateway: COUNTED_KINDS.map((kind) => tool("gateway", kind)),
   // Istio routing and mTLS mistakes (#155): judged across objects by the provider of features/mesh (`external`), held
   // only where the cluster serves VirtualServices.

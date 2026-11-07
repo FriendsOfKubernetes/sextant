@@ -42,11 +42,6 @@ export type BuiltInActionId =
   | "rolloutUndo"
   // Set image (src/features/set-image)
   | "setImage"
-  // Argo Workflows (src/features/argo-workflows)
-  | "workflowSuspend"
-  | "workflowResume"
-  | "workflowStop"
-  | "workflowTerminate"
   // Storage insights (src/features/storage)
   | "snapshotCreate"
   | "snapshotRestore"
@@ -153,7 +148,6 @@ export const SIDEBAR_SECTIONS = [
   "vpa",
   "volumeSnapshots",
   "velero",
-  "argoWorkflows",
   "istio",
   "linkerd",
   "traefik",
@@ -190,6 +184,7 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
   ["flux", "velero"],
   ["argocd", "velero"],
   ["argoRollouts", "velero"],
+  ["argoWorkflows", "velero"],
 ];
 
 /**
@@ -199,7 +194,6 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
  */
 export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>([
   "gatewayApi",
-  "argoWorkflows",
   "certManager",
   "trivy",
   "keda",
@@ -253,7 +247,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   vpa: "vpa",
   volumeSnapshots: "volumeSnapshots",
   velero: "velero",
-  argoWorkflows: "argoWorkflows",
   istio: "istio",
   linkerd: "linkerd",
   traefik: "traefik",

@@ -27,7 +27,6 @@
     "vpa": "Vertical Pod Autoscaler",
     "volumes": "Richieste di volume",
     "certificates": "Certificati",
-    "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "Service mesh",
     "traefik": "Traefik",

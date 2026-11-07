@@ -1,0 +1,1609 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.argo-workflows",
+  "name": "Argo Workflows",
+  "version": "1.0.0",
+  "description": "Argo Workflows: workflows with their phase, progress, duration and failed step, the step tree with each pod's logs, cron workflows and templates; suspend, resume, stop and terminate with the patches the argo CLI sends, shown first; problems of recently failed workflows.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "argoWorkflows",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "argoproj.io",
+              "kind": "Workflow"
+            },
+            {
+              "group": "argoproj.io",
+              "kind": "CronWorkflow"
+            },
+            {
+              "group": "argoproj.io",
+              "kind": "WorkflowTemplate"
+            },
+            {
+              "group": "argoproj.io",
+              "kind": "ClusterWorkflowTemplate"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      },
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "argoproj.io",
+              "kind": "Workflow"
+            }
+          ]
+        },
+        "actions": [
+          "modify"
+        ],
+        "confirm": false
+      },
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "",
+              "kind": "Pod"
+            }
+          ]
+        },
+        "actions": [
+          "logs"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "argoproj.io",
+        "kind": "Workflow",
+        "section": "argoWorkflows",
+        "title": "Workflows",
+        "icon": "argoWorkflow",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "in",
+          "path": ".status.phase",
+          "values": [
+            "Failed",
+            "Error"
+          ]
+        }
+      },
+      {
+        "group": "argoproj.io",
+        "kind": "CronWorkflow",
+        "section": "argoWorkflows",
+        "title": "Cron Workflows",
+        "icon": "argoCronWorkflow",
+        "order": 20,
+        "printerColumns": false
+      },
+      {
+        "group": "argoproj.io",
+        "kind": "WorkflowTemplate",
+        "section": "argoWorkflows",
+        "title": "Workflow Templates",
+        "icon": "argoWorkflowTemplate",
+        "order": 30,
+        "printerColumns": false
+      },
+      {
+        "group": "argoproj.io",
+        "kind": "ClusterWorkflowTemplate",
+        "section": "argoWorkflows",
+        "title": "Cluster Workflow Templates",
+        "icon": "argoClusterWorkflowTemplate",
+        "order": 40,
+        "printerColumns": false
+      }
+    ],
+    "sections": [
+      {
+        "section": "argoWorkflows",
+        "title": "Argo Workflows",
+        "icon": "argoWorkflows",
+        "after": "velero"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "argoWorkflows"
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "workflow",
+        "title": "Workflow",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Workflow"
+          }
+        ],
+        "placement": "section",
+        "order": 25
+      },
+      {
+        "id": "cron-workflow",
+        "title": "Schedule",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "CronWorkflow"
+          }
+        ],
+        "placement": "section",
+        "order": 25
+      },
+      {
+        "id": "template",
+        "title": "Template",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "WorkflowTemplate"
+          },
+          {
+            "group": "argoproj.io",
+            "kind": "ClusterWorkflowTemplate"
+          }
+        ],
+        "placement": "section",
+        "order": 25
+      }
+    ],
+    "actions": [
+      {
+        "id": "suspend",
+        "title": "Suspend",
+        "icon": "suspend",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Workflow"
+          }
+        ],
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.labels[\"workflows.argoproj.io/completed\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "in",
+                "path": ".status.phase",
+                "values": [
+                  "Succeeded",
+                  "Failed",
+                  "Error"
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.suspend",
+                "value": true
+              }
+            }
+          ]
+        },
+        "whyNot": "Only a workflow that has not finished and is not suspended can be suspended.",
+        "placement": "primary"
+      },
+      {
+        "id": "resume",
+        "title": "Resume",
+        "icon": "resume",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Workflow"
+          }
+        ],
+        "when": {
+          "type": "any",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".spec.suspend",
+              "value": true
+            },
+            {
+              "type": "exists",
+              "path": ".status.nodes[type=\"Suspend\",phase=\"Running\"]"
+            }
+          ]
+        },
+        "whyNot": "The workflow is not suspended and no suspend step is waiting.",
+        "placement": "primary"
+      },
+      {
+        "id": "stop",
+        "title": "Stop",
+        "icon": "terminate",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Workflow"
+          }
+        ],
+        "danger": true,
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "in",
+                "path": ".status.phase",
+                "values": [
+                  "Succeeded",
+                  "Failed",
+                  "Error"
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.shutdown",
+                "value": "Stop"
+              }
+            }
+          ]
+        },
+        "whyNot": "The workflow has finished or is already being stopped.",
+        "placement": "primary"
+      },
+      {
+        "id": "terminate",
+        "title": "Terminate",
+        "icon": "rolloutAbort",
+        "kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Workflow"
+          }
+        ],
+        "danger": true,
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "in",
+                "path": ".status.phase",
+                "values": [
+                  "Succeeded",
+                  "Failed",
+                  "Error"
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.shutdown",
+                "value": "Terminate"
+              }
+            }
+          ]
+        },
+        "whyNot": "The workflow has finished or is already being terminated.",
+        "placement": "more"
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Workflow"
+        },
+        "id": "workflow-phase",
+        "title": "Phase",
+        "paths": [
+          ".status.phase"
+        ],
+        "tones": {
+          "Pending": "neutral",
+          "Running": "neutral",
+          "Succeeded": "ok",
+          "Failed": "error",
+          "Error": "error"
+        },
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Workflow"
+        },
+        "id": "workflow-progress",
+        "title": "Progress",
+        "paths": [
+          ".status.progress"
+        ],
+        "afterColumn": "workflow-phase"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Workflow"
+        },
+        "id": "workflow-duration",
+        "title": "Duration",
+        "paths": [
+          ".status.startedAt"
+        ],
+        "format": "duration",
+        "endPaths": [
+          ".status.finishedAt"
+        ],
+        "afterColumn": "workflow-progress"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Workflow"
+        },
+        "id": "workflow-failed-step",
+        "title": "Failed step",
+        "paths": [
+          ".status.message"
+        ],
+        "format": "list",
+        "cases": [
+          {
+            "when": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "Error"
+              ]
+            },
+            "text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+            "tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}"
+          },
+          {
+            "when": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "Error"
+              ]
+            },
+            "text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+            "tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "in",
+                  "path": ".status.phase",
+                  "values": [
+                    "Failed",
+                    "Error"
+                  ]
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.nodes[type=\"Pod\",phase=\"Failed\"].id",
+                    "otherPath": ".metadata.name"
+                  }
+                }
+              ]
+            },
+            "text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+            "tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "in",
+                  "path": ".status.phase",
+                  "values": [
+                    "Failed",
+                    "Error"
+                  ]
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.nodes[type=\"Pod\",phase=\"Error\"].id",
+                    "otherPath": ".metadata.name"
+                  }
+                }
+              ]
+            },
+            "text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+            "tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "in",
+                  "path": ".status.phase",
+                  "values": [
+                    "Failed",
+                    "Error"
+                  ]
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.nodes[type=\"Pod\",phase=\"Failed\"].id",
+                    "otherPath": ".metadata.name"
+                  }
+                }
+              ]
+            },
+            "text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+            "tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "in",
+                  "path": ".status.phase",
+                  "values": [
+                    "Failed",
+                    "Error"
+                  ]
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.nodes[type=\"Pod\",phase=\"Error\"].id",
+                    "otherPath": ".metadata.name"
+                  }
+                }
+              ]
+            },
+            "text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+            "tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}"
+          },
+          {
+            "when": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "Error"
+              ]
+            },
+            "text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+            "tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}"
+          },
+          {
+            "when": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "Error"
+              ]
+            },
+            "text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+            "tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}"
+          },
+          {
+            "when": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "Error"
+              ]
+            },
+            "text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+            "tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}"
+          },
+          {
+            "when": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "Error"
+              ]
+            },
+            "text": "{{.status.message}}",
+            "tooltip": "{{.status.message}}"
+          }
+        ],
+        "afterColumn": "workflow-duration"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "CronWorkflow"
+        },
+        "id": "cron-schedule",
+        "title": "Schedule",
+        "paths": [
+          ".spec.schedules"
+        ],
+        "format": "list",
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.schedules[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.schedule"
+                }
+              ]
+            },
+            "text": "{{.spec.schedule}}"
+          }
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "CronWorkflow"
+        },
+        "id": "cron-suspended",
+        "title": "Suspended",
+        "paths": [
+          ".spec.suspend"
+        ],
+        "format": "list",
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.suspend",
+              "value": true
+            },
+            "text": "Yes"
+          }
+        ],
+        "afterColumn": "cron-schedule"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "CronWorkflow"
+        },
+        "id": "cron-active",
+        "title": "Active",
+        "paths": [
+          ".status.active"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.active"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "afterColumn": "cron-suspended"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "CronWorkflow"
+        },
+        "id": "cron-last-scheduled",
+        "title": "Last scheduled",
+        "paths": [
+          ".status.lastScheduledTime"
+        ],
+        "format": "age",
+        "afterColumn": "cron-active"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "WorkflowTemplate"
+        },
+        "id": "template-entrypoint",
+        "title": "Entrypoint",
+        "paths": [
+          ".spec.entrypoint"
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "WorkflowTemplate"
+        },
+        "id": "template-templates",
+        "title": "Templates",
+        "paths": [
+          ".spec.templates"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".spec.templates"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "afterColumn": "template-entrypoint"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "ClusterWorkflowTemplate"
+        },
+        "id": "cluster-template-entrypoint",
+        "title": "Entrypoint",
+        "paths": [
+          ".spec.entrypoint"
+        ],
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "ClusterWorkflowTemplate"
+        },
+        "id": "cluster-template-templates",
+        "title": "Templates",
+        "paths": [
+          ".spec.templates"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".spec.templates"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "afterColumn": "cluster-template-entrypoint"
+      }
+    ],
+    "problems": [
+      {
+        "id": "failed",
+        "title": "Workflow failed",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Workflow"
+        },
+        "source": {
+          "labelSelector": "workflows.argoproj.io/phase in (Failed,Error)",
+          "metadataOnly": true
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "in",
+              "path": ".metadata.labels[\"workflows.argoproj.io/phase\"]",
+              "values": [
+                "Failed",
+                "Error"
+              ]
+            },
+            {
+              "type": "enteredWithin",
+              "minutes": 1440
+            }
+          ]
+        },
+        "reason": "{{.metadata.labels[\"workflows.argoproj.io/phase\"]}}",
+        "message": "The workflow ended {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: its failed step and message are in its details.",
+        "group": "failed",
+        "notifyAs": ".metadata.labels[\"workflows.argoproj.io/cron-workflow\"]"
+      },
+      {
+        "id": "failed-earlier",
+        "title": "Workflow failed before Sextant looked",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Workflow"
+        },
+        "source": {
+          "labelSelector": "workflows.argoproj.io/phase in (Failed,Error)",
+          "metadataOnly": true
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "in",
+              "path": ".metadata.labels[\"workflows.argoproj.io/phase\"]",
+              "values": [
+                "Failed",
+                "Error"
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "enteredWithin",
+                "minutes": 1440
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "olderThan",
+                "path": ".metadata.creationTimestamp",
+                "minutes": 1440
+              }
+            }
+          ]
+        },
+        "since": ".metadata.creationTimestamp",
+        "reason": "{{.metadata.labels[\"workflows.argoproj.io/phase\"]}}",
+        "message": "The workflow ended {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: its failed step and message are in its details.",
+        "group": "failed",
+        "notifyAs": ".metadata.labels[\"workflows.argoproj.io/cron-workflow\"]"
+      }
+    ]
+  },
+  "translations": {
+    "ru": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows: workflow с фазой, прогрессом, длительностью и шагом со сбоем, дерево шагов с логами каждого pod, cron workflow и шаблоны; приостановка, возобновление, остановка и завершение теми патчами, что шлёт argo CLI, с показом перед отправкой; проблемы недавно завершившихся сбоем workflow.",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "Расписание",
+      "detailsSections.template.title": "Шаблон",
+      "actions.suspend.title": "Приостановить",
+      "actions.suspend.whyNot": "Приостановить можно только незаконченный и не приостановленный workflow.",
+      "actions.resume.title": "Возобновить",
+      "actions.resume.whyNot": "Workflow не приостановлен, и ни один шаг suspend не ждёт.",
+      "actions.stop.title": "Остановить",
+      "actions.stop.whyNot": "Workflow уже закончился или уже останавливается.",
+      "actions.terminate.title": "Завершить",
+      "actions.terminate.whyNot": "Workflow уже закончился или уже завершается.",
+      "columns.workflow-phase.title": "Фаза",
+      "columns.workflow-progress.title": "Прогресс",
+      "columns.workflow-duration.title": "Длительность",
+      "columns.workflow-failed-step.title": "Шаг со сбоем",
+      "columns.cron-schedule.title": "Расписание",
+      "columns.cron-suspended.title": "Приостановлен",
+      "columns.cron-active.title": "Активные",
+      "columns.cron-last-scheduled.title": "Последний запуск",
+      "columns.template-entrypoint.title": "Точка входа",
+      "columns.template-templates.title": "Шаблоны",
+      "columns.cluster-template-entrypoint.title": "Точка входа",
+      "columns.cluster-template-templates.title": "Шаблоны",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "Да",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow завершился сбоем",
+      "problems.failed.message": "Workflow закончился как {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: шаг со сбоем и его сообщение — в деталях.",
+      "problems.failed-earlier.title": "Workflow завершился сбоем до того, как Sextant посмотрел",
+      "problems.failed-earlier.message": "Workflow закончился как {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: шаг со сбоем и его сообщение — в деталях."
+    },
+    "uk": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows: workflow з фазою, прогресом, тривалістю й кроком зі збоєм, дерево кроків із логами кожного pod, cron workflow і шаблони; призупинення, відновлення, зупинка й завершення тими патчами, що надсилає argo CLI, з показом перед надсиланням; проблеми workflow, що нещодавно завершилися збоєм.",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "Розклад",
+      "detailsSections.template.title": "Шаблон",
+      "actions.suspend.title": "Призупинити",
+      "actions.suspend.whyNot": "Призупинити можна лише незакінчений і не призупинений workflow.",
+      "actions.resume.title": "Відновити",
+      "actions.resume.whyNot": "Workflow не призупинено й жоден крок suspend не очікує.",
+      "actions.stop.title": "Зупинити",
+      "actions.stop.whyNot": "Workflow уже закінчився або вже зупиняється.",
+      "actions.terminate.title": "Завершити",
+      "actions.terminate.whyNot": "Workflow уже закінчився або вже завершується.",
+      "columns.workflow-phase.title": "Фаза",
+      "columns.workflow-progress.title": "Прогрес",
+      "columns.workflow-duration.title": "Тривалість",
+      "columns.workflow-failed-step.title": "Крок зі збоєм",
+      "columns.cron-schedule.title": "Розклад",
+      "columns.cron-suspended.title": "Призупинено",
+      "columns.cron-active.title": "Активні",
+      "columns.cron-last-scheduled.title": "Останній запуск",
+      "columns.template-entrypoint.title": "Точка входу",
+      "columns.template-templates.title": "Шаблони",
+      "columns.cluster-template-entrypoint.title": "Точка входу",
+      "columns.cluster-template-templates.title": "Шаблони",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "Так",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow завершився збоєм",
+      "problems.failed.message": "Workflow закінчився як {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: крок зі збоєм і його повідомлення — у деталях.",
+      "problems.failed-earlier.title": "Workflow завершився збоєм до того, як Sextant подивився",
+      "problems.failed-earlier.message": "Workflow закінчився як {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: крок зі збоєм і його повідомлення — у деталях."
+    },
+    "de": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows: Workflows mit Phase, Fortschritt, Dauer und fehlgeschlagenem Schritt, der Schrittbaum mit den Logs jedes Pods, Cron Workflows und Vorlagen; Anhalten, Fortsetzen, Stoppen und Beenden mit den Patches, die die argo CLI sendet, vorher angezeigt; Probleme kürzlich fehlgeschlagener Workflows.",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "Zeitplan",
+      "detailsSections.template.title": "Vorlage",
+      "actions.suspend.title": "Anhalten",
+      "actions.suspend.whyNot": "Nur ein Workflow, der nicht fertig und nicht angehalten ist, kann angehalten werden.",
+      "actions.resume.title": "Fortsetzen",
+      "actions.resume.whyNot": "Der Workflow ist nicht angehalten, und kein suspend-Schritt wartet.",
+      "actions.stop.title": "Stoppen",
+      "actions.stop.whyNot": "Der Workflow ist fertig oder wird bereits gestoppt.",
+      "actions.terminate.title": "Beenden",
+      "actions.terminate.whyNot": "Der Workflow ist fertig oder wird bereits beendet.",
+      "columns.workflow-phase.title": "Phase",
+      "columns.workflow-progress.title": "Fortschritt",
+      "columns.workflow-duration.title": "Dauer",
+      "columns.workflow-failed-step.title": "Fehlgeschlagener Schritt",
+      "columns.cron-schedule.title": "Zeitplan",
+      "columns.cron-suspended.title": "Angehalten",
+      "columns.cron-active.title": "Aktiv",
+      "columns.cron-last-scheduled.title": "Zuletzt geplant",
+      "columns.template-entrypoint.title": "Einstiegspunkt",
+      "columns.template-templates.title": "Vorlagen",
+      "columns.cluster-template-entrypoint.title": "Einstiegspunkt",
+      "columns.cluster-template-templates.title": "Vorlagen",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "Ja",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow fehlgeschlagen",
+      "problems.failed.message": "Der Workflow endete mit {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: Der fehlgeschlagene Schritt und seine Meldung stehen in seinen Details.",
+      "problems.failed-earlier.title": "Workflow fehlgeschlagen, bevor Sextant nachsah",
+      "problems.failed-earlier.message": "Der Workflow endete mit {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: Der fehlgeschlagene Schritt und seine Meldung stehen in seinen Details."
+    },
+    "fr": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows : les workflows avec leur phase, leur progression, leur durée et l'étape en échec, l'arbre des étapes avec les logs de chaque pod, les cron workflows et les modèles ; suspendre, reprendre, arrêter et terminer avec les patches qu'envoie la CLI argo, montrés d'abord ; problèmes des workflows en échec récent.",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "Planification",
+      "detailsSections.template.title": "Modèle",
+      "actions.suspend.title": "Suspendre",
+      "actions.suspend.whyNot": "Seul un workflow ni fini ni suspendu peut être suspendu.",
+      "actions.resume.title": "Reprendre",
+      "actions.resume.whyNot": "Le workflow n'est pas suspendu et aucune étape suspend n'attend.",
+      "actions.stop.title": "Arrêter",
+      "actions.stop.whyNot": "Le workflow est fini ou déjà en cours d'arrêt.",
+      "actions.terminate.title": "Terminer",
+      "actions.terminate.whyNot": "Le workflow est fini ou déjà en cours de terminaison.",
+      "columns.workflow-phase.title": "Phase",
+      "columns.workflow-progress.title": "Progression",
+      "columns.workflow-duration.title": "Durée",
+      "columns.workflow-failed-step.title": "Étape en échec",
+      "columns.cron-schedule.title": "Planification",
+      "columns.cron-suspended.title": "Suspendu",
+      "columns.cron-active.title": "Actifs",
+      "columns.cron-last-scheduled.title": "Dernière exécution",
+      "columns.template-entrypoint.title": "Point d'entrée",
+      "columns.template-templates.title": "Modèles",
+      "columns.cluster-template-entrypoint.title": "Point d'entrée",
+      "columns.cluster-template-templates.title": "Modèles",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}} : {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}} : {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}} : {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}} : {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}} : {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}} : {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}} : {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}} : {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}} : {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}} : {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}} : {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}} : {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}} : {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}} : {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}} : {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}} : {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}} : {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}} : {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "Oui",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow en échec",
+      "problems.failed.message": "Le workflow s'est terminé en {{.metadata.labels[\"workflows.argoproj.io/phase\"]}} : l'étape en échec et son message sont dans ses détails.",
+      "problems.failed-earlier.title": "Workflow en échec avant que Sextant ne regarde",
+      "problems.failed-earlier.message": "Le workflow s'est terminé en {{.metadata.labels[\"workflows.argoproj.io/phase\"]}} : l'étape en échec et son message sont dans ses détails."
+    },
+    "es": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows: workflows con su fase, progreso, duración y paso fallido, el árbol de pasos con los logs de cada pod, cron workflows y plantillas; suspender, reanudar, detener y terminar con los patches que envía la CLI de argo, mostrados antes; problemas de workflows que fallaron hace poco.",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "Programación",
+      "detailsSections.template.title": "Plantilla",
+      "actions.suspend.title": "Suspender",
+      "actions.suspend.whyNot": "Solo se puede suspender un workflow que no ha terminado y no está suspendido.",
+      "actions.resume.title": "Reanudar",
+      "actions.resume.whyNot": "El workflow no está suspendido y ningún paso suspend está esperando.",
+      "actions.stop.title": "Detener",
+      "actions.stop.whyNot": "El workflow ya terminó o ya se está deteniendo.",
+      "actions.terminate.title": "Terminar",
+      "actions.terminate.whyNot": "El workflow ya terminó o ya se está terminando.",
+      "columns.workflow-phase.title": "Fase",
+      "columns.workflow-progress.title": "Progreso",
+      "columns.workflow-duration.title": "Duración",
+      "columns.workflow-failed-step.title": "Paso fallido",
+      "columns.cron-schedule.title": "Programación",
+      "columns.cron-suspended.title": "Suspendido",
+      "columns.cron-active.title": "Activos",
+      "columns.cron-last-scheduled.title": "Última ejecución",
+      "columns.template-entrypoint.title": "Punto de entrada",
+      "columns.template-templates.title": "Plantillas",
+      "columns.cluster-template-entrypoint.title": "Punto de entrada",
+      "columns.cluster-template-templates.title": "Plantillas",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "Sí",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow fallido",
+      "problems.failed.message": "El workflow terminó en {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: el paso fallido y su mensaje están en sus detalles.",
+      "problems.failed-earlier.title": "Workflow fallido antes de que Sextant mirara",
+      "problems.failed-earlier.message": "El workflow terminó en {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: el paso fallido y su mensaje están en sus detalles."
+    },
+    "pt-BR": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows: workflows com fase, progresso, duração e etapa com falha, a árvore de etapas com os logs de cada pod, cron workflows e modelos; suspender, retomar, parar e encerrar com os patches que a CLI do argo envia, mostrados antes; problemas de workflows que falharam recentemente.",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "Agendamento",
+      "detailsSections.template.title": "Modelo",
+      "actions.suspend.title": "Suspender",
+      "actions.suspend.whyNot": "Só é possível suspender um workflow que não terminou e não está suspenso.",
+      "actions.resume.title": "Retomar",
+      "actions.resume.whyNot": "O workflow não está suspenso e nenhum passo suspend está aguardando.",
+      "actions.stop.title": "Parar",
+      "actions.stop.whyNot": "O workflow já terminou ou já está sendo parado.",
+      "actions.terminate.title": "Encerrar",
+      "actions.terminate.whyNot": "O workflow já terminou ou já está sendo encerrado.",
+      "columns.workflow-phase.title": "Fase",
+      "columns.workflow-progress.title": "Progresso",
+      "columns.workflow-duration.title": "Duração",
+      "columns.workflow-failed-step.title": "Etapa com falha",
+      "columns.cron-schedule.title": "Agendamento",
+      "columns.cron-suspended.title": "Suspenso",
+      "columns.cron-active.title": "Ativos",
+      "columns.cron-last-scheduled.title": "Última execução",
+      "columns.template-entrypoint.title": "Ponto de entrada",
+      "columns.template-templates.title": "Modelos",
+      "columns.cluster-template-entrypoint.title": "Ponto de entrada",
+      "columns.cluster-template-templates.title": "Modelos",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "Sim",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow com falha",
+      "problems.failed.message": "O workflow terminou como {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: a etapa com falha e sua mensagem estão nos detalhes.",
+      "problems.failed-earlier.title": "Workflow com falha antes de o Sextant olhar",
+      "problems.failed-earlier.message": "O workflow terminou como {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: a etapa com falha e sua mensagem estão nos detalhes."
+    },
+    "it": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows: workflow con fase, avanzamento, durata e passo non riuscito, l'albero dei passi con i log di ogni pod, cron workflow e modelli; sospendere, riprendere, fermare e terminare con le patch che invia la CLI argo, mostrate prima; problemi dei workflow non riusciti di recente.",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "Pianificazione",
+      "detailsSections.template.title": "Modello",
+      "actions.suspend.title": "Sospendi",
+      "actions.suspend.whyNot": "Si può sospendere solo un workflow non finito e non sospeso.",
+      "actions.resume.title": "Riprendi",
+      "actions.resume.whyNot": "Il workflow non è sospeso e nessun passo suspend è in attesa.",
+      "actions.stop.title": "Ferma",
+      "actions.stop.whyNot": "Il workflow è finito o si sta già fermando.",
+      "actions.terminate.title": "Termina",
+      "actions.terminate.whyNot": "Il workflow è finito o sta già terminando.",
+      "columns.workflow-phase.title": "Fase",
+      "columns.workflow-progress.title": "Avanzamento",
+      "columns.workflow-duration.title": "Durata",
+      "columns.workflow-failed-step.title": "Passo non riuscito",
+      "columns.cron-schedule.title": "Pianificazione",
+      "columns.cron-suspended.title": "Sospeso",
+      "columns.cron-active.title": "Attivi",
+      "columns.cron-last-scheduled.title": "Ultima esecuzione",
+      "columns.template-entrypoint.title": "Punto di ingresso",
+      "columns.template-templates.title": "Modelli",
+      "columns.cluster-template-entrypoint.title": "Punto di ingresso",
+      "columns.cluster-template-templates.title": "Modelli",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "Sì",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow non riuscito",
+      "problems.failed.message": "Il workflow è finito in {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: il passo non riuscito e il suo messaggio sono nei dettagli.",
+      "problems.failed-earlier.title": "Workflow non riuscito prima che Sextant guardasse",
+      "problems.failed-earlier.message": "Il workflow è finito in {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: il passo non riuscito e il suo messaggio sono nei dettagli."
+    },
+    "pl": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows: workflowy z fazą, postępem, czasem trwania i nieudanym krokiem, drzewo kroków z logami każdego poda, cron workflowy i szablony; wstrzymanie, wznowienie, zatrzymanie i zakończenie tymi patchami, które wysyła argo CLI, pokazanymi najpierw; problemy workflowów, które niedawno zakończyły się niepowodzeniem.",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "Harmonogram",
+      "detailsSections.template.title": "Szablon",
+      "actions.suspend.title": "Wstrzymaj",
+      "actions.suspend.whyNot": "Wstrzymać można tylko workflow, który się nie zakończył i nie jest wstrzymany.",
+      "actions.resume.title": "Wznów",
+      "actions.resume.whyNot": "Workflow nie jest wstrzymany i żaden krok suspend nie czeka.",
+      "actions.stop.title": "Zatrzymaj",
+      "actions.stop.whyNot": "Workflow już się zakończył albo jest już zatrzymywany.",
+      "actions.terminate.title": "Zakończ",
+      "actions.terminate.whyNot": "Workflow już się zakończył albo jest już kończony.",
+      "columns.workflow-phase.title": "Faza",
+      "columns.workflow-progress.title": "Postęp",
+      "columns.workflow-duration.title": "Czas trwania",
+      "columns.workflow-failed-step.title": "Nieudany krok",
+      "columns.cron-schedule.title": "Harmonogram",
+      "columns.cron-suspended.title": "Wstrzymany",
+      "columns.cron-active.title": "Aktywne",
+      "columns.cron-last-scheduled.title": "Ostatnie uruchomienie",
+      "columns.template-entrypoint.title": "Punkt wejścia",
+      "columns.template-templates.title": "Szablony",
+      "columns.cluster-template-entrypoint.title": "Punkt wejścia",
+      "columns.cluster-template-templates.title": "Szablony",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "Tak",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow zakończony niepowodzeniem",
+      "problems.failed.message": "Workflow zakończył się jako {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: nieudany krok i jego komunikat są w szczegółach.",
+      "problems.failed-earlier.title": "Workflow zakończony niepowodzeniem, zanim Sextant spojrzał",
+      "problems.failed-earlier.message": "Workflow zakończył się jako {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}: nieudany krok i jego komunikat są w szczegółach."
+    },
+    "tr": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows: aşaması, ilerlemesi, süresi ve başarısız adımıyla workflow'lar, her pod'un loglarıyla adım ağacı, cron workflow'lar ve şablonlar; argo CLI'ın gönderdiği patch'lerle, önce gösterilerek askıya alma, sürdürme, durdurma ve sonlandırma; yakın zamanda başarısız olan workflow'ların sorunları.",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "Zamanlama",
+      "detailsSections.template.title": "Şablon",
+      "actions.suspend.title": "Askıya al",
+      "actions.suspend.whyNot": "Yalnızca bitmemiş ve askıda olmayan bir workflow askıya alınabilir.",
+      "actions.resume.title": "Sürdür",
+      "actions.resume.whyNot": "Workflow askıda değil ve bekleyen suspend adımı yok.",
+      "actions.stop.title": "Durdur",
+      "actions.stop.whyNot": "Workflow bitti ya da zaten durduruluyor.",
+      "actions.terminate.title": "Sonlandır",
+      "actions.terminate.whyNot": "Workflow bitti ya da zaten sonlandırılıyor.",
+      "columns.workflow-phase.title": "Aşama",
+      "columns.workflow-progress.title": "İlerleme",
+      "columns.workflow-duration.title": "Süre",
+      "columns.workflow-failed-step.title": "Başarısız adım",
+      "columns.cron-schedule.title": "Zamanlama",
+      "columns.cron-suspended.title": "Askıda",
+      "columns.cron-active.title": "Etkin",
+      "columns.cron-last-scheduled.title": "Son çalıştırma",
+      "columns.template-entrypoint.title": "Giriş noktası",
+      "columns.template-templates.title": "Şablonlar",
+      "columns.cluster-template-entrypoint.title": "Giriş noktası",
+      "columns.cluster-template-templates.title": "Şablonlar",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "Evet",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow başarısız oldu",
+      "problems.failed.message": "Workflow {{.metadata.labels[\"workflows.argoproj.io/phase\"]}} ile bitti: başarısız adım ve iletisi ayrıntılarında.",
+      "problems.failed-earlier.title": "Workflow, Sextant bakmadan önce başarısız oldu",
+      "problems.failed-earlier.message": "Workflow {{.metadata.labels[\"workflows.argoproj.io/phase\"]}} ile bitti: başarısız adım ve iletisi ayrıntılarında."
+    },
+    "zh-CN": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows：workflow 的阶段、进度、时长和失败的步骤，带有每个 pod 日志的步骤树，cron workflow 和模板；以 argo CLI 发送的 patch 挂起、恢复、停止和终止，发送前先展示；最近失败的 workflow 的问题。",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "计划",
+      "detailsSections.template.title": "模板",
+      "actions.suspend.title": "挂起",
+      "actions.suspend.whyNot": "只有尚未结束且未挂起的 workflow 才能挂起。",
+      "actions.resume.title": "恢复",
+      "actions.resume.whyNot": "workflow 未挂起，也没有等待中的 suspend 步骤。",
+      "actions.stop.title": "停止",
+      "actions.stop.whyNot": "workflow 已经结束或已在停止中。",
+      "actions.terminate.title": "终止",
+      "actions.terminate.whyNot": "workflow 已经结束或已在终止中。",
+      "columns.workflow-phase.title": "阶段",
+      "columns.workflow-progress.title": "进度",
+      "columns.workflow-duration.title": "时长",
+      "columns.workflow-failed-step.title": "失败的步骤",
+      "columns.cron-schedule.title": "计划",
+      "columns.cron-suspended.title": "已挂起",
+      "columns.cron-active.title": "活动",
+      "columns.cron-last-scheduled.title": "上次运行",
+      "columns.template-entrypoint.title": "入口",
+      "columns.template-templates.title": "模板",
+      "columns.cluster-template-entrypoint.title": "入口",
+      "columns.cluster-template-templates.title": "模板",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}：{{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}：{{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}：{{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}：{{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "是",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow 失败",
+      "problems.failed.message": "workflow 以 {{.metadata.labels[\"workflows.argoproj.io/phase\"]}} 结束：失败的步骤及其消息见其详情。",
+      "problems.failed-earlier.title": "Workflow 在 Sextant 查看之前已失败",
+      "problems.failed-earlier.message": "workflow 以 {{.metadata.labels[\"workflows.argoproj.io/phase\"]}} 结束：失败的步骤及其消息见其详情。"
+    },
+    "zh-TW": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows：workflow 的階段、進度、時長和失敗的步驟，附有每個 pod 日誌的步驟樹，cron workflow 和範本；以 argo CLI 傳送的 patch 暫停、繼續、停止和終止，傳送前先顯示；最近失敗的 workflow 的問題。",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "排程",
+      "detailsSections.template.title": "範本",
+      "actions.suspend.title": "暫停",
+      "actions.suspend.whyNot": "只有尚未結束且未暫停的 workflow 才能暫停。",
+      "actions.resume.title": "繼續",
+      "actions.resume.whyNot": "workflow 未暫停，也沒有等待中的 suspend 步驟。",
+      "actions.stop.title": "停止",
+      "actions.stop.whyNot": "workflow 已經結束或已在停止中。",
+      "actions.terminate.title": "終止",
+      "actions.terminate.whyNot": "workflow 已經結束或已在終止中。",
+      "columns.workflow-phase.title": "階段",
+      "columns.workflow-progress.title": "進度",
+      "columns.workflow-duration.title": "時長",
+      "columns.workflow-failed-step.title": "失敗的步驟",
+      "columns.cron-schedule.title": "排程",
+      "columns.cron-suspended.title": "已暫停",
+      "columns.cron-active.title": "作用中",
+      "columns.cron-last-scheduled.title": "上次執行",
+      "columns.template-entrypoint.title": "進入點",
+      "columns.template-templates.title": "範本",
+      "columns.cluster-template-entrypoint.title": "進入點",
+      "columns.cluster-template-templates.title": "範本",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}：{{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}：{{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}：{{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}：{{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}：{{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}：{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "是",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow 失敗",
+      "problems.failed.message": "workflow 以 {{.metadata.labels[\"workflows.argoproj.io/phase\"]}} 結束：失敗的步驟及其訊息請見其詳細資料。",
+      "problems.failed-earlier.title": "Workflow 在 Sextant 查看之前已失敗",
+      "problems.failed-earlier.message": "workflow 以 {{.metadata.labels[\"workflows.argoproj.io/phase\"]}} 結束：失敗的步驟及其訊息請見其詳細資料。"
+    },
+    "ja": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows：フェーズ、進捗、所要時間、失敗したステップ付きの Workflow、各 Pod のログを開けるステップツリー、Cron Workflow とテンプレート。argo CLI が送るのと同じパッチで、送信前に表示してから一時停止・再開・停止・終了。最近失敗した Workflow の問題。",
+      "kinds.0.title": "Workflow",
+      "kinds.1.title": "CronWorkflow",
+      "kinds.2.title": "WorkflowTemplate",
+      "kinds.3.title": "ClusterWorkflowTemplate",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "スケジュール",
+      "detailsSections.template.title": "テンプレート",
+      "actions.suspend.title": "一時停止",
+      "actions.suspend.whyNot": "一時停止できるのは、終わっておらず一時停止もしていない Workflow だけです。",
+      "actions.resume.title": "再開",
+      "actions.resume.whyNot": "Workflow は一時停止しておらず、待機中の suspend ステップもありません。",
+      "actions.stop.title": "停止",
+      "actions.stop.whyNot": "Workflow はすでに終わっているか、停止処理中です。",
+      "actions.terminate.title": "終了",
+      "actions.terminate.whyNot": "Workflow はすでに終わっているか、終了処理中です。",
+      "columns.workflow-phase.title": "フェーズ",
+      "columns.workflow-progress.title": "進捗",
+      "columns.workflow-duration.title": "所要時間",
+      "columns.workflow-failed-step.title": "失敗したステップ",
+      "columns.cron-schedule.title": "スケジュール",
+      "columns.cron-suspended.title": "停止中",
+      "columns.cron-active.title": "実行中",
+      "columns.cron-last-scheduled.title": "前回の実行",
+      "columns.template-entrypoint.title": "エントリーポイント",
+      "columns.template-templates.title": "テンプレート",
+      "columns.cluster-template-entrypoint.title": "エントリーポイント",
+      "columns.cluster-template-templates.title": "テンプレート",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "はい",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow が失敗",
+      "problems.failed.message": "Workflow は {{.metadata.labels[\"workflows.argoproj.io/phase\"]}} で終わりました。失敗したステップとそのメッセージは詳細にあります。",
+      "problems.failed-earlier.title": "Sextant が見る前に Workflow が失敗",
+      "problems.failed-earlier.message": "Workflow は {{.metadata.labels[\"workflows.argoproj.io/phase\"]}} で終わりました。失敗したステップとそのメッセージは詳細にあります。"
+    },
+    "ko": {
+      "name": "Argo Workflows",
+      "description": "Argo Workflows: 단계 상태, 진행률, 소요 시간, 실패한 단계가 있는 workflow, 각 pod의 로그를 여는 단계 트리, cron workflow와 템플릿; argo CLI가 보내는 패치로, 먼저 보여 준 뒤 일시 중단·재개·중지·종료; 최근 실패한 workflow의 문제.",
+      "kinds.0.title": "Workflows",
+      "kinds.1.title": "Cron Workflows",
+      "kinds.2.title": "Workflow Templates",
+      "kinds.3.title": "Cluster Workflow Templates",
+      "sections.argoWorkflows.title": "Argo Workflows",
+      "detailsSections.workflow.title": "Workflow",
+      "detailsSections.cron-workflow.title": "일정",
+      "detailsSections.template.title": "템플릿",
+      "actions.suspend.title": "일시 중단",
+      "actions.suspend.whyNot": "끝나지 않았고 일시 중단되지 않은 workflow만 일시 중단할 수 있습니다.",
+      "actions.resume.title": "재개",
+      "actions.resume.whyNot": "workflow가 일시 중단되지 않았고 대기 중인 suspend 단계도 없습니다.",
+      "actions.stop.title": "중지",
+      "actions.stop.whyNot": "workflow가 이미 끝났거나 이미 중지되는 중입니다.",
+      "actions.terminate.title": "종료",
+      "actions.terminate.whyNot": "workflow가 이미 끝났거나 이미 종료되는 중입니다.",
+      "columns.workflow-phase.title": "단계 상태",
+      "columns.workflow-progress.title": "진행률",
+      "columns.workflow-duration.title": "소요 시간",
+      "columns.workflow-failed-step.title": "실패한 단계",
+      "columns.cron-schedule.title": "일정",
+      "columns.cron-suspended.title": "일시 중단됨",
+      "columns.cron-active.title": "활성",
+      "columns.cron-last-scheduled.title": "마지막 실행",
+      "columns.template-entrypoint.title": "진입점",
+      "columns.template-templates.title": "템플릿",
+      "columns.cluster-template-entrypoint.title": "진입점",
+      "columns.cluster-template-templates.title": "템플릿",
+      "columns.workflow-failed-step.cases.0.text": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.0.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.1.text": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.1.tooltip": "{{.status.nodes[type=\"Container\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Container\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.2.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.2.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.3.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.3.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"Pod\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.4.text": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.4.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Failed\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.text": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.5.tooltip": "{{.status.nodes[type=\"Pod\",phase=\"Error\"].displayName}}: {{.status.message}}",
+      "columns.workflow-failed-step.cases.6.text": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.6.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.7.text": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.7.tooltip": "{{.status.nodes[type=\"HTTP\",phase=\"Error\"].displayName}}: {{.status.nodes[type=\"HTTP\",phase=\"Error\"].message}}",
+      "columns.workflow-failed-step.cases.8.text": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.8.tooltip": "{{.status.nodes[type=\"Plugin\",phase=\"Failed\"].displayName}}: {{.status.nodes[type=\"Plugin\",phase=\"Failed\"].message}}",
+      "columns.workflow-failed-step.cases.9.text": "{{.status.message}}",
+      "columns.workflow-failed-step.cases.9.tooltip": "{{.status.message}}",
+      "columns.cron-schedule.cases.0.text": "{{.spec.schedule}}",
+      "columns.cron-suspended.cases.0.text": "예",
+      "columns.cron-active.cases.0.text": "0",
+      "columns.template-templates.cases.0.text": "0",
+      "columns.cluster-template-templates.cases.0.text": "0",
+      "problems.failed.title": "Workflow 실패",
+      "problems.failed.message": "workflow가 {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}(으)로 끝났습니다. 실패한 단계와 메시지는 세부 정보에 있습니다.",
+      "problems.failed-earlier.title": "Sextant가 보기 전에 실패한 Workflow",
+      "problems.failed-earlier.message": "workflow가 {{.metadata.labels[\"workflows.argoproj.io/phase\"]}}(으)로 끝났습니다. 실패한 단계와 메시지는 세부 정보에 있습니다."
+    }
+  }
+}

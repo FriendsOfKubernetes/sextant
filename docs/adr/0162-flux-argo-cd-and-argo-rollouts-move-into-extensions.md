@@ -55,3 +55,12 @@ and notifications would double.
 - `crates/sextant-core/tests/gitops_flux.rs` and `gitops_argocd.rs` keep checking the patches against real Flux and
   Argo CD: the extensions send the same ones. The core's Argo CD client tests (`gitops_argocd_diff.rs`) went with it.
 - The e2e GitOps scenarios run against the extensions installed into the e2e profile.
+
+## Amendment: Argo Workflows (#397)
+
+Argo Workflows moves the same way in 0.30.0, on the API additions of ADR-0165: the extension `extensions/argo-workflows`
+(`sextant.argo-workflows`), the built-in `src/features/argo-workflows` and its texts removed, the section `argoWorkflows`
+kept in place after Velero (`EXTENSION_SECTION_PLACES`), an offer in `OFFERS` matching `argoproj.io` `Workflow`, and the
+category `workflows` moved by the version-3 migration to `ext:sextant.argo-workflows` (`MOVED_PROBLEM_CATEGORIES`, not
+given to agents: it never was). `fnv32a` and `DurationText`, which OpenShift used, moved to OpenShift's model and the
+shared components. The extension must be in the catalog before 0.30.0 is released, as the other three.

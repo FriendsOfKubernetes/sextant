@@ -20,6 +20,7 @@ export const OFFERS: readonly ExtensionOffer[] = [
   // Argo CD, Argo Rollouts and Argo Workflows share `argoproj.io`: by kind too.
   { id: "sextant.argo-cd", tool: "Argo CD", matches: (k) => k.group === "argoproj.io" && k.kind === "Application" },
   { id: "sextant.argo-rollouts", tool: "Argo Rollouts", matches: (k) => k.group === "argoproj.io" && k.kind === "Rollout" },
+  { id: "sextant.argo-workflows", tool: "Argo Workflows", matches: (k) => k.group === "argoproj.io" && k.kind === "Workflow" },
 ];
 
 /** The offers for a cluster serving `kinds`: its tool is there, the extension is not installed, nor declined. */

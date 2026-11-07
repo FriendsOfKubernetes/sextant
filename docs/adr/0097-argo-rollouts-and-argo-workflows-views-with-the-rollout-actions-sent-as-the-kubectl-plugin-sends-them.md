@@ -57,3 +57,9 @@ Amended (v0.21.0 review): three corrections. (1) A Workflow resume read the para
 ## Amended (v0.22.0): Rollout Restart (#255)
 
 Restart sends exactly `kubectl argo rollouts restart`'s patch (pkg/kubectl-argo-rollouts/cmd/restart/restart.go, `restartPatch` and `RestartRollout`): the merge patch `{"spec":{"restartAt":"<now>"}}` to the Rollout itself (never the status subresource), the time `timeutil.Now().UTC()` formatted with Go's `time.RFC3339` (whole seconds, `Z`; `restartPatch`/`rfc3339Seconds` in `argo-rollouts/patches.ts`). The plugin's `--in` delay is not offered. Restart is not one of the Rollout dialogs of this ADR: it is the generic Restart action (ADR-0112), so that several Rollouts — and the ReplicaSets a Rollout owns — restart from one selection; its confirmation lists the patch with the time as of opening and says the time of sending is used, and it reads the Rollout again (same uid, not being deleted) right before sending. The patch is sent once, through `resource_patch`, within CHANGE_TIMEOUT.
+
+## Amendment: both views moved into extensions (0.30.0)
+
+Argo Rollouts (ADR-0162) and Argo Workflows (#397, ADR-0162's amendment, on ADR-0165's API) are Sextant's own
+extensions since 0.30.0. What this ADR decided — the plugin's exact patches, the fresh read before sending, the Workflow
+patches of `workflow/util/util.go`, pod names by `pod-name-format` — holds there; the core keeps no view of either.

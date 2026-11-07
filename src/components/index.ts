@@ -1,4 +1,4 @@
-export { Age, ageParts, type AgeUnit } from "./Age";
+export { Age, ageParts, DurationText, type AgeUnit } from "./Age";
 export { Badge, type BadgeTone } from "./Badge";
 export { Button, type ButtonProps } from "./Button";
 export { Checkbox, type CheckboxProps } from "./Checkbox";

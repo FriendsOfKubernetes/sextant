@@ -49,7 +49,8 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
   from what Istio, Linkerd, ingress-nginx, Grafana Beyla or Cilium Hubble already report to Prometheus or VictoriaMetrics — nothing
   installed.
 - **Ecosystem** — Argo Rollouts (status, steps, weights, analysis; promote, abort and retry as the kubectl plugin
-  sends them; Sextant's own extension), Argo Workflows (the step tree with the failed step and its logs, CronWorkflows), Knative Serving,
+  sends them; Sextant's own extension), Argo Workflows (the step tree with the failed step and its logs, CronWorkflows;
+  Sextant's own extension), Knative Serving,
   Crossplane (claim → composite → managed resources, paused state), Kyverno (policy results on every object),
   External Secrets (never the secret data), CloudNativePG (primary, replicas, backups, hibernation), Strimzi and
   Prometheus Operator (what a monitor selects and which Prometheus picks it up), each from the operator's own status.

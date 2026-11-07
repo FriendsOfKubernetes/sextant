@@ -57,7 +57,6 @@ export const PROBLEM_CATEGORIES = [
   "vpa",
   "volumes",
   "certificates",
-  "workflows",
   "gateway",
   "mesh",
   "traefik",
@@ -729,8 +728,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return eventProblems(obj);
     case "certificates":
       return certificateProblems(obj);
-    case "workflows": // Recent failed Workflows: the provider of features/argo-workflows finds them.
-      return [];
     case "gateway":
       return gatewayProblems(obj, kind);
     case "knative":

@@ -23,7 +23,6 @@
     "vpa": "Vertical Pod Autoscaler",
     "volumes": "卷声明",
     "certificates": "证书",
-    "workflows": "Argo Workflows",
     "gateway": "Gateway API",
     "mesh": "服务网格",
     "traefik": "Traefik",

@@ -18,7 +18,6 @@
     "vpa": "Vertical Pod Autoscaler",
     "volumeSnapshots": "Знімки томів",
     "velero": "Velero",
-    "argoWorkflows": "Argo Workflows",
     "istio": "Istio",
     "linkerd": "Linkerd",
     "traefik": "Traefik",

@@ -194,7 +194,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "vpa",
     "volumes",
     "certificates",
-    "workflows",
     "gateway",
     "mesh",
     "traefik",
@@ -240,9 +239,7 @@ pub const OPT_IN_CATEGORIES: [&str; 11] = [
 /// Never given to agents: expiring kubeconfig credentials are the app user's, not the cluster's (ADR-0084).
 /// Knative, Crossplane and Kyverno policy problems (#213) are window views of this build: agents get nothing new.
 /// So are External Secrets, CloudNativePG, Strimzi and Prometheus Operator problems (#213).
-/// And Argo Workflows problems (#213, ADR-0097).
 pub const NEVER_FOR_AGENTS: &[&str] = &[
-    "workflows",
     "credentials",
     // Traefik references (#232): a window view of 0.20.0.
     "traefik",

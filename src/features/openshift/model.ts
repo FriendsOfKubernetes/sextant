@@ -8,7 +8,6 @@ import type { KindRef, KubeObject } from "../../api";
 import { status } from "../../resources";
 import type { Tone } from "../../resources/status";
 import { cleanText, safeUriText } from "../../resources/uri";
-import { fnv32a } from "../argo-workflows/model";
 import type { Detected } from "../problems/model";
 
 const { arr, get, num, record, str } = status;
@@ -711,3 +710,13 @@ export function openshiftProblems(kind: Pick<KindRef, "group" | "kind">, obj: Ku
 /** Whether the table's "Only problems" filter shows the object (no grace; a failed Build however long ago). */
 export const isProblem = (obj: KubeObject, kind: Pick<KindRef, "group" | "kind">): boolean =>
   isKind(kind, BUILD) ? isFailedBuild(obj) : openshiftProblems(kind, obj).length > 0;
+
+/** 32-bit FNV-1a of the UTF-8 bytes, as Go's `hash/fnv` `New32a` (library-go's build pod names). */
+export function fnv32a(text: string): number {
+  let hash = 0x811c9dc5;
+  for (const byte of new TextEncoder().encode(text)) {
+    hash ^= byte;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash >>> 0;
+}

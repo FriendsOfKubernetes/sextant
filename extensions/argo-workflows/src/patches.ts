@@ -1,4 +1,5 @@
-// The patches of the Workflow actions, built as Argo Workflows builds them (ADR-0097, amended for #238;
+// The patches of the Workflow actions, built as Argo Workflows builds them (ported from Sextant's former built-in view;
+// ADR-0097, amended for #238;
 // workflow/util/util.go `SuspendWorkflow`, `ResumeWorkflow`, `StopWorkflow`, `TerminateWorkflow`,
 // `patchShutdownStrategy`, `OverrideOutputParametersWithDefault`, `AddParamToGlobalScope`; workflow/creator/creator.go).
 // A Workflow has no status subresource (`subresources: {}` in the CRD; the controller and `argo resume` write its nodes
@@ -20,10 +21,8 @@
 // outputs exported. Nodes that are
 // compressed or offloaded to the controller's database cannot be read here: resume is then refused.
 // Retry is not offered: util.go's `FormulateRetryWorkflow` rebuilds the node tree and deletes pods (ADR-0097).
-import type { KubeObject } from "../../api";
-import { status } from "../../resources";
-
-const { arr, get, labelsOf, record, str } = status;
+import type { KubeObject } from "@sextant/extension-sdk";
+import { arr, get, labelsOf, record, str } from "./model";
 
 export type WorkflowAction = "suspend" | "resume" | "stop" | "terminate";
 
@@ -185,3 +184,24 @@ export function patchToSend(plan: WorkflowPlan, resourceVersion: string | undefi
   const { metadata, ...rest } = patch;
   return metadata ? { metadata, ...rest } : rest;
 }
+
+// ---------- The manifest's actions ----------
+
+/** The manifest's action ids, by action. */
+export const ACTION_IDS: Record<WorkflowAction, string> = { suspend: "suspend", resume: "resume", stop: "stop", terminate: "terminate" };
+
+/** The action of a manifest action id. */
+export function actionOf(id: string): WorkflowAction | undefined {
+  return (Object.keys(ACTION_IDS) as WorkflowAction[]).find((a) => ACTION_IDS[a] === id);
+}
+
+/**
+ * Where each action is offered, as util.go would act: suspend a running one, resume a suspended one, stop or
+ * terminate an unfinished one. The manifest's `when` says exactly this (model.test.ts checks it).
+ */
+export const APPLIES: Record<WorkflowAction, (wf: KubeObject) => boolean> = {
+  suspend: (wf) => !isCompleted(wf) && !isFinished(wf) && !isSuspended(wf),
+  resume: (wf) => isSuspended(wf) || activeSuspendNodes(wf).length > 0,
+  stop: (wf) => !isFinished(wf) && shutdownOf(wf) !== "Stop",
+  terminate: (wf) => !isFinished(wf) && shutdownOf(wf) !== "Terminate",
+};

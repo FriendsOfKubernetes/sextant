@@ -10,7 +10,6 @@ import { getResourceDef, kindFromApiVersion, resetClusterKinds } from "../../res
 import { axeViolations } from "../../test/axe";
 import "../actions";
 import { getAction, getActionsFor, runAction, type ActionId } from "../actions/registry";
-import { fnv32a } from "../argo-workflows/model";
 import "../details";
 import { copy, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetNamespaceRestore } from "../namespaces";
@@ -46,6 +45,7 @@ import {
   routeTls,
   routeUrl,
   streamTags,
+  fnv32a,
 } from "./model";
 import { rolloutLatestRequest, sortedJson, startBuildRequest } from "./requests";
 

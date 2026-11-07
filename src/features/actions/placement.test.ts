@@ -18,9 +18,6 @@ const PRIMARY: ActionId[] = [
   "cordon",
   "drain",
   "diagnose",
-  "workflowSuspend",
-  "workflowResume",
-  "workflowStop",
   "openshiftRolloutLatest",
   "openshiftStartBuild",
 ];
@@ -29,7 +26,6 @@ const MORE: ActionId[] = [
   "setImage",
   "compareWith",
   "rolloutUndo",
-  "workflowTerminate",
   "snapshotCreate",
   "snapshotRestore",
   "veleroBackup",

@@ -750,10 +750,12 @@ pub fn migrate(settings: &mut AppSettings) {
 
 /// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
 /// the extension, and whether agents got the category by default.
-pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 3] = [
+pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 4] = [
     ("flux", "sextant.flux", true),
     ("argocd", "sextant.argo-cd", true),
     ("rollouts", "sextant.argo-rollouts", false),
+    // Argo Workflows (#397): never given to agents before, so not now either.
+    ("workflows", "sextant.argo-workflows", false),
 ];
 
 /// Reads the settings file and decides whether it may be written.
@@ -1305,7 +1307,7 @@ mod tests {
         std::fs::write(
             &path,
             r#"{ "settingsVersion": 2,
-                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts"] },
+                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows"] },
                  "mcp": { "extensionProblems": ["sextant.argo-cd", "acme.widgets"] } }"#,
         )
         .unwrap();
@@ -1314,7 +1316,12 @@ mod tests {
         assert_eq!(s.settings_version, SETTINGS_VERSION);
         assert_eq!(
             s.notifications.disabled_categories,
-            ["ext:sextant.flux", "pods", "ext:sextant.argo-rollouts"]
+            [
+                "ext:sextant.flux",
+                "pods",
+                "ext:sextant.argo-rollouts",
+                "ext:sextant.argo-workflows"
+            ]
         );
         assert_eq!(
             s.mcp.extension_problems,

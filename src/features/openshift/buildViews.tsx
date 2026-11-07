@@ -7,10 +7,9 @@ import { useDetailsDisclosure } from "../../layout/details/disclosure";
 // log snippet the build controller keeps.
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KubeObject } from "../../api";
-import { Button } from "../../components";
+import { Button, DurationText } from "../../components";
 import { status } from "../../resources";
 import { cleanText } from "../../resources/uri";
-import { DurationText } from "../argo-workflows/columns";
 import { Block, chips, Fields, KINDS, link, table, type ColumnWrap, type FieldRow } from "../details";
 import { openLogsTab } from "../logs";
 import { BuildPhaseText } from "./columns";

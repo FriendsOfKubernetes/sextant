@@ -20,13 +20,15 @@ const kind = (group: string, k: string, version = "v1"): ResourceKind => ({
 const FLUX = kind("kustomize.toolkit.fluxcd.io", "Kustomization");
 const APP = kind("argoproj.io", "Application", "v1alpha1");
 const WORKFLOW = kind("argoproj.io", "Workflow", "v1alpha1");
+/** A kind no extension of Sextant's own is offered for. */
+const OTHER = kind("demo.sextant.dev", "Widget");
 
 describe("offersFor", () => {
   const refs = (...kinds: ResourceKind[]) => kinds.map((k) => k.kindRef);
   it("offers an extension of Sextant's own only where its tool runs, unless installed, declined or put off", () => {
     expect(offersFor(refs(FLUX, APP), new Set(), [], new Set()).map((o) => o.id)).toEqual(["sextant.flux", "sextant.argo-cd"]);
-    // Argo Workflows shares the group: not Argo CD.
-    expect(offersFor(refs(WORKFLOW), new Set(), [], new Set())).toEqual([]);
+    // Argo Workflows shares the group: its own extension, not Argo CD's (#397).
+    expect(offersFor(refs(WORKFLOW), new Set(), [], new Set()).map((o) => o.id)).toEqual(["sextant.argo-workflows"]);
     expect(offersFor(refs(FLUX, APP), new Set(["sextant.flux"]), ["sextant.argo-cd"], new Set())).toEqual([]);
     expect(offersFor(refs(FLUX), new Set(), [], new Set(["sextant.flux"]))).toEqual([]);
   });
@@ -41,7 +43,7 @@ describe("the offers above the sidebar", () => {
     resetClusterKinds();
     resetNotNow();
     installed = [];
-    backend = mockBackend({ cluster_kinds: () => [FLUX, WORKFLOW], extensions_list: () => installed }, {
+    backend = mockBackend({ cluster_kinds: () => [FLUX, OTHER], extensions_list: () => installed }, {
       settings: { extensionCatalog: { enabled: true, declinedOffers: [] } },
     });
     useAppStore.getState().setActiveCluster("c1");

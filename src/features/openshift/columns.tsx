@@ -4,10 +4,9 @@
 // duration; an ImageStream's tags and the tags whose import fails; a Project's display name, phase and requester.
 import { useTranslation } from "react-i18next";
 import type { KubeObject } from "../../api";
-import { Age, ageParts } from "../../components";
+import { Age, ageParts, DurationText } from "../../components";
 import { formatList, formatNumber } from "../../i18n";
 import { ageColumn, ageOptions, nameColumn, namespaceColumn, status, StatusText, type ColumnDef } from "../../resources";
-import { DurationText } from "../argo-workflows/columns";
 import {
   bcTriggers,
   BUILD_TONE,

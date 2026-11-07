@@ -1,34 +1,16 @@
 // What Argo Workflows objects say, read the way the Argo Workflows UI reads them (ADR-0097): the phase, progress and
 // duration of a Workflow, the node that failed and its message, the node tree (bounded), the pod of a pod node (named
 // as ui/src/shared/pod-name.ts and workflow/util/pod_name.go name it, by `workflows.argoproj.io/pod-name-format`), and
-// a CronWorkflow's schedule, last run and active Workflows. No React here.
-import type { KindRef, KubeObject } from "../../api";
-import { status } from "../../resources";
-import type { Tone } from "../../resources/status";
-
-const { arr, get, num, record, str } = status;
+// a CronWorkflow's schedule, last run and active Workflows. Ported from Sextant's former built-in view
+// (src/features/argo-workflows); no DOM here. The patches of the actions are in ./patches.ts.
+import type { KubeObject, UiTone } from "@sextant/extension-sdk";
 
 export const WORKFLOWS_GROUP = "argoproj.io";
-const v1alpha1 = (kind: string): KindRef => ({ group: WORKFLOWS_GROUP, version: "v1alpha1", kind });
-
-export const WORKFLOW = v1alpha1("Workflow");
-export const CRON_WORKFLOW = v1alpha1("CronWorkflow");
-export const WORKFLOW_TEMPLATE = v1alpha1("WorkflowTemplate");
-export const CLUSTER_WORKFLOW_TEMPLATE = v1alpha1("ClusterWorkflowTemplate");
-
-/** The kinds of the sidebar section, in its order. Argo CD's and Argo Rollouts' kinds share the group. */
-export const WORKFLOWS_KINDS = [
-  { kind: WORKFLOW, label: "workflows", order: 10, namespaced: true },
-  { kind: CRON_WORKFLOW, label: "cronWorkflows", order: 20, namespaced: true },
-  { kind: WORKFLOW_TEMPLATE, label: "workflowTemplates", order: 30, namespaced: true },
-  { kind: CLUSTER_WORKFLOW_TEMPLATE, label: "clusterWorkflowTemplates", order: 40, namespaced: false },
-] as const;
-
-export const isKind = (kind: Pick<KindRef, "group" | "kind">, ...of: KindRef[]): boolean =>
-  of.some((k) => k.group === kind.group && k.kind === kind.kind);
-
-export const isWorkflowsKind = (kind: Pick<KindRef, "group" | "kind">): boolean =>
-  WORKFLOWS_KINDS.some((d) => isKind(kind, d.kind));
+export const WORKFLOW = { group: WORKFLOWS_GROUP, kind: "Workflow" } as const;
+export const CRON_WORKFLOW = { group: WORKFLOWS_GROUP, kind: "CronWorkflow" } as const;
+export const WORKFLOW_TEMPLATE = { group: WORKFLOWS_GROUP, kind: "WorkflowTemplate" } as const;
+export const CLUSTER_WORKFLOW_TEMPLATE = { group: WORKFLOWS_GROUP, kind: "ClusterWorkflowTemplate" } as const;
+export const POD = { group: "", kind: "Pod" } as const;
 
 /** The label the controller keeps equal to `status.phase` (server-side selectable, unlike the status). */
 export const PHASE_LABEL = "workflows.argoproj.io/phase";
@@ -36,6 +18,32 @@ export const PHASE_LABEL = "workflows.argoproj.io/phase";
 export const CRON_WORKFLOW_LABEL = "workflows.argoproj.io/cron-workflow";
 /** How the controller named the Workflow's pods: `v1` (the node id) or `v2` (the default). */
 export const POD_NAME_FORMAT_ANNOTATION = "workflows.argoproj.io/pod-name-format";
+
+/** The tone of a status word, as the SDK's UI kit colours it (`ui.status`). */
+export type Tone = UiTone;
+
+// ---------- Reading fields ----------
+
+/** The value at `path` of `value`, or `undefined` where a step is missing. */
+export function get(value: unknown, ...path: string[]): unknown {
+  let at = value;
+  for (const key of path) {
+    if (at === null || typeof at !== "object" || Array.isArray(at)) return undefined;
+    at = (at as Record<string, unknown>)[key];
+  }
+  return at;
+}
+
+export const arr = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
+export const record = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+export const str = (value: unknown): string | undefined => (typeof value === "string" && value !== "" ? value : undefined);
+export const num = (value: unknown): number | undefined => (typeof value === "number" && Number.isFinite(value) ? value : undefined);
+export const labelsOf = (obj: KubeObject): Record<string, unknown> => record(obj.metadata?.labels);
+
+/** Whether `kind` is `of` (Argo CD, Argo Rollouts and Argo Workflows share the group: by group and kind). */
+export const isKind = (kind: { group: string; kind: string }, of: { group: string; kind: string }): boolean =>
+  kind.group === of.group && kind.kind === of.kind;
 
 // ---------- Phase, progress, duration ----------
 
@@ -76,6 +84,19 @@ export function durationOf(obj: unknown, now: number): number | undefined {
 }
 
 export const workflowDuration = (wf: KubeObject, now: number) => durationOf(get(wf, "status"), now);
+
+/** A duration in the largest whole unit, as Sextant shows ages (its `ageParts`): the unit and the count. */
+export function durationParts(ms: number): { unit: "seconds" | "minutes" | "hours" | "days" | "years"; count: number } {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  if (s < 60) return { unit: "seconds", count: s };
+  const m = Math.floor(s / 60);
+  if (m < 60) return { unit: "minutes", count: m };
+  const h = Math.floor(m / 60);
+  if (h < 24) return { unit: "hours", count: h };
+  const d = Math.floor(h / 24);
+  if (d < 365) return { unit: "days", count: d };
+  return { unit: "years", count: Math.floor(d / 365) };
+}
 
 // ---------- Nodes ----------
 
@@ -195,6 +216,15 @@ export function failureMessage(wf: KubeObject, node: WorkflowNode | undefined): 
   return node?.message ?? str(get(wf, "status", "message"));
 }
 
+/** "step: message" of the node that failed (or the Workflow's message), for a failed or errored Workflow only. */
+export function failedStepText(wf: KubeObject, join: (step: string, message: string) => string): string | undefined {
+  if (!isFailedPhase(workflowPhase(wf))) return undefined;
+  const node = failedNode(wf);
+  const message = failureMessage(wf, node);
+  if (node && message) return join(node.displayName, message);
+  return node?.displayName ?? message;
+}
+
 // ---------- Pod names ----------
 
 const MAX_NAME = 253;
@@ -242,6 +272,17 @@ export function podNameOf(wf: KubeObject, node: WorkflowNode, nodes?: ReadonlyMa
   return `${prefix}-${hash}`;
 }
 
+// ---------- Where a Workflow came from ----------
+
+/** The CronWorkflow that started a Workflow (its label). */
+export const cronOf = (wf: KubeObject): string | undefined => str(labelsOf(wf)[CRON_WORKFLOW_LABEL]);
+
+/** The WorkflowTemplate (or ClusterWorkflowTemplate) a Workflow was made from. */
+export const templateRefOf = (wf: KubeObject): { name: string; cluster: boolean } | undefined => {
+  const name = str(get(wf, "spec", "workflowTemplateRef", "name"));
+  return name ? { name, cluster: get(wf, "spec", "workflowTemplateRef", "clusterScope") === true } : undefined;
+};
+
 // ---------- CronWorkflow ----------
 
 /** `spec.schedules` (Argo 3.6+), else the one `spec.schedule`. */
@@ -269,7 +310,7 @@ export function cronCounts(cron: KubeObject): { succeeded?: number; failed?: num
 
 /** The entry template and the number of templates of a Workflow, WorkflowTemplate or ClusterWorkflowTemplate. */
 export function templateSummary(obj: KubeObject): { entrypoint?: string; templates: string[] } {
-  const spec = isKind({ group: WORKFLOWS_GROUP, kind: obj.kind ?? "" }, CRON_WORKFLOW) ? get(obj, "spec", "workflowSpec") : get(obj, "spec");
+  const spec = obj.kind === CRON_WORKFLOW.kind ? get(obj, "spec", "workflowSpec") : get(obj, "spec");
   return {
     entrypoint: str(get(spec, "entrypoint")),
     templates: arr(get(spec, "templates")).flatMap((t) => (str(get(t, "name")) ? [str(get(t, "name")) as string] : [])),
@@ -280,12 +321,18 @@ export function templateSummary(obj: KubeObject): { entrypoint?: string; templat
 
 /** How long a failed Workflow counts as a problem after it failed (or, when that time is unknown, was created). */
 export const RECENT_FAILURE_MS = 24 * 3600_000;
-/**
- * Failed Workflows the problems source lists (metadata only, about 1 KB each). The API server lists in namespace/name
- * order, so past this cap the list is incomplete whatever its age: the source says it is truncated.
- */
-export const MAX_FAILED_WORKFLOWS = 5000;
-/** At most this many failed Workflows become problems, the most recent failures first. */
-export const MAX_WORKFLOW_PROBLEMS = 500;
 /** The label selector of the problems source: failed and errored Workflows only. */
 export const FAILED_SELECTOR = `${PHASE_LABEL} in (Failed,Error)`;
+
+/**
+ * When a failed Workflow (metadata only) failed, as the built-in problems source read it: the moment the source saw it
+ * enter the failed list while watching (`enteredAt`), else its creation; it counts until `RECENT_FAILURE_MS` after.
+ * `undefined` when the phase label is not Failed or Error, or no time is known.
+ */
+export function failedAt(wf: KubeObject, enteredAt?: number): { since: number; until: number } | undefined {
+  const phase = str(labelsOf(wf)[PHASE_LABEL]);
+  if (!isFailedPhase(phase)) return undefined;
+  const created = Date.parse(String(wf.metadata?.creationTimestamp ?? ""));
+  const since = Math.max(Number.isNaN(created) ? -Infinity : created, enteredAt ?? -Infinity);
+  return Number.isFinite(since) ? { since, until: since + RECENT_FAILURE_MS } : undefined;
+}
