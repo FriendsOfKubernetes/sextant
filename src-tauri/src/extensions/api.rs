@@ -2823,9 +2823,7 @@ fn take_at(value: &mut Value, steps: &[PathStep]) -> Option<String> {
         at = match step {
             PathStep::Key(key) => at.get_mut(key.as_str())?,
             PathStep::Index(i) => at.get_mut(*i)?,
-            PathStep::Match { field, value } => at.as_array_mut()?.iter_mut().find(|item| {
-                item.get(field.as_str()).and_then(Value::as_str) == Some(value.as_str())
-            })?,
+            PathStep::Match { pairs } => PathStep::pick_mut(pairs, at)?,
         };
     }
     let token = at.as_str().filter(|t| !t.is_empty())?.to_owned();

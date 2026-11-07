@@ -32,8 +32,8 @@ function walk(obj: unknown, steps: readonly PathStep[]): unknown {
     if ("index" in step) {
       if (!Array.isArray(at)) return undefined;
       at = at[step.index];
-    } else if ("field" in step) {
-      at = pickItem(at, step);
+    } else if ("match" in step) {
+      at = pickItem(at, step.match);
     } else {
       if (Array.isArray(at) || !Object.prototype.hasOwnProperty.call(at, step.key)) return undefined;
       at = (at as Record<string, unknown>)[step.key];

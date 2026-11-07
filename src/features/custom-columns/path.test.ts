@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import type { KubeObject } from "../../api";
 import {
+  pickItem,
   cellValue,
   checkSpec,
   columnIdOf,
@@ -172,5 +173,24 @@ describe("secret material outside a Secret (#294)", () => {
     expect(checkSpec(NODE, "annotation", "rke2.io/node-args", "")).toEqual({ problem: "inlineSecret" });
     expect(checkSpec(NODE, "field", '.metadata.annotations["k3s.io/node-args"]', "")).toEqual({ problem: "inlineSecret" });
     expect("spec" in checkSpec(NODE, "annotation", "k3s.io/hostname", "")).toBe(true);
+  });
+});
+
+describe("a step picking by fields (#392)", () => {
+  it("takes several pairs and picks a list item or a map's value in key order", () => {
+    const steps = parseFieldPath('.status.nodes[type="Suspend",phase="Running"].name');
+    expect(steps).toEqual([{ key: "status" }, { key: "nodes" }, { match: [["type", "Suspend"], ["phase", "Running"]] }, { key: "name" }]);
+    expect(formatFieldPath(steps!)).toBe('.status.nodes[type="Suspend",phase="Running"].name');
+    const nodes = {
+      "wf-b": { type: "Suspend", phase: "Running", name: "second" },
+      "wf-a": { type: "Suspend", phase: "Running", name: "first" },
+      "wf-c": { type: "Pod", phase: "Running", name: "pod" },
+    };
+    expect(pickItem(nodes, [["type", "Suspend"], ["phase", "Running"]])).toEqual(nodes["wf-a"]);
+    expect(pickItem([{ type: "Suspend", phase: "Succeeded" }, nodes["wf-b"]], [["type", "Suspend"], ["phase", "Running"]])).toEqual(nodes["wf-b"]);
+    expect(pickItem("x", [["type", "Pod"]])).toBeUndefined();
+    expect(parseFieldPath('a[b="1",c="2",d="3",e="4",f="5"]')).toBeNull();
+    expect(parseFieldPath('a[b="1",]')).toBeNull();
+    expect(parseFieldPath('a[b="1" c="2"]')).toBeNull();
   });
 });

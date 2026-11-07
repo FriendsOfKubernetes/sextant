@@ -219,8 +219,7 @@ fn a_step_picks_a_list_item_by_a_field() {
             Key("status".into()),
             Key("conditions".into()),
             Match {
-                field: "type".into(),
-                value: "Ready".into()
+                pairs: vec![("type".into(), "Ready".into())]
             },
             Key("message".into()),
         ])
@@ -232,11 +231,30 @@ fn a_step_picks_a_list_item_by_a_field() {
             Key("spec".into()),
             Key("items".into()),
             Match {
-                field: "name".into(),
-                value: "a]=b".into()
+                pairs: vec![("name".into(), "a]=b".into())]
             },
         ])
     );
+    // Several pairs, all of which must match (#392).
+    assert_eq!(
+        parse_field_path(".status.nodes[type=\"Suspend\",phase=\"Running\"]"),
+        Some(vec![
+            Key("status".into()),
+            Key("nodes".into()),
+            Match {
+                pairs: vec![
+                    ("type".into(), "Suspend".into()),
+                    ("phase".into(), "Running".into())
+                ]
+            },
+        ])
+    );
+    assert_eq!(
+        parse_field_path("a[b=\"1\",c=\"2\",d=\"3\",e=\"4\",f=\"5\"]"),
+        None
+    );
+    assert_eq!(parse_field_path("a[b=\"1\",]"), None);
+    assert_eq!(parse_field_path("a[b=\"1\" c=\"2\"]"), None);
     for bad in [
         "a[type=Ready]",
         "a[=\"x\"]",
@@ -246,4 +264,25 @@ fn a_step_picks_a_list_item_by_a_field() {
     ] {
         assert_eq!(parse_field_path(bad), None, "{bad}");
     }
+}
+
+#[test]
+fn a_match_picks_a_list_item_or_a_maps_value_in_key_order() {
+    use serde_json::json;
+    let pairs = vec![
+        ("type".to_owned(), "Suspend".to_owned()),
+        ("phase".to_owned(), "Running".to_owned()),
+    ];
+    let nodes = json!({
+        "wf-b": { "type": "Suspend", "phase": "Running", "name": "second" },
+        "wf-a": { "type": "Suspend", "phase": "Running", "name": "first" },
+        "wf-c": { "type": "Pod", "phase": "Running" }
+    });
+    assert_eq!(PathStep::pick(&pairs, &nodes).unwrap()["name"], "first");
+    let list = json!([{ "type": "Suspend", "phase": "Succeeded" }, { "type": "Suspend", "phase": "Running", "n": 2 }]);
+    assert_eq!(PathStep::pick(&pairs, &list).unwrap()["n"], 2);
+    assert!(PathStep::pick(&pairs, &json!("x")).is_none());
+    let mut changed = nodes.clone();
+    PathStep::pick_mut(&pairs, &mut changed).unwrap()["name"] = json!("x");
+    assert_eq!(changed["wf-a"]["name"], "x");
 }

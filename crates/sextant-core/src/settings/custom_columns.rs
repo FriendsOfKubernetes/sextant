@@ -10,6 +10,7 @@
 //! and scope and [`MAX_CUSTOM_COLUMNS`] in all.
 
 use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Value;
 use ts_rs::TS;
 
 /// Most custom columns kept in all.
@@ -102,11 +103,53 @@ pub fn is_metadata_key(key: &str) -> bool {
 pub enum PathStep {
     Key(String),
     Index(usize),
-    /// `[field="value"]`: the first item of a list whose `field` is the string `value` (ADR-0161).
+    /// `[field="value",…]`: the first item of a list — or value of a map, in key order (#392) — whose every `field` is
+    /// the string `value` (ADR-0161); up to [`MAX_MATCH_PAIRS`] pairs.
     Match {
-        field: String,
-        value: String,
+        pairs: Vec<(String, String)>,
     },
+}
+
+/// Pairs one `[field="value",…]` step takes at most.
+pub const MAX_MATCH_PAIRS: usize = 4;
+
+impl PathStep {
+    /// The item of a list, or the value of a map (in key order), whose fields are all `pairs`.
+    pub fn pick<'a>(pairs: &[(String, String)], value: &'a Value) -> Option<&'a Value> {
+        let fits = |item: &&Value| {
+            pairs
+                .iter()
+                .all(|(field, want)| item.get(field).and_then(Value::as_str) == Some(want.as_str()))
+        };
+        match value {
+            Value::Array(items) => items.iter().find(fits),
+            Value::Object(map) => {
+                let mut keys: Vec<&String> = map.keys().collect();
+                keys.sort();
+                keys.into_iter().map(|k| &map[k]).find(fits)
+            }
+            _ => None,
+        }
+    }
+
+    /// [`PathStep::pick`] for a value to change.
+    pub fn pick_mut<'a>(pairs: &[(String, String)], value: &'a mut Value) -> Option<&'a mut Value> {
+        let fits = |item: &Value| {
+            pairs
+                .iter()
+                .all(|(field, want)| item.get(field).and_then(Value::as_str) == Some(want.as_str()))
+        };
+        match value {
+            Value::Array(items) => items.iter_mut().find(|item| fits(item)),
+            Value::Object(map) => {
+                let mut keys: Vec<String> = map.keys().cloned().collect();
+                keys.sort();
+                let key = keys.into_iter().find(|k| fits(&map[k]))?;
+                map.get_mut(&key)
+            }
+            _ => None,
+        }
+    }
 }
 
 fn is_name_char(c: char) -> bool {
@@ -137,28 +180,42 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
                 }
                 steps.push(PathStep::Key(key));
                 i = end + 2;
-            } else if let Some(eq) = (i + 1..chars.len())
+            } else if (i + 1..chars.len())
                 .take_while(|&j| chars[j] != ']')
-                .find(|&j| chars[j] == '=')
+                .any(|j| chars[j] == '=')
             {
-                // `[field="value"]`
-                let field: String = chars[i + 1..eq].iter().collect();
-                if field.is_empty()
-                    || !field.chars().all(is_name_char)
-                    || chars.get(eq + 1) != Some(&'"')
-                {
-                    return None;
+                // `[field="value",…]`: pairs separated by `,`; a value may hold `]` or `,`, so each ends at its quote.
+                let mut pairs = Vec::new();
+                let mut at = i + 1;
+                loop {
+                    let eq = (at..chars.len()).find(|&j| chars[j] == '=')?;
+                    let field: String = chars[at..eq].iter().collect();
+                    if field.is_empty()
+                        || !field.chars().all(is_name_char)
+                        || chars.get(eq + 1) != Some(&'"')
+                    {
+                        return None;
+                    }
+                    let close = (eq + 2..chars.len()).find(|&j| chars[j] == '"')?;
+                    let value: String = chars[eq + 2..close].iter().collect();
+                    if value.chars().any(|c| c == '\\' || c.is_control()) {
+                        return None;
+                    }
+                    pairs.push((field, value));
+                    if pairs.len() > MAX_MATCH_PAIRS {
+                        return None;
+                    }
+                    match chars.get(close + 1) {
+                        Some(']') => {
+                            at = close + 2;
+                            break;
+                        }
+                        Some(',') => at = close + 2,
+                        _ => return None,
+                    }
                 }
-                let close = (eq + 2..chars.len()).find(|&j| chars[j] == '"')?;
-                if chars.get(close + 1) != Some(&']') {
-                    return None;
-                }
-                let value: String = chars[eq + 2..close].iter().collect();
-                if value.chars().any(|c| c == '\\' || c.is_control()) {
-                    return None;
-                }
-                steps.push(PathStep::Match { field, value });
-                i = close + 2;
+                steps.push(PathStep::Match { pairs });
+                i = at;
             } else {
                 let end = (i + 1..chars.len()).find(|&j| chars[j] == ']')?;
                 let digits: String = chars[i + 1..end].iter().collect();

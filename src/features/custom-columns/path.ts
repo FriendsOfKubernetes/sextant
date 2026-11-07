@@ -22,8 +22,14 @@ export const MAX_TITLE_CHARS = 64;
 /** Longest text a cell shows; an object or a long list is clipped. */
 export const MAX_CELL_CHARS = 200;
 
-/** A step: a key, a list index, or the first list item whose `field` is the string `value` (ADR-0161). */
-export type PathStep = { key: string } | { index: number } | { field: string; value: string };
+/**
+ * A step: a key, a list index, or the first list item — or map value, in key order (#392) — whose every `field` is the
+ * string `value` (ADR-0161).
+ */
+export type PathStep = { key: string } | { index: number } | { match: readonly (readonly [string, string])[] };
+
+/** Pairs one `[field="value",…]` step takes at most (Rust `MAX_MATCH_PAIRS`). */
+export const MAX_MATCH_PAIRS = 4;
 
 const NAME = /^[A-Za-z0-9_-]+/;
 const LABEL_NAME = /^[A-Za-z0-9]([A-Za-z0-9_.-]*[A-Za-z0-9])?$/;
@@ -60,18 +66,30 @@ export function parseFieldPath(path: string): PathStep[] | null {
       } else {
         const end = path.indexOf("]", i + 1);
         if (end < 0) return null;
-        const eq = path.slice(i + 1, end).indexOf("=");
-        if (eq >= 0) {
-          // `[field="value"]`: the value may hold `]`, so the step ends at its closing quote.
-          const field = path.slice(i + 1, i + 1 + eq);
-          const open = i + 1 + eq + 1;
-          if (!NAME.test(field) || NAME.exec(field)?.[0] !== field || path[open] !== '"') return null;
-          const close = path.indexOf('"', open + 1);
-          if (close < 0 || path[close + 1] !== "]") return null;
-          const value = path.slice(open + 1, close);
-          if (value.includes("\\") || CONTROL.test(value)) return null;
-          steps.push({ field, value });
-          i = close + 2;
+        if (path.slice(i + 1, end).includes("=")) {
+          // `[field="value",…]`: a value may hold `]` or `,`, so each pair ends at its closing quote.
+          const pairs: [string, string][] = [];
+          let at = i + 1;
+          for (;;) {
+            const eq = path.indexOf("=", at);
+            if (eq < 0) return null;
+            const field = path.slice(at, eq);
+            if (NAME.exec(field)?.[0] !== field || field === "" || path[eq + 1] !== '"') return null;
+            const close = path.indexOf('"', eq + 2);
+            if (close < 0) return null;
+            const value = path.slice(eq + 2, close);
+            if (value.includes("\\") || CONTROL.test(value)) return null;
+            pairs.push([field, value]);
+            if (pairs.length > MAX_MATCH_PAIRS) return null;
+            if (path[close + 1] === "]") {
+              at = close + 2;
+              break;
+            }
+            if (path[close + 1] !== ",") return null;
+            at = close + 2;
+          }
+          steps.push({ match: pairs });
+          i = at;
           expectName = false;
           continue;
         }
@@ -102,8 +120,8 @@ export function formatFieldPath(steps: readonly PathStep[]): string {
     .map((s) =>
       "index" in s
         ? `[${s.index}]`
-        : "field" in s
-          ? `[${s.field}="${s.value}"]`
+        : "match" in s
+          ? `[${s.match.map(([field, value]) => `${field}="${value}"`).join(",")}]`
           : /^[A-Za-z0-9_-]+$/.test(s.key)
             ? `.${s.key}`
             : `["${s.key}"]`,
@@ -203,8 +221,8 @@ export function readColumn(obj: KubeObject, source: ColumnSource, steps: readonl
     if ("index" in step) {
       if (!Array.isArray(current)) return undefined;
       current = current[step.index];
-    } else if ("field" in step) {
-      current = pickItem(current, step);
+    } else if ("match" in step) {
+      current = pickItem(current, step.match);
     } else {
       if (Array.isArray(current) || !Object.prototype.hasOwnProperty.call(current, step.key)) return undefined;
       current = (current as Record<string, unknown>)[step.key];
@@ -213,10 +231,21 @@ export function readColumn(obj: KubeObject, source: ColumnSource, steps: readonl
   return current;
 }
 
-/** The first item of a list whose `field` is the string `value`; `undefined` for anything else. */
-export function pickItem(list: unknown, step: { field: string; value: string }): unknown {
-  if (!Array.isArray(list)) return undefined;
-  return list.find((item) => item !== null && typeof item === "object" && (item as Record<string, unknown>)[step.field] === step.value);
+/**
+ * The first item of a list — or value of a map, in key order (#392) — whose every field is its pair's string value;
+ * `undefined` for anything else.
+ */
+export function pickItem(holder: unknown, pairs: readonly (readonly [string, string])[]): unknown {
+  const fits = (item: unknown) =>
+    item !== null && typeof item === "object" && !Array.isArray(item) && pairs.every(([field, value]) => (item as Record<string, unknown>)[field] === value);
+  if (Array.isArray(holder)) return holder.find(fits);
+  if (holder === null || typeof holder !== "object") return undefined;
+  const map = holder as Record<string, unknown>;
+  // Code-unit order, as Rust sorts a map's keys (byte order for the ASCII names Kubernetes uses).
+  const key = Object.keys(map)
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+    .find((k) => fits(map[k]));
+  return key === undefined ? undefined : map[key];
 }
 
 function clip(text: string): string {

@@ -538,17 +538,30 @@ export function parseFieldPath(path) {
         steps.push({ key });
         i = end + 2;
       } else if (chars.slice(i + 1, chars.indexOf("]", i + 1) < 0 ? chars.length : chars.indexOf("]", i + 1)).includes("=")) {
-        // `[field="value"]` (`PathStep::Match` in Rust).
-        const eq = chars.indexOf("=", i + 1);
-        const field = chars.slice(i + 1, eq).join("");
-        if (!/^[A-Za-z0-9_-]+$/.test(field) || chars[eq + 1] !== '"') return null;
-        const close = chars.indexOf('"', eq + 2);
-        if (close < 0 || chars[close + 1] !== "]") return null;
-        const value = chars.slice(eq + 2, close).join("");
-        // eslint-disable-next-line no-control-regex
-        if (/[\\\u0000-\u001f\u007f-\u009f]/.test(value)) return null;
-        steps.push({ field, value });
-        i = close + 2;
+        // `[field="value",…]` (`PathStep::Match` in Rust): up to 4 pairs; a value may hold `]` or `,` (#392).
+        const pairs = [];
+        let at = i + 1;
+        for (;;) {
+          const eq = chars.indexOf("=", at);
+          if (eq < 0) return null;
+          const field = chars.slice(at, eq).join("");
+          if (!/^[A-Za-z0-9_-]+$/.test(field) || chars[eq + 1] !== '"') return null;
+          const close = chars.indexOf('"', eq + 2);
+          if (close < 0) return null;
+          const value = chars.slice(eq + 2, close).join("");
+          // eslint-disable-next-line no-control-regex
+          if (/[\\\u0000-\u001f\u007f-\u009f]/.test(value)) return null;
+          pairs.push([field, value]);
+          if (pairs.length > 4) return null;
+          if (chars[close + 1] === "]") {
+            at = close + 2;
+            break;
+          }
+          if (chars[close + 1] !== ",") return null;
+          at = close + 2;
+        }
+        steps.push({ match: pairs });
+        i = at;
       } else {
         const end = chars.indexOf("]", i + 1);
         if (end < 0) return null;
@@ -583,7 +596,8 @@ function readsSecret(kind, steps) {
     .filter((k) => sameKind(k, kind))
     .some((k) =>
       k.paths.some((secret) =>
-        secret.slice(0, steps.length).every((want, i) => want === "*" || (steps[i].key !== undefined && steps[i].key === want)),
+        // A map's value picked by its fields may sit under any key (#392): as `*`.
+        secret.slice(0, steps.length).every((want, i) => want === "*" || steps[i].match !== undefined || (steps[i].key !== undefined && steps[i].key === want)),
       ),
     );
 }
