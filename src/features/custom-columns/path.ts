@@ -26,7 +26,16 @@ export const MAX_CELL_CHARS = 200;
  * A step: a key, a list index, or the first list item — or map value, in key order (#392) — whose every `field` is the
  * string `value` (ADR-0161).
  */
-export type PathStep = { key: string } | { index: number } | { match: readonly (readonly [string, string])[] };
+export type PathStep =
+  | { key: string }
+  | { index: number }
+  | {
+      match: readonly (readonly [string, string])[];
+      /** `<field`: of the matches, the one with the smallest value there (#399). */
+      earliest?: string;
+      /** `*`: every match, as a list; only a path's last step (#399). */
+      all?: true;
+    };
 
 /** Pairs one `[field="value",…]` step takes at most (Rust `MAX_MATCH_PAIRS`). */
 export const MAX_MATCH_PAIRS = 4;
@@ -69,6 +78,8 @@ export function parseFieldPath(path: string): PathStep[] | null {
         if (path.slice(i + 1, end).includes("=")) {
           // `[field="value",…]`: a value may hold `]` or `,`, so each pair ends at its closing quote.
           const pairs: [string, string][] = [];
+          let earliest: string | undefined;
+          let all = false;
           let at = i + 1;
           for (;;) {
             const eq = path.indexOf("=", at);
@@ -87,8 +98,23 @@ export function parseFieldPath(path: string): PathStep[] | null {
             }
             if (path[close + 1] !== ",") return null;
             at = close + 2;
+            // A last part: `*` (every match) or `<field` (the earliest by it), then `]` (#399).
+            if (path[at] === "*") {
+              if (path[at + 1] !== "]") return null;
+              all = true;
+              at += 2;
+              break;
+            }
+            if (path[at] === "<") {
+              const end = path.indexOf("]", at + 1);
+              const name = end < 0 ? "" : path.slice(at + 1, end);
+              if (NAME.exec(name)?.[0] !== name || name === "") return null;
+              earliest = name;
+              at = end + 1;
+              break;
+            }
           }
-          steps.push({ match: pairs });
+          steps.push({ match: pairs, ...(earliest !== undefined ? { earliest } : {}), ...(all ? { all: true as const } : {}) });
           i = at;
           expectName = false;
           continue;
@@ -111,6 +137,8 @@ export function parseFieldPath(path: string): PathStep[] | null {
     i += name.length;
     expectName = false;
   }
+  // `*` gives a list: only a path's last step may.
+  if (steps.slice(0, -1).some((s) => "match" in s && s.all)) return null;
   return steps.length > 0 ? steps : null;
 }
 
@@ -121,7 +149,7 @@ export function formatFieldPath(steps: readonly PathStep[]): string {
       "index" in s
         ? `[${s.index}]`
         : "match" in s
-          ? `[${s.match.map(([field, value]) => `${field}="${value}"`).join(",")}]`
+          ? `[${[...s.match.map(([field, value]) => `${field}="${value}"`), ...(s.earliest ? [`<${s.earliest}`] : []), ...(s.all ? ["*"] : [])].join(",")}]`
           : /^[A-Za-z0-9_-]+$/.test(s.key)
             ? `.${s.key}`
             : `["${s.key}"]`,
@@ -222,7 +250,7 @@ export function readColumn(obj: KubeObject, source: ColumnSource, steps: readonl
       if (!Array.isArray(current)) return undefined;
       current = current[step.index];
     } else if ("match" in step) {
-      current = pickItem(current, step.match);
+      current = pickStep(current, step);
     } else {
       if (Array.isArray(current) || !Object.prototype.hasOwnProperty.call(current, step.key)) return undefined;
       current = (current as Record<string, unknown>)[step.key];
@@ -232,20 +260,51 @@ export function readColumn(obj: KubeObject, source: ColumnSource, steps: readonl
 }
 
 /**
- * The first item of a list — or value of a map, in key order (#392) — whose every field is its pair's string value;
- * `undefined` for anything else.
+ * The items of a list — or values of a map, in key order (#392) — whose every field is its pair's string value.
  */
-export function pickItem(holder: unknown, pairs: readonly (readonly [string, string])[]): unknown {
+export function matchingItems(holder: unknown, pairs: readonly (readonly [string, string])[]): unknown[] {
   const fits = (item: unknown) =>
     item !== null && typeof item === "object" && !Array.isArray(item) && pairs.every(([field, value]) => (item as Record<string, unknown>)[field] === value);
-  if (Array.isArray(holder)) return holder.find(fits);
-  if (holder === null || typeof holder !== "object") return undefined;
+  if (Array.isArray(holder)) return holder.filter(fits);
+  if (holder === null || typeof holder !== "object") return [];
   const map = holder as Record<string, unknown>;
   // Code-unit order, as Rust sorts a map's keys (byte order for the ASCII names Kubernetes uses).
-  const key = Object.keys(map)
+  return Object.keys(map)
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
-    .find((k) => fits(map[k]));
-  return key === undefined ? undefined : map[key];
+    .map((k) => map[k])
+    .filter(fits);
+}
+
+/** The first matching item; `undefined` for none. */
+export function pickItem(holder: unknown, pairs: readonly (readonly [string, string])[]): unknown {
+  return matchingItems(holder, pairs)[0];
+}
+
+/**
+ * What a `[field="value",…]` step reads (#399): the first match, the one with the smallest value of `earliest`
+ * (numbers as numbers, else text; one without it last), or every match as a list (`all`).
+ */
+export function pickStep(holder: unknown, step: Extract<PathStep, { match: unknown }>): unknown {
+  const items = matchingItems(holder, step.match);
+  if (step.all) return items;
+  if (step.earliest === undefined) return items[0];
+  const field = step.earliest;
+  const rank = (item: unknown): [number, number, string] => {
+    const v = (item as Record<string, unknown>)[field];
+    if (typeof v === "number") return [0, v, ""];
+    if (typeof v === "string") return [1, 0, v];
+    return [2, 0, ""];
+  };
+  let best: unknown;
+  let bestRank: [number, number, string] | undefined;
+  for (const item of items) {
+    const r = rank(item);
+    if (!bestRank || r[0] < bestRank[0] || (r[0] === bestRank[0] && (r[1] < bestRank[1] || (r[1] === bestRank[1] && r[2] < bestRank[2])))) {
+      best = item;
+      bestRank = r;
+    }
+  }
+  return best;
 }
 
 function clip(text: string): string {

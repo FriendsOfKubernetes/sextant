@@ -212,6 +212,7 @@ fn a_saved_view_carries_its_columns_and_reads_without_them() {
 
 #[test]
 fn a_step_picks_a_list_item_by_a_field() {
+    use super::MatchPick;
     use PathStep::{Key, Match};
     assert_eq!(
         parse_field_path(".status.conditions[type=\"Ready\"].message"),
@@ -219,7 +220,8 @@ fn a_step_picks_a_list_item_by_a_field() {
             Key("status".into()),
             Key("conditions".into()),
             Match {
-                pairs: vec![("type".into(), "Ready".into())]
+                pairs: vec![("type".into(), "Ready".into())],
+                pick: MatchPick::First
             },
             Key("message".into()),
         ])
@@ -231,7 +233,8 @@ fn a_step_picks_a_list_item_by_a_field() {
             Key("spec".into()),
             Key("items".into()),
             Match {
-                pairs: vec![("name".into(), "a]=b".into())]
+                pairs: vec![("name".into(), "a]=b".into())],
+                pick: MatchPick::First
             },
         ])
     );
@@ -245,7 +248,8 @@ fn a_step_picks_a_list_item_by_a_field() {
                 pairs: vec![
                     ("type".into(), "Suspend".into()),
                     ("phase".into(), "Running".into())
-                ]
+                ],
+                pick: MatchPick::First
             },
         ])
     );
@@ -285,4 +289,39 @@ fn a_match_picks_a_list_item_or_a_maps_value_in_key_order() {
     let mut changed = nodes.clone();
     PathStep::pick_mut(&pairs, &mut changed).unwrap()["name"] = json!("x");
     assert_eq!(changed["wf-a"]["name"], "x");
+}
+
+#[test]
+fn a_match_takes_the_earliest_by_a_field_or_every_match_as_the_last_step() {
+    use serde_json::json;
+    let steps =
+        parse_field_path(".status.nodes[type=\"Pod\",phase=\"Failed\",<finishedAt].displayName")
+            .unwrap();
+    assert!(
+        matches!(&steps[2], PathStep::Match { pick: MatchPick::Earliest(f), .. } if f == "finishedAt")
+    );
+    let all = parse_field_path(".status.nodes[type=\"Pod\",*]").unwrap();
+    assert!(matches!(
+        &all[2],
+        PathStep::Match {
+            pick: MatchPick::All,
+            ..
+        }
+    ));
+    // `*` only last; `<` needs a name; nothing after them.
+    assert_eq!(parse_field_path(".status.nodes[type=\"Pod\",*].name"), None);
+    assert_eq!(parse_field_path(".a[b=\"1\",<]"), None);
+    assert_eq!(parse_field_path(".a[b=\"1\",*,c=\"2\"]"), None);
+    let pairs = vec![("phase".to_owned(), "Failed".to_owned())];
+    let nodes = json!({
+        "a": { "phase": "Failed", "finishedAt": "2026-11-07T10:05:00Z", "n": "late" },
+        "b": { "phase": "Failed", "finishedAt": "2026-11-07T10:01:00Z", "n": "early" },
+        "c": { "phase": "Failed", "n": "unfinished" },
+        "d": { "phase": "Succeeded", "finishedAt": "2026-11-07T09:00:00Z" }
+    });
+    assert_eq!(
+        PathStep::earliest(&pairs, "finishedAt", &nodes).unwrap()["n"],
+        "early"
+    );
+    assert_eq!(PathStep::matching(&pairs, &nodes).len(), 3);
 }

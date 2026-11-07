@@ -540,6 +540,7 @@ export function parseFieldPath(path) {
       } else if (chars.slice(i + 1, chars.indexOf("]", i + 1) < 0 ? chars.length : chars.indexOf("]", i + 1)).includes("=")) {
         // `[field="value",…]` (`PathStep::Match` in Rust): up to 4 pairs; a value may hold `]` or `,` (#392).
         const pairs = [];
+        let pick = "first";
         let at = i + 1;
         for (;;) {
           const eq = chars.indexOf("=", at);
@@ -559,8 +560,24 @@ export function parseFieldPath(path) {
           }
           if (chars[close + 1] !== ",") return null;
           at = close + 2;
+          // A last part: `*` (every match) or `<field` (the earliest by it), then `]` (#399).
+          if (chars[at] === "*") {
+            if (chars[at + 1] !== "]") return null;
+            pick = "all";
+            at += 2;
+            break;
+          }
+          if (chars[at] === "<") {
+            const end = chars.indexOf("]", at + 1);
+            if (end < 0) return null;
+            const name = chars.slice(at + 1, end).join("");
+            if (!/^[A-Za-z0-9_-]+$/.test(name)) return null;
+            pick = { earliest: name };
+            at = end + 1;
+            break;
+          }
         }
-        steps.push({ match: pairs });
+        steps.push({ match: pairs, pick });
         i = at;
       } else {
         const end = chars.indexOf("]", i + 1);
@@ -583,6 +600,8 @@ export function parseFieldPath(path) {
     steps.push({ key: chars.slice(start, i).join("") });
     expectName = false;
   }
+  // `*` gives a list: only a path's last step may.
+  if (steps.slice(0, -1).some((s) => s.pick === "all")) return null;
   return steps.length > 0 ? steps : null;
 }
 

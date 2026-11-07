@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { KubeObject } from "../../api";
 import {
   pickItem,
+  pickStep,
   cellValue,
   checkSpec,
   columnIdOf,
@@ -192,5 +193,24 @@ describe("a step picking by fields (#392)", () => {
     expect(parseFieldPath('a[b="1",c="2",d="3",e="4",f="5"]')).toBeNull();
     expect(parseFieldPath('a[b="1",]')).toBeNull();
     expect(parseFieldPath('a[b="1" c="2"]')).toBeNull();
+  });
+});
+
+describe("the earliest match and every match (#399)", () => {
+  it("parses `<field` and `*`, the latter only last, and reads them", () => {
+    const earliest = parseFieldPath('.status.nodes[phase="Failed",<finishedAt].n');
+    expect(earliest).toEqual([{ key: "status" }, { key: "nodes" }, { match: [["phase", "Failed"]], earliest: "finishedAt" }, { key: "n" }]);
+    expect(formatFieldPath(earliest!)).toBe('.status.nodes[phase="Failed",<finishedAt].n');
+    expect(parseFieldPath('.status.nodes[type="Pod",*]')).toEqual([{ key: "status" }, { key: "nodes" }, { match: [["type", "Pod"]], all: true }]);
+    expect(parseFieldPath('.status.nodes[type="Pod",*].name')).toBeNull();
+    expect(parseFieldPath('.a[b="1",<]')).toBeNull();
+    const nodes = {
+      a: { phase: "Failed", finishedAt: "2026-11-07T10:05:00Z", n: "late" },
+      b: { phase: "Failed", finishedAt: "2026-11-07T10:01:00Z", n: "early" },
+      c: { phase: "Failed", n: "unfinished" },
+      d: { phase: "Succeeded", finishedAt: "2026-11-07T09:00:00Z", n: "ok" },
+    };
+    expect(pickStep(nodes, { match: [["phase", "Failed"]], earliest: "finishedAt" })).toEqual(nodes.b);
+    expect(pickStep(nodes, { match: [["phase", "Failed"]], all: true })).toHaveLength(3);
   });
 });

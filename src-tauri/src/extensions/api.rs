@@ -47,7 +47,7 @@ use sextant_core::portforward::{ForwardInfo, ForwardSource, ForwardTarget, PodFi
 use sextant_core::resources::{
     self, KindRef, PatchType, ResourceKind, WatchUpdate, inline_secrets,
 };
-use sextant_core::settings::custom_columns::{PathStep, parse_field_path};
+use sextant_core::settings::custom_columns::{MatchPick, PathStep, parse_field_path};
 use sextant_core::{
     ClusterId, ClusterManager, ConnectionState, CoreError, CoreResult, ErrorCode, ObjectRef,
     SettingsStore, WatchSpec, logs,
@@ -2823,7 +2823,12 @@ fn take_at(value: &mut Value, steps: &[PathStep]) -> Option<String> {
         at = match step {
             PathStep::Key(key) => at.get_mut(key.as_str())?,
             PathStep::Index(i) => at.get_mut(*i)?,
-            PathStep::Match { pairs } => PathStep::pick_mut(pairs, at)?,
+            PathStep::Match {
+                pairs,
+                pick: MatchPick::First,
+            } => PathStep::pick_mut(pairs, at)?,
+            // A token is one value: the first match only.
+            PathStep::Match { .. } => return None,
         };
     }
     let token = at.as_str().filter(|t| !t.is_empty())?.to_owned();

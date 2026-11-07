@@ -7,7 +7,9 @@
 use serde_json::{Map, Value, json};
 use sextant_core::CoreError;
 use sextant_core::ErrorCode;
-use sextant_core::settings::custom_columns::{PathStep, is_secret_data_path, parse_field_path};
+use sextant_core::settings::custom_columns::{
+    MatchPick, PathStep, is_secret_data_path, parse_field_path,
+};
 
 /// The most paths one call projects.
 pub const MAX_FIELDS: usize = 20;
@@ -51,7 +53,19 @@ fn at<'a>(value: &'a Value, steps: &[PathStep]) -> Option<&'a Value> {
     steps.iter().try_fold(value, |v, step| match step {
         PathStep::Key(key) => v.get(key),
         PathStep::Index(i) => v.get(*i),
-        PathStep::Match { pairs } => PathStep::pick(pairs, v),
+        PathStep::Match {
+            pairs,
+            pick: MatchPick::First,
+        } => PathStep::pick(pairs, v),
+        PathStep::Match {
+            pairs,
+            pick: MatchPick::Earliest(field),
+        } => PathStep::earliest(pairs, field, v),
+        // Every match is a list of its own: an agent's projection reads one value.
+        PathStep::Match {
+            pick: MatchPick::All,
+            ..
+        } => None,
     })
 }
 

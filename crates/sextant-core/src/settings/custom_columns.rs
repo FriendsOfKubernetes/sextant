@@ -104,32 +104,77 @@ pub enum PathStep {
     Key(String),
     Index(usize),
     /// `[field="value",…]`: the first item of a list — or value of a map, in key order (#392) — whose every `field` is
-    /// the string `value` (ADR-0161); up to [`MAX_MATCH_PAIRS`] pairs.
+    /// the string `value` (ADR-0161); up to [`MAX_MATCH_PAIRS`] pairs. A last part `<field` picks the matching entry
+    /// with the smallest value there instead, `*` every matching entry as a list (#399).
     Match {
         pairs: Vec<(String, String)>,
+        pick: MatchPick,
     },
+}
+
+/// Which of the entries a `[field="value",…]` step matches it takes (#399).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MatchPick {
+    /// The first, in list or key order.
+    First,
+    /// `<field`: the one with the smallest value of `field` (numbers as numbers, else text; one without it last).
+    Earliest(String),
+    /// `*`: every one, as a list; only in a path's last step.
+    All,
 }
 
 /// Pairs one `[field="value",…]` step takes at most.
 pub const MAX_MATCH_PAIRS: usize = 4;
 
 impl PathStep {
-    /// The item of a list, or the value of a map (in key order), whose fields are all `pairs`.
-    pub fn pick<'a>(pairs: &[(String, String)], value: &'a Value) -> Option<&'a Value> {
+    /// The items of a list, or the values of a map (in key order), whose fields are all `pairs`.
+    pub fn matching<'a>(pairs: &[(String, String)], value: &'a Value) -> Vec<&'a Value> {
         let fits = |item: &&Value| {
             pairs
                 .iter()
                 .all(|(field, want)| item.get(field).and_then(Value::as_str) == Some(want.as_str()))
         };
         match value {
-            Value::Array(items) => items.iter().find(fits),
+            Value::Array(items) => items.iter().filter(fits).collect(),
             Value::Object(map) => {
                 let mut keys: Vec<&String> = map.keys().collect();
                 keys.sort();
-                keys.into_iter().map(|k| &map[k]).find(fits)
+                keys.into_iter().map(|k| &map[k]).filter(fits).collect()
             }
-            _ => None,
+            _ => Vec::new(),
         }
+    }
+
+    /// The item of a list, or the value of a map (in key order), whose fields are all `pairs`.
+    pub fn pick<'a>(pairs: &[(String, String)], value: &'a Value) -> Option<&'a Value> {
+        Self::matching(pairs, value).into_iter().next()
+    }
+
+    /// The matching entry with the smallest value of `field` (#399): numbers as numbers, strings as text (RFC 3339
+    /// times sort so); an entry without it comes last; the first of equals.
+    pub fn earliest<'a>(
+        pairs: &[(String, String)],
+        field: &str,
+        value: &'a Value,
+    ) -> Option<&'a Value> {
+        let rank = |v: &Value| -> (u8, f64, String) {
+            match v.get(field) {
+                Some(Value::Number(n)) => (0, n.as_f64().unwrap_or(f64::MAX), String::new()),
+                Some(Value::String(s)) => (1, 0.0, s.clone()),
+                _ => (2, 0.0, String::new()),
+            }
+        };
+        let mut best: Option<(&Value, (u8, f64, String))> = None;
+        for entry in Self::matching(pairs, value) {
+            let r = rank(entry);
+            let better = best.as_ref().is_none_or(|(_, b)| {
+                r.0 < b.0 || (r.0 == b.0 && (r.1 < b.1 || (r.1 == b.1 && r.2 < b.2)))
+            });
+            if better {
+                best = Some((entry, r));
+            }
+        }
+        best.map(|(entry, _)| entry)
     }
 
     /// [`PathStep::pick`] for a value to change.
@@ -186,6 +231,7 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
             {
                 // `[field="value",…]`: pairs separated by `,`; a value may hold `]` or `,`, so each ends at its quote.
                 let mut pairs = Vec::new();
+                let mut pick = MatchPick::First;
                 let mut at = i + 1;
                 loop {
                     let eq = (at..chars.len()).find(|&j| chars[j] == '=')?;
@@ -213,8 +259,27 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
                         Some(',') => at = close + 2,
                         _ => return None,
                     }
+                    // A last part: `<field` (the earliest by it) or `*` (every match), then `]` (#399).
+                    if chars.get(at) == Some(&'*') {
+                        if chars.get(at + 1) != Some(&']') {
+                            return None;
+                        }
+                        pick = MatchPick::All;
+                        at += 2;
+                        break;
+                    }
+                    if chars.get(at) == Some(&'<') {
+                        let end = (at + 1..chars.len()).find(|&j| chars[j] == ']')?;
+                        let field: String = chars[at + 1..end].iter().collect();
+                        if field.is_empty() || !field.chars().all(is_name_char) {
+                            return None;
+                        }
+                        pick = MatchPick::Earliest(field);
+                        at = end + 1;
+                        break;
+                    }
                 }
-                steps.push(PathStep::Match { pairs });
+                steps.push(PathStep::Match { pairs, pick });
                 i = at;
             } else {
                 let end = (i + 1..chars.len()).find(|&j| chars[j] == ']')?;
@@ -247,7 +312,17 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
         steps.push(PathStep::Key(chars[start..i].iter().collect()));
         expect_name = false;
     }
-    (!steps.is_empty()).then_some(steps)
+    // `*` gives a list: only a path's last step may.
+    let all_inside = steps[..steps.len().saturating_sub(1)].iter().any(|s| {
+        matches!(
+            s,
+            PathStep::Match {
+                pick: MatchPick::All,
+                ..
+            }
+        )
+    });
+    (!steps.is_empty() && !all_inside).then_some(steps)
 }
 
 /// Whether a field path reads a core Secret's values (`data`, `stringData` or anything inside them).
