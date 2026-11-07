@@ -199,6 +199,8 @@ export const MANIFEST_SHAPES = {
     tooltipPaths: "optional",
     cases: "optional",
     afterColumn: "optional",
+    lookup: "optional",
+    valueText: "optional",
   }),
   ManifestKind: described<ManifestKind>(`${CONTRIBUTION}/kinds/items`, {
     group: "required",

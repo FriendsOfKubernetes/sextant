@@ -226,6 +226,7 @@ export type { ActionContribution } from "./generated/ActionContribution";
 export type { ActionAsk } from "./generated/ActionAsk";
 export type { ColumnContribution } from "./generated/ColumnContribution";
 export type { ColumnCase } from "./generated/ColumnCase";
+export type { ColumnLookup } from "./generated/ColumnLookup";
 export type { ColumnFormat } from "./generated/ColumnFormat";
 export type { ColumnTone } from "./generated/ColumnTone";
 export type { KindContribution } from "./generated/KindContribution";

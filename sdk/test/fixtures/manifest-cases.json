@@ -1110,6 +1110,66 @@
           }
         }
       }
+    },
+    {
+      "name": "the set weight: atLeast, a lookup by index and a value text (sextantApi 4)",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 4,
+        "/contributes/columns": [
+          {
+            "kind": {
+              "group": "argoproj.io",
+              "kind": "Rollout"
+            },
+            "id": "weight",
+            "title": "Weight",
+            "lookup": {
+              "list": ".spec.strategy.canary.steps",
+              "index": ".status.currentStepIndex",
+              "field": ".setWeight",
+              "nearestBefore": true,
+              "orElse": 0
+            },
+            "format": "number",
+            "valueText": "{{value}}%",
+            "cases": [
+              {
+                "when": {
+                  "type": "atLeast",
+                  "path": ".status.currentStepIndex",
+                  "otherPath": ".spec.strategy.canary.steps"
+                },
+                "text": "100%"
+              }
+            ]
+          }
+        ],
+        "/contributes/problems": [
+          {
+            "id": "unseen",
+            "title": "Unseen",
+            "kind": {
+              "group": "argoproj.io",
+              "kind": "Rollout"
+            },
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.observedGeneration",
+                "otherPath": ".metadata.generation"
+              }
+            },
+            "message": "x"
+          }
+        ],
+        "/translations": {
+          "fr": {
+            "columns.weight.valueText": "{{value}} %"
+          }
+        }
+      }
     }
   ],
   "invalid": [
@@ -3873,7 +3933,7 @@
     {"name": "an action's whyNot without when", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "a", "title": "A", "kinds": [{"group": "example.dev", "kind": "Widget"}], "whyNot": "No."}]}, "path": "contributes.actions[0].whyNot", "message": "needs a `when`"},
     {"name": "an action condition with missing", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "a", "title": "A", "kinds": [{"group": "example.dev", "kind": "Widget"}], "when": {"type": "missing", "path": ".spec.ref", "kind": {"group": "example.dev", "kind": "Gadget"}}}]}, "path": "contributes.actions[0].when.type", "message": "only problem rules"},
     {"name": "an action condition reading a Secret's values", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "a", "title": "A", "kinds": [{"group": "example.dev", "kind": "Widget"}, {"group": "", "kind": "Secret"}], "when": {"type": "exists", "path": ".data.token"}}]}, "path": "contributes.actions[0].when.path", "message": "reads secret values of Secret"},
-    {"name": "a column with neither jsonPath nor paths", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "example.dev", "kind": "Widget"}, "id": "a", "title": "A"}]}, "path": "contributes.columns[0]", "message": "needs a `jsonPath` or `paths`"},
+    {"name": "a column with neither jsonPath nor paths", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "example.dev", "kind": "Widget"}, "id": "a", "title": "A"}]}, "path": "contributes.columns[0]", "message": "needs a `jsonPath`, `paths` or a `lookup`"},
     {"name": "a column with both jsonPath and paths", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "example.dev", "kind": "Widget"}, "id": "a", "title": "A", "jsonPath": ".spec.size", "paths": [".spec.size"]}]}, "path": "contributes.columns[0].paths", "message": "not both"},
     {"name": "column paths under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/columns": [{"kind": {"group": "example.dev", "kind": "Widget"}, "id": "a", "title": "A", "paths": [".spec.size"]}]}, "path": "contributes.columns[0].paths", "message": "needs sextantApi 4"},
     {"name": "column tones with a jsonPath", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "example.dev", "kind": "Widget"}, "id": "a", "title": "A", "jsonPath": ".status.phase", "tones": {"Ready": "ok"}}]}, "path": "contributes.columns[0].tones", "message": "goes with `paths`"},
@@ -3957,6 +4017,16 @@
     {"name": "a headless action with a patch", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "suspend", "title": "Suspend", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "headless": true, "patch": {"spec": {"suspend": true}}}]}, "path": "contributes.actions[0].headless", "message": "leave `headless` out"},
     {"name": "a case tooltip reading a Secret's values", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "", "kind": "Secret"}, "id": "a", "title": "A", "paths": [".metadata.name"], "cases": [{"when": {"type": "exists", "path": ".metadata.name"}, "text": "x", "tooltip": "{{.data.password}}"}]}]}, "path": "contributes.columns[0].cases[0].tooltip", "message": "reads secret values"},
     {"name": "a translated case tooltip with other placeholders", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}, "id": "a", "title": "A", "paths": [".x"], "cases": [{"when": {"type": "exists", "path": ".y"}, "text": "Y", "tooltip": "{{.spec.x}}"}]}], "/translations": {"de": {"columns.a.cases.0.tooltip": "{{.spec.y}}"}}}, "path": "translations.de.columns.a.cases.0.tooltip", "message": "must have the same"},
-    {"name": "a translated question dropping its placeholder", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "suspend", "title": "Suspend", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"spec": {"suspend": true}}, "ask": {"title": "Suspend {{name}}?", "text": "x", "confirm": "Go"}}], "/translations": {"de": {"actions.suspend.ask.title": "Anhalten?"}}}, "path": "translations.de.actions.suspend.ask.title", "message": "must have the same"}
+    {"name": "a translated question dropping its placeholder", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "suspend", "title": "Suspend", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"spec": {"suspend": true}}, "ask": {"title": "Suspend {{name}}?", "text": "x", "confirm": "Go"}}], "/translations": {"de": {"actions.suspend.ask.title": "Anhalten?"}}}, "path": "translations.de.actions.suspend.ask.title", "message": "must have the same"},
+    {"name": "atLeast under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "when": {"type": "atLeast", "path": ".a", "otherPath": ".b"}, "message": "x"}]}, "path": "contributes.problems[0].when.type", "message": "needs sextantApi 4"},
+    {"name": "atLeast reading a Secret's values", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "", "kind": "Secret"}, "when": {"type": "atLeast", "path": ".metadata.generation", "otherPath": ".data.size"}, "message": "x"}]}, "path": "contributes.problems[0].when.otherPath", "message": "reads secret values"},
+    {"name": "a lookup under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/columns": [{"kind": {"group": "argoproj.io", "kind": "Rollout"}, "id": "weight", "title": "Weight", "jsonPath": ".spec.x", "lookup": {"list": ".spec.strategy.canary.steps", "index": ".status.currentStepIndex", "field": ".setWeight", "nearestBefore": true, "orElse": 0}}]}, "path": "contributes.columns[0].lookup", "message": "needs sextantApi 4"},
+    {"name": "a lookup beside a jsonPath", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "argoproj.io", "kind": "Rollout"}, "id": "weight", "title": "Weight", "jsonPath": ".spec.x", "lookup": {"list": ".spec.strategy.canary.steps", "index": ".status.currentStepIndex", "field": ".setWeight", "nearestBefore": true, "orElse": 0}}]}, "path": "contributes.columns[0].lookup", "message": "not `jsonPath`"},
+    {"name": "a lookup field that is no path inside an item", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "argoproj.io", "kind": "Rollout"}, "id": "weight", "title": "Weight", "lookup": {"list": ".spec.strategy.canary.steps", "index": ".status.currentStepIndex", "field": "setWeight", "nearestBefore": true, "orElse": 0}}]}, "path": "contributes.columns[0].lookup.field", "message": "inside an item"},
+    {"name": "a lookup reading a Secret's values", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "", "kind": "Secret"}, "id": "a", "title": "A", "lookup": {"list": ".data", "index": ".metadata.generation", "field": ".x"}}]}, "path": "contributes.columns[0].lookup.list", "message": "reads secret values"},
+    {"name": "a value text without its value", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "argoproj.io", "kind": "Rollout"}, "id": "weight", "title": "Weight", "paths": [".x"], "valueText": "%"}]}, "path": "contributes.columns[0].valueText", "message": "has `{{value}}`"},
+    {"name": "a value text with another placeholder", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "argoproj.io", "kind": "Rollout"}, "id": "weight", "title": "Weight", "paths": [".x"], "valueText": "{{value}} {{.spec.unit}}"}]}, "path": "contributes.columns[0].valueText", "message": "no other placeholder"},
+    {"name": "a value text on an age", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "argoproj.io", "kind": "Rollout"}, "id": "weight", "title": "Weight", "paths": [".x"], "format": "age", "valueText": "{{value}} ago"}]}, "path": "contributes.columns[0].valueText", "message": "`text` or `number`"},
+    {"name": "a translated value text dropping its value", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "argoproj.io", "kind": "Rollout"}, "id": "weight", "title": "Weight", "paths": [".x"], "valueText": "{{value}}%"}], "/translations": {"fr": {"columns.weight.valueText": "%"}}}, "path": "translations.fr.columns.weight.valueText", "message": "must have the same"}
   ]
 }

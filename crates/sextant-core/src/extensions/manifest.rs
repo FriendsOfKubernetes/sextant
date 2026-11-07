@@ -373,6 +373,32 @@ pub struct ColumnContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub after_column: Option<String>,
+    /// The value picked from a list by an index field (#387), before `paths`; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub lookup: Option<ColumnLookup>,
+    /// How a `text` or `number` value is written: text with the one placeholder `{{value}}` (#387); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub value_text: Option<String>,
+}
+
+/// A value picked from a list by an index field (#387): `field` of the item of `list` that `index` names (an index the
+/// object leaves out is 0, as Kubernetes leaves zero counts out); with `nearest_before`, else of the nearest earlier
+/// item that has it; else `or_else`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ColumnLookup {
+    pub list: String,
+    pub index: String,
+    /// A field path inside an item: `.setWeight`.
+    pub field: String,
+    #[serde(default)]
+    pub nearest_before: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub or_else: Option<super::problems::ProblemScalar>,
 }
 
 /// How a computed column shows its value.
@@ -1023,6 +1049,8 @@ mod tests {
                 tooltip_paths: None,
                 cases: None,
                 after_column: None,
+                lookup: None,
+                value_text: None,
             }
         );
         assert_eq!(
@@ -1200,7 +1228,7 @@ mod tests {
             fails(&without(full(), "/contributes/columns/1/jsonPath")),
             (
                 "contributes.columns[1]".to_owned(),
-                "needs a `jsonPath` or `paths`".to_owned()
+                "needs a `jsonPath`, `paths` or a `lookup`".to_owned()
             )
         );
     }

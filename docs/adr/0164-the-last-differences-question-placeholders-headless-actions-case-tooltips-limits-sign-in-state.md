@@ -44,3 +44,20 @@ user notices (#378–#382):
   Argo CD keyring logins).
 - A headless frame is still extension code: it gets nothing a visible window would not, and the user sees every
   confirmation Sextant asks for it.
+
+## Amendment: the set weight (#386, #387)
+
+The built-in Argo Rollouts Weight column showed the set weight (`GetCurrentSetWeight`): 0 after an abort, the maximum
+once every step is done, else the `setWeight` of the current step or the nearest earlier one, written "25%". Two
+generic additions to `sextantApi` 4 let a manifest say it:
+
+- **`atLeast`** `{path, otherPath}`: both read as numbers (a number, a string that reads as one, a list as its length);
+  holds when the first is at least the second, never when either is not a number. Checked like `same` (no secret path).
+  It also lets "observed" read `observedGeneration` ≥ `generation`, as the built-in view did.
+- **A column's `lookup`** `{list, index, field, nearestBefore?, orElse?}`: `field` (a path inside an item) of the item of
+  `list` that `index` names — 0 when the object leaves the index out —, with `nearestBefore` else the nearest earlier
+  item's, else `orElse`; it comes before `paths`. A column needs `jsonPath`, `paths` or a `lookup`; the field is
+  checked where it is read (`<list>[0]<field>`). **`valueText`** writes a `text` or `number` value with the one
+  placeholder `{{value}}` (`{{value}}%`, `{{value}} %` in French), translated with the same placeholder.
+
+With these, Argo Rollouts' Weight is the built-in column; the weight the router reports stays in the details.

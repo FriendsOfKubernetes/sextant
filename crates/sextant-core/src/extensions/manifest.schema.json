@@ -442,6 +442,27 @@
                 "description": "The cell's tooltip, the first with a value.",
                 "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/fieldPath" }
               },
+              "lookup": {
+                "description": "The value picked from a list by an index field (sextantApi 4): `field` of the item of `list` that `index` names (0 when the object leaves the index out); with `nearestBefore`, else of the nearest earlier item that has it; else `orElse`. Before `paths`.",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["list", "index", "field"],
+                "properties": {
+                  "list": { "$ref": "#/$defs/fieldPath" },
+                  "index": { "$ref": "#/$defs/fieldPath" },
+                  "field": { "$ref": "#/$defs/fieldPath" },
+                  "nearestBefore": { "type": "boolean", "default": false },
+                  "orElse": { "oneOf": [{ "type": "string", "maxLength": 100 }, { "type": "number" }, { "type": "boolean" }] }
+                }
+              },
+              "valueText": {
+                "description": "How a `text` or `number` value is written: text with the one placeholder `{{value}}`, such as `{{value}}%` (sextantApi 4).",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "format": "non-blank",
+                "pattern": "\\S"
+              },
               "afterColumn": {
                 "description": "The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own column ids); the same in every language.",
                 "type": "string",
@@ -990,6 +1011,17 @@
           "required": ["type", "path", "otherPath"],
           "properties": {
             "type": { "const": "same" },
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "otherPath": { "$ref": "#/$defs/fieldPath" }
+          }
+        },
+        {
+          "description": "The value at `path` is a number at least the one at `otherPath`: each a number, a string that reads as one, or a list counted as its length (sextantApi 4).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path", "otherPath"],
+          "properties": {
+            "type": { "const": "atLeast" },
             "path": { "$ref": "#/$defs/fieldPath" },
             "otherPath": { "$ref": "#/$defs/fieldPath" }
           }

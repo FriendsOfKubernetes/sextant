@@ -3,7 +3,7 @@
 // text whose condition holds. No extension code runs; Rust checked the paths read no secret.
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { ColumnCase, ColumnContribution, ColumnTone, KubeObject } from "../api";
+import type { ColumnCase, ColumnContribution, ColumnLookup, ColumnTone, KubeObject } from "../api";
 import { Age, ageParts } from "../components";
 import type { ColumnDef } from "../resources/registry";
 import { StatusText } from "../resources/columns";
@@ -15,6 +15,24 @@ import { cleanText } from "../resources/uri";
 export const MAX_CELL_CHARS = 200;
 
 const TONES: Record<ColumnTone, Tone> = { ok: "success", warning: "warning", error: "danger", neutral: "neutral" };
+
+/**
+ * A column's `lookup` (#387): `field` of the item of `list` that `index` names (an index the object leaves out is 0);
+ * with `nearestBefore`, else the nearest earlier item's; else `orElse`. `undefined` without the list or past its end.
+ */
+export function lookupValue(obj: KubeObject, lookup: ColumnLookup): unknown {
+  const list = valueAt(obj, lookup.list);
+  if (!Array.isArray(list)) return undefined;
+  const raw = valueAt(obj, lookup.index);
+  const index = raw === undefined || raw === null ? 0 : numberOf(raw);
+  if (index === undefined || !Number.isInteger(index) || index < 0 || index >= list.length) return undefined;
+  for (let i = index; i >= 0; i--) {
+    const value = valueAt(list[i], lookup.field);
+    if (value !== undefined && value !== null) return value;
+    if (!lookup.nearestBefore) break;
+  }
+  return lookup.orElse;
+}
 
 /** The first value of `paths` that is there (not `null`). */
 export function firstValue(obj: KubeObject, paths: readonly string[] | undefined): unknown {
@@ -87,11 +105,14 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
     const toned = replaced.tone ? TONES[replaced.tone] : tone(text);
     return { sort: text, text, draw: toned || column.tones ? <StatusText value={text} tone={toned ?? "neutral"} /> : text };
   }
-  const value = firstValue(obj, column.paths);
+  const looked = column.lookup === undefined ? undefined : lookupValue(obj, column.lookup);
+  const value = looked !== undefined && looked !== null ? looked : firstValue(obj, column.paths);
+  // `valueText` writes a text or number value (#387): "{{value}}%".
+  const written = (text: string) => (column.valueText === undefined ? text : column.valueText.replace(/\{\{\s*value\s*\}\}/g, text));
   switch (column.format ?? "text") {
     case "number": {
       const n = numberOf(value);
-      return { sort: n, text: n === undefined ? undefined : String(n), draw: n === undefined ? null : String(n) };
+      return { sort: n, text: n === undefined ? undefined : written(String(n)), draw: n === undefined ? null : written(String(n)) };
     }
     case "age": {
       const t = timeOf(value);
@@ -115,9 +136,10 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
       return { sort: whole === 0 ? 0 : part / whole, text, draw: text };
     }
     case "text": {
-      const text = textOf(value);
-      if (text === undefined) return { sort: undefined, text: undefined, draw: null };
-      return { sort: text, text, draw: column.tones ? <StatusText value={text} tone={tone(text) ?? "neutral"} /> : text };
+      const plain = textOf(value);
+      if (plain === undefined) return { sort: undefined, text: undefined, draw: null };
+      const text = written(plain);
+      return { sort: plain, text, draw: column.tones ? <StatusText value={text} tone={tone(plain) ?? "neutral"} /> : text };
     }
   }
 }

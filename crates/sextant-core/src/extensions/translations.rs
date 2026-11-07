@@ -83,6 +83,12 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
     }
     for column in &c.columns {
         out.insert(format!("columns.{}.title", column.id), Text::Title);
+        if let Some(text) = &column.value_text {
+            out.insert(
+                format!("columns.{}.valueText", column.id),
+                Text::Template(text, 40),
+            );
+        }
         for (i, case) in column.cases.iter().flatten().enumerate() {
             out.insert(
                 format!("columns.{}.cases.{i}.text", column.id),

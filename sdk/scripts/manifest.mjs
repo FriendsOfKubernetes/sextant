@@ -643,8 +643,8 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     checkCondition(condition.of, kind, [...segments, "of"], depth + 1, counter, "not");
     return;
   }
-  if (condition.type === "same") {
-    if (counter.api < SOURCES_API) fail([...segments, "type"], `\`same\` needs sextantApi ${SOURCES_API} or later`);
+  if (condition.type === "same" || condition.type === "atLeast") {
+    if (counter.api < SOURCES_API) fail([...segments, "type"], `\`${condition.type}\` needs sextantApi ${SOURCES_API} or later`);
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
     checkRulePath(condition.otherPath, kind, [...segments, "otherPath"], counter.metadataOnly);
     return;
@@ -1006,6 +1006,7 @@ export function translatableTexts(manifest) {
   }
   for (const column of c.columns ?? []) {
     out.set(`columns.${column.id}.title`, title);
+    if (column.valueText !== undefined) out.set(`columns.${column.id}.valueText`, { max: 40, message: column.valueText });
     (column.cases ?? []).forEach((c, i) => {
       out.set(`columns.${column.id}.cases.${i}.text`, { max: 200, message: c.text });
       if (c.tooltip !== undefined) out.set(`columns.${column.id}.cases.${i}.tooltip`, { max: 300, message: c.tooltip });
@@ -1361,7 +1362,7 @@ function checkActionPatch(patch, segments) {
   walk(patch, segments);
 }
 
-const COLUMN_FIELDS = ["paths", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
+const COLUMN_FIELDS = ["paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
 
 function checkColumns(manifest) {
   const list = ["contributes", "columns"];
@@ -1374,14 +1375,18 @@ function checkColumns(manifest) {
     for (const field of COLUMN_FIELDS) {
       if (column[field] !== undefined && manifest.sextantApi < WINDOW_API) fail([...here, field], `needs sextantApi ${WINDOW_API} or later`);
     }
-    if (column.jsonPath === undefined && column.paths === undefined) fail(here, "needs a `jsonPath` or `paths`");
+    if (column.jsonPath === undefined && column.paths === undefined && column.lookup === undefined) {
+      fail(here, "needs a `jsonPath`, `paths` or a `lookup`");
+    }
     if (column.jsonPath !== undefined && column.paths !== undefined) fail([...here, "paths"], "a column has a `jsonPath` or `paths`, not both");
     if (column.jsonPath !== undefined) {
       const extra = COLUMN_FIELDS.slice(1).find((field) => column[field] !== undefined);
-      if (extra !== undefined) fail([...here, extra], "goes with `paths`, not `jsonPath`");
+      if (extra !== undefined) fail([...here, extra], "goes with `paths` or a `lookup`, not `jsonPath`");
       return;
     }
     const format = column.format ?? "text";
+    if (column.lookup !== undefined) checkLookup(column.lookup, column.kind, [...here, "lookup"]);
+    if (column.valueText !== undefined) checkValueText(column.valueText, format, [...here, "valueText"]);
     if (column.endPaths !== undefined && format !== "duration") fail([...here, "endPaths"], 'goes with `format: "duration"`');
     if (format === "ratio" && column.totalPaths === undefined) fail([...here, "totalPaths"], '`format: "ratio"` needs `totalPaths`');
     if (format !== "ratio" && column.totalPaths !== undefined) fail([...here, "totalPaths"], 'goes with `format: "ratio"`');
@@ -1400,6 +1405,23 @@ function checkColumns(manifest) {
       if (c.tooltip !== undefined) checkMessage(c.tooltip, column.kind, [...here, "cases", j, "tooltip"], false);
     });
   });
+}
+
+/** `check_lookup` (#387): list, index and the item's field are paths that read no secret of the kind. */
+function checkLookup(lookup, kind, segments) {
+  checkPath(lookup.list, kind, [...segments, "list"]);
+  checkPath(lookup.index, kind, [...segments, "index"]);
+  const field = lookup.field.trim();
+  if (!field.startsWith(".") && !field.startsWith("[")) fail([...segments, "field"], "must be a field path inside an item, such as `.setWeight`");
+  checkPath(`${lookup.list.trim()}[0]${field}`, kind, [...segments, "field"]);
+}
+
+/** `check_value_text` (#387): the one placeholder `{{value}}`, for a `text` or `number` value. */
+function checkValueText(text, format, segments) {
+  if (format !== "text" && format !== "number") fail(segments, "goes with `format` `text` or `number`");
+  const found = placeholders(text);
+  if (found === null) fail(segments, "has a `{{` without its `}}`");
+  if (found.length === 0 || found.some((p) => p.trim() !== "value")) fail(segments, "has `{{value}}`, and no other placeholder");
 }
 
 function checkKinds(manifest) {

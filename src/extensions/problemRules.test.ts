@@ -180,6 +180,16 @@ describe("sameValue and templates (#368, #369, #370)", () => {
     expect(evaluate({ type: "same", path: ".metadata.generation", otherPath: ".status.observedGeneration" }, ro).holds).toBe(true);
   });
 
+  it("compare two numbers with atLeast, a list as its length, never a non-number (#386)", () => {
+    const ro = { apiVersion: "v1", kind: "X", metadata: { name: "r", generation: 3 }, status: { observedGeneration: "4", at: 2 }, spec: { steps: [1, 2] } };
+    const atLeast = (path: string, otherPath: string) => evaluate({ type: "atLeast", path, otherPath }, ro).holds;
+    expect(atLeast(".status.observedGeneration", ".metadata.generation")).toBe(true);
+    expect(atLeast(".metadata.generation", ".status.observedGeneration")).toBe(false);
+    expect(atLeast(".status.at", ".spec.steps")).toBe(true);
+    expect(atLeast(".status.none", ".spec.steps")).toBe(false);
+    expect(atLeast(".metadata.name", ".spec.steps")).toBe(false);
+  });
+
   it("fill a template only when every placeholder has a value", () => {
     const obj = { apiVersion: "v1", kind: "X", metadata: { name: "x" }, spec: { sourceRef: { kind: "GitRepository", name: "podinfo" } } };
     expect(fillTemplate("{{.spec.sourceRef.kind}}/{{.spec.sourceRef.name}}", obj)).toBe("GitRepository/podinfo");

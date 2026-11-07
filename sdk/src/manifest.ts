@@ -154,6 +154,14 @@ export interface ManifestColumn {
   }[];
   /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
   afterColumn?: string;
+  /**
+   * The value picked from a list by an index field, before `paths` (since Sextant 0.30): `field` of the item of `list`
+   * that `index` names (0 when the object leaves the index out); with `nearestBefore`, else of the nearest earlier item
+   * that has it; else `orElse`.
+   */
+  lookup?: { list: string; index: string; field: string; nearestBefore?: boolean; orElse?: string | number | boolean };
+  /** How a `text` or `number` value is written, with the one placeholder `{{value}}`: `{{value}}%` (since Sextant 0.30). */
+  valueText?: string;
 }
 
 /**

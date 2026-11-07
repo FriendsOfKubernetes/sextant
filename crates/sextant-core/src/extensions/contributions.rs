@@ -4,7 +4,8 @@
 //! extension code runs for them.
 
 use super::manifest::{
-    ActionContribution, ColumnContribution, ColumnFormat, ExtensionManifest, ManifestError,
+    ActionContribution, ColumnContribution, ColumnFormat, ColumnLookup, ExtensionManifest,
+    ManifestError,
 };
 use super::problems::{check_message, check_object_condition, check_path};
 use super::schema::JsonPath;
@@ -185,7 +186,10 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
             }
         }
         match (&column.json_path, &column.paths) {
-            (None, None) => return Err(at(&here, "needs a `jsonPath` or `paths`")),
+            (None, None) if column.lookup.is_none() => {
+                return Err(at(&here, "needs a `jsonPath`, `paths` or a `lookup`"));
+            }
+            (None, None) => {}
             (Some(_), Some(_)) => {
                 return Err(at(
                     &here.key("paths"),
@@ -194,13 +198,22 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
             }
             (Some(_), None) => {
                 if let Some((field, _)) = computed.iter().skip(1).find(|(_, set)| *set) {
-                    return Err(at(&here.key(field), "goes with `paths`, not `jsonPath`"));
+                    return Err(at(
+                        &here.key(field),
+                        "goes with `paths` or a `lookup`, not `jsonPath`",
+                    ));
                 }
                 continue;
             }
             (None, Some(_)) => {}
         }
         let format = column.format.unwrap_or(ColumnFormat::Text);
+        if let Some(lookup) = &column.lookup {
+            check_lookup(lookup, &column.kind, &here.key("lookup"))?;
+        }
+        if let Some(text) = &column.value_text {
+            check_value_text(text, format, &here.key("valueText"))?;
+        }
         if column.end_paths.is_some() && format != ColumnFormat::Duration {
             return Err(at(
                 &here.key("endPaths"),
@@ -264,6 +277,46 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
     Ok(())
 }
 
+/// A column's `lookup` (#387): the list, index and the item's field (relative, `.setWeight`) are field paths that read
+/// no secret of the kind, the field checked where it is read (`<list>[0]<field>`).
+fn check_lookup(
+    lookup: &ColumnLookup,
+    kind: &KindPattern,
+    path: &JsonPath,
+) -> Result<(), ManifestError> {
+    check_path(&lookup.list, kind, &path.key("list"))?;
+    check_path(&lookup.index, kind, &path.key("index"))?;
+    let field = lookup.field.trim();
+    if !field.starts_with('.') && !field.starts_with('[') {
+        return Err(at(
+            &path.key("field"),
+            "must be a field path inside an item, such as `.setWeight`",
+        ));
+    }
+    check_path(
+        &format!("{}[0]{field}", lookup.list.trim()),
+        kind,
+        &path.key("field"),
+    )
+}
+
+/// A column's `valueText` (#387): the one placeholder `{{value}}`, at least once, for a `text` or `number` value.
+fn check_value_text(
+    text: &str,
+    format: ColumnFormat,
+    path: &JsonPath,
+) -> Result<(), ManifestError> {
+    if !matches!(format, ColumnFormat::Text | ColumnFormat::Number) {
+        return Err(at(path, "goes with `format` `text` or `number`"));
+    }
+    let found = super::problems::placeholders(text)
+        .ok_or_else(|| at(path, "has a `{{` without its `}}`"))?;
+    if found.is_empty() || found.iter().any(|p| p.trim() != "value") {
+        return Err(at(path, "has `{{value}}`, and no other placeholder"));
+    }
+    Ok(())
+}
+
 /// `afterColumn`: a column id of letters, digits, `-`, `_` and `:`.
 fn is_column_id(text: &str) -> bool {
     (1..=80).contains(&text.len())
@@ -272,9 +325,11 @@ fn is_column_id(text: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b':'))
 }
 
-fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 7] {
+fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 9] {
     [
         ("paths", column.paths.is_some()),
+        ("lookup", column.lookup.is_some()),
+        ("valueText", column.value_text.is_some()),
         ("format", column.format.is_some()),
         ("endPaths", column.end_paths.is_some()),
         ("totalPaths", column.total_paths.is_some()),

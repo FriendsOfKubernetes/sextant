@@ -164,6 +164,13 @@ pub enum ProblemCondition {
         #[serde(rename = "otherPath")]
         other_path: String,
     },
+    /// The value at `path` is a number at least the one at `otherPath` (each a number, a string that reads as one, or a
+    /// list counted as its length; #386); `sextantApi` 4.
+    AtLeast {
+        path: String,
+        #[serde(rename = "otherPath")]
+        other_path: String,
+    },
     /// The time at `path` (RFC 3339) is more than `minutes` ago.
     OlderThan {
         path: String,
@@ -421,11 +428,20 @@ fn check_condition<'k>(
         ProblemCondition::Same {
             path: field,
             other_path,
+        }
+        | ProblemCondition::AtLeast {
+            path: field,
+            other_path,
         } => {
             if checks.api < SOURCES_API {
+                let name = if matches!(condition, ProblemCondition::Same { .. }) {
+                    "same"
+                } else {
+                    "atLeast"
+                };
                 return Err(at(
                     &path.key("type"),
-                    format!("`same` needs sextantApi {SOURCES_API} or later"),
+                    format!("`{name}` needs sextantApi {SOURCES_API} or later"),
                 ));
             }
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)?;

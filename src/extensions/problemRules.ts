@@ -126,6 +126,12 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject): Verdict 
       const b = valueAt(obj, condition.otherPath);
       return { holds: sameValue(a, b) };
     }
+    case "atLeast": {
+      // Both as numbers (a list as its length); not a number on either side never holds (#386).
+      const a = numberOf(valueAt(obj, condition.path));
+      const b = numberOf(valueAt(obj, condition.otherPath));
+      return { holds: a !== undefined && b !== undefined && a >= b };
+    }
     case "olderThan": {
       const t = timeOf(valueAt(obj, condition.path));
       return t === undefined ? NO : { holds: true, activeFrom: t + condition.minutes * MINUTE_MS };

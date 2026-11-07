@@ -43,6 +43,7 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
       columns: c.columns.map((col) => ({
         ...col,
         title: text(`columns.${col.id}.title`, col.title),
+        ...(col.valueText !== undefined ? { valueText: text(`columns.${col.id}.valueText`, col.valueText) } : {}),
         ...(col.cases !== undefined
           ? {
               cases: col.cases.map((cs, i) => ({

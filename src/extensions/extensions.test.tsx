@@ -506,6 +506,15 @@ describe("contributions of an extension", () => {
               { kind, id: "step", title: "Step", paths: [".status.step"], format: "ratio", totalPaths: [".spec.steps"] },
               {
                 kind,
+                id: "weight",
+                title: "Weight",
+                format: "number",
+                valueText: "{{value}}%",
+                lookup: { list: ".spec.plan", index: ".status.at", field: ".weight", nearestBefore: true, orElse: 0 },
+                cases: [{ when: { type: "atLeast", path: ".status.at", otherPath: ".spec.plan" }, text: "100%" }],
+              },
+              {
+                kind,
                 id: "source",
                 title: "Source",
                 paths: [".spec.sourceRef.name"],
@@ -544,6 +553,16 @@ describe("contributions of an extension", () => {
     expect(col("took").value(run)).toBe(30 * 60_000);
     expect(col("took").filter?.type).toBe("number");
     // A case's text with field values (#368); one whose placeholder has none does not hold.
+    // A value picked by an index field, the nearest earlier item's when it has none, written by `valueText` (#387).
+    const plan = [{ weight: 10 }, { pause: {} }, { weight: 40 }, { pause: {} }];
+    const weight = (status: object) => col("weight").searchText!(obj({ plan }, status), { now: ctx.now, t: i18n.t });
+    expect(weight({})).toBe("10%");
+    expect(weight({ at: 1 })).toBe("10%");
+    expect(weight({ at: 3 })).toBe("40%");
+    expect(col("weight").value(obj({ plan }, { at: 3 }))).toBe(40);
+    expect(weight({ at: 4 })).toBe("100%");
+    expect(col("weight").searchText!(obj({ plan: [{ pause: {} }] }, { at: 0 }), { now: ctx.now, t: i18n.t })).toBe("0%");
+    expect(col("weight").searchText!(obj({}, { at: 0 }), { now: ctx.now, t: i18n.t })).toBeUndefined();
     // A count Kubernetes leaves out is 0 when the whole is there.
     expect(col("step").searchText!(obj({ steps: [1, 2, 3, 4] }, {}), { now: ctx.now, t: i18n.t })).toBe("0/4");
     expect(col("step").searchText!(obj({}, {}), { now: ctx.now, t: i18n.t })).toBeUndefined();
