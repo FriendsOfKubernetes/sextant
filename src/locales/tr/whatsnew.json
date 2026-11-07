@@ -1,0 +1,29 @@
+{
+  "title": "Sextant {{version}} sürümünde yenilikler",
+  "version": "Sextant {{version}}",
+  "close": "Anladım",
+  "v0_30_0": {
+    "extensionsMoved": {
+      "title": "Flux, Argo CD, Argo Rollouts ve Argo Workflows artık birer eklenti",
+      "text": "Görünümleri Sextant’tan çıkarılıp eklenti kataloğundaki, ayrı güncellenen kendi eklentilerine taşındı. Kullandıklarınızı aşağıdan yükleyin: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçların çalıştığı kümelerde de onları önerir."
+    },
+    "api4": {
+      "title": "Eklenti API 4",
+      "text": "Eklentiler artık Sextant’ın kendi tablolarıyla kenar çubuğu bölümlerine, hesaplanan sütunlara, tek tıklık eylemlere, küme içindeki hizmetlere ve yapay zekâ ajanları için araçlara sahip olabiliyor: bu dört görünümü açık API üzerinde kurmaya yetecek kadar."
+    }
+  },
+  "extensions": {
+    "title": "Taşınan eklentileri yükleyin",
+    "hint": "Her paket denetlenir ve yüklenmeden önce onayınızı ister.",
+    "catalogOff": "Eklenti kataloğu kapalı: yüklemek için Ayarlar → Eklentiler’den açın.",
+    "install": "Yükle",
+    "installLabel": "{{tool}} yükle",
+    "installed": "Yüklendi",
+    "about": {
+      "flux": "Kaynaklar, Kustomizations, HelmReleases, imaj otomasyonu ve bildirimler",
+      "argo-cd": "Eşitleme, sağlık, kaynaklar, geçmiş ve diff ile Applications",
+      "argo-rollouts": "Adımlar, ağırlıklar ve analizle Rollouts; promote, abort ve duraklatma",
+      "argo-workflows": "Adım ağacı ve günlükleriyle Workflows, CronWorkflows ve şablonlar"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "title": "Sextant {{version}} の新機能",
+  "version": "Sextant {{version}}",
+  "close": "閉じる",
+  "v0_30_0": {
+    "extensionsMoved": {
+      "title": "Flux、Argo CD、Argo Rollouts、Argo Workflows は拡張機能になりました",
+      "text": "これらのビューは Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
+    },
+    "api4": {
+      "title": "拡張機能 API 4",
+      "text": "拡張機能で、Sextant 自身のテーブルを使うサイドバーのセクション、計算列、ワンクリックの操作、クラスター内のサービス、AI エージェント向けのツールを持てるようになりました。この 4 つのビューを公開 API で作れるだけの機能です。"
+    }
+  },
+  "extensions": {
+    "title": "移された拡張機能をインストール",
+    "hint": "各パッケージはインストール前に検証され、同意を求めます。",
+    "catalogOff": "拡張機能カタログがオフです。インストールするには 設定 → 拡張機能 でオンにしてください。",
+    "install": "インストール",
+    "installLabel": "{{tool}} をインストール",
+    "installed": "インストール済み",
+    "about": {
+      "flux": "ソース、Kustomizations、HelmReleases、イメージの自動化と通知",
+      "argo-cd": "同期、ヘルス、リソース、履歴、diff を備えた Applications",
+      "argo-rollouts": "ステップ、重み、分析を備えた Rollouts。promote、abort、一時停止",
+      "argo-workflows": "ステップのツリーとログを備えた Workflows、CronWorkflows とテンプレート"
+    }
+  }
+}

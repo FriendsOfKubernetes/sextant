@@ -21,6 +21,7 @@ import type { TableColumnWidths } from "./TableColumnWidths";
 import type { TerminalToolsSettings } from "./TerminalToolsSettings";
 import type { Theme } from "./Theme";
 import type { TimelineSettings } from "./TimelineSettings";
+import type { WhatsNewSettings } from "./WhatsNewSettings";
 import type { WindowLayout } from "./WindowLayout";
 import type { Workspace } from "./Workspace";
 
@@ -170,4 +171,9 @@ extensionCatalog: ExtensionCatalogSettings,
  * Terminal tools (ADR-0132): whether a cluster's terminal offers kubectl. Written by the frontend; read
  * leniently ([`terminal_tools`]).
  */
-terminalTools: TerminalToolsSettings, };
+terminalTools: TerminalToolsSettings, 
+/**
+ * The "What's new" window (ADR-0166): the newest notes the user has seen. Written by the frontend; set by the
+ * migration for a file of Sextant 0.29 or earlier; read leniently ([`whats_new`]).
+ */
+whatsNew: WhatsNewSettings, };

@@ -1,0 +1,29 @@
+{
+  "title": "Sextant {{version}}의 새로운 기능",
+  "version": "Sextant {{version}}",
+  "close": "확인",
+  "v0_30_0": {
+    "extensionsMoved": {
+      "title": "Flux, Argo CD, Argo Rollouts, Argo Workflows가 이제 확장 기능입니다",
+      "text": "이들의 화면은 Sextant에서 확장 기능 카탈로그에 있는 Sextant 자체 확장 기능으로 옮겨졌으며, 따로 업데이트됩니다. 사용하는 것을 아래에서 설치하세요. 그 전까지는 해당 섹션이 표시되지 않습니다. 이들에 대한 알림 설정은 유지되었으며, 이 도구들이 실행되는 클러스터에서는 사이드바에서도 추천합니다."
+    },
+    "api4": {
+      "title": "확장 기능 API 4",
+      "text": "이제 확장 기능은 Sextant 자체 테이블을 쓰는 사이드바 섹션, 계산 열, 원클릭 작업, 클러스터 안의 서비스, AI 에이전트용 도구를 가질 수 있습니다. 이 네 가지 화면을 공개 API로 만들 수 있을 만큼입니다."
+    }
+  },
+  "extensions": {
+    "title": "옮겨진 확장 기능 설치",
+    "hint": "각 패키지는 설치 전에 검사되고 동의를 요청합니다.",
+    "catalogOff": "확장 기능 카탈로그가 꺼져 있습니다. 설치하려면 설정 → 확장 기능에서 켜세요.",
+    "install": "설치",
+    "installLabel": "{{tool}} 설치",
+    "installed": "설치됨",
+    "about": {
+      "flux": "소스, Kustomizations, HelmReleases, 이미지 자동화 및 알림",
+      "argo-cd": "동기화, 상태, 리소스, 기록, diff를 갖춘 Applications",
+      "argo-rollouts": "단계, 가중치, 분석을 갖춘 Rollouts. promote, abort, 일시 중지",
+      "argo-workflows": "단계 트리와 로그를 갖춘 Workflows, CronWorkflows 및 템플릿"
+    }
+  }
+}

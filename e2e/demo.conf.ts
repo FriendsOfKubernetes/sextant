@@ -32,6 +32,8 @@ export const config: WebdriverIO.Config = {
       language: "en",
       settingsVersion: 1,
       checkForUpdates: false,
+      // "What's new" would open over the scenario (ADR-0166).
+      whatsNew: { seenVersion: "999.0.0" },
       mcp: { enabled: demo === "mcp", port: MCP_PORT },
     };
     writeFileSync(path.join(dir, "settings.json"), `${JSON.stringify(settings, null, 2)}\n`);

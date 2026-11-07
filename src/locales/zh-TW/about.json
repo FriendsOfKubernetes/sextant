@@ -32,5 +32,6 @@
   "copyFailed": "無法複製到剪貼簿",
   "openLogs": "開啟記錄資料夾",
   "openLogsFailed": "無法開啟記錄資料夾",
-  "fonts": "字型：Fira Sans 與 Fira Mono，SIL Open Font License 1.1"
+  "fonts": "字型：Fira Sans 與 Fira Mono，SIL Open Font License 1.1",
+  "whatsNew": "新功能"
 }

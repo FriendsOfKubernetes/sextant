@@ -1,0 +1,29 @@
+{
+  "title": "Sextant {{version}} 的新功能",
+  "version": "Sextant {{version}}",
+  "close": "知道了",
+  "v0_30_0": {
+    "extensionsMoved": {
+      "title": "Flux、Argo CD、Argo Rollouts 和 Argo Workflows 现在是扩展",
+      "text": "它们的视图已从 Sextant 移到扩展目录中 Sextant 自己的扩展里，这些扩展单独更新。请在下面安装你用到的扩展：在此之前它们的分区不会显示。你对它们的通知设置已保留，侧边栏也会在运行这些工具的集群中推荐它们。"
+    },
+    "api4": {
+      "title": "扩展 API 4",
+      "text": "扩展现在可以拥有使用 Sextant 自己表格的侧边栏分区、计算列、一键操作、集群内服务以及供 AI 代理使用的工具——足以在公开 API 上构建这四个视图。"
+    }
+  },
+  "extensions": {
+    "title": "安装已移出的扩展",
+    "hint": "每个包在安装前都会经过检查并征求你的同意。",
+    "catalogOff": "扩展目录已关闭：请在 设置 → 扩展 中打开它以安装这些扩展。",
+    "install": "安装",
+    "installLabel": "安装 {{tool}}",
+    "installed": "已安装",
+    "about": {
+      "flux": "源、Kustomizations、HelmReleases、镜像自动化和通知",
+      "argo-cd": "带同步、健康状况、资源、历史和 diff 的 Applications",
+      "argo-rollouts": "带步骤、权重和分析的 Rollouts；promote、abort 和暂停",
+      "argo-workflows": "带步骤树和日志的 Workflows、CronWorkflows 和模板"
+    }
+  }
+}

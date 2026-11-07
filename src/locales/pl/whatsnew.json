@@ -1,0 +1,29 @@
+{
+  "title": "Co nowego w Sextant {{version}}",
+  "version": "Sextant {{version}}",
+  "close": "Rozumiem",
+  "v0_30_0": {
+    "extensionsMoved": {
+      "title": "Flux, Argo CD, Argo Rollouts i Argo Workflows są teraz rozszerzeniami",
+      "text": "Ich widoki przeniesiono z Sextant do jego własnych rozszerzeń z katalogu rozszerzeń, aktualizowanych osobno. Zainstaluj poniżej te, których używasz: do tego czasu ich sekcje nie są pokazywane. Twoje ustawienia powiadomień dla nich zostały zachowane, a panel boczny proponuje je też w klastrach, w których działają te narzędzia."
+    },
+    "api4": {
+      "title": "API rozszerzeń 4",
+      "text": "Rozszerzenia mogą teraz mieć sekcje panelu bocznego z tabelami Sextant, kolumny obliczane, działania jednym kliknięciem, usługi w klastrze i narzędzia dla agentów AI — wystarczająco, by zbudować te cztery widoki na publicznym API."
+    }
+  },
+  "extensions": {
+    "title": "Zainstaluj przeniesione rozszerzenia",
+    "hint": "Każdy pakiet jest sprawdzany i prosi o zgodę przed instalacją.",
+    "catalogOff": "Katalog rozszerzeń jest wyłączony: włącz go w Ustawienia → Rozszerzenia, aby je zainstalować.",
+    "install": "Zainstaluj",
+    "installLabel": "Zainstaluj {{tool}}",
+    "installed": "Zainstalowane",
+    "about": {
+      "flux": "Źródła, Kustomizations, HelmReleases, automatyzacja obrazów i powiadomienia",
+      "argo-cd": "Applications z synchronizacją, stanem, zasobami, historią i diff",
+      "argo-rollouts": "Rollouts z krokami, wagami i analizą; promote, abort i pauza",
+      "argo-workflows": "Workflows z drzewem kroków i logami, CronWorkflows i szablony"
+    }
+  }
+}

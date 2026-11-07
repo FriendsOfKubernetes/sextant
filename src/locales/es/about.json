@@ -32,5 +32,6 @@
   "copyFailed": "No se pudo copiar al portapapeles",
   "openLogs": "Abrir la carpeta de registros",
   "openLogsFailed": "No se pudo abrir la carpeta de registros",
-  "fonts": "Fuentes: Fira Sans y Fira Mono, SIL Open Font License 1.1"
+  "fonts": "Fuentes: Fira Sans y Fira Mono, SIL Open Font License 1.1",
+  "whatsNew": "Novedades"
 }

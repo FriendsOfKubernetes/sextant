@@ -32,5 +32,6 @@
   "copyFailed": "クリップボードにコピーできませんでした",
   "openLogs": "ログフォルダーを開く",
   "openLogsFailed": "ログフォルダーを開けませんでした",
-  "fonts": "フォント: Fira Sans と Fira Mono、SIL Open Font License 1.1"
+  "fonts": "フォント: Fira Sans と Fira Mono、SIL Open Font License 1.1",
+  "whatsNew": "新機能"
 }

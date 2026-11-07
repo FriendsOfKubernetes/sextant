@@ -32,5 +32,6 @@
   "copyFailed": "Kopieren in die Zwischenablage fehlgeschlagen",
   "openLogs": "Protokollordner öffnen",
   "openLogsFailed": "Der Protokollordner konnte nicht geöffnet werden",
-  "fonts": "Schriften: Fira Sans und Fira Mono, SIL Open Font License 1.1"
+  "fonts": "Schriften: Fira Sans und Fira Mono, SIL Open Font License 1.1",
+  "whatsNew": "Neuigkeiten"
 }

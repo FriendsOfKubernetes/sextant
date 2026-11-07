@@ -12,6 +12,8 @@ import fontLicense from "../../assets/fonts/OFL.txt?raw";
 import { ABOUT_LINKS } from "./links";
 import { buildKey, versionInfoText } from "./versionInfo";
 import "./about.css";
+import { openWhatsNew } from "../whats-new/store";
+import { closeAbout } from "./store";
 
 const { license } = tauriConfig.bundle;
 /** `bundle.copyright` names the licence too (for the installers); the licence has its own line here. */
@@ -155,6 +157,15 @@ function AboutBody() {
         </Button>
         {/* Sextant's own log: start, exit and every crash, for a report of an app that closed by itself (#343). */}
         <Button onClick={() => void openLogs()}>{t("about:openLogs")}</Button>
+        {/* The notes of the latest version and the extensions that left the core (ADR-0166). */}
+        <Button
+          onClick={() => {
+            closeAbout();
+            openWhatsNew();
+          }}
+        >
+          {t("about:whatsNew")}
+        </Button>
         {feedback && (
           <span className="updates__status" role={feedback.kind === "error" ? "alert" : "status"}>
             {feedback.text}

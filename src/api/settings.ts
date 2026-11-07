@@ -68,6 +68,7 @@ export function defaultAppSettings(): AppSettings {
     customColumns: [],
     imageFiles: { dockerCredentials: false },
     extensionCatalog: { enabled: true, declinedOffers: [] },
+    whatsNew: {},
     terminalTools: { offerKubectl: true },
   };
 }

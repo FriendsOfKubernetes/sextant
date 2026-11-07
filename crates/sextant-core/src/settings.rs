@@ -26,6 +26,8 @@ pub mod logs;
 pub use logs::LogViewSettings;
 pub mod extension_catalog;
 pub use extension_catalog::ExtensionCatalogSettings;
+pub mod whats_new;
+pub use whats_new::WhatsNewSettings;
 pub mod terminal_tools;
 pub use terminal_tools::TerminalToolsSettings;
 pub mod appearance;
@@ -586,6 +588,11 @@ pub struct AppSettings {
     #[serde(with = "terminal_tools::terminal_tools_field")]
     #[ts(as = "TerminalToolsSettings")]
     pub terminal_tools: TerminalToolsSettings,
+    /// The "What's new" window (ADR-0166): the newest notes the user has seen. Written by the frontend; set by the
+    /// migration for a file of Sextant 0.29 or earlier; read leniently ([`whats_new`]).
+    #[serde(with = "whats_new::whats_new_field")]
+    #[ts(as = "WhatsNewSettings")]
+    pub whats_new: WhatsNewSettings,
 }
 
 impl Default for AppSettings {
@@ -621,6 +628,7 @@ impl Default for AppSettings {
             logs: LogViewSettings::default(),
             extension_catalog: ExtensionCatalogSettings::default(),
             terminal_tools: TerminalToolsSettings::default(),
+            whats_new: WhatsNewSettings::default(),
             cluster_order: Vec::new(),
             practices: PracticesSettings::default(),
             custom_columns: Vec::new(),
@@ -743,6 +751,10 @@ pub fn migrate(settings: &mut AppSettings) {
             if for_agents && !settings.mcp.extension_problems.contains(&id) {
                 settings.mcp.extension_problems.push(id);
             }
+        }
+        // A file of Sextant 0.29 or earlier: the user updated, and "What's new" tells what moved (ADR-0166).
+        if settings.whats_new.seen_version.is_none() {
+            settings.whats_new.seen_version = Some(whats_new::BEFORE_0_30.to_owned());
         }
         settings.settings_version = 3;
     }
@@ -1327,6 +1339,8 @@ mod tests {
             s.mcp.extension_problems,
             ["sextant.argo-cd", "acme.widgets", "sextant.flux"]
         );
+        // An update from 0.29: "What's new" has notes to show.
+        assert_eq!(s.whats_new.seen_version.as_deref(), Some("0.29.0"));
         // Taken away afterwards: the user's choice, not undone by a reopen.
         store.update(|s| s.mcp.extension_problems.clear()).unwrap();
         assert!(
@@ -1336,10 +1350,11 @@ mod tests {
                 .extension_problems
                 .is_empty()
         );
-        // A new install lets agents have no extension's problems (ADR-0146).
+        // A new install lets agents have no extension's problems (ADR-0146), and has seen no notes yet.
         let fresh = tempfile::tempdir().unwrap();
         let (_, store) = store_in(&fresh);
         assert!(store.get().mcp.extension_problems.is_empty());
+        assert_eq!(store.get().whats_new.seen_version, None);
     }
 
     #[test]

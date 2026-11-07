@@ -32,5 +32,6 @@
   "copyFailed": "Could not copy to the clipboard",
   "openLogs": "Open logs folder",
   "openLogsFailed": "Could not open the logs folder",
-  "fonts": "Fonts: Fira Sans and Fira Mono, SIL Open Font License 1.1"
+  "fonts": "Fonts: Fira Sans and Fira Mono, SIL Open Font License 1.1",
+  "whatsNew": "What's new"
 }

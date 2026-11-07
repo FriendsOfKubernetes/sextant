@@ -20,7 +20,7 @@ export const config: WebdriverIO.Config = {
     const home = process.env.SEXTANT_E2E_HOME;
     if (!home) throw new Error("SEXTANT_E2E_HOME is not set");
     // Tauri's app_config_dir on Linux: $XDG_CONFIG_HOME/<identifier> (created by the e2e setup).
-    const settings = { language: "en", settingsVersion: 1, checkForUpdates: false };
+    const settings = { language: "en", settingsVersion: 1, checkForUpdates: false, whatsNew: { seenVersion: "999.0.0" } };
     writeFileSync(path.join(home, "config", "dev.sextant.app", "settings.json"), `${JSON.stringify(settings, null, 2)}\n`);
   },
 };

@@ -1,0 +1,29 @@
+{
+  "title": "Nouveautés de Sextant {{version}}",
+  "version": "Sextant {{version}}",
+  "close": "Compris",
+  "v0_30_0": {
+    "extensionsMoved": {
+      "title": "Flux, Argo CD, Argo Rollouts et Argo Workflows sont désormais des extensions",
+      "text": "Leurs vues ont quitté Sextant pour ses propres extensions du catalogue d’extensions, mises à jour séparément. Installez ci-dessous celles que vous utilisez : d’ici là, leurs sections ne s’affichent pas. Vos réglages de notifications pour elles sont conservés, et la barre latérale les propose aussi dans les clusters qui exécutent ces outils."
+    },
+    "api4": {
+      "title": "API d’extensions 4",
+      "text": "Les extensions peuvent désormais avoir des sections de barre latérale avec les tableaux de Sextant, des colonnes calculées, des actions en un clic, des services dans le cluster et des outils pour agents IA : de quoi construire ces quatre vues sur l’API publique."
+    }
+  },
+  "extensions": {
+    "title": "Installer les extensions déplacées",
+    "hint": "Chaque paquet est vérifié et demande votre accord avant d’être installé.",
+    "catalogOff": "Le catalogue d’extensions est désactivé : activez-le dans Réglages → Extensions pour les installer.",
+    "install": "Installer",
+    "installLabel": "Installer {{tool}}",
+    "installed": "Installée",
+    "about": {
+      "flux": "Sources, Kustomizations, HelmReleases, automatisation des images et notifications",
+      "argo-cd": "Applications avec synchronisation, santé, ressources, historique et diff",
+      "argo-rollouts": "Rollouts avec étapes, poids et analyse ; promote, abort et pause",
+      "argo-workflows": "Workflows avec leur arbre d’étapes et leurs journaux, CronWorkflows et modèles"
+    }
+  }
+}

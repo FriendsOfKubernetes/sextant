@@ -78,7 +78,7 @@ export const config: WebdriverIO.Config = {
     // Flux, Argo CD and Argo Rollouts are Sextant's own extensions (ADR-0162): installed as the user would have them.
     buildOwnExtensions();
     const extensions = OWN_EXTENSIONS.map(installedEntry);
-    writeFileSync(path.join(config, "settings.json"), `${JSON.stringify({ language: "en", settingsVersion: 1, extensions }, null, 2)}\n`);
+    writeFileSync(path.join(config, "settings.json"), `${JSON.stringify({ language: "en", settingsVersion: 1, extensions, whatsNew: { seenVersion: "999.0.0" } }, null, 2)}\n`);
     process.env.SEXTANT_E2E_HOME = home;
     process.env.SEXTANT_TEST_KUBECONFIG = testKubeconfig();
 

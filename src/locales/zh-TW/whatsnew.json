@@ -1,0 +1,29 @@
+{
+  "title": "Sextant {{version}} 的新功能",
+  "version": "Sextant {{version}}",
+  "close": "知道了",
+  "v0_30_0": {
+    "extensionsMoved": {
+      "title": "Flux、Argo CD、Argo Rollouts 和 Argo Workflows 現在是擴充功能",
+      "text": "它們的檢視已從 Sextant 移到擴充功能目錄中 Sextant 自己的擴充功能裡，這些擴充功能會個別更新。請在下方安裝你會用到的擴充功能：在此之前它們的區段不會顯示。你對它們的通知設定已保留，側邊欄也會在執行這些工具的叢集中推薦它們。"
+    },
+    "api4": {
+      "title": "擴充功能 API 4",
+      "text": "擴充功能現在可以擁有使用 Sextant 自己表格的側邊欄區段、計算欄位、一鍵動作、叢集內服務，以及供 AI 代理使用的工具——足以在公開 API 上建構這四個檢視。"
+    }
+  },
+  "extensions": {
+    "title": "安裝已移出的擴充功能",
+    "hint": "每個套件在安裝前都會經過檢查並徵求你的同意。",
+    "catalogOff": "擴充功能目錄已關閉：請在 設定 → 擴充功能 中開啟它以安裝這些擴充功能。",
+    "install": "安裝",
+    "installLabel": "安裝 {{tool}}",
+    "installed": "已安裝",
+    "about": {
+      "flux": "來源、Kustomizations、HelmReleases、映像自動化與通知",
+      "argo-cd": "具同步、健康狀態、資源、歷史與 diff 的 Applications",
+      "argo-rollouts": "具步驟、權重與分析的 Rollouts；promote、abort 與暫停",
+      "argo-workflows": "具步驟樹與日誌的 Workflows、CronWorkflows 與範本"
+    }
+  }
+}
