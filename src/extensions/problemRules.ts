@@ -86,7 +86,13 @@ export interface Verdict {
 const NO: Verdict = { holds: false };
 
 /** Whether `condition` holds for `obj`. Values compare by type: `"3"` is not `3` (but `above`/`below` read both). */
-export function evaluate(condition: ProblemCondition, obj: KubeObject): Verdict {
+/** What the problems store knows of an object beyond the object (#393). */
+export interface RuleContext {
+  /** When the object entered its label-selected source, as the store saw it (not for objects already there). */
+  enteredAt?: number;
+}
+
+export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: RuleContext = {}): Verdict {
   switch (condition.type) {
     case "equals":
       return { holds: sameScalar(valueAt(obj, condition.path), condition.value) };
@@ -126,6 +132,11 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject): Verdict 
       const b = valueAt(obj, condition.otherPath);
       return { holds: sameValue(a, b) };
     }
+    case "enteredWithin": {
+      // From when the store saw the object enter its narrowed list, for `minutes` (#393).
+      if (ctx.enteredAt === undefined) return NO;
+      return { holds: true, since: new Date(ctx.enteredAt).toISOString(), until: ctx.enteredAt + condition.minutes * MINUTE_MS };
+    }
     case "atLeast": {
       // Both as numbers (a list as its length); not a number on either side never holds (#386).
       const a = numberOf(valueAt(obj, condition.path));
@@ -148,7 +159,7 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject): Verdict 
       let since: string | undefined;
       let lookups: Lookup[] | undefined;
       for (const inner of condition.of) {
-        const v = evaluate(inner, obj);
+        const v = evaluate(inner, obj, ctx);
         if (!v.holds) return NO;
         if (v.activeFrom !== undefined) activeFrom = Math.max(activeFrom ?? v.activeFrom, v.activeFrom);
         if (v.until !== undefined) until = Math.min(until ?? v.until, v.until);
@@ -167,7 +178,7 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject): Verdict 
       // that holds earliest.
       let best: Verdict | undefined;
       for (const inner of condition.of) {
-        const v = evaluate(inner, obj);
+        const v = evaluate(inner, obj, ctx);
         if (!v.holds) continue;
         if (v.activeFrom === undefined && v.until === undefined) return v;
         if (!best || rank(v) < rank(best)) best = v;
@@ -175,7 +186,7 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject): Verdict 
       return best ?? NO;
     }
     case "not": {
-      const v = evaluate(condition.of, obj);
+      const v = evaluate(condition.of, obj, ctx);
       if (!v.holds) return { holds: true };
       // It holds from some time on: until then, `not` holds; past an end, it holds again (not modelled: never).
       if (v.activeFrom !== undefined && v.until === undefined) return { holds: true, until: v.activeFrom };
@@ -240,8 +251,8 @@ export function renderMessage(template: string, obj: KubeObject): string {
 }
 
 /** The problems one rule finds in `obj`: none, or one. */
-export function detectRule(rule: ProblemContribution, obj: KubeObject): Detected[] {
-  const verdict = evaluate(rule.when, obj);
+export function detectRule(rule: ProblemContribution, obj: KubeObject, ctx: RuleContext = {}): Detected[] {
+  const verdict = evaluate(rule.when, obj, ctx);
   if (!verdict.holds) return [];
   const since = rule.since !== undefined ? valueAt(obj, rule.since) : verdict.since;
   // The reason from the object (#370), cleaned like the message; the title when it comes out empty.
@@ -278,13 +289,15 @@ function controllerOf(obj: KubeObject): { ownerUid?: string } {
 export const kindKeyOf = (kind: { group: string; kind: string }): string => `${kind.group.toLowerCase()}/${kind.kind.toLowerCase()}`;
 
 /** The rules grouped by kind, each kind's as one detector. */
-export function compileRules(rules: readonly ProblemContribution[]): Map<string, (obj: KubeObject) => Detected[]> {
+export function compileRules(
+  rules: readonly ProblemContribution[],
+): Map<string, (obj: KubeObject, ctx?: RuleContext) => Detected[]> {
   const byKind = new Map<string, ProblemContribution[]>();
   for (const rule of rules) {
     const key = kindKeyOf(rule.kind);
     byKind.set(key, [...(byKind.get(key) ?? []), rule]);
   }
   return new Map(
-    [...byKind].map(([key, list]) => [key, (obj: KubeObject) => list.flatMap((rule) => detectRule(rule, obj))] as const),
+    [...byKind].map(([key, list]) => [key, (obj: KubeObject, ctx: RuleContext = {}) => list.flatMap((rule) => detectRule(rule, obj, ctx))] as const),
   );
 }

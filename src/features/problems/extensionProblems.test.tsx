@@ -139,6 +139,34 @@ describe("problems of extensions", () => {
     expect(within(section).getAllByText("rook-ceph").length).toBeGreaterThan(0);
   });
 
+  it("tell an object that entered a label-selected source after the first list, for the minutes given (#393)", async () => {
+    const entering = RULES.map((rule) =>
+      rule.kind.kind === "CephCluster"
+        ? {
+            ...rule,
+            source: { labelSelector: "phase in (Failed)", metadataOnly: true },
+            when: { type: "enteredWithin", minutes: 60 } as const,
+            message: "{{.metadata.name}}",
+          }
+        : rule,
+    );
+    unregister = registerExtensionProblems("rook-ceph-ext", "Rook Ceph", entering);
+    const { result } = renderHook(() => useProblemCount("c1"));
+    const id = await watchOf(wb, "CephCluster");
+    const object = (uid: string, name: string): KubeObject => ({
+      apiVersion: "ceph.rook.io/v1",
+      kind: "CephCluster",
+      metadata: { name, namespace: "rook-ceph", uid },
+    });
+    // Already there when the list was first read: not counted.
+    emitSnapshot(wb, id, [object("old", "was-failed")]);
+    await waitFor(() => expect(getSource(sourceKey("c1", { category: "ext:rook-ceph-ext", kind: CEPH_CLUSTER.kindRef, fieldSelector: null, namespaces: ["rook-ceph"], labelSelector: "phase in (Failed)", metadataOnly: true }))?.status).toBe("ready"));
+    expect(result.current).toBe(0);
+    // Came in later: a problem.
+    emitDelta(wb, id, [object("new", "failed-now")], []);
+    await waitFor(() => expect(result.current).toBe(1));
+  });
+
   it("count in the sidebar badge like Sextant's own", async () => {
     unregister = registerExtensionProblems("rook-ceph-ext", "Rook Ceph", RULES);
     const { result } = renderHook(() => useProblemCount("c1"));

@@ -980,6 +980,16 @@
           }
         },
         {
+          "description": "The object entered the rule's label-selected source less than `minutes` ago, as Sextant saw it; never for objects already there when the list was first read. sextantApi 4; problem rules with a `source.labelSelector` only.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "minutes"],
+          "properties": {
+            "type": { "const": "enteredWithin" },
+            "minutes": { "type": "integer", "minimum": 1, "maximum": 10080 }
+          }
+        },
+        {
           "description": "The text at `path` names no object of `kind` in the object's namespace (or, for a kind without namespaces, in the cluster); unknown while that list is not read in full. sextantApi 3; not inside `any`; never a Secret.",
           "type": "object",
           "additionalProperties": false,

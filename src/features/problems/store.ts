@@ -107,6 +107,11 @@ interface Entry {
   acrossFrom?: { key: string; release: () => void };
   /** The namespaces the watch reads (`null`: every namespace); set when it opens. */
   watched?: readonly string[] | null;
+  /**
+   * A label-selected source (an extension rule's `source`): the objects in it, whether its first list was read, and
+   * when each object that came later entered it (#393, `enteredWithin`). Kept while the source lives.
+   */
+  arrivals?: { primed: boolean; known: Set<string>; entered: Map<string, number> };
 }
 
 const entries = new Map<string, Entry>();
@@ -286,10 +291,22 @@ export function applyCertExpiryDays(days: unknown): void {
 }
 
 /** Puts the problems of one object; whether anything changed, and whether an object was dropped for the cap. */
+/** Notes that `uid` is in a label-selected source; one that came after the first list entered it now (#393). */
+function arrive(entry: Entry, uid: string, now: number): { enteredAt?: number } {
+  const arrivals = entry.arrivals;
+  if (!arrivals) return {};
+  if (!arrivals.known.has(uid)) {
+    arrivals.known.add(uid);
+    if (arrivals.primed) arrivals.entered.set(uid, now);
+  }
+  const enteredAt = arrivals.entered.get(uid);
+  return enteredAt === undefined ? {} : { enteredAt };
+}
+
 function put(entry: Entry, obj: KubeObject, now: number): { changed: boolean; dropped: boolean } {
   const uid = uidOfObject(obj);
   const before = entry.byUid.get(uid);
-  const found = resolve(entry.state.def.kind, obj, now, before, entry.state.def.category);
+  const found = resolve(entry.state.def.kind, obj, now, before, entry.state.def.category, arrive(entry, uid, now));
   if (found.length === 0) return { changed: entry.byUid.delete(uid), dropped: false };
   entry.byUid.set(uid, found);
   if (!before && entry.byUid.size > MAX_PROBLEM_OBJECTS) {
@@ -308,11 +325,21 @@ function applyUpdate(entry: Entry, update: WatchUpdate, now: number): Partial<So
       const previous = entry.byUid;
       entry.byUid = new Map();
       let truncated = false;
+      // A new list (a reconnect) keeps the times seen; what left meanwhile is forgotten.
+      if (entry.arrivals) {
+        const present = new Set((update.items as KubeObject[]).map(uidOfObject));
+        for (const uid of [...entry.arrivals.known]) {
+          if (!present.has(uid)) {
+            entry.arrivals.known.delete(uid);
+            entry.arrivals.entered.delete(uid);
+          }
+        }
+      }
       // Oldest first, so the cap drops the oldest (events: the newest warnings stay).
       for (const obj of [...(update.items as KubeObject[])].sort(byCreation)) {
         const uid = uidOfObject(obj);
         // The problems before keep their first-seen times across a reconnect.
-        const found = resolve(entry.state.def.kind, obj, now, previous.get(uid), entry.state.def.category);
+        const found = resolve(entry.state.def.kind, obj, now, previous.get(uid), entry.state.def.category, arrive(entry, uid, now));
         if (found.length === 0) continue;
         entry.byUid.set(uid, found);
         if (entry.byUid.size > MAX_PROBLEM_OBJECTS) {
@@ -321,6 +348,7 @@ function applyUpdate(entry: Entry, update: WatchUpdate, now: number): Partial<So
           truncated = true;
         }
       }
+      if (entry.arrivals) entry.arrivals.primed = true;
       return { status: "ready", error: undefined, truncated: truncated || entry.capped === true };
     }
     case "delta": {
@@ -332,7 +360,11 @@ function applyUpdate(entry: Entry, update: WatchUpdate, now: number): Partial<So
         changed ||= result.changed;
         truncated ||= result.dropped;
       }
-      for (const uid of update.deleted) changed = entry.byUid.delete(uid) || changed;
+      for (const uid of update.deleted) {
+        changed = entry.byUid.delete(uid) || changed;
+        entry.arrivals?.known.delete(uid);
+        entry.arrivals?.entered.delete(uid);
+      }
       return changed ? { truncated } : null;
     }
     case "reconnecting":
@@ -451,6 +483,7 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
       listed: false,
       taps: new Map(),
       attempts: 0,
+      ...(def.labelSelector !== undefined ? { arrivals: { primed: false, known: new Set<string>(), entered: new Map<string, number>() } } : {}),
     };
     entries.set(key, created);
     // `null` (cluster-wide) unless the user may not list Namespaces: then the accessible known namespaces (#285), as

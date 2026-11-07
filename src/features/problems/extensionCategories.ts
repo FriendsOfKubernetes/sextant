@@ -16,7 +16,7 @@ import {
   type ResourceKind,
   type RuleSource,
 } from "../../api";
-import { compileRules, kindKeyOf } from "../../extensions/problemRules";
+import { compileRules, kindKeyOf, type RuleContext } from "../../extensions/problemRules";
 import { judgeAcross, judgedAcross, lookedUp, rowOf, type AcrossTarget } from "../../extensions/problemsAcross";
 import { setExtensionDetector, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
 import { MAX_SOURCE_OBJECTS, type SourceDef } from "./sources";
@@ -25,7 +25,7 @@ interface Entry {
   category: ExtensionCategory;
   extensionId: string;
   title: string;
-  detectors: Map<string, (obj: KubeObject) => Detected[]>;
+  detectors: Map<string, (obj: KubeObject, ctx?: RuleContext) => Detected[]>;
   /** The rules by id. */
   rules: ReadonlyMap<string, ProblemContribution>;
   /** `group/kind` (lower case) of the kinds judged across objects (ADR-0144): their rules' or looked up. */
@@ -103,8 +103,13 @@ export function extensionCategoryTitle(category: ProblemCategory): string | unde
 }
 
 /** The problems the category's rules find in `obj` of `kind` (none for a kind it does not judge). */
-export function detectExtension(category: ExtensionCategory, kind: Pick<KindRef, "group" | "kind">, obj: KubeObject): Detected[] {
-  return entries.get(category)?.detectors.get(kindKeyOf(kind))?.(obj) ?? [];
+export function detectExtension(
+  category: ExtensionCategory,
+  kind: Pick<KindRef, "group" | "kind">,
+  obj: KubeObject,
+  ctx?: RuleContext,
+): Detected[] {
+  return entries.get(category)?.detectors.get(kindKeyOf(kind))?.(obj, ctx) ?? [];
 }
 
 setExtensionDetector(detectExtension);

@@ -657,6 +657,14 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     checkCondition(condition.of, kind, [...segments, "of"], depth + 1, counter, "not");
     return;
   }
+  if (condition.type === "enteredWithin") {
+    if (counter.api < SOURCES_API) fail([...segments, "type"], `\`enteredWithin\` needs sextantApi ${SOURCES_API} or later`);
+    if (counter.single || !counter.narrowed) {
+      fail([...segments, "type"], "`enteredWithin` tells when an object entered a rule's `source.labelSelector`: only such rules may use it");
+    }
+    if (condition.minutes < 1 || condition.minutes > 10080) fail([...segments, "minutes"], "must be 1 to 10080 minutes");
+    return;
+  }
   if (condition.type === "same" || condition.type === "atLeast") {
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`${condition.type}\` needs sextantApi ${SOURCES_API} or later`);
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
@@ -774,7 +782,13 @@ function checkProblems(manifest) {
       if (kinds.length > MAX_KINDS) fail([...here, "kind"], `the rules judge at most ${MAX_KINDS} kinds`);
     }
     const metadataOnly = checkSource(rule, rules, manifest.sextantApi, list, here);
-    checkCondition(rule.when, rule.kind, [...here, "when"], 1, { count: 0, api: manifest.sextantApi, kinds, metadataOnly });
+    checkCondition(rule.when, rule.kind, [...here, "when"], 1, {
+      count: 0,
+      api: manifest.sextantApi,
+      kinds,
+      metadataOnly,
+      narrowed: rule.source?.labelSelector !== undefined,
+    });
     if (rule.toldThroughOwner === true && manifest.sextantApi < ACROSS_API) {
       fail([...here, "toldThroughOwner"], `needs sextantApi ${ACROSS_API} or later`);
     }

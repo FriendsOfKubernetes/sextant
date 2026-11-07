@@ -190,6 +190,17 @@ describe("sameValue and templates (#368, #369, #370)", () => {
     expect(atLeast(".metadata.name", ".spec.steps")).toBe(false);
   });
 
+  it("hold enteredWithin from when the store saw the object enter, for its minutes (#393)", () => {
+    const obj = { apiVersion: "v1", kind: "X", metadata: { name: "x" } };
+    expect(evaluate({ type: "enteredWithin", minutes: 60 }, obj).holds).toBe(false);
+    const at = Date.parse("2026-11-07T10:00:00Z");
+    expect(evaluate({ type: "enteredWithin", minutes: 60 }, obj, { enteredAt: at })).toEqual({
+      holds: true,
+      since: "2026-11-07T10:00:00.000Z",
+      until: at + 3_600_000,
+    });
+  });
+
   it("fill a template only when every placeholder has a value", () => {
     const obj = { apiVersion: "v1", kind: "X", metadata: { name: "x" }, spec: { sourceRef: { kind: "GitRepository", name: "podinfo" } } };
     expect(fillTemplate("{{.spec.sourceRef.kind}}/{{.spec.sourceRef.name}}", obj)).toBe("GitRepository/podinfo");

@@ -47,6 +47,8 @@ pub fn condition_limits(api: u32) -> (usize, usize) {
 }
 /// `{{path}}` placeholders in a message.
 pub const MAX_PLACEHOLDERS: usize = 5;
+/// `enteredWithin` counts at most a week (#393).
+pub const MAX_ENTERED_MINUTES: u32 = 10_080;
 
 /// A rule: objects of `kind` for which `when` holds have a problem titled `title`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -171,6 +173,12 @@ pub enum ProblemCondition {
         #[serde(rename = "otherPath")]
         other_path: String,
     },
+    /// The object entered the rule's label-selected source less than `minutes` ago, as Sextant saw it (#393): holds from
+    /// then for `minutes`, never for objects already there when the list was first read; `sextantApi` 4, problem rules
+    /// with a `source.labelSelector` only.
+    EnteredWithin {
+        minutes: u32,
+    },
     /// The time at `path` (RFC 3339) is more than `minutes` ago.
     OlderThan {
         path: String,
@@ -249,6 +257,10 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             count: &mut count,
             metadata_only,
             single: false,
+            narrowed: rule
+                .source
+                .as_ref()
+                .is_some_and(|s| s.label_selector.is_some()),
         };
         check_condition(
             &rule.when,
@@ -365,6 +377,8 @@ struct ConditionChecks<'a, 'k> {
     metadata_only: bool,
     /// A condition the window evaluates on one object (an action's `when`, a column's case): no `missing`.
     single: bool,
+    /// The rule's source has a label selector: `enteredWithin` can be told.
+    narrowed: bool,
 }
 
 /// A condition of an action or a column (ADR-0153, ADR-0154): the grammar of problem rules without `missing`, its
@@ -384,6 +398,7 @@ pub(crate) fn check_object_condition(
             count: &mut count,
             metadata_only: false,
             single: true,
+            narrowed: false,
         };
         check_condition(condition, kind, path, 1, Inside::Top, &mut checks)?;
     }
@@ -457,6 +472,27 @@ fn check_condition<'k>(
             "`condition` reads `.status.conditions`, which a `metadataOnly` source does not watch",
         )),
         ProblemCondition::Condition { .. } => Ok(()),
+        ProblemCondition::EnteredWithin { minutes } => {
+            if checks.api < SOURCES_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`enteredWithin` needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            if checks.single || !checks.narrowed {
+                return Err(at(
+                    &path.key("type"),
+                    "`enteredWithin` tells when an object entered a rule's `source.labelSelector`: only such rules may use it",
+                ));
+            }
+            if *minutes == 0 || *minutes > MAX_ENTERED_MINUTES {
+                return Err(at(
+                    &path.key("minutes"),
+                    format!("must be 1 to {MAX_ENTERED_MINUTES} minutes"),
+                ));
+            }
+            Ok(())
+        }
         ProblemCondition::Missing {
             path: field,
             kind: target,
