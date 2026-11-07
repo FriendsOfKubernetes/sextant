@@ -49,10 +49,16 @@ describe("the manifest's translations", () => {
       ...c.sections.map((s) => `sections.${s.section}.title`),
       ...c.kinds.map((_, i) => `kinds.${i}.title`),
       ...c.detailsSections.map((s) => `detailsSections.${s.id}.title`),
-      ...c.actions.flatMap((a) => [`actions.${a.id}.title`, ...("whyNot" in a ? [`actions.${a.id}.whyNot`] : [])]),
+      ...c.actions.flatMap((a) => [
+        `actions.${a.id}.title`,
+        ...("whyNot" in a ? [`actions.${a.id}.whyNot`] : []),
+        // Sextant's question before Suspend's fixed patch.
+        ...("ask" in a ? ["title", "text", "confirm"].map((k) => `actions.${a.id}.ask.${k}`) : []),
+      ]),
       ...c.columns.map((col) => `columns.${col.id}.title`),
       // The Suspended column's Yes and No, toned by their cases. The Ready column shows Kubernetes' condition statuses
-      // (True, False, Unknown) as they are, as Sextant's own Flux table did, toned by them.
+      // (True, False, Unknown) as they are, as Sextant's own Flux table did, toned by them. The Source column's cases
+      // hold no words (`{{kind}}/{{name}}`): English is every language's.
       ...c.columns.filter((col) => col.id.startsWith("suspended-")).flatMap((col) => [`columns.${col.id}.cases.0.text`, `columns.${col.id}.cases.1.text`]),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
     ].sort();

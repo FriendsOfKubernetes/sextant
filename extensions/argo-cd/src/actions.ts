@@ -1,10 +1,10 @@
-// The action windows: Sync (revision, prune, dry run; sets `operation`), Refresh / Hard refresh (the refresh
-// annotation, every selected Application under one confirmation), Terminate (sets the running operation's phase to
-// Terminating) and "Open Argo CD UI" (a port forward to argocd-server, then the browser after the user agrees). Every
-// change is a merge patch of the Application that Sextant checks and confirms (the manifest's Modify rule asks every
-// time); the window shows the outcome.
+// The action windows: Sync (revision, prune, dry run; sets `operation`), Terminate (sets the running operation's phase
+// to Terminating) and "Open Argo CD UI" (a port forward to argocd-server, then the browser after the user agrees).
+// Each window is the question, as in Sextant's former built-in view: the manifest's Modify rule does not confirm again.
+// Every change is a merge patch of the Application that Sextant checks; the window shows the outcome. Refresh and Hard
+// refresh have no window: they are the manifest's fixed patches (`refreshPatch`), which Sextant sends itself.
 import { ui, type ClusterId, type ForwardInfo, type ObjectRef, type Sextant } from "@sextant/extension-sdk";
-import { defaultRevision, isApplication, isMultiSource, patchCall, refreshPatch, syncPatch, terminatePatch, type RefreshKind } from "./argo";
+import { defaultRevision, isApplication, isMultiSource, patchCall, syncPatch, terminatePatch } from "./argo";
 import { buttons, element, errorBox } from "./dom";
 import { t } from "./i18n";
 import { describeServer, findInstallation, uiPort } from "./server";
@@ -62,32 +62,6 @@ async function startSync(sextant: Sextant, root: HTMLElement, ref: ObjectRef): P
     buttons(confirm, cancel(sextant)),
   );
   if (!multiSource) revision.focus();
-}
-
-/** At most this many patches go in one `resources.patchMany` (Sextant's limit). */
-export const PATCH_BATCH = 50;
-
-/**
- * Refresh or Hard refresh of every selected Application: one `resources.patchMany` (one confirmation) per 50, sent in
- * order; the first failure stops the rest and is thrown.
- */
-export async function refreshAll(sextant: Sextant, refs: readonly ObjectRef[], kind: RefreshKind): Promise<void> {
-  const items = refs.filter((ref) => isApplication(ref.kind)).map((ref) => patchCall(ref, refreshPatch(kind)));
-  for (let i = 0; i < items.length; i += PATCH_BATCH) {
-    const answer = await sextant.resources.patchMany({ items: items.slice(i, i + PATCH_BATCH) });
-    const failed = answer.items.find((item) => "error" in item);
-    if (failed && "error" in failed) throw new Error(failed.error.message);
-  }
-}
-
-async function startRefresh(sextant: Sextant, root: HTMLElement, refs: readonly ObjectRef[], kind: RefreshKind): Promise<void> {
-  root.replaceChildren(ui.loading(t("refresh.running")));
-  try {
-    await refreshAll(sextant, refs, kind);
-    await sextant.ui.close();
-  } catch (err) {
-    root.replaceChildren(errorBox(err), buttons(close(sextant)));
-  }
 }
 
 function startTerminate(sextant: Sextant, root: HTMLElement, ref: ObjectRef): void {
@@ -172,12 +146,6 @@ export function startAction(sextant: Sextant, root: HTMLElement, contribution: s
   switch (contribution) {
     case "sync":
       startSync(sextant, root, ref).catch(fail);
-      break;
-    case "refresh":
-      void startRefresh(sextant, root, refs, "normal");
-      break;
-    case "hard-refresh":
-      void startRefresh(sextant, root, refs, "hard");
       break;
     case "terminate":
       startTerminate(sextant, root, ref);

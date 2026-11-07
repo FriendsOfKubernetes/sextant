@@ -532,6 +532,9 @@ describe("contributions of an extension", () => {
     expect(col("took").value(run)).toBe(30 * 60_000);
     expect(col("took").filter?.type).toBe("number");
     // A case's text with field values (#368); one whose placeholder has none does not hold.
+    // A count Kubernetes leaves out is 0 when the whole is there.
+    expect(col("step").searchText!(obj({ steps: [1, 2, 3, 4] }, {}), { now: ctx.now, t: i18n.t })).toBe("0/4");
+    expect(col("step").searchText!(obj({}, {}), { now: ctx.now, t: i18n.t })).toBeUndefined();
     expect(col("source").value(obj({ sourceRef: { kind: "GitRepository", name: "podinfo" } }, {}))).toBe("GitRepository/podinfo");
     expect(col("source").value(obj({ sourceRef: { kind: "GitRepository", name: "p", namespace: "infra" } }, {}))).toBe("GitRepository/infra/p");
     expect(col("source").value(obj({ sourceRef: { name: "p" } }, {}))).toBe("p");

@@ -127,7 +127,7 @@ export interface ManifestColumn {
   format?: ColumnFormat;
   /** `duration`: the end time; now without one. */
   endPaths?: string[];
-  /** `ratio`: the whole. */
+  /** `ratio`: the whole; with it there, a missing value counts as 0 (Kubernetes leaves zero counts out). */
   totalPaths?: string[];
   /** A tone per shown value. */
   tones?: Record<string, ColumnTone>;

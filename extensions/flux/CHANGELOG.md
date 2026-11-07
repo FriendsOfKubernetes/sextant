@@ -1,5 +1,25 @@
 # Changes of Flux
 
+## 1.2.0 — 2026-11-07
+
+Needs Sextant 0.30 (`sextantApi` 4) with the extension API's fixed-patch actions, field values in column cases and
+problem reasons (#375). The actions and problems are now those of Sextant's former built-in Flux view.
+
+- **Actions are one click again.** Reconcile now and Resume send their patch at once, on every selected object, with
+  no window and no question; Suspend asks Sextant's own question ("Suspend this object?" and what it means), then
+  sends. Sextant sends these patches itself (`patch` in the manifest). Reconcile with source still opens its window,
+  because it reads the object to find its source, but sends at once, shows that it is waiting and closes itself once
+  sent; a failure stays shown, names the object that failed and offers Retry.
+- **No confirmation on top.** The rule that lets the extension modify Flux objects no longer asks Sextant's
+  confirmation for every change (`confirm: false`): Suspend's question is the one question, as in the built-in view.
+  Because the grant changed, **updating asks you to agree to the extension's permissions again.**
+- **Alerts and Providers** have the Ready, Status and Revision columns of every other Flux kind, as the built-in
+  tables had (empty for v1beta3 objects, which have no status).
+- **Source column:** `Kind/name`, or `Kind/namespace/name` when the source is in another namespace, as the built-in
+  table showed it (it showed the name only).
+- **Problems:** the reason is Flux's own (the Ready condition's reason, such as `BuildFailed` or
+  `BucketOperationFailed`) and the message is the Ready condition's whole message, no longer cut at 100 characters.
+
 ## 1.1.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4). Closer to Sextant's former built-in Flux view, through the extension API's

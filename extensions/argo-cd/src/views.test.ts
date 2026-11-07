@@ -11,6 +11,7 @@ import { APPLICATION } from "./argo";
 import { startFields } from "./details";
 import { startHistory } from "./history";
 import { setLanguage, t } from "./i18n";
+import { tokenSecretKey } from "./diff";
 import { installationKey } from "./server";
 import { startTree } from "./tree";
 
@@ -166,6 +167,72 @@ describe("Diff", () => {
     expect(bodies.every((b) => b.includes("{{signIn:") || b.includes("{{secret:"))).toBe(true);
     expect(root.textContent).toContain(t("diff.signedInAs", { user: "alice" }));
     expect(root.textContent).not.toContain(t("diff.source.secret"));
+    // Typed in Sextant's dialog (or remembered there): the session bar says so.
+    expect(root.textContent).toContain(t("diff.source.signIn"));
+  });
+
+  it("after the admin Secret, signs in with the API token of a labelled Secret, by name, as the built-in view did", async () => {
+    const h = await open(
+      "diff",
+      installation({
+        "service.secrets": () => ({
+          secrets: [
+            { name: "b-token", key: "token" },
+            { name: "a-token", key: "token" },
+          ],
+        }),
+        "service.request": (p) => {
+          if (p.auth === "signIn:token" || isTyped(p)) return nothingToSend();
+          if (p.path === "/api/v1/session") return { status: 401, body: { error: "Invalid username or password" } };
+          if (p.auth === "secret:a-token/token") return { status: 200, body: { loggedIn: false } };
+          if (p.auth === "secret:b-token/token") {
+            return p.path.endsWith("userinfo") ? { status: 200, body: { loggedIn: true, username: "ci-bot" } } : { status: 200, body: MANAGED };
+          }
+          return nothingToSend();
+        },
+      }),
+    );
+    expect(h.calls.find((c) => c.method === "service.secrets")?.params).toEqual({ clusterId: "kind", namespace: "argocd", service: "argocd-server-token" });
+    const tokens = requests(h).filter((r) => r.auth?.startsWith("secret:"));
+    // Each checked with userinfo, by name (a refused one too), then the diff read with the first Argo CD accepts.
+    expect(tokens.map((r) => [r.auth, r.path, r.service])).toEqual([
+      ["secret:a-token/token", "/api/v1/session/userinfo", "argocd-server-token"],
+      ["secret:b-token/token", "/api/v1/session/userinfo", "argocd-server-token"],
+      ["secret:b-token/token", "/api/v1/applications/guestbook/managed-resources", "argocd-server-token"],
+      ["secret:b-token/token", "/api/v1/session/userinfo", "argocd-server-token"],
+    ]);
+    expect(h.storage.get(tokenSecretKey("kind", "argocd"))).toBe("b-token");
+    expect(root.textContent).toContain(t("diff.signedInAs", { user: "ci-bot" }));
+    expect(root.textContent).toContain(t("diff.source.tokenSecret", { name: "b-token" }));
+    expect(root.textContent).toContain("Deployment sextant-argo/guestbook-ui");
+    // Reload keeps the token that worked: nothing is tried again.
+    byText(t("diff.reload")).click();
+    await settle();
+    expect(requests(h).slice(-2).map((r) => [r.auth, r.path])).toEqual([
+      ["secret:b-token/token", "/api/v1/applications/guestbook/managed-resources"],
+      ["secret:b-token/token", "/api/v1/session/userinfo"],
+    ]);
+    expect(h.calls.filter((c) => c.method === "service.secrets")).toHaveLength(1);
+  });
+
+  it("asks with the built-in's notes when Argo CD refused the admin password earlier and every token Secret", async () => {
+    await open(
+      "diff",
+      installation({
+        "service.secrets": () => ({ secrets: [{ name: "ci-token", key: "token" }] }),
+        "service.request": (p) => {
+          if (p.auth === "signIn:token" || isTyped(p)) return nothingToSend();
+          // Refused in an earlier window: Sextant does not send the same password again.
+          if (p.path === "/api/v1/session") return { status: 401, body: { message: "refused before" }, notSent: true };
+          if (p.auth === "secret:ci-token/token") return { status: 401, body: { error: "invalid session" } };
+          return nothingToSend();
+        },
+      }),
+    );
+    expect(root.querySelector("section.login")).not.toBeNull();
+    expect(root.textContent).toContain(t("login.refused.adminSecret"));
+    expect(root.textContent).toContain(t("login.refused.tokenSecret"));
+    expect(root.textContent).not.toContain("refused before");
   });
 
   it("signs in with an API token typed in Sextant's dialog, sent as the bearer of each request", async () => {

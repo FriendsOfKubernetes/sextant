@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.argo-cd",
   "name": "Argo CD",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Argo CD's Applications, ApplicationSets and AppProjects in a section of their own: sync, health, revision and destination, the resources each application manages with their health, the sync history; Sync, Refresh, Terminate, the diff of desired and live states from Argo CD's API, and the Argo CD UI.",
   "author": "Sextant",
   "sextantApi": 4,
@@ -94,7 +94,7 @@
         "actions": [
           "modify"
         ],
-        "confirm": true
+        "confirm": false
       },
       {
         "namespaces": {
@@ -438,7 +438,14 @@
           }
         ],
         "multiple": true,
-        "placement": "primary"
+        "placement": "primary",
+        "patch": {
+          "metadata": {
+            "annotations": {
+              "argocd.argoproj.io/refresh": "normal"
+            }
+          }
+        }
       },
       {
         "id": "hard-refresh",
@@ -450,7 +457,14 @@
             "kind": "Application"
           }
         ],
-        "multiple": true
+        "multiple": true,
+        "patch": {
+          "metadata": {
+            "annotations": {
+              "argocd.argoproj.io/refresh": "hard"
+            }
+          }
+        }
       },
       {
         "id": "terminate",
@@ -572,6 +586,12 @@
         "labelSelector": "app.kubernetes.io/name=argocd-server",
         "port": "https",
         "scheme": "https",
+        "secrets": [
+          {
+            "labelSelector": "app.kubernetes.io/part-of=argocd",
+            "key": "token"
+          }
+        ],
         "signIn": {
           "fields": [
             {
@@ -588,6 +608,12 @@
         "labelSelector": "app.kubernetes.io/name=argocd-server",
         "port": "http",
         "scheme": "http",
+        "secrets": [
+          {
+            "labelSelector": "app.kubernetes.io/part-of=argocd",
+            "key": "token"
+          }
+        ],
         "signIn": {
           "fields": [
             {

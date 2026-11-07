@@ -1,5 +1,23 @@
 # Changes of Argo CD
 
+## 1.2.0 — 2026-11-07
+
+Needs Sextant 0.30 (`sextantApi` 4) with its newest extension API. What still differed from Sextant's former built-in
+view (#376):
+
+- The Diff signs in with API tokens from Secrets again: after the remembered login and the admin Secret, it tries the
+  `token` of each Secret labelled `app.kubernetes.io/part-of=argocd`, by name, and keeps the first Argo CD accepts.
+  Sextant sends the token itself; the extension learns only the Secrets' names and still needs no "Secret values".
+- A wrong admin password (or token, or login) is no longer tried from every Diff window: Sextant does not send
+  credentials Argo CD refused again in this run, and the sign-in says the admin password was refused, as before.
+- The session bar says how the Diff signed in: with the standard Argo CD secret, with the API token from a named
+  Secret, or with your sign-in.
+- Refresh and Hard refresh are one click again: no window and no question, on one or several Applications.
+- Sync… and Terminate… are no longer confirmed a second time: their windows are the question, as in the built-in view.
+
+An update asks for consent again: the Modify rule on Applications no longer confirms (`confirm: false`), and the two
+token services may receive the `token` key of Secrets labelled `app.kubernetes.io/part-of=argocd`.
+
 ## 1.1.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4). Closer to Sextant's former built-in view, and nothing secret passes through the

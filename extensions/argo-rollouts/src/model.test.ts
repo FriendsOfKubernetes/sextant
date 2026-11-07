@@ -81,8 +81,9 @@ function shown(id: string, obj: KubeObject): { text?: string; tone?: string } {
     (paths ?? []).map((p) => engine.valueAt(obj, p)).find((v) => v !== undefined && v !== null);
   const value = first(column.paths);
   if (column.format === "ratio") {
-    const part = engine.numberOf(value);
+    // With the whole there, a missing part is 0 (Kubernetes leaves zero counts out).
     const whole = engine.numberOf(first(column.totalPaths));
+    const part = value === undefined && whole !== undefined ? 0 : engine.numberOf(value);
     return part === undefined || whole === undefined ? {} : { text: `${part}/${whole}` };
   }
   const scalar = typeof value === "string" || typeof value === "number" || typeof value === "boolean" ? String(value) : undefined;
@@ -343,6 +344,11 @@ describe("the manifest's problem rules", () => {
     delete st(old).phase;
     st(old).conditions = [{ type: "Progressing", status: "False", reason: "ProgressDeadlineExceeded" }];
     expect(rolloutPhase(old).phase).toBe("Degraded");
+    // The older controller's rule names its reason "Degraded", as the built-in did (its title is only for consent).
+    expect(detected(old).map((p) => p.reason)).toEqual(["Degraded"]);
+    // Argo Rollouts v0.9 writes a hash as `observedGeneration`: observed, so still Degraded.
+    st(old).observedGeneration = "5b6c7d8f9";
+    expect(rolloutPhase(old).phase).toBe("Degraded");
     expect(detected(old).map((p) => p.reason)).toEqual(["Degraded"]);
   });
 
@@ -377,12 +383,33 @@ describe("the manifest's problem rules", () => {
         ro.metadata.annotations = { "rollout.argoproj.io/workload-generation": "4" };
         st(ro).workloadObservedGeneration = "4";
       },
+      // The newest spec is not observed yet: Progressing, not Degraded (#377).
+      specNotObserved: (ro) => {
+        st(ro).phase = "Degraded";
+        ro.metadata.generation = 5;
+      },
+      // v0.9 writes no phase and a hash as `observedGeneration`, which counts as observed.
+      hashedGeneration: (ro) => {
+        delete st(ro).phase;
+        st(ro).conditions = [{ type: "InvalidSpec", status: "True", message: "bad" }];
+        st(ro).observedGeneration = "5b6c7d8f9";
+        ro.metadata.generation = 5;
+      },
+      // A phase Sextant does not know, from an older controller's conditions.
+      unknownPhase: (ro) => {
+        st(ro).phase = "Unknown";
+        st(ro).conditions = [{ type: "Progressing", status: "False", reason: "ProgressDeadlineExceeded" }];
+      },
+      observedAsNumber: (ro) => {
+        st(ro).phase = "Degraded";
+        st(ro).observedGeneration = 2;
+      },
     };
     for (const [name, change] of Object.entries(variants)) {
       const ro = copy(canary);
       change(ro);
       const builtIn = rolloutProblems(ro).some((p) => p.reason === "Degraded");
-      expect(detected(ro).some((p) => p.reason === "Degraded"), name).toBe(builtIn);
+      expect(detected(ro).some((p) => p.reason.startsWith("Degraded")), name).toBe(builtIn);
     }
   });
 
@@ -418,6 +445,18 @@ describe("the manifest's columns", () => {
     expect(cell("rollout-weight", aborted)).toBe("0");
   });
 
+  it("show step 0 of n before the controller writes the step index, as `GetCurrentCanaryStep`", () => {
+    const fresh = copy(canary);
+    delete st(fresh).currentStepIndex;
+    expect(stepProgress(fresh)).toBe("0/8");
+    expect(cell("rollout-step", fresh)).toBe(stepProgress(fresh));
+    // No canary steps: no step, in both.
+    const noSteps = copy(fresh);
+    delete (spec(noSteps).strategy as { canary: Record<string, unknown> }).canary.steps;
+    expect(stepProgress(noSteps)).toBeUndefined();
+    expect(cell("rollout-step", noSteps)).toBeUndefined();
+  });
+
   it("show the phase the plugin shows, in its tone, also where it is computed", () => {
     const tone = { Healthy: "ok", Progressing: "neutral", Paused: "warning", Degraded: "error" } as const;
     const unpausing = copy(canary);
@@ -434,7 +473,23 @@ describe("the manifest's columns", () => {
     delete st(oldUpdating).phase;
     st(oldUpdating).pauseConditions = null;
     st(oldUpdating).controllerPause = false;
-    for (const [name, ro] of Object.entries({ canary, aborted, blueGreen, unpausing, workload, old, oldPaused, oldUpdating })) {
+    // The controller has not observed the newest spec: Progressing, whatever its phase says (#377).
+    const specNotObserved = copy(aborted);
+    specNotObserved.metadata.generation = 4;
+    const specNotObservedPaused = copy(canary);
+    st(specNotObservedPaused).observedGeneration = "1";
+    // v0.9's hash in `observedGeneration` counts as observed, as does an object without a generation.
+    const hashed = copy(aborted);
+    st(hashed).observedGeneration = "5b6c7d8f9";
+    const noGeneration = copy(canary);
+    delete (noGeneration.metadata as { generation?: number }).generation;
+    st(noGeneration).observedGeneration = "7";
+    const states = { canary, aborted, blueGreen, unpausing, workload, old, oldPaused, oldUpdating, specNotObserved, specNotObservedPaused, hashed, noGeneration };
+    expect(rolloutPhase(specNotObserved).reasonKey).toBe("specNotObserved");
+    expect(rolloutPhase(specNotObservedPaused).reasonKey).toBe("specNotObserved");
+    expect(rolloutPhase(hashed).phase).toBe("Degraded");
+    expect(rolloutPhase(noGeneration).phase).toBe("Paused");
+    for (const [name, ro] of Object.entries(states)) {
       const { phase } = rolloutPhase(ro);
       expect(shown("rollout-status", ro), name).toEqual({ text: phase, tone: tone[phase] });
     }

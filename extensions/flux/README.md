@@ -10,14 +10,15 @@ ADR-0139 (Sextant's own extensions), ADR-0140 (translations), ADR-0152 (kinds in
 `not` in problem rules), ADR-0153 (computed columns), ADR-0154 (when an action applies and where its button goes),
 ADR-0160 (the section's icon and place, palette names, the UI kit) and ADR-0161 (printer columns left out, a condition
 picked by its type, columns placed by id, one confirmation for several patches, notification groups, hidden
-sections).
+sections); its actions' fixed patches, the Source column's field values and the problems' reasons come from the
+extension API's additions for the moved views (#367, #368, #370).
 
 ## At a glance
 
 | | |
 |---|---|
 | Id | `sextant.flux` |
-| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Version | 1.2.0 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants keep their built-in Flux view. |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `flux-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Flux |
@@ -35,8 +36,9 @@ asked and takes `ks` and `hr` as their short names (`hr podinfo`), as it did for
 
 **Columns**, in this order right after Namespace, each placed after the one before it by its id; the CRDs' own
 printer columns are left out, so Ready and Status are not shown twice:
-- **Source** of a Kustomization or HelmRelease (`source-kustomization`, `source-helmrelease`): the name of its
-  `sourceRef`, `chart.spec.sourceRef` or `chartRef`; the kind in the tooltip.
+- **Source** of a Kustomization or HelmRelease (`source-kustomization`, `source-helmrelease`): its `sourceRef`,
+  `chart.spec.sourceRef` or `chartRef` as `Kind/name`, or `Kind/namespace/name` when the source's namespace is set
+  and is not the object's own, as the built-in table showed it; the kind in the tooltip.
 - **Ready**: the Ready condition's status (found by its type wherever it is in the list), True in green, False in red,
   Unknown (reconciling) in yellow.
 - **Status**: the Ready condition's message, what was applied or what failed; the whole message in the tooltip.
@@ -59,8 +61,8 @@ By kind:
 | ImageRepository | `ready-imagerepository` `status-imagerepository` `revision-imagerepository` `suspended-imagerepository` |
 | ImagePolicy | `ready-imagepolicy` `status-imagepolicy` `revision-imagepolicy` `suspended-imagepolicy` |
 | ImageUpdateAutomation | `ready-imageupdateautomation` `status-imageupdateautomation` `revision-imageupdateautomation` `suspended-imageupdateautomation` |
-| Alert | `suspended-alert` (Flux's Alerts and Providers have no status, and a manifest has at most 50 columns) |
-| Provider | `suspended-provider` |
+| Alert | `ready-alert` `status-alert` `revision-alert` `suspended-alert` (empty for v1beta3 Alerts, which have no status) |
+| Provider | `ready-provider` `status-provider` `revision-provider` `suspended-provider` |
 | Receiver | `ready-receiver` `status-receiver` `revision-receiver` `suspended-receiver` |
 
 **Details of every Flux object:** **Flux** (`fields`, a section): Ready with its reason, the status message, the
@@ -84,13 +86,18 @@ namespaces, live. A kind you may not list is named under the table; the others s
 section): the Kustomizations and HelmReleases, in every namespace you may read, that take their artifact from it,
 live.
 
-**Actions**, as buttons of the details bar on the Flux kinds and in the selection bar; however many objects an action
-changes, Sextant asks once:
-- **Reconcile now** (`reconcile`, several objects at once).
+**Actions**, as buttons of the details bar on the Flux kinds and in the selection bar, one click each as in the
+built-in view:
+- **Reconcile now** (`reconcile`, several objects at once): sent at once, no window, no question.
 - **Reconcile with source** (`reconcile-with-source`, in the "Actions" menu, on a Kustomization or HelmRelease that
-  names a source).
-- **Suspend** (`suspend`, on an object that is not suspended).
-- **Resume** (`resume`, several objects at once, on suspended objects).
+  names a source): a small window that sends at once, shows that it is waiting and closes itself once sent; on a
+  failure it stays, says which object failed and offers Retry.
+- **Suspend** (`suspend`, on an object that is not suspended): Sextant asks "Suspend this object?" with what it means
+  and the object, then sends.
+- **Resume** (`resume`, several objects at once, on suspended objects): sent at once, no window, no question.
+
+Reconcile now, Suspend and Resume are patches fixed in the manifest (`patch`), which Sextant sends itself without
+opening the extension's window.
 
 Sextant's own Edit and Delete stay where they are for every kind.
 
@@ -100,7 +107,9 @@ Sextant's own Edit and Delete stay where they are for every kind.
   DaemonSets, Jobs, CronJobs, Services, ConfigMaps, Secrets, ServiceAccounts, PersistentVolumeClaims and Ingresses:
   only to list, by helm-controller's labels and metadata only, what a HelmRelease created. A Secret's values are never
   read (Sextant never gives them to an extension without "Secret values", which this one does not ask for).
-- **Modify** on the 13 Flux kinds, each change confirmed by Sextant: the merge patches of the actions below.
+- **Modify** on the 13 Flux kinds, without Sextant's confirmation on top (`confirm: false`): the merge patches of the
+  actions below. Suspend's question is Sextant's own (`ask`); Reconcile now, Reconcile with source and Resume send
+  at once, as the built-in view's actions did.
 - Nothing is deleted by the extension.
 
 All clusters and namespaces; Sextant's own access rules decide where it may act. An update that adds a kind or an
@@ -117,8 +126,9 @@ action asks for consent again.
 | `not-ready-kustomization` | Kustomization | the same | 2 minutes | No |
 | `not-ready-helmrelease` | HelmRelease | the same | 2 minutes | No |
 
-Each notifies, all six in one notification group (`not-ready`), as the built-in rule did. The message is the Ready
-condition's reason and message.
+Each notifies, all six in one notification group (`not-ready`), as the built-in rule did. The reason is Flux's own,
+the Ready condition's reason (`BuildFailed`, `BucketOperationFailed`, …; the rule's title, such as "Kustomization not
+ready", when it has none); the message is the Ready condition's whole message.
 
 ## Metrics
 
@@ -130,18 +140,19 @@ None.
 
 ## Changes it makes
 
-Every change is a merge patch, shown in the action's window before it is sent. All the objects of one action go in one
-`resources.patchMany` call (up to 50; more in further calls), so Sextant confirms them once, in one list; they are sent
-once each, one at a time, in order:
-- **Reconcile now**: `metadata.annotations["reconcile.fluxcd.io/requestedAt"]` set to the time it is sent, which
-  every Flux controller watches.
-- **Reconcile with source**: the same on the source of a Kustomization; on a HelmRelease's chart source and then on
-  its HelmChart (`status.helmChart`), so the chart is pulled again; then on the object itself.
-- **Suspend**: `spec.suspend: true`, after the question "Suspend <kind> <name>?" and what it means.
-- **Resume**: `spec.suspend: false`.
+Every change is a merge patch. All the objects of one action go in one `resources.patchMany` call (up to 50; more in
+further calls), decided once by Sextant's access rules for the extension; they are sent once each, one at a time, in
+order:
+- **Reconcile now**: `{"metadata":{"annotations":{"reconcile.fluxcd.io/requestedAt":"{{now}}"}}}`, the annotation set
+  to the time Sextant sends it, which every Flux controller watches.
+- **Reconcile with source**: the same annotation on the source of a Kustomization; on a HelmRelease's chart source and
+  then on its HelmChart (`status.helmChart`), so the chart is pulled again; then on the object itself.
+- **Suspend**: `{"spec":{"suspend":true}}`, after Sextant's question "Suspend this object?" and what it means.
+- **Resume**: `{"spec":{"suspend":false}}`.
 
 Sextant's or the user's refusal sends nothing. The cluster's error on one object stops before the next and names the
-object that failed; nothing is retried.
+object that failed (Sextant's notice for the fixed patches, the window for Reconcile with source); nothing is retried
+unless you press Retry.
 
 ## What it does not do
 
@@ -154,15 +165,10 @@ object that failed; nothing is retried.
 ## Requirements and limits
 
 - Flux v2 with the current API versions. Older versions a cluster serves are read by field name, as Flux keeps them.
-- A problem's title is fixed per kind ("Kustomization not ready"), where the built-in view showed the Ready reason as
-  the reason; the reason starts the message instead. A message shows at most 100 characters of each field, so a
-  long Ready message is cut.
 - The Flux fields are a section titled "Flux" of the details, below Sextant's own fields, where the built-in view put
   them among those fields.
 - The Suspended column's No is in the table's normal colour, where the built-in table greyed it.
-- A column cannot join two fields: an ImagePolicy whose status has only `latestRef` shows its tag as the revision
-  (the details show `name:tag`), and Source shows the source's name with its kind in the tooltip.
-- Notification Alerts and Providers have no status, so they show Suspended only.
+- An ImagePolicy whose status has only `latestRef` shows its tag as the revision (the details show `name:tag`).
 - What a HelmRelease created is looked for among the 11 kinds above, as helm-controller labels them; other kinds of a
   chart show only through the inventory.
 
@@ -174,6 +180,7 @@ object that failed; nothing is retried.
   other kinds are still shown.
 - **A list fails with an error and Retry:** the cluster could not be reached or refused the list; Retry lists again.
 - **An action says "Sextant refused":** Sextant's access rules for the extension, or you, declined the change.
+- **Updating to 1.2.0 asks for consent again:** its Modify rule no longer asks Sextant's confirmation for every change.
 
 ## Development
 

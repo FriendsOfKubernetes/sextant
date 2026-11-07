@@ -211,94 +211,79 @@ describe("related objects", () => {
   });
 });
 
-describe("the action windows", () => {
+describe("the action window", () => {
   type Item = { ref: { kind: { kind: string }; name: string }; patch: unknown; patchType: string };
-  /** The `resources.patchMany` calls: one confirmation each. */
+  /** The `resources.patchMany` calls: one decision each. */
   const batches = () => host.calls.filter((c) => c.method === "resources.patchMany").map((c) => (c.params as { items: Item[] }).items);
   const patches = () => batches().flat();
   const press = (label: string) => ([...root.querySelectorAll("button")].find((b) => b.textContent === label) as HTMLButtonElement).click();
+  const danger = () => root.querySelector(".change-status.sx-status--danger")?.textContent;
 
-  it("Reconcile now sets reconcile.fluxcd.io/requestedAt on each selected object by a merge patch, then closes", async () => {
+  it("Reconcile with source sends at once a HelmRelease's repository, then its HelmChart, then the release, and closes", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(Date.parse("2026-11-06T10:00:00Z"));
-    await start({ context: { view: "action", contribution: "reconcile", selection: [refOf(KUSTOMIZATION), refOf(GIT)] } });
-    stop = startAction(host.sextant, root, "reconcile");
-    await expect.poll(text).toContain("reconcile.fluxcd.io/requestedAt");
-    expect(patches()).toEqual([]);
-    press("Reconcile now");
+    await start({ context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(RELEASE)] } });
+    stop = startAction(host.sextant, root, "reconcile-with-source");
+    // No button to press: the window sends as soon as it knows the source, as the built-in action did.
     await expect.poll(() => host.closedByFrame).toBe(true);
-    // Both objects in one call, so Sextant asks once.
+    expect(text()).toContain("the source first");
     expect(batches()).toHaveLength(1);
     expect(host.calls.some((c) => c.method === "resources.patch")).toBe(false);
-    expect(patches().map((p) => [p.ref.kind.kind, p.ref.name, p.patchType, p.patch])).toEqual(
-      ["Kustomization", "GitRepository"].map((kind) => [
-        kind,
-        "podinfo",
+    expect(patches().map((p) => [`${p.ref.kind.kind}/${p.ref.name}`, p.patchType, p.patch])).toEqual(
+      ["HelmRepository/podinfo", "HelmChart/sextant-flux-podinfo-helm", "HelmRelease/podinfo-helm"].map((name) => [
+        name,
         "merge",
         { metadata: { annotations: { "reconcile.fluxcd.io/requestedAt": "2026-11-06T10:00:00.000Z" } } },
       ]),
     );
-    expect(host.notices).toEqual(["Flux was asked to reconcile Kustomization podinfo and GitRepository podinfo."]);
+    // Silent, as the built-in action was.
+    expect(host.notices).toEqual([]);
   });
 
-  it("Reconcile with source asks a HelmRelease's repository, then its HelmChart, then the release", async () => {
-    await start({ context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(RELEASE)] } });
-    stop = startAction(host.sextant, root, "reconcile-with-source");
-    await expect.poll(text).toContain("the source first");
-    press("Reconcile with source");
-    await expect.poll(() => host.closedByFrame).toBe(true);
-    expect(batches()).toHaveLength(1);
-    expect(patches().map((p) => `${p.ref.kind.kind}/${p.ref.name}`)).toEqual([
-      "HelmRepository/podinfo",
-      "HelmChart/sextant-flux-podinfo-helm",
-      "HelmRelease/podinfo-helm",
-    ]);
-  });
-
-  it("Suspend asks first and sends spec.suspend only when confirmed", async () => {
-    await start({ context: { view: "action", contribution: "suspend", selection: [refOf(KUSTOMIZATION)] } });
-    stop = startAction(host.sextant, root, "suspend");
-    await expect.poll(() => root.querySelector("h2")?.textContent).toBe("Suspend Kustomization podinfo?");
-    expect(text()).toContain("Flux stops reconciling Kustomization podinfo until it is resumed");
-    expect(patches()).toEqual([]);
-    press("Suspend");
-    await expect.poll(() => patches().length).toBe(1);
-    expect(patches()[0]!.patch).toEqual({ spec: { suspend: true } });
-  });
-
-  it("Resume clears spec.suspend; a failure stops before the next object and names the one that failed", async () => {
+  it("a failure stops before the next object, names the one that failed, stays open and sends again on Retry", async () => {
+    let calls = 0;
     await start({
-      context: { view: "action", contribution: "resume", selection: [refOf(KUSTOMIZATION), refOf(GIT), refOf(BUCKET)] },
+      context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(KUSTOMIZATION)] },
       handlers: {
-        // The Kustomization is sent, the GitRepository refused by the cluster, the Bucket never sent.
-        "resources.patchMany": () => ({ items: [{ object: {} }, { error: { code: "forbidden", message: "no" } }], sent: 1 }),
+        // The first time the GitRepository is refused by the cluster and the Kustomization never sent.
+        "resources.patchMany": ({ items }) =>
+          calls++ === 0
+            ? { items: [{ error: { code: "forbidden", message: "no" } }], sent: 0 }
+            : { items: (items as unknown[]).map(() => ({ object: {} })), sent: (items as unknown[]).length },
       },
     });
-    stop = startAction(host.sextant, root, "resume");
-    await expect.poll(text).toContain(t("resume.intro"));
-    press("Resume");
-    await expect.poll(() => root.querySelector(".change-status.sx-status--danger")?.textContent).toBe(
-      `GitRepository podinfo: ${t("error.forbidden", { message: "no" })}`,
-    );
-    expect(batches()).toHaveLength(1);
-    expect(patches().map((p) => p.patch)).toEqual([0, 1, 2].map(() => ({ spec: { suspend: false } })));
+    stop = startAction(host.sextant, root, "reconcile-with-source");
+    await expect.poll(danger).toBe(`GitRepository podinfo: ${t("error.forbidden", { message: "no" })}`);
+    expect(patches().map((p) => `${p.ref.kind.kind}/${p.ref.name}`)).toEqual(["GitRepository/podinfo", "Kustomization/podinfo"]);
     expect(host.closedByFrame).toBe(false);
+    press(t("related.retry"));
+    await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(batches()).toHaveLength(2);
   });
 
   it("a refusal of the whole change says so and closes nothing", async () => {
     await start({
-      context: { view: "action", contribution: "reconcile", selection: [refOf(KUSTOMIZATION), refOf(GIT)] },
+      context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(KUSTOMIZATION)] },
       handlers: {
         "resources.patchMany": () => {
           throw new SextantError("denied", "the user said no");
         },
       },
     });
-    stop = startAction(host.sextant, root, "reconcile");
-    await expect.poll(text).toContain("reconcile.fluxcd.io/requestedAt");
-    press("Reconcile now");
-    await expect.poll(() => root.querySelector(".change-status.sx-status--danger")?.textContent).toBe("Sextant refused: the user said no");
+    stop = startAction(host.sextant, root, "reconcile-with-source");
+    await expect.poll(danger).toBe("Sextant refused: the user said no");
     expect(host.closedByFrame).toBe(false);
     expect(host.notices).toEqual([]);
+  });
+
+  it("Reconcile now, Suspend and Resume have no window: Sextant sends their patches itself", async () => {
+    for (const contribution of ["reconcile", "suspend", "resume"]) {
+      await start({ context: { view: "action", contribution, selection: [refOf(KUSTOMIZATION)] } });
+      stop = startAction(host.sextant, root, contribution);
+      expect(text()).toContain(t("common.nothingToShow", { view: contribution }));
+      expect(patches()).toEqual([]);
+      root.remove();
+      host.close();
+    }
   });
 });

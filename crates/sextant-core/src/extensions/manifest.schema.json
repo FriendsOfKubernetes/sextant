@@ -388,7 +388,7 @@
         },
         "columns": {
           "type": "array",
-          "maxItems": 50,
+          "maxItems": 100,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -415,7 +415,7 @@
                 "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/fieldPath" }
               },
               "format": {
-                "description": "How the value is shown, sorted and filtered: `text` (default), `number`, `age` (a time), `duration` (from the time to `endPaths` or now), `ratio` (`value/totalPaths`).",
+                "description": "How the value is shown, sorted and filtered: `text` (default), `number`, `age` (a time), `duration` (from the time to `endPaths` or now), `ratio` (`value/totalPaths`; with the whole there, a missing value is 0, as Kubernetes leaves zero counts out).",
                 "type": "string",
                 "enum": ["text", "number", "age", "duration", "ratio"]
               },

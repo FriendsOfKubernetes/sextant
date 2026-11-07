@@ -8,9 +8,12 @@
 // plain HTTP when `argocd-cmd-params-cm` says `server.insecure: "true"` — never a fallback after an error.
 //
 // Nothing secret passes through the extension. Sextant keeps the session token (`capture`, `auth: "session"`), puts
-// the admin password of `argocd-initial-admin-secret` into the sign-in itself (a key the services declare), and asks
-// for a user and password, or an API token, in its own dialog (`ui.signIn`), filling them in as `{{signIn:…}}` or
-// sending the token as the bearer (`auth: "signIn:token"`).
+// the admin password of `argocd-initial-admin-secret` into the sign-in itself (a key the services declare), sends the
+// `token` of a Secret labelled `app.kubernetes.io/part-of=argocd` as the bearer (`auth: "secret:<name>/token"`; the
+// extension learns only the Secrets' names, from `service.secrets`), and asks for a user and password, or an API token,
+// in its own dialog (`ui.signIn`), filling them in as `{{signIn:…}}` or sending the token as the bearer
+// (`auth: "signIn:token"`). A service that refused credentials is not sent them again in this run: Sextant answers 401
+// with `notSent` itself.
 import type { ClusterId, JsonValue, KubeObject, ObjectRef, Sextant, ServiceAnswer, ServiceRequestParams } from "@sextant/extension-sdk";
 import { arr, get, num, record, str } from "./fields";
 
@@ -32,6 +35,10 @@ export const SETTINGS_CONFIG_MAP = "argocd-cm";
 export const PARAMS_CONFIG_MAP = "argocd-cmd-params-cm";
 /** The Secret Argo CD creates at installation with the first password of `admin` (key `password`). */
 export const ADMIN_SECRET = "argocd-initial-admin-secret";
+/** The label of the Secrets whose `token` key holds an API token (the token services' labelled `secrets`). */
+export const TOKEN_SECRET_SELECTOR = "app.kubernetes.io/part-of=argocd";
+/** The key of an API token Secret. */
+export const TOKEN_KEY = "token";
 
 const SERVICE_KIND = { group: "", version: "v1", kind: "Service" };
 const CONFIG_MAP_KIND = { group: "", version: "v1", kind: "ConfigMap" };
@@ -171,25 +178,48 @@ export function typedSignIn(server: ArgoServer): ServiceRequestParams {
   };
 }
 
-/** How a request is authorized: the session, or the API token typed in Sextant's dialog. */
-const authOf = (mode: SignInMode) => (mode === "token" ? ({ auth: "signIn:token" } as const) : ({ auth: "session" } as const));
+/**
+ * How the extension's requests are authorized: the session Sextant keeps (`password`), the API token typed or
+ * remembered in Sextant's dialog (`token`), or the `token` key of an API token Secret, by its name.
+ */
+export type Using = SignInMode | { secret: string };
 
-/** Who the session (or the token) belongs to. */
-export function userInfo(server: ArgoServer, mode: SignInMode = "password"): ServiceRequestParams {
-  return { ...base(server, mode), method: "GET", path: "/api/v1/session/userinfo", ...authOf(mode) };
+/** The way of signing in (the service) of `using`: a token Secret goes to the token services. */
+export const modeOf = (using: Using): SignInMode => (typeof using === "string" ? using : "token");
+
+/** How a request is authorized: the session, the API token typed in Sextant's dialog, or a token Secret's key. */
+function authOf(using: Using): Pick<ServiceRequestParams, "auth"> {
+  if (typeof using !== "string") return { auth: `secret:${using.secret}/${TOKEN_KEY}` };
+  return using === "token" ? { auth: "signIn:token" } : { auth: "session" };
+}
+
+/** Who the session (or the token) belongs to; Argo CD answers `loggedIn: false` for a token it does not accept. */
+export function userInfo(server: ArgoServer, using: Using = "password"): ServiceRequestParams {
+  return { ...base(server, modeOf(using)), method: "GET", path: "/api/v1/session/userinfo", ...authOf(using) };
+}
+
+/** The names of the API token Secrets of the installation (by label, holding `token`), sorted; none when unreadable. */
+export async function tokenSecrets(sextant: Sextant, server: ArgoServer): Promise<string[]> {
+  try {
+    const found = await sextant.service.secrets({ clusterId: server.clusterId, namespace: server.namespace, service: serviceOf(server, "token") });
+    return [...new Set(found.filter((s) => s.key === TOKEN_KEY).map((s) => s.name))].sort();
+  } catch {
+    // Missing or not readable: skipped, as the built-in view skipped them.
+    return [];
+  }
 }
 
 /** The desired and live states of an Application's resources (the app's own namespace as `appNamespace`). */
 export function managedResourcesRequest(
   server: ArgoServer,
   app: Pick<ObjectRef, "namespace" | "name">,
-  mode: SignInMode = "password",
+  using: Using = "password",
 ): ServiceRequestParams {
   const request: ServiceRequestParams = {
-    ...base(server, mode),
+    ...base(server, modeOf(using)),
     method: "GET",
     path: `/api/v1/applications/${encodeURIComponent(app.name)}/managed-resources`,
-    ...authOf(mode),
+    ...authOf(using),
   };
   if (app.namespace) request.query = { appNamespace: app.namespace };
   return request;
@@ -212,6 +242,15 @@ export function answerKind(status: number): AnswerKind {
   if (status === 403 || status === 404) return "forbidden";
   if (status >= 502 && status <= 504) return "unreachable";
   return "other";
+}
+
+/**
+ * Argo CD refused the credentials (unauthorized or forbidden, as the built-in view counted a refusal), or Sextant did
+ * not send them because Argo CD refused the same ones earlier in this run (`notSent`, a 401 of Sextant's own).
+ */
+export function isRefused(answer: ServiceAnswer): boolean {
+  const kind = answerKind(answer.status);
+  return answer.notSent === true || kind === "unauthorized" || kind === "forbidden";
 }
 
 /** The user name of a `userinfo` answer, when signed in. */

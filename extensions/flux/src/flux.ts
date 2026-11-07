@@ -1,6 +1,6 @@
 // What the extension reads from Flux objects, as Sextant's former built-in Flux view read it: the kinds it lists,
 // their Ready condition, revision and suspension, the source an object uses, the objects a Kustomization or
-// HelmRelease applied (`status.inventory`), which objects use a source, and the merge patches of its actions. Pure
+// HelmRelease applied (`status.inventory`), which objects use a source, and Reconcile with source's merge patches. Pure
 // functions, no DOM.
 import type { KubeObject, RefInput } from "@sextant/extension-sdk";
 
@@ -22,8 +22,8 @@ export interface FluxKind {
   /** A source of artifacts (a Kustomization or HelmRelease may refer to it). */
   source?: boolean;
   /**
-   * It has a status with a Ready condition (notification Providers and Alerts have none in v1beta3): Ready, Status and
-   * Revision columns, and a manifest has at most 50 columns.
+   * It has Ready, Status and Revision columns (every kind does; notification Providers and Alerts of v1beta3 have no
+   * status, so theirs stay empty).
    */
   status: boolean;
 }
@@ -40,8 +40,8 @@ export const FLUX_KINDS: readonly FluxKind[] = [
   { group: IMAGE_GROUP, kind: "ImageRepository", order: 40, label: "imageRepositories", icon: "imageRepository", status: true },
   { group: IMAGE_GROUP, kind: "ImagePolicy", order: 41, label: "imagePolicies", icon: "imagePolicy", status: true },
   { group: IMAGE_GROUP, kind: "ImageUpdateAutomation", order: 42, label: "imageUpdateAutomations", icon: "imageUpdateAutomation", status: true },
-  { group: NOTIFICATION_GROUP, kind: "Alert", order: 50, label: "alerts", icon: "alert", status: false },
-  { group: NOTIFICATION_GROUP, kind: "Provider", order: 51, label: "providers", icon: "provider", status: false },
+  { group: NOTIFICATION_GROUP, kind: "Alert", order: 50, label: "alerts", icon: "alert", status: true },
+  { group: NOTIFICATION_GROUP, kind: "Provider", order: 51, label: "providers", icon: "provider", status: true },
   { group: NOTIFICATION_GROUP, kind: "Receiver", order: 52, label: "receivers", icon: "receiver", status: true },
 ];
 
@@ -293,11 +293,11 @@ export const refOf = (obj: KubeObject, fallback: { group: string; kind: string }
 /** The annotation every Flux controller watches: a new value asks it to reconcile now. */
 export const REQUESTED_AT_ANNOTATION = "reconcile.fluxcd.io/requestedAt";
 
-/** Asks the controller to reconcile the object now. */
+/**
+ * Asks the controller to reconcile the object now: Reconcile with source's patch. Reconcile now, Suspend and Resume are
+ * patches fixed in the manifest, which Sextant sends itself (`{{now}}` is the time it sends them).
+ */
 export const reconcilePatch = (now: Date) => ({ metadata: { annotations: { [REQUESTED_AT_ANNOTATION]: now.toISOString() } } });
-
-/** Suspends (`true`) or resumes (`false`) reconciling. */
-export const suspendPatch = (suspend: boolean) => ({ spec: { suspend } });
 
 /**
  * What to reconcile, in order, for "Reconcile with source": the source of a Kustomization; the chart source of a

@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.flux",
   "name": "Flux",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Flux CD's objects in a sidebar section of their own: sources, Kustomizations, HelmReleases, image automation and notifications with their readiness, revision and source; what each one applied and which objects use a source; problems of what fails to reconcile; Reconcile, Suspend and Resume.",
   "author": "Sextant",
   "sextantApi": 4,
@@ -186,7 +186,7 @@
         "actions": [
           "modify"
         ],
-        "confirm": true
+        "confirm": false
       }
     ]
   },
@@ -505,7 +505,14 @@
           }
         ],
         "multiple": true,
-        "placement": "primary"
+        "placement": "primary",
+        "patch": {
+          "metadata": {
+            "annotations": {
+              "reconcile.fluxcd.io/requestedAt": "{{now}}"
+            }
+          }
+        }
       },
       {
         "id": "reconcile-with-source",
@@ -608,7 +615,17 @@
           }
         },
         "whyNot": "Already suspended.",
-        "placement": "primary"
+        "placement": "primary",
+        "patch": {
+          "spec": {
+            "suspend": true
+          }
+        },
+        "ask": {
+          "title": "Suspend this object?",
+          "text": "Flux stops reconciling it until it is resumed: changes in Git or in the cluster are not applied or corrected meanwhile.",
+          "confirm": "Suspend"
+        }
       },
       {
         "id": "resume",
@@ -675,7 +692,12 @@
           "value": true
         },
         "whyNot": "Not suspended.",
-        "placement": "primary"
+        "placement": "primary",
+        "patch": {
+          "spec": {
+            "suspend": false
+          }
+        }
       }
     ],
     "columns": [
@@ -1176,6 +1198,113 @@
           ".spec.sourceRef.kind",
           ".spec.chart.spec.sourceRef.kind",
           ".spec.chartRef.kind"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.sourceRef.namespace"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".spec.sourceRef.namespace",
+                    "value": ""
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".spec.sourceRef.namespace",
+                    "otherPath": ".metadata.namespace"
+                  }
+                }
+              ]
+            },
+            "text": "{{.spec.sourceRef.kind}}/{{.spec.sourceRef.namespace}}/{{.spec.sourceRef.name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.sourceRef.name"
+            },
+            "text": "{{.spec.sourceRef.kind}}/{{.spec.sourceRef.name}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.chart.spec.sourceRef.namespace"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".spec.chart.spec.sourceRef.namespace",
+                    "value": ""
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".spec.chart.spec.sourceRef.namespace",
+                    "otherPath": ".metadata.namespace"
+                  }
+                }
+              ]
+            },
+            "text": "{{.spec.chart.spec.sourceRef.kind}}/{{.spec.chart.spec.sourceRef.namespace}}/{{.spec.chart.spec.sourceRef.name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.chart.spec.sourceRef.name"
+            },
+            "text": "{{.spec.chart.spec.sourceRef.kind}}/{{.spec.chart.spec.sourceRef.name}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.chartRef.namespace"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".spec.chartRef.namespace",
+                    "value": ""
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".spec.chartRef.namespace",
+                    "otherPath": ".metadata.namespace"
+                  }
+                }
+              ]
+            },
+            "text": "{{.spec.chartRef.kind}}/{{.spec.chartRef.namespace}}/{{.spec.chartRef.name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.chartRef.name"
+            },
+            "text": "{{.spec.chartRef.kind}}/{{.spec.chartRef.name}}"
+          }
         ]
       },
       {
@@ -1291,6 +1420,113 @@
           ".spec.sourceRef.kind",
           ".spec.chart.spec.sourceRef.kind",
           ".spec.chartRef.kind"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.sourceRef.namespace"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".spec.sourceRef.namespace",
+                    "value": ""
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".spec.sourceRef.namespace",
+                    "otherPath": ".metadata.namespace"
+                  }
+                }
+              ]
+            },
+            "text": "{{.spec.sourceRef.kind}}/{{.spec.sourceRef.namespace}}/{{.spec.sourceRef.name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.sourceRef.name"
+            },
+            "text": "{{.spec.sourceRef.kind}}/{{.spec.sourceRef.name}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.chart.spec.sourceRef.namespace"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".spec.chart.spec.sourceRef.namespace",
+                    "value": ""
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".spec.chart.spec.sourceRef.namespace",
+                    "otherPath": ".metadata.namespace"
+                  }
+                }
+              ]
+            },
+            "text": "{{.spec.chart.spec.sourceRef.kind}}/{{.spec.chart.spec.sourceRef.namespace}}/{{.spec.chart.spec.sourceRef.name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.chart.spec.sourceRef.name"
+            },
+            "text": "{{.spec.chart.spec.sourceRef.kind}}/{{.spec.chart.spec.sourceRef.name}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.chartRef.namespace"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".spec.chartRef.namespace",
+                    "value": ""
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".spec.chartRef.namespace",
+                    "otherPath": ".metadata.namespace"
+                  }
+                }
+              ]
+            },
+            "text": "{{.spec.chartRef.kind}}/{{.spec.chartRef.namespace}}/{{.spec.chartRef.name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.chartRef.name"
+            },
+            "text": "{{.spec.chartRef.kind}}/{{.spec.chartRef.name}}"
+          }
         ]
       },
       {
@@ -1682,9 +1918,70 @@
           "group": "notification.toolkit.fluxcd.io",
           "kind": "Alert"
         },
+        "id": "ready-alert",
+        "title": "Ready",
+        "afterColumn": "namespace",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "notification.toolkit.fluxcd.io",
+          "kind": "Alert"
+        },
+        "id": "status-alert",
+        "title": "Status",
+        "afterColumn": "ready-alert",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ]
+      },
+      {
+        "kind": {
+          "group": "notification.toolkit.fluxcd.io",
+          "kind": "Alert"
+        },
+        "id": "revision-alert",
+        "title": "Revision",
+        "afterColumn": "status-alert",
+        "paths": [
+          ".status.artifact.revision",
+          ".status.lastAppliedRevision",
+          ".status.history[0].chartVersion",
+          ".status.latestImage",
+          ".status.latestRef.tag",
+          ".status.lastScanResult.revision",
+          ".status.lastPushCommit",
+          ".status.observedSourceRevision"
+        ],
+        "tooltipPaths": [
+          ".status.artifact.revision",
+          ".status.lastAppliedRevision",
+          ".status.history[0].chartVersion",
+          ".status.latestImage",
+          ".status.latestRef.tag",
+          ".status.lastScanResult.revision",
+          ".status.lastPushCommit",
+          ".status.observedSourceRevision"
+        ]
+      },
+      {
+        "kind": {
+          "group": "notification.toolkit.fluxcd.io",
+          "kind": "Alert"
+        },
         "id": "suspended-alert",
         "title": "Suspended",
-        "afterColumn": "namespace",
+        "afterColumn": "revision-alert",
         "paths": [
           ".spec.suspend"
         ],
@@ -1717,9 +2014,70 @@
           "group": "notification.toolkit.fluxcd.io",
           "kind": "Provider"
         },
+        "id": "ready-provider",
+        "title": "Ready",
+        "afterColumn": "namespace",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning"
+        }
+      },
+      {
+        "kind": {
+          "group": "notification.toolkit.fluxcd.io",
+          "kind": "Provider"
+        },
+        "id": "status-provider",
+        "title": "Status",
+        "afterColumn": "ready-provider",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ]
+      },
+      {
+        "kind": {
+          "group": "notification.toolkit.fluxcd.io",
+          "kind": "Provider"
+        },
+        "id": "revision-provider",
+        "title": "Revision",
+        "afterColumn": "status-provider",
+        "paths": [
+          ".status.artifact.revision",
+          ".status.lastAppliedRevision",
+          ".status.history[0].chartVersion",
+          ".status.latestImage",
+          ".status.latestRef.tag",
+          ".status.lastScanResult.revision",
+          ".status.lastPushCommit",
+          ".status.observedSourceRevision"
+        ],
+        "tooltipPaths": [
+          ".status.artifact.revision",
+          ".status.lastAppliedRevision",
+          ".status.history[0].chartVersion",
+          ".status.latestImage",
+          ".status.latestRef.tag",
+          ".status.lastScanResult.revision",
+          ".status.lastPushCommit",
+          ".status.observedSourceRevision"
+        ]
+      },
+      {
+        "kind": {
+          "group": "notification.toolkit.fluxcd.io",
+          "kind": "Provider"
+        },
         "id": "suspended-provider",
         "title": "Suspended",
-        "afterColumn": "namespace",
+        "afterColumn": "revision-provider",
         "paths": [
           ".spec.suspend"
         ],
@@ -1908,7 +2266,8 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "group": "not-ready"
       },
@@ -1975,7 +2334,8 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "group": "not-ready"
       },
@@ -2042,7 +2402,8 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "group": "not-ready"
       },
@@ -2109,7 +2470,8 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "group": "not-ready"
       },
@@ -2176,7 +2538,8 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "group": "not-ready"
       },
@@ -2243,7 +2606,8 @@
         },
         "graceMinutes": 2,
         "notify": true,
-        "message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "group": "not-ready"
       }
@@ -2276,6 +2640,9 @@
       "actions.reconcile-with-source.whyNot": "Источник не указан.",
       "actions.suspend.title": "Приостановить",
       "actions.suspend.whyNot": "Уже приостановлен.",
+      "actions.suspend.ask.title": "Приостановить этот объект?",
+      "actions.suspend.ask.text": "Flux прекратит его синхронизацию, пока его не возобновят: изменения в Git или в кластере за это время не будут применяться или исправляться.",
+      "actions.suspend.ask.confirm": "Приостановить",
       "actions.resume.title": "Возобновить",
       "actions.resume.whyNot": "Не приостановлен.",
       "columns.ready-gitrepository.title": "Готов",
@@ -2349,21 +2716,27 @@
       "columns.ready-receiver.title": "Готов",
       "columns.status-receiver.title": "Состояние",
       "columns.revision-receiver.title": "Ревизия",
+      "columns.ready-alert.title": "Готов",
+      "columns.status-alert.title": "Состояние",
+      "columns.revision-alert.title": "Ревизия",
+      "columns.ready-provider.title": "Готов",
+      "columns.status-provider.title": "Состояние",
+      "columns.revision-provider.title": "Ревизия",
       "columns.suspended-receiver.title": "Приостановлен",
       "columns.suspended-receiver.cases.0.text": "Да",
       "columns.suspended-receiver.cases.1.text": "Нет",
       "problems.not-ready-gitrepository.title": "GitRepository не готов",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository не готов",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository не готов",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket не готов",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization не готов",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease не готов",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "uk": {
       "name": "Flux",
@@ -2391,6 +2764,9 @@
       "actions.reconcile-with-source.whyNot": "Джерело не вказано.",
       "actions.suspend.title": "Призупинити",
       "actions.suspend.whyNot": "Уже призупинено.",
+      "actions.suspend.ask.title": "Призупинити цей об'єкт?",
+      "actions.suspend.ask.text": "Flux припинить його синхронізацію, доки його не відновлять: зміни в Git або в кластері за цей час не застосовуватимуться й не виправлятимуться.",
+      "actions.suspend.ask.confirm": "Призупинити",
       "actions.resume.title": "Відновити",
       "actions.resume.whyNot": "Не призупинено.",
       "columns.ready-gitrepository.title": "Готовий",
@@ -2464,21 +2840,27 @@
       "columns.ready-receiver.title": "Готовий",
       "columns.status-receiver.title": "Стан",
       "columns.revision-receiver.title": "Ревізія",
+      "columns.ready-alert.title": "Готовий",
+      "columns.status-alert.title": "Стан",
+      "columns.revision-alert.title": "Ревізія",
+      "columns.ready-provider.title": "Готовий",
+      "columns.status-provider.title": "Стан",
+      "columns.revision-provider.title": "Ревізія",
       "columns.suspended-receiver.title": "Призупинено",
       "columns.suspended-receiver.cases.0.text": "Так",
       "columns.suspended-receiver.cases.1.text": "Ні",
       "problems.not-ready-gitrepository.title": "GitRepository не готовий",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository не готовий",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository не готовий",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket не готовий",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization не готовий",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease не готовий",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "de": {
       "name": "Flux",
@@ -2506,6 +2888,9 @@
       "actions.reconcile-with-source.whyNot": "Keine Quelle angegeben.",
       "actions.suspend.title": "Anhalten",
       "actions.suspend.whyNot": "Bereits angehalten.",
+      "actions.suspend.ask.title": "Dieses Objekt anhalten?",
+      "actions.suspend.ask.text": "Flux gleicht es nicht mehr ab, bis der Abgleich fortgesetzt wird: Änderungen in Git oder im Cluster werden in der Zwischenzeit weder angewendet noch korrigiert.",
+      "actions.suspend.ask.confirm": "Anhalten",
       "actions.resume.title": "Fortsetzen",
       "actions.resume.whyNot": "Nicht angehalten.",
       "columns.ready-gitrepository.title": "Bereit",
@@ -2579,21 +2964,27 @@
       "columns.ready-receiver.title": "Bereit",
       "columns.status-receiver.title": "Status",
       "columns.revision-receiver.title": "Revision",
+      "columns.ready-alert.title": "Bereit",
+      "columns.status-alert.title": "Status",
+      "columns.revision-alert.title": "Revision",
+      "columns.ready-provider.title": "Bereit",
+      "columns.status-provider.title": "Status",
+      "columns.revision-provider.title": "Revision",
       "columns.suspended-receiver.title": "Angehalten",
       "columns.suspended-receiver.cases.0.text": "Ja",
       "columns.suspended-receiver.cases.1.text": "Nein",
       "problems.not-ready-gitrepository.title": "GitRepository nicht bereit",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository nicht bereit",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository nicht bereit",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket nicht bereit",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization nicht bereit",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease nicht bereit",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "fr": {
       "name": "Flux",
@@ -2621,6 +3012,9 @@
       "actions.reconcile-with-source.whyNot": "Aucune source n'est indiquée.",
       "actions.suspend.title": "Suspendre",
       "actions.suspend.whyNot": "Déjà suspendu.",
+      "actions.suspend.ask.title": "Suspendre cet objet ?",
+      "actions.suspend.ask.text": "Flux cesse de le réconcilier jusqu'à sa reprise : entre-temps, les modifications dans Git ou dans le cluster ne sont ni appliquées ni corrigées.",
+      "actions.suspend.ask.confirm": "Suspendre",
       "actions.resume.title": "Reprendre",
       "actions.resume.whyNot": "Pas suspendu.",
       "columns.ready-gitrepository.title": "Prêt",
@@ -2694,21 +3088,27 @@
       "columns.ready-receiver.title": "Prêt",
       "columns.status-receiver.title": "État",
       "columns.revision-receiver.title": "Révision",
+      "columns.ready-alert.title": "Prêt",
+      "columns.status-alert.title": "État",
+      "columns.revision-alert.title": "Révision",
+      "columns.ready-provider.title": "Prêt",
+      "columns.status-provider.title": "État",
+      "columns.revision-provider.title": "Révision",
       "columns.suspended-receiver.title": "Suspendu",
       "columns.suspended-receiver.cases.0.text": "Oui",
       "columns.suspended-receiver.cases.1.text": "Non",
       "problems.not-ready-gitrepository.title": "GitRepository non prêt",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository non prêt",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository non prêt",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket non prêt",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization non prêt",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease non prêt",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "es": {
       "name": "Flux",
@@ -2736,6 +3136,9 @@
       "actions.reconcile-with-source.whyNot": "No indica ningún origen.",
       "actions.suspend.title": "Suspender",
       "actions.suspend.whyNot": "Ya está suspendido.",
+      "actions.suspend.ask.title": "¿Suspender este objeto?",
+      "actions.suspend.ask.text": "Flux deja de reconciliarlo hasta que se reanude: mientras tanto, los cambios en Git o en el clúster no se aplican ni se corrigen.",
+      "actions.suspend.ask.confirm": "Suspender",
       "actions.resume.title": "Reanudar",
       "actions.resume.whyNot": "No está suspendido.",
       "columns.ready-gitrepository.title": "Listo",
@@ -2809,21 +3212,27 @@
       "columns.ready-receiver.title": "Listo",
       "columns.status-receiver.title": "Estado",
       "columns.revision-receiver.title": "Revisión",
+      "columns.ready-alert.title": "Listo",
+      "columns.status-alert.title": "Estado",
+      "columns.revision-alert.title": "Revisión",
+      "columns.ready-provider.title": "Listo",
+      "columns.status-provider.title": "Estado",
+      "columns.revision-provider.title": "Revisión",
       "columns.suspended-receiver.title": "Suspendido",
       "columns.suspended-receiver.cases.0.text": "Sí",
       "columns.suspended-receiver.cases.1.text": "No",
       "problems.not-ready-gitrepository.title": "GitRepository no está listo",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository no está listo",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository no está listo",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket no está listo",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization no está listo",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease no está listo",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "pt-BR": {
       "name": "Flux",
@@ -2851,6 +3260,9 @@
       "actions.reconcile-with-source.whyNot": "Não indica nenhuma fonte.",
       "actions.suspend.title": "Suspender",
       "actions.suspend.whyNot": "Já está suspenso.",
+      "actions.suspend.ask.title": "Suspender este objeto?",
+      "actions.suspend.ask.text": "O Flux deixa de reconciliá-lo até que seja retomado: enquanto isso, alterações no Git ou no cluster não são aplicadas nem corrigidas.",
+      "actions.suspend.ask.confirm": "Suspender",
       "actions.resume.title": "Retomar",
       "actions.resume.whyNot": "Não está suspenso.",
       "columns.ready-gitrepository.title": "Pronto",
@@ -2924,21 +3336,27 @@
       "columns.ready-receiver.title": "Pronto",
       "columns.status-receiver.title": "Status",
       "columns.revision-receiver.title": "Revisão",
+      "columns.ready-alert.title": "Pronto",
+      "columns.status-alert.title": "Status",
+      "columns.revision-alert.title": "Revisão",
+      "columns.ready-provider.title": "Pronto",
+      "columns.status-provider.title": "Status",
+      "columns.revision-provider.title": "Revisão",
       "columns.suspended-receiver.title": "Suspenso",
       "columns.suspended-receiver.cases.0.text": "Sim",
       "columns.suspended-receiver.cases.1.text": "Não",
       "problems.not-ready-gitrepository.title": "GitRepository não está pronto",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository não está pronto",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository não está pronto",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket não está pronto",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization não está pronto",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease não está pronto",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "it": {
       "name": "Flux",
@@ -2966,6 +3384,9 @@
       "actions.reconcile-with-source.whyNot": "Non indica alcuna origine.",
       "actions.suspend.title": "Sospendi",
       "actions.suspend.whyNot": "Già sospeso.",
+      "actions.suspend.ask.title": "Sospendere questo oggetto?",
+      "actions.suspend.ask.text": "Flux smette di riconciliarlo finché non viene ripreso: nel frattempo le modifiche in Git o nel cluster non vengono applicate né corrette.",
+      "actions.suspend.ask.confirm": "Sospendi",
       "actions.resume.title": "Riprendi",
       "actions.resume.whyNot": "Non è sospeso.",
       "columns.ready-gitrepository.title": "Pronto",
@@ -3039,21 +3460,27 @@
       "columns.ready-receiver.title": "Pronto",
       "columns.status-receiver.title": "Stato",
       "columns.revision-receiver.title": "Revisione",
+      "columns.ready-alert.title": "Pronto",
+      "columns.status-alert.title": "Stato",
+      "columns.revision-alert.title": "Revisione",
+      "columns.ready-provider.title": "Pronto",
+      "columns.status-provider.title": "Stato",
+      "columns.revision-provider.title": "Revisione",
       "columns.suspended-receiver.title": "Sospeso",
       "columns.suspended-receiver.cases.0.text": "Sì",
       "columns.suspended-receiver.cases.1.text": "No",
       "problems.not-ready-gitrepository.title": "GitRepository non pronto",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository non pronto",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository non pronto",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket non pronto",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization non pronto",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease non pronto",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "pl": {
       "name": "Flux",
@@ -3081,6 +3508,9 @@
       "actions.reconcile-with-source.whyNot": "Nie wskazuje źródła.",
       "actions.suspend.title": "Wstrzymaj",
       "actions.suspend.whyNot": "Już wstrzymany.",
+      "actions.suspend.ask.title": "Wstrzymać ten obiekt?",
+      "actions.suspend.ask.text": "Flux przestanie go uzgadniać do czasu wznowienia: w tym czasie zmiany w Git lub w klastrze nie będą stosowane ani korygowane.",
+      "actions.suspend.ask.confirm": "Wstrzymaj",
       "actions.resume.title": "Wznów",
       "actions.resume.whyNot": "Nie jest wstrzymany.",
       "columns.ready-gitrepository.title": "Gotowe",
@@ -3154,21 +3584,27 @@
       "columns.ready-receiver.title": "Gotowe",
       "columns.status-receiver.title": "Stan",
       "columns.revision-receiver.title": "Rewizja",
+      "columns.ready-alert.title": "Gotowe",
+      "columns.status-alert.title": "Stan",
+      "columns.revision-alert.title": "Rewizja",
+      "columns.ready-provider.title": "Gotowe",
+      "columns.status-provider.title": "Stan",
+      "columns.revision-provider.title": "Rewizja",
       "columns.suspended-receiver.title": "Wstrzymane",
       "columns.suspended-receiver.cases.0.text": "Tak",
       "columns.suspended-receiver.cases.1.text": "Nie",
       "problems.not-ready-gitrepository.title": "GitRepository niegotowy",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository niegotowy",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository niegotowy",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket niegotowy",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization niegotowy",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease niegotowy",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "tr": {
       "name": "Flux",
@@ -3196,6 +3632,9 @@
       "actions.reconcile-with-source.whyNot": "Bir kaynak belirtmiyor.",
       "actions.suspend.title": "Askıya al",
       "actions.suspend.whyNot": "Zaten askıya alınmış.",
+      "actions.suspend.ask.title": "Bu nesne askıya alınsın mı?",
+      "actions.suspend.ask.text": "Flux, bu nesne sürdürülene kadar uzlaştırmayı durdurur: bu sırada Git'teki veya kümedeki değişiklikler uygulanmaz ya da düzeltilmez.",
+      "actions.suspend.ask.confirm": "Askıya al",
       "actions.resume.title": "Sürdür",
       "actions.resume.whyNot": "Askıya alınmamış.",
       "columns.ready-gitrepository.title": "Hazır",
@@ -3269,21 +3708,27 @@
       "columns.ready-receiver.title": "Hazır",
       "columns.status-receiver.title": "Durum",
       "columns.revision-receiver.title": "Revizyon",
+      "columns.ready-alert.title": "Hazır",
+      "columns.status-alert.title": "Durum",
+      "columns.revision-alert.title": "Revizyon",
+      "columns.ready-provider.title": "Hazır",
+      "columns.status-provider.title": "Durum",
+      "columns.revision-provider.title": "Revizyon",
       "columns.suspended-receiver.title": "Askıda",
       "columns.suspended-receiver.cases.0.text": "Evet",
       "columns.suspended-receiver.cases.1.text": "Hayır",
       "problems.not-ready-gitrepository.title": "GitRepository hazır değil",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository hazır değil",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository hazır değil",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket hazır değil",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization hazır değil",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease hazır değil",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "zh-CN": {
       "name": "Flux",
@@ -3311,6 +3756,9 @@
       "actions.reconcile-with-source.whyNot": "未指定来源。",
       "actions.suspend.title": "暂停",
       "actions.suspend.whyNot": "已暂停。",
+      "actions.suspend.ask.title": "暂停此对象？",
+      "actions.suspend.ask.text": "在恢复之前，Flux 将停止协调此对象：在此期间，Git 或集群中的更改不会被应用或纠正。",
+      "actions.suspend.ask.confirm": "暂停",
       "actions.resume.title": "恢复",
       "actions.resume.whyNot": "未暂停。",
       "columns.ready-gitrepository.title": "就绪",
@@ -3384,21 +3832,27 @@
       "columns.ready-receiver.title": "就绪",
       "columns.status-receiver.title": "状态",
       "columns.revision-receiver.title": "修订版本",
+      "columns.ready-alert.title": "就绪",
+      "columns.status-alert.title": "状态",
+      "columns.revision-alert.title": "修订版本",
+      "columns.ready-provider.title": "就绪",
+      "columns.status-provider.title": "状态",
+      "columns.revision-provider.title": "修订版本",
       "columns.suspended-receiver.title": "已暂停",
       "columns.suspended-receiver.cases.0.text": "是",
       "columns.suspended-receiver.cases.1.text": "否",
       "problems.not-ready-gitrepository.title": "GitRepository 未就绪",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository 未就绪",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository 未就绪",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket 未就绪",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization 未就绪",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease 未就绪",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "zh-TW": {
       "name": "Flux",
@@ -3426,6 +3880,9 @@
       "actions.reconcile-with-source.whyNot": "未指定來源。",
       "actions.suspend.title": "暫停",
       "actions.suspend.whyNot": "已暫停。",
+      "actions.suspend.ask.title": "要暫停此物件嗎？",
+      "actions.suspend.ask.text": "在繼續之前，Flux 會停止調和此物件：在此期間，Git 或叢集中的變更不會被套用或修正。",
+      "actions.suspend.ask.confirm": "暫停",
       "actions.resume.title": "繼續",
       "actions.resume.whyNot": "未暫停。",
       "columns.ready-gitrepository.title": "就緒",
@@ -3499,21 +3956,27 @@
       "columns.ready-receiver.title": "就緒",
       "columns.status-receiver.title": "狀態",
       "columns.revision-receiver.title": "修訂版本",
+      "columns.ready-alert.title": "就緒",
+      "columns.status-alert.title": "狀態",
+      "columns.revision-alert.title": "修訂版本",
+      "columns.ready-provider.title": "就緒",
+      "columns.status-provider.title": "狀態",
+      "columns.revision-provider.title": "修訂版本",
       "columns.suspended-receiver.title": "已暫停",
       "columns.suspended-receiver.cases.0.text": "是",
       "columns.suspended-receiver.cases.1.text": "否",
       "problems.not-ready-gitrepository.title": "GitRepository 未就緒",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository 未就緒",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository 未就緒",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket 未就緒",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization 未就緒",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease 未就緒",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "ja": {
       "name": "Flux",
@@ -3541,6 +4004,9 @@
       "actions.reconcile-with-source.whyNot": "ソースが指定されていません。",
       "actions.suspend.title": "一時停止",
       "actions.suspend.whyNot": "すでに一時停止されています。",
+      "actions.suspend.ask.title": "このオブジェクトを一時停止しますか?",
+      "actions.suspend.ask.text": "再開されるまで、Flux はこのオブジェクトの調整を停止します。その間、Git やクラスターでの変更は適用も修正もされません。",
+      "actions.suspend.ask.confirm": "一時停止",
       "actions.resume.title": "再開",
       "actions.resume.whyNot": "一時停止されていません。",
       "columns.ready-gitrepository.title": "準備完了",
@@ -3614,21 +4080,27 @@
       "columns.ready-receiver.title": "準備完了",
       "columns.status-receiver.title": "状態",
       "columns.revision-receiver.title": "リビジョン",
+      "columns.ready-alert.title": "準備完了",
+      "columns.status-alert.title": "状態",
+      "columns.revision-alert.title": "リビジョン",
+      "columns.ready-provider.title": "準備完了",
+      "columns.status-provider.title": "状態",
+      "columns.revision-provider.title": "リビジョン",
       "columns.suspended-receiver.title": "一時停止",
       "columns.suspended-receiver.cases.0.text": "はい",
       "columns.suspended-receiver.cases.1.text": "いいえ",
       "problems.not-ready-gitrepository.title": "GitRepository が準備できていません",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository が準備できていません",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository が準備できていません",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket が準備できていません",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization が準備できていません",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease が準備できていません",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "ko": {
       "name": "Flux",
@@ -3656,6 +4128,9 @@
       "actions.reconcile-with-source.whyNot": "소스가 지정되지 않았습니다.",
       "actions.suspend.title": "일시 중단",
       "actions.suspend.whyNot": "이미 일시 중단되었습니다.",
+      "actions.suspend.ask.title": "이 개체를 일시 중단하시겠습니까?",
+      "actions.suspend.ask.text": "Flux는 이 개체가 재개될 때까지 조정을 중지합니다. 그동안 Git이나 클러스터의 변경 사항이 적용되거나 수정되지 않습니다.",
+      "actions.suspend.ask.confirm": "일시 중단",
       "actions.resume.title": "재개",
       "actions.resume.whyNot": "일시 중단되지 않았습니다.",
       "columns.ready-gitrepository.title": "준비",
@@ -3729,21 +4204,27 @@
       "columns.ready-receiver.title": "준비",
       "columns.status-receiver.title": "상태",
       "columns.revision-receiver.title": "리비전",
+      "columns.ready-alert.title": "준비",
+      "columns.status-alert.title": "상태",
+      "columns.revision-alert.title": "리비전",
+      "columns.ready-provider.title": "준비",
+      "columns.status-provider.title": "상태",
+      "columns.revision-provider.title": "리비전",
       "columns.suspended-receiver.title": "일시 중단됨",
       "columns.suspended-receiver.cases.0.text": "예",
       "columns.suspended-receiver.cases.1.text": "아니요",
       "problems.not-ready-gitrepository.title": "GitRepository 준비되지 않음",
-      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-gitrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-ocirepository.title": "OCIRepository 준비되지 않음",
-      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-ocirepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrepository.title": "HelmRepository 준비되지 않음",
-      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-helmrepository.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-bucket.title": "Bucket 준비되지 않음",
-      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-bucket.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-kustomization.title": "Kustomization 준비되지 않음",
-      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease 준비되지 않음",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
     }
   }
 }

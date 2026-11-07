@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.argo-rollouts",
   "name": "Argo Rollouts",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Argo Rollouts: rollouts with their steps, weights, ReplicaSets and analysis runs; promote, abort, retry, pause and resume with the exact patches of kubectl argo rollouts, shown first; problems of degraded and aborted rollouts and failed analyses.",
   "author": "Sextant",
   "sextantApi": 4,
@@ -72,7 +72,7 @@
         "actions": [
           "modify"
         ],
-        "confirm": true
+        "confirm": false
       }
     ]
   },
@@ -447,6 +447,32 @@
           ".status.message"
         ],
         "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "above",
+                  "path": ".status.observedGeneration",
+                  "value": -1
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.generation"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.observedGeneration",
+                    "otherPath": ".metadata.generation"
+                  }
+                }
+              ]
+            },
+            "text": "Progressing",
+            "tone": "neutral"
+          },
           {
             "when": {
               "type": "all",
@@ -830,6 +856,98 @@
               }
             },
             {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Degraded"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.observedGeneration"
+                },
+                {
+                  "type": "absent",
+                  "path": ".metadata.generation"
+                },
+                {
+                  "type": "same",
+                  "path": ".status.observedGeneration",
+                  "otherPath": ".metadata.generation"
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.controllerPause"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.controllerPause",
+                  "value": false
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.pauseConditions[0]"
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.templateResolvedFromRef"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.templateResolvedFromRef",
+                  "value": false
+                },
+                {
+                  "type": "absent",
+                  "path": ".metadata.annotations[\"rollout.argoproj.io/workload-generation\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.workloadObservedGeneration"
+                },
+                {
+                  "type": "same",
+                  "path": ".metadata.annotations[\"rollout.argoproj.io/workload-generation\"]",
+                  "otherPath": ".status.workloadObservedGeneration"
+                }
+              ]
+            }
+          ]
+        },
+        "graceMinutes": 1,
+        "message": "The rollout is Degraded: {{.status.message}}",
+        "group": "rollout"
+      },
+      {
+        "id": "degraded-older-controller",
+        "title": "Degraded (before Argo Rollouts v1.0)",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.abort",
+                "value": true
+              }
+            },
+            {
               "type": "not",
               "of": {
                 "type": "in",
@@ -837,18 +955,14 @@
                 "values": [
                   "Healthy",
                   "Progressing",
-                  "Paused"
+                  "Paused",
+                  "Degraded"
                 ]
               }
             },
             {
               "type": "any",
               "of": [
-                {
-                  "type": "equals",
-                  "path": ".status.phase",
-                  "value": "Degraded"
-                },
                 {
                   "type": "exists",
                   "path": ".status.conditions[type=\"InvalidSpec\"]"
@@ -912,7 +1026,8 @@
         },
         "graceMinutes": 1,
         "message": "The rollout is Degraded: {{.status.message}}",
-        "group": "rollout"
+        "group": "rollout",
+        "reason": "Degraded"
       },
       {
         "id": "aborted",
@@ -1044,6 +1159,8 @@
       "columns.cluster-template-metric.title": "Метрика",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "Rollout в состоянии Degraded: {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded (Argo Rollouts до v1.0)",
+      "problems.degraded-older-controller.message": "Rollout в состоянии Degraded: {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "Обновление прервано: {{.status.message}}",
       "problems.step-analysis-failed.title": "Анализ шага провален",
@@ -1056,10 +1173,11 @@
       "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} завершился как {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1104,6 +1222,8 @@
       "columns.cluster-template-metric.title": "Метрика",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "Rollout у стані Degraded: {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded (Argo Rollouts до v1.0)",
+      "problems.degraded-older-controller.message": "Rollout у стані Degraded: {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "Оновлення перервано: {{.status.message}}",
       "problems.step-analysis-failed.title": "Аналіз кроку провалено",
@@ -1116,10 +1236,11 @@
       "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} завершився як {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1164,6 +1285,8 @@
       "columns.cluster-template-metric.title": "Metrik",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "Der Rollout ist Degraded: {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded (Argo Rollouts vor v1.0)",
+      "problems.degraded-older-controller.message": "Der Rollout ist Degraded: {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "Das Update wurde abgebrochen: {{.status.message}}",
       "problems.step-analysis-failed.title": "Schrittanalyse fehlgeschlagen",
@@ -1176,10 +1299,11 @@
       "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} endete mit {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1224,6 +1348,8 @@
       "columns.cluster-template-metric.title": "Métrique",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "Le rollout est Degraded : {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded (Argo Rollouts avant v1.0)",
+      "problems.degraded-older-controller.message": "Le rollout est Degraded : {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "La mise à jour a été interrompue : {{.status.message}}",
       "problems.step-analysis-failed.title": "Analyse d'étape échouée",
@@ -1236,10 +1362,11 @@
       "problems.post-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} s'est terminé en {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} : {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1284,6 +1411,8 @@
       "columns.cluster-template-metric.title": "Métrica",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "El rollout está Degraded: {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded (Argo Rollouts anterior a v1.0)",
+      "problems.degraded-older-controller.message": "El rollout está Degraded: {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "La actualización se interrumpió: {{.status.message}}",
       "problems.step-analysis-failed.title": "Análisis de paso fallido",
@@ -1296,10 +1425,11 @@
       "problems.post-promotion-analysis-failed.message": "El AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} terminó como {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1344,6 +1474,8 @@
       "columns.cluster-template-metric.title": "Métrica",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "O rollout está Degraded: {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded (Argo Rollouts anterior à v1.0)",
+      "problems.degraded-older-controller.message": "O rollout está Degraded: {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "A atualização foi interrompida: {{.status.message}}",
       "problems.step-analysis-failed.title": "Análise do passo falhou",
@@ -1356,10 +1488,11 @@
       "problems.post-promotion-analysis-failed.message": "O AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} terminou como {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1404,6 +1537,8 @@
       "columns.cluster-template-metric.title": "Metrica",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "Il rollout è Degraded: {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded (Argo Rollouts prima della v1.0)",
+      "problems.degraded-older-controller.message": "Il rollout è Degraded: {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "L'aggiornamento è stato interrotto: {{.status.message}}",
       "problems.step-analysis-failed.title": "Analisi del passo fallita",
@@ -1416,10 +1551,11 @@
       "problems.post-promotion-analysis-failed.message": "L'AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} è terminato come {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1464,6 +1600,8 @@
       "columns.cluster-template-metric.title": "Metryka",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "Rollout jest w stanie Degraded: {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded (Argo Rollouts przed v1.0)",
+      "problems.degraded-older-controller.message": "Rollout jest w stanie Degraded: {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "Aktualizacja została przerwana: {{.status.message}}",
       "problems.step-analysis-failed.title": "Analiza kroku nie powiodła się",
@@ -1476,10 +1614,11 @@
       "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} zakończył się jako {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1524,6 +1663,8 @@
       "columns.cluster-template-metric.title": "Metrik",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "Rollout Degraded durumunda: {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded (v1.0 öncesi Argo Rollouts)",
+      "problems.degraded-older-controller.message": "Rollout Degraded durumunda: {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "Güncelleme iptal edildi: {{.status.message}}",
       "problems.step-analysis-failed.title": "Adım analizi başarısız",
@@ -1536,10 +1677,11 @@
       "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} olarak bitti: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1584,6 +1726,8 @@
       "columns.cluster-template-metric.title": "指标",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "rollout 处于 Degraded 状态：{{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded（Argo Rollouts v1.0 之前）",
+      "problems.degraded-older-controller.message": "rollout 处于 Degraded 状态：{{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "更新已中止：{{.status.message}}",
       "problems.step-analysis-failed.title": "步骤分析失败",
@@ -1596,10 +1740,11 @@
       "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} 结束：{{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1644,6 +1789,8 @@
       "columns.cluster-template-metric.title": "指標",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "rollout 處於 Degraded 狀態：{{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded（Argo Rollouts v1.0 之前）",
+      "problems.degraded-older-controller.message": "rollout 處於 Degraded 狀態：{{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "更新已中止：{{.status.message}}",
       "problems.step-analysis-failed.title": "步驟分析失敗",
@@ -1656,10 +1803,11 @@
       "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} 以 {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} 結束：{{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1704,6 +1852,8 @@
       "columns.cluster-template-metric.title": "メトリクス",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "Rollout は Degraded です: {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded（Argo Rollouts v1.0 より前）",
+      "problems.degraded-older-controller.message": "Rollout は Degraded です: {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "更新は中止されました: {{.status.message}}",
       "problems.step-analysis-failed.title": "ステップ分析が失敗しました",
@@ -1716,10 +1866,11 @@
       "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} は {{.status.blueGreen.postPromotionAnalysisRunStatus.status}} で終了しました: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"
@@ -1764,6 +1915,8 @@
       "columns.cluster-template-metric.title": "메트릭",
       "problems.degraded.title": "Degraded",
       "problems.degraded.message": "rollout이 Degraded 상태입니다: {{.status.message}}",
+      "problems.degraded-older-controller.title": "Degraded(Argo Rollouts v1.0 이전)",
+      "problems.degraded-older-controller.message": "rollout이 Degraded 상태입니다: {{.status.message}}",
       "problems.aborted.title": "Aborted",
       "problems.aborted.message": "업데이트가 중단되었습니다: {{.status.message}}",
       "problems.step-analysis-failed.title": "단계 분석 실패",
@@ -1776,10 +1929,11 @@
       "problems.post-promotion-analysis-failed.message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}}이(가) {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}(으)로 끝났습니다: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
       "columns.rollout-status.cases.0.text": "Progressing",
       "columns.rollout-status.cases.1.text": "Progressing",
-      "columns.rollout-status.cases.2.text": "Degraded",
-      "columns.rollout-status.cases.3.text": "Paused",
+      "columns.rollout-status.cases.2.text": "Progressing",
+      "columns.rollout-status.cases.3.text": "Degraded",
       "columns.rollout-status.cases.4.text": "Paused",
-      "columns.rollout-status.cases.5.text": "Progressing",
+      "columns.rollout-status.cases.5.text": "Paused",
+      "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
       "columns.rollout-strategy.cases.1.text": "BlueGreen",
       "columns.rollout-weight.cases.0.text": "0"

@@ -1,14 +1,12 @@
 // GitOps scenarios against the fixtures of `scripts/test-cluster.sh up --gitops` (scripts/fixtures/gitops/): the
 // Flux Kustomization `sextant-flux/podinfo` and the Argo CD Application `argocd/guestbook`, through Sextant's own Flux
 // and Argo CD extensions, which the e2e profile installs (`e2e/extensions.ts`, ADR-0162): their details are extension
-// frames, their actions extension windows whose changes Sextant confirms. Each part is skipped when the cluster does
+// frames, Flux's Suspend and Resume fixed patches Sextant sends itself (ADR-0163). Each part is skipped when the cluster does
 // not serve its kinds (a cluster brought up without --gitops).
 import { $, browser, expect } from "@wdio/globals";
 import { after, before, describe, it } from "mocha";
 import {
   actionOfRow,
-  allowChange,
-  clickInFrame,
   closeDetails,
   connectTo,
   detailsPanel,
@@ -70,20 +68,20 @@ describe("GitOps on sextant-test", () => {
 
     it("suspends and resumes a Kustomization", async () => {
       const target = rowWith(KUSTOMIZATION, FLUX_NS);
+      // Suspend is the manifest's fixed patch: Sextant's own question, then the patch, no extension window (ADR-0163).
       await actionOfRow(target, "Suspend");
       const dialog = $('[role="dialog"]');
       await expect(dialog).toBeDisplayed();
-      await clickInFrame(dialog, "Suspend");
-      await allowChange();
+      expect(await dialog.$$("iframe").length).toBe(0);
+      const confirm = dialog.$("button=Suspend");
+      await confirm.waitForClickable();
+      await confirm.click();
       await eventually(() => suspendedInCluster() === "true", "spec.suspend=true in the cluster");
-      await browser.keys("Escape");
       await eventually(async () => /\bYes\b/.test(await textOf(target)), "Suspended: Yes in the table");
 
+      // Resume is one click.
       await actionOfRow(target, "Resume");
-      await clickInFrame($('[role="dialog"]'), "Resume");
-      await allowChange();
       await eventually(() => suspendedInCluster() === "false", "spec.suspend=false in the cluster");
-      await browser.keys("Escape");
       await eventually(async () => !/\bYes\b/.test(await textOf(target)), "Suspended: No in the table");
     });
   });

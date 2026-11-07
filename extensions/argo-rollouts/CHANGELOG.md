@@ -1,5 +1,24 @@
 # Changes of Argo Rollouts
 
+## 1.2.0 — 2026-11-07
+
+Needs Sextant 0.30 (`sextantApi` 4). The last differences from Sextant's former built-in view (#377).
+
+- **Status** of a Rollout whose newest spec the controller has not observed yet (`status.observedGeneration` behind
+  `metadata.generation`) is Progressing, whatever the old phase says; such a Rollout is not Degraded either. Argo
+  Rollouts v0.9's hash in `observedGeneration` counts as observed, as before.
+- **Problems:** Degraded of a controller older than v1.0 (which writes no `status.phase`) is a rule of its own,
+  `degraded-older-controller`, titled "Degraded (before Argo Rollouts v1.0)" on the consent screen; its problems still
+  read "Degraded" (its `reason`), and it is in the same notification group.
+- **Step** shows 0/n before the controller writes the step index, as `kubectl argo rollouts` does.
+- **One question per action:** the action's window, which lists the exact patches, is the only one; Sextant no
+  longer asks again (the Modify rule's `confirm: false`). Updating to 1.2.0 asks to agree to the changed grant once.
+- **Argo Rollouts v0.9** (no status subresource): Sextant refuses the status patch before anything is sent or
+  asked, and the extension then sends the unified patch the plugin sends instead, once, with no second question.
+  (1.1.0 fell back only when the status patch itself failed, and showed Sextant's refusal as an error.)
+- **Weight** stays the weight the traffic router reports, as `kubectl argo rollouts get` shows it; the set weight is
+  in the details.
+
 ## 1.1.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4). Closer to Sextant's former built-in view, with what the extension API gained

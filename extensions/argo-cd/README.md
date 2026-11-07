@@ -10,14 +10,15 @@ of the installation), ADR-0139 (Sextant's own extensions), ADR-0140 (its transla
 (kinds, computed columns, action conditions), ADR-0156 (port forwards and links), ADR-0158 (requests to a Service,
 sessions kept by Sextant), ADR-0160 (its own section, palette names, the UI kit, Sextant's sign-in dialog) and
 ADR-0161 (columns by id and with a case's tone, Services by label, the Secret key a service receives, token sign-in,
-several patches under one confirmation, hidden empty sections).
+several patches under one confirmation, hidden empty sections) and its amendments of 0.30 (fixed-patch actions, Secrets
+a service receives by label, credentials a service refused not sent again).
 
 ## At a glance
 
 | | |
 |---|---|
 | Id | `sextant.argo-cd` |
-| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Version | 1.2.0 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `argo-cd-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Argo CD |
@@ -76,14 +77,23 @@ details.
 - **Sync…** (`sync`, a button): revision (the target revision by default; each source's own for a multi-source app),
   Prune, Dry run. Offered only while no operation runs.
 - **Refresh** (`refresh`, a button) and **Hard refresh** (`hard-refresh`), on one or several selected Applications:
-  one confirmation for all of them (up to 50 at a time).
+  one click, as in the built-in view. They open no window and ask nothing: the patch is fixed in the manifest, and
+  Sextant sends it itself (up to 50 at a time).
 - **Terminate…** (`terminate`): stops the running operation. Offered only while one runs.
 - **Diff** (`diff`): desired (Git) ↔ live (cluster) of each resource, the differing ones first, line by line with the
-  unchanged runs folded; a session bar with who is signed in, Reload and Sign out. Before asking, it signs in with
-  the login typed earlier or remembered for the cluster in Sextant's dialog, then with the admin password of
-  `argocd-initial-admin-secret`. Otherwise it offers "User and password" or "API token", each of which opens
-  Sextant's own sign-in dialog (with "Remember for this cluster"). Sign out forgets the session and the remembered
-  login.
+  unchanged runs folded; a session bar with who is signed in and how (the standard admin Secret, an API token Secret
+  by name, or your own sign-in in Sextant), Reload and Sign out. Before asking, it signs in, in the built-in view's
+  order:
+  1. with the login typed earlier or remembered for the cluster in Sextant's dialog (a user and password, or an API
+     token);
+  2. with the admin password of `argocd-initial-admin-secret`, unless `admin.enabled` is `"false"` in `argocd-cm`;
+  3. with the `token` of each Secret labelled `app.kubernetes.io/part-of=argocd` in the installation's namespace, by
+     name (the one that signed in last first), each checked with `GET /api/v1/session/userinfo`, which must answer
+     `loggedIn: true`; the first Argo CD accepts is used for the rest of the window.
+
+  Otherwise it offers "User and password" or "API token", each of which opens Sextant's own sign-in dialog (with
+  "Remember for this cluster"), with a note when Argo CD refused the saved login, the admin password or the token
+  Secrets. Sign out forgets the session and the remembered login.
 - **Open Argo CD UI** (`open-ui`, also on ApplicationSets and AppProjects): the application's page, or the list of
   applications.
 
@@ -94,8 +104,9 @@ At install the user agrees to these rules (every cluster):
   (Deployments, StatefulSets, DaemonSets, ReplicaSets, Pods, Jobs, PersistentVolumeClaims, Services, Ingresses); and
   ConfigMaps, for `argocd-cmd-params-cm` (does the server run without TLS?) and `argocd-cm` (local users, SSO) of the
   installation. All namespaces: an Application, its resources and Argo CD itself may be anywhere.
-- **Modify** Applications, asked every time: Sync, Refresh, Hard refresh and Terminate are merge patches of the
-  Application.
+- **Modify** Applications, not confirmed by Sextant (`confirm: false`): Sync, Refresh, Hard refresh and Terminate are
+  merge patches of the Application. The Sync… and Terminate… windows are the questions, and Refresh and Hard refresh
+  are one click, as in Sextant's former built-in view.
 - **Port forward** to Services, all namespaces: "Open Argo CD UI" forwards a port to the installation's
   `argocd-server` Service, and every request to Argo CD's API goes through a forward of Sextant's own (Read and Port
   forward on Services in the installation's namespace). Not asked each time (`confirm: false`): a forward and a
@@ -109,11 +120,16 @@ At install the user agrees to these rules (every cluster):
   - `argocd-server-http`: the same over port `http` in plain HTTP, used only when `argocd-cmd-params-cm` says
     `server.insecure: "true"`.
   - `argocd-server-token` and `argocd-server-token-http`: the same two, signing in with an API token, which Sextant
-    sends as the bearer of each request.
+    sends as the bearer of each request. They may receive the key `token` of every Secret labelled
+    `app.kubernetes.io/part-of=argocd` in that namespace: the extension learns only the names of those Secrets
+    (`service.secrets`) and asks Sextant to send one's token as the bearer (`auth: "secret:<name>/token"`), never
+    reading it, so again no "Secret values" permission.
 
   What the user types goes from Sextant's dialog to Sextant, never to the extension, and is filled in by Sextant
   (`{{signIn:username}}`, `{{signIn:password}}`, `auth: "signIn:token"`). With "Remember for this cluster" Sextant
-  keeps it in the system keychain, valid only while the cluster's API server and CA are the same.
+  keeps it in the system keychain, valid only while the cluster's API server and CA are the same. Credentials Argo CD
+  refused (the admin password, a token, a login) are not sent again in this run of Sextant until they change or you
+  sign in in Sextant's dialog, so a changed admin password is not tried from every Diff window.
 
 An update asks for consent again when it changes any of these rules or services.
 
@@ -136,13 +152,15 @@ None.
 
 ## Changes it makes
 
-Every change is a merge patch of one Application, sent only after a click in the action's window, and Sextant asks
-before each one (the Modify rule):
+Every change is a merge patch of an Application, sent only after a click: in the action's window for Sync and
+Terminate (the window is the question; Sextant does not ask again), or on the action itself for Refresh and Hard
+refresh:
 - **Sync:** `operation` with `initiatedBy.username: sextant`, `sync.revision` (unless multi-source), `prune`,
   `dryRun`, and the app's own `syncOptions` and `retry`, as `argocd app sync` sends them.
 - **Refresh / Hard refresh:** the annotation `argocd.argoproj.io/refresh: normal` or `hard` on every selected
-  Application, sent in order under one confirmation (`resources.patchMany`, 50 at a time); the first failure stops the
-  rest. Argo CD removes the annotation when done.
+  Application, the manifest's fixed `patch`, sent by Sextant itself in the extension's name and in order
+  (`resources.patchMany`, 50 at a time); the first failure stops the rest and Sextant says which. Argo CD removes the
+  annotation when done.
 - **Terminate:** `status.operationState.phase: Terminating`, as `argocd app terminate-op` does. What was applied stays.
 
 "Open Argo CD UI" starts a port forward of the extension's own (listed on Sextant's port-forward page, reused while it
@@ -151,13 +169,10 @@ says so in Sextant's dialog. Signing in to Argo CD creates a session in Argo CD;
 
 ## What it does not do
 
-- **No API token from Secrets** labelled `app.kubernetes.io/part-of=argocd`, which the built-in diff tried by itself:
-  their names are not known in advance, and the extension asks for no "Secret values" on the namespace. Type the token
-  in Sextant's dialog once, with "Remember for this cluster". No SSO, as before.
-- A login Argo CD refused is not tried again in the same Diff window, but a later window tries it once more (the
-  built-in view remembered refusals for the connection).
-- The session bar tells only a sign-in made from the admin Secret; it does not say whether a typed login was
-  remembered.
+- No SSO, as before.
+- The session bar says "with your sign-in" for a login typed or remembered in Sextant's dialog alike; the built-in
+  view told a remembered login from one kept until Sextant closed.
+- Sextant forgets the credentials Argo CD refused when it closes, as the built-in view forgot them on disconnecting.
 - It never chooses between several namespaces with an `argocd-server` Service: the user picks one, and the choice is
   kept for the cluster.
 - It installs neither Argo CD nor anything else, and never runs the `argocd` CLI.
@@ -183,11 +198,14 @@ says so in Sextant's dialog. Signing in to Argo CD creates a session in Argo CD;
   `app.kubernetes.io/name=argocd-server` in a namespace the extension may read.
 - **"Choose the Argo CD installation"**: several namespaces have such a Service. Choose the real one; the choice is
   kept for the cluster.
-- **"Sign in to Argo CD" appears**: nothing is remembered for the cluster, and the admin Secret is gone or its
-  password was changed in Argo CD. Choose "User and password" or "API token" and sign in in Sextant's dialog; tick
+- **"Sign in to Argo CD" appears**: nothing is remembered for the cluster, the admin Secret is gone or its
+  password was changed in Argo CD, and no Secret labelled `app.kubernetes.io/part-of=argocd` holds a `token` Argo CD
+  accepts. Choose "User and password" or "API token" and sign in in Sextant's dialog; tick
   "Remember for this cluster" to be signed in by itself next time.
 - **"Argo CD refused the saved login"**: the remembered password or token changed. Sign in again with "Remember for
   this cluster" to replace it.
+- **"Argo CD refused the API token from a Secret labelled app.kubernetes.io/part-of=argocd"**: every such token is
+  expired or revoked. Put a current one into the Secret, or sign in with "API token".
 - **A conflict naming the label selector**: more than one Service labelled `app.kubernetes.io/name=argocd-server`
   in the namespace; the extension reaches Argo CD only through exactly one.
 - **"Sextant refused: …"**: the extension's grant does not cover the call, or you declined a confirmation. Settings →
@@ -207,7 +225,8 @@ to `../../sdk`.)
 
 - `src/main.ts` picks the view by the frame's context:
   - `details.ts` (`fields`), `tree.ts` (`resources`), `history.ts` (`history`);
-  - `actions.ts` (every action window) and `diff.ts` (the diff, the choice of how to sign in and the session bar);
+  - `actions.ts` (the windows of Sync, Terminate and Open Argo CD UI; Refresh and Hard refresh are fixed patches in
+    the manifest) and `diff.ts` (the diff, the order of signing in, the choice of how to sign in and the session bar);
   - `picker.ts` (the choice among several installations).
 - Argo CD's objects are read in `argo.ts`, the resource health in `health.ts` (ported from Sextant's built-in
   view), the installation and every request to Argo CD's API in `server.ts`, the diff and the line diff in

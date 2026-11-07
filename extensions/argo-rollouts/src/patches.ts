@@ -22,9 +22,12 @@
 //
 // The status patch goes to the status subresource (`subresource: "status"`, granted by `permissions.statusPatches`,
 // ADR-0155) and the spec patch to the object, in that order and under one confirmation (`resources.patchMany`,
-// ADR-0161). An API server that answers `notFound` for the status has no status subresource (Argo Rollouts v0.9), and
-// the plugin then sends the "unified" patch (spec and status together) to the object itself — so does the extension.
-// All are JSON merge patches, each sent once. Restart (`spec.restartAt`) is Sextant's own generic action and not here.
+// ADR-0161). Where the kind has no status subresource (Argo Rollouts v0.9), Sextant refuses the status patch `notFound`
+// before anything is sent or asked (#374), and the plugin then sends the "unified" patch (spec and status together) to
+// the object itself — so does the extension. Sextant asks no question of its own for either (the manifest's Modify
+// rule has `confirm: false`): the action's window, which lists every patch, is the only question, as in the built-in
+// view. All are JSON merge patches, each sent once. Restart (`spec.restartAt`) is Sextant's own generic action and
+// not here.
 import { SextantError, type JsonValue, type KubeObject, type ObjectRef, type PatchManyParams, type ErrorCode, type Sextant } from "@sextant/extension-sdk";
 import {
   canarySteps,
@@ -173,19 +176,28 @@ export function itemsOf(ref: ObjectRef, plan: PatchPlan): PatchManyParams["items
 }
 
 /**
- * Sends `plan` as the plugin does: the status first, then the spec, in one `resources.patchMany` so Sextant asks once
- * for both. An API server without the status subresource (v0.9) answers the status item `notFound`, which stops the
- * spec item; the unified patch then goes to the object alone (a second question), as the plugin's fallback.
+ * Sends `plan` as the plugin does: the status first, then the spec, in one `resources.patchMany`. Without the status
+ * subresource (v0.9) Sextant refuses the whole call `notFound` before sending or asking anything (#374); a Sextant
+ * that sends the status item first answers it `notFound` with `sent` 0, which stops the spec item. Either way the
+ * unified patch then goes to the object alone, as the plugin's fallback — one more call, and no question but the
+ * window's.
  */
 export async function sendPlan(sextant: Sextant, ref: ObjectRef, plan: PatchPlan): Promise<void> {
   const items = itemsOf(ref, plan);
   if (items.length === 0) return;
-  const answer = await sextant.resources.patchMany({ items });
+  const unified = plan.status !== undefined ? plan.unified : undefined;
+  let answer: Awaited<ReturnType<Sextant["resources"]["patchMany"]>>;
+  try {
+    answer = await sextant.resources.patchMany({ items });
+  } catch (err) {
+    if (!unified || !(err instanceof SextantError) || err.code !== "notFound") throw err;
+    await sextant.resources.patch({ ref, patch: unified as JsonValue, patchType: "merge" });
+    return;
+  }
   const failed = answer.items.find((item): item is { error: { code: string; message: string } } => "error" in item);
   if (!failed) return;
-  const statusRefused = plan.status !== undefined && answer.sent === 0;
-  if (!statusRefused || failed.error.code !== "notFound" || !plan.unified) {
+  if (!unified || answer.sent !== 0 || failed.error.code !== "notFound") {
     throw new SextantError(failed.error.code as ErrorCode, failed.error.message);
   }
-  await sextant.resources.patch({ ref, patch: plan.unified as JsonValue, patchType: "merge" });
+  await sextant.resources.patch({ ref, patch: unified as JsonValue, patchType: "merge" });
 }

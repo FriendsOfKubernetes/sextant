@@ -1,8 +1,11 @@
 // The "Diff" window of an Application: desired ↔ live of its resources from Argo CD's API, through Sextant
 // (`sextant.service.request`, ADR-0158). Sextant keeps the session and every secret: before asking, the extension
 // signs in with the login typed earlier in Sextant's dialog or remembered there for the cluster (a user and password,
-// or an API token), then with the admin password of `argocd-initial-admin-secret` — each put in by Sextant, never seen
-// here — and otherwise asks the user to sign in in Sextant's own dialog (`ui.signIn`, ADR-0160).
+// or an API token), then with the admin password of `argocd-initial-admin-secret`, then with the API token of each
+// Secret labelled `app.kubernetes.io/part-of=argocd` (by name) — the order of Sextant's former built-in view, each put
+// in by Sextant, never seen here — and otherwise asks the user to sign in in Sextant's own dialog (`ui.signIn`,
+// ADR-0160). Credentials Argo CD refused are not sent again in this run (Sextant answers `notSent`), so a changed admin
+// password is not tried from every window.
 import { isSextantError, ui, type ClusterId, type ObjectRef, type Sextant, type ServiceAnswer } from "@sextant/extension-sdk";
 import { describe, diffRows, isSecret, sideBySide, sidesOf, yamlOf, type ArgoResource, type DiffRow, parseManagedResources } from "./diffModel";
 import { buttons, element, errorText } from "./dom";
@@ -14,18 +17,38 @@ import {
   answerMessage,
   describeServer,
   findInstallation,
+  isRefused,
   managedResourcesRequest,
   serviceOf,
+  tokenSecrets,
   typedSignIn,
   userInfo,
   userOf,
   type ArgoServer,
   type SignInMode,
+  type Using,
 } from "./server";
 
 /** How the session was made, kept so the session bar can say it (the token itself stays in Sextant). */
 export type SessionSource = "secret" | "signIn";
 export const sessionKey = (clusterId: ClusterId, namespace: string): string => `session/${clusterId}/${namespace}`;
+/** The API token Secret that signed in last (its name only), tried first by a later window. */
+export const tokenSecretKey = (clusterId: ClusterId, namespace: string): string => `tokenSecret/${clusterId}/${namespace}`;
+
+/**
+ * How the window is signed in, as the session bar says it (the built-in view's `diff.source.*`): the standard admin
+ * Secret, an API token Secret by name, or the user's own sign-in in Sextant (typed or remembered).
+ */
+export function sourceText(using: Using, stored: unknown): string {
+  if (typeof using !== "string") return t("diff.source.tokenSecret", { name: using.secret });
+  if (using === "password" && stored === "secret") return t("diff.source.secret");
+  return t("diff.source.signIn");
+}
+
+/** The token Secrets in the order they are tried: the one that signed in last, then the others by name. */
+export function tokenOrder(names: readonly string[], last: unknown): string[] {
+  return typeof last === "string" && names.includes(last) ? [last, ...names.filter((n) => n !== last)] : [...names];
+}
 
 /** Why the sign-in is asked for, as notes above it. */
 export interface SignInReasons {
@@ -33,6 +56,8 @@ export interface SignInReasons {
   /** Argo CD refused the login typed or remembered earlier. */
   savedRefused?: boolean;
   adminRefused?: boolean;
+  /** Argo CD refused the API token of every Secret labelled `app.kubernetes.io/part-of=argocd`. */
+  tokenRefused?: boolean;
 }
 
 /** The notes above the sign-in, as text keys. */
@@ -41,6 +66,7 @@ export function signInNotes(server: ArgoServer, reasons: SignInReasons): string[
   if (reasons.expired) notes.push("login.expired");
   if (reasons.savedRefused) notes.push("login.refused.saved");
   if (reasons.adminRefused) notes.push("login.refused.adminSecret");
+  if (reasons.tokenRefused) notes.push("login.refused.tokenSecret");
   if (server.insecure) notes.push("login.insecure");
   if (!server.options.localUsers) notes.push("login.noLocalUsers");
   if (server.options.sso) notes.push("login.sso");
@@ -82,9 +108,8 @@ export async function passwordSignIn(sextant: Sextant, server: ArgoServer): Prom
     if (isSextantError(err, "unauthorized")) return "none";
     return failureOf(null, err);
   }
-  const kind = answerKind(answer.status);
-  if (kind === "ok") return "ok";
-  if (kind === "unauthorized" || kind === "forbidden") return "refused";
+  if (answerKind(answer.status) === "ok") return "ok";
+  if (isRefused(answer)) return "refused";
   return failureOf(answer);
 }
 
@@ -94,6 +119,7 @@ export async function signOut(sextant: Sextant, server: ArgoServer): Promise<voi
     await sextant.service.forget({ clusterId: server.clusterId, namespace: server.namespace, service: serviceOf(server, mode) }).catch(() => undefined);
   }
   await sextant.storage.remove(sessionKey(server.clusterId, server.namespace)).catch(() => undefined);
+  await sextant.storage.remove(tokenSecretKey(server.clusterId, server.namespace)).catch(() => undefined);
 }
 
 export function startDiff(sextant: Sextant, root: HTMLElement, app: ObjectRef): () => void {
@@ -103,9 +129,9 @@ export function startDiff(sextant: Sextant, root: HTMLElement, app: ObjectRef): 
   /** A diff was read in this window: a later 401 means the session expired. */
   let hadSession = false;
   /** The way of signing in that worked in this window; a session first otherwise. */
-  let mode: SignInMode | null = null;
+  let mode: Using | null = null;
   /** What is tried by itself, each once per window (and none after signing out). */
-  const tried = { password: false, token: false, admin: false };
+  const tried = { password: false, token: false, admin: false, tokenSecrets: false };
   const show = (...nodes: (Node | null)[]) => {
     if (!closed) root.replaceChildren(...nodes.filter((n): n is Node => n !== null));
   };
@@ -157,6 +183,7 @@ export function startDiff(sextant: Sextant, root: HTMLElement, app: ObjectRef): 
     const kind = answerKind(answer.status);
     if (kind === "unauthorized") {
       mode = null;
+      if (typeof using !== "string") return signIn(server, current, { ...reasons, tokenRefused: true });
       if (using === "token") return signIn(server, current, { ...reasons, savedRefused: true });
       return signIn(server, current, { ...reasons, expired: hadSession });
     }
@@ -195,18 +222,49 @@ export function startDiff(sextant: Sextant, root: HTMLElement, app: ObjectRef): 
       try {
         const answer = await sextant.service.request(adminSignIn(server));
         if (!current()) return;
-        const kind = answerKind(answer.status);
-        if (kind === "ok") {
+        if (answerKind(answer.status) === "ok") {
           await remember("secret");
           return readDiff(server, current, reasons);
         }
-        if (kind === "unauthorized" || kind === "forbidden") reasons = { ...reasons, adminRefused: true };
+        // Refused now, or earlier in this run (Sextant did not send the same password again).
+        if (isRefused(answer)) reasons = { ...reasons, adminRefused: true };
         else return fail(failureOf(answer));
       } catch (err) {
         if (!current()) return;
         // `notFound`: no such Secret or key (the admin password was changed and the Secret deleted).
         if (!isSextantError(err, "notFound")) return fail(failureOf(null, err));
       }
+    }
+    // The API token of each Secret labelled app.kubernetes.io/part-of=argocd, by name, sent by Sextant as the bearer;
+    // Argo CD's `userinfo` says whether it accepts it.
+    if (!tried.tokenSecrets) {
+      tried.tokenSecrets = true;
+      const names = await tokenSecrets(sextant, server);
+      if (!current()) return;
+      const last = names.length > 0 ? await sextant.storage.get(tokenSecretKey(server.clusterId, server.namespace)).catch(() => null) : null;
+      let refused = false;
+      for (const name of tokenOrder(names, last)) {
+        const using: Using = { secret: name };
+        let answer: ServiceAnswer;
+        try {
+          answer = await sextant.service.request(userInfo(server, using));
+        } catch (err) {
+          if (!current()) return;
+          // The Secret or its key is gone since it was listed: the next one.
+          if (isSextantError(err, "notFound")) continue;
+          return fail(failureOf(null, err));
+        }
+        if (!current()) return;
+        if (answerKind(answer.status) === "ok" && userOf(answer.body) !== null) {
+          mode = using;
+          await sextant.storage.set(tokenSecretKey(server.clusterId, server.namespace), name).catch(() => undefined);
+          return readDiff(server, current, reasons);
+        }
+        // `loggedIn: false`: Argo CD does not accept the token.
+        if (answerKind(answer.status) === "ok" || isRefused(answer)) refused = true;
+        else return fail(failureOf(answer));
+      }
+      if (refused) reasons = { ...reasons, tokenRefused: true };
     }
     show(title, signInChoice(server, reasons));
   };
@@ -267,9 +325,8 @@ export function startDiff(sextant: Sextant, root: HTMLElement, app: ObjectRef): 
       }
       const answer = await sextant.service.request(managedResourcesRequest(server, app, "token"));
       if (!current()) return;
-      const kind = answerKind(answer.status);
-      if (kind === "unauthorized") return again({ key: "login.errors.invalidToken", detail: null });
-      if (kind !== "ok") return again(failureOf(answer));
+      if (answer.notSent === true || answerKind(answer.status) === "unauthorized") return again({ key: "login.errors.invalidToken", detail: null });
+      if (answerKind(answer.status) !== "ok") return again(failureOf(answer));
       mode = "token";
       hadSession = true;
       const bar = await sessionBar(server, "token");
@@ -279,7 +336,7 @@ export function startDiff(sextant: Sextant, root: HTMLElement, app: ObjectRef): 
     }
   };
 
-  const sessionBar = async (server: ArgoServer, using: SignInMode): Promise<HTMLElement> => {
+  const sessionBar = async (server: ArgoServer, using: Using): Promise<HTMLElement> => {
     let user: string | null = null;
     try {
       const answer = await sextant.service.request(userInfo(server, using));
@@ -287,15 +344,15 @@ export function startDiff(sextant: Sextant, root: HTMLElement, app: ObjectRef): 
     } catch {
       // Who is signed in is only shown; the diff is there anyway.
     }
-    const source = using === "password" ? await sextant.storage.get(sessionKey(server.clusterId, server.namespace)).catch(() => null) : null;
+    const stored = using === "password" ? await sextant.storage.get(sessionKey(server.clusterId, server.namespace)).catch(() => null) : null;
     const who = user ? t("diff.signedInAs", { user }) : t("diff.signedIn");
-    const text = source === "secret" ? `${who} · ${t("diff.source.secret")}` : who;
+    const text = `${who} · ${sourceText(using, stored)}`;
     const leave = async () => {
       ++request;
       await signOut(sextant, server);
       hadSession = false;
       mode = null;
-      tried.password = tried.token = tried.admin = true;
+      tried.password = tried.token = tried.admin = tried.tokenSecrets = true;
       show(title, signInChoice(server, {}));
     };
     return element(

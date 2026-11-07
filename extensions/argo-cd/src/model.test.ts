@@ -10,7 +10,7 @@ import podJson from "../fixtures/pod.json";
 import replicaSetJson from "../fixtures/replicaset.json";
 import serviceJson from "../fixtures/service.json";
 import manifest from "../sextant-extension.json";
-import { refreshAll, runningForward, uiPath } from "./actions";
+import { runningForward, uiPath } from "./actions";
 import {
   APPLICATION,
   RUNNING,
@@ -32,7 +32,8 @@ import {
   type ManagedResource,
 } from "./argo";
 import { diffLines, diffRows, parseManagedResources, sideBySide, sidesOf, stateOf, yamlOf, type ArgoResource } from "./diffModel";
-import { failureOf, signInNotes } from "./diff";
+import { failureOf, signInNotes, sourceText, tokenOrder } from "./diff";
+import { setLanguage, t } from "./i18n";
 import { computedHealth, liveState, namespacesFor, type LiveList } from "./tree";
 import {
   ADMIN_PASSWORD,
@@ -40,6 +41,7 @@ import {
   answerKind,
   chooseInstallation,
   isInsecure,
+  isRefused,
   loginOptionsOf,
   managedResourcesRequest,
   serviceOf,
@@ -115,23 +117,23 @@ describe("the patches", () => {
     });
   });
 
-  it("refreshes every selected Application under one confirmation per 50, stopping at the first failure", async () => {
-    const calls: { items: unknown[] }[] = [];
-    let fail = false;
-    const sextant = {
-      resources: {
-        patchMany: async (p: { items: unknown[] }) => {
-          calls.push(p);
-          return fail ? { items: [{ error: { code: "conflict", message: "changed" } }], sent: 1 } : { items: p.items.map(() => ({ object: {} })), sent: p.items.length };
-        },
-      },
-    } as never;
-    const refs: ObjectRef[] = Array.from({ length: 51 }, (_, i) => ({ kind: APPLICATION, namespace: "argocd", name: `app-${i}` }));
-    await refreshAll(sextant, refs, "hard");
-    expect(calls.map((c) => c.items.length)).toEqual([50, 1]);
-    expect(calls[0]!.items[0]).toEqual(patchCall(refs[0]!, refreshPatch("hard")));
-    fail = true;
-    await expect(refreshAll(sextant, refs.slice(0, 2), "normal")).rejects.toThrow("changed");
+  it("Refresh and Hard refresh are the manifest's fixed patches, sent by Sextant without a window or a question", () => {
+    const actions = manifest.contributes.actions as { id: string; patch?: unknown; ask?: unknown; done?: unknown; multiple?: boolean; placement?: string }[];
+    const refresh = actions.find((a) => a.id === "refresh")!;
+    const hard = actions.find((a) => a.id === "hard-refresh")!;
+    expect(refresh.patch).toEqual(refreshPatch("normal"));
+    expect(hard.patch).toEqual(refreshPatch("hard"));
+    // One click, as the built-in view: no question of Sextant's, no notice; on several Applications at once.
+    for (const action of [refresh, hard]) {
+      expect(action.ask).toBeUndefined();
+      expect(action.done).toBeUndefined();
+      expect(action.multiple).toBe(true);
+    }
+    expect(refresh.placement).toBe("primary");
+    // The Sync and Terminate windows are the questions: the Modify rule does not confirm again.
+    const modify = manifest.permissions.rules.find((r) => r.actions.includes("modify"))!;
+    expect(modify.confirm).toBe(false);
+    expect(actions.filter((a) => a.patch !== undefined).map((a) => a.id)).toEqual(["refresh", "hard-refresh"]);
   });
 });
 
@@ -214,12 +216,14 @@ describe("the requests to Argo CD's API", () => {
       ["argocd-server-token", "app.kubernetes.io/name=argocd-server", "https", "https"],
       ["argocd-server-token-http", "app.kubernetes.io/name=argocd-server", "http", "http"],
     ]);
-    // Only the password services receive the admin Secret's key; each asks for its own sign-in in Sextant's dialog.
+    // The password services receive the admin Secret's key, the token services the `token` of every Secret labelled
+    // app.kubernetes.io/part-of=argocd; each asks for its own sign-in in Sextant's dialog.
+    const tokens = [{ labelSelector: "app.kubernetes.io/part-of=argocd", key: "token" }];
     expect(services.map((s) => ("secrets" in s ? s.secrets : []))).toEqual([
       [{ name: "argocd-initial-admin-secret", key: "password" }],
       [{ name: "argocd-initial-admin-secret", key: "password" }],
-      [],
-      [],
+      tokens,
+      tokens,
     ]);
     expect(services.map((s) => s.signIn.fields.map((f) => f.id))).toEqual([["username", "password"], ["username", "password"], ["token"], ["token"]]);
     expect(serviceOf(server(), "token")).toBe("argocd-server-token");
@@ -252,6 +256,12 @@ describe("the requests to Argo CD's API", () => {
     });
     expect(userInfo(server())).toMatchObject({ method: "GET", path: "/api/v1/session/userinfo", auth: "session" });
     expect(userInfo(server(), "token")).toMatchObject({ service: "argocd-server-token", auth: "signIn:token" });
+    // An API token Secret's key goes as the bearer, through the token service (HTTP when the server has no TLS).
+    expect(userInfo(server(), { secret: "ci-token" })).toMatchObject({ service: "argocd-server-token", auth: "secret:ci-token/token" });
+    expect(managedResourcesRequest(server(true), { namespace: "argocd", name: "guestbook" }, { secret: "ci-token" })).toMatchObject({
+      service: "argocd-server-token-http",
+      auth: "secret:ci-token/token",
+    });
     expect(userOf({ loggedIn: true, username: "admin" })).toBe("admin");
     expect(userOf({})).toBeNull();
   });
@@ -267,6 +277,27 @@ describe("the requests to Argo CD's API", () => {
       key: "diff.errors.forbidden",
       detail: "permission denied",
     });
+    // A refusal: Argo CD's own, or Sextant's for credentials Argo CD refused earlier in this run.
+    expect(isRefused({ status: 401, body: {} })).toBe(true);
+    expect(isRefused({ status: 403, body: {} })).toBe(true);
+    expect(isRefused({ status: 401, body: { message: "refused before" }, notSent: true })).toBe(true);
+    expect(isRefused({ status: 503, body: {} })).toBe(false);
+    expect(isRefused({ status: 200, body: {} })).toBe(false);
+  });
+
+  it("tries the token Secret that signed in last first, then the others by name", () => {
+    expect(tokenOrder(["a", "b", "c"], null)).toEqual(["a", "b", "c"]);
+    expect(tokenOrder(["a", "b", "c"], "b")).toEqual(["b", "a", "c"]);
+    expect(tokenOrder(["a", "c"], "gone")).toEqual(["a", "c"]);
+  });
+
+  it("says how the window signed in, as the built-in session bar did", () => {
+    setLanguage("en");
+    expect(sourceText("password", "secret")).toBe(t("diff.source.secret"));
+    expect(sourceText("password", "signIn")).toBe(t("diff.source.signIn"));
+    expect(sourceText("password", null)).toBe(t("diff.source.signIn"));
+    expect(sourceText("token", "secret")).toBe(t("diff.source.signIn"));
+    expect(sourceText({ secret: "ci-token" }, "secret")).toBe("with the API token from Secret ci-token");
   });
 
   it("finds the installation, never choosing between several by itself", () => {
@@ -291,7 +322,11 @@ describe("the requests to Argo CD's API", () => {
       "login.noLocalUsers",
       "login.sso",
     ]);
-    expect(signInNotes(server(), { savedRefused: true, adminRefused: true })).toEqual(["login.refused.saved", "login.refused.adminSecret"]);
+    expect(signInNotes(server(), { savedRefused: true, adminRefused: true, tokenRefused: true })).toEqual([
+      "login.refused.saved",
+      "login.refused.adminSecret",
+      "login.refused.tokenSecret",
+    ]);
   });
 
   it("opens the UI on the Application's page through a forward of its UI port", () => {

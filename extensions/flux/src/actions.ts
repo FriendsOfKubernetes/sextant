@@ -1,17 +1,14 @@
-// The windows of the extension's actions (the manifest's `contributes.actions`). Each shows the objects it runs on and
-// the merge patch it sends, and sends it once the user presses its button: every object in one
-// `resources.patchMany` call, so Sextant asks for one confirmation listing them all, then sends them in order, each
-// once. Nothing is sent from opening a window. A failure stops before the next object and says which object failed.
-//
-// - `reconcile`: `metadata.annotations["reconcile.fluxcd.io/requestedAt"]` = now, on every selected object;
-// - `reconcile-with-source`: the same on the source of a Kustomization or HelmRelease (and a HelmRelease's HelmChart),
-//   then on the object;
-// - `suspend`: `spec.suspend: true`, after the built-in view's question;
-// - `resume`: `spec.suspend: false` on every selected object.
+// The one action of the extension that has a window (the manifest's `contributes.actions`): Reconcile with source. It
+// reads the object to find its source, so it cannot be a patch fixed in the manifest as Reconcile now, Suspend and
+// Resume are (Sextant sends those itself). Like the built-in view's action it is one click: the window sends at once,
+// `metadata.annotations["reconcile.fluxcd.io/requestedAt"]` = now on the source of a Kustomization or HelmRelease (and a
+// HelmRelease's HelmChart), then on the object, every object in one `resources.patchMany` call, shows that it is
+// waiting, and closes itself once they are sent. A failure stops before the next object, says which object failed and
+// offers to send again.
 import { isSextantError, SextantError, ui, type ObjectRef, type Sextant } from "@sextant/extension-sdk";
 import { element, errorBox, errorText } from "./dom";
-import { reconcilePatch, refInput, REQUESTED_AT_ANNOTATION, suspendPatch, withSourceOrder, type FluxRef } from "./flux";
-import { i18n, t } from "./i18n";
+import { reconcilePatch, refInput, withSourceOrder, type FluxRef } from "./flux";
+import { t } from "./i18n";
 
 const fluxRefOf = (ref: ObjectRef): FluxRef => ({
   group: ref.kind.group,
@@ -27,7 +24,7 @@ export interface Step {
   patch: () => Record<string, unknown>;
 }
 
-/** Items one `resources.patchMany` takes at most; more steps go in further calls, each confirmed. */
+/** Items one `resources.patchMany` takes at most; more steps go in further calls. */
 export const MAX_BATCH = 50;
 
 /** What a failed step says: a conflict, or the cluster's message, with the object. */
@@ -37,8 +34,8 @@ function stepError(step: Step, err: unknown): string {
 }
 
 /**
- * Sends the steps in order, each once, under one decision and confirmation per call of up to `MAX_BATCH`. Sextant's
- * or the user's refusal sends nothing; the first failed object stops the rest.
+ * Sends the steps in order, each once, under one decision per call of up to `MAX_BATCH`. Sextant's or the user's
+ * refusal sends nothing; the first failed object stops the rest.
  */
 export async function sendSteps(sextant: Sextant, steps: readonly Step[]): Promise<void> {
   for (let start = 0; start < steps.length; start += MAX_BATCH) {
@@ -60,61 +57,42 @@ export async function sendSteps(sextant: Sextant, steps: readonly Step[]): Promi
   }
 }
 
-/** The window: the intro, the objects, the patch folded, and Cancel / the action's button. */
-export function actionWindow(
-  sextant: Sextant,
-  root: HTMLElement,
-  parts: { intro: Node[]; steps: Step[]; label: string; notice: string },
-): void {
+/**
+ * The window: the intro and the objects, sent at once; it closes itself once they are sent, and on a failure says why
+ * and offers to send again.
+ */
+export function sendingWindow(sextant: Sextant, root: HTMLElement, parts: { intro: Node[]; steps: Step[] }): void {
   const status = element("span", { className: "change-status" });
   status.setAttribute("role", "status");
-  const show = (text: string, tone: "muted" | "success" | "danger") => {
+  const show = (text: string, tone: "muted" | "danger") => {
     status.className = `change-status sx-status sx-status--${tone}`;
     status.textContent = text;
   };
-  const cancel = ui.button(t("change.cancel"), () => void sextant.ui.close().catch(() => undefined));
-  const send = ui.button(
-    parts.label,
-    async () => {
-      send.disabled = true;
-      show(t("change.waiting"), "muted");
-      try {
-        await sendSteps(sextant, parts.steps);
-        show(t("change.done"), "success");
-        await sextant.ui.notify(parts.notice).catch(() => undefined);
-        await sextant.ui.close().catch(() => undefined);
-      } catch (err) {
-        show(err instanceof Error ? err.message : String(err), "danger");
-      } finally {
-        send.disabled = false;
-      }
-    },
-    { variant: "primary" },
-  );
+  const retry = ui.button(t("related.retry"), () => void send(), { variant: "primary" });
+  retry.hidden = true;
+  const send = async () => {
+    retry.hidden = true;
+    show(t("change.waiting"), "muted");
+    try {
+      await sendSteps(sextant, parts.steps);
+      await sextant.ui.close().catch(() => undefined);
+    } catch (err) {
+      show(err instanceof Error ? err.message : String(err), "danger");
+      retry.hidden = false;
+    }
+  };
   const refs = parts.steps.map((s) => s.ref);
   const objects = ui.table(
     [t("related.kind"), t("related.name"), t("related.namespace")],
     refs.map((r) => [r.kind, r.name, r.namespace ?? ""]),
   );
-  const example = parts.steps[0]?.patch();
-  const preview = ui.block(t("change.preview"), ui.pre(JSON.stringify(example ?? null, null, 2)), { collapsible: true, collapsed: true });
-  root.replaceChildren(...parts.intro, objects, preview, element("div", { className: "actions" }, status, cancel, send));
+  root.replaceChildren(...parts.intro, objects, element("div", { className: "actions" }, status, retry));
+  void send();
 }
-
-const names = (refs: readonly FluxRef[]) => i18n().formatList(refs.map((r) => `${r.kind} ${r.name}`));
 
 type Opener = (sextant: Sextant, root: HTMLElement, refs: FluxRef[], selection: ObjectRef[]) => void | Promise<void>;
 
 export const ACTIONS: Record<string, Opener> = {
-  reconcile(sextant, root, refs) {
-    actionWindow(sextant, root, {
-      intro: [element("p", { textContent: t("reconcile.intro", { annotation: REQUESTED_AT_ANNOTATION }) })],
-      steps: refs.map((ref) => ({ ref, patch: () => reconcilePatch(new Date()) })),
-      label: t("actions.reconcile"),
-      notice: t("notice.reconcile", { names: names(refs) }),
-    });
-  },
-
   async "reconcile-with-source"(sextant, root, refs, selection) {
     const self = refs[0]!;
     const obj = await sextant.resources.get({ ref: selection[0]! });
@@ -123,37 +101,15 @@ export const ACTIONS: Record<string, Opener> = {
       root.replaceChildren(ui.empty(t("reconcileWithSource.noSource", { kind: self.kind, name: self.name })));
       return;
     }
-    actionWindow(sextant, root, {
+    sendingWindow(sextant, root, {
       intro: [element("p", { textContent: t("reconcileWithSource.intro", { kind: self.kind, name: self.name }) })],
       steps: order.map((ref) => ({ ref, patch: () => reconcilePatch(new Date()) })),
-      label: t("actions.reconcileWithSource"),
-      notice: t("notice.reconcile", { names: names(order) }),
-    });
-  },
-
-  suspend(sextant, root, refs) {
-    const ref = refs[0]!;
-    const what = { kind: ref.kind, name: ref.name };
-    actionWindow(sextant, root, {
-      intro: [element("h2", { textContent: t("suspend.title", what) }), element("p", { textContent: t("suspend.text", what) })],
-      steps: [{ ref, patch: () => suspendPatch(true) }],
-      label: t("suspend.confirm"),
-      notice: t("notice.suspend", what),
-    });
-  },
-
-  resume(sextant, root, refs) {
-    actionWindow(sextant, root, {
-      intro: [element("p", { textContent: t("resume.intro") })],
-      steps: refs.map((ref) => ({ ref, patch: () => suspendPatch(false) })),
-      label: t("actions.resume"),
-      notice: t("notice.resume", { names: names(refs) }),
     });
   },
 };
 
 /** The actions that run on one object only (the manifest does not mark them `multiple`). */
-const SINGLE = new Set(["reconcile-with-source", "suspend"]);
+const SINGLE = new Set(["reconcile-with-source"]);
 
 /** Starts the window of the action `contribution` on the objects in the context. */
 export function startAction(sextant: Sextant, root: HTMLElement, contribution: string): () => void {

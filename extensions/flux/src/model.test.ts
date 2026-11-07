@@ -29,7 +29,6 @@ import {
   SOURCE_KIND_PATHS,
   SOURCE_NAME_PATHS,
   sourceRefOf,
-  suspendPatch,
   usesSource,
   withSourceOrder,
 } from "./flux";
@@ -50,6 +49,7 @@ const host = (await import(/* @vite-ignore */ rulesPath)) as {
   evaluate: (condition: unknown, obj: KubeObject) => Verdict;
   valueAt: (obj: unknown, path: string) => unknown;
   detectRule: (rule: unknown, obj: KubeObject) => Detected[];
+  fillTemplate: (template: string, obj: KubeObject) => string | null;
 };
 
 type Column = (typeof manifest.contributes.columns)[number] & {
@@ -63,9 +63,16 @@ const columns = manifest.contributes.columns as Column[];
 const columnOf = (obj: KubeObject, name: string) =>
   columns.find((c) => c.id === `${name}-${obj.kind!.toLowerCase()}` && c.kind.group === groupOf(obj.apiVersion));
 
-/** A computed cell's text as the window draws it (`cellOf` in src/extensions/columns.tsx): the first case, else the first path. */
+/**
+ * A computed cell's text as the window draws it (`cellOf` in src/extensions/columns.tsx): the first case that holds
+ * and whose placeholders all have a value, filled; else the first path.
+ */
 function cell(column: Column, obj: KubeObject): string | undefined {
-  for (const c of column.cases ?? []) if (host.evaluate(c.when, obj).holds) return c.text;
+  for (const c of column.cases ?? []) {
+    if (!host.evaluate(c.when, obj).holds) continue;
+    const filled = host.fillTemplate(c.text, obj);
+    if (filled !== null) return filled;
+  }
   for (const path of column.paths ?? []) {
     const value = host.valueAt(obj, path);
     if (value !== undefined && value !== null) return String(value);
@@ -118,7 +125,7 @@ const TITLES: Record<string, string> = { source: "Source", ready: "Ready", statu
 
 describe("the columns", () => {
   it("are, after Namespace, Source (Kustomization, HelmRelease), Ready, Status, Revision, Suspended, by column id", () => {
-    expect(columns.length).toBeLessThanOrEqual(50);
+    expect(columns.length).toBeLessThanOrEqual(100);
     for (const kind of FLUX_KINDS) {
       const own = columns.filter((c) => c.kind.group === kind.group && c.kind.kind === kind.kind);
       const expected = [
@@ -200,16 +207,47 @@ describe("the columns", () => {
     }
   });
 
-  it("Source names the source, its kind in the tooltip", () => {
-    for (const name of ["kustomization", "helmrelease"]) {
-      const obj = fixture(name);
+  it("Source shows Kind/name, or Kind/namespace/name of a source in another namespace, as the built-in table did", () => {
+    /** The built-in column's text (`sourceText` in src/features/flux/columns.tsx). */
+    const builtInSource = (obj: KubeObject) => {
+      const ref = sourceRefOf(obj);
+      if (!ref) return undefined;
+      const ns = ref.namespace && ref.namespace !== obj.metadata.namespace ? `${ref.namespace}/` : "";
+      return `${ref.kind}/${ns}${ref.name}`;
+    };
+    const kustomization = fixture("kustomization");
+    const release = fixture("helmrelease");
+    const chart = (release.spec as { chart: { spec: Record<string, unknown> } }).chart;
+    const variants: KubeObject[] = [
+      kustomization,
+      release,
+      { ...kustomization, spec: { ...kustomization.spec, sourceRef: { kind: "GitRepository", name: "fleet", namespace: "flux-system" } } },
+      { ...kustomization, spec: { ...kustomization.spec, sourceRef: { kind: "GitRepository", name: "own", namespace: "sextant-flux" } } },
+      { ...kustomization, spec: { ...kustomization.spec, sourceRef: { kind: "OCIRepository", name: "blank", namespace: "" } } },
+      { ...release, spec: { ...release.spec, chart: { spec: { ...chart.spec, sourceRef: { kind: "HelmRepository", name: "charts", namespace: "infra" } } } } },
+      { ...release, spec: { chartRef: { kind: "OCIRepository", name: "podinfo-oci" } } },
+      { ...release, spec: { chartRef: { kind: "OCIRepository", name: "podinfo-oci", namespace: "oci" } } },
+    ] as KubeObject[];
+    for (const obj of variants) {
       const column = columnOf(obj, "source")!;
       expect(column.paths).toEqual([...SOURCE_NAME_PATHS]);
       expect(column.tooltipPaths).toEqual([...SOURCE_KIND_PATHS]);
-      expect(cell(column, obj)).toBe(sourceRefOf(obj)?.name);
+      expect(column.cases!.length).toBeLessThanOrEqual(10);
+      expect(cell(column, obj), JSON.stringify(obj.spec)).toBe(builtInSource(obj));
     }
-    const chartRef = { ...fixture("helmrelease"), spec: { chartRef: { kind: "OCIRepository", name: "podinfo-oci" } } } as KubeObject;
-    expect(cell(columnOf(chartRef, "source")!, chartRef)).toBe("podinfo-oci");
+    expect(variants.map((obj) => cell(columnOf(obj, "source")!, obj))).toEqual([
+      "GitRepository/podinfo",
+      "HelmRepository/podinfo",
+      "GitRepository/flux-system/fleet",
+      "GitRepository/own",
+      "OCIRepository/blank",
+      "HelmRepository/infra/charts",
+      "OCIRepository/podinfo-oci",
+      "OCIRepository/oci/podinfo-oci",
+    ]);
+    // Without a kind no case holds (Flux requires one): the name alone.
+    const noKind = { ...kustomization, spec: { sourceRef: { name: "podinfo" } } } as KubeObject;
+    expect(cell(columnOf(noKind, "source")!, noKind)).toBe("podinfo");
   });
 });
 
@@ -219,15 +257,12 @@ function withReady(obj: KubeObject, change: Record<string, string>): KubeObject 
   return { ...obj, status: { ...obj.status, conditions } };
 }
 
-/** A placeholder's value as a problem message shows it: at most 100 characters (`MAX_VALUE_CHARS`). */
-const clipped = (text = "") => (Array.from(text).length > 100 ? `${Array.from(text).slice(0, 100).join("")}…` : text);
-
 /** What Sextant's built-in rule (`fluxProblems` in src/features/problems/model.ts) said of an object. */
-function builtIn(obj: KubeObject): { reason: string } | null {
+function builtIn(obj: KubeObject): { reason: string; message: string | undefined } | null {
   if (isSuspended(obj) || readyStatus(obj) !== "False") return null;
   const reason = readyReason(obj);
   if ((IN_PROGRESS_REASONS as readonly string[]).includes(reason ?? "")) return null;
-  return { reason: reason ?? "NotReady" };
+  return { reason: reason ?? "NotReady", message: readyMessage(obj) };
 }
 
 describe("the problem rules", () => {
@@ -241,6 +276,9 @@ describe("the problem rules", () => {
       expect(rule.notify).toBe(true);
       expect(rule.group).toBe("not-ready");
       expect(rule.since).toBe('.status.conditions[type="Ready"].lastTransitionTime');
+      // Flux's own reason and message, as the built-in rule told them.
+      expect(rule.reason).toBe('{{.status.conditions[type="Ready"].reason}}');
+      expect(rule.message).toBe('{{.status.conditions[type="Ready"].message}}');
     }
   });
 
@@ -252,7 +290,7 @@ describe("the problem rules", () => {
     ...IN_PROGRESS_REASONS.map((reason): [string, KubeObject] => [`False with ${reason}`, withReady(obj, { status: "False", reason })]),
   ];
 
-  it("find what the built-in rule found, since the Ready condition's last transition", () => {
+  it("find what the built-in rule found, with its reason and message, since the Ready condition's last transition", () => {
     for (const obj of ALL) {
       const rule = ruleOf(obj);
       if (!rule) continue;
@@ -264,9 +302,9 @@ describe("the problem rules", () => {
         const ready = (variant.status?.conditions as Record<string, string>[]).find((c) => c.type === "Ready")!;
         expect(found[0]!.since).toBe(ready.lastTransitionTime);
         expect(found[0]!.graceMs).toBe(2 * 60_000);
-        expect(found[0]!.reason).toBe(`${obj.kind} not ready`);
+        expect(found[0]!.reason).toBe(expected.reason);
         expect(found[0]!.group).toBe("not-ready");
-        expect(found[0]!.message).toBe(`${expected.reason}: ${clipped(readyMessage(variant))}`);
+        expect(found[0]!.message).toBe(expected.message ?? "");
       }
     }
   });
@@ -274,10 +312,11 @@ describe("the problem rules", () => {
   it("tell the failing Bucket of the fixtures", () => {
     const bucket = fixture("bucket");
     const found = host.detectRule(ruleOf(bucket), bucket);
-    expect(builtIn(bucket)).toEqual({ reason: "BucketOperationFailed" });
+    expect(builtIn(bucket)).toEqual({ reason: "BucketOperationFailed", message: readyMessage(bucket) });
     expect(found).toHaveLength(1);
-    // The Ready condition's reason and message (its first 100 characters), though Reconciling comes first in the list.
-    expect(found[0]!.message).toBe(`BucketOperationFailed: ${clipped(readyMessage(bucket))}`);
+    // The Ready condition's reason and its whole message, though Reconciling comes first in the list.
+    expect(found[0]!.reason).toBe("BucketOperationFailed");
+    expect(found[0]!.message).toBe(readyMessage(bucket));
     expect(found[0]!.message).toContain("failed to confirm existence of 'assets' bucket");
   });
 });
@@ -306,13 +345,27 @@ describe("the actions", () => {
     expect(holds("reconcile-with-source", { ...kustomization, spec: {} })).toBe(false);
   });
 
-  it("send the built-in view's merge patches", () => {
+  it("send the built-in view's merge patches: Reconcile now, Suspend and Resume fixed in the manifest, sent by Sextant", () => {
+    type Fixed = { patch?: unknown; ask?: { title: string; text: string; confirm: string }; done?: string };
+    const fixed = (id: string) => action(id) as Fixed;
+    expect(REQUESTED_AT_ANNOTATION).toBe("reconcile.fluxcd.io/requestedAt");
+    // Sextant fills `{{now}}` with the time it sends the patch, as Reconcile with source's window does.
+    expect(fixed("reconcile").patch).toEqual({ metadata: { annotations: { [REQUESTED_AT_ANNOTATION]: "{{now}}" } } });
     expect(reconcilePatch(new Date("2026-11-06T10:00:00Z"))).toEqual({
       metadata: { annotations: { [REQUESTED_AT_ANNOTATION]: "2026-11-06T10:00:00.000Z" } },
     });
-    expect(REQUESTED_AT_ANNOTATION).toBe("reconcile.fluxcd.io/requestedAt");
-    expect(suspendPatch(true)).toEqual({ spec: { suspend: true } });
-    expect(suspendPatch(false)).toEqual({ spec: { suspend: false } });
+    expect(fixed("suspend").patch).toEqual({ spec: { suspend: true } });
+    expect(fixed("resume").patch).toEqual({ spec: { suspend: false } });
+    // Reconcile with source reads the object to find its source: it keeps its window.
+    expect(fixed("reconcile-with-source").patch).toBeUndefined();
+    // Only Suspend asks, with the built-in view's question; none says anything after, as the built-in ones did.
+    expect(fixed("suspend").ask).toEqual({
+      title: "Suspend this object?",
+      text: "Flux stops reconciling it until it is resumed: changes in Git or in the cluster are not applied or corrected meanwhile.",
+      confirm: "Suspend",
+    });
+    for (const id of ["reconcile", "reconcile-with-source", "resume"]) expect(fixed(id).ask, id).toBeUndefined();
+    for (const a of actions) expect((a as Fixed).done, a.id).toBeUndefined();
   });
 
   it("reconcile a Kustomization's source first, a HelmRelease's repository and HelmChart first", () => {
@@ -361,13 +414,14 @@ describe("relations", () => {
     expect(LABELLED_KINDS).toHaveLength(11);
   });
 
-  it("are readable: the manifest grants Read on the Flux kinds and the labelled kinds, Modify on the Flux kinds", () => {
+  it("are readable: the manifest grants Read on the Flux kinds and the labelled kinds, Modify on the Flux kinds unconfirmed", () => {
     const [read, modify] = manifest.permissions.rules;
     const kinds = (rule: typeof read) => (rule!.kinds as { kinds: { group: string; kind: string }[] }).kinds.map((k) => `${k.group}/${k.kind}`);
     expect(kinds(read)).toEqual([...FLUX_KINDS, ...LABELLED_KINDS].map((k) => `${k.group}/${k.kind}`));
     expect(read!.actions).toEqual(["read"]);
     expect(kinds(modify)).toEqual(FLUX_KINDS.map((k) => `${k.group}/${k.kind}`));
     expect(modify!.actions).toEqual(["modify"]);
-    expect(modify!.confirm).toBe(true);
+    // The questions are Sextant's `ask` of Suspend and nothing else, as in the built-in view: no confirmation on top.
+    expect(modify!.confirm).toBe(false);
   });
 });

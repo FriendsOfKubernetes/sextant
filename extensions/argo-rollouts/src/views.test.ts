@@ -1,5 +1,5 @@
 // The details sections and the action windows, driven through the SDK's stand-in for Sextant's window.
-import { type KubeObject, type WatchParams } from "@sextant/extension-sdk";
+import { SextantError, type KubeObject, type WatchParams } from "@sextant/extension-sdk";
 import { startTestHost, type TestHost, type TestHostOptions } from "@sextant/extension-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import abortedJson from "../fixtures/rollout-aborted.json";
@@ -251,11 +251,57 @@ describe("an action's window", () => {
     await expect.poll(() => root.querySelectorAll("pre").length).toBe(2);
     const confirm = root.querySelector("button.danger") as HTMLButtonElement;
     confirm.click();
-    await expect.poll(() => sent()).toHaveLength(2);
+    await expect.poll(() => host.closedByFrame).toBe(true);
+    // Sextant refused the status item before sending or asking anything; exactly one more call follows (#374).
+    expect(sent()).toHaveLength(2);
     expect(sent()[1]).toEqual({
       method: "resources.patch",
       params: { clusterId: "test-cluster", ref: ref(canary), patch: { status: { abort: true } }, patchType: "merge" },
     });
+  });
+
+  it("on v0.9, a status and a spec patch refused before any question become exactly one unified patch", async () => {
+    const paused = structuredClone(canary);
+    (paused.spec as Record<string, unknown>).paused = true;
+    await start({
+      objects: [paused],
+      context: { view: "action", contribution: "promote", selection: [ref(canary)] },
+      handlers: {
+        // Sextant refuses the whole call before sending or asking anything: the kind has no status subresource.
+        "resources.patchMany": () => {
+          throw new SextantError("notFound", "Rollout has no status subresource in this cluster: patch the object instead");
+        },
+        "resources.patch": () => paused,
+      },
+    });
+    stop = startAction(host.sextant, root, "promote");
+    await expect.poll(() => root.querySelectorAll("pre").length).toBe(3);
+    (root.querySelector("button.primary") as HTMLButtonElement).click();
+    await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(sent().map((c) => c.method)).toEqual(["resources.patchMany", "resources.patch"]);
+    expect((sent()[0]?.params as { items: unknown[] }).items).toHaveLength(2);
+    expect(sent()[1]?.params).toEqual({
+      clusterId: "test-cluster",
+      ref: ref(canary),
+      patch: { spec: { paused: false }, status: { pauseConditions: null } },
+      patchType: "merge",
+    });
+  });
+
+  it("sends no fallback when Sextant refuses the call for another reason", async () => {
+    await start({
+      context: { view: "action", contribution: "abort", selection: [ref(canary)] },
+      handlers: {
+        "resources.patchMany": () => {
+          throw new SextantError("denied", "Sextant denied patching the status");
+        },
+      },
+    });
+    stop = startAction(host.sextant, root, "abort");
+    await expect.poll(() => root.querySelectorAll("pre").length).toBe(2);
+    (root.querySelector("button.danger") as HTMLButtonElement).click();
+    await expect.poll(text).toContain("Sextant denied patching the status");
+    expect(sent().map((c) => c.method)).toEqual(["resources.patchMany"]);
   });
 
   it("says why when a patch fails, and sends no fallback for another error", async () => {

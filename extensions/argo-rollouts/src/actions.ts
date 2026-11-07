@@ -2,8 +2,8 @@
 // Rollout and lists exactly the patches it will send (./patches.ts, as `kubectl argo rollouts` builds them from the
 // Rollout as it is now). On confirm the Rollout is read once more: if the action no longer applies, or the patches
 // would differ from the ones shown, nothing is sent and the window shows why, or the new patches to confirm. Each
-// patch is sent once (ADR-0055); Sextant asks its own confirmation once for all of them (the manifest's `confirm`,
-// `resources.patchMany`).
+// patch is sent once (ADR-0055), all of them in one `resources.patchMany`. The window is the only question: the
+// manifest's Modify rule has `confirm: false`, so Sextant does not ask again, as the built-in view did not.
 import { ui, type KubeObject, type ObjectRef, type Sextant } from "@sextant/extension-sdk";
 import { element, errorText } from "./dom";
 import { t } from "./i18n";

@@ -101,8 +101,10 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
       return { sort: ms, text: undefined, draw: <DurationText ms={ms} /> };
     }
     case "ratio": {
-      const part = numberOf(value);
+      // Kubernetes leaves a zero count out (`readyReplicas`, Argo Rollouts' `currentStepIndex`): with the whole there,
+      // a missing part is 0, as the controllers read it.
       const whole = numberOf(firstValue(obj, column.totalPaths));
+      const part = value === undefined && whole !== undefined ? 0 : numberOf(value);
       if (part === undefined || whole === undefined) return { sort: undefined, text: undefined, draw: null };
       const text = `${part}/${whole}`;
       return { sort: whole === 0 ? 0 : part / whole, text, draw: text };
