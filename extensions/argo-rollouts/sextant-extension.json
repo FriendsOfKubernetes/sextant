@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.argo-rollouts",
   "name": "Argo Rollouts",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Argo Rollouts: rollouts with their steps, weights, ReplicaSets and analysis runs; promote, abort, retry, pause and resume with the exact patches of kubectl argo rollouts, shown first; problems of degraded and aborted rollouts and failed analyses.",
   "author": "Sextant",
   "sextantApi": 4,
@@ -463,7 +463,7 @@
                 {
                   "type": "not",
                   "of": {
-                    "type": "same",
+                    "type": "atLeast",
                     "path": ".status.observedGeneration",
                     "otherPath": ".metadata.generation"
                   }
@@ -664,10 +664,18 @@
         },
         "id": "rollout-weight",
         "title": "Weight",
+        "lookup": {
+          "list": ".spec.strategy.canary.steps",
+          "index": ".status.currentStepIndex",
+          "field": ".setWeight",
+          "nearestBefore": true,
+          "orElse": 0
+        },
         "paths": [
-          ".status.canary.weights.canary.weight"
+          ".spec.strategy.canary.trafficRouting.maxTrafficWeight"
         ],
         "format": "number",
+        "valueText": "{{value}}%",
         "cases": [
           {
             "when": {
@@ -684,8 +692,37 @@
                 }
               ]
             },
-            "text": "0",
-            "tone": "neutral"
+            "text": "0%"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.strategy.canary"
+                },
+                {
+                  "type": "absent",
+                  "path": ".spec.strategy.canary.trafficRouting.maxTrafficWeight"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "absent",
+                      "path": ".spec.strategy.canary.steps[0]"
+                    },
+                    {
+                      "type": "atLeast",
+                      "path": ".status.currentStepIndex",
+                      "otherPath": ".spec.strategy.canary.steps"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "100%"
           }
         ],
         "afterColumn": "rollout-step"
@@ -906,7 +943,7 @@
                   "path": ".metadata.generation"
                 },
                 {
-                  "type": "same",
+                  "type": "atLeast",
                   "path": ".status.observedGeneration",
                   "otherPath": ".metadata.generation"
                 }
@@ -1087,6 +1124,9 @@
       "actions.resume.whyNot": "Rollout не на паузе.",
       "columns.rollout-ready.title": "Готово",
       "columns.rollout-weight.title": "Вес",
+      "columns.rollout-weight.valueText": "{{value}}%",
+      "columns.rollout-weight.cases.0.text": "0%",
+      "columns.rollout-weight.cases.1.text": "100%",
       "columns.rollout-step.title": "Шаг",
       "columns.rollout-strategy.title": "Стратегия",
       "columns.rollout-status.title": "Статус",
@@ -1119,8 +1159,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "uk": {
       "name": "Argo Rollouts",
@@ -1149,6 +1188,9 @@
       "actions.resume.whyNot": "Rollout не на паузі.",
       "columns.rollout-ready.title": "Готово",
       "columns.rollout-weight.title": "Вага",
+      "columns.rollout-weight.valueText": "{{value}}%",
+      "columns.rollout-weight.cases.0.text": "0%",
+      "columns.rollout-weight.cases.1.text": "100%",
       "columns.rollout-step.title": "Крок",
       "columns.rollout-strategy.title": "Стратегія",
       "columns.rollout-status.title": "Статус",
@@ -1181,8 +1223,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "de": {
       "name": "Argo Rollouts",
@@ -1211,6 +1252,9 @@
       "actions.resume.whyNot": "Der Rollout ist nicht pausiert.",
       "columns.rollout-ready.title": "Bereit",
       "columns.rollout-weight.title": "Gewicht",
+      "columns.rollout-weight.valueText": "{{value}} %",
+      "columns.rollout-weight.cases.0.text": "0 %",
+      "columns.rollout-weight.cases.1.text": "100 %",
       "columns.rollout-step.title": "Schritt",
       "columns.rollout-strategy.title": "Strategie",
       "columns.rollout-status.title": "Status",
@@ -1243,8 +1287,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "fr": {
       "name": "Argo Rollouts",
@@ -1273,6 +1316,9 @@
       "actions.resume.whyNot": "Le rollout n'est pas en pause.",
       "columns.rollout-ready.title": "Prêts",
       "columns.rollout-weight.title": "Poids",
+      "columns.rollout-weight.valueText": "{{value}} %",
+      "columns.rollout-weight.cases.0.text": "0 %",
+      "columns.rollout-weight.cases.1.text": "100 %",
       "columns.rollout-step.title": "Étape",
       "columns.rollout-strategy.title": "Stratégie",
       "columns.rollout-status.title": "Statut",
@@ -1305,8 +1351,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "es": {
       "name": "Argo Rollouts",
@@ -1335,6 +1380,9 @@
       "actions.resume.whyNot": "El rollout no está en pausa.",
       "columns.rollout-ready.title": "Listos",
       "columns.rollout-weight.title": "Peso",
+      "columns.rollout-weight.valueText": "{{value}} %",
+      "columns.rollout-weight.cases.0.text": "0 %",
+      "columns.rollout-weight.cases.1.text": "100 %",
       "columns.rollout-step.title": "Paso",
       "columns.rollout-strategy.title": "Estrategia",
       "columns.rollout-status.title": "Estado",
@@ -1367,8 +1415,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "pt-BR": {
       "name": "Argo Rollouts",
@@ -1397,6 +1444,9 @@
       "actions.resume.whyNot": "O rollout não está pausado.",
       "columns.rollout-ready.title": "Prontos",
       "columns.rollout-weight.title": "Peso",
+      "columns.rollout-weight.valueText": "{{value}}%",
+      "columns.rollout-weight.cases.0.text": "0%",
+      "columns.rollout-weight.cases.1.text": "100%",
       "columns.rollout-step.title": "Etapa",
       "columns.rollout-strategy.title": "Estratégia",
       "columns.rollout-status.title": "Status",
@@ -1429,8 +1479,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "it": {
       "name": "Argo Rollouts",
@@ -1459,6 +1508,9 @@
       "actions.resume.whyNot": "Il rollout non è in pausa.",
       "columns.rollout-ready.title": "Pronti",
       "columns.rollout-weight.title": "Peso",
+      "columns.rollout-weight.valueText": "{{value}}%",
+      "columns.rollout-weight.cases.0.text": "0%",
+      "columns.rollout-weight.cases.1.text": "100%",
       "columns.rollout-step.title": "Passo",
       "columns.rollout-strategy.title": "Strategia",
       "columns.rollout-status.title": "Stato",
@@ -1491,8 +1543,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "pl": {
       "name": "Argo Rollouts",
@@ -1521,6 +1572,9 @@
       "actions.resume.whyNot": "Rollout nie jest wstrzymany.",
       "columns.rollout-ready.title": "Gotowe",
       "columns.rollout-weight.title": "Waga",
+      "columns.rollout-weight.valueText": "{{value}}%",
+      "columns.rollout-weight.cases.0.text": "0%",
+      "columns.rollout-weight.cases.1.text": "100%",
       "columns.rollout-step.title": "Krok",
       "columns.rollout-strategy.title": "Strategia",
       "columns.rollout-status.title": "Stan",
@@ -1553,8 +1607,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "tr": {
       "name": "Argo Rollouts",
@@ -1583,6 +1636,9 @@
       "actions.resume.whyNot": "Rollout duraklatılmamış.",
       "columns.rollout-ready.title": "Hazır",
       "columns.rollout-weight.title": "Ağırlık",
+      "columns.rollout-weight.valueText": "%{{value}}",
+      "columns.rollout-weight.cases.0.text": "%0",
+      "columns.rollout-weight.cases.1.text": "%100",
       "columns.rollout-step.title": "Adım",
       "columns.rollout-strategy.title": "Strateji",
       "columns.rollout-status.title": "Durum",
@@ -1615,8 +1671,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "zh-CN": {
       "name": "Argo Rollouts",
@@ -1645,6 +1700,9 @@
       "actions.resume.whyNot": "rollout 未暂停。",
       "columns.rollout-ready.title": "就绪",
       "columns.rollout-weight.title": "权重",
+      "columns.rollout-weight.valueText": "{{value}}%",
+      "columns.rollout-weight.cases.0.text": "0%",
+      "columns.rollout-weight.cases.1.text": "100%",
       "columns.rollout-step.title": "步骤",
       "columns.rollout-strategy.title": "策略",
       "columns.rollout-status.title": "状态",
@@ -1677,8 +1735,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "zh-TW": {
       "name": "Argo Rollouts",
@@ -1707,6 +1764,9 @@
       "actions.resume.whyNot": "rollout 未暫停。",
       "columns.rollout-ready.title": "就緒",
       "columns.rollout-weight.title": "權重",
+      "columns.rollout-weight.valueText": "{{value}}%",
+      "columns.rollout-weight.cases.0.text": "0%",
+      "columns.rollout-weight.cases.1.text": "100%",
       "columns.rollout-step.title": "步驟",
       "columns.rollout-strategy.title": "策略",
       "columns.rollout-status.title": "狀態",
@@ -1739,8 +1799,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "ja": {
       "name": "Argo Rollouts",
@@ -1769,6 +1828,9 @@
       "actions.resume.whyNot": "Rollout は一時停止していません。",
       "columns.rollout-ready.title": "準備完了",
       "columns.rollout-weight.title": "重み",
+      "columns.rollout-weight.valueText": "{{value}}%",
+      "columns.rollout-weight.cases.0.text": "0%",
+      "columns.rollout-weight.cases.1.text": "100%",
       "columns.rollout-step.title": "ステップ",
       "columns.rollout-strategy.title": "戦略",
       "columns.rollout-status.title": "ステータス",
@@ -1801,8 +1863,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     },
     "ko": {
       "name": "Argo Rollouts",
@@ -1831,6 +1892,9 @@
       "actions.resume.whyNot": "rollout이 일시 중지되지 않았습니다.",
       "columns.rollout-ready.title": "준비됨",
       "columns.rollout-weight.title": "가중치",
+      "columns.rollout-weight.valueText": "{{value}}%",
+      "columns.rollout-weight.cases.0.text": "0%",
+      "columns.rollout-weight.cases.1.text": "100%",
       "columns.rollout-step.title": "단계",
       "columns.rollout-strategy.title": "전략",
       "columns.rollout-status.title": "상태",
@@ -1863,8 +1927,7 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen",
-      "columns.rollout-weight.cases.0.text": "0"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen"
     }
   }
 }

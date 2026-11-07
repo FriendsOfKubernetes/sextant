@@ -1,5 +1,19 @@
 # Changes of Argo Rollouts
 
+## 1.4.0 — 2026-11-07
+
+Needs Sextant 0.30 (`sextantApi` 4), with `atLeast`, a column's `lookup` and `valueText` of ADR-0164 (#386, #387).
+
+- **Weight** is the set weight again, exactly as the built-in column showed it (`GetCurrentSetWeight`): the
+  `setWeight` of the current step or of the nearest earlier one (0 before any), 0 after an abort, and the maximum
+  traffic weight (100 unless `maxTrafficWeight` says otherwise) once every step is done or without steps; written
+  "20%", in each language's form ("20 %" in French and German, "%20" in Turkish); blank for blue-green. It sorts by
+  the number; a number filter leaves out "0%" after an abort and "100%" without `maxTrafficWeight`. The weight the
+  traffic router reports stays in the details as the actual weight.
+- **Status** and the `degraded` rule count the newest spec as observed when `status.observedGeneration` is at least
+  `metadata.generation` (it was: equal to), as the built-in view did; v0.9's hash still counts as observed.
+- No new permission or problem kind: updating asks for no consent again.
+
 ## 1.3.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4), with the deeper conditions and case tooltips of ADR-0164 (#385).

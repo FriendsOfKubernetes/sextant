@@ -61,9 +61,9 @@ describe("catalogs", () => {
 describe("the manifest's translations", () => {
   it("translate every text of the manifest into every language Sextant has", () => {
     const c = manifest.contributes;
-    // Column cases are the API's own words (Paused, Degraded, Canary, …) and a number, beside `.status.phase` values
-    // shown as written: "translated" as themselves in every language (model.test.ts checks it); their tooltips are
-    // sentences, translated.
+    // Column cases are the API's own words (Paused, Degraded, Canary, …), beside `.status.phase` values shown as
+    // written: "translated" as themselves in every language (model.test.ts checks it); their tooltips are sentences,
+    // translated. The Weight's `valueText` and its cases are written in each language's form ("20 %" in French).
     const keys = [
       "name",
       "description",
@@ -73,6 +73,7 @@ describe("the manifest's translations", () => {
       ...c.sections.flatMap((s) => (s.title === undefined ? [] : [`sections.${s.section}.title`])),
       ...c.columns.flatMap((col) => [
         `columns.${col.id}.title`,
+        ...("valueText" in col ? [`columns.${col.id}.valueText`] : []),
         ...((col as { cases?: { tooltip?: string }[] }).cases ?? []).flatMap((cs, i) => [
           `columns.${col.id}.cases.${i}.text`,
           ...(cs.tooltip === undefined ? [] : [`columns.${col.id}.cases.${i}.tooltip`]),

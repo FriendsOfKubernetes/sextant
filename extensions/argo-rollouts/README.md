@@ -17,7 +17,7 @@ notification groups, hidden details sections).
 | | |
 |---|---|
 | Id | `sextant.argo-rollouts` |
-| Version | 1.3.0 ([changes](CHANGELOG.md)) |
+| Version | 1.4.0 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `argo-rollouts-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Argo Rollouts |
@@ -36,8 +36,10 @@ Rollouts.
   message on hover; Progressing while the controller has not observed the newest spec, with "The controller has not
   seen the latest spec yet." on hover), **Strategy**
   (`rollout-strategy`: Canary or BlueGreen), **Step** (`rollout-step`: "i/n", the current step of the canary's steps,
-  0 before the controller writes one), **Weight** (`rollout-weight`: the canary weight the traffic router reports, 0
-  after an abort) and **Ready** (`rollout-ready`: ready of desired replicas).
+  0 before the controller writes one), **Weight** (`rollout-weight`: the canary's set weight, as the built-in view and
+  `GetCurrentSetWeight` read it — the `setWeight` of the current step or of the nearest earlier one, 0 before any,
+  0 after an abort, the maximum traffic weight (100 unless `maxTrafficWeight` says otherwise) once every step is done
+  or without steps — written "20%" in each language's form, blank for blue-green) and **Ready** (`rollout-ready`: ready of desired replicas).
 - Analysis Runs: **Phase** (`run-phase`), **Rollout** (`run-rollout`: the owner that is a Rollout) and **Message**
   (`run-message`: why it failed).
 - Experiments: **Phase** (`experiment-phase`), **Rollout** (`experiment-rollout`) and **Message**
@@ -97,7 +99,7 @@ built-in view did.
 
 | Id | When it holds | Grace | Told by another object |
 |---|---|---|---|
-| `degraded` | The update was not aborted, the Rollout is Degraded and the controller has observed the newest spec and is not lifting its pause or waiting to observe the workload the template comes from — the built-in view's reading, for every controller: `status.phase` is Degraded, or, from a controller older than v1.0 (no known `status.phase`), an InvalidSpec condition or one of reason RolloutAborted or ProgressDeadlineExceeded; the spec counts as observed when `status.observedGeneration` equals `metadata.generation`, when either is missing, or when it is not a number (Argo Rollouts v0.9's hash) | 1 minute | No |
+| `degraded` | The update was not aborted, the Rollout is Degraded and the controller has observed the newest spec and is not lifting its pause or waiting to observe the workload the template comes from — the built-in view's reading, for every controller: `status.phase` is Degraded, or, from a controller older than v1.0 (no known `status.phase`), an InvalidSpec condition or one of reason RolloutAborted or ProgressDeadlineExceeded; the spec counts as observed when `status.observedGeneration` is at least `metadata.generation`, when either is missing, or when it is not a number (Argo Rollouts v0.9's hash) | 1 minute | No |
 | `aborted` | `status.abort` is true | None | No |
 | `step-analysis-failed` | The current canary step's analysis run is Failed or Error | None | No |
 | `background-analysis-failed` | The canary's background analysis run is Failed or Error | None | No |
@@ -133,9 +135,6 @@ confirmed.
 - It does not set an image, edit steps or create Rollouts: Sextant's editor does that.
 - It does not restart: Sextant's own Restart action does.
 - It does not show Argo Workflows or Argo CD, which share the group `argoproj.io`.
-- The **Weight** column does not compute the set weight from the steps, as the former built-in view did: it shows the
-  weight the traffic router reports, as `kubectl argo rollouts get` does with traffic routing. The set weight (and the
-  actual weight) are in the details.
 
 ## Requirements and limits
 
@@ -148,8 +147,10 @@ confirmed.
     seen the latest spec yet."); the other computed states have no explanation on hover, which the details give. Of
     an older controller's computed phase only Degraded, Paused and an update under way (Progressing) are shown; its
     Healthy and its other Progressing (from replica counts) are left blank. The details always show the full reading.
-  - **Weight** is the router's reported weight (blank without traffic routing, no "%"). The details show the set
-    weight and the actual weight.
+  - **Weight** is the set weight, as the built-in column; the weight the router reports (the actual weight) is in
+    the details. It sorts and filters as a number while steps run and once they are done with a `maxTrafficWeight`;
+    "0%" after an abort and "100%" once every step is done without one are texts, sorted by their number but left
+    out by a number filter.
   - **Message** of an AnalysisRun is its own message, else the message of a failed, errored or inconclusive metric
     (in that order, not the metrics' order), else of its first measurement of that phase (the oldest, not the
     newest). The templates' **Metric** is the first metric only. The details list all of them.

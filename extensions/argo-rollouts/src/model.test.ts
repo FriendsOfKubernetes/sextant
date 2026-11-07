@@ -35,6 +35,7 @@ const analysisRun = analysisRunJson as unknown as KubeObject;
 const replicaSets = replicaSetsJson as unknown as KubeObject[];
 
 const copy = <T>(value: T): T => structuredClone(value);
+const arrayOf = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
 const st = (obj: KubeObject) => obj.status as Record<string, unknown>;
 const spec = (obj: KubeObject) => obj.spec as Record<string, unknown>;
 
@@ -52,11 +53,21 @@ interface Engine {
   fillTemplate(template: string, obj: KubeObject): string | null;
   detectRule(rule: unknown, obj: KubeObject): { reason: string; group: string; message?: string; graceMs?: number; notify: boolean }[];
 }
+/** The window's computed column (src/extensions/columns.tsx): its sort value and its text for search and copying. */
+interface WindowColumn {
+  value(obj: KubeObject): unknown;
+  searchText(obj: KubeObject, ctx: { now: number; t: (key: string) => string }): string | null | undefined;
+}
+interface Columns {
+  computedColumn(id: string, column: unknown): WindowColumn;
+}
 let engine: Engine;
+let columns: Columns;
 const here = dirname(fileURLToPath(import.meta.url));
 beforeAll(async () => {
   const path = join(here, "../../../src/extensions/problemRules.ts");
   engine = (await import(/* @vite-ignore */ path)) as Engine;
+  columns = (await import(/* @vite-ignore */ join(here, "../../../src/extensions/columns.tsx"))) as Columns;
 });
 
 const holdsNow = (condition: unknown, obj: KubeObject, now = Date.now()) => {
@@ -67,6 +78,8 @@ const holdsNow = (condition: unknown, obj: KubeObject, now = Date.now()) => {
 interface Column {
   id: string;
   paths: string[];
+  lookup?: { list: string; index: string; field: string; nearestBefore?: boolean; orElse?: unknown };
+  valueText?: string;
   format?: string;
   totalPaths?: string[];
   tones?: Record<string, string>;
@@ -75,13 +88,37 @@ interface Column {
 }
 const columnOf = (id: string) => manifest.contributes.columns.find((c) => c.id === id)! as Column;
 
+/**
+ * A column's `lookup` (as `lookupValue` of src/extensions/columns.tsx): `field` of the item of `list` that `index`
+ * names (0 when left out), with `nearestBefore` else the nearest earlier item's, else `orElse`; nothing past the end.
+ */
+function looked(obj: KubeObject, lookup: NonNullable<Column["lookup"]>): unknown {
+  const list = engine.valueAt(obj, lookup.list);
+  if (!Array.isArray(list)) return undefined;
+  const raw = engine.valueAt(obj, lookup.index);
+  const index = raw === undefined || raw === null ? 0 : engine.numberOf(raw);
+  if (index === undefined || !Number.isInteger(index) || index < 0 || index >= list.length) return undefined;
+  for (let i = index; i >= 0; i--) {
+    const value = engine.valueAt(list[i], lookup.field);
+    if (value !== undefined && value !== null) return value;
+    if (!lookup.nearestBefore) break;
+  }
+  return lookup.orElse;
+}
+
 /** What a computed column shows and its tone (as src/extensions/columns.tsx draws text, number and ratio cells). */
 function shown(id: string, obj: KubeObject): { text?: string; tone?: string } {
   const column = columnOf(id);
   for (const c of column.cases ?? []) if (holdsNow(c.when, obj)) return { text: c.text, tone: c.tone ?? column.tones?.[c.text] };
   const first = (paths: string[] | undefined) =>
     (paths ?? []).map((p) => engine.valueAt(obj, p)).find((v) => v !== undefined && v !== null);
-  const value = first(column.paths);
+  const picked = column.lookup === undefined ? undefined : looked(obj, column.lookup);
+  const value = picked !== undefined && picked !== null ? picked : first(column.paths);
+  const written = (text: string) => (column.valueText === undefined ? text : column.valueText.replace("{{value}}", text));
+  if (column.format === "number") {
+    const n = engine.numberOf(value);
+    return n === undefined ? {} : { text: written(String(n)) };
+  }
   if (column.format === "ratio") {
     // With the whole there, a missing part is 0 (Kubernetes leaves zero counts out).
     const whole = engine.numberOf(first(column.totalPaths));
@@ -441,6 +478,24 @@ describe("the manifest's problem rules", () => {
         ro.metadata.annotations = { "rollout.argoproj.io/workload-generation": "4" };
         st(ro).workloadObservedGeneration = "3";
       },
+      // An observed generation ahead of the spec's: observed (`>=`, as the built-in), so Degraded.
+      observedAhead: (ro) => {
+        st(ro).phase = "Degraded";
+        st(ro).observedGeneration = "6";
+        ro.metadata.generation = 5;
+      },
+      oldObservedAhead: (ro) => {
+        delete st(ro).phase;
+        st(ro).conditions = [{ type: "InvalidSpec", status: "True", message: "bad" }];
+        st(ro).observedGeneration = "6";
+        ro.metadata.generation = 5;
+      },
+      // Behind by a number written as a number: not observed.
+      observedBehind: (ro) => {
+        st(ro).phase = "Degraded";
+        st(ro).observedGeneration = "4";
+        ro.metadata.generation = 5;
+      },
       // Neither generation written: observed.
       noGenerations: (ro) => {
         st(ro).phase = "Degraded";
@@ -520,7 +575,9 @@ describe("the manifest's columns", () => {
     expect(cell("rollout-step", canary)).toBe("1/8");
     expect(cell("rollout-step", blueGreen)).toBeUndefined();
     expect(cell("rollout-ready", canary)).toBe("5/5");
-    expect(cell("rollout-weight", aborted)).toBe("0");
+    expect(cell("rollout-weight", aborted)).toBe("0%");
+    expect(cell("rollout-weight", canary)).toBe("20%");
+    expect(cell("rollout-weight", blueGreen)).toBeUndefined();
   });
 
   it("show step 0 of n before the controller writes the step index, as `GetCurrentCanaryStep`", () => {
@@ -562,7 +619,11 @@ describe("the manifest's columns", () => {
     const noGeneration = copy(canary);
     delete (noGeneration.metadata as { generation?: number }).generation;
     st(noGeneration).observedGeneration = "7";
-    const states = { canary, aborted, blueGreen, unpausing, workload, old, oldPaused, oldUpdating, specNotObserved, specNotObservedPaused, hashed, noGeneration };
+    // An observed generation ahead of the spec's counts as observed, as the built-in read it (`>=`).
+    const ahead = copy(aborted);
+    st(ahead).observedGeneration = "5";
+    const states = { canary, aborted, blueGreen, unpausing, workload, old, oldPaused, oldUpdating, specNotObserved, specNotObservedPaused, hashed, noGeneration, ahead };
+    expect(rolloutPhase(ahead).phase).toBe("Degraded");
     expect(rolloutPhase(specNotObserved).reasonKey).toBe("specNotObserved");
     expect(rolloutPhase(specNotObservedPaused).reasonKey).toBe("specNotObserved");
     expect(rolloutPhase(hashed).phase).toBe("Degraded");
@@ -598,12 +659,110 @@ describe("the manifest's columns", () => {
 
   it("keep the case texts the API's own words in every language", () => {
     const translations = manifest.translations as Record<string, Record<string, string>>;
-    for (const column of manifest.contributes.columns as Column[]) {
+    // The Weight column's cases are values, written as its `valueText` in each language (below).
+    for (const column of (manifest.contributes.columns as Column[]).filter((c) => c.id !== "rollout-weight")) {
       (column.cases ?? []).forEach((c, i) => {
         expect(c.tone, `${column.id} case ${i}`).toBeDefined();
         for (const texts of Object.values(translations)) expect(texts[`columns.${column.id}.cases.${i}.text`]).toBe(c.text);
       });
     }
+  });
+
+  it("show the set weight exactly as the built-in Weight (`GetCurrentSetWeight`), blank where the strategy is not canary", () => {
+    const canaryOf = (ro: KubeObject) => (spec(ro).strategy as { canary: Record<string, unknown> }).canary;
+    const variants: Record<string, (ro: KubeObject) => void> = {
+      asIs: () => {},
+      // Traffic routing with its own maximum, which the weight reaches once every step is done.
+      maxTrafficWeight: (ro) => void (canaryOf(ro).trafficRouting = { nginx: {}, maxTrafficWeight: 1000 }),
+      trafficRoutingWithoutMax: (ro) => void (canaryOf(ro).trafficRouting = { nginx: {} }),
+      aborted: (ro) => void (st(ro).abort = true),
+      notAborted: (ro) => void (st(ro).abort = false),
+      abortedWithMax: (ro) => {
+        st(ro).abort = true;
+        canaryOf(ro).trafficRouting = { nginx: {}, maxTrafficWeight: 1000 };
+      },
+      allStepsDone: (ro) => void (st(ro).currentStepIndex = arrayOf(canaryOf(ro).steps).length),
+      allStepsDoneWithMax: (ro) => {
+        st(ro).currentStepIndex = arrayOf(canaryOf(ro).steps).length;
+        canaryOf(ro).trafficRouting = { nginx: {}, maxTrafficWeight: 1000 };
+      },
+      pastTheEnd: (ro) => void (st(ro).currentStepIndex = arrayOf(canaryOf(ro).steps).length + 3),
+      indexUnset: (ro) => void delete st(ro).currentStepIndex,
+      // On a step without `setWeight`: the nearest earlier one's.
+      onAPause: (ro) => void (st(ro).currentStepIndex = 3),
+      lastStep: (ro) => void (st(ro).currentStepIndex = arrayOf(canaryOf(ro).steps).length - 1),
+      // No earlier step sets a weight: 0.
+      firstStepAPause: (ro) => {
+        canaryOf(ro).steps = [{ pause: {} }, { setWeight: 50 }];
+        st(ro).currentStepIndex = 0;
+      },
+      // No steps: every step is done.
+      noSteps: (ro) => void delete canaryOf(ro).steps,
+      emptySteps: (ro) => void (canaryOf(ro).steps = []),
+      noStepsWithMax: (ro) => {
+        delete canaryOf(ro).steps;
+        canaryOf(ro).trafficRouting = { nginx: {}, maxTrafficWeight: 200 };
+      },
+      noStepsIndexUnset: (ro) => {
+        canaryOf(ro).steps = [];
+        delete st(ro).currentStepIndex;
+      },
+    };
+    const weight = columnOf("rollout-weight");
+    const inWindow = () => columns.computedColumn("ext:sextant.argo-rollouts:rollout-weight", weight);
+    const ctx = { now: Date.now(), t: (key: string) => key };
+    for (const [name, change] of Object.entries(variants)) {
+      for (const base of [canary, aborted]) {
+        const ro = copy(base);
+        change(ro);
+        const expected = `${setWeight(ro)}%`;
+        expect(cell("rollout-weight", ro), `${name} of ${ro.metadata.name}`).toBe(expected);
+        expect(inWindow().searchText(ro, ctx), `${name} of ${ro.metadata.name} in the window`).toBe(expected);
+      }
+    }
+    // Blue-green (and a Rollout of neither strategy): blank, as the built-in.
+    expect(strategyOf(blueGreen)).toBe("blueGreen");
+    expect(cell("rollout-weight", blueGreen)).toBeUndefined();
+    expect(inWindow().searchText(blueGreen, ctx) ?? undefined).toBeUndefined();
+    const aborting = copy(blueGreen);
+    st(aborting).abort = true;
+    expect(inWindow().searchText(aborting, ctx) ?? undefined).toBeUndefined();
+    // Sorted and filtered as a number while steps run, and with the maximum once they are done.
+    expect(inWindow().value(canary)).toBe(20);
+    const done = copy(canary);
+    st(done).currentStepIndex = 8;
+    canaryOf(done).trafficRouting = { nginx: {}, maxTrafficWeight: 1000 };
+    expect(inWindow().value(done)).toBe(1000);
+  });
+
+  it("write the weight, its cases included, in each language's form of the built-in `weightValue`", () => {
+    const translations = manifest.translations as Record<string, Record<string, string>>;
+    // `argorollouts:weightValue` of the built-in view, `{{weight}}` written `{{value}}`.
+    const forms: Record<string, string> = { de: "{{value}} %", es: "{{value}} %", fr: "{{value}} %", tr: "%{{value}}" };
+    const weight = columnOf("rollout-weight");
+    expect(weight.valueText).toBe("{{value}}%");
+    expect(weight.cases!.map((c) => c.text)).toEqual(["0%", "100%"]);
+    expect(Object.keys(translations).sort()).toEqual(["de", "es", "fr", "it", "ja", "ko", "pl", "pt-BR", "ru", "tr", "uk", "zh-CN", "zh-TW"]);
+    const ctx = { now: Date.now(), t: (key: string) => key };
+    for (const [language, texts] of Object.entries(translations)) {
+      const form = forms[language] ?? "{{value}}%";
+      expect(texts["columns.rollout-weight.valueText"], language).toBe(form);
+      expect(texts["columns.rollout-weight.cases.0.text"], language).toBe(form.replace("{{value}}", "0"));
+      expect(texts["columns.rollout-weight.cases.1.text"], language).toBe(form.replace("{{value}}", "100"));
+      // As the window shows it in that language.
+      const localized = {
+        ...weight,
+        valueText: texts["columns.rollout-weight.valueText"],
+        cases: weight.cases!.map((c, i) => ({ ...c, text: texts[`columns.rollout-weight.cases.${i}.text`]! })),
+      };
+      const column = columns.computedColumn("weight", localized);
+      const done = copy(canary);
+      st(done).currentStepIndex = 8;
+      expect(column.searchText(canary, ctx), language).toBe(form.replace("{{value}}", "20"));
+      expect(column.searchText(aborted, ctx), language).toBe(form.replace("{{value}}", "0"));
+      expect(column.searchText(done, ctx), language).toBe(form.replace("{{value}}", "100"));
+    }
+    expect(translations.fr!["columns.rollout-weight.cases.1.text"]).toBe("100 %");
   });
 
   it("show an AnalysisRun's phase, Rollout and why it failed", () => {
