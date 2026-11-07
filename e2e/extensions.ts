@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { ROOT } from "./cluster";
 
-export const OWN_EXTENSIONS = ["flux", "argo-cd", "argo-rollouts"] as const;
+export const OWN_EXTENSIONS = ["flux", "argo-cd", "argo-rollouts", "argo-workflows"] as const;
 
 type Json = Record<string, unknown>;
 
