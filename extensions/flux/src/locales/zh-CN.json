@@ -1,6 +1,5 @@
 {
   "change.conflict": "该对象在读取后已被更改。请重新打开以查看更改，然后再试一次。",
-  "change.waiting": "正在等待 Sextant…",
   "common.loading": "正在加载…",
   "common.nothingSelected": "未选择任何内容。",
   "common.nothingToShow": "{{view}} 视图中没有可显示的内容。",
@@ -35,7 +34,8 @@
   "fields.type": "类型",
   "fields.url": "URL",
   "fields.webhookPath": "Webhook 路径",
-  "reconcileWithSource.intro": "Flux 现在依次协调这些对象：先协调来源，再协调 {{kind}} {{name}}。",
+  "reconcileWithSource.failed": "连同来源一起协调：{{message}}",
+  "reconcileWithSource.failedAt": "连同来源一起协调在 {{kind}} {{name}} 处停止：{{message}}",
   "reconcileWithSource.noSource": "{{kind}} {{name}} 未指定来源。",
   "related.forbidden": "你没有列出这些对象的权限：{{kind}}",
   "related.forbiddenIn": "在以下 Namespace 中没有权限：{{namespaces}}",
@@ -50,6 +50,5 @@
   "related.retry": "重试",
   "related.usedBy": "使用者",
   "suspended.no": "否",
-  "suspended.yes": "是",
-  "window.failedAt": "{{kind}} {{name}}: {{message}}"
+  "suspended.yes": "是"
 }

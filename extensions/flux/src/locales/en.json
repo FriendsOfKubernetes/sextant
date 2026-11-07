@@ -1,6 +1,5 @@
 {
   "change.conflict": "The object changed since it was read. Open it again to see the change, then try again.",
-  "change.waiting": "Waiting for Sextant…",
   "common.loading": "Loading…",
   "common.nothingSelected": "Nothing selected.",
   "common.nothingToShow": "Nothing to show in the {{view}} view.",
@@ -35,7 +34,8 @@
   "fields.type": "Type",
   "fields.url": "URL",
   "fields.webhookPath": "Webhook path",
-  "reconcileWithSource.intro": "Flux reconciles these objects now, one after another: the source first, then {{kind}} {{name}}.",
+  "reconcileWithSource.failed": "Reconcile with source: {{message}}",
+  "reconcileWithSource.failedAt": "Reconcile with source stopped at {{kind}} {{name}}: {{message}}",
   "reconcileWithSource.noSource": "{{kind}} {{name}} names no source.",
   "related.forbidden": "You don't have permission to list these objects: {{kind}}",
   "related.forbiddenIn": "No permission in: {{namespaces}}",
@@ -50,6 +50,5 @@
   "related.retry": "Retry",
   "related.usedBy": "Used by",
   "suspended.no": "No",
-  "suspended.yes": "Yes",
-  "window.failedAt": "{{kind}} {{name}}: {{message}}"
+  "suspended.yes": "Yes"
 }

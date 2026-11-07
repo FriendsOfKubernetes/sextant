@@ -1,6 +1,5 @@
 {
   "change.conflict": "O objeto mudou desde que foi lido. Abra-o de novo para ver a alteração e tente novamente.",
-  "change.waiting": "Aguardando o Sextant…",
   "common.loading": "Carregando…",
   "common.nothingSelected": "Nada selecionado.",
   "common.nothingToShow": "Nada a mostrar na visualização {{view}}.",
@@ -35,7 +34,8 @@
   "fields.type": "Tipo",
   "fields.url": "URL",
   "fields.webhookPath": "Caminho do webhook",
-  "reconcileWithSource.intro": "O Flux reconcilia estes objetos agora, um após o outro: primeiro a fonte, depois {{kind}} {{name}}.",
+  "reconcileWithSource.failed": "Reconciliar com a fonte: {{message}}",
+  "reconcileWithSource.failedAt": "A reconciliação com a fonte parou em {{kind}} {{name}}: {{message}}",
   "reconcileWithSource.noSource": "{{kind}} {{name}} não indica nenhuma fonte.",
   "related.forbidden": "Você não tem permissão para listar estes objetos: {{kind}}",
   "related.forbiddenIn": "Sem permissão em: {{namespaces}}",
@@ -50,6 +50,5 @@
   "related.retry": "Tentar novamente",
   "related.usedBy": "Usado por",
   "suspended.no": "Não",
-  "suspended.yes": "Sim",
-  "window.failedAt": "{{kind}} {{name}}: {{message}}"
+  "suspended.yes": "Sim"
 }

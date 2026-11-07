@@ -1,6 +1,5 @@
 {
   "change.conflict": "L'objet a changé depuis sa lecture. Rouvrez-le pour voir la modification, puis réessayez.",
-  "change.waiting": "En attente de Sextant…",
   "common.loading": "Chargement…",
   "common.nothingSelected": "Aucune sélection.",
   "common.nothingToShow": "Rien à afficher dans la vue {{view}}.",
@@ -35,7 +34,8 @@
   "fields.type": "Type",
   "fields.url": "URL",
   "fields.webhookPath": "Chemin du webhook",
-  "reconcileWithSource.intro": "Flux réconcilie ces objets maintenant, l'un après l'autre : d'abord la source, puis {{kind}} {{name}}.",
+  "reconcileWithSource.failed": "Réconcilier avec la source : {{message}}",
+  "reconcileWithSource.failedAt": "Réconciliation avec la source arrêtée sur {{kind}} {{name}} : {{message}}",
   "reconcileWithSource.noSource": "{{kind}} {{name}} n'indique aucune source.",
   "related.forbidden": "Vous n'avez pas l'autorisation de lister ces objets : {{kind}}",
   "related.forbiddenIn": "Aucune autorisation dans : {{namespaces}}",
@@ -50,6 +50,5 @@
   "related.retry": "Réessayer",
   "related.usedBy": "Utilisé par",
   "suspended.no": "Non",
-  "suspended.yes": "Oui",
-  "window.failedAt": "{{kind}} {{name}} : {{message}}"
+  "suspended.yes": "Oui"
 }

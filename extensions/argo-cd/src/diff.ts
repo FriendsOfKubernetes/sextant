@@ -6,7 +6,7 @@
 // in by Sextant, never seen here — and otherwise asks the user to sign in in Sextant's own dialog (`ui.signIn`,
 // ADR-0160). Credentials Argo CD refused are not sent again in this run (Sextant answers `notSent`), so a changed admin
 // password is not tried from every window.
-import { isSextantError, ui, type ClusterId, type ObjectRef, type Sextant, type ServiceAnswer } from "@sextant/extension-sdk";
+import { isSextantError, ui, type ClusterId, type ObjectRef, type Sextant, type ServiceAnswer, type SignInState } from "@sextant/extension-sdk";
 import { describe, diffRows, isSecret, sideBySide, sidesOf, yamlOf, type ArgoResource, type DiffRow, parseManagedResources } from "./diffModel";
 import { buttons, element, errorText } from "./dom";
 import { t } from "./i18n";
@@ -37,12 +37,26 @@ export const tokenSecretKey = (clusterId: ClusterId, namespace: string): string 
 
 /**
  * How the window is signed in, as the session bar says it (the built-in view's `diff.source.*`): the standard admin
- * Secret, an API token Secret by name, or the user's own sign-in in Sextant (typed or remembered).
+ * Secret, an API token Secret by name, or the user's own sign-in in Sextant's dialog — saved for the cluster, typed for
+ * this run only (`service.signInState`), or "your sign-in" when Sextant could not tell.
  */
-export function sourceText(using: Using, stored: unknown): string {
+export function sourceText(using: Using, stored: unknown, state: SignInState | null = null): string {
   if (typeof using !== "string") return t("diff.source.tokenSecret", { name: using.secret });
   if (using === "password" && stored === "secret") return t("diff.source.secret");
+  if (state === "saved") return t("diff.source.saved");
+  if (state === "session") return t("diff.source.session");
   return t("diff.source.signIn");
+}
+
+/** Whether the sign-in of `using`'s service is saved or typed for this run; `null` when Sextant does not say. */
+export async function signInStateOf(sextant: Sextant, server: ArgoServer, using: Using): Promise<SignInState | null> {
+  if (typeof using !== "string") return null;
+  try {
+    return await sextant.service.signInState({ clusterId: server.clusterId, namespace: server.namespace, service: serviceOf(server, using) });
+  } catch {
+    // Only shown: the bar keeps "with your sign-in".
+    return null;
+  }
 }
 
 /** The token Secrets in the order they are tried: the one that signed in last, then the others by name. */
@@ -345,8 +359,10 @@ export function startDiff(sextant: Sextant, root: HTMLElement, app: ObjectRef): 
       // Who is signed in is only shown; the diff is there anyway.
     }
     const stored = using === "password" ? await sextant.storage.get(sessionKey(server.clusterId, server.namespace)).catch(() => null) : null;
+    // Signed in through Sextant's dialog: whether that sign-in is saved for the cluster or kept until Sextant closes.
+    const state = using === "token" || (using === "password" && stored !== "secret") ? await signInStateOf(sextant, server, using) : null;
     const who = user ? t("diff.signedInAs", { user }) : t("diff.signedIn");
-    const text = `${who} · ${sourceText(using, stored)}`;
+    const text = `${who} · ${sourceText(using, stored, state)}`;
     const leave = async () => {
       ++request;
       await signOut(sextant, server);

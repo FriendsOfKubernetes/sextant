@@ -349,21 +349,27 @@ describe("the actions", () => {
     type Fixed = { patch?: unknown; ask?: { title: string; text: string; confirm: string }; done?: string };
     const fixed = (id: string) => action(id) as Fixed;
     expect(REQUESTED_AT_ANNOTATION).toBe("reconcile.fluxcd.io/requestedAt");
-    // Sextant fills `{{now}}` with the time it sends the patch, as Reconcile with source's window does.
+    // Sextant fills `{{now}}` with the time it sends the patch, as Reconcile with source's frame does.
     expect(fixed("reconcile").patch).toEqual({ metadata: { annotations: { [REQUESTED_AT_ANNOTATION]: "{{now}}" } } });
     expect(reconcilePatch(new Date("2026-11-06T10:00:00Z"))).toEqual({
       metadata: { annotations: { [REQUESTED_AT_ANNOTATION]: "2026-11-06T10:00:00.000Z" } },
     });
     expect(fixed("suspend").patch).toEqual({ spec: { suspend: true } });
     expect(fixed("resume").patch).toEqual({ spec: { suspend: false } });
-    // Reconcile with source reads the object to find its source: it keeps its window.
+    // Reconcile with source reads the object to find its source, so its frame sends it: out of sight (`headless`), one
+    // click with no window, as the built-in action was. Only it has a frame; the fixed patches are never headless.
     expect(fixed("reconcile-with-source").patch).toBeUndefined();
-    // Only Suspend asks, with the built-in view's question; none says anything after, as the built-in ones did.
+    expect(actions.filter((a) => (a as { headless?: boolean }).headless === true).map((a) => a.id)).toEqual(["reconcile-with-source"]);
+    // Only Suspend asks, with the built-in view's question naming the object (Sextant fills `{{kind}}` and `{{name}}` on
+    // an action of one object); none says anything after, as the built-in ones did.
     expect(fixed("suspend").ask).toEqual({
-      title: "Suspend this object?",
-      text: "Flux stops reconciling it until it is resumed: changes in Git or in the cluster are not applied or corrected meanwhile.",
+      title: "Suspend {{kind}} {{name}}?",
+      text: "Flux stops reconciling {{kind}} {{name}} until it is resumed: changes in Git or in the cluster are not applied or corrected meanwhile.",
       confirm: "Suspend",
     });
+    expect(action("suspend").multiple).toBeUndefined();
+    const fill = (text: string) => text.replace(/\{\{(kind|name)\}\}/g, (_, key: string) => (key === "kind" ? "Kustomization" : "podinfo"));
+    expect(fill(fixed("suspend").ask!.title)).toBe("Suspend Kustomization podinfo?");
     for (const id of ["reconcile", "reconcile-with-source", "resume"]) expect(fixed(id).ask, id).toBeUndefined();
     for (const a of actions) expect((a as Fixed).done, a.id).toBeUndefined();
   });

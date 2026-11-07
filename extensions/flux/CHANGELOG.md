@@ -1,5 +1,17 @@
 # Changes of Flux
 
+## 1.3.0 — 2026-11-07
+
+Needs Sextant 0.30 (`sextantApi` 4) with the extension API's question placeholders and headless actions (ADR-0164,
+#378, #379). The permissions are unchanged, so updating does not ask for consent again.
+
+- **Suspend names its object.** Sextant asks "Suspend Kustomization podinfo?" and says what it means for that object,
+  as the built-in view did ("Suspend {{kind}} {{name}}?", filled in by Sextant), in every language.
+- **Reconcile with source has no window.** Its frame runs out of sight (`headless`): it reads the object, sends the
+  source's, the HelmChart's and the object's patches in one call and ends, so nothing flashes up. A failure is a
+  notice that names the object that failed and the error; your own refusal of a question of Sextant's ends it
+  silently. The window, its waiting line and its Retry are gone.
+
 ## 1.2.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4) with the extension API's fixed-patch actions, field values in column cases and

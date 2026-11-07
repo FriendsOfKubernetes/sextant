@@ -11,14 +11,15 @@ ADR-0139 (Sextant's own extensions), ADR-0140 (translations), ADR-0152 (kinds in
 ADR-0160 (the section's icon and place, palette names, the UI kit) and ADR-0161 (printer columns left out, a condition
 picked by its type, columns placed by id, one confirmation for several patches, notification groups, hidden
 sections); its actions' fixed patches, the Source column's field values and the problems' reasons come from the
-extension API's additions for the moved views (#367, #368, #370).
+extension API's additions for the moved views (#367, #368, #370); Suspend's question names its object and Reconcile
+with source runs without a window through ADR-0164 (#378, #379).
 
 ## At a glance
 
 | | |
 |---|---|
 | Id | `sextant.flux` |
-| Version | 1.2.0 ([changes](CHANGELOG.md)) |
+| Version | 1.3.0 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants keep their built-in Flux view. |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `flux-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Flux |
@@ -90,14 +91,16 @@ live.
 built-in view:
 - **Reconcile now** (`reconcile`, several objects at once): sent at once, no window, no question.
 - **Reconcile with source** (`reconcile-with-source`, in the "Actions" menu, on a Kustomization or HelmRelease that
-  names a source): a small window that sends at once, shows that it is waiting and closes itself once sent; on a
-  failure it stays, says which object failed and offers Retry.
-- **Suspend** (`suspend`, on an object that is not suspended): Sextant asks "Suspend this object?" with what it means
-  and the object, then sends.
+  names a source): no window at all (`headless`): Sextant runs the extension's frame out of sight, which reads the
+  object, sends and ends; a failure is told as a notice of the extension's that names the object that failed and the
+  error; your own refusal of a question of Sextant's ends it silently.
+- **Suspend** (`suspend`, on an object that is not suspended): Sextant asks "Suspend Kustomization podinfo?" (the
+  object's kind and name, filled in by Sextant) with what it means, then sends.
 - **Resume** (`resume`, several objects at once, on suspended objects): sent at once, no window, no question.
 
 Reconcile now, Suspend and Resume are patches fixed in the manifest (`patch`), which Sextant sends itself without
-opening the extension's window.
+opening the extension's frame. Reconcile with source reads the object to find its source, so its frame sends it, out of
+sight, and Sextant ends it after 2 minutes if it has not finished.
 
 Sextant's own Edit and Delete stay where they are for every kind.
 
@@ -147,12 +150,13 @@ order:
   to the time Sextant sends it, which every Flux controller watches.
 - **Reconcile with source**: the same annotation on the source of a Kustomization; on a HelmRelease's chart source and
   then on its HelmChart (`status.helmChart`), so the chart is pulled again; then on the object itself.
-- **Suspend**: `{"spec":{"suspend":true}}`, after Sextant's question "Suspend this object?" and what it means.
+- **Suspend**: `{"spec":{"suspend":true}}`, after Sextant's question "Suspend {{kind}} {{name}}?" (filled with the
+  object's kind and name) and what it means.
 - **Resume**: `{"spec":{"suspend":false}}`.
 
 Sextant's or the user's refusal sends nothing. The cluster's error on one object stops before the next and names the
-object that failed (Sextant's notice for the fixed patches, the window for Reconcile with source); nothing is retried
-unless you press Retry.
+object that failed (Sextant's notice for the fixed patches, the extension's notice for Reconcile with source); nothing
+is retried.
 
 ## What it does not do
 
@@ -179,7 +183,10 @@ unless you press Retry.
 - **"You don't have permission to list these objects: …" under Resources:** you may not list that kind there; the
   other kinds are still shown.
 - **A list fails with an error and Retry:** the cluster could not be reached or refused the list; Retry lists again.
-- **An action says "Sextant refused":** Sextant's access rules for the extension, or you, declined the change.
+- **An action says "Sextant refused":** Sextant's access rules for the extension declined the change.
+- **Reconcile with source shows nothing:** it has no window; it is done when no notice comes. "Reconcile with source
+  stopped at …" names the object the cluster refused and why; "… did not finish within 2 minutes" means Sextant ended
+  it (a question of Sextant's left unanswered, or a cluster that does not answer).
 - **Updating to 1.2.0 asks for consent again:** its Modify rule no longer asks Sextant's confirmation for every change.
 
 ## Development
@@ -187,7 +194,7 @@ unless you press Retry.
 - Type check: `cd extensions/flux && npx tsc --noEmit`.
 - Tests (from the repository root): `npx vitest run --config sdk/vitest.config.ts extensions/flux`. They check the
   columns and problem rules with Sextant's own evaluator of extension conditions against `fixtures/`, the patches,
-  the details sections and the action windows against the SDK's test host, and the texts in every language.
+  the details sections and the headless action against the SDK's test host, and the texts in every language.
 - Check the manifest: `node sdk/scripts/cli.mjs check extensions/flux`.
 - Build: `npm run sdk:build -- extensions/flux`; pack: `npm run sdk:pack -- extensions/flux/dist`.
 - `npm run sdk:check` does all of these for every folder of `extensions/`.

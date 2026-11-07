@@ -5,7 +5,7 @@ import { setLanguage, t } from "./i18n";
 import { startInventory, startResources, startUsedBy } from "./related";
 
 // One page serves every view; the context's view and contribution (the manifest id) say which one this frame is.
-// A change of Sextant's language starts the view again in the new one.
+// A change of Sextant's language starts a details view again in the new one; an action runs once.
 const sextant = await connect();
 const root = document.getElementById("app")!;
 const { view, contribution } = sextant.context;
@@ -32,7 +32,7 @@ function start(): () => void {
 let stop = start();
 let language = sextant.context.language;
 sextant.onContextChange((context) => {
-  if (context.language === language) return;
+  if (context.language === language || view === "action") return;
   language = context.language;
   stop();
   stop = start();

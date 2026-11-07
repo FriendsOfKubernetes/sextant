@@ -298,6 +298,13 @@ describe("the requests to Argo CD's API", () => {
     expect(sourceText("password", null)).toBe(t("diff.source.signIn"));
     expect(sourceText("token", "secret")).toBe(t("diff.source.signIn"));
     expect(sourceText({ secret: "ci-token" }, "secret")).toBe("with the API token from Secret ci-token");
+    // Signed in through Sextant's dialog: saved for the cluster, or typed for this run only (the built-in's words).
+    expect(sourceText("password", "signIn", "saved")).toBe("with the saved login");
+    expect(sourceText("token", null, "session")).toBe("until Sextant is closed");
+    expect(sourceText("password", "signIn", "none")).toBe(t("diff.source.signIn"));
+    // The admin Secret and a token Secret say so whatever Sextant keeps for the dialog.
+    expect(sourceText("password", "secret", "saved")).toBe(t("diff.source.secret"));
+    expect(sourceText({ secret: "ci-token" }, null, "saved")).toBe("with the API token from Secret ci-token");
   });
 
   it("finds the installation, never choosing between several by itself", () => {

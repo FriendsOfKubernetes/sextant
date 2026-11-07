@@ -1,5 +1,16 @@
 # Changes of Argo CD
 
+## 1.3.0 — 2026-11-07
+
+Needs Sextant 0.30 (`sextantApi` 4) with its newest extension API. What still differed from Sextant's former built-in
+view (#384):
+
+- The Diff's session bar tells a login of Sextant's dialog remembered for the cluster ("with the saved login") from
+  one typed for this run only ("until Sextant is closed"), in the built-in view's words in every language. Sextant
+  says which (`service.signInState`), never a value; "with your sign-in" stays when it cannot say.
+
+No new permissions: an update asks for no consent.
+
 ## 1.2.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4) with its newest extension API. What still differed from Sextant's former built-in

@@ -11,14 +11,14 @@ of the installation), ADR-0139 (Sextant's own extensions), ADR-0140 (its transla
 sessions kept by Sextant), ADR-0160 (its own section, palette names, the UI kit, Sextant's sign-in dialog) and
 ADR-0161 (columns by id and with a case's tone, Services by label, the Secret key a service receives, token sign-in,
 several patches under one confirmation, hidden empty sections) and its amendments of 0.30 (fixed-patch actions, Secrets
-a service receives by label, credentials a service refused not sent again).
+a service receives by label, credentials a service refused not sent again), and ADR-0164 (a service's sign-in state).
 
 ## At a glance
 
 | | |
 |---|---|
 | Id | `sextant.argo-cd` |
-| Version | 1.2.0 ([changes](CHANGELOG.md)) |
+| Version | 1.3.0 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `argo-cd-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Argo CD |
@@ -81,9 +81,11 @@ details.
   Sextant sends it itself (up to 50 at a time).
 - **Terminate…** (`terminate`): stops the running operation. Offered only while one runs.
 - **Diff** (`diff`): desired (Git) ↔ live (cluster) of each resource, the differing ones first, line by line with the
-  unchanged runs folded; a session bar with who is signed in and how (the standard admin Secret, an API token Secret
-  by name, or your own sign-in in Sextant), Reload and Sign out. Before asking, it signs in, in the built-in view's
-  order:
+  unchanged runs folded; a session bar with who is signed in and how, Reload and Sign out. How is said as the
+  built-in view said it: "from the standard Argo CD secret", "with the API token from Secret <name>", and for a login
+  of Sextant's dialog "with the saved login" (remembered for the cluster) or "until Sextant is closed" (typed without
+  Remember), which Sextant tells the extension (`service.signInState`, never a value); "with your sign-in" when Sextant
+  cannot say. Before asking, it signs in, in the built-in view's order:
   1. with the login typed earlier or remembered for the cluster in Sextant's dialog (a user and password, or an API
      token);
   2. with the admin password of `argocd-initial-admin-secret`, unless `admin.enabled` is `"false"` in `argocd-cm`;
@@ -170,8 +172,6 @@ says so in Sextant's dialog. Signing in to Argo CD creates a session in Argo CD;
 ## What it does not do
 
 - No SSO, as before.
-- The session bar says "with your sign-in" for a login typed or remembered in Sextant's dialog alike; the built-in
-  view told a remembered login from one kept until Sextant closed.
 - Sextant forgets the credentials Argo CD refused when it closes, as the built-in view forgot them on disconnecting.
 - It never chooses between several namespaces with an `argocd-server` Service: the user picks one, and the choice is
   kept for the cluster.

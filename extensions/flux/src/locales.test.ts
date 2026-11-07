@@ -52,7 +52,7 @@ describe("the manifest's translations", () => {
       ...c.actions.flatMap((a) => [
         `actions.${a.id}.title`,
         ...("whyNot" in a ? [`actions.${a.id}.whyNot`] : []),
-        // Sextant's question before Suspend's fixed patch.
+        // Sextant's question before Suspend's fixed patch, naming the object as the built-in one did.
         ...("ask" in a ? ["title", "text", "confirm"].map((k) => `actions.${a.id}.ask.${k}`) : []),
       ]),
       ...c.columns.map((col) => `columns.${col.id}.title`),
@@ -75,6 +75,21 @@ describe("the manifest's translations", () => {
     for (const rule of manifest.contributes.problems) {
       for (const texts of Object.values(translations)) {
         expect(placeholders(texts[`problems.${rule.id}.message`]!)).toEqual(placeholders(rule.message));
+      }
+    }
+  });
+
+  it("keep the actions' questions' placeholders, which Sextant fills (`{{kind}}`, `{{name}}`)", () => {
+    const translations = manifest.translations as Record<string, Record<string, string>>;
+    const placeholders = (text: string) => [...text.matchAll(/\{\{[^}]+\}\}/g)].map((m) => m[0]).sort();
+    const asking = manifest.contributes.actions.filter((a): a is typeof a & { ask: Record<string, string> } => "ask" in a);
+    expect(asking.map((a) => a.id)).toEqual(["suspend"]);
+    for (const action of asking) {
+      expect(placeholders(action.ask.title!)).toEqual(["{{kind}}", "{{name}}"]);
+      for (const [language, texts] of Object.entries(translations)) {
+        for (const key of ["title", "text", "confirm"]) {
+          expect(placeholders(texts[`actions.${action.id}.ask.${key}`]!), `${language} ${key}`).toEqual(placeholders(action.ask[key]!));
+        }
       }
     }
   });

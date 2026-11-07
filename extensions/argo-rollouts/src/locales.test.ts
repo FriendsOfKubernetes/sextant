@@ -62,7 +62,8 @@ describe("the manifest's translations", () => {
   it("translate every text of the manifest into every language Sextant has", () => {
     const c = manifest.contributes;
     // Column cases are the API's own words (Paused, Degraded, Canary, …) and a number, beside `.status.phase` values
-    // shown as written: "translated" as themselves in every language (model.test.ts checks it).
+    // shown as written: "translated" as themselves in every language (model.test.ts checks it); their tooltips are
+    // sentences, translated.
     const keys = [
       "name",
       "description",
@@ -70,7 +71,13 @@ describe("the manifest's translations", () => {
       ...c.detailsSections.map((s) => `detailsSections.${s.id}.title`),
       ...c.actions.flatMap((a) => [`actions.${a.id}.title`, `actions.${a.id}.whyNot`]),
       ...c.sections.flatMap((s) => (s.title === undefined ? [] : [`sections.${s.section}.title`])),
-      ...c.columns.flatMap((col) => [`columns.${col.id}.title`, ...((col as { cases?: unknown[] }).cases ?? []).map((_, i) => `columns.${col.id}.cases.${i}.text`)]),
+      ...c.columns.flatMap((col) => [
+        `columns.${col.id}.title`,
+        ...((col as { cases?: { tooltip?: string }[] }).cases ?? []).flatMap((cs, i) => [
+          `columns.${col.id}.cases.${i}.text`,
+          ...(cs.tooltip === undefined ? [] : [`columns.${col.id}.cases.${i}.tooltip`]),
+        ]),
+      ]),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
     ].sort();
     const translations = manifest.translations as Record<string, Record<string, string>>;

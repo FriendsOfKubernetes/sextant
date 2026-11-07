@@ -1,6 +1,5 @@
 {
   "change.conflict": "Obiekt zmienił się od chwili odczytu. Otwórz go ponownie, aby zobaczyć zmianę, i spróbuj jeszcze raz.",
-  "change.waiting": "Oczekiwanie na Sextant…",
   "common.loading": "Wczytywanie…",
   "common.nothingSelected": "Nic nie wybrano.",
   "common.nothingToShow": "Widok {{view}} nie ma nic do pokazania.",
@@ -35,7 +34,8 @@
   "fields.type": "Typ",
   "fields.url": "URL",
   "fields.webhookPath": "Ścieżka webhooka",
-  "reconcileWithSource.intro": "Flux uzgadnia te obiekty teraz, jeden po drugim: najpierw źródło, potem {{kind}} {{name}}.",
+  "reconcileWithSource.failed": "Uzgodnij ze źródłem: {{message}}",
+  "reconcileWithSource.failedAt": "Uzgadnianie ze źródłem zatrzymano na {{kind}} {{name}}: {{message}}",
   "reconcileWithSource.noSource": "{{kind}} {{name}} nie wskazuje źródła.",
   "related.forbidden": "Brak uprawnień do wyświetlenia listy tych obiektów: {{kind}}",
   "related.forbiddenIn": "Brak uprawnień w: {{namespaces}}",
@@ -50,6 +50,5 @@
   "related.retry": "Ponów",
   "related.usedBy": "Używane przez",
   "suspended.no": "Nie",
-  "suspended.yes": "Tak",
-  "window.failedAt": "{{kind}} {{name}}: {{message}}"
+  "suspended.yes": "Tak"
 }

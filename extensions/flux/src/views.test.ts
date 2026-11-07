@@ -211,22 +211,20 @@ describe("related objects", () => {
   });
 });
 
-describe("the action window", () => {
+describe("the headless action", () => {
   type Item = { ref: { kind: { kind: string }; name: string }; patch: unknown; patchType: string };
   /** The `resources.patchMany` calls: one decision each. */
   const batches = () => host.calls.filter((c) => c.method === "resources.patchMany").map((c) => (c.params as { items: Item[] }).items);
   const patches = () => batches().flat();
-  const press = (label: string) => ([...root.querySelectorAll("button")].find((b) => b.textContent === label) as HTMLButtonElement).click();
-  const danger = () => root.querySelector(".change-status.sx-status--danger")?.textContent;
 
-  it("Reconcile with source sends at once a HelmRelease's repository, then its HelmChart, then the release, and closes", async () => {
+  it("Reconcile with source sends a HelmRelease's repository, then its HelmChart, then the release, and closes with nothing drawn", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(Date.parse("2026-11-06T10:00:00Z"));
     await start({ context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(RELEASE)] } });
     stop = startAction(host.sextant, root, "reconcile-with-source");
-    // No button to press: the window sends as soon as it knows the source, as the built-in action did.
     await expect.poll(() => host.closedByFrame).toBe(true);
-    expect(text()).toContain("the source first");
+    // Out of sight: the frame draws nothing at all.
+    expect(root.childNodes).toHaveLength(0);
     expect(batches()).toHaveLength(1);
     expect(host.calls.some((c) => c.method === "resources.patch")).toBe(false);
     expect(patches().map((p) => [`${p.ref.kind.kind}/${p.ref.name}`, p.patchType, p.patch])).toEqual(
@@ -240,48 +238,76 @@ describe("the action window", () => {
     expect(host.notices).toEqual([]);
   });
 
-  it("a failure stops before the next object, names the one that failed, stays open and sends again on Retry", async () => {
-    let calls = 0;
+  it("a failure stops before the next object, names the one that failed in a notice, and closes", async () => {
     await start({
       context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(KUSTOMIZATION)] },
       handlers: {
-        // The first time the GitRepository is refused by the cluster and the Kustomization never sent.
-        "resources.patchMany": ({ items }) =>
-          calls++ === 0
-            ? { items: [{ error: { code: "forbidden", message: "no" } }], sent: 0 }
-            : { items: (items as unknown[]).map(() => ({ object: {} })), sent: (items as unknown[]).length },
+        // The GitRepository is refused by the cluster and the Kustomization never sent.
+        "resources.patchMany": () => ({ items: [{ error: { code: "forbidden", message: "no" } }], sent: 0 }),
       },
     });
     stop = startAction(host.sextant, root, "reconcile-with-source");
-    await expect.poll(danger).toBe(`GitRepository podinfo: ${t("error.forbidden", { message: "no" })}`);
-    expect(patches().map((p) => `${p.ref.kind.kind}/${p.ref.name}`)).toEqual(["GitRepository/podinfo", "Kustomization/podinfo"]);
-    expect(host.closedByFrame).toBe(false);
-    press(t("related.retry"));
     await expect.poll(() => host.closedByFrame).toBe(true);
-    expect(batches()).toHaveLength(2);
+    expect(host.notices).toEqual([
+      t("reconcileWithSource.failedAt", { kind: "GitRepository", name: "podinfo", message: t("error.forbidden", { message: "no" }) }),
+    ]);
+    expect(host.notices[0]).toBe("Reconcile with source stopped at GitRepository podinfo: The cluster refused your credentials: no");
+    expect(patches().map((p) => `${p.ref.kind.kind}/${p.ref.name}`)).toEqual(["GitRepository/podinfo", "Kustomization/podinfo"]);
+    expect(batches()).toHaveLength(1);
+    expect(root.childNodes).toHaveLength(0);
   });
 
-  it("a refusal of the whole change says so and closes nothing", async () => {
+  it("an object it cannot read is named in a notice, and nothing is sent", async () => {
     await start({
       context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(KUSTOMIZATION)] },
       handlers: {
-        "resources.patchMany": () => {
-          throw new SextantError("denied", "the user said no");
+        "resources.get": () => {
+          throw new SextantError("notFound", "gone");
         },
       },
     });
     stop = startAction(host.sextant, root, "reconcile-with-source");
-    await expect.poll(danger).toBe("Sextant refused: the user said no");
-    expect(host.closedByFrame).toBe(false);
-    expect(host.notices).toEqual([]);
+    await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(host.notices).toEqual([t("reconcileWithSource.failedAt", { kind: "Kustomization", name: "podinfo", message: "gone" })]);
+    expect(patches()).toEqual([]);
   });
 
-  it("Reconcile now, Suspend and Resume have no window: Sextant sends their patches itself", async () => {
+  it("Sextant's refusal of the whole change is told; the user's own refusal closes silently", async () => {
+    await start({
+      context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(KUSTOMIZATION)] },
+      handlers: {
+        "resources.patchMany": () => {
+          throw new SextantError("denied", "Sextant denied modify on Kustomization sextant-flux/podinfo.");
+        },
+      },
+    });
+    stop = startAction(host.sextant, root, "reconcile-with-source");
+    await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(host.notices).toEqual(["Reconcile with source: Sextant refused: Sextant denied modify on Kustomization sextant-flux/podinfo."]);
+    host.close();
+    root.remove();
+
+    await start({
+      context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(KUSTOMIZATION)] },
+      handlers: {
+        "resources.patchMany": () => {
+          throw new SextantError("denied", "The user declined resources.patchMany on Kustomization sextant-flux/podinfo in cluster kind.");
+        },
+      },
+    });
+    stop = startAction(host.sextant, root, "reconcile-with-source");
+    await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(host.notices).toEqual([]);
+    expect(root.childNodes).toHaveLength(0);
+  });
+
+  it("Reconcile now, Suspend and Resume have no frame: Sextant sends their patches itself", async () => {
     for (const contribution of ["reconcile", "suspend", "resume"]) {
       await start({ context: { view: "action", contribution, selection: [refOf(KUSTOMIZATION)] } });
       stop = startAction(host.sextant, root, contribution);
       expect(text()).toContain(t("common.nothingToShow", { view: contribution }));
       expect(patches()).toEqual([]);
+      expect(host.closedByFrame).toBe(false);
       root.remove();
       host.close();
     }

@@ -15,19 +15,3 @@ p {
   gap: 8px;
   margin: 4px 0;
 }
-
-/* The action window. */
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
-}
-.change-status:empty {
-  display: none;
-}
-.change-status {
-  font-size: 12px;
-}

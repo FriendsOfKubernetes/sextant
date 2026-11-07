@@ -1,5 +1,19 @@
 # Changes of Argo Rollouts
 
+## 1.3.0 — 2026-11-07
+
+Needs Sextant 0.30 (`sextantApi` 4), with the deeper conditions and case tooltips of ADR-0164 (#385).
+
+- **Problems:** Degraded is one rule again, `degraded`, judged exactly as the built-in view judged it for every
+  controller: Argo Rollouts v1.0 and newer by `status.phase`, older ones by their InvalidSpec, RolloutAborted or
+  ProgressDeadlineExceeded condition, and never while the controller has not observed the newest spec (v0.9's hash
+  in `observedGeneration` counts as observed). `degraded-older-controller` is gone: an older controller that has not
+  observed the newest spec is no longer shown Degraded. The rules still judge only Rollouts, so updating asks for no
+  consent again.
+- **Status** of a Rollout whose newest spec the controller has not observed yet says so on hover: "The controller has
+  not seen the latest spec yet.", in every language, as the built-in view did.
+- No new permission.
+
 ## 1.2.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4). The last differences from Sextant's former built-in view (#377).

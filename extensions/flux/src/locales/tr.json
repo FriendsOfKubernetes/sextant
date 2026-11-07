@@ -1,6 +1,5 @@
 {
   "change.conflict": "Nesne okunduktan sonra değişti. Değişikliği görmek için yeniden açın, sonra tekrar deneyin.",
-  "change.waiting": "Sextant bekleniyor…",
   "common.loading": "Yükleniyor…",
   "common.nothingSelected": "Hiçbir şey seçilmedi.",
   "common.nothingToShow": "{{view}} görünümünde gösterilecek bir şey yok.",
@@ -35,7 +34,8 @@
   "fields.type": "Tür",
   "fields.url": "URL",
   "fields.webhookPath": "Webhook yolu",
-  "reconcileWithSource.intro": "Flux bu nesneleri şimdi sırayla uzlaştırır: önce kaynak, sonra {{kind}} {{name}}.",
+  "reconcileWithSource.failed": "Kaynakla birlikte uzlaştır: {{message}}",
+  "reconcileWithSource.failedAt": "Kaynakla birlikte uzlaştırma {{kind}} {{name}} üzerinde durdu: {{message}}",
   "reconcileWithSource.noSource": "{{kind}} {{name}} bir kaynak belirtmiyor.",
   "related.forbidden": "Bu nesneleri listeleme izniniz yok: {{kind}}",
   "related.forbiddenIn": "İzin olmayan namespace'ler: {{namespaces}}",
@@ -50,6 +50,5 @@
   "related.retry": "Yeniden dene",
   "related.usedBy": "Kullananlar",
   "suspended.no": "Hayır",
-  "suspended.yes": "Evet",
-  "window.failedAt": "{{kind}} {{name}}: {{message}}"
+  "suspended.yes": "Evet"
 }

@@ -1,6 +1,5 @@
 {
   "change.conflict": "読み込み後にオブジェクトが変更されました。もう一度開いて変更を確認してから、再試行してください。",
-  "change.waiting": "Sextant を待っています…",
   "common.loading": "読み込み中…",
   "common.nothingSelected": "何も選択されていません。",
   "common.nothingToShow": "{{view}} ビューに表示するものはありません。",
@@ -35,7 +34,8 @@
   "fields.type": "タイプ",
   "fields.url": "URL",
   "fields.webhookPath": "Webhook パス",
-  "reconcileWithSource.intro": "Flux がこれらのオブジェクトを今すぐ順に調整します。まずソース、次に {{kind}} {{name}} です。",
+  "reconcileWithSource.failed": "ソースと共に調整: {{message}}",
+  "reconcileWithSource.failedAt": "ソースと共に調整は {{kind}} {{name}} で停止しました: {{message}}",
   "reconcileWithSource.noSource": "{{kind}} {{name}} はソースを指定していません。",
   "related.forbidden": "これらのオブジェクトを一覧表示する権限がありません: {{kind}}",
   "related.forbiddenIn": "権限がない namespace: {{namespaces}}",
@@ -50,6 +50,5 @@
   "related.retry": "再試行",
   "related.usedBy": "使用元",
   "suspended.no": "いいえ",
-  "suspended.yes": "はい",
-  "window.failedAt": "{{kind}} {{name}}: {{message}}"
+  "suspended.yes": "はい"
 }

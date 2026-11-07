@@ -49,6 +49,7 @@ interface Engine {
   evaluate(condition: unknown, obj: KubeObject): Verdict;
   valueAt(obj: unknown, path: string): unknown;
   numberOf(value: unknown): number | undefined;
+  fillTemplate(template: string, obj: KubeObject): string | null;
   detectRule(rule: unknown, obj: KubeObject): { reason: string; group: string; message?: string; graceMs?: number; notify: boolean }[];
 }
 let engine: Engine;
@@ -69,7 +70,8 @@ interface Column {
   format?: string;
   totalPaths?: string[];
   tones?: Record<string, string>;
-  cases?: { when: unknown; text: string; tone?: string }[];
+  tooltipPaths?: string[];
+  cases?: { when: unknown; text: string; tone?: string; tooltip?: string }[];
 }
 const columnOf = (id: string) => manifest.contributes.columns.find((c) => c.id === id)! as Column;
 
@@ -90,6 +92,15 @@ function shown(id: string, obj: KubeObject): { text?: string; tone?: string } {
   return { text: scalar, tone: scalar === undefined ? undefined : column.tones?.[scalar] };
 }
 const cell = (id: string, obj: KubeObject) => shown(id, obj).text;
+
+/** A computed column's hover: the holding case's tooltip (placeholders filled), else the column's own `tooltipPaths`. */
+function hover(id: string, obj: KubeObject): string | undefined {
+  const column = columnOf(id);
+  const own = () => (column.tooltipPaths ?? []).map((p) => engine.valueAt(obj, p)).find((v) => typeof v === "string" && v !== "") as string | undefined;
+  const holding = (column.cases ?? []).find((c) => holdsNow(c.when, obj));
+  if (holding?.tooltip === undefined) return own();
+  return engine.fillTemplate(holding.tooltip, obj) ?? own();
+}
 
 const rules = manifest.contributes.problems;
 /** The reasons the manifest's rules find, as Sextant judges them (grace not applied). */
@@ -333,7 +344,7 @@ describe("the manifest's problem rules", () => {
     expect(detected(aborted).map((p) => p.group)).toEqual(["rollout", "rollout"]);
   });
 
-  it("tell a Degraded rollout after a minute, also from an older controller's conditions", () => {
+  it("tell a Degraded rollout after a minute, also from an older controller's conditions, by one rule", () => {
     const degraded = copy(canary);
     st(degraded).phase = "Degraded";
     st(degraded).message = "ProgressDeadlineExceeded: ReplicaSet has timed out progressing.";
@@ -344,8 +355,9 @@ describe("the manifest's problem rules", () => {
     delete st(old).phase;
     st(old).conditions = [{ type: "Progressing", status: "False", reason: "ProgressDeadlineExceeded" }];
     expect(rolloutPhase(old).phase).toBe("Degraded");
-    // The older controller's rule names its reason "Degraded", as the built-in did (its title is only for consent).
+    // One rule, `degraded`, for every controller (#385): its title is the reason, as the built-in's.
     expect(detected(old).map((p) => p.reason)).toEqual(["Degraded"]);
+    expect(rules.filter((r) => r.title.startsWith("Degraded")).map((r) => r.id)).toEqual(["degraded"]);
     // Argo Rollouts v0.9 writes a hash as `observedGeneration`: observed, so still Degraded.
     st(old).observedGeneration = "5b6c7d8f9";
     expect(rolloutPhase(old).phase).toBe("Degraded");
@@ -404,12 +416,78 @@ describe("the manifest's problem rules", () => {
         st(ro).phase = "Degraded";
         st(ro).observedGeneration = 2;
       },
+      // v1.0+ with v0.9's hash left in `observedGeneration`: observed, so the phase decides.
+      hashedWithPhase: (ro) => {
+        st(ro).phase = "Degraded";
+        st(ro).observedGeneration = "5b6c7d8f9";
+        ro.metadata.generation = 5;
+      },
+      // An older controller that has not seen the newest spec: Progressing, not Degraded (#385).
+      olderSpecNotObserved: (ro) => {
+        delete st(ro).phase;
+        st(ro).conditions = [{ type: "InvalidSpec", status: "True", message: "bad" }];
+        ro.metadata.generation = 5;
+      },
+      olderUnpausing: (ro) => {
+        delete st(ro).phase;
+        st(ro).conditions = [{ type: "Progressing", status: "False", reason: "RolloutAborted" }];
+        st(ro).pauseConditions = null;
+        st(ro).controllerPause = true;
+      },
+      olderWorkloadNotObserved: (ro) => {
+        delete st(ro).phase;
+        st(ro).conditions = [{ type: "Progressing", status: "False", reason: "ProgressDeadlineExceeded" }];
+        spec(ro).templateResolvedFromRef = true;
+        ro.metadata.annotations = { "rollout.argoproj.io/workload-generation": "4" };
+        st(ro).workloadObservedGeneration = "3";
+      },
+      // Neither generation written: observed.
+      noGenerations: (ro) => {
+        st(ro).phase = "Degraded";
+        delete st(ro).observedGeneration;
+        delete (ro.metadata as { generation?: number }).generation;
+      },
+      // An empty or hashed workload generation is not compared, as the built-in did not.
+      workloadHashed: (ro) => {
+        st(ro).phase = "Degraded";
+        spec(ro).templateResolvedFromRef = true;
+        ro.metadata.annotations = { "rollout.argoproj.io/workload-generation": "4" };
+        st(ro).workloadObservedGeneration = "abc";
+      },
+      workloadWantedEmpty: (ro) => {
+        st(ro).phase = "Degraded";
+        spec(ro).templateResolvedFromRef = true;
+        ro.metadata.annotations = { "rollout.argoproj.io/workload-generation": "" };
+        st(ro).workloadObservedGeneration = "3";
+      },
+      // A paused controller with its pause conditions still there is no unpause.
+      pausedWithConditions: (ro) => {
+        st(ro).phase = "Degraded";
+        st(ro).controllerPause = true;
+      },
+      // A known phase other than Degraded wins over an older controller's condition.
+      progressingWithOldCondition: (ro) => {
+        st(ro).phase = "Progressing";
+        st(ro).conditions = [{ type: "Progressing", status: "False", reason: "ProgressDeadlineExceeded" }];
+      },
+      // An older controller with nothing wrong.
+      olderHealthy: (ro) => {
+        delete st(ro).phase;
+        st(ro).conditions = [{ type: "Available", status: "True" }];
+      },
+      // Aborted: told as Aborted, never Degraded.
+      abortedDegraded: (ro) => {
+        st(ro).phase = "Degraded";
+        st(ro).abort = true;
+      },
     };
     for (const [name, change] of Object.entries(variants)) {
-      const ro = copy(canary);
-      change(ro);
-      const builtIn = rolloutProblems(ro).some((p) => p.reason === "Degraded");
-      expect(detected(ro).some((p) => p.reason.startsWith("Degraded")), name).toBe(builtIn);
+      for (const base of [canary, blueGreen, aborted]) {
+        const ro = copy(base);
+        change(ro);
+        const builtIn = rolloutProblems(ro).filter((p) => p.reason === "Degraded").length;
+        expect(detected(ro).filter((p) => p.reason === "Degraded").length, `${name} of ${ro.metadata.name}`).toBe(builtIn);
+      }
     }
   });
 
@@ -493,6 +571,29 @@ describe("the manifest's columns", () => {
       const { phase } = rolloutPhase(ro);
       expect(shown("rollout-status", ro), name).toEqual({ text: phase, tone: tone[phase] });
     }
+  });
+
+  it("explain on hover that the controller has not seen the newest spec, as the built-in Status did", () => {
+    const stale = copy(aborted);
+    stale.metadata.generation = 4;
+    expect(rolloutPhase(stale).reasonKey).toBe("specNotObserved");
+    expect(hover("rollout-status", stale)).toBe("The controller has not seen the latest spec yet.");
+    // Elsewhere the controller's own message, as before.
+    expect(hover("rollout-status", aborted)).toBe(st(aborted).message);
+    const hashed = copy(aborted);
+    st(hashed).observedGeneration = "5b6c7d8f9";
+    expect(hover("rollout-status", hashed)).toBe(st(aborted).message);
+    // The one case with a tooltip, translated (the built-in's sentences) and never left in English.
+    const status = columnOf("rollout-status");
+    expect((status.cases ?? []).map((c) => c.tooltip !== undefined)).toEqual([true, false, false, false, false, false, false]);
+    const translations = manifest.translations as Record<string, Record<string, string>>;
+    for (const [language, texts] of Object.entries(translations)) {
+      const text = texts["columns.rollout-status.cases.0.tooltip"];
+      expect(text, language).toBeTruthy();
+      expect(text, language).not.toBe(status.cases![0]!.tooltip);
+    }
+    expect(translations.de!["columns.rollout-status.cases.0.tooltip"]).toBe("Der Controller hat die neueste spec noch nicht gesehen.");
+    expect(translations.ru!["columns.rollout-status.cases.0.tooltip"]).toBe("Контроллер ещё не увидел последнюю spec.");
   });
 
   it("keep the case texts the API's own words in every language", () => {

@@ -1,6 +1,5 @@
 {
   "change.conflict": "Объект изменился после того, как был прочитан. Откройте его снова, чтобы увидеть изменение, и повторите попытку.",
-  "change.waiting": "Ожидание Sextant…",
   "common.loading": "Загрузка…",
   "common.nothingSelected": "Ничего не выбрано.",
   "common.nothingToShow": "В представлении {{view}} нечего показать.",
@@ -35,7 +34,8 @@
   "fields.type": "Тип",
   "fields.url": "URL",
   "fields.webhookPath": "Путь webhook",
-  "reconcileWithSource.intro": "Flux синхронизирует эти объекты сейчас, по очереди: сначала источник, затем {{kind}} {{name}}.",
+  "reconcileWithSource.failed": "Синхронизировать с источником: {{message}}",
+  "reconcileWithSource.failedAt": "Синхронизировать с источником: остановлено на {{kind}} {{name}}: {{message}}",
   "reconcileWithSource.noSource": "{{kind}} {{name}} не указывает источник.",
   "related.forbidden": "У вас нет прав на просмотр списка этих объектов: {{kind}}",
   "related.forbiddenIn": "Нет прав в: {{namespaces}}",
@@ -50,6 +50,5 @@
   "related.retry": "Повторить",
   "related.usedBy": "Используется в",
   "suspended.no": "Нет",
-  "suspended.yes": "Да",
-  "window.failedAt": "{{kind}} {{name}}: {{message}}"
+  "suspended.yes": "Да"
 }

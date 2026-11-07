@@ -1,4 +1,4 @@
-import { SextantError, type KubeObject, type ObjectRef } from "@sextant/extension-sdk";
+import { SextantError, type KubeObject, type ObjectRef, type SignInState } from "@sextant/extension-sdk";
 import { startTestHost, type TestHost, type TestHostOptions } from "@sextant/extension-sdk/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import applicationJson from "../fixtures/application.json";
@@ -114,6 +114,7 @@ describe("Diff", () => {
     });
     expect(root.textContent).toContain(t("diff.signedInAs", { user: "admin" }));
     expect(root.textContent).toContain(t("diff.source.secret"));
+    expect(h.calls.some((c) => c.method === "service.signInState")).toBe(false);
     expect(root.textContent).toContain("Deployment sextant-argo/guestbook-ui");
     expect(root.querySelector("td.removed")?.textContent).toContain("replicas: 2");
     expect(root.querySelector("td.added")?.textContent).toContain("replicas: 1");
@@ -130,6 +131,7 @@ describe("Diff", () => {
           password = typed.shift() ?? null;
           return { signedIn: password !== null };
         },
+        "service.signInState": () => ({ state: "session" }),
         "service.request": (p) => {
           if (p.auth === "signIn:token") return nothingToSend();
           if (p.path === "/api/v1/session") {
@@ -167,8 +169,37 @@ describe("Diff", () => {
     expect(bodies.every((b) => b.includes("{{signIn:") || b.includes("{{secret:"))).toBe(true);
     expect(root.textContent).toContain(t("diff.signedInAs", { user: "alice" }));
     expect(root.textContent).not.toContain(t("diff.source.secret"));
-    // Typed in Sextant's dialog (or remembered there): the session bar says so.
-    expect(root.textContent).toContain(t("diff.source.signIn"));
+    // Typed in Sextant's dialog without Remember: the session bar says it lasts until Sextant is closed.
+    expect(h.calls.filter((c) => c.method === "service.signInState").at(-1)?.params).toEqual({
+      clusterId: "kind",
+      namespace: "argocd",
+      service: "argocd-server",
+    });
+    expect(root.textContent).toContain(`${t("diff.signedInAs", { user: "alice" })} · ${t("diff.source.session")}`);
+  });
+
+  it("says the saved login when Sextant has the sign-in in the keyring, and your sign-in when it cannot tell", async () => {
+    let state: (() => { state: SignInState }) | null = () => ({ state: "saved" });
+    const h = await open(
+      "diff",
+      installation({
+        "service.signInState": () => {
+          if (!state) throw new SextantError("unreachable", "no answer");
+          return state();
+        },
+        "service.request": (p) => {
+          if (p.path === "/api/v1/session") return isTyped(p) ? { status: 200, body: { token: "<hidden>" } } : nothingToSend();
+          if (p.path === "/api/v1/session/userinfo") return { status: 200, body: { loggedIn: true, username: "alice" } };
+          return { status: 200, body: MANAGED };
+        },
+      }),
+    );
+    expect(root.textContent).toContain(`${t("diff.signedInAs", { user: "alice" })} · ${t("diff.source.saved")}`);
+    expect(h.calls.find((c) => c.method === "service.signInState")?.params).toEqual({ clusterId: "kind", namespace: "argocd", service: "argocd-server" });
+    state = null;
+    byText(t("diff.reload")).click();
+    await settle();
+    expect(root.textContent).toContain(`${t("diff.signedInAs", { user: "alice" })} · ${t("diff.source.signIn")}`);
   });
 
   it("after the admin Secret, signs in with the API token of a labelled Secret, by name, as the built-in view did", async () => {
@@ -249,6 +280,7 @@ describe("Diff", () => {
           token = true;
           return { signedIn: true };
         },
+        "service.signInState": (p) => ({ state: p.service === "argocd-server-token" ? "saved" : "none" }),
         "service.request": (p) => {
           if (p.auth !== "signIn:token" || !token) return nothingToSend();
           if (p.path.endsWith("userinfo")) return { status: 200, body: { loggedIn: true, username: "ci" } };
@@ -264,7 +296,7 @@ describe("Diff", () => {
     await settle();
     expect(h.calls.find((c) => c.method === "ui.signIn")?.params).toMatchObject({ service: "argocd-server-token" });
     expect(requests(h).at(-2)).toMatchObject({ path: "/api/v1/applications/guestbook/managed-resources", auth: "signIn:token" });
-    expect(root.textContent).toContain(t("diff.signedInAs", { user: "ci" }));
+    expect(root.textContent).toContain(`${t("diff.signedInAs", { user: "ci" })} · ${t("diff.source.saved")}`);
   });
 
   it("signs out by asking Sextant to forget the sessions and the remembered sign-ins", async () => {

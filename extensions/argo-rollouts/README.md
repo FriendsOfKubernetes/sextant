@@ -17,7 +17,7 @@ notification groups, hidden details sections).
 | | |
 |---|---|
 | Id | `sextant.argo-rollouts` |
-| Version | 1.2.0 ([changes](CHANGELOG.md)) |
+| Version | 1.3.0 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `argo-rollouts-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Argo Rollouts |
@@ -33,7 +33,8 @@ Rollouts.
 
 **Columns**, after Name and Namespace, in place of the CRDs' own printer columns (left out, as the built-in view did):
 - Rollouts: **Status** (`rollout-status`: Healthy, Progressing, Paused or Degraded, coloured, the controller's
-  message on hover; Progressing while the controller has not observed the newest spec), **Strategy**
+  message on hover; Progressing while the controller has not observed the newest spec, with "The controller has not
+  seen the latest spec yet." on hover), **Strategy**
   (`rollout-strategy`: Canary or BlueGreen), **Step** (`rollout-step`: "i/n", the current step of the canary's steps,
   0 before the controller writes one), **Weight** (`rollout-weight`: the canary weight the traffic router reports, 0
   after an abort) and **Ready** (`rollout-ready`: ready of desired replicas).
@@ -85,7 +86,8 @@ Restart (`spec.restartAt`) is Sextant's own generic Restart action and works on 
 - Nothing is deleted. Services are only linked to, never read.
 - Its problem rules judge Rollouts; Sextant asks for that separately at install.
 - An update asks for consent again when it needs a new kind, action or status patch, or changes a grant (1.2.0
-  turned Sextant's confirmation of Modify off, so updating to it asks once).
+  turned Sextant's confirmation of Modify off, so updating to it asks once). Changed or removed problem rules of the
+  same kind ask nothing: Sextant agrees to the kinds the rules judge, and they still judge only Rollouts.
 
 ## Problems
 
@@ -95,8 +97,7 @@ built-in view did.
 
 | Id | When it holds | Grace | Told by another object |
 |---|---|---|---|
-| `degraded` | `status.phase` is Degraded, the update was not aborted, and the controller has observed the newest spec (`status.observedGeneration` equals `metadata.generation`) and is not lifting its pause or waiting to observe the workload the template comes from | 1 minute | No |
-| `degraded-older-controller` | "Degraded (before Argo Rollouts v1.0)", shown with the reason "Degraded": a controller older than v1.0 writes no `status.phase`; it has an InvalidSpec condition or one of reason RolloutAborted or ProgressDeadlineExceeded, the update was not aborted, and the controller is not lifting its pause or waiting to observe the workload the template comes from | 1 minute | No |
+| `degraded` | The update was not aborted, the Rollout is Degraded and the controller has observed the newest spec and is not lifting its pause or waiting to observe the workload the template comes from — the built-in view's reading, for every controller: `status.phase` is Degraded, or, from a controller older than v1.0 (no known `status.phase`), an InvalidSpec condition or one of reason RolloutAborted or ProgressDeadlineExceeded; the spec counts as observed when `status.observedGeneration` equals `metadata.generation`, when either is missing, or when it is not a number (Argo Rollouts v0.9's hash) | 1 minute | No |
 | `aborted` | `status.abort` is true | None | No |
 | `step-analysis-failed` | The current canary step's analysis run is Failed or Error | None | No |
 | `background-analysis-failed` | The canary's background analysis run is Failed or Error | None | No |
@@ -143,10 +144,10 @@ confirmed.
   computed a value they show the closest field:
   - **Status** is `status.phase`, with a spec the controller has not observed yet, its not-yet-observed unpause and
     a referenced workload not yet observed shown as Progressing, as before the move. On hover it shows the
-    controller's message, not Sextant's own explanation ("The controller has not seen the latest spec yet."), which
-    only the details show. Of an older controller's computed phase only Degraded, Paused and an update under way
-    (Progressing) are shown; its Healthy and its other Progressing (from replica counts) are left blank. The details
-    always show the full reading.
+    controller's message, and for a spec not observed yet the built-in view's explanation ("The controller has not
+    seen the latest spec yet."); the other computed states have no explanation on hover, which the details give. Of
+    an older controller's computed phase only Degraded, Paused and an update under way (Progressing) are shown; its
+    Healthy and its other Progressing (from replica counts) are left blank. The details always show the full reading.
   - **Weight** is the router's reported weight (blank without traffic routing, no "%"). The details show the set
     weight and the actual weight.
   - **Message** of an AnalysisRun is its own message, else the message of a failed, errored or inconclusive metric
@@ -156,12 +157,9 @@ confirmed.
   template is not the stable one) is one of several alternatives of theirs, and Sextant's conditions do not nest that
   deep, so they stand on the phase there. Their windows check exactly and say why when they do not apply. Abort,
   Retry, Pause and Resume are offered exactly where they apply.
-- Degraded is two rules, `degraded` for controllers that write `status.phase` (v1.0 and newer) and
-  `degraded-older-controller` for older ones, because one rule may hold at most 20 conditions nested two deep. The
-  second does not wait for the controller to observe the newest spec: Argo Rollouts v0.9 writes a hash there, which
-  Sextant's conditions cannot tell from a generation in a rule that deep. Its one-minute grace covers a spec observed
-  late; a controller older than v1.0 that never observes it is shown Degraded, where the built-in view said
-  Progressing. Both rules have one notification group, as before.
+- A Degraded problem of a controller older than v1.0 reads "The rollout is Degraded: " with `status.message`, blank
+  where the controller writes none; the built-in view named the condition there ("ProgressDeadlineExceeded: …"). The
+  details show the condition.
 - A problem and the failed analysis that caused it are listed as separate problems, but notify once.
 - An Analysis Run or Experiment that failed is not marked under "Only problems": no problem rule watches them.
 - Checked against the patches of `kubectl argo rollouts`, including v0.9's fallback, by tests; not tried on a
