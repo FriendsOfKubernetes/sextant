@@ -23,6 +23,11 @@
       "submit": "Oturum aç",
       "remember": "Bu küme için hatırla",
       "hint": "Sextant yazdıklarınızı saklar ve yalnızca bu servise gönderir; uzantı bunları asla görmez. Hatırlanan oturumlar sisteminizin anahtarlığında tutulur."
+    },
+    "action": {
+      "failed": "{{action}}: {{message}}",
+      "stoppedAt": "{{action}}, {{kind}} {{name}} üzerinde durdu: {{message}}",
+      "objects": "Nesneler"
     }
   },
   "install": {

@@ -763,12 +763,21 @@ function checkProblems(manifest) {
       if (!isLabelKey(rule.newestPer)) fail([...here, "newestPer"], "must be a label key such as `app` or `example.com/name`");
     }
     if (rule.group !== undefined && manifest.sextantApi < SOURCES_API) fail([...here, "group"], `needs sextantApi ${SOURCES_API} or later`);
+    if (rule.reason !== undefined) {
+      if (manifest.sextantApi < SOURCES_API) fail([...here, "reason"], `needs sextantApi ${SOURCES_API} or later`);
+      checkMessage(rule.reason, rule.kind, [...here, "reason"], metadataOnly);
+    }
     if (rule.since !== undefined) checkRulePath(rule.since, rule.kind, [...here, "since"], metadataOnly);
-    const found = placeholders(rule.message);
-    if (found === null) fail([...here, "message"], "has a `{{` without its `}}`");
-    if (found.length > MAX_PLACEHOLDERS) fail([...here, "message"], `has at most ${MAX_PLACEHOLDERS} placeholders`);
-    for (const field of found) checkRulePath(field.trim(), rule.kind, [...here, "message"], metadataOnly);
+    checkMessage(rule.message, rule.kind, [...here, "message"], metadataOnly);
   });
+}
+
+/** Text with `{{<field path>}}` placeholders (`check_message`): each a path that reads no secret of `kind`. */
+function checkMessage(text, kind, segments, metadataOnly) {
+  const found = placeholders(text);
+  if (found === null) fail(segments, "has a `{{` without its `}}`");
+  if (found.length > MAX_PLACEHOLDERS) fail(segments, `has at most ${MAX_PLACEHOLDERS} placeholders`);
+  for (const field of found) checkRulePath(field.trim(), kind, segments, metadataOnly);
 }
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
@@ -982,10 +991,16 @@ export function translatableTexts(manifest) {
   for (const action of c.actions ?? []) {
     out.set(`actions.${action.id}.title`, title);
     if (action.whyNot !== undefined) out.set(`actions.${action.id}.whyNot`, { max: 200 });
+    if (action.ask !== undefined) {
+      out.set(`actions.${action.id}.ask.title`, title);
+      out.set(`actions.${action.id}.ask.text`, { max: 300, message: action.ask.text });
+      out.set(`actions.${action.id}.ask.confirm`, { max: 40, message: action.ask.confirm });
+    }
+    if (action.done !== undefined) out.set(`actions.${action.id}.done`, { max: 200 });
   }
   for (const column of c.columns ?? []) {
     out.set(`columns.${column.id}.title`, title);
-    (column.cases ?? []).forEach((_, i) => out.set(`columns.${column.id}.cases.${i}.text`, title));
+    (column.cases ?? []).forEach((c, i) => out.set(`columns.${column.id}.cases.${i}.text`, { max: 200, message: c.text }));
   }
   for (const section of c.sections ?? []) if (section.title !== undefined) out.set(`sections.${section.section}.title`, title);
   if (c.clusterSettings !== undefined) out.set("clusterSettings.title", title);
@@ -1104,8 +1119,15 @@ function checkServices(manifest) {
       fail(here, "names the Service by `name` or `labelSelector`, one of them");
     }
     (service.secrets ?? []).forEach((secret, j) => {
-      if (!isDnsLabel(secret.name) || !/^[A-Za-z0-9._-]{1,253}$/.test(secret.key)) {
-        fail([...here, "secrets", j], "names a Secret (a DNS name) and a key (letters, digits, `-`, `_`, `.`)");
+      const okSecret =
+        secret.name !== undefined && secret.labelSelector === undefined
+          ? isDnsLabel(secret.name)
+          : secret.name === undefined && secret.labelSelector !== undefined && isSetSelector(secret.labelSelector);
+      if (!okSecret || !/^[A-Za-z0-9._-]{1,253}$/.test(secret.key)) {
+        fail(
+          [...here, "secrets", j],
+          "names a Secret by `name` (a DNS name) or `labelSelector`, and a key (letters, digits, `-`, `_`, `.`)",
+        );
       }
     });
     const port = service.port;
@@ -1270,12 +1292,42 @@ function checkActions(manifest) {
   const list = ["contributes", "actions"];
   (manifest.contributes?.actions ?? []).forEach((action, i) => {
     const here = [...list, i];
-    for (const field of ["when", "whyNot", "placement"]) {
+    for (const field of ["when", "whyNot", "placement", "patch", "ask", "done"]) {
       if (action[field] !== undefined && manifest.sextantApi < WINDOW_API) fail([...here, field], `needs sextantApi ${WINDOW_API} or later`);
     }
     if (action.whyNot !== undefined && action.when === undefined) fail([...here, "whyNot"], "explains `when`: the action needs a `when`");
     if (action.when !== undefined) checkObjectCondition(action.when, action.kinds, [...here, "when"], manifest.sextantApi);
+    for (const field of ["ask", "done"]) {
+      if (action[field] !== undefined && action.patch === undefined) fail([...here, field], "goes with `patch`: the action needs a `patch`");
+    }
+    if (action.patch !== undefined) checkActionPatch(action.patch, [...here, "patch"]);
   });
+}
+
+/** An action's `patch`, serialized, at most (`MAX_ACTION_PATCH_BYTES`, #367). */
+export const MAX_ACTION_PATCH_BYTES = 4096;
+
+/** `check_action_patch`: at most 4 KiB, `{{now}}` only as a whole string value, no key with `{{`, no hidden-values marker. */
+function checkActionPatch(patch, segments) {
+  if (Object.keys(patch).length === 0) fail(segments, "must not be empty");
+  if (new TextEncoder().encode(JSON.stringify(patch)).length > MAX_ACTION_PATCH_BYTES) {
+    fail(segments, `must be at most ${MAX_ACTION_PATCH_BYTES} bytes`);
+  }
+  const walk = (value, at) => {
+    if (typeof value === "string") {
+      if (value.includes("{{") && value !== "{{now}}") fail(at, "has `{{now}}` as a whole value, and no other `{{…}}`");
+    } else if (Array.isArray(value)) {
+      value.forEach((v, i) => walk(v, [...at, i]));
+    } else if (value !== null && typeof value === "object") {
+      // serde_json keeps an object's keys sorted: the first failing key is the same in both checks.
+      for (const key of sortedKeys(value)) {
+        if (key.includes("{{")) fail([...at, key], "a key has no placeholder");
+        if (key === "sextant.dev/values-hidden") fail([...at, key], "must not name Sextant's marker of hidden values");
+        walk(value[key], [...at, key]);
+      }
+    }
+  };
+  walk(patch, segments);
 }
 
 const COLUMN_FIELDS = ["paths", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
@@ -1310,7 +1362,11 @@ function checkColumns(manifest) {
         fail([...here, "tones"], `names values of 1 to ${MAX_TONE_VALUE_CHARS} characters`);
       }
     }
-    (column.cases ?? []).forEach((c, j) => checkObjectCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi));
+    (column.cases ?? []).forEach((c, j) => {
+      checkObjectCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi);
+      // Field values in the text, as a problem message has them (#368).
+      checkMessage(c.text, column.kind, [...here, "cases", j, "text"], false);
+    });
   });
 }
 

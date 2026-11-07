@@ -27,6 +27,8 @@ enum Text<'a> {
     Sentence,
     /// A problem message: up to 300 characters with the English message's placeholders.
     Message(&'a str),
+    /// A column case's text (up to 200 characters) or an action's question: the English text's placeholders, if any.
+    Template(&'a str, usize),
 }
 
 impl Text<'_> {
@@ -36,6 +38,7 @@ impl Text<'_> {
             Text::Description => 500,
             Text::Sentence => 200,
             Text::Message(_) => 300,
+            Text::Template(_, max) => max,
         }
     }
 }
@@ -60,11 +63,28 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
         if action.why_not.is_some() {
             out.insert(format!("actions.{}.whyNot", action.id), Text::Sentence);
         }
+        if let Some(ask) = &action.ask {
+            out.insert(format!("actions.{}.ask.title", action.id), Text::Title);
+            out.insert(
+                format!("actions.{}.ask.text", action.id),
+                Text::Template(&ask.text, 300),
+            );
+            out.insert(
+                format!("actions.{}.ask.confirm", action.id),
+                Text::Template(&ask.confirm, 40),
+            );
+        }
+        if action.done.is_some() {
+            out.insert(format!("actions.{}.done", action.id), Text::Sentence);
+        }
     }
     for column in &c.columns {
         out.insert(format!("columns.{}.title", column.id), Text::Title);
-        for i in 0..column.cases.as_ref().map_or(0, Vec::len) {
-            out.insert(format!("columns.{}.cases.{i}.text", column.id), Text::Title);
+        for (i, case) in column.cases.iter().flatten().enumerate() {
+            out.insert(
+                format!("columns.{}.cases.{i}.text", column.id),
+                Text::Template(&case.text, 200),
+            );
         }
     }
     for section in &c.sections {
@@ -201,7 +221,7 @@ pub(crate) fn check_translations(manifest: &ExtensionManifest) -> Result<(), Man
             if text.chars().count() > max {
                 return Err(at(&path, format!("must be at most {max} characters")));
             }
-            if let Text::Message(english) = kind
+            if let Text::Message(english) | Text::Template(english, _) = kind
                 && sorted_placeholders(text) != sorted_placeholders(english)
             {
                 return Err(at(

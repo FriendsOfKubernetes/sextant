@@ -24,6 +24,11 @@
       "submit": "Entrar",
       "remember": "Lembrar para este cluster",
       "hint": "O Sextant guarda o que você digita e só o envia a este serviço; a extensão nunca o vê. Logins lembrados ficam no chaveiro do seu sistema."
+    },
+    "action": {
+      "failed": "{{action}}: {{message}}",
+      "stoppedAt": "{{action}} parou em {{kind}} {{name}}: {{message}}",
+      "objects": "Objetos"
     }
   },
   "install": {

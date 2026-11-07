@@ -24,6 +24,11 @@
       "submit": "Accedi",
       "remember": "Ricorda per questo cluster",
       "hint": "Sextant conserva ciò che digiti e lo invia solo a questo servizio; l’estensione non lo vede mai. Gli accessi ricordati sono nel portachiavi del sistema."
+    },
+    "action": {
+      "failed": "{{action}}: {{message}}",
+      "stoppedAt": "{{action}} interrotto su {{kind}} {{name}}: {{message}}",
+      "objects": "Oggetti"
     }
   },
   "install": {

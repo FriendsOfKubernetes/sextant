@@ -25,6 +25,11 @@
       "submit": "Zaloguj",
       "remember": "Zapamiętaj dla tego klastra",
       "hint": "Sextant przechowuje to, co wpiszesz, i wysyła tylko do tej usługi; rozszerzenie nigdy tego nie widzi. Zapamiętane logowania są w systemowym magazynie kluczy."
+    },
+    "action": {
+      "failed": "{{action}}: {{message}}",
+      "stoppedAt": "{{action}} zatrzymano na {{kind}} {{name}}: {{message}}",
+      "objects": "Obiekty"
     }
   },
   "install": {

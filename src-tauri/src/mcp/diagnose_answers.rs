@@ -322,7 +322,7 @@ pub fn agent_categories(settings: &sextant_core::settings::AppSettings) -> Vec<S
     enabled
 }
 
-/// Longest message of an extension's problem an agent gets: the window's own limit (`MAX_MESSAGE_CHARS`).
+/// Longest message of an extension's problem an agent gets (the window keeps up to its `MAX_MESSAGE_CHARS`, 1200).
 pub const MAX_EXTENSION_MESSAGE_CHARS: usize = 300;
 
 /// An extension's problem message as an agent gets it: text its manifest wrote, filled from the cluster, already

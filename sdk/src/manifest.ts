@@ -97,6 +97,15 @@ export interface ManifestAction {
    * (`contributes.kinds`); elsewhere, and by default, the "Actions" menu; sextantApi 4.
    */
   placement?: "primary" | "more";
+  /**
+   * A merge patch Sextant sends itself to each object, without the extension's window (since Sextant 0.30,
+   * sextantApi 4): its only placeholder is a whole string value `{{now}}` (the time, RFC 3339); at most 4 KiB.
+   */
+  patch?: Record<string, unknown>;
+  /** With `patch`: Sextant's question before sending it (the objects are listed under `text`). */
+  ask?: { title: string; text: string; confirm: string };
+  /** With `patch`: what Sextant says once every object got it. */
+  done?: string;
 }
 
 /** How a computed column shows its value (sextantApi 4). */
@@ -124,7 +133,10 @@ export interface ManifestColumn {
   tones?: Record<string, ColumnTone>;
   /** The cell's tooltip. */
   tooltipPaths?: string[];
-  /** Texts shown instead of the value where a condition holds, the first that holds, each with its tone. */
+  /**
+   * Texts shown instead of the value where a condition holds, the first that holds, each with its tone; a text may hold
+   * `{{<field path>}}` placeholders (since Sextant 0.30), and a case whose placeholder has no value does not hold.
+   */
   cases?: { when: ProblemCondition; text: string; tone?: ColumnTone }[];
   /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
   afterColumn?: string;
@@ -192,6 +204,11 @@ export interface ManifestProblem {
   source?: { labelSelector?: string; metadataOnly?: boolean };
   /** Rules with the same group notify once per object for all of them (sextantApi 4). */
   group?: string;
+  /**
+   * The reason shown, from the object: text with `{{<field path>}}` placeholders as `message`; the title when it comes
+   * out empty. Not translated (since Sextant 0.30, sextantApi 4).
+   */
+  reason?: string;
 }
 
 /**
@@ -283,7 +300,7 @@ export interface ManifestService {
   /** A label selector picking exactly one Service in the namespace (a Helm release's prefixed name), instead of `name`. */
   labelSelector?: string;
   /** Keys of Secrets of the namespace it may receive in `{{secret:<name>/<key>}}`, agreed to with it: no namespace-wide "Secret values" needed. */
-  secrets?: { name: string; key: string }[];
+  secrets?: ({ name: string; key: string } | { labelSelector: string; key: string })[];
   /** Its port: a number or a port name. */
   port: number | string;
   /** `https`: TLS without checking the certificate (the loopback end of Sextant's forward); `http`: plain. */

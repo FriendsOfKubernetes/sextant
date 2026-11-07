@@ -497,6 +497,16 @@ describe("contributions of an extension", () => {
               },
               { kind, id: "took", title: "Took", paths: [".status.startedAt"], format: "duration", endPaths: [".status.finishedAt"] },
               { kind, id: "step", title: "Step", paths: [".status.step"], format: "ratio", totalPaths: [".spec.steps"] },
+              {
+                kind,
+                id: "source",
+                title: "Source",
+                paths: [".spec.sourceRef.name"],
+                cases: [
+                  { when: { type: "exists", path: ".spec.sourceRef.namespace" }, text: "{{.spec.sourceRef.kind}}/{{.spec.sourceRef.namespace}}/{{.spec.sourceRef.name}}" },
+                  { when: { type: "exists", path: ".spec.sourceRef.name" }, text: "{{.spec.sourceRef.kind}}/{{.spec.sourceRef.name}}" },
+                ],
+              },
             ],
           },
         },
@@ -521,6 +531,10 @@ describe("contributions of an extension", () => {
     const run = obj({}, { startedAt: "2026-11-06T11:00:00Z", finishedAt: "2026-11-06T11:30:00Z" });
     expect(col("took").value(run)).toBe(30 * 60_000);
     expect(col("took").filter?.type).toBe("number");
+    // A case's text with field values (#368); one whose placeholder has none does not hold.
+    expect(col("source").value(obj({ sourceRef: { kind: "GitRepository", name: "podinfo" } }, {}))).toBe("GitRepository/podinfo");
+    expect(col("source").value(obj({ sourceRef: { kind: "GitRepository", name: "p", namespace: "infra" } }, {}))).toBe("GitRepository/infra/p");
+    expect(col("source").value(obj({ sourceRef: { name: "p" } }, {}))).toBe("p");
   });
 
   it("offer an action only where its condition holds, saying why not, as a button only on kinds of its own (ADR-0154)", () => {
@@ -563,6 +577,70 @@ describe("contributions of an extension", () => {
     const other = render(<ActionBar clusterId="c1" kind={gadget} obj={{ ...suspended, kind: "Gadget" }} />);
     expect(within(other.container).queryByRole("button", { name: "Resume" })).toBeNull();
     other.unmount();
+  });
+
+  it("send an action that is a fixed patch itself, after its question, with {{now}} filled in (#367)", async () => {
+    const own = { group: "demo.sextant.dev", kind: "Widget" };
+    registerExtension(
+      info({
+        manifest: {
+          ...manifest,
+          sextantApi: 4,
+          contributes: {
+            ...manifest.contributes,
+            actions: [
+              {
+                id: "poke",
+                title: "Poke",
+                kinds: [own],
+                danger: false,
+                multiple: true,
+                patch: { metadata: { annotations: { "demo/requestedAt": "{{now}}" } } },
+                done: "Poked",
+              },
+              {
+                id: "stop",
+                title: "Stop",
+                kinds: [own],
+                danger: true,
+                multiple: false,
+                patch: { spec: { stopped: true } },
+                ask: { title: "Stop the widget?", text: "It stops until resumed.", confirm: "Stop it" },
+              },
+            ],
+          },
+        },
+      }),
+    );
+    backend.on("extension_call", () => ({ items: [{ object: widget }], sent: 1 }));
+    render(<ActionDialogHost />);
+    const [poke] = getActionsFor([widget], WIDGET, ["ext:demo.widgets:poke"]);
+    await act(() => runAction(poke!, "c1", WIDGET, [widget]));
+    // No frame and no question: the patch went at once, in the extension's name.
+    expect(document.querySelector("iframe")).toBeNull();
+    await waitFor(() => expect(backend.calls.filter((c) => c.cmd === "extension_call")).toHaveLength(1));
+    const sent = backend.calls.find((c) => c.cmd === "extension_call")!.args as {
+      extensionId: string;
+      method: string;
+      params: { clusterId: string; items: { ref: unknown; patch: { metadata: { annotations: Record<string, string> } }; patchType: string }[] };
+    };
+    expect(sent).toMatchObject({ extensionId: "demo.widgets", method: "resources.patchMany", params: { clusterId: "c1" } });
+    expect(sent.params.items[0]!.ref).toEqual(widgetRef);
+    expect(sent.params.items[0]!.patchType).toBe("merge");
+    const at = sent.params.items[0]!.patch.metadata.annotations["demo/requestedAt"]!;
+    expect(Number.isNaN(Date.parse(at))).toBe(false);
+
+    // With a question: nothing goes before "Stop it".
+    const [stop] = getActionsFor([widget], WIDGET, ["ext:demo.widgets:stop"]);
+    await act(() => runAction(stop!, "c1", WIDGET, [widget]));
+    const dialog = screen.getByRole("dialog", { name: "Stop the widget?" });
+    expect(within(dialog).getByText("It stops until resumed.")).toBeInTheDocument();
+    expect(within(dialog).getByRole("list", { name: "Objects" })).toHaveTextContent("Widget team-a/w1");
+    expect(backend.calls.filter((c) => c.cmd === "extension_call")).toHaveLength(1);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Stop it" }));
+    await waitFor(() => expect(backend.calls.filter((c) => c.cmd === "extension_call")).toHaveLength(2));
+    const second = backend.calls.filter((c) => c.cmd === "extension_call")[1]!.args as { params: { items: { patch: unknown }[] } };
+    expect(second.params.items[0]!.patch).toEqual({ spec: { stopped: true } });
   });
 
   it("list kinds in a section of its own with Sextant's table, titled and filtered by its rules (ADR-0152)", async () => {

@@ -33,7 +33,7 @@ pub use dry_run::{
 pub(crate) use dry_run::{secret_key_changes, secret_values};
 pub(crate) use get::hide_secret_values;
 pub(crate) use get::resolve_kind;
-pub use get::{get, get_full, secret_value};
+pub use get::{VALUES_HIDDEN_ANNOTATION, get, get_full, secret_value, serves_status};
 pub use list::{ListPage, ObjectCount, count, events, list, resolve};
 pub use mutate::{
     ApplyTarget, Document, STEP_TIMEOUT, apply_planned, apply_yaml, cordon, delete, drain,
@@ -43,7 +43,7 @@ pub use mutate::{
 pub use mutate::{DeletePreconditions, delete_with};
 pub use mutate::{IMMUTABLE_SECRET, SecretWrites, apply_planned_with, patch_with};
 pub use sample::{KindSample, MAX_SAMPLE, MAX_SAMPLED_KINDS, SampledObject, sample_namespace};
-pub use status_patch::patch_custom_status;
+pub use status_patch::{no_status, patch_custom_status};
 pub use watch::{watch, watch_with_options};
 
 /// Group/version/kind. `group` is `""` for the core API group.
@@ -67,6 +67,11 @@ pub struct ResourceKind {
     pub verbs: Vec<String>,
     /// `additionalPrinterColumns` of a CRD; empty for built-in kinds.
     pub printer_columns: Vec<PrinterColumn>,
+    /// Whether discovery lists `<plural>/status`: a status patch of a kind without it is refused before anyone is asked
+    /// (#374). Kept in the backend.
+    #[serde(skip)]
+    #[ts(skip)]
+    pub status_subresource: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

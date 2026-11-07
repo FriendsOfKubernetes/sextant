@@ -45,4 +45,9 @@ source?: RuleSource,
 /**
  * Rules with the same group notify once per object for all of them (ADR-0161); `sextantApi` 4.
  */
-group?: string, };
+group?: string, 
+/**
+ * The reason shown, from the object: text with `{{<field path>}}` placeholders, as `message` (#370); the title
+ * when it comes out empty. Not translated. `sextantApi` 4.
+ */
+reason?: string, };

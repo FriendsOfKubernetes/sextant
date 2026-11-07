@@ -717,7 +717,140 @@
     {"name": "printer columns left out, case tones, placement by column id, rule groups (sextantApi 4)", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/kinds": [{"group": "argoproj.io", "kind": "Rollout", "section": "rollouts", "sectionTitle": "Argo Rollouts", "printerColumns": false}], "/contributes/columns": [{"kind": {"group": "argoproj.io", "kind": "Rollout"}, "id": "status", "title": "Status", "paths": [".status.phase"], "afterColumn": "namespace", "cases": [{"when": {"type": "equals", "path": ".spec.paused", "value": true}, "text": "Paused", "tone": "warning"}]}], "/contributes/problems": [{"id": "aborted", "title": "Aborted", "kind": {"group": "argoproj.io", "kind": "Rollout"}, "group": "rollout", "when": {"type": "equals", "path": ".status.abort", "value": true}, "message": "x"}]}},
     {"name": "paths that pick a list item by a field", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "not-ready", "title": "Not ready", "kind": {"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}, "when": {"type": "equals", "path": ".status.conditions[type=\"Ready\"].status", "value": "False"}, "since": ".status.conditions[type=\"Ready\"].lastTransitionTime", "message": "{{.status.conditions[type=\"Ready\"].message}}"}], "/contributes/columns": [{"kind": {"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}, "id": "status", "title": "Status", "paths": [".status.conditions[type=\"Ready\"].message"]}]}},
     {"name": "a condition comparing two fields (sextantApi 4)", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "promote", "title": "Promote", "kinds": [{"group": "argoproj.io", "kind": "Rollout"}], "when": {"type": "not", "of": {"type": "same", "path": ".status.currentPodHash", "otherPath": ".status.stableRS"}}}]}},
-    {"name": "a service found by labels, with Secret keys it receives", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/services": [{"id": "api", "title": "Argo CD API", "labelSelector": "app.kubernetes.io/name=argocd-server", "port": "https", "scheme": "https", "secrets": [{"name": "argocd-initial-admin-secret", "key": "password"}]}]}}
+    {"name": "a service found by labels, with Secret keys it receives", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/services": [{"id": "api", "title": "Argo CD API", "labelSelector": "app.kubernetes.io/name=argocd-server", "port": "https", "scheme": "https", "secrets": [{"name": "argocd-initial-admin-secret", "key": "password"}]}]}},
+    {
+      "name": "an action that is a fixed patch, with Sextant's question and notice (sextantApi 4)",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 4,
+        "/contributes/actions": [
+          {
+            "id": "reconcile",
+            "title": "Reconcile",
+            "kinds": [
+              {
+                "group": "kustomize.toolkit.fluxcd.io",
+                "kind": "Kustomization"
+              }
+            ],
+            "multiple": true,
+            "patch": {
+              "metadata": {
+                "annotations": {
+                  "reconcile.fluxcd.io/requestedAt": "{{now}}"
+                }
+              }
+            },
+            "done": "Reconcile requested"
+          },
+          {
+            "id": "suspend",
+            "title": "Suspend",
+            "kinds": [
+              {
+                "group": "kustomize.toolkit.fluxcd.io",
+                "kind": "Kustomization"
+              }
+            ],
+            "patch": {
+              "spec": {
+                "suspend": true
+              }
+            },
+            "ask": {
+              "title": "Suspend?",
+              "text": "Flux stops reconciling it until it is resumed.",
+              "confirm": "Suspend"
+            }
+          }
+        ],
+        "/translations": {
+          "de": {
+            "actions.suspend.ask.title": "Anhalten?",
+            "actions.suspend.ask.text": "Flux gleicht es nicht mehr ab, bis es fortgesetzt wird.",
+            "actions.suspend.ask.confirm": "Anhalten",
+            "actions.reconcile.done": "Abgleich angefordert"
+          }
+        }
+      }
+    },
+    {
+      "name": "a service receiving a key of Secrets picked by labels",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 4,
+        "/contributes/services": [
+          {
+            "id": "api",
+            "title": "Argo CD API",
+            "labelSelector": "app.kubernetes.io/name=argocd-server",
+            "port": "https",
+            "scheme": "https",
+            "secrets": [
+              {
+                "name": "argocd-initial-admin-secret",
+                "key": "password"
+              },
+              {
+                "labelSelector": "app.kubernetes.io/part-of=argocd",
+                "key": "token"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "a rule's reason and a case's text from the object (sextantApi 4)",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 4,
+        "/contributes/problems": [
+          {
+            "id": "not-ready",
+            "title": "Not ready",
+            "kind": {
+              "group": "kustomize.toolkit.fluxcd.io",
+              "kind": "Kustomization"
+            },
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "message": "{{.status.conditions[type=\"Ready\"].message}}"
+          }
+        ],
+        "/contributes/columns": [
+          {
+            "kind": {
+              "group": "kustomize.toolkit.fluxcd.io",
+              "kind": "Kustomization"
+            },
+            "id": "source",
+            "title": "Source",
+            "paths": [
+              ".spec.sourceRef.name"
+            ],
+            "cases": [
+              {
+                "when": {
+                  "type": "exists",
+                  "path": ".spec.sourceRef.namespace"
+                },
+                "text": "{{.spec.sourceRef.kind}}/{{.spec.sourceRef.namespace}}/{{.spec.sourceRef.name}}"
+              }
+            ]
+          }
+        ],
+        "/translations": {
+          "de": {
+            "columns.source.cases.0.text": "{{.spec.sourceRef.kind}} {{.spec.sourceRef.namespace}}/{{.spec.sourceRef.name}}"
+          }
+        }
+      }
+    }
   ],
   "invalid": [
     {
@@ -3538,6 +3671,23 @@
     {"name": "same reading a Secret's values", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "", "kind": "Secret"}, "when": {"type": "same", "path": ".metadata.name", "otherPath": ".data.password"}, "message": "x"}]}, "path": "contributes.problems[0].when.otherPath", "message": "reads secret values"},
     {"name": "a service with both a name and labels", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/services": [{"id": "api", "title": "API", "name": "argocd-server", "labelSelector": "app=x", "port": 443, "scheme": "https"}]}, "path": "contributes.services[0]", "message": "one of them"},
     {"name": "a service with neither a name nor labels", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/services": [{"id": "api", "title": "API", "port": 443, "scheme": "https"}]}, "path": "contributes.services[0]", "message": "one of them"},
-    {"name": "a service's Secret key with a slash", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/services": [{"id": "api", "title": "API", "name": "argocd-server", "port": 443, "scheme": "https", "secrets": [{"name": "s", "key": "a/b"}]}]}, "path": "contributes.services[0].secrets[0]", "message": "names a Secret"}
+    {"name": "a service's Secret key with a slash", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/services": [{"id": "api", "title": "API", "name": "argocd-server", "port": 443, "scheme": "https", "secrets": [{"name": "s", "key": "a/b"}]}]}, "path": "contributes.services[0].secrets[0]", "message": "names a Secret"},
+    {"name": "a patch action under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"spec": {"suspend": true}}}]}, "path": "contributes.actions[0].patch", "message": "needs sextantApi 4"},
+    {"name": "a patch with a placeholder other than now", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"metadata": {"name": "{{name}}"}}}]}, "path": "contributes.actions[0].patch.metadata.name", "message": "`{{now}}` as a whole value"},
+    {"name": "a patch with now inside other text", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"metadata": {"annotations": {"a": "at {{now}}"}}}}]}, "path": "contributes.actions[0].patch.metadata.annotations.a", "message": "`{{now}}` as a whole value"},
+    {"name": "a patch key with a placeholder", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"metadata": {"{{now}}": "x"}}}]}, "path": "contributes.actions[0].patch.metadata.{{now}}", "message": "a key has no placeholder"},
+    {"name": "a patch naming the hidden-values marker", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"metadata": {"annotations": {"sextant.dev/values-hidden": "true"}}}}]}, "path": "contributes.actions[0].patch.metadata.annotations.sextant.dev/values-hidden", "message": "marker of hidden values"},
+    {"name": "an empty patch", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {}}]}, "path": "contributes.actions[0].patch", "message": "must not be empty"},
+    {"name": "a patch over 4 KiB", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"metadata": {"annotations": {"a": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}}}}]}, "path": "contributes.actions[0].patch", "message": "at most 4096 bytes"},
+    {"name": "a question without a patch", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "ask": {"title": "Sure?", "text": "It changes.", "confirm": "Go"}}]}, "path": "contributes.actions[0].ask", "message": "goes with `patch`"},
+    {"name": "a notice without a patch", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "done": "Done"}]}, "path": "contributes.actions[0].done", "message": "goes with `patch`"},
+    {"name": "a service Secret with a name and labels", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/services": [{"id": "api", "title": "API", "name": "argocd-server", "port": 443, "scheme": "https", "secrets": [{"name": "s", "labelSelector": "a=b", "key": "token"}]}]}, "path": "contributes.services[0].secrets[0]", "message": "names a Secret by"},
+    {"name": "a service Secret with a label selector Kubernetes does not read", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/services": [{"id": "api", "title": "API", "name": "argocd-server", "port": 443, "scheme": "https", "secrets": [{"labelSelector": "a b!", "key": "token"}]}]}, "path": "contributes.services[0].secrets[0]", "message": "names a Secret by"},
+    {"name": "a rule reason under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "example.dev", "kind": "Widget"}, "when": {"type": "exists", "path": ".a"}, "reason": "{{.status.reason}}", "message": "x"}]}, "path": "contributes.problems[0].reason", "message": "needs sextantApi 4"},
+    {"name": "a rule reason reading a Secret's values", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "", "kind": "Secret"}, "when": {"type": "exists", "path": ".metadata.name"}, "reason": "{{.data.password}}", "message": "x"}]}, "path": "contributes.problems[0].reason", "message": "reads secret values"},
+    {"name": "a case text reading a Secret's values", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "", "kind": "Secret"}, "id": "a", "title": "A", "paths": [".metadata.name"], "cases": [{"when": {"type": "exists", "path": ".metadata.name"}, "text": "{{.data.password}}"}]}]}, "path": "contributes.columns[0].cases[0].text", "message": "reads secret values"},
+    {"name": "a case text with an unclosed placeholder", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}, "id": "a", "title": "A", "paths": [".x"], "cases": [{"when": {"type": "exists", "path": ".y"}, "text": "{{.spec.x"}]}]}, "path": "contributes.columns[0].cases[0].text", "message": "without its `}}`"},
+    {"name": "a translated case text with other placeholders", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}, "id": "a", "title": "A", "paths": [".x"], "cases": [{"when": {"type": "exists", "path": ".y"}, "text": "{{.spec.x}}"}]}], "/translations": {"de": {"columns.a.cases.0.text": "{{.spec.y}}"}}}, "path": "translations.de.columns.a.cases.0.text", "message": "must have the same"},
+    {"name": "a translated question adding a placeholder", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/actions": [{"id": "reconcile", "title": "Reconcile", "kinds": [{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"}], "patch": {"spec": {"suspend": true}}, "ask": {"title": "Sure?", "text": "It stops.", "confirm": "Go"}}], "/translations": {"de": {"actions.reconcile.ask.text": "{{.metadata.name}} hält an."}}}, "path": "translations.de.actions.reconcile.ask.text", "message": "must have the same"}
   ]
 }

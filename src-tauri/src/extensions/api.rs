@@ -57,7 +57,7 @@ use tauri::{Runtime, State, Webview};
 use tokio::task::AbortHandle;
 
 use super::forwards::{ExtensionForwards, MAX_FORWARDS_PER_EXTENSION};
-use super::sessions::{RememberedSignIn, ServiceSessions, session_key, sign_in_credential};
+use super::sessions::{self, RememberedSignIn, ServiceSessions, session_key, sign_in_credential};
 use super::watch_hub::WatchHub;
 use super::{ExtensionHost, HostEvent, WeakExtensionHost};
 use crate::access_guard::audit::{AuditDecision, AuditEntry, AuditLog, clip};
@@ -94,7 +94,7 @@ pub const MAX_GET_MANY: usize = 50;
 pub const GET_MANY_AT_ONCE: usize = 4;
 
 /// The methods `extension_call` serves (`ui.*` and the context are the window's).
-pub const METHODS: [&str; 23] = [
+pub const METHODS: [&str; 24] = [
     "clusters.list",
     "kinds",
     "resources.list",
@@ -118,6 +118,7 @@ pub const METHODS: [&str; 23] = [
     "portForward.stop",
     "service.request",
     "service.forget",
+    "service.secrets",
 ];
 
 const NODE_SHELL_REFUSAL: &str = "Sextant does not let extensions change or delete node shell pods";
@@ -522,6 +523,7 @@ impl ExtensionApi {
             "portForward.stop" => call.port_forward_stop(params).await,
             "service.request" => call.service_request(params).await,
             "service.forget" => call.service_forget(params).await,
+            "service.secrets" => call.service_secrets(params).await,
             _ => Err(invalid(format!("unknown method {method}"))),
         };
         let record = call.record();
@@ -1556,6 +1558,13 @@ impl<'a> ExtCall<'a> {
                 self.where_to_allow()
             )));
         }
+        // A kind without a status subresource (Argo Rollouts v0.9) is refused before the question, so the extension's
+        // patch of the object that v0.9 needs is the only one the user is asked about (#374).
+        if status
+            && !resources::serves_status(&self.api.clusters, &cluster.id, &object.kind).await?
+        {
+            return Err(resources::no_status(&object));
+        }
         let mut needs = vec![requirement(&object, AccessAction::Modify)];
         // On a Secret, a JSON patch other than add/replace/remove may read its values: only with "Secret values".
         if is_core_secret(&object.kind)
@@ -1821,18 +1830,26 @@ impl<'a> ExtCall<'a> {
         services::check_path(&args.path)?;
         let query: Vec<(String, String)> = args.query.into_iter().collect();
         let encoded = services::encode_query(&query)?;
-        // `session`: the token a `capture` kept; `signIn:<field>`: that sign-in field as the bearer token (ADR-0161).
+        // `session`: the token a `capture` kept; `signIn:<field>`: that sign-in field as the bearer token (ADR-0161);
+        // `secret:<name>/<key>`: that key of a Secret the service may receive (#371).
         let auth = match args.auth.as_deref() {
             None => Auth::None,
             Some("session") => Auth::Session,
-            Some(other) => match other.strip_prefix("signIn:") {
-                Some(field) if !field.is_empty() => Auth::SignIn(field.to_owned()),
-                _ => {
+            Some(other) => {
+                if let Some(field) = other.strip_prefix("signIn:").filter(|f| !f.is_empty()) {
+                    Auth::SignIn(field.to_owned())
+                } else if let Some((name, key)) = other
+                    .strip_prefix("secret:")
+                    .and_then(|t| t.split_once('/'))
+                    .filter(|(n, k)| services::is_dns_label(n) && !k.is_empty() && k.len() <= 253)
+                {
+                    Auth::Secret(name.to_owned(), key.to_owned())
+                } else {
                     return Err(invalid(format!(
-                        "auth {other:?}: \"session\" or \"signIn:<field>\""
+                        "auth {other:?}: \"session\", \"signIn:<field>\" or \"secret:<name>/<key>\""
                     )));
                 }
-            },
+            }
         };
         let session = matches!(auth, Auth::Session);
         let capture = match args.capture.as_deref().map(str::trim) {
@@ -1847,6 +1864,12 @@ impl<'a> ExtCall<'a> {
         if let Some(body) = &args.body {
             secret_placeholders(body, &mut secrets)?;
             sign_in_placeholders(body, &mut sign_in_fields)?;
+        }
+        if let Auth::Secret(name, key) = &auth {
+            let pair = (name.clone(), key.clone());
+            if !secrets.contains(&pair) {
+                secrets.push(pair);
+            }
         }
         let entry = active_off_runtime(self.host, &self.id)
             .await?
@@ -1899,8 +1922,28 @@ impl<'a> ExtCall<'a> {
                 AccessAction::PortForward,
             ),
         ];
-        // Keys the service declares were agreed to with it; any other needs "Secret values" there (ADR-0161).
-        if secrets.iter().any(|(n, k)| !service.receives_secret(n, k)) {
+        // Keys the service declares were agreed to with it — by the Secret's name, or by its labels (#371); any other
+        // needs "Secret values" there (ADR-0161).
+        let mut unagreed = false;
+        for (name, key) in &secrets {
+            if service.receives_secret(name, key) {
+                continue;
+            }
+            let selectors = service.secret_selectors(key);
+            let mut labelled = false;
+            for selector in selectors {
+                if self
+                    .labelled_secrets(&cluster, &namespace, selector, key)
+                    .await?
+                    .contains(name)
+                {
+                    labelled = true;
+                    break;
+                }
+            }
+            unagreed |= !labelled;
+        }
+        if unagreed {
             needs.push((
                 Some(namespace.clone()),
                 KindPattern::new("", "Secret"),
@@ -1932,15 +1975,22 @@ impl<'a> ExtCall<'a> {
         };
         self.check(&cluster, &needs, &summary).await?;
         let mut body = args.body;
-        if let Some(body) = body.as_mut() {
-            for (name, key) in &secrets {
-                let value = read(
-                    "reading the Secret",
-                    resources::secret_value(&self.api.clusters, &cluster.id, &namespace, name, key),
-                )
-                .await?;
+        // What the request carries to prove who it is, for the refusal memory (#372): never kept, only digested.
+        let mut credentials: Vec<(String, String)> = Vec::new();
+        let mut secret_bearer = None;
+        for (name, key) in &secrets {
+            let value = read(
+                "reading the Secret",
+                resources::secret_value(&self.api.clusters, &cluster.id, &namespace, name, key),
+            )
+            .await?;
+            if let Some(body) = body.as_mut() {
                 fill_secret(body, name, key, &value);
             }
+            if matches!(&auth, Auth::Secret(n, k) if n == name && k == key) {
+                secret_bearer = Some(value.clone());
+            }
+            credentials.push((format!("secret:{name}/{key}"), value));
         }
         let key = session_key(&self.id, &cluster.id.0, &namespace, &service.id);
         let mut signed_in = None;
@@ -1956,7 +2006,24 @@ impl<'a> ExtCall<'a> {
                     fill_placeholder(body, &format!("{{{{signIn:{field}}}}}"), value);
                 }
             }
+            for field in &sign_in_fields {
+                if let Some(value) = values.get(field) {
+                    credentials.push((format!("signIn:{field}"), value.clone()));
+                }
+            }
             signed_in = Some(values);
+        }
+        // The service refused exactly these credentials earlier in this run: they are not sent again (a wrong password
+        // tried from every window would lock the account), until they change or the user signs in (#372).
+        let digest = sessions::credentials_digest(&credentials);
+        if let Some(digest) = &digest
+            && self.api.sessions.was_refused(&key, digest)
+        {
+            return Ok(json!({
+                "status": 401,
+                "body": { "message": REFUSED_BEFORE },
+                "notSent": true,
+            }));
         }
         let service_name = self.service_name(&cluster, &namespace, &service).await?;
         let forward = self
@@ -1986,6 +2053,7 @@ impl<'a> ExtCall<'a> {
                         CoreError::new(ErrorCode::Unauthorized, "sign in first (ui.signIn)")
                     })?,
             ),
+            Auth::Secret(..) => secret_bearer,
         };
         let path_and_query = if encoded.is_empty() {
             args.path.clone()
@@ -2006,6 +2074,9 @@ impl<'a> ExtCall<'a> {
         let ok = (200..300).contains(&answer.status);
         if session && answer.status == 401 {
             self.api.sessions.forget(&key);
+        }
+        if let (401, Some(digest)) = (answer.status, digest) {
+            self.api.sessions.remember_refused(&key, digest);
         }
         if let (true, Some(steps)) = (ok, capture.as_deref()) {
             let token = take_at(&mut out, steps).ok_or_else(|| {
@@ -2031,6 +2102,7 @@ impl<'a> ExtCall<'a> {
         let key = session_key(&self.id, &cluster.id.0, &args.namespace, &args.service);
         self.api.sessions.forget(&key);
         self.api.sessions.forget_sign_in(&key);
+        self.api.sessions.forget_refused(&key);
         let (store, id) = (
             Arc::clone(&self.host.backends().credentials),
             self.id.clone(),
@@ -2038,6 +2110,99 @@ impl<'a> ExtCall<'a> {
         let name = sign_in_credential(&args.service, &cluster.id.0, &args.namespace);
         blocking(move || store.remove(&id, &name)).await?;
         Ok(Value::Null)
+    }
+
+    /// The names of the namespace's Secrets that a service's labelled `secrets` entries pick and that hold the key
+    /// (#371): names only, never values; Read on the Service there, as for its requests.
+    async fn service_secrets(&self, params: Value) -> CoreResult<Value> {
+        let args: ServiceForgetArgs = parse(&self.method, params)?;
+        let namespace = required("namespace", &args.namespace)?.to_owned();
+        let entry = active_off_runtime(self.host, &self.id)
+            .await?
+            .ok_or_else(|| {
+                self.decide(AuditDecision::Denied);
+                inactive(&self.id)
+            })?;
+        let service = entry
+            .granted_services
+            .iter()
+            .flatten()
+            .find(|s| s.id == args.service)
+            .cloned()
+            .ok_or_else(|| {
+                CoreError::new(
+                    ErrorCode::NotFound,
+                    format!("no service {:?} the user agreed to", args.service),
+                )
+            })?;
+        let cluster = self.open(&args.cluster_id).await?;
+        let needs = vec![(
+            Some(namespace.clone()),
+            KindPattern::new("", "Service"),
+            AccessAction::Read,
+        )];
+        let summary = CallSummary {
+            tool: self.method.clone(),
+            target: format!(
+                "Secrets of Service {namespace}/{} (names only)",
+                service.shown_name()
+            ),
+            details: None,
+        };
+        self.check(&cluster, &needs, &summary).await?;
+        let mut found = Vec::new();
+        for secret in &service.secrets {
+            let Some(selector) = secret.label_selector.as_deref() else {
+                continue;
+            };
+            for name in self
+                .labelled_secrets(&cluster, &namespace, selector, &secret.key)
+                .await?
+            {
+                let item = json!({ "name": name, "key": secret.key });
+                if !found.contains(&item) {
+                    found.push(item);
+                }
+            }
+        }
+        Ok(json!({ "secrets": found }))
+    }
+
+    /// The names of the Secrets of `namespace` that `selector` picks and that hold `key` (values are never read here:
+    /// the list comes without them), at most [`MAX_LABELLED_SECRETS`].
+    async fn labelled_secrets(
+        &self,
+        cluster: &ExtCluster,
+        namespace: &str,
+        selector: &str,
+        key: &str,
+    ) -> CoreResult<Vec<String>> {
+        let kind = KindRef {
+            group: String::new(),
+            version: "v1".into(),
+            kind: "Secret".into(),
+        };
+        let page = read(
+            "listing the Secrets",
+            resources::list(
+                &self.api.clusters,
+                &cluster.id,
+                &kind,
+                Some(namespace),
+                Some(selector),
+                None,
+                MAX_LABELLED_SECRETS,
+            ),
+        )
+        .await?;
+        let mut names: Vec<String> = page
+            .items
+            .iter()
+            .filter(|s| s["data"].get(key).is_some())
+            .filter_map(|s| s["metadata"]["name"].as_str().map(str::to_owned))
+            .collect();
+        names.sort();
+        Ok(names)
     }
 
     /// The sign-in typed for this service in this run, else one remembered for the same API server and CA.
@@ -3003,7 +3168,15 @@ enum Auth {
     Session,
     /// A sign-in field as the bearer token.
     SignIn(String),
+    /// A Secret's key as the bearer token.
+    Secret(String, String),
 }
+
+/// What a request answers when the service refused the same credentials earlier in this run (#372).
+const REFUSED_BEFORE: &str = "Sextant did not send these credentials again: the service refused them earlier in this run. Sign in, or change them, to try again.";
+
+/// Secrets of one labelled `secrets` entry looked at, at most.
+const MAX_LABELLED_SECRETS: u32 = 50;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

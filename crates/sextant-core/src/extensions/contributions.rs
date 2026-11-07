@@ -6,16 +6,21 @@
 use super::manifest::{
     ActionContribution, ColumnContribution, ColumnFormat, ExtensionManifest, ManifestError,
 };
-use super::problems::{check_object_condition, check_path};
+use super::problems::{check_message, check_object_condition, check_path};
 use super::schema::JsonPath;
 use crate::access::{AccessAction, KindPattern};
+use serde_json::Value;
 
 /// The extension API version that brought computed columns, action conditions and `contributes.kinds`.
 pub const WINDOW_API: u32 = 4;
 /// Longest value a column's `tones` names.
 pub const MAX_TONE_VALUE_CHARS: usize = 100;
+/// An action's `patch`, serialized, at most (#367).
+pub const MAX_ACTION_PATCH_BYTES: usize = 4096;
+/// The one placeholder of an action's `patch`: the time it is sent, RFC 3339.
+pub const NOW_PLACEHOLDER: &str = "{{now}}";
 
-/// An action's `when`, `whyNot` and `placement`.
+/// An action's `when`, `whyNot` and `placement`, and its `patch` with `ask` and `done`.
 pub(crate) fn check_actions(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
     let list = JsonPath::default().key("contributes").key("actions");
     for (i, action) in manifest.contributes.actions.iter().enumerate() {
@@ -37,16 +42,73 @@ pub(crate) fn check_actions(manifest: &ExtensionManifest) -> Result<(), Manifest
         if let Some(when) = &action.when {
             check_object_condition(when, &action.kinds, &here.key("when"), manifest.sextant_api)?;
         }
+        for (field, set) in [
+            ("ask", action.ask.is_some()),
+            ("done", action.done.is_some()),
+        ] {
+            if set && action.patch.is_none() {
+                return Err(at(
+                    &here.key(field),
+                    "goes with `patch`: the action needs a `patch`",
+                ));
+            }
+        }
+        if let Some(patch) = &action.patch {
+            check_action_patch(patch, &here.key("patch"))?;
+        }
     }
     Ok(())
 }
 
-fn fields_of_action(action: &ActionContribution) -> [(&'static str, bool); 3] {
+fn fields_of_action(action: &ActionContribution) -> [(&'static str, bool); 6] {
     [
         ("when", action.when.is_some()),
         ("whyNot", action.why_not.is_some()),
         ("placement", action.placement.is_some()),
+        ("patch", action.patch.is_some()),
+        ("ask", action.ask.is_some()),
+        ("done", action.done.is_some()),
     ]
+}
+
+/// An action's `patch` (#367): at most [`MAX_ACTION_PATCH_BYTES`], `{{now}}` only as a whole string value, no key with
+/// `{{` and never Sextant's marker of hidden values.
+fn check_action_patch(patch: &Value, path: &JsonPath) -> Result<(), ManifestError> {
+    if patch.as_object().is_some_and(serde_json::Map::is_empty) {
+        return Err(at(path, "must not be empty"));
+    }
+    if serde_json::to_vec(patch).map_or(usize::MAX, |b| b.len()) > MAX_ACTION_PATCH_BYTES {
+        return Err(at(
+            path,
+            format!("must be at most {MAX_ACTION_PATCH_BYTES} bytes"),
+        ));
+    }
+    fn walk(value: &Value, path: &JsonPath) -> Result<(), ManifestError> {
+        match value {
+            Value::String(text) if text.contains("{{") && text != NOW_PLACEHOLDER => Err(at(
+                path,
+                "has `{{now}}` as a whole value, and no other `{{…}}`",
+            )),
+            Value::Array(items) => items
+                .iter()
+                .enumerate()
+                .try_for_each(|(i, v)| walk(v, &path.index(i))),
+            Value::Object(map) => map.iter().try_for_each(|(k, v)| {
+                if k.contains("{{") {
+                    Err(at(&path.key(k), "a key has no placeholder"))
+                } else if k == crate::resources::VALUES_HIDDEN_ANNOTATION {
+                    Err(at(
+                        &path.key(k),
+                        "must not name Sextant's marker of hidden values",
+                    ))
+                } else {
+                    walk(v, &path.key(k))
+                }
+            }),
+            _ => Ok(()),
+        }
+    }
+    walk(patch, path)
 }
 
 /// A column: a `jsonPath` or `paths`, and the fields that go with `paths` only with it, in a way its format reads.
@@ -136,6 +198,13 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 std::slice::from_ref(&column.kind),
                 &here.key("cases").index(j).key("when"),
                 manifest.sextant_api,
+            )?;
+            // Field values in the text, as a problem message has them (#368).
+            check_message(
+                &case.text,
+                &column.kind,
+                &here.key("cases").index(j).key("text"),
+                false,
             )?;
         }
     }

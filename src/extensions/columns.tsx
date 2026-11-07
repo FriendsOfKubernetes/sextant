@@ -8,7 +8,8 @@ import { Age, ageParts } from "../components";
 import type { ColumnDef } from "../resources/registry";
 import { StatusText } from "../resources/columns";
 import type { Tone } from "../resources/status";
-import { evaluate, numberOf, valueAt } from "./problemRules";
+import { evaluate, fillTemplate, numberOf, valueAt } from "./problemRules";
+import { cleanText } from "../resources/uri";
 
 /** Longest text a computed cell shows. */
 export const MAX_CELL_CHARS = 200;
@@ -47,9 +48,18 @@ function holdsNow(c: ColumnCase, obj: KubeObject, now: number): boolean {
   return verdict.until === undefined || verdict.until > now;
 }
 
-/** The case that replaces the value, if one holds. */
+/**
+ * The case that replaces the value, if one holds, with its text filled from the object (#368): a case whose
+ * placeholder has no value does not hold.
+ */
 function caseOf(column: ColumnContribution, obj: KubeObject, now: number): ColumnCase | undefined {
-  for (const c of column.cases ?? []) if (holdsNow(c, obj, now)) return c;
+  for (const c of column.cases ?? []) {
+    if (!holdsNow(c, obj, now)) continue;
+    if (!c.text.includes("{{")) return c;
+    const filled = fillTemplate(c.text, obj);
+    if (filled === null) continue;
+    return { ...c, text: textOf(cleanText(filled) ?? "") ?? "" };
+  }
   return undefined;
 }
 

@@ -196,8 +196,11 @@ export interface ServiceRequestParams extends OnCluster {
   query?: Record<string, string>;
   /** JSON. A string value exactly `{{secret:<name>/<key>}}` is that key of a Secret of `namespace`, put in by Sextant. */
   body?: JsonValue;
-  /** `session`: the token a `capture` kept; `signIn:<field>`: that sign-in field (an API token) as the bearer token. */
-  auth?: "session" | `signIn:${string}`;
+  /**
+   * `session`: the token a `capture` kept; `signIn:<field>`: that sign-in field (an API token) as the bearer token;
+   * `secret:<name>/<key>`: that key of a Secret the service may receive (an API token Secret, since Sextant 0.30).
+   */
+  auth?: "session" | `signIn:${string}` | `secret:${string}`;
   /** A field path of the JSON answer holding a token: Sextant keeps it as the session, the answer shows `<hidden>`. */
   capture?: string;
 }
@@ -206,6 +209,17 @@ export interface ServiceRequestParams extends OnCluster {
 export interface ServiceAnswer<T = JsonValue> {
   status: number;
   body: T;
+  /**
+   * `true` with a 401 Sextant gave without sending: the service refused these same credentials earlier in this run,
+   * and they are not tried again until they change or the user signs in (so a wrong password does not lock the account).
+   */
+  notSent?: boolean;
+}
+
+/** A Secret a service may receive by its labels (`service.secrets`): its name and the key. */
+export interface ServiceSecretRef {
+  name: string;
+  key: string;
 }
 
 /** What `ui.openLogs` opens in Sextant's logs tab: one pod (and container), or the pods a label selector picks. */
@@ -277,6 +291,7 @@ export interface Methods {
   "portForward.stop": { params: { id: string }; result: null };
   "service.request": { params: ServiceRequestParams & { clusterId: ClusterId }; result: ServiceAnswer };
   "service.forget": { params: { clusterId: ClusterId; namespace: string; service: string }; result: null };
+  "service.secrets": { params: { clusterId: ClusterId; namespace: string; service: string }; result: { secrets: ServiceSecretRef[] } };
 }
 
 /** Options of one call. */

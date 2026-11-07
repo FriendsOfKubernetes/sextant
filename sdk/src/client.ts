@@ -35,6 +35,7 @@ import type {
   PatchParams,
   ServiceAnswer,
   ServiceRequestParams,
+  ServiceSecretRef,
   RefInput,
   ResourceKind,
   SecretParams,
@@ -148,6 +149,11 @@ export interface Sextant {
     request<T = JsonValue>(params: ServiceRequestParams, options?: CallOptions): Promise<ServiceAnswer<T>>;
     /** Drops the session token Sextant keeps for the service in `namespace` (signing out). */
     forget(params: { clusterId?: ClusterId; namespace: string; service: string }, options?: CallOptions): Promise<void>;
+    /**
+     * The Secrets of `namespace` the service's labelled `secrets` entries pick and that hold the key — names only, for
+     * `{{secret:<name>/<key>}}` or `auth: "secret:<name>/<key>"` (since Sextant 0.30).
+     */
+    secrets(params: { clusterId?: ClusterId; namespace: string; service: string }, options?: CallOptions): Promise<ServiceSecretRef[]>;
   };
   portForward: {
     start(params: ForwardStartParams, options?: CallOptions): Promise<ForwardResult>;
@@ -581,6 +587,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
     service: {
       request: (params, o) => onCluster("service.request", params, o),
       forget: (params, o) => onCluster<unknown>("service.forget", params, o).then(() => undefined),
+      secrets: (params, o) => onCluster<{ secrets: ServiceSecretRef[] }>("service.secrets", params, o).then((r) => r.secrets),
     },
     portForward: {
       start: (params, o) => onCluster("portForward.start", params, o),

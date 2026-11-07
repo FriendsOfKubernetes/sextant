@@ -22,6 +22,11 @@
       "submit": "サインイン",
       "remember": "このクラスターで記憶する",
       "hint": "入力内容は Sextant が保持し、このサービスにだけ送信します。拡張機能からは見えません。記憶したサインインはシステムのキーリングに保存されます。"
+    },
+    "action": {
+      "failed": "{{action}}: {{message}}",
+      "stoppedAt": "{{action}} は {{kind}} {{name}} で停止しました: {{message}}",
+      "objects": "オブジェクト"
     }
   },
   "install": {

@@ -608,6 +608,10 @@ async fn discover_aggregated(client: &kube::Client) -> Option<Vec<ResourceKind>>
                     namespaced: res.scope.as_deref() == Some("Namespaced"),
                     verbs: res.verbs,
                     printer_columns: Vec::new(),
+                    status_subresource: res
+                        .subresources
+                        .iter()
+                        .any(|s| s.subresource.as_deref() == Some("status")),
                 });
             }
         }
@@ -694,11 +698,18 @@ fn push_kinds(
         Some((g, v)) => (g.to_owned(), v.to_owned()),
         None => (String::new(), list.group_version.clone()),
     };
+    let with_status: std::collections::HashSet<String> = list
+        .resources
+        .iter()
+        .filter_map(|r| r.name.strip_suffix("/status").map(str::to_owned))
+        .collect();
     for res in list.resources {
         if res.name.contains('/') {
             continue; // subresources: pods/log, deployments/scale, …
         }
+        let status_subresource = with_status.contains(&res.name);
         out.push(ResourceKind {
+            status_subresource,
             printer_columns: Vec::new(),
             kind_ref: KindRef {
                 group: group.clone(),

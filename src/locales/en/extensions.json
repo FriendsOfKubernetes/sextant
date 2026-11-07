@@ -23,6 +23,11 @@
       "submit": "Sign in",
       "remember": "Remember for this cluster",
       "hint": "Sextant keeps what you type and sends it only to this service; the extension never sees it. Remembered sign-ins are kept in your system's keyring."
+    },
+    "action": {
+      "failed": "{{action}}: {{message}}",
+      "stoppedAt": "{{action}} stopped at {{kind}} {{name}}: {{message}}",
+      "objects": "Objects"
     }
   },
   "install": {

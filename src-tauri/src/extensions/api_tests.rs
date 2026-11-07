@@ -1194,6 +1194,15 @@ async fn fake_cluster() -> String {
                 r#"{"status":"success","data":{"resultType":"vector",
                     "result":[{"metric":{"namespace":"rook-ceph"},"value":[100,"3"]}]}}"#,
             ),
+            // API token Secrets of Argo CD, found by their labels (#371): the list comes with key names only.
+            "/api/v1/namespaces/argocd/secrets" => (
+                StatusCode::OK,
+                r#"{"apiVersion":"v1","kind":"SecretList","metadata":{"resourceVersion":"1"},"items":[
+                    {"metadata":{"name":"argocd-token-ci","namespace":"argocd","labels":{"app.kubernetes.io/part-of":"argocd"}},
+                     "data":{"token":"dDBr"}},
+                    {"metadata":{"name":"argocd-notifications-secret","namespace":"argocd","labels":{"app.kubernetes.io/part-of":"argocd"}},
+                     "data":{"slack":"eA=="}}]}"#,
+            ),
             "/api/v1/namespaces/team-a/secrets/db" => (
                 StatusCode::OK,
                 r#"{"apiVersion":"v1","kind":"Secret","metadata":{"name":"db","namespace":"team-a"},
@@ -2728,6 +2737,57 @@ async fn a_secret_key_a_service_declares_needs_no_secret_values_on_the_namespace
         journal.iter().any(|e| e.target
             == "Service argocd/app.kubernetes.io/name=argocd-server: POST /api/v1/session")
     );
+}
+
+#[tokio::test]
+async fn secrets_picked_by_labels_are_listed_by_name_and_may_be_the_bearer_token() {
+    let env = Env::at(&fake_cluster().await);
+    env.install(
+        "argo",
+        perms(all_clusters(), &["argocd"], &["read", "portForward"], false),
+    );
+    grant_services(
+        &env,
+        "argo",
+        json!([{ "id": "api", "title": "Argo CD API", "name": "argocd-server", "port": 443, "scheme": "https",
+                 "secrets": [{ "labelSelector": "app.kubernetes.io/part-of=argocd", "key": "token" }] }]),
+    );
+    let call =
+        |method: &'static str, params: Value| env.api.call(&env.host, "argo", method, params, None);
+    // Names only, and only of Secrets with the key.
+    let found = call(
+        "service.secrets",
+        json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": "api" }),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        found,
+        json!({ "secrets": [{ "name": "argocd-token-ci", "key": "token" }] })
+    );
+    let request = |auth: &str| {
+        json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": "api", "method": "GET",
+                "path": "/api/v1/session/userinfo", "auth": auth })
+    };
+    // A labelled Secret's agreed key: no "Secret values" needed (the fake cluster cannot read it: not denied).
+    let err = call("service.request", request("secret:argocd-token-ci/token"))
+        .await
+        .unwrap_err();
+    assert_ne!(err.code, ErrorCode::Denied, "{}", err.message);
+    assert!(!err.message.contains("t0k"), "{}", err.message);
+    // A Secret the selector does not pick, or another key: "Secret values", which the extension does not have.
+    for auth in [
+        "secret:db/token",
+        "secret:argocd-notifications-secret/slack",
+    ] {
+        let err = call("service.request", request(auth)).await.unwrap_err();
+        assert_eq!(err.code, ErrorCode::Denied, "{auth}: {}", err.message);
+    }
+    // A malformed one: invalid.
+    let err = call("service.request", request("secret:/token"))
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid, "{}", err.message);
 }
 
 #[tokio::test]

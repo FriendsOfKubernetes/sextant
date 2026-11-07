@@ -287,6 +287,29 @@ pub struct ActionContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub placement: Option<ActionPlacement>,
+    /// A merge patch the window sends itself to each selected object through `resources.patchMany`, without the
+    /// extension's window (#367); its only placeholder is a whole string value `{{now}}`. `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "Record<string, unknown>")]
+    pub patch: Option<serde_json::Value>,
+    /// With `patch`: Sextant's question before sending it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub ask: Option<ActionAsk>,
+    /// With `patch`: what Sextant says once every object got it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub done: Option<String>,
+}
+
+/// The question Sextant asks before an action's `patch` (#367): a title, a sentence and the button's label.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ActionAsk {
+    pub title: String,
+    pub text: String,
+    pub confirm: String,
 }
 
 /// Where an extension's action asks to be shown in the details bar.
@@ -970,6 +993,9 @@ mod tests {
                 when: None,
                 why_not: None,
                 placement: None,
+                patch: None,
+                ask: None,
+                done: None,
             }
         );
         assert!(c.actions[1].danger && c.actions[1].multiple);

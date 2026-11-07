@@ -75,6 +75,11 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub group: Option<String>,
+    /// The reason shown, from the object: text with `{{<field path>}}` placeholders, as `message` (#370); the title
+    /// when it comes out empty. Not translated. `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub reason: Option<String>,
 }
 
 /// The objects a rule's kind is watched for (`ProblemContribution.source`).
@@ -139,7 +144,8 @@ pub enum ProblemCondition {
         #[ts(type = "number")]
         value: serde_json::Number,
     },
-    /// The values at `path` and `otherPath` are the same scalar (ADR-0161); `sextantApi` 4. With `not`: they differ.
+    /// The values at `path` and `otherPath` are the same scalar, or the same number where one is written as text
+    /// (`"3"` and `3`, #369) (ADR-0161); `sextantApi` 4. With `not`: they differ.
     Same {
         path: String,
         #[serde(rename = "otherPath")]
@@ -257,6 +263,15 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 &here.key("group"),
                 format!("needs sextantApi {SOURCES_API} or later"),
             ));
+        }
+        if let Some(reason) = &rule.reason {
+            if manifest.sextant_api < SOURCES_API {
+                return Err(at(
+                    &here.key("reason"),
+                    format!("needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            check_message(reason, &rule.kind, &here.key("reason"), metadata_only)?;
         }
         if let Some(since) = &rule.since {
             check_rule_path(since, &rule.kind, &here.key("since"), metadata_only)?;
@@ -653,7 +668,7 @@ fn is_selector_value(text: &str) -> bool {
 }
 
 /// The placeholders of a message: each `{{…}}` a field path that reads no secret; no `{{` without its `}}`.
-fn check_message(
+pub(crate) fn check_message(
     text: &str,
     kind: &KindPattern,
     path: &JsonPath,

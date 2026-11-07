@@ -1,7 +1,7 @@
 // Contributions of extensions, registered in Sextant's registries from their manifests — no extension code runs for
 // this. Every registry id is `ext:<extensionId>:<id>`; each one shows the extension's frame (`ExtensionFrame`) with its
 // view: pages and sidebar sections (`page`), details sections and tabs (`details`), actions opening a window
-// (`action`), dock buttons opening a dock tab (`dock`); table columns are JSONPath, shown without any frame. The
+// (`action`; an action that is a fixed patch is sent by Sextant itself, `patchAction.tsx`), dock buttons opening a dock tab (`dock`); table columns are JSONPath, shown without any frame. The
 // settings section is drawn by Settings → Extensions (`ExtensionSettingsFrame`).
 //
 // Only active extensions contribute (enabled, consented, manifest read). `syncExtensions(list)` follows the installed
@@ -39,6 +39,7 @@ import {
 } from "../features/clusters/settingsRegistry";
 import { ExtensionClusterSettingsFrame, ExtensionFrame } from "./ExtensionFrame";
 import { evaluate, kindKeyOf } from "./problemRules";
+import { runPatchAction } from "./patchAction";
 import { matchesSelector } from "./selector";
 import { contributionKey, VIEW } from "./protocol";
 
@@ -234,7 +235,11 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
           when === undefined
             ? undefined
             : (obj, kind) => (matches(action.kinds, kind) && !holdsNow(when, obj) ? action.whyNot : undefined),
-        run: (ctx) => openActionWindow(extensionId, action.id, action.title, ctx),
+        // A fixed patch is sent by Sextant without the extension's window (#367).
+        run: (ctx) =>
+          action.patch !== undefined
+            ? runPatchAction(extensionId, action, ctx)
+            : openActionWindow(extensionId, action.id, action.title, ctx),
       }),
     );
     for (const kind of action.kinds) removers.push(extendActions(kind, [id]));

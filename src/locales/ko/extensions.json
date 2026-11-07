@@ -22,6 +22,11 @@
       "submit": "로그인",
       "remember": "이 클러스터에 대해 기억",
       "hint": "입력한 내용은 Sextant가 보관하며 이 서비스에만 보냅니다. 확장 프로그램은 볼 수 없습니다. 기억된 로그인은 시스템 키링에 저장됩니다."
+    },
+    "action": {
+      "failed": "{{action}}: {{message}}",
+      "stoppedAt": "{{action}}이(가) {{kind}} {{name}}에서 중지됨: {{message}}",
+      "objects": "개체"
     }
   },
   "install": {

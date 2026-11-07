@@ -153,6 +153,7 @@ export const MANIFEST_SHAPES = {
     newestPer: "optional",
     source: "optional",
     group: "optional",
+    reason: "optional",
   }),
   ManifestPage: described<ManifestPage>(`${CONTRIBUTION}/pages/items`, {
     id: "required",
@@ -179,6 +180,9 @@ export const MANIFEST_SHAPES = {
     when: "optional",
     whyNot: "optional",
     placement: "optional",
+    patch: "optional",
+    ask: "optional",
+    done: "optional",
   }),
   ManifestColumn: described<ManifestColumn>(`${CONTRIBUTION}/columns/items`, {
     kind: "required",

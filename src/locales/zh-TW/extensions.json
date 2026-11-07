@@ -22,6 +22,11 @@
       "submit": "登入",
       "remember": "為此叢集記住",
       "hint": "Sextant 保存你輸入的內容，只傳送給此服務；擴充功能永遠看不到。記住的登入保存在系統鑰匙圈中。"
+    },
+    "action": {
+      "failed": "{{action}}：{{message}}",
+      "stoppedAt": "{{action}} 在 {{kind}} {{name}} 處停止：{{message}}",
+      "objects": "物件"
     }
   },
   "install": {

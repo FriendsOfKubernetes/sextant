@@ -359,6 +359,29 @@
                 "description": "`primary`: a button of the details bar on kinds of the extension's own section (`contributes.kinds`); `more` (default): the \"Actions\" menu (sextantApi 4).",
                 "type": "string",
                 "enum": ["primary", "more"]
+              },
+              "patch": {
+                "description": "A merge patch Sextant sends itself to each selected object, without the extension's window (sextantApi 4): at most 4 KiB, its only placeholder a whole string value `{{now}}` (the time, RFC 3339).",
+                "type": "object"
+              },
+              "ask": {
+                "description": "With `patch`: a question Sextant asks before sending it, listing the objects (sextantApi 4).",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["title", "text", "confirm"],
+                "properties": {
+                  "title": { "$ref": "#/$defs/title" },
+                  "text": { "type": "string", "minLength": 1, "maxLength": 300, "format": "non-blank", "pattern": "\\S" },
+                  "confirm": { "type": "string", "minLength": 1, "maxLength": 40, "format": "non-blank", "pattern": "\\S" }
+                }
+              },
+              "done": {
+                "description": "With `patch`: what Sextant says once every object got it (sextantApi 4).",
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "format": "non-blank",
+                "pattern": "\\S"
               }
             }
           }
@@ -430,7 +453,14 @@
                   "required": ["when", "text"],
                   "properties": {
                     "when": { "$ref": "#/$defs/problemCondition" },
-                    "text": { "$ref": "#/$defs/title" },
+                    "text": {
+                      "description": "Text with up to 5 `{{<field path>}}` placeholders filled from the object; a case whose placeholder has no value does not hold.",
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "format": "non-blank",
+                      "pattern": "\\S"
+                    },
                     "tone": { "type": "string", "enum": ["ok", "warning", "error", "neutral"] }
                   }
                 }
@@ -543,15 +573,16 @@
               "name": { "description": "The Service's name, in the namespace each request names; or `labelSelector`.", "type": "string", "minLength": 1, "maxLength": 63 },
               "labelSelector": { "description": "A label selector picking exactly one Service in the namespace, instead of `name`.", "type": "string", "minLength": 1, "maxLength": 1000 },
               "secrets": {
-                "description": "Keys of Secrets of the namespace the service may receive in `{{secret:<name>/<key>}}`, agreed to with it.",
+                "description": "Keys of Secrets of the namespace the service may receive in `{{secret:<name>/<key>}}` or `auth: \"secret:<name>/<key>\"`, agreed to with it: a Secret by `name`, or every Secret `labelSelector` picks (`service.secrets` lists their names).",
                 "type": "array",
                 "maxItems": 5,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["name", "key"],
+                  "required": ["key"],
                   "properties": {
                     "name": { "type": "string", "minLength": 1, "maxLength": 63 },
+                    "labelSelector": { "type": "string", "minLength": 1, "maxLength": 1000 },
                     "key": { "type": "string", "minLength": 1, "maxLength": 253 }
                   }
                 }
@@ -702,6 +733,14 @@
         "group": {
           "description": "Rules with the same group notify once per object for all of them (sextantApi 4).",
           "$ref": "#/$defs/contributionId"
+        },
+        "reason": {
+          "description": "The problem's reason, from the object: text with up to 5 `{{<field path>}}` placeholders, as the message (sextantApi 4). Not translated; the title when it comes out empty.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "format": "non-blank",
+          "pattern": "\\S"
         },
         "source": {
           "description": "Which objects of the kind the rule sees (sextantApi 4): those a label selector picks, and only their metadata. Every rule of a kind has the same source.",

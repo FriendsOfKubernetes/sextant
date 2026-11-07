@@ -10,10 +10,12 @@ import { parseFieldPath, pickItem, type PathStep } from "../features/custom-colu
 import type { Detected } from "../features/problems/model";
 import { cleanText } from "../resources/uri";
 
-/** A placeholder shows at most this many characters of its value. */
-export const MAX_VALUE_CHARS = 100;
-/** A message shows at most this many characters. */
-export const MAX_MESSAGE_CHARS = 300;
+/** A placeholder shows at most this many characters of its value: a controller's whole condition message (#373). */
+export const MAX_VALUE_CHARS = 1000;
+/** A message shows at most this many characters (notifications and agents clip it further). */
+export const MAX_MESSAGE_CHARS = 1200;
+/** A reason from the object shows at most this many characters. */
+export const MAX_REASON_CHARS = 100;
 
 const MINUTE_MS = 60_000;
 
@@ -122,7 +124,7 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject): Verdict 
     case "same": {
       const a = valueAt(obj, condition.path);
       const b = valueAt(obj, condition.otherPath);
-      return { holds: isScalar(a) && isScalar(b) && a === b };
+      return { holds: sameValue(a, b) };
     }
     case "olderThan": {
       const t = timeOf(valueAt(obj, condition.path));
@@ -182,8 +184,39 @@ function rank(v: Verdict): number {
   return v.activeFrom;
 }
 
+/**
+ * `same`: the same scalar, or the same number where one side is a number and the other a number written as text
+ * (Argo Rollouts' `status.observedGeneration` is `"3"`, `metadata.generation` is `3`; #369). Two strings compare as
+ * text only: `"07"` is not `"7"`.
+ */
+export function sameValue(a: unknown, b: unknown): boolean {
+  if (!isScalar(a) || !isScalar(b)) return false;
+  if (a === b) return true;
+  if (typeof a === typeof b || (typeof a !== "number" && typeof b !== "number")) return false;
+  const x = numberOf(a);
+  return x !== undefined && x === numberOf(b);
+}
+
 function sameScalar(value: unknown, expected: ProblemScalar): boolean {
   return isScalar(value) && typeof value === typeof expected && value === expected;
+}
+
+/**
+ * `template` with each `{{path}}` replaced by the scalar value there (clipped); `null` when a placeholder has none
+ * (an object, a list, nothing).
+ */
+export function fillTemplate(template: string, obj: KubeObject): string | null {
+  let missing = false;
+  const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, path: string) => {
+    const value = valueAt(obj, path);
+    if (!isScalar(value)) {
+      missing = true;
+      return "";
+    }
+    const shown = String(value);
+    return Array.from(shown).length > MAX_VALUE_CHARS ? `${Array.from(shown).slice(0, MAX_VALUE_CHARS).join("")}…` : shown;
+  });
+  return missing ? null : text;
 }
 
 /** `template` with each `{{path}}` replaced by the scalar value there (clipped; anything else shows nothing). */
@@ -205,9 +238,11 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject): Detected
   const verdict = evaluate(rule.when, obj);
   if (!verdict.holds) return [];
   const since = rule.since !== undefined ? valueAt(obj, rule.since) : verdict.since;
+  // The reason from the object (#370), cleaned like the message; the title when it comes out empty.
+  const reason = rule.reason === undefined ? "" : renderMessage(rule.reason, obj).trim();
   return [
     {
-      reason: rule.title,
+      reason: reason === "" ? rule.title : Array.from(reason).slice(0, MAX_REASON_CHARS).join(""),
       // Rules of one group notify once per object (ADR-0161).
       group: rule.group ?? rule.id,
       message: renderMessage(rule.message, obj),

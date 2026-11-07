@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
-import { compileRules, detectRule, evaluate, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, renderMessage, valueAt } from "./problemRules";
+import { compileRules, detectRule, evaluate, fillTemplate, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, renderMessage, sameValue, valueAt } from "./problemRules";
 
 const cluster: KubeObject = {
   apiVersion: "ceph.rook.io/v1",
@@ -127,7 +127,7 @@ describe("problem rules of extensions", () => {
     );
     // An object or a missing value shows nothing.
     expect(renderMessage("[{{.status.ceph}}][{{.status.none}}]", cluster)).toBe("[][]");
-    const long = { ...cluster, status: { message: "x".repeat(500) } };
+    const long = { ...cluster, status: { message: "x".repeat(MAX_VALUE_CHARS + 500) } };
     expect(renderMessage("{{.status.message}}", long)).toBe(`${"x".repeat(MAX_VALUE_CHARS)}…`);
     expect(Array.from(renderMessage("{{.status.message}}".repeat(5), long)).length).toBe(MAX_MESSAGE_CHARS + 1);
     const leaky = { ...cluster, status: { message: "pull from https://u:secret@registry.example.com/x?sig=abc failed" } };
@@ -164,5 +164,43 @@ describe("problem rules of extensions", () => {
     const detectors = compileRules([rule, { ...rule, id: "other", title: "Other", kind: { group: "CEPH.rook.io", kind: "cephcluster" } }]);
     expect([...detectors.keys()]).toEqual(["ceph.rook.io/cephcluster"]);
     expect(detectors.get("ceph.rook.io/cephcluster")!(cluster).map((d) => d.reason)).toEqual(["Ceph health error", "Other"]);
+  });
+});
+
+describe("sameValue and templates (#368, #369, #370)", () => {
+  it("read a number written as text as that number, but compare two strings as text", () => {
+    expect(sameValue(3, "3")).toBe(true);
+    expect(sameValue("3", 3)).toBe(true);
+    expect(sameValue(3, "4")).toBe(false);
+    expect(sameValue("07", "7")).toBe(false);
+    expect(sameValue(7, "5d8f9c")).toBe(false);
+    expect(sameValue("abc", "abc")).toBe(true);
+    expect(sameValue(null, null)).toBe(false);
+    const ro = { apiVersion: "argoproj.io/v1alpha1", kind: "Rollout", metadata: { name: "r", generation: 3 }, status: { observedGeneration: "3" } };
+    expect(evaluate({ type: "same", path: ".metadata.generation", otherPath: ".status.observedGeneration" }, ro).holds).toBe(true);
+  });
+
+  it("fill a template only when every placeholder has a value", () => {
+    const obj = { apiVersion: "v1", kind: "X", metadata: { name: "x" }, spec: { sourceRef: { kind: "GitRepository", name: "podinfo" } } };
+    expect(fillTemplate("{{.spec.sourceRef.kind}}/{{.spec.sourceRef.name}}", obj)).toBe("GitRepository/podinfo");
+    expect(fillTemplate("{{.spec.sourceRef.kind}}/{{.spec.sourceRef.namespace}}", obj)).toBeNull();
+    expect(fillTemplate("{{.spec.sourceRef}}", obj)).toBeNull();
+  });
+
+  it("take a rule's reason from the object, else its title", () => {
+    const rule: ProblemContribution = {
+      id: "not-ready",
+      title: "Not ready",
+      kind: { group: "kustomize.toolkit.fluxcd.io", kind: "Kustomization" },
+      when: { type: "exists", path: ".metadata.name" },
+      graceMinutes: 0,
+      notify: true,
+      message: "x",
+      toldThroughOwner: false,
+      reason: "{{.status.conditions[type=\"Ready\"].reason}}",
+    };
+    const failing = { apiVersion: "v1", kind: "Kustomization", metadata: { name: "k" }, status: { conditions: [{ type: "Ready", status: "False", reason: "BuildFailed" }] } };
+    expect(detectRule(rule, failing)[0]!.reason).toBe("BuildFailed");
+    expect(detectRule(rule, { ...failing, status: {} })[0]!.reason).toBe("Not ready");
   });
 });

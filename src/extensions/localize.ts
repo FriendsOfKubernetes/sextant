@@ -29,6 +29,16 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
         ...a,
         title: text(`actions.${a.id}.title`, a.title),
         ...(a.whyNot !== undefined ? { whyNot: text(`actions.${a.id}.whyNot`, a.whyNot) } : {}),
+        ...(a.ask !== undefined
+          ? {
+              ask: {
+                title: text(`actions.${a.id}.ask.title`, a.ask.title),
+                text: text(`actions.${a.id}.ask.text`, a.ask.text),
+                confirm: text(`actions.${a.id}.ask.confirm`, a.ask.confirm),
+              },
+            }
+          : {}),
+        ...(a.done !== undefined ? { done: text(`actions.${a.id}.done`, a.done) } : {}),
       })),
       columns: c.columns.map((col) => ({
         ...col,

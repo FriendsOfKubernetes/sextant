@@ -22,6 +22,11 @@
       "submit": "登录",
       "remember": "为此集群记住",
       "hint": "Sextant 保存你输入的内容，只发送给此服务；扩展永远看不到。记住的登录保存在系统钥匙串中。"
+    },
+    "action": {
+      "failed": "{{action}}：{{message}}",
+      "stoppedAt": "{{action}} 在 {{kind}} {{name}} 处停止：{{message}}",
+      "objects": "对象"
     }
   },
   "install": {

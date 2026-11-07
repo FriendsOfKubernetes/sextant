@@ -21,7 +21,7 @@ export function ServicesConsent({ services }: { services: readonly ServiceContri
               <>
                 <br />
                 <span className="settings__hint">
-                  {t("extensions:services.secrets", { keys: formatList((service.secrets ?? []).map((s) => `${s.name}/${s.key}`)) })}
+                  {t("extensions:services.secrets", { keys: formatList((service.secrets ?? []).map((s) => `${s.name ?? `[${s.labelSelector ?? ""}]`}/${s.key}`)) })}
                 </span>
               </>
             )}

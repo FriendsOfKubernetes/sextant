@@ -287,6 +287,32 @@ pub(crate) async fn resolve_kind(
     ))
 }
 
+/// Whether the cluster serves the `status` subresource of `kind` (a custom kind, from discovery): Argo Rollouts v0.9
+/// declares none, so a status patch there would only fail after the user allowed it (#374). A kind discovery does not
+/// list is `notFound`, as for any request.
+pub async fn serves_status(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    kind: &KindRef,
+) -> CoreResult<bool> {
+    let kinds = mgr.kinds(cluster).await?;
+    let same_kind = |k: &&crate::resources::ResourceKind| {
+        k.kind_ref.group == kind.group && k.kind_ref.kind == kind.kind
+    };
+    kinds
+        .iter()
+        .filter(same_kind)
+        .find(|k| k.kind_ref.version == kind.version)
+        .or_else(|| kinds.iter().find(same_kind))
+        .map(|k| k.status_subresource)
+        .ok_or_else(|| {
+            CoreError::new(
+                ErrorCode::NotFound,
+                format!("the cluster does not serve {}", describe(kind)),
+            )
+        })
+}
+
 /// Finds the API of the kind a YAML document names, for `replace_yaml`/`apply_yaml`: the body carries the document's
 /// `apiVersion`, so it goes to the URL of exactly that version. A version discovery lists is used as is; any other is
 /// looked up in the group (`GET /apis/<group>/<version>`), because discovery keeps only one version of a kind — a

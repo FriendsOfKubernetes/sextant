@@ -219,6 +219,7 @@ export const REMOTE_METHODS: readonly string[] = [
   "portForward.stop",
   "service.request",
   "service.forget",
+  "service.secrets",
 ];
 
 /** Methods the window answers itself. */

@@ -83,6 +83,7 @@ pub async fn resolve(
         namespaced: resolved.namespaced,
         verbs,
         printer_columns: Vec::new(),
+        status_subresource: false,
     })
 }
 

@@ -81,12 +81,18 @@ pub struct ServiceContribution {
     pub sign_in: Option<SignIn>,
 }
 
-/// A key of a Secret a service may receive.
+/// A key of a Secret a service may receive: of the Secret `name`, or of any Secret of the namespace that `label_selector`
+/// picks (an API token Secret a tool's CLI makes with a generated name, #371).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ServiceSecret {
-    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub label_selector: Option<String>,
     pub key: String,
 }
 
@@ -99,9 +105,20 @@ impl ServiceContribution {
             .unwrap_or_default()
     }
 
-    /// Whether the service may receive `key` of the Secret `name` without "Secret values".
+    /// Whether the service may receive `key` of the Secret `name` without "Secret values", by its name.
     pub fn receives_secret(&self, name: &str, key: &str) -> bool {
-        self.secrets.iter().any(|s| s.name == name && s.key == key)
+        self.secrets
+            .iter()
+            .any(|s| s.name.as_deref() == Some(name) && s.key == key)
+    }
+
+    /// The label selectors whose Secrets may give `key` to the service (checked against the Secret's labels).
+    pub fn secret_selectors(&self, key: &str) -> Vec<&str> {
+        self.secrets
+            .iter()
+            .filter(|s| s.key == key)
+            .filter_map(|s| s.label_selector.as_deref())
+            .collect()
     }
 }
 
@@ -179,10 +196,15 @@ pub(crate) fn check_services(manifest: &ExtensionManifest) -> Result<(), Manifes
                     .key
                     .bytes()
                     .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'));
-            if !is_dns_label(&secret.name) || !ok_key {
+            let ok_secret = match (&secret.name, &secret.label_selector) {
+                (Some(name), None) => is_dns_label(name),
+                (None, Some(selector)) => super::problems::is_set_selector(selector),
+                _ => false,
+            };
+            if !ok_secret || !ok_key {
                 return Err(at(
                     &here.key("secrets").index(j),
-                    "names a Secret (a DNS name) and a key (letters, digits, `-`, `_`, `.`)",
+                    "names a Secret by `name` (a DNS name) or `labelSelector`, and a key (letters, digits, `-`, `_`, `.`)",
                 ));
             }
         }

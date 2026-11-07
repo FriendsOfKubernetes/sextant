@@ -119,3 +119,12 @@
   flex-direction: column;
   gap: 4px;
 }
+
+/* The objects an extension's fixed-patch action asks about (#367). */
+.ext-action__objects {
+  margin: 8px 0 0;
+  padding-left: 1.25em;
+  max-height: 240px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}

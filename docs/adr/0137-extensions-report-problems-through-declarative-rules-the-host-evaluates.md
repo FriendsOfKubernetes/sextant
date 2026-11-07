@@ -29,8 +29,9 @@ code the user installed to act while nobody looks (#317).
   kind (ADR-0120), is refused when the manifest is read — in `when`, `since` and the message alike. (The window's
   watches strip Secret values anyway, but not inline secret fields.)
 - **Messages are templates of field values only**: at most 300 characters and 5 placeholders `{{<field path>}}`; a
-  placeholder shows a string, number or boolean, clipped to 100 characters (anything else shows nothing); the result is
-  cleaned like every other text from the cluster (`cleanText`: URI credentials cut) and capped at 300 characters, and
+  placeholder shows a string, number or boolean, clipped to 1000 characters (100 before #373: a controller's condition
+  message is longer) (anything else shows nothing); the result is cleaned like every other text from the cluster
+  (`cleanText`: URI credentials cut) and capped at 1200 characters (an agent gets 300), and
   notifications pass it through `clip`/`inert` as for built-in rules (ADR-0067).
 - **Where a rule runs is decided in Rust.** The command `extension_problem_scopes` (window only) gives, for an enabled
   extension and a connected cluster, each kind the user agreed to (below) with the namespaces where the extension's

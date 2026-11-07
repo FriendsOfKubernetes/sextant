@@ -154,6 +154,7 @@ fn live_objects_are_listed_through_the_served_replacement_first() {
         namespaced: true,
         verbs: vec!["list".into(), "watch".into()],
         printer_columns: Vec::new(),
+        status_subresource: false,
     };
     let kinds = vec![
         served("extensions", "v1beta1", "Ingress", "ingresses"),

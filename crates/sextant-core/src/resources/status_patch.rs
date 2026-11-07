@@ -35,7 +35,22 @@ pub async fn patch_custom_status(
             ),
         ));
     }
+    if !super::serves_status(mgr, cluster, &r.kind).await? {
+        return Err(no_status(r));
+    }
     send_status_patch(mgr, cluster, r, patch, patch_type).await
+}
+
+/// The answer for a kind whose CRD declares no status subresource (Argo Rollouts v0.9): `notFound`, as the API server
+/// would answer, but before anything is sent or anyone is asked (#374).
+pub fn no_status(r: &ObjectRef) -> CoreError {
+    CoreError::new(
+        ErrorCode::NotFound,
+        format!(
+            "{} has no status subresource in this cluster: patch the object instead",
+            r.kind.kind
+        ),
+    )
 }
 
 async fn send_status_patch(
@@ -162,5 +177,35 @@ mod tests {
         .unwrap_err();
         assert_eq!(err.code, ErrorCode::Invalid);
         assert!(api.requests().iter().all(|r| r.method == "GET"));
+    }
+
+    #[tokio::test]
+    async fn a_kind_without_a_status_subresource_is_refused_before_sending() {
+        let api = FakeApi::start(argo).await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let patch = json!({ "status": { "phase": "Running" } });
+        let err = patch_custom_status(
+            &mgr,
+            &id,
+            &reference("Workflow", "w"),
+            &patch,
+            PatchType::Merge,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(err.code, ErrorCode::NotFound);
+        assert!(
+            err.message.contains("no status subresource"),
+            "{}",
+            err.message
+        );
+        assert!(api.requests().iter().all(|r| r.method == "GET"));
+        assert!(serves_status_of(&mgr, &id, "Rollout").await);
+    }
+
+    async fn serves_status_of(mgr: &ClusterManager, id: &ClusterId, kind: &str) -> bool {
+        crate::resources::serves_status(mgr, id, &reference(kind, "x").kind)
+            .await
+            .unwrap()
     }
 }

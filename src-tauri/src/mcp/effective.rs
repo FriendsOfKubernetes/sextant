@@ -283,6 +283,7 @@ mod tests {
             namespaced,
             verbs: vec!["list".to_owned()],
             printer_columns: Vec::new(),
+            status_subresource: false,
         }
     }
 
