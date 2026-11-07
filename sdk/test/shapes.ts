@@ -154,6 +154,7 @@ export const MANIFEST_SHAPES = {
     source: "optional",
     group: "optional",
     reason: "optional",
+    notifyAs: "optional",
   }),
   ManifestPage: described<ManifestPage>(`${CONTRIBUTION}/pages/items`, {
     id: "required",

@@ -270,8 +270,20 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject, ctx: Rule
       notify: rule.notify,
       ...(verdict.lookups ? { lookups: verdict.lookups } : {}),
       ...(rule.toldThroughOwner ? controllerOf(obj) : {}),
+      ...notifyAsOf(rule, obj),
     },
   ];
+}
+
+/**
+ * The notification identity a rule's `notifyAs` gives (#394): `<kind>/<namespace>/<value>` when the path has a value
+ * (the runs of one CronWorkflow notify as one); else none, and the object's own counts.
+ */
+function notifyAsOf(rule: ProblemContribution, obj: KubeObject): { notifyAs?: string } {
+  if (rule.notifyAs === undefined) return {};
+  const value = valueAt(obj, rule.notifyAs);
+  if (!isScalar(value) || String(value) === "") return {};
+  return { notifyAs: `${rule.kind.group}/${rule.kind.kind}/${obj.metadata?.namespace ?? ""}/${String(value)}` };
 }
 
 /** The uid of the object's controller (`ownerUid`), when it has one. */

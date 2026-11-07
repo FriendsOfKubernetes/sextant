@@ -201,6 +201,28 @@ describe("sameValue and templates (#368, #369, #370)", () => {
     });
   });
 
+  it("notify as the owner a rule's notifyAs names, else as the object (#394)", () => {
+    const rule: ProblemContribution = {
+      id: "failed",
+      title: "Failed",
+      kind: { group: "argoproj.io", kind: "Workflow" },
+      when: { type: "exists", path: ".metadata.name" },
+      graceMinutes: 0,
+      notify: true,
+      message: "x",
+      toldThroughOwner: false,
+      notifyAs: '.metadata.labels["workflows.argoproj.io/cron-workflow"]',
+    };
+    const run = (name: string, cron?: string) => ({
+      apiVersion: "argoproj.io/v1alpha1",
+      kind: "Workflow",
+      metadata: { name, namespace: "ci", uid: name, ...(cron ? { labels: { "workflows.argoproj.io/cron-workflow": cron } } : {}) },
+    });
+    expect(detectRule(rule, run("nightly-1", "nightly"))[0]!.notifyAs).toBe("argoproj.io/Workflow/ci/nightly");
+    expect(detectRule(rule, run("nightly-2", "nightly"))[0]!.notifyAs).toBe("argoproj.io/Workflow/ci/nightly");
+    expect(detectRule(rule, run("by-hand"))[0]!.notifyAs).toBeUndefined();
+  });
+
   it("fill a template only when every placeholder has a value", () => {
     const obj = { apiVersion: "v1", kind: "X", metadata: { name: "x" }, spec: { sourceRef: { kind: "GitRepository", name: "podinfo" } } };
     expect(fillTemplate("{{.spec.sourceRef.kind}}/{{.spec.sourceRef.name}}", obj)).toBe("GitRepository/podinfo");

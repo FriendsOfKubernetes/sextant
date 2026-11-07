@@ -772,6 +772,10 @@
           "description": "Rules with the same group notify once per object for all of them (sextantApi 4).",
           "$ref": "#/$defs/contributionId"
         },
+        "notifyAs": {
+          "description": "A field path whose value, when the object has one, is what a notification is about instead of the object (`<kind>/<namespace>/<value>`), so the runs of one owner notify as one (sextantApi 4).",
+          "$ref": "#/$defs/fieldPath"
+        },
         "reason": {
           "description": "The problem's reason, from the object: text with up to 5 `{{<field path>}}` placeholders, as the message (sextantApi 4). Not translated; the title when it comes out empty.",
           "type": "string",

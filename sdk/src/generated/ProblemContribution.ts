@@ -50,4 +50,9 @@ group?: string,
  * The reason shown, from the object: text with `{{<field path>}}` placeholders, as `message` (#370); the title
  * when it comes out empty. Not translated. `sextantApi` 4.
  */
-reason?: string, };
+reason?: string, 
+/**
+ * A field path whose value, when the object has one, is what a notification is about instead of the object
+ * (`<kind>/<namespace>/<value>`): the runs of one CronWorkflow notify as one (#394). `sextantApi` 4.
+ */
+notifyAs?: string, };

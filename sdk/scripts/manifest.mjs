@@ -802,6 +802,10 @@ function checkProblems(manifest) {
       checkMessage(rule.reason, rule.kind, [...here, "reason"], metadataOnly);
     }
     if (rule.since !== undefined) checkRulePath(rule.since, rule.kind, [...here, "since"], metadataOnly);
+    if (rule.notifyAs !== undefined) {
+      if (manifest.sextantApi < SOURCES_API) fail([...here, "notifyAs"], `needs sextantApi ${SOURCES_API} or later`);
+      checkRulePath(rule.notifyAs, rule.kind, [...here, "notifyAs"], metadataOnly);
+    }
     checkMessage(rule.message, rule.kind, [...here, "message"], metadataOnly);
   });
 }

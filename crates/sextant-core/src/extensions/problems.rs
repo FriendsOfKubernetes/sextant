@@ -95,6 +95,11 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub reason: Option<String>,
+    /// A field path whose value, when the object has one, is what a notification is about instead of the object
+    /// (`<kind>/<namespace>/<value>`): the runs of one CronWorkflow notify as one (#394). `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub notify_as: Option<String>,
 }
 
 /// The objects a rule's kind is watched for (`ProblemContribution.source`).
@@ -307,6 +312,15 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
         }
         if let Some(since) = &rule.since {
             check_rule_path(since, &rule.kind, &here.key("since"), metadata_only)?;
+        }
+        if let Some(path) = &rule.notify_as {
+            if manifest.sextant_api < SOURCES_API {
+                return Err(at(
+                    &here.key("notifyAs"),
+                    format!("needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            check_rule_path(path, &rule.kind, &here.key("notifyAs"), metadata_only)?;
         }
         check_message(
             &rule.message,

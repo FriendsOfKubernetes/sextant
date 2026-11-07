@@ -233,6 +233,11 @@ export interface ManifestProblem {
    * out empty. Not translated (since Sextant 0.30, sextantApi 4).
    */
   reason?: string;
+  /**
+   * A field path whose value, when the object has one, is what a notification is about instead of the object, so the
+   * runs of one owner notify as one: `.metadata.labels["workflows.argoproj.io/cron-workflow"]` (since Sextant 0.30).
+   */
+  notifyAs?: string;
 }
 
 /**

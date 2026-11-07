@@ -202,6 +202,8 @@ export interface Detected {
   lookups?: { group: string; kind: string; name: string }[];
   /** An extension's rule told through the owner (ADR-0144): the uid of the object's controller. */
   ownerUid?: string;
+  /** What a notification is about instead of the object (an extension rule's `notifyAs`, #394): one per identity. */
+  notifyAs?: string;
   /** The problem counts only this long after it began (or was first seen). */
   graceMs?: number;
   /** Counts from this time (ms) on, whatever `since` says (a certificate expiring soon). */
@@ -808,7 +810,7 @@ export function resolve(
       : category.startsWith("ext:")
         ? (extensionDetector?.(category as ExtensionCategory, kind, obj, ctx) ?? [])
         : detect(kind, obj);
-  return found.map(({ object, ...d }) => {
+  return found.map(({ object, notifyAs, ...d }) => {
     const key = `${uid}|${d.reason}`;
     const previous = before.find((p) => p.key === key);
     const firstSeen = previous && previous.stamp === d.stamp ? previous.firstSeen : now;
@@ -816,7 +818,7 @@ export function resolve(
     return {
       ...d,
       key,
-      notifyKey: `${identity}|${d.group ?? d.reason}`,
+      notifyKey: `${notifyAs ?? identity}|${d.group ?? d.reason}`,
       category,
       uid,
       object: object ?? self,
