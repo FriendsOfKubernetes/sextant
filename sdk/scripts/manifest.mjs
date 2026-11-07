@@ -1472,6 +1472,9 @@ function checkKinds(manifest) {
     if (!ownSection(manifest, entry.section)) {
       fail([...here, "section"], "must be a section of the extension's own: a kind or page of it with this section has a `sectionTitle`");
     }
+    if (entry.problemWhen !== undefined) {
+      checkObjectCondition(entry.problemWhen, [{ group: entry.group, kind: entry.kind }], [...here, "problemWhen"], manifest.sextantApi);
+    }
     (entry.aliases ?? []).forEach((alias, j) => {
       if (!(alias.length >= 1 && alias.length <= 20 && /^[a-z0-9-]+$/.test(alias))) {
         fail([...here, "aliases", j], "a short name has 1 to 20 lowercase letters, digits and `-`");

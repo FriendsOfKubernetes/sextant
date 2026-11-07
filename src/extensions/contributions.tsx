@@ -198,7 +198,11 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
         label: entry.title,
         icon: entry.icon === undefined ? undefined : iconOf(entry.icon, extensionIcon),
         order: entry.order ?? 0,
-        problem: problemOf(extensionId, entry, contributes.problems),
+        // The kind's own "Only problems" (#396), else its rules'.
+        problem:
+          entry.problemWhen !== undefined
+            ? ((when) => (obj: KubeObject) => holdsNow(when, obj))(entry.problemWhen)
+            : problemOf(extensionId, entry, contributes.problems),
         aliases: entry.aliases ?? [],
         searchByDefault: entry.searchByDefault,
         printerColumns: entry.printerColumns,

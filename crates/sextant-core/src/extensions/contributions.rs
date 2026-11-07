@@ -379,6 +379,15 @@ pub(crate) fn check_kinds(manifest: &ExtensionManifest) -> Result<(), ManifestEr
                 "must be a section of the extension's own: a kind or page of it with this section has a `sectionTitle`",
             ));
         }
+        if let Some(when) = &entry.problem_when {
+            let pattern = KindPattern::new(&entry.group, &entry.kind);
+            check_object_condition(
+                when,
+                std::slice::from_ref(&pattern),
+                &here.key("problemWhen"),
+                manifest.sextant_api,
+            )?;
+        }
         for (j, alias) in entry.aliases.iter().enumerate() {
             let ok = (1..=20).contains(&alias.len())
                 && alias

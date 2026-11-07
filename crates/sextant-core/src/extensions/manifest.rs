@@ -411,6 +411,8 @@ pub enum ColumnFormat {
     Age,
     Duration,
     Ratio,
+    /// A list of scalars, joined in the UI language (#395).
+    List,
 }
 
 /// The tone of a shown value.
@@ -482,6 +484,11 @@ pub struct KindContribution {
     /// `false`: the CRD's printer columns are left out of the table, the extension's own take their place (ADR-0161).
     #[serde(default = "yes")]
     pub printer_columns: bool,
+    /// What the table's "Only problems" shows for the kind instead of the objects with an active problem of the rules:
+    /// those this holds for (#396); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub problem_when: Option<super::problems::ProblemCondition>,
 }
 
 /// A dock button that opens a dock tab (`view=dock`).

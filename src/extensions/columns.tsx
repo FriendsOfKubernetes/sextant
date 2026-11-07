@@ -10,6 +10,7 @@ import { StatusText } from "../resources/columns";
 import type { Tone } from "../resources/status";
 import { evaluate, fillTemplate, numberOf, valueAt } from "./problemRules";
 import { cleanText } from "../resources/uri";
+import { formatList } from "../i18n/format";
 
 /** Longest text a computed cell shows. */
 export const MAX_CELL_CHARS = 200;
@@ -136,6 +137,14 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
       if (part === undefined || whole === undefined) return { sort: undefined, text: undefined, draw: null };
       const text = `${part}/${whole}`;
       return { sort: whole === 0 ? 0 : part / whole, text, draw: text };
+    }
+    case "list": {
+      // A list of scalars joined in the UI language (#395); anything else in it is left out.
+      if (!Array.isArray(value)) return { sort: undefined, text: undefined, draw: null };
+      const items = value.filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean").map(String);
+      if (items.length === 0) return { sort: undefined, text: undefined, draw: null };
+      const text = textOf(formatList(items)) ?? "";
+      return { sort: text, text, draw: text };
     }
     case "text": {
       const plain = textOf(value);

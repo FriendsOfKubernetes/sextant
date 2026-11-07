@@ -504,6 +504,7 @@ describe("contributions of an extension", () => {
               },
               { kind, id: "took", title: "Took", paths: [".status.startedAt"], format: "duration", endPaths: [".status.finishedAt"] },
               { kind, id: "step", title: "Step", paths: [".status.step"], format: "ratio", totalPaths: [".spec.steps"] },
+              { kind, id: "zones", title: "Zones", paths: [".spec.zones"], format: "list" },
               {
                 kind,
                 id: "weight",
@@ -565,6 +566,9 @@ describe("contributions of an extension", () => {
     expect(col("weight").value(obj({ plan }, { at: 4 }))).toBe(100);
     expect(col("weight").searchText!(obj({ plan: [{ pause: {} }] }, { at: 0 }), { now: ctx.now, t: i18n.t })).toBe("0%");
     expect(col("weight").searchText!(obj({}, { at: 0 }), { now: ctx.now, t: i18n.t })).toBeUndefined();
+    // A list of scalars joined in the UI language (#395).
+    expect(col("zones").searchText!(obj({ zones: ["a", "b", { x: 1 }] }, {}), { now: ctx.now, t: i18n.t })).toBe("a, b");
+    expect(col("zones").searchText!(obj({ zones: "a" }, {}), { now: ctx.now, t: i18n.t })).toBeUndefined();
     // A count Kubernetes leaves out is 0 when the whole is there.
     expect(col("step").searchText!(obj({ steps: [1, 2, 3, 4] }, {}), { now: ctx.now, t: i18n.t })).toBe("0/4");
     expect(col("step").searchText!(obj({}, {}), { now: ctx.now, t: i18n.t })).toBeUndefined();
@@ -765,6 +769,16 @@ describe("contributions of an extension", () => {
               { group: "demo.sextant.dev", kind: "Widget", section: "tools", title: "Widgets of the demo", order: 1, searchByDefault: false, printerColumns: true },
               // Not served by the cluster: never listed.
               { group: "demo.sextant.dev", kind: "Missing", section: "tools", order: 2, searchByDefault: false, printerColumns: true },
+              // "Only problems" of its own (#396), whatever the rules say.
+              {
+                group: "demo.sextant.dev",
+                kind: "Gizmo",
+                section: "tools",
+                order: 3,
+                searchByDefault: false,
+                printerColumns: true,
+                problemWhen: { type: "equals", path: ".status.phase", value: "Failed" },
+              },
             ],
             problems: [rule],
           },
@@ -783,8 +797,9 @@ describe("contributions of an extension", () => {
     // An object its rules' source does not pick is never a problem of them.
     expect(def.problem?.({ ...broken, metadata: widget.metadata })).toBe(false);
     expect(def.problem?.({ ...broken, status: {} })).toBe(false);
-    // Another custom kind of the group stays under "Custom resources".
-    expect(getResourceDef({ group: "demo.sextant.dev", version: "v1", kind: "Gizmo" }).problem).toBeUndefined();
+    const gizmo = getResourceDef({ group: "demo.sextant.dev", version: "v1", kind: "Gizmo" });
+    expect(gizmo.problem?.({ ...widget, kind: "Gizmo", status: { phase: "Failed" } })).toBe(true);
+    expect(gizmo.problem?.({ ...widget, kind: "Gizmo", status: { phase: "Running" } })).toBe(false);
   });
 
   it("add an item to a cluster's context menu that opens its window for that cluster (ADR-0157)", async () => {

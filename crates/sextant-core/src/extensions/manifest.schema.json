@@ -422,7 +422,7 @@
               "format": {
                 "description": "How the value is shown, sorted and filtered: `text` (default), `number`, `age` (a time), `duration` (from the time to `endPaths` or now), `ratio` (`value/totalPaths`; with the whole there, a missing value is 0, as Kubernetes leaves zero counts out).",
                 "type": "string",
-                "enum": ["text", "number", "age", "duration", "ratio"]
+                "enum": ["text", "number", "age", "duration", "ratio", "list"]
               },
               "endPaths": {
                 "description": "`duration`: the end time, the first with a value; now without one.",
@@ -577,7 +577,11 @@
                 "items": { "type": "string", "minLength": 1, "maxLength": 20 }
               },
               "searchByDefault": { "description": "The command palette searches the kind without being asked to.", "type": "boolean" },
-              "printerColumns": { "description": "`false`: the CRD's printer columns are left out of the table (default true).", "type": "boolean" }
+              "printerColumns": { "description": "`false`: the CRD's printer columns are left out of the table (default true).", "type": "boolean" },
+              "problemWhen": {
+                "description": "What the table's \"Only problems\" shows for the kind instead of the objects with an active problem of the rules: those this holds for, a condition without `missing` (sextantApi 4).",
+                "$ref": "#/$defs/problemCondition"
+              }
             }
           }
         },

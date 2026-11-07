@@ -1301,6 +1301,44 @@
           }
         ]
       }
+    },
+    {
+      "name": "a list column and a kind's own \"Only problems\" (sextantApi 4)",
+      "base": "minimal",
+      "set": {
+        "/sextantApi": 4,
+        "/contributes/kinds": [
+          {
+            "group": "argoproj.io",
+            "kind": "Workflow",
+            "section": "wf",
+            "sectionTitle": "Argo Workflows",
+            "problemWhen": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "Error"
+              ]
+            }
+          }
+        ],
+        "/contributes/columns": [
+          {
+            "kind": {
+              "group": "argoproj.io",
+              "kind": "CronWorkflow"
+            },
+            "id": "schedule",
+            "title": "Schedule",
+            "paths": [
+              ".spec.schedules",
+              ".spec.schedule"
+            ],
+            "format": "list"
+          }
+        ]
+      }
     }
   ],
   "invalid": [
@@ -4166,6 +4204,7 @@
     {"name": "enteredWithin under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "argoproj.io", "kind": "Workflow"}, "when": {"type": "enteredWithin", "minutes": 60}, "message": "x"}]}, "path": "contributes.problems[0].when.type", "message": "needs sextantApi 4"},
     {"name": "enteredWithin over a week", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "argoproj.io", "kind": "Workflow"}, "source": {"labelSelector": "workflows.argoproj.io/phase in (Failed,Error)", "metadataOnly": true}, "when": {"type": "enteredWithin", "minutes": 10081}, "message": "x"}]}, "path": "contributes.problems[0].when.minutes", "message": "at most 10080"},
     {"name": "notifyAs under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "argoproj.io", "kind": "Workflow"}, "when": {"type": "exists", "path": ".a"}, "notifyAs": ".metadata.name", "message": "x"}]}, "path": "contributes.problems[0].notifyAs", "message": "needs sextantApi 4"},
-    {"name": "notifyAs outside the metadata of a metadata-only source", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "argoproj.io", "kind": "Workflow"}, "source": {"metadataOnly": true}, "when": {"type": "exists", "path": ".metadata.name"}, "notifyAs": ".spec.workflowTemplateRef.name", "message": "x"}]}, "path": "contributes.problems[0].notifyAs", "message": "must be under `.metadata`"}
+    {"name": "notifyAs outside the metadata of a metadata-only source", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "argoproj.io", "kind": "Workflow"}, "source": {"metadataOnly": true}, "when": {"type": "exists", "path": ".metadata.name"}, "notifyAs": ".spec.workflowTemplateRef.name", "message": "x"}]}, "path": "contributes.problems[0].notifyAs", "message": "must be under `.metadata`"},
+    {"name": "a kind's problemWhen with missing", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/kinds": [{"group": "argoproj.io", "kind": "Workflow", "section": "wf", "sectionTitle": "Argo Workflows", "problemWhen": {"type": "missing", "path": ".spec.x", "kind": {"group": "", "kind": "ConfigMap"}}}]}, "path": "contributes.kinds[0].problemWhen.type", "message": "only problem rules"}
   ]
 }

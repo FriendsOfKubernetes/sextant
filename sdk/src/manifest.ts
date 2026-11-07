@@ -117,7 +117,7 @@ export interface ManifestAction {
 }
 
 /** How a computed column shows its value (sextantApi 4). */
-export type ColumnFormat = "text" | "number" | "age" | "duration" | "ratio";
+export type ColumnFormat = "text" | "number" | "age" | "duration" | "ratio" | "list";
 /** The tone of a value, drawn as Sextant's status text. */
 export type ColumnTone = "ok" | "warning" | "error" | "neutral";
 
@@ -186,6 +186,11 @@ export interface ManifestKind {
   searchByDefault?: boolean;
   /** `false`: the CRD's printer columns are left out of the table (the extension's columns take their place). Default `true`. */
   printerColumns?: boolean;
+  /**
+   * What the table's "Only problems" shows for the kind instead of the objects with an active problem of the rules:
+   * those this holds for (a condition without `missing`; since Sextant 0.30).
+   */
+  problemWhen?: ProblemCondition;
 }
 
 export interface ManifestDockAction {
