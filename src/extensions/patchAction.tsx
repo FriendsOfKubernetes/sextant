@@ -79,8 +79,8 @@ export function runPatchAction(
       }
     } catch (err) {
       const error = toApiError(err);
-      // The user said no in Sextant's own confirmation: nothing to tell.
-      if (error.code === "denied" && /declined|refused by the user/i.test(error.message)) return;
+      // The user said no in Sextant's own confirmation: nothing to tell (#389).
+      if (error.reason === "declined") return;
       showToast(t("extensions:host.action.failed", { action: action.title, message: error.message }), "error");
     }
   };

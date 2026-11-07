@@ -60,6 +60,20 @@ pub struct CoreError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional, type = "string")]
     pub plugin_output: Option<Box<String>>,
+    /// Why, where the code alone does not say (#389): `declined` — the user said no in Sextant's confirmation, as
+    /// opposed to the access rules refusing (both are `denied`, so code written for `denied` keeps working).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub reason: Option<ErrorReason>,
+}
+
+/// Why an error happened, where its code alone does not say (#389).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ErrorReason {
+    /// The user said no in Sextant's own confirmation.
+    Declined,
 }
 
 /// `Debug` like the derived one, but the plugin's output is never printed.
@@ -84,7 +98,14 @@ impl CoreError {
             code,
             message: message.into(),
             plugin_output: None,
+            reason: None,
         }
+    }
+
+    /// The same error with a [`ErrorReason`].
+    pub fn with_reason(mut self, reason: ErrorReason) -> Self {
+        self.reason = Some(reason);
+        self
     }
 
     /// What a failed exec plugin printed ([`CoreError::plugin_output`]), if anything.

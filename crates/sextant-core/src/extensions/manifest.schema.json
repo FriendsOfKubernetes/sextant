@@ -488,6 +488,10 @@
                       "pattern": "\\S"
                     },
                     "tone": { "type": "string", "enum": ["ok", "warning", "error", "neutral"] },
+                    "value": {
+                      "description": "With `format: \"number\"`: the number the column sorts and filters by while the case holds; the text is still shown (sextantApi 4).",
+                      "type": "number"
+                    },
                     "tooltip": {
                       "description": "Shown on hover while the case holds, instead of `tooltipPaths`: text with up to 5 `{{<field path>}}` placeholders (sextantApi 4).",
                       "type": "string",

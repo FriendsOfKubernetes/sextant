@@ -147,6 +147,15 @@ describe("extension message bridge", () => {
     });
   });
 
+  it("passes on that the user declined, beside the code denied (#389)", async () => {
+    backend.on("extension_call", () => {
+      throw { code: "denied", message: "The user declined resources.patch on Pod team-a/web.", reason: "declined" };
+    });
+    send({ sextant: 1, doc: DOC_A, id: 8, method: "resources.patch", params: {} });
+    await postedCount(1);
+    expect(posted[0]).toMatchObject({ id: 8, error: { code: "denied", reason: "declined" } });
+  });
+
   it("sends the context on ready and on request", async () => {
     send({ sextant: 1, type: "ready" });
     send({ sextant: 1, doc: DOC_A, id: 9, method: "context.get" });

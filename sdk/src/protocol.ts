@@ -41,6 +41,8 @@ export interface HostContext {
 export interface ProtocolError {
   code: ErrorCode;
   message: string;
+  /** `declined`: the user said no in Sextant's confirmation (the code stays `denied`); since Sextant 0.30 (#389). */
+  reason?: "declined";
 }
 
 /** Frame → window. */

@@ -291,7 +291,7 @@ describe("the headless action", () => {
       context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(KUSTOMIZATION)] },
       handlers: {
         "resources.patchMany": () => {
-          throw new SextantError("denied", "The user declined resources.patchMany on Kustomization sextant-flux/podinfo in cluster kind.");
+          throw new SextantError("denied", "The user declined resources.patchMany on Kustomization sextant-flux/podinfo in cluster kind.", "resources.patchMany", "declined");
         },
       },
     });

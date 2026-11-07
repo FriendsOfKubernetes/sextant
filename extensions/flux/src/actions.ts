@@ -6,7 +6,7 @@
 // HelmRelease's HelmChart), then to the object, all in one `resources.patchMany` call, and ends the run with
 // `ui.close`. A failure stops before the next object and is told with `ui.notify`, naming the object that failed; the
 // user's own refusal of Sextant's question ends it silently.
-import { isSextantError, SextantError, ui, type ObjectRef, type Sextant } from "@sextant/extension-sdk";
+import { isDeclined, isSextantError, type ObjectRef, type Sextant, SextantError, ui } from "@sextant/extension-sdk";
 import { errorText } from "./dom";
 import { reconcilePatch, refInput, withSourceOrder, type FluxRef } from "./flux";
 import { t } from "./i18n";
@@ -30,7 +30,8 @@ export interface Step {
  * refusal and the user's with `denied`; only its text says which (`The user declined …`, `No answer from the user …`).
  */
 export function declinedByUser(err: unknown): boolean {
-  return isSextantError(err, "denied") && /^(The user declined|No answer from the user)\b/.test(err.message);
+  // Sextant says so by the error's reason since 0.30 (#389), not by its words.
+  return isDeclined(err);
 }
 
 /** What a failed step says: a conflict, or the cluster's message, with the object. */

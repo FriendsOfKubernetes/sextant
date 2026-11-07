@@ -10,7 +10,7 @@ Needs Sextant 0.30 (`sextantApi` 4) with the extension API's question placeholde
 - **Reconcile with source has no window.** Its frame runs out of sight (`headless`): it reads the object, sends the
   source's, the HelmChart's and the object's patches in one call and ends, so nothing flashes up. A failure is a
   notice that names the object that failed and the error; your own refusal of a question of Sextant's ends it
-  silently. The window, its waiting line and its Retry are gone.
+  silently (Sextant marks it as `declined`, #389; a question nobody answered is told). The window, its waiting line and its Retry are gone.
 
 ## 1.2.0 — 2026-11-07
 

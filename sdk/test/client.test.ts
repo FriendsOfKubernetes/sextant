@@ -1,6 +1,6 @@
 // The frame client against a test double of Sextant's window: what it sends, and how it reads what comes back.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { connect, isSextantError, SextantError, type Sextant, type WatchUpdate } from "../src";
+import { connect, isDeclined, isSextantError, SextantError, type Sextant, type WatchUpdate } from "../src";
 import type { FrameMessage, HostContext } from "../src/protocol";
 
 const CONTEXT: HostContext = {
@@ -162,6 +162,19 @@ describe("calls", () => {
     answer(first!.id, { items: [], truncated: false });
     await expect(list).resolves.toEqual({ items: [], truncated: false });
     await expect(get).resolves.toEqual({ metadata: { name: "web" } });
+  });
+
+  it("tell the user's no from the rules' refusal by the reason, both denied (#389)", async () => {
+    const sextant = await connected();
+    const declined = sextant.resources.delete({ ref: { kind: { kind: "Pod" }, namespace: "a", name: "web" } });
+    const refused = sextant.resources.delete({ ref: { kind: { kind: "Pod" }, namespace: "a", name: "db" } });
+    const [first, second] = requests();
+    deliver({ sextant: 1, doc: docOf(), id: first!.id, error: { code: "denied", message: "no", reason: "declined" } });
+    refuse(second!.id, "denied", "not granted");
+    const a = await declined.catch((e: unknown) => e);
+    const b = await refused.catch((e: unknown) => e);
+    expect(isSextantError(a, "denied") && isDeclined(a)).toBe(true);
+    expect(isSextantError(b, "denied") && !isDeclined(b)).toBe(true);
   });
 
   it("send every method's parameters in the shape Sextant reads", async () => {

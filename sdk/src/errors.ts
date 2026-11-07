@@ -12,9 +12,19 @@ export class SextantError extends Error {
     message: string,
     /** The API method that failed, when it was a call. */
     readonly method?: string,
+    /**
+     * `declined`: the user said no in Sextant's confirmation; the code stays `denied`, as when the access rules refuse
+     * (since Sextant 0.30). Use `isDeclined`.
+     */
+    readonly reason?: "declined",
   ) {
     super(message);
   }
+}
+
+/** Whether the user said no in Sextant's confirmation (a `denied` error with `reason: "declined"`, since Sextant 0.30). */
+export function isDeclined(err: unknown): boolean {
+  return isSextantError(err, "denied") && err.reason === "declined";
 }
 
 /** Whether `err` is a `SextantError` (with `code`, when given). */
@@ -43,5 +53,5 @@ export function toSextantError(error: unknown, method?: string): SextantError {
   const record = typeof error === "object" && error !== null ? (error as Record<string, unknown>) : {};
   const code = typeof record.code === "string" && CODES.has(record.code) ? (record.code as ErrorCode) : "other";
   const message = typeof record.message === "string" && record.message !== "" ? record.message : String(error);
-  return new SextantError(code, message, method);
+  return new SextantError(code, message, method, record.reason === "declined" ? "declined" : undefined);
 }

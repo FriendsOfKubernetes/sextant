@@ -511,7 +511,7 @@ describe("contributions of an extension", () => {
                 format: "number",
                 valueText: "{{value}}%",
                 lookup: { list: ".spec.plan", index: ".status.at", field: ".weight", nearestBefore: true, orElse: 0 },
-                cases: [{ when: { type: "atLeast", path: ".status.at", otherPath: ".spec.plan" }, text: "100%" }],
+                cases: [{ when: { type: "atLeast", path: ".status.at", otherPath: ".spec.plan" }, text: "100%", value: 100 }],
               },
               {
                 kind,
@@ -561,6 +561,8 @@ describe("contributions of an extension", () => {
     expect(weight({ at: 3 })).toBe("40%");
     expect(col("weight").value(obj({ plan }, { at: 3 }))).toBe(40);
     expect(weight({ at: 4 })).toBe("100%");
+    // A case's own number sorts and filters (#390).
+    expect(col("weight").value(obj({ plan }, { at: 4 }))).toBe(100);
     expect(col("weight").searchText!(obj({ plan: [{ pause: {} }] }, { at: 0 }), { now: ctx.now, t: i18n.t })).toBe("0%");
     expect(col("weight").searchText!(obj({}, { at: 0 }), { now: ctx.now, t: i18n.t })).toBeUndefined();
     // A count Kubernetes leaves out is 0 when the whole is there.

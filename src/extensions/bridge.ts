@@ -15,6 +15,7 @@ import {
   parseFrameMessage,
   type HostContext,
   type HostMessage,
+  type ProtocolError,
   type RequestId,
   type RequestMessage,
 } from "./protocol";
@@ -288,7 +289,7 @@ export function createBridge(options: BridgeOptions): Bridge {
   };
 }
 
-function toProtocolError(err: unknown): { code: ErrorCode; message: string } {
+function toProtocolError(err: unknown): ProtocolError {
   const error = toApiError(err);
-  return { code: error.code, message: error.message };
+  return { code: error.code, message: error.message, ...(error.reason === "declined" ? { reason: "declined" as const } : {}) };
 }

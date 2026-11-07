@@ -131,10 +131,11 @@ export async function startTestHost(options: TestHostOptions = {}): Promise<Test
       const result = await handler(params);
       toFrame({ id, result: result === undefined ? null : result });
     } catch (err) {
-      const record = (typeof err === "object" && err !== null ? err : {}) as { code?: unknown; message?: unknown };
+      const record = (typeof err === "object" && err !== null ? err : {}) as { code?: unknown; message?: unknown; reason?: unknown };
       const code = typeof record.code === "string" ? record.code : "other";
       const message = typeof record.message === "string" ? record.message : String(err);
-      toFrame({ id, error: { code, message } });
+      // A handler that throws `new SextantError("denied", …, method, "declined")` answers as the user's "no" (#389).
+      toFrame({ id, error: { code, message, ...(record.reason === "declined" ? { reason: "declined" } : {}) } });
     }
   };
 

@@ -61,3 +61,14 @@ generic additions to `sextantApi` 4 let a manifest say it:
   placeholder `{{value}}` (`{{value}}%`, `{{value}} %` in French), translated with the same placeholder.
 
 With these, Argo Rollouts' Weight is the built-in column; the weight the router reports stays in the details.
+
+## Amendment: a user's "no", and a case's number (#389, #390)
+
+- **`reason: "declined"`.** The user saying no in Sextant's confirmation and the access rules refusing are both
+  `denied`; an extension released with that code keeps working (ADR-0142). Beside it, `CoreError.reason`
+  (`ErrorReason::Declined`, set only by `ExtCall::check` on a declined confirmation) goes to the window (`ApiError`),
+  the frame (`ProtocolError.reason`, `SextantError.reason`, the SDK's `isDeclined`) and the test host. The window's
+  fixed-patch actions and Flux's headless action read it instead of the message's words. A confirmation nobody
+  answered is not `declined`.
+- **`cases[].value`.** A `number` column's case may give the number the column sorts and filters by while it holds;
+  its text is what shows ("0%", "100%" of Argo Rollouts' Weight).

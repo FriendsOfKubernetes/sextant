@@ -148,9 +148,7 @@ confirmed.
     an older controller's computed phase only Degraded, Paused and an update under way (Progressing) are shown; its
     Healthy and its other Progressing (from replica counts) are left blank. The details always show the full reading.
   - **Weight** is the set weight, as the built-in column; the weight the router reports (the actual weight) is in
-    the details. It sorts and filters as a number while steps run and once they are done with a `maxTrafficWeight`;
-    "0%" after an abort and "100%" once every step is done without one are texts, sorted by their number but left
-    out by a number filter.
+    the details.
   - **Message** of an AnalysisRun is its own message, else the message of a failed, errored or inconclusive metric
     (in that order, not the metrics' order), else of its first measurement of that phase (the oldest, not the
     newest). The templates' **Metric** is the first metric only. The details list all of them.

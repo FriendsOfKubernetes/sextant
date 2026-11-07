@@ -1,5 +1,6 @@
 import type { CoreError } from "./generated/CoreError";
 import type { ErrorCode } from "./generated/ErrorCode";
+import type { ErrorReason } from "./generated/ErrorReason";
 
 export const ERROR_CODES: readonly ErrorCode[] = [
   "unreachable",
@@ -22,17 +23,21 @@ export class ApiError extends Error {
   readonly code: ErrorCode;
   /** What a failed exec auth plugin printed, masked by the backend: shown in the window only (#256). */
   readonly pluginOutput?: string;
+  /** `declined`: the user said no in Sextant's confirmation (#389). */
+  readonly reason?: ErrorReason;
 
-  constructor(code: ErrorCode, message: string, pluginOutput?: string) {
+  constructor(code: ErrorCode, message: string, pluginOutput?: string, reason?: ErrorReason) {
     super(message);
     this.name = "ApiError";
     this.code = code;
     if (pluginOutput !== undefined) this.pluginOutput = pluginOutput;
+    if (reason !== undefined) this.reason = reason;
   }
 
   toCoreError(): CoreError {
     const error: CoreError = { code: this.code, message: this.message };
     if (this.pluginOutput !== undefined) error.pluginOutput = this.pluginOutput;
+    if (this.reason !== undefined) error.reason = this.reason;
     return error;
   }
 }
@@ -47,7 +52,8 @@ export function toApiError(err: unknown): ApiError {
   if (typeof err === "object" && err !== null && "code" in err && isErrorCode(err.code)) {
     const message = "message" in err && typeof err.message === "string" ? err.message : "";
     const output = "pluginOutput" in err && typeof err.pluginOutput === "string" ? err.pluginOutput : undefined;
-    return new ApiError(err.code, message, output);
+    const reason = "reason" in err && err.reason === "declined" ? ("declined" as const) : undefined;
+    return new ApiError(err.code, message, output, reason);
   }
   if (typeof err === "string") return new ApiError("other", err);
   if (err instanceof Error) return new ApiError("other", err.message);

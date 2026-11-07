@@ -130,6 +130,8 @@ export type FrameMessage = RequestMessage | ReadyMessage | ResizeMessage | Frame
 export interface ProtocolError {
   code: ErrorCode;
   message: string;
+  /** `declined`: the user said no in Sextant's confirmation (the code stays `denied`); since Sextant 0.30 (#389). */
+  reason?: "declined";
 }
 
 export interface ResultMessage {

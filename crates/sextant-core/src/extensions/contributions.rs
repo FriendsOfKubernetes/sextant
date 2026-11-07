@@ -264,6 +264,12 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 &here.key("cases").index(j).key("text"),
                 false,
             )?;
+            if case.value.is_some() && format != ColumnFormat::Number {
+                return Err(at(
+                    &here.key("cases").index(j).key("value"),
+                    "goes with `format: \"number\"`",
+                ));
+            }
             if let Some(tooltip) = &case.tooltip {
                 check_message(
                     tooltip,

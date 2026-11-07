@@ -490,6 +490,9 @@ async fn without_a_window_a_call_that_asks_is_declined() {
         "{}",
         err.message
     );
+    // Told apart from the rules' refusal by its reason, not its words (#389).
+    assert_eq!(err.code, ErrorCode::Denied);
+    assert_eq!(err.reason, Some(sextant_core::error::ErrorReason::Declined));
 }
 
 #[tokio::test]

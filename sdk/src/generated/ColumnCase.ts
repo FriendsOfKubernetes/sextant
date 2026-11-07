@@ -13,4 +13,8 @@ tone?: ColumnTone,
 /**
  * Shown on hover while the case holds, in place of `tooltipPaths` (#380): text with the text's placeholders.
  */
-tooltip?: string, };
+tooltip?: string, 
+/**
+ * The number a `number` column sorts and filters by while the case holds (#390); its text is still shown.
+ */
+value?: number, };

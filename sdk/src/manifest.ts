@@ -151,6 +151,8 @@ export interface ManifestColumn {
     tone?: ColumnTone;
     /** Shown on hover while the case holds, instead of `tooltipPaths`; the text's placeholders (since Sextant 0.30). */
     tooltip?: string;
+    /** With `format: "number"`: the number it sorts and filters by while it holds; the text is still shown (since Sextant 0.30). */
+    value?: number;
   }[];
   /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
   afterColumn?: string;

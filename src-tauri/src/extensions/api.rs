@@ -36,7 +36,7 @@ use serde_json::{Map, Value, json};
 use sextant_core::access::{
     self, AccessAction, AccessPreset, ClusterAccess, Decision, KindPattern, NamespaceScope,
 };
-use sextant_core::error::with_timeout;
+use sextant_core::error::{ErrorReason, with_timeout};
 use sextant_core::extensions::commands::{self, MAX_OUTPUT_BYTES};
 use sextant_core::extensions::metric_queries::{MetricQueryRange, run_metric_query};
 use sextant_core::extensions::services::{
@@ -1052,7 +1052,8 @@ impl<'a> ExtCall<'a> {
                         "The user declined {} on {what} in cluster {}.",
                         self.method, cluster.name
                     ),
-                ))
+                )
+                .with_reason(ErrorReason::Declined))
             }
             ConfirmOutcome::TimedOut => {
                 self.decide(AuditDecision::TimedOut);
