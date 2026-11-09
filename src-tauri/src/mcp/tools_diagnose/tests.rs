@@ -1062,25 +1062,11 @@ fn dra_and_gpu_operator_problems_are_never_given_to_agents() {
     }
 }
 
-/// KubeRay (#248) and KServe (#249) problems are window views: agents get none of them, though both categories are
-/// on by default (ADR-0115).
+/// Kueue (#246) problems are window views: agents get none of them — neither the queues (on by default) nor the
+/// opt-in Kueue Workloads, even when turned on (ADR-0114).
 #[test]
-fn kuberay_and_kserve_problems_are_never_given_to_agents() {
-    for category in ["kuberay", "kserve"] {
-        assert!(answers::PROBLEM_CATEGORIES.contains(&category));
-        assert!(!answers::OPT_IN_CATEGORIES.contains(&category));
-        assert!(!answers::category_for_agents(
-            category,
-            &[category.to_owned()]
-        ));
-    }
-}
-
-/// Kueue (#246) and JobSet (#247) problems are window views: agents get none of them — neither the queues and JobSets
-/// (on by default) nor the opt-in Kueue Workloads, even when turned on (ADR-0114).
-#[test]
-fn kueue_and_jobset_problems_are_never_given_to_agents() {
-    for category in ["kueue", "kueueWorkloads", "jobset"] {
+fn kueue_problems_are_never_given_to_agents() {
+    for category in ["kueue", "kueueWorkloads"] {
         assert!(answers::PROBLEM_CATEGORIES.contains(&category));
         assert!(!answers::category_for_agents(
             category,
@@ -1089,7 +1075,6 @@ fn kueue_and_jobset_problems_are_never_given_to_agents() {
     }
     assert!(answers::OPT_IN_CATEGORIES.contains(&"kueueWorkloads"));
     assert!(!answers::OPT_IN_CATEGORIES.contains(&"kueue"));
-    assert!(!answers::OPT_IN_CATEGORIES.contains(&"jobset"));
 }
 
 /// k3s / RKE2 problems (#270) — failed HelmChart installs and bundled components not available — are a window view:

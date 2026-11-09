@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "叢集工具的檢視現在是擴充功能",
-      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、CloudNativePG、Strimzi 與 Operator Lifecycle Manager 已從 Sextant 移到擴充功能目錄中它自己的擴充功能，這些擴充功能會個別更新。請在下方安裝你使用的擴充功能：在此之前不會顯示它們的區段。你為它們設定的通知已保留，側邊欄也會在執行這些工具的叢集中推薦它們。"
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、CloudNativePG、Strimzi、External Secrets、JobSet、KubeRay、KServe 與 Operator Lifecycle Manager 已從 Sextant 移到擴充功能目錄中它自己的擴充功能，這些擴充功能會個別更新。請在下方安裝你使用的擴充功能：在此之前不會顯示它們的區段。你為它們設定的通知已保留，側邊欄也會在執行這些工具的叢集中推薦它們。"
     },
     "api4": {
       "title": "擴充功能 API 4",
@@ -30,7 +30,11 @@
       "argo-workflows": "具步驟樹與日誌的 Workflows、CronWorkflows 與範本",
       "cnpg": "PostgreSQL 叢集、備份與連線池",
       "strimzi": "Kafka 叢集、主題、使用者、連接器與鏡像",
-      "olm": "訂閱、Operator、安裝計畫與目錄"
+      "olm": "訂閱、Operator、安裝計畫與目錄",
+      "external-secrets": "ExternalSecret、儲存區與 PushSecret",
+      "jobset": "JobSet 及其 Job、重新啟動與失敗",
+      "kuberay": "Ray 叢集、作業與服務及其日誌",
+      "kserve": "InferenceService、服務執行環境與推論圖"
     }
   }
 }

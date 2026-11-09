@@ -762,7 +762,7 @@ pub fn migrate(settings: &mut AppSettings) {
 
 /// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
 /// the extension, and whether agents got the category by default.
-pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 7] = [
+pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 11] = [
     ("flux", "sextant.flux", true),
     ("argocd", "sextant.argo-cd", true),
     ("rollouts", "sextant.argo-rollouts", false),
@@ -772,6 +772,11 @@ pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 7] = [
     ("cnpg", "sextant.cnpg", false),
     ("strimzi", "sextant.strimzi", false),
     ("olm", "sextant.olm", false),
+    // External Secrets, JobSet, KubeRay and KServe: window views, never for agents.
+    ("externalSecrets", "sextant.external-secrets", false),
+    ("jobset", "sextant.jobset", false),
+    ("kuberay", "sextant.kuberay", false),
+    ("kserve", "sextant.kserve", false),
 ];
 
 /// Reads the settings file and decides whether it may be written.

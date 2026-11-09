@@ -19,7 +19,6 @@ import {
   MACHINE as CAPI_MACHINE,
   PROBLEM_KINDS as CAPI_PROBLEM_KINDS,
 } from "../cluster-api/model";
-import { CLUSTER_EXTERNAL_SECRET, CLUSTER_SECRET_STORE, EXTERNAL_SECRET, PUSH_SECRET, SECRET_STORE } from "../external-secrets/model";
 import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operator/model";
 import { SEALED_SECRET } from "../sealed-secrets/model";
 import { VPA } from "../vpa/model";
@@ -27,9 +26,6 @@ import { RESOURCE_CLAIM as DRA_CLAIM } from "../dra/model";
 import { CLUSTER_POLICY as GPU_CLUSTER_POLICY } from "../gpu-operator/model";
 import { HELM_CHART as K3S_HELM_CHART } from "../k3s/model";
 import { CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE, WORKLOAD as KUEUE_WORKLOAD } from "../kueue/model";
-import { JOBSET } from "../jobset/model";
-import { RAY_CLUSTER, RAY_JOB, RAY_SERVICE } from "../kuberay/model";
-import { INFERENCE_SERVICE as KSERVE_INFERENCE_SERVICE } from "../kserve/model";
 import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
 import { BUILD as OPENSHIFT_BUILD, DEPLOYMENT_CONFIG as OPENSHIFT_DC, IMAGE_STREAM as OPENSHIFT_IMAGE_STREAM, ROUTE as OPENSHIFT_ROUTE } from "../openshift/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
@@ -155,8 +151,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // Kueue Workloads (#246, opt-in): waiting for quota, not queueable, evicted repeatedly; each one holds its jobs' pod
   // templates and a batch cluster queues thousands: capped. The same watch feeds the queues' pending lists (a row tap).
   kueueWorkloads: [tool("kueueWorkloads", KUEUE_WORKLOAD, MAX_SOURCE_OBJECTS)],
-  // JobSet (#247): failed JobSets (for a day) and restarts near the limit; capped like the other kinds by the thousand.
-  jobset: [tool("jobset", JOBSET, MAX_SOURCE_OBJECTS)],
   // Vertical Pod Autoscaler (#242): configurations the recommender cannot use, VPAs that match no pod, and VPAs that
   // fight an HPA over the same resource, judged by the provider of features/vpa (`external`: the HPA is another
   // object), held only where VPAs are served.
@@ -187,10 +181,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // Kyverno policy failures (#213, opt-in): the reports Kyverno writes, one per resource.
   // One report per resource: capped.
   policies: [tool("policies", POLICY_REPORT, MAX_SOURCE_OBJECTS), tool("policies", CLUSTER_POLICY_REPORT, MAX_SOURCE_OBJECTS)],
-  // External Secrets (#213): failed syncs and stores that do not validate.
-  externalSecrets: [EXTERNAL_SECRET, CLUSTER_EXTERNAL_SECRET, SECRET_STORE, CLUSTER_SECRET_STORE, PUSH_SECRET].map((kind) =>
-    tool("externalSecrets", kind),
-  ),
   // Sealed Secrets (#240): failed unseals and synced SealedSecrets whose Secret is missing, judged by the provider of
   // features/sealed-secrets (`external`: the Secret is another object), held only where SealedSecrets are served.
   sealedSecrets: [{ category: "sealedSecrets", kind: SEALED_SECRET, fieldSelector: null, discovered: true, external: true }],
@@ -218,8 +208,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   k3s: [{ category: "k3s", kind: K3S_HELM_CHART, fieldSelector: null, discovered: true, external: true }],
   // KubeRay (#248): failed RayClusters or ones whose head is not ready, failed RayJobs (batch jobs can be thousands:
   // capped), RayServices not ready. KServe (#249): InferenceServices not ready or whose model failed to load.
-  kuberay: [tool("kuberay", RAY_CLUSTER), tool("kuberay", RAY_JOB, MAX_SOURCE_OBJECTS), tool("kuberay", RAY_SERVICE)],
-  kserve: [tool("kserve", KSERVE_INFERENCE_SERVICE)],
   // OpenShift (#267): Routes no router admitted, DeploymentConfigs whose rollout failed, failed Builds (only the latest
   // of their BuildConfig: judged across the Build rows) and ImageStreams with a failing tag import; every kind a cluster
   // can hold by the thousand: capped.

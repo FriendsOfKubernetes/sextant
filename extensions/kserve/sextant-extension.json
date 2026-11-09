@@ -1,0 +1,3698 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.kserve",
+  "name": "KServe",
+  "version": "1.0.0",
+  "description": "KServe: InferenceServices with their state, URL, model format, runtime, deployment mode and canary share, what KServe made for them and the serving runtime KServe chooses; ServingRuntimes, ClusterServingRuntimes, InferenceGraphs and TrainedModels; problems of models that failed to load, specs KServe cannot serve and InferenceServices that are not ready. URIs are shown without credentials or a query. Read-only.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "kserve",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "serving.kserve.io",
+              "kind": "InferenceService"
+            },
+            {
+              "group": "serving.kserve.io",
+              "kind": "ServingRuntime"
+            },
+            {
+              "group": "serving.kserve.io",
+              "kind": "ClusterServingRuntime"
+            },
+            {
+              "group": "serving.kserve.io",
+              "kind": "InferenceGraph"
+            },
+            {
+              "group": "serving.kserve.io",
+              "kind": "TrainedModel"
+            },
+            {
+              "group": "serving.knative.dev",
+              "kind": "Service"
+            },
+            {
+              "group": "apps",
+              "kind": "Deployment"
+            },
+            {
+              "group": "",
+              "kind": "Service"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "serving.kserve.io",
+        "kind": "InferenceService",
+        "section": "kserve",
+        "title": "Inference Services",
+        "icon": "inferenceService",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.transitionStatus",
+                  "value": "InvalidSpec"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.states.activeModelState",
+                      "value": "FailedToLoad"
+                    },
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.states.targetModelState",
+                      "value": "FailedToLoad"
+                    },
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.transitionStatus",
+                      "value": "BlockedByFailedLoad"
+                    }
+                  ]
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "group": "serving.kserve.io",
+        "kind": "ServingRuntime",
+        "section": "kserve",
+        "title": "Serving Runtimes",
+        "icon": "servingRuntime",
+        "order": 20,
+        "printerColumns": false
+      },
+      {
+        "group": "serving.kserve.io",
+        "kind": "ClusterServingRuntime",
+        "section": "kserve",
+        "title": "Cluster Serving Runtimes",
+        "icon": "clusterServingRuntime",
+        "order": 21,
+        "printerColumns": false
+      },
+      {
+        "group": "serving.kserve.io",
+        "kind": "InferenceGraph",
+        "section": "kserve",
+        "title": "Inference Graphs",
+        "icon": "inferenceGraph",
+        "order": 30,
+        "printerColumns": false
+      },
+      {
+        "group": "serving.kserve.io",
+        "kind": "TrainedModel",
+        "section": "kserve",
+        "title": "Trained Models",
+        "icon": "trainedModel",
+        "order": 40,
+        "printerColumns": false
+      }
+    ],
+    "sections": [
+      {
+        "section": "kserve",
+        "title": "KServe",
+        "icon": "kserve",
+        "after": "kueue"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "kserve",
+        "label": {
+          "one": "{{count}} InferenceService needs attention",
+          "other": "{{count}} InferenceServices need attention"
+        }
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "inference-service",
+        "title": "InferenceService",
+        "kinds": [
+          {
+            "group": "serving.kserve.io",
+            "kind": "InferenceService"
+          }
+        ],
+        "placement": "section",
+        "order": 20
+      },
+      {
+        "id": "serving-runtime",
+        "title": "ServingRuntime",
+        "kinds": [
+          {
+            "group": "serving.kserve.io",
+            "kind": "ServingRuntime"
+          }
+        ],
+        "placement": "section",
+        "order": 20
+      },
+      {
+        "id": "cluster-serving-runtime",
+        "title": "ClusterServingRuntime",
+        "kinds": [
+          {
+            "group": "serving.kserve.io",
+            "kind": "ClusterServingRuntime"
+          }
+        ],
+        "placement": "section",
+        "order": 20
+      },
+      {
+        "id": "inference-graph",
+        "title": "InferenceGraph",
+        "kinds": [
+          {
+            "group": "serving.kserve.io",
+            "kind": "InferenceGraph"
+          }
+        ],
+        "placement": "section",
+        "order": 20
+      },
+      {
+        "id": "trained-model",
+        "title": "TrainedModel",
+        "kinds": [
+          {
+            "group": "serving.kserve.io",
+            "kind": "TrainedModel"
+          }
+        ],
+        "placement": "section",
+        "order": 20
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "id": "isvc-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                  "value": "true"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Stopped",
+                  "status": "True"
+                }
+              ]
+            },
+            "text": "Stopped",
+            "tone": "neutral",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.transitionStatus",
+                  "value": "InvalidSpec"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.states.activeModelState",
+                  "value": "FailedToLoad"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.states.targetModelState",
+                  "value": "FailedToLoad"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.transitionStatus",
+                  "value": "BlockedByFailedLoad"
+                }
+              ]
+            },
+            "text": "Failed",
+            "tone": "error",
+            "tooltip": "{{.status.modelStatus.lastFailureInfo.message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "Ready",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "PredictorReady",
+                  "status": "False"
+                }
+              ]
+            },
+            "text": "Not ready",
+            "tone": "warning",
+            "tooltip": "{{.status.conditions[type=\"PredictorReady\"].message}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "TransformerReady",
+                  "status": "False"
+                }
+              ]
+            },
+            "text": "Not ready",
+            "tone": "warning",
+            "tooltip": "{{.status.conditions[type=\"TransformerReady\"].message}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "ExplainerReady",
+                  "status": "False"
+                }
+              ]
+            },
+            "text": "Not ready",
+            "tone": "warning",
+            "tooltip": "{{.status.conditions[type=\"ExplainerReady\"].message}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "LatestDeploymentReady",
+                  "status": "False"
+                }
+              ]
+            },
+            "text": "Not ready",
+            "tone": "warning",
+            "tooltip": "{{.status.conditions[type=\"LatestDeploymentReady\"].message}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "IngressReady",
+                  "status": "False"
+                }
+              ]
+            },
+            "text": "Not ready",
+            "tone": "warning",
+            "tooltip": "{{.status.conditions[type=\"IngressReady\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "Not ready",
+            "tone": "warning",
+            "tooltip": "{{.status.conditions[type=\"Ready\"].message}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Progressing",
+            "tone": "warning"
+          }
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "id": "isvc-url",
+        "title": "URL",
+        "paths": [
+          ".status.url"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.url"
+            },
+            "text": "{{.status.url}}"
+          }
+        ],
+        "afterColumn": "isvc-status"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "id": "isvc-model-format",
+        "title": "Model format",
+        "paths": [
+          ".spec.predictor.model.modelFormat.name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.predictor.model.modelFormat.version"
+            },
+            "text": "{{.spec.predictor.model.modelFormat.name}}:{{.spec.predictor.model.modelFormat.version}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.predictor.model.modelFormat.name"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.predictor.sklearn"
+                }
+              ]
+            },
+            "text": "sklearn"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.predictor.model.modelFormat.name"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.predictor.xgboost"
+                }
+              ]
+            },
+            "text": "xgboost"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.predictor.model.modelFormat.name"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.predictor.tensorflow"
+                }
+              ]
+            },
+            "text": "tensorflow"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.predictor.model.modelFormat.name"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.predictor.pytorch"
+                }
+              ]
+            },
+            "text": "pytorch"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.predictor.model.modelFormat.name"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.predictor.triton"
+                }
+              ]
+            },
+            "text": "triton"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.predictor.model.modelFormat.name"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.predictor.onnx"
+                }
+              ]
+            },
+            "text": "onnx"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.predictor.model.modelFormat.name"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.predictor.huggingface"
+                }
+              ]
+            },
+            "text": "huggingface"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.predictor.model.modelFormat.name"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.predictor.pmml"
+                }
+              ]
+            },
+            "text": "pmml"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.predictor.model.modelFormat.name"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.predictor.lightgbm"
+                }
+              ]
+            },
+            "text": "lightgbm"
+          }
+        ],
+        "afterColumn": "isvc-url"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "id": "isvc-runtime",
+        "title": "Runtime",
+        "paths": [
+          ".spec.predictor.model.runtime",
+          ".status.servingRuntimeName",
+          ".status.clusterServingRuntimeName"
+        ],
+        "afterColumn": "isvc-model-format"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "id": "isvc-mode",
+        "title": "Mode",
+        "paths": [
+          ".status.deploymentMode",
+          ".metadata.annotations[\"serving.kserve.io/deploymentMode\"]"
+        ],
+        "afterColumn": "isvc-runtime"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "id": "isvc-canary",
+        "title": "Canary %",
+        "paths": [
+          ".status.components.predictor.traffic[tag=\"latest\"].percent"
+        ],
+        "format": "number",
+        "afterColumn": "isvc-mode"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "ServingRuntime"
+        },
+        "id": "sr-formats",
+        "title": "Model formats",
+        "paths": [
+          ".spec.supportedModelFormats[0].name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.supportedModelFormats[4]"
+            },
+            "text": "{{.spec.supportedModelFormats[0].name}}, {{.spec.supportedModelFormats[1].name}}, {{.spec.supportedModelFormats[2].name}}, {{.spec.supportedModelFormats[3].name}}, …"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.supportedModelFormats[3]"
+            },
+            "text": "{{.spec.supportedModelFormats[0].name}}, {{.spec.supportedModelFormats[1].name}}, {{.spec.supportedModelFormats[2].name}}, {{.spec.supportedModelFormats[3].name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.supportedModelFormats[2]"
+            },
+            "text": "{{.spec.supportedModelFormats[0].name}}, {{.spec.supportedModelFormats[1].name}}, {{.spec.supportedModelFormats[2].name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.supportedModelFormats[1]"
+            },
+            "text": "{{.spec.supportedModelFormats[0].name}}, {{.spec.supportedModelFormats[1].name}}"
+          }
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "ServingRuntime"
+        },
+        "id": "sr-protocols",
+        "title": "Protocols",
+        "paths": [
+          ".spec.protocolVersions[0]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.protocolVersions[5]"
+            },
+            "text": "{{.spec.protocolVersions[0]}}, {{.spec.protocolVersions[1]}}, {{.spec.protocolVersions[2]}}, {{.spec.protocolVersions[3]}}, {{.spec.protocolVersions[4]}}, …"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.protocolVersions[4]"
+            },
+            "text": "{{.spec.protocolVersions[0]}}, {{.spec.protocolVersions[1]}}, {{.spec.protocolVersions[2]}}, {{.spec.protocolVersions[3]}}, {{.spec.protocolVersions[4]}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.protocolVersions[3]"
+            },
+            "text": "{{.spec.protocolVersions[0]}}, {{.spec.protocolVersions[1]}}, {{.spec.protocolVersions[2]}}, {{.spec.protocolVersions[3]}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.protocolVersions[2]"
+            },
+            "text": "{{.spec.protocolVersions[0]}}, {{.spec.protocolVersions[1]}}, {{.spec.protocolVersions[2]}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.protocolVersions[1]"
+            },
+            "text": "{{.spec.protocolVersions[0]}}, {{.spec.protocolVersions[1]}}"
+          }
+        ],
+        "afterColumn": "sr-formats"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "ServingRuntime"
+        },
+        "id": "sr-disabled",
+        "title": "Disabled",
+        "paths": [
+          ".spec.disabled"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.disabled",
+              "value": true
+            },
+            "text": "True"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "False"
+          }
+        ],
+        "afterColumn": "sr-protocols"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "ServingRuntime"
+        },
+        "id": "sr-multi-model",
+        "title": "Multi-model",
+        "paths": [
+          ".spec.multiModel"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.multiModel",
+              "value": true
+            },
+            "text": "True"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "False"
+          }
+        ],
+        "afterColumn": "sr-disabled"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "ClusterServingRuntime"
+        },
+        "id": "csr-formats",
+        "title": "Model formats",
+        "paths": [
+          ".spec.supportedModelFormats[0].name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.supportedModelFormats[4]"
+            },
+            "text": "{{.spec.supportedModelFormats[0].name}}, {{.spec.supportedModelFormats[1].name}}, {{.spec.supportedModelFormats[2].name}}, {{.spec.supportedModelFormats[3].name}}, …"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.supportedModelFormats[3]"
+            },
+            "text": "{{.spec.supportedModelFormats[0].name}}, {{.spec.supportedModelFormats[1].name}}, {{.spec.supportedModelFormats[2].name}}, {{.spec.supportedModelFormats[3].name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.supportedModelFormats[2]"
+            },
+            "text": "{{.spec.supportedModelFormats[0].name}}, {{.spec.supportedModelFormats[1].name}}, {{.spec.supportedModelFormats[2].name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.supportedModelFormats[1]"
+            },
+            "text": "{{.spec.supportedModelFormats[0].name}}, {{.spec.supportedModelFormats[1].name}}"
+          }
+        ],
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "ClusterServingRuntime"
+        },
+        "id": "csr-protocols",
+        "title": "Protocols",
+        "paths": [
+          ".spec.protocolVersions[0]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.protocolVersions[5]"
+            },
+            "text": "{{.spec.protocolVersions[0]}}, {{.spec.protocolVersions[1]}}, {{.spec.protocolVersions[2]}}, {{.spec.protocolVersions[3]}}, {{.spec.protocolVersions[4]}}, …"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.protocolVersions[4]"
+            },
+            "text": "{{.spec.protocolVersions[0]}}, {{.spec.protocolVersions[1]}}, {{.spec.protocolVersions[2]}}, {{.spec.protocolVersions[3]}}, {{.spec.protocolVersions[4]}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.protocolVersions[3]"
+            },
+            "text": "{{.spec.protocolVersions[0]}}, {{.spec.protocolVersions[1]}}, {{.spec.protocolVersions[2]}}, {{.spec.protocolVersions[3]}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.protocolVersions[2]"
+            },
+            "text": "{{.spec.protocolVersions[0]}}, {{.spec.protocolVersions[1]}}, {{.spec.protocolVersions[2]}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.protocolVersions[1]"
+            },
+            "text": "{{.spec.protocolVersions[0]}}, {{.spec.protocolVersions[1]}}"
+          }
+        ],
+        "afterColumn": "csr-formats"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "ClusterServingRuntime"
+        },
+        "id": "csr-disabled",
+        "title": "Disabled",
+        "paths": [
+          ".spec.disabled"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.disabled",
+              "value": true
+            },
+            "text": "True"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "False"
+          }
+        ],
+        "afterColumn": "csr-protocols"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "ClusterServingRuntime"
+        },
+        "id": "csr-multi-model",
+        "title": "Multi-model",
+        "paths": [
+          ".spec.multiModel"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.multiModel",
+              "value": true
+            },
+            "text": "True"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "False"
+          }
+        ],
+        "afterColumn": "csr-disabled"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceGraph"
+        },
+        "id": "graph-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "Ready",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"].message"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.conditions[type=\"Ready\"].message",
+                    "value": ""
+                  }
+                }
+              ]
+            },
+            "text": "Not ready",
+            "tone": "warning",
+            "tooltip": "{{.status.conditions[type=\"Ready\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "Not ready",
+            "tone": "warning",
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Progressing",
+            "tone": "warning"
+          }
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceGraph"
+        },
+        "id": "graph-url",
+        "title": "URL",
+        "paths": [
+          ".status.url"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.url"
+            },
+            "text": "{{.status.url}}"
+          }
+        ],
+        "afterColumn": "graph-status"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "TrainedModel"
+        },
+        "id": "trained-model-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "Ready",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"].message"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.conditions[type=\"Ready\"].message",
+                    "value": ""
+                  }
+                }
+              ]
+            },
+            "text": "Not ready",
+            "tone": "warning",
+            "tooltip": "{{.status.conditions[type=\"Ready\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "Not ready",
+            "tone": "warning",
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Progressing",
+            "tone": "warning"
+          }
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "TrainedModel"
+        },
+        "id": "trained-model-inference-service",
+        "title": "InferenceService",
+        "paths": [
+          ".spec.inferenceService"
+        ],
+        "afterColumn": "trained-model-status"
+      },
+      {
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "TrainedModel"
+        },
+        "id": "trained-model-framework",
+        "title": "Framework",
+        "paths": [
+          ".spec.model.framework"
+        ],
+        "afterColumn": "trained-model-inference-service"
+      }
+    ],
+    "problems": [
+      {
+        "id": "invalid-spec",
+        "title": "InferenceService spec cannot be served",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.modelStatus.transitionStatus",
+              "value": "InvalidSpec"
+            },
+            {
+              "type": "exists",
+              "path": ".status.modelStatus.lastFailureInfo.reason"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.modelStatus.lastFailureInfo.reason",
+                "value": ""
+              }
+            }
+          ]
+        },
+        "since": ".status.modelStatus.lastFailureInfo.time",
+        "graceMinutes": 2,
+        "reason": "{{.status.modelStatus.lastFailureInfo.reason}}",
+        "message": "{{.status.modelStatus.lastFailureInfo.message}}",
+        "group": "invalid-spec"
+      },
+      {
+        "id": "invalid-spec-unnamed",
+        "title": "InferenceService spec cannot be served (no reason given)",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.modelStatus.transitionStatus",
+              "value": "InvalidSpec"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.modelStatus.lastFailureInfo.reason"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.lastFailureInfo.reason",
+                  "value": ""
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.modelStatus.lastFailureInfo.time",
+        "graceMinutes": 2,
+        "reason": "InvalidSpec",
+        "message": "{{.status.modelStatus.lastFailureInfo.message}}",
+        "group": "invalid-spec"
+      },
+      {
+        "id": "model-load-failed",
+        "title": "InferenceService model failed to load",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.modelStatus.transitionStatus",
+                "value": "InvalidSpec"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.states.activeModelState",
+                  "value": "FailedToLoad"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.states.targetModelState",
+                  "value": "FailedToLoad"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.transitionStatus",
+                  "value": "BlockedByFailedLoad"
+                }
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.modelStatus.lastFailureInfo.reason"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.modelStatus.lastFailureInfo.reason",
+                "value": ""
+              }
+            }
+          ]
+        },
+        "since": ".status.modelStatus.lastFailureInfo.time",
+        "reason": "{{.status.modelStatus.lastFailureInfo.reason}}",
+        "message": "{{.status.modelStatus.lastFailureInfo.message}}",
+        "group": "model-load"
+      },
+      {
+        "id": "model-load-failed-unnamed",
+        "title": "InferenceService model failed to load (no reason given)",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.modelStatus.transitionStatus",
+                "value": "InvalidSpec"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.states.activeModelState",
+                  "value": "FailedToLoad"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.states.targetModelState",
+                  "value": "FailedToLoad"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.transitionStatus",
+                  "value": "BlockedByFailedLoad"
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.modelStatus.lastFailureInfo.reason"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.modelStatus.lastFailureInfo.reason",
+                  "value": ""
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.modelStatus.lastFailureInfo.time",
+        "reason": "FailedToLoad",
+        "message": "{{.status.modelStatus.lastFailureInfo.message}}",
+        "group": "model-load"
+      },
+      {
+        "id": "not-ready-predictor",
+        "title": "InferenceService not ready: PredictorReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "PredictorReady",
+              "status": "False"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"PredictorReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"PredictorReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-transformer",
+        "title": "InferenceService not ready: TransformerReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "TransformerReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"TransformerReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"TransformerReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-explainer",
+        "title": "InferenceService not ready: ExplainerReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "ExplainerReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"ExplainerReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"ExplainerReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-predictor-config",
+        "title": "InferenceService not ready: PredictorConfigurationReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "PredictorConfigurationReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"PredictorConfigurationReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"PredictorConfigurationReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-transformer-config",
+        "title": "InferenceService not ready: TransformerConfigurationReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "TransformerConfigurationReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"TransformerConfigurationReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"TransformerConfigurationReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-explainer-config",
+        "title": "InferenceService not ready: ExplainerConfigurationReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "ExplainerConfigurationReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerConfigurationReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"ExplainerConfigurationReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"ExplainerConfigurationReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-latest-deployment",
+        "title": "InferenceService not ready: LatestDeploymentReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "LatestDeploymentReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerConfigurationReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"LatestDeploymentReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"LatestDeploymentReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-canary-predictor",
+        "title": "InferenceService not ready: CanaryPredictorReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "CanaryPredictorReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "LatestDeploymentReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"CanaryPredictorReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"CanaryPredictorReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-predictor-route",
+        "title": "InferenceService not ready: PredictorRouteReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "PredictorRouteReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "LatestDeploymentReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "CanaryPredictorReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"PredictorRouteReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"PredictorRouteReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-transformer-route",
+        "title": "InferenceService not ready: TransformerRouteReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "TransformerRouteReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "LatestDeploymentReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "CanaryPredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorRouteReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"TransformerRouteReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"TransformerRouteReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-explainer-routes",
+        "title": "InferenceService not ready: ExplainerRoutesReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "ExplainerRoutesReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "LatestDeploymentReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "CanaryPredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorRouteReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerRouteReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"ExplainerRoutesReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"ExplainerRoutesReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-routes",
+        "title": "InferenceService not ready: RoutesReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "RoutesReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "LatestDeploymentReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "CanaryPredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorRouteReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerRouteReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerRoutesReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"RoutesReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"RoutesReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-ingress",
+        "title": "InferenceService not ready: IngressReady is False",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "condition",
+              "conditionType": "IngressReady",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "LatestDeploymentReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "CanaryPredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorRouteReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerRouteReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerRoutesReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "RoutesReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"IngressReady\"].reason}}",
+        "message": "{{.status.conditions[type=\"IngressReady\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready",
+        "title": "InferenceService not ready",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "LatestDeploymentReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "CanaryPredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorRouteReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerRouteReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerRoutesReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "RoutesReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "IngressReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Ready\"].reason",
+                "value": ""
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.conditions[type=\"Ready\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-unnamed",
+        "title": "InferenceService not ready (no reason given)",
+        "kind": {
+          "group": "serving.kserve.io",
+          "kind": "InferenceService"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                "value": "true"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Stopped",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerConfigurationReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "LatestDeploymentReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "CanaryPredictorReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "PredictorRouteReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "TransformerRouteReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "ExplainerRoutesReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "RoutesReady",
+                    "status": "False"
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "IngressReady",
+                    "status": "False"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].reason"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "value": ""
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "reason": "InferenceServiceNotReady",
+        "message": "{{.status.conditions[type=\"Ready\"].message}}",
+        "group": "not-ready"
+      }
+    ]
+  },
+  "translations": {
+    "ru": {
+      "description": "KServe: InferenceService с их состоянием, URL, форматом модели, средой выполнения, режимом развёртывания и долей канареечного трафика, тем, что KServe для них создал, и средой выполнения, которую выбирает KServe; ServingRuntime, ClusterServingRuntime, InferenceGraph и TrainedModel; проблемы моделей, которые не удалось загрузить, спецификаций, которые KServe не может обслуживать, и неготовых InferenceService. URI показываются без учётных данных и запроса. Только чтение.",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.one": "{{count}} InferenceService требует внимания",
+      "sectionBadges.kserve.label.few": "{{count}} InferenceService требуют внимания",
+      "sectionBadges.kserve.label.many": "{{count}} InferenceService требуют внимания",
+      "sectionBadges.kserve.label.other": "{{count}} InferenceService требуют внимания",
+      "columns.isvc-status.title": "Статус",
+      "columns.isvc-status.cases.0.text": "Остановлен",
+      "columns.isvc-status.cases.1.text": "Сбой",
+      "columns.isvc-status.cases.2.text": "Готов",
+      "columns.isvc-status.cases.3.text": "Не готов",
+      "columns.isvc-status.cases.4.text": "Не готов",
+      "columns.isvc-status.cases.5.text": "Не готов",
+      "columns.isvc-status.cases.6.text": "Не готов",
+      "columns.isvc-status.cases.7.text": "Не готов",
+      "columns.isvc-status.cases.8.text": "Не готов",
+      "columns.isvc-status.cases.9.text": "В процессе",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "Формат модели",
+      "columns.isvc-runtime.title": "Среда",
+      "columns.isvc-mode.title": "Режим",
+      "columns.isvc-canary.title": "Canary, %",
+      "columns.sr-formats.title": "Форматы моделей",
+      "columns.sr-protocols.title": "Протоколы",
+      "columns.sr-disabled.title": "Отключена",
+      "columns.sr-multi-model.title": "Много моделей",
+      "columns.csr-formats.title": "Форматы моделей",
+      "columns.csr-protocols.title": "Протоколы",
+      "columns.csr-disabled.title": "Отключена",
+      "columns.csr-multi-model.title": "Много моделей",
+      "columns.graph-status.title": "Статус",
+      "columns.graph-status.cases.0.text": "Готов",
+      "columns.graph-status.cases.1.text": "Не готов",
+      "columns.graph-status.cases.2.text": "Не готов",
+      "columns.graph-status.cases.3.text": "В процессе",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "Статус",
+      "columns.trained-model-status.cases.0.text": "Готов",
+      "columns.trained-model-status.cases.1.text": "Не готов",
+      "columns.trained-model-status.cases.2.text": "Не готов",
+      "columns.trained-model-status.cases.3.text": "В процессе",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "Фреймворк",
+      "problems.invalid-spec.title": "Спецификацию InferenceService нельзя обслуживать",
+      "problems.invalid-spec-unnamed.title": "Спецификацию InferenceService нельзя обслуживать (причина не указана)",
+      "problems.model-load-failed.title": "Модель InferenceService не загрузилась",
+      "problems.model-load-failed-unnamed.title": "Модель InferenceService не загрузилась (причина не указана)",
+      "problems.not-ready-predictor.title": "InferenceService не готов: PredictorReady = False",
+      "problems.not-ready-transformer.title": "InferenceService не готов: TransformerReady = False",
+      "problems.not-ready-explainer.title": "InferenceService не готов: ExplainerReady = False",
+      "problems.not-ready-predictor-config.title": "InferenceService не готов: PredictorConfigurationReady = False",
+      "problems.not-ready-transformer-config.title": "InferenceService не готов: TransformerConfigurationReady = False",
+      "problems.not-ready-explainer-config.title": "InferenceService не готов: ExplainerConfigurationReady = False",
+      "problems.not-ready-latest-deployment.title": "InferenceService не готов: LatestDeploymentReady = False",
+      "problems.not-ready-canary-predictor.title": "InferenceService не готов: CanaryPredictorReady = False",
+      "problems.not-ready-predictor-route.title": "InferenceService не готов: PredictorRouteReady = False",
+      "problems.not-ready-transformer-route.title": "InferenceService не готов: TransformerRouteReady = False",
+      "problems.not-ready-explainer-routes.title": "InferenceService не готов: ExplainerRoutesReady = False",
+      "problems.not-ready-routes.title": "InferenceService не готов: RoutesReady = False",
+      "problems.not-ready-ingress.title": "InferenceService не готов: IngressReady = False",
+      "problems.not-ready.title": "InferenceService не готов",
+      "problems.not-ready-unnamed.title": "InferenceService не готов (причина не указана)"
+    },
+    "uk": {
+      "description": "KServe: InferenceService з їхнім станом, URL, форматом моделі, середовищем виконання, режимом розгортання та часткою канаркового трафіку, тим, що KServe для них створив, і середовищем виконання, яке обирає KServe; ServingRuntime, ClusterServingRuntime, InferenceGraph і TrainedModel; проблеми моделей, які не вдалося завантажити, специфікацій, які KServe не може обслуговувати, і неготових InferenceService. URI показуються без облікових даних і запиту. Лише читання.",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.one": "{{count}} InferenceService потребує уваги",
+      "sectionBadges.kserve.label.few": "{{count}} InferenceService потребують уваги",
+      "sectionBadges.kserve.label.many": "{{count}} InferenceService потребують уваги",
+      "sectionBadges.kserve.label.other": "{{count}} InferenceService потребують уваги",
+      "columns.isvc-status.title": "Статус",
+      "columns.isvc-status.cases.0.text": "Зупинено",
+      "columns.isvc-status.cases.1.text": "Збій",
+      "columns.isvc-status.cases.2.text": "Готовий",
+      "columns.isvc-status.cases.3.text": "Не готовий",
+      "columns.isvc-status.cases.4.text": "Не готовий",
+      "columns.isvc-status.cases.5.text": "Не готовий",
+      "columns.isvc-status.cases.6.text": "Не готовий",
+      "columns.isvc-status.cases.7.text": "Не готовий",
+      "columns.isvc-status.cases.8.text": "Не готовий",
+      "columns.isvc-status.cases.9.text": "Триває",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "Формат моделі",
+      "columns.isvc-runtime.title": "Середовище",
+      "columns.isvc-mode.title": "Режим",
+      "columns.isvc-canary.title": "Canary, %",
+      "columns.sr-formats.title": "Формати моделей",
+      "columns.sr-protocols.title": "Протоколи",
+      "columns.sr-disabled.title": "Вимкнено",
+      "columns.sr-multi-model.title": "Багато моделей",
+      "columns.csr-formats.title": "Формати моделей",
+      "columns.csr-protocols.title": "Протоколи",
+      "columns.csr-disabled.title": "Вимкнено",
+      "columns.csr-multi-model.title": "Багато моделей",
+      "columns.graph-status.title": "Статус",
+      "columns.graph-status.cases.0.text": "Готовий",
+      "columns.graph-status.cases.1.text": "Не готовий",
+      "columns.graph-status.cases.2.text": "Не готовий",
+      "columns.graph-status.cases.3.text": "Триває",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "Статус",
+      "columns.trained-model-status.cases.0.text": "Готовий",
+      "columns.trained-model-status.cases.1.text": "Не готовий",
+      "columns.trained-model-status.cases.2.text": "Не готовий",
+      "columns.trained-model-status.cases.3.text": "Триває",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "Фреймворк",
+      "problems.invalid-spec.title": "Специфікацію InferenceService не можна обслуговувати",
+      "problems.invalid-spec-unnamed.title": "Специфікацію InferenceService не можна обслуговувати (причину не вказано)",
+      "problems.model-load-failed.title": "Модель InferenceService не завантажилася",
+      "problems.model-load-failed-unnamed.title": "Модель InferenceService не завантажилася (причину не вказано)",
+      "problems.not-ready-predictor.title": "InferenceService не готовий: PredictorReady = False",
+      "problems.not-ready-transformer.title": "InferenceService не готовий: TransformerReady = False",
+      "problems.not-ready-explainer.title": "InferenceService не готовий: ExplainerReady = False",
+      "problems.not-ready-predictor-config.title": "InferenceService не готовий: PredictorConfigurationReady = False",
+      "problems.not-ready-transformer-config.title": "InferenceService не готовий: TransformerConfigurationReady = False",
+      "problems.not-ready-explainer-config.title": "InferenceService не готовий: ExplainerConfigurationReady = False",
+      "problems.not-ready-latest-deployment.title": "InferenceService не готовий: LatestDeploymentReady = False",
+      "problems.not-ready-canary-predictor.title": "InferenceService не готовий: CanaryPredictorReady = False",
+      "problems.not-ready-predictor-route.title": "InferenceService не готовий: PredictorRouteReady = False",
+      "problems.not-ready-transformer-route.title": "InferenceService не готовий: TransformerRouteReady = False",
+      "problems.not-ready-explainer-routes.title": "InferenceService не готовий: ExplainerRoutesReady = False",
+      "problems.not-ready-routes.title": "InferenceService не готовий: RoutesReady = False",
+      "problems.not-ready-ingress.title": "InferenceService не готовий: IngressReady = False",
+      "problems.not-ready.title": "InferenceService не готовий",
+      "problems.not-ready-unnamed.title": "InferenceService не готовий (причину не вказано)"
+    },
+    "de": {
+      "description": "KServe: InferenceServices mit Zustand, URL, Modellformat, Runtime, Bereitstellungsmodus und Canary-Anteil, dem, was KServe für sie erstellt hat, und der Serving-Runtime, die KServe wählt; ServingRuntimes, ClusterServingRuntimes, InferenceGraphs und TrainedModels; Probleme von Modellen, die nicht geladen wurden, Spezifikationen, die KServe nicht bereitstellen kann, und nicht bereiten InferenceServices. URIs ohne Anmeldedaten und Abfrage. Nur lesend.",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.one": "{{count}} InferenceService erfordert Aufmerksamkeit",
+      "sectionBadges.kserve.label.other": "{{count}} InferenceServices erfordern Aufmerksamkeit",
+      "columns.isvc-status.title": "Status",
+      "columns.isvc-status.cases.0.text": "Gestoppt",
+      "columns.isvc-status.cases.1.text": "Fehlgeschlagen",
+      "columns.isvc-status.cases.2.text": "Bereit",
+      "columns.isvc-status.cases.3.text": "Nicht bereit",
+      "columns.isvc-status.cases.4.text": "Nicht bereit",
+      "columns.isvc-status.cases.5.text": "Nicht bereit",
+      "columns.isvc-status.cases.6.text": "Nicht bereit",
+      "columns.isvc-status.cases.7.text": "Nicht bereit",
+      "columns.isvc-status.cases.8.text": "Nicht bereit",
+      "columns.isvc-status.cases.9.text": "In Arbeit",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "Modellformat",
+      "columns.isvc-runtime.title": "Runtime",
+      "columns.isvc-mode.title": "Modus",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "Modellformate",
+      "columns.sr-protocols.title": "Protokolle",
+      "columns.sr-disabled.title": "Deaktiviert",
+      "columns.sr-multi-model.title": "Multi-Modell",
+      "columns.csr-formats.title": "Modellformate",
+      "columns.csr-protocols.title": "Protokolle",
+      "columns.csr-disabled.title": "Deaktiviert",
+      "columns.csr-multi-model.title": "Multi-Modell",
+      "columns.graph-status.title": "Status",
+      "columns.graph-status.cases.0.text": "Bereit",
+      "columns.graph-status.cases.1.text": "Nicht bereit",
+      "columns.graph-status.cases.2.text": "Nicht bereit",
+      "columns.graph-status.cases.3.text": "In Arbeit",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "Status",
+      "columns.trained-model-status.cases.0.text": "Bereit",
+      "columns.trained-model-status.cases.1.text": "Nicht bereit",
+      "columns.trained-model-status.cases.2.text": "Nicht bereit",
+      "columns.trained-model-status.cases.3.text": "In Arbeit",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "Framework",
+      "problems.invalid-spec.title": "InferenceService-Spezifikation nicht bereitstellbar",
+      "problems.invalid-spec-unnamed.title": "InferenceService-Spezifikation nicht bereitstellbar (kein Grund angegeben)",
+      "problems.model-load-failed.title": "Modell des InferenceService konnte nicht geladen werden",
+      "problems.model-load-failed-unnamed.title": "Modell des InferenceService konnte nicht geladen werden (kein Grund angegeben)",
+      "problems.not-ready-predictor.title": "InferenceService nicht bereit: PredictorReady ist False",
+      "problems.not-ready-transformer.title": "InferenceService nicht bereit: TransformerReady ist False",
+      "problems.not-ready-explainer.title": "InferenceService nicht bereit: ExplainerReady ist False",
+      "problems.not-ready-predictor-config.title": "InferenceService nicht bereit: PredictorConfigurationReady ist False",
+      "problems.not-ready-transformer-config.title": "InferenceService nicht bereit: TransformerConfigurationReady ist False",
+      "problems.not-ready-explainer-config.title": "InferenceService nicht bereit: ExplainerConfigurationReady ist False",
+      "problems.not-ready-latest-deployment.title": "InferenceService nicht bereit: LatestDeploymentReady ist False",
+      "problems.not-ready-canary-predictor.title": "InferenceService nicht bereit: CanaryPredictorReady ist False",
+      "problems.not-ready-predictor-route.title": "InferenceService nicht bereit: PredictorRouteReady ist False",
+      "problems.not-ready-transformer-route.title": "InferenceService nicht bereit: TransformerRouteReady ist False",
+      "problems.not-ready-explainer-routes.title": "InferenceService nicht bereit: ExplainerRoutesReady ist False",
+      "problems.not-ready-routes.title": "InferenceService nicht bereit: RoutesReady ist False",
+      "problems.not-ready-ingress.title": "InferenceService nicht bereit: IngressReady ist False",
+      "problems.not-ready.title": "InferenceService nicht bereit",
+      "problems.not-ready-unnamed.title": "InferenceService nicht bereit (kein Grund angegeben)"
+    },
+    "fr": {
+      "description": "KServe : les InferenceServices avec leur état, URL, format de modèle, runtime, mode de déploiement et part canary, ce que KServe a créé pour eux et le runtime que KServe choisit ; ServingRuntimes, ClusterServingRuntimes, InferenceGraphs et TrainedModels ; problèmes des modèles non chargés, des spécifications que KServe ne peut pas servir et des InferenceServices pas prêts. URI sans identifiants ni requête. Lecture seule.",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.one": "{{count}} InferenceService nécessite votre attention",
+      "sectionBadges.kserve.label.many": "{{count}} InferenceServices nécessitent votre attention",
+      "sectionBadges.kserve.label.other": "{{count}} InferenceServices nécessitent votre attention",
+      "columns.isvc-status.title": "Statut",
+      "columns.isvc-status.cases.0.text": "Arrêté",
+      "columns.isvc-status.cases.1.text": "Échec",
+      "columns.isvc-status.cases.2.text": "Prêt",
+      "columns.isvc-status.cases.3.text": "Non prêt",
+      "columns.isvc-status.cases.4.text": "Non prêt",
+      "columns.isvc-status.cases.5.text": "Non prêt",
+      "columns.isvc-status.cases.6.text": "Non prêt",
+      "columns.isvc-status.cases.7.text": "Non prêt",
+      "columns.isvc-status.cases.8.text": "Non prêt",
+      "columns.isvc-status.cases.9.text": "En cours",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "Format du modèle",
+      "columns.isvc-runtime.title": "Runtime",
+      "columns.isvc-mode.title": "Mode",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "Formats de modèle",
+      "columns.sr-protocols.title": "Protocoles",
+      "columns.sr-disabled.title": "Désactivé",
+      "columns.sr-multi-model.title": "Multi-modèle",
+      "columns.csr-formats.title": "Formats de modèle",
+      "columns.csr-protocols.title": "Protocoles",
+      "columns.csr-disabled.title": "Désactivé",
+      "columns.csr-multi-model.title": "Multi-modèle",
+      "columns.graph-status.title": "Statut",
+      "columns.graph-status.cases.0.text": "Prêt",
+      "columns.graph-status.cases.1.text": "Non prêt",
+      "columns.graph-status.cases.2.text": "Non prêt",
+      "columns.graph-status.cases.3.text": "En cours",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "Statut",
+      "columns.trained-model-status.cases.0.text": "Prêt",
+      "columns.trained-model-status.cases.1.text": "Non prêt",
+      "columns.trained-model-status.cases.2.text": "Non prêt",
+      "columns.trained-model-status.cases.3.text": "En cours",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "Framework",
+      "problems.invalid-spec.title": "La spécification de l'InferenceService ne peut pas être servie",
+      "problems.invalid-spec-unnamed.title": "La spécification de l'InferenceService ne peut être servie (sans raison)",
+      "problems.model-load-failed.title": "Le modèle de l'InferenceService n'a pas pu être chargé",
+      "problems.model-load-failed-unnamed.title": "Le modèle de l'InferenceService n'a pas pu être chargé (aucune raison donnée)",
+      "problems.not-ready-predictor.title": "InferenceService pas prêt : PredictorReady est False",
+      "problems.not-ready-transformer.title": "InferenceService pas prêt : TransformerReady est False",
+      "problems.not-ready-explainer.title": "InferenceService pas prêt : ExplainerReady est False",
+      "problems.not-ready-predictor-config.title": "InferenceService pas prêt : PredictorConfigurationReady est False",
+      "problems.not-ready-transformer-config.title": "InferenceService pas prêt : TransformerConfigurationReady est False",
+      "problems.not-ready-explainer-config.title": "InferenceService pas prêt : ExplainerConfigurationReady est False",
+      "problems.not-ready-latest-deployment.title": "InferenceService pas prêt : LatestDeploymentReady est False",
+      "problems.not-ready-canary-predictor.title": "InferenceService pas prêt : CanaryPredictorReady est False",
+      "problems.not-ready-predictor-route.title": "InferenceService pas prêt : PredictorRouteReady est False",
+      "problems.not-ready-transformer-route.title": "InferenceService pas prêt : TransformerRouteReady est False",
+      "problems.not-ready-explainer-routes.title": "InferenceService pas prêt : ExplainerRoutesReady est False",
+      "problems.not-ready-routes.title": "InferenceService pas prêt : RoutesReady est False",
+      "problems.not-ready-ingress.title": "InferenceService pas prêt : IngressReady est False",
+      "problems.not-ready.title": "InferenceService pas prêt",
+      "problems.not-ready-unnamed.title": "InferenceService pas prêt (aucune raison donnée)"
+    },
+    "es": {
+      "description": "KServe: InferenceServices con su estado, URL, formato de modelo, runtime, modo de despliegue y porcentaje canary, lo que KServe creó para ellos y el runtime de servicio que KServe elige; ServingRuntimes, ClusterServingRuntimes, InferenceGraphs y TrainedModels; problemas de modelos que no se pudieron cargar, especificaciones que KServe no puede servir e InferenceServices que no están listos. Las URI se muestran sin credenciales ni consulta. Solo lectura.",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.one": "{{count}} InferenceService requiere atención",
+      "sectionBadges.kserve.label.many": "{{count}} InferenceServices requieren atención",
+      "sectionBadges.kserve.label.other": "{{count}} InferenceServices requieren atención",
+      "columns.isvc-status.title": "Estado",
+      "columns.isvc-status.cases.0.text": "Detenido",
+      "columns.isvc-status.cases.1.text": "Fallido",
+      "columns.isvc-status.cases.2.text": "Listo",
+      "columns.isvc-status.cases.3.text": "No listo",
+      "columns.isvc-status.cases.4.text": "No listo",
+      "columns.isvc-status.cases.5.text": "No listo",
+      "columns.isvc-status.cases.6.text": "No listo",
+      "columns.isvc-status.cases.7.text": "No listo",
+      "columns.isvc-status.cases.8.text": "No listo",
+      "columns.isvc-status.cases.9.text": "En curso",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "Formato del modelo",
+      "columns.isvc-runtime.title": "Runtime",
+      "columns.isvc-mode.title": "Modo",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "Formatos de modelo",
+      "columns.sr-protocols.title": "Protocolos",
+      "columns.sr-disabled.title": "Deshabilitado",
+      "columns.sr-multi-model.title": "Multimodelo",
+      "columns.csr-formats.title": "Formatos de modelo",
+      "columns.csr-protocols.title": "Protocolos",
+      "columns.csr-disabled.title": "Deshabilitado",
+      "columns.csr-multi-model.title": "Multimodelo",
+      "columns.graph-status.title": "Estado",
+      "columns.graph-status.cases.0.text": "Listo",
+      "columns.graph-status.cases.1.text": "No listo",
+      "columns.graph-status.cases.2.text": "No listo",
+      "columns.graph-status.cases.3.text": "En curso",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "Estado",
+      "columns.trained-model-status.cases.0.text": "Listo",
+      "columns.trained-model-status.cases.1.text": "No listo",
+      "columns.trained-model-status.cases.2.text": "No listo",
+      "columns.trained-model-status.cases.3.text": "En curso",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "Framework",
+      "problems.invalid-spec.title": "La especificación del InferenceService no se puede servir",
+      "problems.invalid-spec-unnamed.title": "La especificación del InferenceService no se puede servir (sin motivo indicado)",
+      "problems.model-load-failed.title": "El modelo del InferenceService no se pudo cargar",
+      "problems.model-load-failed-unnamed.title": "El modelo del InferenceService no se pudo cargar (sin motivo indicado)",
+      "problems.not-ready-predictor.title": "InferenceService no listo: PredictorReady es False",
+      "problems.not-ready-transformer.title": "InferenceService no listo: TransformerReady es False",
+      "problems.not-ready-explainer.title": "InferenceService no listo: ExplainerReady es False",
+      "problems.not-ready-predictor-config.title": "InferenceService no listo: PredictorConfigurationReady es False",
+      "problems.not-ready-transformer-config.title": "InferenceService no listo: TransformerConfigurationReady es False",
+      "problems.not-ready-explainer-config.title": "InferenceService no listo: ExplainerConfigurationReady es False",
+      "problems.not-ready-latest-deployment.title": "InferenceService no listo: LatestDeploymentReady es False",
+      "problems.not-ready-canary-predictor.title": "InferenceService no listo: CanaryPredictorReady es False",
+      "problems.not-ready-predictor-route.title": "InferenceService no listo: PredictorRouteReady es False",
+      "problems.not-ready-transformer-route.title": "InferenceService no listo: TransformerRouteReady es False",
+      "problems.not-ready-explainer-routes.title": "InferenceService no listo: ExplainerRoutesReady es False",
+      "problems.not-ready-routes.title": "InferenceService no listo: RoutesReady es False",
+      "problems.not-ready-ingress.title": "InferenceService no listo: IngressReady es False",
+      "problems.not-ready.title": "InferenceService no listo",
+      "problems.not-ready-unnamed.title": "InferenceService no listo (sin motivo indicado)"
+    },
+    "pt-BR": {
+      "description": "KServe: InferenceServices com seu estado, URL, formato de modelo, runtime, modo de implantação e parcela canary, o que o KServe criou para eles e o runtime de serviço que o KServe escolhe; ServingRuntimes, ClusterServingRuntimes, InferenceGraphs e TrainedModels; problemas de modelos que não puderam ser carregados, especificações que o KServe não consegue servir e InferenceServices que não estão prontos. As URIs são mostradas sem credenciais nem consulta. Somente leitura.",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.one": "{{count}} InferenceService precisa de atenção",
+      "sectionBadges.kserve.label.many": "{{count}} InferenceServices precisam de atenção",
+      "sectionBadges.kserve.label.other": "{{count}} InferenceServices precisam de atenção",
+      "columns.isvc-status.title": "Status",
+      "columns.isvc-status.cases.0.text": "Parado",
+      "columns.isvc-status.cases.1.text": "Falhou",
+      "columns.isvc-status.cases.2.text": "Pronto",
+      "columns.isvc-status.cases.3.text": "Não pronto",
+      "columns.isvc-status.cases.4.text": "Não pronto",
+      "columns.isvc-status.cases.5.text": "Não pronto",
+      "columns.isvc-status.cases.6.text": "Não pronto",
+      "columns.isvc-status.cases.7.text": "Não pronto",
+      "columns.isvc-status.cases.8.text": "Não pronto",
+      "columns.isvc-status.cases.9.text": "Em andamento",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "Formato do modelo",
+      "columns.isvc-runtime.title": "Runtime",
+      "columns.isvc-mode.title": "Modo",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "Formatos de modelo",
+      "columns.sr-protocols.title": "Protocolos",
+      "columns.sr-disabled.title": "Desativado",
+      "columns.sr-multi-model.title": "Multimodelo",
+      "columns.csr-formats.title": "Formatos de modelo",
+      "columns.csr-protocols.title": "Protocolos",
+      "columns.csr-disabled.title": "Desativado",
+      "columns.csr-multi-model.title": "Multimodelo",
+      "columns.graph-status.title": "Status",
+      "columns.graph-status.cases.0.text": "Pronto",
+      "columns.graph-status.cases.1.text": "Não pronto",
+      "columns.graph-status.cases.2.text": "Não pronto",
+      "columns.graph-status.cases.3.text": "Em andamento",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "Status",
+      "columns.trained-model-status.cases.0.text": "Pronto",
+      "columns.trained-model-status.cases.1.text": "Não pronto",
+      "columns.trained-model-status.cases.2.text": "Não pronto",
+      "columns.trained-model-status.cases.3.text": "Em andamento",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "Framework",
+      "problems.invalid-spec.title": "A especificação do InferenceService não pode ser servida",
+      "problems.invalid-spec-unnamed.title": "A especificação do InferenceService não pode ser servida (sem motivo)",
+      "problems.model-load-failed.title": "O modelo do InferenceService não pôde ser carregado",
+      "problems.model-load-failed-unnamed.title": "O modelo do InferenceService não pôde ser carregado (nenhum motivo informado)",
+      "problems.not-ready-predictor.title": "InferenceService não pronto: PredictorReady é False",
+      "problems.not-ready-transformer.title": "InferenceService não pronto: TransformerReady é False",
+      "problems.not-ready-explainer.title": "InferenceService não pronto: ExplainerReady é False",
+      "problems.not-ready-predictor-config.title": "InferenceService não pronto: PredictorConfigurationReady é False",
+      "problems.not-ready-transformer-config.title": "InferenceService não pronto: TransformerConfigurationReady é False",
+      "problems.not-ready-explainer-config.title": "InferenceService não pronto: ExplainerConfigurationReady é False",
+      "problems.not-ready-latest-deployment.title": "InferenceService não pronto: LatestDeploymentReady é False",
+      "problems.not-ready-canary-predictor.title": "InferenceService não pronto: CanaryPredictorReady é False",
+      "problems.not-ready-predictor-route.title": "InferenceService não pronto: PredictorRouteReady é False",
+      "problems.not-ready-transformer-route.title": "InferenceService não pronto: TransformerRouteReady é False",
+      "problems.not-ready-explainer-routes.title": "InferenceService não pronto: ExplainerRoutesReady é False",
+      "problems.not-ready-routes.title": "InferenceService não pronto: RoutesReady é False",
+      "problems.not-ready-ingress.title": "InferenceService não pronto: IngressReady é False",
+      "problems.not-ready.title": "InferenceService não pronto",
+      "problems.not-ready-unnamed.title": "InferenceService não pronto (nenhum motivo informado)"
+    },
+    "it": {
+      "description": "KServe: InferenceService con il loro stato, URL, formato del modello, runtime, modalità di distribuzione e quota canary, ciò che KServe ha creato per loro e il runtime di servizio che KServe sceglie; ServingRuntime, ClusterServingRuntime, InferenceGraph e TrainedModel; problemi di modelli che non è stato possibile caricare, specifiche che KServe non può servire e InferenceService non pronti. Gli URI sono mostrati senza credenziali né query. Sola lettura.",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.one": "{{count}} InferenceService richiede attenzione",
+      "sectionBadges.kserve.label.many": "{{count}} InferenceService richiedono attenzione",
+      "sectionBadges.kserve.label.other": "{{count}} InferenceService richiedono attenzione",
+      "columns.isvc-status.title": "Stato",
+      "columns.isvc-status.cases.0.text": "Fermato",
+      "columns.isvc-status.cases.1.text": "Non riuscito",
+      "columns.isvc-status.cases.2.text": "Pronto",
+      "columns.isvc-status.cases.3.text": "Non pronto",
+      "columns.isvc-status.cases.4.text": "Non pronto",
+      "columns.isvc-status.cases.5.text": "Non pronto",
+      "columns.isvc-status.cases.6.text": "Non pronto",
+      "columns.isvc-status.cases.7.text": "Non pronto",
+      "columns.isvc-status.cases.8.text": "Non pronto",
+      "columns.isvc-status.cases.9.text": "In corso",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "Formato del modello",
+      "columns.isvc-runtime.title": "Runtime",
+      "columns.isvc-mode.title": "Modalità",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "Formati di modello",
+      "columns.sr-protocols.title": "Protocolli",
+      "columns.sr-disabled.title": "Disattivato",
+      "columns.sr-multi-model.title": "Multi-modello",
+      "columns.csr-formats.title": "Formati di modello",
+      "columns.csr-protocols.title": "Protocolli",
+      "columns.csr-disabled.title": "Disattivato",
+      "columns.csr-multi-model.title": "Multi-modello",
+      "columns.graph-status.title": "Stato",
+      "columns.graph-status.cases.0.text": "Pronto",
+      "columns.graph-status.cases.1.text": "Non pronto",
+      "columns.graph-status.cases.2.text": "Non pronto",
+      "columns.graph-status.cases.3.text": "In corso",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "Stato",
+      "columns.trained-model-status.cases.0.text": "Pronto",
+      "columns.trained-model-status.cases.1.text": "Non pronto",
+      "columns.trained-model-status.cases.2.text": "Non pronto",
+      "columns.trained-model-status.cases.3.text": "In corso",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "Framework",
+      "problems.invalid-spec.title": "La specifica dell'InferenceService non può essere servita",
+      "problems.invalid-spec-unnamed.title": "La specifica dell'InferenceService non può essere servita (senza motivo)",
+      "problems.model-load-failed.title": "Il modello dell'InferenceService non è stato caricato",
+      "problems.model-load-failed-unnamed.title": "Il modello dell'InferenceService non è stato caricato (nessun motivo indicato)",
+      "problems.not-ready-predictor.title": "InferenceService non pronto: PredictorReady è False",
+      "problems.not-ready-transformer.title": "InferenceService non pronto: TransformerReady è False",
+      "problems.not-ready-explainer.title": "InferenceService non pronto: ExplainerReady è False",
+      "problems.not-ready-predictor-config.title": "InferenceService non pronto: PredictorConfigurationReady è False",
+      "problems.not-ready-transformer-config.title": "InferenceService non pronto: TransformerConfigurationReady è False",
+      "problems.not-ready-explainer-config.title": "InferenceService non pronto: ExplainerConfigurationReady è False",
+      "problems.not-ready-latest-deployment.title": "InferenceService non pronto: LatestDeploymentReady è False",
+      "problems.not-ready-canary-predictor.title": "InferenceService non pronto: CanaryPredictorReady è False",
+      "problems.not-ready-predictor-route.title": "InferenceService non pronto: PredictorRouteReady è False",
+      "problems.not-ready-transformer-route.title": "InferenceService non pronto: TransformerRouteReady è False",
+      "problems.not-ready-explainer-routes.title": "InferenceService non pronto: ExplainerRoutesReady è False",
+      "problems.not-ready-routes.title": "InferenceService non pronto: RoutesReady è False",
+      "problems.not-ready-ingress.title": "InferenceService non pronto: IngressReady è False",
+      "problems.not-ready.title": "InferenceService non pronto",
+      "problems.not-ready-unnamed.title": "InferenceService non pronto (nessun motivo indicato)"
+    },
+    "pl": {
+      "description": "KServe: InferenceService z ich stanem, URL, formatem modelu, środowiskiem uruchomieniowym, trybem wdrożenia i udziałem canary, tym, co KServe dla nich utworzył, oraz środowiskiem serwowania wybieranym przez KServe; ServingRuntime, ClusterServingRuntime, InferenceGraph i TrainedModel; problemy modeli, których nie udało się załadować, specyfikacji, których KServe nie może serwować, i InferenceService, które nie są gotowe. URI są pokazywane bez poświadczeń i zapytania. Tylko do odczytu.",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.one": "{{count}} InferenceService wymaga uwagi",
+      "sectionBadges.kserve.label.few": "{{count}} InferenceService wymagają uwagi",
+      "sectionBadges.kserve.label.many": "{{count}} InferenceService wymaga uwagi",
+      "sectionBadges.kserve.label.other": "{{count}} InferenceService wymaga uwagi",
+      "columns.isvc-status.title": "Stan",
+      "columns.isvc-status.cases.0.text": "Zatrzymany",
+      "columns.isvc-status.cases.1.text": "Błąd",
+      "columns.isvc-status.cases.2.text": "Gotowy",
+      "columns.isvc-status.cases.3.text": "Niegotowy",
+      "columns.isvc-status.cases.4.text": "Niegotowy",
+      "columns.isvc-status.cases.5.text": "Niegotowy",
+      "columns.isvc-status.cases.6.text": "Niegotowy",
+      "columns.isvc-status.cases.7.text": "Niegotowy",
+      "columns.isvc-status.cases.8.text": "Niegotowy",
+      "columns.isvc-status.cases.9.text": "W toku",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "Format modelu",
+      "columns.isvc-runtime.title": "Środowisko",
+      "columns.isvc-mode.title": "Tryb",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "Formaty modeli",
+      "columns.sr-protocols.title": "Protokoły",
+      "columns.sr-disabled.title": "Wyłączone",
+      "columns.sr-multi-model.title": "Wiele modeli",
+      "columns.csr-formats.title": "Formaty modeli",
+      "columns.csr-protocols.title": "Protokoły",
+      "columns.csr-disabled.title": "Wyłączone",
+      "columns.csr-multi-model.title": "Wiele modeli",
+      "columns.graph-status.title": "Stan",
+      "columns.graph-status.cases.0.text": "Gotowy",
+      "columns.graph-status.cases.1.text": "Niegotowy",
+      "columns.graph-status.cases.2.text": "Niegotowy",
+      "columns.graph-status.cases.3.text": "W toku",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "Stan",
+      "columns.trained-model-status.cases.0.text": "Gotowy",
+      "columns.trained-model-status.cases.1.text": "Niegotowy",
+      "columns.trained-model-status.cases.2.text": "Niegotowy",
+      "columns.trained-model-status.cases.3.text": "W toku",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "Framework",
+      "problems.invalid-spec.title": "Specyfikacji InferenceService nie można serwować",
+      "problems.invalid-spec-unnamed.title": "Specyfikacji InferenceService nie można serwować (nie podano przyczyny)",
+      "problems.model-load-failed.title": "Nie udało się załadować modelu InferenceService",
+      "problems.model-load-failed-unnamed.title": "Nie udało się załadować modelu InferenceService (nie podano przyczyny)",
+      "problems.not-ready-predictor.title": "InferenceService niegotowy: PredictorReady ma wartość False",
+      "problems.not-ready-transformer.title": "InferenceService niegotowy: TransformerReady ma wartość False",
+      "problems.not-ready-explainer.title": "InferenceService niegotowy: ExplainerReady ma wartość False",
+      "problems.not-ready-predictor-config.title": "InferenceService niegotowy: PredictorConfigurationReady ma wartość False",
+      "problems.not-ready-transformer-config.title": "InferenceService niegotowy: TransformerConfigurationReady ma wartość False",
+      "problems.not-ready-explainer-config.title": "InferenceService niegotowy: ExplainerConfigurationReady ma wartość False",
+      "problems.not-ready-latest-deployment.title": "InferenceService niegotowy: LatestDeploymentReady ma wartość False",
+      "problems.not-ready-canary-predictor.title": "InferenceService niegotowy: CanaryPredictorReady ma wartość False",
+      "problems.not-ready-predictor-route.title": "InferenceService niegotowy: PredictorRouteReady ma wartość False",
+      "problems.not-ready-transformer-route.title": "InferenceService niegotowy: TransformerRouteReady ma wartość False",
+      "problems.not-ready-explainer-routes.title": "InferenceService niegotowy: ExplainerRoutesReady ma wartość False",
+      "problems.not-ready-routes.title": "InferenceService niegotowy: RoutesReady ma wartość False",
+      "problems.not-ready-ingress.title": "InferenceService niegotowy: IngressReady ma wartość False",
+      "problems.not-ready.title": "InferenceService niegotowy",
+      "problems.not-ready-unnamed.title": "InferenceService niegotowy (nie podano przyczyny)"
+    },
+    "tr": {
+      "description": "KServe: durumları, URL'leri, model biçimi, çalışma ortamı, dağıtım modu ve canary payı ile InferenceService'ler, KServe'ün onlar için oluşturdukları ve KServe'ün seçtiği sunum çalışma ortamı; ServingRuntime, ClusterServingRuntime, InferenceGraph ve TrainedModel'ler; yüklenemeyen modellerin, KServe'ün sunamadığı belirtimlerin ve hazır olmayan InferenceService'lerin sorunları. URI'ler kimlik bilgileri ve sorgu olmadan gösterilir. Salt okunur.",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.one": "{{count}} InferenceService ilgi gerektiriyor",
+      "sectionBadges.kserve.label.other": "{{count}} InferenceService ilgi gerektiriyor",
+      "columns.isvc-status.title": "Durum",
+      "columns.isvc-status.cases.0.text": "Durduruldu",
+      "columns.isvc-status.cases.1.text": "Başarısız",
+      "columns.isvc-status.cases.2.text": "Hazır",
+      "columns.isvc-status.cases.3.text": "Hazır değil",
+      "columns.isvc-status.cases.4.text": "Hazır değil",
+      "columns.isvc-status.cases.5.text": "Hazır değil",
+      "columns.isvc-status.cases.6.text": "Hazır değil",
+      "columns.isvc-status.cases.7.text": "Hazır değil",
+      "columns.isvc-status.cases.8.text": "Hazır değil",
+      "columns.isvc-status.cases.9.text": "Sürüyor",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "Model biçimi",
+      "columns.isvc-runtime.title": "Çalışma ortamı",
+      "columns.isvc-mode.title": "Mod",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "Model biçimleri",
+      "columns.sr-protocols.title": "Protokoller",
+      "columns.sr-disabled.title": "Devre dışı",
+      "columns.sr-multi-model.title": "Çoklu model",
+      "columns.csr-formats.title": "Model biçimleri",
+      "columns.csr-protocols.title": "Protokoller",
+      "columns.csr-disabled.title": "Devre dışı",
+      "columns.csr-multi-model.title": "Çoklu model",
+      "columns.graph-status.title": "Durum",
+      "columns.graph-status.cases.0.text": "Hazır",
+      "columns.graph-status.cases.1.text": "Hazır değil",
+      "columns.graph-status.cases.2.text": "Hazır değil",
+      "columns.graph-status.cases.3.text": "Sürüyor",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "Durum",
+      "columns.trained-model-status.cases.0.text": "Hazır",
+      "columns.trained-model-status.cases.1.text": "Hazır değil",
+      "columns.trained-model-status.cases.2.text": "Hazır değil",
+      "columns.trained-model-status.cases.3.text": "Sürüyor",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "Çerçeve",
+      "problems.invalid-spec.title": "InferenceService belirtimi sunulamıyor",
+      "problems.invalid-spec-unnamed.title": "InferenceService belirtimi sunulamıyor (neden belirtilmemiş)",
+      "problems.model-load-failed.title": "InferenceService modeli yüklenemedi",
+      "problems.model-load-failed-unnamed.title": "InferenceService modeli yüklenemedi (neden belirtilmemiş)",
+      "problems.not-ready-predictor.title": "InferenceService hazır değil: PredictorReady False",
+      "problems.not-ready-transformer.title": "InferenceService hazır değil: TransformerReady False",
+      "problems.not-ready-explainer.title": "InferenceService hazır değil: ExplainerReady False",
+      "problems.not-ready-predictor-config.title": "InferenceService hazır değil: PredictorConfigurationReady False",
+      "problems.not-ready-transformer-config.title": "InferenceService hazır değil: TransformerConfigurationReady False",
+      "problems.not-ready-explainer-config.title": "InferenceService hazır değil: ExplainerConfigurationReady False",
+      "problems.not-ready-latest-deployment.title": "InferenceService hazır değil: LatestDeploymentReady False",
+      "problems.not-ready-canary-predictor.title": "InferenceService hazır değil: CanaryPredictorReady False",
+      "problems.not-ready-predictor-route.title": "InferenceService hazır değil: PredictorRouteReady False",
+      "problems.not-ready-transformer-route.title": "InferenceService hazır değil: TransformerRouteReady False",
+      "problems.not-ready-explainer-routes.title": "InferenceService hazır değil: ExplainerRoutesReady False",
+      "problems.not-ready-routes.title": "InferenceService hazır değil: RoutesReady False",
+      "problems.not-ready-ingress.title": "InferenceService hazır değil: IngressReady False",
+      "problems.not-ready.title": "InferenceService hazır değil",
+      "problems.not-ready-unnamed.title": "InferenceService hazır değil (neden belirtilmemiş)"
+    },
+    "zh-CN": {
+      "description": "KServe：InferenceService 及其状态、URL、模型格式、运行时、部署模式和金丝雀流量占比，KServe 为其创建的对象以及 KServe 选择的服务运行时；ServingRuntime、ClusterServingRuntime、InferenceGraph 和 TrainedModel；模型加载失败、KServe 无法提供的规约以及未就绪的 InferenceService 等问题。URI 显示时不含凭据和查询。只读。",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.other": "{{count}} 个 InferenceService 需要关注",
+      "columns.isvc-status.title": "状态",
+      "columns.isvc-status.cases.0.text": "已停止",
+      "columns.isvc-status.cases.1.text": "失败",
+      "columns.isvc-status.cases.2.text": "就绪",
+      "columns.isvc-status.cases.3.text": "未就绪",
+      "columns.isvc-status.cases.4.text": "未就绪",
+      "columns.isvc-status.cases.5.text": "未就绪",
+      "columns.isvc-status.cases.6.text": "未就绪",
+      "columns.isvc-status.cases.7.text": "未就绪",
+      "columns.isvc-status.cases.8.text": "未就绪",
+      "columns.isvc-status.cases.9.text": "进行中",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "模型格式",
+      "columns.isvc-runtime.title": "运行时",
+      "columns.isvc-mode.title": "模式",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "模型格式",
+      "columns.sr-protocols.title": "协议",
+      "columns.sr-disabled.title": "已禁用",
+      "columns.sr-multi-model.title": "多模型",
+      "columns.csr-formats.title": "模型格式",
+      "columns.csr-protocols.title": "协议",
+      "columns.csr-disabled.title": "已禁用",
+      "columns.csr-multi-model.title": "多模型",
+      "columns.graph-status.title": "状态",
+      "columns.graph-status.cases.0.text": "就绪",
+      "columns.graph-status.cases.1.text": "未就绪",
+      "columns.graph-status.cases.2.text": "未就绪",
+      "columns.graph-status.cases.3.text": "进行中",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "状态",
+      "columns.trained-model-status.cases.0.text": "就绪",
+      "columns.trained-model-status.cases.1.text": "未就绪",
+      "columns.trained-model-status.cases.2.text": "未就绪",
+      "columns.trained-model-status.cases.3.text": "进行中",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "框架",
+      "problems.invalid-spec.title": "InferenceService 规约无法提供服务",
+      "problems.invalid-spec-unnamed.title": "InferenceService 规约无法提供服务（未给出原因）",
+      "problems.model-load-failed.title": "InferenceService 模型加载失败",
+      "problems.model-load-failed-unnamed.title": "InferenceService 模型加载失败（未给出原因）",
+      "problems.not-ready-predictor.title": "InferenceService 未就绪：PredictorReady 为 False",
+      "problems.not-ready-transformer.title": "InferenceService 未就绪：TransformerReady 为 False",
+      "problems.not-ready-explainer.title": "InferenceService 未就绪：ExplainerReady 为 False",
+      "problems.not-ready-predictor-config.title": "InferenceService 未就绪：PredictorConfigurationReady 为 False",
+      "problems.not-ready-transformer-config.title": "InferenceService 未就绪：TransformerConfigurationReady 为 False",
+      "problems.not-ready-explainer-config.title": "InferenceService 未就绪：ExplainerConfigurationReady 为 False",
+      "problems.not-ready-latest-deployment.title": "InferenceService 未就绪：LatestDeploymentReady 为 False",
+      "problems.not-ready-canary-predictor.title": "InferenceService 未就绪：CanaryPredictorReady 为 False",
+      "problems.not-ready-predictor-route.title": "InferenceService 未就绪：PredictorRouteReady 为 False",
+      "problems.not-ready-transformer-route.title": "InferenceService 未就绪：TransformerRouteReady 为 False",
+      "problems.not-ready-explainer-routes.title": "InferenceService 未就绪：ExplainerRoutesReady 为 False",
+      "problems.not-ready-routes.title": "InferenceService 未就绪：RoutesReady 为 False",
+      "problems.not-ready-ingress.title": "InferenceService 未就绪：IngressReady 为 False",
+      "problems.not-ready.title": "InferenceService 未就绪",
+      "problems.not-ready-unnamed.title": "InferenceService 未就绪（未给出原因）"
+    },
+    "zh-TW": {
+      "description": "KServe：InferenceService 及其狀態、URL、模型格式、執行環境、部署模式與金絲雀流量比例，KServe 為其建立的物件以及 KServe 選擇的服務執行環境；ServingRuntime、ClusterServingRuntime、InferenceGraph 與 TrainedModel；模型載入失敗、KServe 無法提供的規格以及未就緒的 InferenceService 等問題。URI 顯示時不含憑證與查詢。唯讀。",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.other": "{{count}} 個 InferenceService 需要注意",
+      "columns.isvc-status.title": "狀態",
+      "columns.isvc-status.cases.0.text": "已停止",
+      "columns.isvc-status.cases.1.text": "失敗",
+      "columns.isvc-status.cases.2.text": "就緒",
+      "columns.isvc-status.cases.3.text": "未就緒",
+      "columns.isvc-status.cases.4.text": "未就緒",
+      "columns.isvc-status.cases.5.text": "未就緒",
+      "columns.isvc-status.cases.6.text": "未就緒",
+      "columns.isvc-status.cases.7.text": "未就緒",
+      "columns.isvc-status.cases.8.text": "未就緒",
+      "columns.isvc-status.cases.9.text": "進行中",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "模型格式",
+      "columns.isvc-runtime.title": "執行階段",
+      "columns.isvc-mode.title": "模式",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "模型格式",
+      "columns.sr-protocols.title": "通訊協定",
+      "columns.sr-disabled.title": "已停用",
+      "columns.sr-multi-model.title": "多模型",
+      "columns.csr-formats.title": "模型格式",
+      "columns.csr-protocols.title": "通訊協定",
+      "columns.csr-disabled.title": "已停用",
+      "columns.csr-multi-model.title": "多模型",
+      "columns.graph-status.title": "狀態",
+      "columns.graph-status.cases.0.text": "就緒",
+      "columns.graph-status.cases.1.text": "未就緒",
+      "columns.graph-status.cases.2.text": "未就緒",
+      "columns.graph-status.cases.3.text": "進行中",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "狀態",
+      "columns.trained-model-status.cases.0.text": "就緒",
+      "columns.trained-model-status.cases.1.text": "未就緒",
+      "columns.trained-model-status.cases.2.text": "未就緒",
+      "columns.trained-model-status.cases.3.text": "進行中",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "架構",
+      "problems.invalid-spec.title": "InferenceService 規格無法提供服務",
+      "problems.invalid-spec-unnamed.title": "InferenceService 規格無法提供服務（未提供原因）",
+      "problems.model-load-failed.title": "InferenceService 模型載入失敗",
+      "problems.model-load-failed-unnamed.title": "InferenceService 模型載入失敗（未提供原因）",
+      "problems.not-ready-predictor.title": "InferenceService 未就緒：PredictorReady 為 False",
+      "problems.not-ready-transformer.title": "InferenceService 未就緒：TransformerReady 為 False",
+      "problems.not-ready-explainer.title": "InferenceService 未就緒：ExplainerReady 為 False",
+      "problems.not-ready-predictor-config.title": "InferenceService 未就緒：PredictorConfigurationReady 為 False",
+      "problems.not-ready-transformer-config.title": "InferenceService 未就緒：TransformerConfigurationReady 為 False",
+      "problems.not-ready-explainer-config.title": "InferenceService 未就緒：ExplainerConfigurationReady 為 False",
+      "problems.not-ready-latest-deployment.title": "InferenceService 未就緒：LatestDeploymentReady 為 False",
+      "problems.not-ready-canary-predictor.title": "InferenceService 未就緒：CanaryPredictorReady 為 False",
+      "problems.not-ready-predictor-route.title": "InferenceService 未就緒：PredictorRouteReady 為 False",
+      "problems.not-ready-transformer-route.title": "InferenceService 未就緒：TransformerRouteReady 為 False",
+      "problems.not-ready-explainer-routes.title": "InferenceService 未就緒：ExplainerRoutesReady 為 False",
+      "problems.not-ready-routes.title": "InferenceService 未就緒：RoutesReady 為 False",
+      "problems.not-ready-ingress.title": "InferenceService 未就緒：IngressReady 為 False",
+      "problems.not-ready.title": "InferenceService 未就緒",
+      "problems.not-ready-unnamed.title": "InferenceService 未就緒（未提供原因）"
+    },
+    "ja": {
+      "description": "KServe: 状態、URL、モデル形式、ランタイム、デプロイモード、カナリアの割合を含む InferenceService、KServe がそれらのために作成したもの、KServe が選ぶサービングランタイム。ServingRuntime、ClusterServingRuntime、InferenceGraph、TrainedModel。読み込みに失敗したモデル、KServe が提供できない仕様、準備ができていない InferenceService の問題。URI は資格情報とクエリなしで表示されます。読み取り専用。",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.other": "対応が必要な InferenceService が {{count}} 件あります",
+      "columns.isvc-status.title": "状態",
+      "columns.isvc-status.cases.0.text": "停止",
+      "columns.isvc-status.cases.1.text": "失敗",
+      "columns.isvc-status.cases.2.text": "準備完了",
+      "columns.isvc-status.cases.3.text": "未準備",
+      "columns.isvc-status.cases.4.text": "未準備",
+      "columns.isvc-status.cases.5.text": "未準備",
+      "columns.isvc-status.cases.6.text": "未準備",
+      "columns.isvc-status.cases.7.text": "未準備",
+      "columns.isvc-status.cases.8.text": "未準備",
+      "columns.isvc-status.cases.9.text": "進行中",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "モデル形式",
+      "columns.isvc-runtime.title": "ランタイム",
+      "columns.isvc-mode.title": "モード",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "モデル形式",
+      "columns.sr-protocols.title": "プロトコル",
+      "columns.sr-disabled.title": "無効",
+      "columns.sr-multi-model.title": "マルチモデル",
+      "columns.csr-formats.title": "モデル形式",
+      "columns.csr-protocols.title": "プロトコル",
+      "columns.csr-disabled.title": "無効",
+      "columns.csr-multi-model.title": "マルチモデル",
+      "columns.graph-status.title": "状態",
+      "columns.graph-status.cases.0.text": "準備完了",
+      "columns.graph-status.cases.1.text": "未準備",
+      "columns.graph-status.cases.2.text": "未準備",
+      "columns.graph-status.cases.3.text": "進行中",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "状態",
+      "columns.trained-model-status.cases.0.text": "準備完了",
+      "columns.trained-model-status.cases.1.text": "未準備",
+      "columns.trained-model-status.cases.2.text": "未準備",
+      "columns.trained-model-status.cases.3.text": "進行中",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "フレームワーク",
+      "problems.invalid-spec.title": "InferenceService の仕様を提供できない",
+      "problems.invalid-spec-unnamed.title": "InferenceService の仕様を提供できない (理由なし)",
+      "problems.model-load-failed.title": "InferenceService のモデルの読み込みに失敗",
+      "problems.model-load-failed-unnamed.title": "InferenceService のモデルの読み込みに失敗 (理由なし)",
+      "problems.not-ready-predictor.title": "InferenceService が未準備: PredictorReady が False",
+      "problems.not-ready-transformer.title": "InferenceService が未準備: TransformerReady が False",
+      "problems.not-ready-explainer.title": "InferenceService が未準備: ExplainerReady が False",
+      "problems.not-ready-predictor-config.title": "InferenceService が未準備: PredictorConfigurationReady が False",
+      "problems.not-ready-transformer-config.title": "InferenceService が未準備: TransformerConfigurationReady が False",
+      "problems.not-ready-explainer-config.title": "InferenceService が未準備: ExplainerConfigurationReady が False",
+      "problems.not-ready-latest-deployment.title": "InferenceService が未準備: LatestDeploymentReady が False",
+      "problems.not-ready-canary-predictor.title": "InferenceService が未準備: CanaryPredictorReady が False",
+      "problems.not-ready-predictor-route.title": "InferenceService が未準備: PredictorRouteReady が False",
+      "problems.not-ready-transformer-route.title": "InferenceService が未準備: TransformerRouteReady が False",
+      "problems.not-ready-explainer-routes.title": "InferenceService が未準備: ExplainerRoutesReady が False",
+      "problems.not-ready-routes.title": "InferenceService が未準備: RoutesReady が False",
+      "problems.not-ready-ingress.title": "InferenceService が未準備: IngressReady が False",
+      "problems.not-ready.title": "InferenceService が未準備",
+      "problems.not-ready-unnamed.title": "InferenceService が未準備 (理由なし)"
+    },
+    "ko": {
+      "description": "KServe: 상태, URL, 모델 형식, 런타임, 배포 모드, 카나리 비율이 포함된 InferenceService, KServe가 이를 위해 만든 것, KServe가 선택하는 서빙 런타임; ServingRuntime, ClusterServingRuntime, InferenceGraph, TrainedModel; 로드에 실패한 모델, KServe가 제공할 수 없는 사양, 준비되지 않은 InferenceService의 문제. URI는 자격 증명과 쿼리 없이 표시됩니다. 읽기 전용.",
+      "kinds.0.title": "Inference Services",
+      "kinds.1.title": "Serving Runtimes",
+      "kinds.2.title": "Cluster Serving Runtimes",
+      "kinds.3.title": "Inference Graphs",
+      "kinds.4.title": "Trained Models",
+      "sections.kserve.title": "KServe",
+      "sectionBadges.kserve.label.other": "주의가 필요한 InferenceService {{count}}개",
+      "columns.isvc-status.title": "상태",
+      "columns.isvc-status.cases.0.text": "중지됨",
+      "columns.isvc-status.cases.1.text": "실패",
+      "columns.isvc-status.cases.2.text": "준비됨",
+      "columns.isvc-status.cases.3.text": "준비 안 됨",
+      "columns.isvc-status.cases.4.text": "준비 안 됨",
+      "columns.isvc-status.cases.5.text": "준비 안 됨",
+      "columns.isvc-status.cases.6.text": "준비 안 됨",
+      "columns.isvc-status.cases.7.text": "준비 안 됨",
+      "columns.isvc-status.cases.8.text": "준비 안 됨",
+      "columns.isvc-status.cases.9.text": "진행 중",
+      "columns.isvc-url.title": "URL",
+      "columns.isvc-model-format.title": "모델 형식",
+      "columns.isvc-runtime.title": "런타임",
+      "columns.isvc-mode.title": "모드",
+      "columns.isvc-canary.title": "Canary %",
+      "columns.sr-formats.title": "모델 형식",
+      "columns.sr-protocols.title": "프로토콜",
+      "columns.sr-disabled.title": "사용 안 함",
+      "columns.sr-multi-model.title": "다중 모델",
+      "columns.csr-formats.title": "모델 형식",
+      "columns.csr-protocols.title": "프로토콜",
+      "columns.csr-disabled.title": "사용 안 함",
+      "columns.csr-multi-model.title": "다중 모델",
+      "columns.graph-status.title": "상태",
+      "columns.graph-status.cases.0.text": "준비됨",
+      "columns.graph-status.cases.1.text": "준비 안 됨",
+      "columns.graph-status.cases.2.text": "준비 안 됨",
+      "columns.graph-status.cases.3.text": "진행 중",
+      "columns.graph-url.title": "URL",
+      "columns.trained-model-status.title": "상태",
+      "columns.trained-model-status.cases.0.text": "준비됨",
+      "columns.trained-model-status.cases.1.text": "준비 안 됨",
+      "columns.trained-model-status.cases.2.text": "준비 안 됨",
+      "columns.trained-model-status.cases.3.text": "진행 중",
+      "columns.trained-model-inference-service.title": "InferenceService",
+      "columns.trained-model-framework.title": "프레임워크",
+      "problems.invalid-spec.title": "InferenceService 사양을 제공할 수 없음",
+      "problems.invalid-spec-unnamed.title": "InferenceService 사양을 제공할 수 없음 (이유 없음)",
+      "problems.model-load-failed.title": "InferenceService 모델 로드 실패",
+      "problems.model-load-failed-unnamed.title": "InferenceService 모델 로드 실패 (이유 없음)",
+      "problems.not-ready-predictor.title": "InferenceService 준비 안 됨: PredictorReady이(가) False",
+      "problems.not-ready-transformer.title": "InferenceService 준비 안 됨: TransformerReady이(가) False",
+      "problems.not-ready-explainer.title": "InferenceService 준비 안 됨: ExplainerReady이(가) False",
+      "problems.not-ready-predictor-config.title": "InferenceService 준비 안 됨: PredictorConfigurationReady이(가) False",
+      "problems.not-ready-transformer-config.title": "InferenceService 준비 안 됨: TransformerConfigurationReady이(가) False",
+      "problems.not-ready-explainer-config.title": "InferenceService 준비 안 됨: ExplainerConfigurationReady이(가) False",
+      "problems.not-ready-latest-deployment.title": "InferenceService 준비 안 됨: LatestDeploymentReady이(가) False",
+      "problems.not-ready-canary-predictor.title": "InferenceService 준비 안 됨: CanaryPredictorReady이(가) False",
+      "problems.not-ready-predictor-route.title": "InferenceService 준비 안 됨: PredictorRouteReady이(가) False",
+      "problems.not-ready-transformer-route.title": "InferenceService 준비 안 됨: TransformerRouteReady이(가) False",
+      "problems.not-ready-explainer-routes.title": "InferenceService 준비 안 됨: ExplainerRoutesReady이(가) False",
+      "problems.not-ready-routes.title": "InferenceService 준비 안 됨: RoutesReady이(가) False",
+      "problems.not-ready-ingress.title": "InferenceService 준비 안 됨: IngressReady이(가) False",
+      "problems.not-ready.title": "InferenceService 준비 안 됨",
+      "problems.not-ready-unnamed.title": "InferenceService 준비 안 됨 (이유 없음)"
+    }
+  }
+}

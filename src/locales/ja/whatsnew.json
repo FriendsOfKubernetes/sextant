@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "クラスターツールのビューは拡張機能になりました",
-      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、CloudNativePG、Strimzi、Operator Lifecycle Manager は Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、CloudNativePG、Strimzi、External Secrets、JobSet、KubeRay、KServe、Operator Lifecycle Manager は Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
     },
     "api4": {
       "title": "拡張機能 API 4",
@@ -30,7 +30,11 @@
       "argo-workflows": "ステップのツリーとログを備えた Workflows、CronWorkflows とテンプレート",
       "cnpg": "PostgreSQL クラスター、バックアップ、プーラー",
       "strimzi": "Kafka クラスター、トピック、ユーザー、コネクター、ミラー",
-      "olm": "サブスクリプション、オペレーター、インストールプラン、カタログ"
+      "olm": "サブスクリプション、オペレーター、インストールプラン、カタログ",
+      "external-secrets": "ExternalSecret、ストア、PushSecret",
+      "jobset": "JobSet とその Job、再起動、失敗",
+      "kuberay": "Ray のクラスター、ジョブ、サービスとそのログ",
+      "kserve": "InferenceService、サービングランタイム、推論グラフ"
     }
   }
 }

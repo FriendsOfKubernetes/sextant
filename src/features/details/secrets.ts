@@ -10,7 +10,7 @@
 // credentials, and text that does not read is hidden whole.
 import type { KubeObject } from "../../api";
 import { cleanText } from "../../resources/uri";
-import { HIDDEN, looksSecret } from "../kuberay/mask";
+import { HIDDEN, looksSecret } from "../../resources/secretNames";
 import { K3S_OMITTED, nodeArgs } from "../k3s/mask";
 
 export const LAST_APPLIED = "kubectl.kubernetes.io/last-applied-configuration";

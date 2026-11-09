@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Las vistas de las herramientas del clúster ahora son extensiones",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi y Operator Lifecycle Manager salieron de Sextant y pasaron a sus propias extensiones del catálogo de extensiones, que se actualizan por separado. Instale abajo las que use: hasta entonces sus secciones no se muestran. Se conservó su configuración de notificaciones para ellas, y la barra lateral también las ofrece en los clústeres que ejecutan estas herramientas."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi, External Secrets, JobSet, KubeRay, KServe y Operator Lifecycle Manager salieron de Sextant y pasaron a sus propias extensiones del catálogo de extensiones, que se actualizan por separado. Instale abajo las que use: hasta entonces sus secciones no se muestran. Se conservó su configuración de notificaciones para ellas, y la barra lateral también las ofrece en los clústeres que ejecutan estas herramientas."
     },
     "api4": {
       "title": "API de extensiones 4",
@@ -30,7 +30,11 @@
       "argo-workflows": "Workflows con su árbol de pasos y registros, CronWorkflows y plantillas",
       "cnpg": "Clústeres de PostgreSQL, copias de seguridad y poolers",
       "strimzi": "Clústeres de Kafka, topics, usuarios, conectores y espejos",
-      "olm": "Suscripciones, operadores, planes de instalación y catálogos"
+      "olm": "Suscripciones, operadores, planes de instalación y catálogos",
+      "external-secrets": "ExternalSecrets, almacenes y PushSecrets",
+      "jobset": "JobSets con sus Jobs, reinicios y fallos",
+      "kuberay": "Clústeres, trabajos y servicios de Ray con sus registros",
+      "kserve": "InferenceServices, entornos de ejecución de modelos y grafos de inferencia"
     }
   }
 }

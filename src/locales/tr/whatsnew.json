@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Küme araçlarının görünümleri artık uzantı",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi ve Operator Lifecycle Manager, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi, External Secrets, JobSet, KubeRay, KServe ve Operator Lifecycle Manager, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
     },
     "api4": {
       "title": "Eklenti API 4",
@@ -30,7 +30,11 @@
       "argo-workflows": "Adım ağacı ve günlükleriyle Workflows, CronWorkflows ve şablonlar",
       "cnpg": "PostgreSQL kümeleri, yedekler ve pooler'lar",
       "strimzi": "Kafka kümeleri, topic'ler, kullanıcılar, bağlayıcılar ve aynalar",
-      "olm": "Abonelikler, operatörler, kurulum planları ve kataloglar"
+      "olm": "Abonelikler, operatörler, kurulum planları ve kataloglar",
+      "external-secrets": "ExternalSecret'lar, depolar ve PushSecret'lar",
+      "jobset": "Job'ları, yeniden başlatmaları ve hatalarıyla JobSet'ler",
+      "kuberay": "Günlükleriyle Ray kümeleri, işleri ve servisleri",
+      "kserve": "InferenceService'ler, sunum çalışma ortamları ve çıkarım grafikleri"
     }
   }
 }

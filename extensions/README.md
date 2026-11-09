@@ -15,6 +15,10 @@ for other authors. The guide to writing one is the wiki page
 | CloudNativePG (`sextant.cnpg`) | [`cnpg/`](cnpg/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | PostgreSQL clusters, backups, scheduled backups and poolers, with their problems |
 | Operator Lifecycle Manager (`sextant.olm`) | [`olm/`](olm/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Subscriptions, ClusterServiceVersions, InstallPlans, catalogs and OLM v1 extensions, read-only, with their problems |
 | Strimzi (`sextant.strimzi`) | [`strimzi/`](strimzi/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Kafka clusters, node pools, topics, users, Connect, connectors and MirrorMaker 2, with their problems |
+| External Secrets (`sextant.external-secrets`) | [`external-secrets/`](external-secrets/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | ExternalSecrets, ClusterExternalSecrets, stores and PushSecrets, read-only, with their problems |
+| JobSet (`sextant.jobset`) | [`jobset/`](jobset/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | JobSets with their replicated jobs, Jobs, pods, restarts and failures |
+| KubeRay (`sextant.kuberay`) | [`kuberay/`](kuberay/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | RayClusters, RayJobs and RayServices with their pods and logs |
+| KServe (`sextant.kserve`) | [`kserve/`](kserve/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | InferenceServices with the runtime KServe chooses, serving runtimes, inference graphs and trained models |
 
 ## The documents of an extension
 

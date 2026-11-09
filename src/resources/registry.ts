@@ -156,7 +156,6 @@ export const SIDEBAR_SECTIONS = [
   "knativeEventing",
   "crossplane",
   "kyverno",
-  "externalSecrets",
   "sealedSecrets",
   "prometheusOperator",
   "clusterApi",
@@ -165,9 +164,6 @@ export const SIDEBAR_SECTIONS = [
   "dra",
   "gpuOperator",
   "kueue",
-  "jobset",
-  "kuberay",
-  "kserve",
   "openshift",
   "customResources",
 ] as const;
@@ -182,9 +178,13 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
   ["argocd", "velero"],
   ["argoRollouts", "velero"],
   ["argoWorkflows", "velero"],
+  ["externalSecrets", "kyverno"],
   ["cnpg", "sealedSecrets"],
   ["strimzi", "sealedSecrets"],
-  ["olm", "kserve"],
+  ["jobset", "kueue"],
+  ["kuberay", "kueue"],
+  ["kserve", "kueue"],
+  ["olm", "kueue"],
 ];
 
 /**
@@ -209,7 +209,6 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "knativeEventing",
   "crossplane",
   "kyverno",
-  "externalSecrets",
   "sealedSecrets",
   "prometheusOperator",
   "clusterApi",
@@ -218,9 +217,6 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "dra",
   "gpuOperator",
   "kueue",
-  "jobset",
-  "kuberay",
-  "kserve",
   "openshift",
 ]);
 
@@ -252,7 +248,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   knativeEventing: "knativeEventing",
   crossplane: "crossplane",
   kyverno: "kyverno",
-  externalSecrets: "externalSecrets",
   sealedSecrets: "sealedSecrets",
   prometheusOperator: "prometheusOperator",
   clusterApi: "clusterApi",
@@ -261,9 +256,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   dra: "dra",
   gpuOperator: "gpuOperator",
   kueue: "kueue",
-  jobset: "jobset",
-  kuberay: "kuberay",
-  kserve: "kserve",
   openshift: "openshift",
   customResources: "customResources",
   settings: "settings",

@@ -85,3 +85,12 @@ them where their groups are served (`OFFERS`); the version-3 migration moves the
 to the extensions' (never for agents, as before); "What's new" lists them. What each extension still shows differently
 from the built-in view is listed in its README under "Requirements and limits", with the API addition that would close
 it.
+
+## Amendment: External Secrets, JobSet, KubeRay and KServe
+
+The second group moves the same way: `extensions/external-secrets`, `extensions/jobset`, `extensions/kuberay` and
+`extensions/kserve` (1.0.0, `sextantApi` 4). Their sections keep their places (`externalSecrets` after `kyverno`;
+`jobset`, `kuberay`, `kserve` and `olm` after `kueue`), the version-3 migration moves their categories (never for
+agents), and the secret-name rule KubeRay's masks shared with the core moves to `src/resources/secretNames.ts`. The
+ClusterExternalSecret Refresh column now reads `spec.refreshTime`: the built-in one read `spec.refreshInterval`, which
+that kind does not have, and was always empty.

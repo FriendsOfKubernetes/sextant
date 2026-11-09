@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Widoki narzędzi klastra są teraz rozszerzeniami",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi i Operator Lifecycle Manager przeniesiono z Sextant do jego własnych rozszerzeń z katalogu rozszerzeń, aktualizowanych osobno. Zainstaluj poniżej te, których używasz: do tego czasu ich sekcje nie są pokazywane. Twoje ustawienia powiadomień dla nich zostały zachowane, a pasek boczny proponuje je też w klastrach, w których działają te narzędzia."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi, External Secrets, JobSet, KubeRay, KServe i Operator Lifecycle Manager przeniesiono z Sextant do jego własnych rozszerzeń z katalogu rozszerzeń, aktualizowanych osobno. Zainstaluj poniżej te, których używasz: do tego czasu ich sekcje nie są pokazywane. Twoje ustawienia powiadomień dla nich zostały zachowane, a pasek boczny proponuje je też w klastrach, w których działają te narzędzia."
     },
     "api4": {
       "title": "API rozszerzeń 4",
@@ -30,7 +30,11 @@
       "argo-workflows": "Workflows z drzewem kroków i logami, CronWorkflows i szablony",
       "cnpg": "Klastry PostgreSQL, kopie zapasowe i poolery",
       "strimzi": "Klastry Kafka, tematy, użytkownicy, konektory i lustra",
-      "olm": "Subskrypcje, operatory, plany instalacji i katalogi"
+      "olm": "Subskrypcje, operatory, plany instalacji i katalogi",
+      "external-secrets": "ExternalSecrets, magazyny i PushSecrets",
+      "jobset": "JobSety z ich Jobami, restartami i błędami",
+      "kuberay": "Klastry, zadania i usługi Ray z ich logami",
+      "kserve": "InferenceServices, środowiska uruchomieniowe modeli i grafy inferencji"
     }
   }
 }

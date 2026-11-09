@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "클러스터 도구의 보기는 이제 확장 프로그램입니다",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi 및 Operator Lifecycle Manager가 Sextant에서 확장 프로그램 카탈로그의 자체 확장 프로그램으로 옮겨졌으며, 이 확장 프로그램은 따로 업데이트됩니다. 사용하는 것을 아래에서 설치하세요. 그 전까지는 해당 섹션이 표시되지 않습니다. 이에 대한 알림 설정은 유지되며, 이 도구를 실행하는 클러스터에서는 사이드바에서도 추천됩니다."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi, External Secrets, JobSet, KubeRay, KServe 및 Operator Lifecycle Manager가 Sextant에서 확장 프로그램 카탈로그의 자체 확장 프로그램으로 옮겨졌으며, 이 확장 프로그램은 따로 업데이트됩니다. 사용하는 것을 아래에서 설치하세요. 그 전까지는 해당 섹션이 표시되지 않습니다. 이에 대한 알림 설정은 유지되며, 이 도구를 실행하는 클러스터에서는 사이드바에서도 추천됩니다."
     },
     "api4": {
       "title": "확장 기능 API 4",
@@ -30,7 +30,11 @@
       "argo-workflows": "단계 트리와 로그를 갖춘 Workflows, CronWorkflows 및 템플릿",
       "cnpg": "PostgreSQL 클러스터, 백업 및 풀러",
       "strimzi": "Kafka 클러스터, 토픽, 사용자, 커넥터 및 미러",
-      "olm": "구독, 오퍼레이터, 설치 계획 및 카탈로그"
+      "olm": "구독, 오퍼레이터, 설치 계획 및 카탈로그",
+      "external-secrets": "ExternalSecret, 저장소 및 PushSecret",
+      "jobset": "JobSet과 해당 Job, 재시작 및 실패",
+      "kuberay": "Ray 클러스터, 작업 및 서비스와 해당 로그",
+      "kserve": "InferenceService, 서빙 런타임 및 추론 그래프"
     }
   }
 }

@@ -19,8 +19,6 @@ import { LINGER_MS, USAGE_POLL_MS, resetVolumeUsage, useVolumeUsage } from "../s
 import { VclusterSection } from "../vcluster/details";
 import { PrometheusOperatorSection } from "../prometheus-operator/details";
 import { SERVICE_MONITOR, PROMETHEUS, PROMETHEUS_AGENT } from "../prometheus-operator/model";
-import { KServeSection } from "../kserve/details";
-import { INFERENCE_SERVICE } from "../kserve/model";
 import { KSERVICE } from "../knative/model";
 import { MeshMembershipSection } from "../mesh/MembershipSection";
 import { CrossplaneResourceSection } from "../crossplane/details";
@@ -196,23 +194,6 @@ it("unmounts the monitor-target body while preserving the namespace resolver, th
   toggle("targets"); const next = await watchOf(wb, "Service", spec => spec.labelSelector === "app=web"); expect(next).not.toBe(target);
   emitSnapshot(wb, next, [{ apiVersion: "v1", kind: "Service", metadata: { name: "fresh-target", namespace: "demo" }, spec: { ports: [{ name: "http", port: 80 }] } }]);
   expect(await screen.findByText("demo/fresh-target")).toBeInTheDocument();
-});
-
-it("holds KServe underlying lists for either visible component and releases the last component", async () => {
-  const ref = refOf(INFERENCE_SERVICE);
-  const obj: KubeObject = { apiVersion: "serving.kserve.io/v1beta1", kind: "InferenceService", metadata: { name: ref.name, namespace: "demo" }, spec: { predictor: { model: { modelFormat: { name: "onnx" } } }, transformer: { containers: [{ name: "transformer", image: "example" }] } } };
-  render(card(ref, <KServeSection clusterId="c1" objectRef={ref} obj={obj} />));
-  const selector = `serving.kserve.io/inferenceservice=${ref.name}`;
-  await waitFor(() => expect([...wb.specs].filter(([, spec]) => spec.labelSelector === selector)).toHaveLength(3));
-  const ids = [...wb.specs].filter(([, spec]) => spec.labelSelector === selector).map(([id]) => id);
-  toggle("component.predictor");
-  for (const id of ids) expect(wb.backend.listenerCount(`watch:${id}`)).toBe(1);
-  toggle("component.transformer");
-  await waitFor(() => { for (const id of ids) expect(wb.backend.listenerCount(`watch:${id}`)).toBe(0); });
-  toggle("component.predictor");
-  const next = await watchOf(wb, "Deployment", spec => spec.labelSelector === selector); expect(ids).not.toContain(next);
-  emitSnapshot(wb, next, [{ apiVersion: "apps/v1", kind: "Deployment", metadata: { name: "fresh-predictor", namespace: "demo", labels: { component: "predictor" } } }]);
-  expect(await screen.findByText("fresh-predictor")).toBeInTheDocument();
 });
 
 it("ignores inapplicable mesh headings when the only visible Linkerd block closes", async () => {

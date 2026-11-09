@@ -1,0 +1,44 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields, tables,
+   status words and links are the SDK's UI kit (`ui`, classes `sx-*`). */
+body.compact {
+  padding: 8px 0;
+}
+
+/* KubeRay: notes in the operator's words, the masked entrypoint and serve config as text, the logs buttons, as the
+   built-in view drew them. */
+.kr-note {
+  margin: 0 0 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-left: 0.1875rem solid var(--color-warning);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.kr-note--danger {
+  border-left-color: var(--color-danger);
+}
+
+.kr-muted {
+  margin: 0 0 0.5rem;
+  color: var(--color-text-muted);
+}
+
+.kr-pre {
+  margin: 0 0 0.5rem;
+  max-height: 20rem;
+  overflow: auto;
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.kr-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.kr-messages {
+  white-space: pre-wrap;
+}

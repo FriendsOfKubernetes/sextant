@@ -17,7 +17,7 @@
 // Pure functions.
 import { parseDocument, stringify } from "yaml";
 import { cleanText } from "../../resources/uri";
-import { HIDDEN, looksSecret } from "../kuberay/mask";
+import { HIDDEN, looksSecret } from "../../resources/secretNames";
 
 export { HIDDEN };
 

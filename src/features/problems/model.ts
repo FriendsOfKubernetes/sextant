@@ -15,16 +15,12 @@ import { knativeProblems } from "../knative/problemRules";
 import { contourProblems } from "../contour/problemRules";
 import { policyProblems } from "../kyverno/problemRules";
 import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../cluster-api/model";
-import { ESO_GROUP, externalSecretsProblems } from "../external-secrets/model";
 import { isSealedSecret } from "../sealed-secrets/model";
 import { isVpa } from "../vpa/model";
 import { DRA_GROUP } from "../dra/model";
 import { isGpuOperatorKind } from "../gpu-operator/model";
 import { isHelmControllerKind, isK3sKind } from "../k3s/model";
 import { isKind as isKueueKind, KUEUE_GROUP, CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE, queueProblems as kueueQueueProblems, workloadProblems as kueueWorkloadProblems, WORKLOAD as KUEUE_WORKLOAD } from "../kueue/model";
-import { isJobSet, jobSetProblems } from "../jobset/model";
-import { RAY_GROUP, rayKind, rayProblems } from "../kuberay/model";
-import { INFERENCE_SERVICE, isKind as isKServeKind, kserveProblems } from "../kserve/model";
 import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
 import { MONITORING_GROUP, prometheusOperatorProblems } from "../prometheus-operator/model";
 import {
@@ -50,7 +46,6 @@ export const PROBLEM_CATEGORIES = [
   "jobs",
   "kueue",
   "kueueWorkloads",
-  "jobset",
   "vpa",
   "volumes",
   "certificates",
@@ -64,11 +59,8 @@ export const PROBLEM_CATEGORIES = [
   "k3s",
   "dra",
   "gpuOperator",
-  "kuberay",
-  "kserve",
   "openshift",
   "policies",
-  "externalSecrets",
   "sealedSecrets",
   "prometheusOperator",
   "reflector",
@@ -284,7 +276,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (kind.group === KUEUE_GROUP && isKueueKind(kind, KUEUE_CLUSTER_QUEUE, KUEUE_LOCAL_QUEUE)) return "kueue";
   if (kind.group === KUEUE_GROUP && isKueueKind(kind, KUEUE_WORKLOAD)) return "kueueWorkloads";
   // JobSet (#247): failed JobSets and restarts near the limit.
-  if (isJobSet(kind)) return "jobset";
   if (same(kind, PVC)) return "volumes";
   if (same(kind, EVENT)) return "events";
   if (same(kind, CERTIFICATE)) return "certificates";
@@ -297,7 +288,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   // Contour HTTPProxies (#233): invalid and orphaned ones.
   if (kind.group === "projectcontour.io" && kind.kind === "HTTPProxy") return "contour";
   // External Secrets, CloudNativePG, Strimzi and Prometheus Operator (#213): judged by their sections' own helpers.
-  if (kind.group === ESO_GROUP) return "externalSecrets";
   // Sealed Secrets (#240): judged by the provider of features/sealed-secrets (the target Secret is another object).
   if (isSealedSecret(kind)) return "sealedSecrets";
   // Vertical Pod Autoscaler (#242): judged by the provider of features/vpa (HPA conflicts span two objects).
@@ -311,8 +301,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   // k3s and RKE2 (#270): HelmCharts and the bundled components, judged by the provider of features/k3s.
   if (isHelmControllerKind(kind) || isK3sKind(kind)) return "k3s";
   // KubeRay (#248): RayClusters, RayJobs and RayServices; KServe (#249): InferenceServices.
-  if (kind.group === RAY_GROUP && rayKind(kind)) return "kuberay";
-  if (isKServeKind(kind, INFERENCE_SERVICE)) return "kserve";
   // Operator Lifecycle Manager (#268): failed CSVs (originals only), Subscriptions whose resolution or InstallPlan
   // failed or whose plan is stuck, catalogs not READY.
   // OpenShift (#267): Routes no router admitted, failed DeploymentConfig rollouts, failed Builds, failing imports.
@@ -711,8 +699,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return kueueQueueProblems(kind, obj);
     case "kueueWorkloads":
       return kueueWorkloadProblems(obj);
-    case "jobset":
-      return jobSetProblems(obj);
     case "volumes":
       return claimProblems(obj);
     case "events":
@@ -727,14 +713,8 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return contourProblems(kind, obj);
     case "policies":
       return policyProblems(kind, obj);
-    case "externalSecrets":
-      return externalSecretsProblems(obj);
     case "clusterApi":
       return capiProblems(kind, obj);
-    case "kuberay":
-      return rayProblems(kind, obj);
-    case "kserve":
-      return kserveProblems(kind, obj);
     case "openshift":
       return openshiftProblems(kind, obj);
     case "prometheusOperator": // Monitors that select nothing come from the provider of features/prometheus-operator.

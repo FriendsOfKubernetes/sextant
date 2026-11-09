@@ -21,8 +21,12 @@ export const OFFERS: readonly ExtensionOffer[] = [
   { id: "sextant.argo-cd", tool: "Argo CD", matches: (k) => k.group === "argoproj.io" && k.kind === "Application" },
   { id: "sextant.argo-rollouts", tool: "Argo Rollouts", matches: (k) => k.group === "argoproj.io" && k.kind === "Rollout" },
   { id: "sextant.argo-workflows", tool: "Argo Workflows", matches: (k) => k.group === "argoproj.io" && k.kind === "Workflow" },
+  { id: "sextant.external-secrets", tool: "External Secrets", matches: (k) => k.group === "external-secrets.io" },
   { id: "sextant.cnpg", tool: "CloudNativePG", matches: (k) => k.group === "postgresql.cnpg.io" },
   { id: "sextant.strimzi", tool: "Strimzi", matches: (k) => k.group === "kafka.strimzi.io" },
+  { id: "sextant.jobset", tool: "JobSet", matches: (k) => k.group === "jobset.x-k8s.io" },
+  { id: "sextant.kuberay", tool: "KubeRay", matches: (k) => k.group === "ray.io" },
+  { id: "sextant.kserve", tool: "KServe", matches: (k) => k.group === "serving.kserve.io" },
   // OLM v0 (`operators.coreos.com`) or v1 (`olm.operatorframework.io`).
   {
     id: "sextant.olm",

@@ -190,7 +190,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "jobs",
     "kueue",
     "kueueWorkloads",
-    "jobset",
     "vpa",
     "volumes",
     "certificates",
@@ -204,11 +203,8 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "k3s",
     "dra",
     "gpuOperator",
-    "kuberay",
-    "kserve",
     "openshift",
     "policies",
-    "externalSecrets",
     "sealedSecrets",
     "prometheusOperator",
     "reflector",
@@ -245,7 +241,6 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "knative",
     "crossplane",
     "policies",
-    "externalSecrets",
     // Sealed Secrets (#240): a window view of 0.21.0.
     "sealedSecrets",
     // Reflector mirrors (#241): a window view of 0.21.0.
@@ -257,16 +252,12 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     // Kueue queues and Workloads (#246) and JobSets (#247): window views of 0.23.0.
     "kueue",
     "kueueWorkloads",
-    "jobset",
     // Dynamic Resource Allocation (#244): a window view of 0.23.0.
     "dra",
     // NVIDIA GPU Operator (#245): a window view of 0.23.0.
     "gpuOperator",
     // k3s and RKE2 HelmCharts and bundled components (#270): a window view of 0.25.0.
     "k3s",
-    // KubeRay (#248) and KServe (#249): window views of 0.23.0.
-    "kuberay",
-    "kserve",
     // OpenShift Routes, DeploymentConfigs, Builds and ImageStreams (#267): a window view of 0.25.0.
     "openshift",
     "prometheusOperator",
