@@ -249,6 +249,49 @@ pub struct RuleSource {
     /// Only `apiVersion`, `kind` and `metadata` are watched; every path of the rule is under `.metadata`.
     #[serde(default)]
     pub metadata_only: bool,
+    /// A field selector the watch passes to the API server (#409): `status.phase=Pending` on pods. Only fields the API
+    /// server selects the kind by (`src/components/Table/field-selectors.json`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub field_selector: Option<String>,
+}
+
+/// The fields the API server selects objects by, per kind: the window's table (`selectors.ts`) and this check share it.
+const FIELD_SELECTORS: &str = include_str!("../../../../src/components/Table/field-selectors.json");
+
+/// Whether `selector` is terms `field=value`, `field==value` or `field!=value` of fields the API server selects `kind`
+/// by, with values of name characters (at most 63; `status.phase=Pending`, `spec.nodeName!=`).
+pub fn is_field_selector(selector: &str, kind: &KindPattern) -> bool {
+    let table: serde_json::Value = match serde_json::from_str(FIELD_SELECTORS) {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+    let key = format!("{}/{}", kind.group, kind.kind);
+    let known = |field: &str| {
+        let has = |list: Option<&serde_json::Value>| {
+            list.and_then(serde_json::Value::as_array)
+                .is_some_and(|l| l.iter().any(|f| f.as_str() == Some(field)))
+        };
+        has(table.get("common")) || has(table.get("kinds").and_then(|k| k.get(&key)))
+    };
+    !selector.is_empty()
+        && selector.len() <= MAX_SELECTOR_CHARS
+        && selector.split(',').all(|term| {
+            let (field, value) = if let Some((f, v)) = term.split_once("!=") {
+                (f, v)
+            } else if let Some((f, v)) = term.split_once("==") {
+                (f, v)
+            } else if let Some((f, v)) = term.split_once('=') {
+                (f, v)
+            } else {
+                return false;
+            };
+            known(field.trim())
+                && value.len() <= 63
+                && value
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+        })
 }
 
 fn yes() -> bool {
@@ -610,10 +653,21 @@ fn check_source(
                 format!("needs sextantApi {SOURCES_API} or later"),
             ));
         }
-        if source.label_selector.is_none() && !source.metadata_only {
+        if source.label_selector.is_none()
+            && source.field_selector.is_none()
+            && !source.metadata_only
+        {
             return Err(at(
                 &path,
-                "names a `labelSelector`, `metadataOnly: true` or both",
+                "names a `labelSelector`, a `fieldSelector`, `metadataOnly: true` or more",
+            ));
+        }
+        if let Some(selector) = &source.field_selector
+            && !is_field_selector(selector, &rule.kind)
+        {
+            return Err(at(
+                &path.key("fieldSelector"),
+                "must be field terms the API server selects this kind by, such as `status.phase=Pending` on pods",
             ));
         }
         if let Some(selector) = &source.label_selector

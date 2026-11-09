@@ -20,6 +20,9 @@ export const SCHEMA_PATH = resolve(
 );
 /** The kinds with secret material inline (ADR-0120): the table Sextant's checks share. */
 export const INLINE_SECRETS_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "../../src/resources/inline-secrets.json");
+/** The fields the API server selects objects by (`is_field_selector`'s table in Rust, the window's `selectors.ts`). */
+export const FIELD_SELECTORS_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "../../src/components/Table/field-selectors.json");
+let fieldSelectorsCache;
 
 let schemaCache = null;
 /** The manifest's JSON schema, as Sextant has it. */
@@ -785,13 +788,28 @@ function isRequirement(raw) {
   return isLabelKey(text);
 }
 
+/** `is_field_selector` (#409): field terms of the fields the API server selects `kind` by (the shared table). */
+function isFieldSelector(selector, kind) {
+  fieldSelectorsCache ??= JSON.parse(readFileSync(FIELD_SELECTORS_PATH, "utf8"));
+  const table = fieldSelectorsCache;
+  const fields = new Set([...table.common, ...(table.kinds[`${kind.group}/${kind.kind}`] ?? [])]);
+  if (selector.length === 0 || selector.length > 1000) return false;
+  return selector.split(",").every((term) => {
+    const m = /^([^=!]+)(!=|==|=)(.*)$/.exec(term);
+    return m !== null && fields.has(m[1].trim()) && m[3].length <= 63 && /^[A-Za-z0-9._-]*$/.test(m[3]);
+  });
+}
+
 /** A rule's `source` (`check_source` in Rust); whether it watches metadata only. */
 function checkSource(rule, rules, api, list, here) {
   if (rule.source !== undefined) {
     const path = [...here, "source"];
     if (api < SOURCES_API) fail(path, `needs sextantApi ${SOURCES_API} or later`);
-    if (rule.source.labelSelector === undefined && rule.source.metadataOnly !== true) {
-      fail(path, "names a `labelSelector`, `metadataOnly: true` or both");
+    if (rule.source.labelSelector === undefined && rule.source.fieldSelector === undefined && rule.source.metadataOnly !== true) {
+      fail(path, "names a `labelSelector`, a `fieldSelector`, `metadataOnly: true` or more");
+    }
+    if (rule.source.fieldSelector !== undefined && !isFieldSelector(rule.source.fieldSelector, rule.kind)) {
+      fail([...path, "fieldSelector"], "must be field terms the API server selects this kind by, such as `status.phase=Pending` on pods");
     }
     if (rule.source.labelSelector !== undefined && !isSetSelector(rule.source.labelSelector)) {
       fail([...path, "labelSelector"], "must be a Kubernetes label selector such as `app=web`, `tier in (a,b)` or `!canary`");

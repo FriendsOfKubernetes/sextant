@@ -904,6 +904,12 @@
             "metadataOnly": {
               "description": "Only `apiVersion`, `kind` and `metadata` are watched; every path of the rule is then under `.metadata`.",
               "type": "boolean"
+            },
+            "fieldSelector": {
+              "description": "A field selector the API server applies: terms of fields it selects the kind by, such as `status.phase=Pending` on pods.",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
             }
           }
         },

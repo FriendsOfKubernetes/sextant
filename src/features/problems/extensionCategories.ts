@@ -249,7 +249,8 @@ export function extensionSourcesFor(
       const def: SourceDef = {
         category,
         kind: served.kindRef,
-        fieldSelector: null,
+        // A rule's `source.fieldSelector` (#409), checked against the fields the API server selects the kind by.
+        fieldSelector: source?.fieldSelector ?? null,
         discovered: true,
         maxObjects: MAX_SOURCE_OBJECTS,
         ...(everywhere || !served.namespaced ? {} : { namespaces: namespaces.namespaces }),

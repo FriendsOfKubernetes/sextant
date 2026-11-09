@@ -1,0 +1,52 @@
+{
+  "$comment": "Fields the API server selects objects by (field selectors), per kind `group/Kind`, besides `common`; read by the window (src/components/Table/selectors.ts) and Rust (extension rules' `source.fieldSelector`). Add a field only from the API server's own list.",
+  "common": [
+    "metadata.name",
+    "metadata.namespace"
+  ],
+  "kinds": {
+    "/Pod": [
+      "spec.nodeName",
+      "spec.restartPolicy",
+      "spec.schedulerName",
+      "spec.serviceAccountName",
+      "spec.hostNetwork",
+      "status.phase",
+      "status.podIP",
+      "status.nominatedNodeName"
+    ],
+    "/Event": [
+      "involvedObject.kind",
+      "involvedObject.namespace",
+      "involvedObject.name",
+      "involvedObject.uid",
+      "involvedObject.apiVersion",
+      "involvedObject.fieldPath",
+      "reason",
+      "reportingComponent",
+      "source",
+      "type"
+    ],
+    "/Secret": [
+      "type"
+    ],
+    "/Namespace": [
+      "status.phase"
+    ],
+    "/Node": [
+      "spec.unschedulable"
+    ],
+    "/ReplicationController": [
+      "status.replicas"
+    ],
+    "apps/ReplicaSet": [
+      "status.replicas"
+    ],
+    "batch/Job": [
+      "status.successful"
+    ],
+    "certificates.k8s.io/CertificateSigningRequest": [
+      "spec.signerName"
+    ]
+  }
+}

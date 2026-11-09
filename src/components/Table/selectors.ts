@@ -4,41 +4,13 @@
 // that is not a valid selector (`app=a b`, a value over 63 characters) stays in the window too, so a typo never
 // turns into an error of the watch.
 
-/** Fields every kind can be selected by. */
-const COMMON_FIELDS = ["metadata.name", "metadata.namespace"];
+import FIELDS from "./field-selectors.json";
 
-/** Fields the API server selects by, per kind (`group/Kind`), besides `COMMON_FIELDS`. */
-const KIND_FIELDS: Record<string, readonly string[]> = {
-  "/Pod": [
-    "spec.nodeName",
-    "spec.restartPolicy",
-    "spec.schedulerName",
-    "spec.serviceAccountName",
-    "spec.hostNetwork",
-    "status.phase",
-    "status.podIP",
-    "status.nominatedNodeName",
-  ],
-  "/Event": [
-    "involvedObject.kind",
-    "involvedObject.namespace",
-    "involvedObject.name",
-    "involvedObject.uid",
-    "involvedObject.apiVersion",
-    "involvedObject.fieldPath",
-    "reason",
-    "reportingComponent",
-    "source",
-    "type",
-  ],
-  "/Secret": ["type"],
-  "/Namespace": ["status.phase"],
-  "/Node": ["spec.unschedulable"],
-  "/ReplicationController": ["status.replicas"],
-  "apps/ReplicaSet": ["status.replicas"],
-  "batch/Job": ["status.successful"],
-  "certificates.k8s.io/CertificateSigningRequest": ["spec.signerName"],
-};
+/** Fields every kind can be selected by. */
+const COMMON_FIELDS: readonly string[] = FIELDS.common;
+
+/** Fields the API server selects by, per kind (`group/Kind`), besides `COMMON_FIELDS` (shared with Rust). */
+const KIND_FIELDS: Record<string, readonly string[]> = FIELDS.kinds;
 
 /**
  * Fields whose value the API server does not read from the object's own JSON path, or reads as something when unset

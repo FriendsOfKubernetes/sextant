@@ -163,3 +163,10 @@ when the text at `path` names an object of `kind` there — looked up as `missin
 not read in full — for which `when` holds: a claim that exists but is not allocated. `when` reads only the named object,
 nothing across objects and no time, since it is judged when that object changes: the row of each looked-up object keeps
 the answer of every such `when` (`AcrossRow.facts`, `factKey`), and the judge needs the row there with its fact true.
+
+## Amendment: a rule's source by a field selector (#409)
+
+A rule's `source.fieldSelector` passes field terms to the API server — only fields it selects that kind by, as the
+window's table search does: the one table `src/components/Table/field-selectors.json` (read by `selectors.ts`, by
+Rust's `is_field_selector` through `include_str!`, and by the SDK) — so DRA's rules watch only Pending pods. Like a label
+selector, an object leaving such a list is not deleted, and every rule of a kind has the same source.

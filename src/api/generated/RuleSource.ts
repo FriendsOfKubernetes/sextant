@@ -11,4 +11,9 @@ labelSelector?: string,
 /**
  * Only `apiVersion`, `kind` and `metadata` are watched; every path of the rule is under `.metadata`.
  */
-metadataOnly: boolean, };
+metadataOnly: boolean, 
+/**
+ * A field selector the watch passes to the API server (#409): `status.phase=Pending` on pods. Only fields the API
+ * server selects the kind by (`src/components/Table/field-selectors.json`).
+ */
+fieldSelector?: string, };
