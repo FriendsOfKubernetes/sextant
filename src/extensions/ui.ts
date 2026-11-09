@@ -80,7 +80,9 @@ export function hostUi(options: HostUiOptions): BridgeUi {
       if (!isRecord(params)) throw bad();
       const { namespace, pod, container, labelSelector, title } = params;
       // A merged tab's title (#407): `raycluster/<name>` instead of the selector; shown as written, clipped.
-      if (title !== undefined && (typeof title !== "string" || title.trim() === "" || /[\u0000-\u001f\u007f]/.test(title))) throw bad();
+      if (title !== undefined && (typeof title !== "string" || title.trim() === "" || Array.from(title).some((c) => c < " " || c === "\u007f"))) {
+        throw bad();
+      }
       const tabTitle = typeof title === "string" ? Array.from(title.trim()).slice(0, 80).join("") : undefined;
       if (typeof namespace !== "string" || namespace === "") throw bad();
       const named = typeof pod === "string" && pod !== "";
