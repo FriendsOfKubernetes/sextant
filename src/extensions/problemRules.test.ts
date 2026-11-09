@@ -91,6 +91,23 @@ describe("problem rules of extensions", () => {
     expect(detectRule(policy, ds)[0]!.object).toMatchObject({ namespace: null, name: "cluster-policy" });
   });
 
+  it("notify again when the values it names change (#407)", () => {
+    const rule = {
+      id: "restarts",
+      title: "Restarts near the limit",
+      kind: { group: "jobset.x-k8s.io", kind: "JobSet" },
+      when: { type: "exists", path: ".status.restarts" },
+      message: "",
+      graceMinutes: 0,
+      notify: true,
+      toldThroughOwner: false,
+      notifyAgainOn: [".status.restarts"],
+    } as unknown as ProblemContribution;
+    const at = (restarts: number) => detectRule(rule, { metadata: { name: "j" }, status: { restarts } } as KubeObject)[0]!.notifyTag;
+    expect(at(3)).toBe("[3]");
+    expect(at(4)).not.toBe(at(3));
+  });
+
   it("read field paths of the custom columns' grammar, nothing else", () => {
     expect(valueAt(cluster, ".status.ceph.health")).toBe("HEALTH_ERR");
     expect(valueAt(cluster, "status.items[1].name")).toBe("b");

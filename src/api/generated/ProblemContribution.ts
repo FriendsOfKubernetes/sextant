@@ -81,4 +81,9 @@ about?: RuleAbout,
  * Field paths whose values are the problem's progress (#405): when they change, it counts as first seen now, so a
  * grace measures the time without progress (a rollout's counts, a plan's phase). At most 4; `sextantApi` 4.
  */
-stamp?: Array<string>, };
+stamp?: Array<string>, 
+/**
+ * Field paths whose values, when they change, make the problem notify again (#407): a new restart count, a new
+ * reason. At most 4; `sextantApi` 4.
+ */
+notifyAgainOn?: Array<string>, };

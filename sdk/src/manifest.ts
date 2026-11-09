@@ -271,6 +271,8 @@ export interface ManifestProblem {
   };
   /** Paths whose values are the problem's progress: when they change, its grace starts again (since Sextant 0.30). */
   stamp?: string[];
+  /** Paths whose values, when they change, make the problem notify again (since Sextant 0.30). */
+  notifyAgainOn?: string[];
 }
 
 /**

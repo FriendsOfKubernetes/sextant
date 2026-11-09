@@ -843,6 +843,13 @@
           "maxItems": 4,
           "items": { "$ref": "#/$defs/fieldPath" }
         },
+        "notifyAgainOn": {
+          "description": "Field paths whose values, when they change, make the problem notify again (sextantApi 4).",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/fieldPath" }
+        },
         "sinceOr": {
           "description": "Field paths tried in order when `since` gives no time (sextantApi 4).",
           "type": "array",

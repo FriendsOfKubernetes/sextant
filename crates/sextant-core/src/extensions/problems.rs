@@ -139,6 +139,11 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub stamp: Option<Vec<String>>,
+    /// Field paths whose values, when they change, make the problem notify again (#407): a new restart count, a new
+    /// reason. At most 4; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub notify_again_on: Option<Vec<String>>,
 }
 
 /// Which object a problem is about (`ProblemContribution.about`): its kind written out, or read from the judged object
@@ -454,6 +459,7 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             ("sinceOr", rule.since_or.is_some()),
             ("about", rule.about.is_some()),
             ("stamp", rule.stamp.is_some()),
+            ("notifyAgainOn", rule.notify_again_on.is_some()),
         ] {
             if set && manifest.sextant_api < SOURCES_API {
                 return Err(at(
@@ -513,15 +519,19 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 }
             }
         }
-        if let Some(stamp) = &rule.stamp {
-            if stamp.is_empty() || stamp.len() > MAX_SINCE_OR {
+        for (field, paths) in [
+            ("stamp", rule.stamp.as_ref()),
+            ("notifyAgainOn", rule.notify_again_on.as_ref()),
+        ] {
+            let Some(paths) = paths else { continue };
+            if paths.is_empty() || paths.len() > MAX_SINCE_OR {
                 return Err(at(
-                    &here.key("stamp"),
+                    &here.key(field),
                     format!("has 1 to {MAX_SINCE_OR} paths"),
                 ));
             }
-            for (j, path) in stamp.iter().enumerate() {
-                check_rule_path(path, &rule.kind, &here.key("stamp").index(j), metadata_only)?;
+            for (j, path) in paths.iter().enumerate() {
+                check_rule_path(path, &rule.kind, &here.key(field).index(j), metadata_only)?;
             }
         }
         if let Some(path) = &rule.notify_as {

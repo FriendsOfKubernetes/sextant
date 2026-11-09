@@ -290,6 +290,7 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject, ctx: Rule
       ...(rule.toldThroughOwner ? controllerOf(obj) : {}),
       ...aboutOf(rule, obj),
       ...stampOf(rule, obj),
+      ...(rule.notifyAgainOn ? { notifyTag: JSON.stringify(rule.notifyAgainOn.map((path) => valueAt(obj, path) ?? null)) } : {}),
     },
   ];
 }

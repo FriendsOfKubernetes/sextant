@@ -193,6 +193,8 @@ export interface Detected {
   ownerUid?: string;
   /** What a notification is about instead of the object (an extension rule's `notifyAs`, #394): one per identity. */
   notifyAs?: string;
+  /** A state within the problem notifications follow too (an extension rule's `notifyAgainOn`, #407): a new one notifies again. */
+  notifyTag?: string;
   /** The problem counts only this long after it began (or was first seen). */
   graceMs?: number;
   /** Counts from this time (ms) on, whatever `since` says (a certificate expiring soon). */
@@ -766,7 +768,7 @@ export function resolve(
       : category.startsWith("ext:")
         ? (extensionDetector?.(category as ExtensionCategory, kind, obj, ctx) ?? [])
         : detect(kind, obj);
-  return found.map(({ object, notifyAs, ...d }) => {
+  return found.map(({ object, notifyAs, notifyTag, ...d }) => {
     const key = `${uid}|${d.reason}`;
     const previous = before.find((p) => p.key === key);
     const firstSeen = previous && previous.stamp === d.stamp ? previous.firstSeen : now;
@@ -774,7 +776,7 @@ export function resolve(
     return {
       ...d,
       key,
-      notifyKey: `${notifyAs ?? identity}|${d.group ?? d.reason}`,
+      notifyKey: `${notifyAs ?? identity}|${d.group ?? d.reason}${notifyTag === undefined ? "" : `|${notifyTag}`}`,
       category,
       uid,
       object: object ?? self,

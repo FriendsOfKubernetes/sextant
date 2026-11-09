@@ -841,7 +841,7 @@ function checkProblems(manifest) {
       checkMessage(rule.reason, rule.kind, [...here, "reason"], metadataOnly);
     }
     if (rule.since !== undefined) checkRulePath(rule.since, rule.kind, [...here, "since"], metadataOnly);
-    for (const field of ["reasonOr", "sinceOr", "about", "stamp"]) {
+    for (const field of ["reasonOr", "sinceOr", "about", "stamp", "notifyAgainOn"]) {
       if (rule[field] !== undefined && manifest.sextantApi < SOURCES_API) fail([...here, field], `needs sextantApi ${SOURCES_API} or later`);
     }
     if (rule.reasonOr !== undefined && rule.reasonOr.includes("{{")) fail([...here, "reasonOr"], "is written as it shows: no `{{…}}`");
@@ -857,9 +857,10 @@ function checkProblems(manifest) {
         if (about[field] !== undefined) checkRulePath(about[field], rule.kind, [...here, "about", field], metadataOnly);
       }
     }
-    if (rule.stamp !== undefined) {
-      if (rule.stamp.length === 0 || rule.stamp.length > 4) fail([...here, "stamp"], "has 1 to 4 paths");
-      rule.stamp.forEach((path, j) => checkRulePath(path, rule.kind, [...here, "stamp", j], metadataOnly));
+    for (const field of ["stamp", "notifyAgainOn"]) {
+      if (rule[field] === undefined) continue;
+      if (rule[field].length === 0 || rule[field].length > 4) fail([...here, field], "has 1 to 4 paths");
+      rule[field].forEach((path, j) => checkRulePath(path, rule.kind, [...here, field, j], metadataOnly));
     }
     if (rule.notifyAs !== undefined) {
       if (manifest.sextantApi < SOURCES_API) fail([...here, "notifyAs"], `needs sextantApi ${SOURCES_API} or later`);
