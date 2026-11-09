@@ -499,7 +499,8 @@ function checkUniqueIds(manifest) {
 // --- Problem rules (`check_problems` in crates/sextant-core/src/extensions/problems.rs) ----------------------------
 
 const PROBLEMS_API = 2;
-const MAX_KINDS = 10;
+/** `rule_limits`: rules and the kinds they judge, more from sextantApi 4. */
+const ruleLimits = (api) => (api >= 4 ? [30, 20] : [20, 10]);
 const MAX_CONDITIONS = 20;
 const MAX_DEPTH = 3;
 /** From sextantApi 4 (#381): an older Sextant reads only older manifests, so the limits grow with the version. */
@@ -701,7 +702,8 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
     if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
       counter.kinds.push(condition.kind);
-      if (counter.kinds.length > MAX_KINDS) fail([...segments, "kind"], `the rules judge at most ${MAX_KINDS} kinds`);
+      const maxKinds = ruleLimits(counter.api)[1];
+      if (counter.kinds.length > maxKinds) fail([...segments, "kind"], `the rules judge at most ${maxKinds} kinds`);
     }
     return;
   }
@@ -791,6 +793,8 @@ function checkProblems(manifest) {
   const list = ["contributes", "problems"];
   if (rules.length === 0) return;
   if (manifest.sextantApi < PROBLEMS_API) fail(list, `needs sextantApi ${PROBLEMS_API} or later`);
+  const [maxRules, maxKinds] = ruleLimits(manifest.sextantApi);
+  if (rules.length > maxRules) fail(list, `has at most ${maxRules} rules`);
   const kinds = [];
   rules.forEach((rule, i) => {
     const here = [...list, i];
@@ -798,7 +802,7 @@ function checkProblems(manifest) {
     if (first >= 0) fail([...here, "title"], `duplicate title (also ${pathText([...list, first])})`);
     if (!kinds.some((k) => sameKind(k, rule.kind))) {
       kinds.push(rule.kind);
-      if (kinds.length > MAX_KINDS) fail([...here, "kind"], `the rules judge at most ${MAX_KINDS} kinds`);
+      if (kinds.length > maxKinds) fail([...here, "kind"], `the rules judge at most ${maxKinds} kinds`);
     }
     const metadataOnly = checkSource(rule, rules, manifest.sextantApi, list, here);
     checkCondition(rule.when, rule.kind, [...here, "when"], 1, {

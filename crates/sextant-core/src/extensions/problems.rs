@@ -24,10 +24,24 @@ pub const ACROSS_API: u32 = 3;
 pub const SOURCES_API: u32 = 4;
 /// Longest label selector of a rule's source (the schema's `maxLength`).
 pub const MAX_SELECTOR_CHARS: usize = 1000;
-/// Rules per extension (the schema's `maxItems`).
+/// Rules per extension before `sextantApi` 4.
 pub const MAX_RULES: usize = 20;
-/// Kinds the rules of one extension judge.
+/// Rules per extension from `sextantApi` 4 (the schema's `maxItems`).
+pub const MAX_RULES_4: usize = 30;
+/// Kinds the rules of one extension judge before `sextantApi` 4.
 pub const MAX_KINDS: usize = 10;
+/// Kinds the rules of one extension judge from `sextantApi` 4 (Knative's and Crossplane's views need more).
+pub const MAX_KINDS_4: usize = 20;
+
+/// The rules and the kinds they judge an extension of `api` may have: an older Sextant reads only older manifests, so
+/// the limits grow with the version.
+pub fn rule_limits(api: u32) -> (usize, usize) {
+    if api >= SOURCES_API {
+        (MAX_RULES_4, MAX_KINDS_4)
+    } else {
+        (MAX_RULES, MAX_KINDS)
+    }
+}
 /// Conditions of one rule, `all`/`any` counted.
 pub const MAX_CONDITIONS: usize = 20;
 /// Conditions of one rule from `sextantApi` 4 (#381).
@@ -233,6 +247,10 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             format!("needs sextantApi {PROBLEMS_API} or later"),
         ));
     }
+    let (max_rules, max_kinds) = rule_limits(manifest.sextant_api);
+    if rules.len() > max_rules {
+        return Err(at(&list, format!("has at most {max_rules} rules")));
+    }
     let mut kinds: Vec<&KindPattern> = Vec::new();
     for (i, rule) in rules.iter().enumerate() {
         let here = list.index(i);
@@ -247,10 +265,10 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
         }
         if !kinds.iter().any(|k| same_kind(k, &rule.kind)) {
             kinds.push(&rule.kind);
-            if kinds.len() > MAX_KINDS {
+            if kinds.len() > max_kinds {
                 return Err(at(
                     &here.key("kind"),
-                    format!("the rules judge at most {MAX_KINDS} kinds"),
+                    format!("the rules judge at most {max_kinds} kinds"),
                 ));
             }
         }
@@ -544,10 +562,11 @@ fn check_condition<'k>(
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)?;
             if !checks.kinds.iter().any(|k| same_kind(k, target)) {
                 checks.kinds.push(target);
-                if checks.kinds.len() > MAX_KINDS {
+                let max_kinds = rule_limits(checks.api).1;
+                if checks.kinds.len() > max_kinds {
                     return Err(at(
                         &path.key("kind"),
-                        format!("the rules judge at most {MAX_KINDS} kinds"),
+                        format!("the rules judge at most {max_kinds} kinds"),
                     ));
                 }
             }

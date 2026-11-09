@@ -31,3 +31,9 @@ not express (#398–#401). `sextantApi` 4 is still unreleased, so they are addit
   with Sextant's failure dialog instead of a notice.
 - A `*` path yields a list: a column formats it with `format: "list"`, a rule compares it as a list (`same`, lists
   counted as lengths).
+
+## Amendment: more rules and kinds from `sextantApi` 4
+
+Moving the built-in tool modules into extensions needs more than 20 rules over 10 kinds (Knative's two groups,
+Crossplane's chain). From `sextantApi` 4 an extension may have 30 problem rules judging 20 kinds (`rule_limits` =
+`ruleLimits`); older manifests keep 20 and 10, so an older Sextant never meets a manifest it would refuse.
