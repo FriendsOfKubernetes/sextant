@@ -543,7 +543,7 @@ describe("contributions of an extension", () => {
     act(() => {
       window.dispatchEvent(new MessageEvent("message", { data: { sextant: 1, doc: DOC, type: "ready" }, source: frame.contentWindow }));
     });
-    await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { view: "details", uid: widget.metadata.uid } }));
+    await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { view: "details", uid: "u-w1" } }));
   });
 
   it("give a details section the height the frame asks for", async () => {
