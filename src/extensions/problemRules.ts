@@ -20,6 +20,25 @@ export const MAX_REASON_CHARS = 100;
 
 const MINUTE_MS = 60_000;
 
+/** The sum of the numbers in a list, lists inside it included (#407); `undefined` without one. */
+export function sumOf(value: unknown): number | undefined {
+  if (!Array.isArray(value)) return undefined;
+  let found = false;
+  let total = 0;
+  const visit = (v: unknown) => {
+    if (Array.isArray(v)) v.forEach(visit);
+    else {
+      const n = numberOf(v);
+      if (n !== undefined) {
+        found = true;
+        total += n;
+      }
+    }
+  };
+  visit(value);
+  return found ? total : undefined;
+}
+
 /** The key of a `related` condition's own `when` (#409): what a row of the named kind remembers of it. */
 export const factKey = (when: ProblemCondition): string => JSON.stringify(when);
 
@@ -31,11 +50,7 @@ export function valueAt(obj: unknown, path: string): unknown {
     const filter = path.slice(bar + 1).trim();
     const value = valueAt(obj, path.slice(0, bar));
     if (filter === "count") return Array.isArray(value) ? value.length : value !== null && typeof value === "object" ? Object.keys(value).length : undefined;
-    if (filter === "sum") {
-      if (!Array.isArray(value)) return undefined;
-      const numbers = value.map(numberOf).filter((n): n is number => n !== undefined);
-      return numbers.length === 0 ? undefined : numbers.reduce((a, b) => a + b, 0);
-    }
+    if (filter === "sum") return sumOf(value);
     return undefined;
   }
   const steps = parseFieldPath(path.trim());
@@ -173,7 +188,9 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
     }
     case "atLeast": {
       // Both as numbers (a list as its length); not a number on either side never holds (#386).
-      const a = numberOf(valueAt(obj, condition.path));
+      // `addPaths` (#407): their numbers added to `path`'s first.
+      const parts = [condition.path, ...(condition.addPaths ?? [])].map((p) => numberOf(valueAt(obj, p)));
+      const a = parts.some((n) => n === undefined) ? undefined : (parts as number[]).reduce((x, y) => x + y, 0);
       const b = numberOf(valueAt(obj, condition.otherPath));
       // `offset` (#407): added to the other value first.
       return { holds: a !== undefined && b !== undefined && a >= b + (condition.offset ?? 0) };
@@ -289,6 +306,10 @@ export function placeholderText(obj: KubeObject, inner: string): string | undefi
   const path = bar < 0 ? inner : inner.slice(0, bar);
   const filter = bar < 0 ? undefined : inner.slice(bar + 1).trim();
   const value = valueAt(obj, path);
+  if (filter === "sum") {
+    const n = sumOf(value);
+    return n === undefined ? undefined : String(n);
+  }
   if (filter === "count") {
     if (Array.isArray(value)) return String(value.length);
     return value !== null && typeof value === "object" ? String(Object.keys(value).length) : undefined;

@@ -163,6 +163,24 @@ describe("problem rules of extensions", () => {
     expect(evaluate({ type: "above", path: ".status.replicatedJobsStatus|count", value: 2 } as ProblemCondition, js).holds).toBe(true);
   });
 
+  it("add nested lists and several paths (#407)", () => {
+    const js = {
+      metadata: { name: "j" },
+      spec: { failurePolicy: { maxRestarts: 4 } },
+      status: { restartsCountTowardsMax: 1, replicatedJobsStatus: [{ jobRestartsCountTowardsMax: [1, 1] }, { jobRestartsCountTowardsMax: [1] }] },
+    } as unknown as KubeObject;
+    expect(valueAt(js, ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum")).toBe(3);
+    expect(placeholderText(js, ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum")).toBe("3");
+    const near: ProblemCondition = {
+      type: "atLeast",
+      path: ".status.restartsCountTowardsMax",
+      addPaths: [".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum"],
+      otherPath: ".spec.failurePolicy.maxRestarts",
+      offset: -1,
+    };
+    expect(evaluate(near, js).holds).toBe(true);
+  });
+
   it("read field paths of the custom columns' grammar, nothing else", () => {
     expect(valueAt(cluster, ".status.ceph.health")).toBe("HEALTH_ERR");
     expect(valueAt(cluster, "status.items[1].name")).toBe("b");

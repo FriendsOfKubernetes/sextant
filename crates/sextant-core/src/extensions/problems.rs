@@ -374,6 +374,10 @@ pub enum ProblemCondition {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         #[ts(optional)]
         offset: Option<i64>,
+        /// More paths whose numbers are added to `path`'s first (#407): a JobSet's own restarts and its Jobs'. At most 3.
+        #[serde(default, rename = "addPaths", skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        add_paths: Option<Vec<String>>,
     },
     /// The object entered the rule's label-selected source less than `minutes` ago, as Sextant saw it (#393): holds from
     /// then for `minutes`, never for objects already there when the list was first read; `sextantApi` 4, problem rules
@@ -816,7 +820,26 @@ fn check_condition<'k>(
                 kind,
                 &path.key("otherPath"),
                 checks.metadata_only,
-            )
+            )?;
+            if let ProblemCondition::AtLeast {
+                add_paths: Some(more),
+                ..
+            } = condition
+            {
+                if more.is_empty() || more.len() > 3 {
+                    return Err(at(&path.key("addPaths"), "has 1 to 3 paths"));
+                }
+                for (j, extra) in more.iter().enumerate() {
+                    let place = path.key("addPaths").index(j);
+                    check_rule_path(
+                        numeric_path(extra, checks.api, &place)?,
+                        kind,
+                        &place,
+                        checks.metadata_only,
+                    )?;
+                }
+            }
+            Ok(())
         }
         ProblemCondition::Condition { .. } if checks.metadata_only => Err(at(
             &path.key("type"),
@@ -1018,7 +1041,11 @@ fn is_label_key(text: &str) -> bool {
 
 /// A compared path without its `|sum` or `|count` (#407): a list's numbers added, or its items (a map's entries)
 /// counted; `sextantApi` 4.
-fn numeric_path<'t>(text: &'t str, api: u32, path: &JsonPath) -> Result<&'t str, ManifestError> {
+pub(crate) fn numeric_path<'t>(
+    text: &'t str,
+    api: u32,
+    path: &JsonPath,
+) -> Result<&'t str, ManifestError> {
     let Some((field, filter)) = text.rsplit_once('|') else {
         return Ok(text);
     };
@@ -1206,7 +1233,7 @@ pub(crate) fn check_message(
 }
 
 /// What may follow a placeholder's path after `|` (#404).
-pub const PLACEHOLDER_FILTERS: [&str; 4] = ["firstLine", "lastSegment", "list", "count"];
+pub const PLACEHOLDER_FILTERS: [&str; 5] = ["firstLine", "lastSegment", "list", "count", "sum"];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.
 pub fn placeholders(text: &str) -> Option<Vec<&str>> {

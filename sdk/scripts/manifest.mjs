@@ -709,6 +709,12 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`${condition.type}\` needs sextantApi ${SOURCES_API} or later`);
     checkRulePath(numericPath(condition.path, counter.api, [...segments, "path"]), kind, [...segments, "path"], counter.metadataOnly);
     checkRulePath(numericPath(condition.otherPath, counter.api, [...segments, "otherPath"]), kind, [...segments, "otherPath"], counter.metadataOnly);
+    if (condition.type === "atLeast" && condition.addPaths !== undefined) {
+      if (condition.addPaths.length === 0 || condition.addPaths.length > 3) fail([...segments, "addPaths"], "has 1 to 3 paths");
+      condition.addPaths.forEach((extra, j) =>
+        checkRulePath(numericPath(extra, counter.api, [...segments, "addPaths", j]), kind, [...segments, "addPaths", j], counter.metadataOnly),
+      );
+    }
     return;
   }
   if (["equals", "in", "above", "below"].includes(condition.type)) {
@@ -927,7 +933,7 @@ function checkMessage(text, kind, segments, metadataOnly) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "count"];
+const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "count", "sum"];
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
 
@@ -1633,7 +1639,11 @@ function checkColumns(manifest) {
     if (format === "ratio" && column.totalPaths === undefined) fail([...here, "totalPaths"], '`format: "ratio"` needs `totalPaths`');
     if (format !== "ratio" && column.totalPaths !== undefined) fail([...here, "totalPaths"], 'goes with `format: "ratio"`');
     for (const field of ["paths", "endPaths", "totalPaths", "tooltipPaths"]) {
-      (column[field] ?? []).forEach((text, j) => checkPath(text, column.kind, [...here, field, j]));
+      (column[field] ?? []).forEach((text, j) => {
+        // A number read may be a list's sum or count (#407).
+        const place = [...here, field, j];
+        checkPath(field === "paths" || field === "totalPaths" ? numericPath(text, manifest.sextantApi, place) : text, column.kind, place);
+      });
     }
     for (const value of sortedKeys(column.tones ?? {})) {
       if (value.trim() === "" || Array.from(value).length > MAX_TONE_VALUE_CHARS) {

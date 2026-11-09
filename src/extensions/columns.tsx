@@ -8,7 +8,7 @@ import { Age, ageParts } from "../components";
 import type { ColumnDef } from "../resources/registry";
 import { StatusText } from "../resources/columns";
 import type { Tone } from "../resources/status";
-import { evaluate, fillTemplate, numberOf, valueAt } from "./problemRules";
+import { evaluate, fillTemplate, numberOf, sumOf, valueAt } from "./problemRules";
 import { cleanText } from "../resources/uri";
 import { formatList } from "../i18n/format";
 
@@ -163,9 +163,8 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
     }
     case "sum": {
       // The sum of a list's numbers, numeric text included (#404); none without one.
-      const numbers = Array.isArray(value) ? value.map(numberOf).filter((n): n is number => n !== undefined) : [];
-      if (numbers.length === 0) return { sort: undefined, text: undefined, draw: null };
-      const n = numbers.reduce((a, b) => a + b, 0);
+      const n = sumOf(value);
+      if (n === undefined) return { sort: undefined, text: undefined, draw: null };
       return { sort: n, text: written(String(n)), draw: written(String(n)) };
     }
     case "entries": {

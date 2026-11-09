@@ -9,7 +9,11 @@ export type ProblemCondition = { "type": "equals", path: string, value: ProblemS
 /**
  * Added to the other value first (#407): `-1` for "one before the limit".
  */
-offset?: number, } | { "type": "enteredWithin", minutes: number, } | { "type": "olderThan", path: string, minutes: number, 
+offset?: number, 
+/**
+ * More paths whose numbers are added to `path`'s first (#407): a JobSet's own restarts and its Jobs'. At most 3.
+ */
+addPaths?: Array<string>, } | { "type": "enteredWithin", minutes: number, } | { "type": "olderThan", path: string, minutes: number, 
 /**
  * Holds at once for a value that is there but no time (#405), as the built-in rules counted it.
  */

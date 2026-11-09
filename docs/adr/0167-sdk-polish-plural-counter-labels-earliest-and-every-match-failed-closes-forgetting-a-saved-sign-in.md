@@ -176,3 +176,9 @@ selector, an object leaving such a list is not deleted, and every rule of a kind
 A compared path of `equals`, `in`, `above`, `below`, `same` or `atLeast` may end in `|sum` (a list's numbers, numeric
 text included, added) or `|count` (a list's items, a map's entries): JobSet's restarts of every replicated job against
 its limit, `atLeast` with `offset: -1` for one before it.
+
+## Amendment: nested sums, added paths, column sums (#407)
+
+`|sum` adds the numbers of lists inside a list too (`[*].jobRestartsCountTowardsMax|sum`), as a placeholder filter
+(`{{path|sum}}`) and at the end of a column's `paths` or `totalPaths` (a ratio of succeeded over wanted jobs); `atLeast`'s
+`addPaths` (≤ 3) adds more paths' numbers to `path`'s before the comparison.

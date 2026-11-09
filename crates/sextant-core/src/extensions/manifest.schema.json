@@ -1191,7 +1191,8 @@
             "type": { "const": "atLeast" },
             "path": { "$ref": "#/$defs/fieldPath" },
             "otherPath": { "$ref": "#/$defs/fieldPath" },
-            "offset": { "description": "Added to the other value first: -1 for one before the limit.", "type": "integer", "minimum": -1000000, "maximum": 1000000 }
+            "offset": { "description": "Added to the other value first: -1 for one before the limit.", "type": "integer", "minimum": -1000000, "maximum": 1000000 },
+            "addPaths": { "description": "More paths whose numbers are added to `path`'s first (sextantApi 4).", "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/fieldPath" } }
           }
         },
         {

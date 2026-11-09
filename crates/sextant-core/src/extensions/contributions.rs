@@ -370,7 +370,14 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
             ("tooltipPaths", &column.tooltip_paths),
         ] {
             for (j, text) in paths.iter().flatten().enumerate() {
-                check_path(text, &column.kind, &here.key(field).index(j))?;
+                let place = here.key(field).index(j);
+                // A number read may be a list's sum or count (#407): a ratio of succeeded over wanted jobs.
+                let text = if matches!(field, "paths" | "totalPaths") {
+                    super::problems::numeric_path(text, manifest.sextant_api, &place)?
+                } else {
+                    text.as_str()
+                };
+                check_path(text, &column.kind, &place)?;
             }
         }
         for value in column.tones.iter().flat_map(|tones| tones.keys()) {
