@@ -478,9 +478,9 @@
                 "maxLength": 80
               },
               "cases": {
-                "description": "Texts shown instead of the value where a condition holds, the first that holds.",
+                "description": "Texts shown instead of the value where a condition holds, the first that holds; at most 10 before sextantApi 4, 20 from it.",
                 "type": "array",
-                "maxItems": 10,
+                "maxItems": 20,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,

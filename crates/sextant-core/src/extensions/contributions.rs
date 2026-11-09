@@ -256,6 +256,18 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
     let list = JsonPath::default().key("contributes").key("columns");
     for (i, column) in manifest.contributes.columns.iter().enumerate() {
         let here = list.index(i);
+        // More cases from sextantApi 4 (#403): an older Sextant reads only older manifests.
+        let max_cases = if manifest.sextant_api >= WINDOW_API {
+            20
+        } else {
+            10
+        };
+        if column.cases.as_ref().is_some_and(|c| c.len() > max_cases) {
+            return Err(at(
+                &here.key("cases"),
+                format!("has at most {max_cases} cases"),
+            ));
+        }
         if let Some(width) = &column.width {
             if manifest.sextant_api < WINDOW_API {
                 return Err(at(

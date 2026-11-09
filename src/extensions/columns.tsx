@@ -97,7 +97,8 @@ interface Cell {
 function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell {
   const replaced = caseOf(column, obj, now);
   const tone = (value: string | undefined): Tone | undefined => {
-    const named = value !== undefined ? column.tones?.[value] : undefined;
+    // `"*"`: the tone of any other value (#403).
+    const named = value !== undefined ? (column.tones?.[value] ?? column.tones?.["*"]) : undefined;
     return named ? TONES[named] : undefined;
   };
   if (replaced !== undefined) {

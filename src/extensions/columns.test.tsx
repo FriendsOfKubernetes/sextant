@@ -47,4 +47,10 @@ describe("an extension's computed column", () => {
     expect(computedColumn("x", column({ paths: [".spec.jobs[*].restarts"], format: "sum" })).searchText!(o, ctx)).toBe("3");
     expect(computedColumn("x", column({ paths: [".metadata.labels"], format: "entries" })).searchText!(o, ctx)).toBe("app=shop, tier=web");
   });
+
+  it("tones any other value with the \"*\" tone (#403)", () => {
+    const toned = computedColumn("x", column({ paths: [".status.phase"], tones: { Running: "ok", "*": "warning" } }));
+    const at = (phase: string) => render(<>{toned.render!({ metadata: { name: "a" }, status: { phase } } as unknown as KubeObject, ctx)}</>).container;
+    expect(at("Running").innerHTML).not.toBe(at("Paused").innerHTML.replace("Paused", "Running"));
+  });
 });

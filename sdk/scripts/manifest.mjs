@@ -1544,6 +1544,8 @@ function checkColumns(manifest) {
   const list = ["contributes", "columns"];
   (manifest.contributes?.columns ?? []).forEach((column, i) => {
     const here = [...list, i];
+    const maxCases = manifest.sextantApi >= WINDOW_API ? 20 : 10;
+    if ((column.cases ?? []).length > maxCases) fail([...here, "cases"], `has at most ${maxCases} cases`);
     if (column.width !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "width"], `needs sextantApi ${WINDOW_API} or later`);
       if (!isColumnWidth(column.width)) fail([...here, "width"], "is `<n>px` or `minmax(<n>px, <m>fr)`, n from 40 to 600 and m from 0.5 to 5");
