@@ -770,12 +770,18 @@ fn check_condition<'k>(
             }
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
         }
+        // A number compared may be a list's sum or count (`|sum`, `|count`, #407).
         ProblemCondition::Equals { path: field, .. }
         | ProblemCondition::In { path: field, .. }
-        | ProblemCondition::Exists { path: field }
-        | ProblemCondition::Absent { path: field }
         | ProblemCondition::Above { path: field, .. }
-        | ProblemCondition::Below { path: field, .. }
+        | ProblemCondition::Below { path: field, .. } => check_rule_path(
+            numeric_path(field, checks.api, &path.key("path"))?,
+            kind,
+            &path.key("path"),
+            checks.metadata_only,
+        ),
+        ProblemCondition::Exists { path: field }
+        | ProblemCondition::Absent { path: field }
         | ProblemCondition::OlderThan { path: field, .. } => {
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
         }
@@ -799,9 +805,14 @@ fn check_condition<'k>(
                     format!("`{name}` needs sextantApi {SOURCES_API} or later"),
                 ));
             }
-            check_rule_path(field, kind, &path.key("path"), checks.metadata_only)?;
             check_rule_path(
-                other_path,
+                numeric_path(field, checks.api, &path.key("path"))?,
+                kind,
+                &path.key("path"),
+                checks.metadata_only,
+            )?;
+            check_rule_path(
+                numeric_path(other_path, checks.api, &path.key("otherPath"))?,
                 kind,
                 &path.key("otherPath"),
                 checks.metadata_only,
@@ -1003,6 +1014,27 @@ fn is_label_key(text: &str) -> bool {
             })
     });
     name_ok && prefix_ok
+}
+
+/// A compared path without its `|sum` or `|count` (#407): a list's numbers added, or its items (a map's entries)
+/// counted; `sextantApi` 4.
+fn numeric_path<'t>(text: &'t str, api: u32, path: &JsonPath) -> Result<&'t str, ManifestError> {
+    let Some((field, filter)) = text.rsplit_once('|') else {
+        return Ok(text);
+    };
+    if !matches!(filter.trim(), "sum" | "count") {
+        return Err(at(path, "ends in `|sum` or `|count`, or in no filter"));
+    }
+    if api < SOURCES_API {
+        return Err(at(
+            path,
+            format!(
+                "`|{}` needs sextantApi {SOURCES_API} or later",
+                filter.trim()
+            ),
+        ));
+    }
+    Ok(field.trim())
 }
 
 /// Whether a condition holds only from or until a time (`olderThan`, `enteredWithin`).

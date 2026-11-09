@@ -170,3 +170,9 @@ A rule's `source.fieldSelector` passes field terms to the API server — only fi
 window's table search does: the one table `src/components/Table/field-selectors.json` (read by `selectors.ts`, by
 Rust's `is_field_selector` through `include_str!`, and by the SDK) — so DRA's rules watch only Pending pods. Like a label
 selector, an object leaving such a list is not deleted, and every rule of a kind has the same source.
+
+## Amendment: sums and counts in conditions (#407)
+
+A compared path of `equals`, `in`, `above`, `below`, `same` or `atLeast` may end in `|sum` (a list's numbers, numeric
+text included, added) or `|count` (a list's items, a map's entries): JobSet's restarts of every replicated job against
+its limit, `atLeast` with `offset: -1` for one before it.

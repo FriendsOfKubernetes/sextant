@@ -151,6 +151,18 @@ describe("problem rules of extensions", () => {
     expect(evaluate({ type: "olderThan", path: ".status.missing", minutes: 5, orUnreadable: true }, odd).holds).toBe(false);
   });
 
+  it("compare a list's sum or count (#407)", () => {
+    const js = {
+      metadata: { name: "j" },
+      spec: { failurePolicy: { maxRestarts: 4 } },
+      status: { restartsCountTowardsMax: 1, replicatedJobsStatus: [{ restarts: 1 }, { restarts: "1" }, {}] },
+    } as unknown as KubeObject;
+    expect(valueAt(js, ".status.replicatedJobsStatus[*].restarts|sum")).toBe(2);
+    expect(valueAt(js, ".status.replicatedJobsStatus|count")).toBe(3);
+    expect(evaluate({ type: "atLeast", path: ".status.replicatedJobsStatus[*].restarts|sum", otherPath: ".spec.failurePolicy.maxRestarts", offset: -2 }, js).holds).toBe(true);
+    expect(evaluate({ type: "above", path: ".status.replicatedJobsStatus|count", value: 2 } as ProblemCondition, js).holds).toBe(true);
+  });
+
   it("read field paths of the custom columns' grammar, nothing else", () => {
     expect(valueAt(cluster, ".status.ceph.health")).toBe("HEALTH_ERR");
     expect(valueAt(cluster, "status.items[1].name")).toBe("b");

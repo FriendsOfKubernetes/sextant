@@ -25,6 +25,19 @@ export const factKey = (when: ProblemCondition): string => JSON.stringify(when);
 
 /** The value at a field path; `undefined` when the path does not parse or leads nowhere. */
 export function valueAt(obj: unknown, path: string): unknown {
+  // A compared path may end in `|sum` (a list's numbers added) or `|count` (a list's items, a map's entries; #407).
+  const bar = path.lastIndexOf("|");
+  if (bar >= 0) {
+    const filter = path.slice(bar + 1).trim();
+    const value = valueAt(obj, path.slice(0, bar));
+    if (filter === "count") return Array.isArray(value) ? value.length : value !== null && typeof value === "object" ? Object.keys(value).length : undefined;
+    if (filter === "sum") {
+      if (!Array.isArray(value)) return undefined;
+      const numbers = value.map(numberOf).filter((n): n is number => n !== undefined);
+      return numbers.length === 0 ? undefined : numbers.reduce((a, b) => a + b, 0);
+    }
+    return undefined;
+  }
   const steps = parseFieldPath(path.trim());
   return steps ? walk(obj, steps) : undefined;
 }

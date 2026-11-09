@@ -707,8 +707,12 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
   }
   if (condition.type === "same" || condition.type === "atLeast") {
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`${condition.type}\` needs sextantApi ${SOURCES_API} or later`);
-    checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
-    checkRulePath(condition.otherPath, kind, [...segments, "otherPath"], counter.metadataOnly);
+    checkRulePath(numericPath(condition.path, counter.api, [...segments, "path"]), kind, [...segments, "path"], counter.metadataOnly);
+    checkRulePath(numericPath(condition.otherPath, counter.api, [...segments, "otherPath"]), kind, [...segments, "otherPath"], counter.metadataOnly);
+    return;
+  }
+  if (["equals", "in", "above", "below"].includes(condition.type)) {
+    checkRulePath(numericPath(condition.path, counter.api, [...segments, "path"]), kind, [...segments, "path"], counter.metadataOnly);
     return;
   }
   if (condition.type === "related") {
@@ -1482,6 +1486,16 @@ function checkSections(manifest) {
 }
 
 /** A condition of an action or a column (`check_object_condition`): no `missing`, no secret of any of `kinds`. */
+/** `numeric_path` (#407): a compared path without its `|sum` or `|count`. */
+function numericPath(text, api, segments) {
+  const bar = text.lastIndexOf("|");
+  if (bar < 0) return text;
+  const filter = text.slice(bar + 1).trim();
+  if (filter !== "sum" && filter !== "count") fail(segments, "ends in `|sum` or `|count`, or in no filter");
+  if (api < SOURCES_API) fail(segments, `\`|${filter}\` needs sextantApi ${SOURCES_API} or later`);
+  return text.slice(0, bar).trim();
+}
+
 /** `uses_time`: a condition that holds only from or until a time. */
 function usesTime(condition) {
   if (condition.type === "olderThan" || condition.type === "enteredWithin") return true;
