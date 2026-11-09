@@ -15,6 +15,7 @@ tone?: ColumnTone,
  */
 tooltip?: string, 
 /**
- * The number a `number` column sorts and filters by while the case holds (#390); its text is still shown.
+ * The number a `number` column sorts and filters by while the case holds (#390), or a `text` column sorts by
+ * (#403: a state's order, not its translated word); its text is still shown.
  */
 value?: number, };

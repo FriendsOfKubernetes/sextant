@@ -21,6 +21,40 @@ pub const MAX_ACTION_PATCH_BYTES: usize = 4096;
 /// The one placeholder of an action's `patch`: the time it is sent, RFC 3339.
 pub const NOW_PLACEHOLDER: &str = "{{now}}";
 
+/// A column width: `<n>px`, or `minmax(<n>px, <m>fr)` with `<m>` like `1`, `1.5` (#403).
+pub fn is_column_width(text: &str) -> bool {
+    let px = |s: &str| {
+        s.strip_suffix("px")
+            .filter(|n| !n.is_empty() && n.len() <= 3 && n.bytes().all(|b| b.is_ascii_digit()))
+            .and_then(|n| n.parse::<u32>().ok())
+            .is_some_and(|n| (40..=600).contains(&n))
+    };
+    if px(text) {
+        return true;
+    }
+    let Some(inner) = text
+        .strip_prefix("minmax(")
+        .and_then(|t| t.strip_suffix(')'))
+    else {
+        return false;
+    };
+    let Some((min, fr)) = inner.split_once(", ") else {
+        return false;
+    };
+    let fr_ok = fr
+        .strip_suffix("fr")
+        .filter(|n| {
+            !n.is_empty()
+                && n.len() <= 3
+                && n.bytes().all(|b| b.is_ascii_digit() || b == b'.')
+                && !n.starts_with('.')
+                && !n.ends_with('.')
+        })
+        .and_then(|n| n.parse::<f64>().ok())
+        .is_some_and(|n| (0.5..=5.0).contains(&n));
+    px(min) && fr_ok
+}
+
 /// Whether a kind pattern is the details sections' "every kind" (`{"group": "*", "kind": "*"}`, #411).
 pub fn is_every_kind(kind: &KindPattern) -> bool {
     kind.group == "*" && kind.kind == "*"
@@ -202,6 +236,20 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
     let list = JsonPath::default().key("contributes").key("columns");
     for (i, column) in manifest.contributes.columns.iter().enumerate() {
         let here = list.index(i);
+        if let Some(width) = &column.width {
+            if manifest.sextant_api < WINDOW_API {
+                return Err(at(
+                    &here.key("width"),
+                    format!("needs sextantApi {WINDOW_API} or later"),
+                ));
+            }
+            if !is_column_width(width) {
+                return Err(at(
+                    &here.key("width"),
+                    "is `<n>px` or `minmax(<n>px, <m>fr)`, n from 40 to 600 and m from 0.5 to 5",
+                ));
+            }
+        }
         if let Some(id) = &column.after_column {
             if manifest.sextant_api < WINDOW_API {
                 return Err(at(

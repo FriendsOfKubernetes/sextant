@@ -379,6 +379,10 @@ pub struct ColumnContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub after_column: Option<String>,
+    /// Its width as Sextant's own columns give it (#403): `<n>px`, or `minmax(<n>px, <m>fr)`; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub width: Option<String>,
     /// The value picked from a list by an index field (#387), before `paths`; `sextantApi` 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -1071,6 +1075,7 @@ mod tests {
                 tooltip_paths: None,
                 cases: None,
                 after_column: None,
+                width: None,
                 lookup: None,
                 value_text: None,
             }

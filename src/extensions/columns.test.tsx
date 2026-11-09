@@ -30,4 +30,9 @@ describe("an extension's computed column", () => {
     expect(title).not.toContain("hidden");
     expect(title).toContain("failed");
   });
+
+  it("takes the width it asks for (#403)", () => {
+    expect(computedColumn("x", column({ width: "minmax(140px, 1.5fr)" })).width).toBe("minmax(140px, 1.5fr)");
+    expect(computedColumn("x", column({})).width).toBeUndefined();
+  });
 });

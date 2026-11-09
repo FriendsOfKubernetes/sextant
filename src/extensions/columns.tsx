@@ -184,6 +184,8 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
     id,
     title: column.title,
     ...placement(column, ownIds),
+    // As Sextant's own columns give theirs (#403); Rust and the SDK checked its shape.
+    ...(column.width !== undefined ? { width: column.width } : {}),
     fallback: "end",
     // Sorting and the default text; a time-dependent cell sorts as of now.
     value: (obj) => cellOf(column, obj, Date.now()).sort,

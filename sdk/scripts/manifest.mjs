@@ -959,6 +959,16 @@ function checkSectionBadges(manifest) {
   });
 }
 
+/** `is_column_width` (#403): `<n>px` or `minmax(<n>px, <m>fr)`. */
+export function isColumnWidth(text) {
+  const px = (s) => /^[0-9]{1,3}px$/.test(s) && Number(s.slice(0, -2)) >= 40 && Number(s.slice(0, -2)) <= 600;
+  if (px(text)) return true;
+  const m = /^minmax\((.+), (.+)\)$/.exec(text);
+  if (!m) return false;
+  const fr = /^([0-9][0-9.]{0,2})fr$/.exec(m[2]);
+  return px(m[1]) && fr !== null && !fr[1].endsWith(".") && Number(fr[1]) >= 0.5 && Number(fr[1]) <= 5;
+}
+
 /** `check_problem_categories` (#410): categories besides the main one, and each rule's `category`. */
 function checkProblemCategories(manifest) {
   const list = ["contributes", "problemCategories"];
@@ -1489,6 +1499,10 @@ function checkColumns(manifest) {
   const list = ["contributes", "columns"];
   (manifest.contributes?.columns ?? []).forEach((column, i) => {
     const here = [...list, i];
+    if (column.width !== undefined) {
+      if (manifest.sextantApi < WINDOW_API) fail([...here, "width"], `needs sextantApi ${WINDOW_API} or later`);
+      if (!isColumnWidth(column.width)) fail([...here, "width"], "is `<n>px` or `minmax(<n>px, <m>fr)`, n from 40 to 600 and m from 0.5 to 5");
+    }
     if (column.afterColumn !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "afterColumn"], `needs sextantApi ${WINDOW_API} or later`);
       if (!/^[A-Za-z0-9:_-]{1,80}$/.test(column.afterColumn)) fail([...here, "afterColumn"], "must be a column id: letters, digits, `-`, `_` and `:`");

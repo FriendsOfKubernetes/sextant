@@ -158,6 +158,8 @@ export interface ManifestColumn {
   }[];
   /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
   afterColumn?: string;
+  /** Its width as Sextant's own columns give it: `<n>px` or `minmax(<n>px, <m>fr)` (since Sextant 0.30). */
+  width?: string;
   /**
    * The value picked from a list by an index field, before `paths` (since Sextant 0.30): `field` of the item of `list`
    * that `index` names (0 when the object leaves the index out); with `nearestBefore`, else of the nearest earlier item

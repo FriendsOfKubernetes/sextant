@@ -51,6 +51,10 @@ cases?: Array<ColumnCase>,
  */
 afterColumn?: string, 
 /**
+ * Its width as Sextant's own columns give it (#403): `<n>px`, or `minmax(<n>px, <m>fr)`; `sextantApi` 4.
+ */
+width?: string, 
+/**
  * The value picked from a list by an index field (#387), before `paths`; `sextantApi` 4.
  */
 lookup?: ColumnLookup, 
