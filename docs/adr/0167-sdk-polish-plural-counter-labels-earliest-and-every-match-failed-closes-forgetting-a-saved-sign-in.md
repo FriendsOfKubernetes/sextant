@@ -86,3 +86,12 @@ A details `section` may set `heading: false` — no visible heading, as Sextant'
 the group's accessible name — and `startHidden: true` — hidden until its frame calls `ui.setHidden(false)`, so a section
 on every kind (#411) never flashes empty. A computed column may give its `width` (`<n>px` or `minmax(<n>px, <m>fr)`), and
 a case's `value` sorts a text column too (#403).
+
+## Amendment: a problem about another object, and progress that restarts its grace (#405)
+
+A rule's `about` names the object its problem is about when it is not the judged one — its kind written out, or read
+with `apiVersionPath` + `kindPath` (a policy report's `scope`); its name read; its namespace read, the judged object's
+(default), or none (`clusterScoped`) — and notifications follow that object unless the rule has a `notifyAs`. Without
+the name (or a read kind) the problem stays about the judged object. A rule's `stamp` (≤ 4 paths) is its progress: when
+the values change it counts as first seen now, as the built-in rollout and plan rules did. The problems store already
+carried both (`Detected.object`, `stamp`); an agent gets a problem only when it may read its object (`can_object`).

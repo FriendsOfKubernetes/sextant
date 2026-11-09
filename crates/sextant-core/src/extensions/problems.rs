@@ -129,6 +129,40 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub since_or: Option<Vec<String>>,
+    /// The object the problem is about when it is not the judged one (#405): a failed InstallPlan a Subscription names,
+    /// the ClusterPolicy a component DaemonSet belongs to, the object a policy report names. `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub about: Option<RuleAbout>,
+    /// Field paths whose values are the problem's progress (#405): when they change, it counts as first seen now, so a
+    /// grace measures the time without progress (a rollout's counts, a plan's phase). At most 4; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub stamp: Option<Vec<String>>,
+}
+
+/// Which object a problem is about (`ProblemContribution.about`): its kind written out, or read from the judged object
+/// (`apiVersionPath` + `kindPath`, a policy report's `scope`), its name read, its namespace read, the judged object's
+/// (the default), or none (`clusterScoped`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RuleAbout {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub kind: Option<crate::resources::KindRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub api_version_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub kind_path: Option<String>,
+    pub name_path: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub namespace_path: Option<String>,
+    #[serde(default)]
+    pub cluster_scoped: bool,
 }
 
 /// Fallback paths of a rule's `since`.
@@ -418,6 +452,8 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
         for (field, set) in [
             ("reasonOr", rule.reason_or.is_some()),
             ("sinceOr", rule.since_or.is_some()),
+            ("about", rule.about.is_some()),
+            ("stamp", rule.stamp.is_some()),
         ] {
             if set && manifest.sextant_api < SOURCES_API {
                 return Err(at(
@@ -448,6 +484,45 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 &here.key("sinceOr").index(j),
                 metadata_only,
             )?;
+        }
+        if let Some(about) = &rule.about {
+            let here = here.key("about");
+            match (&about.kind, &about.api_version_path, &about.kind_path) {
+                (Some(_), None, None) | (None, Some(_), Some(_)) => {}
+                _ => {
+                    return Err(at(
+                        &here,
+                        "names its kind, or reads it with both `apiVersionPath` and `kindPath`",
+                    ));
+                }
+            }
+            if about.cluster_scoped && about.namespace_path.is_some() {
+                return Err(at(
+                    &here.key("namespacePath"),
+                    "is not for a cluster-scoped object",
+                ));
+            }
+            for (field, path) in [
+                ("apiVersionPath", about.api_version_path.as_ref()),
+                ("kindPath", about.kind_path.as_ref()),
+                ("namePath", Some(&about.name_path)),
+                ("namespacePath", about.namespace_path.as_ref()),
+            ] {
+                if let Some(path) = path {
+                    check_rule_path(path, &rule.kind, &here.key(field), metadata_only)?;
+                }
+            }
+        }
+        if let Some(stamp) = &rule.stamp {
+            if stamp.is_empty() || stamp.len() > MAX_SINCE_OR {
+                return Err(at(
+                    &here.key("stamp"),
+                    format!("has 1 to {MAX_SINCE_OR} paths"),
+                ));
+            }
+            for (j, path) in stamp.iter().enumerate() {
+                check_rule_path(path, &rule.kind, &here.key("stamp").index(j), metadata_only)?;
+            }
         }
         if let Some(path) = &rule.notify_as {
             if manifest.sextant_api < SOURCES_API {

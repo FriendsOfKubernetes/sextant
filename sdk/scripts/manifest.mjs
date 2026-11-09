@@ -830,12 +830,26 @@ function checkProblems(manifest) {
       checkMessage(rule.reason, rule.kind, [...here, "reason"], metadataOnly);
     }
     if (rule.since !== undefined) checkRulePath(rule.since, rule.kind, [...here, "since"], metadataOnly);
-    for (const field of ["reasonOr", "sinceOr"]) {
+    for (const field of ["reasonOr", "sinceOr", "about", "stamp"]) {
       if (rule[field] !== undefined && manifest.sextantApi < SOURCES_API) fail([...here, field], `needs sextantApi ${SOURCES_API} or later`);
     }
     if (rule.reasonOr !== undefined && rule.reasonOr.includes("{{")) fail([...here, "reasonOr"], "is written as it shows: no `{{…}}`");
     if (rule.sinceOr !== undefined && rule.since === undefined) fail([...here, "sinceOr"], "falls back from `since`: the rule needs a `since`");
     (rule.sinceOr ?? []).forEach((path, j) => checkRulePath(path, rule.kind, [...here, "sinceOr", j], metadataOnly));
+    if (rule.about !== undefined) {
+      const about = rule.about;
+      const named = about.kind !== undefined && about.apiVersionPath === undefined && about.kindPath === undefined;
+      const read = about.kind === undefined && about.apiVersionPath !== undefined && about.kindPath !== undefined;
+      if (!named && !read) fail([...here, "about"], "names its kind, or reads it with both `apiVersionPath` and `kindPath`");
+      if (about.clusterScoped === true && about.namespacePath !== undefined) fail([...here, "about", "namespacePath"], "is not for a cluster-scoped object");
+      for (const field of ["apiVersionPath", "kindPath", "namePath", "namespacePath"]) {
+        if (about[field] !== undefined) checkRulePath(about[field], rule.kind, [...here, "about", field], metadataOnly);
+      }
+    }
+    if (rule.stamp !== undefined) {
+      if (rule.stamp.length === 0 || rule.stamp.length > 4) fail([...here, "stamp"], "has 1 to 4 paths");
+      rule.stamp.forEach((path, j) => checkRulePath(path, rule.kind, [...here, "stamp", j], metadataOnly));
+    }
     if (rule.notifyAs !== undefined) {
       if (manifest.sextantApi < SOURCES_API) fail([...here, "notifyAs"], `needs sextantApi ${SOURCES_API} or later`);
       checkRulePath(rule.notifyAs, rule.kind, [...here, "notifyAs"], metadataOnly);

@@ -5,7 +5,7 @@
 //
 //   compileRules(rules)          // per kind: (obj) => Detected[]
 //   renderMessage(template, obj) // `{{path}}` placeholders filled with scalar values, cleaned and capped
-import type { KubeObject, ProblemCondition, ProblemContribution, ProblemScalar } from "../api";
+import type { KindRef, KubeObject, ObjectRef, ProblemCondition, ProblemContribution, ProblemScalar } from "../api";
 import { parseFieldPath, pickStep, type PathStep } from "../features/custom-columns/path";
 import type { Detected } from "../features/problems/model";
 import { cleanText } from "../resources/uri";
@@ -283,9 +283,44 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject, ctx: Rule
       notify: rule.notify,
       ...(verdict.lookups ? { lookups: verdict.lookups } : {}),
       ...(rule.toldThroughOwner ? controllerOf(obj) : {}),
-      ...notifyAsOf(rule, obj),
+      ...aboutOf(rule, obj),
+      ...stampOf(rule, obj),
     },
   ];
+}
+
+/**
+ * The object a rule's `about` names (#405), and — unless the rule has its own `notifyAs` — notifications about it, once
+ * per object; nothing when its name (or a read kind) is missing: the problem stays about the judged object.
+ */
+function aboutOf(rule: ProblemContribution, obj: KubeObject): { object?: ObjectRef; notifyAs?: string } {
+  const own = notifyAsOf(rule, obj);
+  const about = rule.about;
+  if (!about) return own;
+  const text = (path: string | undefined) => {
+    const value = path === undefined ? undefined : valueAt(obj, path);
+    return typeof value === "string" && value !== "" ? value : undefined;
+  };
+  const name = text(about.namePath);
+  let kind: KindRef | undefined = about.kind;
+  if (!kind) {
+    const apiVersion = text(about.apiVersionPath);
+    const k = text(about.kindPath);
+    if (apiVersion && k) {
+      const slash = apiVersion.lastIndexOf("/");
+      kind = { group: slash < 0 ? "" : apiVersion.slice(0, slash), version: slash < 0 ? apiVersion : apiVersion.slice(slash + 1), kind: k };
+    }
+  }
+  if (!name || !kind) return own;
+  const namespace = about.clusterScoped ? null : about.namespacePath !== undefined ? (text(about.namespacePath) ?? null) : (obj.metadata?.namespace ?? null);
+  const object: ObjectRef = { kind, namespace, name };
+  return { object, notifyAs: own.notifyAs ?? `${kind.group}/${kind.kind}/${namespace ?? ""}/${name}` };
+}
+
+/** The progress `stamp` names (#405): when it changes, the problem counts as first seen again. */
+function stampOf(rule: ProblemContribution, obj: KubeObject): { stamp?: string } {
+  if (!rule.stamp) return {};
+  return { stamp: JSON.stringify(rule.stamp.map((path) => valueAt(obj, path) ?? null)) };
 }
 
 /**

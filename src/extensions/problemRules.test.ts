@@ -56,6 +56,41 @@ describe("problem rules of extensions", () => {
     expect(evaluate({ type: "contains", path: ".status.missing", values: ["x"], ignoreCase: false }, cluster).holds).toBe(false);
   });
 
+  it("tell a problem about another object, and restart its grace when its progress moves (#405)", () => {
+    const base = { title: "T", when: { type: "exists", path: ".metadata.name" }, message: "", graceMinutes: 0, notify: true, toldThroughOwner: false };
+    const plan = {
+      ...base,
+      id: "plan",
+      kind: { group: "operators.coreos.com", kind: "Subscription" },
+      about: { kind: { group: "operators.coreos.com", version: "v1alpha1", kind: "InstallPlan" }, namePath: ".status.installPlanRef.name" },
+      stamp: [".status.state"],
+    } as unknown as ProblemContribution;
+    const sub = { metadata: { name: "etcd", namespace: "ops" }, status: { installPlanRef: { name: "install-abc" }, state: "UpgradePending" } } as KubeObject;
+    expect(detectRule(plan, sub)[0]).toMatchObject({
+      object: { kind: { kind: "InstallPlan", version: "v1alpha1" }, namespace: "ops", name: "install-abc" },
+      notifyAs: "operators.coreos.com/InstallPlan/ops/install-abc",
+      stamp: '["UpgradePending"]',
+    });
+    // Without the name it stays about the judged object.
+    expect(detectRule(plan, { metadata: { name: "etcd", namespace: "ops" } } as KubeObject)[0]!.object).toBeUndefined();
+    const report = {
+      ...base,
+      id: "report",
+      kind: { group: "wgpolicyk8s.io", kind: "PolicyReport" },
+      about: { apiVersionPath: ".scope.apiVersion", kindPath: ".scope.kind", namePath: ".scope.name", namespacePath: ".scope.namespace" },
+    } as unknown as ProblemContribution;
+    const pr = { metadata: { name: "uid-1", namespace: "web" }, scope: { apiVersion: "apps/v1", kind: "Deployment", name: "shop", namespace: "web" } } as unknown as KubeObject;
+    expect(detectRule(report, pr)[0]!.object).toEqual({ kind: { group: "apps", version: "v1", kind: "Deployment" }, namespace: "web", name: "shop" });
+    const policy = {
+      ...base,
+      id: "policy",
+      kind: { group: "apps", kind: "DaemonSet" },
+      about: { kind: { group: "nvidia.com", version: "v1", kind: "ClusterPolicy" }, namePath: ".metadata.ownerReferences[0].name", clusterScoped: true },
+    } as unknown as ProblemContribution;
+    const ds = { metadata: { name: "nvidia-dcgm", namespace: "gpu-operator", ownerReferences: [{ name: "cluster-policy" }] } } as KubeObject;
+    expect(detectRule(policy, ds)[0]!.object).toMatchObject({ namespace: null, name: "cluster-policy" });
+  });
+
   it("read field paths of the custom columns' grammar, nothing else", () => {
     expect(valueAt(cluster, ".status.ceph.health")).toBe("HEALTH_ERR");
     expect(valueAt(cluster, "status.items[1].name")).toBe("b");

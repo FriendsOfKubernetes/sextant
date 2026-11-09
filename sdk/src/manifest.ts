@@ -257,6 +257,20 @@ export interface ManifestProblem {
   reasonOr?: string;
   /** Paths tried in order when `since` gives no time (since Sextant 0.30). */
   sinceOr?: string[];
+  /**
+   * The object the problem is about when it is not the judged one (since Sextant 0.30): its kind written out, or read
+   * with `apiVersionPath` + `kindPath`; its name read; its namespace read, the judged object's, or none (`clusterScoped`).
+   */
+  about?: {
+    kind?: { group: string; version: string; kind: string };
+    apiVersionPath?: string;
+    kindPath?: string;
+    namePath: string;
+    namespacePath?: string;
+    clusterScoped?: boolean;
+  };
+  /** Paths whose values are the problem's progress: when they change, its grace starts again (since Sextant 0.30). */
+  stamp?: string[];
 }
 
 /**

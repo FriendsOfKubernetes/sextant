@@ -161,6 +161,8 @@ export const MANIFEST_SHAPES = {
     category: "optional",
     reasonOr: "optional",
     sinceOr: "optional",
+    about: "optional",
+    stamp: "optional",
   }),
   ManifestProblemCategory: described<ManifestProblemCategory>(`${CONTRIBUTION}/problemCategories/items`, {
     id: "required",
