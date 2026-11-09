@@ -456,7 +456,7 @@ function detailsComponent(
     );
     if (tab) return frame;
     return (
-      <div className="ext-section" hidden={hidden} {...(look.heading ? {} : { role: "group", "aria-label": title })}>
+      <div className="ext-section" hidden={hidden} role={look.heading ? undefined : "group"} aria-label={look.heading ? undefined : title}>
         {look.heading && <h3 className="ext-section__title">{title}</h3>}
         {frame}
       </div>
