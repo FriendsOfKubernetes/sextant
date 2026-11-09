@@ -201,7 +201,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "clusterApi",
     "k3s",
     "dra",
-    "gpuOperator",
     "openshift",
     "policies",
     "sealedSecrets",
@@ -252,8 +251,6 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "kueueWorkloads",
     // Dynamic Resource Allocation (#244): a window view of 0.23.0.
     "dra",
-    // NVIDIA GPU Operator (#245): a window view of 0.23.0.
-    "gpuOperator",
     // k3s and RKE2 HelmCharts and bundled components (#270): a window view of 0.25.0.
     "k3s",
     // OpenShift Routes, DeploymentConfigs, Builds and ImageStreams (#267): a window view of 0.25.0.

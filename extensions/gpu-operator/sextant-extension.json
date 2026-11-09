@@ -1,0 +1,1544 @@
+{
+ "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+ "id": "sextant.gpu-operator",
+ "name": "NVIDIA GPU Operator",
+ "version": "1.0.0",
+ "description": "NVIDIA GPU Operator's ClusterPolicies and NVIDIADrivers with their state, components and DaemonSets and the MIG strategy, a GPU block on GPU nodes and a GPU nodes page; problems of objects not ready, components not rolled out and failed MIG configurations. Read-only.",
+ "author": "Sextant",
+ "sextantApi": 4,
+ "entry": "index.html",
+ "icon": "gpuOperator",
+ "permissions": {
+  "clusters": {
+   "type": "all"
+  },
+  "rules": [
+   {
+    "namespaces": {
+     "type": "all"
+    },
+    "kinds": {
+     "type": "only",
+     "kinds": [
+      {
+       "group": "nvidia.com",
+       "kind": "ClusterPolicy"
+      },
+      {
+       "group": "nvidia.com",
+       "kind": "NVIDIADriver"
+      },
+      {
+       "group": "apps",
+       "kind": "DaemonSet"
+      },
+      {
+       "group": "",
+       "kind": "Node"
+      }
+     ]
+    },
+    "actions": [
+     "read"
+    ]
+   }
+  ]
+ },
+ "contributes": {
+  "kinds": [
+   {
+    "group": "nvidia.com",
+    "kind": "ClusterPolicy",
+    "section": "gpuOperator",
+    "title": "Cluster Policies",
+    "icon": "clusterPolicy",
+    "order": 10,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "equals",
+     "path": ".status.state",
+     "value": "notReady"
+    }
+   },
+   {
+    "group": "nvidia.com",
+    "kind": "NVIDIADriver",
+    "section": "gpuOperator",
+    "title": "NVIDIA Drivers",
+    "icon": "nvidiaDriver",
+    "order": 20,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "equals",
+     "path": ".status.state",
+     "value": "notReady"
+    }
+   }
+  ],
+  "sections": [
+   {
+    "section": "gpuOperator",
+    "title": "NVIDIA GPU Operator",
+    "icon": "gpuOperator",
+    "after": "dra"
+   }
+  ],
+  "pages": [
+   {
+    "id": "gpu-nodes",
+    "title": "GPU nodes",
+    "section": "gpuOperator",
+    "icon": "gpuNodes",
+    "order": 30
+   }
+  ],
+  "sectionBadges": [
+   {
+    "section": "gpuOperator",
+    "label": {
+     "one": "{{count}} object needs attention",
+     "other": "{{count}} objects need attention"
+    }
+   }
+  ],
+  "detailsSections": [
+   {
+    "id": "gpu-operator",
+    "title": "NVIDIA GPU Operator",
+    "kinds": [
+     {
+      "group": "nvidia.com",
+      "kind": "ClusterPolicy"
+     },
+     {
+      "group": "nvidia.com",
+      "kind": "NVIDIADriver"
+     }
+    ],
+    "placement": "section",
+    "order": 20
+   },
+   {
+    "id": "gpu-node",
+    "title": "GPU",
+    "kinds": [
+     {
+      "group": "",
+      "kind": "Node"
+     }
+    ],
+    "placement": "section",
+    "order": 28,
+    "when": {
+     "type": "any",
+     "of": [
+      {
+       "type": "equals",
+       "path": ".metadata.labels[\"nvidia.com/gpu.present\"]",
+       "value": "true"
+      },
+      {
+       "type": "exists",
+       "path": ".status.capacity[\"nvidia.com/gpu\"]"
+      },
+      {
+       "type": "exists",
+       "path": ".status.allocatable[\"nvidia.com/gpu\"]"
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".metadata.labels[\"nvidia.com/gpu.product\"]"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".metadata.labels[\"nvidia.com/gpu.product\"]",
+          "value": ""
+         }
+        }
+       ]
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".metadata.labels[\"nvidia.com/mig.config\"]"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".metadata.labels[\"nvidia.com/mig.config\"]",
+          "value": ""
+         }
+        }
+       ]
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".metadata.labels[\"nvidia.com/mig.config.state\"]"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".metadata.labels[\"nvidia.com/mig.config.state\"]",
+          "value": ""
+         }
+        }
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "columns": [
+   {
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "ClusterPolicy"
+    },
+    "id": "policy-state",
+    "title": "State",
+    "afterColumn": "name",
+    "paths": [
+     ".status.state"
+    ],
+    "tooltipPaths": [
+     ".status.conditions[type=\"Error\",status=\"True\"].message",
+     ".status.conditions[type=\"Ready\",status=\"False\"].message"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "ready"
+      },
+      "text": "Ready",
+      "tone": "ok"
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "notReady"
+      },
+      "text": "Not ready",
+      "tone": "warning"
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "ignored"
+      },
+      "text": "Ignored",
+      "tone": "neutral"
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "disabled"
+      },
+      "text": "Disabled",
+      "tone": "neutral"
+     },
+     {
+      "when": {
+       "type": "not",
+       "of": {
+        "type": "in",
+        "path": ".status.state",
+        "values": [
+         "ready",
+         "notReady",
+         "ignored",
+         "disabled"
+        ]
+       }
+      },
+      "text": "No state yet",
+      "tone": "neutral"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "ClusterPolicy"
+    },
+    "id": "policy-namespace",
+    "title": "Operand namespace",
+    "afterColumn": "policy-state",
+    "paths": [
+     ".status.namespace"
+    ]
+   },
+   {
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "ClusterPolicy"
+    },
+    "id": "policy-mig-strategy",
+    "title": "MIG strategy",
+    "afterColumn": "policy-namespace",
+    "paths": [
+     ".spec.mig.strategy"
+    ]
+   },
+   {
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "NVIDIADriver"
+    },
+    "id": "driver-state",
+    "title": "State",
+    "afterColumn": "name",
+    "paths": [
+     ".status.state"
+    ],
+    "tooltipPaths": [
+     ".status.conditions[type=\"Error\",status=\"True\"].message",
+     ".status.conditions[type=\"Ready\",status=\"False\"].message"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "ready"
+      },
+      "text": "Ready",
+      "tone": "ok"
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "notReady"
+      },
+      "text": "Not ready",
+      "tone": "warning"
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "ignored"
+      },
+      "text": "Ignored",
+      "tone": "neutral"
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "disabled"
+      },
+      "text": "Disabled",
+      "tone": "neutral"
+     },
+     {
+      "when": {
+       "type": "not",
+       "of": {
+        "type": "in",
+        "path": ".status.state",
+        "values": [
+         "ready",
+         "notReady",
+         "ignored",
+         "disabled"
+        ]
+       }
+      },
+      "text": "No state yet",
+      "tone": "neutral"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "NVIDIADriver"
+    },
+    "id": "driver-type",
+    "title": "Driver type",
+    "afterColumn": "driver-state",
+    "paths": [
+     ".spec.driverType"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".spec.driverType"
+        },
+        {
+         "type": "equals",
+         "path": ".spec.driverType",
+         "value": ""
+        }
+       ]
+      },
+      "text": "gpu"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "NVIDIADriver"
+    },
+    "id": "driver-version",
+    "title": "Version",
+    "afterColumn": "driver-type",
+    "paths": [
+     ".spec.version"
+    ]
+   },
+   {
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "NVIDIADriver"
+    },
+    "id": "driver-node-selector",
+    "title": "Node selector",
+    "afterColumn": "driver-version",
+    "jsonPath": ".spec.nodeSelector"
+   }
+  ],
+  "problems": [
+   {
+    "id": "policy-not-ready",
+    "title": "ClusterPolicy not ready, with the operator's error",
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "ClusterPolicy"
+    },
+    "since": ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime",
+    "graceMinutes": 10,
+    "reason": "NotReady",
+    "group": "not-ready",
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "notReady"
+      },
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "condition",
+       "conditionType": "Error",
+       "status": "True"
+      },
+      {
+       "type": "exists",
+       "path": ".status.conditions[type=\"Error\"].message"
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "equals",
+        "path": ".status.conditions[type=\"Error\"].message",
+        "value": ""
+       }
+      }
+     ]
+    },
+    "message": "{{.status.conditions[type=\"Error\"].message}}"
+   },
+   {
+    "id": "policy-not-ready-condition",
+    "title": "ClusterPolicy not ready, with the Ready condition's message",
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "ClusterPolicy"
+    },
+    "since": ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime",
+    "graceMinutes": 10,
+    "reason": "NotReady",
+    "group": "not-ready",
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "notReady"
+      },
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "condition",
+        "conditionType": "Error",
+        "status": "True"
+       }
+      },
+      {
+       "type": "condition",
+       "conditionType": "Ready",
+       "status": "False"
+      },
+      {
+       "type": "exists",
+       "path": ".status.conditions[type=\"Ready\"].message"
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "equals",
+        "path": ".status.conditions[type=\"Ready\"].message",
+        "value": ""
+       }
+      }
+     ]
+    },
+    "message": "{{.status.conditions[type=\"Ready\"].message}}"
+   },
+   {
+    "id": "policy-not-ready-plain",
+    "title": "ClusterPolicy not ready",
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "ClusterPolicy"
+    },
+    "since": ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime",
+    "graceMinutes": 10,
+    "reason": "NotReady",
+    "group": "not-ready",
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "notReady"
+      },
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "condition",
+          "conditionType": "Error",
+          "status": "True"
+         }
+        },
+        {
+         "type": "absent",
+         "path": ".status.conditions[type=\"Error\"].message"
+        },
+        {
+         "type": "equals",
+         "path": ".status.conditions[type=\"Error\"].message",
+         "value": ""
+        }
+       ]
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "condition",
+         "conditionType": "Error",
+         "status": "True"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+         }
+        },
+        {
+         "type": "absent",
+         "path": ".status.conditions[type=\"Ready\"].message"
+        },
+        {
+         "type": "equals",
+         "path": ".status.conditions[type=\"Ready\"].message",
+         "value": ""
+        }
+       ]
+      }
+     ]
+    },
+    "message": "The NVIDIA GPU Operator reports it not ready."
+   },
+   {
+    "id": "driver-not-ready",
+    "title": "NVIDIADriver not ready, with the operator's error",
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "NVIDIADriver"
+    },
+    "since": ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime",
+    "graceMinutes": 10,
+    "reason": "NotReady",
+    "group": "not-ready",
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "notReady"
+      },
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "condition",
+       "conditionType": "Error",
+       "status": "True"
+      },
+      {
+       "type": "exists",
+       "path": ".status.conditions[type=\"Error\"].message"
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "equals",
+        "path": ".status.conditions[type=\"Error\"].message",
+        "value": ""
+       }
+      }
+     ]
+    },
+    "message": "{{.status.conditions[type=\"Error\"].message}}"
+   },
+   {
+    "id": "driver-not-ready-condition",
+    "title": "NVIDIADriver not ready, with the Ready condition's message",
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "NVIDIADriver"
+    },
+    "since": ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime",
+    "graceMinutes": 10,
+    "reason": "NotReady",
+    "group": "not-ready",
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "notReady"
+      },
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "condition",
+        "conditionType": "Error",
+        "status": "True"
+       }
+      },
+      {
+       "type": "condition",
+       "conditionType": "Ready",
+       "status": "False"
+      },
+      {
+       "type": "exists",
+       "path": ".status.conditions[type=\"Ready\"].message"
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "equals",
+        "path": ".status.conditions[type=\"Ready\"].message",
+        "value": ""
+       }
+      }
+     ]
+    },
+    "message": "{{.status.conditions[type=\"Ready\"].message}}"
+   },
+   {
+    "id": "driver-not-ready-plain",
+    "title": "NVIDIADriver not ready",
+    "kind": {
+     "group": "nvidia.com",
+     "kind": "NVIDIADriver"
+    },
+    "since": ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime",
+    "graceMinutes": 10,
+    "reason": "NotReady",
+    "group": "not-ready",
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "equals",
+       "path": ".status.state",
+       "value": "notReady"
+      },
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "condition",
+          "conditionType": "Error",
+          "status": "True"
+         }
+        },
+        {
+         "type": "absent",
+         "path": ".status.conditions[type=\"Error\"].message"
+        },
+        {
+         "type": "equals",
+         "path": ".status.conditions[type=\"Error\"].message",
+         "value": ""
+        }
+       ]
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "condition",
+         "conditionType": "Error",
+         "status": "True"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+         }
+        },
+        {
+         "type": "absent",
+         "path": ".status.conditions[type=\"Ready\"].message"
+        },
+        {
+         "type": "equals",
+         "path": ".status.conditions[type=\"Ready\"].message",
+         "value": ""
+        }
+       ]
+      }
+     ]
+    },
+    "message": "The NVIDIA GPU Operator reports it not ready."
+   },
+   {
+    "id": "component-not-rolled-out",
+    "title": "Component DaemonSet not rolled out",
+    "kind": {
+     "group": "apps",
+     "kind": "DaemonSet"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".metadata.ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".metadata.ownerReferences[kind=\"NVIDIADriver\",apiVersion=\"nvidia.com/v1alpha1\"]"
+        }
+       ]
+      },
+      {
+       "type": "above",
+       "path": ".status.desiredNumberScheduled",
+       "value": 0
+      },
+      {
+       "type": "exists",
+       "path": ".status.updatedNumberScheduled"
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "atLeast",
+          "path": ".status.numberReady",
+          "otherPath": ".status.desiredNumberScheduled"
+         }
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "atLeast",
+          "path": ".status.updatedNumberScheduled",
+          "otherPath": ".status.desiredNumberScheduled"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    "graceMinutes": 10,
+    "reason": "ComponentNotReady",
+    "group": "component-not-ready",
+    "message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} of {{.status.desiredNumberScheduled}} Pods ready, {{.status.updatedNumberScheduled}} updated."
+   },
+   {
+    "id": "component-not-rolled-out-none-updated",
+    "title": "Component DaemonSet not rolled out, no Pod updated",
+    "kind": {
+     "group": "apps",
+     "kind": "DaemonSet"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".metadata.ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".metadata.ownerReferences[kind=\"NVIDIADriver\",apiVersion=\"nvidia.com/v1alpha1\"]"
+        }
+       ]
+      },
+      {
+       "type": "above",
+       "path": ".status.desiredNumberScheduled",
+       "value": 0
+      },
+      {
+       "type": "absent",
+       "path": ".status.updatedNumberScheduled"
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "atLeast",
+          "path": ".status.numberReady",
+          "otherPath": ".status.desiredNumberScheduled"
+         }
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "atLeast",
+          "path": ".status.updatedNumberScheduled",
+          "otherPath": ".status.desiredNumberScheduled"
+         }
+        }
+       ]
+      }
+     ]
+    },
+    "graceMinutes": 10,
+    "reason": "ComponentNotReady",
+    "group": "component-not-ready",
+    "message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} of {{.status.desiredNumberScheduled}} Pods ready, 0 updated."
+   },
+   {
+    "id": "mig-config-failed",
+    "title": "MIG configuration failed",
+    "kind": {
+     "group": "",
+     "kind": "Node"
+    },
+    "source": {
+     "labelSelector": "nvidia.com/mig.config.state=failed",
+     "metadataOnly": true
+    },
+    "when": {
+     "type": "equals",
+     "path": ".metadata.labels[\"nvidia.com/mig.config.state\"]",
+     "value": "failed"
+    },
+    "graceMinutes": 2,
+    "reason": "MigConfigFailed",
+    "group": "mig-config-failed",
+    "message": "The MIG manager could not apply the MIG configuration {{.metadata.labels[\"nvidia.com/mig.config\"]}} on this node."
+   }
+  ]
+ },
+ "translations": {
+  "de": {
+   "name": "NVIDIA GPU Operator",
+   "description": "ClusterPolicies und NVIDIADrivers des NVIDIA GPU Operator mit ihrem Zustand, ihren Komponenten und DaemonSets und der MIG-Strategie, ein GPU-Block auf GPU-Nodes und eine Seite der GPU-Nodes; Probleme nicht bereiter Objekte, nicht ausgerollter Komponenten und fehlgeschlagener MIG-Konfigurationen. Nur lesend.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "GPU-Knoten",
+   "sectionBadges.gpuOperator.label.one": "{{count}} Objekt braucht Aufmerksamkeit",
+   "sectionBadges.gpuOperator.label.other": "{{count}} Objekte brauchen Aufmerksamkeit",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "Zustand",
+   "columns.policy-state.cases.0.text": "Bereit",
+   "columns.policy-state.cases.1.text": "Nicht bereit",
+   "columns.policy-state.cases.2.text": "Ignoriert",
+   "columns.policy-state.cases.3.text": "Deaktiviert",
+   "columns.policy-state.cases.4.text": "Noch kein Zustand",
+   "columns.policy-namespace.title": "Operanden-Namespace",
+   "columns.policy-mig-strategy.title": "MIG-Strategie",
+   "columns.driver-state.title": "Zustand",
+   "columns.driver-state.cases.0.text": "Bereit",
+   "columns.driver-state.cases.1.text": "Nicht bereit",
+   "columns.driver-state.cases.2.text": "Ignoriert",
+   "columns.driver-state.cases.3.text": "Deaktiviert",
+   "columns.driver-state.cases.4.text": "Noch kein Zustand",
+   "columns.driver-type.title": "Treibertyp",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "Version",
+   "columns.driver-node-selector.title": "Knoten-Selektor",
+   "problems.policy-not-ready.title": "ClusterPolicy nicht bereit, mit dem Fehler des Operators",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy nicht bereit, mit der Meldung der Ready-Bedingung",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy nicht bereit",
+   "problems.policy-not-ready-plain.message": "Der NVIDIA GPU Operator meldet es als nicht bereit.",
+   "problems.driver-not-ready.title": "NVIDIADriver nicht bereit, mit dem Fehler des Operators",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver nicht bereit, mit der Meldung der Ready-Bedingung",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver nicht bereit",
+   "problems.driver-not-ready-plain.message": "Der NVIDIA GPU Operator meldet es als nicht bereit.",
+   "problems.component-not-rolled-out.title": "Komponenten-DaemonSet nicht ausgerollt",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} von {{.status.desiredNumberScheduled}} Pods bereit, {{.status.updatedNumberScheduled}} aktualisiert.",
+   "problems.component-not-rolled-out-none-updated.title": "Komponenten-DaemonSet nicht ausgerollt, kein Pod aktualisiert",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} von {{.status.desiredNumberScheduled}} Pods bereit, 0 aktualisiert.",
+   "problems.mig-config-failed.title": "MIG-Konfiguration fehlgeschlagen",
+   "problems.mig-config-failed.message": "Der MIG Manager konnte die MIG-Konfiguration {{.metadata.labels[\"nvidia.com/mig.config\"]}} auf diesem Knoten nicht anwenden."
+  },
+  "es": {
+   "name": "NVIDIA GPU Operator",
+   "description": "ClusterPolicies y NVIDIADrivers del NVIDIA GPU Operator con su estado, sus componentes y DaemonSets y la estrategia MIG, un bloque GPU en los nodos con GPU y una página de nodos con GPU; problemas de objetos no listos, componentes no desplegados y configuraciones MIG fallidas. Solo lectura.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "Nodos con GPU",
+   "sectionBadges.gpuOperator.label.one": "{{count}} objeto requiere atención",
+   "sectionBadges.gpuOperator.label.many": "{{count}} de objetos requieren atención",
+   "sectionBadges.gpuOperator.label.other": "{{count}} objetos requieren atención",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "Estado",
+   "columns.policy-state.cases.0.text": "Listo",
+   "columns.policy-state.cases.1.text": "No listo",
+   "columns.policy-state.cases.2.text": "Ignorado",
+   "columns.policy-state.cases.3.text": "Desactivado",
+   "columns.policy-state.cases.4.text": "Aún sin estado",
+   "columns.policy-namespace.title": "Namespace de los operandos",
+   "columns.policy-mig-strategy.title": "Estrategia MIG",
+   "columns.driver-state.title": "Estado",
+   "columns.driver-state.cases.0.text": "Listo",
+   "columns.driver-state.cases.1.text": "No listo",
+   "columns.driver-state.cases.2.text": "Ignorado",
+   "columns.driver-state.cases.3.text": "Desactivado",
+   "columns.driver-state.cases.4.text": "Aún sin estado",
+   "columns.driver-type.title": "Tipo de controlador",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "Versión",
+   "columns.driver-node-selector.title": "Selector de nodos",
+   "problems.policy-not-ready.title": "ClusterPolicy no está listo, con el error del operador",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy no está listo, con el mensaje de la condición Ready",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy no está listo",
+   "problems.policy-not-ready-plain.message": "El NVIDIA GPU Operator indica que no está listo.",
+   "problems.driver-not-ready.title": "NVIDIADriver no está listo, con el error del operador",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver no está listo, con el mensaje de la condición Ready",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver no está listo",
+   "problems.driver-not-ready-plain.message": "El NVIDIA GPU Operator indica que no está listo.",
+   "problems.component-not-rolled-out.title": "DaemonSet del componente no desplegado",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods listos, {{.status.updatedNumberScheduled}} actualizados.",
+   "problems.component-not-rolled-out-none-updated.title": "DaemonSet del componente no desplegado, ningún Pod actualizado",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods listos, 0 actualizados.",
+   "problems.mig-config-failed.title": "La configuración MIG falló",
+   "problems.mig-config-failed.message": "El MIG manager no pudo aplicar la configuración MIG {{.metadata.labels[\"nvidia.com/mig.config\"]}} en este nodo."
+  },
+  "fr": {
+   "name": "NVIDIA GPU Operator",
+   "description": "Les ClusterPolicies et NVIDIADrivers du NVIDIA GPU Operator avec leur état, leurs composants et DaemonSets et la stratégie MIG, un bloc GPU sur les nœuds GPU et une page des nœuds GPU ; problèmes d'objets pas prêts, de composants non déployés et de configurations MIG en échec. Lecture seule.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "Nœuds GPU",
+   "sectionBadges.gpuOperator.label.one": "{{count}} objet demande de l’attention",
+   "sectionBadges.gpuOperator.label.many": "{{count}} d’objets demandent de l’attention",
+   "sectionBadges.gpuOperator.label.other": "{{count}} objets demandent de l’attention",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "État",
+   "columns.policy-state.cases.0.text": "Prêt",
+   "columns.policy-state.cases.1.text": "Pas prêt",
+   "columns.policy-state.cases.2.text": "Ignoré",
+   "columns.policy-state.cases.3.text": "Désactivé",
+   "columns.policy-state.cases.4.text": "Pas encore d’état",
+   "columns.policy-namespace.title": "Namespace des opérandes",
+   "columns.policy-mig-strategy.title": "Stratégie MIG",
+   "columns.driver-state.title": "État",
+   "columns.driver-state.cases.0.text": "Prêt",
+   "columns.driver-state.cases.1.text": "Pas prêt",
+   "columns.driver-state.cases.2.text": "Ignoré",
+   "columns.driver-state.cases.3.text": "Désactivé",
+   "columns.driver-state.cases.4.text": "Pas encore d’état",
+   "columns.driver-type.title": "Type de pilote",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "Version",
+   "columns.driver-node-selector.title": "Sélecteur de nœuds",
+   "problems.policy-not-ready.title": "ClusterPolicy pas prêt, avec l'erreur de l'opérateur",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy pas prêt, avec le message de la condition Ready",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy pas prêt",
+   "problems.policy-not-ready-plain.message": "Le NVIDIA GPU Operator l’indique comme pas prêt.",
+   "problems.driver-not-ready.title": "NVIDIADriver pas prêt, avec l'erreur de l'opérateur",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver pas prêt, avec le message de la condition Ready",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver pas prêt",
+   "problems.driver-not-ready-plain.message": "Le NVIDIA GPU Operator l’indique comme pas prêt.",
+   "problems.component-not-rolled-out.title": "DaemonSet du composant non déployé",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}} : {{.status.numberReady}} sur {{.status.desiredNumberScheduled}} Pods prêts, {{.status.updatedNumberScheduled}} à jour.",
+   "problems.component-not-rolled-out-none-updated.title": "DaemonSet du composant non déployé, aucun Pod mis à jour",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}} : {{.status.numberReady}} sur {{.status.desiredNumberScheduled}} Pods prêts, 0 à jour.",
+   "problems.mig-config-failed.title": "Échec de la configuration MIG",
+   "problems.mig-config-failed.message": "Le MIG manager n’a pas pu appliquer la configuration MIG {{.metadata.labels[\"nvidia.com/mig.config\"]}} sur ce nœud."
+  },
+  "it": {
+   "name": "NVIDIA GPU Operator",
+   "description": "ClusterPolicy e NVIDIADriver del NVIDIA GPU Operator con stato, componenti, DaemonSet e strategia MIG, un blocco GPU sui nodi GPU e una pagina dei nodi GPU; problemi di oggetti non pronti, componenti non distribuiti e configurazioni MIG non riuscite. Sola lettura.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "Nodi GPU",
+   "sectionBadges.gpuOperator.label.one": "{{count}} oggetto richiede attenzione",
+   "sectionBadges.gpuOperator.label.many": "{{count}} di oggetti richiedono attenzione",
+   "sectionBadges.gpuOperator.label.other": "{{count}} oggetti richiedono attenzione",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "Stato",
+   "columns.policy-state.cases.0.text": "Pronto",
+   "columns.policy-state.cases.1.text": "Non pronto",
+   "columns.policy-state.cases.2.text": "Ignorato",
+   "columns.policy-state.cases.3.text": "Disattivato",
+   "columns.policy-state.cases.4.text": "Ancora nessuno stato",
+   "columns.policy-namespace.title": "Namespace degli operandi",
+   "columns.policy-mig-strategy.title": "Strategia MIG",
+   "columns.driver-state.title": "Stato",
+   "columns.driver-state.cases.0.text": "Pronto",
+   "columns.driver-state.cases.1.text": "Non pronto",
+   "columns.driver-state.cases.2.text": "Ignorato",
+   "columns.driver-state.cases.3.text": "Disattivato",
+   "columns.driver-state.cases.4.text": "Ancora nessuno stato",
+   "columns.driver-type.title": "Tipo di driver",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "Versione",
+   "columns.driver-node-selector.title": "Selettore di nodi",
+   "problems.policy-not-ready.title": "ClusterPolicy non pronto, con l'errore dell'operatore",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy non pronto, con il messaggio della condizione Ready",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy non pronto",
+   "problems.policy-not-ready-plain.message": "Il NVIDIA GPU Operator lo segnala come non pronto.",
+   "problems.driver-not-ready.title": "NVIDIADriver non pronto, con l'errore dell'operatore",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver non pronto, con il messaggio della condizione Ready",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver non pronto",
+   "problems.driver-not-ready-plain.message": "Il NVIDIA GPU Operator lo segnala come non pronto.",
+   "problems.component-not-rolled-out.title": "DaemonSet del componente non distribuito",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} di {{.status.desiredNumberScheduled}} Pod pronti, {{.status.updatedNumberScheduled}} aggiornati.",
+   "problems.component-not-rolled-out-none-updated.title": "DaemonSet del componente non distribuito, nessun Pod aggiornato",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} di {{.status.desiredNumberScheduled}} Pod pronti, 0 aggiornati.",
+   "problems.mig-config-failed.title": "Configurazione MIG non riuscita",
+   "problems.mig-config-failed.message": "Il MIG manager non è riuscito ad applicare la configurazione MIG {{.metadata.labels[\"nvidia.com/mig.config\"]}} su questo nodo."
+  },
+  "ja": {
+   "name": "NVIDIA GPU Operator",
+   "description": "NVIDIA GPU Operator の ClusterPolicy と NVIDIADriver を状態、コンポーネントと DaemonSet、MIG 戦略とともに表示し、GPU ノードに GPU ブロックを、GPU ノードのページを追加します。準備できていないオブジェクト、ロールアウトされていないコンポーネント、失敗した MIG 構成を問題として報告します。読み取り専用。",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "GPU ノード",
+   "sectionBadges.gpuOperator.label.other": "{{count}} 個のオブジェクトに注意が必要です",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "状態",
+   "columns.policy-state.cases.0.text": "準備完了",
+   "columns.policy-state.cases.1.text": "未準備",
+   "columns.policy-state.cases.2.text": "無視",
+   "columns.policy-state.cases.3.text": "無効",
+   "columns.policy-state.cases.4.text": "状態なし",
+   "columns.policy-namespace.title": "オペランドの namespace",
+   "columns.policy-mig-strategy.title": "MIG 戦略",
+   "columns.driver-state.title": "状態",
+   "columns.driver-state.cases.0.text": "準備完了",
+   "columns.driver-state.cases.1.text": "未準備",
+   "columns.driver-state.cases.2.text": "無視",
+   "columns.driver-state.cases.3.text": "無効",
+   "columns.driver-state.cases.4.text": "状態なし",
+   "columns.driver-type.title": "ドライバーの種類",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "バージョン",
+   "columns.driver-node-selector.title": "ノードセレクター",
+   "problems.policy-not-ready.title": "ClusterPolicy の準備ができていません（オペレーターのエラー）",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy の準備ができていません（Ready 条件のメッセージ）",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy の準備ができていません",
+   "problems.policy-not-ready-plain.message": "NVIDIA GPU Operator が未準備と報告しています。",
+   "problems.driver-not-ready.title": "NVIDIADriver の準備ができていません（オペレーターのエラー）",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver の準備ができていません（Ready 条件のメッセージ）",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver の準備ができていません",
+   "problems.driver-not-ready-plain.message": "NVIDIA GPU Operator が未準備と報告しています。",
+   "problems.component-not-rolled-out.title": "コンポーネントの DaemonSet がロールアウトされていません",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} 個中 {{.status.numberReady}} 個の Pod が準備完了、{{.status.updatedNumberScheduled}} 個更新済み。",
+   "problems.component-not-rolled-out-none-updated.title": "コンポーネントの DaemonSet がロールアウトされていません（更新済みの Pod なし）",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} 個中 {{.status.numberReady}} 個の Pod が準備完了、0 個更新済み。",
+   "problems.mig-config-failed.title": "MIG 構成に失敗しました",
+   "problems.mig-config-failed.message": "MIG manager はこのノードで MIG 構成 {{.metadata.labels[\"nvidia.com/mig.config\"]}} を適用できませんでした。"
+  },
+  "ko": {
+   "name": "NVIDIA GPU Operator",
+   "description": "NVIDIA GPU Operator의 ClusterPolicy와 NVIDIADriver를 상태, 구성 요소와 DaemonSet, MIG 전략과 함께 보여 주고 GPU 노드에 GPU 블록을, GPU 노드 페이지를 더합니다. 준비되지 않은 객체, 롤아웃되지 않은 구성 요소, 실패한 MIG 구성을 문제로 알립니다. 읽기 전용.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "GPU 노드",
+   "sectionBadges.gpuOperator.label.other": "객체 {{count}}개에 주의가 필요합니다",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "상태",
+   "columns.policy-state.cases.0.text": "준비됨",
+   "columns.policy-state.cases.1.text": "준비 안 됨",
+   "columns.policy-state.cases.2.text": "무시됨",
+   "columns.policy-state.cases.3.text": "비활성화됨",
+   "columns.policy-state.cases.4.text": "아직 상태 없음",
+   "columns.policy-namespace.title": "오퍼랜드 namespace",
+   "columns.policy-mig-strategy.title": "MIG 전략",
+   "columns.driver-state.title": "상태",
+   "columns.driver-state.cases.0.text": "준비됨",
+   "columns.driver-state.cases.1.text": "준비 안 됨",
+   "columns.driver-state.cases.2.text": "무시됨",
+   "columns.driver-state.cases.3.text": "비활성화됨",
+   "columns.driver-state.cases.4.text": "아직 상태 없음",
+   "columns.driver-type.title": "드라이버 유형",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "버전",
+   "columns.driver-node-selector.title": "노드 셀렉터",
+   "problems.policy-not-ready.title": "ClusterPolicy 준비되지 않음 (오퍼레이터 오류)",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy 준비되지 않음 (Ready 조건 메시지)",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy 준비되지 않음",
+   "problems.policy-not-ready-plain.message": "NVIDIA GPU Operator가 준비되지 않았다고 보고합니다.",
+   "problems.driver-not-ready.title": "NVIDIADriver 준비되지 않음 (오퍼레이터 오류)",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver 준비되지 않음 (Ready 조건 메시지)",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver 준비되지 않음",
+   "problems.driver-not-ready-plain.message": "NVIDIA GPU Operator가 준비되지 않았다고 보고합니다.",
+   "problems.component-not-rolled-out.title": "구성 요소 DaemonSet이 롤아웃되지 않음",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: Pod {{.status.desiredNumberScheduled}}개 중 {{.status.numberReady}}개 준비됨, {{.status.updatedNumberScheduled}}개 업데이트됨.",
+   "problems.component-not-rolled-out-none-updated.title": "구성 요소 DaemonSet이 롤아웃되지 않음, 업데이트된 Pod 없음",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: Pod {{.status.desiredNumberScheduled}}개 중 {{.status.numberReady}}개 준비됨, 0개 업데이트됨.",
+   "problems.mig-config-failed.title": "MIG 구성 실패",
+   "problems.mig-config-failed.message": "MIG manager가 이 노드에 MIG 구성 {{.metadata.labels[\"nvidia.com/mig.config\"]}}을 적용하지 못했습니다."
+  },
+  "pl": {
+   "name": "NVIDIA GPU Operator",
+   "description": "ClusterPolicies i NVIDIADrivers NVIDIA GPU Operator z ich stanem, komponentami, DaemonSetami i strategią MIG, blok GPU na węzłach z GPU i strona węzłów z GPU; problemy niegotowych obiektów, niewdrożonych komponentów i nieudanych konfiguracji MIG. Tylko do odczytu.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "Węzły z GPU",
+   "sectionBadges.gpuOperator.label.one": "{{count}} obiekt wymaga uwagi",
+   "sectionBadges.gpuOperator.label.few": "{{count}} obiekty wymagają uwagi",
+   "sectionBadges.gpuOperator.label.many": "{{count}} obiektów wymaga uwagi",
+   "sectionBadges.gpuOperator.label.other": "{{count}} obiektu wymaga uwagi",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "Stan",
+   "columns.policy-state.cases.0.text": "Gotowy",
+   "columns.policy-state.cases.1.text": "Niegotowy",
+   "columns.policy-state.cases.2.text": "Ignorowany",
+   "columns.policy-state.cases.3.text": "Wyłączony",
+   "columns.policy-state.cases.4.text": "Brak stanu",
+   "columns.policy-namespace.title": "Namespace komponentów",
+   "columns.policy-mig-strategy.title": "Strategia MIG",
+   "columns.driver-state.title": "Stan",
+   "columns.driver-state.cases.0.text": "Gotowy",
+   "columns.driver-state.cases.1.text": "Niegotowy",
+   "columns.driver-state.cases.2.text": "Ignorowany",
+   "columns.driver-state.cases.3.text": "Wyłączony",
+   "columns.driver-state.cases.4.text": "Brak stanu",
+   "columns.driver-type.title": "Typ sterownika",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "Wersja",
+   "columns.driver-node-selector.title": "Selektor węzłów",
+   "problems.policy-not-ready.title": "ClusterPolicy niegotowy, z błędem operatora",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy niegotowy, z komunikatem warunku Ready",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy niegotowy",
+   "problems.policy-not-ready-plain.message": "NVIDIA GPU Operator zgłasza go jako niegotowy.",
+   "problems.driver-not-ready.title": "NVIDIADriver niegotowy, z błędem operatora",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver niegotowy, z komunikatem warunku Ready",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver niegotowy",
+   "problems.driver-not-ready-plain.message": "NVIDIA GPU Operator zgłasza go jako niegotowy.",
+   "problems.component-not-rolled-out.title": "DaemonSet komponentu niewdrożony",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: gotowe {{.status.numberReady}} z {{.status.desiredNumberScheduled}} Podów, zaktualizowane {{.status.updatedNumberScheduled}}.",
+   "problems.component-not-rolled-out-none-updated.title": "DaemonSet komponentu niewdrożony, żaden Pod nie zaktualizowany",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: gotowe {{.status.numberReady}} z {{.status.desiredNumberScheduled}} Podów, zaktualizowane 0.",
+   "problems.mig-config-failed.title": "Konfiguracja MIG nie powiodła się",
+   "problems.mig-config-failed.message": "MIG manager nie zdołał zastosować konfiguracji MIG {{.metadata.labels[\"nvidia.com/mig.config\"]}} na tym węźle."
+  },
+  "pt-BR": {
+   "name": "NVIDIA GPU Operator",
+   "description": "ClusterPolicies e NVIDIADrivers do NVIDIA GPU Operator com seu estado, componentes, DaemonSets e a estratégia MIG, um bloco de GPU nos nós com GPU e uma página de nós com GPU; problemas de objetos não prontos, componentes não implantados e configurações MIG com falha. Somente leitura.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "Nós com GPU",
+   "sectionBadges.gpuOperator.label.one": "{{count}} objeto requer atenção",
+   "sectionBadges.gpuOperator.label.many": "{{count}} de objetos requerem atenção",
+   "sectionBadges.gpuOperator.label.other": "{{count}} objetos requerem atenção",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "Estado",
+   "columns.policy-state.cases.0.text": "Pronto",
+   "columns.policy-state.cases.1.text": "Não pronto",
+   "columns.policy-state.cases.2.text": "Ignorado",
+   "columns.policy-state.cases.3.text": "Desativado",
+   "columns.policy-state.cases.4.text": "Ainda sem estado",
+   "columns.policy-namespace.title": "Namespace dos operandos",
+   "columns.policy-mig-strategy.title": "Estratégia MIG",
+   "columns.driver-state.title": "Estado",
+   "columns.driver-state.cases.0.text": "Pronto",
+   "columns.driver-state.cases.1.text": "Não pronto",
+   "columns.driver-state.cases.2.text": "Ignorado",
+   "columns.driver-state.cases.3.text": "Desativado",
+   "columns.driver-state.cases.4.text": "Ainda sem estado",
+   "columns.driver-type.title": "Tipo de driver",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "Versão",
+   "columns.driver-node-selector.title": "Seletor de nós",
+   "problems.policy-not-ready.title": "ClusterPolicy não está pronto, com o erro do operador",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy não está pronto, com a mensagem da condição Ready",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy não está pronto",
+   "problems.policy-not-ready-plain.message": "O NVIDIA GPU Operator informa que não está pronto.",
+   "problems.driver-not-ready.title": "NVIDIADriver não está pronto, com o erro do operador",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver não está pronto, com a mensagem da condição Ready",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver não está pronto",
+   "problems.driver-not-ready-plain.message": "O NVIDIA GPU Operator informa que não está pronto.",
+   "problems.component-not-rolled-out.title": "DaemonSet do componente não implantado",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods prontos, {{.status.updatedNumberScheduled}} atualizados.",
+   "problems.component-not-rolled-out-none-updated.title": "DaemonSet do componente não implantado, nenhum Pod atualizado",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods prontos, 0 atualizados.",
+   "problems.mig-config-failed.title": "A configuração MIG falhou",
+   "problems.mig-config-failed.message": "O MIG manager não conseguiu aplicar a configuração MIG {{.metadata.labels[\"nvidia.com/mig.config\"]}} neste nó."
+  },
+  "ru": {
+   "name": "NVIDIA GPU Operator",
+   "description": "ClusterPolicy и NVIDIADriver оператора NVIDIA GPU Operator с их состоянием, компонентами, DaemonSet и стратегией MIG, блок GPU на узлах с GPU и страница узлов с GPU; проблемы неготовых объектов, неразвёрнутых компонентов и неудавшихся конфигураций MIG. Только чтение.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "Узлы с GPU",
+   "sectionBadges.gpuOperator.label.one": "{{count}} объект требует внимания",
+   "sectionBadges.gpuOperator.label.few": "{{count}} объекта требуют внимания",
+   "sectionBadges.gpuOperator.label.many": "{{count}} объектов требуют внимания",
+   "sectionBadges.gpuOperator.label.other": "{{count}} объекта требуют внимания",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "Состояние",
+   "columns.policy-state.cases.0.text": "Готов",
+   "columns.policy-state.cases.1.text": "Не готов",
+   "columns.policy-state.cases.2.text": "Игнорируется",
+   "columns.policy-state.cases.3.text": "Отключён",
+   "columns.policy-state.cases.4.text": "Состояния ещё нет",
+   "columns.policy-namespace.title": "Namespace компонентов",
+   "columns.policy-mig-strategy.title": "Стратегия MIG",
+   "columns.driver-state.title": "Состояние",
+   "columns.driver-state.cases.0.text": "Готов",
+   "columns.driver-state.cases.1.text": "Не готов",
+   "columns.driver-state.cases.2.text": "Игнорируется",
+   "columns.driver-state.cases.3.text": "Отключён",
+   "columns.driver-state.cases.4.text": "Состояния ещё нет",
+   "columns.driver-type.title": "Тип драйвера",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "Версия",
+   "columns.driver-node-selector.title": "Селектор узлов",
+   "problems.policy-not-ready.title": "ClusterPolicy не готов, с ошибкой оператора",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy не готов, с сообщением условия Ready",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy не готов",
+   "problems.policy-not-ready-plain.message": "NVIDIA GPU Operator сообщает, что он не готов.",
+   "problems.driver-not-ready.title": "NVIDIADriver не готов, с ошибкой оператора",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver не готов, с сообщением условия Ready",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver не готов",
+   "problems.driver-not-ready-plain.message": "NVIDIA GPU Operator сообщает, что он не готов.",
+   "problems.component-not-rolled-out.title": "DaemonSet компонента не развёрнут",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} из {{.status.desiredNumberScheduled}} Pod, обновлено {{.status.updatedNumberScheduled}}.",
+   "problems.component-not-rolled-out-none-updated.title": "DaemonSet компонента не развёрнут, ни один Pod не обновлён",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} из {{.status.desiredNumberScheduled}} Pod, обновлено 0.",
+   "problems.mig-config-failed.title": "Не удалось применить конфигурацию MIG",
+   "problems.mig-config-failed.message": "MIG manager не смог применить конфигурацию MIG {{.metadata.labels[\"nvidia.com/mig.config\"]}} на этом узле."
+  },
+  "tr": {
+   "name": "NVIDIA GPU Operator",
+   "description": "NVIDIA GPU Operator'ın ClusterPolicy ve NVIDIADriver nesneleri durumları, bileşenleri, DaemonSet'leri ve MIG stratejisiyle; GPU düğümlerinde bir GPU bloğu ve bir GPU düğümleri sayfası; hazır olmayan nesnelerin, dağıtılmamış bileşenlerin ve başarısız MIG yapılandırmalarının sorunları. Salt okunur.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "GPU düğümleri",
+   "sectionBadges.gpuOperator.label.one": "{{count}} nesne ilgi gerektiriyor",
+   "sectionBadges.gpuOperator.label.other": "{{count}} nesne ilgi gerektiriyor",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "Durum",
+   "columns.policy-state.cases.0.text": "Hazır",
+   "columns.policy-state.cases.1.text": "Hazır değil",
+   "columns.policy-state.cases.2.text": "Yok sayılıyor",
+   "columns.policy-state.cases.3.text": "Devre dışı",
+   "columns.policy-state.cases.4.text": "Henüz durum yok",
+   "columns.policy-namespace.title": "Bileşen namespace'i",
+   "columns.policy-mig-strategy.title": "MIG stratejisi",
+   "columns.driver-state.title": "Durum",
+   "columns.driver-state.cases.0.text": "Hazır",
+   "columns.driver-state.cases.1.text": "Hazır değil",
+   "columns.driver-state.cases.2.text": "Yok sayılıyor",
+   "columns.driver-state.cases.3.text": "Devre dışı",
+   "columns.driver-state.cases.4.text": "Henüz durum yok",
+   "columns.driver-type.title": "Sürücü türü",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "Sürüm",
+   "columns.driver-node-selector.title": "Düğüm seçici",
+   "problems.policy-not-ready.title": "ClusterPolicy hazır değil, operatörün hatasıyla",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy hazır değil, Ready koşulunun iletisiyle",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy hazır değil",
+   "problems.policy-not-ready-plain.message": "NVIDIA GPU Operator onu hazır değil olarak bildiriyor.",
+   "problems.driver-not-ready.title": "NVIDIADriver hazır değil, operatörün hatasıyla",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver hazır değil, Ready koşulunun iletisiyle",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver hazır değil",
+   "problems.driver-not-ready-plain.message": "NVIDIA GPU Operator onu hazır değil olarak bildiriyor.",
+   "problems.component-not-rolled-out.title": "Bileşen DaemonSet'i dağıtılmadı",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} Pod'dan {{.status.numberReady}} hazır, {{.status.updatedNumberScheduled}} güncel.",
+   "problems.component-not-rolled-out-none-updated.title": "Bileşen DaemonSet'i dağıtılmadı, hiçbir Pod güncellenmedi",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} Pod'dan {{.status.numberReady}} hazır, 0 güncel.",
+   "problems.mig-config-failed.title": "MIG yapılandırması başarısız oldu",
+   "problems.mig-config-failed.message": "MIG manager bu düğümde {{.metadata.labels[\"nvidia.com/mig.config\"]}} MIG yapılandırmasını uygulayamadı."
+  },
+  "uk": {
+   "name": "NVIDIA GPU Operator",
+   "description": "ClusterPolicy і NVIDIADriver оператора NVIDIA GPU Operator з їхнім станом, компонентами, DaemonSet і стратегією MIG, блок GPU на вузлах із GPU і сторінка вузлів із GPU; проблеми неготових об'єктів, нерозгорнутих компонентів і невдалих конфігурацій MIG. Лише читання.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "Вузли з GPU",
+   "sectionBadges.gpuOperator.label.one": "{{count}} об’єкт потребує уваги",
+   "sectionBadges.gpuOperator.label.few": "{{count}} об’єкти потребують уваги",
+   "sectionBadges.gpuOperator.label.many": "{{count}} об’єктів потребують уваги",
+   "sectionBadges.gpuOperator.label.other": "{{count}} об’єкта потребують уваги",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "Стан",
+   "columns.policy-state.cases.0.text": "Готовий",
+   "columns.policy-state.cases.1.text": "Не готовий",
+   "columns.policy-state.cases.2.text": "Ігнорується",
+   "columns.policy-state.cases.3.text": "Вимкнено",
+   "columns.policy-state.cases.4.text": "Стану ще немає",
+   "columns.policy-namespace.title": "Namespace компонентів",
+   "columns.policy-mig-strategy.title": "Стратегія MIG",
+   "columns.driver-state.title": "Стан",
+   "columns.driver-state.cases.0.text": "Готовий",
+   "columns.driver-state.cases.1.text": "Не готовий",
+   "columns.driver-state.cases.2.text": "Ігнорується",
+   "columns.driver-state.cases.3.text": "Вимкнено",
+   "columns.driver-state.cases.4.text": "Стану ще немає",
+   "columns.driver-type.title": "Тип драйвера",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "Версія",
+   "columns.driver-node-selector.title": "Селектор вузлів",
+   "problems.policy-not-ready.title": "ClusterPolicy не готовий, з помилкою оператора",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy не готовий, з повідомленням умови Ready",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy не готовий",
+   "problems.policy-not-ready-plain.message": "NVIDIA GPU Operator повідомляє, що він не готовий.",
+   "problems.driver-not-ready.title": "NVIDIADriver не готовий, з помилкою оператора",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver не готовий, з повідомленням умови Ready",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver не готовий",
+   "problems.driver-not-ready-plain.message": "NVIDIA GPU Operator повідомляє, що він не готовий.",
+   "problems.component-not-rolled-out.title": "DaemonSet компонента не розгорнуто",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} з {{.status.desiredNumberScheduled}} Pod, оновлено {{.status.updatedNumberScheduled}}.",
+   "problems.component-not-rolled-out-none-updated.title": "DaemonSet компонента не розгорнуто, жоден Pod не оновлено",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} з {{.status.desiredNumberScheduled}} Pod, оновлено 0.",
+   "problems.mig-config-failed.title": "Не вдалося застосувати конфігурацію MIG",
+   "problems.mig-config-failed.message": "MIG manager не зміг застосувати конфігурацію MIG {{.metadata.labels[\"nvidia.com/mig.config\"]}} на цьому вузлі."
+  },
+  "zh-CN": {
+   "name": "NVIDIA GPU Operator",
+   "description": "NVIDIA GPU Operator 的 ClusterPolicy 和 NVIDIADriver，及其状态、组件、DaemonSet 和 MIG 策略；GPU 节点上的 GPU 区块和 GPU 节点页面；未就绪对象、未完成发布的组件和失败的 MIG 配置的问题。只读。",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "GPU 节点",
+   "sectionBadges.gpuOperator.label.other": "{{count}} 个对象需要关注",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "状态",
+   "columns.policy-state.cases.0.text": "就绪",
+   "columns.policy-state.cases.1.text": "未就绪",
+   "columns.policy-state.cases.2.text": "已忽略",
+   "columns.policy-state.cases.3.text": "已禁用",
+   "columns.policy-state.cases.4.text": "尚无状态",
+   "columns.policy-namespace.title": "组件 namespace",
+   "columns.policy-mig-strategy.title": "MIG 策略",
+   "columns.driver-state.title": "状态",
+   "columns.driver-state.cases.0.text": "就绪",
+   "columns.driver-state.cases.1.text": "未就绪",
+   "columns.driver-state.cases.2.text": "已忽略",
+   "columns.driver-state.cases.3.text": "已禁用",
+   "columns.driver-state.cases.4.text": "尚无状态",
+   "columns.driver-type.title": "驱动类型",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "版本",
+   "columns.driver-node-selector.title": "节点选择器",
+   "problems.policy-not-ready.title": "ClusterPolicy 未就绪（Operator 的错误）",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy 未就绪（Ready 条件的消息）",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy 未就绪",
+   "problems.policy-not-ready-plain.message": "NVIDIA GPU Operator 报告其未就绪。",
+   "problems.driver-not-ready.title": "NVIDIADriver 未就绪（Operator 的错误）",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver 未就绪（Ready 条件的消息）",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver 未就绪",
+   "problems.driver-not-ready-plain.message": "NVIDIA GPU Operator 报告其未就绪。",
+   "problems.component-not-rolled-out.title": "组件 DaemonSet 未完成发布",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 个 Pod 就绪，{{.status.updatedNumberScheduled}} 个已更新。",
+   "problems.component-not-rolled-out-none-updated.title": "组件 DaemonSet 未完成发布，没有 Pod 已更新",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 个 Pod 就绪，0 个已更新。",
+   "problems.mig-config-failed.title": "MIG 配置失败",
+   "problems.mig-config-failed.message": "MIG manager 无法在此节点上应用 MIG 配置 {{.metadata.labels[\"nvidia.com/mig.config\"]}}。"
+  },
+  "zh-TW": {
+   "name": "NVIDIA GPU Operator",
+   "description": "NVIDIA GPU Operator 的 ClusterPolicy 與 NVIDIADriver，及其狀態、元件、DaemonSet 與 MIG 策略；GPU 節點上的 GPU 區塊與 GPU 節點頁面；未就緒物件、未完成推出的元件與失敗的 MIG 設定的問題。唯讀。",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.1.title": "NVIDIA Drivers",
+   "sections.gpuOperator.title": "NVIDIA GPU Operator",
+   "pages.gpu-nodes.title": "GPU 節點",
+   "sectionBadges.gpuOperator.label.other": "{{count}} 個物件需要注意",
+   "detailsSections.gpu-operator.title": "NVIDIA GPU Operator",
+   "detailsSections.gpu-node.title": "GPU",
+   "columns.policy-state.title": "狀態",
+   "columns.policy-state.cases.0.text": "就緒",
+   "columns.policy-state.cases.1.text": "未就緒",
+   "columns.policy-state.cases.2.text": "已忽略",
+   "columns.policy-state.cases.3.text": "已停用",
+   "columns.policy-state.cases.4.text": "尚無狀態",
+   "columns.policy-namespace.title": "元件 namespace",
+   "columns.policy-mig-strategy.title": "MIG 策略",
+   "columns.driver-state.title": "狀態",
+   "columns.driver-state.cases.0.text": "就緒",
+   "columns.driver-state.cases.1.text": "未就緒",
+   "columns.driver-state.cases.2.text": "已忽略",
+   "columns.driver-state.cases.3.text": "已停用",
+   "columns.driver-state.cases.4.text": "尚無狀態",
+   "columns.driver-type.title": "驅動程式類型",
+   "columns.driver-type.cases.0.text": "gpu",
+   "columns.driver-version.title": "版本",
+   "columns.driver-node-selector.title": "節點選擇器",
+   "problems.policy-not-ready.title": "ClusterPolicy 未就緒（Operator 的錯誤）",
+   "problems.policy-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.policy-not-ready-condition.title": "ClusterPolicy 未就緒（Ready 條件的訊息）",
+   "problems.policy-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.policy-not-ready-plain.title": "ClusterPolicy 未就緒",
+   "problems.policy-not-ready-plain.message": "NVIDIA GPU Operator 回報其未就緒。",
+   "problems.driver-not-ready.title": "NVIDIADriver 未就緒（Operator 的錯誤）",
+   "problems.driver-not-ready.message": "{{.status.conditions[type=\"Error\"].message}}",
+   "problems.driver-not-ready-condition.title": "NVIDIADriver 未就緒（Ready 條件的訊息）",
+   "problems.driver-not-ready-condition.message": "{{.status.conditions[type=\"Ready\"].message}}",
+   "problems.driver-not-ready-plain.title": "NVIDIADriver 未就緒",
+   "problems.driver-not-ready-plain.message": "NVIDIA GPU Operator 回報其未就緒。",
+   "problems.component-not-rolled-out.title": "元件 DaemonSet 未完成推出",
+   "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 個 Pod 就緒，{{.status.updatedNumberScheduled}} 個已更新。",
+   "problems.component-not-rolled-out-none-updated.title": "元件 DaemonSet 未完成推出，沒有 Pod 已更新",
+   "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 個 Pod 就緒，0 個已更新。",
+   "problems.mig-config-failed.title": "MIG 設定失敗",
+   "problems.mig-config-failed.message": "MIG manager 無法在此節點上套用 MIG 設定 {{.metadata.labels[\"nvidia.com/mig.config\"]}}。"
+  }
+ }
+}

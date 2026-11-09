@@ -33,7 +33,6 @@
     "crossplane": "Crossplane",
     "clusterApi": "Cluster API",
     "dra": "Dynamic Resource Allocation",
-    "gpuOperator": "NVIDIA GPU Operator",
     "openshift": "OpenShift",
     "policies": "Políticas de Kyverno",
     "sealedSecrets": "Sealed Secrets",

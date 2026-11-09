@@ -101,3 +101,11 @@ Knative Serving and Eventing move into one extension, `extensions/knative` (`sex
 sections (`knative`, `knativeEventing`, after `contour`) and a counter each, counting its own rules
 (`sectionBadges[].rules`); the category `knative` moves to the extension's (never for agents). A SinkBinding's subject
 selector now reads as a selector (the built-in printed `[object Object]`).
+
+## Amendment: NVIDIA GPU Operator, and DRA kept
+
+`extensions/gpu-operator` (`sextant.gpu-operator`, 1.0.0) takes the GPU Operator view, its Node "GPU" block on GPU nodes
+only (`detailsSections[].when`, #408); the section keeps its place after `dra`, and the category `gpuOperator` moves to
+the extension's (never for agents). A component not rolled out is now a problem of its DaemonSet, not of the
+ClusterPolicy (a rule cannot name another object, #405). Dynamic Resource Allocation stays built in: its rules cannot yet
+see a claim that exists but is not allocated nor watch only Pending pods (#409).

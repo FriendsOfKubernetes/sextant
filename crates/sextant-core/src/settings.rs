@@ -762,7 +762,7 @@ pub fn migrate(settings: &mut AppSettings) {
 
 /// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
 /// the extension, and whether agents got the category by default.
-pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 12] = [
+pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 13] = [
     ("flux", "sextant.flux", true),
     ("argocd", "sextant.argo-cd", true),
     ("rollouts", "sextant.argo-rollouts", false),
@@ -779,6 +779,8 @@ pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 12] = [
     ("kserve", "sextant.kserve", false),
     // Knative Serving and Eventing (one extension, two sections): a window view, never for agents.
     ("knative", "sextant.knative", false),
+    // NVIDIA GPU Operator: a window view, never for agents.
+    ("gpuOperator", "sextant.gpu-operator", false),
 ];
 
 /// Reads the settings file and decides whether it may be written.

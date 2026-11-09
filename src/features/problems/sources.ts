@@ -21,7 +21,6 @@ import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operato
 import { SEALED_SECRET } from "../sealed-secrets/model";
 import { VPA } from "../vpa/model";
 import { RESOURCE_CLAIM as DRA_CLAIM } from "../dra/model";
-import { CLUSTER_POLICY as GPU_CLUSTER_POLICY } from "../gpu-operator/model";
 import { HELM_CHART as K3S_HELM_CHART } from "../k3s/model";
 import { CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE, WORKLOAD as KUEUE_WORKLOAD } from "../kueue/model";
 import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
@@ -188,10 +187,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // the provider of features/dra (`external`: Pending pods and their namespaces' claims), held only where
   // ResourceClaims are served.
   dra: [{ category: "dra", kind: DRA_CLAIM, fieldSelector: null, discovered: true, external: true }],
-  // NVIDIA GPU Operator (#245): ClusterPolicies and NVIDIADrivers not ready, component DaemonSets not rolled out, MIG
-  // configurations that failed on a node, judged by the provider of features/gpu-operator (`external`), held only
-  // where ClusterPolicies are served.
-  gpuOperator: [{ category: "gpuOperator", kind: GPU_CLUSTER_POLICY, fieldSelector: null, discovered: true, external: true }],
   // k3s and RKE2 (#270): HelmCharts whose install Job failed or keeps failing, bundled components' Deployments not
   // available, judged by the provider of features/k3s (`external`: the Job and the Deployments are other objects), held
   // only where HelmCharts are served (its watches are bounded there).

@@ -17,7 +17,6 @@ import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../clust
 import { isSealedSecret } from "../sealed-secrets/model";
 import { isVpa } from "../vpa/model";
 import { DRA_GROUP } from "../dra/model";
-import { isGpuOperatorKind } from "../gpu-operator/model";
 import { isHelmControllerKind, isK3sKind } from "../k3s/model";
 import { isKind as isKueueKind, KUEUE_GROUP, CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE, queueProblems as kueueQueueProblems, workloadProblems as kueueWorkloadProblems, WORKLOAD as KUEUE_WORKLOAD } from "../kueue/model";
 import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
@@ -56,7 +55,6 @@ export const PROBLEM_CATEGORIES = [
   "clusterApi",
   "k3s",
   "dra",
-  "gpuOperator",
   "openshift",
   "policies",
   "sealedSecrets",
@@ -289,8 +287,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (isClusterApiProblemKind(kind)) return "clusterApi";
   // Dynamic Resource Allocation (#244): pods waiting for devices, judged by the provider of features/dra.
   if (kind.group === DRA_GROUP) return "dra";
-  // NVIDIA GPU Operator (#245): ClusterPolicies, NVIDIADrivers and their DaemonSets, judged by features/gpu-operator.
-  if (isGpuOperatorKind(kind)) return "gpuOperator";
   // k3s and RKE2 (#270): HelmCharts and the bundled components, judged by the provider of features/k3s.
   if (isHelmControllerKind(kind) || isK3sKind(kind)) return "k3s";
   // KubeRay (#248): RayClusters, RayJobs and RayServices; KServe (#249): InferenceServices.
@@ -724,7 +720,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "sealedSecrets": // A missing target Secret is another object: the provider of features/sealed-secrets finds both.
     case "vpa": // A conflict with an HPA spans two objects: the provider of features/vpa finds every VPA problem.
     case "dra": // A pod waits for a claim (two objects): the provider of features/dra finds it.
-    case "gpuOperator": // Components are DaemonSets and MIG states are node labels: the provider of features/gpu-operator.
     case "k3s": // A chart's outcome is its Job, components are Deployments: the provider of features/k3s finds them.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:

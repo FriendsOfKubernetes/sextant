@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "集群工具的视图现在是扩展",
-      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Knative、CloudNativePG、Strimzi、External Secrets、JobSet、KubeRay、KServe 和 Operator Lifecycle Manager 已从 Sextant 移到扩展目录中它自己的扩展里，这些扩展单独更新。请在下方安装你使用的扩展：在此之前不会显示它们的分区。你为它们设置的通知已保留，侧边栏也会在运行这些工具的集群中推荐它们。"
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Knative、CloudNativePG、Strimzi、External Secrets、NVIDIA GPU Operator、JobSet、KubeRay、KServe 和 Operator Lifecycle Manager 已从 Sextant 移到扩展目录中它自己的扩展里，这些扩展单独更新。请在下方安装你使用的扩展：在此之前不会显示它们的分区。你为它们设置的通知已保留，侧边栏也会在运行这些工具的集群中推荐它们。"
     },
     "api4": {
       "title": "扩展 API 4",
@@ -35,7 +35,8 @@
       "jobset": "JobSet 及其 Job、重启和失败",
       "kuberay": "Ray 集群、作业和服务及其日志",
       "kserve": "InferenceService、服务运行时和推理图",
-      "knative": "Serving 的服务、修订版和路由；Eventing 的代理、触发器、通道和事件源"
+      "knative": "Serving 的服务、修订版和路由；Eventing 的代理、触发器、通道和事件源",
+      "gpu-operator": "ClusterPolicy、NVIDIA 驱动、其组件和 GPU 节点"
     }
   }
 }

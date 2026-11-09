@@ -1,5 +1,5 @@
-// What the NVIDIA GPU Operator section reads (#245, ADR-0116), from the operator's own types and manifests
-// (github.com/NVIDIA/gpu-operator):
+// What the NVIDIA GPU Operator extension reads (ADR-0116), from the operator's own types and manifests
+// (github.com/NVIDIA/gpu-operator) — Sextant's former built-in model, ported unchanged:
 //
 //   ClusterPolicy (nvidia.com/v1, api/nvidia/v1/clusterpolicy_types.go): `status.state` ready / notReady / ignored /
 //     disabled, `status.namespace` (where the operands run) and `status.conditions` (Ready, Error); one spec block per
@@ -12,28 +12,46 @@
 //   node labels the operator, GPU Feature Discovery and the MIG manager write: `nvidia.com/gpu.present`,
 //     `gpu.product`, `gpu.count`, `gpu.memory`, `mig.config`, `mig.config.state` (pending, rebooting, success, failed);
 //   node capacity and allocatable: `nvidia.com/gpu` and, with the mixed MIG strategy, `nvidia.com/mig-<profile>`.
-// Pure functions, no React. Read-only.
-import type { KindRef, KubeObject } from "../../api";
-import { status } from "../../resources";
-import type { Tone } from "../../resources/status";
+// Pure functions. Read-only. The problem detector at the end (`gpuProblems`) is the former built-in one, kept as the
+// reference the manifest's rules are tested against.
+import type { KubeObject, UiTone } from "@sextant/extension-sdk";
 
-const { arr, get, num, record, str } = status;
+export interface KindOf {
+  group: string;
+  version: string;
+  kind: string;
+}
 
 export const NVIDIA_GROUP = "nvidia.com";
-export const CLUSTER_POLICY: KindRef = { group: NVIDIA_GROUP, version: "v1", kind: "ClusterPolicy" };
-export const NVIDIA_DRIVER: KindRef = { group: NVIDIA_GROUP, version: "v1alpha1", kind: "NVIDIADriver" };
-export const DAEMONSET: KindRef = { group: "apps", version: "v1", kind: "DaemonSet" };
-export const NODE: KindRef = { group: "", version: "v1", kind: "Node" };
+export const CLUSTER_POLICY: KindOf = { group: NVIDIA_GROUP, version: "v1", kind: "ClusterPolicy" };
+export const NVIDIA_DRIVER: KindOf = { group: NVIDIA_GROUP, version: "v1alpha1", kind: "NVIDIADriver" };
+export const DAEMONSET: KindOf = { group: "apps", version: "v1", kind: "DaemonSet" };
+export const NODE: KindOf = { group: "", version: "v1", kind: "Node" };
 
-export const isKind = (a: Pick<KindRef, "group" | "kind">, b: Pick<KindRef, "group" | "kind">): boolean =>
-  a.group === b.group && a.kind === b.kind;
-export const isGpuOperatorKind = (kind: Pick<KindRef, "group" | "kind">): boolean => isKind(kind, CLUSTER_POLICY) || isKind(kind, NVIDIA_DRIVER);
+export const isKind = (a: { group: string; kind: string }, b: { group: string; kind: string }): boolean => a.group === b.group && a.kind === b.kind;
+
+// ---------- Field access ----------
+
+export const get = (value: unknown, ...path: (string | number)[]): unknown => {
+  let cur = value;
+  for (const key of path) {
+    if (cur === null || typeof cur !== "object") return undefined;
+    cur = (cur as Record<string | number, unknown>)[key];
+  }
+  return cur;
+};
+export const arr = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
+export const str = (value: unknown): string | undefined => (typeof value === "string" ? value : undefined);
+export const num = (value: unknown): number | undefined => (typeof value === "number" ? value : undefined);
+export const record = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 
 // ---------- State ----------
 
 export type OperatorState = "ready" | "notReady" | "ignored" | "disabled" | "unknown";
+export const OPERATOR_STATES: OperatorState[] = ["ready", "notReady", "ignored", "disabled", "unknown"];
 
-export const STATE_TONE: Record<OperatorState, Tone> = {
+export const STATE_TONE: Record<OperatorState, UiTone> = {
   ready: "success",
   notReady: "warning",
   ignored: "muted",
@@ -41,7 +59,6 @@ export const STATE_TONE: Record<OperatorState, Tone> = {
   unknown: "muted",
 };
 
-/** The health the issue's status column speaks of: ready / progressing / failed. */
 export function stateOf(obj: KubeObject): OperatorState {
   const s = str(get(obj, "status", "state"));
   return s === "ready" || s === "notReady" || s === "ignored" || s === "disabled" ? s : "unknown";
@@ -81,7 +98,7 @@ export const operandNamespaceOf = (obj: KubeObject): string | undefined => str(g
 // ---------- Components ----------
 
 export interface ComponentDef {
-  /** Key under `gpuoperator:component` and the spec field. */
+  /** Key under `component.` and the spec field. */
   id: string;
   /** The spec field when it is not the id. */
   field?: string;
@@ -160,8 +177,8 @@ export interface Rollout {
 export function rolloutOf(ds: KubeObject): Rollout {
   const n = (field: string) => num(get(ds, "status", field)) ?? 0;
   return {
-    name: ds.metadata?.name ?? "",
-    namespace: ds.metadata?.namespace ?? "",
+    name: ds.metadata.name ?? "",
+    namespace: ds.metadata.namespace ?? "",
     desired: n("desiredNumberScheduled"),
     ready: n("numberReady"),
     updated: n("updatedNumberScheduled"),
@@ -220,7 +237,7 @@ export function gpuNodeOf(node: KubeObject): GpuNode {
     .sort((a, b) => (a === GPU_RESOURCE ? -1 : b === GPU_RESOURCE ? 1 : a.localeCompare(b)));
   const text = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v) : undefined);
   const out: GpuNode = {
-    name: node.metadata?.name ?? "",
+    name: node.metadata.name ?? "",
     present: labelOf(node, LABEL_PRESENT) === "true",
     amounts: names.map((resource) => {
       const c = text(capacity[resource]);
@@ -243,15 +260,16 @@ export function gpuNodeOf(node: KubeObject): GpuNode {
 /** Whether a node shows anything of NVIDIA GPUs (labels or resources). */
 export const hasGpu = (n: GpuNode): boolean => n.present || n.amounts.length > 0 || Boolean(n.product || n.migConfig || n.migState);
 
-export const MIG_STATE_TONE: Record<string, Tone> = { success: "success", pending: "warning", rebooting: "warning", failed: "danger" };
-export const migStateTone = (state: string | undefined): Tone => (state ? (MIG_STATE_TONE[state] ?? "neutral") : "muted");
+export const MIG_STATE_TONE: Record<string, UiTone> = { success: "success", pending: "warning", rebooting: "warning", failed: "danger" };
+export const migStateTone = (state: string | undefined): UiTone => (state ? (MIG_STATE_TONE[state] ?? "neutral") : "muted");
 
 // ---------- Components against their DaemonSets ----------
 
 /** `off`: not enabled; `managedByDriver`: the driver comes from NVIDIADriver objects; `missing`: enabled, no DaemonSet. */
 export type ComponentState = "ready" | "rollingOut" | "missing" | "off" | "managedByDriver";
+export const COMPONENT_STATES: ComponentState[] = ["ready", "rollingOut", "missing", "off", "managedByDriver"];
 
-export const COMPONENT_TONE: Record<ComponentState, Tone> = {
+export const COMPONENT_TONE: Record<ComponentState, UiTone> = {
   ready: "success",
   rollingOut: "warning",
   missing: "warning",
@@ -287,7 +305,7 @@ export const shownComponent = (row: ComponentRow): boolean => row.enabled || row
 
 /** The DaemonSets an NVIDIADriver owns (by its uid). */
 export function ownedDaemonSets(driver: KubeObject, daemonSets: readonly KubeObject[]): Rollout[] {
-  const uid = driver.metadata?.uid;
+  const uid = driver.metadata.uid;
   if (!uid) return [];
   return daemonSets
     .filter((ds) => arr(get(ds, "metadata", "ownerReferences")).some((o) => str(get(o, "uid")) === uid))
@@ -299,3 +317,91 @@ export const driverTypeOf = (driver: KubeObject): string => str(get(driver, "spe
 export const driverVersionOf = (driver: KubeObject): string | undefined => str(get(driver, "spec", "version")) || undefined;
 export const driverNodeSelectorOf = (driver: KubeObject): Record<string, string> =>
   Object.fromEntries(Object.entries(record(get(driver, "spec", "nodeSelector"))).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : [])));
+
+// ---------- The former built-in problems (the reference) ----------
+
+/** The built-in category's graces. */
+export const NOT_READY_GRACE_MS = 10 * 60_000;
+export const ROLLOUT_GRACE_MS = 10 * 60_000;
+export const MIG_GRACE_MS = 2 * 60_000;
+export const MIG_FAILED_SELECTOR = `${LABEL_MIG_STATE}=failed`;
+
+/** A problem as the built-in provider found it (`toProblems`), with the problem's object. */
+export interface BuiltInProblem {
+  object: { kind: string; name: string };
+  reason: "NotReady" | "ComponentNotReady" | "MigConfigFailed";
+  /** The operator's message, else the English text of the built-in message key with its parameters. */
+  message: string;
+  /** For a component: the DaemonSet. */
+  daemonSet?: string;
+  since?: string;
+  /** When it starts to count: the start (else first seen) plus the grace. */
+  activeAt: number;
+}
+
+const time = (value: string | undefined): number | undefined => {
+  if (!value) return undefined;
+  const t = Date.parse(value);
+  return Number.isNaN(t) ? undefined : t;
+};
+
+/**
+ * The built-in category's problems (`provider.ts` `toProblems`), every one first seen at `firstSeen`: ClusterPolicies
+ * and NVIDIADrivers not ready, their components' DaemonSets in the operand namespace not rolled out, nodes whose MIG
+ * configuration failed. English messages.
+ */
+export function gpuProblems(
+  input: { policies: KubeObject[]; drivers: KubeObject[]; daemonSets: KubeObject[]; failedNodes: KubeObject[] },
+  firstSeen: number,
+): BuiltInProblem[] {
+  const out: BuiltInProblem[] = [];
+  const judge = (obj: KubeObject, rollouts: (ds: KubeObject[]) => Rollout[]) => {
+    if (obj.metadata.deletionTimestamp) return;
+    const state = stateOf(obj);
+    if (state === "ignored" || state === "disabled") return;
+    const object = { kind: obj.kind ?? "", name: obj.metadata.name ?? "" };
+    if (state === "notReady") {
+      const ready = conditionOf(obj, "Ready");
+      const failure = failureOf(obj);
+      out.push({
+        object,
+        reason: "NotReady",
+        message: failure?.message ?? "The NVIDIA GPU Operator reports it not ready.",
+        ...(ready?.since ? { since: ready.since } : {}),
+        activeAt: ((ready?.status === "False" ? time(ready.since) : undefined) ?? firstSeen) + NOT_READY_GRACE_MS,
+      });
+    }
+    const namespace = operandNamespaceOf(obj);
+    if (!namespace) return;
+    const inNamespace = input.daemonSets.filter((d) => d.metadata.namespace === namespace);
+    for (const r of rollouts(inNamespace)) {
+      if (isRolledOut(r)) continue;
+      out.push({
+        object,
+        reason: "ComponentNotReady",
+        message: `DaemonSet ${r.name}: ${r.ready} of ${r.desired} Pods ready, ${r.updated} updated.`,
+        daemonSet: r.name,
+        activeAt: firstSeen + ROLLOUT_GRACE_MS,
+      });
+    }
+  };
+  for (const policy of input.policies) {
+    judge(policy, (ds) =>
+      componentsOf(policy, ds)
+        .filter((row) => row.enabled && row.state !== "managedByDriver")
+        .flatMap((row) => row.daemonSets),
+    );
+  }
+  for (const driver of input.drivers) judge(driver, (ds) => ownedDaemonSets(driver, ds));
+  for (const node of input.failedNodes) {
+    const labels = record(get(node, "metadata", "labels"));
+    if (labels[LABEL_MIG_STATE] !== "failed") continue;
+    out.push({
+      object: { kind: "Node", name: node.metadata.name ?? "" },
+      reason: "MigConfigFailed",
+      message: `The MIG manager could not apply the MIG configuration ${str(labels[LABEL_MIG_CONFIG]) ?? ""} on this node.`,
+      activeAt: firstSeen + MIG_GRACE_MS,
+    });
+  }
+  return out;
+}

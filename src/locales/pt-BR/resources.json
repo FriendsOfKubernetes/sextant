@@ -28,7 +28,6 @@
     "prometheusOperator": "Prometheus Operator",
     "clusterApi": "Cluster API",
     "dra": "Dynamic Resource Allocation",
-    "gpuOperator": "NVIDIA GPU Operator",
     "kueue": "Kueue",
     "openshift": "OpenShift",
     "customResources": "Recursos personalizados",

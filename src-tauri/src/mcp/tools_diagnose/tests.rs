@@ -1048,11 +1048,11 @@ fn cluster_api_problems_are_never_given_to_agents() {
     ));
 }
 
-/// Dynamic Resource Allocation (#244) and NVIDIA GPU Operator (#245) problems are window views: agents get none of
-/// them, though both categories are on by default (ADR-0116).
+/// Dynamic Resource Allocation (#244) problems are a window view: agents get none of them, though the category is on
+/// by default (ADR-0116).
 #[test]
-fn dra_and_gpu_operator_problems_are_never_given_to_agents() {
-    for category in ["dra", "gpuOperator"] {
+fn dra_problems_are_never_given_to_agents() {
+    for category in ["dra"] {
         assert!(answers::PROBLEM_CATEGORIES.contains(&category));
         assert!(!answers::OPT_IN_CATEGORIES.contains(&category));
         assert!(!answers::category_for_agents(

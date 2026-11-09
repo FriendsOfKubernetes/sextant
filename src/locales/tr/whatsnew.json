@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Küme araçlarının görünümleri artık uzantı",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Knative, CloudNativePG, Strimzi, External Secrets, JobSet, KubeRay, KServe ve Operator Lifecycle Manager, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Knative, CloudNativePG, Strimzi, External Secrets, NVIDIA GPU Operator, JobSet, KubeRay, KServe ve Operator Lifecycle Manager, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
     },
     "api4": {
       "title": "Eklenti API 4",
@@ -35,7 +35,8 @@
       "jobset": "Job'ları, yeniden başlatmaları ve hatalarıyla JobSet'ler",
       "kuberay": "Günlükleriyle Ray kümeleri, işleri ve servisleri",
       "kserve": "InferenceService'ler, sunum çalışma ortamları ve çıkarım grafikleri",
-      "knative": "Serving servisleri, revizyonları ve rotaları; Eventing broker'ları, tetikleyicileri, kanalları ve kaynakları"
+      "knative": "Serving servisleri, revizyonları ve rotaları; Eventing broker'ları, tetikleyicileri, kanalları ve kaynakları",
+      "gpu-operator": "ClusterPolicy'ler, NVIDIA sürücüleri, bileşenleri ve GPU düğümleri"
     }
   }
 }

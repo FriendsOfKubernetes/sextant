@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Les vues des outils du cluster sont désormais des extensions",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Knative, CloudNativePG, Strimzi, External Secrets, JobSet, KubeRay, KServe et Operator Lifecycle Manager ont quitté Sextant pour ses propres extensions du catalogue d'extensions, mises à jour séparément. Installez ci-dessous celles que vous utilisez : d'ici là, leurs sections ne sont pas affichées. Vos réglages de notification pour elles sont conservés, et la barre latérale les propose aussi dans les clusters qui exécutent ces outils."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Knative, CloudNativePG, Strimzi, External Secrets, NVIDIA GPU Operator, JobSet, KubeRay, KServe et Operator Lifecycle Manager ont quitté Sextant pour ses propres extensions du catalogue d'extensions, mises à jour séparément. Installez ci-dessous celles que vous utilisez : d'ici là, leurs sections ne sont pas affichées. Vos réglages de notification pour elles sont conservés, et la barre latérale les propose aussi dans les clusters qui exécutent ces outils."
     },
     "api4": {
       "title": "API d’extensions 4",
@@ -35,7 +35,8 @@
       "jobset": "JobSets avec leurs Jobs, redémarrages et échecs",
       "kuberay": "Clusters, jobs et services Ray avec leurs journaux",
       "kserve": "InferenceServices, runtimes de service et graphes d'inférence",
-      "knative": "Services, révisions et routes de Serving ; brokers, déclencheurs, canaux et sources d'Eventing"
+      "knative": "Services, révisions et routes de Serving ; brokers, déclencheurs, canaux et sources d'Eventing",
+      "gpu-operator": "ClusterPolicies, pilotes NVIDIA, leurs composants et nœuds GPU"
     }
   }
 }
