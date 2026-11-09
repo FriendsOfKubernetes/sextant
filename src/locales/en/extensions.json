@@ -17,6 +17,13 @@
       "text": "Extension {{extension}} wants to open this address in your browser:",
       "open": "Open"
     },
+    "openCluster": {
+      "title": "Open a cluster?",
+      "text": "Extension {{extension}} wants to open the cluster at {{address}}. Sextant connects it if it is not connected.",
+      "open": "Open cluster {{context}}",
+      "openNode": "Open Node {{node}} in {{context}}",
+      "cancel": "Cancel"
+    },
     "signIn": {
       "title": "Sign in to {{service}}",
       "text": "Extension {{extension}} asks you to sign in (namespace {{namespace}}).",

@@ -18,6 +18,13 @@
       "text": "L’estensione {{extension}} vuole aprire questo indirizzo nel browser:",
       "open": "Apri"
     },
+    "openCluster": {
+      "title": "Aprire un cluster?",
+      "text": "L'estensione {{extension}} vuole aprire il cluster all'indirizzo {{address}}. Sextant lo connette se non è connesso.",
+      "open": "Apri il cluster {{context}}",
+      "openNode": "Apri il Node {{node}} in {{context}}",
+      "cancel": "Annulla"
+    },
     "signIn": {
       "title": "Accedi a {{service}}",
       "text": "L’estensione {{extension}} chiede di accedere (namespace {{namespace}}).",

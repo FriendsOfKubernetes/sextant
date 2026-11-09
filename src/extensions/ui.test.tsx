@@ -3,7 +3,10 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mockBackend, type KubeObject, type MockBackend } from "../api";
 import { resetAppStore, useAppStore } from "../app/store";
+import { checkedTarget, OpenClusterHost, resetOpenCluster, serverIs } from "./openCluster";
 import { checkedUrl, OpenUrlHost, resetOpenUrl } from "./openUrl";
+import { useClustersStore } from "../features/clusters/clustersStore";
+import type { ClusterInfo } from "../api";
 import { resetSignIns, SignInHost } from "./signIn";
 import { hostUi } from "./ui";
 
@@ -139,5 +142,38 @@ describe("ui.signIn", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
     await expect(answer).resolves.toEqual({ signedIn: false });
     await expect(withServices().signIn({ namespace: "argocd", service: "other" })).rejects.toMatchObject({ code: "notFound" });
+  });
+});
+
+describe("ui.openCluster (#413)", () => {
+  afterEach(() => resetOpenCluster());
+
+  it("compares a kubeconfig server with an endpoint, and checks what is asked", () => {
+    expect(serverIs("https://10.0.0.5:6443", { host: "10.0.0.5", port: 6443 })).toBe(true);
+    expect(serverIs("https://api.example.com", { host: "API.example.com", port: 443 })).toBe(true);
+    expect(serverIs("https://[fd00::1]:6443", { host: "fd00::1", port: 6443 })).toBe(true);
+    expect(serverIs("https://10.0.0.5:6443", { host: "10.0.0.5", port: 443 })).toBe(false);
+    expect(() => checkedTarget({ host: "a/b", port: 443 })).toThrow(/host/);
+    expect(() => checkedTarget({ host: "a", port: 0 })).toThrow(/port/);
+    expect(() => checkedTarget({ host: "a", port: 6443, node: "Bad Node" })).toThrow(/node/);
+  });
+
+  it("asks nothing and says found: 0 where Sextant has no cluster at the address; else lets the user pick", async () => {
+    const cluster = { id: "workload-1", context: "capi-quickstart", server: "https://172.18.0.4:6443" } as ClusterInfo;
+    useClustersStore.setState({ clusters: [cluster] });
+    await expect(ui().openCluster({ host: "10.9.9.9", port: 6443 })).resolves.toEqual({ opened: false, found: 0 });
+    render(<OpenClusterHost />);
+    let answer: Promise<{ opened: boolean; found?: number }> | undefined;
+    act(() => {
+      answer = ui().openCluster({ host: "172.18.0.4", port: 6443 });
+    });
+    expect(await screen.findByText("Extension Demo wants to open the cluster at 172.18.0.4:6443. Sextant connects it if it is not connected.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await expect(answer).resolves.toEqual({ opened: false });
+    act(() => {
+      answer = ui().openCluster({ host: "172.18.0.4", port: 6443 });
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Open cluster capi-quickstart" }));
+    await expect(answer).resolves.toEqual({ opened: true });
   });
 });

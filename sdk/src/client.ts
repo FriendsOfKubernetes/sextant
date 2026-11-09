@@ -208,6 +208,13 @@ export interface Sextant {
      */
     openUrl(url: string, options?: CallOptions): Promise<boolean>;
     /**
+     * Asks the user to open the cluster Sextant has at an API server address (a Cluster API workload cluster's
+     * `controlPlaneEndpoint`), with `node` that Node's details (since Sextant 0.30). Sextant lists the matching clusters
+     * in its own dialog and connects the one picked; the extension learns only `opened`, or `found: 0` when Sextant has
+     * none at that address (nothing is asked then).
+     */
+    openCluster(target: { host: string; port: number; node?: string }, options?: CallOptions): Promise<{ opened: boolean; found?: number }>;
+    /**
      * Asks the user to sign in to a service of the manifest that declares `signIn`, in Sextant's own dialog (since
      * Sextant 0.30); `true` once they did. What they type goes to Sextant, never to the extension: use it in a request
      * body as `{{signIn:<field id>}}`. "Remember" keeps it for that cluster in the keyring.
@@ -628,6 +635,8 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       openLogs: (params, o) => send<unknown>("ui.openLogs", params, o).then(() => undefined),
       openUrl: (url, o) =>
         send<{ opened: boolean }>("ui.openUrl", { url }, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.opened),
+      openCluster: (target, o) =>
+        send<{ opened: boolean; found?: number }>("ui.openCluster", target, { timeoutMs: CONFIRM_TIMEOUT, ...o }),
       setHidden: (hidden, o) => send<unknown>("ui.setHidden", { hidden }, o).then(() => undefined),
       signIn: (params, o) =>
         onCluster<{ signedIn: boolean }>("ui.signIn", params, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.signedIn),

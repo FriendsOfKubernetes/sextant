@@ -16,6 +16,13 @@
       "text": "扩展 {{extension}} 想在浏览器中打开此地址：",
       "open": "打开"
     },
+    "openCluster": {
+      "title": "打开集群？",
+      "text": "扩展 {{extension}} 想打开位于 {{address}} 的集群。如果尚未连接，Sextant 会连接它。",
+      "open": "打开集群 {{context}}",
+      "openNode": "在 {{context}} 中打开 Node {{node}}",
+      "cancel": "取消"
+    },
     "signIn": {
       "title": "登录 {{service}}",
       "text": "扩展 {{extension}} 请你登录（命名空间 {{namespace}}）。",

@@ -99,6 +99,7 @@ export const LOCAL_METHODS = [
   "resources.unwatch",
   "ui.openLogs",
   "ui.openUrl",
+  "ui.openCluster",
   "ui.signIn",
   "ui.setHidden",
 ] as const;

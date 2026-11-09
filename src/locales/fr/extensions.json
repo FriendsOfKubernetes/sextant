@@ -18,6 +18,13 @@
       "text": "L’extension {{extension}} veut ouvrir cette adresse dans votre navigateur :",
       "open": "Ouvrir"
     },
+    "openCluster": {
+      "title": "Ouvrir un cluster ?",
+      "text": "L'extension {{extension}} veut ouvrir le cluster à l'adresse {{address}}. Sextant s'y connecte s'il n'est pas connecté.",
+      "open": "Ouvrir le cluster {{context}}",
+      "openNode": "Ouvrir le Node {{node}} dans {{context}}",
+      "cancel": "Annuler"
+    },
     "signIn": {
       "title": "Se connecter à {{service}}",
       "text": "L’extension {{extension}} vous demande de vous connecter (namespace {{namespace}}).",

@@ -4,6 +4,7 @@ import { api, ApiError, type ClusterId, type ObjectRef, type ServiceContribution
 import { useAppStore } from "../app/store";
 import { openLogsTab, POD_KIND } from "../features/logs/openLogsTab";
 import { openSelectorLogsTab } from "../features/logs/multi/open";
+import { askOpenCluster } from "./openCluster";
 import { askOpenUrl } from "./openUrl";
 import { askSignIn } from "./signIn";
 import { getPage } from "../layout/pages";
@@ -123,6 +124,9 @@ export function hostUi(options: HostUiOptions): BridgeUi {
     async openUrl(params) {
       const url = typeof params === "string" ? params : isRecord(params) ? params.url : undefined;
       return { opened: await askOpenUrl(options.extensionId, options.extensionName(), url) };
+    },
+    openCluster(params) {
+      return askOpenCluster(options.extensionId, options.extensionName(), params);
     },
   };
 }

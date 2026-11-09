@@ -19,6 +19,13 @@
       "text": "Rozszerzenie {{extension}} chce otworzyć ten adres w przeglądarce:",
       "open": "Otwórz"
     },
+    "openCluster": {
+      "title": "Otworzyć klaster?",
+      "text": "Rozszerzenie {{extension}} chce otworzyć klaster pod adresem {{address}}. Sextant połączy się z nim, jeśli nie jest połączony.",
+      "open": "Otwórz klaster {{context}}",
+      "openNode": "Otwórz Node {{node}} w {{context}}",
+      "cancel": "Anuluj"
+    },
     "signIn": {
       "title": "Logowanie: {{service}}",
       "text": "Rozszerzenie {{extension}} prosi o zalogowanie się (przestrzeń nazw {{namespace}}).",

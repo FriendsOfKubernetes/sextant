@@ -236,6 +236,7 @@ export const LOCAL_METHODS: readonly string[] = [
   "resources.unwatch",
   "ui.openLogs",
   "ui.openUrl",
+  "ui.openCluster",
   "ui.signIn",
   "ui.setHidden",
 ];

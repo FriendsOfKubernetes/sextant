@@ -59,3 +59,10 @@ page, and counted on the extension's section only while on. Agents never get the
 A details section whose `kinds` is `[{"group": "*", "kind": "*"}]` alone (`sextantApi` 4, no `when`) shows on every
 kind: Kyverno's policy results belong to whatever object a report names. The frame hides itself (`ui.setHidden`) where
 it has nothing to show. Elsewhere `*` is no wildcard: a permission's or an action's kind `*` matches no kind.
+
+## Amendment: opening a workload cluster (#413)
+
+`ui.openCluster({host, port, node?})` (frames only, a window method like `ui.openUrl`): Sextant lists the configured
+clusters whose kubeconfig server is that endpoint (`serverIs`, the default port by scheme) in its own dialog and opens
+the one the user picks — connected first if it is not, with `node` that Node's details — every time. The extension
+learns only `{opened}`, or `{opened: false, found: 0}` without a question; never the user's clusters or contexts.

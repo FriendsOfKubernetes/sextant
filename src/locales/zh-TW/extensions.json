@@ -16,6 +16,13 @@
       "text": "擴充功能 {{extension}} 想在瀏覽器中開啟此位址：",
       "open": "開啟"
     },
+    "openCluster": {
+      "title": "開啟叢集？",
+      "text": "擴充功能 {{extension}} 想開啟位於 {{address}} 的叢集。若尚未連線，Sextant 會連線到它。",
+      "open": "開啟叢集 {{context}}",
+      "openNode": "在 {{context}} 中開啟 Node {{node}}",
+      "cancel": "取消"
+    },
     "signIn": {
       "title": "登入 {{service}}",
       "text": "擴充功能 {{extension}} 請你登入（命名空間 {{namespace}}）。",

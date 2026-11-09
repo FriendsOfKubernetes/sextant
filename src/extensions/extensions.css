@@ -140,3 +140,11 @@
   opacity: 0;
   pointer-events: none;
 }
+
+/* `ui.openCluster`'s choice: a button per matching cluster (#413). */
+.ext-open-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}

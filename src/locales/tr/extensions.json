@@ -17,6 +17,13 @@
       "text": "{{extension}} uzantısı bu adresi tarayıcınızda açmak istiyor:",
       "open": "Aç"
     },
+    "openCluster": {
+      "title": "Küme açılsın mı?",
+      "text": "{{extension}} uzantısı {{address}} adresindeki kümeyi açmak istiyor. Bağlı değilse Sextant ona bağlanır.",
+      "open": "{{context}} kümesini aç",
+      "openNode": "{{context}} içinde Node {{node}} öğesini aç",
+      "cancel": "İptal"
+    },
     "signIn": {
       "title": "{{service}} oturumu aç",
       "text": "{{extension}} uzantısı oturum açmanızı istiyor (namespace {{namespace}}).",

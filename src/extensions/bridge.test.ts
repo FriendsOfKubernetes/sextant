@@ -23,10 +23,11 @@ let other: HTMLIFrameElement;
 let posted: unknown[];
 type Fn = (arg?: unknown) => void;
 let ui: {
-  [K in Exclude<keyof BridgeUi, "openLogs" | "openUrl" | "signIn">]: ReturnType<typeof vi.fn<Fn>>;
+  [K in Exclude<keyof BridgeUi, "openLogs" | "openUrl" | "openCluster" | "signIn">]: ReturnType<typeof vi.fn<Fn>>;
 } & {
   openLogs: ReturnType<typeof vi.fn<(params: unknown) => Promise<void>>>;
   openUrl: ReturnType<typeof vi.fn<(params: unknown) => Promise<{ opened: boolean }>>>;
+  openCluster: ReturnType<typeof vi.fn<(params: unknown) => Promise<{ opened: boolean; found?: number }>>>;
   signIn: ReturnType<typeof vi.fn<(params: unknown) => Promise<{ signedIn: boolean }>>>;
 };
 let bridge: Bridge;
@@ -68,6 +69,7 @@ beforeEach(() => {
     setHidden: vi.fn<Fn>(),
     openLogs: vi.fn<(params: unknown) => Promise<void>>(() => Promise.resolve()),
     openUrl: vi.fn<(params: unknown) => Promise<{ opened: boolean }>>(() => Promise.resolve({ opened: true })),
+    openCluster: vi.fn<(params: unknown) => Promise<{ opened: boolean; found?: number }>>(() => Promise.resolve({ opened: true })),
     signIn: vi.fn<(params: unknown) => Promise<{ signedIn: boolean }>>(() => Promise.resolve({ signedIn: true })),
   };
   onResize = vi.fn<(height: number) => void>();

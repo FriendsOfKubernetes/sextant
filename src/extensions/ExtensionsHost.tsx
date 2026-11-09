@@ -6,6 +6,7 @@ import { Button } from "../components";
 import { syncExtensions } from "./contributions";
 import { HeadlessActions } from "./headless";
 import { dismissNotice, useNotices } from "./notices";
+import { OpenClusterHost } from "./openCluster";
 import { OpenUrlHost } from "./openUrl";
 import { SignInHost } from "./signIn";
 import { useExtensions } from "./store";
@@ -20,6 +21,7 @@ export function ExtensionsHost() {
     <>
       <ExtensionNotices />
       <OpenUrlHost />
+      <OpenClusterHost />
       <SignInHost />
       <HeadlessActions />
     </>

@@ -16,6 +16,13 @@
       "text": "확장 프로그램 {{extension}}이(가) 브라우저에서 이 주소를 열려고 합니다:",
       "open": "열기"
     },
+    "openCluster": {
+      "title": "클러스터를 열까요?",
+      "text": "확장 프로그램 {{extension}}이(가) {{address}}의 클러스터를 열려고 합니다. 연결되어 있지 않으면 Sextant가 연결합니다.",
+      "open": "클러스터 {{context}} 열기",
+      "openNode": "{{context}}에서 Node {{node}} 열기",
+      "cancel": "취소"
+    },
     "signIn": {
       "title": "{{service}}에 로그인",
       "text": "확장 프로그램 {{extension}}이(가) 로그인을 요청합니다(네임스페이스 {{namespace}}).",

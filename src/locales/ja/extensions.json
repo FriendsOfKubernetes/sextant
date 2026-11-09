@@ -16,6 +16,13 @@
       "text": "拡張機能 {{extension}} がこのアドレスをブラウザーで開こうとしています:",
       "open": "開く"
     },
+    "openCluster": {
+      "title": "クラスターを開きますか？",
+      "text": "拡張機能 {{extension}} が {{address}} のクラスターを開こうとしています。接続されていなければ Sextant が接続します。",
+      "open": "クラスター {{context}} を開く",
+      "openNode": "{{context}} で Node {{node}} を開く",
+      "cancel": "キャンセル"
+    },
     "signIn": {
       "title": "{{service}} にサインイン",
       "text": "拡張機能 {{extension}} がサインインを求めています（名前空間 {{namespace}}）。",

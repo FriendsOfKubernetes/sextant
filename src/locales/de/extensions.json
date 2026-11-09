@@ -17,6 +17,13 @@
       "text": "Die Erweiterung {{extension}} möchte diese Adresse in Ihrem Browser öffnen:",
       "open": "Öffnen"
     },
+    "openCluster": {
+      "title": "Cluster öffnen?",
+      "text": "Die Erweiterung {{extension}} möchte den Cluster unter {{address}} öffnen. Sextant verbindet ihn, falls er nicht verbunden ist.",
+      "open": "Cluster {{context}} öffnen",
+      "openNode": "Node {{node}} in {{context}} öffnen",
+      "cancel": "Abbrechen"
+    },
     "signIn": {
       "title": "Bei {{service}} anmelden",
       "text": "Die Erweiterung {{extension}} bittet Sie, sich anzumelden (Namespace {{namespace}}).",
