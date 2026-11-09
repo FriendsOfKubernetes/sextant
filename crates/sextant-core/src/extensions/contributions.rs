@@ -21,12 +21,36 @@ pub const MAX_ACTION_PATCH_BYTES: usize = 4096;
 /// The one placeholder of an action's `patch`: the time it is sent, RFC 3339.
 pub const NOW_PLACEHOLDER: &str = "{{now}}";
 
-/// A details section's `when` (#408): a condition on the object, as an action's.
+/// Whether a kind pattern is the details sections' "every kind" (`{"group": "*", "kind": "*"}`, #411).
+pub fn is_every_kind(kind: &KindPattern) -> bool {
+    kind.group == "*" && kind.kind == "*"
+}
+
+/// A details section's `when` (#408): a condition on the object, as an action's; and its kinds, where
+/// `{"group": "*", "kind": "*"}` alone means every kind (#411), without a `when`.
 pub(crate) fn check_details_sections(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
     let list = JsonPath::default()
         .key("contributes")
         .key("detailsSections");
     for (i, section) in manifest.contributes.details_sections.iter().enumerate() {
+        if section.kinds.iter().any(is_every_kind) {
+            let here = list.index(i).key("kinds");
+            if manifest.sextant_api < WINDOW_API {
+                return Err(at(
+                    &here,
+                    format!("every kind needs sextantApi {WINDOW_API} or later"),
+                ));
+            }
+            if section.kinds.len() != 1 {
+                return Err(at(&here, "with every kind (`*`/`*`) lists no other kind"));
+            }
+            if section.when.is_some() {
+                return Err(at(
+                    &list.index(i).key("when"),
+                    "is not for a section of every kind",
+                ));
+            }
+        }
         let Some(when) = &section.when else { continue };
         let here = list.index(i).key("when");
         if manifest.sextant_api < WINDOW_API {

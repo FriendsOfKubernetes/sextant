@@ -1395,6 +1395,12 @@ function checkObjectCondition(condition, kinds, segments, api) {
 function checkDetailsSections(manifest) {
   const list = ["contributes", "detailsSections"];
   (manifest.contributes?.detailsSections ?? []).forEach((section, i) => {
+    // `{"group": "*", "kind": "*"}` alone: every kind (#411), without a `when`.
+    if ((section.kinds ?? []).some((k) => k.group === "*" && k.kind === "*")) {
+      if (manifest.sextantApi < WINDOW_API) fail([...list, i, "kinds"], `every kind needs sextantApi ${WINDOW_API} or later`);
+      if (section.kinds.length !== 1) fail([...list, i, "kinds"], "with every kind (`*`/`*`) lists no other kind");
+      if (section.when !== undefined) fail([...list, i, "when"], "is not for a section of every kind");
+    }
     if (section.when === undefined) return;
     const here = [...list, i, "when"];
     if (manifest.sextantApi < WINDOW_API) fail(here, `needs sextantApi ${WINDOW_API} or later`);

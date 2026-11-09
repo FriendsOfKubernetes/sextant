@@ -439,6 +439,29 @@ describe("contributions of an extension", () => {
     }
   });
 
+  it("put a details section of every kind on every kind (#411)", () => {
+    const every: ExtensionManifest = {
+      ...manifest,
+      sextantApi: 4,
+      contributes: {
+        ...manifest.contributes,
+        detailsSections: [{ id: "results", title: "Policy results", kinds: [{ group: "*", kind: "*" }], placement: "section" }],
+      },
+    };
+    registerExtension(info({ manifest: every }));
+    try {
+      for (const kind of [
+        { group: "", version: "v1", kind: "Pod" },
+        { group: "apps", version: "v1", kind: "Deployment" },
+        { group: "example.dev", version: "v1", kind: "Widget" },
+      ]) {
+        expect(getDetailsSections(kind).map((s) => s.id), kind.kind).toContain("ext:demo.widgets:results");
+      }
+    } finally {
+      unregisterExtension("demo.widgets");
+    }
+  });
+
   it("give a details section the height the frame asks for", async () => {
     await renderShell();
     act(() => useAppStore.getState().openDetails(widgetRef));

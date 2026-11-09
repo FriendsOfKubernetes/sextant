@@ -193,7 +193,8 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
       order: section.order ?? DETAILS_ORDER,
       placement: section.placement,
       label: section.title,
-      appliesTo: (kind) => matches(section.kinds, kind),
+      // `*`/`*`: every kind (#411).
+      appliesTo: (kind) => section.kinds.some((k) => k.group === "*" && k.kind === "*") || matches(section.kinds, kind),
       ...(section.when !== undefined ? { appliesToObject: ((when) => (obj: KubeObject) => holdsNow(when, obj))(section.when) } : {}),
       Component: detailsComponent(extensionId, section.id, section.title, section.placement === "tab"),
     });

@@ -53,3 +53,9 @@ window registers each as `ext:<extension id>:<category id>` beside the main `ext
 until turned on (`isOptIn` asks the registry through `setExtensionOptIn`), shown with the opt-in toggles on the Problems
 page, and counted on the extension's section only while on. Agents never get these categories: Rust takes only
 `ext:<id>` (`category_for_agents`). A columns' `muted` tone came with it (#403).
+
+## Amendment: a details section on every kind (#411)
+
+A details section whose `kinds` is `[{"group": "*", "kind": "*"}]` alone (`sextantApi` 4, no `when`) shows on every
+kind: Kyverno's policy results belong to whatever object a report names. The frame hides itself (`ui.setHidden`) where
+it has nothing to show. Elsewhere `*` is no wildcard: a permission's or an action's kind `*` matches no kind.
