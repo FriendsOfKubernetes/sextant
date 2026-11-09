@@ -10,7 +10,8 @@
 //   same value of that label; one without the label is judged alone. Until the rows are read, no problem.
 //
 //   judgeAcross(problems, context, { rules, targets })   // the problems that stand
-import type { KubeObject, ProblemContribution } from "../api";
+import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
+import { evaluate, factKey } from "./problemRules";
 import type { Problem } from "../features/problems/model";
 import type { JudgeContext, JudgedRows, SourceDef } from "../features/problems/sources";
 
@@ -22,10 +23,12 @@ export interface AcrossRow {
   created: number | undefined;
   /** The values of the labels `newestPer` names. */
   labels: Record<string, string>;
+  /** Whether each `related` condition's own `when` on this kind holds for it (#409), by `factKey`. */
+  facts?: Record<string, boolean>;
 }
 
-/** The row of `obj`, keeping only the labels `labelKeys` name. */
-export function rowOf(labelKeys: readonly string[]): (obj: KubeObject) => AcrossRow {
+/** The row of `obj`, keeping only the labels `labelKeys` name and the `facts` the rules ask of its kind (#409). */
+export function rowOf(labelKeys: readonly string[], facts: readonly ProblemCondition[] = []): (obj: KubeObject) => AcrossRow {
   return (obj) => {
     const meta = (obj.metadata ?? {}) as { name?: string; namespace?: string; creationTimestamp?: string; labels?: Record<string, unknown> };
     const all = meta.labels ?? {};
@@ -35,7 +38,9 @@ export function rowOf(labelKeys: readonly string[]): (obj: KubeObject) => Across
       if (typeof value === "string") labels[key] = value;
     }
     const created = Date.parse(meta.creationTimestamp ?? "");
-    return { namespace: meta.namespace ?? "", name: meta.name ?? "", created: Number.isNaN(created) ? undefined : created, labels };
+    const row: AcrossRow = { namespace: meta.namespace ?? "", name: meta.name ?? "", created: Number.isNaN(created) ? undefined : created, labels };
+    if (facts.length > 0) row.facts = Object.fromEntries(facts.map((when) => [factKey(when), evaluate(when, obj).holds]));
+    return row;
   };
 }
 
@@ -61,12 +66,12 @@ const sameKind = (a: { group: string; kind: string }, b: { group: string; kind: 
 
 /** The problems of `problems` that stand once the rows of the cluster say what their rules look up. */
 export function judgeAcross(problems: readonly Problem[], context: JudgeContext, { rules, targets }: AcrossRules): Problem[] {
-  // Names per target, built once per look.
-  const names = new Map<AcrossTarget, Set<string> | null>();
-  const namesOf = (target: AcrossTarget): Set<string> | null => {
+  // Rows per target by `namespace/name`, built once per look.
+  const names = new Map<AcrossTarget, Map<string, AcrossRow> | null>();
+  const namesOf = (target: AcrossTarget): Map<string, AcrossRow> | null => {
     if (!names.has(target)) {
       const rows = context.target(target.def);
-      names.set(target, usable(rows) ? new Set([...rows.rows.values()].map((r) => `${(r as AcrossRow).namespace}/${(r as AcrossRow).name}`)) : null);
+      names.set(target, usable(rows) ? new Map([...rows.rows.values()].map((r) => [`${(r as AcrossRow).namespace}/${(r as AcrossRow).name}`, r as AcrossRow])) : null);
     }
     return names.get(target)!;
   };
@@ -79,7 +84,10 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
       const namespace = target.namespaced ? (p.object.namespace ?? "") : "";
       const watched = context.target(target.def)?.namespaces;
       if (target.namespaced && watched !== null && !watched?.includes(namespace)) return false;
-      return !known.has(`${namespace}/${lookup.name}`);
+      const row = known.get(`${namespace}/${lookup.name}`);
+      // `related` (#409): there, with its fact holding; `missing`: not there.
+      if (lookup.fact !== undefined) return row?.facts?.[lookup.fact] === true;
+      return row === undefined;
     });
 
   let newest: Map<string, string> | null | undefined;
@@ -134,7 +142,22 @@ export function judgedAcross(rule: ProblemContribution): boolean {
 
 /** The kinds a condition looks up (`missing`). */
 export function lookedUp(condition: ProblemContribution["when"]): { group: string; kind: string }[] {
-  if (condition.type === "missing") return [condition.kind];
+  if (condition.type === "missing" || condition.type === "related") return [condition.kind];
   if (condition.type === "all" || condition.type === "any") return condition.of.flatMap(lookedUp);
   return [];
+}
+
+/** The `related` conditions' own `when`s of `rules`, by the `group/kind` (lower case) they name (#409). */
+export function factsOf(rules: readonly ProblemContribution[], keyOf: (kind: { group: string; kind: string }) => string): Map<string, ProblemCondition[]> {
+  const out = new Map<string, ProblemCondition[]>();
+  const visit = (condition: ProblemCondition) => {
+    if (condition.type === "related") {
+      const key = keyOf(condition.kind);
+      const list = out.get(key) ?? [];
+      if (!list.some((c) => factKey(c) === factKey(condition.when))) list.push(condition.when);
+      out.set(key, list);
+    } else if (condition.type === "all" || condition.type === "any") condition.of.forEach(visit);
+  };
+  for (const rule of rules) visit(rule.when);
+  return out;
 }

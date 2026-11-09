@@ -357,6 +357,15 @@ pub enum ProblemCondition {
         path: String,
         kind: KindPattern,
     },
+    /// The text at `path` names an object of `kind` there (as `missing` looks it up) for which `when` holds (#409): a
+    /// claim that exists but is not allocated, an HPA on the same target. `sextantApi` 4; unknown (not holding) while
+    /// that list is not read in full; not inside `any` or `not`; `when` reads only the named object (no `missing`,
+    /// `related` or times).
+    Related {
+        path: String,
+        kind: KindPattern,
+        when: Box<ProblemCondition>,
+    },
     All {
         of: Vec<ProblemCondition>,
     },
@@ -770,6 +779,59 @@ fn check_condition<'k>(
             }
             Ok(())
         }
+        ProblemCondition::Related {
+            path: field,
+            kind: target,
+            when,
+        } => {
+            if checks.single {
+                return Err(at(
+                    &path.key("type"),
+                    "`related` judges across objects: only problem rules may use it",
+                ));
+            }
+            if checks.api < SOURCES_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`related` needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            if !matches!(inside, Inside::Top) {
+                return Err(at(
+                    &path.key("type"),
+                    "`related` cannot be inside `any` or `not`: a list not read would make it unknown",
+                ));
+            }
+            if target.group.is_empty() && target.kind.eq_ignore_ascii_case("Secret") {
+                return Err(at(&path.key("kind"), "Secrets are never listed for rules"));
+            }
+            check_rule_path(field, kind, &path.key("path"), checks.metadata_only)?;
+            // The named object's own condition: paths of its kind, nothing across objects, no time (it is judged when
+            // that object changes, not as time passes).
+            check_object_condition(
+                when,
+                std::slice::from_ref(target),
+                &path.key("when"),
+                checks.api,
+            )?;
+            if uses_time(when) {
+                return Err(at(
+                    &path.key("when"),
+                    "reads no time (`olderThan`): it is judged when that object changes",
+                ));
+            }
+            if !checks.kinds.iter().any(|k| same_kind(k, target)) {
+                checks.kinds.push(target);
+                let max_kinds = rule_limits(checks.api).1;
+                if checks.kinds.len() > max_kinds {
+                    return Err(at(
+                        &path.key("kind"),
+                        format!("the rules judge at most {max_kinds} kinds"),
+                    ));
+                }
+            }
+            Ok(())
+        }
         ProblemCondition::Missing {
             path: field,
             kind: target,
@@ -889,10 +951,20 @@ fn is_label_key(text: &str) -> bool {
     name_ok && prefix_ok
 }
 
+/// Whether a condition holds only from or until a time (`olderThan`, `enteredWithin`).
+fn uses_time(condition: &ProblemCondition) -> bool {
+    match condition {
+        ProblemCondition::OlderThan { .. } | ProblemCondition::EnteredWithin { .. } => true,
+        ProblemCondition::All { of } | ProblemCondition::Any { of } => of.iter().any(uses_time),
+        ProblemCondition::Not { of } => uses_time(of),
+        _ => false,
+    }
+}
+
 /// The kinds a condition looks up (`missing`), each once, added to `out`.
 fn looked_up<'c>(condition: &'c ProblemCondition, out: &mut Vec<&'c KindPattern>) {
     match condition {
-        ProblemCondition::Missing { kind, .. } => {
+        ProblemCondition::Missing { kind, .. } | ProblemCondition::Related { kind, .. } => {
             if !out.iter().any(|k| same_kind(k, kind)) {
                 out.push(kind);
             }

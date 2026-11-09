@@ -188,7 +188,7 @@ export interface Detected {
   /** When the state began (RFC 3339), if the object says. */
   since?: string;
   /** An extension's rule with `missing` (ADR-0144): the objects that must not exist for the problem to stand. */
-  lookups?: { group: string; kind: string; name: string }[];
+  lookups?: { group: string; kind: string; name: string; fact?: string }[];
   /** An extension's rule told through the owner (ADR-0144): the uid of the object's controller. */
   ownerUid?: string;
   /** What a notification is about instead of the object (an extension rule's `notifyAs`, #394): one per identity. */

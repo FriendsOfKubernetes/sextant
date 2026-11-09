@@ -1136,6 +1136,18 @@
           }
         },
         {
+          "description": "The text at `path` names an object of `kind` (as `missing` looks it up) for which `when` holds; unknown while that list is not read in full. sextantApi 4; not inside `any` or `not`; `when` reads only that object, no time.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path", "kind", "when"],
+          "properties": {
+            "type": { "const": "related" },
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "kind": { "$ref": "#/$defs/kind" },
+            "when": { "$ref": "#/$defs/problemCondition" }
+          }
+        },
+        {
           "type": "object",
           "additionalProperties": false,
           "required": ["type", "of"],

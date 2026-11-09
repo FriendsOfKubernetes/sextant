@@ -262,6 +262,57 @@ describe("problems of extensions", () => {
     await waitFor(() => expect(result.current).toBe(0));
   });
 
+  it("judge across objects: a named object that exists with its own condition holding (#409)", async () => {
+    const POD: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "", version: "v1", kind: "Pod" }, plural: "pods" };
+    const CLAIM: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "resource.k8s.io", version: "v1", kind: "ResourceClaim" }, plural: "resourceclaims" };
+    wb.backend.on("cluster_kinds", () => [POD, CLAIM]);
+    scopes = [
+      { kind: { group: "", kind: "Pod" }, namespaces: { type: "all" } },
+      { kind: { group: "resource.k8s.io", kind: "ResourceClaim" }, namespaces: { type: "all" } },
+    ];
+    unregister = registerExtensionProblems("rook-ceph-ext", "DRA", [
+      {
+        id: "waiting",
+        title: "Waiting for a device",
+        kind: { group: "", kind: "Pod" },
+        when: {
+          type: "all",
+          of: [
+            { type: "equals", path: ".status.phase", value: "Pending" },
+            {
+              type: "related",
+              path: ".spec.resourceClaims[0].resourceClaimName",
+              kind: { group: "resource.k8s.io", kind: "ResourceClaim" },
+              when: { type: "absent", path: ".status.allocation" },
+            },
+          ],
+        },
+        graceMinutes: 0,
+        notify: true,
+        toldThroughOwner: false,
+        message: "{{.spec.resourceClaims[0].resourceClaimName}} is not allocated",
+      },
+    ]);
+    const { result } = renderHook(() => useProblemCount("c1"));
+    const pod = { apiVersion: "v1", kind: "Pod", metadata: { name: "trainer", namespace: "ml", uid: "u-pod" }, spec: { resourceClaims: [{ resourceClaimName: "gpu" }] }, status: { phase: "Pending" } };
+    const claim = (allocated: boolean) => ({
+      apiVersion: "resource.k8s.io/v1",
+      kind: "ResourceClaim",
+      metadata: { name: "gpu", namespace: "ml", uid: "u-claim" },
+      status: allocated ? { allocation: { devices: {} } } : {},
+    });
+    emitSnapshot(wb, await watchOf(wb, "Pod"), [pod]);
+    const claims = await watchOf(wb, "ResourceClaim");
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    expect(result.current).toBe(0);
+    // The claim is there but not allocated: the pod waits for a device.
+    emitSnapshot(wb, claims, [claim(false)]);
+    await waitFor(() => expect(result.current).toBe(1));
+    // Allocated: the problem goes.
+    emitDelta(wb, claims, [claim(true)]);
+    await waitFor(() => expect(result.current).toBe(0));
+  });
+
   it("run nowhere when Rust says the extension may read nothing there", async () => {
     scopes = [];
     unregister = registerExtensionProblems("rook-ceph-ext", "Rook Ceph", RULES);

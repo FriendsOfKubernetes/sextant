@@ -20,6 +20,9 @@ export const MAX_REASON_CHARS = 100;
 
 const MINUTE_MS = 60_000;
 
+/** The key of a `related` condition's own `when` (#409): what a row of the named kind remembers of it. */
+export const factKey = (when: ProblemCondition): string => JSON.stringify(when);
+
 /** The value at a field path; `undefined` when the path does not parse or leads nowhere. */
 export function valueAt(obj: unknown, path: string): unknown {
   const steps = parseFieldPath(path.trim());
@@ -71,6 +74,8 @@ export interface Lookup {
   group: string;
   kind: string;
   name: string;
+  /** `related` (#409): the named object must exist with this fact (`factKey` of its `when`) holding; else it must not exist. */
+  fact?: string;
 }
 
 /** What a condition says of an object. */
@@ -172,6 +177,12 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       const name = valueAt(obj, condition.path);
       if (typeof name !== "string" || name.trim() === "") return NO;
       return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name }] };
+    }
+    case "related": {
+      // Nothing named, nothing related; the named object's own condition is judged on its row (#409).
+      const name = valueAt(obj, condition.path);
+      if (typeof name !== "string" || name.trim() === "") return NO;
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name, fact: factKey(condition.when) }] };
     }
     case "all": {
       let activeFrom: number | undefined;

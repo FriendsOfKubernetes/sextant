@@ -708,6 +708,21 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     checkRulePath(condition.otherPath, kind, [...segments, "otherPath"], counter.metadataOnly);
     return;
   }
+  if (condition.type === "related") {
+    if (counter.single) fail([...segments, "type"], "`related` judges across objects: only problem rules may use it");
+    if (counter.api < SOURCES_API) fail([...segments, "type"], `\`related\` needs sextantApi ${SOURCES_API} or later`);
+    if (inside !== "top") fail([...segments, "type"], "`related` cannot be inside `any` or `not`: a list not read would make it unknown");
+    if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret") fail([...segments, "kind"], "Secrets are never listed for rules");
+    checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
+    checkObjectCondition(condition.when, [condition.kind], [...segments, "when"], counter.api);
+    if (usesTime(condition.when)) fail([...segments, "when"], "reads no time (`olderThan`): it is judged when that object changes");
+    if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
+      counter.kinds.push(condition.kind);
+      const maxKinds = ruleLimits(counter.api)[1];
+      if (counter.kinds.length > maxKinds) fail([...segments, "kind"], `the rules judge at most ${maxKinds} kinds`);
+    }
+    return;
+  }
   if (condition.type === "missing") {
     if (counter.single) fail([...segments, "type"], "`missing` judges across objects: only problem rules may use it");
     if (counter.api < ACROSS_API) fail([...segments, "type"], `\`missing\` needs sextantApi ${ACROSS_API} or later`);
@@ -1449,6 +1464,14 @@ function checkSections(manifest) {
 }
 
 /** A condition of an action or a column (`check_object_condition`): no `missing`, no secret of any of `kinds`. */
+/** `uses_time`: a condition that holds only from or until a time. */
+function usesTime(condition) {
+  if (condition.type === "olderThan" || condition.type === "enteredWithin") return true;
+  if (condition.type === "all" || condition.type === "any") return condition.of.some(usesTime);
+  if (condition.type === "not") return usesTime(condition.of);
+  return false;
+}
+
 function checkObjectCondition(condition, kinds, segments, api) {
   for (const kind of kinds) checkCondition(condition, kind, segments, 1, { count: 0, api, kinds: [], metadataOnly: false, single: true });
 }

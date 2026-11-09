@@ -155,3 +155,11 @@ tells a frame that joins late the last cap. Watches without `maxObjects` are as 
 
 A column case's `tooltipOr` (1 to 3, after a `tooltip`, translatable as `cases.<i>.tooltipOr.<k>`) is tried in order:
 with it, a tooltip whose placeholder is empty or missing gives way to the next — "reason: message", else "message".
+
+## Amendment: a named object with its own condition (#409)
+
+`{"type": "related", "path", "kind", "when"}` (`sextantApi` 4, problem rules only, not inside `any` or `not`) holds
+when the text at `path` names an object of `kind` there — looked up as `missing` looks it up, unknown while that list is
+not read in full — for which `when` holds: a claim that exists but is not allocated. `when` reads only the named object,
+nothing across objects and no time, since it is judged when that object changes: the row of each looked-up object keeps
+the answer of every such `when` (`AcrossRow.facts`, `factKey`), and the judge needs the row there with its fact true.

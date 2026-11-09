@@ -13,4 +13,4 @@ offset?: number, } | { "type": "enteredWithin", minutes: number, } | { "type": "
 /**
  * Holds at once for a value that is there but no time (#405), as the built-in rules counted it.
  */
-orUnreadable?: boolean, } | { "type": "missing", path: string, kind: KindPattern, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, };
+orUnreadable?: boolean, } | { "type": "missing", path: string, kind: KindPattern, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, };

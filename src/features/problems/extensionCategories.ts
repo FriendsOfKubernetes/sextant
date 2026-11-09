@@ -20,7 +20,7 @@ import {
   type RuleSource,
 } from "../../api";
 import { compileRules, kindKeyOf, type RuleContext } from "../../extensions/problemRules";
-import { judgeAcross, judgedAcross, lookedUp, rowOf, type AcrossTarget } from "../../extensions/problemsAcross";
+import { factsOf, judgeAcross, judgedAcross, lookedUp, rowOf, type AcrossTarget } from "../../extensions/problemsAcross";
 import { setExtensionDetector, setExtensionOptIn, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
 import { MAX_SOURCE_OBJECTS, type SourceDef } from "./sources";
 
@@ -35,6 +35,8 @@ interface Entry {
   across: ReadonlySet<string>;
   /** `group/kind` → the labels `newestPer` of its rules names. */
   newestLabels: ReadonlyMap<string, readonly string[]>;
+  /** `group/kind` → the `related` conditions' own `when`s its rows answer (#409). */
+  facts: ReadonlyMap<string, readonly ProblemContribution["when"][]>;
   /** `group/kind` → the `source` its rules share (ADR-0152). */
   sources: ReadonlyMap<string, RuleSource>;
   /** Off until the user turns it on (a category of the extension's own, #410). */
@@ -100,6 +102,7 @@ export function registerExtensionProblems(
     rules: new Map(rules.map((r) => [r.id, r])),
     across,
     newestLabels,
+    facts: factsOf(rules, kindKeyOf),
     sources,
     optIn: own?.optIn ?? false,
   };
@@ -261,7 +264,7 @@ export function extensionSourcesFor(
     }
     for (const { def, key } of judged) {
       def.judge = {
-        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? []), max: MAX_SOURCE_OBJECTS },
+        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? [], entry.facts.get(key) ?? []), max: MAX_SOURCE_OBJECTS },
         judge: (problems, context) => judgeAcross(problems, context, { rules: entry.rules, targets }),
       };
     }
