@@ -41,6 +41,7 @@ import { ExtensionClusterSettingsFrame, ExtensionFrame } from "./ExtensionFrame"
 import { evaluate, kindKeyOf } from "./problemRules";
 import { endHeadlessActionsOf, startHeadlessAction } from "./headless";
 import { runPatchAction } from "./patchAction";
+import { pluralLabel } from "./pluralLabel";
 import { matchesSelector } from "./selector";
 import { contributionKey, VIEW } from "./protocol";
 
@@ -152,10 +153,12 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
     if ((SIDEBAR_SECTIONS as readonly string[]).includes(badge.section) || getSectionBadge(badge.section)) continue;
     const category = categoryOfExtension(extensionId);
     const rules = badge.rules;
+    const forms = badge.label;
     removers.push(
       registerSectionBadge(badge.section, (clusterId) => useExtensionSectionCount(clusterId, category, rules), {
         tone: "danger",
         labelKey: "extensions:host.sectionBadge",
+        ...(forms ? { label: (count: number) => pluralLabel(forms, count) } : {}),
       }),
     );
   }

@@ -201,7 +201,7 @@ function SectionCount({ id, clusterId, def }: { id: string; clusterId: ClusterId
   const { t } = useTranslation();
   const count = def.useCount(clusterId);
   if (count <= 0) return null;
-  const label = def.labelKey ? t(def.labelKey, { count }) : String(count);
+  const label = def.label ? def.label(count) : def.labelKey ? t(def.labelKey, { count }) : String(count);
   return (
     <>
       <span className="sidebar__badge" title={label} aria-hidden="true">

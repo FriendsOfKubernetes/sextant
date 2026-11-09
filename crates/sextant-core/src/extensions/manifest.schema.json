@@ -729,6 +729,12 @@
                 "type": "array",
                 "maxItems": 20,
                 "items": { "$ref": "#/$defs/contributionId" }
+              },
+              "label": {
+                "description": "Its tooltip and accessible label by CLDR plural form (zero, one, two, few, many, other; `other` given), each with `{{count}}` (sextantApi 4).",
+                "type": "object",
+                "maxProperties": 6,
+                "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 80, "format": "non-blank", "pattern": "\\S" }
               }
             }
           }

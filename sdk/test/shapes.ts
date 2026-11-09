@@ -132,6 +132,7 @@ export const MANIFEST_SHAPES = {
   ManifestSectionBadge: described<ManifestSectionBadge>(`${CONTRIBUTION}/sectionBadges/items`, {
     section: "required",
     rules: "optional",
+    label: "optional",
   }),
   ManifestMetricQuery: described<ManifestMetricQuery>(`${CONTRIBUTION}/metricQueries/items`, {
     id: "required",

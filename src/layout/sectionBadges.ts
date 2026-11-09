@@ -18,6 +18,8 @@ export interface SectionBadgeDef {
   tone?: BadgeTone;
   /** i18n key of the tooltip and accessible label, given `count`. */
   labelKey?: string;
+  /** The tooltip and accessible label for a count, before `labelKey` (an extension's own words, #398). */
+  label?: (count: number) => string;
 }
 
 const badges = new Map<string, SectionBadgeDef>();
@@ -28,7 +30,7 @@ let seq = 0;
 export function registerSectionBadge(
   section: string,
   useCount: SectionBadgeDef["useCount"],
-  options: Pick<SectionBadgeDef, "tone" | "labelKey"> = {},
+  options: Pick<SectionBadgeDef, "tone" | "labelKey" | "label"> = {},
 ): () => void {
   const def: SectionBadgeDef = { id: ++seq, section, useCount, ...options };
   badges.set(section, def);

@@ -394,6 +394,11 @@ export interface ManifestCommandParam {
 export interface ManifestSectionBadge {
   section: string;
   rules?: string[];
+  /**
+   * The counter's tooltip by CLDR plural form (`one`, `few`, `many`, `other`, …; `other` given), each with
+   * `{{count}}`: "{{count}} workflows failed recently" (since Sextant 0.30).
+   */
+  label?: Record<string, string>;
 }
 
 /** `sextant-extension.json` as written. */
@@ -475,7 +480,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
         };
       }),
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
-      sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [] })),
+      sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [], ...(b.label ? { label: b.label } : {}) })),
       commands: (c.commands ?? []).map((command) => ({ ...command, params: command.params ?? [], changes: command.changes ?? false })),
       kinds: (c.kinds ?? []).map((k) => ({ ...k, searchByDefault: k.searchByDefault ?? false, printerColumns: k.printerColumns ?? true })),
       sections: c.sections ?? [],

@@ -122,6 +122,17 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
             );
         }
     }
+    // A counter's label: every plural form a language may need, each keeping `{{count}}` (#398).
+    for badge in &c.section_badges {
+        if let Some(other) = badge.label.as_ref().and_then(|l| l.get("other")) {
+            for form in super::section_badges::PLURAL_FORMS {
+                out.insert(
+                    format!("sectionBadges.{}.label.{form}", badge.section),
+                    Text::Template(other, 80),
+                );
+            }
+        }
+    }
     for item in &c.menu_items {
         out.insert(format!("menuItems.{}.title", item.id), Text::Title);
     }

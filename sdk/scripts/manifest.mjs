@@ -934,10 +934,26 @@ function checkSectionBadges(manifest) {
     }
     const first = badges.slice(0, i).findIndex((other) => other.section === badge.section);
     if (first >= 0) fail([...here, "section"], `duplicate section (also ${pathText([...list, first])})`);
+    if (badge.label !== undefined) {
+      if (manifest.sextantApi < WINDOW_API) fail([...here, "label"], `needs sextantApi ${WINDOW_API} or later`);
+      checkLabelForms(badge.label, [...here, "label"]);
+    }
     (badge.rules ?? []).forEach((rule, j) => {
       if (!rules.some((r) => r.id === rule)) fail([...here, "rules", j], "is not the id of one of `contributes.problems`");
     });
   });
+}
+
+/** `PLURAL_FORMS` and `check_label_forms` (#398). */
+const PLURAL_FORMS = ["zero", "one", "two", "few", "many", "other"];
+
+function checkLabelForms(forms, segments) {
+  if (!Object.hasOwn(forms, "other")) fail(segments, "gives the form `other`");
+  for (const form of sortedKeys(forms)) {
+    if (!PLURAL_FORMS.includes(form)) fail([...segments, form], "is a CLDR plural form: zero, one, two, few, many or other");
+    const found = placeholders(forms[form]);
+    if (found === null || found.length !== 1 || found[0] !== "count") fail([...segments, form], "has `{{count}}` once, and no other placeholder");
+  }
 }
 
 // --- Metric queries (`check_metric_queries` in crates/sextant-core/src/extensions/metric_queries.rs) -------------
@@ -1069,6 +1085,10 @@ export function translatableTexts(manifest) {
   for (const service of c.services ?? []) {
     out.set(`services.${service.id}.title`, title);
     for (const field of service.signIn?.fields ?? []) out.set(`services.${service.id}.signIn.${field.id}.label`, title);
+  }
+  for (const badge of c.sectionBadges ?? []) {
+    const other = badge.label?.other;
+    if (other !== undefined) for (const form of PLURAL_FORMS) out.set(`sectionBadges.${badge.section}.label.${form}`, { max: 80, message: other });
   }
   for (const item of c.menuItems ?? []) out.set(`menuItems.${item.id}.title`, title);
   (c.kinds ?? []).forEach((kind, i) => {

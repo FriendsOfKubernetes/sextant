@@ -26,6 +26,41 @@ pub struct SectionBadgeContribution {
     /// The ids of the rules whose problems it counts; empty: every rule of the extension.
     #[serde(default)]
     pub rules: Vec<String>,
+    /// Its tooltip and accessible label by CLDR plural form (`one`, `few`, `many`, `other`, …), each with `{{count}}`
+    /// (#398); `sextantApi` 4. Without it, Sextant's own words.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub label: Option<std::collections::BTreeMap<String, String>>,
+}
+
+/// The CLDR plural forms a counter's label may give.
+pub const PLURAL_FORMS: [&str; 6] = ["zero", "one", "two", "few", "many", "other"];
+
+/// A label's forms: CLDR names only, `other` among them, each text with `{{count}}` and no other placeholder.
+pub(crate) fn check_label_forms(
+    forms: &std::collections::BTreeMap<String, String>,
+    path: &JsonPath,
+    need_other: bool,
+) -> Result<(), ManifestError> {
+    if need_other && !forms.contains_key("other") {
+        return Err(at(path, "gives the form `other`"));
+    }
+    for (form, text) in forms {
+        if !PLURAL_FORMS.contains(&form.as_str()) {
+            return Err(at(
+                &path.key(form),
+                "is a CLDR plural form: zero, one, two, few, many or other",
+            ));
+        }
+        let found = super::problems::placeholders(text);
+        if found.as_deref() != Some(&["count"][..]) {
+            return Err(at(
+                &path.key(form),
+                "has `{{count}}` once, and no other placeholder",
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// What reading a manifest checks of its section counters beyond the schema.
@@ -60,6 +95,18 @@ pub(crate) fn check_section_badges(manifest: &ExtensionManifest) -> Result<(), M
                 &here.key("section"),
                 format!("duplicate section (also {})", list.index(first)),
             ));
+        }
+        if let Some(label) = &badge.label {
+            if manifest.sextant_api < super::contributions::WINDOW_API {
+                return Err(at(
+                    &here.key("label"),
+                    format!(
+                        "needs sextantApi {} or later",
+                        super::contributions::WINDOW_API
+                    ),
+                ));
+            }
+            check_label_forms(label, &here.key("label"), true)?;
         }
         for (j, rule) in badge.rules.iter().enumerate() {
             if !manifest.contributes.problems.iter().any(|r| &r.id == rule) {

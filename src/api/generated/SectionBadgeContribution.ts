@@ -11,4 +11,9 @@ section: string,
 /**
  * The ids of the rules whose problems it counts; empty: every rule of the extension.
  */
-rules: Array<string>, };
+rules: Array<string>, 
+/**
+ * Its tooltip and accessible label by CLDR plural form (`one`, `few`, `many`, `other`, …), each with `{{count}}`
+ * (#398); `sextantApi` 4. Without it, Sextant's own words.
+ */
+label?: { [key in string]: string }, };

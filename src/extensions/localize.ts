@@ -55,6 +55,17 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
           : {}),
       })),
       menuItems: c.menuItems.map((m) => ({ ...m, title: text(`menuItems.${m.id}.title`, m.title) })),
+      // A counter's label: the language's own plural forms when it translates any, else the English ones (#398).
+      sectionBadges: c.sectionBadges.map((b) => {
+        if (!b.label) return b;
+        const prefix = `sectionBadges.${b.section}.label.`;
+        const forms = Object.fromEntries(
+          Object.entries(texts)
+            .filter(([key]) => key.startsWith(prefix))
+            .map(([key, value]) => [key.slice(prefix.length), value]),
+        );
+        return Object.keys(forms).length > 0 ? { ...b, label: forms } : b;
+      }),
       sections: c.sections.map((s) => ({
         ...s,
         ...(s.title !== undefined ? { title: text(`sections.${s.section}.title`, s.title) } : {}),
