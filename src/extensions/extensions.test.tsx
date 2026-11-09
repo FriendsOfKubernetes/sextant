@@ -532,6 +532,20 @@ describe("contributions of an extension", () => {
     }
   });
 
+  it("tell a details frame the shown object's uid (#415)", async () => {
+    await renderShell();
+    act(() => useAppStore.getState().openDetails(widgetRef));
+    const panel = screen.getByRole("complementary", { name: "Details" });
+    await waitFor(() => expect(frameOf(panel)).not.toBeNull());
+    const frame = frameOf(panel);
+    const posted: unknown[] = [];
+    vi.spyOn(frame.contentWindow!, "postMessage").mockImplementation((m: unknown) => void posted.push(m));
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", { data: { sextant: 1, doc: DOC, type: "ready" }, source: frame.contentWindow }));
+    });
+    await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { view: "details", uid: widget.metadata.uid } }));
+  });
+
   it("give a details section the height the frame asks for", async () => {
     await renderShell();
     act(() => useAppStore.getState().openDetails(widgetRef));

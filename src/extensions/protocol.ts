@@ -194,6 +194,8 @@ export interface HostContext {
   selection: ObjectRef[];
   /** Details: the shown object's `metadata.resourceVersion` (changes when the object changes); otherwise `null`. */
   resourceVersion: string | null;
+  /** Details: the shown object's `metadata.uid` once it is read (since Sextant 0.30, #415); otherwise left out. */
+  uid?: string | null;
 }
 
 /** Methods the backend serves (`METHODS` in `src-tauri/src/extensions/api.rs`). */

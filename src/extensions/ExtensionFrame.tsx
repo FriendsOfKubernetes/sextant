@@ -39,6 +39,8 @@ export interface ExtensionFrameProps {
   selection?: readonly ObjectRef[];
   /** Details: the shown object's `resourceVersion`, so the frame learns that it changed. */
   resourceVersion?: string | null;
+  /** Details: the shown object's uid (#415), so a frame finds what is named by it (a policy report) without reading it. */
+  uid?: string | null;
   /** Height follows the frame's `resize` messages (details sections). */
   autoHeight?: boolean;
   /** `ui.close`; `failed` when the frame said its action failed (#400). */
@@ -171,6 +173,7 @@ function FrameView({
   clusterId,
   selection = NO_SELECTION,
   resourceVersion = null,
+  uid = null,
   autoHeight = false,
   onClose,
   onHidden,
@@ -201,8 +204,9 @@ function FrameView({
       tokens,
       selection: JSON.parse(selectionKey) as ObjectRef[],
       resourceVersion,
+      ...(uid !== null ? { uid } : {}),
     }),
-    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion],
+    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion, uid],
   );
   const services = info.manifest?.contributes.services ?? [];
   const latest = useRef({ context, name: info.name, autoHeight, onClose, onFailed, services, onHidden });

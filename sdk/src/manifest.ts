@@ -515,9 +515,10 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       }),
       dockActions: c.dockActions ?? [],
       problems: (c.problems ?? []).map((p) => {
-        const { source, ...rule } = p;
+        const { source, about, ...rule } = p;
         return {
           ...rule,
+          ...(about !== undefined ? { about: { ...about, clusterScoped: about.clusterScoped ?? false } } : {}),
           graceMinutes: p.graceMinutes ?? 0,
           notify: p.notify ?? true,
           toldThroughOwner: p.toldThroughOwner ?? false,

@@ -448,6 +448,7 @@ function detailsComponent(
         clusterId={clusterId}
         selection={[objectRef]}
         resourceVersion={typeof obj?.metadata?.resourceVersion === "string" ? obj.metadata.resourceVersion : null}
+        uid={typeof obj?.metadata?.uid === "string" ? obj.metadata.uid : null}
         autoHeight={!tab}
         className={tab ? "ext-frame--tab" : "ext-frame--section"}
         onHidden={tab ? undefined : setHidden}

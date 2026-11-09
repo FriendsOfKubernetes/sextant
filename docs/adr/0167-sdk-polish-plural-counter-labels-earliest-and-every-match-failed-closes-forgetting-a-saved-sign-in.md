@@ -128,3 +128,8 @@ holds at once for a value that is there but no time, as the built-in rules count
 
 An action's `requiresKinds` (`sextantApi` 4, 1 to 5 kinds) offers it only where the active cluster's discovery serves
 every one, as the built-in "Back up namespace…" needed Velero's Backups.
+
+## Amendment: the shown object's uid in the details context (#415)
+
+A details frame's context carries `uid` (optional, beside `resourceVersion`) once the object is read, so a frame finds
+what is named by it — a policy report — without reading the object or asking Read on its kind.
