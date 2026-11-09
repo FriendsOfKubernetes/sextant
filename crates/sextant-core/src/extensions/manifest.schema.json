@@ -378,6 +378,12 @@
                   "confirm": { "type": "string", "minLength": 1, "maxLength": 40, "format": "non-blank", "pattern": "\\S" }
                 }
               },
+              "requiresKinds": {
+                "description": "Kinds the cluster must serve for the action to be offered, 1 to 5 (sextantApi 4).",
+                "type": "array",
+                "maxItems": 5,
+                "items": { "$ref": "#/$defs/kind" }
+              },
               "headless": {
                 "description": "The action's frame runs out of sight, without a window: it ends with `ui.close` and tells the user with `ui.notify` (sextantApi 4). Not with `patch`.",
                 "type": "boolean",

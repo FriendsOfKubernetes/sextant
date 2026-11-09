@@ -1481,6 +1481,10 @@ function checkActions(manifest) {
     for (const field of ["headless", "when", "whyNot", "placement", "patch", "ask", "done"]) {
       if (action[field] !== undefined && manifest.sextantApi < WINDOW_API) fail([...here, field], `needs sextantApi ${WINDOW_API} or later`);
     }
+    if (action.requiresKinds !== undefined) {
+      if (manifest.sextantApi < WINDOW_API) fail([...here, "requiresKinds"], `needs sextantApi ${WINDOW_API} or later`);
+      if (action.requiresKinds.length === 0 || action.requiresKinds.length > 5) fail([...here, "requiresKinds"], "names 1 to 5 kinds");
+    }
     if (action.whyNot !== undefined && action.when === undefined) fail([...here, "whyNot"], "explains `when`: the action needs a `when`");
     if (action.when !== undefined) checkObjectCondition(action.when, action.kinds, [...here, "when"], manifest.sextantApi);
     for (const field of ["ask", "done"]) {

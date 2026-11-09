@@ -120,6 +120,8 @@ export interface ManifestAction {
    * and an error it reports is shown as a notice; ended after 2 minutes. Not with `patch` (since Sextant 0.30).
    */
   headless?: boolean;
+  /** Kinds the cluster must serve for the action to be offered, 1 to 5 (since Sextant 0.30). */
+  requiresKinds?: KindPattern[];
 }
 
 /** How a computed column shows its value (sextantApi 4). */

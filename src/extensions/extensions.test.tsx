@@ -14,7 +14,7 @@ import { getPage, registerPage, unregisterPage } from "../layout/pages";
 import { getSectionBadge } from "../layout/sectionBadges";
 import { i18n } from "../i18n";
 import { getResourceDef } from "../resources/registry";
-import { resetClusterKinds } from "../resources/useKinds";
+import { loadClusterKinds, resetClusterKinds } from "../resources/useKinds";
 import { registerExtension, syncExtensions, unregisterExtension } from "./contributions";
 import { ExtensionSettingsFrame } from "./ExtensionFrame";
 import { resetExtensionsStore } from "./store";
@@ -490,6 +490,43 @@ describe("contributions of an extension", () => {
       expect(screen.getByRole("group", { name: "Widget fields" })).toBeInTheDocument();
       const [, late] = container.querySelectorAll(".ext-section");
       expect((late as HTMLElement).hidden).toBe(true);
+    } finally {
+      unregisterExtension("demo.widgets");
+    }
+  });
+
+  it("offer an action only where the cluster serves the kinds it requires (#414)", async () => {
+    resetClusterKinds();
+    const NAMESPACE = { group: "", version: "v1", kind: "Namespace" };
+    const gated: ExtensionManifest = {
+      ...manifest,
+      sextantApi: 4,
+      contributes: {
+        ...manifest.contributes,
+        actions: [
+          {
+            id: "backup",
+            title: "Back up namespace…",
+            kinds: [{ group: "", kind: "Namespace" }],
+            danger: false,
+            multiple: false,
+            headless: false,
+            requiresKinds: [{ group: "velero.io", kind: "Backup" }],
+          },
+        ],
+      },
+    };
+    registerExtension(info({ manifest: gated }));
+    try {
+      const ns = { metadata: { name: "shop" } };
+      const offered = () => getActionsFor([ns], NAMESPACE, ["ext:demo.widgets:backup"]).map((a) => a.id);
+      useAppStore.setState({ activeClusterId: "kind" });
+      expect(offered()).toEqual([]);
+      backend.on("cluster_kinds", () => [
+        { kindRef: { group: "velero.io", version: "v1", kind: "Backup" }, plural: "backups", namespaced: true, verbs: ["list"], printerColumns: [], shortNames: [] },
+      ]);
+      loadClusterKinds("kind");
+      await waitFor(() => expect(offered()).toEqual(["ext:demo.widgets:backup"]));
     } finally {
       unregisterExtension("demo.widgets");
     }

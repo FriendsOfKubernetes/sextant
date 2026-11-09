@@ -319,6 +319,11 @@ pub struct ActionContribution {
     /// The action's frame runs out of sight, with no window (#379); `sextantApi` 4.
     #[serde(default)]
     pub headless: bool,
+    /// Kinds the cluster must serve for the action to be offered (#414): "Back up namespace" only where Velero's
+    /// Backups are. At most 5; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub requires_kinds: Option<Vec<KindPattern>>,
 }
 
 /// The question Sextant asks before an action's `patch` (#367): a title, a sentence and the button's label.
@@ -1072,6 +1077,7 @@ mod tests {
                 ask: None,
                 done: None,
                 headless: false,
+                requires_kinds: None,
             }
         );
         assert!(c.actions[1].danger && c.actions[1].multiple);

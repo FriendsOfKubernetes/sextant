@@ -128,6 +128,17 @@ pub(crate) fn check_actions(manifest: &ExtensionManifest) -> Result<(), Manifest
                 ));
             }
         }
+        if let Some(kinds) = &action.requires_kinds {
+            if manifest.sextant_api < WINDOW_API {
+                return Err(at(
+                    &here.key("requiresKinds"),
+                    format!("needs sextantApi {WINDOW_API} or later"),
+                ));
+            }
+            if kinds.is_empty() || kinds.len() > 5 {
+                return Err(at(&here.key("requiresKinds"), "names 1 to 5 kinds"));
+            }
+        }
         if action.why_not.is_some() && action.when.is_none() {
             return Err(at(
                 &here.key("whyNot"),

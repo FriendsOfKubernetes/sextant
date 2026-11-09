@@ -123,3 +123,8 @@ texts alike (`PLACEHOLDER_FILTERS`). A rule's `sinceUnit: "seconds"` reads `sinc
 `atLeast` takes an `offset` added to the other value (`-1`: one before the limit), and `olderThan` with `orUnreadable`
 holds at once for a value that is there but no time, as the built-in rules counted it. From `sextantApi` 4 a rule nests
 `all`/`any`/`not` 6 deep with 40 conditions, and a section counter names up to 30 rules.
+
+## Amendment: actions that need served kinds (#414)
+
+An action's `requiresKinds` (`sextantApi` 4, 1 to 5 kinds) offers it only where the active cluster's discovery serves
+every one, as the built-in "Back up namespace…" needed Velero's Backups.

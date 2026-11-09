@@ -45,4 +45,9 @@ done?: string,
 /**
  * The action's frame runs out of sight, with no window (#379); `sextantApi` 4.
  */
-headless: boolean, };
+headless: boolean, 
+/**
+ * Kinds the cluster must serve for the action to be offered (#414): "Back up namespace" only where Velero's
+ * Backups are. At most 5; `sextantApi` 4.
+ */
+requiresKinds?: Array<KindPattern>, };

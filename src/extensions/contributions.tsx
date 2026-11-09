@@ -30,6 +30,8 @@ import { getPage, registerPage, unregisterPage, type PageProps } from "../layout
 import { getSectionBadge, registerSectionBadge } from "../layout/sectionBadges";
 import { evalJsonPath, formatJsonPathValues } from "../resources/jsonpath";
 import { DEFAULT_ENTRY_ICON, extendActions, extendColumns, placeKind, placeSection, SIDEBAR_SECTIONS } from "../resources/registry";
+import { findKind } from "../resources";
+import { knownClusterKinds } from "../resources/useKinds";
 import { computedColumn, placement } from "./columns";
 import {
   registerClusterSettingsSection,
@@ -127,6 +129,13 @@ function closeOrphans(): void {
 /** An icon of Sextant's set; an unknown name gets the default one. */
 function iconOf(name: string | undefined, fallback: IconName = DEFAULT_ENTRY_ICON): IconName {
   return name !== undefined && isIconName(name) ? name : fallback;
+}
+
+/** Whether the active cluster serves every kind of an action's `requiresKinds` (#414); without it, yes. */
+function servedInActiveCluster(kinds: readonly KindPattern[] | undefined): boolean {
+  if (!kinds || kinds.length === 0) return true;
+  const known = knownClusterKinds(useAppStore.getState().activeClusterId);
+  return kinds.every((k) => findKind(known, k) !== undefined);
 }
 
 function matches(kinds: readonly KindPattern[], kind: Pick<KindRef, "group" | "kind">): boolean {
@@ -253,7 +262,8 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
         primaryOn: action.placement === "primary" ? (kind) => matches(listed, kind) : undefined,
         danger: action.danger,
         multiple: action.multiple,
-        appliesTo: (obj, kind) => matches(action.kinds, kind) && (when === undefined || holdsNow(when, obj)),
+        appliesTo: (obj, kind) =>
+          matches(action.kinds, kind) && (when === undefined || holdsNow(when, obj)) && servedInActiveCluster(action.requiresKinds),
         notApplicableReason:
           when === undefined
             ? undefined
