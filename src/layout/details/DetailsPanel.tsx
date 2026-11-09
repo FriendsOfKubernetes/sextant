@@ -45,7 +45,8 @@ export function DetailsPanel({ clusterId, objectRef }: { clusterId: ClusterId; o
   }, []);
   const { obj, loading, error } = useDetailsObject(clusterId, objectRef);
   useDetailsSectionsVersion();
-  const all = getDetailsSections(objectRef.kind);
+  // A section with a condition on the object shows once the object is there and the condition holds.
+  const all = getDetailsSections(objectRef.kind).filter((s) => !s.appliesToObject || (obj !== null && s.appliesToObject(obj)));
   const sections = all.filter((s) => s.placement !== "tab");
   const tabs = all.filter((s) => s.placement === "tab");
   const [tab, setTab] = useState(OVERVIEW);

@@ -21,6 +21,22 @@ pub const MAX_ACTION_PATCH_BYTES: usize = 4096;
 /// The one placeholder of an action's `patch`: the time it is sent, RFC 3339.
 pub const NOW_PLACEHOLDER: &str = "{{now}}";
 
+/// A details section's `when` (#408): a condition on the object, as an action's.
+pub(crate) fn check_details_sections(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
+    let list = JsonPath::default()
+        .key("contributes")
+        .key("detailsSections");
+    for (i, section) in manifest.contributes.details_sections.iter().enumerate() {
+        let Some(when) = &section.when else { continue };
+        let here = list.index(i).key("when");
+        if manifest.sextant_api < WINDOW_API {
+            return Err(at(&here, format!("needs sextantApi {WINDOW_API} or later")));
+        }
+        check_object_condition(when, &section.kinds, &here, manifest.sextant_api)?;
+    }
+    Ok(())
+}
+
 /// An action's `when`, `whyNot` and `placement`, and its `patch` with `ask` and `done`.
 pub(crate) fn check_actions(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
     let list = JsonPath::default().key("contributes").key("actions");

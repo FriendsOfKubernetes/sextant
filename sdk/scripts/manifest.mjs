@@ -1373,6 +1373,17 @@ function checkObjectCondition(condition, kinds, segments, api) {
   for (const kind of kinds) checkCondition(condition, kind, segments, 1, { count: 0, api, kinds: [], metadataOnly: false, single: true });
 }
 
+/** `check_details_sections` (#408). */
+function checkDetailsSections(manifest) {
+  const list = ["contributes", "detailsSections"];
+  (manifest.contributes?.detailsSections ?? []).forEach((section, i) => {
+    if (section.when === undefined) return;
+    const here = [...list, i, "when"];
+    if (manifest.sextantApi < WINDOW_API) fail(here, `needs sextantApi ${WINDOW_API} or later`);
+    checkObjectCondition(section.when, section.kinds, here, manifest.sextantApi);
+  });
+}
+
 function checkActions(manifest) {
   const list = ["contributes", "actions"];
   (manifest.contributes?.actions ?? []).forEach((action, i) => {
@@ -1542,6 +1553,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     checkSectionBadges(value);
     checkCommands(value);
     checkActions(value);
+    checkDetailsSections(value);
     checkColumns(value);
     checkKinds(value);
     checkPermissions(value);

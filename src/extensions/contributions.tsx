@@ -185,6 +185,7 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
       placement: section.placement,
       label: section.title,
       appliesTo: (kind) => matches(section.kinds, kind),
+      ...(section.when !== undefined ? { appliesToObject: ((when) => (obj: KubeObject) => holdsNow(when, obj))(section.when) } : {}),
       Component: detailsComponent(extensionId, section.id, section.title, section.placement === "tab"),
     });
     removers.push(() => unregisterDetailsSection(id));

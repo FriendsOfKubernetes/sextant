@@ -411,6 +411,33 @@ describe("contributions of an extension", () => {
     );
   });
 
+  it("leave out a details section whose condition does not hold for the object (#408)", () => {
+    const gated: ExtensionManifest = {
+      ...manifest,
+      sextantApi: 4,
+      contributes: {
+        ...manifest.contributes,
+        detailsSections: [
+          {
+            id: "gpu",
+            title: "GPU",
+            kinds: [{ group: "", kind: "Node" }],
+            placement: "section",
+            when: { type: "equals", path: '.metadata.labels["nvidia.com/gpu.present"]', value: "true" },
+          },
+        ],
+      },
+    };
+    registerExtension(info({ manifest: gated }));
+    try {
+      const section = getDetailsSections({ group: "", version: "v1", kind: "Node" }).find((s) => s.id === "ext:demo.widgets:gpu")!;
+      expect(section.appliesToObject!({ metadata: { name: "gpu-1", labels: { "nvidia.com/gpu.present": "true" } } })).toBe(true);
+      expect(section.appliesToObject!({ metadata: { name: "cpu-1" } })).toBe(false);
+    } finally {
+      unregisterExtension("demo.widgets");
+    }
+  });
+
   it("give a details section the height the frame asks for", async () => {
     await renderShell();
     act(() => useAppStore.getState().openDetails(widgetRef));

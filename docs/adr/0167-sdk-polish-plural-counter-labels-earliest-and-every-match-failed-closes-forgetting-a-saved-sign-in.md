@@ -37,3 +37,10 @@ not express (#398–#401). `sextantApi` 4 is still unreleased, so they are addit
 Moving the built-in tool modules into extensions needs more than 20 rules over 10 kinds (Knative's two groups,
 Crossplane's chain). From `sextantApi` 4 an extension may have 30 problem rules judging 20 kinds (`rule_limits` =
 `ruleLimits`); older manifests keep 20 and 10, so an older Sextant never meets a manifest it would refuse.
+
+## Amendment: details sections by condition (#408)
+
+`contributes.detailsSections[].when` (`sextantApi` 4) shows a section only for objects for which the condition holds,
+checked as an action's `when` (`check_details_sections` = `checkDetailsSections`, no `missing`) and evaluated by the
+window (`DetailsSectionDef.appliesToObject`); while the object loads the section is left out. A GPU block goes only on
+GPU nodes, a devices block only on pods that claim devices.

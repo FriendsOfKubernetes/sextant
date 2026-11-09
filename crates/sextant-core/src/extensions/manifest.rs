@@ -255,6 +255,10 @@ pub struct DetailsSectionContribution {
     #[ts(optional)]
     pub order: Option<i32>,
     pub placement: DetailsPlacement,
+    /// Shown only for objects for which this holds, evaluated by the window (#408); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub when: Option<ProblemCondition>,
 }
 
 /// An action on objects of the listed kinds: the details action bar and the table row menu (`view=action`).
@@ -551,6 +555,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     section_badges::check_section_badges(&manifest)?;
     commands::check_commands(&manifest)?;
     contributions::check_actions(&manifest)?;
+    contributions::check_details_sections(&manifest)?;
     contributions::check_columns(&manifest)?;
     contributions::check_kinds(&manifest)?;
     contributions::check_permissions(&manifest)?;

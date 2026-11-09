@@ -16,6 +16,8 @@ export interface DetailsSectionDef {
   id: string;
   order: number;
   appliesTo: (kind: KindRef) => boolean;
+  /** Whether it is shown for this object too (an extension section's `when`); unset: for every object of the kind. */
+  appliesToObject?: (obj: KubeObject) => boolean;
   Component: ComponentType<DetailsSectionProps>;
   /** `section` (default): stacked with the others; `tab`: a tab of its own, filling the panel. */
   placement?: "section" | "tab";

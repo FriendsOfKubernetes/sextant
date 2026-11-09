@@ -77,6 +77,8 @@ export interface ManifestDetailsSection {
   kinds: KindPattern[];
   order?: number;
   placement: DetailsPlacement;
+  /** Shown only for objects for which this holds (since Sextant 0.30): a GPU block only on GPU nodes. */
+  when?: ProblemCondition;
 }
 
 export interface ManifestAction {
