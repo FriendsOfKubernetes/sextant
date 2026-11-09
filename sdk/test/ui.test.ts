@@ -33,6 +33,19 @@ describe("the UI kit", () => {
     expect(await violations()).toEqual([]);
   });
 
+  it("tells each toggle of a block and puts its actions in the head (#406, #407)", async () => {
+    const heard: boolean[] = [];
+    const logs = button("Logs", () => undefined);
+    const section = block("Pods", ["…"], { collapsible: true, collapsed: true, onToggle: (open) => heard.push(open), actions: [logs] });
+    document.body.append(section);
+    expect(section.querySelector(".sx-block__head .sx-block__actions")?.contains(logs)).toBe(true);
+    const toggle = section.querySelector<HTMLButtonElement>(".sx-block__toggle")!;
+    toggle.click();
+    toggle.click();
+    expect(heard).toEqual([true, false]);
+    expect(await violations()).toEqual([]);
+  });
+
   it("draws tables, chips, links, empty lines and errors", async () => {
     const openDetails = vi.fn(() => Promise.resolve());
     const ref = { kind: { group: "", version: "v1", kind: "Pod" }, namespace: "ns", name: "web-1" };

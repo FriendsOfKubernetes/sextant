@@ -138,3 +138,8 @@ what is named by it — a policy report — without reading the object or asking
 
 `ui.openLogs({namespace, labelSelector, title})` titles the merged tab as written (≤ 80 characters, no control
 characters) — `raycluster/<name>` rather than the selector; the title stays in the window and never reaches Rust.
+
+## Amendment: blocks that tell their toggles, with actions in their head (#406, #407)
+
+The SDK's `ui.block` takes `onToggle` — each open or close, so a frame remembers it in its `storage` and watches a
+block's lists only while it is open — and `actions`, buttons in its head after the title.

@@ -13,6 +13,7 @@ const UI_STYLES = `
 .sx-block { margin: 12px 0; min-width: 0; }
 .sx-block .sx-block { margin: 8px 0; }
 .sx-block__head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.sx-block__actions { display: flex; gap: 6px; margin-left: auto; }
 .sx-block__title { margin: 0; font-size: 0.8125rem; font-weight: 600; flex: 1; min-width: 0; }
 .sx-block__toggle { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font: inherit; font-weight: 600; font-size: 0.8125rem; }
 .sx-block__toggle::before { content: "▾"; display: inline-block; width: 1em; color: var(--color-text-muted); }
@@ -82,9 +83,15 @@ let blockCounter = 0;
 
 /**
  * A titled block, as a section of Sextant's details: with `collapsible`, a disclosure button (keyboard and screen
- * readers included) that shows and hides the body; `collapsed` starts it closed.
+ * readers included) that shows and hides the body; `collapsed` starts it closed, and `onToggle` hears each change (to
+ * remember it in `storage`, or to watch only while the block is open; since Sextant 0.30). `actions` go in its head,
+ * after the title (a "Logs" button of the block's pods).
  */
-export function block(title: string, content: UiContent, options: { collapsible?: boolean; collapsed?: boolean } = {}): HTMLElement {
+export function block(
+  title: string,
+  content: UiContent,
+  options: { collapsible?: boolean; collapsed?: boolean; onToggle?: (open: boolean) => void; actions?: readonly HTMLElement[] } = {},
+): HTMLElement {
   const section = el("section", "sx-block");
   const head = el("div", "sx-block__head");
   const body = el("div", "sx-block__body", content);
@@ -100,12 +107,17 @@ export function block(title: string, content: UiContent, options: { collapsible?
       body.hidden = !open;
     };
     set(!options.collapsed);
-    toggle.addEventListener("click", () => set(body.hidden === true));
+    toggle.addEventListener("click", () => {
+      const open = body.hidden === true;
+      set(open);
+      options.onToggle?.(open);
+    });
     heading.append(toggle);
   } else {
     heading.textContent = title;
   }
   head.append(heading);
+  if (options.actions && options.actions.length > 0) head.append(el("div", "sx-block__actions", [...options.actions]));
   section.append(head, body);
   section.setAttribute("aria-label", title);
   return section;
