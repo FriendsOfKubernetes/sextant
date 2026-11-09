@@ -373,7 +373,14 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 false,
             )?;
             // A number column sorts and filters by it; a text column sorts by it (#403), its text still shown.
-            if case.value.is_some() && !matches!(format, ColumnFormat::Number | ColumnFormat::Text)
+            if case.value.is_some()
+                && !matches!(
+                    format,
+                    ColumnFormat::Number
+                        | ColumnFormat::Text
+                        | ColumnFormat::Count
+                        | ColumnFormat::Sum
+                )
             {
                 return Err(at(
                     &here.key("cases").index(j).key("value"),
@@ -422,8 +429,14 @@ fn check_value_text(
     format: ColumnFormat,
     path: &JsonPath,
 ) -> Result<(), ManifestError> {
-    if !matches!(format, ColumnFormat::Text | ColumnFormat::Number) {
-        return Err(at(path, "goes with `format` `text` or `number`"));
+    if !matches!(
+        format,
+        ColumnFormat::Text | ColumnFormat::Number | ColumnFormat::Count | ColumnFormat::Sum
+    ) {
+        return Err(at(
+            path,
+            "goes with `format` `text`, `number`, `count` or `sum`",
+        ));
     }
     let found = super::problems::placeholders(text)
         .ok_or_else(|| at(path, "has a `{{` without its `}}`"))?;

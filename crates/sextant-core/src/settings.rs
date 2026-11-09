@@ -746,6 +746,15 @@ pub fn migrate(settings: &mut AppSettings) {
                 *category = format!("ext:{extension}");
             }
         }
+        // An opt-in category the user turned on stays on as the extension's category of its own (#410).
+        for category in &mut settings.notifications.enabled_categories {
+            if let Some((_, moved)) = MOVED_OPT_IN_CATEGORIES
+                .iter()
+                .find(|(old, _)| old == category)
+            {
+                *category = (*moved).to_owned();
+            }
+        }
         for (_, extension, for_agents) in MOVED_PROBLEM_CATEGORIES {
             let id = extension.to_owned();
             if for_agents && !settings.mcp.extension_problems.contains(&id) {
@@ -759,6 +768,11 @@ pub fn migrate(settings: &mut AppSettings) {
         settings.settings_version = 3;
     }
 }
+
+/// The opt-in problem categories of Sextant's own that moved into categories of its first-party extensions' own
+/// (`problemCategories`, #410): the old category and the new one, `ext:<extension id>:<category id>`. Never for agents.
+pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 1] =
+    [("kueueWorkloads", "ext:sextant.kueue:workloads")];
 
 /// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
 /// the extension, and whether agents got the category by default.
@@ -1332,7 +1346,8 @@ mod tests {
         std::fs::write(
             &path,
             r#"{ "settingsVersion": 2,
-                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm"] },
+                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm"],
+                                    "enabledCategories": ["security", "kueueWorkloads"] },
                  "mcp": { "extensionProblems": ["sextant.argo-cd", "acme.widgets"] } }"#,
         )
         .unwrap();
@@ -1348,6 +1363,11 @@ mod tests {
                 "ext:sextant.argo-workflows",
                 "ext:sextant.olm"
             ]
+        );
+        // An opt-in category turned on stays on as the extension's own (#410).
+        assert_eq!(
+            s.notifications.enabled_categories,
+            ["security", "ext:sextant.kueue:workloads"]
         );
         assert_eq!(
             s.mcp.extension_problems,

@@ -538,6 +538,17 @@ export function parseFieldPath(path) {
         if (/[\\\u0000-\u001f\u007f-\u009f]/.test(key)) return null;
         steps.push({ key });
         i = end + 2;
+      } else if (chars[i + 1] === "*" && chars[i + 2] === "]") {
+        // `[*]`: every item, as a list (#404).
+        steps.push({ match: [], pick: "all" });
+        i += 3;
+      } else if (chars[i + 1] === "<") {
+        // `[<field]`: the item with the smallest value there (#404).
+        const end = chars.indexOf("]", i + 2);
+        const name = end < 0 ? "" : chars.slice(i + 2, end).join("");
+        if (!/^[A-Za-z0-9_-]+$/.test(name)) return null;
+        steps.push({ match: [], pick: { earliest: name } });
+        i = end + 1;
       } else if (chars.slice(i + 1, chars.indexOf("]", i + 1) < 0 ? chars.length : chars.indexOf("]", i + 1)).includes("=")) {
         // `[field="value",…]` (`PathStep::Match` in Rust): up to 4 pairs; a value may hold `]` or `,` (#392).
         const pairs = [];
@@ -601,8 +612,8 @@ export function parseFieldPath(path) {
     steps.push({ key: chars.slice(start, i).join("") });
     expectName = false;
   }
-  // `*` gives a list: only a path's last step may.
-  if (steps.slice(0, -1).some((s) => s.pick === "all")) return null;
+  // The steps after `*` read each item (#404); one list per path.
+  if (steps.filter((s) => s.pick === "all").length > 1) return null;
   return steps.length > 0 ? steps : null;
 }
 
@@ -1556,7 +1567,7 @@ function checkColumns(manifest) {
       checkObjectCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi);
       // Field values in the text, as a problem message has them (#368).
       checkMessage(c.text, column.kind, [...here, "cases", j, "text"], false);
-      if (c.value !== undefined && format !== "number" && format !== "text") fail([...here, "cases", j, "value"], 'goes with `format: "number"` or `"text"`');
+      if (c.value !== undefined && !["number", "text", "count", "sum"].includes(format)) fail([...here, "cases", j, "value"], 'goes with `format: "number"` or `"text"`');
       if (c.tooltip !== undefined) checkMessage(c.tooltip, column.kind, [...here, "cases", j, "tooltip"], false);
     });
   });
@@ -1573,7 +1584,7 @@ function checkLookup(lookup, kind, segments) {
 
 /** `check_value_text` (#387): the one placeholder `{{value}}`, for a `text` or `number` value. */
 function checkValueText(text, format, segments) {
-  if (format !== "text" && format !== "number") fail(segments, "goes with `format` `text` or `number`");
+  if (!["text", "number", "count", "sum"].includes(format)) fail(segments, "goes with `format` `text`, `number`, `count` or `sum`");
   const found = placeholders(text);
   if (found === null) fail(segments, "has a `{{` without its `}}`");
   if (found.length === 0 || found.some((p) => p.trim() !== "value")) fail(segments, "has `{{value}}`, and no other placeholder");

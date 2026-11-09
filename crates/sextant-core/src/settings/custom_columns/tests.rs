@@ -53,7 +53,6 @@ fn field_paths_follow_the_small_grammar() {
         "..spec",
         "spec.",
         "spec..x",
-        ".spec.containers[*].image",
         ".spec.containers[-1]",
         ".spec.containers[]",
         "$.spec",
@@ -308,10 +307,32 @@ fn a_match_takes_the_earliest_by_a_field_or_every_match_as_the_last_step() {
             ..
         }
     ));
-    // `*` only last; `<` needs a name; nothing after them.
-    assert_eq!(parse_field_path(".status.nodes[type=\"Pod\",*].name"), None);
+    // Steps after `*` read each item (#404); one list per path; `<` needs a name.
+    assert!(parse_field_path(".status.nodes[type=\"Pod\",*].name").is_some());
+    assert!(parse_field_path(".spec.kafka.listeners[*].name").is_some());
+    assert!(matches!(
+        &parse_field_path(".spec.containers[<name]").unwrap()[2],
+        PathStep::Match { pairs, pick: MatchPick::Earliest(f) } if pairs.is_empty() && f == "name"
+    ));
+    assert_eq!(parse_field_path(".a[*].b[*]"), None);
     assert_eq!(parse_field_path(".a[b=\"1\",<]"), None);
+    assert_eq!(parse_field_path(".a[<]"), None);
     assert_eq!(parse_field_path(".a[b=\"1\",*,c=\"2\"]"), None);
+    // A custom column shows one value: no list paths there.
+    assert!(!is_valid_spec(
+        "",
+        "Pod",
+        ColumnSource::Field,
+        ".spec.containers[*].image",
+        ""
+    ));
+    assert!(is_valid_spec(
+        "",
+        "Pod",
+        ColumnSource::Field,
+        ".spec.containers[0].image",
+        ""
+    ));
     let pairs = vec![("phase".to_owned(), "Failed".to_owned())];
     let nodes = json!({
         "a": { "phase": "Failed", "finishedAt": "2026-11-07T10:05:00Z", "n": "late" },

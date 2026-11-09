@@ -202,7 +202,13 @@ describe("the earliest match and every match (#399)", () => {
     expect(earliest).toEqual([{ key: "status" }, { key: "nodes" }, { match: [["phase", "Failed"]], earliest: "finishedAt" }, { key: "n" }]);
     expect(formatFieldPath(earliest!)).toBe('.status.nodes[phase="Failed",<finishedAt].n');
     expect(parseFieldPath('.status.nodes[type="Pod",*]')).toEqual([{ key: "status" }, { key: "nodes" }, { match: [["type", "Pod"]], all: true }]);
-    expect(parseFieldPath('.status.nodes[type="Pod",*].name')).toBeNull();
+    // The steps after `*` read each item (#404); one list per path.
+    expect(parseFieldPath('.status.nodes[type="Pod",*].name')).not.toBeNull();
+    expect(parseFieldPath(".spec.listeners[*].name")).toEqual([{ key: "spec" }, { key: "listeners" }, { match: [], all: true }, { key: "name" }]);
+    expect(formatFieldPath(parseFieldPath(".spec.listeners[*].name")!)).toBe(".spec.listeners[*].name");
+    expect(parseFieldPath(".spec.c[<name]")).toEqual([{ key: "spec" }, { key: "c" }, { match: [], earliest: "name" }]);
+    expect(formatFieldPath(parseFieldPath(".spec.c[<name]")!)).toBe(".spec.c[<name]");
+    expect(parseFieldPath(".a[*].b[*]")).toBeNull();
     expect(parseFieldPath('.a[b="1",<]')).toBeNull();
     const nodes = {
       a: { phase: "Failed", finishedAt: "2026-11-07T10:05:00Z", n: "late" },

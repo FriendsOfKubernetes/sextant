@@ -425,7 +425,7 @@
               "format": {
                 "description": "How the value is shown, sorted and filtered: `text` (default), `number`, `age` (a time), `duration` (from the time to `endPaths` or now), `ratio` (`value/totalPaths`; with the whole there, a missing value is 0, as Kubernetes leaves zero counts out).",
                 "type": "string",
-                "enum": ["text", "number", "age", "duration", "ratio", "list"]
+                "enum": ["text", "number", "age", "duration", "ratio", "list", "count", "sum", "entries"]
               },
               "endPaths": {
                 "description": "`duration`: the end time, the first with a value; now without one.",

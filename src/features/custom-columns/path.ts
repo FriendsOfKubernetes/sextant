@@ -72,6 +72,17 @@ export function parseFieldPath(path: string): PathStep[] | null {
         if (key.includes("\\") || CONTROL.test(key)) return null;
         steps.push({ key });
         i = end + 2;
+      } else if (path[i + 1] === "*" && path[i + 2] === "]") {
+        // `[*]`: every item of a list, or value of a map in key order, as a list (#404).
+        steps.push({ match: [], all: true });
+        i += 3;
+      } else if (path[i + 1] === "<") {
+        // `[<field]`: the item with the smallest value there (#404).
+        const end = path.indexOf("]", i + 2);
+        const name = end < 0 ? "" : path.slice(i + 2, end);
+        if (NAME.exec(name)?.[0] !== name || name === "") return null;
+        steps.push({ match: [], earliest: name });
+        i = end + 1;
       } else {
         const end = path.indexOf("]", i + 1);
         if (end < 0) return null;
@@ -137,8 +148,8 @@ export function parseFieldPath(path: string): PathStep[] | null {
     i += name.length;
     expectName = false;
   }
-  // `*` gives a list: only a path's last step may.
-  if (steps.slice(0, -1).some((s) => "match" in s && s.all)) return null;
+  // `*` gives a list; the steps after it read each item (#404). One list per path.
+  if (steps.filter((s) => "match" in s && s.all).length > 1) return null;
   return steps.length > 0 ? steps : null;
 }
 
@@ -222,7 +233,8 @@ export function checkSpec(
   if (!raw) return { problem: "pathEmpty" };
   if (Array.from(raw).length > MAX_FIELD_PATH_CHARS) return { problem: "pathTooLong" };
   const steps = parseFieldPath(raw);
-  if (!steps) return { problem: "pathInvalid" };
+  // One value per cell: a path that gives a list (`*`, #404) is an extension's, not a custom column's.
+  if (!steps || steps.some((s) => "match" in s && s.all)) return { problem: "pathInvalid" };
   if (isSecretDataPath(target.group, target.kind, steps)) return { problem: "secretData" };
   if (readsInlineSecret(target.group, target.kind, steps.map((s) => ("key" in s ? s.key : "*")))) return { problem: "inlineSecret" };
   const first = steps[0];
@@ -263,8 +275,10 @@ export function readColumn(obj: KubeObject, source: ColumnSource, steps: readonl
  * The items of a list — or values of a map, in key order (#392) — whose every field is its pair's string value.
  */
 export function matchingItems(holder: unknown, pairs: readonly (readonly [string, string])[]): unknown[] {
+  // `[*]` and `[<field]` (no pairs) take every item, a scalar too (#404).
   const fits = (item: unknown) =>
-    item !== null && typeof item === "object" && !Array.isArray(item) && pairs.every(([field, value]) => (item as Record<string, unknown>)[field] === value);
+    pairs.length === 0 ||
+    (item !== null && typeof item === "object" && !Array.isArray(item) && pairs.every(([field, value]) => (item as Record<string, unknown>)[field] === value));
   if (Array.isArray(holder)) return holder.filter(fits);
   if (holder === null || typeof holder !== "object") return [];
   const map = holder as Record<string, unknown>;

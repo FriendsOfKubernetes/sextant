@@ -225,6 +225,25 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
                 }
                 steps.push(PathStep::Key(key));
                 i = end + 2;
+            } else if chars.get(i + 1) == Some(&'*') && chars.get(i + 2) == Some(&']') {
+                // `[*]`: every item of a list, or value of a map in key order, as a list (#404).
+                steps.push(PathStep::Match {
+                    pairs: Vec::new(),
+                    pick: MatchPick::All,
+                });
+                i += 3;
+            } else if chars.get(i + 1) == Some(&'<') {
+                // `[<field]`: the item with the smallest value there (#404).
+                let end = (i + 2..chars.len()).find(|&j| chars[j] == ']')?;
+                let field: String = chars[i + 2..end].iter().collect();
+                if field.is_empty() || !field.chars().all(is_name_char) {
+                    return None;
+                }
+                steps.push(PathStep::Match {
+                    pairs: Vec::new(),
+                    pick: MatchPick::Earliest(field),
+                });
+                i = end + 1;
             } else if (i + 1..chars.len())
                 .take_while(|&j| chars[j] != ']')
                 .any(|j| chars[j] == '=')
@@ -312,17 +331,20 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
         steps.push(PathStep::Key(chars[start..i].iter().collect()));
         expect_name = false;
     }
-    // `*` gives a list: only a path's last step may.
-    let all_inside = steps[..steps.len().saturating_sub(1)].iter().any(|s| {
-        matches!(
-            s,
-            PathStep::Match {
-                pick: MatchPick::All,
-                ..
-            }
-        )
-    });
-    (!steps.is_empty() && !all_inside).then_some(steps)
+    // `*` gives a list; the steps after it read each item (#404). One list per path.
+    let lists = steps
+        .iter()
+        .filter(|s| {
+            matches!(
+                s,
+                PathStep::Match {
+                    pick: MatchPick::All,
+                    ..
+                }
+            )
+        })
+        .count();
+    (!steps.is_empty() && lists <= 1).then_some(steps)
 }
 
 /// Whether a field path reads a core Secret's values (`data`, `stringData` or anything inside them).
@@ -342,9 +364,19 @@ pub fn is_valid_spec(
 ) -> bool {
     let path_ok = match source {
         ColumnSource::Label | ColumnSource::Annotation => is_metadata_key(path),
-        ColumnSource::Field => {
-            parse_field_path(path).is_some_and(|steps| !is_secret_data_path(group, kind, &steps))
-        }
+        // One value per cell: a path that gives a list (`*`, #404) is an extension's, not a custom column's.
+        ColumnSource::Field => parse_field_path(path).is_some_and(|steps| {
+            !is_secret_data_path(group, kind, &steps)
+                && !steps.iter().any(|s| {
+                    matches!(
+                        s,
+                        PathStep::Match {
+                            pick: MatchPick::All,
+                            ..
+                        }
+                    )
+                })
+        }),
     };
     path_ok && title.chars().count() <= MAX_TITLE_CHARS && !title.chars().any(char::is_control)
 }

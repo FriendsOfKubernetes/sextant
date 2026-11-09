@@ -3,4 +3,4 @@
 /**
  * How a computed column shows its value.
  */
-export type ColumnFormat = "text" | "number" | "age" | "duration" | "ratio" | "list";
+export type ColumnFormat = "text" | "number" | "age" | "duration" | "ratio" | "list" | "count" | "sum" | "entries";

@@ -149,6 +149,30 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
       const text = textOf(formatList(items)) ?? "";
       return { sort: text, text, draw: text };
     }
+    case "count": {
+      // How many items a list, or entries a map, has (#404).
+      const n = Array.isArray(value) ? value.length : value !== null && typeof value === "object" ? Object.keys(value).length : undefined;
+      return { sort: n, text: n === undefined ? undefined : written(String(n)), draw: n === undefined ? null : written(String(n)) };
+    }
+    case "sum": {
+      // The sum of a list's numbers, numeric text included (#404); none without one.
+      const numbers = Array.isArray(value) ? value.map(numberOf).filter((n): n is number => n !== undefined) : [];
+      if (numbers.length === 0) return { sort: undefined, text: undefined, draw: null };
+      const n = numbers.reduce((a, b) => a + b, 0);
+      return { sort: n, text: written(String(n)), draw: written(String(n)) };
+    }
+    case "entries": {
+      // A map's `key=value` entries in key order (#404), joined in the UI language.
+      if (value === null || typeof value !== "object" || Array.isArray(value)) return { sort: undefined, text: undefined, draw: null };
+      const map = value as Record<string, unknown>;
+      const items = Object.keys(map)
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        .filter((k) => typeof map[k] === "string" || typeof map[k] === "number" || typeof map[k] === "boolean")
+        .map((k) => cleanText(`${k}=${String(map[k])}`) ?? "");
+      if (items.length === 0) return { sort: undefined, text: undefined, draw: null };
+      const text = textOf(formatList(items)) ?? "";
+      return { sort: text, text, draw: text };
+    }
     case "text": {
       const plain = textOf(cleanText(textOf(value)));
       if (plain === undefined) return { sort: undefined, text: undefined, draw: null };

@@ -433,6 +433,12 @@ pub enum ColumnFormat {
     Ratio,
     /// A list of scalars, joined in the UI language (#395).
     List,
+    /// How many items a list (or entries a map) has (#404): a number.
+    Count,
+    /// The sum of a list's numbers (#404): a number; a list without one shows nothing.
+    Sum,
+    /// A map's `key=value` entries in key order, joined in the UI language (#404).
+    Entries,
 }
 
 /// The tone of a shown value.

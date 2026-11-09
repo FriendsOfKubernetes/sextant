@@ -96,8 +96,9 @@ describe("problem rules of extensions", () => {
     expect(valueAt(cluster, "status.items[1].name")).toBe("b");
     expect(valueAt(cluster, '.metadata.labels["app.kubernetes.io/name"]')).toBe("ceph");
     expect(valueAt(cluster, ".status.items[9].name")).toBeUndefined();
-    // No wildcards or filters: such a path leads nowhere (Rust refuses the manifest before).
-    expect(valueAt(cluster, ".status.items[*].name")).toBeUndefined();
+    // `[*]` (#404): every item, the steps after it read each; no other wildcard or filter.
+    expect(valueAt(cluster, ".status.items[*].name")).toEqual(["a", "b"]);
+    expect(valueAt(cluster, ".status.items[?(@.name)]")).toBeUndefined();
     // A list item by a field (ADR-0161).
     expect(valueAt(cluster, '.status.conditions[type="Ready"].reason')).toBe("ReconcileFailed");
     expect(valueAt(cluster, '.status.conditions[type="Missing"].reason')).toBeUndefined();

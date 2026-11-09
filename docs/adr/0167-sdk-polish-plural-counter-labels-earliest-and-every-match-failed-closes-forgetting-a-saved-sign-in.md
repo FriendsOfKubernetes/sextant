@@ -95,3 +95,13 @@ with `apiVersionPath` + `kindPath` (a policy report's `scope`); its name read; i
 the name (or a read kind) the problem stays about the judged object. A rule's `stamp` (≤ 4 paths) is its progress: when
 the values change it counts as first seen now, as the built-in rollout and plan rules did. The problems store already
 carried both (`Detected.object`, `stamp`); an agent gets a problem only when it may read its object (`can_object`).
+
+## Amendment: lists of a field, counts, sums and map entries (#404)
+
+A path step `[*]` takes every item of a list, or value of a map in key order, and the steps after a `*` step (this one
+or `[field="value",…,*]`) read each item, those leading nowhere left out — `.spec.kafka.listeners[*].name` is the
+listeners' names; one list per path. `[<field]` is the item with the smallest value there. A custom column shows one
+value, so it refuses a path that gives a list (`is_valid_spec`, `checkSpec`); the MCP projection and a service's
+`capture` refuse it as before. Column formats `count` (a list's items or a map's entries), `sum` (a list's numbers,
+numeric text included) and `entries` (a map's `key=value` in key order, joined in the UI language) read such values;
+`count` and `sum` take a `valueText` and a case's `value` like `number`.

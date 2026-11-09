@@ -27,13 +27,18 @@ export function valueAt(obj: unknown, path: string): unknown {
 
 function walk(obj: unknown, steps: readonly PathStep[]): unknown {
   let at: unknown = obj;
-  for (const step of steps) {
+  for (const [n, step] of steps.entries()) {
     if (at === null || typeof at !== "object") return undefined;
     if ("index" in step) {
       if (!Array.isArray(at)) return undefined;
       at = at[step.index];
     } else if ("match" in step) {
       at = pickStep(at, step);
+      // `*` (#404): the steps after it read each item; the ones that lead nowhere are left out.
+      if (step.all && n < steps.length - 1) {
+        const rest = steps.slice(n + 1);
+        return (at as unknown[]).map((item) => walk(item, rest)).filter((v) => v !== undefined);
+      }
     } else {
       if (Array.isArray(at) || !Object.prototype.hasOwnProperty.call(at, step.key)) return undefined;
       at = (at as Record<string, unknown>)[step.key];

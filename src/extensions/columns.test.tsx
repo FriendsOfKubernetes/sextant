@@ -35,4 +35,16 @@ describe("an extension's computed column", () => {
     expect(computedColumn("x", column({ width: "minmax(140px, 1.5fr)" })).width).toBe("minmax(140px, 1.5fr)");
     expect(computedColumn("x", column({})).width).toBeUndefined();
   });
+
+  it("count, add and list entries of what a [*] path reads (#404)", () => {
+    const o = {
+      metadata: { name: "a", labels: { tier: "web", app: "shop" } },
+      spec: { listeners: [{ name: "plain" }, { name: "tls" }], jobs: [{ restarts: 1 }, { restarts: "2" }, {}] },
+    } as unknown as KubeObject;
+    expect(computedColumn("x", column({ paths: [".spec.listeners[*].name"], format: "list" })).searchText!(o, ctx)).toBe("plain, tls");
+    expect(computedColumn("x", column({ paths: [".spec.listeners"], format: "count" })).searchText!(o, ctx)).toBe("2");
+    expect(computedColumn("x", column({ paths: [".metadata.labels"], format: "count" })).searchText!(o, ctx)).toBe("2");
+    expect(computedColumn("x", column({ paths: [".spec.jobs[*].restarts"], format: "sum" })).searchText!(o, ctx)).toBe("3");
+    expect(computedColumn("x", column({ paths: [".metadata.labels"], format: "entries" })).searchText!(o, ctx)).toBe("app=shop, tier=web");
+  });
 });
