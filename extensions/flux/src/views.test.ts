@@ -238,7 +238,7 @@ describe("the headless action", () => {
     expect(host.notices).toEqual([]);
   });
 
-  it("a failure stops before the next object, names the one that failed in a notice, and closes", async () => {
+  it("a failure stops before the next object and ends the action as failed, naming the one that failed", async () => {
     await start({
       context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(KUSTOMIZATION)] },
       handlers: {
@@ -248,16 +248,17 @@ describe("the headless action", () => {
     });
     stop = startAction(host.sextant, root, "reconcile-with-source");
     await expect.poll(() => host.closedByFrame).toBe(true);
-    expect(host.notices).toEqual([
+    expect(host.notices).toEqual([]);
+    expect(host.closedFailed).toBe(
       t("reconcileWithSource.failedAt", { kind: "GitRepository", name: "podinfo", message: t("error.forbidden", { message: "no" }) }),
-    ]);
-    expect(host.notices[0]).toBe("Reconcile with source stopped at GitRepository podinfo: The cluster refused your credentials: no");
+    );
+    expect(host.closedFailed).toBe("Reconcile with source stopped at GitRepository podinfo: The cluster refused your credentials: no");
     expect(patches().map((p) => `${p.ref.kind.kind}/${p.ref.name}`)).toEqual(["GitRepository/podinfo", "Kustomization/podinfo"]);
     expect(batches()).toHaveLength(1);
     expect(root.childNodes).toHaveLength(0);
   });
 
-  it("an object it cannot read is named in a notice, and nothing is sent", async () => {
+  it("an object it cannot read is named in the failure, and nothing is sent", async () => {
     await start({
       context: { view: "action", contribution: "reconcile-with-source", selection: [refOf(KUSTOMIZATION)] },
       handlers: {
@@ -268,7 +269,7 @@ describe("the headless action", () => {
     });
     stop = startAction(host.sextant, root, "reconcile-with-source");
     await expect.poll(() => host.closedByFrame).toBe(true);
-    expect(host.notices).toEqual([t("reconcileWithSource.failedAt", { kind: "Kustomization", name: "podinfo", message: "gone" })]);
+    expect(host.closedFailed).toBe(t("reconcileWithSource.failedAt", { kind: "Kustomization", name: "podinfo", message: "gone" }));
     expect(patches()).toEqual([]);
   });
 
@@ -283,7 +284,7 @@ describe("the headless action", () => {
     });
     stop = startAction(host.sextant, root, "reconcile-with-source");
     await expect.poll(() => host.closedByFrame).toBe(true);
-    expect(host.notices).toEqual(["Reconcile with source: Sextant refused: Sextant denied modify on Kustomization sextant-flux/podinfo."]);
+    expect(host.closedFailed).toBe("Reconcile with source: Sextant refused: Sextant denied modify on Kustomization sextant-flux/podinfo.");
     host.close();
     root.remove();
 
@@ -297,6 +298,7 @@ describe("the headless action", () => {
     });
     stop = startAction(host.sextant, root, "reconcile-with-source");
     await expect.poll(() => host.closedByFrame).toBe(true);
+    expect(host.closedFailed).toBeUndefined();
     expect(host.notices).toEqual([]);
     expect(root.childNodes).toHaveLength(0);
   });

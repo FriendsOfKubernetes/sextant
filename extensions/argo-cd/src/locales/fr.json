@@ -18,6 +18,7 @@
   "diff.resources": "Ressources de l'application",
   "diff.retry": "Réessayer",
   "diff.secretHidden": "Les valeurs des Secrets sont masquées des deux côtés.",
+  "diff.forgetSaved": "Oublier l'identifiant enregistré",
   "diff.signOut": "Se déconnecter",
   "diff.signedIn": "Connecté à Argo CD",
   "diff.signedInAs": "Connecté à Argo CD en tant que {{user}}",

@@ -299,6 +299,32 @@ describe("Diff", () => {
     expect(root.textContent).toContain(`${t("diff.signedInAs", { user: "ci" })} · ${t("diff.source.saved")}`);
   });
 
+  it("forgets only the saved login on its own button, and keeps this run signed in", async () => {
+    let state: SignInState = "saved";
+    const h = await open(
+      "diff",
+      installation({
+        "service.signInState": () => ({ state }),
+        "service.forget": () => {
+          state = "session";
+          return null;
+        },
+        "service.request": (p) => {
+          if (p.path === "/api/v1/session") return isTyped(p) ? { status: 200, body: { token: "<hidden>" } } : nothingToSend();
+          if (p.path === "/api/v1/session/userinfo") return { status: 200, body: { loggedIn: true, username: "alice" } };
+          return { status: 200, body: MANAGED };
+        },
+      }),
+    );
+    byText(t("diff.forgetSaved")).click();
+    await settle();
+    expect(h.calls.filter((c) => c.method === "service.forget").map((c) => c.params)).toEqual([
+      { clusterId: "kind", namespace: "argocd", service: "argocd-server", saved: true },
+    ]);
+    expect(root.textContent).toContain(`${t("diff.signedInAs", { user: "alice" })} · ${t("diff.source.session")}`);
+    expect([...root.querySelectorAll("button")].some((b) => b.textContent === t("diff.forgetSaved"))).toBe(false);
+  });
+
   it("signs out by asking Sextant to forget the sessions and the remembered sign-ins", async () => {
     const h = await open(
       "diff",

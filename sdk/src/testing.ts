@@ -48,6 +48,8 @@ export interface TestHost {
   /** Notices (`ui.notify`) and whether `ui.close` was called. */
   readonly notices: string[];
   readonly closedByFrame: boolean;
+  /** The text of `ui.close({failed})`: the frame ended its action as failed (since Sextant 0.30). */
+  readonly closedFailed: string | undefined;
   /** Errors the frame reported (`{type: "error"}`) and heights it asked for. */
   readonly errors: string[];
   readonly heights: number[];
@@ -85,6 +87,7 @@ export async function startTestHost(options: TestHostOptions = {}): Promise<Test
   const errors: string[] = [];
   const heights: number[] = [];
   let closedByFrame = false;
+  let closedFailed: string | undefined;
 
   const toFrame = (message: Record<string, unknown>) => {
     if (doc === null) return;
@@ -98,7 +101,11 @@ export async function startTestHost(options: TestHostOptions = {}): Promise<Test
     "storage.set": ({ key, value }) => void storage.set(key, value),
     "storage.remove": ({ key }) => void storage.delete(key),
     "ui.notify": ({ text }) => void notices.push(text),
-    "ui.close": () => void (closedByFrame = true),
+    "ui.close": (params) => {
+      closedByFrame = true;
+      const failed = (params as { failed?: unknown } | undefined)?.failed;
+      if (typeof failed === "string") closedFailed = failed;
+    },
     "ui.navigate": () => null,
     "ui.openDetails": () => null,
   };
@@ -166,6 +173,9 @@ export async function startTestHost(options: TestHostOptions = {}): Promise<Test
     heights,
     get closedByFrame() {
       return closedByFrame;
+    },
+    get closedFailed() {
+      return closedFailed;
     },
     setContext(patch) {
       context = { ...context, ...patch };

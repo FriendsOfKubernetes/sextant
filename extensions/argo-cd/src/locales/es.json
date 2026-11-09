@@ -18,6 +18,7 @@
   "diff.resources": "Recursos de la aplicación",
   "diff.retry": "Reintentar",
   "diff.secretHidden": "Los valores de los Secrets están ocultos en ambos lados.",
+  "diff.forgetSaved": "Olvidar el inicio de sesión guardado",
   "diff.signOut": "Cerrar sesión",
   "diff.signedIn": "Sesión iniciada en Argo CD",
   "diff.signedInAs": "Sesión iniciada en Argo CD como {{user}}",

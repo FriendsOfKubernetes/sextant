@@ -18,6 +18,7 @@
   "diff.resources": "애플리케이션의 리소스",
   "diff.retry": "다시 시도",
   "diff.secretHidden": "Secret 값은 양쪽 모두 숨겨집니다.",
+  "diff.forgetSaved": "저장된 로그인 삭제",
   "diff.signOut": "로그아웃",
   "diff.signedIn": "Argo CD에 로그인됨",
   "diff.signedInAs": "{{user}}(으)로 Argo CD에 로그인됨",

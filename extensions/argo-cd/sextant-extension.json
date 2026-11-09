@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.argo-cd",
   "name": "Argo CD",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Argo CD's Applications, ApplicationSets and AppProjects in a section of their own: sync, health, revision and destination, the resources each application manages with their health, the sync history; Sync, Refresh, Terminate, the diff of desired and live states from Argo CD's API, and the Argo CD UI.",
   "author": "Sextant",
   "sextantApi": 4,

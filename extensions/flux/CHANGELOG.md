@@ -1,5 +1,12 @@
 # Changes of Flux
 
+## 1.4.0 — 2026-11-09
+
+Needs Sextant 0.30 (`sextantApi` 4) with `ui.close({failed})` (ADR-0167, #400). The permissions are unchanged.
+
+- **Reconcile with source fails as a built-in action does:** the object the cluster refused and why are shown in
+  Sextant's failure dialog for the action, not as a notice of the extension's.
+
 ## 1.3.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4) with the extension API's question placeholders and headless actions (ADR-0164,

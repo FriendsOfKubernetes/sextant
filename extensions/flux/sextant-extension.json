@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.flux",
   "name": "Flux",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Flux CD's objects in a sidebar section of their own: sources, Kustomizations, HelmReleases, image automation and notifications with their readiness, revision and source; what each one applied and which objects use a source; problems of what fails to reconcile; Reconcile, Suspend and Resume.",
   "author": "Sextant",
   "sextantApi": 4,

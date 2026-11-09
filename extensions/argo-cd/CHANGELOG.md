@@ -1,5 +1,13 @@
 # Changes of Argo CD
 
+## 1.4.0 — 2026-11-09
+
+Needs Sextant 0.30 (`sextantApi` 4) with `service.forget({saved: true})` (ADR-0167, #401). The permissions are
+unchanged.
+
+- **"Forget saved login"** in the diff's session bar while the login is saved for the cluster: Sextant forgets the
+  remembered login only, this run stays signed in, as the built-in view's button did.
+
 ## 1.3.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4) with its newest extension API. What still differed from Sextant's former built-in

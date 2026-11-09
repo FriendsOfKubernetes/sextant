@@ -80,8 +80,16 @@ describe("the manifest's translations", () => {
     ].sort();
     const translations = manifest.translations as Record<string, Record<string, string>>;
     expect(Object.keys(translations).sort()).toEqual(SEXTANT_LANGUAGES.filter((l) => l !== "en"));
+    // The counter's label in exactly the language's plural forms (ADR-0167).
+    const badge = (key: string) => key.startsWith("sectionBadges.");
     for (const [language, texts] of Object.entries(translations)) {
-      expect(Object.keys(texts).sort(), language).toEqual(keys);
+      expect(Object.keys(texts).filter((k) => !badge(k)).sort(), language).toEqual(keys);
+      const forms = Object.keys(texts)
+        .filter(badge)
+        .map((k) => k.slice("sectionBadges.argoWorkflows.label.".length))
+        .sort();
+      expect(forms, language).toEqual([...new Intl.PluralRules(language).resolvedOptions().pluralCategories].sort());
+      for (const k of Object.keys(texts).filter(badge)) expect(texts[k], `${language} ${k}`).toContain("{{count}}");
     }
   });
 

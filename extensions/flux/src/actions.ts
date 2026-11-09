@@ -4,8 +4,8 @@
 // sight, so like the built-in view's action it is one click with nothing drawn. The frame reads the object, sends
 // `metadata.annotations["reconcile.fluxcd.io/requestedAt"]` = now to the source of a Kustomization or HelmRelease (and a
 // HelmRelease's HelmChart), then to the object, all in one `resources.patchMany` call, and ends the run with
-// `ui.close`. A failure stops before the next object and is told with `ui.notify`, naming the object that failed; the
-// user's own refusal of Sextant's question ends it silently.
+// `ui.close`. A failure stops before the next object and ends the run with `ui.close({failed})`, naming the object that
+// failed, so Sextant shows its own failure dialog; the user's own refusal of Sextant's question ends it silently.
 import { isDeclined, isSextantError, type ObjectRef, type Sextant, SextantError, ui } from "@sextant/extension-sdk";
 import { errorText } from "./dom";
 import { reconcilePatch, refInput, withSourceOrder, type FluxRef } from "./flux";
@@ -89,17 +89,16 @@ const HEADLESS: Record<string, (sextant: Sextant, selection: ObjectRef) => Promi
   "reconcile-with-source": reconcileWithSource,
 };
 
-/** Runs a headless action: nothing drawn; a notice for what went wrong, then the run is ended. */
+/** Runs a headless action: nothing drawn; what went wrong ends it as failed (Sextant's failure dialog, ADR-0167). */
 async function runHeadless(sextant: Sextant, run: (sextant: Sextant, selection: ObjectRef) => Promise<void>): Promise<void> {
+  let failed: string | undefined;
   try {
     const first = sextant.context.selection[0];
     if (first) await run(sextant, first);
   } catch (err) {
-    const notice = err instanceof Told ? err.notice : errorText(err);
-    if (notice !== undefined) await sextant.ui.notify(notice).catch(() => undefined);
-  } finally {
-    await sextant.ui.close().catch(() => undefined);
+    failed = err instanceof Told ? err.notice : errorText(err);
   }
+  await sextant.ui.close(failed === undefined ? undefined : { failed }).catch(() => undefined);
 }
 
 /** Starts the action `contribution` on the objects in the context. */

@@ -18,6 +18,7 @@
   "diff.resources": "Ресурси застосунку",
   "diff.retry": "Спробувати ще раз",
   "diff.secretHidden": "Значення Secret приховано з обох боків.",
+  "diff.forgetSaved": "Забути збережений вхід",
   "diff.signOut": "Вийти",
   "diff.signedIn": "Виконано вхід в Argo CD",
   "diff.signedInAs": "Виконано вхід в Argo CD як {{user}}",

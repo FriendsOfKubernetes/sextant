@@ -19,7 +19,7 @@ with source runs without a window through ADR-0164 (#378, #379).
 | | |
 |---|---|
 | Id | `sextant.flux` |
-| Version | 1.3.0 ([changes](CHANGELOG.md)) |
+| Version | 1.4.0 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants keep their built-in Flux view. |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `flux-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Flux |
@@ -92,8 +92,8 @@ built-in view:
 - **Reconcile now** (`reconcile`, several objects at once): sent at once, no window, no question.
 - **Reconcile with source** (`reconcile-with-source`, in the "Actions" menu, on a Kustomization or HelmRelease that
   names a source): no window at all (`headless`): Sextant runs the extension's frame out of sight, which reads the
-  object, sends and ends; a failure is told as a notice of the extension's that names the object that failed and the
-  error; your own refusal of a question of Sextant's ends it silently.
+  object, sends and ends; a failure ends it as failed, and Sextant's failure dialog names the object that failed and
+  the error; your own refusal of a question of Sextant's ends it silently.
 - **Suspend** (`suspend`, on an object that is not suspended): Sextant asks "Suspend Kustomization podinfo?" (the
   object's kind and name, filled in by Sextant) with what it means, then sends.
 - **Resume** (`resume`, several objects at once, on suspended objects): sent at once, no window, no question.
@@ -155,7 +155,7 @@ order:
 - **Resume**: `{"spec":{"suspend":false}}`.
 
 Sextant's or the user's refusal sends nothing. The cluster's error on one object stops before the next and names the
-object that failed (Sextant's notice for the fixed patches, the extension's notice for Reconcile with source); nothing
+object that failed (Sextant's notice for the fixed patches, Sextant's failure dialog for Reconcile with source); nothing
 is retried.
 
 ## What it does not do
@@ -184,7 +184,7 @@ is retried.
   other kinds are still shown.
 - **A list fails with an error and Retry:** the cluster could not be reached or refused the list; Retry lists again.
 - **An action says "Sextant refused":** Sextant's access rules for the extension declined the change.
-- **Reconcile with source shows nothing:** it has no window; it is done when no notice comes. "Reconcile with source
+- **Reconcile with source shows nothing:** it has no window; it is done when no failure dialog comes. "Reconcile with source
   stopped at …" names the object the cluster refused and why; "… did not finish within 2 minutes" means Sextant ended
   it (a question of Sextant's left unanswered, or a cluster that does not answer).
 - **Updating to 1.2.0 asks for consent again:** its Modify rule no longer asks Sextant's confirmation for every change.

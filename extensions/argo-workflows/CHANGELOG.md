@@ -1,5 +1,14 @@
 # Changes of Argo Workflows
 
+## 1.1.0 — 2026-11-09
+
+Needs Sextant 0.30 (`sextantApi` 4) with ADR-0167's additions (#398, #399).
+
+- **The section's counter** says "N workflows failed recently", in every language with its plural forms, as the
+  built-in view did.
+- **The failed step** in the table is the failed (else errored) pod or container node that finished first, as in the
+  details, instead of the first by node id.
+
 ## 1.0.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4), with the map entries, `enteredWithin`, `notifyAs`, list cells and a kind's own

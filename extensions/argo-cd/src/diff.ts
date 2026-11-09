@@ -136,6 +136,13 @@ export async function signOut(sextant: Sextant, server: ArgoServer): Promise<voi
   await sextant.storage.remove(tokenSecretKey(server.clusterId, server.namespace)).catch(() => undefined);
 }
 
+/** Forgets only the sign-in saved for the cluster; this run's session stays signed in. */
+export async function forgetSaved(sextant: Sextant, server: ArgoServer, using: SignInMode): Promise<void> {
+  await sextant.service
+    .forget({ clusterId: server.clusterId, namespace: server.namespace, service: serviceOf(server, using), saved: true })
+    .catch(() => undefined);
+}
+
 export function startDiff(sextant: Sextant, root: HTMLElement, app: ObjectRef): () => void {
   const clusterId = sextant.context.clusterId;
   let closed = false;
@@ -375,7 +382,14 @@ export function startDiff(sextant: Sextant, root: HTMLElement, app: ObjectRef): 
       "div",
       { className: "session" },
       element("span", { textContent: text }),
-      buttons(ui.button(t("diff.reload"), () => void load()), ui.button(t("diff.signOut"), () => void leave())),
+      buttons(
+        ui.button(t("diff.reload"), () => void load()),
+        // A saved sign-in can be forgotten without ending this run's session (`saved: true`, ADR-0167).
+        ...(state === "saved" && typeof using === "string"
+          ? [ui.button(t("diff.forgetSaved"), () => void forgetSaved(sextant, server, using).then(() => load()))]
+          : []),
+        ui.button(t("diff.signOut"), () => void leave()),
+      ),
     );
   };
 

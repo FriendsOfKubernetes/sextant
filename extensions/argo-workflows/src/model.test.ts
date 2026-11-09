@@ -388,7 +388,9 @@ describe("the manifest's problem rules", () => {
   });
 
   it("are counted on the section, and the table's Only problems shows every failed or errored Workflow", () => {
-    expect(manifest.contributes.sectionBadges).toEqual([{ section: "argoWorkflows" }]);
+    expect(manifest.contributes.sectionBadges).toEqual([
+      { section: "argoWorkflows", label: { one: "{{count}} workflow failed recently", other: "{{count}} workflows failed recently" } },
+    ]);
     const kind = manifest.contributes.kinds.find((k) => k.kind === "Workflow")!;
     for (const [name, wf] of Object.entries(states())) {
       expect(holdsNow(kind.problemWhen, wf), name).toBe(isFailedPhase(workflowPhase(wf)));
@@ -480,13 +482,13 @@ describe("the manifest's columns", () => {
     }
   });
 
-  it("differ where the README says: the first failed step by node id, and none without any message", () => {
-    // Two failed pods: the built-in view named the one that finished first, the cases the first by node id.
+  it("differ where the README says: none without any message, and a failed step before an errored one", () => {
+    // Two failed pods: the one that finished first, as the built-in view named it (`<finishedAt`, ADR-0167).
     const two = copy(workflow);
     nodeOf(two, `${NAME}-2565941370`).phase = "Failed";
     nodeOf(two, `${NAME}-2565941370`).message = "OOMKilled (exit code 137)";
     expect(joined(two)).toBe("A: OOMKilled (exit code 137)");
-    expect(cell("workflow-failed-step", two)).toBe("C: Error (exit code 1)");
+    expect(cell("workflow-failed-step", two)).toBe("A: OOMKilled (exit code 137)");
     // A failed step with no message in a Workflow with none either: the built-in view named the step alone.
     const silent = copy(workflow);
     delete nodeOf(silent, C_ID).message;
@@ -498,7 +500,7 @@ describe("the manifest's columns", () => {
   it("write the failed step as each language does", () => {
     const translations = manifest.translations as Record<string, Record<string, string>>;
     expect(translations.fr!["columns.workflow-failed-step.cases.0.text"]).toBe(
-      '{{.status.nodes[type="Container",phase="Failed"].displayName}} : {{.status.nodes[type="Container",phase="Failed"].message}}',
+      '{{.status.nodes[type="Container",phase="Failed",<finishedAt].displayName}} : {{.status.nodes[type="Container",phase="Failed",<finishedAt].message}}',
     );
     expect(translations["zh-CN"]!["columns.workflow-failed-step.cases.0.text"]).toContain("}}：{{");
   });

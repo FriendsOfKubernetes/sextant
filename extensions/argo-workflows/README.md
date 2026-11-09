@@ -18,7 +18,7 @@ entries by their fields, `enteredWithin`, `notifyAs`, list cells, a kind's own "
 | | |
 |---|---|
 | Id | `sextant.argo-workflows` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `argo-workflows-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Argo Workflows |
@@ -141,16 +141,14 @@ cannot be confirmed and says why.
   computed a value they read it as closely as fields allow; the details always show the full reading:
   - **Progress** is `status.progress`; a controller older than v3.0, which writes none, leaves it blank (the built-in
     column counted the pod steps; the details still do).
-  - **Failed step** is the first failed or errored container step, then pod step (not the root of a one-pod
-    Workflow), then HTTP or plugin step, each in the order of the steps' ids, not the one that finished first as the
-    built-in column chose when several failed; another kind of failed step is told by the Workflow's message. A pod step
+  - **Failed step** is the failed container step that finished first, then the errored one, then the same of pod
+    steps (not the root of a one-pod Workflow), then HTTP or plugin step; the built-in column took the first to finish
+    among failed and errored steps together; another kind of failed step is told by the Workflow's message. A pod step
     without a message shows the Workflow's message after its name, as before; one with neither leaves the cell
     blank (the built-in column showed its name). The details name the failed step exactly as before.
   - **Schedule** joins several schedules as a list in the UI language ("0 2 * * * and 0 14 * * *"); the built-in
     column joined them with commas.
   - **Suspended** and **Failed step** are shown only by their cases: their path, read as a list, is never one.
-- The section's counter says how many Workflows have a problem in Sextant's words for every extension, not "N
-  workflows failed recently".
 - Problems are kept as Sextant keeps every extension's (at most 2000 Workflows with problems per cluster, the source
   at most 5000 failed Workflows); the built-in view kept the 500 most recent failures. A problem's message is new: the
   built-in problems had none.

@@ -18,6 +18,7 @@
   "diff.resources": "Uygulamanın kaynakları",
   "diff.retry": "Tekrar dene",
   "diff.secretHidden": "Secret değerleri her iki tarafta da gizlenir.",
+  "diff.forgetSaved": "Kaydedilmiş oturum bilgilerini unut",
   "diff.signOut": "Oturumu kapat",
   "diff.signedIn": "Argo CD'de oturum açıldı",
   "diff.signedInAs": "Argo CD'de {{user}} olarak oturum açıldı",

@@ -18,7 +18,7 @@ a service receives by label, credentials a service refused not sent again), and 
 | | |
 |---|---|
 | Id | `sextant.argo-cd` |
-| Version | 1.3.0 ([changes](CHANGELOG.md)) |
+| Version | 1.4.0 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `argo-cd-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Argo CD |
@@ -95,7 +95,8 @@ details.
 
   Otherwise it offers "User and password" or "API token", each of which opens Sextant's own sign-in dialog (with
   "Remember for this cluster"), with a note when Argo CD refused the saved login, the admin password or the token
-  Secrets. Sign out forgets the session and the remembered login.
+  Secrets. Sign out forgets the session and the remembered login; "Forget saved login", shown while the login is
+  saved, forgets only the remembered one and keeps this run signed in.
 - **Open Argo CD UI** (`open-ui`, also on ApplicationSets and AppProjects): the application's page, or the list of
   applications.
 

@@ -18,6 +18,7 @@
   "diff.resources": "应用的资源",
   "diff.retry": "重试",
   "diff.secretHidden": "两侧的 Secret 值均已隐藏。",
+  "diff.forgetSaved": "忘记已保存的登录信息",
   "diff.signOut": "退出登录",
   "diff.signedIn": "已登录 Argo CD",
   "diff.signedInAs": "已以 {{user}} 身份登录 Argo CD",
