@@ -462,6 +462,39 @@ describe("contributions of an extension", () => {
     }
   });
 
+  it("draw a details section without a heading, and one hidden until its frame shows it (#406)", () => {
+    const quiet: ExtensionManifest = {
+      ...manifest,
+      sextantApi: 4,
+      contributes: {
+        ...manifest.contributes,
+        detailsSections: [
+          { id: "fields", title: "Widget fields", kinds: [{ group: "demo.sextant.dev", kind: "Widget" }], placement: "section", heading: false },
+          { id: "late", title: "Widget late", kinds: [{ group: "demo.sextant.dev", kind: "Widget" }], placement: "section", startHidden: true },
+        ],
+      },
+    };
+    registerExtension(info({ manifest: quiet }));
+    try {
+      const sections = getDetailsSections({ group: "demo.sextant.dev", version: "v1", kind: "Widget" });
+      const ref = { kind: { group: "demo.sextant.dev", version: "v1", kind: "Widget" }, namespace: "team-a", name: "w" };
+      const Fields = sections.find((s) => s.id === "ext:demo.widgets:fields")!.Component;
+      const Late = sections.find((s) => s.id === "ext:demo.widgets:late")!.Component;
+      const { container } = render(
+        <>
+          <Fields clusterId="kind" objectRef={ref} obj={null} />
+          <Late clusterId="kind" objectRef={ref} obj={null} />
+        </>,
+      );
+      expect(screen.queryByRole("heading", { name: "Widget fields" })).toBeNull();
+      expect(screen.getByRole("group", { name: "Widget fields" })).toBeInTheDocument();
+      const [, late] = container.querySelectorAll(".ext-section");
+      expect((late as HTMLElement).hidden).toBe(true);
+    } finally {
+      unregisterExtension("demo.widgets");
+    }
+  });
+
   it("give a details section the height the frame asks for", async () => {
     await renderShell();
     act(() => useAppStore.getState().openDetails(widgetRef));

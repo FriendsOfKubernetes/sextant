@@ -326,7 +326,9 @@
               "kinds": { "$ref": "#/$defs/kinds" },
               "order": { "$ref": "#/$defs/order" },
               "placement": { "type": "string", "enum": ["section", "tab"] },
-              "when": { "description": "Shown only for objects for which this holds (sextantApi 4).", "$ref": "#/$defs/problemCondition" }
+              "when": { "description": "Shown only for objects for which this holds (sextantApi 4).", "$ref": "#/$defs/problemCondition" },
+              "heading": { "description": "false: no visible heading; the title stays its accessible name (a section, sextantApi 4).", "type": "boolean" },
+              "startHidden": { "description": "Hidden until its frame shows it with ui.setHidden(false) (a section, sextantApi 4).", "type": "boolean" }
             }
           }
         },

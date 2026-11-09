@@ -261,6 +261,16 @@ pub struct DetailsSectionContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub when: Option<ProblemCondition>,
+    /// `false`: no visible heading, as Sextant's own untitled blocks (the title stays its accessible name; #406).
+    /// A `section` only; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub heading: Option<bool>,
+    /// Hidden until its frame shows it (`ui.setHidden(false)`), so a section that may have nothing to show never
+    /// flashes empty (#406). A `section` only; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub start_hidden: Option<bool>,
 }
 
 /// An action on objects of the listed kinds: the details action bar and the table row menu (`view=action`).

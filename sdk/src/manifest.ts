@@ -79,6 +79,10 @@ export interface ManifestDetailsSection {
   placement: DetailsPlacement;
   /** Shown only for objects for which this holds (since Sextant 0.30): a GPU block only on GPU nodes. */
   when?: ProblemCondition;
+  /** `false`: no visible heading; the title stays its accessible name (a `section`; since Sextant 0.30). */
+  heading?: boolean;
+  /** Hidden until the frame shows it with `ui.setHidden(false)` (a `section`; since Sextant 0.30). */
+  startHidden?: boolean;
 }
 
 export interface ManifestAction {

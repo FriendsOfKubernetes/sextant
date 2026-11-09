@@ -67,6 +67,26 @@ pub(crate) fn check_details_sections(manifest: &ExtensionManifest) -> Result<(),
         .key("contributes")
         .key("detailsSections");
     for (i, section) in manifest.contributes.details_sections.iter().enumerate() {
+        for (field, set) in [
+            ("heading", section.heading.is_some()),
+            ("startHidden", section.start_hidden.is_some()),
+        ] {
+            if !set {
+                continue;
+            }
+            if manifest.sextant_api < WINDOW_API {
+                return Err(at(
+                    &list.index(i).key(field),
+                    format!("needs sextantApi {WINDOW_API} or later"),
+                ));
+            }
+            if section.placement != super::manifest::DetailsPlacement::Section {
+                return Err(at(
+                    &list.index(i).key(field),
+                    "is for a `section`, not a tab",
+                ));
+            }
+        }
         if section.kinds.iter().any(is_every_kind) {
             let here = list.index(i).key("kinds");
             if manifest.sextant_api < WINDOW_API {

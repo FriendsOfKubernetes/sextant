@@ -196,7 +196,10 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
       // `*`/`*`: every kind (#411).
       appliesTo: (kind) => section.kinds.some((k) => k.group === "*" && k.kind === "*") || matches(section.kinds, kind),
       ...(section.when !== undefined ? { appliesToObject: ((when) => (obj: KubeObject) => holdsNow(when, obj))(section.when) } : {}),
-      Component: detailsComponent(extensionId, section.id, section.title, section.placement === "tab"),
+      Component: detailsComponent(extensionId, section.id, section.title, section.placement === "tab", {
+        heading: section.heading !== false,
+        startHidden: section.startHidden === true,
+      }),
     });
     removers.push(() => unregisterDetailsSection(id));
   }
@@ -420,10 +423,12 @@ function detailsComponent(
   contribution: string,
   title: string,
   tab: boolean,
+  look: { heading: boolean; startHidden: boolean } = { heading: true, startHidden: false },
 ): ComponentType<DetailsSectionProps> {
   return function ExtensionDetails({ clusterId, objectRef, obj }: DetailsSectionProps) {
-    // `ui.setHidden` (ADR-0161): a section with nothing to show hides, title included; the frame keeps running.
-    const [hidden, setHidden] = useState(false);
+    // `ui.setHidden` (ADR-0161): a section with nothing to show hides, title included; the frame keeps running. With
+    // `startHidden` (#406) it waits hidden until the frame shows it.
+    const [hidden, setHidden] = useState(look.startHidden);
     const frame = (
       <ExtensionFrame
         extensionId={extensionId}
@@ -440,8 +445,8 @@ function detailsComponent(
     );
     if (tab) return frame;
     return (
-      <div className="ext-section" hidden={hidden}>
-        <h3 className="ext-section__title">{title}</h3>
+      <div className="ext-section" hidden={hidden} {...(look.heading ? {} : { role: "group", "aria-label": title })}>
+        {look.heading && <h3 className="ext-section__title">{title}</h3>}
         {frame}
       </div>
     );

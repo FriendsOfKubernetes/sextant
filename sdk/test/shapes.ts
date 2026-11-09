@@ -182,6 +182,8 @@ export const MANIFEST_SHAPES = {
     order: "optional",
     placement: "required",
     when: "optional",
+    heading: "optional",
+    startHidden: "optional",
   }),
   ManifestAction: described<ManifestAction>(`${CONTRIBUTION}/actions/items`, {
     id: "required",

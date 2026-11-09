@@ -10,4 +10,14 @@ export type DetailsSectionContribution = { id: string, title: string, kinds: Arr
 /**
  * Shown only for objects for which this holds, evaluated by the window (#408); `sextantApi` 4.
  */
-when?: ProblemCondition, };
+when?: ProblemCondition, 
+/**
+ * `false`: no visible heading, as Sextant's own untitled blocks (the title stays its accessible name; #406).
+ * A `section` only; `sextantApi` 4.
+ */
+heading?: boolean, 
+/**
+ * Hidden until its frame shows it (`ui.setHidden(false)`), so a section that may have nothing to show never
+ * flashes empty (#406). A `section` only; `sextantApi` 4.
+ */
+startHidden?: boolean, };

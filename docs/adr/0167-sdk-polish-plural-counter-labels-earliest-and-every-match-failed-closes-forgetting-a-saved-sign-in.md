@@ -79,3 +79,10 @@ and `sinceOr` (≤ 4 field paths, only with a `since`) is tried in order when `s
 characters) hold when the text at `path` holds or begins with one of the values, compared as written or in lower case.
 No pattern language: the built-in regular expressions of alternatives (`/unrecoverable|cannot|…/i`) are lists, and
 nothing can backtrack. A value that is not a string never holds.
+
+## Amendment: details sections without a heading, or hidden until shown (#406)
+
+A details `section` may set `heading: false` — no visible heading, as Sextant's own untitled blocks, the title kept as
+the group's accessible name — and `startHidden: true` — hidden until its frame calls `ui.setHidden(false)`, so a section
+on every kind (#411) never flashes empty. A computed column may give its `width` (`<n>px` or `minmax(<n>px, <m>fr)`), and
+a case's `value` sorts a text column too (#403).
