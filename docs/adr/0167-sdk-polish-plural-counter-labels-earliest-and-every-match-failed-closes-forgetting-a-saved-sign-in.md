@@ -72,3 +72,10 @@ learns only `{opened}`, or `{opened: false, found: 0}` without a question; never
 A problem rule's `reasonOr` (a literal, no `{{…}}`) is the reason when `reason` comes out empty, instead of the title,
 and `sinceOr` (≤ 4 field paths, only with a `since`) is tried in order when `since` gives no time: the built-in readings
 "the reason, else `NotReady`" and "`endTime`, else `startTime`, else the creation" are one rule each again.
+
+## Amendment: text conditions (#405)
+
+`{"type": "contains" | "startsWith", "path", "values", "ignoreCase"?}` (`sextantApi` 4, ≤ 20 values of ≤ 256
+characters) hold when the text at `path` holds or begins with one of the values, compared as written or in lower case.
+No pattern language: the built-in regular expressions of alternatives (`/unrecoverable|cannot|…/i`) are lists, and
+nothing can backtrack. A value that is not a string never holds.

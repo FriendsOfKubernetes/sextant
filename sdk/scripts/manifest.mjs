@@ -685,6 +685,11 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (condition.minutes < 1 || condition.minutes > 10080) fail([...segments, "minutes"], "must be 1 to 10080 minutes");
     return;
   }
+  if (condition.type === "contains" || condition.type === "startsWith") {
+    if (counter.api < SOURCES_API) fail([...segments, "type"], `text conditions need sextantApi ${SOURCES_API} or later`);
+    checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
+    return;
+  }
   if (condition.type === "same" || condition.type === "atLeast") {
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`${condition.type}\` needs sextantApi ${SOURCES_API} or later`);
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);

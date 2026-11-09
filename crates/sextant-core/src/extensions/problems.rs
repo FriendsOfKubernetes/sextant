@@ -218,6 +218,21 @@ pub enum ProblemCondition {
         path: String,
         values: Vec<ProblemScalar>,
     },
+    /// The text at `path` holds one of `values` (#405); with `ignoreCase`, in any case (ASCII and Unicode lower case).
+    /// `sextantApi` 4.
+    Contains {
+        path: String,
+        values: Vec<String>,
+        #[serde(default, rename = "ignoreCase")]
+        ignore_case: bool,
+    },
+    /// The text at `path` begins with one of `values` (#405), as `contains`. `sextantApi` 4.
+    StartsWith {
+        path: String,
+        values: Vec<String>,
+        #[serde(default, rename = "ignoreCase")]
+        ignore_case: bool,
+    },
     /// `path` holds a value (not `null`).
     Exists {
         path: String,
@@ -566,6 +581,16 @@ fn check_condition<'k>(
         ));
     }
     match condition {
+        ProblemCondition::Contains { path: field, .. }
+        | ProblemCondition::StartsWith { path: field, .. } => {
+            if checks.api < SOURCES_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("text conditions need sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
+        }
         ProblemCondition::Equals { path: field, .. }
         | ProblemCondition::In { path: field, .. }
         | ProblemCondition::Exists { path: field }

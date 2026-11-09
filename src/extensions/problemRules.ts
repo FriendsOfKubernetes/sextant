@@ -100,6 +100,16 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       const value = valueAt(obj, condition.path);
       return { holds: condition.values.some((v) => sameScalar(value, v)) };
     }
+    // Text conditions (#405): a string value only; no pattern language, so no backtracking.
+    case "contains":
+    case "startsWith": {
+      const value = valueAt(obj, condition.path);
+      if (typeof value !== "string") return NO;
+      const fold = (text: string) => (condition.ignoreCase ? text.toLowerCase() : text);
+      const text = fold(value);
+      const test = condition.type === "contains" ? (v: string) => text.includes(fold(v)) : (v: string) => text.startsWith(fold(v));
+      return { holds: condition.values.some(test) };
+    }
     case "exists": {
       const value = valueAt(obj, condition.path);
       return { holds: value !== undefined && value !== null };

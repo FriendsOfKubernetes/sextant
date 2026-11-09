@@ -46,6 +46,16 @@ describe("problem rules of extensions", () => {
     expect(detectRule(rule, job({ endTime: "2026-11-03T00:00:00Z", startTime: "x" }))[0]!.since).toBe("2026-11-03T00:00:00Z");
   });
 
+  it("test a text by what it holds or begins with, in any case when asked (#405)", () => {
+    const cluster = { metadata: { name: "pg" }, status: { phase: "Waiting for user action", reason: "FailedToPull" } } as KubeObject;
+    expect(evaluate({ type: "contains", path: ".status.phase", values: ["waiting for user"], ignoreCase: true }, cluster).holds).toBe(true);
+    expect(evaluate({ type: "contains", path: ".status.phase", values: ["waiting for user"], ignoreCase: false }, cluster).holds).toBe(false);
+    expect(evaluate({ type: "startsWith", path: ".status.reason", values: ["Failed"], ignoreCase: false }, cluster).holds).toBe(true);
+    expect(evaluate({ type: "startsWith", path: ".status.reason", values: ["ToPull"], ignoreCase: false }, cluster).holds).toBe(false);
+    // Only a text: a number or a missing value never holds.
+    expect(evaluate({ type: "contains", path: ".status.missing", values: ["x"], ignoreCase: false }, cluster).holds).toBe(false);
+  });
+
   it("read field paths of the custom columns' grammar, nothing else", () => {
     expect(valueAt(cluster, ".status.ceph.health")).toBe("HEALTH_ERR");
     expect(valueAt(cluster, "status.items[1].name")).toBe("b");
