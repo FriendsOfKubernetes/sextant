@@ -273,6 +273,8 @@ export interface ManifestProblem {
   stamp?: string[];
   /** Paths whose values, when they change, make the problem notify again (since Sextant 0.30). */
   notifyAgainOn?: string[];
+  /** `seconds`: `since` and `sinceOr` hold seconds since 1970 (since Sextant 0.30). */
+  sinceUnit?: "seconds";
 }
 
 /**

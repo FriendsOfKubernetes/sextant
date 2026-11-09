@@ -3,6 +3,7 @@ import type { KindPattern } from "./KindPattern";
 import type { ProblemCondition } from "./ProblemCondition";
 import type { RuleAbout } from "./RuleAbout";
 import type { RuleSource } from "./RuleSource";
+import type { SinceUnit } from "./SinceUnit";
 
 /**
  * A rule: objects of `kind` for which `when` holds have a problem titled `title`.
@@ -86,4 +87,9 @@ stamp?: Array<string>,
  * Field paths whose values, when they change, make the problem notify again (#407): a new restart count, a new
  * reason. At most 4; `sextantApi` 4.
  */
-notifyAgainOn?: Array<string>, };
+notifyAgainOn?: Array<string>, 
+/**
+ * `seconds`: `since` and `sinceOr` hold seconds since 1970, not RFC 3339 times (a policy result's
+ * `timestamp.seconds`, #404). `sextantApi` 4.
+ */
+sinceUnit?: SinceUnit, };

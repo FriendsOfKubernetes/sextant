@@ -8,6 +8,7 @@
 import type { KindRef, KubeObject, ObjectRef, ProblemCondition, ProblemContribution, ProblemScalar } from "../api";
 import { parseFieldPath, pickStep, type PathStep } from "../features/custom-columns/path";
 import type { Detected } from "../features/problems/model";
+import { formatList } from "../i18n/format";
 import { cleanText } from "../resources/uri";
 
 /** A placeholder shows at most this many characters of its value: a controller's whole condition message (#373). */
@@ -239,24 +240,47 @@ function sameScalar(value: unknown, expected: ProblemScalar): boolean {
  */
 export function fillTemplate(template: string, obj: KubeObject): string | null {
   let missing = false;
-  const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, path: string) => {
-    const value = valueAt(obj, path);
-    if (!isScalar(value)) {
+  const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, inner: string) => {
+    const shown = placeholderText(obj, inner);
+    if (shown === undefined) {
       missing = true;
       return "";
     }
-    const shown = String(value);
     return Array.from(shown).length > MAX_VALUE_CHARS ? `${Array.from(shown).slice(0, MAX_VALUE_CHARS).join("")}…` : shown;
   });
   return missing ? null : text;
 }
 
+/**
+ * What a placeholder shows (#404): the scalar at its path, or with `|firstLine` its first line, `|lastSegment` the part
+ * after its last `.` or `/`, `|list` a list's scalars joined in the UI language, `|count` a list's items or a map's
+ * entries; `undefined` when there is nothing to show.
+ */
+export function placeholderText(obj: KubeObject, inner: string): string | undefined {
+  const bar = inner.indexOf("|");
+  const path = bar < 0 ? inner : inner.slice(0, bar);
+  const filter = bar < 0 ? undefined : inner.slice(bar + 1).trim();
+  const value = valueAt(obj, path);
+  if (filter === "count") {
+    if (Array.isArray(value)) return String(value.length);
+    return value !== null && typeof value === "object" ? String(Object.keys(value).length) : undefined;
+  }
+  if (filter === "list") {
+    const items = Array.isArray(value) ? value.filter(isScalar).map(String) : isScalar(value) ? [String(value)] : [];
+    return items.length === 0 ? undefined : formatList(items);
+  }
+  if (!isScalar(value)) return undefined;
+  const text = String(value);
+  if (filter === "firstLine") return text.split(/\r?\n/)[0];
+  if (filter === "lastSegment") return text.slice(Math.max(text.lastIndexOf("."), text.lastIndexOf("/")) + 1);
+  return text;
+}
+
 /** `template` with each `{{path}}` replaced by the scalar value there (clipped; anything else shows nothing). */
 export function renderMessage(template: string, obj: KubeObject): string {
-  const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, path: string) => {
-    const value = valueAt(obj, path);
-    if (!isScalar(value)) return "";
-    const shown = String(value);
+  const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, inner: string) => {
+    const shown = placeholderText(obj, inner);
+    if (shown === undefined) return "";
     return Array.from(shown).length > MAX_VALUE_CHARS ? `${Array.from(shown).slice(0, MAX_VALUE_CHARS).join("")}…` : shown;
   });
   // Text from the cluster: a URI loses its credentials, query and fragment, as everywhere else.
@@ -270,8 +294,16 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject, ctx: Rule
   const verdict = evaluate(rule.when, obj, ctx);
   if (!verdict.holds) return [];
   // `since`, else the first of `sinceOr` that holds a time (#407), else the condition's own.
+  // With `sinceUnit: "seconds"` (#404) the values are seconds since 1970.
+  const asTime = (v: unknown): string | undefined => {
+    if (rule.sinceUnit === "seconds") {
+      const n = numberOf(v);
+      return n === undefined || n <= 0 ? undefined : new Date(n * 1000).toISOString();
+    }
+    return typeof v === "string" && timeOf(v) !== undefined ? v : undefined;
+  };
   const since =
-    rule.since !== undefined ? [rule.since, ...(rule.sinceOr ?? [])].map((path) => valueAt(obj, path)).find((v) => typeof v === "string" && timeOf(v) !== undefined) : verdict.since;
+    rule.since !== undefined ? [rule.since, ...(rule.sinceOr ?? [])].map((path) => asTime(valueAt(obj, path))).find((v) => v !== undefined) : verdict.since;
   // The reason from the object (#370), cleaned like the message; `reasonOr` (#404), else the title, when it comes out
   // empty.
   const reason = rule.reason === undefined ? "" : renderMessage(rule.reason, obj).trim();

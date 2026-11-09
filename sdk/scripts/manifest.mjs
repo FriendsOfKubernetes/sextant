@@ -842,11 +842,12 @@ function checkProblems(manifest) {
       checkMessage(rule.reason, rule.kind, [...here, "reason"], metadataOnly);
     }
     if (rule.since !== undefined) checkRulePath(rule.since, rule.kind, [...here, "since"], metadataOnly);
-    for (const field of ["reasonOr", "sinceOr", "about", "stamp", "notifyAgainOn"]) {
+    for (const field of ["reasonOr", "sinceOr", "about", "stamp", "notifyAgainOn", "sinceUnit"]) {
       if (rule[field] !== undefined && manifest.sextantApi < SOURCES_API) fail([...here, field], `needs sextantApi ${SOURCES_API} or later`);
     }
     if (rule.reasonOr !== undefined && rule.reasonOr.includes("{{")) fail([...here, "reasonOr"], "is written as it shows: no `{{…}}`");
     if (rule.sinceOr !== undefined && rule.since === undefined) fail([...here, "sinceOr"], "falls back from `since`: the rule needs a `since`");
+    if (rule.sinceUnit !== undefined && rule.since === undefined) fail([...here, "sinceUnit"], "says how `since` is written: the rule needs a `since`");
     (rule.sinceOr ?? []).forEach((path, j) => checkRulePath(path, rule.kind, [...here, "sinceOr", j], metadataOnly));
     if (rule.about !== undefined) {
       const about = rule.about;
@@ -876,8 +877,20 @@ function checkMessage(text, kind, segments, metadataOnly) {
   const found = placeholders(text);
   if (found === null) fail(segments, "has a `{{` without its `}}`");
   if (found.length > MAX_PLACEHOLDERS) fail(segments, `has at most ${MAX_PLACEHOLDERS} placeholders`);
-  for (const field of found) checkRulePath(field.trim(), kind, segments, metadataOnly);
+  for (const raw of found) {
+    // `{{path|filter}}` (#404).
+    const bar = raw.indexOf("|");
+    const field = bar < 0 ? raw : raw.slice(0, bar);
+    const filter = bar < 0 ? undefined : raw.slice(bar + 1).trim();
+    if (filter !== undefined && !PLACEHOLDER_FILTERS.includes(filter)) {
+      fail(segments, `has a filter \`${filter}\`: one of ${PLACEHOLDER_FILTERS.join(", ")}`);
+    }
+    checkRulePath(field.trim(), kind, segments, metadataOnly);
+  }
 }
+
+/** `PLACEHOLDER_FILTERS` (#404). */
+const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "count"];
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
 

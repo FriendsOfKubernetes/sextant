@@ -111,3 +111,9 @@ numeric text included) and `entries` (a map's `key=value` in key order, joined i
 A match step's field may name a nested one (`[connector.state="FAILED"]`) and end in `!` for "not this value"
 (`[type!="Ready"]`, also when the entry lacks it); values are compared as text, so `[controller="true"]` and `[n="3"]`
 match a boolean and a number too (`pair_fits` = `pairsFit`).
+
+## Amendment: placeholder filters and times in seconds (#404)
+
+A placeholder may end in a filter: `{{path|firstLine}}`, `|lastSegment` (after the last `.` or `/`), `|list` (a list's
+scalars joined in the UI language) or `|count` (a list's items, a map's entries) — in messages, reasons and column case
+texts alike (`PLACEHOLDER_FILTERS`). A rule's `sinceUnit: "seconds"` reads `since` and `sinceOr` as seconds since 1970.

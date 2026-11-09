@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
-import { compileRules, detectRule, evaluate, fillTemplate, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, renderMessage, sameValue, valueAt } from "./problemRules";
+import { compileRules, detectRule, evaluate, fillTemplate, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, placeholderText, renderMessage, sameValue, valueAt } from "./problemRules";
 
 const cluster: KubeObject = {
   apiVersion: "ceph.rook.io/v1",
@@ -106,6 +106,38 @@ describe("problem rules of extensions", () => {
     const at = (restarts: number) => detectRule(rule, { metadata: { name: "j" }, status: { restarts } } as KubeObject)[0]!.notifyTag;
     expect(at(3)).toBe("[3]");
     expect(at(4)).not.toBe(at(3));
+  });
+
+  it("show a placeholder's first line, last segment, list or count, and read seconds as a time (#404)", () => {
+    const report = {
+      metadata: { name: "r" },
+      spec: { class: "org.apache.kafka.connect.file.FileStreamSourceConnector", trace: "java.lang.Error: boom\n\tat X" },
+      results: [
+        { policy: "require-labels", result: "fail", timestamp: { seconds: 1762700000 } },
+        { policy: "disallow-latest", result: "fail" },
+        { policy: "ok", result: "pass" },
+      ],
+    } as unknown as KubeObject;
+    expect(placeholderText(report, ".spec.trace|firstLine")).toBe("java.lang.Error: boom");
+    expect(placeholderText(report, ".spec.class|lastSegment")).toBe("FileStreamSourceConnector");
+    expect(placeholderText(report, '.results[result="fail",*].policy|list')).toBe("require-labels, disallow-latest");
+    expect(placeholderText(report, '.results[result="fail",*]|count')).toBe("2");
+    expect(renderMessage('{{.results[result="fail",*]|count}} failed: {{.results[result="fail",*].policy|list}}', report)).toBe(
+      "2 failed: require-labels, disallow-latest",
+    );
+    const rule = {
+      id: "fail",
+      title: "Failed",
+      kind: { group: "wgpolicyk8s.io", kind: "PolicyReport" },
+      when: { type: "exists", path: ".results" },
+      message: "",
+      graceMinutes: 0,
+      notify: true,
+      toldThroughOwner: false,
+      since: '.results[result="fail"].timestamp.seconds',
+      sinceUnit: "seconds",
+    } as unknown as ProblemContribution;
+    expect(detectRule(rule, report)[0]!.since).toBe(new Date(1762700000 * 1000).toISOString());
   });
 
   it("read field paths of the custom columns' grammar, nothing else", () => {

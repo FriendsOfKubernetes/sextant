@@ -850,6 +850,11 @@
           "maxItems": 4,
           "items": { "$ref": "#/$defs/fieldPath" }
         },
+        "sinceUnit": {
+          "description": "`seconds`: since and sinceOr hold seconds since 1970 (sextantApi 4).",
+          "type": "string",
+          "enum": ["seconds"]
+        },
         "sinceOr": {
           "description": "Field paths tried in order when `since` gives no time (sextantApi 4).",
           "type": "array",

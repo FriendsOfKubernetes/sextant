@@ -144,6 +144,19 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub notify_again_on: Option<Vec<String>>,
+    /// `seconds`: `since` and `sinceOr` hold seconds since 1970, not RFC 3339 times (a policy result's
+    /// `timestamp.seconds`, #404). `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub since_unit: Option<SinceUnit>,
+}
+
+/// How a rule's `since` is written.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum SinceUnit {
+    Seconds,
 }
 
 /// Which object a problem is about (`ProblemContribution.about`): its kind written out, or read from the judged object
@@ -460,6 +473,7 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             ("about", rule.about.is_some()),
             ("stamp", rule.stamp.is_some()),
             ("notifyAgainOn", rule.notify_again_on.is_some()),
+            ("sinceUnit", rule.since_unit.is_some()),
         ] {
             if set && manifest.sextant_api < SOURCES_API {
                 return Err(at(
@@ -475,6 +489,12 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                     "is written as it shows: no `{{…}}`",
                 ));
             }
+        }
+        if rule.since_unit.is_some() && rule.since.is_none() {
+            return Err(at(
+                &here.key("sinceUnit"),
+                "says how `since` is written: the rule needs a `since`",
+            ));
         }
         let since_or = rule.since_or.as_deref().unwrap_or_default();
         if !since_or.is_empty() && rule.since.is_none() {
@@ -994,10 +1014,29 @@ pub(crate) fn check_message(
         ));
     }
     for field in placeholders {
+        // `{{path|filter}}` (#404): the value as its first line, last segment, a list joined, or a count.
+        let (field, filter) = match field.split_once('|') {
+            Some((f, filter)) => (f, Some(filter.trim())),
+            None => (field, None),
+        };
+        if let Some(filter) = filter {
+            if !PLACEHOLDER_FILTERS.contains(&filter) {
+                return Err(at(
+                    path,
+                    format!(
+                        "has a filter `{filter}`: one of {}",
+                        PLACEHOLDER_FILTERS.join(", ")
+                    ),
+                ));
+            }
+        }
         check_rule_path(field.trim(), kind, path, metadata_only)?;
     }
     Ok(())
 }
+
+/// What may follow a placeholder's path after `|` (#404).
+pub const PLACEHOLDER_FILTERS: [&str; 4] = ["firstLine", "lastSegment", "list", "count"];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.
 pub fn placeholders(text: &str) -> Option<Vec<&str>> {
