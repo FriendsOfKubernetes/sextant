@@ -197,7 +197,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "mesh",
     "traefik",
     "contour",
-    "knative",
     "crossplane",
     "clusterApi",
     "k3s",
@@ -238,7 +237,6 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "traefik",
     // Contour proxies (#233): a window view of 0.20.0.
     "contour",
-    "knative",
     "crossplane",
     "policies",
     // Sealed Secrets (#240): a window view of 0.21.0.

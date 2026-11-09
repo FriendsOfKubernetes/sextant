@@ -22,8 +22,6 @@
     "linkerd": "Linkerd",
     "traefik": "Traefik",
     "contour": "Contour",
-    "knative": "Knative Serving",
-    "knativeEventing": "Knative Eventing",
     "crossplane": "Crossplane",
     "kyverno": "Kyverno",
     "sealedSecrets": "Sealed Secrets",

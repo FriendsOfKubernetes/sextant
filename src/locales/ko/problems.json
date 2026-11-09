@@ -26,7 +26,6 @@
     "mesh": "서비스 메시",
     "traefik": "Traefik",
     "contour": "Contour",
-    "knative": "Knative",
     "crossplane": "Crossplane",
     "clusterApi": "Cluster API",
     "dra": "Dynamic Resource Allocation",

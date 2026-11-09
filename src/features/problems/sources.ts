@@ -4,11 +4,9 @@
 import type { KindRef, KubeObject, ResourceKind } from "../../api";
 import { findKind } from "../../resources";
 import { COUNTED_KINDS } from "../gateway-api/problems";
-import { CONFIGURATION as KNATIVE_CONFIGURATION, KSERVICE } from "../knative/model";
 import { CONTOUR_ACROSS } from "../contour/across";
 import { HTTP_PROXY } from "../contour/model";
 import { INGRESS_ROUTE as TRAEFIK_INGRESS_ROUTE } from "../traefik/model";
-import { EVENTING_KINDS } from "../knative/eventing";
 import { CLUSTER_POLICY_REPORT, POLICY_REPORT } from "../kyverno/model";
 import { XRD } from "../crossplane/model";
 import { CAPI_PAUSED_ACROSS } from "../cluster-api/across";
@@ -161,14 +159,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // Istio routing and mTLS mistakes (#155): judged across objects by the provider of features/mesh (`external`), held
   // only where the cluster serves VirtualServices.
   mesh: [{ category: "mesh", kind: { group: "networking.istio.io", version: "v1", kind: "VirtualService" }, fieldSelector: null, discovered: true, external: true }],
-  // Knative Services and Configurations of their own (#213): a failed latest revision shows through them.
-  // Knative Eventing (#234): every kind of its section the cluster serves; Triggers and Subscriptions can be thousands:
-  // capped.
-  knative: [
-    tool("knative", KSERVICE),
-    tool("knative", KNATIVE_CONFIGURATION),
-    ...EVENTING_KINDS.map((d) => tool("knative", d.kind, MAX_SOURCE_OBJECTS)),
-  ],
   // Traefik (#232, opt-in): references to objects that do not exist, judged across objects by the provider of
   // features/traefik (`external`), held only where the cluster serves IngressRoutes (traefik.io); no Secret is listed.
   traefik: [{ category: "traefik", kind: TRAEFIK_INGRESS_ROUTE, fieldSelector: null, discovered: true, external: true }],

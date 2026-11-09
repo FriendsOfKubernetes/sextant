@@ -11,7 +11,6 @@ import type { KindRef, KubeObject, ObjectRef } from "../../api";
 import { status } from "../../resources";
 import { kindFromApiVersion } from "../../resources/refs";
 import { eventTimestamp, involvedObject } from "../events/model";
-import { knativeProblems } from "../knative/problemRules";
 import { contourProblems } from "../contour/problemRules";
 import { policyProblems } from "../kyverno/problemRules";
 import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../cluster-api/model";
@@ -53,7 +52,6 @@ export const PROBLEM_CATEGORIES = [
   "mesh",
   "traefik",
   "contour",
-  "knative",
   "crossplane",
   "clusterApi",
   "k3s",
@@ -252,8 +250,6 @@ export const REPLICASET = k("apps", "v1", "ReplicaSet");
 /** cert-manager's Certificate. */
 export const CERTIFICATE = k("cert-manager.io", "v1", "Certificate");
 
-const KNATIVE_EVENTING_GROUPS = new Set(["eventing.knative.dev", "messaging.knative.dev", "flows.knative.dev", "sources.knative.dev"]);
-
 function time(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const t = Date.parse(value);
@@ -281,9 +277,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (same(kind, CERTIFICATE)) return "certificates";
   if (kind.group === "gateway.networking.k8s.io") return "gateway";
   // Knative Services and Configurations (#213); Kyverno policy reports (#213, opt-in).
-  if (kind.group === "serving.knative.dev" && (kind.kind === "Service" || kind.kind === "Configuration")) return "knative";
-  // Knative Eventing (#234): its kinds are judged in features/knative/eventingProblems.ts.
-  if (KNATIVE_EVENTING_GROUPS.has(kind.group)) return "knative";
   if (kind.group === "wgpolicyk8s.io") return "policies";
   // Contour HTTPProxies (#233): invalid and orphaned ones.
   if (kind.group === "projectcontour.io" && kind.kind === "HTTPProxy") return "contour";
@@ -707,8 +700,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return certificateProblems(obj);
     case "gateway":
       return gatewayProblems(obj, kind);
-    case "knative":
-      return knativeProblems(kind, obj);
     case "contour":
       return contourProblems(kind, obj);
     case "policies":

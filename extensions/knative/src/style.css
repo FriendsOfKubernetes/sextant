@@ -1,0 +1,85 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields, tables,
+   status words and links are the SDK's UI kit (`ui`, classes `sx-*`). */
+body.compact {
+  padding: 8px 0;
+}
+
+/* Knative: why an object is (not) ready, the failing condition's message, the event path as a tree and a Trigger's
+   filter as a list, as the built-in view drew them (with cert-manager's classes then). */
+.kn-explain {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.kn-explain--danger {
+  border-left-color: var(--color-danger);
+}
+
+.kn-message {
+  margin: 4px 0 8px;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.kn-muted {
+  margin: 4px 0;
+  color: var(--color-text-muted);
+}
+
+.kn-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.kn-list li {
+  margin: 2px 0;
+}
+
+.kn-resolved {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.kn-chain,
+.kn-chain ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.kn-chain ul {
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+}
+
+.kn-chain__item {
+  margin: 4px 0;
+}
+
+.kn-chain__row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.kn-chain__item[aria-current="true"] > .kn-chain__row {
+  background: var(--color-selected);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.kn-chain__kind {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.kn-chain__extra {
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}

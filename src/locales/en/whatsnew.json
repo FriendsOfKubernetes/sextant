@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Views of cluster tools are now extensions",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi, External Secrets, JobSet, KubeRay, KServe and Operator Lifecycle Manager moved out of Sextant into its own extensions from the extension catalog, which are updated on their own. Install the ones you use below: until then their sections are not shown. Your notification settings for them were kept, and the sidebar also offers them in clusters that run these tools."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Knative, CloudNativePG, Strimzi, External Secrets, JobSet, KubeRay, KServe and Operator Lifecycle Manager moved out of Sextant into its own extensions from the extension catalog, which are updated on their own. Install the ones you use below: until then their sections are not shown. Your notification settings for them were kept, and the sidebar also offers them in clusters that run these tools."
     },
     "api4": {
       "title": "Extension API 4",
@@ -34,7 +34,8 @@
       "external-secrets": "ExternalSecrets, stores and PushSecrets",
       "jobset": "JobSets with their Jobs, restarts and failures",
       "kuberay": "Ray clusters, jobs and services with their logs",
-      "kserve": "InferenceServices, serving runtimes and inference graphs"
+      "kserve": "InferenceServices, serving runtimes and inference graphs",
+      "knative": "Serving Services, revisions and routes; Eventing brokers, triggers, channels and sources"
     }
   }
 }

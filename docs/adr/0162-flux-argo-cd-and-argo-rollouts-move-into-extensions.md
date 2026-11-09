@@ -94,3 +94,10 @@ The second group moves the same way: `extensions/external-secrets`, `extensions/
 agents), and the secret-name rule KubeRay's masks shared with the core moves to `src/resources/secretNames.ts`. The
 ClusterExternalSecret Refresh column now reads `spec.refreshTime`: the built-in one read `spec.refreshInterval`, which
 that kind does not have, and was always empty.
+
+## Amendment: Knative
+
+Knative Serving and Eventing move into one extension, `extensions/knative` (`sextant.knative`, 1.0.0), with both
+sections (`knative`, `knativeEventing`, after `contour`) and a counter each, counting its own rules
+(`sectionBadges[].rules`); the category `knative` moves to the extension's (never for agents). A SinkBinding's subject
+selector now reads as a selector (the built-in printed `[object Object]`).

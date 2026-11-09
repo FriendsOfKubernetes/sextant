@@ -30,7 +30,6 @@
     "mesh": "Maillage de services",
     "traefik": "Traefik",
     "contour": "Contour",
-    "knative": "Knative",
     "crossplane": "Crossplane",
     "clusterApi": "Cluster API",
     "dra": "Dynamic Resource Allocation",

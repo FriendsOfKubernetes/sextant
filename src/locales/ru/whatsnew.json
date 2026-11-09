@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Представления инструментов кластера теперь расширения",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi, External Secrets, JobSet, KubeRay, KServe и Operator Lifecycle Manager вынесены из Sextant в его собственные расширения из каталога расширений, которые обновляются отдельно. Установите нужные ниже: до этого их разделы не показываются. Ваши настройки уведомлений для них сохранены, а боковая панель тоже предлагает их в кластерах, где работают эти инструменты."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Knative, CloudNativePG, Strimzi, External Secrets, JobSet, KubeRay, KServe и Operator Lifecycle Manager вынесены из Sextant в его собственные расширения из каталога расширений, которые обновляются отдельно. Установите нужные ниже: до этого их разделы не показываются. Ваши настройки уведомлений для них сохранены, а боковая панель тоже предлагает их в кластерах, где работают эти инструменты."
     },
     "api4": {
       "title": "API расширений 4",
@@ -34,7 +34,8 @@
       "external-secrets": "ExternalSecret, хранилища и PushSecret",
       "jobset": "JobSet с их Job, перезапусками и сбоями",
       "kuberay": "Кластеры, задания и сервисы Ray с их логами",
-      "kserve": "InferenceService, среды выполнения моделей и графы инференса"
+      "kserve": "InferenceService, среды выполнения моделей и графы инференса",
+      "knative": "Сервисы, ревизии и маршруты Serving; брокеры, триггеры, каналы и источники Eventing"
     }
   }
 }

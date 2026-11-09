@@ -19,7 +19,7 @@ import { LINGER_MS, USAGE_POLL_MS, resetVolumeUsage, useVolumeUsage } from "../s
 import { VclusterSection } from "../vcluster/details";
 import { PrometheusOperatorSection } from "../prometheus-operator/details";
 import { SERVICE_MONITOR, PROMETHEUS, PROMETHEUS_AGENT } from "../prometheus-operator/model";
-import { KSERVICE } from "../knative/model";
+const KSERVICE = { group: "serving.knative.dev", version: "v1", kind: "Service" };
 import { MeshMembershipSection } from "../mesh/MembershipSection";
 import { CrossplaneResourceSection } from "../crossplane/details";
 import { XRD } from "../crossplane/model";
