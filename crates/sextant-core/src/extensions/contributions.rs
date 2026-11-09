@@ -304,10 +304,12 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 &here.key("cases").index(j).key("text"),
                 false,
             )?;
-            if case.value.is_some() && format != ColumnFormat::Number {
+            // A number column sorts and filters by it; a text column sorts by it (#403), its text still shown.
+            if case.value.is_some() && !matches!(format, ColumnFormat::Number | ColumnFormat::Text)
+            {
                 return Err(at(
                     &here.key("cases").index(j).key("value"),
-                    "goes with `format: \"number\"`",
+                    "goes with `format: \"number\"` or `\"text\"`",
                 ));
             }
             if let Some(tooltip) = &case.tooltip {

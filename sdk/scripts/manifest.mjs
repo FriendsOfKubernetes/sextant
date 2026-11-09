@@ -1523,7 +1523,7 @@ function checkColumns(manifest) {
       checkObjectCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi);
       // Field values in the text, as a problem message has them (#368).
       checkMessage(c.text, column.kind, [...here, "cases", j, "text"], false);
-      if (c.value !== undefined && format !== "number") fail([...here, "cases", j, "value"], 'goes with `format: "number"`');
+      if (c.value !== undefined && format !== "number" && format !== "text") fail([...here, "cases", j, "value"], 'goes with `format: "number"` or `"text"`');
       if (c.tooltip !== undefined) checkMessage(c.tooltip, column.kind, [...here, "cases", j, "tooltip"], false);
     });
   });
