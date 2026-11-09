@@ -3,4 +3,4 @@
 /**
  * The tone of a shown value.
  */
-export type ColumnTone = "ok" | "warning" | "error" | "neutral";
+export type ColumnTone = "ok" | "warning" | "error" | "neutral" | "muted";

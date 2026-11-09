@@ -15,7 +15,7 @@ import { formatList } from "../i18n/format";
 /** Longest text a computed cell shows. */
 export const MAX_CELL_CHARS = 200;
 
-const TONES: Record<ColumnTone, Tone> = { ok: "success", warning: "warning", error: "danger", neutral: "neutral" };
+const TONES: Record<ColumnTone, Tone> = { ok: "success", warning: "warning", error: "danger", neutral: "neutral", muted: "muted" };
 
 /**
  * A column's `lookup` (#387): `field` of the item of `list` that `index` names (an index the object leaves out is 0);

@@ -428,6 +428,8 @@ pub enum ColumnTone {
     Warning,
     Error,
     Neutral,
+    /// Greyed: a steady state that is neither good nor bad (hibernated, paused, completed; #403).
+    Muted,
 }
 
 /// A text a column shows where `when` holds.

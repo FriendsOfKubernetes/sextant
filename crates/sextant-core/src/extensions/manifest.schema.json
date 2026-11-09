@@ -437,7 +437,7 @@
                 "description": "A tone per shown value: `ok`, `warning`, `error` or `neutral`.",
                 "type": "object",
                 "maxProperties": 20,
-                "additionalProperties": { "type": "string", "enum": ["ok", "warning", "error", "neutral"] }
+                "additionalProperties": { "type": "string", "enum": ["ok", "warning", "error", "neutral", "muted"] }
               },
               "tooltipPaths": {
                 "description": "The cell's tooltip, the first with a value.",
@@ -488,7 +488,7 @@
                       "format": "non-blank",
                       "pattern": "\\S"
                     },
-                    "tone": { "type": "string", "enum": ["ok", "warning", "error", "neutral"] },
+                    "tone": { "type": "string", "enum": ["ok", "warning", "error", "neutral", "muted"] },
                     "value": {
                       "description": "With `format: \"number\"`: the number the column sorts and filters by while the case holds; the text is still shown (sextantApi 4).",
                       "type": "number"
