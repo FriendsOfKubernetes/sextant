@@ -143,19 +143,28 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
 
   // Problem rules: evaluated by the problems store, never by extension code (ADR-0137); where they run is decided in
   // Rust for the kinds the user agreed to.
-  if (contributes.problems.length > 0) {
-    removers.push(registerExtensionProblems(extensionId, info.name, contributes.problems));
+  // Rules of a category of the extension's own (#410) go to that category, the others to the main one.
+  const mainRules = contributes.problems.filter((rule) => rule.category === undefined);
+  if (mainRules.length > 0) removers.push(registerExtensionProblems(extensionId, info.name, mainRules));
+  for (const own of contributes.problemCategories ?? []) {
+    const rules = contributes.problems.filter((rule) => rule.category === own.id);
+    if (rules.length > 0) removers.push(registerExtensionProblems(extensionId, own.title, rules, { id: own.id, optIn: own.optIn }));
   }
+  const allCategories = [
+    ...(mainRules.length > 0 ? [categoryOfExtension(extensionId)] : []),
+    ...(contributes.problemCategories ?? [])
+      .filter((own) => contributes.problems.some((rule) => rule.category === own.id))
+      .map((own) => categoryOfExtension(extensionId, own.id)),
+  ];
 
   // Counters on the extension's own sections (ADR-0143): the problems of its own rules, counted by the window. Never on
   // a section of Sextant's, nor on one another extension already counts.
   for (const badge of contributes.sectionBadges) {
     if ((SIDEBAR_SECTIONS as readonly string[]).includes(badge.section) || getSectionBadge(badge.section)) continue;
-    const category = categoryOfExtension(extensionId);
     const rules = badge.rules;
     const forms = badge.label;
     removers.push(
-      registerSectionBadge(badge.section, (clusterId) => useExtensionSectionCount(clusterId, category, rules), {
+      registerSectionBadge(badge.section, (clusterId) => useExtensionSectionCount(clusterId, allCategories, rules), {
         tone: "danger",
         labelKey: "extensions:host.sectionBadge",
         ...(forms ? { label: (count: number) => pluralLabel(forms, count) } : {}),
@@ -368,14 +377,17 @@ function problemOf(
   const own = rules.filter((rule) => kindKeyOf(rule.kind) === kindKeyOf(kind));
   if (own.length === 0) return undefined;
   const selector = own[0]!.source?.labelSelector;
-  const category = categoryOfExtension(extensionId);
+  // The rules may belong to the main category and to categories of the extension's own (#410).
+  const categories = [...new Set(own.map((rule) => categoryOfExtension(extensionId, rule.category)))];
   return (obj) => {
     if (selector !== undefined && !matchesSelector(obj.metadata?.labels as Record<string, string> | undefined, selector)) {
       return false;
     }
     const now = Date.now();
-    return detectExtension(category, kind, obj).some(
-      (d) => (d.activeFrom === undefined || d.activeFrom <= now) && (d.until === undefined || d.until > now),
+    return categories.some((category) =>
+      detectExtension(category, kind, obj).some(
+        (d) => (d.activeFrom === undefined || d.activeFrom <= now) && (d.until === undefined || d.until > now),
+      ),
     );
   };
 }

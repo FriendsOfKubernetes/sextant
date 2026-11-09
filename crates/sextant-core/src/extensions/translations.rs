@@ -157,6 +157,12 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
             Text::Message(&rule.message),
         );
     }
+    for category in &c.problem_categories {
+        out.insert(
+            format!("problemCategories.{}.title", category.id),
+            Text::Title,
+        );
+    }
     for command in &c.commands {
         out.insert(format!("commands.{}.title", command.id), Text::Title);
     }

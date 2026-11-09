@@ -92,6 +92,7 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
         title: text(`problems.${r.id}.title`, r.title),
         message: text(`problems.${r.id}.message`, r.message),
       })),
+      problemCategories: (c.problemCategories ?? []).map((pc) => ({ ...pc, title: text(`problemCategories.${pc.id}.title`, pc.title) })),
       metricQueries: c.metricQueries.map((q) => ({ ...q, title: text(`metricQueries.${q.id}.title`, q.title) })),
       commands: c.commands.map((command) => ({ ...command, title: text(`commands.${command.id}.title`, command.title) })),
     },

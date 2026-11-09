@@ -117,8 +117,16 @@ export function setExtensionDetector(detector: typeof extensionDetector): void {
   extensionDetector = detector;
 }
 
-/** Whether a category is off until the user turns it on (`OPT_IN_CATEGORIES`); an extension's never is. */
-export const isOptIn = (category: ProblemCategory): boolean => (OPT_IN_CATEGORIES as readonly string[]).includes(category);
+/** Whether an extension's category is opt-in (`problemCategories[].optIn`, #410): set by its registry too. */
+let extensionOptIn: ((category: ProblemCategory) => boolean) | undefined;
+
+export function setExtensionOptIn(optIn: typeof extensionOptIn): void {
+  extensionOptIn = optIn;
+}
+
+/** Whether a category is off until the user turns it on: `OPT_IN_CATEGORIES`, or an extension's opt-in category. */
+export const isOptIn = (category: ProblemCategory): boolean =>
+  (OPT_IN_CATEGORIES as readonly string[]).includes(category) || (extensionOptIn?.(category) ?? false);
 
 /** How long a container restart or an OOM kill counts after it happened. */
 export const RECENT_RESTART_MS = 15 * 60_000;

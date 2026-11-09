@@ -245,6 +245,18 @@ export interface ManifestProblem {
    * runs of one owner notify as one: `.metadata.labels["workflows.argoproj.io/cron-workflow"]` (since Sextant 0.30).
    */
   notifyAs?: string;
+  /** The id of one of `contributes.problemCategories` its problems belong to (since Sextant 0.30). */
+  category?: string;
+}
+
+/**
+ * A problem category of the extension's own besides its main one (since Sextant 0.30): with `optIn`, off until the
+ * user turns it on, as Sextant's opt-in categories are. Never given to agents.
+ */
+export interface ManifestProblemCategory {
+  id: string;
+  title: string;
+  optIn?: boolean;
 }
 
 /**
@@ -276,6 +288,7 @@ export interface ManifestContributions {
   metricQueries?: ManifestMetricQuery[];
   /** Problem counters on the extension's own sidebar sections; needs `sextantApi` 3. */
   sectionBadges?: ManifestSectionBadge[];
+  problemCategories?: ManifestProblemCategory[];
   /** Programs run by id in a container named by labels (`sextant.exec.run`); needs `sextantApi` 3. */
   commands?: ManifestCommand[];
   /** Kinds in a sidebar section of the extension's own; needs `sextantApi` 4. */
@@ -482,6 +495,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
         };
       }),
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
+      problemCategories: (c.problemCategories ?? []).map((pc) => ({ id: pc.id, title: pc.title, optIn: pc.optIn ?? false })),
       sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [], ...(b.label ? { label: b.label } : {}) })),
       commands: (c.commands ?? []).map((command) => ({ ...command, params: command.params ?? [], changes: command.changes ?? false })),
       kinds: (c.kinds ?? []).map((k) => ({ ...k, searchByDefault: k.searchByDefault ?? false, printerColumns: k.printerColumns ?? true })),

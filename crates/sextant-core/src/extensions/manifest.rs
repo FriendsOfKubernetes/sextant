@@ -152,6 +152,8 @@ pub struct Contributions {
     pub metric_queries: Vec<MetricQuery>,
     /// Problem counters on the extension's own sidebar sections (ADR-0143); `sextantApi` 3.
     pub section_badges: Vec<SectionBadgeContribution>,
+    /// Problem categories of the extension's own besides its main one, opt-in or not (#410); `sextantApi` 4.
+    pub problem_categories: Vec<super::problems::ProblemCategoryContribution>,
     /// Programs the extension runs by id in a container it names by labels (ADR-0147); `sextantApi` 3.
     pub commands: Vec<CommandContribution>,
     /// Kinds listed in a sidebar section of the extension's own with Sextant's tables (ADR-0152); `sextantApi` 4.
@@ -558,6 +560,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     commands::check_commands(&manifest)?;
     contributions::check_actions(&manifest)?;
     contributions::check_details_sections(&manifest)?;
+    super::problems::check_problem_categories(&manifest)?;
     contributions::check_columns(&manifest)?;
     contributions::check_kinds(&manifest)?;
     contributions::check_permissions(&manifest)?;

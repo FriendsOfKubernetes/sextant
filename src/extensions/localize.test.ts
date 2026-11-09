@@ -31,6 +31,7 @@ const manifest: ExtensionManifest = {
     ],
     metricQueries: [{ id: "health", title: "Ceph health", query: "max(ceph_health_status)", params: [] }],
     sectionBadges: [],
+    problemCategories: [],
     commands: [],
     kinds: [],
     menuItems: [],

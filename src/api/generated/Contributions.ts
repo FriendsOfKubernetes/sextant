@@ -9,6 +9,7 @@ import type { KindContribution } from "./KindContribution";
 import type { MenuItemContribution } from "./MenuItemContribution";
 import type { MetricQuery } from "./MetricQuery";
 import type { PageContribution } from "./PageContribution";
+import type { ProblemCategoryContribution } from "./ProblemCategoryContribution";
 import type { ProblemContribution } from "./ProblemContribution";
 import type { SectionBadgeContribution } from "./SectionBadgeContribution";
 import type { SectionContribution } from "./SectionContribution";
@@ -31,6 +32,10 @@ metricQueries: Array<MetricQuery>,
  * Problem counters on the extension's own sidebar sections (ADR-0143); `sextantApi` 3.
  */
 sectionBadges: Array<SectionBadgeContribution>, 
+/**
+ * Problem categories of the extension's own besides its main one, opt-in or not (#410); `sextantApi` 4.
+ */
+problemCategories: Array<ProblemCategoryContribution>, 
 /**
  * Programs the extension runs by id in a container it names by labels (ADR-0147); `sextantApi` 3.
  */

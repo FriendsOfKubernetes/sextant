@@ -78,7 +78,8 @@ const manifest: ExtensionManifest = {
   sextantApi: 1,
   entry: "index.html",
   permissions: { clusters: { type: "all" }, rules: [] },
-  contributes: { pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [], metricQueries: [], sectionBadges: [], commands: [], kinds: [], menuItems: [], services: [], agentTools: [], sections: [] },
+  contributes: { pages: [], detailsSections: [], actions: [], columns: [], dockActions: [], problems: [], metricQueries: [], sectionBadges: [],
+    problemCategories: [], commands: [], kinds: [], menuItems: [], services: [], agentTools: [], sections: [] },
 };
 
 const catalogSource = { type: "catalog" as const, repository: "acme/sextant-quota", keyId: "C0F4B41AA942C166", publicKey: KEY };

@@ -44,3 +44,12 @@ Crossplane's chain). From `sextantApi` 4 an extension may have 30 problem rules 
 checked as an action's `when` (`check_details_sections` = `checkDetailsSections`, no `missing`) and evaluated by the
 window (`DetailsSectionDef.appliesToObject`); while the object loads the section is left out. A GPU block goes only on
 GPU nodes, a devices block only on pods that claim devices.
+
+## Amendment: problem categories of an extension's own (#410)
+
+`contributes.problemCategories` (`sextantApi` 4, at most 5: `{id, title, optIn}`) and a rule's `category`
+(`check_problem_categories` = `checkProblemCategories`; titles translatable as `problemCategories.<id>.title`). The
+window registers each as `ext:<extension id>:<category id>` beside the main `ext:<extension id>`; an opt-in one is off
+until turned on (`isOptIn` asks the registry through `setExtensionOptIn`), shown with the opt-in toggles on the Problems
+page, and counted on the extension's section only while on. Agents never get these categories: Rust takes only
+`ext:<id>` (`category_for_agents`). A columns' `muted` tone came with it (#403).

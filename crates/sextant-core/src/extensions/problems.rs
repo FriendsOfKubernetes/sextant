@@ -114,6 +114,62 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub notify_as: Option<String>,
+    /// The id of one of `contributes.problemCategories` the rule's problems belong to, instead of the extension's own
+    /// category (#410). `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub category: Option<String>,
+}
+
+/// A problem category of an extension's own besides its main one (#410): a title, and whether it is off until the user
+/// turns it on, as Sextant's opt-in categories are. Never given to agents.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ProblemCategoryContribution {
+    pub id: String,
+    pub title: String,
+    #[serde(default)]
+    pub opt_in: bool,
+}
+
+/// Categories of one extension besides its main one.
+pub const MAX_PROBLEM_CATEGORIES: usize = 5;
+
+/// `contributes.problemCategories` and each rule's `category` (#410).
+pub(crate) fn check_problem_categories(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
+    let list = JsonPath::default()
+        .key("contributes")
+        .key("problemCategories");
+    let categories = &manifest.contributes.problem_categories;
+    if !categories.is_empty() && manifest.sextant_api < SOURCES_API {
+        return Err(at(
+            &list,
+            format!("needs sextantApi {SOURCES_API} or later"),
+        ));
+    }
+    if !categories.is_empty() && manifest.contributes.problems.is_empty() {
+        return Err(at(&list, "needs `contributes.problems`"));
+    }
+    for (i, category) in categories.iter().enumerate() {
+        if categories[..i].iter().any(|c| c.id == category.id) {
+            return Err(at(
+                &list.index(i).key("id"),
+                "is the id of another category",
+            ));
+        }
+    }
+    let rules = JsonPath::default().key("contributes").key("problems");
+    for (i, rule) in manifest.contributes.problems.iter().enumerate() {
+        let Some(id) = &rule.category else { continue };
+        if !categories.iter().any(|c| &c.id == id) {
+            return Err(at(
+                &rules.index(i).key("category"),
+                "is not the id of one of `contributes.problemCategories`",
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// The objects a rule's kind is watched for (`ProblemContribution.source`).

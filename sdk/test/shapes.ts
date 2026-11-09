@@ -23,6 +23,7 @@ import type {
   ManifestProblem,
   ManifestRule,
   ManifestSectionBadge,
+  ManifestProblemCategory,
   ManifestSettings,
 } from "../src/manifest";
 
@@ -82,6 +83,7 @@ export const MANIFEST_SHAPES = {
     problems: "optional",
     metricQueries: "optional",
     sectionBadges: "optional",
+    problemCategories: "optional",
     commands: "optional",
     kinds: "optional",
     menuItems: "optional",
@@ -156,6 +158,12 @@ export const MANIFEST_SHAPES = {
     group: "optional",
     reason: "optional",
     notifyAs: "optional",
+    category: "optional",
+  }),
+  ManifestProblemCategory: described<ManifestProblemCategory>(`${CONTRIBUTION}/problemCategories/items`, {
+    id: "required",
+    title: "required",
+    optIn: "optional",
   }),
   ManifestPage: described<ManifestPage>(`${CONTRIBUTION}/pages/items`, {
     id: "required",

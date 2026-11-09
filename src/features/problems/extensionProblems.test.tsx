@@ -9,7 +9,10 @@ import { resetClusterKinds } from "../../resources/useKinds";
 import { emitDelta, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetNamespaceRestore } from "../namespaces";
 import { resetNotifier } from "../notifications/notifier";
-import { registerExtensionProblems } from "./extensionCategories";
+import { categoriesOfExtension, registerExtensionProblems } from "./extensionCategories";
+import { isOptIn } from "./model";
+import { setCategory } from "../notifications/prefs";
+import { updateSettings } from "../../api";
 import { useExtensionSectionCount, useProblemCount } from "./hooks";
 import "./index";
 import { ProblemsPage } from "./ProblemsPage";
@@ -180,12 +183,38 @@ describe("problems of extensions", () => {
       { ...RULES[0]!, id: "health-error-again", title: "Ceph health error, again" },
       { ...RULES[0]!, id: "warn", title: "Ceph health warning", when: { type: "equals", path: ".status.ceph.health", value: "HEALTH_WARN" } },
     ]);
-    const every = renderHook(() => useExtensionSectionCount("c1", "ext:rook-ceph-ext", []));
-    const warnings = renderHook(() => useExtensionSectionCount("c1", "ext:rook-ceph-ext", ["warn"]));
+    const every = renderHook(() => useExtensionSectionCount("c1", ["ext:rook-ceph-ext"], []));
+    const warnings = renderHook(() => useExtensionSectionCount("c1", ["ext:rook-ceph-ext"], ["warn"]));
     emitSnapshot(wb, await watchOf(wb, "CephCluster"), [ceph("HEALTH_ERR")]);
     // Two rules hold for the one cluster: it counts once.
     await waitFor(() => expect(every.result.current).toBe(1));
     expect(warnings.result.current).toBe(0);
+  });
+
+  it("put a rule of a category of the extension's own there; an opt-in one counts only once turned on (#410)", async () => {
+    const main = registerExtensionProblems("rook-ceph-ext", "Rook Ceph", [RULES[0]!]);
+    const own = registerExtensionProblems("rook-ceph-ext", "Rook Ceph warnings", [{ ...RULES[0]!, id: "warn", title: "Warn", category: "warnings" }], {
+      id: "warnings",
+      optIn: true,
+    });
+    unregister = () => {
+      own();
+      main();
+    };
+    expect(isOptIn("ext:rook-ceph-ext:warnings")).toBe(true);
+    expect(isOptIn("ext:rook-ceph-ext")).toBe(false);
+    expect(categoriesOfExtension("rook-ceph-ext")).toEqual(["ext:rook-ceph-ext", "ext:rook-ceph-ext:warnings"]);
+    const count = renderHook(() => useExtensionSectionCount("c1", ["ext:rook-ceph-ext", "ext:rook-ceph-ext:warnings"], ["warn"]));
+    emitSnapshot(wb, await watchOf(wb, "CephCluster"), [ceph("HEALTH_ERR")]);
+    // Off: the opt-in category is not watched, so its problem is not counted.
+    await waitFor(() => expect(count.result.current).toBe(0));
+    const before = new Set(wb.specs.keys());
+    await act(() => updateSettings(setCategory("ext:rook-ceph-ext:warnings", true)));
+    // On: its own source opens, and its rule counts.
+    const opened = await watchOf(wb, "CephCluster");
+    expect(before.has(opened)).toBe(false);
+    emitSnapshot(wb, opened, [ceph("HEALTH_ERR")]);
+    await waitFor(() => expect(count.result.current).toBe(1));
   });
 
   it("judge across objects: a reference to an object that is not there, told only once its list is read", async () => {

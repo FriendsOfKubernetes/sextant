@@ -708,6 +708,21 @@
           "required": ["title"],
           "properties": { "title": { "$ref": "#/$defs/title" } }
         },
+        "problemCategories": {
+          "description": "Problem categories of the extension's own besides its main one, each opt-in or not (sextantApi 4). Never given to agents.",
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title"],
+            "properties": {
+              "id": { "$ref": "#/$defs/contributionId" },
+              "title": { "$ref": "#/$defs/title" },
+              "optIn": { "type": "boolean", "default": false }
+            }
+          }
+        },
         "sectionBadges": {
           "description": "Counters on the extension's own sidebar sections (ADR-0143); needs `sextantApi` 3. Sextant counts the objects with active problems of the extension's rules and shows the number on the section's header.",
           "type": "array",
@@ -781,6 +796,10 @@
         },
         "group": {
           "description": "Rules with the same group notify once per object for all of them (sextantApi 4).",
+          "$ref": "#/$defs/contributionId"
+        },
+        "category": {
+          "description": "The id of one of `contributes.problemCategories` the rule's problems belong to (sextantApi 4).",
           "$ref": "#/$defs/contributionId"
         },
         "notifyAs": {

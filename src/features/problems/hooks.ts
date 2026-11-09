@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useSettings, type ClusterId } from "../../api";
 import { useClusterKinds } from "../../resources";
 import { useClustersStore } from "../clusters/clustersStore";
-import { isActive, isOptIn, NOTIFY_CATEGORIES, OPT_IN_CATEGORIES, type Problem, type ProblemCategory } from "./model";
+import { isActive, isOptIn, NOTIFY_CATEGORIES, type Problem, type ProblemCategory } from "./model";
 import { extensionSourcesFor, requestScopes, useExtensionCategories, useExtensionProblemsVersion } from "./extensionCategories";
 import { needsDiscovery, sourceKey, sourcesFor } from "./sources";
 import {
@@ -130,8 +130,9 @@ export function useProblemCount(clusterId: ClusterId): number {
  * The counter of an extension's own sidebar section (`contributes.sectionBadges`, ADR-0143): the objects with active
  * problems of the extension's category, of `rules` only when it names some (a problem's `group` is its rule's id).
  */
-export function useExtensionSectionCount(clusterId: ClusterId, category: ProblemCategory, rules: readonly string[]): number {
-  const categories = useMemo(() => [category], [category]);
+export function useExtensionSectionCount(clusterId: ClusterId, all: readonly ProblemCategory[], rules: readonly string[]): number {
+  // An opt-in category of the extension's own counts only while it is on (#410).
+  const categories = useCategoriesOn(all);
   const active = useClusterProblems(clusterId, categories).active;
   return new Set(active.filter((p) => rules.length === 0 || rules.includes(p.group ?? "")).map((p) => p.uid)).size;
 }
@@ -144,7 +145,7 @@ const EMPTY: readonly string[] = [];
  */
 export function useCategoriesOn(categories: readonly ProblemCategory[]): readonly ProblemCategory[] {
   const optedIn = useSettings().settings?.notifications.enabledCategories ?? EMPTY;
-  const key = `${categories.join(",")}#${OPT_IN_CATEGORIES.filter((c) => optedIn.includes(c)).join(",")}`;
+  const key = `${categories.join(",")}#${categories.filter((c) => isOptIn(c) && optedIn.includes(c)).join(",")}`;
   return useMemo(
     () => {
       const on = key.split("#")[1]!.split(",");

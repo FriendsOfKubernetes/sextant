@@ -948,6 +948,23 @@ function checkSectionBadges(manifest) {
   });
 }
 
+/** `check_problem_categories` (#410): categories besides the main one, and each rule's `category`. */
+function checkProblemCategories(manifest) {
+  const list = ["contributes", "problemCategories"];
+  const categories = manifest.contributes?.problemCategories ?? [];
+  const rules = manifest.contributes?.problems ?? [];
+  if (categories.length > 0 && manifest.sextantApi < WINDOW_API) fail(list, `needs sextantApi ${WINDOW_API} or later`);
+  if (categories.length > 0 && rules.length === 0) fail(list, "needs `contributes.problems`");
+  categories.forEach((category, i) => {
+    if (categories.slice(0, i).some((c) => c.id === category.id)) fail([...list, i, "id"], "is the id of another category");
+  });
+  rules.forEach((rule, i) => {
+    if (rule.category !== undefined && !categories.some((c) => c.id === rule.category)) {
+      fail(["contributes", "problems", i, "category"], "is not the id of one of `contributes.problemCategories`");
+    }
+  });
+}
+
 /** `PLURAL_FORMS` and `check_label_forms` (#398). */
 const PLURAL_FORMS = ["zero", "one", "two", "few", "many", "other"];
 
@@ -1105,6 +1122,7 @@ export function translatableTexts(manifest) {
     out.set(`problems.${rule.id}.title`, title);
     out.set(`problems.${rule.id}.message`, { max: 300, message: rule.message });
   }
+  for (const category of c.problemCategories ?? []) out.set(`problemCategories.${category.id}.title`, title);
   for (const command of c.commands ?? []) out.set(`commands.${command.id}.title`, title);
   for (const query of c.metricQueries ?? []) out.set(`metricQueries.${query.id}.title`, title);
   for (const credential of manifest.backend?.credentials ?? []) out.set(`backend.credentials.${credential.id}.label`, title);
@@ -1551,6 +1569,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     checkMetricQueries(value);
     checkTranslations(value);
     checkSectionBadges(value);
+    checkProblemCategories(value);
     checkCommands(value);
     checkActions(value);
     checkDetailsSections(value);

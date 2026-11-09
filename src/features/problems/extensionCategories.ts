@@ -5,6 +5,9 @@
 //
 // These categories are not `PROBLEM_CATEGORIES`: agents never get them (`get_problems` takes only those), the fleet
 // cards do not watch them and the timeline does not correlate them.
+//
+// An extension may also have categories of its own besides the main one (`problemCategories`, #410),
+// `ext:<extension id>:<category id>`, each opt-in or not; agents never get these (Rust refuses any but `ext:<id>`).
 import { useSyncExternalStore } from "react";
 import {
   api,
@@ -18,7 +21,7 @@ import {
 } from "../../api";
 import { compileRules, kindKeyOf, type RuleContext } from "../../extensions/problemRules";
 import { judgeAcross, judgedAcross, lookedUp, rowOf, type AcrossTarget } from "../../extensions/problemsAcross";
-import { setExtensionDetector, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
+import { setExtensionDetector, setExtensionOptIn, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
 import { MAX_SOURCE_OBJECTS, type SourceDef } from "./sources";
 
 interface Entry {
@@ -34,6 +37,8 @@ interface Entry {
   newestLabels: ReadonlyMap<string, readonly string[]>;
   /** `group/kind` → the `source` its rules share (ADR-0152). */
   sources: ReadonlyMap<string, RuleSource>;
+  /** Off until the user turns it on (a category of the extension's own, #410). */
+  optIn: boolean;
 }
 
 /** The tap id of a source judged across objects (`SourceDef.judge`): the same on every source of a category. */
@@ -51,11 +56,31 @@ function changed(): void {
 }
 
 export const isExtensionCategory = (category: string): category is ExtensionCategory => category.startsWith("ext:");
-export const categoryOfExtension = (extensionId: string): ExtensionCategory => `ext:${extensionId}`;
+export const categoryOfExtension = (extensionId: string, sub?: string): ExtensionCategory =>
+  sub === undefined ? `ext:${extensionId}` : `ext:${extensionId}:${sub}`;
 
-/** Registers the rules of an active extension (replacing earlier ones); returns what removes them. */
-export function registerExtensionProblems(extensionId: string, title: string, rules: readonly ProblemContribution[]): () => void {
-  const category = categoryOfExtension(extensionId);
+/** The registered categories of an extension: its main one and those of its own (#410). */
+export function categoriesOfExtension(extensionId: string): ExtensionCategory[] {
+  return [...entries.values()].filter((e) => e.extensionId === extensionId).map((e) => e.category);
+}
+
+/** Whether a registered extension category is opt-in. */
+export const isOptInExtensionCategory = (category: ProblemCategory): boolean =>
+  isExtensionCategory(category) && (entries.get(category)?.optIn ?? false);
+
+setExtensionOptIn(isOptInExtensionCategory);
+
+/**
+ * Registers the rules of an active extension (replacing earlier ones); returns what removes them. `own`: a category of
+ * the extension's own (#410) these rules belong to instead of its main one.
+ */
+export function registerExtensionProblems(
+  extensionId: string,
+  title: string,
+  rules: readonly ProblemContribution[],
+  own?: { id: string; optIn: boolean },
+): () => void {
+  const category = categoryOfExtension(extensionId, own?.id);
   const across = new Set<string>();
   const newestLabels = new Map<string, string[]>();
   for (const rule of rules) {
@@ -76,6 +101,7 @@ export function registerExtensionProblems(extensionId: string, title: string, ru
     across,
     newestLabels,
     sources,
+    optIn: own?.optIn ?? false,
   };
   entries.set(category, entry);
   forgetScopes(extensionId);
@@ -89,6 +115,8 @@ export function registerExtensionProblems(extensionId: string, title: string, ru
 }
 
 function forgetScopes(extensionId: string): void {
+  // Another category of the extension still registered keeps the answer: it is per extension.
+  if ([...entries.values()].some((e) => e.extensionId === extensionId)) return;
   for (const key of [...scopes.keys()]) if (key.endsWith(`|${extensionId}`)) scopes.delete(key);
 }
 

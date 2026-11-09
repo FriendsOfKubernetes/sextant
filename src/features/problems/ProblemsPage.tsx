@@ -18,7 +18,7 @@ import { filterProblems, groupProblems } from "./group";
 import { useCategoriesOn, useClusterProblems } from "./hooks";
 import { updateSettings } from "../../api";
 import { setCategory } from "../notifications/prefs";
-import { useExtensionCategories } from "./extensionCategories";
+import { extensionCategoryTitle, isOptInExtensionCategory, useExtensionCategories } from "./extensionCategories";
 import { categoryLabel } from "./labels";
 import { PROBLEM_CATEGORIES, startedAt, type Problem, type ProblemCategory } from "./model";
 import "./problems.css";
@@ -131,6 +131,16 @@ export function ProblemsPage({ clusterId }: PageProps) {
           />
           {t("problems:showAlerts")}
         </label>
+        {/* Opt-in categories of extensions (#410), titled as the extension titles them. */}
+        {extensionCategories.filter(isOptInExtensionCategory).map((category) => (
+          <label key={category} className="problems__choice">
+            <Checkbox
+              checked={categories.includes(category)}
+              onChange={(e) => void updateSettings(setCategory(category, e.target.checked)).catch(() => undefined)}
+            />
+            {extensionCategoryTitle(category) ?? category}
+          </label>
+        ))}
         <Button size="compact" onClick={() => markSeen(clusterId, Date.now())}>
           {t("problems:markSeen")}
         </Button>
