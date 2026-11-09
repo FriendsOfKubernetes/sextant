@@ -296,7 +296,7 @@ export interface Methods {
   "portForward.list": { params: { clusterId?: ClusterId }; result: { forwards: ForwardInfo[] } };
   "portForward.stop": { params: { id: string }; result: null };
   "service.request": { params: ServiceRequestParams & { clusterId: ClusterId }; result: ServiceAnswer };
-  "service.forget": { params: { clusterId: ClusterId; namespace: string; service: string }; result: null };
+  "service.forget": { params: { clusterId: ClusterId; namespace: string; service: string; saved?: boolean }; result: null };
   "service.secrets": { params: { clusterId: ClusterId; namespace: string; service: string }; result: { secrets: ServiceSecretRef[] } };
   "service.signInState": { params: { clusterId: ClusterId; namespace: string; service: string }; result: { state: SignInState } };
 }

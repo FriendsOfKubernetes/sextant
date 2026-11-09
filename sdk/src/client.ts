@@ -148,8 +148,11 @@ export interface Sextant {
    */
   service: {
     request<T = JsonValue>(params: ServiceRequestParams, options?: CallOptions): Promise<ServiceAnswer<T>>;
-    /** Drops the session token Sextant keeps for the service in `namespace` (signing out). */
-    forget(params: { clusterId?: ClusterId; namespace: string; service: string }, options?: CallOptions): Promise<void>;
+    /**
+     * Drops the session token Sextant keeps for the service in `namespace` and its remembered sign-in (signing out);
+     * with `saved: true` only the sign-in remembered in the keyring, keeping this run's session (since Sextant 0.30).
+     */
+    forget(params: { clusterId?: ClusterId; namespace: string; service: string; saved?: boolean }, options?: CallOptions): Promise<void>;
     /**
      * The Secrets of `namespace` the service's labelled `secrets` entries pick and that hold the key — names only, for
      * `{{secret:<name>/<key>}}` or `auth: "secret:<name>/<key>"` (since Sextant 0.30).

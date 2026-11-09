@@ -2095,17 +2095,26 @@ impl<'a> ExtCall<'a> {
 
     /// Forgets the session token of a service; nothing is sent.
     async fn service_forget(&self, params: Value) -> CoreResult<Value> {
-        let args: ServiceForgetArgs = parse(&self.method, params)?;
+        let args: ServiceForgetSavedArgs = parse(&self.method, params)?;
         let cluster = self.target(&args.cluster_id).await?;
         lock(&self.record).target = clip(&format!(
-            "session of service {} in {}",
-            args.service, args.namespace
+            "{} of service {} in {}",
+            if args.saved {
+                "saved sign-in"
+            } else {
+                "session"
+            },
+            args.service,
+            args.namespace
         ));
         self.decide(AuditDecision::Allowed);
         let key = session_key(&self.id, &cluster.id.0, &args.namespace, &args.service);
-        self.api.sessions.forget(&key);
-        self.api.sessions.forget_sign_in(&key);
-        self.api.sessions.forget_refused(&key);
+        // `saved`: only the sign-in remembered in the keyring goes; this run's session stays (#401).
+        if !args.saved {
+            self.api.sessions.forget(&key);
+            self.api.sessions.forget_sign_in(&key);
+            self.api.sessions.forget_refused(&key);
+        }
         let (store, id) = (
             Arc::clone(&self.host.backends().credentials),
             self.id.clone(),
@@ -3256,6 +3265,17 @@ const REFUSED_BEFORE: &str = "Sextant did not send these credentials again: the 
 
 /// Secrets of one labelled `secrets` entry looked at, at most.
 const MAX_LABELLED_SECRETS: u32 = 50;
+
+/// `service.forget`: with `saved`, only the remembered sign-in (#401).
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ServiceForgetSavedArgs {
+    cluster_id: String,
+    namespace: String,
+    service: String,
+    #[serde(default)]
+    saved: bool,
+}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

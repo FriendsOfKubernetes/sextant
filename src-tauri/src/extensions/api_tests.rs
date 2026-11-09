@@ -2838,6 +2838,45 @@ async fn the_sign_in_state_says_saved_for_this_run_or_none_and_never_a_value() {
 }
 
 #[tokio::test]
+async fn forgetting_only_the_saved_sign_in_keeps_this_runs_session() {
+    let env = Env::at(&fake_cluster().await);
+    env.install("argo", perms(all_clusters(), &["argocd"], &["read"], false));
+    grant_services(
+        &env,
+        "argo",
+        json!([{ "id": "api", "title": "Argo CD API", "name": "argocd-server", "port": 443, "scheme": "https",
+                 "signIn": { "fields": [{ "id": "token", "label": "Token", "secret": true }] } }]),
+    );
+    let id = env.cluster_id("ctx-a").0;
+    let values: HashMap<String, String> = [("token".to_owned(), "t0k3n".to_owned())].into();
+    env.api
+        .sign_in(&env.host, "argo", &id, "argocd", "api", values, false)
+        .await
+        .unwrap();
+    let call = |params: Value| {
+        env.api
+            .call(&env.host, "argo", "service.forget", params, None)
+    };
+    let state = || {
+        env.api.call(
+            &env.host,
+            "argo",
+            "service.signInState",
+            json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": "api" }),
+            None,
+        )
+    };
+    call(json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": "api", "saved": true }))
+        .await
+        .unwrap();
+    assert_eq!(state().await.unwrap(), json!({ "state": "session" }));
+    call(json!({ "clusterId": "ctx-a", "namespace": "argocd", "service": "api" }))
+        .await
+        .unwrap();
+    assert_eq!(state().await.unwrap(), json!({ "state": "none" }));
+}
+
+#[tokio::test]
 async fn several_patches_are_decided_together_under_one_confirmation_and_stop_at_the_first_failure()
 {
     let env = Env::at(&fake_cluster().await);
