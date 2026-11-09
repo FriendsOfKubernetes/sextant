@@ -66,3 +66,9 @@ it has nothing to show. Elsewhere `*` is no wildcard: a permission's or an actio
 clusters whose kubeconfig server is that endpoint (`serverIs`, the default port by scheme) in its own dialog and opens
 the one the user picks — connected first if it is not, with `node` that Node's details — every time. The extension
 learns only `{opened}`, or `{opened: false, found: 0}` without a question; never the user's clusters or contexts.
+
+## Amendment: a rule's literal reason and since fallbacks (#404, #407)
+
+A problem rule's `reasonOr` (a literal, no `{{…}}`) is the reason when `reason` comes out empty, instead of the title,
+and `sinceOr` (≤ 4 field paths, only with a `since`) is tried in order when `since` gives no time: the built-in readings
+"the reason, else `NotReady`" and "`endTime`, else `startTime`, else the creation" are one rule each again.

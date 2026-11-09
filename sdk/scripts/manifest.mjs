@@ -825,6 +825,12 @@ function checkProblems(manifest) {
       checkMessage(rule.reason, rule.kind, [...here, "reason"], metadataOnly);
     }
     if (rule.since !== undefined) checkRulePath(rule.since, rule.kind, [...here, "since"], metadataOnly);
+    for (const field of ["reasonOr", "sinceOr"]) {
+      if (rule[field] !== undefined && manifest.sextantApi < SOURCES_API) fail([...here, field], `needs sextantApi ${SOURCES_API} or later`);
+    }
+    if (rule.reasonOr !== undefined && rule.reasonOr.includes("{{")) fail([...here, "reasonOr"], "is written as it shows: no `{{…}}`");
+    if (rule.sinceOr !== undefined && rule.since === undefined) fail([...here, "sinceOr"], "falls back from `since`: the rule needs a `since`");
+    (rule.sinceOr ?? []).forEach((path, j) => checkRulePath(path, rule.kind, [...here, "sinceOr", j], metadataOnly));
     if (rule.notifyAs !== undefined) {
       if (manifest.sextantApi < SOURCES_API) fail([...here, "notifyAs"], `needs sextantApi ${SOURCES_API} or later`);
       checkRulePath(rule.notifyAs, rule.kind, [...here, "notifyAs"], metadataOnly);

@@ -247,6 +247,10 @@ export interface ManifestProblem {
   notifyAs?: string;
   /** The id of one of `contributes.problemCategories` its problems belong to (since Sextant 0.30). */
   category?: string;
+  /** The reason when `reason` comes out empty, as written, instead of the title (since Sextant 0.30). */
+  reasonOr?: string;
+  /** Paths tried in order when `since` gives no time (since Sextant 0.30). */
+  sinceOr?: string[];
 }
 
 /**

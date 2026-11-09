@@ -60,4 +60,14 @@ notifyAs?: string,
  * The id of one of `contributes.problemCategories` the rule's problems belong to, instead of the extension's own
  * category (#410). `sextantApi` 4.
  */
-category?: string, };
+category?: string, 
+/**
+ * The reason when `reason` comes out empty, as written (a code like `NotReady`), instead of the title (#404).
+ * `sextantApi` 4.
+ */
+reasonOr?: string, 
+/**
+ * Field paths tried in order when `since` gives no time (`endTime`, else `startTime`, else the creation; #407).
+ * `sextantApi` 4.
+ */
+sinceOr?: Array<string>, };

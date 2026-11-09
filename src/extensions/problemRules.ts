@@ -254,12 +254,15 @@ export function renderMessage(template: string, obj: KubeObject): string {
 export function detectRule(rule: ProblemContribution, obj: KubeObject, ctx: RuleContext = {}): Detected[] {
   const verdict = evaluate(rule.when, obj, ctx);
   if (!verdict.holds) return [];
-  const since = rule.since !== undefined ? valueAt(obj, rule.since) : verdict.since;
-  // The reason from the object (#370), cleaned like the message; the title when it comes out empty.
+  // `since`, else the first of `sinceOr` that holds a time (#407), else the condition's own.
+  const since =
+    rule.since !== undefined ? [rule.since, ...(rule.sinceOr ?? [])].map((path) => valueAt(obj, path)).find((v) => typeof v === "string" && timeOf(v) !== undefined) : verdict.since;
+  // The reason from the object (#370), cleaned like the message; `reasonOr` (#404), else the title, when it comes out
+  // empty.
   const reason = rule.reason === undefined ? "" : renderMessage(rule.reason, obj).trim();
   return [
     {
-      reason: reason === "" ? rule.title : Array.from(reason).slice(0, MAX_REASON_CHARS).join(""),
+      reason: reason === "" ? (rule.reasonOr ?? rule.title) : Array.from(reason).slice(0, MAX_REASON_CHARS).join(""),
       // Rules of one group notify once per object (ADR-0161).
       group: rule.group ?? rule.id,
       message: renderMessage(rule.message, obj),

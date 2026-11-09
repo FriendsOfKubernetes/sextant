@@ -119,7 +119,20 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub category: Option<String>,
+    /// The reason when `reason` comes out empty, as written (a code like `NotReady`), instead of the title (#404).
+    /// `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub reason_or: Option<String>,
+    /// Field paths tried in order when `since` gives no time (`endTime`, else `startTime`, else the creation; #407).
+    /// `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub since_or: Option<Vec<String>>,
 }
+
+/// Fallback paths of a rule's `since`.
+pub const MAX_SINCE_OR: usize = 4;
 
 /// A problem category of an extension's own besides its main one (#410): a title, and whether it is off until the user
 /// turns it on, as Sextant's opt-in categories are. Never given to agents.
@@ -386,6 +399,40 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
         }
         if let Some(since) = &rule.since {
             check_rule_path(since, &rule.kind, &here.key("since"), metadata_only)?;
+        }
+        for (field, set) in [
+            ("reasonOr", rule.reason_or.is_some()),
+            ("sinceOr", rule.since_or.is_some()),
+        ] {
+            if set && manifest.sextant_api < SOURCES_API {
+                return Err(at(
+                    &here.key(field),
+                    format!("needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+        }
+        if let Some(text) = &rule.reason_or {
+            if text.contains("{{") {
+                return Err(at(
+                    &here.key("reasonOr"),
+                    "is written as it shows: no `{{…}}`",
+                ));
+            }
+        }
+        let since_or = rule.since_or.as_deref().unwrap_or_default();
+        if !since_or.is_empty() && rule.since.is_none() {
+            return Err(at(
+                &here.key("sinceOr"),
+                "falls back from `since`: the rule needs a `since`",
+            ));
+        }
+        for (j, path) in since_or.iter().enumerate() {
+            check_rule_path(
+                path,
+                &rule.kind,
+                &here.key("sinceOr").index(j),
+                metadata_only,
+            )?;
         }
         if let Some(path) = &rule.notify_as {
             if manifest.sextant_api < SOURCES_API {

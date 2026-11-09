@@ -21,6 +21,31 @@ const cluster: KubeObject = {
 const holds = (condition: ProblemCondition) => evaluate(condition, cluster).holds;
 
 describe("problem rules of extensions", () => {
+  it("fall back to a literal reason and to later time paths (#404, #407)", () => {
+    const rule = {
+      id: "failed",
+      title: "Failed",
+      kind: { group: "ray.io", kind: "RayJob" },
+      when: { type: "exists", path: ".status.jobStatus" },
+      message: "",
+      reason: "{{.status.reason}}",
+      reasonOr: "JobFailed",
+      since: ".status.endTime",
+      sinceOr: [".status.startTime", ".metadata.creationTimestamp"],
+      graceMinutes: 0,
+      notify: true,
+      toldThroughOwner: false,
+    } as unknown as ProblemContribution;
+    const job = (status: Record<string, unknown>) =>
+      ({ metadata: { name: "j", creationTimestamp: "2026-11-01T00:00:00Z" }, status: { jobStatus: "FAILED", ...status } }) as KubeObject;
+    expect(detectRule(rule, job({}))[0]).toMatchObject({ reason: "JobFailed", since: "2026-11-01T00:00:00Z" });
+    expect(detectRule(rule, job({ reason: "DeadlineExceeded", startTime: "2026-11-02T00:00:00Z" }))[0]).toMatchObject({
+      reason: "DeadlineExceeded",
+      since: "2026-11-02T00:00:00Z",
+    });
+    expect(detectRule(rule, job({ endTime: "2026-11-03T00:00:00Z", startTime: "x" }))[0]!.since).toBe("2026-11-03T00:00:00Z");
+  });
+
   it("read field paths of the custom columns' grammar, nothing else", () => {
     expect(valueAt(cluster, ".status.ceph.health")).toBe("HEALTH_ERR");
     expect(valueAt(cluster, "status.items[1].name")).toBe("b");

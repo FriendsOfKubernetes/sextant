@@ -798,6 +798,21 @@
           "description": "Rules with the same group notify once per object for all of them (sextantApi 4).",
           "$ref": "#/$defs/contributionId"
         },
+        "reasonOr": {
+          "description": "The reason when `reason` comes out empty, as written (sextantApi 4).",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "format": "non-blank",
+          "pattern": "\\S"
+        },
+        "sinceOr": {
+          "description": "Field paths tried in order when `since` gives no time (sextantApi 4).",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/fieldPath" }
+        },
         "category": {
           "description": "The id of one of `contributes.problemCategories` the rule's problems belong to (sextantApi 4).",
           "$ref": "#/$defs/contributionId"
