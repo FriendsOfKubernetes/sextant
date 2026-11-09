@@ -1,4 +1,4 @@
-//! Tools that change a cluster: apply, patch, delete, scale, restart, rollout undo, node and CronJob actions, GitOps actions, Helm,
+//! Tools that change a cluster: apply, patch, delete, scale, restart, rollout undo, node and CronJob actions, Helm,
 //! a command in a container and port forwards. Every one checks the cluster's access rules through the call's `Guard`
 //! right before it acts (`Guard::check` also waits for "Allow" in the window when a rule asks for it, and refuses once
 //! the server has stopped); what the agent named is checked for sense before that, so the user is not asked about a
@@ -13,7 +13,7 @@
 //! `apply_yaml` and `patch_resource` take `dryRun: true` (#141): the same requirements and node shell refusals, checked
 //! by `Guard::check_dry_run` — the rules decide, but nobody is asked, since nothing changes — and the call is sent
 //! with `dryRun=All`; the agent gets what would change ([`super::dry_run::summary`], no Secret values).
-//! | `patch_resource`, `scale`, `restart`, `rollout_undo`, `trigger_cronjob`, `suspend_cronjob`, `gitops_action`, `cordon_node` | Modify on the kind |
+//! | `patch_resource`, `scale`, `restart`, `rollout_undo`, `trigger_cronjob`, `suspend_cronjob`, `cordon_node` | Modify on the kind |
 //! | `delete_resource` | Delete on the kind |
 //! | `drain_node` | Modify on `Node` and Delete on `Pod` in all namespaces |
 //! | `exec_command` | Exec on `Pod` |
@@ -29,7 +29,7 @@
 //! service has. A Helm call past its time limit, or whose server stops, has its `helm` killed (`helm repo list`, which
 //! only reads, has 30 s).
 
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -46,22 +46,13 @@ use super::confirm::first_lines;
 use super::context::McpContext;
 use super::guard::{CallSummary, Requirement};
 use super::tools::{ToolCall, ToolKind, ToolOutput, ToolResult, ToolSet};
-use super::tools_read::{
-    describe, find_kind, invalid, need, non_empty, object_ref, pattern_of, read,
-};
+use super::tools_read::{describe, find_kind, invalid, need, non_empty, object_ref, pattern_of};
 use crate::commands::actions::CHANGE_TIMEOUT;
 
 /// `exec_command` runs this long unless asked for another number of seconds.
 pub const DEFAULT_EXEC_TIMEOUT: Duration = Duration::from_secs(30);
 /// At most this much of stdout and of stderr of `exec_command` comes back.
 pub const MAX_EXEC_OUTPUT: usize = 64 * 1024;
-
-/// Flux asks its controllers to reconcile through this annotation.
-pub const FLUX_REQUESTED_AT: &str = "reconcile.fluxcd.io/requestedAt";
-/// Argo CD refreshes an Application when this annotation appears.
-pub const ARGO_REFRESH: &str = "argocd.argoproj.io/refresh";
-/// Who started a sync, in the Application's operation (as the application does it).
-pub const SYNC_INITIATOR: &str = "sextant";
 
 /// Adds the changing tools.
 pub fn register_write_tools(tools: &mut ToolSet) {
@@ -136,14 +127,6 @@ pub fn register_write_tools(tools: &mut ToolSet) {
             "Suspends a CronJob (`suspend`: true, the default) or resumes it (false).",
             ToolKind::Change,
             suspend_cronjob,
-        )
-        .add(
-            "gitops_action",
-            "Flux (any *.toolkit.fluxcd.io kind): `reconcile`, `suspend`, `resume`. Argo CD Application: `sync` \
-             (optional `revision`, `prune`), `refresh`, `hardRefresh`. Done through the Kubernetes API, as Sextant's \
-             own buttons do it.",
-            ToolKind::Change,
-            gitops_action,
         )
         .add(
             "helm_install",
@@ -341,56 +324,6 @@ pub struct SuspendCronJobArgs {
     pub name: String,
     /// true (default) — suspend; false — resume.
     pub suspend: Option<bool>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub enum GitopsAction {
-    /// Flux: reconcile now.
-    Reconcile,
-    /// Flux: `spec.suspend: true`.
-    Suspend,
-    /// Flux: `spec.suspend: false`.
-    Resume,
-    /// Argo CD Application: start a sync.
-    Sync,
-    /// Argo CD Application: refresh from the repository.
-    Refresh,
-    /// Argo CD Application: refresh, regenerating manifests (no cache).
-    HardRefresh,
-}
-
-impl GitopsAction {
-    fn name(self) -> &'static str {
-        match self {
-            GitopsAction::Reconcile => "reconcile",
-            GitopsAction::Suspend => "suspend",
-            GitopsAction::Resume => "resume",
-            GitopsAction::Sync => "sync",
-            GitopsAction::Refresh => "refresh",
-            GitopsAction::HardRefresh => "hard refresh",
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct GitopsArgs {
-    /// Cluster id from list_clusters.
-    pub cluster: String,
-    /// A Flux kind (`Kustomization`, `HelmRelease`, `GitRepository`, …) or `Application` (Argo CD).
-    pub kind: String,
-    /// Needed only when several API groups serve the kind.
-    pub api_version: Option<String>,
-    pub namespace: String,
-    pub name: String,
-    /// `reconcile`, `suspend`, `resume` (Flux); `sync`, `refresh`, `hardRefresh` (Argo CD).
-    pub action: GitopsAction,
-    /// `sync`: the revision to sync to; each source's own targetRevision when left out.
-    pub revision: Option<String>,
-    /// `sync`: also delete resources no longer in Git.
-    #[serde(default)]
-    pub prune: bool,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -845,54 +778,6 @@ async fn suspend_cronjob(call: ToolCall, args: SuspendCronJobArgs) -> ToolResult
     Ok(ToolOutput::Text(format!("{done} {}", describe(&cronjob))))
 }
 
-async fn gitops_action(call: ToolCall, args: GitopsArgs) -> ToolResult {
-    let cluster = call.open(&args.cluster).await?;
-    let mgr = &call.ctx().clusters;
-    let kind = find_kind(mgr, &cluster.id, args.api_version.as_deref(), &args.kind).await?;
-    gitops_supports(&kind.kind_ref, args.action)?;
-    let object = object_ref(&kind, Some(&args.namespace), &args.name)?;
-    let mut details = args.action.name().to_owned();
-    if args.action == GitopsAction::Sync {
-        if let Some(revision) = non_empty(args.revision.as_deref()) {
-            details.push_str(&format!("\nrevision: {revision}"));
-        }
-        if args.prune {
-            details.push_str("\nprune: delete resources no longer in Git");
-        }
-    }
-    let summary = plain("gitops_action", describe(&object), Some(details));
-    call.guard
-        .check(&cluster, &[modify(&object)], &summary)
-        .await?;
-    // A sync carries the Application's own sync options and retry policy, as the application's button does.
-    let app = if args.action == GitopsAction::Sync {
-        read(
-            "reading the Application",
-            resources::get(mgr, &cluster.id, &object),
-        )
-        .await?
-    } else {
-        Value::Null
-    };
-    let patch = gitops_patch(
-        args.action,
-        &app,
-        non_empty(args.revision.as_deref()),
-        args.prune,
-        &rfc3339(now_secs()),
-    );
-    change(
-        "patching the object",
-        resources::patch(mgr, &cluster.id, &object, &patch, PatchType::Merge),
-    )
-    .await?;
-    Ok(ToolOutput::Text(format!(
-        "requested {} of {}",
-        args.action.name(),
-        describe(&object)
-    )))
-}
-
 async fn helm_install(call: ToolCall, args: HelmInstallArgs) -> ToolResult {
     let namespace = helm_namespace(&args.namespace)?;
     let release = helm_release_name(&args.release)?;
@@ -1320,81 +1205,6 @@ pub fn drain_requirements() -> Vec<Requirement> {
     ]
 }
 
-/// Whether `action` applies to objects of `kind`: Flux actions to the kinds of `*.toolkit.fluxcd.io`, Argo CD ones
-/// to `argoproj.io/Application`.
-pub fn gitops_supports(kind: &KindRef, action: GitopsAction) -> CoreResult<()> {
-    let flux = kind.group.ends_with(".toolkit.fluxcd.io");
-    let argo = kind.group == "argoproj.io" && kind.kind == "Application";
-    let fits = match action {
-        GitopsAction::Reconcile | GitopsAction::Suspend | GitopsAction::Resume => flux,
-        GitopsAction::Sync | GitopsAction::Refresh | GitopsAction::HardRefresh => argo,
-    };
-    if fits {
-        return Ok(());
-    }
-    Err(invalid(format!(
-        "{} does not apply to {}: reconcile, suspend and resume are for Flux kinds, sync, refresh and hardRefresh for \
-         Argo CD Applications",
-        args_name(action),
-        kind.kind
-    )))
-}
-
-fn args_name(action: GitopsAction) -> &'static str {
-    match action {
-        GitopsAction::HardRefresh => "hardRefresh",
-        other => other.name(),
-    }
-}
-
-/// The merge patch of a GitOps action, as the application's buttons send it. `app` — the Argo CD Application (for
-/// `sync`: its sync options and retry policy go into the operation); `now` — RFC 3339 time for Flux.
-pub fn gitops_patch(
-    action: GitopsAction,
-    app: &Value,
-    revision: Option<&str>,
-    prune: bool,
-    now: &str,
-) -> Value {
-    match action {
-        GitopsAction::Reconcile => {
-            json!({ "metadata": { "annotations": { FLUX_REQUESTED_AT: now } } })
-        }
-        GitopsAction::Suspend => json!({ "spec": { "suspend": true } }),
-        GitopsAction::Resume => json!({ "spec": { "suspend": false } }),
-        GitopsAction::Refresh => {
-            json!({ "metadata": { "annotations": { ARGO_REFRESH: "normal" } } })
-        }
-        GitopsAction::HardRefresh => {
-            json!({ "metadata": { "annotations": { ARGO_REFRESH: "hard" } } })
-        }
-        GitopsAction::Sync => {
-            let mut sync = json!({ "prune": prune, "dryRun": false });
-            if let Some(revision) = revision {
-                sync["revision"] = json!(revision);
-            }
-            if let Some(options) = app
-                .pointer("/spec/syncPolicy/syncOptions")
-                .and_then(Value::as_array)
-                .filter(|o| !o.is_empty())
-            {
-                sync["syncOptions"] = json!(options);
-            }
-            let mut operation = json!({
-                "initiatedBy": { "username": SYNC_INITIATOR },
-                "sync": sync,
-            });
-            if let Some(retry) = app
-                .pointer("/spec/syncPolicy/retry")
-                .filter(|r| r.is_object())
-            {
-                operation["retry"] = retry.clone();
-            }
-            json!({ "operation": operation })
-        }
-    }
-}
-
 /// Whether a JSON patch may read a Secret's values into what the agent then sees (an annotation, a label) or tell
 /// them apart (`test`): anything but `add`, `replace` and `remove`, wherever it points. Those three only write what
 /// the agent sends; a merge patch reads nothing either.
@@ -1500,13 +1310,6 @@ pub fn rfc3339(secs: u64) -> String {
         rest % 3_600 / 60,
         rest % 60
     )
-}
-
-fn now_secs() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0)
 }
 
 /// A change with [`CHANGE_TIMEOUT`], as the application's own actions.
@@ -1778,7 +1581,7 @@ mod tests {
     use super::*;
     use crate::state::AppState;
 
-    const WRITE_TOOLS: [&str; 19] = [
+    const WRITE_TOOLS: [&str; 18] = [
         "apply_yaml",
         "patch_resource",
         "delete_resource",
@@ -1789,7 +1592,6 @@ mod tests {
         "drain_node",
         "trigger_cronjob",
         "suspend_cronjob",
-        "gitops_action",
         "helm_install",
         "helm_upgrade",
         "helm_rollback",
@@ -1978,68 +1780,6 @@ mod tests {
                 (None, KindPattern::new("", "Node"), AccessAction::Modify),
                 (None, KindPattern::new("", "Pod"), AccessAction::Delete),
             ]
-        );
-    }
-
-    #[test]
-    fn gitops_actions_patch_like_the_application() {
-        let kustomization = KindRef {
-            group: "kustomize.toolkit.fluxcd.io".into(),
-            version: "v1".into(),
-            kind: "Kustomization".into(),
-        };
-        let application = KindRef {
-            group: "argoproj.io".into(),
-            version: "v1alpha1".into(),
-            kind: "Application".into(),
-        };
-        assert!(gitops_supports(&kustomization, GitopsAction::Reconcile).is_ok());
-        assert!(gitops_supports(&application, GitopsAction::Sync).is_ok());
-        assert_eq!(
-            gitops_supports(&kustomization, GitopsAction::Sync)
-                .unwrap_err()
-                .code,
-            ErrorCode::Invalid
-        );
-        assert!(gitops_supports(&application, GitopsAction::Suspend).is_err());
-        let deployment = KindRef {
-            group: "apps".into(),
-            version: "v1".into(),
-            kind: "Deployment".into(),
-        };
-        assert!(gitops_supports(&deployment, GitopsAction::Reconcile).is_err());
-
-        let now = "2026-10-13T10:00:00Z";
-        assert_eq!(
-            gitops_patch(GitopsAction::Reconcile, &Value::Null, None, false, now),
-            json!({ "metadata": { "annotations": { "reconcile.fluxcd.io/requestedAt": now } } })
-        );
-        assert_eq!(
-            gitops_patch(GitopsAction::Resume, &Value::Null, None, false, now),
-            json!({ "spec": { "suspend": false } })
-        );
-        assert_eq!(
-            gitops_patch(GitopsAction::HardRefresh, &Value::Null, None, false, now),
-            json!({ "metadata": { "annotations": { "argocd.argoproj.io/refresh": "hard" } } })
-        );
-        let app = json!({ "spec": { "syncPolicy": {
-            "syncOptions": ["CreateNamespace=true"],
-            "retry": { "limit": 2 },
-        } } });
-        assert_eq!(
-            gitops_patch(GitopsAction::Sync, &app, Some("main"), true, now),
-            json!({ "operation": {
-                "initiatedBy": { "username": "sextant" },
-                "sync": { "prune": true, "dryRun": false, "revision": "main", "syncOptions": ["CreateNamespace=true"] },
-                "retry": { "limit": 2 },
-            } })
-        );
-        assert_eq!(
-            gitops_patch(GitopsAction::Sync, &json!({}), None, false, now),
-            json!({ "operation": {
-                "initiatedBy": { "username": "sextant" },
-                "sync": { "prune": false, "dryRun": false },
-            } })
         );
     }
 
@@ -2236,10 +1976,6 @@ mod tests {
                 json!({ "cluster": c, "namespace": "a", "name": "b" }),
             ),
             (
-                "gitops_action",
-                json!({ "cluster": c, "kind": "Kustomization", "namespace": "a", "name": "b", "action": "reconcile" }),
-            ),
-            (
                 "helm_install",
                 json!({ "cluster": c, "namespace": "a", "release": "r", "chart": "repo/chart" }),
             ),
@@ -2280,7 +2016,7 @@ mod tests {
             sextant_core::ConnectionState::Disconnected
         ));
         let journal = state.mcp.context().audit.list(None);
-        assert_eq!(journal.len(), 18);
+        assert_eq!(journal.len(), 17);
         assert!(journal.iter().all(|e| e.decision == AuditDecision::Denied));
     }
 
@@ -3145,10 +2881,6 @@ spec:
         check::<SuspendCronJobArgs>(
             "suspend_cronjob",
             json!({ "cluster": "c", "namespace": "n", "name": "job", "suspend": true }),
-        );
-        check::<GitopsArgs>(
-            "gitops_action",
-            json!({ "cluster": "c", "kind": "Application", "namespace": "argocd", "name": "app", "action": "sync", "revision": "main", "prune": true }),
         );
         check::<HelmInstallArgs>(
             "helm_install",
@@ -4137,56 +3869,6 @@ spec:
             .await
             .is_some()
         );
-
-        // Flux, when the cluster has it (`scripts/test-cluster.sh up --gitops`).
-        let flux = state.clusters.kinds(&id).await.unwrap().iter().any(|k| {
-            k.kind_ref.group == "source.toolkit.fluxcd.io" && k.kind_ref.kind == "GitRepository"
-        });
-        if flux {
-            resources::apply_yaml(
-                &state.clusters,
-                &id,
-                &format!(
-                    "apiVersion: source.toolkit.fluxcd.io/v1\nkind: GitRepository\n\
-                     metadata: {{name: repo, namespace: {NS}}}\n\
-                     spec: {{url: https://example.invalid/sextant.git, interval: 60m, suspend: true}}\n"
-                ),
-            )
-            .await
-            .unwrap();
-            let repo = object(
-                kind("source.toolkit.fluxcd.io", "v1", "GitRepository"),
-                Some(NS),
-                "repo",
-            );
-            let action = |action: &str| json!({ "cluster": c, "kind": "GitRepository", "namespace": NS, "name": "repo", "action": action });
-            tool(&state, "gitops_action", action("reconcile"))
-                .await
-                .unwrap();
-            let saved = get(&state, &id, &repo).await.unwrap();
-            assert!(saved["metadata"]["annotations"][FLUX_REQUESTED_AT].is_string());
-            tool(&state, "gitops_action", action("resume"))
-                .await
-                .unwrap();
-            assert_eq!(
-                get(&state, &id, &repo).await.unwrap()["spec"]["suspend"],
-                false
-            );
-            tool(&state, "gitops_action", action("suspend"))
-                .await
-                .unwrap();
-            assert_eq!(
-                get(&state, &id, &repo).await.unwrap()["spec"]["suspend"],
-                true
-            );
-            let wrong = tool(&state, "gitops_action", action("sync"))
-                .await
-                .unwrap_err();
-            assert!(
-                wrong.starts_with("sync does not apply to GitRepository"),
-                "{wrong}"
-            );
-        }
 
         // Helm runs (against the test cluster) once the rules allow it: a missing release is helm's error.
         let failed = tool(

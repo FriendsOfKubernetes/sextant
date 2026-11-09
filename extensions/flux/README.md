@@ -104,6 +104,13 @@ sight, and Sextant ends it after 2 minutes if it has not finished.
 
 Sextant's own Edit and Delete stay where they are for every kind.
 
+**Tools for AI agents** (`contributes.agentTools`, answered by the extension's backend, ADR-0159), the ones Sextant's
+former MCP tool `gitops_action` had: `reconcile` (the `reconcile.fluxcd.io/requestedAt` annotation), `suspend` and
+`resume` (`spec.suspend`), each on one object of the 13 Flux kinds given by cluster id, kind, namespace and name. An
+agent gets them only when you agreed to them at install and turned the extension's tools on in Settings → AI agents
+(MCP); every patch is decided for the extension and for the agent's own access in that cluster both, and Sextant asks
+you when either asks. The MCP names are `ext_sextant_flux__reconcile`, `…__suspend` and `…__resume`.
+
 ## Permissions
 
 - **Read** on the 13 Flux kinds: the tables, details, problems, and Used by. **Read** on Deployments, StatefulSets,
@@ -113,6 +120,7 @@ Sextant's own Edit and Delete stay where they are for every kind.
 - **Modify** on the 13 Flux kinds, without Sextant's confirmation on top (`confirm: false`): the merge patches of the
   actions below. Suspend's question is Sextant's own (`ask`); Reconcile now, Reconcile with source and Resume send
   at once, as the built-in view's actions did.
+- **A backend** (`backend.wasm`, ADR-0131) that answers only the agents' tools: no network, no credentials.
 - Nothing is deleted by the extension.
 
 All clusters and namespaces; Sextant's own access rules decide where it may act. An update that adds a kind or an

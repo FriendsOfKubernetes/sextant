@@ -2,10 +2,14 @@
 
 ## 1.4.0 — 2026-11-09
 
-Needs Sextant 0.30 (`sextantApi` 4) with `ui.close({failed})` (ADR-0167, #400). The permissions are unchanged.
+Needs Sextant 0.30 (`sextantApi` 4) with `ui.close({failed})` (ADR-0167, #400). The rules are unchanged; the
+agents' tools are new.
 
 - **Reconcile with source fails as a built-in action does:** the object the cluster refused and why are shown in
   Sextant's failure dialog for the action, not as a notice of the extension's.
+- **Tools for AI agents** (#402): Reconcile, Suspend and Resume (`reconcile`, `suspend`, `resume`), answered by the
+  extension's new backend, as Sextant's former MCP tool `gitops_action` did. Updating asks for consent to the tools;
+  agents get them only once you turn the extension's tools on in Settings → AI agents (MCP).
 
 ## 1.3.0 — 2026-11-07
 

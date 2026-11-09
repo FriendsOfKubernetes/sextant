@@ -10,6 +10,10 @@
     "api4": {
       "title": "Extension API 4",
       "text": "Extensions can now have sidebar sections with Sextant's own tables, computed columns, one-click actions, services inside the cluster and tools for AI agents: enough to build these four views on the public API."
+    },
+    "agentTools": {
+      "title": "GitOps tools for AI agents are now the extensions'",
+      "text": "The MCP tool gitops_action is gone: the Flux and Argo CD extensions give agents Reconcile, Suspend and Resume, and Sync, Refresh and Hard refresh. To let agents use them, turn on the extension's tools in Settings → AI agents (MCP)."
     }
   },
   "extensions": {

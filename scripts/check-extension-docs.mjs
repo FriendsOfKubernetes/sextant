@@ -37,6 +37,7 @@ export function manifestIds(manifest) {
     ...ids(c.problems),
     ...ids(c.metricQueries),
     ...ids(c.commands),
+    ...ids(c.agentTools),
   ];
 }
 

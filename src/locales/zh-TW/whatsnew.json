@@ -10,6 +10,10 @@
     "api4": {
       "title": "擴充功能 API 4",
       "text": "擴充功能現在可以擁有使用 Sextant 自己表格的側邊欄區段、計算欄位、一鍵動作、叢集內服務，以及供 AI 代理使用的工具——足以在公開 API 上建構這四個檢視。"
+    },
+    "agentTools": {
+      "title": "AI 代理程式的 GitOps 工具現在來自擴充功能",
+      "text": "MCP 工具 gitops_action 已移除：Flux 與 Argo CD 擴充功能為代理程式提供 Reconcile、Suspend 與 Resume，以及 Sync、Refresh 與 Hard refresh。若要讓代理程式使用它們，請在「設定 → AI 代理程式（MCP）」中開啟該擴充功能的工具。"
     }
   },
   "extensions": {

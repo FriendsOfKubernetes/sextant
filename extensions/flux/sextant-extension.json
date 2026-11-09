@@ -2612,7 +2612,168 @@
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "group": "not-ready"
       }
+    ],
+    "agentTools": [
+      {
+        "id": "reconcile",
+        "title": "Reconcile now",
+        "description": "Asks Flux to reconcile a Flux object now (the reconcile.fluxcd.io/requestedAt annotation, as `flux reconcile` sets it).",
+        "readOnly": false,
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cluster",
+            "kind",
+            "namespace",
+            "name"
+          ],
+          "properties": {
+            "cluster": {
+              "type": "string",
+              "description": "The cluster id from list_clusters.",
+              "minLength": 1
+            },
+            "kind": {
+              "type": "string",
+              "description": "The Flux kind of the object.",
+              "enum": [
+                "GitRepository",
+                "OCIRepository",
+                "HelmRepository",
+                "HelmChart",
+                "Bucket",
+                "Kustomization",
+                "HelmRelease",
+                "ImageRepository",
+                "ImagePolicy",
+                "ImageUpdateAutomation",
+                "Alert",
+                "Provider",
+                "Receiver"
+              ]
+            },
+            "namespace": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            }
+          }
+        }
+      },
+      {
+        "id": "suspend",
+        "title": "Suspend",
+        "description": "Suspends a Flux object: Flux stops reconciling it until it is resumed (spec.suspend: true).",
+        "readOnly": false,
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cluster",
+            "kind",
+            "namespace",
+            "name"
+          ],
+          "properties": {
+            "cluster": {
+              "type": "string",
+              "description": "The cluster id from list_clusters.",
+              "minLength": 1
+            },
+            "kind": {
+              "type": "string",
+              "description": "The Flux kind of the object.",
+              "enum": [
+                "GitRepository",
+                "OCIRepository",
+                "HelmRepository",
+                "HelmChart",
+                "Bucket",
+                "Kustomization",
+                "HelmRelease",
+                "ImageRepository",
+                "ImagePolicy",
+                "ImageUpdateAutomation",
+                "Alert",
+                "Provider",
+                "Receiver"
+              ]
+            },
+            "namespace": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            }
+          }
+        }
+      },
+      {
+        "id": "resume",
+        "title": "Resume",
+        "description": "Resumes a suspended Flux object (spec.suspend: false).",
+        "readOnly": false,
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cluster",
+            "kind",
+            "namespace",
+            "name"
+          ],
+          "properties": {
+            "cluster": {
+              "type": "string",
+              "description": "The cluster id from list_clusters.",
+              "minLength": 1
+            },
+            "kind": {
+              "type": "string",
+              "description": "The Flux kind of the object.",
+              "enum": [
+                "GitRepository",
+                "OCIRepository",
+                "HelmRepository",
+                "HelmChart",
+                "Bucket",
+                "Kustomization",
+                "HelmRelease",
+                "ImageRepository",
+                "ImagePolicy",
+                "ImageUpdateAutomation",
+                "Alert",
+                "Provider",
+                "Receiver"
+              ]
+            },
+            "namespace": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 253
+            }
+          }
+        }
+      }
     ]
+  },
+  "backend": {
+    "module": "backend.wasm"
   },
   "translations": {
     "ru": {
@@ -2737,7 +2898,10 @@
       "problems.not-ready-kustomization.title": "Kustomization не готов",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease не готов",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "Синхронизировать сейчас",
+      "agentTools.suspend.title": "Приостановить",
+      "agentTools.resume.title": "Возобновить"
     },
     "uk": {
       "name": "Flux",
@@ -2861,7 +3025,10 @@
       "problems.not-ready-kustomization.title": "Kustomization не готовий",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease не готовий",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "Синхронізувати зараз",
+      "agentTools.suspend.title": "Призупинити",
+      "agentTools.resume.title": "Відновити"
     },
     "de": {
       "name": "Flux",
@@ -2985,7 +3152,10 @@
       "problems.not-ready-kustomization.title": "Kustomization nicht bereit",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease nicht bereit",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "Jetzt abgleichen",
+      "agentTools.suspend.title": "Anhalten",
+      "agentTools.resume.title": "Fortsetzen"
     },
     "fr": {
       "name": "Flux",
@@ -3109,7 +3279,10 @@
       "problems.not-ready-kustomization.title": "Kustomization non prêt",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease non prêt",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "Réconcilier maintenant",
+      "agentTools.suspend.title": "Suspendre",
+      "agentTools.resume.title": "Reprendre"
     },
     "es": {
       "name": "Flux",
@@ -3233,7 +3406,10 @@
       "problems.not-ready-kustomization.title": "Kustomization no está listo",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease no está listo",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "Reconciliar ahora",
+      "agentTools.suspend.title": "Suspender",
+      "agentTools.resume.title": "Reanudar"
     },
     "pt-BR": {
       "name": "Flux",
@@ -3357,7 +3533,10 @@
       "problems.not-ready-kustomization.title": "Kustomization não está pronto",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease não está pronto",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "Reconciliar agora",
+      "agentTools.suspend.title": "Suspender",
+      "agentTools.resume.title": "Retomar"
     },
     "it": {
       "name": "Flux",
@@ -3481,7 +3660,10 @@
       "problems.not-ready-kustomization.title": "Kustomization non pronto",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease non pronto",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "Riconcilia ora",
+      "agentTools.suspend.title": "Sospendi",
+      "agentTools.resume.title": "Riprendi"
     },
     "pl": {
       "name": "Flux",
@@ -3605,7 +3787,10 @@
       "problems.not-ready-kustomization.title": "Kustomization niegotowy",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease niegotowy",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "Uzgodnij teraz",
+      "agentTools.suspend.title": "Wstrzymaj",
+      "agentTools.resume.title": "Wznów"
     },
     "tr": {
       "name": "Flux",
@@ -3729,7 +3914,10 @@
       "problems.not-ready-kustomization.title": "Kustomization hazır değil",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease hazır değil",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "Şimdi uzlaştır",
+      "agentTools.suspend.title": "Askıya al",
+      "agentTools.resume.title": "Sürdür"
     },
     "zh-CN": {
       "name": "Flux",
@@ -3853,7 +4041,10 @@
       "problems.not-ready-kustomization.title": "Kustomization 未就绪",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease 未就绪",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "立即协调",
+      "agentTools.suspend.title": "暂停",
+      "agentTools.resume.title": "恢复"
     },
     "zh-TW": {
       "name": "Flux",
@@ -3977,7 +4168,10 @@
       "problems.not-ready-kustomization.title": "Kustomization 未就緒",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease 未就緒",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "立即調和",
+      "agentTools.suspend.title": "暫停",
+      "agentTools.resume.title": "繼續"
     },
     "ja": {
       "name": "Flux",
@@ -4101,7 +4295,10 @@
       "problems.not-ready-kustomization.title": "Kustomization が準備できていません",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease が準備できていません",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "今すぐ調整",
+      "agentTools.suspend.title": "一時停止",
+      "agentTools.resume.title": "再開"
     },
     "ko": {
       "name": "Flux",
@@ -4225,7 +4422,10 @@
       "problems.not-ready-kustomization.title": "Kustomization 준비되지 않음",
       "problems.not-ready-kustomization.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.not-ready-helmrelease.title": "HelmRelease 준비되지 않음",
-      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.not-ready-helmrelease.message": "{{.status.conditions[type=\"Ready\"].message}}",
+      "agentTools.reconcile.title": "지금 조정",
+      "agentTools.suspend.title": "일시 중단",
+      "agentTools.resume.title": "재개"
     }
   }
 }

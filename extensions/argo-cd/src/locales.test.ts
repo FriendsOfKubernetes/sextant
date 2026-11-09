@@ -81,6 +81,8 @@ describe("the manifest's translations", () => {
       ...c.kinds.flatMap((k, i) => [`kinds.${i}.title`, ...("sectionTitle" in k ? [`kinds.${i}.sectionTitle`] : [])]),
       ...c.detailsSections.map((s) => `detailsSections.${s.id}.title`),
       ...c.actions.flatMap((a) => [`actions.${a.id}.title`, ...("whyNot" in a ? [`actions.${a.id}.whyNot`] : [])]),
+      // The agents' tools' titles; their descriptions are for agents and stay English (ADR-0159).
+      ...c.agentTools.map((tool) => `agentTools.${tool.id}.title`),
       ...c.columns.flatMap((col) => [`columns.${col.id}.title`, ...(col.cases ?? []).map((_, i) => `columns.${col.id}.cases.${i}.text`)]),
       ...c.services.flatMap((s) => [`services.${s.id}.title`, ...s.signIn.fields.map((f) => `services.${s.id}.signIn.${f.id}.label`)]),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),

@@ -572,7 +572,6 @@ async fn an_agent_initializes_lists_the_tools_and_calls_one_and_the_call_is_jour
             "get_recent_changes",
             "get_resource",
             "get_secret_value",
-            "gitops_action",
             "helm_get_release",
             "helm_install",
             "helm_list_releases",

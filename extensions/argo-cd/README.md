@@ -100,6 +100,14 @@ details.
 - **Open Argo CD UI** (`open-ui`, also on ApplicationSets and AppProjects): the application's page, or the list of
   applications.
 
+**Tools for AI agents** (`contributes.agentTools`, answered by the extension's backend, ADR-0159), the ones Sextant's
+former MCP tool `gitops_action` had, each on one Application given by cluster id, namespace and name: `sync` (with an
+optional `revision` and `prune`; the operation carries the Application's sync options and retry policy, as the Sync…
+window's does), `refresh` and `hard-refresh` (the `argocd.argoproj.io/refresh` annotation). An agent gets them only
+when you agreed to them at install and turned the extension's tools on in Settings → AI agents (MCP); every read and
+patch is decided for the extension and for the agent's own access in that cluster both, and Sextant asks you when
+either asks. The MCP names are `ext_sextant_argo-cd__sync`, `…__refresh` and `…__hard-refresh`.
+
 ## Permissions
 
 At install the user agrees to these rules (every cluster):
@@ -134,7 +142,9 @@ At install the user agrees to these rules (every cluster):
   refused (the admin password, a token, a login) are not sent again in this run of Sextant until they change or you
   sign in in Sextant's dialog, so a changed admin password is not tried from every Diff window.
 
-An update asks for consent again when it changes any of these rules or services.
+- **A backend** (`backend.wasm`, ADR-0131) that answers only the agents' tools: no network, no credentials.
+
+An update asks for consent again when it changes any of these rules, services or tools.
 
 ## Problems
 

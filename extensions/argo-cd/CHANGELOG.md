@@ -2,11 +2,14 @@
 
 ## 1.4.0 — 2026-11-09
 
-Needs Sextant 0.30 (`sextantApi` 4) with `service.forget({saved: true})` (ADR-0167, #401). The permissions are
-unchanged.
+Needs Sextant 0.30 (`sextantApi` 4) with `service.forget({saved: true})` (ADR-0167, #401). The rules and services
+are unchanged; the agents' tools are new.
 
 - **"Forget saved login"** in the diff's session bar while the login is saved for the cluster: Sextant forgets the
   remembered login only, this run stays signed in, as the built-in view's button did.
+- **Tools for AI agents** (#402): Sync, Refresh and Hard refresh (`sync`, `refresh`, `hard-refresh`), answered by
+  the extension's new backend, as Sextant's former MCP tool `gitops_action` did. Updating asks for consent to the tools; agents get them only once you turn the extension's
+  tools on in Settings → AI agents (MCP).
 
 ## 1.3.0 — 2026-11-07
 

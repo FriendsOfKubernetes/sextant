@@ -10,6 +10,10 @@
     "api4": {
       "title": "拡張機能 API 4",
       "text": "拡張機能で、Sextant 自身のテーブルを使うサイドバーのセクション、計算列、ワンクリックの操作、クラスター内のサービス、AI エージェント向けのツールを持てるようになりました。この 4 つのビューを公開 API で作れるだけの機能です。"
+    },
+    "agentTools": {
+      "title": "AI エージェントの GitOps ツールは拡張機能から提供されます",
+      "text": "MCP ツール gitops_action はなくなりました。Flux と Argo CD の拡張機能がエージェントに Reconcile、Suspend、Resume と Sync、Refresh、Hard refresh を提供します。エージェントに使わせるには、「設定 → AI エージェント (MCP)」で拡張機能のツールをオンにしてください。"
     }
   },
   "extensions": {

@@ -10,6 +10,10 @@
     "api4": {
       "title": "Eklenti API 4",
       "text": "Eklentiler artık Sextant’ın kendi tablolarıyla kenar çubuğu bölümlerine, hesaplanan sütunlara, tek tıklık eylemlere, küme içindeki hizmetlere ve yapay zekâ ajanları için araçlara sahip olabiliyor: bu dört görünümü açık API üzerinde kurmaya yetecek kadar."
+    },
+    "agentTools": {
+      "title": "Yapay zekâ ajanlarının GitOps araçları artık uzantılardan geliyor",
+      "text": "MCP aracı gitops_action artık yok: Flux ve Argo CD uzantıları ajanlara Reconcile, Suspend ve Resume ile Sync, Refresh ve Hard refresh verir. Ajanların bunları kullanabilmesi için uzantının araçlarını Ayarlar → Yapay zekâ ajanları (MCP) bölümünde açın."
     }
   },
   "extensions": {

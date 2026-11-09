@@ -10,6 +10,10 @@
     "api4": {
       "title": "API de extensiones 4",
       "text": "Las extensiones ahora pueden tener secciones de la barra lateral con las tablas de Sextant, columnas calculadas, acciones de un clic, servicios dentro del clúster y herramientas para agentes de IA: suficiente para construir estas cuatro vistas sobre la API pública."
+    },
+    "agentTools": {
+      "title": "Las herramientas GitOps para agentes de IA ahora vienen de las extensiones",
+      "text": "La herramienta MCP gitops_action ya no existe: las extensiones Flux y Argo CD dan a los agentes Reconcile, Suspend y Resume, y también Sync, Refresh y Hard refresh. Para que los agentes las usen, active las herramientas de la extensión en Configuración → Agentes de IA (MCP)."
     }
   },
   "extensions": {

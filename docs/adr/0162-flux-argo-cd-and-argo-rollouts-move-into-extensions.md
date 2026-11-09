@@ -23,7 +23,7 @@ and notifications would double.
     readiness;
   - Restart of an Argo Rollout (`kubectl argo rollouts restart`'s `spec.restartAt`);
   - the Flux kinds Cleanup scans for the Secrets and ConfigMaps they name (`src/resources/gitopsKinds.ts`);
-  - the GitOps install from the official manifests (ADR-0058) and the MCP tool `gitops_action`;
+  - the GitOps install from the official manifests (ADR-0058) (and, until #402, the MCP tool `gitops_action`);
   - the icons of the set the extensions name (an extension API name is never removed, ADR-0142);
   - the loopback TLS of Sextant's own port forwards, now `sextant_core::loopback_tls`, used by extension services
     (ADR-0158).
@@ -64,3 +64,13 @@ kept in place after Velero (`EXTENSION_SECTION_PLACES`), an offer in `OFFERS` ma
 category `workflows` moved by the version-3 migration to `ext:sextant.argo-workflows` (`MOVED_PROBLEM_CATEGORIES`, not
 given to agents: it never was). `fnv32a` and `DurationText`, which OpenShift used, moved to OpenShift's model and the
 shared components. The extension must be in the catalog before 0.30.0 is released, as the other three.
+
+## Amendment: the agents' GitOps tools (#402)
+
+The MCP tool `gitops_action` leaves the core too, without an alias. The Flux extension's backend gives agents
+`reconcile`, `suspend` and `resume`, the Argo CD extension's `sync`, `refresh` and `hard-refresh` (`contributes.agentTools`,
+ADR-0159; MCP names `ext_sextant_flux__<tool>`, `ext_sextant_argo-cd__<tool>`), each sending the patch `gitops_action`
+sent (a sync reads the Application for its sync options and retry policy). The backends are TypeScript components
+(`backend/main.ts`) whose logic is the pure `src/agentTools.ts`. Agents get them only when the user agrees to the tools
+when installing or updating and turns the extension's tools on in Settings → AI agents (MCP); every call is decided for
+the extension and the agent both. "What's new" for 0.30.0 says so.

@@ -10,6 +10,10 @@
     "api4": {
       "title": "Erweiterungs-API 4",
       "text": "Erweiterungen können jetzt Seitenleisten-Bereiche mit Sextants eigenen Tabellen, berechnete Spalten, Aktionen mit einem Klick, Dienste im Cluster und Werkzeuge für KI-Agenten haben: genug, um diese vier Ansichten auf der öffentlichen API zu bauen."
+    },
+    "agentTools": {
+      "title": "GitOps-Werkzeuge für KI-Agenten kommen jetzt aus den Erweiterungen",
+      "text": "Das MCP-Werkzeug gitops_action gibt es nicht mehr: Die Erweiterungen Flux und Argo CD geben Agenten Reconcile, Suspend und Resume sowie Sync, Refresh und Hard refresh. Damit Agenten sie nutzen können, schalten Sie die Werkzeuge der Erweiterung unter Einstellungen → KI-Agenten (MCP) ein."
     }
   },
   "extensions": {

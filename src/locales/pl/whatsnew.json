@@ -10,6 +10,10 @@
     "api4": {
       "title": "API rozszerzeń 4",
       "text": "Rozszerzenia mogą teraz mieć sekcje panelu bocznego z tabelami Sextant, kolumny obliczane, działania jednym kliknięciem, usługi w klastrze i narzędzia dla agentów AI — wystarczająco, by zbudować te cztery widoki na publicznym API."
+    },
+    "agentTools": {
+      "title": "Narzędzia GitOps dla agentów AI pochodzą teraz z rozszerzeń",
+      "text": "Narzędzia MCP gitops_action już nie ma: rozszerzenia Flux i Argo CD dają agentom Reconcile, Suspend i Resume, a także Sync, Refresh i Hard refresh. Aby agenci mogli z nich korzystać, włącz narzędzia rozszerzenia w Ustawienia → Agenci AI (MCP)."
     }
   },
   "extensions": {

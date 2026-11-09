@@ -658,7 +658,123 @@
         "since": ".status.operationState.finishedAt",
         "message": "{{.status.operationState.message}}"
       }
+    ],
+    "agentTools": [
+      {
+        "id": "sync",
+        "title": "Sync",
+        "description": "Starts a sync of an Argo CD Application, as `argocd app sync` does: the operation carries the Application's sync options and retry policy.",
+        "readOnly": false,
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cluster",
+            "namespace",
+            "name"
+          ],
+          "properties": {
+            "cluster": {
+              "type": "string",
+              "description": "The cluster id from list_clusters.",
+              "minLength": 1
+            },
+            "namespace": {
+              "type": "string",
+              "description": "The Application's namespace (where Argo CD keeps it).",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "name": {
+              "type": "string",
+              "description": "The Application's name.",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "revision": {
+              "type": "string",
+              "description": "The revision to sync to; each source's own targetRevision when left out.",
+              "maxLength": 1024
+            },
+            "prune": {
+              "type": "boolean",
+              "description": "Also delete resources no longer in Git."
+            }
+          }
+        }
+      },
+      {
+        "id": "refresh",
+        "title": "Refresh",
+        "description": "Asks Argo CD to compare an Application with its repository again (the argocd.argoproj.io/refresh annotation, normal).",
+        "readOnly": false,
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cluster",
+            "namespace",
+            "name"
+          ],
+          "properties": {
+            "cluster": {
+              "type": "string",
+              "description": "The cluster id from list_clusters.",
+              "minLength": 1
+            },
+            "namespace": {
+              "type": "string",
+              "description": "The Application's namespace (where Argo CD keeps it).",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "name": {
+              "type": "string",
+              "description": "The Application's name.",
+              "minLength": 1,
+              "maxLength": 253
+            }
+          }
+        }
+      },
+      {
+        "id": "hard-refresh",
+        "title": "Hard refresh",
+        "description": "Asks Argo CD to regenerate an Application's manifests without its cache and compare them again (the argocd.argoproj.io/refresh annotation, hard).",
+        "readOnly": false,
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cluster",
+            "namespace",
+            "name"
+          ],
+          "properties": {
+            "cluster": {
+              "type": "string",
+              "description": "The cluster id from list_clusters.",
+              "minLength": 1
+            },
+            "namespace": {
+              "type": "string",
+              "description": "The Application's namespace (where Argo CD keeps it).",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "name": {
+              "type": "string",
+              "description": "The Application's name.",
+              "minLength": 1,
+              "maxLength": 253
+            }
+          }
+        }
+      }
     ]
+  },
+  "backend": {
+    "module": "backend.wasm"
   },
   "translations": {
     "ru": {
@@ -703,7 +819,10 @@
       "services.argocd-server-token.title": "API Argo CD с API-токеном (argocd-server, HTTPS)",
       "services.argocd-server.signIn.password.label": "Пароль",
       "services.argocd-server.signIn.username.label": "Пользователь",
-      "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)"
+      "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)",
+      "agentTools.sync.title": "Синхронизировать",
+      "agentTools.refresh.title": "Обновить",
+      "agentTools.hard-refresh.title": "Полное обновление"
     },
     "uk": {
       "actions.diff.title": "Відмінності",
@@ -747,7 +866,10 @@
       "services.argocd-server-token.title": "API Argo CD з API-токеном (argocd-server, HTTPS)",
       "services.argocd-server.signIn.password.label": "Пароль",
       "services.argocd-server.signIn.username.label": "Користувач",
-      "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)"
+      "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)",
+      "agentTools.sync.title": "Синхронізувати",
+      "agentTools.refresh.title": "Оновити",
+      "agentTools.hard-refresh.title": "Повне оновлення"
     },
     "de": {
       "actions.diff.title": "Diff",
@@ -791,7 +913,10 @@
       "services.argocd-server-token.title": "Argo-CD-API mit einem API-Token (argocd-server, HTTPS)",
       "services.argocd-server.signIn.password.label": "Passwort",
       "services.argocd-server.signIn.username.label": "Benutzer",
-      "services.argocd-server.title": "Argo-CD-API (argocd-server, HTTPS)"
+      "services.argocd-server.title": "Argo-CD-API (argocd-server, HTTPS)",
+      "agentTools.sync.title": "Synchronisieren",
+      "agentTools.refresh.title": "Aktualisieren",
+      "agentTools.hard-refresh.title": "Vollständig aktualisieren"
     },
     "fr": {
       "actions.diff.title": "Différences",
@@ -835,7 +960,10 @@
       "services.argocd-server-token.title": "API d'Argo CD avec un jeton d'API (argocd-server, HTTPS)",
       "services.argocd-server.signIn.password.label": "Mot de passe",
       "services.argocd-server.signIn.username.label": "Utilisateur",
-      "services.argocd-server.title": "API d'Argo CD (argocd-server, HTTPS)"
+      "services.argocd-server.title": "API d'Argo CD (argocd-server, HTTPS)",
+      "agentTools.sync.title": "Synchroniser",
+      "agentTools.refresh.title": "Actualiser",
+      "agentTools.hard-refresh.title": "Actualisation forcée"
     },
     "es": {
       "actions.diff.title": "Diferencias",
@@ -879,7 +1007,10 @@
       "services.argocd-server-token.title": "API de Argo CD con un token de API (argocd-server, HTTPS)",
       "services.argocd-server.signIn.password.label": "Contraseña",
       "services.argocd-server.signIn.username.label": "Usuario",
-      "services.argocd-server.title": "API de Argo CD (argocd-server, HTTPS)"
+      "services.argocd-server.title": "API de Argo CD (argocd-server, HTTPS)",
+      "agentTools.sync.title": "Sincronizar",
+      "agentTools.refresh.title": "Actualizar",
+      "agentTools.hard-refresh.title": "Actualización completa"
     },
     "pt-BR": {
       "actions.diff.title": "Diff",
@@ -923,7 +1054,10 @@
       "services.argocd-server-token.title": "API do Argo CD com um token de API (argocd-server, HTTPS)",
       "services.argocd-server.signIn.password.label": "Senha",
       "services.argocd-server.signIn.username.label": "Usuário",
-      "services.argocd-server.title": "API do Argo CD (argocd-server, HTTPS)"
+      "services.argocd-server.title": "API do Argo CD (argocd-server, HTTPS)",
+      "agentTools.sync.title": "Sincronizar",
+      "agentTools.refresh.title": "Atualizar",
+      "agentTools.hard-refresh.title": "Atualização completa"
     },
     "it": {
       "actions.diff.title": "Differenze",
@@ -967,7 +1101,10 @@
       "services.argocd-server-token.title": "API di Argo CD con un token API (argocd-server, HTTPS)",
       "services.argocd-server.signIn.password.label": "Password",
       "services.argocd-server.signIn.username.label": "Utente",
-      "services.argocd-server.title": "API di Argo CD (argocd-server, HTTPS)"
+      "services.argocd-server.title": "API di Argo CD (argocd-server, HTTPS)",
+      "agentTools.sync.title": "Sincronizza",
+      "agentTools.refresh.title": "Aggiorna",
+      "agentTools.hard-refresh.title": "Aggiornamento forzato"
     },
     "pl": {
       "actions.diff.title": "Różnice",
@@ -1011,7 +1148,10 @@
       "services.argocd-server-token.title": "API Argo CD z tokenem API (argocd-server, HTTPS)",
       "services.argocd-server.signIn.password.label": "Hasło",
       "services.argocd-server.signIn.username.label": "Użytkownik",
-      "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)"
+      "services.argocd-server.title": "API Argo CD (argocd-server, HTTPS)",
+      "agentTools.sync.title": "Synchronizuj",
+      "agentTools.refresh.title": "Odśwież",
+      "agentTools.hard-refresh.title": "Twarde odświeżenie"
     },
     "tr": {
       "actions.diff.title": "Fark",
@@ -1055,7 +1195,10 @@
       "services.argocd-server-token.title": "API belirteciyle Argo CD API'si (argocd-server, HTTPS)",
       "services.argocd-server.signIn.password.label": "Parola",
       "services.argocd-server.signIn.username.label": "Kullanıcı",
-      "services.argocd-server.title": "Argo CD API'si (argocd-server, HTTPS)"
+      "services.argocd-server.title": "Argo CD API'si (argocd-server, HTTPS)",
+      "agentTools.sync.title": "Eşitle",
+      "agentTools.refresh.title": "Yenile",
+      "agentTools.hard-refresh.title": "Tam yenile"
     },
     "zh-CN": {
       "actions.diff.title": "差异",
@@ -1099,7 +1242,10 @@
       "services.argocd-server-token.title": "使用 API 令牌的 Argo CD API（argocd-server，HTTPS）",
       "services.argocd-server.signIn.password.label": "密码",
       "services.argocd-server.signIn.username.label": "用户",
-      "services.argocd-server.title": "Argo CD API（argocd-server，HTTPS）"
+      "services.argocd-server.title": "Argo CD API（argocd-server，HTTPS）",
+      "agentTools.sync.title": "同步",
+      "agentTools.refresh.title": "刷新",
+      "agentTools.hard-refresh.title": "硬刷新"
     },
     "zh-TW": {
       "actions.diff.title": "差異",
@@ -1143,7 +1289,10 @@
       "services.argocd-server-token.title": "使用 API 權杖的 Argo CD API（argocd-server，HTTPS）",
       "services.argocd-server.signIn.password.label": "密碼",
       "services.argocd-server.signIn.username.label": "使用者",
-      "services.argocd-server.title": "Argo CD API（argocd-server，HTTPS）"
+      "services.argocd-server.title": "Argo CD API（argocd-server，HTTPS）",
+      "agentTools.sync.title": "同步",
+      "agentTools.refresh.title": "重新整理",
+      "agentTools.hard-refresh.title": "強制重新整理"
     },
     "ja": {
       "actions.diff.title": "差分",
@@ -1187,7 +1336,10 @@
       "services.argocd-server-token.title": "API トークンを使う Argo CD API (argocd-server、HTTPS)",
       "services.argocd-server.signIn.password.label": "パスワード",
       "services.argocd-server.signIn.username.label": "ユーザー",
-      "services.argocd-server.title": "Argo CD API（argocd-server、HTTPS）"
+      "services.argocd-server.title": "Argo CD API（argocd-server、HTTPS）",
+      "agentTools.sync.title": "同期",
+      "agentTools.refresh.title": "更新",
+      "agentTools.hard-refresh.title": "ハードリフレッシュ"
     },
     "ko": {
       "actions.diff.title": "차이",
@@ -1231,7 +1383,10 @@
       "services.argocd-server-token.title": "API 토큰을 사용하는 Argo CD API(argocd-server, HTTPS)",
       "services.argocd-server.signIn.password.label": "암호",
       "services.argocd-server.signIn.username.label": "사용자",
-      "services.argocd-server.title": "Argo CD API(argocd-server, HTTPS)"
+      "services.argocd-server.title": "Argo CD API(argocd-server, HTTPS)",
+      "agentTools.sync.title": "동기화",
+      "agentTools.refresh.title": "새로 고침",
+      "agentTools.hard-refresh.title": "강제 새로 고침"
     }
   }
 }

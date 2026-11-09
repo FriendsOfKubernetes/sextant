@@ -10,6 +10,10 @@
     "api4": {
       "title": "扩展 API 4",
       "text": "扩展现在可以拥有使用 Sextant 自己表格的侧边栏分区、计算列、一键操作、集群内服务以及供 AI 代理使用的工具——足以在公开 API 上构建这四个视图。"
+    },
+    "agentTools": {
+      "title": "AI 智能体的 GitOps 工具现在来自扩展",
+      "text": "MCP 工具 gitops_action 已移除：Flux 和 Argo CD 扩展为智能体提供 Reconcile、Suspend 和 Resume，以及 Sync、Refresh 和 Hard refresh。要让智能体使用它们，请在“设置 → AI 智能体（MCP）”中开启该扩展的工具。"
     }
   },
   "extensions": {

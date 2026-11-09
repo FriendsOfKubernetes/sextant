@@ -61,6 +61,8 @@ describe("the manifest's translations", () => {
       // hold no words (`{{kind}}/{{name}}`): English is every language's.
       ...c.columns.filter((col) => col.id.startsWith("suspended-")).flatMap((col) => [`columns.${col.id}.cases.0.text`, `columns.${col.id}.cases.1.text`]),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
+      // The agents' tools' titles; their descriptions are for agents and stay English (ADR-0159).
+      ...c.agentTools.map((tool) => `agentTools.${tool.id}.title`),
     ].sort();
     const translations = manifest.translations as Record<string, Record<string, string>>;
     expect(Object.keys(translations).sort()).toEqual(SEXTANT_LANGUAGES.filter((l) => l !== "en"));
