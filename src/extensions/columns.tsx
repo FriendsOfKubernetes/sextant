@@ -141,13 +141,16 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
     case "list": {
       // A list of scalars joined in the UI language (#395); anything else in it is left out.
       if (!Array.isArray(value)) return { sort: undefined, text: undefined, draw: null };
-      const items = value.filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean").map(String);
+      const items = value
+        .filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+        .map((v) => cleanText(String(v)) ?? "")
+        .filter((v) => v !== "");
       if (items.length === 0) return { sort: undefined, text: undefined, draw: null };
       const text = textOf(formatList(items)) ?? "";
       return { sort: text, text, draw: text };
     }
     case "text": {
-      const plain = textOf(value);
+      const plain = textOf(cleanText(textOf(value)));
       if (plain === undefined) return { sort: undefined, text: undefined, draw: null };
       const text = written(plain);
       return { sort: plain, text, draw: column.tones ? <StatusText value={text} tone={tone(plain) ?? "neutral"} /> : text };
@@ -175,7 +178,8 @@ export function placement(column: Pick<ColumnContribution, "after" | "afterColum
 export function computedColumn(id: string, column: ColumnContribution, ownIds?: (id: string) => string | undefined): ColumnDef {
   const format = column.format ?? "text";
   const timed = format === "age" || format === "duration" || (column.cases ?? []).length > 0;
-  const tooltip = (obj: KubeObject) => textOf(firstValue(obj, column.tooltipPaths));
+  // Cluster text is cleaned wherever it shows, as case texts are: no credentials of a URI in a hover.
+  const tooltip = (obj: KubeObject) => textOf(cleanText(textOf(firstValue(obj, column.tooltipPaths))));
   return {
     id,
     title: column.title,
