@@ -16,8 +16,11 @@ export interface HostUiOptions {
   extensionId: string;
   /** The extension's name as it is now (a dev extension can be renamed while its frame runs), shown with its notices. */
   extensionName: () => string;
-  /** `ui.close`: closes the frame's window or dock tab; nothing for frames that cannot be closed. */
-  close?: () => void;
+  /**
+   * `ui.close`: closes the frame's window or dock tab; nothing for frames that cannot be closed. `failed`: the action
+   * failed, and Sextant shows its own failure dialog with this text (#400).
+   */
+  close?: (failed?: string) => void;
   /** The cluster of the frame's context; the active cluster when it has none. */
   clusterId?: () => ClusterId | null;
   /** The services the extension's manifest declares (localized), for `ui.signIn`. */
@@ -33,6 +36,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** `ui.*` of one frame. */
+/** A failure an action's frame tells with `ui.close({failed})` keeps at most this many characters. */
+export const MAX_FAILED_CHARS = 1000;
+
 export function hostUi(options: HostUiOptions): BridgeUi {
   return {
     openDetails(params) {
@@ -57,8 +63,10 @@ export function hostUi(options: HostUiOptions): BridgeUi {
       if (typeof text !== "string" || text.trim() === "") throw new ApiError("invalid", "ui.notify needs {text}");
       pushNotice(options.extensionName(), text);
     },
-    close() {
-      options.close?.();
+    close(params) {
+      const failed = isRecord(params) && typeof params.failed === "string" ? params.failed.trim() : "";
+      // Text of the extension's: clipped, shown as plain text in Sextant's failure dialog.
+      options.close?.(failed === "" ? undefined : Array.from(failed).slice(0, MAX_FAILED_CHARS).join(""));
     },
     setHidden(params) {
       const hidden = typeof params === "boolean" ? params : isRecord(params) ? params.hidden : undefined;

@@ -245,6 +245,14 @@ export function openActionDialog(render: (close: () => void) => ReactNode): () =
   return close;
 }
 
+/**
+ * Shows Sextant's failure dialog for an action that failed outside `run` (an extension's window or headless frame that
+ * closed with `{failed}`, #400): titled with the action's label as shown.
+ */
+export function reportActionFailure(label: string, message: string): void {
+  reportActionError({ label, icon: "customResource", appliesTo: () => true, run: () => undefined }, new Error(message));
+}
+
 function reportActionError(action: ActionDef, error: unknown): void {
   const id = ++dialogCounter;
   const close = () => {

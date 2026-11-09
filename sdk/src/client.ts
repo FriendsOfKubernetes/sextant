@@ -184,8 +184,11 @@ export interface Sextant {
     navigate(page: string, options?: CallOptions): Promise<void>;
     /** A short notice in Sextant's window (at most 500 characters). */
     notify(text: string, options?: CallOptions): Promise<void>;
-    /** Closes the action's window or the dock tab. */
-    close(options?: CallOptions): Promise<void>;
+    /**
+     * Closes the action's window or the dock tab. With `failed` the action failed: Sextant shows its own failure dialog
+     * with the action's title and this text (since Sextant 0.30).
+     */
+    close(options?: CallOptions & { failed?: string }): Promise<void>;
     /**
      * Opens Sextant's logs tab of a pod (one container), or the merged logs of the pods a label selector picks, when
      * the extension may read their logs (since Sextant 0.30).
@@ -618,7 +621,8 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       setHidden: (hidden, o) => send<unknown>("ui.setHidden", { hidden }, o).then(() => undefined),
       signIn: (params, o) =>
         onCluster<{ signedIn: boolean }>("ui.signIn", params, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.signedIn),
-      close: (o) => send<unknown>("ui.close", undefined, o).then(() => undefined),
+      close: (o) =>
+        send<unknown>("ui.close", o?.failed !== undefined ? { failed: o.failed } : undefined, o).then(() => undefined),
     },
     call: (method, params, o) => send(method, params, o),
     resize,

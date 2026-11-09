@@ -268,7 +268,7 @@ export interface Methods {
   "ui.openDetails": { params: RefInput; result: null };
   "ui.navigate": { params: { page: string }; result: null };
   "ui.notify": { params: { text: string }; result: null };
-  "ui.close": { params: undefined; result: null };
+  "ui.close": { params: { failed?: string } | undefined; result: null };
   "ui.openLogs": { params: OpenLogsParams; result: null };
   "ui.openUrl": { params: { url: string }; result: { opened: boolean } };
   "ui.setHidden": { params: { hidden: boolean }; result: null };

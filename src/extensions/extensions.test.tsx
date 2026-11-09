@@ -721,6 +721,22 @@ describe("contributions of an extension", () => {
     });
     expect(document.querySelector(".ext-headless iframe")).toBeNull();
 
+    // `ui.close({failed})` ends it as a failed action: Sextant's own failure dialog (#400).
+    await act(() => runAction(sync!, "c1", WIDGET, [widget]));
+    const failing = document.querySelector<HTMLIFrameElement>(".ext-headless iframe")!;
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          data: { sextant: 1, doc: DOC, id: 2, method: "ui.close", params: { failed: "the source is gone" } },
+          source: failing.contentWindow,
+        }),
+      );
+    });
+    expect(document.querySelector(".ext-headless iframe")).toBeNull();
+    const failure = await screen.findByRole("dialog", { name: "Sync now failed" });
+    expect(within(failure).getByText(/the source is gone/)).toBeInTheDocument();
+    fireEvent.click(within(failure).getAllByRole("button").at(-1)!);
+
     // A frame that reports an error is ended and told as the extension's notice.
     await act(() => runAction(sync!, "c1", WIDGET, [widget]));
     const second = document.querySelector<HTMLIFrameElement>(".ext-headless iframe")!;

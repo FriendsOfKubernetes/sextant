@@ -25,7 +25,8 @@ export interface BridgeUi {
   openDetails(ref: unknown): void;
   navigate(params: unknown): void;
   notify(params: unknown): void;
-  close(): void;
+  /** `ui.close`, with `{failed}` when the action failed (#400). */
+  close(params?: unknown): void;
   /** Opens Sextant's logs tab once the backend allowed it (ADR-0156). */
   openLogs(params: unknown): Promise<void>;
   /** Opens an address in the browser once the user said so (ADR-0156); `{opened}`. */
@@ -155,7 +156,7 @@ export function createBridge(options: BridgeOptions): Bridge {
       case "ui.notify":
         return ui.notify(request.params);
       case "ui.close":
-        return ui.close();
+        return ui.close(request.params);
       case "ui.openLogs":
         return ui.openLogs(request.params);
       case "ui.openUrl":

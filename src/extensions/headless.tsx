@@ -7,6 +7,7 @@ import { create } from "zustand";
 import type { ClusterId, ObjectRef } from "../api";
 import { i18n } from "../i18n";
 import { ExtensionFrame } from "./ExtensionFrame";
+import { reportActionFailure } from "../features/actions/registry";
 import { pushNotice } from "./notices";
 import { VIEW } from "./protocol";
 import { useExtensions } from "./store";
@@ -79,7 +80,9 @@ export function HeadlessActions() {
             title={run.title}
             clusterId={run.clusterId}
             selection={run.refs}
-            onClose={() => endHeadlessAction(run.id)}
+            onClose={(failed) => {
+              if (endHeadlessAction(run.id) && failed !== undefined) reportActionFailure(run.title, failed);
+            }}
             onFailed={(message) => {
               if (!endHeadlessAction(run.id)) return;
               pushNotice(

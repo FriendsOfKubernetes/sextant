@@ -41,8 +41,8 @@ export interface ExtensionFrameProps {
   resourceVersion?: string | null;
   /** Height follows the frame's `resize` messages (details sections). */
   autoHeight?: boolean;
-  /** `ui.close`. */
-  onClose?: () => void;
+  /** `ui.close`; `failed` when the frame said its action failed (#400). */
+  onClose?: (failed?: string) => void;
   /** `ui.setHidden`: a details section hides itself while it has nothing to show (ADR-0161); others ignore it. */
   onHidden?: (hidden: boolean) => void;
   /** The frame reported an error or did not load (a hidden action's frame tells it here, #379). */
@@ -222,7 +222,7 @@ function FrameView({
         clusterId: () => latest.current.context.clusterId,
         services: () => latest.current.services,
         setHidden: (hidden) => latest.current.onHidden?.(hidden),
-        close: () => latest.current.onClose?.(),
+        close: (failed) => latest.current.onClose?.(failed),
       }),
       onResize: (next) => {
         if (latest.current.autoHeight) setHeight(next);

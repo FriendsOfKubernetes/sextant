@@ -12,7 +12,7 @@ import { useState, type ComponentType } from "react";
 import type { ActionContribution, ExtensionInfo, KindContribution, KindPattern, KindRef, KubeObject, ProblemContribution } from "../api";
 import { useAppStore } from "../app/store";
 import { Dialog, isIconName, type IconName } from "../components";
-import { openActionDialog, registerAction, type ActionContext } from "../features/actions/registry";
+import { openActionDialog, registerAction, reportActionFailure, type ActionContext } from "../features/actions/registry";
 import { registerClusterMenuItem } from "../features/clusters/menuItems";
 import { categoryOfExtension, detectExtension, registerExtensionProblems } from "../features/problems/extensionCategories";
 import { NamespaceFilter } from "../features/namespaces";
@@ -454,7 +454,10 @@ function openActionWindow(
           title={title}
           clusterId={ctx.clusterId}
           selection={ctx.refs}
-          onClose={finish}
+          onClose={(failed) => {
+            finish();
+            if (failed !== undefined) reportActionFailure(title, failed);
+          }}
           className="ext-frame--action"
         />
       </Dialog>
