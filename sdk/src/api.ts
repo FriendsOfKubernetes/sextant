@@ -281,6 +281,7 @@ export interface Methods {
   "resources.getMany": { params: GetManyParams & { clusterId: ClusterId }; result: GetManyResult };
   "resources.watch": { params: WatchParams & { clusterId: ClusterId }; result: { stream: string | number } };
   "resources.apply": { params: ApplyParams & { clusterId: ClusterId }; result: ObjectRef[] };
+  "resources.create": { params: ApplyParams & { clusterId: ClusterId }; result: ObjectRef };
   "resources.patch": { params: PatchParams & { clusterId: ClusterId }; result: KubeObject };
   "resources.patchMany": { params: PatchManyParams & { clusterId: ClusterId }; result: PatchManyResult };
   "resources.delete": { params: DeleteParams & { clusterId: ClusterId }; result: null };

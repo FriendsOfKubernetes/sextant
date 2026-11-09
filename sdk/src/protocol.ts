@@ -68,6 +68,7 @@ export const REMOTE_METHODS = [
   "resources.getMany",
   "resources.watch",
   "resources.apply",
+  "resources.create",
   "resources.patch",
   "resources.patchMany",
   "resources.delete",

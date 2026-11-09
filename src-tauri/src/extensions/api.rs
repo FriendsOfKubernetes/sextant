@@ -94,7 +94,7 @@ pub const MAX_GET_MANY: usize = 50;
 pub const GET_MANY_AT_ONCE: usize = 4;
 
 /// The methods `extension_call` serves (`ui.*` and the context are the window's).
-pub const METHODS: [&str; 25] = [
+pub const METHODS: [&str; 26] = [
     "clusters.list",
     "kinds",
     "resources.list",
@@ -102,6 +102,7 @@ pub const METHODS: [&str; 25] = [
     "resources.getMany",
     "resources.watch",
     "resources.apply",
+    "resources.create",
     "resources.patch",
     "resources.patchMany",
     "resources.delete",
@@ -511,6 +512,7 @@ impl ExtensionApi {
             "resources.getMany" => call.get_many(params).await,
             "resources.watch" => call.watch(params, watch).await,
             "resources.apply" => call.apply(params).await,
+            "resources.create" => call.create(params).await,
             "resources.patch" => call.patch(params).await,
             "resources.patchMany" => call.patch_many(params).await,
             "resources.delete" => call.delete(params).await,
@@ -1473,6 +1475,37 @@ impl<'a> ExtCall<'a> {
         }
         let applied = resources::apply_planned(mgr, &cluster.id, targets).await?;
         to_value(&applied)
+    }
+
+    /// Creates one new object, never changing one that exists (#412, ADR-0086 amendment): Modify on it, decided on the
+    /// same parsed document that is posted; a name already taken is `conflict`.
+    async fn create(&self, params: Value) -> CoreResult<Value> {
+        let args: ApplyArgs = parse(&self.method, params)?;
+        let docs = resources::parse_documents(&args.yaml)?;
+        if docs.len() != 1 {
+            return Err(invalid("the text holds exactly one object to create"));
+        }
+        let cluster = self.open(&args.cluster_id).await?;
+        let mgr = &self.api.clusters;
+        let mut targets = resources::plan_apply(mgr, &cluster.id, docs).await?;
+        let target = targets
+            .pop()
+            .ok_or_else(|| invalid("the text has no object to create"))?;
+        refuse_named_node_shell(target.object(), Some(target.document().value()))?;
+        let object = target.object().clone();
+        let summary = CallSummary {
+            tool: self.method.clone(),
+            target: targets_text(std::slice::from_ref(&object)),
+            details: Some(apply_details(std::slice::from_ref(&object), &args.yaml)),
+        };
+        self.check(
+            &cluster,
+            &[requirement(&object, AccessAction::Modify)],
+            &summary,
+        )
+        .await?;
+        let created = resources::create_planned(mgr, &cluster.id, target).await?;
+        to_value(&created)
     }
 
     async fn patch(&self, params: Value) -> CoreResult<Value> {

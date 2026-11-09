@@ -205,6 +205,7 @@ export const REMOTE_METHODS: readonly string[] = [
   "resources.getMany",
   "resources.watch",
   "resources.apply",
+  "resources.create",
   "resources.patch",
   "resources.patchMany",
   "resources.delete",

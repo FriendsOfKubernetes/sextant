@@ -25,7 +25,7 @@ use ts_rs::TS;
 use crate::error::{CoreError, CoreResult, ErrorCode};
 
 pub use cluster_check::{ClusterCheck, NamedObject, UnreadKind, cluster_check};
-pub use create::create_yaml;
+pub use create::{create_planned, create_yaml};
 pub use dry_run::{
     DryRunChange, DryRunMode, DryRunObject, DryRunResult, FieldChange, SecretKeyChanges,
     dry_run_patch, dry_run_planned, dry_run_yaml, field_changes,

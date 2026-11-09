@@ -118,6 +118,11 @@ export interface Sextant {
     ): Watch;
     /** Applies YAML documents (server-side apply); the objects applied. */
     apply(params: ApplyParams, options?: CallOptions): Promise<ObjectRef[]>;
+    /**
+     * Creates the one object of `yaml`, never changing one that exists: a name already taken fails with `conflict`
+     * (Modify on it; since Sextant 0.30). For a Velero Backup or Restore, a snapshot, anything that must be new.
+     */
+    create(params: ApplyParams, options?: CallOptions): Promise<ObjectRef>;
     patch<T = KubeObject>(params: PatchParams, options?: CallOptions): Promise<T>;
     /**
      * Several patches (at most 50) under one decision and one confirmation, sent in order; the first failure stops
@@ -230,6 +235,7 @@ const DEFAULT_CHANGE_TIMEOUT = 180_000;
 const AUTO_HEIGHT_VIEWS: ReadonlySet<string> = new Set(["details", "settings"]);
 const CHANGES: ReadonlySet<string> = new Set([
   "resources.apply",
+  "resources.create",
   "resources.patch",
   "resources.patchMany",
   "resources.delete",
@@ -585,6 +591,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       getMany: (params, o) => onCluster("resources.getMany", params, o),
       watch,
       apply: (params, o) => onCluster("resources.apply", params, o),
+      create: (params, o) => onCluster("resources.create", params, o),
       patch: (params, o) => onCluster("resources.patch", params, o),
       patchMany: (params, o) => onCluster("resources.patchMany", params, o),
       delete: (params, o) => onCluster<unknown>("resources.delete", params, o).then(() => undefined),

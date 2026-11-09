@@ -55,9 +55,14 @@ mod tests {
             !tools.iter().any(|t| new.iter().any(|n| t.contains(n))),
             "{tools:?}"
         );
+        // Extensions create one object only through `resources.create` (#412, ADR-0086 amendment): Modify on it, decided
+        // on the posted document; none of the storage commands is a method of theirs.
         let methods = crate::extensions::api::METHODS;
         assert!(
-            !methods.iter().any(|m| new.iter().any(|n| m.contains(n))),
+            !methods
+                .iter()
+                .filter(|m| **m != "resources.create")
+                .any(|m| new.iter().any(|n| m.contains(n))),
             "{methods:?}"
         );
     }

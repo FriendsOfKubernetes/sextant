@@ -1,7 +1,8 @@
 //! Creating one new object (#152): a POST, so an object of the same name that already exists — also one that appears
 //! between a check and the request — is never touched: the API server answers `AlreadyExists` (409, `conflict`)
 //! atomically. Used by the storage actions (a VolumeSnapshot, a restored claim, a Velero Backup or Restore) after the
-//! window's confirmation; never by agents or extensions. Sent once (the client repeats only reads).
+//! window's confirmation, and by extensions' `resources.create` (#412) after their decision on the same parsed
+//! document (`create_planned`); never by agents. Sent once (the client repeats only reads).
 
 use kube::api::DynamicObject;
 use serde_json::Value;
@@ -50,6 +51,37 @@ pub async fn create_yaml(
             .metadata
             .name
             .unwrap_or_else(|| doc.name().to_owned()),
+    })
+}
+
+/// Creates the one object an extension's decision was made on: the document [`super::plan_apply`] read, posted as it
+/// is, so what was checked is what is sent (ADR-0057). An object that already exists is `conflict`, never changed.
+pub async fn create_planned(
+    mgr: &ClusterManager,
+    cluster: &ClusterId,
+    target: super::mutate::ApplyTarget,
+) -> CoreResult<ObjectRef> {
+    if target
+        .doc
+        .value()
+        .pointer("/metadata/resourceVersion")
+        .and_then(Value::as_str)
+        .is_some_and(|v| !v.is_empty())
+    {
+        return Err(CoreError::new(
+            ErrorCode::Invalid,
+            "a new object has no metadata.resourceVersion",
+        ));
+    }
+    let client = mgr.client(cluster)?;
+    let api = target
+        .kind
+        .api(client.clone(), target.object.namespace.as_deref());
+    let obj: DynamicObject = serde_json::from_value(target.doc.value().clone())?;
+    let created = api.create(&post_params(), &obj).await?;
+    Ok(ObjectRef {
+        name: created.metadata.name.unwrap_or(target.object.name),
+        ..target.object
     })
 }
 

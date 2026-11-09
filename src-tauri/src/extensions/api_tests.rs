@@ -606,6 +606,14 @@ async fn bad_parameters_and_unknown_methods_are_invalid_before_the_cluster_is_to
             json!({ "clusterId": "ctx-a", "yaml": "" }),
         ),
         (
+            "resources.create",
+            json!({ "clusterId": "ctx-a", "yaml": "" }),
+        ),
+        (
+            "resources.create",
+            json!({ "clusterId": "ctx-a", "yaml": "kind: ConfigMap\napiVersion: v1\nmetadata: {name: a}\n---\nkind: ConfigMap\napiVersion: v1\nmetadata: {name: b}\n" }),
+        ),
+        (
             "resources.watch",
             json!({ "clusterId": "ctx-a", "kind": { "kind": "Pod" } }),
         ),
@@ -1637,6 +1645,45 @@ async fn every_method_against_the_test_cluster() {
         ErrorCode::NotFound,
         "nothing of a refused apply is sent"
     );
+
+    // resources.create (#412): a new object once; the same name again is a conflict and the object stays as it was;
+    // another namespace is refused before anything is sent.
+    let fresh = format!(
+        "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: created\n  namespace: {NS}\ndata:\n  a: \"1\"\n"
+    );
+    let created = live
+        .call(
+            "resources.create",
+            json!({ "clusterId": id, "yaml": fresh }),
+        )
+        .await
+        .unwrap();
+    assert_eq!(created["name"], "created");
+    let again = format!(
+        "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: created\n  namespace: {NS}\ndata:\n  a: \"2\"\n"
+    );
+    let taken = live
+        .call(
+            "resources.create",
+            json!({ "clusterId": id, "yaml": again }),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(taken.code, ErrorCode::Conflict, "{}", taken.message);
+    let kept = live
+        .call("resources.get", json!({ "clusterId": id, "ref": { "kind": { "kind": "ConfigMap" }, "namespace": NS, "name": "created" } }))
+        .await
+        .unwrap();
+    assert_eq!(kept["data"]["a"], "1");
+    let elsewhere = live
+        .call(
+            "resources.create",
+            json!({ "clusterId": id, "yaml":
+            "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: sneaky\n  namespace: default\n" }),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(elsewhere.code, ErrorCode::Denied);
 
     // Node shell pods: by name (no rule needed to refuse), and by label on a live pod.
     let named = json!({ "kind": { "kind": "Pod" }, "namespace": "kube-system", "name": "sextant-node-shell-x-abcde" });

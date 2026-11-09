@@ -24,3 +24,12 @@
 - Use `resource_create` wherever an existing object must never be modified; it is not a general "apply".
 - Without `nodes/proxy` and without Prometheus there is no usage; snapshots and Velero still work.
 - Velero itself skips most objects that exist on restore and merges some kinds (ServiceAccounts); the restore dialog says so.
+
+## Amendment: extensions create objects through `resources.create` (#412)
+
+Moving Velero into an extension needs to create a Backup or Restore that must be new. Extensions already had
+`resources.apply`, which creates *or changes*; `resources.create` is narrower: exactly one object, posted once, a name
+already taken answered `conflict` with the object left as it was. It needs Modify on the object, is decided (and
+confirmed when the rules ask) on the same parsed document that is posted (`create_planned`, ADR-0057), refuses
+node-shell names, and is journaled like an apply. Agents still get no create; the window's `resource_create` is
+unchanged.
