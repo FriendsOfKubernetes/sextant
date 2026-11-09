@@ -150,3 +150,8 @@ An extension's `resources.watch` may ask `maxObjects` (1 to 20 000): the core ke
 the `capped` update (still no `WatchUpdate` an extension switches over: the SDK tells it apart, `onCapped` and
 `Watch.capped`) says how many match. A capped watch is its own shared list (the cap is in the hub's key), and the hub
 tells a frame that joins late the last cap. Watches without `maxObjects` are as before: no `capped`, no parts.
+
+## Amendment: a case's tooltip fallbacks (#403)
+
+A column case's `tooltipOr` (1 to 3, after a `tooltip`, translatable as `cases.<i>.tooltipOr.<k>`) is tried in order:
+with it, a tooltip whose placeholder is empty or missing gives way to the next — "reason: message", else "message".

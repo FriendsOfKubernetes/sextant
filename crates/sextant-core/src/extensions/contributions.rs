@@ -418,6 +418,15 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                     false,
                 )?;
             }
+            if let Some(more) = &case.tooltip_or {
+                let place = here.key("cases").index(j).key("tooltipOr");
+                if case.tooltip.is_none() || more.is_empty() || more.len() > 3 {
+                    return Err(at(&place, "follows a `tooltip` with 1 to 3 more"));
+                }
+                for (k, tooltip) in more.iter().enumerate() {
+                    check_message(tooltip, &column.kind, &place.index(k), false)?;
+                }
+            }
         }
     }
     Ok(())

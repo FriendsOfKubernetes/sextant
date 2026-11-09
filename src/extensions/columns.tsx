@@ -76,8 +76,14 @@ function caseOf(column: ColumnContribution, obj: KubeObject, now: number): Colum
     if (!holdsNow(c, obj, now)) continue;
     const filled = c.text.includes("{{") ? fillTemplate(c.text, obj) : c.text;
     if (filled === null) continue;
-    // A tooltip whose placeholder has no value leaves the column's own tooltip (#380).
-    const tooltip = c.tooltip === undefined ? undefined : fillTemplate(c.tooltip, obj);
+    // A tooltip whose placeholder has no value leaves the column's own tooltip (#380); with `tooltipOr` (#403) an empty
+    // value skips to the next one.
+    const tooltip =
+      c.tooltip === undefined
+        ? undefined
+        : c.tooltipOr === undefined
+          ? fillTemplate(c.tooltip, obj)
+          : ([c.tooltip, ...c.tooltipOr].map((t) => fillTemplate(t, obj, { emptyIsMissing: true })).find((t) => t !== null) ?? null);
     return {
       ...c,
       text: filled === c.text ? c.text : (textOf(cleanText(filled) ?? "") ?? ""),

@@ -100,6 +100,12 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
                     Text::Template(tooltip, 300),
                 );
             }
+            for (k, tooltip) in case.tooltip_or.iter().flatten().enumerate() {
+                out.insert(
+                    format!("columns.{}.cases.{i}.tooltipOr.{k}", column.id),
+                    Text::Template(tooltip, 300),
+                );
+            }
         }
     }
     for section in &c.sections {

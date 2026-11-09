@@ -1159,6 +1159,7 @@ export function translatableTexts(manifest) {
     (column.cases ?? []).forEach((c, i) => {
       out.set(`columns.${column.id}.cases.${i}.text`, { max: 200, message: c.text });
       if (c.tooltip !== undefined) out.set(`columns.${column.id}.cases.${i}.tooltip`, { max: 300, message: c.tooltip });
+      (c.tooltipOr ?? []).forEach((t, k) => out.set(`columns.${column.id}.cases.${i}.tooltipOr.${k}`, { max: 300, message: t }));
     });
   }
   for (const section of c.sections ?? []) if (section.title !== undefined) out.set(`sections.${section.section}.title`, title);
@@ -1590,6 +1591,10 @@ function checkColumns(manifest) {
       checkMessage(c.text, column.kind, [...here, "cases", j, "text"], false);
       if (c.value !== undefined && !["number", "text", "count", "sum"].includes(format)) fail([...here, "cases", j, "value"], 'goes with `format: "number"` or `"text"`');
       if (c.tooltip !== undefined) checkMessage(c.tooltip, column.kind, [...here, "cases", j, "tooltip"], false);
+      if (c.tooltipOr !== undefined) {
+        if (c.tooltip === undefined || c.tooltipOr.length === 0 || c.tooltipOr.length > 3) fail([...here, "cases", j, "tooltipOr"], "follows a `tooltip` with 1 to 3 more");
+        c.tooltipOr.forEach((t, k) => checkMessage(t, column.kind, [...here, "cases", j, "tooltipOr", k], false));
+      }
     });
   });
 }

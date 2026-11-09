@@ -50,6 +50,9 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
                 ...cs,
                 text: text(`columns.${col.id}.cases.${i}.text`, cs.text),
                 ...(cs.tooltip !== undefined ? { tooltip: text(`columns.${col.id}.cases.${i}.tooltip`, cs.tooltip) } : {}),
+                ...(cs.tooltipOr !== undefined
+                  ? { tooltipOr: cs.tooltipOr.map((t, k) => text(`columns.${col.id}.cases.${i}.tooltipOr.${k}`, t)) }
+                  : {}),
               })),
             }
           : {}),

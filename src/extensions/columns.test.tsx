@@ -53,4 +53,25 @@ describe("an extension's computed column", () => {
     const at = (phase: string) => render(<>{toned.render!({ metadata: { name: "a" }, status: { phase } } as unknown as KubeObject, ctx)}</>).container;
     expect(at("Running").innerHTML).not.toBe(at("Paused").innerHTML.replace("Paused", "Running"));
   });
+
+  it("falls back to the next tooltip when one has an empty value (#403)", () => {
+    const col = computedColumn(
+      "x",
+      column({
+        paths: [".status.phase"],
+        cases: [
+          {
+            when: { type: "exists", path: ".status.phase" },
+            text: "{{.status.phase}}",
+            tooltip: "{{.status.reason}}: {{.status.message}}",
+            tooltipOr: ["{{.status.message}}"],
+          },
+        ],
+      }),
+    );
+    const titleOf = (status: Record<string, unknown>) =>
+      render(<>{col.render!({ metadata: { name: "a" }, status } as unknown as KubeObject, ctx)}</>).container.querySelector("span[title]")?.getAttribute("title");
+    expect(titleOf({ phase: "Pending", reason: "Quota", message: "waiting" })).toBe("Quota: waiting");
+    expect(titleOf({ phase: "Pending", reason: "", message: "waiting" })).toBe("waiting");
+  });
 });

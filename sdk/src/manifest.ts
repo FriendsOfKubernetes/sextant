@@ -159,6 +159,8 @@ export interface ManifestColumn {
     tone?: ColumnTone;
     /** Shown on hover while the case holds, instead of `tooltipPaths`; the text's placeholders (since Sextant 0.30). */
     tooltip?: string;
+    /** Tooltips tried in order when `tooltip` has an empty or missing value, 1 to 3 (since Sextant 0.30). */
+    tooltipOr?: string[];
     /** With `format: "number"`: the number it sorts and filters by while it holds; the text is still shown (since Sextant 0.30). */
     value?: number;
   }[];

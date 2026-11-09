@@ -506,6 +506,12 @@
                       "description": "With `format: \"number\"`: the number the column sorts and filters by while the case holds; the text is still shown (sextantApi 4).",
                       "type": "number"
                     },
+                    "tooltipOr": {
+                      "description": "Tooltips tried in order when `tooltip` has an empty or missing value, 1 to 3 (sextantApi 4).",
+                      "type": "array",
+                      "maxItems": 3,
+                      "items": { "type": "string", "minLength": 1, "maxLength": 300, "format": "non-blank", "pattern": "\\S" }
+                    },
                     "tooltip": {
                       "description": "Shown on hover while the case holds, instead of `tooltipPaths`: text with up to 5 `{{<field path>}}` placeholders (sextantApi 4).",
                       "type": "string",

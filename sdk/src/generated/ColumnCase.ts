@@ -15,6 +15,11 @@ tone?: ColumnTone,
  */
 tooltip?: string, 
 /**
+ * Tooltips tried in order when `tooltip` has an empty or missing value (#403): "reason: message", else
+ * "message". At most 3; `sextantApi` 4.
+ */
+tooltipOr?: Array<string>, 
+/**
  * The number a `number` column sorts and filters by while the case holds (#390), or a `text` column sorts by
  * (#403: a state's order, not its translated word); its text is still shown.
  */

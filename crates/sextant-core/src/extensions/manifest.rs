@@ -474,6 +474,11 @@ pub struct ColumnCase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub tooltip: Option<String>,
+    /// Tooltips tried in order when `tooltip` has an empty or missing value (#403): "reason: message", else
+    /// "message". At most 3; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub tooltip_or: Option<Vec<String>>,
     /// The number a `number` column sorts and filters by while the case holds (#390), or a `text` column sorts by
     /// (#403: a state's order, not its translated word); its text is still shown.
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -242,11 +242,11 @@ function sameScalar(value: unknown, expected: ProblemScalar): boolean {
  * `template` with each `{{path}}` replaced by the scalar value there (clipped); `null` when a placeholder has none
  * (an object, a list, nothing).
  */
-export function fillTemplate(template: string, obj: KubeObject): string | null {
+export function fillTemplate(template: string, obj: KubeObject, options: { emptyIsMissing?: boolean } = {}): string | null {
   let missing = false;
   const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, inner: string) => {
     const shown = placeholderText(obj, inner);
-    if (shown === undefined) {
+    if (shown === undefined || (options.emptyIsMissing && shown === "")) {
       missing = true;
       return "";
     }
