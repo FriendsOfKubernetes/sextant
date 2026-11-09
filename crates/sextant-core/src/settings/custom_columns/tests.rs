@@ -346,3 +346,32 @@ fn a_match_takes_the_earliest_by_a_field_or_every_match_as_the_last_step() {
     );
     assert_eq!(PathStep::matching(&pairs, &nodes).len(), 3);
 }
+
+#[test]
+fn a_match_reads_nested_fields_negates_and_compares_scalars_as_text() {
+    use serde_json::json;
+    let steps = parse_field_path(".status.connectors[connector.state=\"FAILED\"].name").unwrap();
+    let PathStep::Match { pairs, .. } = &steps[2] else {
+        panic!("{steps:?}")
+    };
+    let connectors = json!([
+        { "name": "a", "connector": { "state": "RUNNING" } },
+        { "name": "b", "connector": { "state": "FAILED" } }
+    ]);
+    assert_eq!(PathStep::pick(pairs, &connectors).unwrap()["name"], "b");
+    let owners = json!([{ "name": "x", "controller": false }, { "name": "y", "controller": true }]);
+    let controller = vec![("controller".to_owned(), "true".to_owned())];
+    assert_eq!(PathStep::pick(&controller, &owners).unwrap()["name"], "y");
+    let not_ready = vec![("type!".to_owned(), "Ready".to_owned())];
+    let conditions = json!([{ "type": "Ready" }, { "type": "Synced" }, { "reason": "untyped" }]);
+    assert_eq!(PathStep::matching(&not_ready, &conditions).len(), 2);
+    assert!(parse_field_path(".a[b.c!=\"x\"]").is_some());
+    for bad in [
+        ".a[.b=\"x\"]",
+        ".a[b..c=\"x\"]",
+        ".a[b.=\"x\"]",
+        ".a[b!!=\"x\"]",
+    ] {
+        assert_eq!(parse_field_path(bad), None, "{bad}");
+    }
+}

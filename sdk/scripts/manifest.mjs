@@ -558,7 +558,8 @@ export function parseFieldPath(path) {
           const eq = chars.indexOf("=", at);
           if (eq < 0) return null;
           const field = chars.slice(at, eq).join("");
-          if (!/^[A-Za-z0-9_-]+$/.test(field) || chars[eq + 1] !== '"') return null;
+          // Names joined by dots, optionally ending in `!` (#404).
+          if (!/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*!?$/.test(field) || chars[eq + 1] !== '"') return null;
           const close = chars.indexOf('"', eq + 2);
           if (close < 0) return null;
           const value = chars.slice(eq + 2, close).join("");

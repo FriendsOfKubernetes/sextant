@@ -1,6 +1,7 @@
 // Custom columns (#214): the field path grammar, key syntax, the Secret refusal and how values are read and shown.
 import { describe, expect, it } from "vitest";
 import type { KubeObject } from "../../api";
+import type { PathStep } from "./path";
 import {
   pickItem,
   pickStep,
@@ -218,5 +219,21 @@ describe("the earliest match and every match (#399)", () => {
     };
     expect(pickStep(nodes, { match: [["phase", "Failed"]], earliest: "finishedAt" })).toEqual(nodes.b);
     expect(pickStep(nodes, { match: [["phase", "Failed"]], all: true })).toHaveLength(3);
+  });
+});
+
+describe("match steps with nested fields, negation and scalars (#404)", () => {
+  it("pick by a nested field, not a value, or a boolean written as text", () => {
+    const connectors = [
+      { name: "a", connector: { state: "RUNNING" } },
+      { name: "b", connector: { state: "FAILED" } },
+    ];
+    const failed = parseFieldPath('[connector.state="FAILED"]')!;
+    expect(pickStep(connectors, failed[0] as Extract<PathStep, { match: unknown }>)).toEqual(connectors[1]);
+    const owners = [{ name: "x", controller: false }, { name: "y", controller: true }];
+    expect(pickStep(owners, { match: [["controller", "true"]] })).toEqual(owners[1]);
+    expect(pickStep([{ type: "Ready" }, { type: "Synced" }, { reason: "x" }], { match: [["type!", "Ready"]], all: true })).toHaveLength(2);
+    expect(parseFieldPath('.a[b.c!="x"]')).not.toBeNull();
+    for (const bad of ['.a[.b="x"]', '.a[b..c="x"]', '.a[b.="x"]', '.a[b!!="x"]']) expect(parseFieldPath(bad), bad).toBeNull();
   });
 });

@@ -41,6 +41,28 @@ export type PathStep =
 export const MAX_MATCH_PAIRS = 4;
 
 const NAME = /^[A-Za-z0-9_-]+/;
+/** A match step's field: names joined by single dots, optionally ending in `!` (#404). */
+const MATCH_FIELD = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*!?$/;
+
+/**
+ * Whether an entry has every pair (#404): a field may name a nested one (`connector.state`) and end in `!` for "not
+ * this value" (also when the entry lacks it); a value is compared as text, so `"true"` and `"3"` match a boolean and
+ * a number too; Rust's `pair_fits`.
+ */
+function pairsFit(item: unknown, pairs: readonly (readonly [string, string])[]): boolean {
+  if (pairs.length === 0) return true;
+  if (item === null || typeof item !== "object" || Array.isArray(item)) return false;
+  return pairs.every(([raw, want]) => {
+    const negated = raw.endsWith("!");
+    const field = negated ? raw.slice(0, -1) : raw;
+    let at: unknown = item;
+    for (const part of field.split(".")) {
+      at = at !== null && typeof at === "object" && !Array.isArray(at) ? (at as Record<string, unknown>)[part] : undefined;
+    }
+    const text = typeof at === "string" || typeof at === "boolean" || typeof at === "number" ? String(at) : undefined;
+    return (text === want) !== negated;
+  });
+}
 const LABEL_NAME = /^[A-Za-z0-9]([A-Za-z0-9_.-]*[A-Za-z0-9])?$/;
 const DNS_LABEL = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 // eslint-disable-next-line no-control-regex
@@ -96,7 +118,8 @@ export function parseFieldPath(path: string): PathStep[] | null {
             const eq = path.indexOf("=", at);
             if (eq < 0) return null;
             const field = path.slice(at, eq);
-            if (NAME.exec(field)?.[0] !== field || field === "" || path[eq + 1] !== '"') return null;
+            // Names joined by dots, optionally ending in `!` for "not this value" (#404).
+            if (!MATCH_FIELD.test(field) || path[eq + 1] !== '"') return null;
             const close = path.indexOf('"', eq + 2);
             if (close < 0) return null;
             const value = path.slice(eq + 2, close);
@@ -276,9 +299,7 @@ export function readColumn(obj: KubeObject, source: ColumnSource, steps: readonl
  */
 export function matchingItems(holder: unknown, pairs: readonly (readonly [string, string])[]): unknown[] {
   // `[*]` and `[<field]` (no pairs) take every item, a scalar too (#404).
-  const fits = (item: unknown) =>
-    pairs.length === 0 ||
-    (item !== null && typeof item === "object" && !Array.isArray(item) && pairs.every(([field, value]) => (item as Record<string, unknown>)[field] === value));
+  const fits = (item: unknown) => pairsFit(item, pairs);
   if (Array.isArray(holder)) return holder.filter(fits);
   if (holder === null || typeof holder !== "object") return [];
   const map = holder as Record<string, unknown>;

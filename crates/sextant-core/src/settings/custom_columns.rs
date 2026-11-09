@@ -129,11 +129,7 @@ pub const MAX_MATCH_PAIRS: usize = 4;
 impl PathStep {
     /// The items of a list, or the values of a map (in key order), whose fields are all `pairs`.
     pub fn matching<'a>(pairs: &[(String, String)], value: &'a Value) -> Vec<&'a Value> {
-        let fits = |item: &&Value| {
-            pairs
-                .iter()
-                .all(|(field, want)| item.get(field).and_then(Value::as_str) == Some(want.as_str()))
-        };
+        let fits = |item: &&Value| pair_fits(pairs, item);
         match value {
             Value::Array(items) => items.iter().filter(fits).collect(),
             Value::Object(map) => {
@@ -179,11 +175,7 @@ impl PathStep {
 
     /// [`PathStep::pick`] for a value to change.
     pub fn pick_mut<'a>(pairs: &[(String, String)], value: &'a mut Value) -> Option<&'a mut Value> {
-        let fits = |item: &Value| {
-            pairs
-                .iter()
-                .all(|(field, want)| item.get(field).and_then(Value::as_str) == Some(want.as_str()))
-        };
+        let fits = |item: &Value| pair_fits(pairs, item);
         match value {
             Value::Array(items) => items.iter_mut().find(|item| fits(item)),
             Value::Object(map) => {
@@ -195,6 +187,40 @@ impl PathStep {
             _ => None,
         }
     }
+}
+
+/// Whether an entry has every pair (#404): a field may name a nested one (`connector.state`) and end in `!` for "not
+/// this value" (`type!="Ready"`, also when the entry lacks it); a value is compared as text, so `"true"` and `"3"`
+/// match a boolean and a number too. `[*]`'s no pairs take every entry, a scalar included.
+fn pair_fits(pairs: &[(String, String)], item: &Value) -> bool {
+    pairs.iter().all(|(field, want)| {
+        let (field, negated) = match field.strip_suffix('!') {
+            Some(f) => (f, true),
+            None => (field.as_str(), false),
+        };
+        if !item.is_object() {
+            return false;
+        }
+        let found = field
+            .split('.')
+            .try_fold(item, |at, part| at.get(part))
+            .and_then(|v| match v {
+                Value::String(s) => Some(s.clone()),
+                Value::Bool(b) => Some(b.to_string()),
+                Value::Number(n) => Some(n.to_string()),
+                _ => None,
+            });
+        (found.as_deref() == Some(want.as_str())) != negated
+    })
+}
+
+/// A match field: names joined by single dots, optionally ending in `!` (#404).
+fn is_match_field(field: &str) -> bool {
+    let names = field.strip_suffix('!').unwrap_or(field);
+    !names.is_empty()
+        && names
+            .split('.')
+            .all(|part| !part.is_empty() && part.chars().all(is_name_char))
 }
 
 fn is_name_char(c: char) -> bool {
@@ -255,10 +281,7 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
                 loop {
                     let eq = (at..chars.len()).find(|&j| chars[j] == '=')?;
                     let field: String = chars[at..eq].iter().collect();
-                    if field.is_empty()
-                        || !field.chars().all(is_name_char)
-                        || chars.get(eq + 1) != Some(&'"')
-                    {
+                    if !is_match_field(&field) || chars.get(eq + 1) != Some(&'"') {
                         return None;
                     }
                     let close = (eq + 2..chars.len()).find(|&j| chars[j] == '"')?;

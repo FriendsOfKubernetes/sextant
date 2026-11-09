@@ -105,3 +105,9 @@ value, so it refuses a path that gives a list (`is_valid_spec`, `checkSpec`); th
 `capture` refuse it as before. Column formats `count` (a list's items or a map's entries), `sum` (a list's numbers,
 numeric text included) and `entries` (a map's `key=value` in key order, joined in the UI language) read such values;
 `count` and `sum` take a `valueText` and a case's `value` like `number`.
+
+## Amendment: richer match steps (#404)
+
+A match step's field may name a nested one (`[connector.state="FAILED"]`) and end in `!` for "not this value"
+(`[type!="Ready"]`, also when the entry lacks it); values are compared as text, so `[controller="true"]` and `[n="3"]`
+match a boolean and a number too (`pair_fits` = `pairsFit`).
