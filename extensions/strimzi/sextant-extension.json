@@ -1,0 +1,4219 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.strimzi",
+  "name": "Strimzi",
+  "version": "1.0.0",
+  "description": "Strimzi (Apache Kafka on Kubernetes): Kafkas with their listeners and node pools, topics, users, Kafka Connect, MirrorMaker 2 and connectors with their readiness, the connectors' and tasks' states and stack traces; problems of objects that are not ready and of failed connectors and tasks.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "strimzi",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "kafka.strimzi.io",
+              "kind": "Kafka"
+            },
+            {
+              "group": "kafka.strimzi.io",
+              "kind": "KafkaNodePool"
+            },
+            {
+              "group": "kafka.strimzi.io",
+              "kind": "KafkaTopic"
+            },
+            {
+              "group": "kafka.strimzi.io",
+              "kind": "KafkaUser"
+            },
+            {
+              "group": "kafka.strimzi.io",
+              "kind": "KafkaConnect"
+            },
+            {
+              "group": "kafka.strimzi.io",
+              "kind": "KafkaMirrorMaker2"
+            },
+            {
+              "group": "kafka.strimzi.io",
+              "kind": "KafkaConnector"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "kafka.strimzi.io",
+        "kind": "Kafka",
+        "section": "strimzi",
+        "title": "Kafkas",
+        "icon": "kafka",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            }
+          ]
+        }
+      },
+      {
+        "group": "kafka.strimzi.io",
+        "kind": "KafkaNodePool",
+        "section": "strimzi",
+        "title": "Kafka Node Pools",
+        "icon": "kafkaNodePool",
+        "order": 11,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            }
+          ]
+        }
+      },
+      {
+        "group": "kafka.strimzi.io",
+        "kind": "KafkaTopic",
+        "section": "strimzi",
+        "title": "Kafka Topics",
+        "icon": "kafkaTopic",
+        "order": 20,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            }
+          ]
+        }
+      },
+      {
+        "group": "kafka.strimzi.io",
+        "kind": "KafkaUser",
+        "section": "strimzi",
+        "title": "Kafka Users",
+        "icon": "kafkaUser",
+        "order": 21,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            }
+          ]
+        }
+      },
+      {
+        "group": "kafka.strimzi.io",
+        "kind": "KafkaConnect",
+        "section": "strimzi",
+        "title": "Kafka Connects",
+        "icon": "kafkaConnect",
+        "order": 30,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            }
+          ]
+        }
+      },
+      {
+        "group": "kafka.strimzi.io",
+        "kind": "KafkaMirrorMaker2",
+        "section": "strimzi",
+        "title": "Kafka MirrorMaker 2",
+        "icon": "kafkaMirror",
+        "order": 31,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.connectors[0].connector.state",
+                  "value": "FAILED"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.connectors[1].connector.state",
+                  "value": "FAILED"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.connectors[2].connector.state",
+                  "value": "FAILED"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.connectors[3].connector.state",
+                  "value": "FAILED"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.connectors[4].connector.state",
+                  "value": "FAILED"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.connectors[5].connector.state",
+                  "value": "FAILED"
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.connectors[3].tasks[state=\"FAILED\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.connectors[4].tasks[state=\"FAILED\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.connectors[5].tasks[state=\"FAILED\"]"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "group": "kafka.strimzi.io",
+        "kind": "KafkaConnector",
+        "section": "strimzi",
+        "title": "Kafka Connectors",
+        "icon": "kafkaConnector",
+        "order": 32,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectorStatus.connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectorStatus.tasks[state=\"FAILED\"]"
+            }
+          ]
+        }
+      }
+    ],
+    "sections": [
+      {
+        "section": "strimzi",
+        "title": "Strimzi",
+        "icon": "strimzi",
+        "after": "sealedSecrets"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "strimzi",
+        "label": {
+          "one": "{{count}} object needs attention",
+          "other": "{{count}} objects need attention"
+        }
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "strimzi",
+        "title": "Strimzi",
+        "kinds": [
+          {
+            "group": "kafka.strimzi.io",
+            "kind": "Kafka"
+          },
+          {
+            "group": "kafka.strimzi.io",
+            "kind": "KafkaNodePool"
+          },
+          {
+            "group": "kafka.strimzi.io",
+            "kind": "KafkaTopic"
+          },
+          {
+            "group": "kafka.strimzi.io",
+            "kind": "KafkaUser"
+          },
+          {
+            "group": "kafka.strimzi.io",
+            "kind": "KafkaConnect"
+          },
+          {
+            "group": "kafka.strimzi.io",
+            "kind": "KafkaMirrorMaker2"
+          },
+          {
+            "group": "kafka.strimzi.io",
+            "kind": "KafkaConnector"
+          }
+        ],
+        "placement": "section",
+        "order": 20
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "Kafka"
+        },
+        "id": "kafka-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "True"
+              }
+            },
+            "text": "Pending",
+            "tone": "warning"
+          }
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "Kafka"
+        },
+        "id": "kafka-version",
+        "title": "Version",
+        "paths": [
+          ".status.kafkaVersion",
+          ".spec.kafka.version"
+        ],
+        "afterColumn": "kafka-status"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "Kafka"
+        },
+        "id": "kafka-listeners",
+        "title": "Listeners",
+        "paths": [
+          ".spec.kafka.listeners[0].name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.kafka.listeners[5]"
+            },
+            "text": "{{.spec.kafka.listeners[0].name}}, {{.spec.kafka.listeners[1].name}}, {{.spec.kafka.listeners[2].name}}, {{.spec.kafka.listeners[3].name}}, {{.spec.kafka.listeners[4].name}}, …"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.kafka.listeners[4]"
+            },
+            "text": "{{.spec.kafka.listeners[0].name}}, {{.spec.kafka.listeners[1].name}}, {{.spec.kafka.listeners[2].name}}, {{.spec.kafka.listeners[3].name}}, {{.spec.kafka.listeners[4].name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.kafka.listeners[3]"
+            },
+            "text": "{{.spec.kafka.listeners[0].name}}, {{.spec.kafka.listeners[1].name}}, {{.spec.kafka.listeners[2].name}}, {{.spec.kafka.listeners[3].name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.kafka.listeners[2]"
+            },
+            "text": "{{.spec.kafka.listeners[0].name}}, {{.spec.kafka.listeners[1].name}}, {{.spec.kafka.listeners[2].name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.kafka.listeners[1]"
+            },
+            "text": "{{.spec.kafka.listeners[0].name}}, {{.spec.kafka.listeners[1].name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.kafka.listeners[0]"
+            },
+            "text": "{{.spec.kafka.listeners[0].name}}"
+          }
+        ],
+        "afterColumn": "kafka-version"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "Kafka"
+        },
+        "id": "kafka-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.conditions[type=\"NotReady\",status=\"True\"].reason",
+          ".status.conditions[type=\"Ready\",status=\"True\"].reason",
+          ".status.conditions[type=\"Ready\",status=\"False\"].reason"
+        ],
+        "afterColumn": "kafka-listeners"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaNodePool"
+        },
+        "id": "node-pool-cluster",
+        "title": "Kafka",
+        "paths": [
+          ".metadata.labels[\"strimzi.io/cluster\"]"
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaNodePool"
+        },
+        "id": "node-pool-roles",
+        "title": "Roles",
+        "paths": [
+          ".spec.roles"
+        ],
+        "format": "list",
+        "afterColumn": "node-pool-cluster"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaNodePool"
+        },
+        "id": "node-pool-replicas",
+        "title": "Replicas",
+        "paths": [
+          ".status.replicas",
+          ".spec.replicas"
+        ],
+        "format": "number",
+        "afterColumn": "node-pool-roles"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaTopic"
+        },
+        "id": "topic-cluster",
+        "title": "Kafka",
+        "paths": [
+          ".metadata.labels[\"strimzi.io/cluster\"]"
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaTopic"
+        },
+        "id": "topic-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "True"
+              }
+            },
+            "text": "Pending",
+            "tone": "warning"
+          }
+        ],
+        "afterColumn": "topic-cluster"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaTopic"
+        },
+        "id": "topic-partitions",
+        "title": "Partitions",
+        "paths": [
+          ".spec.partitions"
+        ],
+        "format": "number",
+        "afterColumn": "topic-status"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaTopic"
+        },
+        "id": "topic-replicas",
+        "title": "Replicas",
+        "paths": [
+          ".spec.replicas"
+        ],
+        "format": "number",
+        "afterColumn": "topic-partitions"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaTopic"
+        },
+        "id": "topic-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.conditions[type=\"NotReady\",status=\"True\"].reason",
+          ".status.conditions[type=\"Ready\",status=\"True\"].reason",
+          ".status.conditions[type=\"Ready\",status=\"False\"].reason"
+        ],
+        "afterColumn": "topic-replicas"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaUser"
+        },
+        "id": "user-cluster",
+        "title": "Kafka",
+        "paths": [
+          ".metadata.labels[\"strimzi.io/cluster\"]"
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaUser"
+        },
+        "id": "user-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "True"
+              }
+            },
+            "text": "Pending",
+            "tone": "warning"
+          }
+        ],
+        "afterColumn": "user-cluster"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaUser"
+        },
+        "id": "user-authentication",
+        "title": "Authentication",
+        "paths": [
+          ".spec.authentication.type"
+        ],
+        "afterColumn": "user-status"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaUser"
+        },
+        "id": "user-authorization",
+        "title": "Authorization",
+        "paths": [
+          ".spec.authorization.type"
+        ],
+        "afterColumn": "user-authentication"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnect"
+        },
+        "id": "connect-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "True"
+              }
+            },
+            "text": "Pending",
+            "tone": "warning"
+          }
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnect"
+        },
+        "id": "connect-replicas",
+        "title": "Replicas",
+        "paths": [
+          ".status.replicas",
+          ".spec.replicas"
+        ],
+        "format": "number",
+        "afterColumn": "connect-status"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnect"
+        },
+        "id": "connect-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.conditions[type=\"NotReady\",status=\"True\"].reason",
+          ".status.conditions[type=\"Ready\",status=\"True\"].reason",
+          ".status.conditions[type=\"Ready\",status=\"False\"].reason"
+        ],
+        "afterColumn": "connect-replicas"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "id": "mirror-maker-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "True"
+              }
+            },
+            "text": "Pending",
+            "tone": "warning"
+          }
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "id": "mirror-maker-replicas",
+        "title": "Replicas",
+        "paths": [
+          ".status.replicas",
+          ".spec.replicas"
+        ],
+        "format": "number",
+        "afterColumn": "mirror-maker-status"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "id": "mirror-maker-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.conditions[type=\"NotReady\",status=\"True\"].reason",
+          ".status.conditions[type=\"Ready\",status=\"True\"].reason",
+          ".status.conditions[type=\"Ready\",status=\"False\"].reason"
+        ],
+        "afterColumn": "mirror-maker-replicas"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "id": "connector-cluster",
+        "title": "Connect cluster",
+        "paths": [
+          ".metadata.labels[\"strimzi.io/cluster\"]"
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "id": "connector-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "NotReady",
+              "status": "True"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "Not ready",
+            "tone": "error",
+            "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "True"
+              }
+            },
+            "text": "Pending",
+            "tone": "warning"
+          }
+        ],
+        "afterColumn": "connector-cluster"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "id": "connector-state",
+        "title": "Connector",
+        "paths": [
+          ".status.connectorStatus.connector.state"
+        ],
+        "tones": {
+          "RUNNING": "ok",
+          "FAILED": "error",
+          "PAUSED": "neutral",
+          "STOPPED": "neutral",
+          "UNASSIGNED": "warning",
+          "RESTARTING": "warning"
+        },
+        "afterColumn": "connector-status"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "id": "connector-tasks",
+        "title": "Running tasks",
+        "paths": [
+          ".status.connectorStatus.tasks[state=\"RUNNING\",*]"
+        ],
+        "format": "ratio",
+        "totalPaths": [
+          ".status.connectorStatus.tasks"
+        ],
+        "afterColumn": "connector-state"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "id": "connector-class",
+        "title": "Class",
+        "paths": [
+          ".spec.class"
+        ],
+        "tooltipPaths": [
+          ".spec.class"
+        ],
+        "afterColumn": "connector-tasks"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "id": "connector-restarts",
+        "title": "Auto-restarts",
+        "paths": [
+          ".status.autoRestart.count"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.autoRestart"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.autoRestart.count"
+                }
+              ]
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "afterColumn": "connector-class"
+      },
+      {
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "id": "connector-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.conditions[type=\"NotReady\",status=\"True\"].reason",
+          ".status.conditions[type=\"Ready\",status=\"True\"].reason",
+          ".status.conditions[type=\"Ready\",status=\"False\"].reason"
+        ],
+        "afterColumn": "connector-restarts"
+      }
+    ],
+    "problems": [
+      {
+        "id": "kafka-not-ready",
+        "title": "Kafka not ready",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "Kafka"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "NotReady",
+                  "status": "True"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                }
+              ]
+            }
+          ]
+        },
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+        "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "node-pool-not-ready",
+        "title": "KafkaNodePool not ready",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaNodePool"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "NotReady",
+                  "status": "True"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                }
+              ]
+            }
+          ]
+        },
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+        "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "topic-not-ready",
+        "title": "KafkaTopic not ready",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaTopic"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "NotReady",
+                  "status": "True"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                }
+              ]
+            }
+          ]
+        },
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+        "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "user-not-ready",
+        "title": "KafkaUser not ready",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaUser"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "NotReady",
+                  "status": "True"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                }
+              ]
+            }
+          ]
+        },
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+        "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "connect-not-ready",
+        "title": "KafkaConnect not ready",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnect"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "NotReady",
+                  "status": "True"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                }
+              ]
+            }
+          ]
+        },
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+        "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "mirror-maker-not-ready",
+        "title": "KafkaMirrorMaker2 not ready",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "NotReady",
+                  "status": "True"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "equals",
+                    "path": ".status.connectors[0].connector.state",
+                    "value": "FAILED"
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".status.connectors[1].connector.state",
+                    "value": "FAILED"
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".status.connectors[2].connector.state",
+                    "value": "FAILED"
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".status.connectors[3].connector.state",
+                    "value": "FAILED"
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".status.connectors[4].connector.state",
+                    "value": "FAILED"
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".status.connectors[5].connector.state",
+                    "value": "FAILED"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".status.connectors[3].tasks[state=\"FAILED\"]"
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".status.connectors[4].tasks[state=\"FAILED\"]"
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".status.connectors[5].tasks[state=\"FAILED\"]"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+        "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "connector-not-ready",
+        "title": "KafkaConnector not ready",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "NotReady",
+                  "status": "True"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "equals",
+                    "path": ".status.connectorStatus.connector.state",
+                    "value": "FAILED"
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".status.connectorStatus.tasks[state=\"FAILED\"]"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+        "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "connector-failed",
+        "title": "Connector failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectorStatus.connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".spec.autoRestart.enabled",
+                    "value": true
+                  }
+                },
+                {
+                  "type": "atLeast",
+                  "path": ".status.autoRestart.count",
+                  "otherPath": ".spec.autoRestart.maxRestarts"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "absent",
+                      "path": ".status.autoRestart.count"
+                    },
+                    {
+                      "type": "below",
+                      "path": ".spec.autoRestart.maxRestarts",
+                      "value": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "absent",
+                      "path": ".spec.autoRestart.maxRestarts"
+                    },
+                    {
+                      "type": "above",
+                      "path": ".status.autoRestart.count",
+                      "value": 6
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectorStatus.connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "connector-failed-first-restart",
+        "title": "Connector failed, first automatic restart pending",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectorStatus.connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "equals",
+              "path": ".spec.autoRestart.enabled",
+              "value": true
+            },
+            {
+              "type": "absent",
+              "path": ".status.autoRestart.lastRestartTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.autoRestart.count",
+                "otherPath": ".spec.autoRestart.maxRestarts"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".status.autoRestart.count"
+                  },
+                  {
+                    "type": "below",
+                    "path": ".spec.autoRestart.maxRestarts",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".spec.autoRestart.maxRestarts"
+                  },
+                  {
+                    "type": "above",
+                    "path": ".status.autoRestart.count",
+                    "value": 6
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectorStatus.connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "connector-failed-restarting",
+        "title": "Connector failed, an early automatic restart pending",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectorStatus.connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "equals",
+              "path": ".spec.autoRestart.enabled",
+              "value": true
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.autoRestart.count",
+                "otherPath": ".spec.autoRestart.maxRestarts"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".status.autoRestart.count"
+                  },
+                  {
+                    "type": "below",
+                    "path": ".spec.autoRestart.maxRestarts",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".spec.autoRestart.maxRestarts"
+                  },
+                  {
+                    "type": "above",
+                    "path": ".status.autoRestart.count",
+                    "value": 6
+                  }
+                ]
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "below",
+                      "path": ".status.autoRestart.count",
+                      "value": 1
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 2
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 1
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 4
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 2
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 8
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 3
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 14
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 4
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 22
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectorStatus.connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "connector-failed-restarting-later",
+        "title": "Connector failed, a later automatic restart pending",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectorStatus.connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "equals",
+              "path": ".spec.autoRestart.enabled",
+              "value": true
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.autoRestart.count",
+                "otherPath": ".spec.autoRestart.maxRestarts"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".status.autoRestart.count"
+                  },
+                  {
+                    "type": "below",
+                    "path": ".spec.autoRestart.maxRestarts",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".spec.autoRestart.maxRestarts"
+                  },
+                  {
+                    "type": "above",
+                    "path": ".status.autoRestart.count",
+                    "value": 6
+                  }
+                ]
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 5
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 32
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 6
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 44
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 7
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 58
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "above",
+                      "path": ".status.autoRestart.count",
+                      "value": 7
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 62
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectorStatus.connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "task-failed",
+        "title": "Task failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectorStatus.tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".spec.autoRestart.enabled",
+                    "value": true
+                  }
+                },
+                {
+                  "type": "atLeast",
+                  "path": ".status.autoRestart.count",
+                  "otherPath": ".spec.autoRestart.maxRestarts"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "absent",
+                      "path": ".status.autoRestart.count"
+                    },
+                    {
+                      "type": "below",
+                      "path": ".spec.autoRestart.maxRestarts",
+                      "value": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "absent",
+                      "path": ".spec.autoRestart.maxRestarts"
+                    },
+                    {
+                      "type": "above",
+                      "path": ".status.autoRestart.count",
+                      "value": 6
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "TaskFailed",
+        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      },
+      {
+        "id": "task-failed-first-restart",
+        "title": "Task failed, first automatic restart pending",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectorStatus.tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "equals",
+              "path": ".spec.autoRestart.enabled",
+              "value": true
+            },
+            {
+              "type": "absent",
+              "path": ".status.autoRestart.lastRestartTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.autoRestart.count",
+                "otherPath": ".spec.autoRestart.maxRestarts"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".status.autoRestart.count"
+                  },
+                  {
+                    "type": "below",
+                    "path": ".spec.autoRestart.maxRestarts",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".spec.autoRestart.maxRestarts"
+                  },
+                  {
+                    "type": "above",
+                    "path": ".status.autoRestart.count",
+                    "value": 6
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "TaskFailed",
+        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      },
+      {
+        "id": "task-failed-restarting",
+        "title": "Task failed, an early automatic restart pending",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectorStatus.tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "equals",
+              "path": ".spec.autoRestart.enabled",
+              "value": true
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.autoRestart.count",
+                "otherPath": ".spec.autoRestart.maxRestarts"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".status.autoRestart.count"
+                  },
+                  {
+                    "type": "below",
+                    "path": ".spec.autoRestart.maxRestarts",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".spec.autoRestart.maxRestarts"
+                  },
+                  {
+                    "type": "above",
+                    "path": ".status.autoRestart.count",
+                    "value": 6
+                  }
+                ]
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "below",
+                      "path": ".status.autoRestart.count",
+                      "value": 1
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 2
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 1
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 4
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 2
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 8
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 3
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 14
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 4
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 22
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "TaskFailed",
+        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      },
+      {
+        "id": "task-failed-restarting-later",
+        "title": "Task failed, a later automatic restart pending",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaConnector"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectorStatus.tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "equals",
+              "path": ".spec.autoRestart.enabled",
+              "value": true
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.autoRestart.count",
+                "otherPath": ".spec.autoRestart.maxRestarts"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".status.autoRestart.count"
+                  },
+                  {
+                    "type": "below",
+                    "path": ".spec.autoRestart.maxRestarts",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".spec.autoRestart.maxRestarts"
+                  },
+                  {
+                    "type": "above",
+                    "path": ".status.autoRestart.count",
+                    "value": 6
+                  }
+                ]
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 5
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 32
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 6
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 44
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.autoRestart.count",
+                      "value": 7
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 58
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "above",
+                      "path": ".status.autoRestart.count",
+                      "value": 7
+                    },
+                    {
+                      "type": "olderThan",
+                      "path": ".status.autoRestart.lastRestartTimestamp",
+                      "minutes": 62
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "TaskFailed",
+        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      },
+      {
+        "id": "mirror-connector-failed",
+        "title": "MirrorMaker 2 connector failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectors[0].connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "above",
+                "path": ".status.connectors",
+                "value": 1
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectors[0].connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "mirror-connector-1-failed",
+        "title": "MirrorMaker 2 connector 1 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectors[0].connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "above",
+              "path": ".status.connectors",
+              "value": 1
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectors[0].name}}: {{.status.connectors[0].connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "mirror-connector-2-failed",
+        "title": "MirrorMaker 2 connector 2 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectors[1].connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[0].connector.state",
+                "value": "FAILED"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectors[1].name}}: {{.status.connectors[1].connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "mirror-connector-3-failed",
+        "title": "MirrorMaker 2 connector 3 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectors[2].connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[0].connector.state",
+                "value": "FAILED"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[1].connector.state",
+                "value": "FAILED"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectors[2].name}}: {{.status.connectors[2].connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "mirror-connector-4-failed",
+        "title": "MirrorMaker 2 connector 4 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectors[3].connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[0].connector.state",
+                "value": "FAILED"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[1].connector.state",
+                "value": "FAILED"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[2].connector.state",
+                "value": "FAILED"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectors[3].name}}: {{.status.connectors[3].connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "mirror-connector-5-failed",
+        "title": "MirrorMaker 2 connector 5 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectors[4].connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[0].connector.state",
+                "value": "FAILED"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[1].connector.state",
+                "value": "FAILED"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[2].connector.state",
+                "value": "FAILED"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[3].connector.state",
+                "value": "FAILED"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectors[4].name}}: {{.status.connectors[4].connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "mirror-connector-6-failed",
+        "title": "MirrorMaker 2 connector 6 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.connectors[5].connector.state",
+              "value": "FAILED"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[0].connector.state",
+                "value": "FAILED"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[1].connector.state",
+                "value": "FAILED"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[2].connector.state",
+                "value": "FAILED"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[3].connector.state",
+                "value": "FAILED"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.connectors[4].connector.state",
+                "value": "FAILED"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "ConnectorFailed",
+        "message": "{{.status.connectors[5].name}}: {{.status.connectors[5].connector.trace}}",
+        "group": "connector-failed"
+      },
+      {
+        "id": "mirror-task-failed",
+        "title": "MirrorMaker 2 task failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "above",
+                "path": ".status.connectors",
+                "value": 1
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "TaskFailed",
+        "message": "{{.status.connectors[0].tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      },
+      {
+        "id": "mirror-task-1-failed",
+        "title": "Task of MirrorMaker 2 connector 1 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "above",
+              "path": ".status.connectors",
+              "value": 1
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "TaskFailed",
+        "message": "{{.status.connectors[0].name}}: {{.status.connectors[0].tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      },
+      {
+        "id": "mirror-task-2-failed",
+        "title": "Task of MirrorMaker 2 connector 2 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "TaskFailed",
+        "message": "{{.status.connectors[1].name}}: {{.status.connectors[1].tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      },
+      {
+        "id": "mirror-task-3-failed",
+        "title": "Task of MirrorMaker 2 connector 3 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "TaskFailed",
+        "message": "{{.status.connectors[2].name}}: {{.status.connectors[2].tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      },
+      {
+        "id": "mirror-task-4-failed",
+        "title": "Task of MirrorMaker 2 connector 4 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectors[3].tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "TaskFailed",
+        "message": "{{.status.connectors[3].name}}: {{.status.connectors[3].tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      },
+      {
+        "id": "mirror-task-5-failed",
+        "title": "Task of MirrorMaker 2 connector 5 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectors[4].tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[3].tasks[state=\"FAILED\"]"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "TaskFailed",
+        "message": "{{.status.connectors[4].name}}: {{.status.connectors[4].tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      },
+      {
+        "id": "mirror-task-6-failed",
+        "title": "Task of MirrorMaker 2 connector 6 failed",
+        "kind": {
+          "group": "kafka.strimzi.io",
+          "kind": "KafkaMirrorMaker2"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectors[5].tasks[state=\"FAILED\"]"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[3].tasks[state=\"FAILED\"]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.connectors[4].tasks[state=\"FAILED\"]"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "reason": "TaskFailed",
+        "message": "{{.status.connectors[5].name}}: {{.status.connectors[5].tasks[state=\"FAILED\"].trace}}",
+        "group": "task-failed"
+      }
+    ]
+  },
+  "translations": {
+    "de": {
+      "name": "Strimzi",
+      "description": "Strimzi (Apache Kafka auf Kubernetes): Kafkas mit ihren Listenern und Node Pools, Topics, Benutzer, Kafka Connect, MirrorMaker 2 und Connectors mit ihrer Bereitschaft, die Zustände und Stacktraces der Connectors und Tasks; Probleme nicht bereiter Objekte sowie ausgefallener Connectors und Tasks.",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "Status",
+      "columns.kafka-status.cases.0.text": "Nicht bereit",
+      "columns.kafka-status.cases.1.text": "Bereit",
+      "columns.kafka-status.cases.2.text": "Nicht bereit",
+      "columns.kafka-status.cases.3.text": "Ausstehend",
+      "columns.kafka-version.title": "Version",
+      "columns.kafka-listeners.title": "Listener",
+      "columns.kafka-reason.title": "Grund",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "Rollen",
+      "columns.node-pool-replicas.title": "Replikate",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "Status",
+      "columns.topic-status.cases.0.text": "Nicht bereit",
+      "columns.topic-status.cases.1.text": "Bereit",
+      "columns.topic-status.cases.2.text": "Nicht bereit",
+      "columns.topic-status.cases.3.text": "Ausstehend",
+      "columns.topic-partitions.title": "Partitionen",
+      "columns.topic-replicas.title": "Replikate",
+      "columns.topic-reason.title": "Grund",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "Status",
+      "columns.user-status.cases.0.text": "Nicht bereit",
+      "columns.user-status.cases.1.text": "Bereit",
+      "columns.user-status.cases.2.text": "Nicht bereit",
+      "columns.user-status.cases.3.text": "Ausstehend",
+      "columns.user-authentication.title": "Authentifizierung",
+      "columns.user-authorization.title": "Autorisierung",
+      "columns.connect-status.title": "Status",
+      "columns.connect-status.cases.0.text": "Nicht bereit",
+      "columns.connect-status.cases.1.text": "Bereit",
+      "columns.connect-status.cases.2.text": "Nicht bereit",
+      "columns.connect-status.cases.3.text": "Ausstehend",
+      "columns.connect-replicas.title": "Replikate",
+      "columns.connect-reason.title": "Grund",
+      "columns.mirror-maker-status.title": "Status",
+      "columns.mirror-maker-status.cases.0.text": "Nicht bereit",
+      "columns.mirror-maker-status.cases.1.text": "Bereit",
+      "columns.mirror-maker-status.cases.2.text": "Nicht bereit",
+      "columns.mirror-maker-status.cases.3.text": "Ausstehend",
+      "columns.mirror-maker-replicas.title": "Replikate",
+      "columns.mirror-maker-reason.title": "Grund",
+      "columns.connector-cluster.title": "Connect-Cluster",
+      "columns.connector-status.title": "Status",
+      "columns.connector-status.cases.0.text": "Nicht bereit",
+      "columns.connector-status.cases.1.text": "Bereit",
+      "columns.connector-status.cases.2.text": "Nicht bereit",
+      "columns.connector-status.cases.3.text": "Ausstehend",
+      "columns.connector-state.title": "Connector",
+      "columns.connector-tasks.title": "Laufende Tasks",
+      "columns.connector-class.title": "Klasse",
+      "columns.connector-restarts.title": "Auto-Neustarts",
+      "columns.connector-reason.title": "Grund",
+      "problems.kafka-not-ready.title": "Kafka nicht bereit",
+      "problems.node-pool-not-ready.title": "KafkaNodePool nicht bereit",
+      "problems.topic-not-ready.title": "KafkaTopic nicht bereit",
+      "problems.user-not-ready.title": "KafkaUser nicht bereit",
+      "problems.connect-not-ready.title": "KafkaConnect nicht bereit",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 nicht bereit",
+      "problems.connector-not-ready.title": "KafkaConnector nicht bereit",
+      "problems.connector-failed.title": "Connector ausgefallen",
+      "problems.connector-failed-first-restart.title": "Connector ausgefallen, erster automatischer Neustart steht aus",
+      "problems.connector-failed-restarting.title": "Connector ausgefallen, ein früher automatischer Neustart steht aus",
+      "problems.connector-failed-restarting-later.title": "Connector ausgefallen, ein späterer automatischer Neustart steht aus",
+      "problems.task-failed.title": "Task ausgefallen",
+      "problems.task-failed-first-restart.title": "Task ausgefallen, erster automatischer Neustart steht aus",
+      "problems.task-failed-restarting.title": "Task ausgefallen, ein früher automatischer Neustart steht aus",
+      "problems.task-failed-restarting-later.title": "Task ausgefallen, ein späterer automatischer Neustart steht aus",
+      "problems.mirror-connector-failed.title": "MirrorMaker-2-Connector ausgefallen",
+      "problems.mirror-connector-1-failed.title": "MirrorMaker-2-Connector 1 ausgefallen",
+      "problems.mirror-connector-2-failed.title": "MirrorMaker-2-Connector 2 ausgefallen",
+      "problems.mirror-connector-3-failed.title": "MirrorMaker-2-Connector 3 ausgefallen",
+      "problems.mirror-connector-4-failed.title": "MirrorMaker-2-Connector 4 ausgefallen",
+      "problems.mirror-connector-5-failed.title": "MirrorMaker-2-Connector 5 ausgefallen",
+      "problems.mirror-connector-6-failed.title": "MirrorMaker-2-Connector 6 ausgefallen",
+      "problems.mirror-task-failed.title": "MirrorMaker-2-Task ausgefallen",
+      "problems.mirror-task-1-failed.title": "Task von MirrorMaker-2-Connector 1 ausgefallen",
+      "problems.mirror-task-2-failed.title": "Task von MirrorMaker-2-Connector 2 ausgefallen",
+      "problems.mirror-task-3-failed.title": "Task von MirrorMaker-2-Connector 3 ausgefallen",
+      "problems.mirror-task-4-failed.title": "Task von MirrorMaker-2-Connector 4 ausgefallen",
+      "problems.mirror-task-5-failed.title": "Task von MirrorMaker-2-Connector 5 ausgefallen",
+      "problems.mirror-task-6-failed.title": "Task von MirrorMaker-2-Connector 6 ausgefallen",
+      "sectionBadges.strimzi.label.one": "{{count}} Objekt erfordert Aufmerksamkeit",
+      "sectionBadges.strimzi.label.other": "{{count}} Objekte erfordern Aufmerksamkeit"
+    },
+    "es": {
+      "name": "Strimzi",
+      "description": "Strimzi (Apache Kafka en Kubernetes): Kafkas con sus listeners y node pools, topics, usuarios, Kafka Connect, MirrorMaker 2 y conectores con su estado de preparación, los estados y las trazas de pila de conectores y tareas; problemas de objetos que no están listos y de conectores y tareas que fallaron.",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "Estado",
+      "columns.kafka-status.cases.0.text": "No listo",
+      "columns.kafka-status.cases.1.text": "Listo",
+      "columns.kafka-status.cases.2.text": "No listo",
+      "columns.kafka-status.cases.3.text": "Pendiente",
+      "columns.kafka-version.title": "Versión",
+      "columns.kafka-listeners.title": "Listeners",
+      "columns.kafka-reason.title": "Motivo",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "Roles",
+      "columns.node-pool-replicas.title": "Réplicas",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "Estado",
+      "columns.topic-status.cases.0.text": "No listo",
+      "columns.topic-status.cases.1.text": "Listo",
+      "columns.topic-status.cases.2.text": "No listo",
+      "columns.topic-status.cases.3.text": "Pendiente",
+      "columns.topic-partitions.title": "Particiones",
+      "columns.topic-replicas.title": "Réplicas",
+      "columns.topic-reason.title": "Motivo",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "Estado",
+      "columns.user-status.cases.0.text": "No listo",
+      "columns.user-status.cases.1.text": "Listo",
+      "columns.user-status.cases.2.text": "No listo",
+      "columns.user-status.cases.3.text": "Pendiente",
+      "columns.user-authentication.title": "Autenticación",
+      "columns.user-authorization.title": "Autorización",
+      "columns.connect-status.title": "Estado",
+      "columns.connect-status.cases.0.text": "No listo",
+      "columns.connect-status.cases.1.text": "Listo",
+      "columns.connect-status.cases.2.text": "No listo",
+      "columns.connect-status.cases.3.text": "Pendiente",
+      "columns.connect-replicas.title": "Réplicas",
+      "columns.connect-reason.title": "Motivo",
+      "columns.mirror-maker-status.title": "Estado",
+      "columns.mirror-maker-status.cases.0.text": "No listo",
+      "columns.mirror-maker-status.cases.1.text": "Listo",
+      "columns.mirror-maker-status.cases.2.text": "No listo",
+      "columns.mirror-maker-status.cases.3.text": "Pendiente",
+      "columns.mirror-maker-replicas.title": "Réplicas",
+      "columns.mirror-maker-reason.title": "Motivo",
+      "columns.connector-cluster.title": "Clúster de Connect",
+      "columns.connector-status.title": "Estado",
+      "columns.connector-status.cases.0.text": "No listo",
+      "columns.connector-status.cases.1.text": "Listo",
+      "columns.connector-status.cases.2.text": "No listo",
+      "columns.connector-status.cases.3.text": "Pendiente",
+      "columns.connector-state.title": "Conector",
+      "columns.connector-tasks.title": "Tareas en ejecución",
+      "columns.connector-class.title": "Clase",
+      "columns.connector-restarts.title": "Reinicios automáticos",
+      "columns.connector-reason.title": "Motivo",
+      "problems.kafka-not-ready.title": "Kafka no está listo",
+      "problems.node-pool-not-ready.title": "KafkaNodePool no está listo",
+      "problems.topic-not-ready.title": "KafkaTopic no está listo",
+      "problems.user-not-ready.title": "KafkaUser no está listo",
+      "problems.connect-not-ready.title": "KafkaConnect no está listo",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 no está listo",
+      "problems.connector-not-ready.title": "KafkaConnector no está listo",
+      "problems.connector-failed.title": "El conector falló",
+      "problems.connector-failed-first-restart.title": "El conector falló, pendiente del primer reinicio automático",
+      "problems.connector-failed-restarting.title": "El conector falló, pendiente de un reinicio automático temprano",
+      "problems.connector-failed-restarting-later.title": "El conector falló, pendiente de un reinicio automático posterior",
+      "problems.task-failed.title": "La tarea falló",
+      "problems.task-failed-first-restart.title": "La tarea falló, pendiente del primer reinicio automático",
+      "problems.task-failed-restarting.title": "La tarea falló, pendiente de un reinicio automático temprano",
+      "problems.task-failed-restarting-later.title": "La tarea falló, pendiente de un reinicio automático posterior",
+      "problems.mirror-connector-failed.title": "El conector de MirrorMaker 2 falló",
+      "problems.mirror-connector-1-failed.title": "El conector 1 de MirrorMaker 2 falló",
+      "problems.mirror-connector-2-failed.title": "El conector 2 de MirrorMaker 2 falló",
+      "problems.mirror-connector-3-failed.title": "El conector 3 de MirrorMaker 2 falló",
+      "problems.mirror-connector-4-failed.title": "El conector 4 de MirrorMaker 2 falló",
+      "problems.mirror-connector-5-failed.title": "El conector 5 de MirrorMaker 2 falló",
+      "problems.mirror-connector-6-failed.title": "El conector 6 de MirrorMaker 2 falló",
+      "problems.mirror-task-failed.title": "La tarea de MirrorMaker 2 falló",
+      "problems.mirror-task-1-failed.title": "Una tarea del conector 1 de MirrorMaker 2 falló",
+      "problems.mirror-task-2-failed.title": "Una tarea del conector 2 de MirrorMaker 2 falló",
+      "problems.mirror-task-3-failed.title": "Una tarea del conector 3 de MirrorMaker 2 falló",
+      "problems.mirror-task-4-failed.title": "Una tarea del conector 4 de MirrorMaker 2 falló",
+      "problems.mirror-task-5-failed.title": "Una tarea del conector 5 de MirrorMaker 2 falló",
+      "problems.mirror-task-6-failed.title": "Una tarea del conector 6 de MirrorMaker 2 falló",
+      "sectionBadges.strimzi.label.one": "{{count}} objeto requiere atención",
+      "sectionBadges.strimzi.label.many": "{{count}} de objetos requieren atención",
+      "sectionBadges.strimzi.label.other": "{{count}} objetos requieren atención"
+    },
+    "fr": {
+      "name": "Strimzi",
+      "description": "Strimzi (Apache Kafka sur Kubernetes) : les Kafkas avec leurs listeners et node pools, les topics, les utilisateurs, Kafka Connect, MirrorMaker 2 et les connecteurs avec leur disponibilité, les états et traces de pile des connecteurs et des tâches ; les problèmes des objets pas prêts et des connecteurs et tâches en échec.",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "Statut",
+      "columns.kafka-status.cases.0.text": "Pas prêt",
+      "columns.kafka-status.cases.1.text": "Prêt",
+      "columns.kafka-status.cases.2.text": "Pas prêt",
+      "columns.kafka-status.cases.3.text": "En attente",
+      "columns.kafka-version.title": "Version",
+      "columns.kafka-listeners.title": "Listeners",
+      "columns.kafka-reason.title": "Raison",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "Rôles",
+      "columns.node-pool-replicas.title": "Réplicas",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "Statut",
+      "columns.topic-status.cases.0.text": "Pas prêt",
+      "columns.topic-status.cases.1.text": "Prêt",
+      "columns.topic-status.cases.2.text": "Pas prêt",
+      "columns.topic-status.cases.3.text": "En attente",
+      "columns.topic-partitions.title": "Partitions",
+      "columns.topic-replicas.title": "Réplicas",
+      "columns.topic-reason.title": "Raison",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "Statut",
+      "columns.user-status.cases.0.text": "Pas prêt",
+      "columns.user-status.cases.1.text": "Prêt",
+      "columns.user-status.cases.2.text": "Pas prêt",
+      "columns.user-status.cases.3.text": "En attente",
+      "columns.user-authentication.title": "Authentification",
+      "columns.user-authorization.title": "Autorisation",
+      "columns.connect-status.title": "Statut",
+      "columns.connect-status.cases.0.text": "Pas prêt",
+      "columns.connect-status.cases.1.text": "Prêt",
+      "columns.connect-status.cases.2.text": "Pas prêt",
+      "columns.connect-status.cases.3.text": "En attente",
+      "columns.connect-replicas.title": "Réplicas",
+      "columns.connect-reason.title": "Raison",
+      "columns.mirror-maker-status.title": "Statut",
+      "columns.mirror-maker-status.cases.0.text": "Pas prêt",
+      "columns.mirror-maker-status.cases.1.text": "Prêt",
+      "columns.mirror-maker-status.cases.2.text": "Pas prêt",
+      "columns.mirror-maker-status.cases.3.text": "En attente",
+      "columns.mirror-maker-replicas.title": "Réplicas",
+      "columns.mirror-maker-reason.title": "Raison",
+      "columns.connector-cluster.title": "Cluster Connect",
+      "columns.connector-status.title": "Statut",
+      "columns.connector-status.cases.0.text": "Pas prêt",
+      "columns.connector-status.cases.1.text": "Prêt",
+      "columns.connector-status.cases.2.text": "Pas prêt",
+      "columns.connector-status.cases.3.text": "En attente",
+      "columns.connector-state.title": "Connecteur",
+      "columns.connector-tasks.title": "Tâches actives",
+      "columns.connector-class.title": "Classe",
+      "columns.connector-restarts.title": "Redémarrages auto",
+      "columns.connector-reason.title": "Raison",
+      "problems.kafka-not-ready.title": "Kafka pas prêt",
+      "problems.node-pool-not-ready.title": "KafkaNodePool pas prêt",
+      "problems.topic-not-ready.title": "KafkaTopic pas prêt",
+      "problems.user-not-ready.title": "KafkaUser pas prêt",
+      "problems.connect-not-ready.title": "KafkaConnect pas prêt",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 pas prêt",
+      "problems.connector-not-ready.title": "KafkaConnector pas prêt",
+      "problems.connector-failed.title": "Le connecteur a échoué",
+      "problems.connector-failed-first-restart.title": "Le connecteur a échoué, premier redémarrage automatique en attente",
+      "problems.connector-failed-restarting.title": "Le connecteur a échoué, un redémarrage automatique précoce en attente",
+      "problems.connector-failed-restarting-later.title": "Le connecteur a échoué, un redémarrage automatique ultérieur en attente",
+      "problems.task-failed.title": "La tâche a échoué",
+      "problems.task-failed-first-restart.title": "La tâche a échoué, premier redémarrage automatique en attente",
+      "problems.task-failed-restarting.title": "La tâche a échoué, un redémarrage automatique précoce en attente",
+      "problems.task-failed-restarting-later.title": "La tâche a échoué, un redémarrage automatique ultérieur en attente",
+      "problems.mirror-connector-failed.title": "Le connecteur MirrorMaker 2 a échoué",
+      "problems.mirror-connector-1-failed.title": "Le connecteur 1 de MirrorMaker 2 a échoué",
+      "problems.mirror-connector-1-failed.message": "{{.status.connectors[0].name}} : {{.status.connectors[0].connector.trace}}",
+      "problems.mirror-connector-2-failed.title": "Le connecteur 2 de MirrorMaker 2 a échoué",
+      "problems.mirror-connector-2-failed.message": "{{.status.connectors[1].name}} : {{.status.connectors[1].connector.trace}}",
+      "problems.mirror-connector-3-failed.title": "Le connecteur 3 de MirrorMaker 2 a échoué",
+      "problems.mirror-connector-3-failed.message": "{{.status.connectors[2].name}} : {{.status.connectors[2].connector.trace}}",
+      "problems.mirror-connector-4-failed.title": "Le connecteur 4 de MirrorMaker 2 a échoué",
+      "problems.mirror-connector-4-failed.message": "{{.status.connectors[3].name}} : {{.status.connectors[3].connector.trace}}",
+      "problems.mirror-connector-5-failed.title": "Le connecteur 5 de MirrorMaker 2 a échoué",
+      "problems.mirror-connector-5-failed.message": "{{.status.connectors[4].name}} : {{.status.connectors[4].connector.trace}}",
+      "problems.mirror-connector-6-failed.title": "Le connecteur 6 de MirrorMaker 2 a échoué",
+      "problems.mirror-connector-6-failed.message": "{{.status.connectors[5].name}} : {{.status.connectors[5].connector.trace}}",
+      "problems.mirror-task-failed.title": "La tâche MirrorMaker 2 a échoué",
+      "problems.mirror-task-1-failed.title": "Une tâche du connecteur 1 de MirrorMaker 2 a échoué",
+      "problems.mirror-task-1-failed.message": "{{.status.connectors[0].name}} : {{.status.connectors[0].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-2-failed.title": "Une tâche du connecteur 2 de MirrorMaker 2 a échoué",
+      "problems.mirror-task-2-failed.message": "{{.status.connectors[1].name}} : {{.status.connectors[1].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-3-failed.title": "Une tâche du connecteur 3 de MirrorMaker 2 a échoué",
+      "problems.mirror-task-3-failed.message": "{{.status.connectors[2].name}} : {{.status.connectors[2].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-4-failed.title": "Une tâche du connecteur 4 de MirrorMaker 2 a échoué",
+      "problems.mirror-task-4-failed.message": "{{.status.connectors[3].name}} : {{.status.connectors[3].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-5-failed.title": "Une tâche du connecteur 5 de MirrorMaker 2 a échoué",
+      "problems.mirror-task-5-failed.message": "{{.status.connectors[4].name}} : {{.status.connectors[4].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-6-failed.title": "Une tâche du connecteur 6 de MirrorMaker 2 a échoué",
+      "problems.mirror-task-6-failed.message": "{{.status.connectors[5].name}} : {{.status.connectors[5].tasks[state=\"FAILED\"].trace}}",
+      "sectionBadges.strimzi.label.one": "{{count}} objet requiert votre attention",
+      "sectionBadges.strimzi.label.many": "{{count}} d'objets requièrent votre attention",
+      "sectionBadges.strimzi.label.other": "{{count}} objets requièrent votre attention"
+    },
+    "it": {
+      "name": "Strimzi",
+      "description": "Strimzi (Apache Kafka su Kubernetes): i Kafka con i loro listener e node pool, i topic, gli utenti, Kafka Connect, MirrorMaker 2 e i connettori con la loro prontezza, gli stati e gli stack trace di connettori e task; i problemi degli oggetti non pronti e dei connettori e task falliti.",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "Stato",
+      "columns.kafka-status.cases.0.text": "Non pronto",
+      "columns.kafka-status.cases.1.text": "Pronto",
+      "columns.kafka-status.cases.2.text": "Non pronto",
+      "columns.kafka-status.cases.3.text": "In attesa",
+      "columns.kafka-version.title": "Versione",
+      "columns.kafka-listeners.title": "Listener",
+      "columns.kafka-reason.title": "Motivo",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "Ruoli",
+      "columns.node-pool-replicas.title": "Repliche",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "Stato",
+      "columns.topic-status.cases.0.text": "Non pronto",
+      "columns.topic-status.cases.1.text": "Pronto",
+      "columns.topic-status.cases.2.text": "Non pronto",
+      "columns.topic-status.cases.3.text": "In attesa",
+      "columns.topic-partitions.title": "Partizioni",
+      "columns.topic-replicas.title": "Repliche",
+      "columns.topic-reason.title": "Motivo",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "Stato",
+      "columns.user-status.cases.0.text": "Non pronto",
+      "columns.user-status.cases.1.text": "Pronto",
+      "columns.user-status.cases.2.text": "Non pronto",
+      "columns.user-status.cases.3.text": "In attesa",
+      "columns.user-authentication.title": "Autenticazione",
+      "columns.user-authorization.title": "Autorizzazione",
+      "columns.connect-status.title": "Stato",
+      "columns.connect-status.cases.0.text": "Non pronto",
+      "columns.connect-status.cases.1.text": "Pronto",
+      "columns.connect-status.cases.2.text": "Non pronto",
+      "columns.connect-status.cases.3.text": "In attesa",
+      "columns.connect-replicas.title": "Repliche",
+      "columns.connect-reason.title": "Motivo",
+      "columns.mirror-maker-status.title": "Stato",
+      "columns.mirror-maker-status.cases.0.text": "Non pronto",
+      "columns.mirror-maker-status.cases.1.text": "Pronto",
+      "columns.mirror-maker-status.cases.2.text": "Non pronto",
+      "columns.mirror-maker-status.cases.3.text": "In attesa",
+      "columns.mirror-maker-replicas.title": "Repliche",
+      "columns.mirror-maker-reason.title": "Motivo",
+      "columns.connector-cluster.title": "Cluster Connect",
+      "columns.connector-status.title": "Stato",
+      "columns.connector-status.cases.0.text": "Non pronto",
+      "columns.connector-status.cases.1.text": "Pronto",
+      "columns.connector-status.cases.2.text": "Non pronto",
+      "columns.connector-status.cases.3.text": "In attesa",
+      "columns.connector-state.title": "Connettore",
+      "columns.connector-tasks.title": "Task in esecuzione",
+      "columns.connector-class.title": "Classe",
+      "columns.connector-restarts.title": "Riavvii automatici",
+      "columns.connector-reason.title": "Motivo",
+      "problems.kafka-not-ready.title": "Kafka non pronto",
+      "problems.node-pool-not-ready.title": "KafkaNodePool non pronto",
+      "problems.topic-not-ready.title": "KafkaTopic non pronto",
+      "problems.user-not-ready.title": "KafkaUser non pronto",
+      "problems.connect-not-ready.title": "KafkaConnect non pronto",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 non pronto",
+      "problems.connector-not-ready.title": "KafkaConnector non pronto",
+      "problems.connector-failed.title": "Il connettore è fallito",
+      "problems.connector-failed-first-restart.title": "Il connettore è fallito, in attesa del primo riavvio automatico",
+      "problems.connector-failed-restarting.title": "Il connettore è fallito, in attesa di un riavvio automatico iniziale",
+      "problems.connector-failed-restarting-later.title": "Il connettore è fallito, in attesa di un riavvio automatico successivo",
+      "problems.task-failed.title": "Il task è fallito",
+      "problems.task-failed-first-restart.title": "Il task è fallito, in attesa del primo riavvio automatico",
+      "problems.task-failed-restarting.title": "Il task è fallito, in attesa di un riavvio automatico iniziale",
+      "problems.task-failed-restarting-later.title": "Il task è fallito, in attesa di un riavvio automatico successivo",
+      "problems.mirror-connector-failed.title": "Il connettore di MirrorMaker 2 è fallito",
+      "problems.mirror-connector-1-failed.title": "Il connettore 1 di MirrorMaker 2 è fallito",
+      "problems.mirror-connector-2-failed.title": "Il connettore 2 di MirrorMaker 2 è fallito",
+      "problems.mirror-connector-3-failed.title": "Il connettore 3 di MirrorMaker 2 è fallito",
+      "problems.mirror-connector-4-failed.title": "Il connettore 4 di MirrorMaker 2 è fallito",
+      "problems.mirror-connector-5-failed.title": "Il connettore 5 di MirrorMaker 2 è fallito",
+      "problems.mirror-connector-6-failed.title": "Il connettore 6 di MirrorMaker 2 è fallito",
+      "problems.mirror-task-failed.title": "Il task di MirrorMaker 2 è fallito",
+      "problems.mirror-task-1-failed.title": "Un task del connettore 1 di MirrorMaker 2 è fallito",
+      "problems.mirror-task-2-failed.title": "Un task del connettore 2 di MirrorMaker 2 è fallito",
+      "problems.mirror-task-3-failed.title": "Un task del connettore 3 di MirrorMaker 2 è fallito",
+      "problems.mirror-task-4-failed.title": "Un task del connettore 4 di MirrorMaker 2 è fallito",
+      "problems.mirror-task-5-failed.title": "Un task del connettore 5 di MirrorMaker 2 è fallito",
+      "problems.mirror-task-6-failed.title": "Un task del connettore 6 di MirrorMaker 2 è fallito",
+      "sectionBadges.strimzi.label.one": "{{count}} oggetto richiede attenzione",
+      "sectionBadges.strimzi.label.many": "{{count}} di oggetti richiedono attenzione",
+      "sectionBadges.strimzi.label.other": "{{count}} oggetti richiedono attenzione"
+    },
+    "ja": {
+      "name": "Strimzi",
+      "description": "Strimzi（Kubernetes 上の Apache Kafka）: リスナーとノードプールを含む Kafka、トピック、ユーザー、Kafka Connect、MirrorMaker 2、コネクターの準備状態、コネクターとタスクの状態とスタックトレース、および未準備のオブジェクトと失敗したコネクターやタスクの問題。",
+      "kinds.0.title": "Kafka",
+      "kinds.1.title": "KafkaNodePool",
+      "kinds.2.title": "KafkaTopic",
+      "kinds.3.title": "KafkaUser",
+      "kinds.4.title": "KafkaConnect",
+      "kinds.5.title": "KafkaMirrorMaker2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "状態",
+      "columns.kafka-status.cases.0.text": "未準備",
+      "columns.kafka-status.cases.1.text": "準備完了",
+      "columns.kafka-status.cases.2.text": "未準備",
+      "columns.kafka-status.cases.3.text": "保留中",
+      "columns.kafka-version.title": "バージョン",
+      "columns.kafka-listeners.title": "Listener",
+      "columns.kafka-listeners.cases.0.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}、…",
+      "columns.kafka-listeners.cases.1.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}",
+      "columns.kafka-listeners.cases.2.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}",
+      "columns.kafka-listeners.cases.3.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}",
+      "columns.kafka-listeners.cases.4.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}",
+      "columns.kafka-reason.title": "理由",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "ロール",
+      "columns.node-pool-replicas.title": "レプリカ",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "状態",
+      "columns.topic-status.cases.0.text": "未準備",
+      "columns.topic-status.cases.1.text": "準備完了",
+      "columns.topic-status.cases.2.text": "未準備",
+      "columns.topic-status.cases.3.text": "保留中",
+      "columns.topic-partitions.title": "パーティション",
+      "columns.topic-replicas.title": "レプリカ",
+      "columns.topic-reason.title": "理由",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "状態",
+      "columns.user-status.cases.0.text": "未準備",
+      "columns.user-status.cases.1.text": "準備完了",
+      "columns.user-status.cases.2.text": "未準備",
+      "columns.user-status.cases.3.text": "保留中",
+      "columns.user-authentication.title": "認証",
+      "columns.user-authorization.title": "認可",
+      "columns.connect-status.title": "状態",
+      "columns.connect-status.cases.0.text": "未準備",
+      "columns.connect-status.cases.1.text": "準備完了",
+      "columns.connect-status.cases.2.text": "未準備",
+      "columns.connect-status.cases.3.text": "保留中",
+      "columns.connect-replicas.title": "レプリカ",
+      "columns.connect-reason.title": "理由",
+      "columns.mirror-maker-status.title": "状態",
+      "columns.mirror-maker-status.cases.0.text": "未準備",
+      "columns.mirror-maker-status.cases.1.text": "準備完了",
+      "columns.mirror-maker-status.cases.2.text": "未準備",
+      "columns.mirror-maker-status.cases.3.text": "保留中",
+      "columns.mirror-maker-replicas.title": "レプリカ",
+      "columns.mirror-maker-reason.title": "理由",
+      "columns.connector-cluster.title": "Connect クラスター",
+      "columns.connector-status.title": "状態",
+      "columns.connector-status.cases.0.text": "未準備",
+      "columns.connector-status.cases.1.text": "準備完了",
+      "columns.connector-status.cases.2.text": "未準備",
+      "columns.connector-status.cases.3.text": "保留中",
+      "columns.connector-state.title": "コネクター",
+      "columns.connector-tasks.title": "実行中のタスク",
+      "columns.connector-class.title": "クラス",
+      "columns.connector-restarts.title": "自動再起動",
+      "columns.connector-reason.title": "理由",
+      "problems.kafka-not-ready.title": "Kafka が未準備",
+      "problems.node-pool-not-ready.title": "KafkaNodePool が未準備",
+      "problems.topic-not-ready.title": "KafkaTopic が未準備",
+      "problems.user-not-ready.title": "KafkaUser が未準備",
+      "problems.connect-not-ready.title": "KafkaConnect が未準備",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 が未準備",
+      "problems.connector-not-ready.title": "KafkaConnector が未準備",
+      "problems.connector-failed.title": "コネクターが失敗しました",
+      "problems.connector-failed-first-restart.title": "コネクターが失敗しました（最初の自動再起動を待機中）",
+      "problems.connector-failed-restarting.title": "コネクターが失敗しました（初期の自動再起動を待機中）",
+      "problems.connector-failed-restarting-later.title": "コネクターが失敗しました（後続の自動再起動を待機中）",
+      "problems.task-failed.title": "タスクが失敗しました",
+      "problems.task-failed-first-restart.title": "タスクが失敗しました（最初の自動再起動を待機中）",
+      "problems.task-failed-restarting.title": "タスクが失敗しました（初期の自動再起動を待機中）",
+      "problems.task-failed-restarting-later.title": "タスクが失敗しました（後続の自動再起動を待機中）",
+      "problems.mirror-connector-failed.title": "MirrorMaker 2 のコネクターが失敗しました",
+      "problems.mirror-connector-1-failed.title": "MirrorMaker 2 のコネクター 1 が失敗しました",
+      "problems.mirror-connector-2-failed.title": "MirrorMaker 2 のコネクター 2 が失敗しました",
+      "problems.mirror-connector-3-failed.title": "MirrorMaker 2 のコネクター 3 が失敗しました",
+      "problems.mirror-connector-4-failed.title": "MirrorMaker 2 のコネクター 4 が失敗しました",
+      "problems.mirror-connector-5-failed.title": "MirrorMaker 2 のコネクター 5 が失敗しました",
+      "problems.mirror-connector-6-failed.title": "MirrorMaker 2 のコネクター 6 が失敗しました",
+      "problems.mirror-task-failed.title": "MirrorMaker 2 のタスクが失敗しました",
+      "problems.mirror-task-1-failed.title": "MirrorMaker 2 のコネクター 1 のタスクが失敗しました",
+      "problems.mirror-task-2-failed.title": "MirrorMaker 2 のコネクター 2 のタスクが失敗しました",
+      "problems.mirror-task-3-failed.title": "MirrorMaker 2 のコネクター 3 のタスクが失敗しました",
+      "problems.mirror-task-4-failed.title": "MirrorMaker 2 のコネクター 4 のタスクが失敗しました",
+      "problems.mirror-task-5-failed.title": "MirrorMaker 2 のコネクター 5 のタスクが失敗しました",
+      "problems.mirror-task-6-failed.title": "MirrorMaker 2 のコネクター 6 のタスクが失敗しました",
+      "sectionBadges.strimzi.label.other": "対応が必要なオブジェクトが {{count}} 件あります"
+    },
+    "ko": {
+      "name": "Strimzi",
+      "description": "Strimzi(Kubernetes의 Apache Kafka): 리스너와 노드 풀을 포함한 Kafka, 토픽, 사용자, Kafka Connect, MirrorMaker 2, 커넥터의 준비 상태, 커넥터와 작업의 상태 및 스택 트레이스, 준비되지 않은 개체와 실패한 커넥터 및 작업의 문제.",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "상태",
+      "columns.kafka-status.cases.0.text": "준비 안 됨",
+      "columns.kafka-status.cases.1.text": "준비",
+      "columns.kafka-status.cases.2.text": "준비 안 됨",
+      "columns.kafka-status.cases.3.text": "대기 중",
+      "columns.kafka-version.title": "버전",
+      "columns.kafka-listeners.title": "Listener",
+      "columns.kafka-reason.title": "이유",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "역할",
+      "columns.node-pool-replicas.title": "복제본",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "상태",
+      "columns.topic-status.cases.0.text": "준비 안 됨",
+      "columns.topic-status.cases.1.text": "준비",
+      "columns.topic-status.cases.2.text": "준비 안 됨",
+      "columns.topic-status.cases.3.text": "대기 중",
+      "columns.topic-partitions.title": "파티션",
+      "columns.topic-replicas.title": "복제본",
+      "columns.topic-reason.title": "이유",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "상태",
+      "columns.user-status.cases.0.text": "준비 안 됨",
+      "columns.user-status.cases.1.text": "준비",
+      "columns.user-status.cases.2.text": "준비 안 됨",
+      "columns.user-status.cases.3.text": "대기 중",
+      "columns.user-authentication.title": "인증",
+      "columns.user-authorization.title": "권한 부여",
+      "columns.connect-status.title": "상태",
+      "columns.connect-status.cases.0.text": "준비 안 됨",
+      "columns.connect-status.cases.1.text": "준비",
+      "columns.connect-status.cases.2.text": "준비 안 됨",
+      "columns.connect-status.cases.3.text": "대기 중",
+      "columns.connect-replicas.title": "복제본",
+      "columns.connect-reason.title": "이유",
+      "columns.mirror-maker-status.title": "상태",
+      "columns.mirror-maker-status.cases.0.text": "준비 안 됨",
+      "columns.mirror-maker-status.cases.1.text": "준비",
+      "columns.mirror-maker-status.cases.2.text": "준비 안 됨",
+      "columns.mirror-maker-status.cases.3.text": "대기 중",
+      "columns.mirror-maker-replicas.title": "복제본",
+      "columns.mirror-maker-reason.title": "이유",
+      "columns.connector-cluster.title": "Connect 클러스터",
+      "columns.connector-status.title": "상태",
+      "columns.connector-status.cases.0.text": "준비 안 됨",
+      "columns.connector-status.cases.1.text": "준비",
+      "columns.connector-status.cases.2.text": "준비 안 됨",
+      "columns.connector-status.cases.3.text": "대기 중",
+      "columns.connector-state.title": "커넥터",
+      "columns.connector-tasks.title": "실행 중인 작업",
+      "columns.connector-class.title": "클래스",
+      "columns.connector-restarts.title": "자동 재시작",
+      "columns.connector-reason.title": "이유",
+      "problems.kafka-not-ready.title": "Kafka 준비 안 됨",
+      "problems.node-pool-not-ready.title": "KafkaNodePool 준비 안 됨",
+      "problems.topic-not-ready.title": "KafkaTopic 준비 안 됨",
+      "problems.user-not-ready.title": "KafkaUser 준비 안 됨",
+      "problems.connect-not-ready.title": "KafkaConnect 준비 안 됨",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 준비 안 됨",
+      "problems.connector-not-ready.title": "KafkaConnector 준비 안 됨",
+      "problems.connector-failed.title": "커넥터가 실패했습니다",
+      "problems.connector-failed-first-restart.title": "커넥터가 실패했습니다 (첫 자동 재시작 대기 중)",
+      "problems.connector-failed-restarting.title": "커넥터가 실패했습니다 (초기 자동 재시작 대기 중)",
+      "problems.connector-failed-restarting-later.title": "커넥터가 실패했습니다 (이후 자동 재시작 대기 중)",
+      "problems.task-failed.title": "작업이 실패했습니다",
+      "problems.task-failed-first-restart.title": "작업이 실패했습니다 (첫 자동 재시작 대기 중)",
+      "problems.task-failed-restarting.title": "작업이 실패했습니다 (초기 자동 재시작 대기 중)",
+      "problems.task-failed-restarting-later.title": "작업이 실패했습니다 (이후 자동 재시작 대기 중)",
+      "problems.mirror-connector-failed.title": "MirrorMaker 2 커넥터가 실패했습니다",
+      "problems.mirror-connector-1-failed.title": "MirrorMaker 2 커넥터 1이(가) 실패했습니다",
+      "problems.mirror-connector-2-failed.title": "MirrorMaker 2 커넥터 2이(가) 실패했습니다",
+      "problems.mirror-connector-3-failed.title": "MirrorMaker 2 커넥터 3이(가) 실패했습니다",
+      "problems.mirror-connector-4-failed.title": "MirrorMaker 2 커넥터 4이(가) 실패했습니다",
+      "problems.mirror-connector-5-failed.title": "MirrorMaker 2 커넥터 5이(가) 실패했습니다",
+      "problems.mirror-connector-6-failed.title": "MirrorMaker 2 커넥터 6이(가) 실패했습니다",
+      "problems.mirror-task-failed.title": "MirrorMaker 2 작업이 실패했습니다",
+      "problems.mirror-task-1-failed.title": "MirrorMaker 2 커넥터 1의 작업이 실패했습니다",
+      "problems.mirror-task-2-failed.title": "MirrorMaker 2 커넥터 2의 작업이 실패했습니다",
+      "problems.mirror-task-3-failed.title": "MirrorMaker 2 커넥터 3의 작업이 실패했습니다",
+      "problems.mirror-task-4-failed.title": "MirrorMaker 2 커넥터 4의 작업이 실패했습니다",
+      "problems.mirror-task-5-failed.title": "MirrorMaker 2 커넥터 5의 작업이 실패했습니다",
+      "problems.mirror-task-6-failed.title": "MirrorMaker 2 커넥터 6의 작업이 실패했습니다",
+      "sectionBadges.strimzi.label.other": "주의가 필요한 개체 {{count}}개"
+    },
+    "pl": {
+      "name": "Strimzi",
+      "description": "Strimzi (Apache Kafka na Kubernetes): Kafki z ich listenerami i pulami węzłów, tematy, użytkownicy, Kafka Connect, MirrorMaker 2 i konektory z ich gotowością, stany i ślady stosu konektorów i zadań; problemy obiektów, które nie są gotowe, oraz konektorów i zadań, które uległy awarii.",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "Stan",
+      "columns.kafka-status.cases.0.text": "Niegotowe",
+      "columns.kafka-status.cases.1.text": "Gotowe",
+      "columns.kafka-status.cases.2.text": "Niegotowe",
+      "columns.kafka-status.cases.3.text": "Oczekuje",
+      "columns.kafka-version.title": "Wersja",
+      "columns.kafka-listeners.title": "Listenery",
+      "columns.kafka-reason.title": "Przyczyna",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "Role",
+      "columns.node-pool-replicas.title": "Repliki",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "Stan",
+      "columns.topic-status.cases.0.text": "Niegotowe",
+      "columns.topic-status.cases.1.text": "Gotowe",
+      "columns.topic-status.cases.2.text": "Niegotowe",
+      "columns.topic-status.cases.3.text": "Oczekuje",
+      "columns.topic-partitions.title": "Partycje",
+      "columns.topic-replicas.title": "Repliki",
+      "columns.topic-reason.title": "Przyczyna",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "Stan",
+      "columns.user-status.cases.0.text": "Niegotowe",
+      "columns.user-status.cases.1.text": "Gotowe",
+      "columns.user-status.cases.2.text": "Niegotowe",
+      "columns.user-status.cases.3.text": "Oczekuje",
+      "columns.user-authentication.title": "Uwierzytelnianie",
+      "columns.user-authorization.title": "Autoryzacja",
+      "columns.connect-status.title": "Stan",
+      "columns.connect-status.cases.0.text": "Niegotowe",
+      "columns.connect-status.cases.1.text": "Gotowe",
+      "columns.connect-status.cases.2.text": "Niegotowe",
+      "columns.connect-status.cases.3.text": "Oczekuje",
+      "columns.connect-replicas.title": "Repliki",
+      "columns.connect-reason.title": "Przyczyna",
+      "columns.mirror-maker-status.title": "Stan",
+      "columns.mirror-maker-status.cases.0.text": "Niegotowe",
+      "columns.mirror-maker-status.cases.1.text": "Gotowe",
+      "columns.mirror-maker-status.cases.2.text": "Niegotowe",
+      "columns.mirror-maker-status.cases.3.text": "Oczekuje",
+      "columns.mirror-maker-replicas.title": "Repliki",
+      "columns.mirror-maker-reason.title": "Przyczyna",
+      "columns.connector-cluster.title": "Klaster Connect",
+      "columns.connector-status.title": "Stan",
+      "columns.connector-status.cases.0.text": "Niegotowe",
+      "columns.connector-status.cases.1.text": "Gotowe",
+      "columns.connector-status.cases.2.text": "Niegotowe",
+      "columns.connector-status.cases.3.text": "Oczekuje",
+      "columns.connector-state.title": "Konektor",
+      "columns.connector-tasks.title": "Działające zadania",
+      "columns.connector-class.title": "Klasa",
+      "columns.connector-restarts.title": "Autorestarty",
+      "columns.connector-reason.title": "Przyczyna",
+      "problems.kafka-not-ready.title": "Kafka nie jest gotowy",
+      "problems.node-pool-not-ready.title": "KafkaNodePool nie jest gotowy",
+      "problems.topic-not-ready.title": "KafkaTopic nie jest gotowy",
+      "problems.user-not-ready.title": "KafkaUser nie jest gotowy",
+      "problems.connect-not-ready.title": "KafkaConnect nie jest gotowy",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 nie jest gotowy",
+      "problems.connector-not-ready.title": "KafkaConnector nie jest gotowy",
+      "problems.connector-failed.title": "Konektor uległ awarii",
+      "problems.connector-failed-first-restart.title": "Konektor uległ awarii, czeka na pierwszy automatyczny restart",
+      "problems.connector-failed-restarting.title": "Konektor uległ awarii, czeka na wczesny automatyczny restart",
+      "problems.connector-failed-restarting-later.title": "Konektor uległ awarii, czeka na późniejszy automatyczny restart",
+      "problems.task-failed.title": "Zadanie uległo awarii",
+      "problems.task-failed-first-restart.title": "Zadanie uległo awarii, czeka na pierwszy automatyczny restart",
+      "problems.task-failed-restarting.title": "Zadanie uległo awarii, czeka na wczesny automatyczny restart",
+      "problems.task-failed-restarting-later.title": "Zadanie uległo awarii, czeka na późniejszy automatyczny restart",
+      "problems.mirror-connector-failed.title": "Konektor MirrorMaker 2 uległ awarii",
+      "problems.mirror-connector-1-failed.title": "Konektor 1 MirrorMaker 2 uległ awarii",
+      "problems.mirror-connector-2-failed.title": "Konektor 2 MirrorMaker 2 uległ awarii",
+      "problems.mirror-connector-3-failed.title": "Konektor 3 MirrorMaker 2 uległ awarii",
+      "problems.mirror-connector-4-failed.title": "Konektor 4 MirrorMaker 2 uległ awarii",
+      "problems.mirror-connector-5-failed.title": "Konektor 5 MirrorMaker 2 uległ awarii",
+      "problems.mirror-connector-6-failed.title": "Konektor 6 MirrorMaker 2 uległ awarii",
+      "problems.mirror-task-failed.title": "Zadanie MirrorMaker 2 uległo awarii",
+      "problems.mirror-task-1-failed.title": "Zadanie konektora 1 MirrorMaker 2 uległo awarii",
+      "problems.mirror-task-2-failed.title": "Zadanie konektora 2 MirrorMaker 2 uległo awarii",
+      "problems.mirror-task-3-failed.title": "Zadanie konektora 3 MirrorMaker 2 uległo awarii",
+      "problems.mirror-task-4-failed.title": "Zadanie konektora 4 MirrorMaker 2 uległo awarii",
+      "problems.mirror-task-5-failed.title": "Zadanie konektora 5 MirrorMaker 2 uległo awarii",
+      "problems.mirror-task-6-failed.title": "Zadanie konektora 6 MirrorMaker 2 uległo awarii",
+      "sectionBadges.strimzi.label.one": "{{count}} obiekt wymaga uwagi",
+      "sectionBadges.strimzi.label.few": "{{count}} obiekty wymagają uwagi",
+      "sectionBadges.strimzi.label.many": "{{count}} obiektów wymaga uwagi",
+      "sectionBadges.strimzi.label.other": "{{count}} obiektu wymaga uwagi"
+    },
+    "pt-BR": {
+      "name": "Strimzi",
+      "description": "Strimzi (Apache Kafka no Kubernetes): Kafkas com seus listeners e node pools, tópicos, usuários, Kafka Connect, MirrorMaker 2 e conectores com sua prontidão, os estados e stack traces de conectores e tarefas; problemas de objetos que não estão prontos e de conectores e tarefas que falharam.",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "Status",
+      "columns.kafka-status.cases.0.text": "Não pronto",
+      "columns.kafka-status.cases.1.text": "Pronto",
+      "columns.kafka-status.cases.2.text": "Não pronto",
+      "columns.kafka-status.cases.3.text": "Pendente",
+      "columns.kafka-version.title": "Versão",
+      "columns.kafka-listeners.title": "Listeners",
+      "columns.kafka-reason.title": "Motivo",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "Funções",
+      "columns.node-pool-replicas.title": "Réplicas",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "Status",
+      "columns.topic-status.cases.0.text": "Não pronto",
+      "columns.topic-status.cases.1.text": "Pronto",
+      "columns.topic-status.cases.2.text": "Não pronto",
+      "columns.topic-status.cases.3.text": "Pendente",
+      "columns.topic-partitions.title": "Partições",
+      "columns.topic-replicas.title": "Réplicas",
+      "columns.topic-reason.title": "Motivo",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "Status",
+      "columns.user-status.cases.0.text": "Não pronto",
+      "columns.user-status.cases.1.text": "Pronto",
+      "columns.user-status.cases.2.text": "Não pronto",
+      "columns.user-status.cases.3.text": "Pendente",
+      "columns.user-authentication.title": "Autenticação",
+      "columns.user-authorization.title": "Autorização",
+      "columns.connect-status.title": "Status",
+      "columns.connect-status.cases.0.text": "Não pronto",
+      "columns.connect-status.cases.1.text": "Pronto",
+      "columns.connect-status.cases.2.text": "Não pronto",
+      "columns.connect-status.cases.3.text": "Pendente",
+      "columns.connect-replicas.title": "Réplicas",
+      "columns.connect-reason.title": "Motivo",
+      "columns.mirror-maker-status.title": "Status",
+      "columns.mirror-maker-status.cases.0.text": "Não pronto",
+      "columns.mirror-maker-status.cases.1.text": "Pronto",
+      "columns.mirror-maker-status.cases.2.text": "Não pronto",
+      "columns.mirror-maker-status.cases.3.text": "Pendente",
+      "columns.mirror-maker-replicas.title": "Réplicas",
+      "columns.mirror-maker-reason.title": "Motivo",
+      "columns.connector-cluster.title": "Cluster do Connect",
+      "columns.connector-status.title": "Status",
+      "columns.connector-status.cases.0.text": "Não pronto",
+      "columns.connector-status.cases.1.text": "Pronto",
+      "columns.connector-status.cases.2.text": "Não pronto",
+      "columns.connector-status.cases.3.text": "Pendente",
+      "columns.connector-state.title": "Conector",
+      "columns.connector-tasks.title": "Tarefas em execução",
+      "columns.connector-class.title": "Classe",
+      "columns.connector-restarts.title": "Reinícios automáticos",
+      "columns.connector-reason.title": "Motivo",
+      "problems.kafka-not-ready.title": "Kafka não está pronto",
+      "problems.node-pool-not-ready.title": "KafkaNodePool não está pronto",
+      "problems.topic-not-ready.title": "KafkaTopic não está pronto",
+      "problems.user-not-ready.title": "KafkaUser não está pronto",
+      "problems.connect-not-ready.title": "KafkaConnect não está pronto",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 não está pronto",
+      "problems.connector-not-ready.title": "KafkaConnector não está pronto",
+      "problems.connector-failed.title": "O conector falhou",
+      "problems.connector-failed-first-restart.title": "O conector falhou, aguardando o primeiro reinício automático",
+      "problems.connector-failed-restarting.title": "O conector falhou, aguardando um reinício automático inicial",
+      "problems.connector-failed-restarting-later.title": "O conector falhou, aguardando um reinício automático posterior",
+      "problems.task-failed.title": "A tarefa falhou",
+      "problems.task-failed-first-restart.title": "A tarefa falhou, aguardando o primeiro reinício automático",
+      "problems.task-failed-restarting.title": "A tarefa falhou, aguardando um reinício automático inicial",
+      "problems.task-failed-restarting-later.title": "A tarefa falhou, aguardando um reinício automático posterior",
+      "problems.mirror-connector-failed.title": "O conector do MirrorMaker 2 falhou",
+      "problems.mirror-connector-1-failed.title": "O conector 1 do MirrorMaker 2 falhou",
+      "problems.mirror-connector-2-failed.title": "O conector 2 do MirrorMaker 2 falhou",
+      "problems.mirror-connector-3-failed.title": "O conector 3 do MirrorMaker 2 falhou",
+      "problems.mirror-connector-4-failed.title": "O conector 4 do MirrorMaker 2 falhou",
+      "problems.mirror-connector-5-failed.title": "O conector 5 do MirrorMaker 2 falhou",
+      "problems.mirror-connector-6-failed.title": "O conector 6 do MirrorMaker 2 falhou",
+      "problems.mirror-task-failed.title": "A tarefa do MirrorMaker 2 falhou",
+      "problems.mirror-task-1-failed.title": "Uma tarefa do conector 1 do MirrorMaker 2 falhou",
+      "problems.mirror-task-2-failed.title": "Uma tarefa do conector 2 do MirrorMaker 2 falhou",
+      "problems.mirror-task-3-failed.title": "Uma tarefa do conector 3 do MirrorMaker 2 falhou",
+      "problems.mirror-task-4-failed.title": "Uma tarefa do conector 4 do MirrorMaker 2 falhou",
+      "problems.mirror-task-5-failed.title": "Uma tarefa do conector 5 do MirrorMaker 2 falhou",
+      "problems.mirror-task-6-failed.title": "Uma tarefa do conector 6 do MirrorMaker 2 falhou",
+      "sectionBadges.strimzi.label.one": "{{count}} objeto precisa de atenção",
+      "sectionBadges.strimzi.label.many": "{{count}} de objetos precisam de atenção",
+      "sectionBadges.strimzi.label.other": "{{count}} objetos precisam de atenção"
+    },
+    "ru": {
+      "name": "Strimzi",
+      "description": "Strimzi (Apache Kafka в Kubernetes): Kafka с их listener и пулами узлов, топики, пользователи, Kafka Connect, MirrorMaker 2 и коннекторы с их готовностью, состояния и трассировки стека коннекторов и задач; проблемы неготовых объектов и упавших коннекторов и задач.",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "Статус",
+      "columns.kafka-status.cases.0.text": "Не готов",
+      "columns.kafka-status.cases.1.text": "Готов",
+      "columns.kafka-status.cases.2.text": "Не готов",
+      "columns.kafka-status.cases.3.text": "Ожидает",
+      "columns.kafka-version.title": "Версия",
+      "columns.kafka-listeners.title": "Listener",
+      "columns.kafka-reason.title": "Причина",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "Роли",
+      "columns.node-pool-replicas.title": "Реплики",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "Статус",
+      "columns.topic-status.cases.0.text": "Не готов",
+      "columns.topic-status.cases.1.text": "Готов",
+      "columns.topic-status.cases.2.text": "Не готов",
+      "columns.topic-status.cases.3.text": "Ожидает",
+      "columns.topic-partitions.title": "Партиции",
+      "columns.topic-replicas.title": "Реплики",
+      "columns.topic-reason.title": "Причина",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "Статус",
+      "columns.user-status.cases.0.text": "Не готов",
+      "columns.user-status.cases.1.text": "Готов",
+      "columns.user-status.cases.2.text": "Не готов",
+      "columns.user-status.cases.3.text": "Ожидает",
+      "columns.user-authentication.title": "Аутентификация",
+      "columns.user-authorization.title": "Авторизация",
+      "columns.connect-status.title": "Статус",
+      "columns.connect-status.cases.0.text": "Не готов",
+      "columns.connect-status.cases.1.text": "Готов",
+      "columns.connect-status.cases.2.text": "Не готов",
+      "columns.connect-status.cases.3.text": "Ожидает",
+      "columns.connect-replicas.title": "Реплики",
+      "columns.connect-reason.title": "Причина",
+      "columns.mirror-maker-status.title": "Статус",
+      "columns.mirror-maker-status.cases.0.text": "Не готов",
+      "columns.mirror-maker-status.cases.1.text": "Готов",
+      "columns.mirror-maker-status.cases.2.text": "Не готов",
+      "columns.mirror-maker-status.cases.3.text": "Ожидает",
+      "columns.mirror-maker-replicas.title": "Реплики",
+      "columns.mirror-maker-reason.title": "Причина",
+      "columns.connector-cluster.title": "Кластер Connect",
+      "columns.connector-status.title": "Статус",
+      "columns.connector-status.cases.0.text": "Не готов",
+      "columns.connector-status.cases.1.text": "Готов",
+      "columns.connector-status.cases.2.text": "Не готов",
+      "columns.connector-status.cases.3.text": "Ожидает",
+      "columns.connector-state.title": "Коннектор",
+      "columns.connector-tasks.title": "Задачи в работе",
+      "columns.connector-class.title": "Класс",
+      "columns.connector-restarts.title": "Автоперезапуски",
+      "columns.connector-reason.title": "Причина",
+      "problems.kafka-not-ready.title": "Kafka не готов",
+      "problems.node-pool-not-ready.title": "KafkaNodePool не готов",
+      "problems.topic-not-ready.title": "KafkaTopic не готов",
+      "problems.user-not-ready.title": "KafkaUser не готов",
+      "problems.connect-not-ready.title": "KafkaConnect не готов",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 не готов",
+      "problems.connector-not-ready.title": "KafkaConnector не готов",
+      "problems.connector-failed.title": "Коннектор упал",
+      "problems.connector-failed-first-restart.title": "Коннектор упал, ждёт первого автоматического перезапуска",
+      "problems.connector-failed-restarting.title": "Коннектор упал, ждёт раннего автоматического перезапуска",
+      "problems.connector-failed-restarting-later.title": "Коннектор упал, ждёт позднего автоматического перезапуска",
+      "problems.task-failed.title": "Задача упала",
+      "problems.task-failed-first-restart.title": "Задача упала, ждёт первого автоматического перезапуска",
+      "problems.task-failed-restarting.title": "Задача упала, ждёт раннего автоматического перезапуска",
+      "problems.task-failed-restarting-later.title": "Задача упала, ждёт позднего автоматического перезапуска",
+      "problems.mirror-connector-failed.title": "Коннектор MirrorMaker 2 упал",
+      "problems.mirror-connector-1-failed.title": "Коннектор 1 MirrorMaker 2 упал",
+      "problems.mirror-connector-2-failed.title": "Коннектор 2 MirrorMaker 2 упал",
+      "problems.mirror-connector-3-failed.title": "Коннектор 3 MirrorMaker 2 упал",
+      "problems.mirror-connector-4-failed.title": "Коннектор 4 MirrorMaker 2 упал",
+      "problems.mirror-connector-5-failed.title": "Коннектор 5 MirrorMaker 2 упал",
+      "problems.mirror-connector-6-failed.title": "Коннектор 6 MirrorMaker 2 упал",
+      "problems.mirror-task-failed.title": "Задача MirrorMaker 2 упала",
+      "problems.mirror-task-1-failed.title": "Задача коннектора 1 MirrorMaker 2 упала",
+      "problems.mirror-task-2-failed.title": "Задача коннектора 2 MirrorMaker 2 упала",
+      "problems.mirror-task-3-failed.title": "Задача коннектора 3 MirrorMaker 2 упала",
+      "problems.mirror-task-4-failed.title": "Задача коннектора 4 MirrorMaker 2 упала",
+      "problems.mirror-task-5-failed.title": "Задача коннектора 5 MirrorMaker 2 упала",
+      "problems.mirror-task-6-failed.title": "Задача коннектора 6 MirrorMaker 2 упала",
+      "sectionBadges.strimzi.label.one": "{{count}} объект требует внимания",
+      "sectionBadges.strimzi.label.few": "{{count}} объекта требуют внимания",
+      "sectionBadges.strimzi.label.many": "{{count}} объектов требуют внимания",
+      "sectionBadges.strimzi.label.other": "{{count}} объекта требуют внимания"
+    },
+    "tr": {
+      "name": "Strimzi",
+      "description": "Strimzi (Kubernetes üzerinde Apache Kafka): listener'ları ve node pool'larıyla Kafka'lar, topic'ler, kullanıcılar, Kafka Connect, MirrorMaker 2 ve connector'lar hazır olma durumlarıyla, connector'ların ve görevlerin durumları ve yığın izleri; hazır olmayan nesnelerin ve başarısız connector'ların ve görevlerin sorunları.",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "Durum",
+      "columns.kafka-status.cases.0.text": "Hazır değil",
+      "columns.kafka-status.cases.1.text": "Hazır",
+      "columns.kafka-status.cases.2.text": "Hazır değil",
+      "columns.kafka-status.cases.3.text": "Bekliyor",
+      "columns.kafka-version.title": "Sürüm",
+      "columns.kafka-listeners.title": "Listener'lar",
+      "columns.kafka-reason.title": "Neden",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "Roller",
+      "columns.node-pool-replicas.title": "Kopyalar",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "Durum",
+      "columns.topic-status.cases.0.text": "Hazır değil",
+      "columns.topic-status.cases.1.text": "Hazır",
+      "columns.topic-status.cases.2.text": "Hazır değil",
+      "columns.topic-status.cases.3.text": "Bekliyor",
+      "columns.topic-partitions.title": "Bölümler",
+      "columns.topic-replicas.title": "Kopyalar",
+      "columns.topic-reason.title": "Neden",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "Durum",
+      "columns.user-status.cases.0.text": "Hazır değil",
+      "columns.user-status.cases.1.text": "Hazır",
+      "columns.user-status.cases.2.text": "Hazır değil",
+      "columns.user-status.cases.3.text": "Bekliyor",
+      "columns.user-authentication.title": "Kimlik doğrulama",
+      "columns.user-authorization.title": "Yetkilendirme",
+      "columns.connect-status.title": "Durum",
+      "columns.connect-status.cases.0.text": "Hazır değil",
+      "columns.connect-status.cases.1.text": "Hazır",
+      "columns.connect-status.cases.2.text": "Hazır değil",
+      "columns.connect-status.cases.3.text": "Bekliyor",
+      "columns.connect-replicas.title": "Kopyalar",
+      "columns.connect-reason.title": "Neden",
+      "columns.mirror-maker-status.title": "Durum",
+      "columns.mirror-maker-status.cases.0.text": "Hazır değil",
+      "columns.mirror-maker-status.cases.1.text": "Hazır",
+      "columns.mirror-maker-status.cases.2.text": "Hazır değil",
+      "columns.mirror-maker-status.cases.3.text": "Bekliyor",
+      "columns.mirror-maker-replicas.title": "Kopyalar",
+      "columns.mirror-maker-reason.title": "Neden",
+      "columns.connector-cluster.title": "Connect kümesi",
+      "columns.connector-status.title": "Durum",
+      "columns.connector-status.cases.0.text": "Hazır değil",
+      "columns.connector-status.cases.1.text": "Hazır",
+      "columns.connector-status.cases.2.text": "Hazır değil",
+      "columns.connector-status.cases.3.text": "Bekliyor",
+      "columns.connector-state.title": "Connector",
+      "columns.connector-tasks.title": "Çalışan görevler",
+      "columns.connector-class.title": "Sınıf",
+      "columns.connector-restarts.title": "Otomatik yeniden başlatmalar",
+      "columns.connector-reason.title": "Neden",
+      "problems.kafka-not-ready.title": "Kafka hazır değil",
+      "problems.node-pool-not-ready.title": "KafkaNodePool hazır değil",
+      "problems.topic-not-ready.title": "KafkaTopic hazır değil",
+      "problems.user-not-ready.title": "KafkaUser hazır değil",
+      "problems.connect-not-ready.title": "KafkaConnect hazır değil",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 hazır değil",
+      "problems.connector-not-ready.title": "KafkaConnector hazır değil",
+      "problems.connector-failed.title": "Connector başarısız oldu",
+      "problems.connector-failed-first-restart.title": "Connector başarısız oldu, ilk otomatik yeniden başlatma bekleniyor",
+      "problems.connector-failed-restarting.title": "Connector başarısız oldu, erken bir otomatik yeniden başlatma bekleniyor",
+      "problems.connector-failed-restarting-later.title": "Connector başarısız oldu, sonraki bir otomatik yeniden başlatma bekleniyor",
+      "problems.task-failed.title": "Görev başarısız oldu",
+      "problems.task-failed-first-restart.title": "Görev başarısız oldu, ilk otomatik yeniden başlatma bekleniyor",
+      "problems.task-failed-restarting.title": "Görev başarısız oldu, erken bir otomatik yeniden başlatma bekleniyor",
+      "problems.task-failed-restarting-later.title": "Görev başarısız oldu, sonraki bir otomatik yeniden başlatma bekleniyor",
+      "problems.mirror-connector-failed.title": "MirrorMaker 2 connector'ı başarısız oldu",
+      "problems.mirror-connector-1-failed.title": "1. MirrorMaker 2 connector'ı başarısız oldu",
+      "problems.mirror-connector-2-failed.title": "2. MirrorMaker 2 connector'ı başarısız oldu",
+      "problems.mirror-connector-3-failed.title": "3. MirrorMaker 2 connector'ı başarısız oldu",
+      "problems.mirror-connector-4-failed.title": "4. MirrorMaker 2 connector'ı başarısız oldu",
+      "problems.mirror-connector-5-failed.title": "5. MirrorMaker 2 connector'ı başarısız oldu",
+      "problems.mirror-connector-6-failed.title": "6. MirrorMaker 2 connector'ı başarısız oldu",
+      "problems.mirror-task-failed.title": "MirrorMaker 2 görevi başarısız oldu",
+      "problems.mirror-task-1-failed.title": "1. MirrorMaker 2 connector'ının görevi başarısız oldu",
+      "problems.mirror-task-2-failed.title": "2. MirrorMaker 2 connector'ının görevi başarısız oldu",
+      "problems.mirror-task-3-failed.title": "3. MirrorMaker 2 connector'ının görevi başarısız oldu",
+      "problems.mirror-task-4-failed.title": "4. MirrorMaker 2 connector'ının görevi başarısız oldu",
+      "problems.mirror-task-5-failed.title": "5. MirrorMaker 2 connector'ının görevi başarısız oldu",
+      "problems.mirror-task-6-failed.title": "6. MirrorMaker 2 connector'ının görevi başarısız oldu",
+      "sectionBadges.strimzi.label.one": "{{count}} nesne ilgi gerektiriyor",
+      "sectionBadges.strimzi.label.other": "{{count}} nesne ilgi gerektiriyor"
+    },
+    "uk": {
+      "name": "Strimzi",
+      "description": "Strimzi (Apache Kafka у Kubernetes): Kafka з їхніми listener і пулами вузлів, топіки, користувачі, Kafka Connect, MirrorMaker 2 і конектори з їхньою готовністю, стани й трасування стека конекторів і задач; проблеми неготових об'єктів і конекторів та задач, що впали.",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "Статус",
+      "columns.kafka-status.cases.0.text": "Не готовий",
+      "columns.kafka-status.cases.1.text": "Готовий",
+      "columns.kafka-status.cases.2.text": "Не готовий",
+      "columns.kafka-status.cases.3.text": "Очікує",
+      "columns.kafka-version.title": "Версія",
+      "columns.kafka-listeners.title": "Listener",
+      "columns.kafka-reason.title": "Причина",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "Ролі",
+      "columns.node-pool-replicas.title": "Репліки",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "Статус",
+      "columns.topic-status.cases.0.text": "Не готовий",
+      "columns.topic-status.cases.1.text": "Готовий",
+      "columns.topic-status.cases.2.text": "Не готовий",
+      "columns.topic-status.cases.3.text": "Очікує",
+      "columns.topic-partitions.title": "Розділи",
+      "columns.topic-replicas.title": "Репліки",
+      "columns.topic-reason.title": "Причина",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "Статус",
+      "columns.user-status.cases.0.text": "Не готовий",
+      "columns.user-status.cases.1.text": "Готовий",
+      "columns.user-status.cases.2.text": "Не готовий",
+      "columns.user-status.cases.3.text": "Очікує",
+      "columns.user-authentication.title": "Автентифікація",
+      "columns.user-authorization.title": "Авторизація",
+      "columns.connect-status.title": "Статус",
+      "columns.connect-status.cases.0.text": "Не готовий",
+      "columns.connect-status.cases.1.text": "Готовий",
+      "columns.connect-status.cases.2.text": "Не готовий",
+      "columns.connect-status.cases.3.text": "Очікує",
+      "columns.connect-replicas.title": "Репліки",
+      "columns.connect-reason.title": "Причина",
+      "columns.mirror-maker-status.title": "Статус",
+      "columns.mirror-maker-status.cases.0.text": "Не готовий",
+      "columns.mirror-maker-status.cases.1.text": "Готовий",
+      "columns.mirror-maker-status.cases.2.text": "Не готовий",
+      "columns.mirror-maker-status.cases.3.text": "Очікує",
+      "columns.mirror-maker-replicas.title": "Репліки",
+      "columns.mirror-maker-reason.title": "Причина",
+      "columns.connector-cluster.title": "Кластер Connect",
+      "columns.connector-status.title": "Статус",
+      "columns.connector-status.cases.0.text": "Не готовий",
+      "columns.connector-status.cases.1.text": "Готовий",
+      "columns.connector-status.cases.2.text": "Не готовий",
+      "columns.connector-status.cases.3.text": "Очікує",
+      "columns.connector-state.title": "Конектор",
+      "columns.connector-tasks.title": "Задачі в роботі",
+      "columns.connector-class.title": "Клас",
+      "columns.connector-restarts.title": "Автоперезапуски",
+      "columns.connector-reason.title": "Причина",
+      "problems.kafka-not-ready.title": "Kafka не готовий",
+      "problems.node-pool-not-ready.title": "KafkaNodePool не готовий",
+      "problems.topic-not-ready.title": "KafkaTopic не готовий",
+      "problems.user-not-ready.title": "KafkaUser не готовий",
+      "problems.connect-not-ready.title": "KafkaConnect не готовий",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 не готовий",
+      "problems.connector-not-ready.title": "KafkaConnector не готовий",
+      "problems.connector-failed.title": "Конектор впав",
+      "problems.connector-failed-first-restart.title": "Конектор впав, чекає першого автоматичного перезапуску",
+      "problems.connector-failed-restarting.title": "Конектор впав, чекає раннього автоматичного перезапуску",
+      "problems.connector-failed-restarting-later.title": "Конектор впав, чекає пізнішого автоматичного перезапуску",
+      "problems.task-failed.title": "Задача впала",
+      "problems.task-failed-first-restart.title": "Задача впала, чекає першого автоматичного перезапуску",
+      "problems.task-failed-restarting.title": "Задача впала, чекає раннього автоматичного перезапуску",
+      "problems.task-failed-restarting-later.title": "Задача впала, чекає пізнішого автоматичного перезапуску",
+      "problems.mirror-connector-failed.title": "Конектор MirrorMaker 2 впав",
+      "problems.mirror-connector-1-failed.title": "Конектор 1 MirrorMaker 2 впав",
+      "problems.mirror-connector-2-failed.title": "Конектор 2 MirrorMaker 2 впав",
+      "problems.mirror-connector-3-failed.title": "Конектор 3 MirrorMaker 2 впав",
+      "problems.mirror-connector-4-failed.title": "Конектор 4 MirrorMaker 2 впав",
+      "problems.mirror-connector-5-failed.title": "Конектор 5 MirrorMaker 2 впав",
+      "problems.mirror-connector-6-failed.title": "Конектор 6 MirrorMaker 2 впав",
+      "problems.mirror-task-failed.title": "Задача MirrorMaker 2 впала",
+      "problems.mirror-task-1-failed.title": "Задача конектора 1 MirrorMaker 2 впала",
+      "problems.mirror-task-2-failed.title": "Задача конектора 2 MirrorMaker 2 впала",
+      "problems.mirror-task-3-failed.title": "Задача конектора 3 MirrorMaker 2 впала",
+      "problems.mirror-task-4-failed.title": "Задача конектора 4 MirrorMaker 2 впала",
+      "problems.mirror-task-5-failed.title": "Задача конектора 5 MirrorMaker 2 впала",
+      "problems.mirror-task-6-failed.title": "Задача конектора 6 MirrorMaker 2 впала",
+      "sectionBadges.strimzi.label.one": "{{count}} об'єкт потребує уваги",
+      "sectionBadges.strimzi.label.few": "{{count}} об'єкти потребують уваги",
+      "sectionBadges.strimzi.label.many": "{{count}} об'єктів потребують уваги",
+      "sectionBadges.strimzi.label.other": "{{count}} об'єкта потребують уваги"
+    },
+    "zh-CN": {
+      "name": "Strimzi",
+      "description": "Strimzi（Kubernetes 上的 Apache Kafka）：Kafka 及其监听器和节点池、主题、用户、Kafka Connect、MirrorMaker 2 和连接器的就绪状态，连接器和任务的状态及堆栈跟踪；未就绪对象以及失败的连接器和任务的问题。",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "状态",
+      "columns.kafka-status.cases.0.text": "未就绪",
+      "columns.kafka-status.cases.1.text": "就绪",
+      "columns.kafka-status.cases.2.text": "未就绪",
+      "columns.kafka-status.cases.3.text": "等待中",
+      "columns.kafka-version.title": "版本",
+      "columns.kafka-listeners.title": "Listener",
+      "columns.kafka-listeners.cases.0.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}、…",
+      "columns.kafka-listeners.cases.1.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}",
+      "columns.kafka-listeners.cases.2.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}",
+      "columns.kafka-listeners.cases.3.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}",
+      "columns.kafka-listeners.cases.4.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}",
+      "columns.kafka-reason.title": "原因",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "角色",
+      "columns.node-pool-replicas.title": "副本",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "状态",
+      "columns.topic-status.cases.0.text": "未就绪",
+      "columns.topic-status.cases.1.text": "就绪",
+      "columns.topic-status.cases.2.text": "未就绪",
+      "columns.topic-status.cases.3.text": "等待中",
+      "columns.topic-partitions.title": "分区",
+      "columns.topic-replicas.title": "副本",
+      "columns.topic-reason.title": "原因",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "状态",
+      "columns.user-status.cases.0.text": "未就绪",
+      "columns.user-status.cases.1.text": "就绪",
+      "columns.user-status.cases.2.text": "未就绪",
+      "columns.user-status.cases.3.text": "等待中",
+      "columns.user-authentication.title": "身份验证",
+      "columns.user-authorization.title": "授权",
+      "columns.connect-status.title": "状态",
+      "columns.connect-status.cases.0.text": "未就绪",
+      "columns.connect-status.cases.1.text": "就绪",
+      "columns.connect-status.cases.2.text": "未就绪",
+      "columns.connect-status.cases.3.text": "等待中",
+      "columns.connect-replicas.title": "副本",
+      "columns.connect-reason.title": "原因",
+      "columns.mirror-maker-status.title": "状态",
+      "columns.mirror-maker-status.cases.0.text": "未就绪",
+      "columns.mirror-maker-status.cases.1.text": "就绪",
+      "columns.mirror-maker-status.cases.2.text": "未就绪",
+      "columns.mirror-maker-status.cases.3.text": "等待中",
+      "columns.mirror-maker-replicas.title": "副本",
+      "columns.mirror-maker-reason.title": "原因",
+      "columns.connector-cluster.title": "Connect 集群",
+      "columns.connector-status.title": "状态",
+      "columns.connector-status.cases.0.text": "未就绪",
+      "columns.connector-status.cases.1.text": "就绪",
+      "columns.connector-status.cases.2.text": "未就绪",
+      "columns.connector-status.cases.3.text": "等待中",
+      "columns.connector-state.title": "连接器",
+      "columns.connector-tasks.title": "运行中的任务",
+      "columns.connector-class.title": "类",
+      "columns.connector-restarts.title": "自动重启",
+      "columns.connector-reason.title": "原因",
+      "problems.kafka-not-ready.title": "Kafka 未就绪",
+      "problems.node-pool-not-ready.title": "KafkaNodePool 未就绪",
+      "problems.topic-not-ready.title": "KafkaTopic 未就绪",
+      "problems.user-not-ready.title": "KafkaUser 未就绪",
+      "problems.connect-not-ready.title": "KafkaConnect 未就绪",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 未就绪",
+      "problems.connector-not-ready.title": "KafkaConnector 未就绪",
+      "problems.connector-failed.title": "连接器失败",
+      "problems.connector-failed-first-restart.title": "连接器失败，等待首次自动重启",
+      "problems.connector-failed-restarting.title": "连接器失败，等待早期自动重启",
+      "problems.connector-failed-restarting-later.title": "连接器失败，等待后续自动重启",
+      "problems.task-failed.title": "任务失败",
+      "problems.task-failed-first-restart.title": "任务失败，等待首次自动重启",
+      "problems.task-failed-restarting.title": "任务失败，等待早期自动重启",
+      "problems.task-failed-restarting-later.title": "任务失败，等待后续自动重启",
+      "problems.mirror-connector-failed.title": "MirrorMaker 2 连接器失败",
+      "problems.mirror-connector-1-failed.title": "MirrorMaker 2 连接器 1 失败",
+      "problems.mirror-connector-1-failed.message": "{{.status.connectors[0].name}}：{{.status.connectors[0].connector.trace}}",
+      "problems.mirror-connector-2-failed.title": "MirrorMaker 2 连接器 2 失败",
+      "problems.mirror-connector-2-failed.message": "{{.status.connectors[1].name}}：{{.status.connectors[1].connector.trace}}",
+      "problems.mirror-connector-3-failed.title": "MirrorMaker 2 连接器 3 失败",
+      "problems.mirror-connector-3-failed.message": "{{.status.connectors[2].name}}：{{.status.connectors[2].connector.trace}}",
+      "problems.mirror-connector-4-failed.title": "MirrorMaker 2 连接器 4 失败",
+      "problems.mirror-connector-4-failed.message": "{{.status.connectors[3].name}}：{{.status.connectors[3].connector.trace}}",
+      "problems.mirror-connector-5-failed.title": "MirrorMaker 2 连接器 5 失败",
+      "problems.mirror-connector-5-failed.message": "{{.status.connectors[4].name}}：{{.status.connectors[4].connector.trace}}",
+      "problems.mirror-connector-6-failed.title": "MirrorMaker 2 连接器 6 失败",
+      "problems.mirror-connector-6-failed.message": "{{.status.connectors[5].name}}：{{.status.connectors[5].connector.trace}}",
+      "problems.mirror-task-failed.title": "MirrorMaker 2 任务失败",
+      "problems.mirror-task-1-failed.title": "MirrorMaker 2 连接器 1 的任务失败",
+      "problems.mirror-task-1-failed.message": "{{.status.connectors[0].name}}：{{.status.connectors[0].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-2-failed.title": "MirrorMaker 2 连接器 2 的任务失败",
+      "problems.mirror-task-2-failed.message": "{{.status.connectors[1].name}}：{{.status.connectors[1].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-3-failed.title": "MirrorMaker 2 连接器 3 的任务失败",
+      "problems.mirror-task-3-failed.message": "{{.status.connectors[2].name}}：{{.status.connectors[2].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-4-failed.title": "MirrorMaker 2 连接器 4 的任务失败",
+      "problems.mirror-task-4-failed.message": "{{.status.connectors[3].name}}：{{.status.connectors[3].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-5-failed.title": "MirrorMaker 2 连接器 5 的任务失败",
+      "problems.mirror-task-5-failed.message": "{{.status.connectors[4].name}}：{{.status.connectors[4].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-6-failed.title": "MirrorMaker 2 连接器 6 的任务失败",
+      "problems.mirror-task-6-failed.message": "{{.status.connectors[5].name}}：{{.status.connectors[5].tasks[state=\"FAILED\"].trace}}",
+      "sectionBadges.strimzi.label.other": "{{count}} 个对象需要关注"
+    },
+    "zh-TW": {
+      "name": "Strimzi",
+      "description": "Strimzi（Kubernetes 上的 Apache Kafka）：Kafka 及其監聽器和節點池、主題、使用者、Kafka Connect、MirrorMaker 2 和連接器的就緒狀態，連接器和任務的狀態及堆疊追蹤；未就緒物件以及失敗的連接器和任務的問題。",
+      "kinds.0.title": "Kafkas",
+      "kinds.1.title": "Kafka Node Pools",
+      "kinds.2.title": "Kafka Topics",
+      "kinds.3.title": "Kafka Users",
+      "kinds.4.title": "Kafka Connects",
+      "kinds.5.title": "Kafka MirrorMaker 2",
+      "kinds.6.title": "Kafka Connectors",
+      "sections.strimzi.title": "Strimzi",
+      "detailsSections.strimzi.title": "Strimzi",
+      "columns.kafka-status.title": "狀態",
+      "columns.kafka-status.cases.0.text": "未就緒",
+      "columns.kafka-status.cases.1.text": "就緒",
+      "columns.kafka-status.cases.2.text": "未就緒",
+      "columns.kafka-status.cases.3.text": "等待中",
+      "columns.kafka-version.title": "版本",
+      "columns.kafka-listeners.title": "Listener",
+      "columns.kafka-listeners.cases.0.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}、…",
+      "columns.kafka-listeners.cases.1.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}",
+      "columns.kafka-listeners.cases.2.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}",
+      "columns.kafka-listeners.cases.3.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}",
+      "columns.kafka-listeners.cases.4.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}",
+      "columns.kafka-reason.title": "原因",
+      "columns.node-pool-cluster.title": "Kafka",
+      "columns.node-pool-roles.title": "角色",
+      "columns.node-pool-replicas.title": "複本",
+      "columns.topic-cluster.title": "Kafka",
+      "columns.topic-status.title": "狀態",
+      "columns.topic-status.cases.0.text": "未就緒",
+      "columns.topic-status.cases.1.text": "就緒",
+      "columns.topic-status.cases.2.text": "未就緒",
+      "columns.topic-status.cases.3.text": "等待中",
+      "columns.topic-partitions.title": "分割區",
+      "columns.topic-replicas.title": "複本",
+      "columns.topic-reason.title": "原因",
+      "columns.user-cluster.title": "Kafka",
+      "columns.user-status.title": "狀態",
+      "columns.user-status.cases.0.text": "未就緒",
+      "columns.user-status.cases.1.text": "就緒",
+      "columns.user-status.cases.2.text": "未就緒",
+      "columns.user-status.cases.3.text": "等待中",
+      "columns.user-authentication.title": "驗證",
+      "columns.user-authorization.title": "授權",
+      "columns.connect-status.title": "狀態",
+      "columns.connect-status.cases.0.text": "未就緒",
+      "columns.connect-status.cases.1.text": "就緒",
+      "columns.connect-status.cases.2.text": "未就緒",
+      "columns.connect-status.cases.3.text": "等待中",
+      "columns.connect-replicas.title": "複本",
+      "columns.connect-reason.title": "原因",
+      "columns.mirror-maker-status.title": "狀態",
+      "columns.mirror-maker-status.cases.0.text": "未就緒",
+      "columns.mirror-maker-status.cases.1.text": "就緒",
+      "columns.mirror-maker-status.cases.2.text": "未就緒",
+      "columns.mirror-maker-status.cases.3.text": "等待中",
+      "columns.mirror-maker-replicas.title": "複本",
+      "columns.mirror-maker-reason.title": "原因",
+      "columns.connector-cluster.title": "Connect 叢集",
+      "columns.connector-status.title": "狀態",
+      "columns.connector-status.cases.0.text": "未就緒",
+      "columns.connector-status.cases.1.text": "就緒",
+      "columns.connector-status.cases.2.text": "未就緒",
+      "columns.connector-status.cases.3.text": "等待中",
+      "columns.connector-state.title": "連接器",
+      "columns.connector-tasks.title": "執行中的任務",
+      "columns.connector-class.title": "類別",
+      "columns.connector-restarts.title": "自動重新啟動",
+      "columns.connector-reason.title": "原因",
+      "problems.kafka-not-ready.title": "Kafka 未就緒",
+      "problems.node-pool-not-ready.title": "KafkaNodePool 未就緒",
+      "problems.topic-not-ready.title": "KafkaTopic 未就緒",
+      "problems.user-not-ready.title": "KafkaUser 未就緒",
+      "problems.connect-not-ready.title": "KafkaConnect 未就緒",
+      "problems.mirror-maker-not-ready.title": "KafkaMirrorMaker2 未就緒",
+      "problems.connector-not-ready.title": "KafkaConnector 未就緒",
+      "problems.connector-failed.title": "連接器失敗",
+      "problems.connector-failed-first-restart.title": "連接器失敗，等待首次自動重新啟動",
+      "problems.connector-failed-restarting.title": "連接器失敗，等待早期自動重新啟動",
+      "problems.connector-failed-restarting-later.title": "連接器失敗，等待後續自動重新啟動",
+      "problems.task-failed.title": "任務失敗",
+      "problems.task-failed-first-restart.title": "任務失敗，等待首次自動重新啟動",
+      "problems.task-failed-restarting.title": "任務失敗，等待早期自動重新啟動",
+      "problems.task-failed-restarting-later.title": "任務失敗，等待後續自動重新啟動",
+      "problems.mirror-connector-failed.title": "MirrorMaker 2 連接器失敗",
+      "problems.mirror-connector-1-failed.title": "MirrorMaker 2 連接器 1 失敗",
+      "problems.mirror-connector-1-failed.message": "{{.status.connectors[0].name}}：{{.status.connectors[0].connector.trace}}",
+      "problems.mirror-connector-2-failed.title": "MirrorMaker 2 連接器 2 失敗",
+      "problems.mirror-connector-2-failed.message": "{{.status.connectors[1].name}}：{{.status.connectors[1].connector.trace}}",
+      "problems.mirror-connector-3-failed.title": "MirrorMaker 2 連接器 3 失敗",
+      "problems.mirror-connector-3-failed.message": "{{.status.connectors[2].name}}：{{.status.connectors[2].connector.trace}}",
+      "problems.mirror-connector-4-failed.title": "MirrorMaker 2 連接器 4 失敗",
+      "problems.mirror-connector-4-failed.message": "{{.status.connectors[3].name}}：{{.status.connectors[3].connector.trace}}",
+      "problems.mirror-connector-5-failed.title": "MirrorMaker 2 連接器 5 失敗",
+      "problems.mirror-connector-5-failed.message": "{{.status.connectors[4].name}}：{{.status.connectors[4].connector.trace}}",
+      "problems.mirror-connector-6-failed.title": "MirrorMaker 2 連接器 6 失敗",
+      "problems.mirror-connector-6-failed.message": "{{.status.connectors[5].name}}：{{.status.connectors[5].connector.trace}}",
+      "problems.mirror-task-failed.title": "MirrorMaker 2 任務失敗",
+      "problems.mirror-task-1-failed.title": "MirrorMaker 2 連接器 1 的任務失敗",
+      "problems.mirror-task-1-failed.message": "{{.status.connectors[0].name}}：{{.status.connectors[0].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-2-failed.title": "MirrorMaker 2 連接器 2 的任務失敗",
+      "problems.mirror-task-2-failed.message": "{{.status.connectors[1].name}}：{{.status.connectors[1].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-3-failed.title": "MirrorMaker 2 連接器 3 的任務失敗",
+      "problems.mirror-task-3-failed.message": "{{.status.connectors[2].name}}：{{.status.connectors[2].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-4-failed.title": "MirrorMaker 2 連接器 4 的任務失敗",
+      "problems.mirror-task-4-failed.message": "{{.status.connectors[3].name}}：{{.status.connectors[3].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-5-failed.title": "MirrorMaker 2 連接器 5 的任務失敗",
+      "problems.mirror-task-5-failed.message": "{{.status.connectors[4].name}}：{{.status.connectors[4].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-6-failed.title": "MirrorMaker 2 連接器 6 的任務失敗",
+      "problems.mirror-task-6-failed.message": "{{.status.connectors[5].name}}：{{.status.connectors[5].tasks[state=\"FAILED\"].trace}}",
+      "sectionBadges.strimzi.label.other": "{{count}} 個物件需要注意"
+    }
+  }
+}

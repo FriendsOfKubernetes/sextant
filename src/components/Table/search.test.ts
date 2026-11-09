@@ -5,7 +5,6 @@ import type { KubeObject } from "../../api";
 import { i18n } from "../../i18n";
 import { loadLanguage } from "../../i18n/index";
 import "../../features/k3s/index";
-import "../../features/olm/index";
 import "../../features/openshift/index";
 import "../../resources";
 import { findResourceDef } from "../../resources";
@@ -98,27 +97,10 @@ describe("search over the shown columns", () => {
     await loadLanguage("de");
     await i18n.changeLanguage("de");
     try {
-      const SUBSCRIPTION = { group: "operators.coreos.com", version: "v1alpha1", kind: "Subscription" };
-      const INSTALL_PLAN = { group: "operators.coreos.com", version: "v1alpha1", kind: "InstallPlan" };
-      const OPERATOR_GROUP = { group: "operators.coreos.com", version: "v1", kind: "OperatorGroup" };
       const HELM_CHART = { group: "helm.cattle.io", version: "v1", kind: "HelmChart" };
       const ROUTE = { group: "route.openshift.io", version: "v1", kind: "Route" };
       const columnsOf = (kind: typeof POD) => findResourceDef(kind)!.columns;
       const named = (name: string, rest: Partial<KubeObject> = {}): KubeObject => ({ metadata: { name, namespace: "ops" }, ...rest });
-
-      const failed = named("sub", {
-        status: { conditions: [{ type: "ResolutionFailed", status: "True", reason: "ConstraintsNotSatisfiable" }] },
-      });
-      expect(search("Auflösung", [failed], columnsOf(SUBSCRIPTION))).toEqual(["sub"]);
-      expect(search("resolutionFailed", [failed], columnsOf(SUBSCRIPTION))).toEqual([]);
-
-      const plan = named("plan", { spec: { approved: true, approval: "Manual", clusterServiceVersionNames: [] } });
-      expect(search("Ja", [plan], columnsOf(INSTALL_PLAN))).toEqual(["plan"]);
-      expect(search("true", [plan], columnsOf(INSTALL_PLAN))).toEqual([]);
-
-      const group = named("og", { status: { namespaces: [""] } });
-      expect(search("Alle", [group], columnsOf(OPERATOR_GROUP))).toEqual(["og"]);
-      expect(search("*", [group], columnsOf(OPERATOR_GROUP))).toEqual([]);
 
       const chart = named("traefik", { status: { conditions: [{ type: "Failed", status: "True", message: "boom" }] } });
       expect(search("Fehlgeschlagen", [chart], columnsOf(HELM_CHART))).toEqual(["traefik"]);

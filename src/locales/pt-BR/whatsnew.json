@@ -4,8 +4,8 @@
   "close": "Entendi",
   "v0_30_0": {
     "extensionsMoved": {
-      "title": "Flux, Argo CD, Argo Rollouts e Argo Workflows agora são extensões",
-      "text": "As visões deles saíram do Sextant para extensões próprias do catálogo de extensões, atualizadas separadamente. Instale abaixo as que você usa: até lá, as seções delas não aparecem. Suas configurações de notificação para elas foram mantidas, e a barra lateral também as oferece nos clusters que executam essas ferramentas."
+      "title": "As visualizações das ferramentas do cluster agora são extensões",
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi e Operator Lifecycle Manager saíram do Sextant para suas próprias extensões do catálogo de extensões, atualizadas separadamente. Instale abaixo as que você usa: até lá, suas seções não são exibidas. Suas configurações de notificação para elas foram mantidas, e a barra lateral também as oferece nos clusters que executam essas ferramentas."
     },
     "api4": {
       "title": "API de extensões 4",
@@ -27,7 +27,10 @@
       "flux": "Fontes, Kustomizations, HelmReleases, automação de imagens e notificações",
       "argo-cd": "Applications com sincronização, saúde, recursos, histórico e diff",
       "argo-rollouts": "Rollouts com etapas, pesos e análise; promote, abort e pausa",
-      "argo-workflows": "Workflows com a árvore de etapas e logs, CronWorkflows e modelos"
+      "argo-workflows": "Workflows com a árvore de etapas e logs, CronWorkflows e modelos",
+      "cnpg": "Clusters PostgreSQL, backups e poolers",
+      "strimzi": "Clusters Kafka, tópicos, usuários, conectores e espelhos",
+      "olm": "Assinaturas, operadores, planos de instalação e catálogos"
     }
   }
 }

@@ -4,8 +4,8 @@
   "close": "확인",
   "v0_30_0": {
     "extensionsMoved": {
-      "title": "Flux, Argo CD, Argo Rollouts, Argo Workflows가 이제 확장 기능입니다",
-      "text": "이들의 화면은 Sextant에서 확장 기능 카탈로그에 있는 Sextant 자체 확장 기능으로 옮겨졌으며, 따로 업데이트됩니다. 사용하는 것을 아래에서 설치하세요. 그 전까지는 해당 섹션이 표시되지 않습니다. 이들에 대한 알림 설정은 유지되었으며, 이 도구들이 실행되는 클러스터에서는 사이드바에서도 추천합니다."
+      "title": "클러스터 도구의 보기는 이제 확장 프로그램입니다",
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi 및 Operator Lifecycle Manager가 Sextant에서 확장 프로그램 카탈로그의 자체 확장 프로그램으로 옮겨졌으며, 이 확장 프로그램은 따로 업데이트됩니다. 사용하는 것을 아래에서 설치하세요. 그 전까지는 해당 섹션이 표시되지 않습니다. 이에 대한 알림 설정은 유지되며, 이 도구를 실행하는 클러스터에서는 사이드바에서도 추천됩니다."
     },
     "api4": {
       "title": "확장 기능 API 4",
@@ -27,7 +27,10 @@
       "flux": "소스, Kustomizations, HelmReleases, 이미지 자동화 및 알림",
       "argo-cd": "동기화, 상태, 리소스, 기록, diff를 갖춘 Applications",
       "argo-rollouts": "단계, 가중치, 분석을 갖춘 Rollouts. promote, abort, 일시 중지",
-      "argo-workflows": "단계 트리와 로그를 갖춘 Workflows, CronWorkflows 및 템플릿"
+      "argo-workflows": "단계 트리와 로그를 갖춘 Workflows, CronWorkflows 및 템플릿",
+      "cnpg": "PostgreSQL 클러스터, 백업 및 풀러",
+      "strimzi": "Kafka 클러스터, 토픽, 사용자, 커넥터 및 미러",
+      "olm": "구독, 오퍼레이터, 설치 계획 및 카탈로그"
     }
   }
 }

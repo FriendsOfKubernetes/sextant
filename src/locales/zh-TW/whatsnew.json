@@ -4,8 +4,8 @@
   "close": "知道了",
   "v0_30_0": {
     "extensionsMoved": {
-      "title": "Flux、Argo CD、Argo Rollouts 和 Argo Workflows 現在是擴充功能",
-      "text": "它們的檢視已從 Sextant 移到擴充功能目錄中 Sextant 自己的擴充功能裡，這些擴充功能會個別更新。請在下方安裝你會用到的擴充功能：在此之前它們的區段不會顯示。你對它們的通知設定已保留，側邊欄也會在執行這些工具的叢集中推薦它們。"
+      "title": "叢集工具的檢視現在是擴充功能",
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、CloudNativePG、Strimzi 與 Operator Lifecycle Manager 已從 Sextant 移到擴充功能目錄中它自己的擴充功能，這些擴充功能會個別更新。請在下方安裝你使用的擴充功能：在此之前不會顯示它們的區段。你為它們設定的通知已保留，側邊欄也會在執行這些工具的叢集中推薦它們。"
     },
     "api4": {
       "title": "擴充功能 API 4",
@@ -27,7 +27,10 @@
       "flux": "來源、Kustomizations、HelmReleases、映像自動化與通知",
       "argo-cd": "具同步、健康狀態、資源、歷史與 diff 的 Applications",
       "argo-rollouts": "具步驟、權重與分析的 Rollouts；promote、abort 與暫停",
-      "argo-workflows": "具步驟樹與日誌的 Workflows、CronWorkflows 與範本"
+      "argo-workflows": "具步驟樹與日誌的 Workflows、CronWorkflows 與範本",
+      "cnpg": "PostgreSQL 叢集、備份與連線池",
+      "strimzi": "Kafka 叢集、主題、使用者、連接器與鏡像",
+      "olm": "訂閱、Operator、安裝計畫與目錄"
     }
   }
 }

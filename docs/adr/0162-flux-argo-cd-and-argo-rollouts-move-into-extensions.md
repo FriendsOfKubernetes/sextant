@@ -74,3 +74,14 @@ sent (a sync reads the Application for its sync options and retry policy). The b
 (`backend/main.ts`) whose logic is the pure `src/agentTools.ts`. Agents get them only when the user agrees to the tools
 when installing or updating and turns the extension's tools on in Settings → AI agents (MCP); every call is decided for
 the extension and the agent both. "What's new" for 0.30.0 says so.
+
+## Amendment: CloudNativePG, Strimzi and Operator Lifecycle Manager
+
+The course of moving every built-in tool module into Sextant's own extensions starts with the three that need no API
+addition: `extensions/cnpg` (`sextant.cnpg`), `extensions/strimzi` (`sextant.strimzi`) and `extensions/olm`
+(`sextant.olm`), each 1.0.0 on `sextantApi` 4. Their built-in features and texts are removed; their sections keep their
+places (`EXTENSION_SECTION_PLACES`: `cnpg` and `strimzi` after `sealedSecrets`, `olm` after `kserve`); the sidebar offers
+them where their groups are served (`OFFERS`); the version-3 migration moves the categories `cnpg`, `strimzi` and `olm`
+to the extensions' (never for agents, as before); "What's new" lists them. What each extension still shows differently
+from the built-in view is listed in its README under "Requirements and limits", with the API addition that would close
+it.

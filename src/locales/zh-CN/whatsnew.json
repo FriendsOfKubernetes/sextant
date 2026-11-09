@@ -4,8 +4,8 @@
   "close": "知道了",
   "v0_30_0": {
     "extensionsMoved": {
-      "title": "Flux、Argo CD、Argo Rollouts 和 Argo Workflows 现在是扩展",
-      "text": "它们的视图已从 Sextant 移到扩展目录中 Sextant 自己的扩展里，这些扩展单独更新。请在下面安装你用到的扩展：在此之前它们的分区不会显示。你对它们的通知设置已保留，侧边栏也会在运行这些工具的集群中推荐它们。"
+      "title": "集群工具的视图现在是扩展",
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、CloudNativePG、Strimzi 和 Operator Lifecycle Manager 已从 Sextant 移到扩展目录中它自己的扩展里，这些扩展单独更新。请在下方安装你使用的扩展：在此之前不会显示它们的分区。你为它们设置的通知已保留，侧边栏也会在运行这些工具的集群中推荐它们。"
     },
     "api4": {
       "title": "扩展 API 4",
@@ -27,7 +27,10 @@
       "flux": "源、Kustomizations、HelmReleases、镜像自动化和通知",
       "argo-cd": "带同步、健康状况、资源、历史和 diff 的 Applications",
       "argo-rollouts": "带步骤、权重和分析的 Rollouts；promote、abort 和暂停",
-      "argo-workflows": "带步骤树和日志的 Workflows、CronWorkflows 和模板"
+      "argo-workflows": "带步骤树和日志的 Workflows、CronWorkflows 和模板",
+      "cnpg": "PostgreSQL 集群、备份和连接池",
+      "strimzi": "Kafka 集群、主题、用户、连接器和镜像",
+      "olm": "订阅、Operator、安装计划和目录"
     }
   }
 }

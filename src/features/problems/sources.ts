@@ -11,7 +11,6 @@ import { INGRESS_ROUTE as TRAEFIK_INGRESS_ROUTE } from "../traefik/model";
 import { EVENTING_KINDS } from "../knative/eventing";
 import { CLUSTER_POLICY_REPORT, POLICY_REPORT } from "../kyverno/model";
 import { XRD } from "../crossplane/model";
-import { BACKUP as CNPG_BACKUP, PG_CLUSTER } from "../cnpg/model";
 import { CAPI_PAUSED_ACROSS } from "../cluster-api/across";
 import {
   CAPI_CLUSTER,
@@ -31,11 +30,9 @@ import { CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE,
 import { JOBSET } from "../jobset/model";
 import { RAY_CLUSTER, RAY_JOB, RAY_SERVICE } from "../kuberay/model";
 import { INFERENCE_SERVICE as KSERVE_INFERENCE_SERVICE } from "../kserve/model";
-import { CATALOG_SOURCE as OLM_CATALOG_SOURCE, CSV as OLM_CSV, SUBSCRIPTION as OLM_SUBSCRIPTION } from "../olm/model";
 import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
 import { BUILD as OPENSHIFT_BUILD, DEPLOYMENT_CONFIG as OPENSHIFT_DC, IMAGE_STREAM as OPENSHIFT_IMAGE_STREAM, ROUTE as OPENSHIFT_ROUTE } from "../openshift/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
-import { STRIMZI_KINDS } from "../strimzi/model";
 import {
   CERTIFICATE,
   CRONJOB,
@@ -198,7 +195,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // features/sealed-secrets (`external`: the Secret is another object), held only where SealedSecrets are served.
   sealedSecrets: [{ category: "sealedSecrets", kind: SEALED_SECRET, fieldSelector: null, discovered: true, external: true }],
   // CloudNativePG (#213): unhealthy Clusters, failing archiving or backups, failed Backups.
-  cnpg: [tool("cnpg", PG_CLUSTER), tool("cnpg", CNPG_BACKUP)],
   // Cluster API (#243): failed or unavailable Clusters and KubeadmControlPlanes, Machines failed or stuck
   // provisioning, MachineHealthChecks that stopped remediating; a management cluster can hold thousands of Machines:
   // capped.
@@ -224,16 +220,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // capped), RayServices not ready. KServe (#249): InferenceServices not ready or whose model failed to load.
   kuberay: [tool("kuberay", RAY_CLUSTER), tool("kuberay", RAY_JOB, MAX_SOURCE_OBJECTS), tool("kuberay", RAY_SERVICE)],
   kserve: [tool("kserve", KSERVE_INFERENCE_SERVICE)],
-  // Operator Lifecycle Manager (#268): Subscriptions whose resolution or current InstallPlan failed or whose plan is
-  // stuck (one per installed operator, capped), CatalogSources not READY; failed ClusterServiceVersions come from the
-  // provider of features/olm (`external`), which lists the originals only — OLM copies each CSV into every target
-  // namespace. InstallPlans are not watched: each holds its steps' whole manifests, and the Subscription tells its
-  // current plan's state.
-  olm: [
-    tool("olm", OLM_SUBSCRIPTION, MAX_SOURCE_OBJECTS),
-    tool("olm", OLM_CATALOG_SOURCE),
-    { category: "olm", kind: OLM_CSV, fieldSelector: null, discovered: true, external: true },
-  ],
   // OpenShift (#267): Routes no router admitted, DeploymentConfigs whose rollout failed, failed Builds (only the latest
   // of their BuildConfig: judged across the Build rows) and ImageStreams with a failing tag import; every kind a cluster
   // can hold by the thousand: capped.
@@ -243,8 +229,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
     { ...tool("openshift", OPENSHIFT_BUILD, MAX_SOURCE_OBJECTS), across: OPENSHIFT_BUILD_ACROSS },
     tool("openshift", OPENSHIFT_IMAGE_STREAM, MAX_SOURCE_OBJECTS),
   ],
-  // Strimzi (#213): every kind of the section not ready; topics and users can be thousands: capped.
-  strimzi: STRIMZI_KINDS.map((d) => tool("strimzi", d.kind, d.label === "topics" || d.label === "users" ? MAX_SOURCE_OBJECTS : undefined)),
   // Prometheus Operator (#213): Prometheus and Alertmanager not available; monitors that select nothing are judged
   // across objects by the provider of features/prometheus-operator (`external`), held only where ServiceMonitors are
   // served.

@@ -21,6 +21,14 @@ export const OFFERS: readonly ExtensionOffer[] = [
   { id: "sextant.argo-cd", tool: "Argo CD", matches: (k) => k.group === "argoproj.io" && k.kind === "Application" },
   { id: "sextant.argo-rollouts", tool: "Argo Rollouts", matches: (k) => k.group === "argoproj.io" && k.kind === "Rollout" },
   { id: "sextant.argo-workflows", tool: "Argo Workflows", matches: (k) => k.group === "argoproj.io" && k.kind === "Workflow" },
+  { id: "sextant.cnpg", tool: "CloudNativePG", matches: (k) => k.group === "postgresql.cnpg.io" },
+  { id: "sextant.strimzi", tool: "Strimzi", matches: (k) => k.group === "kafka.strimzi.io" },
+  // OLM v0 (`operators.coreos.com`) or v1 (`olm.operatorframework.io`).
+  {
+    id: "sextant.olm",
+    tool: "Operator Lifecycle Manager",
+    matches: (k) => (k.group === "operators.coreos.com" && k.kind === "Subscription") || k.group === "olm.operatorframework.io",
+  },
 ];
 
 /** The offers for a cluster serving `kinds`: its tool is there, the extension is not installed, nor declined. */

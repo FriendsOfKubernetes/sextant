@@ -1,0 +1,4367 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.cnpg",
+  "name": "CloudNativePG",
+  "version": "1.0.0",
+  "description": "CloudNativePG: PostgreSQL clusters with their state, instances, primary and switchovers, backups and continuous archiving, scheduled backups and poolers; problems of unhealthy clusters, failing archiving or backups and failed backups.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "cnpg",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "postgresql.cnpg.io",
+              "kind": "Cluster"
+            },
+            {
+              "group": "postgresql.cnpg.io",
+              "kind": "Backup"
+            },
+            {
+              "group": "postgresql.cnpg.io",
+              "kind": "ScheduledBackup"
+            },
+            {
+              "group": "postgresql.cnpg.io",
+              "kind": "Pooler"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "postgresql.cnpg.io",
+        "kind": "Cluster",
+        "section": "cnpg",
+        "title": "Clusters",
+        "icon": "postgresCluster",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "ContinuousArchiving",
+                  "status": "False"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "LastBackupSucceeded",
+                  "status": "False"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "ContinuousArchiving",
+                  "status": "False"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "LastBackupSucceeded",
+                  "status": "False"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "atLeast",
+                    "path": ".status.readyInstances",
+                    "otherPath": ".spec.instances"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "ContinuousArchiving",
+                  "status": "False"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "LastBackupSucceeded",
+                  "status": "False"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.phase",
+                    "value": "Cluster in healthy state"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.targetPrimary",
+                    "otherPath": ".status.currentPrimary"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "group": "postgresql.cnpg.io",
+        "kind": "Backup",
+        "section": "cnpg",
+        "title": "Backups",
+        "icon": "postgresBackup",
+        "order": 20,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "in",
+          "path": ".status.phase",
+          "values": [
+            "failed",
+            "Failed",
+            "FAILED",
+            "walArchivingFailing",
+            "WalArchivingFailing",
+            "WALARCHIVINGFAILING",
+            "walarchivingfailing",
+            "Walarchivingfailing"
+          ]
+        }
+      },
+      {
+        "group": "postgresql.cnpg.io",
+        "kind": "ScheduledBackup",
+        "section": "cnpg",
+        "title": "Scheduled Backups",
+        "icon": "postgresScheduledBackup",
+        "order": 21,
+        "printerColumns": false
+      },
+      {
+        "group": "postgresql.cnpg.io",
+        "kind": "Pooler",
+        "section": "cnpg",
+        "title": "Poolers",
+        "icon": "postgresPooler",
+        "order": 30,
+        "printerColumns": false
+      }
+    ],
+    "sections": [
+      {
+        "section": "cnpg",
+        "title": "CloudNativePG",
+        "icon": "cnpg",
+        "after": "sealedSecrets"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "cnpg",
+        "label": {
+          "one": "{{count}} object needs attention",
+          "other": "{{count}} objects need attention"
+        }
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "cnpg",
+        "title": "CloudNativePG",
+        "kinds": [
+          {
+            "group": "postgresql.cnpg.io",
+            "kind": "Cluster"
+          },
+          {
+            "group": "postgresql.cnpg.io",
+            "kind": "Backup"
+          },
+          {
+            "group": "postgresql.cnpg.io",
+            "kind": "ScheduledBackup"
+          },
+          {
+            "group": "postgresql.cnpg.io",
+            "kind": "Pooler"
+          }
+        ],
+        "placement": "section",
+        "order": 20
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "id": "cluster-status",
+        "title": "Status",
+        "paths": [
+          ".status.phase"
+        ],
+        "tooltipPaths": [
+          ".status.phase",
+          ".status.phaseReason"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                  "value": "on"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "True"
+                }
+              ]
+            },
+            "text": "Hibernated",
+            "tone": "neutral",
+            "tooltip": "{{.status.phase}}: {{.status.phaseReason}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                  "value": "on"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "cnpg.io/hibernation",
+                    "status": "False",
+                    "reason": "WaitingForHealthy"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "cnpg.io/hibernation",
+                    "status": "Unknown",
+                    "reason": "WaitingForHealthy"
+                  }
+                }
+              ]
+            },
+            "text": "Hibernating",
+            "tone": "neutral",
+            "tooltip": "{{.status.phase}}: {{.status.phaseReason}}"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.phase",
+                  "value": "Failing over"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.targetPrimary",
+                      "value": "pending"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".status.currentPrimary"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "equals",
+                        "path": ".status.currentPrimary",
+                        "value": "pending"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Failing over",
+            "tone": "error",
+            "tooltip": "{{.status.phase}}: {{.status.phaseReason}}"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".status.targetPrimary"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".status.currentPrimary"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "same",
+                        "path": ".status.targetPrimary",
+                        "otherPath": ".status.currentPrimary"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "in",
+                  "path": ".status.phase",
+                  "values": [
+                    "Switchover in progress",
+                    "Promoting to primary cluster"
+                  ]
+                }
+              ]
+            },
+            "text": "Switchover",
+            "tone": "warning",
+            "tooltip": "{{.status.phase}}: {{.status.phaseReason}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.phase",
+                  "value": "Cluster in healthy state"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "False"
+                  }
+                }
+              ]
+            },
+            "text": "Healthy",
+            "tone": "ok",
+            "tooltip": "{{.status.phase}}: {{.status.phaseReason}}"
+          },
+          {
+            "when": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Waiting for user action",
+                "Cluster cannot proceed to reconciliation due to an unknown plugin being required",
+                "Cluster cannot proceed to reconciliation due to an error while interacting with plugins",
+                "Cluster cannot proceed to reconciliation due to an unknown image catalog",
+                "Cluster is unrecoverable and needs manual intervention",
+                "Cluster is in an unrecoverable state, needs manual intervention",
+                "Cluster cannot execute instance online upgrade due to missing architecture binary",
+                "Unable to create required cluster objects"
+              ]
+            },
+            "text": "Unhealthy",
+            "tone": "error",
+            "tooltip": "{{.status.phase}}: {{.status.phaseReason}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Progressing",
+            "tone": "warning",
+            "tooltip": "{{.status.phase}}: {{.status.phaseReason}}"
+          }
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "id": "cluster-instances",
+        "title": "Instances",
+        "paths": [
+          ".status.readyInstances"
+        ],
+        "format": "ratio",
+        "totalPaths": [
+          ".spec.instances",
+          ".status.instances"
+        ],
+        "afterColumn": "cluster-status"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "id": "cluster-primary",
+        "title": "Primary",
+        "paths": [
+          ".status.currentPrimary"
+        ],
+        "afterColumn": "cluster-instances"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "id": "cluster-phase",
+        "title": "Phase",
+        "paths": [
+          ".status.phase"
+        ],
+        "afterColumn": "cluster-primary"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Backup"
+        },
+        "id": "backup-status",
+        "title": "Status",
+        "paths": [
+          ".status.phase"
+        ],
+        "tooltipPaths": [
+          ".status.error"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "completed",
+                "Completed",
+                "COMPLETED"
+              ]
+            },
+            "text": "Completed",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "failed",
+                "Failed",
+                "FAILED",
+                "walArchivingFailing",
+                "WalArchivingFailing",
+                "WALARCHIVINGFAILING",
+                "walarchivingfailing",
+                "Walarchivingfailing"
+              ]
+            },
+            "text": "Failed",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "started",
+                "Started",
+                "STARTED",
+                "running",
+                "Running",
+                "RUNNING",
+                "finalizing",
+                "Finalizing",
+                "FINALIZING"
+              ]
+            },
+            "text": "Running",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Pending",
+            "tone": "neutral"
+          }
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Backup"
+        },
+        "id": "backup-cluster",
+        "title": "Cluster",
+        "paths": [
+          ".spec.cluster.name"
+        ],
+        "afterColumn": "backup-status"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Backup"
+        },
+        "id": "backup-method",
+        "title": "Method",
+        "paths": [
+          ".spec.method",
+          ".status.method"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.method"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.method"
+                }
+              ]
+            },
+            "text": "barmanObjectStore"
+          }
+        ],
+        "afterColumn": "backup-cluster"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Backup"
+        },
+        "id": "backup-started",
+        "title": "Started",
+        "paths": [
+          ".status.startedAt"
+        ],
+        "format": "age",
+        "afterColumn": "backup-method"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "ScheduledBackup"
+        },
+        "id": "scheduled-cluster",
+        "title": "Cluster",
+        "paths": [
+          ".spec.cluster.name"
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "ScheduledBackup"
+        },
+        "id": "scheduled-schedule",
+        "title": "Schedule",
+        "paths": [
+          ".spec.schedule"
+        ],
+        "afterColumn": "scheduled-cluster"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "ScheduledBackup"
+        },
+        "id": "scheduled-suspended",
+        "title": "Suspended",
+        "paths": [
+          ".spec.suspend"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.suspend",
+              "value": true
+            },
+            "text": "True"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "False"
+          }
+        ],
+        "afterColumn": "scheduled-schedule"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "ScheduledBackup"
+        },
+        "id": "scheduled-last-backup",
+        "title": "Last backup",
+        "paths": [
+          ".status.lastScheduleTime"
+        ],
+        "format": "age",
+        "afterColumn": "scheduled-suspended"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Pooler"
+        },
+        "id": "pooler-cluster",
+        "title": "Cluster",
+        "paths": [
+          ".spec.cluster.name"
+        ],
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Pooler"
+        },
+        "id": "pooler-type",
+        "title": "Type",
+        "paths": [
+          ".spec.type"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".spec.type"
+            },
+            "text": "rw"
+          }
+        ],
+        "afterColumn": "pooler-cluster"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Pooler"
+        },
+        "id": "pooler-instances",
+        "title": "Instances",
+        "paths": [
+          ".spec.instances"
+        ],
+        "format": "number",
+        "afterColumn": "pooler-type"
+      },
+      {
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Pooler"
+        },
+        "id": "pooler-pool-mode",
+        "title": "Pool mode",
+        "paths": [
+          ".spec.pgbouncer.poolMode"
+        ],
+        "afterColumn": "pooler-instances"
+      }
+    ],
+    "problems": [
+      {
+        "id": "cluster-not-ready-a-fp",
+        "title": "Failing over by phase: Ready is False",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Failing over"
+            },
+            {
+              "type": "exists",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "FailingOver",
+        "message": "{{.status.phaseReason}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-a-fp-phase",
+        "title": "Failing over by phase: Ready is False, phase as message",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Failing over"
+            },
+            {
+              "type": "absent",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "FailingOver",
+        "message": "{{.status.phase}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-a-fo",
+        "title": "Failing over to a pending primary: Ready is False",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Failing over"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.targetPrimary",
+              "value": "pending"
+            },
+            {
+              "type": "exists",
+              "path": ".status.currentPrimary"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.currentPrimary",
+                "value": "pending"
+              }
+            },
+            {
+              "type": "exists",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "FailingOver",
+        "message": "{{.status.phaseReason}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-a-fo-phase",
+        "title": "Failing over to a pending primary: Ready is False, phase as message",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Failing over"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.targetPrimary",
+              "value": "pending"
+            },
+            {
+              "type": "exists",
+              "path": ".status.currentPrimary"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.currentPrimary",
+                "value": "pending"
+              }
+            },
+            {
+              "type": "absent",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "FailingOver",
+        "message": "{{.status.phase}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-a-rr",
+        "title": "Cluster not ready: Ready is False",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Failing over"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.targetPrimary",
+                    "value": "pending"
+                  }
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.currentPrimary",
+                  "value": "pending"
+                }
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "exists",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.phaseReason}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-a-rr-phase",
+        "title": "Cluster not ready: Ready is False, phase as message",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Failing over"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.targetPrimary",
+                    "value": "pending"
+                  }
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.currentPrimary",
+                  "value": "pending"
+                }
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "absent",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.phase}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-b-fp",
+        "title": "Failing over by phase: instances not ready",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Cluster in healthy state"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Failing over"
+            },
+            {
+              "type": "exists",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "FailingOver",
+        "message": "{{.status.phaseReason}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-b-fp-phase",
+        "title": "Failing over by phase: instances not ready, phase as message",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Cluster in healthy state"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Failing over"
+            },
+            {
+              "type": "absent",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "FailingOver",
+        "message": "{{.status.phase}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-b-fo",
+        "title": "Failing over to a pending primary: instances not ready",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Cluster in healthy state"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Failing over"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.targetPrimary",
+              "value": "pending"
+            },
+            {
+              "type": "exists",
+              "path": ".status.currentPrimary"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.currentPrimary",
+                "value": "pending"
+              }
+            },
+            {
+              "type": "exists",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "FailingOver",
+        "message": "{{.status.phaseReason}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-b-fo-phase",
+        "title": "Failing over to a pending primary: instances not ready, phase as message",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Cluster in healthy state"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Failing over"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.targetPrimary",
+              "value": "pending"
+            },
+            {
+              "type": "exists",
+              "path": ".status.currentPrimary"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.currentPrimary",
+                "value": "pending"
+              }
+            },
+            {
+              "type": "absent",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "FailingOver",
+        "message": "{{.status.phase}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-b-rr",
+        "title": "Cluster not ready: instances not ready",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Cluster in healthy state"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Failing over"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.targetPrimary",
+                    "value": "pending"
+                  }
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.currentPrimary",
+                  "value": "pending"
+                }
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "exists",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.phaseReason}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-b-rr-phase",
+        "title": "Cluster not ready: instances not ready, phase as message",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Cluster in healthy state"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Failing over"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.targetPrimary",
+                    "value": "pending"
+                  }
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.currentPrimary",
+                  "value": "pending"
+                }
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "absent",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.phase}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-b-nc",
+        "title": "Cluster without a Ready condition: instances not ready",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Cluster in healthy state"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Failing over"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.targetPrimary",
+                    "value": "pending"
+                  }
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.currentPrimary",
+                  "value": "pending"
+                }
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "exists",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "ClusterNotReady",
+        "message": "{{.status.phaseReason}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-b-nc-phase",
+        "title": "Cluster without a Ready condition: instances not ready, phase as message",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Cluster in healthy state"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.phase",
+                "value": "Failing over"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.targetPrimary",
+                    "value": "pending"
+                  }
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.currentPrimary",
+                  "value": "pending"
+                }
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "absent",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "ClusterNotReady",
+        "message": "{{.status.phase}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-c-fo",
+        "title": "Failing over to a pending primary: primary changing",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Cluster in healthy state"
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.targetPrimary"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.targetPrimary",
+                    "otherPath": ".status.currentPrimary"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "equals",
+              "path": ".status.targetPrimary",
+              "value": "pending"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.currentPrimary",
+                "value": "pending"
+              }
+            },
+            {
+              "type": "exists",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "FailingOver",
+        "message": "{{.status.phaseReason}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-c-fo-phase",
+        "title": "Failing over to a pending primary: primary changing, phase as message",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Cluster in healthy state"
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.targetPrimary"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.targetPrimary",
+                    "otherPath": ".status.currentPrimary"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "equals",
+              "path": ".status.targetPrimary",
+              "value": "pending"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.currentPrimary",
+                "value": "pending"
+              }
+            },
+            {
+              "type": "absent",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "FailingOver",
+        "message": "{{.status.phase}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-c-rr",
+        "title": "Cluster not ready: primary changing",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Cluster in healthy state"
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.targetPrimary"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.targetPrimary",
+                    "otherPath": ".status.currentPrimary"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.targetPrimary",
+                    "value": "pending"
+                  }
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.currentPrimary",
+                  "value": "pending"
+                }
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "exists",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.phaseReason}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-c-rr-phase",
+        "title": "Cluster not ready: primary changing, phase as message",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Cluster in healthy state"
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.targetPrimary"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.targetPrimary",
+                    "otherPath": ".status.currentPrimary"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.targetPrimary",
+                    "value": "pending"
+                  }
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.currentPrimary",
+                  "value": "pending"
+                }
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "absent",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "message": "{{.status.phase}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-c-nc",
+        "title": "Cluster without a Ready condition: primary changing",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Cluster in healthy state"
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.targetPrimary"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.targetPrimary",
+                    "otherPath": ".status.currentPrimary"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.targetPrimary",
+                    "value": "pending"
+                  }
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.currentPrimary",
+                  "value": "pending"
+                }
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "exists",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "ClusterNotReady",
+        "message": "{{.status.phaseReason}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "cluster-not-ready-c-nc-phase",
+        "title": "Cluster without a Ready condition: primary changing, phase as message",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"cnpg.io/hibernation\"]",
+                    "value": "on"
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "False",
+                  "reason": "WaitingForHealthy"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "cnpg.io/hibernation",
+                  "status": "Unknown",
+                  "reason": "WaitingForHealthy"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Ready",
+                "status": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".status.readyInstances",
+                "otherPath": ".spec.instances"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.phase",
+              "value": "Cluster in healthy state"
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.targetPrimary"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.currentPrimary"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "same",
+                    "path": ".status.targetPrimary",
+                    "otherPath": ".status.currentPrimary"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.targetPrimary",
+                    "value": "pending"
+                  }
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.currentPrimary",
+                  "value": "pending"
+                }
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".status.conditions[type=\"Ready\"].reason"
+            },
+            {
+              "type": "absent",
+              "path": ".status.phaseReason"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "ClusterNotReady",
+        "message": "{{.status.phase}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "archiving-failing",
+        "title": "Continuous archiving failing",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "condition",
+              "conditionType": "ContinuousArchiving",
+              "status": "False"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"ContinuousArchiving\"].lastTransitionTime",
+        "reason": "{{.status.conditions[type=\"ContinuousArchiving\"].reason}}",
+        "message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}"
+      },
+      {
+        "id": "last-backup-failed",
+        "title": "Last backup failed",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Cluster"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "condition",
+              "conditionType": "LastBackupSucceeded",
+              "status": "False"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"LastBackupSucceeded\"].lastTransitionTime",
+        "reason": "{{.status.conditions[type=\"LastBackupSucceeded\"].reason}}",
+        "message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}"
+      },
+      {
+        "id": "backup-failed",
+        "title": "Backup failed",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Backup"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "failed",
+                "Failed",
+                "FAILED",
+                "walArchivingFailing",
+                "WalArchivingFailing",
+                "WALARCHIVINGFAILING",
+                "walarchivingfailing",
+                "Walarchivingfailing"
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.stoppedAt"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "olderThan",
+                "path": ".status.stoppedAt",
+                "minutes": 1440
+              }
+            }
+          ]
+        },
+        "since": ".status.stoppedAt",
+        "reason": "BackupFailed",
+        "message": "{{.status.error}}",
+        "group": "backup-failed"
+      },
+      {
+        "id": "backup-failed-terminated",
+        "title": "Backup failed (reconciliation ended)",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Backup"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "failed",
+                "Failed",
+                "FAILED",
+                "walArchivingFailing",
+                "WalArchivingFailing",
+                "WALARCHIVINGFAILING",
+                "walarchivingfailing",
+                "Walarchivingfailing"
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".status.stoppedAt"
+            },
+            {
+              "type": "exists",
+              "path": ".status.reconciliationTerminatedAt"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "olderThan",
+                "path": ".status.reconciliationTerminatedAt",
+                "minutes": 1440
+              }
+            }
+          ]
+        },
+        "since": ".status.reconciliationTerminatedAt",
+        "reason": "BackupFailed",
+        "message": "{{.status.error}}",
+        "group": "backup-failed"
+      },
+      {
+        "id": "backup-failed-started",
+        "title": "Backup failed (timed from its start)",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Backup"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "failed",
+                "Failed",
+                "FAILED",
+                "walArchivingFailing",
+                "WalArchivingFailing",
+                "WALARCHIVINGFAILING",
+                "walarchivingfailing",
+                "Walarchivingfailing"
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".status.stoppedAt"
+            },
+            {
+              "type": "absent",
+              "path": ".status.reconciliationTerminatedAt"
+            },
+            {
+              "type": "exists",
+              "path": ".status.startedAt"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "olderThan",
+                "path": ".status.startedAt",
+                "minutes": 1440
+              }
+            }
+          ]
+        },
+        "since": ".status.startedAt",
+        "reason": "BackupFailed",
+        "message": "{{.status.error}}",
+        "group": "backup-failed"
+      },
+      {
+        "id": "backup-failed-reconciling",
+        "title": "Backup failed (timed from its reconciliation)",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Backup"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "failed",
+                "Failed",
+                "FAILED",
+                "walArchivingFailing",
+                "WalArchivingFailing",
+                "WALARCHIVINGFAILING",
+                "walarchivingfailing",
+                "Walarchivingfailing"
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".status.stoppedAt"
+            },
+            {
+              "type": "absent",
+              "path": ".status.reconciliationTerminatedAt"
+            },
+            {
+              "type": "absent",
+              "path": ".status.startedAt"
+            },
+            {
+              "type": "exists",
+              "path": ".status.reconciliationStartedAt"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "olderThan",
+                "path": ".status.reconciliationStartedAt",
+                "minutes": 1440
+              }
+            }
+          ]
+        },
+        "since": ".status.reconciliationStartedAt",
+        "reason": "BackupFailed",
+        "message": "{{.status.error}}",
+        "group": "backup-failed"
+      },
+      {
+        "id": "backup-failed-created",
+        "title": "Backup failed (timed from its creation)",
+        "kind": {
+          "group": "postgresql.cnpg.io",
+          "kind": "Backup"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "failed",
+                "Failed",
+                "FAILED",
+                "walArchivingFailing",
+                "WalArchivingFailing",
+                "WALARCHIVINGFAILING",
+                "walarchivingfailing",
+                "Walarchivingfailing"
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".status.stoppedAt"
+            },
+            {
+              "type": "absent",
+              "path": ".status.reconciliationTerminatedAt"
+            },
+            {
+              "type": "absent",
+              "path": ".status.startedAt"
+            },
+            {
+              "type": "absent",
+              "path": ".status.reconciliationStartedAt"
+            },
+            {
+              "type": "exists",
+              "path": ".metadata.creationTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "olderThan",
+                "path": ".metadata.creationTimestamp",
+                "minutes": 1440
+              }
+            }
+          ]
+        },
+        "since": ".metadata.creationTimestamp",
+        "reason": "BackupFailed",
+        "message": "{{.status.error}}",
+        "group": "backup-failed"
+      }
+    ]
+  },
+  "translations": {
+    "ru": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG: кластеры PostgreSQL с состоянием, экземплярами, primary и переключениями, резервными копиями и непрерывным архивированием, плановые резервные копии и пулеры; проблемы нездоровых кластеров, сбоев архивирования или резервного копирования и неудавшихся Backup.",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "Статус",
+      "columns.cluster-instances.title": "Экземпляры",
+      "columns.cluster-primary.title": "Основной",
+      "columns.cluster-phase.title": "Фаза",
+      "columns.backup-status.title": "Статус",
+      "columns.backup-cluster.title": "Кластер",
+      "columns.backup-method.title": "Метод",
+      "columns.backup-started.title": "Начат",
+      "columns.scheduled-cluster.title": "Кластер",
+      "columns.scheduled-schedule.title": "Расписание",
+      "columns.scheduled-suspended.title": "Приостановлен",
+      "columns.scheduled-last-backup.title": "Последний",
+      "columns.pooler-cluster.title": "Кластер",
+      "columns.pooler-type.title": "Тип",
+      "columns.pooler-instances.title": "Экземпляры",
+      "columns.pooler-pool-mode.title": "Режим пула",
+      "columns.cluster-status.cases.0.text": "Спит",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "Засыпает",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "Аварийное переключение",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "Переключение",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "Исправен",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "Неисправен",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "Выполняется",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "Завершён",
+      "columns.backup-status.cases.1.text": "Ошибка",
+      "columns.backup-status.cases.2.text": "Выполняется",
+      "columns.backup-status.cases.3.text": "Ожидает",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "Аварийное переключение по фазе: Ready = False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "Аварийное переключение по фазе: Ready = False, фаза в сообщении",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "Переключение на ожидаемый primary: Ready = False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "Переключение на ожидаемый primary: Ready = False, фаза в сообщении",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster не готов: Ready = False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster не готов: Ready = False, фаза в сообщении",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "Аварийное переключение по фазе: экземпляры не готовы",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "Аварийное переключение по фазе: экземпляры не готовы, фаза в сообщении",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "Переключение на ожидаемый primary: экземпляры не готовы",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "Переключение на ожидаемый primary: экземпляры не готовы, фаза в сообщении",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster не готов: экземпляры не готовы",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster не готов: экземпляры не готовы, фаза в сообщении",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Cluster без условия Ready: экземпляры не готовы",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Cluster без условия Ready: экземпляры не готовы, фаза в сообщении",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "Переключение на ожидаемый primary: primary меняется",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "Переключение на ожидаемый primary: primary меняется, фаза в сообщении",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster не готов: primary меняется",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster не готов: primary меняется, фаза в сообщении",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Cluster без условия Ready: primary меняется",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Cluster без условия Ready: primary меняется, фаза в сообщении",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "Сбой непрерывного архивирования",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "Последняя резервная копия не удалась",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup завершился ошибкой",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup завершился ошибкой (сверка окончена)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup завершился ошибкой (отсчёт от начала)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup завершился ошибкой (отсчёт от начала сверки)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup завершился ошибкой (отсчёт от создания)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.one": "{{count}} объект требует внимания",
+      "sectionBadges.cnpg.label.few": "{{count}} объекта требуют внимания",
+      "sectionBadges.cnpg.label.many": "{{count}} объектов требуют внимания",
+      "sectionBadges.cnpg.label.other": "{{count}} объекта требуют внимания"
+    },
+    "uk": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG: кластери PostgreSQL зі станом, екземплярами, primary і перемиканнями, резервними копіями та безперервним архівуванням, планові резервні копії та пулери; проблеми нездорових кластерів, збоїв архівування чи резервного копіювання та невдалих Backup.",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "Статус",
+      "columns.cluster-instances.title": "Екземпляри",
+      "columns.cluster-primary.title": "Основний",
+      "columns.cluster-phase.title": "Фаза",
+      "columns.backup-status.title": "Статус",
+      "columns.backup-cluster.title": "Кластер",
+      "columns.backup-method.title": "Метод",
+      "columns.backup-started.title": "Почато",
+      "columns.scheduled-cluster.title": "Кластер",
+      "columns.scheduled-schedule.title": "Розклад",
+      "columns.scheduled-suspended.title": "Призупинено",
+      "columns.scheduled-last-backup.title": "Остання",
+      "columns.pooler-cluster.title": "Кластер",
+      "columns.pooler-type.title": "Тип",
+      "columns.pooler-instances.title": "Екземпляри",
+      "columns.pooler-pool-mode.title": "Режим пулу",
+      "columns.cluster-status.cases.0.text": "Приспаний",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "Присипляється",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "Аварійне перемикання",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "Перемикання",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "Справний",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "Несправний",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "Виконується",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "Завершено",
+      "columns.backup-status.cases.1.text": "Помилка",
+      "columns.backup-status.cases.2.text": "Виконується",
+      "columns.backup-status.cases.3.text": "Очікує",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "Аварійне перемикання за фазою: Ready = False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "Аварійне перемикання за фазою: Ready = False, фаза в повідомленні",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "Перемикання на очікуваний primary: Ready = False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "Перемикання на очікуваний primary: Ready = False, фаза в повідомленні",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster не готовий: Ready = False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster не готовий: Ready = False, фаза в повідомленні",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "Аварійне перемикання за фазою: екземпляри не готові",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "Аварійне перемикання за фазою: екземпляри не готові, фаза в повідомленні",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "Перемикання на очікуваний primary: екземпляри не готові",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "Перемикання на очікуваний primary: екземпляри не готові, фаза в повідомленні",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster не готовий: екземпляри не готові",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster не готовий: екземпляри не готові, фаза в повідомленні",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Cluster без умови Ready: екземпляри не готові",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Cluster без умови Ready: екземпляри не готові, фаза в повідомленні",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "Перемикання на очікуваний primary: primary змінюється",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "Перемикання на очікуваний primary: primary змінюється, фаза в повідомленні",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster не готовий: primary змінюється",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster не готовий: primary змінюється, фаза в повідомленні",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Cluster без умови Ready: primary змінюється",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Cluster без умови Ready: primary змінюється, фаза в повідомленні",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "Збій безперервного архівування",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "Остання резервна копія не вдалася",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup завершився помилкою",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup завершився помилкою (звірку завершено)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup завершився помилкою (відлік від початку)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup завершився помилкою (відлік від початку звірки)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup завершився помилкою (відлік від створення)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.one": "{{count}} об'єкт потребує уваги",
+      "sectionBadges.cnpg.label.few": "{{count}} об'єкти потребують уваги",
+      "sectionBadges.cnpg.label.many": "{{count}} об'єктів потребують уваги",
+      "sectionBadges.cnpg.label.other": "{{count}} об'єкта потребують уваги"
+    },
+    "de": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG: PostgreSQL-Cluster mit Zustand, Instanzen, Primary und Switchovers, Backups und kontinuierlicher Archivierung, geplante Backups und Pooler; Probleme nicht gesunder Cluster, fehlschlagender Archivierung oder Backups und fehlgeschlagener Backups.",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "Status",
+      "columns.cluster-instances.title": "Instanzen",
+      "columns.cluster-primary.title": "Primär",
+      "columns.cluster-phase.title": "Phase",
+      "columns.backup-status.title": "Status",
+      "columns.backup-cluster.title": "Cluster",
+      "columns.backup-method.title": "Methode",
+      "columns.backup-started.title": "Gestartet",
+      "columns.scheduled-cluster.title": "Cluster",
+      "columns.scheduled-schedule.title": "Zeitplan",
+      "columns.scheduled-suspended.title": "Angehalten",
+      "columns.scheduled-last-backup.title": "Letztes Backup",
+      "columns.pooler-cluster.title": "Cluster",
+      "columns.pooler-type.title": "Typ",
+      "columns.pooler-instances.title": "Instanzen",
+      "columns.pooler-pool-mode.title": "Pool-Modus",
+      "columns.cluster-status.cases.0.text": "Im Ruhezustand",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "Geht in Ruhezustand",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "Failover",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "Umschaltung",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "Fehlerfrei",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "Fehlerhaft",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "In Arbeit",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "Abgeschlossen",
+      "columns.backup-status.cases.1.text": "Fehlgeschlagen",
+      "columns.backup-status.cases.2.text": "Läuft",
+      "columns.backup-status.cases.3.text": "Ausstehend",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "Failover laut Phase: Ready ist False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "Failover laut Phase: Ready ist False, Phase als Meldung",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "Failover auf ausstehenden Primary: Ready ist False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "Failover auf ausstehenden Primary: Ready ist False, Phase als Meldung",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster nicht bereit: Ready ist False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster nicht bereit: Ready ist False, Phase als Meldung",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "Failover laut Phase: Instanzen nicht bereit",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "Failover laut Phase: Instanzen nicht bereit, Phase als Meldung",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "Failover auf ausstehenden Primary: Instanzen nicht bereit",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "Failover auf ausstehenden Primary: Instanzen nicht bereit, Phase als Meldung",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster nicht bereit: Instanzen nicht bereit",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster nicht bereit: Instanzen nicht bereit, Phase als Meldung",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Cluster ohne Ready-Condition: Instanzen nicht bereit",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Cluster ohne Ready-Condition: Instanzen nicht bereit, Phase als Meldung",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "Failover auf ausstehenden Primary: Primary wechselt",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "Failover auf ausstehenden Primary: Primary wechselt, Phase als Meldung",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster nicht bereit: Primary wechselt",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster nicht bereit: Primary wechselt, Phase als Meldung",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Cluster ohne Ready-Condition: Primary wechselt",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Cluster ohne Ready-Condition: Primary wechselt, Phase als Meldung",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "Kontinuierliche Archivierung schlägt fehl",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "Letztes Backup fehlgeschlagen",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup fehlgeschlagen",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup fehlgeschlagen (Abgleich beendet)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup fehlgeschlagen (ab seinem Start gezählt)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup fehlgeschlagen (ab seinem Abgleich gezählt)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup fehlgeschlagen (ab seiner Erstellung gezählt)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.one": "{{count}} Objekt erfordert Aufmerksamkeit",
+      "sectionBadges.cnpg.label.other": "{{count}} Objekte erfordern Aufmerksamkeit"
+    },
+    "fr": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG : clusters PostgreSQL avec leur état, leurs instances, leur primaire et les basculements, sauvegardes et archivage continu, sauvegardes planifiées et poolers ; problèmes des clusters en mauvaise santé, de l'archivage ou des sauvegardes en échec et des Backups échoués.",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "Statut",
+      "columns.cluster-instances.title": "Instances",
+      "columns.cluster-primary.title": "Primaire",
+      "columns.cluster-phase.title": "Phase",
+      "columns.backup-status.title": "Statut",
+      "columns.backup-cluster.title": "Cluster",
+      "columns.backup-method.title": "Méthode",
+      "columns.backup-started.title": "Démarrée",
+      "columns.scheduled-cluster.title": "Cluster",
+      "columns.scheduled-schedule.title": "Planification",
+      "columns.scheduled-suspended.title": "Suspendue",
+      "columns.scheduled-last-backup.title": "Dernière sauvegarde",
+      "columns.pooler-cluster.title": "Cluster",
+      "columns.pooler-type.title": "Type",
+      "columns.pooler-instances.title": "Instances",
+      "columns.pooler-pool-mode.title": "Mode du pool",
+      "columns.cluster-status.cases.0.text": "En hibernation",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "Mise en hibernation",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "Failover",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "Basculement",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "Sain",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "Défaillant",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "En cours",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "Terminée",
+      "columns.backup-status.cases.1.text": "Échec",
+      "columns.backup-status.cases.2.text": "En cours",
+      "columns.backup-status.cases.3.text": "En attente",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "Basculement selon la phase : Ready est False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "Basculement selon la phase : Ready est False, phase en message",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "Basculement vers primaire en attente : Ready est False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "Basculement vers primaire en attente : Ready est False, phase en message",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster pas prêt : Ready est False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster pas prêt : Ready est False, phase en message",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "Basculement selon la phase : instances pas prêtes",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "Basculement selon la phase : instances pas prêtes, phase en message",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "Basculement vers primaire en attente : instances pas prêtes",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "Basculement vers primaire en attente : instances pas prêtes, phase en message",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster pas prêt : instances pas prêtes",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster pas prêt : instances pas prêtes, phase en message",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Cluster sans condition Ready : instances pas prêtes",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Cluster sans condition Ready : instances pas prêtes, phase en message",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "Basculement vers primaire en attente : primaire en changement",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "Basculement vers primaire en attente : primaire en changement, phase en message",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster pas prêt : primaire en changement",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster pas prêt : primaire en changement, phase en message",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Cluster sans condition Ready : primaire en changement",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Cluster sans condition Ready : primaire en changement, phase en message",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "Échec de l'archivage continu",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "Échec de la dernière sauvegarde",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Échec du Backup",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Échec du Backup (réconciliation terminée)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Échec du Backup (compté depuis son début)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Échec du Backup (compté depuis sa réconciliation)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Échec du Backup (compté depuis sa création)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.one": "{{count}} objet requiert votre attention",
+      "sectionBadges.cnpg.label.many": "{{count}} d'objets requièrent votre attention",
+      "sectionBadges.cnpg.label.other": "{{count}} objets requièrent votre attention"
+    },
+    "es": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG: clústeres de PostgreSQL con su estado, instancias, primaria y switchovers, copias de seguridad y archivado continuo, copias programadas y poolers; problemas de clústeres no saludables, archivado o copias que fallan y Backups fallidos.",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "Estado",
+      "columns.cluster-instances.title": "Instancias",
+      "columns.cluster-primary.title": "Primaria",
+      "columns.cluster-phase.title": "Fase",
+      "columns.backup-status.title": "Estado",
+      "columns.backup-cluster.title": "Clúster",
+      "columns.backup-method.title": "Método",
+      "columns.backup-started.title": "Iniciada",
+      "columns.scheduled-cluster.title": "Clúster",
+      "columns.scheduled-schedule.title": "Programación",
+      "columns.scheduled-suspended.title": "Suspendida",
+      "columns.scheduled-last-backup.title": "Última copia",
+      "columns.pooler-cluster.title": "Clúster",
+      "columns.pooler-type.title": "Tipo",
+      "columns.pooler-instances.title": "Instancias",
+      "columns.pooler-pool-mode.title": "Modo del pool",
+      "columns.cluster-status.cases.0.text": "Hibernado",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "Hibernando",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "Failover",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "Conmutación",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "Correcto",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "Con fallos",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "En curso",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "Completada",
+      "columns.backup-status.cases.1.text": "Fallida",
+      "columns.backup-status.cases.2.text": "En ejecución",
+      "columns.backup-status.cases.3.text": "Pendiente",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "Failover según la fase: Ready es False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "Failover según la fase: Ready es False, fase como mensaje",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "Failover a una primaria pendiente: Ready es False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "Failover a una primaria pendiente: Ready es False, fase como mensaje",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster no listo: Ready es False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster no listo: Ready es False, fase como mensaje",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "Failover según la fase: instancias no listas",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "Failover según la fase: instancias no listas, fase como mensaje",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "Failover a una primaria pendiente: instancias no listas",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "Failover a una primaria pendiente: instancias no listas, fase como mensaje",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster no listo: instancias no listas",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster no listo: instancias no listas, fase como mensaje",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Cluster sin condición Ready: instancias no listas",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Cluster sin condición Ready: instancias no listas, fase como mensaje",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "Failover a una primaria pendiente: primaria cambiando",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "Failover a una primaria pendiente: primaria cambiando, fase como mensaje",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster no listo: primaria cambiando",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster no listo: primaria cambiando, fase como mensaje",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Cluster sin condición Ready: primaria cambiando",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Cluster sin condición Ready: primaria cambiando, fase como mensaje",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "El archivado continuo falla",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "La última copia de seguridad falló",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup fallido",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup fallido (conciliación terminada)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup fallido (contado desde su inicio)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup fallido (contado desde su conciliación)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup fallido (contado desde su creación)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.one": "{{count}} objeto requiere atención",
+      "sectionBadges.cnpg.label.many": "{{count}} de objetos requieren atención",
+      "sectionBadges.cnpg.label.other": "{{count}} objetos requieren atención"
+    },
+    "pt-BR": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG: clusters PostgreSQL com estado, instâncias, primária e switchovers, backups e arquivamento contínuo, backups agendados e poolers; problemas de clusters não saudáveis, arquivamento ou backups falhando e Backups com falha.",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "Status",
+      "columns.cluster-instances.title": "Instâncias",
+      "columns.cluster-primary.title": "Primária",
+      "columns.cluster-phase.title": "Fase",
+      "columns.backup-status.title": "Status",
+      "columns.backup-cluster.title": "Cluster",
+      "columns.backup-method.title": "Método",
+      "columns.backup-started.title": "Iniciado",
+      "columns.scheduled-cluster.title": "Cluster",
+      "columns.scheduled-schedule.title": "Agendamento",
+      "columns.scheduled-suspended.title": "Suspenso",
+      "columns.scheduled-last-backup.title": "Último backup",
+      "columns.pooler-cluster.title": "Cluster",
+      "columns.pooler-type.title": "Tipo",
+      "columns.pooler-instances.title": "Instâncias",
+      "columns.pooler-pool-mode.title": "Modo do pool",
+      "columns.cluster-status.cases.0.text": "Hibernado",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "Hibernando",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "Failover",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "Troca",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "Íntegro",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "Com falha",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "Em andamento",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "Concluído",
+      "columns.backup-status.cases.1.text": "Falhou",
+      "columns.backup-status.cases.2.text": "Em execução",
+      "columns.backup-status.cases.3.text": "Pendente",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "Failover pela fase: Ready é False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "Failover pela fase: Ready é False, fase como mensagem",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "Failover para uma primária pendente: Ready é False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "Failover para uma primária pendente: Ready é False, fase como mensagem",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster não pronto: Ready é False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster não pronto: Ready é False, fase como mensagem",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "Failover pela fase: instâncias não prontas",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "Failover pela fase: instâncias não prontas, fase como mensagem",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "Failover para uma primária pendente: instâncias não prontas",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "Failover para uma primária pendente: instâncias não prontas, fase como mensagem",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster não pronto: instâncias não prontas",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster não pronto: instâncias não prontas, fase como mensagem",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Cluster sem condição Ready: instâncias não prontas",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Cluster sem condição Ready: instâncias não prontas, fase como mensagem",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "Failover para uma primária pendente: primária mudando",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "Failover para uma primária pendente: primária mudando, fase como mensagem",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster não pronto: primária mudando",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster não pronto: primária mudando, fase como mensagem",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Cluster sem condição Ready: primária mudando",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Cluster sem condição Ready: primária mudando, fase como mensagem",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "Arquivamento contínuo falhando",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "O último backup falhou",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup falhou",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup falhou (reconciliação encerrada)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup falhou (contado desde o início)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup falhou (contado desde a reconciliação)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup falhou (contado desde a criação)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.one": "{{count}} objeto precisa de atenção",
+      "sectionBadges.cnpg.label.many": "{{count}} de objetos precisam de atenção",
+      "sectionBadges.cnpg.label.other": "{{count}} objetos precisam de atenção"
+    },
+    "it": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG: cluster PostgreSQL con stato, istanze, primario e switchover, backup e archiviazione continua, backup pianificati e pooler; problemi di cluster non sani, archiviazione o backup non riusciti e Backup falliti.",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "Stato",
+      "columns.cluster-instances.title": "Istanze",
+      "columns.cluster-primary.title": "Primaria",
+      "columns.cluster-phase.title": "Fase",
+      "columns.backup-status.title": "Stato",
+      "columns.backup-cluster.title": "Cluster",
+      "columns.backup-method.title": "Metodo",
+      "columns.backup-started.title": "Avviato",
+      "columns.scheduled-cluster.title": "Cluster",
+      "columns.scheduled-schedule.title": "Pianificazione",
+      "columns.scheduled-suspended.title": "Sospeso",
+      "columns.scheduled-last-backup.title": "Ultimo backup",
+      "columns.pooler-cluster.title": "Cluster",
+      "columns.pooler-type.title": "Tipo",
+      "columns.pooler-instances.title": "Istanze",
+      "columns.pooler-pool-mode.title": "Modalità pool",
+      "columns.cluster-status.cases.0.text": "Ibernato",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "In ibernazione",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "Failover",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "Switchover",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "Integro",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "Non integro",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "In corso",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "Completato",
+      "columns.backup-status.cases.1.text": "Non riuscito",
+      "columns.backup-status.cases.2.text": "In esecuzione",
+      "columns.backup-status.cases.3.text": "In attesa",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "Failover secondo la fase: Ready è False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "Failover secondo la fase: Ready è False, fase come messaggio",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "Failover verso un primario in attesa: Ready è False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "Failover verso un primario in attesa: Ready è False, fase come messaggio",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster non pronto: Ready è False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster non pronto: Ready è False, fase come messaggio",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "Failover secondo la fase: istanze non pronte",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "Failover secondo la fase: istanze non pronte, fase come messaggio",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "Failover verso un primario in attesa: istanze non pronte",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "Failover verso un primario in attesa: istanze non pronte, fase come messaggio",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster non pronto: istanze non pronte",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster non pronto: istanze non pronte, fase come messaggio",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Cluster senza condizione Ready: istanze non pronte",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Cluster senza condizione Ready: istanze non pronte, fase come messaggio",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "Failover verso un primario in attesa: primario in cambio",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "Failover verso un primario in attesa: primario in cambio, fase come messaggio",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster non pronto: primario in cambio",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster non pronto: primario in cambio, fase come messaggio",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Cluster senza condizione Ready: primario in cambio",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Cluster senza condizione Ready: primario in cambio, fase come messaggio",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "Archiviazione continua non riuscita",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "Ultimo backup non riuscito",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup non riuscito",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup non riuscito (riconciliazione terminata)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup non riuscito (contato dall'avvio)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup non riuscito (contato dalla riconciliazione)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup non riuscito (contato dalla creazione)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.one": "{{count}} oggetto richiede attenzione",
+      "sectionBadges.cnpg.label.many": "{{count}} di oggetti richiedono attenzione",
+      "sectionBadges.cnpg.label.other": "{{count}} oggetti richiedono attenzione"
+    },
+    "pl": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG: klastry PostgreSQL z ich stanem, instancjami, primary i przełączeniami, kopiami zapasowymi i ciągłą archiwizacją, zaplanowane kopie i poolery; problemy niezdrowych klastrów, błędów archiwizacji lub kopii i nieudanych Backupów.",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "Stan",
+      "columns.cluster-instances.title": "Instancje",
+      "columns.cluster-primary.title": "Główna",
+      "columns.cluster-phase.title": "Faza",
+      "columns.backup-status.title": "Stan",
+      "columns.backup-cluster.title": "Klaster",
+      "columns.backup-method.title": "Metoda",
+      "columns.backup-started.title": "Rozpoczęto",
+      "columns.scheduled-cluster.title": "Klaster",
+      "columns.scheduled-schedule.title": "Harmonogram",
+      "columns.scheduled-suspended.title": "Wstrzymano",
+      "columns.scheduled-last-backup.title": "Ostatnia kopia",
+      "columns.pooler-cluster.title": "Klaster",
+      "columns.pooler-type.title": "Typ",
+      "columns.pooler-instances.title": "Instancje",
+      "columns.pooler-pool-mode.title": "Tryb puli",
+      "columns.cluster-status.cases.0.text": "Zahibernowany",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "Hibernuje",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "Przełączanie awaryjne",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "Przełączanie",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "Sprawny",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "Niesprawny",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "W toku",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "Ukończona",
+      "columns.backup-status.cases.1.text": "Błąd",
+      "columns.backup-status.cases.2.text": "Trwa",
+      "columns.backup-status.cases.3.text": "Oczekuje",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "Przełączanie awaryjne wg fazy: Ready to False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "Przełączanie awaryjne wg fazy: Ready to False, faza jako komunikat",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "Przełączanie na oczekujący primary: Ready to False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "Przełączanie na oczekujący primary: Ready to False, faza jako komunikat",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster nie jest gotowy: Ready to False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster nie jest gotowy: Ready to False, faza jako komunikat",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "Przełączanie awaryjne wg fazy: instancje niegotowe",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "Przełączanie awaryjne wg fazy: instancje niegotowe, faza jako komunikat",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "Przełączanie na oczekujący primary: instancje niegotowe",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "Przełączanie na oczekujący primary: instancje niegotowe, faza jako komunikat",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster nie jest gotowy: instancje niegotowe",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster nie jest gotowy: instancje niegotowe, faza jako komunikat",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Cluster bez warunku Ready: instancje niegotowe",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Cluster bez warunku Ready: instancje niegotowe, faza jako komunikat",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "Przełączanie na oczekujący primary: zmiana primary",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "Przełączanie na oczekujący primary: zmiana primary, faza jako komunikat",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster nie jest gotowy: zmiana primary",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster nie jest gotowy: zmiana primary, faza jako komunikat",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Cluster bez warunku Ready: zmiana primary",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Cluster bez warunku Ready: zmiana primary, faza jako komunikat",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "Ciągła archiwizacja kończy się błędem",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "Ostatnia kopia zapasowa nie powiodła się",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup nie powiódł się",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup nie powiódł się (uzgadnianie zakończone)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup nie powiódł się (liczony od startu)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup nie powiódł się (liczony od uzgadniania)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup nie powiódł się (liczony od utworzenia)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.one": "{{count}} obiekt wymaga uwagi",
+      "sectionBadges.cnpg.label.few": "{{count}} obiekty wymagają uwagi",
+      "sectionBadges.cnpg.label.many": "{{count}} obiektów wymaga uwagi",
+      "sectionBadges.cnpg.label.other": "{{count}} obiektu wymaga uwagi"
+    },
+    "tr": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG: durumu, örnekleri, birincili ve geçişleriyle PostgreSQL kümeleri, yedekler ve sürekli arşivleme, zamanlanmış yedekler ve pooler'lar; sağlıksız kümelerin, başarısız arşivleme veya yedeklerin ve başarısız Backup'ların sorunları.",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "Durum",
+      "columns.cluster-instances.title": "Örnekler",
+      "columns.cluster-primary.title": "Birincil",
+      "columns.cluster-phase.title": "Aşama",
+      "columns.backup-status.title": "Durum",
+      "columns.backup-cluster.title": "Küme",
+      "columns.backup-method.title": "Yöntem",
+      "columns.backup-started.title": "Başladı",
+      "columns.scheduled-cluster.title": "Küme",
+      "columns.scheduled-schedule.title": "Zamanlama",
+      "columns.scheduled-suspended.title": "Askıda",
+      "columns.scheduled-last-backup.title": "Son yedek",
+      "columns.pooler-cluster.title": "Küme",
+      "columns.pooler-type.title": "Tür",
+      "columns.pooler-instances.title": "Örnekler",
+      "columns.pooler-pool-mode.title": "Havuz modu",
+      "columns.cluster-status.cases.0.text": "Hazırda bekletiliyor",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "Hazırda beklemeye geçiyor",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "Yük devri",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "Geçiş",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "Sağlıklı",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "Sağlıksız",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "Sürüyor",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "Tamamlandı",
+      "columns.backup-status.cases.1.text": "Başarısız",
+      "columns.backup-status.cases.2.text": "Çalışıyor",
+      "columns.backup-status.cases.3.text": "Bekliyor",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "Faza göre yük devri: Ready False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "Faza göre yük devri: Ready False, mesaj olarak faz",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "Bekleyen birincile yük devri: Ready False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "Bekleyen birincile yük devri: Ready False, mesaj olarak faz",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster hazır değil: Ready False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster hazır değil: Ready False, mesaj olarak faz",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "Faza göre yük devri: örnekler hazır değil",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "Faza göre yük devri: örnekler hazır değil, mesaj olarak faz",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "Bekleyen birincile yük devri: örnekler hazır değil",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "Bekleyen birincile yük devri: örnekler hazır değil, mesaj olarak faz",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster hazır değil: örnekler hazır değil",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster hazır değil: örnekler hazır değil, mesaj olarak faz",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Ready koşulu olmayan Cluster: örnekler hazır değil",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Ready koşulu olmayan Cluster: örnekler hazır değil, mesaj olarak faz",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "Bekleyen birincile yük devri: birincil değişiyor",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "Bekleyen birincile yük devri: birincil değişiyor, mesaj olarak faz",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster hazır değil: birincil değişiyor",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster hazır değil: birincil değişiyor, mesaj olarak faz",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Ready koşulu olmayan Cluster: birincil değişiyor",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Ready koşulu olmayan Cluster: birincil değişiyor, mesaj olarak faz",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "Sürekli arşivleme başarısız",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "Son yedek başarısız",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup başarısız",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup başarısız (uzlaştırma bitti)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup başarısız (başlangıcından sayılır)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup başarısız (uzlaştırmasından sayılır)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup başarısız (oluşturulmasından sayılır)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.one": "{{count}} nesne ilgi gerektiriyor",
+      "sectionBadges.cnpg.label.other": "{{count}} nesne ilgi gerektiriyor"
+    },
+    "zh-CN": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG：PostgreSQL 集群及其状态、实例、主实例和切换、备份和持续归档，计划备份和连接池；不健康集群、失败的归档或备份以及失败的 Backup 的问题。",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "状态",
+      "columns.cluster-instances.title": "实例",
+      "columns.cluster-primary.title": "主实例",
+      "columns.cluster-phase.title": "阶段",
+      "columns.backup-status.title": "状态",
+      "columns.backup-cluster.title": "集群",
+      "columns.backup-method.title": "方式",
+      "columns.backup-started.title": "开始于",
+      "columns.scheduled-cluster.title": "集群",
+      "columns.scheduled-schedule.title": "计划",
+      "columns.scheduled-suspended.title": "已暂停",
+      "columns.scheduled-last-backup.title": "上次备份",
+      "columns.pooler-cluster.title": "集群",
+      "columns.pooler-type.title": "类型",
+      "columns.pooler-instances.title": "实例",
+      "columns.pooler-pool-mode.title": "池模式",
+      "columns.cluster-status.cases.0.text": "已休眠",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "正在休眠",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "故障转移中",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "切换中",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "健康",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "不健康",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "进行中",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "已完成",
+      "columns.backup-status.cases.1.text": "失败",
+      "columns.backup-status.cases.2.text": "运行中",
+      "columns.backup-status.cases.3.text": "等待中",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "按阶段故障转移：Ready 为 False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "按阶段故障转移：Ready 为 False，以阶段作为消息",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "故障转移到待定主实例：Ready 为 False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "故障转移到待定主实例：Ready 为 False，以阶段作为消息",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster 未就绪：Ready 为 False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster 未就绪：Ready 为 False，以阶段作为消息",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "按阶段故障转移：实例未就绪",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "按阶段故障转移：实例未就绪，以阶段作为消息",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "故障转移到待定主实例：实例未就绪",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "故障转移到待定主实例：实例未就绪，以阶段作为消息",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster 未就绪：实例未就绪",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster 未就绪：实例未就绪，以阶段作为消息",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Cluster 无 Ready 条件：实例未就绪",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Cluster 无 Ready 条件：实例未就绪，以阶段作为消息",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "故障转移到待定主实例：主实例变更中",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "故障转移到待定主实例：主实例变更中，以阶段作为消息",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster 未就绪：主实例变更中",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster 未就绪：主实例变更中，以阶段作为消息",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Cluster 无 Ready 条件：主实例变更中",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Cluster 无 Ready 条件：主实例变更中，以阶段作为消息",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "持续归档失败",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "上次备份失败",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup 失败",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup 失败（协调已结束）",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup 失败（从开始计时）",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup 失败（从协调开始计时）",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup 失败（从创建计时）",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.other": "{{count}} 个对象需要关注"
+    },
+    "zh-TW": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG：PostgreSQL 叢集及其狀態、執行個體、主要執行個體與切換、備份與持續封存，排程備份與連線池；不健康叢集、失敗的封存或備份以及失敗的 Backup 的問題。",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "狀態",
+      "columns.cluster-instances.title": "執行個體",
+      "columns.cluster-primary.title": "主要執行個體",
+      "columns.cluster-phase.title": "階段",
+      "columns.backup-status.title": "狀態",
+      "columns.backup-cluster.title": "叢集",
+      "columns.backup-method.title": "方式",
+      "columns.backup-started.title": "開始於",
+      "columns.scheduled-cluster.title": "叢集",
+      "columns.scheduled-schedule.title": "排程",
+      "columns.scheduled-suspended.title": "已暫停",
+      "columns.scheduled-last-backup.title": "上次備份",
+      "columns.pooler-cluster.title": "叢集",
+      "columns.pooler-type.title": "類型",
+      "columns.pooler-instances.title": "執行個體",
+      "columns.pooler-pool-mode.title": "集區模式",
+      "columns.cluster-status.cases.0.text": "已休眠",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "正在休眠",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "容錯移轉中",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "切換中",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "健康",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "不健康",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "進行中",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "已完成",
+      "columns.backup-status.cases.1.text": "失敗",
+      "columns.backup-status.cases.2.text": "執行中",
+      "columns.backup-status.cases.3.text": "等待中",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "依階段容錯移轉：Ready 為 False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "依階段容錯移轉：Ready 為 False，以階段作為訊息",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "容錯移轉到待定主要執行個體：Ready 為 False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "容錯移轉到待定主要執行個體：Ready 為 False，以階段作為訊息",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster 未就緒：Ready 為 False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster 未就緒：Ready 為 False，以階段作為訊息",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "依階段容錯移轉：執行個體未就緒",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "依階段容錯移轉：執行個體未就緒，以階段作為訊息",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "容錯移轉到待定主要執行個體：執行個體未就緒",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "容錯移轉到待定主要執行個體：執行個體未就緒，以階段作為訊息",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster 未就緒：執行個體未就緒",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster 未就緒：執行個體未就緒，以階段作為訊息",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Cluster 無 Ready 條件：執行個體未就緒",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Cluster 無 Ready 條件：執行個體未就緒，以階段作為訊息",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "容錯移轉到待定主要執行個體：主要執行個體變更中",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "容錯移轉到待定主要執行個體：主要執行個體變更中，以階段作為訊息",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster 未就緒：主要執行個體變更中",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster 未就緒：主要執行個體變更中，以階段作為訊息",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Cluster 無 Ready 條件：主要執行個體變更中",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Cluster 無 Ready 條件：主要執行個體變更中，以階段作為訊息",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "持續封存失敗",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "上次備份失敗",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup 失敗",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup 失敗（協調已結束）",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup 失敗（從開始計時）",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup 失敗（從協調開始計時）",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup 失敗（從建立計時）",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.other": "{{count}} 個物件需要注意"
+    },
+    "ja": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG: 状態、インスタンス、プライマリとスイッチオーバー、バックアップと継続的アーカイブを含む PostgreSQL クラスター、スケジュールされたバックアップとプーラー。正常でないクラスター、失敗しているアーカイブやバックアップ、失敗した Backup の問題。",
+      "kinds.0.title": "Cluster",
+      "kinds.1.title": "Backup",
+      "kinds.2.title": "ScheduledBackup",
+      "kinds.3.title": "Pooler",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "状態",
+      "columns.cluster-instances.title": "インスタンス",
+      "columns.cluster-primary.title": "プライマリ",
+      "columns.cluster-phase.title": "フェーズ",
+      "columns.backup-status.title": "状態",
+      "columns.backup-cluster.title": "クラスター",
+      "columns.backup-method.title": "方式",
+      "columns.backup-started.title": "開始",
+      "columns.scheduled-cluster.title": "クラスター",
+      "columns.scheduled-schedule.title": "スケジュール",
+      "columns.scheduled-suspended.title": "一時停止",
+      "columns.scheduled-last-backup.title": "最終バックアップ",
+      "columns.pooler-cluster.title": "クラスター",
+      "columns.pooler-type.title": "種類",
+      "columns.pooler-instances.title": "インスタンス",
+      "columns.pooler-pool-mode.title": "プールモード",
+      "columns.cluster-status.cases.0.text": "休止中",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "休止処理中",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "フェイルオーバー中",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "スイッチオーバー中",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "正常",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "異常",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "処理中",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "完了",
+      "columns.backup-status.cases.1.text": "失敗",
+      "columns.backup-status.cases.2.text": "実行中",
+      "columns.backup-status.cases.3.text": "保留中",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "フェーズによるフェイルオーバー: Ready が False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "フェーズによるフェイルオーバー: Ready が False、フェーズをメッセージに",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "保留中のプライマリへのフェイルオーバー: Ready が False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "保留中のプライマリへのフェイルオーバー: Ready が False、フェーズをメッセージに",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster の準備ができていない: Ready が False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster の準備ができていない: Ready が False、フェーズをメッセージに",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "フェーズによるフェイルオーバー: インスタンスの準備ができていない",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "フェーズによるフェイルオーバー: インスタンスの準備ができていない、フェーズをメッセージに",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "保留中のプライマリへのフェイルオーバー: インスタンスの準備ができていない",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "保留中のプライマリへのフェイルオーバー: インスタンスの準備ができていない、フェーズをメッセージに",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster の準備ができていない: インスタンスの準備ができていない",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster の準備ができていない: インスタンスの準備ができていない、フェーズをメッセージに",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Ready 状態のない Cluster: インスタンスの準備ができていない",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Ready 状態のない Cluster: インスタンスの準備ができていない、フェーズをメッセージに",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "保留中のプライマリへのフェイルオーバー: プライマリ変更中",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "保留中のプライマリへのフェイルオーバー: プライマリ変更中、フェーズをメッセージに",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster の準備ができていない: プライマリ変更中",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster の準備ができていない: プライマリ変更中、フェーズをメッセージに",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Ready 状態のない Cluster: プライマリ変更中",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Ready 状態のない Cluster: プライマリ変更中、フェーズをメッセージに",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "継続的アーカイブが失敗",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "最終バックアップが失敗",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup が失敗",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup が失敗 (調整終了)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup が失敗 (開始から計測)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup が失敗 (調整開始から計測)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup が失敗 (作成から計測)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.other": "対応が必要なオブジェクトが {{count}} 件あります"
+    },
+    "ko": {
+      "name": "CloudNativePG",
+      "description": "CloudNativePG: 상태, 인스턴스, 프라이머리와 스위치오버, 백업과 연속 아카이빙을 갖춘 PostgreSQL 클러스터, 예약된 백업과 풀러; 비정상 클러스터, 실패하는 아카이빙이나 백업, 실패한 Backup의 문제.",
+      "kinds.0.title": "Clusters",
+      "kinds.1.title": "Backups",
+      "kinds.2.title": "Scheduled Backups",
+      "kinds.3.title": "Poolers",
+      "sections.cnpg.title": "CloudNativePG",
+      "detailsSections.cnpg.title": "CloudNativePG",
+      "columns.cluster-status.title": "상태",
+      "columns.cluster-instances.title": "인스턴스",
+      "columns.cluster-primary.title": "기본",
+      "columns.cluster-phase.title": "단계",
+      "columns.backup-status.title": "상태",
+      "columns.backup-cluster.title": "클러스터",
+      "columns.backup-method.title": "방법",
+      "columns.backup-started.title": "시작",
+      "columns.scheduled-cluster.title": "클러스터",
+      "columns.scheduled-schedule.title": "일정",
+      "columns.scheduled-suspended.title": "일시 중지됨",
+      "columns.scheduled-last-backup.title": "마지막 백업",
+      "columns.pooler-cluster.title": "클러스터",
+      "columns.pooler-type.title": "유형",
+      "columns.pooler-instances.title": "인스턴스",
+      "columns.pooler-pool-mode.title": "풀 모드",
+      "columns.cluster-status.cases.0.text": "최대 절전",
+      "columns.cluster-status.cases.0.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.1.text": "최대 절전 전환 중",
+      "columns.cluster-status.cases.1.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.2.text": "장애 조치 중",
+      "columns.cluster-status.cases.2.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.3.text": "전환 중",
+      "columns.cluster-status.cases.3.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.4.text": "정상",
+      "columns.cluster-status.cases.4.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.5.text": "비정상",
+      "columns.cluster-status.cases.5.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.cluster-status.cases.6.text": "진행 중",
+      "columns.cluster-status.cases.6.tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
+      "columns.backup-status.cases.0.text": "완료",
+      "columns.backup-status.cases.1.text": "실패",
+      "columns.backup-status.cases.2.text": "실행 중",
+      "columns.backup-status.cases.3.text": "대기 중",
+      "columns.backup-method.cases.0.text": "barmanObjectStore",
+      "columns.scheduled-suspended.cases.0.text": "True",
+      "columns.scheduled-suspended.cases.1.text": "False",
+      "columns.pooler-type.cases.0.text": "rw",
+      "problems.cluster-not-ready-a-fp.title": "단계에 따른 장애 조치: Ready가 False",
+      "problems.cluster-not-ready-a-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fp-phase.title": "단계에 따른 장애 조치: Ready가 False, 단계를 메시지로",
+      "problems.cluster-not-ready-a-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-fo.title": "대기 중인 프라이머리로 장애 조치: Ready가 False",
+      "problems.cluster-not-ready-a-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-fo-phase.title": "대기 중인 프라이머리로 장애 조치: Ready가 False, 단계를 메시지로",
+      "problems.cluster-not-ready-a-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-a-rr.title": "Cluster 준비 안 됨: Ready가 False",
+      "problems.cluster-not-ready-a-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-a-rr-phase.title": "Cluster 준비 안 됨: Ready가 False, 단계를 메시지로",
+      "problems.cluster-not-ready-a-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fp.title": "단계에 따른 장애 조치: 인스턴스 준비 안 됨",
+      "problems.cluster-not-ready-b-fp.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fp-phase.title": "단계에 따른 장애 조치: 인스턴스 준비 안 됨, 단계를 메시지로",
+      "problems.cluster-not-ready-b-fp-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-fo.title": "대기 중인 프라이머리로 장애 조치: 인스턴스 준비 안 됨",
+      "problems.cluster-not-ready-b-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-fo-phase.title": "대기 중인 프라이머리로 장애 조치: 인스턴스 준비 안 됨, 단계를 메시지로",
+      "problems.cluster-not-ready-b-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-rr.title": "Cluster 준비 안 됨: 인스턴스 준비 안 됨",
+      "problems.cluster-not-ready-b-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-rr-phase.title": "Cluster 준비 안 됨: 인스턴스 준비 안 됨, 단계를 메시지로",
+      "problems.cluster-not-ready-b-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-b-nc.title": "Ready 조건이 없는 Cluster: 인스턴스 준비 안 됨",
+      "problems.cluster-not-ready-b-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-b-nc-phase.title": "Ready 조건이 없는 Cluster: 인스턴스 준비 안 됨, 단계를 메시지로",
+      "problems.cluster-not-ready-b-nc-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-fo.title": "대기 중인 프라이머리로 장애 조치: 프라이머리 변경 중",
+      "problems.cluster-not-ready-c-fo.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-fo-phase.title": "대기 중인 프라이머리로 장애 조치: 프라이머리 변경 중, 단계를 메시지로",
+      "problems.cluster-not-ready-c-fo-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-rr.title": "Cluster 준비 안 됨: 프라이머리 변경 중",
+      "problems.cluster-not-ready-c-rr.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-rr-phase.title": "Cluster 준비 안 됨: 프라이머리 변경 중, 단계를 메시지로",
+      "problems.cluster-not-ready-c-rr-phase.message": "{{.status.phase}}",
+      "problems.cluster-not-ready-c-nc.title": "Ready 조건이 없는 Cluster: 프라이머리 변경 중",
+      "problems.cluster-not-ready-c-nc.message": "{{.status.phaseReason}}",
+      "problems.cluster-not-ready-c-nc-phase.title": "Ready 조건이 없는 Cluster: 프라이머리 변경 중, 단계를 메시지로",
+      "problems.cluster-not-ready-c-nc-phase.message": "{{.status.phase}}",
+      "problems.archiving-failing.title": "연속 아카이빙 실패",
+      "problems.archiving-failing.message": "{{.status.conditions[type=\"ContinuousArchiving\"].message}}",
+      "problems.last-backup-failed.title": "마지막 백업 실패",
+      "problems.last-backup-failed.message": "{{.status.conditions[type=\"LastBackupSucceeded\"].message}}",
+      "problems.backup-failed.title": "Backup 실패",
+      "problems.backup-failed.message": "{{.status.error}}",
+      "problems.backup-failed-terminated.title": "Backup 실패 (조정 종료)",
+      "problems.backup-failed-terminated.message": "{{.status.error}}",
+      "problems.backup-failed-started.title": "Backup 실패 (시작부터 계산)",
+      "problems.backup-failed-started.message": "{{.status.error}}",
+      "problems.backup-failed-reconciling.title": "Backup 실패 (조정부터 계산)",
+      "problems.backup-failed-reconciling.message": "{{.status.error}}",
+      "problems.backup-failed-created.title": "Backup 실패 (생성부터 계산)",
+      "problems.backup-failed-created.message": "{{.status.error}}",
+      "sectionBadges.cnpg.label.other": "주의가 필요한 개체 {{count}}개"
+    }
+  }
+}

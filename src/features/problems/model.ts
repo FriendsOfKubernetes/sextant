@@ -14,7 +14,6 @@ import { eventTimestamp, involvedObject } from "../events/model";
 import { knativeProblems } from "../knative/problemRules";
 import { contourProblems } from "../contour/problemRules";
 import { policyProblems } from "../kyverno/problemRules";
-import { cnpgProblems, CNPG_GROUP } from "../cnpg/model";
 import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../cluster-api/model";
 import { ESO_GROUP, externalSecretsProblems } from "../external-secrets/model";
 import { isSealedSecret } from "../sealed-secrets/model";
@@ -27,9 +26,7 @@ import { isJobSet, jobSetProblems } from "../jobset/model";
 import { RAY_GROUP, rayKind, rayProblems } from "../kuberay/model";
 import { INFERENCE_SERVICE, isKind as isKServeKind, kserveProblems } from "../kserve/model";
 import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
-import { isOlmProblemKind, OLM_GROUP, olmProblems } from "../olm/model";
 import { MONITORING_GROUP, prometheusOperatorProblems } from "../prometheus-operator/model";
-import { STRIMZI_GROUP, strimziProblems } from "../strimzi/model";
 import {
   BACKEND_TLS_POLICY,
   GATEWAY,
@@ -69,13 +66,10 @@ export const PROBLEM_CATEGORIES = [
   "gpuOperator",
   "kuberay",
   "kserve",
-  "olm",
   "openshift",
   "policies",
   "externalSecrets",
   "sealedSecrets",
-  "cnpg",
-  "strimzi",
   "prometheusOperator",
   "reflector",
   "security",
@@ -308,7 +302,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (isSealedSecret(kind)) return "sealedSecrets";
   // Vertical Pod Autoscaler (#242): judged by the provider of features/vpa (HPA conflicts span two objects).
   if (isVpa(kind)) return "vpa";
-  if (kind.group === CNPG_GROUP) return "cnpg";
   // Cluster API (#243): Clusters, KubeadmControlPlanes, Machines and MachineHealthChecks, judged by features/cluster-api.
   if (isClusterApiProblemKind(kind)) return "clusterApi";
   // Dynamic Resource Allocation (#244): pods waiting for devices, judged by the provider of features/dra.
@@ -322,10 +315,8 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (isKServeKind(kind, INFERENCE_SERVICE)) return "kserve";
   // Operator Lifecycle Manager (#268): failed CSVs (originals only), Subscriptions whose resolution or InstallPlan
   // failed or whose plan is stuck, catalogs not READY.
-  if (kind.group === OLM_GROUP && isOlmProblemKind(kind)) return "olm";
   // OpenShift (#267): Routes no router admitted, failed DeploymentConfig rollouts, failed Builds, failing imports.
   if (isOpenShiftProblemKind(kind)) return "openshift";
-  if (kind.group === STRIMZI_GROUP) return "strimzi";
   if (kind.group === MONITORING_GROUP) return "prometheusOperator";
   return undefined;
 }
@@ -738,20 +729,14 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return policyProblems(kind, obj);
     case "externalSecrets":
       return externalSecretsProblems(obj);
-    case "cnpg":
-      return cnpgProblems(kind, obj);
     case "clusterApi":
       return capiProblems(kind, obj);
     case "kuberay":
       return rayProblems(kind, obj);
     case "kserve":
       return kserveProblems(kind, obj);
-    case "olm":
-      return olmProblems(kind, obj);
     case "openshift":
       return openshiftProblems(kind, obj);
-    case "strimzi":
-      return strimziProblems(obj);
     case "prometheusOperator": // Monitors that select nothing come from the provider of features/prometheus-operator.
       return prometheusOperatorProblems(kind, obj);
     case "security":

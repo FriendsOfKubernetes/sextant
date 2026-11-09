@@ -4,8 +4,8 @@
   "close": "Anladım",
   "v0_30_0": {
     "extensionsMoved": {
-      "title": "Flux, Argo CD, Argo Rollouts ve Argo Workflows artık birer eklenti",
-      "text": "Görünümleri Sextant’tan çıkarılıp eklenti kataloğundaki, ayrı güncellenen kendi eklentilerine taşındı. Kullandıklarınızı aşağıdan yükleyin: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçların çalıştığı kümelerde de onları önerir."
+      "title": "Küme araçlarının görünümleri artık uzantı",
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, CloudNativePG, Strimzi ve Operator Lifecycle Manager, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
     },
     "api4": {
       "title": "Eklenti API 4",
@@ -27,7 +27,10 @@
       "flux": "Kaynaklar, Kustomizations, HelmReleases, imaj otomasyonu ve bildirimler",
       "argo-cd": "Eşitleme, sağlık, kaynaklar, geçmiş ve diff ile Applications",
       "argo-rollouts": "Adımlar, ağırlıklar ve analizle Rollouts; promote, abort ve duraklatma",
-      "argo-workflows": "Adım ağacı ve günlükleriyle Workflows, CronWorkflows ve şablonlar"
+      "argo-workflows": "Adım ağacı ve günlükleriyle Workflows, CronWorkflows ve şablonlar",
+      "cnpg": "PostgreSQL kümeleri, yedekler ve pooler'lar",
+      "strimzi": "Kafka kümeleri, topic'ler, kullanıcılar, bağlayıcılar ve aynalar",
+      "olm": "Abonelikler, operatörler, kurulum planları ve kataloglar"
     }
   }
 }

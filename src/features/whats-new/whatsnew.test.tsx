@@ -51,7 +51,7 @@ describe("the window", () => {
     start("0.29.0");
     const { container } = render(<WhatsNewHost />);
     const dialog = await screen.findByRole("dialog", { name: "What's new in Sextant 0.30.0" });
-    expect(within(dialog).getByText("Flux, Argo CD, Argo Rollouts and Argo Workflows are now extensions")).toBeInTheDocument();
+    expect(within(dialog).getByText("Views of cluster tools are now extensions")).toBeInTheDocument();
     const list = within(dialog).getByRole("list", { name: "Install the extensions that moved" });
     await waitFor(() => expect(within(list).getByText("Installed")).toBeInTheDocument());
     expect(within(list).queryByRole("button", { name: "Install Flux" })).toBeNull();

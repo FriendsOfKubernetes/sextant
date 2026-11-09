@@ -206,13 +206,10 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "gpuOperator",
     "kuberay",
     "kserve",
-    "olm",
     "openshift",
     "policies",
     "externalSecrets",
     "sealedSecrets",
-    "cnpg",
-    "strimzi",
     "prometheusOperator",
     "reflector",
     "security",
@@ -270,12 +267,8 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     // KubeRay (#248) and KServe (#249): window views of 0.23.0.
     "kuberay",
     "kserve",
-    // Operator Lifecycle Manager (#268): a window view of 0.25.0.
-    "olm",
     // OpenShift Routes, DeploymentConfigs, Builds and ImageStreams (#267): a window view of 0.25.0.
     "openshift",
-    "cnpg",
-    "strimzi",
     "prometheusOperator",
     // Firing alerts of Prometheus and Alertmanager (#264): a window view of 0.24.0.
     "alerts",

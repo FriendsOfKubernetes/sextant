@@ -1,0 +1,22 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields, tables,
+   status words and links are the SDK's UI kit (`ui`, classes `sx-*`). */
+body.compact {
+  padding: 8px 0;
+}
+
+/* CloudNativePG: notes on a primary change, an unhealthy cluster or a failing backup, as the built-in section drew them. */
+.cnpg-note {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.cnpg-note--danger {
+  border-left-color: var(--color-danger);
+}
+
+.cnpg-muted {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+}

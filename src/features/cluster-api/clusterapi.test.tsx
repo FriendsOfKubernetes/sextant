@@ -291,7 +291,6 @@ describe("problems", () => {
     ]);
     expect(categoryOf(MACHINE)).toBe("clusterApi");
     expect(categoryOf(MACHINE_DEPLOYMENT)).toBeUndefined();
-    expect(categoryOf({ group: "postgresql.cnpg.io", kind: "Cluster" })).toBe("cnpg");
     expect(detect(MACHINE, stuckWorker()).map((d) => d.reason)).toEqual(["ProvisioningStuck"]);
   });
 });
