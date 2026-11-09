@@ -48,6 +48,12 @@ describe("ui.openLogs", () => {
     expect(useAppStore.getState().dock.tabs[0]).toMatchObject({ id: "logs:c1:selector:team-a:app=web" });
   });
 
+  it("titles a merged tab as asked (#407)", async () => {
+    await ui().openLogs({ namespace: "ray", labelSelector: "ray.io/cluster=demo,ray.io/node-type=worker", title: "raycluster/demo" });
+    expect(useAppStore.getState().dock.tabs[0]).toMatchObject({ title: "raycluster/demo" });
+    await expect(ui().openLogs({ namespace: "ray", labelSelector: "a=b", title: "bad\u0007" })).rejects.toMatchObject({ code: "invalid" });
+  });
+
   it("opens nothing when the backend refuses, and refuses a malformed call before asking", async () => {
     backend.on("extension_call", () => {
       throw { code: "denied", message: "no logs" };

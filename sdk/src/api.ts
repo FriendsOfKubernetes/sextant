@@ -231,7 +231,8 @@ export interface ServiceSecretRef {
 /** What `ui.openLogs` opens in Sextant's logs tab: one pod (and container), or the pods a label selector picks. */
 export type OpenLogsParams =
   | { namespace: string; pod: string; container?: string }
-  | { namespace: string; labelSelector: string };
+  /** `title`: the merged tab's title, as written (since Sextant 0.30): `raycluster/<name>` rather than the selector. */
+  | { namespace: string; labelSelector: string; title?: string };
 
 export interface DeleteParams extends OnCluster {
   ref: RefInput;

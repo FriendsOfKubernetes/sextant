@@ -78,7 +78,10 @@ export function hostUi(options: HostUiOptions): BridgeUi {
       const bad = () =>
         new ApiError("invalid", "ui.openLogs needs {namespace, pod, container?} or {namespace, labelSelector}");
       if (!isRecord(params)) throw bad();
-      const { namespace, pod, container, labelSelector } = params;
+      const { namespace, pod, container, labelSelector, title } = params;
+      // A merged tab's title (#407): `raycluster/<name>` instead of the selector; shown as written, clipped.
+      if (title !== undefined && (typeof title !== "string" || title.trim() === "" || /[\u0000-\u001f\u007f]/.test(title))) throw bad();
+      const tabTitle = typeof title === "string" ? Array.from(title.trim()).slice(0, 80).join("") : undefined;
       if (typeof namespace !== "string" || namespace === "") throw bad();
       const named = typeof pod === "string" && pod !== "";
       const selected = typeof labelSelector === "string" && labelSelector.trim() !== "";
@@ -96,7 +99,7 @@ export function hostUi(options: HostUiOptions): BridgeUi {
       });
       if (selected) {
         const selector = (labelSelector as string).trim();
-        openSelectorLogsTab(clusterId, namespace, selector, selector);
+        openSelectorLogsTab(clusterId, namespace, selector, tabTitle ?? selector);
         return;
       }
       const object = await api.resources.get(clusterId, { kind: POD_KIND, namespace, name: pod as string });

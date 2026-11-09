@@ -133,3 +133,8 @@ every one, as the built-in "Back up namespace…" needed Velero's Backups.
 
 A details frame's context carries `uid` (optional, beside `resourceVersion`) once the object is read, so a frame finds
 what is named by it — a policy report — without reading the object or asking Read on its kind.
+
+## Amendment: a merged logs tab's title (#407)
+
+`ui.openLogs({namespace, labelSelector, title})` titles the merged tab as written (≤ 80 characters, no control
+characters) — `raycluster/<name>` rather than the selector; the title stays in the window and never reaches Rust.
