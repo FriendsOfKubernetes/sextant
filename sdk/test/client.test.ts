@@ -321,6 +321,22 @@ describe("watch", () => {
     expect(updates).toEqual([snapshot, delta]);
   });
 
+  it("tells a capped watch's total apart from its updates (#406)", async () => {
+    const sextant = await connected();
+    const updates: WatchUpdate[] = [];
+    const totals: number[] = [];
+    const watch = sextant.resources.watch({ ...params, maxObjects: 1 }, { onUpdate: (u) => updates.push(u), onCapped: (n) => totals.push(n) });
+    const request = lastRequest();
+    expect(request).toMatchObject({ params: { maxObjects: 1 } });
+    answer(request.id, { stream: request.id });
+    await watch.started;
+    deliver({ sextant: 1, doc: docOf(), stream: request.id, event: snapshot });
+    deliver({ sextant: 1, doc: docOf(), stream: request.id, event: { type: "capped", total: 12 } });
+    expect(updates).toEqual([snapshot]);
+    expect(totals).toEqual([12]);
+    expect(watch.capped).toBe(12);
+  });
+
   it("is an async iterator that ends on unwatch, which tells the window", async () => {
     const sextant = await connected();
     const watch = sextant.resources.watch(params);

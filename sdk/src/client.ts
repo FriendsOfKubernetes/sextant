@@ -74,6 +74,8 @@ export interface WatchHandlers {
   onUpdate?: (update: WatchUpdate) => void;
   /** The watch could not start (refused, timed out). */
   onError?: (error: SextantError) => void;
+  /** With `maxObjects`: how many objects match in all, each time it changes (since Sextant 0.30). */
+  onCapped?: (total: number) => void;
 }
 
 /** An open `resources.watch`: updates by callback or `for await`; `unwatch()` (or leaving the loop) stops it. */
@@ -84,6 +86,8 @@ export interface Watch extends AsyncIterable<WatchUpdate> {
   readonly started: Promise<void>;
   /** The watch ended (unwatched, failed to start, or the connection was closed). */
   readonly closed: boolean;
+  /** With `maxObjects`: how many objects match in all when more do than are kept; else `null`. */
+  readonly capped: number | null;
   /** Adds a listener of updates; returns the function that removes it. */
   onUpdate(listener: (update: WatchUpdate) => void): () => void;
   unwatch(): Promise<void>;
@@ -411,7 +415,9 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
     callOptions?: CallOptions,
   ): Watch => {
     const id = nextId++;
-    const { onUpdate, onError } = typeof handlers === "function" ? { onUpdate: handlers, onError: undefined } : (handlers ?? {});
+    const { onUpdate, onError, onCapped } =
+      typeof handlers === "function" ? { onUpdate: handlers, onError: undefined, onCapped: undefined } : (handlers ?? {});
+    let capped: number | null = null;
     const listeners = new Set<(update: WatchUpdate) => void>();
     if (onUpdate) listeners.add(onUpdate);
     // Iterators waiting: each has its own queue.
@@ -431,6 +437,13 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
     };
     streams.set(id, {
       deliver: (update) => {
+        // `capped` (a watch with `maxObjects`) is not a WatchUpdate an extension switches over: it is told apart.
+        const raw = update as unknown as { type: string; total?: number };
+        if (raw.type === "capped") {
+          capped = typeof raw.total === "number" && raw.total > (params.maxObjects ?? Infinity) ? raw.total : null;
+          if (typeof raw.total === "number") onCapped?.(raw.total);
+          return;
+        }
         if (listeners.size === 0 && iterators.size === 0) {
           backlog.push(update);
           return;
@@ -465,6 +478,9 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       started,
       get closed() {
         return ended;
+      },
+      get capped() {
+        return capped;
       },
       onUpdate(listener) {
         listeners.add(listener);

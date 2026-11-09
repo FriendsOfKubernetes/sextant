@@ -1413,19 +1413,29 @@ impl<'a> ExtCall<'a> {
             field_selector: args.field_selector,
             metadata_only: args.metadata_only,
         };
+        let max_objects = args.max_objects;
+        if max_objects.is_some_and(|n| n == 0 || n > MAX_WATCH_OBJECTS) {
+            return Err(invalid(format!("maxObjects is 1 to {MAX_WATCH_OBJECTS}")));
+        }
         let (mgr, cluster_id) = (self.api.clusters.clone(), cluster.id.clone());
         // Frames watching the same list share one core watch (ADR-0145): this call was checked against its own grant
         // above, and every extension's watch carries the same data. `resources::watch` gives Secrets without their
         // values, like `watch_start`; inline secret material is emptied here, object by object, before the hub.
         let hub = Arc::clone(&self.api.watches);
+        // A capped watch is another list: its key carries the cap.
         let key = format!(
-            "{}\u{0}{}",
+            "{}\u{0}{}\u{0}{}",
             cluster_id,
-            serde_json::to_string(&spec).map_err(|e| invalid(e.to_string()))?
+            serde_json::to_string(&spec).map_err(|e| invalid(e.to_string()))?,
+            max_objects.map(|n| n.to_string()).unwrap_or_default()
         );
         let open = async move {
             hub.subscribe(key, async move {
-                resources::watch(&mgr, &cluster_id, spec)
+                let options = resources::WatchOptions {
+                    progressive: false,
+                    max_objects,
+                };
+                resources::watch_with_options(&mgr, &cluster_id, spec, options)
                     .await
                     .map(|updates| updates.map(inline_secrets::hide_in_watch_update))
             })
@@ -3132,7 +3142,13 @@ struct WatchArgs {
     field_selector: Option<String>,
     #[serde(default)]
     metadata_only: bool,
+    /// Keep at most this many objects (#406): the others are counted, and a `capped` update says how many match.
+    #[serde(default)]
+    max_objects: Option<u32>,
 }
+
+/// The most objects an extension's watch may keep when it caps itself.
+const MAX_WATCH_OBJECTS: u32 = 20_000;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

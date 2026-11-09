@@ -37,6 +37,8 @@ struct ListState {
     objects: Option<IndexMap<String, WatchObject>>,
     /// What the last update said of the stream after its objects: told again to a frame that joins.
     status: Option<WatchUpdate>,
+    /// The last `Capped` of a watch with `maxObjects` (#406): told again to a frame that joins.
+    capped: Option<WatchUpdate>,
     /// The frames that joined, while they listen.
     subscribers: Vec<mpsc::UnboundedSender<WatchUpdate>>,
     /// The core's watch ended: nobody joins this list any more.
@@ -169,6 +171,9 @@ impl SharedList {
             let _ = tx.send(WatchUpdate::Snapshot {
                 items: objects.values().cloned().collect(),
             });
+            if let Some(capped) = &state.capped {
+                let _ = tx.send(capped.clone());
+            }
             if let Some(status) = &state.status {
                 let _ = tx.send(status.clone());
             }
@@ -204,10 +209,9 @@ impl SharedList {
             WatchUpdate::Reconnecting | WatchUpdate::Error(_) | WatchUpdate::Forbidden { .. } => {
                 state.status = Some(update.clone());
             }
-            // Only the window's own watches ask for parts or a cap.
-            WatchUpdate::SnapshotPart { .. }
-            | WatchUpdate::SnapshotEnd { .. }
-            | WatchUpdate::Capped { .. } => {}
+            // A cap (an extension's `maxObjects`, #406) is told again to a frame that joins; parts are the window's.
+            WatchUpdate::Capped { .. } => state.capped = Some(update.clone()),
+            WatchUpdate::SnapshotPart { .. } | WatchUpdate::SnapshotEnd { .. } => {}
         }
         state
             .subscribers
@@ -339,6 +343,34 @@ mod tests {
         assert_eq!(names(&next(&mut third).await), ["web-2", "web-3"]);
         assert_eq!(next(&mut third).await, WatchUpdate::Reconnecting);
         assert_eq!(hub.running(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_frame_that_joins_a_capped_list_is_told_the_cap() {
+        let hub = WatchHub::default();
+        let upstream = Upstream::new();
+        let mut first = hub
+            .subscribe("c1|pods|cap".into(), upstream.open())
+            .await
+            .unwrap();
+        upstream.send(WatchUpdate::Snapshot {
+            items: vec![object("1", "web-1")],
+        });
+        upstream.send(WatchUpdate::Capped { total: 7 });
+        next(&mut first).await;
+        assert!(matches!(
+            next(&mut first).await,
+            WatchUpdate::Capped { total: 7 }
+        ));
+        let mut second = hub
+            .subscribe("c1|pods|cap".into(), upstream.open())
+            .await
+            .unwrap();
+        assert_eq!(names(&next(&mut second).await), ["web-1"]);
+        assert!(matches!(
+            next(&mut second).await,
+            WatchUpdate::Capped { total: 7 }
+        ));
     }
 
     #[tokio::test]

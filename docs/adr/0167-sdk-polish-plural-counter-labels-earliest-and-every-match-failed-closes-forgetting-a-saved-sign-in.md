@@ -143,3 +143,10 @@ characters) — `raycluster/<name>` rather than the selector; the title stays in
 
 The SDK's `ui.block` takes `onToggle` — each open or close, so a frame remembers it in its `storage` and watches a
 block's lists only while it is open — and `actions`, buttons in its head after the title.
+
+## Amendment: a capped watch (#406)
+
+An extension's `resources.watch` may ask `maxObjects` (1 to 20 000): the core keeps that many and counts the rest, and
+the `capped` update (still no `WatchUpdate` an extension switches over: the SDK tells it apart, `onCapped` and
+`Watch.capped`) says how many match. A capped watch is its own shared list (the cap is in the hub's key), and the hub
+tells a frame that joins late the last cap. Watches without `maxObjects` are as before: no `capped`, no parts.

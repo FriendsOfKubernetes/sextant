@@ -140,6 +140,11 @@ export interface WatchParams extends OnCluster {
   fieldSelector?: string;
   /** Only `{apiVersion, kind, metadata}` of each object. */
   metadataOnly?: boolean;
+  /**
+   * Keep at most this many objects, 1 to 20 000 (since Sextant 0.30): the others are only counted, and `onCapped` /
+   * `Watch.capped` say how many match in all.
+   */
+  maxObjects?: number;
 }
 
 export interface ApplyParams extends OnCluster {
