@@ -504,8 +504,8 @@ const ruleLimits = (api) => (api >= 4 ? [30, 20] : [20, 10]);
 const MAX_CONDITIONS = 20;
 const MAX_DEPTH = 3;
 /** From sextantApi 4 (#381): an older Sextant reads only older manifests, so the limits grow with the version. */
-const MAX_CONDITIONS_4 = 30;
-const MAX_DEPTH_4 = 4;
+const MAX_CONDITIONS_4 = 40;
+const MAX_DEPTH_4 = 6;
 /** `condition_limits`: the limits of a rule's conditions for a manifest of `api`. */
 const conditionLimits = (api) => (api >= 4 ? [MAX_CONDITIONS_4, MAX_DEPTH_4] : [MAX_CONDITIONS, MAX_DEPTH]);
 const MAX_PLACEHOLDERS = 5;

@@ -140,6 +140,17 @@ describe("problem rules of extensions", () => {
     expect(detectRule(rule, report)[0]!.since).toBe(new Date(1762700000 * 1000).toISOString());
   });
 
+  it("compare with an offset, and hold at once for an unreadable time when asked (#405, #407)", () => {
+    const js = { metadata: { name: "j" }, status: { restarts: 2 }, spec: { failurePolicy: { maxRestarts: 3 } } } as unknown as KubeObject;
+    const near: ProblemCondition = { type: "atLeast", path: ".status.restarts", otherPath: ".spec.failurePolicy.maxRestarts", offset: -1 };
+    expect(evaluate(near, js).holds).toBe(true);
+    expect(evaluate({ ...near, offset: 0 } as ProblemCondition, js).holds).toBe(false);
+    const odd = { metadata: { name: "c" }, status: { lastTransitionTime: "yesterday" } } as unknown as KubeObject;
+    expect(evaluate({ type: "olderThan", path: ".status.lastTransitionTime", minutes: 5 }, odd).holds).toBe(false);
+    expect(evaluate({ type: "olderThan", path: ".status.lastTransitionTime", minutes: 5, orUnreadable: true }, odd)).toEqual({ holds: true });
+    expect(evaluate({ type: "olderThan", path: ".status.missing", minutes: 5, orUnreadable: true }, odd).holds).toBe(false);
+  });
+
   it("read field paths of the custom columns' grammar, nothing else", () => {
     expect(valueAt(cluster, ".status.ceph.health")).toBe("HEALTH_ERR");
     expect(valueAt(cluster, "status.items[1].name")).toBe("b");

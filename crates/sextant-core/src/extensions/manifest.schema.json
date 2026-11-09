@@ -750,7 +750,7 @@
               "rules": {
                 "description": "The ids of the problem rules whose problems it counts; left out: every rule.",
                 "type": "array",
-                "maxItems": 20,
+                "maxItems": 30,
                 "items": { "$ref": "#/$defs/contributionId" }
               },
               "label": {
@@ -1098,7 +1098,8 @@
           "properties": {
             "type": { "const": "olderThan" },
             "path": { "$ref": "#/$defs/fieldPath" },
-            "minutes": { "type": "integer", "minimum": 1, "maximum": 525600 }
+            "minutes": { "type": "integer", "minimum": 1, "maximum": 525600 },
+            "orUnreadable": { "description": "Holds at once for a value that is there but no time (sextantApi 4).", "type": "boolean" }
           }
         },
         {
@@ -1159,7 +1160,8 @@
           "properties": {
             "type": { "const": "atLeast" },
             "path": { "$ref": "#/$defs/fieldPath" },
-            "otherPath": { "$ref": "#/$defs/fieldPath" }
+            "otherPath": { "$ref": "#/$defs/fieldPath" },
+            "offset": { "description": "Added to the other value first: -1 for one before the limit.", "type": "integer", "minimum": -1000000, "maximum": 1000000 }
           }
         },
         {

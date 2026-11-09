@@ -5,4 +5,12 @@ import type { ProblemScalar } from "./ProblemScalar";
 /**
  * A condition of a rule, tagged by `type`.
  */
-export type ProblemCondition = { "type": "equals", path: string, value: ProblemScalar, } | { "type": "in", path: string, values: Array<ProblemScalar>, } | { "type": "contains", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "startsWith", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "exists", path: string, } | { "type": "absent", path: string, } | { "type": "condition", conditionType: string, status: string, reason?: string, } | { "type": "above", path: string, value: number, } | { "type": "below", path: string, value: number, } | { "type": "same", path: string, otherPath: string, } | { "type": "atLeast", path: string, otherPath: string, } | { "type": "enteredWithin", minutes: number, } | { "type": "olderThan", path: string, minutes: number, } | { "type": "missing", path: string, kind: KindPattern, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, };
+export type ProblemCondition = { "type": "equals", path: string, value: ProblemScalar, } | { "type": "in", path: string, values: Array<ProblemScalar>, } | { "type": "contains", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "startsWith", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "exists", path: string, } | { "type": "absent", path: string, } | { "type": "condition", conditionType: string, status: string, reason?: string, } | { "type": "above", path: string, value: number, } | { "type": "below", path: string, value: number, } | { "type": "same", path: string, otherPath: string, } | { "type": "atLeast", path: string, otherPath: string, 
+/**
+ * Added to the other value first (#407): `-1` for "one before the limit".
+ */
+offset?: number, } | { "type": "enteredWithin", minutes: number, } | { "type": "olderThan", path: string, minutes: number, 
+/**
+ * Holds at once for a value that is there but no time (#405), as the built-in rules counted it.
+ */
+orUnreadable?: boolean, } | { "type": "missing", path: string, kind: KindPattern, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, };

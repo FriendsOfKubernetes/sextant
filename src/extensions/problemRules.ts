@@ -157,11 +157,15 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       // Both as numbers (a list as its length); not a number on either side never holds (#386).
       const a = numberOf(valueAt(obj, condition.path));
       const b = numberOf(valueAt(obj, condition.otherPath));
-      return { holds: a !== undefined && b !== undefined && a >= b };
+      // `offset` (#407): added to the other value first.
+      return { holds: a !== undefined && b !== undefined && a >= b + (condition.offset ?? 0) };
     }
     case "olderThan": {
-      const t = timeOf(valueAt(obj, condition.path));
-      return t === undefined ? NO : { holds: true, activeFrom: t + condition.minutes * MINUTE_MS };
+      const value = valueAt(obj, condition.path);
+      const t = timeOf(value);
+      // `orUnreadable` (#405): a value that is there but no time holds at once.
+      if (t === undefined) return condition.orUnreadable && value !== undefined && value !== null && value !== "" ? { holds: true } : NO;
+      return { holds: true, activeFrom: t + condition.minutes * MINUTE_MS };
     }
     case "missing": {
       // Nothing named, nothing missing.

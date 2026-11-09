@@ -45,11 +45,11 @@ pub fn rule_limits(api: u32) -> (usize, usize) {
 /// Conditions of one rule, `all`/`any` counted.
 pub const MAX_CONDITIONS: usize = 20;
 /// Conditions of one rule from `sextantApi` 4 (#381).
-pub const MAX_CONDITIONS_4: usize = 30;
+pub const MAX_CONDITIONS_4: usize = 40;
 /// Nesting of `all`/`any`: the rule's own condition is level 1.
 pub const MAX_DEPTH: usize = 3;
 /// Nesting from `sextantApi` 4 (#381): an older Sextant reads only older manifests, so the limits grow with the version.
-pub const MAX_DEPTH_4: usize = 4;
+pub const MAX_DEPTH_4: usize = 6;
 
 /// The limits of a rule's conditions for a manifest of `api`: (conditions, nesting).
 pub fn condition_limits(api: u32) -> (usize, usize) {
@@ -327,6 +327,10 @@ pub enum ProblemCondition {
         path: String,
         #[serde(rename = "otherPath")]
         other_path: String,
+        /// Added to the other value first (#407): `-1` for "one before the limit".
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        offset: Option<i64>,
     },
     /// The object entered the rule's label-selected source less than `minutes` ago, as Sextant saw it (#393): holds from
     /// then for `minutes`, never for objects already there when the list was first read; `sextantApi` 4, problem rules
@@ -338,6 +342,13 @@ pub enum ProblemCondition {
     OlderThan {
         path: String,
         minutes: u32,
+        /// Holds at once for a value that is there but no time (#405), as the built-in rules counted it.
+        #[serde(
+            default,
+            rename = "orUnreadable",
+            skip_serializing_if = "std::ops::Not::not"
+        )]
+        or_unreadable: bool,
     },
     /// The text at `path` names no object of `kind` — in the object's namespace, or for a kind without namespaces in
     /// the cluster (ADR-0144); `sextantApi` 3. Unknown (so not holding) while that list is not read in full where the
@@ -712,6 +723,7 @@ fn check_condition<'k>(
         | ProblemCondition::AtLeast {
             path: field,
             other_path,
+            ..
         } => {
             if checks.api < SOURCES_API {
                 let name = if matches!(condition, ProblemCondition::Same { .. }) {

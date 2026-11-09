@@ -117,3 +117,9 @@ match a boolean and a number too (`pair_fits` = `pairsFit`).
 A placeholder may end in a filter: `{{path|firstLine}}`, `|lastSegment` (after the last `.` or `/`), `|list` (a list's
 scalars joined in the UI language) or `|count` (a list's items, a map's entries) — in messages, reasons and column case
 texts alike (`PLACEHOLDER_FILTERS`). A rule's `sinceUnit: "seconds"` reads `since` and `sinceOr` as seconds since 1970.
+
+## Amendment: offsets, unreadable times and deeper rules (#405, #407)
+
+`atLeast` takes an `offset` added to the other value (`-1`: one before the limit), and `olderThan` with `orUnreadable`
+holds at once for a value that is there but no time, as the built-in rules counted it. From `sextantApi` 4 a rule nests
+`all`/`any`/`not` 6 deep with 40 conditions, and a section counter names up to 30 rules.
