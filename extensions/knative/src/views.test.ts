@@ -1,6 +1,6 @@
 // The details sections, driven through the SDK's stand-in for Sextant's window, as the built-in view's tests drove it.
 import type { KubeObject, WatchUpdate } from "@sextant/extension-sdk";
-import { startTestHost, type TestHost, type TestWatch } from "@sextant/extension-sdk/testing";
+import { startTestHost, type TestHost, type TestHostOptions, type TestWatch } from "@sextant/extension-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 import manifest from "../sextant-extension.json";
 import eventingJson from "../fixtures/eventing.json";
@@ -34,10 +34,11 @@ let host: TestHost;
 let root: HTMLElement;
 let stop: () => void = () => undefined;
 
-async function open(obj: KubeObject, served: readonly (readonly [string, string, string])[] = SERVED): Promise<void> {
+async function open(obj: KubeObject, served: readonly (readonly [string, string, string])[] = SERVED, options: TestHostOptions = {}): Promise<void> {
   host = await startTestHost({
-    context: { view: "details", contribution: sectionOf(obj), selection: [ref(obj)], resourceVersion: "1" },
-    handlers: { "resources.get": () => structuredClone(obj), kinds: () => kinds(served) },
+    ...options,
+    context: { view: "details", contribution: sectionOf(obj), selection: [ref(obj)], resourceVersion: "1", ...options.context },
+    handlers: { "resources.get": () => structuredClone(obj), kinds: () => kinds(served), ...options.handlers },
   });
   root = document.createElement("main");
   document.body.append(root);
@@ -110,6 +111,94 @@ describe("details of Knative Serving", () => {
     await open(dm);
     expect(byLabel("Open Service hello")).toHaveLength(1);
     expect(text()).toContain("Points at");
+  });
+});
+
+describe("the blocks", () => {
+  const toggles = () => [...root.querySelectorAll<HTMLButtonElement>(".sx-block__toggle")];
+  const expanded = () => toggles().map((b) => [b.textContent, b.getAttribute("aria-expanded")]);
+  /** Sextant's memory: `ui.setBlockOpen` writes it, the context tells it back, as the window does. */
+  const remembering = (blocks: Record<string, boolean> = {}): TestHostOptions => ({
+    context: { blocks },
+    handlers: {
+      "ui.setBlockOpen": ({ id, open }: { id: string; open: boolean }) => {
+        blocks = { ...blocks, [id]: open };
+        setTimeout(() => host.setContext({ blocks }));
+        return null;
+      },
+    },
+  });
+  const setBlockOpen = () => host.calls.filter((c) => c.method === "ui.setBlockOpen").map((c) => c.params);
+
+  it("are the built-in section's: one titled with the kind, the traffic split inside it, the event path beside it", async () => {
+    await open(service);
+    expect(expanded()).toEqual([
+      ["Service", "true"],
+      ["Traffic", "true"],
+    ]);
+    const outer = root.querySelector<HTMLElement>("[data-block='fields']")!;
+    expect(outer.querySelector("[data-block='traffic']")).not.toBeNull();
+    stop();
+    root.remove();
+    host.close();
+    await open(find("Broker", "default"));
+    expect(expanded()).toEqual([
+      ["Broker", "true"],
+      ["Event path", "true"],
+    ]);
+    expect(root.querySelector("[data-block='fields'] [data-block='eventPath']")).toBeNull();
+    expect([...root.children].map((c) => (c as HTMLElement).dataset.block)).toEqual(["fields", "eventPath"]);
+  });
+
+  it("open and close in Sextant's own memory of details sections, the event path watched only while open", async () => {
+    await open(find("Broker", "default"), SERVED, remembering({ eventPath: false }));
+    expect(expanded()).toEqual([
+      ["Broker", "true"],
+      ["Event path", "false"],
+    ]);
+    // A closed path reads nothing.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(host.watches).toHaveLength(0);
+    const path = toggles()[1]!;
+    path.focus();
+    path.click();
+    await expect.poll(() => watchOf("Trigger")).toBeDefined();
+    await expect.poll(setBlockOpen).toEqual([{ id: "eventPath", open: true }]);
+    expect(expanded()[1]).toEqual(["Event path", "true"]);
+    // The path drawn again keeps the focus on its title.
+    expect(document.activeElement?.textContent).toBe("Event path");
+    toggles()[0]!.click();
+    await expect.poll(setBlockOpen).toEqual([
+      { id: "eventPath", open: true },
+      { id: "fields", open: false },
+    ]);
+    expect(expanded()[0]).toEqual(["Broker", "false"]);
+    // Read again on a change: still as chosen.
+    host.setContext({ resourceVersion: "2" });
+    await expect.poll(() => host.calls.filter((c) => c.method === "resources.get").length).toBe(2);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(expanded()).toEqual([
+      ["Broker", "false"],
+      ["Event path", "true"],
+    ]);
+  });
+
+  it("follow the panel's Expand all and Collapse all, the event path's watches with them", async () => {
+    await open(find("Broker", "default"), SERVED, remembering());
+    await expect.poll(() => watchOf("Trigger")).toBeDefined();
+    host.setContext({ blocks: { "*": false } });
+    await expect.poll(expanded).toEqual([
+      ["Broker", "false"],
+      ["Event path", "false"],
+    ]);
+    await expect.poll(() => host.watches.filter((w) => !w.stopped)).toHaveLength(0);
+    host.setContext({ blocks: { "*": true } });
+    await expect.poll(expanded).toEqual([
+      ["Broker", "true"],
+      ["Event path", "true"],
+    ]);
+    await expect.poll(() => watchOf("Trigger")).toBeDefined();
+    expect(setBlockOpen()).toEqual([]);
   });
 });
 

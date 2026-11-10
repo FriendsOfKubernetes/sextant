@@ -988,6 +988,14 @@
             "text": "{{.status.connectorStatus.tasks[state=\"RUNNING\",*]|count}}/{{.status.connectorStatus.tasks|count}}",
             "tone": "warning",
             "value": "{{.status.connectorStatus.tasks[state=\"RUNNING\",*]|count}}"
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.connectorStatus.tasks[0]"
+            },
+            "text": "",
+            "value": 0
           }
         ],
         "afterColumn": "connector-state",

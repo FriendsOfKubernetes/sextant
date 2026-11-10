@@ -11,8 +11,11 @@
 //                                     channel, subscriber and reply; a source's sink and what it reads), each
 //                                     Destination as a link with the address it resolved to, and the event path
 //                                     (path.ts) from the lists of the hub's namespace, watched while that block is open.
-// Each frame reads the shown object again whenever its resourceVersion changes. Conditions, events and YAML are
-// Sextant's own sections. Read-only.
+// As the built-in section, the view is a block titled with the kind (the section itself has no heading), and an
+// Eventing object's event path a block beside it; the blocks open and close with their titles in Sextant's own memory
+// of details sections (`context.blocks`, `ui.setBlockOpen`), with the panel's "Expand all" and "Collapse all". Each
+// frame reads the shown object again whenever its resourceVersion changes. Conditions, events and YAML are Sextant's
+// own sections. Read-only.
 import { trackObjects, ui, type KubeObject, type ObjectRef, type Sextant, type UiContent, type Watch, type WatchParams } from "@sextant/extension-sdk";
 import { element, errorText, explanation, fieldsOf, formatList, formatParts, health, link, message, refLink, remark } from "./dom";
 import {
@@ -83,18 +86,31 @@ const present = (nodes: (Node | null | false | undefined)[]): Node[] => nodes.fi
 
 // ---------- Blocks that keep their state ----------
 
-/** Blocks the user closed, by id: a block drawn again (on every change) stays closed, and the event path unwatched. */
-const closedBlocks = new Set<string>();
+/**
+ * Which blocks are open, and where a toggle goes: Sextant's own memory of details sections (`context.blocks`, written
+ * by `ui.setBlockOpen`), kept per kind as Settings → Appearance says, with the panel's "Expand all" and "Collapse
+ * all" — where the built-in section's blocks were kept.
+ */
+export interface BlockMemory {
+  isOpen(block: string): boolean;
+  setOpen(block: string, open: boolean): void;
+}
 
-/** A titled block as the built-in view's: open unless the user closed it, closable with its title. */
-function block(id: string, title: string, content: UiContent, onToggle?: () => void): HTMLElement {
-  const node = ui.block(title, content, { collapsible: true, collapsed: closedBlocks.has(id) });
-  node.querySelector(".sx-block__toggle")?.addEventListener("click", (event) => {
-    const open = (event.currentTarget as HTMLElement).getAttribute("aria-expanded") === "true";
-    if (open) closedBlocks.delete(id);
-    else closedBlocks.add(id);
-    onToggle?.();
-  });
+/** Blocks that are all open and remember nothing. */
+export const OPEN_BLOCKS: BlockMemory = { isOpen: () => true, setOpen: () => undefined };
+
+/** The blocks' memory of the frame's context; every block open by default, as the built-in's were. */
+export function sextantBlocks(sextant: Sextant): BlockMemory {
+  return {
+    isOpen: (id) => ui.blockOpen(sextant.context.blocks, id, true),
+    setOpen: (id, open) => void sextant.ui.setBlockOpen(id, open).catch(() => undefined),
+  };
+}
+
+/** A titled block as the built-in view's: open as Sextant remembers it, closable with its title. */
+function block(memory: BlockMemory, id: string, title: string, content: UiContent): HTMLElement {
+  const node = ui.block(title, content, { collapsible: true, collapsed: !memory.isOpen(id), onToggle: (open) => memory.setOpen(id, open) });
+  node.dataset.block = id;
   return node;
 }
 
@@ -110,7 +126,7 @@ function servingHead(kind: KindOf, obj: KubeObject): Node[] {
 }
 
 /** The traffic split of a Service or Route, with links to the revisions. */
-export function trafficTable(sextant: Sextant, obj: KubeObject): HTMLElement | null {
+export function trafficTable(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): HTMLElement | null {
   const { targets, asked } = trafficSplit(obj);
   const ns = obj.metadata.namespace ?? null;
   if (targets.length === 0) return null;
@@ -128,10 +144,10 @@ export function trafficTable(sextant: Sextant, obj: KubeObject): HTMLElement | n
   ]);
   const headers = ["revision", "tag", "share", "latest", "url"].map((h) => t(`traffic.${h}`));
   const title = asked ? t("traffic.askedTitle") : t("traffic.title");
-  return block(asked ? "askedTraffic" : "traffic", title, ui.table(headers, rows, { label: title }));
+  return block(memory, asked ? "askedTraffic" : "traffic", title, ui.table(headers, rows, { label: title }));
 }
 
-function serviceView(sextant: Sextant, kind: KindRef, obj: KubeObject): Node[] {
+function serviceView(sextant: Sextant, kind: KindRef, obj: KubeObject, memory: BlockMemory): Node[] {
   const f = serviceFields(obj);
   const ns = obj.metadata.namespace ?? null;
   return present([
@@ -143,7 +159,7 @@ function serviceView(sextant: Sextant, kind: KindRef, obj: KubeObject): Node[] {
       ["latestCreated", link(sextant, REVISION, f.latestCreated, ns)],
       ["latestReady", link(sextant, REVISION, f.latestReady, ns)],
     ]),
-    (sameKind(kind, KSERVICE) || sameKind(kind, ROUTE)) && trafficTable(sextant, obj),
+    (sameKind(kind, KSERVICE) || sameKind(kind, ROUTE)) && trafficTable(sextant, obj, memory),
   ]);
 }
 
@@ -180,10 +196,14 @@ function domainMappingView(sextant: Sextant, obj: KubeObject): Node[] {
   ]);
 }
 
-export function servingView(sextant: Sextant, kind: KindRef, obj: KubeObject): Node[] {
-  if (sameKind(kind, REVISION)) return revisionView(sextant, obj);
-  if (sameKind(kind, DOMAIN_MAPPING)) return domainMappingView(sextant, obj);
-  return serviceView(sextant, kind, obj);
+/** The block titled with the kind, as the built-in section's. */
+export function servingView(sextant: Sextant, kind: KindRef, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
+  const content = sameKind(kind, REVISION)
+    ? revisionView(sextant, obj)
+    : sameKind(kind, DOMAIN_MAPPING)
+      ? domainMappingView(sextant, obj)
+      : serviceView(sextant, kind, obj, memory);
+  return [block(memory, "fields", kind.kind, content)];
 }
 
 // ---------- Knative Eventing ----------
@@ -364,7 +384,7 @@ function nodeItem(sextant: Sextant, node: PathNode, lists: PathLists): HTMLEleme
 }
 
 /** The "Event path" block: the sources that send to the hub, the hub, its Triggers or Subscriptions and their subscribers. */
-export function eventPathView(sextant: Sextant, kind: KindRef, obj: KubeObject, lists: PathLists, loading: boolean, onToggle: () => void): HTMLElement | null {
+export function eventPathView(sextant: Sextant, kind: KindRef, obj: KubeObject, lists: PathLists, loading: boolean, memory: BlockMemory = OPEN_BLOCKS): HTMLElement | null {
   const path = eventPath(kind, obj, lists);
   if (!path) return null;
   const title = t("eventing.path.title");
@@ -372,6 +392,7 @@ export function eventPathView(sextant: Sextant, kind: KindRef, obj: KubeObject, 
   tree.setAttribute("aria-label", title);
   const from = path.from;
   return block(
+    memory,
     "eventPath",
     title,
     [
@@ -389,18 +410,18 @@ export function eventPathView(sextant: Sextant, kind: KindRef, obj: KubeObject, 
       from && from.length === 0 && remark(t("eventing.path.noSources")),
       tree,
     ],
-    onToggle,
   );
 }
 
-export function eventingView(sextant: Sextant, kind: KindRef, obj: KubeObject, lists: PathLists, loading: boolean, onToggle: () => void): Node[] {
+/** The block titled with the kind and, beside it, the event path, as the built-in section's. */
+export function eventingView(sextant: Sextant, kind: KindRef, obj: KubeObject, lists: PathLists, loading: boolean, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const phrase = explainEventing(kind, obj);
-  return present([
+  const content = present([
     phrase && explanation(t(`eventing.explain.${phrase.key}`, phrase.params ?? {}), healthOf(obj) === "failed"),
     message(failingCondition(obj)?.message),
     fieldsOf("eventing.fields", eventingRows(sextant, obj, kind)),
-    eventPathView(sextant, kind, obj, lists, loading, onToggle),
   ]);
+  return present([block(memory, "fields", kind.kind, content), eventPathView(sextant, kind, obj, lists, loading, memory)]);
 }
 
 // ---------- The lists of the event path ----------
@@ -523,11 +544,47 @@ export function startDetails(sextant: Sextant, root: HTMLElement): () => void {
   // The kinds the cluster serves, of those the extension may read: `null` until known, "unknown" when not readable.
   let served: Map<string, KindRef> | null | "unknown" = null;
   let askedKinds = false;
+  // How the drawn blocks show now (each toggle included): a change of Sextant's memory that differs draws them again.
+  const remembered = sextantBlocks(sextant);
+  const shownBlocks = new Map<string, boolean>();
+  // A toggle of this frame until Sextant's memory tells it back (the next change of `context.blocks`): the event path
+  // is drawn again at once.
+  const blocksNow = () => JSON.stringify(sextant.context.blocks ?? {});
+  const pending = new Map<string, { open: boolean; before: string }>();
+  const openNow = (id: string) => {
+    const choice = pending.get(id);
+    if (choice && choice.before === blocksNow()) return choice.open;
+    pending.delete(id);
+    return remembered.isOpen(id);
+  };
+  const memory: BlockMemory = {
+    isOpen: (id) => {
+      const open = openNow(id);
+      shownBlocks.set(id, open);
+      return open;
+    },
+    setOpen: (id, open) => {
+      shownBlocks.set(id, open);
+      pending.set(id, { open, before: blocksNow() });
+      remembered.setOpen(id, open);
+      // The event path watches its lists only while open.
+      if (id === "eventPath") schedule();
+    },
+  };
+
+  /** Draws `nodes`, keeping the focus on a block's toggle that was drawn again. */
+  const show = (nodes: Node[]) => {
+    const focused = document.activeElement instanceof HTMLElement && root.contains(document.activeElement) ? document.activeElement : null;
+    const focusedBlock = focused?.classList.contains("sx-block__toggle") ? focused.closest<HTMLElement>("[data-block]")?.dataset.block : undefined;
+    root.replaceChildren(...nodes);
+    if (focusedBlock) root.querySelector<HTMLElement>(`[data-block="${focusedBlock}"] .sx-block__toggle`)?.focus();
+  };
 
   const render = () => {
     if (!object || !kind || stopped) return;
+    shownBlocks.clear();
     if (knativeKind(kind)) {
-      root.replaceChildren(...servingView(sextant, kind, object));
+      show(servingView(sextant, kind, object, memory));
       return;
     }
     if (!eventingKind(kind)) {
@@ -535,7 +592,7 @@ export function startDetails(sextant: Sextant, root: HTMLElement): () => void {
       return;
     }
     const needs = pathNeeds(kind, object);
-    const open = needs !== undefined && !closedBlocks.has("eventPath");
+    const open = needs !== undefined && memory.isOpen("eventPath");
     if (open && !askedKinds) {
       askedKinds = true;
       sextant
@@ -549,7 +606,7 @@ export function startDetails(sextant: Sextant, root: HTMLElement): () => void {
     }
     const listed = watches.want(open ? needs?.namespace : undefined, open ? neededKinds(needs) : [], served);
     const { lists, loading } = open ? pathLists(needs, listed) : { lists: {}, loading: false };
-    root.replaceChildren(...eventingView(sextant, kind, object, lists, loading, schedule));
+    show(eventingView(sextant, kind, object, lists, loading, memory));
   };
   function schedule() {
     if (scheduled || stopped) return;
@@ -589,7 +646,11 @@ export function startDetails(sextant: Sextant, root: HTMLElement): () => void {
       root.replaceChildren(ui.loading(t("loading")));
     }
     const version = sextant.context.resourceVersion;
-    if (version === shownVersion) return;
+    if (version === shownVersion) {
+      // The panel's "Expand all" or "Collapse all", or a choice made elsewhere.
+      if (object && [...shownBlocks].some(([id, open]) => openNow(id) !== open)) render();
+      return;
+    }
     shownVersion = version;
     void read(ref);
   };

@@ -10,11 +10,12 @@ Broker or Channel to the subscribers; and reports objects that are not ready, ea
 replaces Sextant's former built-in Knative views with the same behaviour where the extension API allows (see
 "Requirements and limits"). Its id is `sextant.knative`. Why it is built this way: ADR-0101 (Knative Serving's
 readings and problems), ADR-0106 (Eventing's kinds, the event path from one namespace, the problems told through the
-owner and the Broker), ADR-0139 (Sextant's own extensions), ADR-0140 (translations), ADR-0144 (problems told through
-an owner), ADR-0152 (kinds in a section of their own, `not`), ADR-0153 (computed columns), ADR-0160 (the sections'
+owner and the Broker), ADR-0139 (Sextant's own extensions), ADR-0140 (translations), ADR-0152 (kinds in a section of their own, `not`), ADR-0153 (computed columns), ADR-0160 (the sections'
 icons and places, the UI kit), ADR-0161 (printer columns left out, paths picking an item, notification groups),
 ADR-0163 (field values in texts, a problem's reason from the object), ADR-0164 (case tooltips, deeper conditions) and
-ADR-0167 (the counters' own labels, 30 rules over 20 kinds).
+ADR-0167 (the counters' own labels, 30 rules over 20 kinds, `reasonOr`, match steps with `!=`, text conditions, sums
+and counts in conditions, `|join`, column widths and sort values, the `muted` tone, details sections without a
+heading, blocks in Sextant's own memory).
 
 ## At a glance
 
@@ -39,9 +40,10 @@ shows how many of its objects need attention (the problems below, each section c
 **"Only problems"** on every kind, as the built-in tables had it (no grace, no owner): the objects whose `Ready`
 condition is False.
 
-**Columns**, after Name and Namespace, in place of the CRDs' own printer columns (left out, as the built-in view did).
-Every kind begins with **Status** (Ready, Progressing, Failed or Unknown from `Ready`, coloured) and ends with
-**Reason** (the failing condition's reason while the object is not ready):
+**Columns**, after Name and Namespace, in place of the CRDs' own printer columns (left out, as the built-in view did),
+with the built-in columns' widths. Every kind begins with **Status** (Ready, Progressing, Failed or Unknown from
+`Ready`, coloured, Unknown muted, sorted by the state) and ends with **Reason** (the reason of the first False
+condition other than `Ready` — a Revision's `Active` left out — else of `Ready`, while the object is not ready):
 - Services: `ksvc-status`, **URL** (`ksvc-url`), **Latest created** (`ksvc-latest-created`), **Latest ready**
   (`ksvc-latest-ready`), `ksvc-reason`.
 - Configurations: `configuration-status`, **Latest created** (`configuration-latest-created`), **Latest ready**
@@ -49,36 +51,40 @@ Every kind begins with **Status** (Ready, Progressing, Failed or Unknown from `R
 - Revisions: `revision-status`, **Configuration** (`revision-configuration`, its label), **Generation**
   (`revision-generation`), **Replicas** (`revision-replicas`: actual/desired), `revision-reason` (a revision scaled to
   zero is ready, with no reason).
-- Routes: `route-status`, **URL** (`route-url`), **Traffic** (`route-traffic`: each revision with its share, "name 80%
-  · name 20%"), `route-reason`.
+- Routes: `route-status`, **URL** (`route-url`), **Traffic** (`route-traffic`: each revision with a share, "name 80%
+  · name 20%", or the split asked while none is in effect), `route-reason`.
 - Domain Mappings: `domain-mapping-status`, **URL** (`domain-mapping-url`), **Target** (`domain-mapping-target`),
   `domain-mapping-reason`.
 - Brokers: `broker-status`, **Class** (`broker-class`), **Address** (`broker-address`), `broker-reason`.
-- Triggers: `trigger-status`, **Broker** (`trigger-broker`), **Filter** (`trigger-filter`: `type=…`, `source=…`, a
-  CESQL expression), **Subscriber** (`trigger-subscriber`: `Kind/name`, with its URI, or the URI), `trigger-reason`.
+- Triggers: `trigger-status`, **Broker** (`trigger-broker`: `spec.brokerRef.name`, else `spec.broker`), **Filter**
+  (`trigger-filter`: `type=…`, `source=…`, a CESQL expression), **Subscriber** (`trigger-subscriber`: `Kind/name`, with
+  its URI, or the URI), `trigger-reason`.
 - Channels and In-Memory Channels: `channel-status`, **Address** (`channel-address`), `channel-reason`;
   `in-memory-channel-status`, `in-memory-channel-address`, `in-memory-channel-reason`.
 - Subscriptions: `subscription-status`, **Channel** (`subscription-channel`), **Subscriber**
   (`subscription-subscriber`), **Reply** (`subscription-reply`), `subscription-reason`.
-- Sequences and Parallels: `sequence-status`, **Steps** (`sequence-steps`), **Address** (`sequence-address`),
-  `sequence-reason`; `parallel-status`, **Branches** (`parallel-branches`), **Address** (`parallel-address`),
-  `parallel-reason`.
+- Sequences and Parallels: `sequence-status`, **Steps** (`sequence-steps`, 0 without any), **Address**
+  (`sequence-address`), `sequence-reason`; `parallel-status`, **Branches** (`parallel-branches`, 0 without any),
+  **Address** (`parallel-address`), `parallel-reason`.
 - API Server Sources: `api-server-source-status`, **Mode** (`api-server-source-mode`), **Sink**
   (`api-server-source-sink`), `api-server-source-reason`.
 - Ping Sources: `ping-source-status`, **Schedule** (`ping-source-schedule`), **Sink** (`ping-source-sink`),
   `ping-source-reason`.
 - Container Sources and Sink Bindings: `container-source-status`, **Sink** (`container-source-sink`),
   `container-source-reason`; `sink-binding-status`, `sink-binding-sink`, `sink-binding-reason`.
-- Kafka Sources: `kafka-source-status`, **Topics** (`kafka-source-topics`), **Sink** (`kafka-source-sink`),
-  `kafka-source-reason`.
+- Kafka Sources: `kafka-source-status`, **Topics** (`kafka-source-topics`, joined with ", ", the list on hover),
+  **Sink** (`kafka-source-sink`), `kafka-source-reason`.
 
-**Details**, a section per kind, titled with the kind, in place of the generic fields and before the conditions,
-drawn with the SDK's UI kit in the classes of Sextant's own details panel. Each begins with why the object is (not)
-ready in plain words (red when it failed) and the failing condition's message as Knative wrote it:
+**Details**, a section per kind in place of the generic fields and before the conditions, drawn with the SDK's UI
+kit in the classes of Sextant's own details panel: as the built-in section, a block titled with the kind (the section
+has no heading of its own) and, for an Eventing object, the event path in a block beside it. The blocks open and
+close with their titles, kept in Sextant's own memory of details sections (as Settings → Appearance says) and
+following the panel's "Expand all" and "Collapse all". Each begins with why the object is (not) ready in plain words
+(red when it failed) and the failing condition's message as Knative wrote it:
 - **Service** (`service`), **Configuration** (`configuration`) and **Route** (`route`): state, URL, address in the
-  cluster, the latest created and latest ready revisions; for a Service or Route the traffic split — each target's
-  revision, tag, share, whether it follows the latest ready revision, and its URL — or, while none is in effect, the
-  split that was asked.
+  cluster, the latest created and latest ready revisions; for a Service or Route the traffic split in a block of its
+  own — each target's revision, tag, share, whether it follows the latest ready revision, and its URL — or, while none
+  is in effect, the split that was asked.
 - **Revision** (`revision`): state (scaled to zero, starting, the container unhealthy, resources unavailable), its
   Configuration and Service, generation, actual of desired replicas, routing state, images, requests per container
   at once and the request timeout.
@@ -97,7 +103,8 @@ ready in plain words (red when it failed) and the failing condition's message as
   subscribers and replies with the addresses they resolved to; a Sequence's steps in order; a Parallel's branches with
   their filters. The opened object is marked; each object is a link with its state. A fan-out shows at most 50 items
   and counts the rest. The path reads the Brokers, Triggers, Subscriptions and sources of that one namespace, watched
-  only while its block is open and only of the kinds the cluster serves.
+  only while its block is open (closed, or collapsed by "Collapse all", it reads nothing) and only of the kinds the
+  cluster serves.
 
 Every object named is a link to its details in Sextant's panel.
 
@@ -114,34 +121,48 @@ Every object named is a link to its details in Sextant's panel.
 
 As the built-in category `knative`, on by default. An object has a problem when its `Ready` condition is False, for
 2 minutes from when its failing condition changed (a rollout the next reconcile fixes passes quietly). Its reason,
-message and time are the first False condition's, in the order Knative writes them (by type); the `-unnamed` rules
-give the built-in fallback reason "NotReady" when that condition gives none. Every rule may notify; the rules of one
-group notify once per object. Revisions, Routes and DomainMappings are not judged: the latest revision's failure makes
-its Configuration and Service not ready, and counts once, there. The "Knative Serving" counter counts the first four
-rules, the "Knative Eventing" counter the others.
+message and time are the failing condition's: the first False condition other than `Ready` (a Revision's `Active`
+never counts), in the order Knative writes them, else `Ready`'s own — each kind has a rule for either, so the two never
+hold at once — and the reason is "NotReady" when that condition gives none. Every rule may notify, all in one group:
+an object notifies once. Revisions, Routes and DomainMappings are not judged: the latest revision's failure makes its
+Configuration and Service not ready, and counts once, there. The "Knative Serving" counter counts the first four rules,
+the "Knative Eventing" counter the others.
 
-"Told by another object" — an object a Knative controller made is told through its owner: an owner reference Knative
-writes (named in the table) leaves it out, and any other controller of the extension's kinds tells it while that
-controller has a problem (`toldThroughOwner`).
+"Told by another object" — an object a Knative controller made is left out, its owner telling its failure, judged on
+the object alone as the built-in detector did: a Configuration with an owner reference to a Knative Service (any
+version), an Eventing object whose controller reference is of `eventing.knative.dev`, `messaging.knative.dev`,
+`flows.knative.dev` or `sources.knative.dev` (any kind and version; the API server allows one controller reference).
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
-| `service-not-ready` | Service (`serving.knative.dev`) | `Ready` is False, with a reason | 2 min | No |
-| `service-not-ready-unnamed` | Service | The same without a reason (reason "NotReady") | 2 min | No |
-| `configuration-not-ready` | Configuration | `Ready` is False, with a reason | 2 min | The Service that made it (`serving.knative.dev/v1` Service) |
-| `configuration-not-ready-unnamed` | Configuration | The same without a reason | 2 min | The Service that made it |
-| `broker-not-ready` | Broker | `Ready` is False | 2 min | Its controller, if any |
-| `trigger-not-ready` | Trigger | `Ready` is False, unless only its Broker is not ready: `BrokerReady` False with a reason other than BrokerDoesNotExist, FailedToGetBroker and MissingBrokerChannel (those are the Trigger's own) | 2 min | The Broker, when the Broker's own failure is the cause |
-| `channel-not-ready` | Channel | `Ready` is False | 2 min | A Broker, Sequence or Parallel that made it |
-| `in-memory-channel-not-ready` | InMemoryChannel | `Ready` is False | 2 min | A Channel, Broker, Sequence or Parallel that made it |
-| `subscription-not-ready` | Subscription | `Ready` is False | 2 min | A Trigger, Sequence or Parallel that made it |
-| `sequence-not-ready` | Sequence | `Ready` is False | 2 min | Its controller, if any |
-| `parallel-not-ready` | Parallel | `Ready` is False | 2 min | Its controller, if any |
-| `api-server-source-not-ready` | ApiServerSource | `Ready` is False | 2 min | Its controller, if any |
-| `ping-source-not-ready` | PingSource | `Ready` is False | 2 min | Its controller, if any |
-| `container-source-not-ready` | ContainerSource | `Ready` is False | 2 min | Its controller, if any |
-| `sink-binding-not-ready` | SinkBinding | `Ready` is False | 2 min | A ContainerSource that made it |
-| `kafka-source-not-ready` | KafkaSource | `Ready` is False | 2 min | Its controller, if any |
+| `service-not-ready` | Service (`serving.knative.dev`) | `Ready` is False and another condition is False | 2 min | No |
+| `service-not-ready-ready-only` | Service | `Ready` alone is False | 2 min | No |
+| `configuration-not-ready` | Configuration | `Ready` is False and another condition is False | 2 min | The Knative Service that owns it |
+| `configuration-not-ready-ready-only` | Configuration | `Ready` alone is False | 2 min | The Knative Service that owns it |
+| `broker-not-ready` | Broker | `Ready` is False and another condition is False | 2 min | Its Eventing controller, if any |
+| `broker-not-ready-ready-only` | Broker | `Ready` alone is False | 2 min | Its Eventing controller, if any |
+| `trigger-not-ready` | Trigger | `Ready` is False and another condition is False, unless only its Broker is not ready: it names a Broker, its failing condition is `BrokerReady` and the reason is not BrokerDoesNotExist, FailedToGetBroker or MissingBrokerChannel (those are the Trigger's own) | 2 min | The Broker, when the Broker's own failure is the cause; its Eventing controller, if any |
+| `trigger-not-ready-ready-only` | Trigger | `Ready` alone is False | 2 min | Its Eventing controller, if any |
+| `channel-not-ready` | Channel | `Ready` is False and another condition is False | 2 min | A Broker, Sequence or Parallel that made it |
+| `channel-not-ready-ready-only` | Channel | `Ready` alone is False | 2 min | A Broker, Sequence or Parallel that made it |
+| `in-memory-channel-not-ready` | InMemoryChannel | `Ready` is False and another condition is False | 2 min | A Channel, Broker, Sequence or Parallel that made it |
+| `in-memory-channel-not-ready-ready-only` | InMemoryChannel | `Ready` alone is False | 2 min | A Channel, Broker, Sequence or Parallel that made it |
+| `subscription-not-ready` | Subscription | `Ready` is False and another condition is False | 2 min | A Trigger, Sequence or Parallel that made it |
+| `subscription-not-ready-ready-only` | Subscription | `Ready` alone is False | 2 min | A Trigger, Sequence or Parallel that made it |
+| `sequence-not-ready` | Sequence | `Ready` is False and another condition is False | 2 min | Its Eventing controller, if any |
+| `sequence-not-ready-ready-only` | Sequence | `Ready` alone is False | 2 min | Its Eventing controller, if any |
+| `parallel-not-ready` | Parallel | `Ready` is False and another condition is False | 2 min | Its Eventing controller, if any |
+| `parallel-not-ready-ready-only` | Parallel | `Ready` alone is False | 2 min | Its Eventing controller, if any |
+| `api-server-source-not-ready` | ApiServerSource | `Ready` is False and another condition is False | 2 min | Its Eventing controller, if any |
+| `api-server-source-not-ready-ready-only` | ApiServerSource | `Ready` alone is False | 2 min | Its Eventing controller, if any |
+| `ping-source-not-ready` | PingSource | `Ready` is False and another condition is False | 2 min | Its Eventing controller, if any |
+| `ping-source-not-ready-ready-only` | PingSource | `Ready` alone is False | 2 min | Its Eventing controller, if any |
+| `container-source-not-ready` | ContainerSource | `Ready` is False and another condition is False | 2 min | Its Eventing controller, if any |
+| `container-source-not-ready-ready-only` | ContainerSource | `Ready` alone is False | 2 min | Its Eventing controller, if any |
+| `sink-binding-not-ready` | SinkBinding | `Ready` is False and another condition is False | 2 min | A ContainerSource that made it |
+| `sink-binding-not-ready-ready-only` | SinkBinding | `Ready` alone is False | 2 min | A ContainerSource that made it |
+| `kafka-source-not-ready` | KafkaSource | `Ready` is False and another condition is False | 2 min | Its Eventing controller, if any |
+| `kafka-source-not-ready-ready-only` | KafkaSource | `Ready` alone is False | 2 min | Its Eventing controller, if any |
 
 ## Metrics
 
@@ -166,35 +187,21 @@ None: the extension is read-only and has no action of its own.
 
 - Knative Serving's or Eventing's CRDs; each section shows only the kinds the cluster serves.
 - Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - A problem's reason, message and time are the first False condition's in Knative's order, `Ready` included; the
-    built-in detector took the first False condition other than `Ready`. Knative copies a failing condition's reason
-    and message into `Ready`, so the two agree unless several conditions fail at once (a path step cannot leave one
-    match out).
-  - An Eventing problem without a reason has the rule's title as its reason (the built-in one said "NotReady"): a
-    section counter counts at most 20 rules, too few for a rule without a reason per Eventing kind (#404, literal
-    reason fallback). A Serving problem whose reason is empty says "NotReady" (the built-in one said nothing).
-  - An object owned by another Eventing object: the built-in detector left out every controller of the four Eventing
-    groups, of any version. The rules leave out the owner references Knative writes (`v1`, by kind; a path matches
-    only text, so a reference of those pairs counts whether or not it is the controller), and tell any other
-    controller's objects through it while it has a problem (`toldThroughOwner`), so such an object is a problem of its
-    own while its owner has none. A Configuration owned by a Service of another version than `v1` likewise.
-  - A Trigger is told through its Broker when `BrokerReady` is False with the Broker's reason; the built-in detector
-    also asked that `BrokerReady` be the first failing condition, which it always is in Knative's order.
-  - The Status columns draw Unknown in the neutral colour (the built-in tables muted it), sort by the text shown, not
-    by the state, and the columns have Sextant's default widths (#403).
-  - Traffic: from the first three targets of `status.traffic`, two shares exactly, and of three shares the first two
-    and "…"; a share past the third target shows only as "…", and a split only asked (`spec.traffic`, nothing in
-    effect yet) only when it has one target (#404, a list projection).
-  - Filter: exactly for one `exact` or `prefix` type filter, a CESQL expression, or the older `type` and `source`
-    attributes; otherwise its first exact type and "…", or "…" alone (#404). An empty `source` value, or an empty
-    `type` beside a `source`, shows `source=`/`type=` where the built-in one wrote `=*`.
-  - Topics are joined with the UI language's list separator and have no hover; Steps and Branches show nothing for an
-    object without any (the built-in columns said 0). Text cells lose the credentials and query of any URI in them,
-    as every computed column's text does.
-  - The details are a section per kind; the event path is a block inside it, not one of its own. A block closed by the
-    user stays closed only while the section's frame lives; the built-in panel remembered it (#406).
+  - Traffic: a case's text says at most five values, two targets, so the summary is exact for one or two shares among
+    the first four targets of `status.traffic`; of three shares or more it shows the first two and "…", and "…" alone
+    for a first share past the fourth target. A split only asked (`spec.traffic`, nothing in effect yet) is exact when
+    its first target has the whole share, else "…". A list projection (each item's name and share, joined with " · ")
+    would close it (#404).
+  - Filter: exact for one filter of one CESQL expression, one exact, prefix or suffix `type`, or an exact `source` and
+    `type`, and for the older attributes of a `type`, a `source` or both; otherwise its first exact type and "…", or
+    "…" alone. An attribute's name cannot be a placeholder, nor `all`/`any`/`not` be written out (a text projection of
+    the filter tree would close it, #404).
+  - Text cells and problem messages lose the credentials and query of any URI in them and are clipped (200 characters
+    a cell, 1200 a message), as every extension text from the cluster is; the built-in ones showed them as written.
+  - A problem whose reason Knative wrote as an empty text says "NotReady" (the built-in one said nothing); Knative
+    leaves an empty reason out, so it is not met in practice.
   - A SinkBinding's subject selector is written as its labels and expressions (`app=heartbeat-cron`); the built-in
-    view wrote the selector's own fields (`matchLabels=[object Object]`).
+    view wrote the selector's own fields (`matchLabels=[object Object]`), a fault not carried over.
 - Checked by tests on fixtures of Knative's objects (copied from the built-in views) against the built-in readings
   and rules; not yet tried on a live cluster.
 

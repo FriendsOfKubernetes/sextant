@@ -54,7 +54,7 @@ every language; **Reason** is that condition's reason.
 - Kafka Connectors: **Connect cluster** (`connector-cluster`), **Status** (`connector-status`), **Connector**
   (`connector-state`: the connector's state as Kafka Connect reports it: RUNNING green, FAILED red, PAUSED and STOPPED
   muted, any other yellow), **Running tasks** (`connector-tasks`: running of all, red with a failed task, green with
-  every task running, else yellow; blank without tasks; sorted by the running tasks), **Class** (`connector-class`: the class's last part, the whole
+  every task running, else yellow; blank without tasks; sorted by the running tasks, a connector without tasks with those running none), **Class** (`connector-class`: the class's last part, the whole
   on hover), **Auto-restarts** (`connector-restarts`: Strimzi's automatic restarts) and **Reason**
   (`connector-reason`).
 
@@ -153,8 +153,6 @@ None: it only reads.
     restart, with its 2-minute grace, where the built-in view read 0 restarts and waited 2 minutes from
     the last restart's time; with a count and a restart time that is no time, the failure is told at once, where the
     built-in view waited 2 minutes. A path has no default value, and a rule's grace cannot depend on a value.
-  - **Running tasks** of a connector without tasks is blank and sorts last, where the built-in column sorted it with
-    the connectors running none. A case's text cannot be blank, so the blank cell is one no case holds for.
   - The problem watches of Kafkas, node pools, Connect clusters, MirrorMaker 2s and connectors hold at most 20 000
     objects of a kind (a rule source's most); the built-in view watched them uncapped.
 - Checked by tests on fixtures of Strimzi's objects (a Kafka with warnings and listeners, a topic, a user, a

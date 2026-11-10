@@ -90,6 +90,8 @@ interface Engine {
   detectRule(rule: unknown, obj: KubeObject): Detected[];
 }
 interface WindowColumn {
+  width?: string;
+  value(obj: KubeObject): unknown;
   render(obj: KubeObject, ctx: { now: number }): unknown;
   searchText(obj: KubeObject, ctx: { now: number; t: (key: string, values?: { count?: number }) => string }): string | null | undefined;
 }
@@ -142,7 +144,17 @@ function services(): KubeObject[] {
   st(readyOnly).conditions = [{ type: "Ready", status: "False", reason: "Bad", message: "bad", lastTransitionTime: "2026-10-12T00:00:00Z" }];
   const bare = copy(service);
   delete (bare as { status?: unknown }).status;
-  return [failed, ready, rolling, routeDown, unnamed, empty, readyOnly, bare];
+  // Several conditions fail: the first False one other than Ready tells the reason, message and time, Ready itself
+  // only when no other one fails.
+  const twoDown = copy(routeDown);
+  setCond(twoDown, { type: "Ready", status: "False", reason: "Summary", message: "summary", lastTransitionTime: "2026-10-12T08:00:00Z" });
+  setCond(twoDown, { type: "ConfigurationsReady", status: "False", reason: "RevisionFailed", message: "first", lastTransitionTime: "2026-10-12T07:00:00Z" });
+  const readyOnlyUnnamed = copy(readyOnly);
+  delete (st(readyOnlyUnnamed).conditions as Cond[])[0]!.reason;
+  // A False condition beside a ready one (a warning) is no reason.
+  const readyWarning = copy(ready);
+  setCond(readyWarning, { type: "RoutesReady", status: "False", reason: "Warn" });
+  return [failed, ready, rolling, routeDown, unnamed, empty, readyOnly, bare, twoDown, readyOnlyUnnamed, readyWarning];
 }
 
 function configurations(): KubeObject[] {
@@ -152,7 +164,21 @@ function configurations(): KubeObject[] {
     o.metadata.ownerReferences = [{ apiVersion: "serving.knative.dev/v1", kind: "Service", name: "hello", uid: "u1", controller: true }];
     return o;
   });
-  return [...own, ...owned];
+  // A Service of any version owns it, its reference wherever it is; a core Service does not.
+  const ownedOlder = owned.map((c) => {
+    const o = copy(c);
+    o.metadata.ownerReferences = [
+      { apiVersion: "v1", kind: "Service", name: "core", uid: "u0" },
+      { apiVersion: "serving.knative.dev/v1beta1", kind: "Service", name: "hello", uid: "u1", controller: true },
+    ];
+    return o;
+  });
+  const coreOwner = own.map((c) => {
+    const o = copy(c);
+    o.metadata.ownerReferences = [{ apiVersion: "v1", kind: "Service", name: "core", uid: "u0" }];
+    return o;
+  });
+  return [...own, ...owned, ...ownedOlder, ...coreOwner];
 }
 
 function revisions(): KubeObject[] {
@@ -255,7 +281,40 @@ function eventingObjects(): KubeObject[] {
   setCond(channelDown, { type: "Ready", status: "False", reason: "BackingChannelNotReady", message: "x" });
   const channelOfBroker = copy(channelDown);
   channelOfBroker.metadata.ownerReferences = [{ apiVersion: "eventing.knative.dev/v1", kind: "Broker", name: "default", uid: "b1", controller: true }];
+  // An owner that is not the controller tells nothing; a controller of another group neither.
+  const channelNotController = copy(channelDown);
+  channelNotController.metadata.ownerReferences = [{ apiVersion: "eventing.knative.dev/v1", kind: "Broker", name: "default", uid: "b1" }];
+  const channelOfOther = copy(channelDown);
+  channelOfOther.metadata.ownerReferences = [{ apiVersion: "apps/v1", kind: "Deployment", name: "d", uid: "d1", controller: true }];
+  // BrokerReady False, but another condition fails first: the Trigger's own problem.
+  const brokerSecond = copy(brokerDown);
+  st(brokerSecond).conditions = [
+    { type: "Addressable", status: "False", reason: "NoAddress", message: "no address", lastTransitionTime: "2026-10-20T00:00:00Z" },
+    ...(st(brokerDown).conditions as Cond[]),
+  ];
+  const subFailing = copy(subOwn);
+  setCond(subFailing, { type: "ChannelReady", status: "False", reason: "ChannelNotReady", message: "channel" });
+  const bindingFailing = copy(bindingOwn);
+  setCond(bindingFailing, { type: "SinkProvided", status: "False", reason: "NotFound", message: "sink" });
+  const brokerRefEmpty = copy(brokerDown);
+  brokerRefEmpty.spec = { ...(brokerRefEmpty.spec as Record<string, unknown>), broker: "", brokerRef: { name: "" } };
+  // Ready alone False, with and without a reason, of every kind.
+  const readyOnly = EVENTING_KINDS.flatMap(({ kind }) => {
+    const o = withKind(find("Broker", "default"), `${kind.group}/v1`, kind.kind);
+    o.metadata.name = `ready-only-${kind.kind.toLowerCase()}`;
+    st(o).conditions = [{ type: "Ready", status: "False", reason: "Own", message: "own", lastTransitionTime: "2026-10-21T00:00:00Z" }];
+    const unnamed = copy(o);
+    delete (st(unnamed).conditions as Cond[])[0]!.reason;
+    return [o, unnamed];
+  });
   return [
+    ...readyOnly,
+    channelNotController,
+    channelOfOther,
+    brokerSecond,
+    brokerRefEmpty,
+    subFailing,
+    bindingFailing,
     ...out,
     imcOwn,
     imcByBroker,
@@ -337,33 +396,36 @@ describe("the problem rules, against the built-in detector", () => {
     for (const kind of [REVISION, ROUTE, DOMAIN_MAPPING]) expect(rulesOf(kind)).toEqual([]);
   });
 
-  it("find a not-ready Eventing object, told through its owner and a Broker-caused Trigger failure through the Broker", () => {
-    // Without a reason, an Eventing problem's reason is the rule's title (a section counter counts at most 20 rules, too
-    // few for a rule without a reason per kind); the built-in one said "NotReady".
-    const unnamed = (o: KubeObject) => reference(kindOf(o), o).some((d) => d.reason === "NotReady");
-    // An owner of a version Knative does not write is told through toldThroughOwner (below).
-    const otherOwner = (o: KubeObject) => owners(o).some((r) => r.kind === "KafkaChannel");
-    for (const o of eventingObjects().filter((x) => !unnamed(x) && !otherOwner(x))) expectSameProblems(kindOf(o), o);
+  it("find a not-ready Eventing object, leaving out what another Eventing object controls and a Broker-caused Trigger failure", () => {
+    for (const o of eventingObjects()) expectSameProblems(kindOf(o), o);
     const brokerUnnamed = eventingObjects().find((o) => o.kind === "Trigger" && (st(o).conditions as Cond[]).some((c) => c.type === "BrokerReady" && c.status === "False" && !c.reason))!;
     expect(reference(TRIGGER, brokerUnnamed)).toEqual([]);
     expect(windowProblems(TRIGGER, brokerUnnamed)).toEqual([]);
     const reasonless = find("KafkaSource", "kafka-source");
     for (const c of st(reasonless).conditions as Cond[]) delete c.reason;
     expect(reference(KAFKA_SOURCE, reasonless)[0]?.reason).toBe("NotReady");
-    expect(windowProblems(KAFKA_SOURCE, reasonless)[0]?.reason).toBe("KafkaSource not ready");
+    expect(windowProblems(KAFKA_SOURCE, reasonless)[0]?.reason).toBe("NotReady");
   });
 
-  it("leave an owner of another version to the window's judging across objects (toldThroughOwner)", () => {
+  it("leave out an object another Eventing object controls, of any version, on the object alone", () => {
     const other = eventingObjects().find((o) => o.kind === "InMemoryChannel" && owners(o)[0]?.kind === "KafkaChannel")!;
-    // The built-in detector left out every Eventing controller; the rule leaves out the ones Knative writes, and tells
-    // the rest through their owner while the owner has a problem of the extension.
     expect(reference(IN_MEMORY_CHANNEL, other)).toEqual([]);
-    expect(windowProblems(IN_MEMORY_CHANNEL, other)).toMatchObject([{ ownerUid: "k1" }]);
+    expect(windowProblems(IN_MEMORY_CHANNEL, other)).toEqual([]);
+    // Nothing is judged across objects: every rule's problems, in the built-in group, come from the object itself.
     for (const rule of manifest.contributes.problems) {
-      expect((rule as { toldThroughOwner?: boolean }).toldThroughOwner === true, rule.id).toBe(rule.kind.kind !== "Service");
-      // A problem's group is its rule's id (the unnamed rule's: its named twin's), which judging across objects needs.
-      expect(manifest.contributes.problems.map((r) => r.id)).toContain(rule.group);
+      expect((rule as { toldThroughOwner?: boolean }).toldThroughOwner, rule.id).toBeUndefined();
+      expect(rule.group, rule.id).toBe("not-ready");
+      expect((rule as { reasonOr?: string }).reasonOr, rule.id).toBe("NotReady");
     }
+  });
+
+  it("tell the reason, message and time of the first False condition other than Ready, else Ready's own", () => {
+    const twoDown = services().find((o) => ((st(o)?.conditions as Cond[] | undefined) ?? []).some((c) => c.reason === "Summary"))!;
+    expect(windowProblems(KSERVICE, twoDown)).toMatchObject([{ reason: "RevisionFailed", message: "first", since: "2026-10-12T07:00:00Z" }]);
+    const readyOnly = services().find((o) => ((st(o)?.conditions as Cond[] | undefined) ?? []).length === 1 && (st(o).conditions as Cond[])[0]!.reason === "Bad")!;
+    expect(windowProblems(KSERVICE, readyOnly)).toMatchObject([{ reason: "Bad", message: "bad", since: "2026-10-12T00:00:00Z" }]);
+    const brokerSecond = eventingObjects().find((o) => (st(o)?.conditions as Cond[] | undefined)?.[0]?.reason === "NoAddress")!;
+    expect(windowProblems(TRIGGER, brokerSecond)).toMatchObject([{ reason: "NoAddress", message: "no address" }]);
   });
 
   it("are each met by a variant", () => {
@@ -389,6 +451,8 @@ describe("the problem rules, against the built-in detector", () => {
     expect(serving!.rules).toEqual(servingRules);
     expect(eventingBadge!.rules).toEqual(eventingRules);
     expect(new Set(manifest.contributes.problems.map((r) => `${r.kind.group}/${r.kind.kind}`)).size).toBe(14);
+    // Two rules a kind: its failing condition's and Ready's own.
+    expect(manifest.contributes.problems).toHaveLength(28);
   });
 });
 
@@ -417,8 +481,9 @@ describe("the kinds", () => {
       ["serving.knative.dev", "DomainMapping", "knative", "Domain Mappings", "knativeDomain", 50, false],
       ...EVENTING_KINDS.map((d) => [d.kind.group, d.kind.kind, "knativeEventing", expect.any(String), d.icon, d.order, false]),
     ]);
-    expect(manifest.contributes.detailsSections.map((d) => [d.kinds[0]!.kind, d.title, d.order, d.placement])).toEqual(
-      ALL_KINDS.map((k) => [k.kind, k.kind, 20, "section"]),
+    // Without a heading: the frame draws the built-in block titled with the kind, which opens and closes.
+    expect(manifest.contributes.detailsSections.map((d) => [d.kinds[0]!.kind, d.title, d.order, d.placement, d.heading])).toEqual(
+      ALL_KINDS.map((k) => [k.kind, k.kind, 20, "section", false]),
     );
     expect(manifest.permissions.rules).toEqual([{ namespaces: { type: "all" }, kinds: { type: "only", kinds: ALL_KINDS.map((k) => ({ group: k.group, kind: k.kind })) }, actions: ["read"] }]);
   });
@@ -441,7 +506,6 @@ function drawn(id: string, obj: KubeObject): { title?: string; tone?: string } {
   return { title: title || undefined, tone: node?.props?.tone };
 }
 const word = (key: string) => (en as Record<string, string>)[key];
-const toneOf = (tone: string) => (tone === "muted" ? "neutral" : tone);
 const prefixOf = (o: KubeObject) =>
   ({ Service: "ksvc", InMemoryChannel: "in-memory-channel", ApiServerSource: "api-server-source", PingSource: "ping-source", ContainerSource: "container-source", SinkBinding: "sink-binding", KafkaSource: "kafka-source", DomainMapping: "domain-mapping" })[o.kind!] ??
   o.kind!.toLowerCase();
@@ -479,8 +543,55 @@ describe("the columns, against the built-in ones", () => {
       const prefix = prefixOf(o);
       const state = healthOf(o);
       expect(cell(`${prefix}-status`, o), `${o.kind} ${o.metadata.name}`).toBe(word(`health.${state}`));
-      expect(drawn(`${prefix}-status`, o).tone).toBe(toneOf(HEALTH_TONE[state]));
+      expect(drawn(`${prefix}-status`, o).tone).toBe(HEALTH_TONE[state]);
+      // Sorted by the state, as the built-in column's value.
+      expect(windowColumn(`${prefix}-status`).value(o)).toBe(state);
       expect(cell(`${prefix}-reason`, o) || undefined, `${o.kind} ${o.metadata.name}`).toBe(failingCondition(o)?.reason || undefined);
+      expect(windowColumn(`${prefix}-reason`).value(o) || undefined).toBe(failingCondition(o)?.reason || undefined);
+    }
+  });
+
+  it("have the built-in widths", () => {
+    const W = { status: "110px", reason: "minmax(100px, 1fr)", url: "minmax(160px, 2fr)", latest: "minmax(120px, 1fr)", text: "minmax(140px, 2fr)", short: "minmax(100px, 1fr)" };
+    const widths: Record<string, string> = {
+      "ksvc-url": W.url,
+      "ksvc-latest-created": W.latest,
+      "ksvc-latest-ready": W.latest,
+      "configuration-latest-created": W.latest,
+      "configuration-latest-ready": W.latest,
+      "revision-configuration": W.latest,
+      "revision-generation": "90px",
+      "revision-replicas": "90px",
+      "route-url": W.url,
+      "route-traffic": W.url,
+      "domain-mapping-url": W.url,
+      "domain-mapping-target": W.latest,
+      "broker-class": W.short,
+      "broker-address": W.text,
+      "trigger-broker": W.short,
+      "trigger-filter": W.text,
+      "trigger-subscriber": W.text,
+      "channel-address": W.text,
+      "in-memory-channel-address": W.text,
+      "subscription-channel": W.short,
+      "subscription-subscriber": W.text,
+      "subscription-reply": W.text,
+      "sequence-steps": "80px",
+      "sequence-address": W.text,
+      "parallel-branches": "90px",
+      "parallel-address": W.text,
+      "api-server-source-mode": "100px",
+      "api-server-source-sink": W.text,
+      "ping-source-schedule": W.short,
+      "ping-source-sink": W.text,
+      "container-source-sink": W.text,
+      "sink-binding-sink": W.text,
+      "kafka-source-topics": "minmax(120px, 1fr)",
+      "kafka-source-sink": W.text,
+    };
+    for (const c of manifest.contributes.columns) {
+      const expected = c.id.endsWith("-status") ? W.status : c.id.endsWith("-reason") ? W.reason : widths[c.id];
+      expect(windowColumn(c.id).width, c.id).toBe(expected);
     }
   });
 
@@ -501,18 +612,54 @@ describe("the columns, against the built-in ones", () => {
     for (const o of domainMappings()) expect(cell("domain-mapping-target", o)).toBe(mappingRef(o).name);
   });
 
-  it("of Routes: the traffic split with its shares, as the built-in summary for up to two shares among three targets", () => {
-    for (const o of routes()) {
+  it("of Routes: the traffic split as the built-in summary, for up to two shares among the first four targets", () => {
+    const base = routes()[0]!;
+    const route = (traffic: unknown[] | undefined, spec?: unknown[]) => {
+      const o = copy(base);
+      if (traffic === undefined) delete st(o).traffic;
+      else st(o).traffic = traffic;
+      if (spec !== undefined) (o.spec as Record<string, unknown>).traffic = spec;
+      return o;
+    };
+    const t = (name: string, percent?: number) => ({ revisionName: name, ...(percent === undefined ? { tag: name } : { percent }) });
+    const variants = [
+      ...routes(),
+      route([t("a"), t("b"), t("c"), t("d", 100)]),
+      route([t("a", 100), t("b"), t("c")]),
+      route([t("a"), t("b", 30), t("c"), t("d", 70)]),
+      route([t("a", 0), t("b", 0), t("c", 25), t("d", 75)]),
+      route([t("a"), t("b")]),
+      route(undefined, [{ configurationName: "hello", percent: 100 }]),
+      route(undefined, [{ revisionName: "hello-00001", percent: 0 }, { latestRevision: true, percent: 100 }]),
+    ];
+    for (const o of variants) {
+      const { targets, asked } = trafficSplit(o);
+      const shares = targets.map((x, i) => [i, x.percent ?? 0] as const).filter(([, p]) => p > 0).map(([i]) => i);
       const summary = trafficSummary(o, word("latest")!);
-      // A case fills at most five values: of three shares, the first two and "…".
-      const expected = (summary.split(" · ").length > 2 ? `${summary.split(" · ").slice(0, 2).join(" · ")} · …` : summary) || undefined;
+      const parts = summary.split(" · ");
+      // A case says at most five values: two targets of the first four; asked, only the first one alone.
+      const expected =
+        shares.length === 0
+          ? undefined
+          : asked
+            ? shares.length === 1 && shares[0] === 0
+              ? summary
+              : "…"
+            : shares.length <= 2 && shares.every((i) => i < 4)
+              ? summary
+              : shares[1]! < 4
+                ? `${parts.slice(0, 2).join(" · ")} · …`
+                : "…";
       expect(cell("route-traffic", o), JSON.stringify(st(o).traffic ?? o.spec)).toBe(expected);
       expect(drawn("route-traffic", o).title).toBe(expected);
+      // Sorted by the summary with no word for the latest revision, as the built-in column's value.
+      if (expected === summary) expect(windowColumn("route-traffic").value(o)).toBe(trafficSummary(o, ""));
     }
-    // Beyond what cases can say: more than two shares among the first three show the first two and "…".
     const many = routes()[0]!;
     st(many).traffic = [10, 20, 30, 40].map((percent, i) => ({ revisionName: `r${i}`, percent }));
     expect(cell("route-traffic", many)).toBe("r0 10% · r1 20% · …");
+    st(many).traffic = [50, 0, 0, 0, 50].map((percent, i) => ({ revisionName: `r${i}`, percent }));
+    expect(cell("route-traffic", many)).toBe("…");
   });
 
   it("of Eventing: class, address, Broker, filter, destinations, channel, steps, schedule, topics and mode", () => {
@@ -529,15 +676,36 @@ describe("the columns, against the built-in ones", () => {
       if (o.kind === "Broker") expect(cell("broker-class", o)).toBe(brokerClassOf(o));
       if (o.kind === "Trigger") expect(cell("trigger-broker", o)).toBe(brokerOf(o)?.name);
       if (o.kind === "Subscription") expect(cell("subscription-channel", o)).toBe(channelOf(o)?.name);
-      if (o.kind === "Sequence") expect(cell("sequence-steps", o)).toBe(String((get(o, "spec", "steps") as unknown[]).length));
-      if (o.kind === "Parallel" && get(o, "spec", "branches")) expect(cell("parallel-branches", o)).toBe(String((get(o, "spec", "branches") as unknown[]).length));
+      // Counted, 0 without any, as the built-in columns.
+      const count = (path: string) => ((get(o, "spec", path) as unknown[] | undefined) ?? []).length;
+      if (o.kind === "Sequence") expect(cell("sequence-steps", o)).toBe(String(count("steps")));
+      if (o.kind === "Parallel") expect(cell("parallel-branches", o)).toBe(String(count("branches")));
       if (o.kind === "PingSource") expect(cell("ping-source-schedule", o)).toBe(str(get(o, "spec", "schedule")));
       if (o.kind === "ApiServerSource") expect(cell("api-server-source-mode", o)).toBe(str(get(o, "spec", "mode")));
-      if (o.kind === "KafkaSource") for (const topic of kafkaTopics(o)) expect(cell("kafka-source-topics", o)).toContain(topic);
+      if (o.kind === "KafkaSource") {
+        expect(cell("kafka-source-topics", o)).toBe(kafkaTopics(o).join(", ") || undefined);
+        expect(drawn("kafka-source-topics", o).title).toBe(kafkaTopics(o).join(", ") || undefined);
+      }
     }
   });
 
-  it("of Triggers: the filter as the built-in text for one exact type, source or CESQL, else its start and …", () => {
+  it("of Eventing: a destination without a kind, a Broker named only by spec.broker, no steps", () => {
+    const ping = find("PingSource", "test-ping-source");
+    ping.spec = { ...(ping.spec as Record<string, unknown>), sink: { ref: { name: "display" }, uri: "/x" } };
+    expect(cell("ping-source-sink", ping)).toBe(destinationText(sinkOf(ping)));
+    expect(cell("ping-source-sink", ping)).toBe("?/display /x");
+    ping.spec = { ...(ping.spec as Record<string, unknown>), sink: { ref: { name: "" }, uri: "http://a" } };
+    expect(cell("ping-source-sink", ping)).toBe("http://a");
+    const trigger = find("Trigger", "my-service-trigger");
+    trigger.spec = { ...(trigger.spec as Record<string, unknown>), brokerRef: { name: "" }, broker: "b" };
+    expect(cell("trigger-broker", trigger)).toBe(brokerOf(trigger)?.name);
+    const sequence = find("Sequence", "sequence");
+    delete (sequence.spec as Record<string, unknown>).steps;
+    expect(cell("sequence-steps", sequence)).toBe("0");
+    expect(windowColumn("sequence-steps").value(sequence)).toBe(0);
+  });
+
+  it("of Triggers: the filter as the built-in text for one CESQL expression, type or source and type, else its start and …", () => {
     const trigger = find("Trigger", "my-service-trigger");
     const withSpec = (spec: Record<string, unknown>) => {
       const o = copy(trigger);
@@ -549,9 +717,21 @@ describe("the columns, against the built-in ones", () => {
       withSpec({ filter: { attributes: { source: "/a", type: "t" } } }),
       withSpec({ filter: { attributes: { source: "/a" } } }),
       withSpec({ filter: { attributes: { type: "" } } }),
+      withSpec({ filter: { attributes: { source: "" } } }),
+      withSpec({ filter: { attributes: { type: "t" } } }),
+      withSpec({ filter: { attributes: { source: "", type: "t" } } }),
+      withSpec({ filter: { attributes: { source: "/a", type: "" } } }),
+      withSpec({ filter: { attributes: { source: "", type: "" } } }),
+      withSpec({ filter: { attributes: {} } }),
       withSpec({ filters: [{ exact: { type: "t" } }] }),
+      withSpec({ filters: [{ exact: { type: "" } }] }),
+      withSpec({ filters: [{ exact: { source: "/s", type: "t" } }] }),
       withSpec({ filters: [{ prefix: { type: "com.example." } }] }),
+      withSpec({ filters: [{ suffix: { type: ".created" } }] }),
       withSpec({ filters: [{ cesql: "source LIKE '%x%'" }] }),
+      withSpec({ filters: [{ exact: { type: "t" } }], filter: { attributes: { type: "old" } } }),
+      withSpec({ filters: [{}] }),
+      withSpec({ filters: [] }),
       withSpec({}),
     ];
     for (const o of exact) {

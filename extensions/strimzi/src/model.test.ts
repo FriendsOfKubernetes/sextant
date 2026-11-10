@@ -582,13 +582,15 @@ describe("the columns", () => {
       expect(toneOf("connector-tasks", o), states.join()).toBe(builtInTone(o));
     }
     expect(cell("connector-tasks", connector)).toBe("1/2");
+    // Without tasks: blank, valued 0 as the built-in column's running tasks.
     for (const states of [[], undefined]) {
       const o = withTasks(states);
-      expect(cell("connector-tasks", o)).toBeUndefined();
-      expect(drawn("connector-tasks", o)).toBeNull();
+      expect(cell("connector-tasks", o) ?? "").toBe("");
+      expect(toneOf("connector-tasks", o)).toBeUndefined();
+      expect(sortValue("connector-tasks", o)).toBe(0);
     }
-    // Sorted by the running tasks, as the built-in column's value.
-    const objects = [["RUNNING", "RUNNING", "RUNNING"], ["FAILED"], Array(10).fill("RUNNING"), ["RUNNING", "FAILED"]].map(withTasks);
+    // Sorted by the running tasks, as the built-in column's value; without tasks with the ones running none.
+    const objects = [["RUNNING", "RUNNING", "RUNNING"], ["FAILED"], [], Array(10).fill("RUNNING"), undefined, ["RUNNING", "FAILED"]].map(withTasks);
     const running = (o: KubeObject) => taskCounts(connectorStatusOf(o)).running;
     const byWindow = [...objects].sort((a, b) => compare(sortValue("connector-tasks", a), sortValue("connector-tasks", b)));
     expect(byWindow.map(running)).toEqual(objects.map(running).sort((a, b) => a - b));
