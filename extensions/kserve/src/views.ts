@@ -4,7 +4,7 @@
 //   InferenceGraph — its readiness, URL and nodes with their router type and steps (the root node first);
 //   TrainedModel   — its InferenceService, framework, storage URI (never with credentials or a query) and memory.
 import { ui, type KubeObject, type Sextant, type UiContent } from "@sextant/extension-sdk";
-import { block, fieldsOf, link, tableOf, uri } from "./dom";
+import { block, fieldsOf, link, OPEN_BLOCKS, tableOf, uri, type BlockMemory } from "./dom";
 import { t } from "./i18n";
 import { arr, conditionOf, deploymentModeOf, get, INFERENCE_SERVICE, num, record, SERVICE_TONE, str } from "./model";
 import { formatsOf, isDisabled, isMultiModel, isMultiNode, protocolsOf } from "./runtimes";
@@ -21,7 +21,7 @@ export function readyText(obj: KubeObject): HTMLElement {
   return node;
 }
 
-export function runtimeView(obj: KubeObject): Node[] {
+export function runtimeView(obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const yesNo = (v: boolean) => (v ? t("yes") : t("no"));
   const formats = formatsOf(obj).map((f) => [f.name, f.version ?? "", yesNo(f.autoSelect), f.priority === undefined ? "" : String(f.priority)]);
   const headers = ["name", "version", "autoSelect", "priority"].map((h) => t(`formats.${h}`));
@@ -33,7 +33,7 @@ export function runtimeView(obj: KubeObject): Node[] {
       ["multiNode", yesNo(isMultiNode(obj))],
       ["images", ui.chips(arr(get(obj, "spec", "containers")).map((c) => str(get(c, "image"))))],
     ]),
-    block(t("formats.title"), tableOf(headers, formats, t("formats.title"))),
+    block(memory, "formats", t("formats.title"), () => tableOf(headers, formats, t("formats.title"))),
   ]);
 }
 
@@ -54,7 +54,7 @@ function stepRows(sextant: Sextant, node: unknown, ns: string | null): UiContent
   });
 }
 
-export function graphView(sextant: Sextant, obj: KubeObject): Node[] {
+export function graphView(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const ns = obj.metadata.namespace ?? null;
   const mode = deploymentModeOf(obj);
   const nodes = Object.entries(record(get(obj, "spec", "nodes"))).sort(([a], [b]) => (a === "root" ? -1 : b === "root" ? 1 : a.localeCompare(b)));
@@ -67,7 +67,8 @@ export function graphView(sextant: Sextant, obj: KubeObject): Node[] {
     ]),
     ...nodes.map(([name, node]) => {
       const title = t("graph.node", { name, type: str(get(node, "routerType")) ?? "" });
-      return block(title, tableOf(headers, stepRows(sextant, node, ns), title));
+      // One id for every node, as the built-in blocks had: they open and close together.
+      return block(memory, "graphNode", title, () => tableOf(headers, stepRows(sextant, node, ns), title));
     }),
   ]);
 }

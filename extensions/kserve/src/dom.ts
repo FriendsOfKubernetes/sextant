@@ -85,8 +85,29 @@ export function tableOf(headers: string[], rows: UiContent[][], label: string): 
   return rows.length > 0 ? ui.table(headers, rows, { label }) : null;
 }
 
-/** A titled block as the built-in view's: open, and closable with its title. */
-export const block = (title: string, content: UiContent): HTMLElement => ui.block(title, content, { collapsible: true });
+/**
+ * Which blocks are open, and where a toggle goes: Sextant's own memory of details sections (`context.blocks`, written
+ * by `ui.setBlockOpen`), kept per kind as Settings → Appearance says, with the panel's "Expand all" and "Collapse
+ * all" — where the built-in section's blocks were kept.
+ */
+export interface BlockMemory {
+  isOpen(block: string): boolean;
+  setOpen(block: string, open: boolean): void;
+}
+
+/** Blocks that are all open and remember nothing. */
+export const OPEN_BLOCKS: BlockMemory = { isOpen: () => true, setOpen: () => undefined };
+
+/**
+ * A titled block as the built-in view's: open unless Sextant remembers it closed, and closable with its title. Its
+ * content is drawn only while it is open, as the built-in block's was (the section draws again on each toggle).
+ */
+export function block(memory: BlockMemory, id: string, title: string, content: () => UiContent): HTMLElement {
+  const open = memory.isOpen(id);
+  const node = ui.block(title, open ? content() : null, { collapsible: true, collapsed: !open, onToggle: (now) => memory.setOpen(id, now) });
+  node.dataset.block = id;
+  return node;
+}
 
 export function errorText(err: unknown): string {
   if (isSextantError(err, "denied")) return t("error.denied", { message: err.message });

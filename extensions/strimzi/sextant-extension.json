@@ -384,11 +384,29 @@
         "id": "kafka-listeners",
         "title": "Listeners",
         "paths": [
-          ".spec.kafka.listeners[*].name",
-          ".status.listeners[*].name"
+          ".spec.kafka.listeners",
+          ".status.listeners"
         ],
         "format": "list",
         "joinPaths": true,
+        "items": {
+          "cases": [
+            {
+              "when": {
+                "type": "exists",
+                "path": ".name"
+              },
+              "text": "{{.name}}"
+            },
+            {
+              "when": {
+                "type": "exists",
+                "path": ".type"
+              },
+              "text": "{{.type}}"
+            }
+          ]
+        },
         "afterColumn": "kafka-version",
         "width": "minmax(120px, 1.5fr)"
       },

@@ -62,9 +62,9 @@ describe("the manifest's translations", () => {
   type Case = { text: string; tooltip?: string };
   const c = manifest.contributes;
   const KINDS = new Set(["InferenceService", "ServingRuntime", "ClusterServingRuntime", "InferenceGraph", "TrainedModel"]);
-  /** A text with no words to translate: field values and punctuation, a kind's or a framework's name, True or False. */
+  /** A text with no words to translate: field values, numbers and punctuation, a kind's or a framework's name, True or False. */
   const sameEverywhere = (text: string) =>
-    KINDS.has(text) || text === "KServe" || text === "True" || text === "False" || /^[a-z]+$/.test(text) || text.replace(/\{\{[\s\S]*?\}\}/g, "").replace(/[\s,:…]/g, "") === "";
+    KINDS.has(text) || text === "KServe" || text === "True" || text === "False" || /^[a-z]+$/.test(text) || text.replace(/\{\{[\s\S]*?\}\}/g, "").replace(/[\s,:…0-9]/g, "") === "";
 
   const english = new Map<string, string>([
     ["name", manifest.name],

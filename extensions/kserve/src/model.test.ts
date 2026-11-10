@@ -164,6 +164,7 @@ interface Engine {
 }
 interface WindowColumn {
   value(obj: KubeObject): unknown;
+  filter?: { type: string; value(obj: KubeObject, ctx: { now: number }): unknown };
   render(obj: KubeObject, ctx: { now: number }): unknown;
   searchText(obj: KubeObject, ctx: { now: number; t: (key: string, values?: { count?: number }) => string }): string | null | undefined;
 }
@@ -236,7 +237,9 @@ function notReadyBy(falses: string[], withReason = true): KubeObject {
   return o;
 }
 
-/** Variants of the fixtures the rules, filter and columns are compared on (none hits a known difference). */
+const EMPTY_ODD = "not ready by a condition outside the list, an empty reason, no message";
+
+/** Variants of the fixtures the rules, filter and columns are compared on (only `EMPTY_ODD` hits a known difference: the hover). */
 function services(): [string, KubeObject][] {
   const list: [string, KubeObject][] = ["sklearn-iris", "flowers", "torch-mnist", "llm-invalid"].map((n) => [n, isvc(n)]);
   const add = (label: string, o: KubeObject) => list.push([label, o]);
@@ -282,6 +285,31 @@ function services(): [string, KubeObject][] {
     if (i + 1 < CAUSES.length) add(`not ready by ${cause} and ${CAUSES[CAUSES.length - 1]}`, notReadyBy([cause, CAUSES[CAUSES.length - 1]!]));
   }
   add("not ready by Explainer and Predictor", notReadyBy(["ExplainerReady", "PredictorReady"]));
+  // A False condition without a reason: the built-in `<Type>False`.
+  for (const cause of CAUSES) add(`not ready by ${cause}, no reason`, notReadyBy([cause], false));
+  const emptyReason = notReadyBy(["IngressReady"]);
+  st(emptyReason).conditions.find((c) => c.type === "IngressReady")!.reason = "";
+  add("not ready, an empty reason", emptyReason);
+  // A False condition of a type outside KServe's list: told after every listed one, before Ready.
+  const odd = notReadyBy([]);
+  st(odd).conditions.push({ type: "LocalModelReady", status: "False", reason: "Downloading", message: "fetching the model" });
+  add("not ready by a condition outside the list", odd);
+  const oddUnnamed = notReadyBy([]);
+  st(oddUnnamed).conditions.push({ type: "LocalModelReady", status: "False", message: "fetching the model" });
+  add("not ready by a condition outside the list, no reason", oddUnnamed);
+  const oddEmpty = notReadyBy([]);
+  st(oddEmpty).conditions.push({ type: "LocalModelReady", status: "False", reason: "" });
+  add(EMPTY_ODD, oddEmpty);
+  const oddAfterListed = notReadyBy(["RoutesReady"]);
+  st(oddAfterListed).conditions.unshift({ type: "AModelReady", status: "False", reason: "Odd", message: "odd" });
+  add("not ready by a listed condition and one outside the list", oddAfterListed);
+  // Stopped False is no fault: Ready tells.
+  const stoppedFalse = notReadyBy([]);
+  st(stoppedFalse).conditions.unshift({ type: "Stopped", status: "False", reason: "NotStopped" });
+  add("not ready, Stopped False", stoppedFalse);
+  const readyNoReason = notReadyBy([]);
+  st(readyNoReason).conditions.find((c) => c.type === "Ready")!.reason = "";
+  add("not ready, Ready with an empty reason", readyNoReason);
   add("not ready, nothing else False", notReadyBy([]));
   const unnamedReady = notReadyBy([]);
   delete st(unnamedReady).conditions.find((c) => c.type === "Ready")!.reason;
@@ -295,6 +323,62 @@ function services(): [string, KubeObject][] {
   const readyUnknown = isvc("torch-mnist");
   st(readyUnknown).conditions = [{ type: "Ready", status: "Unknown" }];
   add("Ready unknown", readyUnknown);
+  // A stopped or failed one with what explains it, and a ready one with a False condition besides.
+  const stoppedFailed = isvc("flowers");
+  stoppedFailed.metadata.annotations = { ...stoppedFailed.metadata.annotations, "serving.kserve.io/stop": "true" };
+  add("stopped with a failed model", stoppedFailed);
+  const stoppedNotReady = isvc("torch-mnist");
+  stoppedNotReady.metadata.annotations = { "serving.kserve.io/stop": "true" };
+  add("stopped and not ready", stoppedNotReady);
+  const failedNoMessage = isvc("flowers");
+  delete failure(failedNoMessage).message;
+  add("failed without a failure message", failedNoMessage);
+  const failedEmptyMessage = isvc("llm-invalid");
+  failure(failedEmptyMessage).message = "";
+  add("invalid with an empty failure message", failedEmptyMessage);
+  const readyCanary = isvc("sklearn-iris");
+  st(readyCanary).conditions.push({ type: "CanaryPredictorReady", status: "False", reason: "RevisionMissing", message: "the canary is gone" });
+  add("ready with a False canary", readyCanary);
+  const readyCanaryUnnamed = isvc("sklearn-iris");
+  st(readyCanaryUnnamed).conditions.push({ type: "CanaryPredictorReady", status: "False", reason: "RevisionMissing" });
+  add("ready with a False canary, no message", readyCanaryUnnamed);
+  // The canary share: only with two or more traffic entries, the latestRevision ones summed.
+  const traffic = (o: KubeObject) => (st(o).components as { predictor: { traffic: Record<string, unknown>[] } }).predictor.traffic;
+  const single = isvc("sklearn-iris");
+  traffic(single).splice(1);
+  add("one traffic entry", single);
+  const tagged = isvc("sklearn-iris");
+  traffic(tagged)[0]!.latestRevision = false;
+  add("two traffic entries, none the latest", tagged);
+  const twoLatest = isvc("sklearn-iris");
+  traffic(twoLatest).push({ tag: "x", revisionName: "sklearn-iris-predictor-00003", percent: 5, latestRevision: true });
+  add("three traffic entries, two the latest", twoLatest);
+  const noPercent = isvc("sklearn-iris");
+  delete traffic(noPercent)[0]!.percent;
+  add("the latest entry without a percent", noPercent);
+  // Runtime and mode: an empty recorded name or mode goes on to the next.
+  const emptyRuntime = isvc("sklearn-iris");
+  delete (emptyRuntime.spec as { predictor: { model: Record<string, unknown> } }).predictor.model.runtime;
+  st(emptyRuntime).servingRuntimeName = "";
+  st(emptyRuntime).clusterServingRuntimeName = "kserve-sklearnserver";
+  add("an empty recorded runtime", emptyRuntime);
+  const namespacedRuntime = isvc("sklearn-iris");
+  delete (namespacedRuntime.spec as { predictor: { model: Record<string, unknown> } }).predictor.model.runtime;
+  st(namespacedRuntime).servingRuntimeName = "team-runtime";
+  add("a recorded namespaced runtime", namespacedRuntime);
+  const emptyMode = isvc("flowers");
+  st(emptyMode).deploymentMode = "";
+  add("an empty recorded mode", emptyMode);
+  const annotatedMode = isvc("torch-mnist");
+  annotatedMode.metadata.annotations = { "serving.kserve.io/deploymentMode": "ModelMesh" };
+  add("an annotated mode", annotatedMode);
+  // Model formats: the old framework fields, paddle included; an empty version.
+  const paddle = isvc("sklearn-iris");
+  paddle.spec = { predictor: { paddle: { storageUri: "gs://x/model" } } };
+  add("the old paddle field", paddle);
+  const emptyVersion = isvc("sklearn-iris");
+  (emptyVersion.spec as { predictor: { model: { modelFormat: Record<string, string> } } }).predictor.model.modelFormat.version = "";
+  add("an empty format version", emptyVersion);
   return list;
 }
 
@@ -328,19 +412,41 @@ describe("the problem rules, against the built-in category kserve", () => {
     expect(problem!.message).toBe("cannot reach https://ingress.example.com/");
   });
 
-  it("differs where a False condition gives no reason: the rule's title stands for the built-in `<type>False`", () => {
+  it("give the built-in reason where a condition gives none, and tell a condition outside KServe's list", () => {
     for (const cause of CAUSES) {
       const o = notReadyBy([cause], false);
       expect(kserveProblems(INFERENCE_SERVICE, o)[0]!.reason).toBe(`${cause}False`);
-      const [found] = windowProblems(INFERENCE_SERVICE, o);
-      expect(found!.reason).toBe(`InferenceService not ready: ${cause} is False`);
-      expect(shape({ ...found!, reason: `${cause}False` })).toEqual(shape(kserveProblems(INFERENCE_SERVICE, o)[0]!));
+      expect(windowProblems(INFERENCE_SERVICE, o)[0]!.reason).toBe(`${cause}False`);
     }
-    // A False condition of a type KServe's list does not name: the built-in told it, the rules tell Ready.
     const odd = notReadyBy([]);
-    st(odd).conditions.push({ type: "LocalModelReady", status: "False", reason: "Downloading" });
-    expect(kserveProblems(INFERENCE_SERVICE, odd)[0]!.reason).toBe("Downloading");
-    expect(windowProblems(INFERENCE_SERVICE, odd)[0]!.reason).toBe("ReadyReason");
+    st(odd).conditions.push({ type: "LocalModelReady", status: "False", message: "fetching" });
+    expect(windowProblems(INFERENCE_SERVICE, odd)).toMatchObject([{ reason: "LocalModelReadyFalse", message: "fetching", group: "not-ready" }]);
+    st(odd).conditions.at(-1)!.reason = "Downloading";
+    expect(windowProblems(INFERENCE_SERVICE, odd)).toMatchObject([{ reason: "Downloading", message: "fetching" }]);
+    const unnamed = notReadyBy([]);
+    delete st(unnamed).conditions.find((c) => c.type === "Ready")!.reason;
+    expect(windowProblems(INFERENCE_SERVICE, unnamed)).toMatchObject([{ reason: "InferenceServiceNotReady" }]);
+    const invalid = isvc("llm-invalid");
+    delete failure(invalid).reason;
+    expect(windowProblems(INFERENCE_SERVICE, invalid)).toMatchObject([{ reason: "InvalidSpec" }]);
+    const load = isvc("flowers");
+    delete failure(load).reason;
+    expect(windowProblems(INFERENCE_SERVICE, load)[0]).toMatchObject({ reason: "FailedToLoad" });
+  });
+
+  it("are one rule per reading, at most one of a group holding", () => {
+    expect(manifest.contributes.problems.map((r) => r.id)).toEqual([
+      "invalid-spec",
+      "model-load-failed",
+      ...["predictor", "transformer", "explainer", "predictor-config", "transformer-config", "explainer-config", "latest-deployment", "canary-predictor", "predictor-route", "transformer-route", "explainer-routes", "routes", "ingress"].map((s) => `not-ready-${s}`),
+      "not-ready-other",
+      "not-ready-other-unnamed",
+      "not-ready",
+    ]);
+    for (const [label, o] of services()) {
+      const groups = windowProblems(INFERENCE_SERVICE, o).map((d) => d.group);
+      expect(new Set(groups).size, label).toBe(groups.length);
+    }
   });
 });
 
@@ -374,7 +480,13 @@ function drawn(id: string, obj: KubeObject): Drawn {
   if (title !== undefined) node = node!.props!.children as typeof node;
   return { title: title || undefined, tone: node?.props?.tone };
 }
-const toneOf = (tone: string) => (tone === "muted" ? "neutral" : tone);
+/** A cell's sort value, as the table sorts it. */
+const sortOf = (id: string, obj: KubeObject) => windowColumn(id).value(obj);
+/** A cell's filter type and value, as the table's filters read it. */
+const filterOf = (id: string, obj: KubeObject) => {
+  const filter = windowColumn(id).filter!;
+  return { type: filter.type, value: filter.value(obj, { now: NOW }) };
+};
 const predictorOf = (o: KubeObject) => componentsOf(o).find((c) => c.name === "predictor");
 
 function runtimes(): KubeObject[] {
@@ -390,60 +502,118 @@ function runtimes(): KubeObject[] {
 }
 
 describe("the columns, against the built-in ones", () => {
-  it("are placed after the name or namespace, in the built-in order, with the CRDs' own columns left out", () => {
+  it("are placed after the name or namespace, in the built-in order and widths, with the CRDs' own columns left out", () => {
     for (const kind of manifest.contributes.kinds) expect(kind.printerColumns).toBe(false);
-    const ids = (k: string) => manifest.contributes.columns.filter((c) => c.kind.kind === k).map((c) => [c.afterColumn, c.id]);
+    const ids = (k: string) => manifest.contributes.columns.filter((c) => c.kind.kind === k).map((c) => [c.afterColumn, c.id, c.width]);
     expect(ids("InferenceService")).toEqual([
-      ["namespace", "isvc-status"],
-      ["isvc-status", "isvc-url"],
-      ["isvc-url", "isvc-model-format"],
-      ["isvc-model-format", "isvc-runtime"],
-      ["isvc-runtime", "isvc-mode"],
-      ["isvc-mode", "isvc-canary"],
+      ["namespace", "isvc-status", "110px"],
+      ["isvc-status", "isvc-url", "minmax(180px, 2fr)"],
+      ["isvc-url", "isvc-model-format", "minmax(100px, 1fr)"],
+      ["isvc-model-format", "isvc-runtime", "minmax(120px, 1fr)"],
+      ["isvc-runtime", "isvc-mode", "110px"],
+      ["isvc-mode", "isvc-canary", "80px"],
     ]);
-    expect(ids("ClusterServingRuntime")[0]).toEqual(["name", "csr-formats"]);
-    expect(ids("ServingRuntime")[0]).toEqual(["namespace", "sr-formats"]);
+    for (const [k, prefix, after] of [
+      ["ClusterServingRuntime", "csr", "name"],
+      ["ServingRuntime", "sr", "namespace"],
+    ] as const)
+      expect(ids(k)).toEqual([
+        [after, `${prefix}-formats`, "minmax(160px, 2fr)"],
+        [`${prefix}-formats`, `${prefix}-protocols`, "minmax(100px, 1fr)"],
+        [`${prefix}-protocols`, `${prefix}-disabled`, "90px"],
+        [`${prefix}-disabled`, `${prefix}-multi-model`, "100px"],
+      ]);
     expect(ids("InferenceGraph")).toEqual([
-      ["namespace", "graph-status"],
-      ["graph-status", "graph-url"],
+      ["namespace", "graph-status", "110px"],
+      ["graph-status", "graph-url", "minmax(180px, 2fr)"],
+      ["graph-url", "graph-nodes", "80px"],
+    ]);
+    expect(ids("TrainedModel")).toEqual([
+      ["namespace", "trained-model-status", "110px"],
+      ["trained-model-status", "trained-model-inference-service", "minmax(140px, 1.5fr)"],
+      ["trained-model-inference-service", "trained-model-framework", "110px"],
     ]);
   });
 
-  it("of InferenceServices: state, URL without credentials, model format, runtime, mode, canary share", () => {
+  it("of InferenceServices: state, URL without credentials, model format, runtime, mode, canary share, as shown and sorted", () => {
     for (const [label, o] of services()) {
       const state = serviceState(o);
       expect(cell("isvc-status", o), label).toBe(en[`state.${state}` as keyof typeof en]);
-      expect(drawn("isvc-status", o).tone, label).toBe(toneOf(SERVICE_TONE[state]));
-      expect(cell("isvc-url", o), label).toBe(safeUri((st(o)?.url as string | undefined) ?? undefined)?.text);
+      expect(drawn("isvc-status", o).tone, label).toBe(SERVICE_TONE[state]);
+      expect(sortOf("isvc-status", o), label).toBe(state);
+      // Filtered by the state, as the built-in column's value, not by the words shown.
+      expect(filterOf("isvc-status", o), label).toEqual({ type: "string", value: state });
+      const url = safeUri((st(o)?.url as string | undefined) ?? undefined)?.text;
+      expect(cell("isvc-url", o), label).toBe(url);
       const f = predictorOf(o)?.format;
-      expect(cell("isvc-model-format", o), label).toBe(f ? [f.name, f.version].filter(Boolean).join(":") : undefined);
-      expect(cell("isvc-runtime", o), label).toBe(predictorOf(o)?.runtime ?? recordedRuntimeOf(o)?.name);
+      const format = f ? [f.name, f.version].filter(Boolean).join(":") : undefined;
+      expect(cell("isvc-model-format", o), label).toBe(format);
+      expect(sortOf("isvc-model-format", o), label).toBe(format);
+      const runtime = predictorOf(o)?.runtime ?? recordedRuntimeOf(o)?.name;
+      expect(cell("isvc-runtime", o), label).toBe(runtime);
+      expect(sortOf("isvc-runtime", o), label).toBe(runtime);
       expect(cell("isvc-mode", o), label).toBe(deploymentModeOf(o)?.raw);
+      expect(sortOf("isvc-mode", o), label).toBe(deploymentModeOf(o)?.raw);
       const canary = canaryPercent(o);
       expect(cell("isvc-canary", o), label).toBe(canary === undefined ? undefined : String(canary));
+      // A number, or the same number as text (the table's collator compares text numerically).
+      const sorted = sortOf("isvc-canary", o);
+      expect(sorted === undefined ? undefined : Number(sorted), label).toBe(canary);
     }
     const leaky = isvc("sklearn-iris");
     st(leaky).url = "https://u:tok@sklearn-iris.default.example.com/?sig=1";
     expect(cell("isvc-url", leaky)).toBe("https://sklearn-iris.default.example.com/");
   });
 
-  it("the state's hover is the built-in one where the failing condition is the predictor's, a component's, the ingress or Ready", () => {
-    const told = ["flowers", "torch-mnist", "llm-invalid", "sklearn-iris"].map((n) => isvc(n));
-    for (const cause of ["PredictorReady", "TransformerReady", "ExplainerReady", "LatestDeploymentReady", "IngressReady"]) told.push(notReadyBy([cause]));
-    told.push(notReadyBy([]));
-    for (const o of told) expect(drawn("isvc-status", o).title, o.metadata.name).toBe(serviceReason(o));
-    // Elsewhere it is Ready's message (the built-in one named the first False condition in KServe's order).
-    const config = notReadyBy(["PredictorConfigurationReady"]);
-    expect(serviceReason(config)).toBe("PredictorConfigurationReady is down");
-    expect(drawn("isvc-status", config).title).toBe("not ready");
+  it("the state's hover is the built-in one: the model's failure, else the most basic False condition, else Ready's", () => {
+    for (const [label, o] of services()) if (label !== EMPTY_ODD) expect(drawn("isvc-status", o).title, label).toBe(serviceReason(o));
+    // Not ready: in KServe's order, a condition outside the list after every listed one.
+    const config = notReadyBy(["PredictorConfigurationReady", "IngressReady"]);
+    expect(drawn("isvc-status", config).title).toBe("PredictorConfigurationReady is down");
     expect(failingCondition(config)?.type).toBe("PredictorConfigurationReady");
   });
 
+  it("differ where the built-in hover chose among two False conditions of a state other than Not ready, or ran long", () => {
+    // Ready with two False conditions: the first in the object's list, not in KServe's order.
+    const two = isvc("sklearn-iris");
+    st(two).conditions.unshift({ type: "AnOddReady", status: "False", message: "odd" });
+    st(two).conditions.push({ type: "CanaryPredictorReady", status: "False", message: "the canary is gone" });
+    expect(serviceReason(two)).toBe("the canary is gone");
+    expect(drawn("isvc-status", two).title).toBe("odd");
+    // Stopped, or failed without the failure's message: PredictorReady when False, else the first False condition
+    // in the list; with only Ready False the built-in hover told Ready's, the cell tells nothing.
+    const stoppedReady = notReadyBy([]);
+    stoppedReady.metadata.annotations = { "serving.kserve.io/stop": "true" };
+    expect(serviceReason(stoppedReady)).toBe("not ready");
+    expect(drawn("isvc-status", stoppedReady).title).toBeUndefined();
+    const stoppedTwo = notReadyBy(["LatestDeploymentReady", "IngressReady"]);
+    stoppedTwo.metadata.annotations = { "serving.kserve.io/stop": "true" };
+    // As knative keeps them: by type.
+    st(stoppedTwo).conditions.sort((a, b) => a.type.localeCompare(b.type));
+    expect(serviceReason(stoppedTwo)).toBe("LatestDeploymentReady is down");
+    expect(drawn("isvc-status", stoppedTwo).title).toBe("IngressReady is down");
+    // A False condition with neither a reason nor a message: the built-in hover said nothing, the cell tells Ready's.
+    const [, emptyOdd] = services().find(([label]) => label === EMPTY_ODD)!;
+    expect(serviceReason(emptyOdd)).toBe("");
+    expect(drawn("isvc-status", emptyOdd).title).toBe("not ready");
+    // A hover holds 1000 characters, a cell 200 (the built-in hover and URL were not cut).
+    const long = notReadyBy(["IngressReady"]);
+    st(long).conditions.find((c) => c.type === "IngressReady")!.message = "x".repeat(300);
+    expect(drawn("isvc-status", long).title).toBe(serviceReason(long));
+    st(long).conditions.find((c) => c.type === "IngressReady")!.message = "x".repeat(1500);
+    expect(serviceReason(long)).toHaveLength(1500);
+    expect(drawn("isvc-status", long).title).toBe(`${"x".repeat(1000)}…`);
+    const longUrl = isvc("sklearn-iris");
+    st(longUrl).url = `https://${"h".repeat(300)}.example.com/`;
+    expect(cell("isvc-url", longUrl)).toBe(`${safeUri(st(longUrl).url as string)!.text.slice(0, 200)}…`);
+  });
+
   it("of the old framework fields: the framework's name", () => {
-    for (const framework of ["sklearn", "xgboost", "tensorflow", "pytorch", "triton", "onnx", "huggingface", "pmml", "lightgbm"]) {
+    for (const framework of ["sklearn", "xgboost", "tensorflow", "pytorch", "triton", "onnx", "huggingface", "pmml", "lightgbm", "paddle"]) {
       const o = isvc("sklearn-iris");
       o.spec = { predictor: { [framework]: { storageUri: "gs://x/model" } } };
       expect(cell("isvc-model-format", o)).toBe(framework);
+      expect(predictorOf(o)?.format?.name).toBe(framework);
     }
     const versioned = isvc("sklearn-iris");
     (versioned.spec as { predictor: { model: { modelFormat: Record<string, string> } } }).predictor.model.modelFormat.version = "1";
@@ -453,16 +623,19 @@ describe("the columns, against the built-in ones", () => {
   it("of runtimes: formats, protocols, disabled and multi-model", () => {
     for (const o of runtimes()) {
       const prefix = o.kind === "ServingRuntime" ? "sr" : "csr";
-      const names = formatsOf(o).map((f) => f.name).filter(Boolean);
-      const shown = names.length > 4 ? `${names.slice(0, 4).join(", ")}, …` : names.join(", ");
-      expect(cell(`${prefix}-formats`, o), o.metadata.name).toBe(shown || undefined);
-      expect(cell(`${prefix}-protocols`, o), o.metadata.name).toBe(protocolsOf(o).join(", ") || undefined);
+      const formats = formatsOf(o).map((f) => f.name).filter(Boolean).join(", ");
+      // An empty text where there is none, sorted first, as the built-in one.
+      expect(cell(`${prefix}-formats`, o), o.metadata.name).toBe(formats);
+      expect(sortOf(`${prefix}-formats`, o), o.metadata.name).toBe(formats);
+      const protocols = protocolsOf(o).join(", ");
+      expect(cell(`${prefix}-protocols`, o), o.metadata.name).toBe(protocols);
+      expect(sortOf(`${prefix}-protocols`, o), o.metadata.name).toBe(protocols);
       expect(cell(`${prefix}-disabled`, o)).toBe(isDisabled(o) ? "True" : "False");
       expect(cell(`${prefix}-multi-model`, o)).toBe((o.spec as Record<string, unknown>).multiModel === true ? "True" : "False");
     }
   });
 
-  it("of InferenceGraphs and TrainedModels: readiness with its reason, URL, InferenceService, framework", () => {
+  it("of InferenceGraphs and TrainedModels: readiness with its reason, URL, nodes, InferenceService, framework", () => {
     const graph = byName("InferenceGraph", "model-chainer");
     const model = byName("TrainedModel", "iris-v2");
     const variants = (o: KubeObject): KubeObject[] => {
@@ -471,8 +644,10 @@ describe("the columns, against the built-in ones", () => {
       const noMessage = copy(o);
       st(noMessage).conditions = [{ type: "Ready", status: "False", reason: "Waiting", message: "" }];
       const unknown = copy(o);
-      st(unknown).conditions = [];
-      return [o, notReady, noMessage, unknown];
+      st(unknown).conditions = [{ type: "Ready", status: "Unknown" }];
+      const none = copy(o);
+      st(none).conditions = [];
+      return [o, notReady, noMessage, unknown, none];
     };
     for (const [prefix, list] of [
       ["graph", variants(graph)],
@@ -482,19 +657,34 @@ describe("the columns, against the built-in ones", () => {
         const ready = conditionOf(o, "Ready");
         const value = ready?.status === "True" ? "ready" : ready?.status === "False" ? "notReady" : "progressing";
         expect(cell(`${prefix}-status`, o)).toBe(en[`state.${value}` as keyof typeof en]);
-        expect(drawn(`${prefix}-status`, o)).toEqual({ title: ready?.status === "False" ? ready.message || ready.reason : undefined, tone: toneOf(SERVICE_TONE[value]) });
+        expect(sortOf(`${prefix}-status`, o)).toBe(ready?.status);
+        // Without a Ready condition the filter reads the words shown (the built-in one had no value): a missing sort
+        // key leaves the filter the text.
+        expect(filterOf(`${prefix}-status`, o)).toEqual({ type: "string", value: ready ? ready.status : en["state.progressing"] });
+        expect(drawn(`${prefix}-status`, o)).toEqual({
+          title: ready?.status === "False" ? cleanText(ready.message || ready.reason) : undefined,
+          tone: SERVICE_TONE[value],
+        });
       }
     }
     expect(cell("graph-url", graph)).toBe(safeUri(st(graph).url as string)?.text);
     expect(cell("trained-model-inference-service", model)).toBe((model.spec as { inferenceService: string }).inferenceService);
     expect(cell("trained-model-framework", model)).toBe((model.spec as { model: { framework: string } }).model.framework);
+    const nodes = (o: KubeObject) => Object.keys((o.spec as { nodes?: object }).nodes ?? {}).length;
+    const noNodes = copy(graph);
+    delete (noNodes.spec as { nodes?: object }).nodes;
+    for (const o of [graph, noNodes]) {
+      expect(cell("graph-nodes", o)).toBe(String(nodes(o)));
+      expect(sortOf("graph-nodes", o)).toBe(nodes(o));
+      expect(filterOf("graph-nodes", o)).toEqual({ type: "number", value: nodes(o) });
+    }
   });
 });
 
 // ---------- The manifest ----------
 
 describe("the manifest", () => {
-  it("lists the five kinds in the section kserve with the built-in icons, each with a details section of its own", () => {
+  it("lists the five kinds in the section kserve with the built-in icons, each with an untitled details section of its own", () => {
     expect(manifest.contributes.kinds.map((k) => [k.kind, k.section, k.order, k.icon])).toEqual([
       ["InferenceService", "kserve", 10, "inferenceService"],
       ["ServingRuntime", "kserve", 20, "servingRuntime"],
@@ -513,6 +703,8 @@ describe("the manifest", () => {
     for (const section of manifest.contributes.detailsSections) {
       expect(section.kinds).toEqual([{ group: kinds[section.id]!.group, kind: kinds[section.id]!.kind }]);
       expect(section.order).toBe(20);
+      // Untitled, as the built-in section: its title is only the group's accessible name.
+      expect(section.heading).toBe(false);
     }
     expect(manifest.contributes.sectionBadges).toEqual([{ section: "kserve", label: { one: "{{count}} InferenceService needs attention", other: "{{count}} InferenceServices need attention" } }]);
   });

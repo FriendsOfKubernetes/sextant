@@ -529,11 +529,11 @@ describe("the columns", () => {
     (status(removing).listeners as Json[]).push({ name: "old" });
     expect(names(removing)).toBe(format.formatList(["plain", "tls", "external", "old"]));
     expect(cell("kafka-listeners", removing)).toBe(names(removing));
-    // A status listener of the old shape, its name only as `type`: the built-in column named it by its type.
+    // A status listener of the old shape, its name only as `type`: named by its type, as the built-in column did.
     const legacy = copy(kafka);
     status(legacy).listeners = [{ type: "plain" }, { type: "legacy" }];
     expect(names(legacy)).toBe(format.formatList(["plain", "tls", "external", "legacy"]));
-    expect(cell("kafka-listeners", legacy)).toBe(names(kafka));
+    expect(cell("kafka-listeners", legacy)).toBe(names(legacy));
     const older = copy(kafka);
     status(older).kafkaVersion = undefined;
     expect(cell("kafka-version", older)).toBe("4.0.0");
