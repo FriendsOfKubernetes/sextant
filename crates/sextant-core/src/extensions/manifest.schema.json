@@ -431,7 +431,7 @@
               "format": {
                 "description": "How the value is shown, sorted and filtered: `text` (default), `number`, `age` (a time), `duration` (from the time to `endPaths` or now), `ratio` (`value/totalPaths`; with the whole there, a missing value is 0, as Kubernetes leaves zero counts out).",
                 "type": "string",
-                "enum": ["text", "number", "age", "duration", "ratio", "list", "count", "sum", "entries"]
+                "enum": ["text", "number", "age", "duration", "ratio", "list", "count", "sum", "entries", "cpu", "bytes", "dateTime"]
               },
               "endPaths": {
                 "description": "`duration`: the end time, the first with a value; now without one.",
@@ -1202,6 +1202,41 @@
             "path": { "$ref": "#/$defs/fieldPath" },
             "kind": { "$ref": "#/$defs/kind" },
             "when": { "$ref": "#/$defs/problemCondition" }
+          }
+        },
+        {
+          "description": "An object of `kind` in the judged object's namespace has, for every pair, the text at `theirs` equal to the judged object's at `ours`, and `when` holds for it; unknown while that list is not read in full. sextantApi 4; not inside `any` or `not`; `when` reads only that object, no time.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "kind", "pairs", "when"],
+          "properties": {
+            "type": { "const": "relatedBy" },
+            "kind": { "$ref": "#/$defs/kind" },
+            "pairs": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["theirs", "ours"],
+                "properties": { "theirs": { "$ref": "#/$defs/fieldPath" }, "ours": { "$ref": "#/$defs/fieldPath" } }
+              }
+            },
+            "when": { "$ref": "#/$defs/problemCondition" }
+          }
+        },
+        {
+          "description": "The label selector at `selector` picks no object of `kind` in the namespaces it covers (every one where `anyNamespacesPath` is true, the names at `namespacesPath`, else the judged object's own); unknown while that list is not read in full. sextantApi 4; not inside `any` or `not`.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "kind", "selector"],
+          "properties": {
+            "type": { "const": "selectsNone" },
+            "kind": { "$ref": "#/$defs/kind" },
+            "selector": { "$ref": "#/$defs/fieldPath" },
+            "anyNamespacesPath": { "$ref": "#/$defs/fieldPath" },
+            "namespacesPath": { "$ref": "#/$defs/fieldPath" }
           }
         },
         {

@@ -721,6 +721,43 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     checkRulePath(numericPath(condition.path, counter.api, [...segments, "path"]), kind, [...segments, "path"], counter.metadataOnly);
     return;
   }
+  if (condition.type === "relatedBy") {
+    // An object of a kind in the namespace with the same field texts (#404), judged across objects like `related`.
+    if (counter.single) fail([...segments, "type"], "`relatedBy` judges across objects: only problem rules may use it");
+    if (counter.api < SOURCES_API) fail([...segments, "type"], `\`relatedBy\` needs sextantApi ${SOURCES_API} or later`);
+    if (inside !== "top") fail([...segments, "type"], "`relatedBy` cannot be inside `any` or `not`: a list not read would make it unknown");
+    if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret") fail([...segments, "kind"], "Secrets are never listed for rules");
+    if (condition.pairs.length === 0 || condition.pairs.length > 4) fail([...segments, "pairs"], "has 1 to 4 pairs");
+    condition.pairs.forEach((pair, i) => {
+      checkRulePath(pair.ours, kind, [...segments, "pairs", i, "ours"], counter.metadataOnly);
+      checkRulePath(pair.theirs, condition.kind, [...segments, "pairs", i, "theirs"], false);
+    });
+    checkObjectCondition(condition.when, [condition.kind], [...segments, "when"], counter.api);
+    if (usesTime(condition.when)) fail([...segments, "when"], "reads no time (`olderThan`): it is judged when that object changes");
+    if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
+      counter.kinds.push(condition.kind);
+      const maxKinds = ruleLimits(counter.api)[1];
+      if (counter.kinds.length > maxKinds) fail([...segments, "kind"], `the rules judge at most ${maxKinds} kinds`);
+    }
+    return;
+  }
+  if (condition.type === "selectsNone") {
+    // A label selector that picks no object of a kind (#404), judged across objects like `related`.
+    if (counter.single) fail([...segments, "type"], "`selectsNone` judges across objects: only problem rules may use it");
+    if (counter.api < SOURCES_API) fail([...segments, "type"], `\`selectsNone\` needs sextantApi ${SOURCES_API} or later`);
+    if (inside !== "top") fail([...segments, "type"], "`selectsNone` cannot be inside `any` or `not`: a list not read would make it unknown");
+    if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret") fail([...segments, "kind"], "Secrets are never listed for rules");
+    checkRulePath(condition.selector, kind, [...segments, "selector"], counter.metadataOnly);
+    for (const field of ["anyNamespacesPath", "namespacesPath"]) {
+      if (condition[field] !== undefined) checkRulePath(condition[field], kind, [...segments, field], counter.metadataOnly);
+    }
+    if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
+      counter.kinds.push(condition.kind);
+      const maxKinds = ruleLimits(counter.api)[1];
+      if (counter.kinds.length > maxKinds) fail([...segments, "kind"], `the rules judge at most ${maxKinds} kinds`);
+    }
+    return;
+  }
   if (condition.type === "related") {
     if (counter.single) fail([...segments, "type"], "`related` judges across objects: only problem rules may use it");
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`related\` needs sextantApi ${SOURCES_API} or later`);

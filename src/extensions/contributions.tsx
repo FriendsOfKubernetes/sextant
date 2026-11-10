@@ -9,7 +9,7 @@
 // consent) is removed with everything it showed — an open page of it falls back to the cluster overview, its dock tabs
 // and action windows close.
 import { useState, type ComponentType } from "react";
-import type { ActionContribution, ExtensionInfo, KindContribution, KindPattern, KindRef, KubeObject, ProblemContribution } from "../api";
+import type { ActionContribution, ClusterId, ExtensionInfo, KindContribution, KindPattern, KindRef, KubeObject, ProblemContribution } from "../api";
 import { useAppStore } from "../app/store";
 import { Dialog, isIconName, type IconName } from "../components";
 import { openActionDialog, registerAction, reportActionFailure, type ActionContext } from "../features/actions/registry";
@@ -17,6 +17,8 @@ import { registerClusterMenuItem } from "../features/clusters/menuItems";
 import { categoryOfExtension, detectExtension, registerExtensionProblems } from "../features/problems/extensionCategories";
 import { NamespaceFilter } from "../features/namespaces";
 import { useExtensionSectionCount } from "../features/problems/hooks";
+import { sourcesOf } from "../features/problems/store";
+import { judgedAcross } from "./problemsAcross";
 import { useDetailsDisclosureBank } from "../layout/details/disclosure";
 import { registerDetailsSection, unregisterDetailsSection, type DetailsSectionProps } from "../layout/details/registry";
 import {
@@ -388,21 +390,32 @@ function problemOf(
   extensionId: string,
   kind: Pick<KindRef, "group" | "kind">,
   rules: readonly ProblemContribution[],
-): ((obj: KubeObject) => boolean) | undefined {
+): ((obj: KubeObject, clusterId?: ClusterId) => boolean) | undefined {
   const own = rules.filter((rule) => kindKeyOf(rule.kind) === kindKeyOf(kind));
   if (own.length === 0) return undefined;
   const selector = own[0]!.source?.labelSelector;
   // The rules may belong to the main category and to categories of the extension's own (#410).
   const categories = [...new Set(own.map((rule) => categoryOfExtension(extensionId, rule.category)))];
-  return (obj) => {
+  // A rule judged across objects (`missing`, `related`, `selectsNone`, …) tells nothing of an object alone (#404): its
+  // problems are the problems store's, judged with the other objects' rows; without the cluster, none.
+  const across = new Set(own.filter(judgedAcross).map((rule) => rule.id));
+  return (obj, clusterId) => {
     if (selector !== undefined && !matchesSelector(obj.metadata?.labels as Record<string, string> | undefined, selector)) {
       return false;
     }
     const now = Date.now();
-    return categories.some((category) =>
+    const alone = categories.some((category) =>
       detectExtension(category, kind, obj).some(
-        (d) => (d.activeFrom === undefined || d.activeFrom <= now) && (d.until === undefined || d.until > now),
+        (d) =>
+          !across.has(d.rule ?? "") && (d.activeFrom === undefined || d.activeFrom <= now) && (d.until === undefined || d.until > now),
       ),
+    );
+    if (alone || across.size === 0 || clusterId === undefined) return alone;
+    const uid = obj.metadata?.uid;
+    return sourcesOf(clusterId).some(
+      (source) =>
+        categories.includes(source.category as (typeof categories)[number]) &&
+        source.problems.some((p) => p.uid === uid && across.has(p.rule ?? "") && (p.activeFrom === undefined || p.activeFrom <= now) && (p.until === undefined || p.until > now)),
     );
   };
 }

@@ -107,6 +107,53 @@ export interface Lookup {
   name: string;
   /** `related` (#409): the named object must exist with this fact (`factKey` of its `when`) holding; else it must not exist. */
   fact?: string;
+  /** `relatedBy` (#404): an object of the kind in the judged object's namespace with these texts at these paths. */
+  by?: [path: string, value: string][];
+  /** `selectsNone` (#404): no object of the kind in `namespaces` (`null`: every one) has labels `selector` matches. */
+  selects?: { selector: LabelSelector; namespaces: string[] | null };
+}
+
+/** A Kubernetes label selector, as `selectsNone` reads it (#404). */
+export interface LabelSelector {
+  matchLabels: Record<string, string>;
+  matchExpressions: { key: string; operator: string; values: string[] }[];
+}
+
+/** The selector at `value`; `undefined` when it is no object. An empty one selects everything. */
+export function labelSelectorOf(value: unknown): LabelSelector | undefined {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const raw = value as { matchLabels?: unknown; matchExpressions?: unknown };
+  const matchLabels: Record<string, string> = {};
+  if (raw.matchLabels !== null && typeof raw.matchLabels === "object" && !Array.isArray(raw.matchLabels)) {
+    for (const [k, v] of Object.entries(raw.matchLabels as Record<string, unknown>)) if (typeof v === "string") matchLabels[k] = v;
+  }
+  const matchExpressions = (Array.isArray(raw.matchExpressions) ? raw.matchExpressions : []).flatMap((e) => {
+    if (e === null || typeof e !== "object") return [];
+    const { key, operator, values } = e as { key?: unknown; operator?: unknown; values?: unknown };
+    if (typeof key !== "string" || typeof operator !== "string") return [];
+    return [{ key, operator, values: Array.isArray(values) ? values.filter((v): v is string => typeof v === "string") : [] }];
+  });
+  return { matchLabels, matchExpressions };
+}
+
+/** Whether `labels` are picked by `selector`, as the API server matches; an operator it does not know matches nothing. */
+export function selectorMatches(selector: LabelSelector, labels: Readonly<Record<string, string>>): boolean {
+  for (const [k, v] of Object.entries(selector.matchLabels)) if (labels[k] !== v) return false;
+  return selector.matchExpressions.every(({ key, operator, values }) => {
+    const has = Object.hasOwn(labels, key);
+    switch (operator) {
+      case "In":
+        return has && values.includes(labels[key]!);
+      case "NotIn":
+        return !has || !values.includes(labels[key]!);
+      case "Exists":
+        return has;
+      case "DoesNotExist":
+        return !has;
+      default:
+        return false;
+    }
+  });
 }
 
 /** What a condition says of an object. */
@@ -217,6 +264,29 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       const name = valueAt(obj, condition.path);
       if (typeof name !== "string" || name.trim() === "") return NO;
       return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name }] };
+    }
+    case "relatedBy": {
+      // The judged object's texts the other object must hold; one missing, nothing related (#404).
+      const by: [string, string][] = [];
+      for (const { theirs, ours } of condition.pairs) {
+        const value = valueAt(obj, ours);
+        if (!isScalar(value) || String(value) === "") return NO;
+        by.push([theirs, String(value)]);
+      }
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name: "", by, fact: factKey(condition.when) }] };
+    }
+    case "selectsNone": {
+      // Nothing to select with, nothing judged; the rows of the kind tell whether it selects any (#404).
+      // No selector at all selects everything, as Prometheus Operator reads a monitor's; any other non-object nothing.
+      const raw = valueAt(obj, condition.selector);
+      const selector = raw === undefined || raw === null ? { matchLabels: {}, matchExpressions: [] } : labelSelectorOf(raw);
+      if (!selector) return NO;
+      const names = condition.namespacesPath === undefined ? undefined : valueAt(obj, condition.namespacesPath);
+      const listed = Array.isArray(names) ? names.filter((n): n is string => typeof n === "string" && n !== "") : [];
+      const every = condition.anyNamespacesPath !== undefined && valueAt(obj, condition.anyNamespacesPath) === true;
+      const own = obj.metadata?.namespace ?? "";
+      const namespaces = every ? null : listed.length > 0 ? listed : [own];
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name: "", selects: { selector, namespaces } }] };
     }
     case "related": {
       // Nothing named, nothing related; the named object's own condition is judged on its row (#409).

@@ -11,7 +11,7 @@
 //
 //   judgeAcross(problems, context, { rules, targets })   // the problems that stand
 import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
-import { evaluate, factKey } from "./problemRules";
+import { evaluate, factKey, selectorMatches, valueAt } from "./problemRules";
 import type { Problem } from "../features/problems/model";
 import type { JudgeContext, JudgedRows, SourceDef } from "../features/problems/sources";
 
@@ -25,10 +25,22 @@ export interface AcrossRow {
   labels: Record<string, string>;
   /** Whether each `related` condition's own `when` on this kind holds for it (#409), by `factKey`. */
   facts?: Record<string, boolean>;
+  /** The texts at the paths a `relatedBy` compares on this kind (#404), by path. */
+  values?: Record<string, string>;
+  /** Every label, for a kind a `selectsNone` selects from (#404); at most `MAX_ROW_LABELS`. */
+  allLabels?: Record<string, string>;
 }
 
+/** The most labels a row keeps for `selectsNone` (#404). */
+export const MAX_ROW_LABELS = 64;
+
 /** The row of `obj`, keeping only the labels `labelKeys` name and the `facts` the rules ask of its kind (#409). */
-export function rowOf(labelKeys: readonly string[], facts: readonly ProblemCondition[] = []): (obj: KubeObject) => AcrossRow {
+export function rowOf(
+  labelKeys: readonly string[],
+  facts: readonly ProblemCondition[] = [],
+  keepLabels = false,
+  valuePaths: readonly string[] = [],
+): (obj: KubeObject) => AcrossRow {
   return (obj) => {
     const meta = (obj.metadata ?? {}) as { name?: string; namespace?: string; creationTimestamp?: string; labels?: Record<string, unknown> };
     const all = meta.labels ?? {};
@@ -40,6 +52,20 @@ export function rowOf(labelKeys: readonly string[], facts: readonly ProblemCondi
     const created = Date.parse(meta.creationTimestamp ?? "");
     const row: AcrossRow = { namespace: meta.namespace ?? "", name: meta.name ?? "", created: Number.isNaN(created) ? undefined : created, labels };
     if (facts.length > 0) row.facts = Object.fromEntries(facts.map((when) => [factKey(when), evaluate(when, obj).holds]));
+    if (valuePaths.length > 0) {
+      row.values = {};
+      for (const path of valuePaths) {
+        const value = valueAt(obj, path);
+        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") row.values[path] = String(value);
+      }
+    }
+    if (keepLabels) {
+      row.allLabels = Object.fromEntries(
+        Object.entries(all)
+          .filter((entry): entry is [string, string] => typeof entry[1] === "string")
+          .slice(0, MAX_ROW_LABELS),
+      );
+    }
     return row;
   };
 }
@@ -81,8 +107,31 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
       if (!target) return false;
       const known = namesOf(target);
       if (!known) return false;
-      const namespace = target.namespaced ? (p.object.namespace ?? "") : "";
       const watched = context.target(target.def)?.namespaces;
+      // `selectsNone` (#404): no row in the namespaces it covers has labels its selector picks; a source that does not
+      // watch all of them cannot tell.
+      if (lookup.selects) {
+        const { selector, namespaces } = lookup.selects;
+        if (target.namespaced && watched !== null && (namespaces === null || namespaces.some((ns) => !watched?.includes(ns)))) return false;
+        for (const row of known.values()) {
+          if (target.namespaced && namespaces !== null && !namespaces.includes(row.namespace)) continue;
+          if (row.allLabels === undefined) return false;
+          if (selectorMatches(selector, row.allLabels)) return false;
+        }
+        return true;
+      }
+      const namespace = target.namespaced ? (p.object.namespace ?? "") : "";
+      // `relatedBy` (#404): a row of the namespace holding every text, with its fact holding.
+      if (lookup.by) {
+        if (target.namespaced && watched !== null && !watched?.includes(namespace)) return false;
+        const by = lookup.by;
+        return [...known.values()].some(
+          (row) =>
+            (!target.namespaced || row.namespace === namespace) &&
+            by.every(([path, value]) => row.values?.[path] === value) &&
+            (lookup.fact === undefined || row.facts?.[lookup.fact] === true),
+        );
+      }
       if (target.namespaced && watched !== null && !watched?.includes(namespace)) return false;
       const row = known.get(`${namespace}/${lookup.name}`);
       // `related` (#409): there, with its fact holding; `missing`: not there.
@@ -143,16 +192,40 @@ export function judgedAcross(rule: ProblemContribution): boolean {
 
 /** The kinds a condition looks up (`missing`). */
 export function lookedUp(condition: ProblemContribution["when"]): { group: string; kind: string }[] {
-  if (condition.type === "missing" || condition.type === "related") return [condition.kind];
+  if (condition.type === "missing" || condition.type === "related" || condition.type === "relatedBy" || condition.type === "selectsNone") return [condition.kind];
   if (condition.type === "all" || condition.type === "any") return condition.of.flatMap(lookedUp);
   return [];
+}
+
+/** The `group/kind` keys (by `keyOf`) a `selectsNone` of `rules` selects from: their rows keep every label (#404). */
+export function selectedKinds(rules: readonly ProblemContribution[], keyOf: (kind: { group: string; kind: string }) => string): Set<string> {
+  const out = new Set<string>();
+  const visit = (condition: ProblemCondition) => {
+    if (condition.type === "selectsNone") out.add(keyOf(condition.kind));
+    else if (condition.type === "all" || condition.type === "any") condition.of.forEach(visit);
+  };
+  for (const rule of rules) visit(rule.when);
+  return out;
+}
+
+/** The paths `relatedBy` compares on each kind, by the `group/kind` key (`keyOf`) it names (#404). */
+export function comparedPaths(rules: readonly ProblemContribution[], keyOf: (kind: { group: string; kind: string }) => string): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  const visit = (condition: ProblemCondition) => {
+    if (condition.type === "relatedBy") {
+      const key = keyOf(condition.kind);
+      out.set(key, [...new Set([...(out.get(key) ?? []), ...condition.pairs.map((p) => p.theirs)])]);
+    } else if (condition.type === "all" || condition.type === "any") condition.of.forEach(visit);
+  };
+  for (const rule of rules) visit(rule.when);
+  return out;
 }
 
 /** The `related` conditions' own `when`s of `rules`, by the `group/kind` (lower case) they name (#409). */
 export function factsOf(rules: readonly ProblemContribution[], keyOf: (kind: { group: string; kind: string }) => string): Map<string, ProblemCondition[]> {
   const out = new Map<string, ProblemCondition[]>();
   const visit = (condition: ProblemCondition) => {
-    if (condition.type === "related") {
+    if (condition.type === "related" || condition.type === "relatedBy") {
       const key = keyOf(condition.kind);
       const list = out.get(key) ?? [];
       if (!list.some((c) => factKey(c) === factKey(condition.when))) list.push(condition.when);

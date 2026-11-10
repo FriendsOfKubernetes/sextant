@@ -454,6 +454,36 @@ pub enum ProblemCondition {
         kind: KindPattern,
         when: Box<ProblemCondition>,
     },
+    /// The label selector at `selector` (`matchLabels`, `matchExpressions`) picks no object of `kind` in the
+    /// namespaces it covers (#404): every namespace where `anyNamespacesPath` is `true`, the names at `namespacesPath`,
+    /// else the judged object's own — a ServiceMonitor that selects no Service. `sextantApi` 4; unknown (not holding)
+    /// while that list is not read in full or does not watch those namespaces; not inside `any` or `not`.
+    SelectsNone {
+        kind: KindPattern,
+        selector: String,
+        #[serde(
+            default,
+            rename = "anyNamespacesPath",
+            skip_serializing_if = "Option::is_none"
+        )]
+        #[ts(optional)]
+        any_namespaces_path: Option<String>,
+        #[serde(
+            default,
+            rename = "namespacesPath",
+            skip_serializing_if = "Option::is_none"
+        )]
+        #[ts(optional)]
+        namespaces_path: Option<String>,
+    },
+    /// An object of `kind` in the judged object's namespace has, for every pair, the text at `theirs` equal to the
+    /// judged object's at `ours`, and `when` holds for it (#404): an HPA on the VPA's target. `sextantApi` 4; unknown
+    /// while that list is not read in full; not inside `any` or `not`; `when` reads only that object, no time.
+    RelatedBy {
+        kind: KindPattern,
+        pairs: Vec<FieldPair>,
+        when: Box<ProblemCondition>,
+    },
     All {
         of: Vec<ProblemCondition>,
     },
@@ -950,6 +980,115 @@ fn check_condition<'k>(
             }
             Ok(())
         }
+        ProblemCondition::RelatedBy {
+            kind: target,
+            pairs,
+            when,
+        } => {
+            if checks.single {
+                return Err(at(
+                    &path.key("type"),
+                    "`relatedBy` judges across objects: only problem rules may use it",
+                ));
+            }
+            if checks.api < SOURCES_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`relatedBy` needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            if !matches!(inside, Inside::Top) {
+                return Err(at(
+                    &path.key("type"),
+                    "`relatedBy` cannot be inside `any` or `not`: a list not read would make it unknown",
+                ));
+            }
+            if target.group.is_empty() && target.kind.eq_ignore_ascii_case("Secret") {
+                return Err(at(&path.key("kind"), "Secrets are never listed for rules"));
+            }
+            if pairs.is_empty() || pairs.len() > MAX_FIELD_PAIRS {
+                return Err(at(
+                    &path.key("pairs"),
+                    format!("has 1 to {MAX_FIELD_PAIRS} pairs"),
+                ));
+            }
+            for (i, pair) in pairs.iter().enumerate() {
+                let at_pair = path.key("pairs").index(i);
+                check_rule_path(&pair.ours, kind, &at_pair.key("ours"), checks.metadata_only)?;
+                check_rule_path(&pair.theirs, target, &at_pair.key("theirs"), false)?;
+            }
+            check_object_condition(
+                when,
+                std::slice::from_ref(target),
+                &path.key("when"),
+                checks.api,
+            )?;
+            if uses_time(when) {
+                return Err(at(
+                    &path.key("when"),
+                    "reads no time (`olderThan`): it is judged when that object changes",
+                ));
+            }
+            if !checks.kinds.iter().any(|k| same_kind(k, target)) {
+                checks.kinds.push(target);
+                let max_kinds = rule_limits(checks.api).1;
+                if checks.kinds.len() > max_kinds {
+                    return Err(at(
+                        &path.key("kind"),
+                        format!("the rules judge at most {max_kinds} kinds"),
+                    ));
+                }
+            }
+            Ok(())
+        }
+        ProblemCondition::SelectsNone {
+            kind: target,
+            selector,
+            any_namespaces_path,
+            namespaces_path,
+        } => {
+            if checks.single {
+                return Err(at(
+                    &path.key("type"),
+                    "`selectsNone` judges across objects: only problem rules may use it",
+                ));
+            }
+            if checks.api < SOURCES_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`selectsNone` needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            if !matches!(inside, Inside::Top) {
+                return Err(at(
+                    &path.key("type"),
+                    "`selectsNone` cannot be inside `any` or `not`: a list not read would make it unknown",
+                ));
+            }
+            if target.group.is_empty() && target.kind.eq_ignore_ascii_case("Secret") {
+                return Err(at(&path.key("kind"), "Secrets are never listed for rules"));
+            }
+            check_rule_path(selector, kind, &path.key("selector"), checks.metadata_only)?;
+            for (key, field) in [
+                ("anyNamespacesPath", any_namespaces_path),
+                ("namespacesPath", namespaces_path),
+            ] {
+                if let Some(field) = field {
+                    check_rule_path(field, kind, &path.key(key), checks.metadata_only)?;
+                }
+            }
+            if !checks.kinds.iter().any(|k| same_kind(k, target)) {
+                checks.kinds.push(target);
+                let max_kinds = rule_limits(checks.api).1;
+                if checks.kinds.len() > max_kinds {
+                    return Err(at(
+                        &path.key("kind"),
+                        format!("the rules judge at most {max_kinds} kinds"),
+                    ));
+                }
+            }
+            Ok(())
+        }
         ProblemCondition::Related {
             path: field,
             kind: target,
@@ -1165,7 +1304,10 @@ fn uses_time(condition: &ProblemCondition) -> bool {
 /// The kinds a condition looks up (`missing`), each once, added to `out`.
 fn looked_up<'c>(condition: &'c ProblemCondition, out: &mut Vec<&'c KindPattern>) {
     match condition {
-        ProblemCondition::Missing { kind, .. } | ProblemCondition::Related { kind, .. } => {
+        ProblemCondition::Missing { kind, .. }
+        | ProblemCondition::Related { kind, .. }
+        | ProblemCondition::RelatedBy { kind, .. }
+        | ProblemCondition::SelectsNone { kind, .. } => {
             if !out.iter().any(|k| same_kind(k, kind)) {
                 out.push(kind);
             }
@@ -1382,6 +1524,20 @@ pub fn placeholder_literal(text: &str) -> Option<&str> {
             .all(|b| b.is_ascii_digit() || matches!(b, b'-' | b'.'));
     number.then_some(text)
 }
+
+/// A field of another object and one of the judged object's that must hold the same text (`relatedBy`, #404).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct FieldPair {
+    /// The path in the other object (`.spec.scaleTargetRef.name`).
+    pub theirs: String,
+    /// The path in the judged object (`.spec.targetRef.name`).
+    pub ours: String,
+}
+
+/// The most pairs a `relatedBy` compares (#404).
+pub const MAX_FIELD_PAIRS: usize = 4;
 
 /// The most paths a placeholder adds (#404).
 pub const MAX_ADDED_PATHS: usize = 4;

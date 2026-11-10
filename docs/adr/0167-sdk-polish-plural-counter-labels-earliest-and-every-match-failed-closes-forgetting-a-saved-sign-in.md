@@ -234,3 +234,14 @@ The placeholder filter `after:<marker>` (1 to 20 characters) keeps the text afte
 when the marker is not there (`Kind=` of a composed job's group, version and kind).
 From `sextantApi` 4 a rule's `missing` may look up a core Secret by name: the window lists Secrets for rules
 metadata-only, never a value, as the built-in Sealed Secrets view did (ADR-0109); `related` still never names a Secret.
+The condition `selectsNone` (top level only, like `related`) holds where the label selector at `selector` picks no
+object of `kind` in the namespaces it covers — every one where `anyNamespacesPath` is `true`, the names at
+`namespacesPath`, else the judged object's own — judged on the rows of that kind, which then keep every label (at most
+64); a list not read in full or not watching those namespaces cannot tell (a ServiceMonitor that selects no Service).
+Columns gain the formats `cpu` ("250m", "4") and `bytes` ("250MiB"), sorted and filtered by the amount, and `dateTime`
+(a date and time in the UI language).
+The condition `relatedBy` (top level only) holds where an object of `kind` in the judged object's namespace holds, for
+each of up to 4 `pairs`, the judged object's text at `ours` at its own `theirs`, and its `when` (an HPA on a VPA's
+target, whatever the HPA is called); the rows of that kind keep those texts. A kind only looked up by name or labels
+(`missing`, `selectsNone`) is listed metadata-only. A kind's "Only problems" takes the problems of rules judged across
+objects from the problems store, judged with the other objects' rows, instead of the object alone.

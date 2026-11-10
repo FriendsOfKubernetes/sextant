@@ -10,7 +10,14 @@ import { StatusText } from "../resources/columns";
 import type { Tone } from "../resources/status";
 import { evaluate, fillTemplate, numberOf, sumOf, valueAt } from "./problemRules";
 import { cleanText } from "../resources/uri";
-import { formatList } from "../i18n/format";
+import { formatDateTime, formatList } from "../i18n/format";
+import { formatBytes, formatCpu, parseQuantity } from "../features/metrics/format";
+
+/** Cores as Kubernetes writes whole ones ("4"), anything else in millicores ("250m"), as Sextant's own columns do. */
+function cpuText(cores: number): string {
+  const milli = Math.round(cores * 1000);
+  return milli % 1000 === 0 && milli > 0 ? String(milli / 1000) : formatCpu(milli);
+}
 
 /** Longest text a computed cell shows. */
 export const MAX_CELL_CHARS = 200;
@@ -193,6 +200,21 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
       if (n === undefined) return { sort: undefined, text: undefined, draw: null };
       return { sort: n, text: written(String(n)), draw: written(String(n)) };
     }
+    case "cpu":
+    case "bytes": {
+      // A quantity as Sextant writes its own (#404): "250m", "250MiB"; sorted and filtered by the amount.
+      const amount = parseQuantity(value);
+      if (amount === undefined) return { sort: undefined, text: undefined, draw: null };
+      const text = column.format === "cpu" ? cpuText(amount) : formatBytes(amount);
+      return { sort: amount, text, draw: text };
+    }
+    case "dateTime": {
+      // A date and time in the UI language (#404), sorted by the time.
+      const t = timeOf(value);
+      if (t === undefined) return { sort: undefined, text: undefined, draw: null };
+      const text = formatDateTime(t);
+      return { sort: t, text, draw: <time dateTime={value as string}>{text}</time> };
+    }
     case "entries": {
       // A map's `key=value` entries in key order (#404), joined in the UI language.
       if (value === null || typeof value !== "object" || Array.isArray(value)) return { sort: undefined, text: undefined, draw: null };
@@ -262,8 +284,8 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
     },
     searchTextTimed: timed,
     filter:
-      // A count or a sum filters as a number (#404), as a number column does.
-      format === "number" || format === "ratio" || format === "count" || format === "sum"
+      // A count, a sum or a quantity filters as a number (#404), as a number column does.
+      format === "number" || format === "ratio" || format === "count" || format === "sum" || format === "cpu" || format === "bytes"
         ? { type: "number", value: (obj, ctx) => numericSort(cellOf(column, obj, ctx.now).sort) }
         : format === "age"
           ? { type: "age", value: (obj, ctx) => ageMs(cellOf(column, obj, ctx.now).sort, ctx.now) }

@@ -117,6 +117,20 @@ describe("an extension's computed column", () => {
     expect(phase.searchText!(backup, ctx)).toBe("Partly failed");
   });
 
+  it("write CPU and bytes as Sextant does and sort them by the amount; a time in the UI language (#404)", () => {
+    const vpa = { metadata: { name: "v" }, status: { cpu: "250m", whole: "2", memory: "262144k", saved: "2026-11-01T10:00:00Z" } } as unknown as KubeObject;
+    const cpu = computedColumn("c", column({ paths: [".status.cpu"], format: "cpu" }));
+    expect(cpu.searchText!(vpa, ctx)).toBe("250m");
+    expect(cpu.value!(vpa)).toBe(0.25);
+    expect(cpu.filter).toMatchObject({ type: "number" });
+    expect(computedColumn("w", column({ paths: [".status.whole"], format: "cpu" })).searchText!(vpa, ctx)).toBe("2");
+    const memory = computedColumn("m", column({ paths: [".status.memory"], format: "bytes" }));
+    expect(memory.searchText!(vpa, ctx)).toBe("250MiB");
+    expect(memory.value!(vpa)).toBe(262144000);
+    const saved = computedColumn("s", column({ paths: [".status.saved"], format: "dateTime" }));
+    expect(saved.value!(vpa)).toBe(Date.parse("2026-11-01T10:00:00Z"));
+  });
+
   it("join every path's list with joinPaths, each item once (#404)", () => {
     const o = {
       metadata: { name: "k" },

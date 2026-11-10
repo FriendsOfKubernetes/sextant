@@ -270,8 +270,11 @@ export interface ResourceDef {
   namespaced?: boolean;
   /** Human-readable plural title when there is no i18n key (custom resources). */
   title?: string;
-  /** Whether an object is in trouble; with it the kind's table offers an "Only problems" filter. */
-  problem?: (obj: KubeObject) => boolean;
+  /**
+   * Whether an object is in trouble; with it the kind's table offers an "Only problems" filter. `clusterId`: the
+   * cluster shown, for problems judged across objects (an extension's `missing`/`related` rules, #404).
+   */
+  problem?: (obj: KubeObject, clusterId?: ClusterId) => boolean;
 }
 
 const defs = new Map<string, ResourceDef>();
@@ -364,8 +367,8 @@ export interface KindPlacement {
   label?: string;
   icon?: IconName;
   order: number;
-  /** Whether an object has a problem of the owner's rules. */
-  problem?: (obj: KubeObject) => boolean;
+  /** Whether an object has a problem of the owner's rules (`clusterId`: the cluster shown). */
+  problem?: (obj: KubeObject, clusterId?: ClusterId) => boolean;
   /** Short names the command palette takes as a kind prefix (ADR-0160). */
   aliases?: readonly string[];
   /** The command palette searches the kind without being asked to. */

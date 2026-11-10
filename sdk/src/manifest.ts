@@ -125,7 +125,7 @@ export interface ManifestAction {
 }
 
 /** How a computed column shows its value (sextantApi 4). */
-export type ColumnFormat = "text" | "number" | "age" | "duration" | "ratio" | "list" | "count" | "sum" | "entries";
+export type ColumnFormat = "text" | "number" | "age" | "duration" | "ratio" | "list" | "count" | "sum" | "entries" | "cpu" | "bytes" | "dateTime";
 /** The tone of a value, drawn as Sextant's status text. */
 export type ColumnTone = "ok" | "warning" | "error" | "neutral" | "muted";
 

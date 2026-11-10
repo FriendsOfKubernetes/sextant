@@ -2,9 +2,10 @@
 // namespace filter and the search box in the table header. With no section chosen yet it opens the first page of
 // the "cluster" section (the overview), if one is registered; so does a page of an extension that was disabled or
 // removed meanwhile.
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import type { ClusterId, KindRef, ResourceKind } from "../../api";
+import type { ClusterId, KindRef, KubeObject, ResourceKind } from "../../api";
+import { sourcesVersion, subscribeSources } from "../../features/problems/store";
 import { tableStateOf, useAppStore, useClusterView } from "../../app/store";
 import { Badge, Checkbox, EmptyState, ErrorState, Icon } from "../../components";
 import { LoadingTable, ResourceTable } from "../../components/Table";
@@ -113,7 +114,17 @@ function KindTable({
   const patchTable = (patch: Parameters<typeof setTableState>[2]) => setTableState(clusterId, viewId, patch);
   // Kinds that say what a problem is offer "Only problems".
   const onlyProblems = table.onlyProblems;
-  const rowFilter = onlyProblems ? def.problem : undefined;
+  // Problems judged across objects come from the problems store (#404): look again when it changes.
+  const problemsVersion = useSyncExternalStore(subscribeSources, sourcesVersion, sourcesVersion);
+  const problem = def.problem;
+  const rowFilter = useMemo(
+    () => {
+      void problemsVersion;
+      return onlyProblems && problem ? (obj: KubeObject) => problem(obj, clusterId) : undefined;
+    },
+    // `problemsVersion` stands for the store's problems.
+    [onlyProblems, problem, clusterId, problemsVersion],
+  );
   const labelSelector = table.labelSelector.trim();
 
   // The access check says the user may not list the kind here (#285): said once instead of a refused watch.

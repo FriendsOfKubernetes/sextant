@@ -1,10 +1,10 @@
 // Rules across objects (ADR-0144): what stands once the rows say what the rules look up — and that whatever cannot be
 // told is no problem.
 import { describe, expect, it } from "vitest";
-import type { KubeObject, ProblemContribution } from "../api";
+import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
 import type { Problem } from "../features/problems/model";
 import type { JudgeContext, JudgedRows, SourceDef } from "../features/problems/sources";
-import { judgeAcross, rowOf, type AcrossTarget } from "./problemsAcross";
+import { factsOf, judgeAcross, rowOf, type AcrossTarget } from "./problemsAcross";
 import { detectRule } from "./problemRules";
 
 const QUEUE = { group: "kueue.x-k8s.io", kind: "ClusterQueue" };
@@ -87,6 +87,94 @@ const TARGETS: AcrossTarget[] = [
   { group: "demo.example.com", kind: "Store", namespaced: true, def: SECRETLESS_DEF },
 ];
 const judge = (problems: Problem[], ctx: JudgeContext) => judgeAcross(problems, ctx, { rules: RULES, targets: TARGETS });
+
+describe("relatedBy (#404)", () => {
+  const HPA = { group: "autoscaling", kind: "HorizontalPodAutoscaler" };
+  const HPA_DEF: SourceDef = { ...QUEUE_DEF, kind: { group: "autoscaling", version: "v2", kind: "HorizontalPodAutoscaler" } };
+  const scalesCpu: ProblemCondition = { type: "exists", path: ".spec.metrics[resource.name=\"cpu\"]" };
+  const CONFLICT = rule({
+    id: "hpa-conflict",
+    kind: { group: "autoscaling.k8s.io", kind: "VerticalPodAutoscaler" },
+    when: {
+      type: "relatedBy",
+      kind: HPA,
+      pairs: [
+        { theirs: ".spec.scaleTargetRef.name", ours: ".spec.targetRef.name" },
+        { theirs: ".spec.scaleTargetRef.kind", ours: ".spec.targetRef.kind" },
+      ],
+      when: scalesCpu,
+    },
+  });
+  const rules = new Map([[CONFLICT.id, CONFLICT]]);
+  const targets: AcrossTarget[] = [{ ...HPA, namespaced: true, def: HPA_DEF }];
+  const facts = factsOf([CONFLICT], (k) => `${k.group}/${k.kind}`.toLowerCase()).get("autoscaling/horizontalpodautoscaler") ?? [];
+  const hpaRows = (objects: Obj[], over: Partial<JudgedRows> = {}): JudgedRows => ({
+    status: "ready",
+    rows: new Map(objects.map((o) => [o.metadata.uid, rowOf([], facts, false, [".spec.scaleTargetRef.name", ".spec.scaleTargetRef.kind"])(o)])),
+    truncated: false,
+    namespaces: null,
+    ...over,
+  });
+  const hpa = (name: string, ns: string, target: string, metric: string) =>
+    obj(name, { metadata: { name, namespace: ns, uid: `h-${ns}-${name}` }, spec: { scaleTargetRef: { kind: "Deployment", name: target }, metrics: [{ resource: { name: metric } }] } });
+  const vpa = obj("v", { spec: { targetRef: { kind: "Deployment", name: "web" } } });
+  const judged = (rows: JudgedRows) =>
+    judgeAcross([problemOf(CONFLICT, vpa)], { rows: undefined, target: (def) => (def === HPA_DEF ? rows : undefined), problemUids: () => new Set() }, { rules, targets });
+
+  it("stands where an object of the namespace holds the same texts and its own condition", () => {
+    expect(judged(hpaRows([hpa("web", "team-a", "web", "cpu")]))).toHaveLength(1);
+    expect(judged(hpaRows([hpa("any-name", "team-a", "web", "cpu")]))).toHaveLength(1);
+    expect(judged(hpaRows([hpa("web", "team-a", "web", "memory")]))).toEqual([]);
+    expect(judged(hpaRows([hpa("web", "team-b", "web", "cpu")]))).toEqual([]);
+    expect(judged(hpaRows([hpa("api", "team-a", "api", "cpu")]))).toEqual([]);
+  });
+
+  it("cannot tell while the list is not read in full or not watched there", () => {
+    expect(judged(hpaRows([hpa("web", "team-a", "web", "cpu")], { truncated: true }))).toEqual([]);
+    expect(judged(hpaRows([hpa("web", "team-a", "web", "cpu")], { namespaces: ["team-b"] }))).toEqual([]);
+  });
+});
+
+describe("selectsNone (#404)", () => {
+  const SERVICE = { group: "", kind: "Service" };
+  const SERVICE_DEF: SourceDef = { ...QUEUE_DEF, kind: { group: "", version: "v1", kind: "Service" } };
+  const SELECTS = rule({
+    id: "selects-nothing",
+    kind: { group: "monitoring.coreos.com", kind: "ServiceMonitor" },
+    when: { type: "selectsNone", kind: SERVICE, selector: ".spec.selector", anyNamespacesPath: ".spec.namespaceSelector.any", namespacesPath: ".spec.namespaceSelector.matchNames" },
+  });
+  const targets: AcrossTarget[] = [{ ...SERVICE, namespaced: true, def: SERVICE_DEF }];
+  const svc = (name: string, ns: string, labels: Record<string, string>) => obj(name, { metadata: { name, namespace: ns, uid: `s-${ns}-${name}`, labels } });
+  const rowsOf = (objects: Obj[], over: Partial<JudgedRows> = {}): JudgedRows => ({
+    status: "ready",
+    rows: new Map(objects.map((o) => [o.metadata.uid, rowOf([], [], true)(o)])),
+    truncated: false,
+    namespaces: null,
+    ...over,
+  });
+  const judged = (monitor: Obj, services: JudgedRows) =>
+    judgeAcross([problemOf(SELECTS, monitor)], { rows: undefined, target: (def) => (def === SERVICE_DEF ? services : undefined), problemUids: () => new Set() }, { rules: new Map([[SELECTS.id, SELECTS]]), targets });
+  const monitor = (spec: Record<string, unknown>) => obj("m", { spec });
+
+  it("stands where no Service in the namespaces it covers has the labels", () => {
+    const web = monitor({ selector: { matchLabels: { app: "web" } } });
+    expect(judged(web, rowsOf([svc("web", "team-a", { app: "web" })]))).toEqual([]);
+    expect(judged(web, rowsOf([svc("web", "team-b", { app: "web" }), svc("api", "team-a", { app: "api" })]))).toHaveLength(1);
+    const anywhere = monitor({ selector: { matchLabels: { app: "web" } }, namespaceSelector: { any: true } });
+    expect(judged(anywhere, rowsOf([svc("web", "team-b", { app: "web" })]))).toEqual([]);
+    const named = monitor({ selector: { matchExpressions: [{ key: "tier", operator: "In", values: ["front"] }] }, namespaceSelector: { matchNames: ["team-b"] } });
+    expect(judged(named, rowsOf([svc("x", "team-b", { tier: "front" })]))).toEqual([]);
+    expect(judged(named, rowsOf([svc("x", "team-a", { tier: "front" })]))).toHaveLength(1);
+  });
+
+  it("cannot tell while the Services are not read in full or not watched there", () => {
+    const web = monitor({ selector: { matchLabels: { app: "web" } } });
+    expect(judged(web, rowsOf([], { truncated: true }))).toEqual([]);
+    expect(judged(web, rowsOf([], { namespaces: ["team-b"] }))).toEqual([]);
+    expect(judged(monitor({ selector: {}, namespaceSelector: { any: true } }), rowsOf([], { namespaces: ["team-a"] }))).toEqual([]);
+    expect(judged(web, rowsOf([], { namespaces: ["team-a"] }))).toHaveLength(1);
+  });
+});
 
 describe("missing", () => {
   const local = obj("lq", { spec: { clusterQueue: "gpu" } });

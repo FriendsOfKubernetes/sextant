@@ -462,6 +462,12 @@ pub enum ColumnFormat {
     Sum,
     /// A map's `key=value` entries in key order, joined in the UI language (#404).
     Entries,
+    /// A CPU quantity as Sextant writes it ("4", "250m"), sorted and filtered by the amount (#404).
+    Cpu,
+    /// A quantity of bytes in binary units ("250MiB"), sorted and filtered by the amount (#404).
+    Bytes,
+    /// A time as a date and time in the UI language, sorted by the time (#404).
+    DateTime,
 }
 
 /// The tone of a shown value.

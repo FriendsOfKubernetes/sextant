@@ -20,7 +20,7 @@ import {
   type RuleSource,
 } from "../../api";
 import { compileRules, kindKeyOf, type RuleContext } from "../../extensions/problemRules";
-import { factsOf, judgeAcross, judgedAcross, lookedUp, rowOf, type AcrossTarget } from "../../extensions/problemsAcross";
+import { comparedPaths, factsOf, judgeAcross, judgedAcross, lookedUp, rowOf, selectedKinds, type AcrossTarget } from "../../extensions/problemsAcross";
 import { setExtensionDetector, setExtensionOptIn, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
 import { MAX_SOURCE_OBJECTS, type SourceDef } from "./sources";
 
@@ -39,6 +39,10 @@ interface Entry {
   facts: ReadonlyMap<string, readonly ProblemContribution["when"][]>;
   /** `group/kind` → the `source` its rules share (ADR-0152). */
   sources: ReadonlyMap<string, RuleSource>;
+  /** `group/kind` of the kinds a `selectsNone` selects from: their rows keep every label (#404). */
+  selected: ReadonlySet<string>;
+  /** `group/kind` → the paths a `relatedBy` compares on it: its rows keep their texts (#404). */
+  compared: ReadonlyMap<string, readonly string[]>;
   /** Off until the user turns it on (a category of the extension's own, #410). */
   optIn: boolean;
 }
@@ -103,6 +107,8 @@ export function registerExtensionProblems(
     across,
     newestLabels,
     facts: factsOf(rules, kindKeyOf),
+    selected: selectedKinds(rules, kindKeyOf),
+    compared: comparedPaths(rules, kindKeyOf),
     sources,
     optIn: own?.optIn ?? false,
   };
@@ -256,8 +262,9 @@ export function extensionSourcesFor(
         maxObjects: source?.maxObjects ?? MAX_SOURCE_OBJECTS,
         ...(everywhere || !served.namespaced ? {} : { namespaces: namespaces.namespaces }),
         ...(source?.labelSelector ? { labelSelector: source.labelSelector } : {}),
-        // A Secret only looked up (`missing`, #404) is listed by name: metadata only, never a value.
-        ...(source?.metadataOnly || (!entry.detectors.has(key) && served.kindRef.group === "" && served.kindRef.kind === "Secret")
+        // A kind only looked up by name or labels (`missing`, `selectsNone`, #404) is listed metadata-only: a Secret never
+        // with a value, Services and Pods without their specs. `related`/`relatedBy` read fields, so theirs stay whole.
+        ...(source?.metadataOnly || (!entry.detectors.has(key) && !entry.facts.has(key) && !entry.compared.has(key))
           ? { metadataOnly: true }
           : {}),
       };
@@ -269,7 +276,7 @@ export function extensionSourcesFor(
     }
     for (const { def, key } of judged) {
       def.judge = {
-        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? [], entry.facts.get(key) ?? []), max: def.maxObjects ?? MAX_SOURCE_OBJECTS },
+        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? [], entry.facts.get(key) ?? [], entry.selected.has(key), entry.compared.get(key) ?? []), max: def.maxObjects ?? MAX_SOURCE_OBJECTS },
         judge: (problems, context) => judgeAcross(problems, context, { rules: entry.rules, targets }),
       };
     }
