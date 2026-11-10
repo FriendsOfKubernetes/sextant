@@ -992,7 +992,14 @@ function checkMessage(text, kind, segments, metadataOnly) {
       });
     }
     // Paths added with `+` before `|sum` (#404): `{{.status.restarts + .status.jobs[*].restarts|sum}}`.
-    const added = tried.length > 1 ? [] : addedPaths(field);
+    // Paths multiplied with ` * ` before `|product` (#404).
+    const multiplied = tried.length > 1 ? [] : splitOutsideQuotes(field, " * ");
+    if (multiplied.length > 1) {
+      if (filters[0]?.trim() !== "product") fail(segments, "multiplies paths with ` * ` only before `|product`");
+      if (multiplied.length > MAX_ADDED_PATHS) fail(segments, `multiplies at most ${MAX_ADDED_PATHS} paths`);
+      for (const one of multiplied) checkRulePath(one.trim(), kind, segments, metadataOnly);
+    }
+    const added = tried.length > 1 || multiplied.length > 1 ? [] : addedPaths(field);
     if (added.length > 1 && filters[0]?.trim() !== "sum") fail(segments, "adds paths with `+` only before `|sum`");
     if (added.length > MAX_ADDED_PATHS) fail(segments, `adds at most ${MAX_ADDED_PATHS} paths`);
     for (const filter of filters.map((f) => f.trim())) {
@@ -1044,7 +1051,7 @@ export function splitOutsideQuotes(field, sep) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique"];
+const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product"];
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
 

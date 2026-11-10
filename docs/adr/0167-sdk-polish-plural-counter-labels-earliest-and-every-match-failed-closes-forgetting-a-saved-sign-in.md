@@ -245,3 +245,6 @@ each of up to 4 `pairs`, the judged object's text at `ours` at its own `theirs`,
 target, whatever the HPA is called); the rows of that kind keep those texts. A kind only looked up by name or labels
 (`missing`, `selectsNone`) is listed metadata-only. A kind's "Only problems" takes the problems of rules judged across
 objects from the problems store, judged with the other objects' rows, instead of the object alone.
+Placeholders gain `|product` (paths multiplied with ` * `, a missing one counting as 1: replicas times shards),
+`|countAll` (the items of the lists in a list: a PrometheusRule's rules over its groups) and `|selector` (a label
+selector as the API server writes one, requirements by key: `app=web,tier in (a,b)`).

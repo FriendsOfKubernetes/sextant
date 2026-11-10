@@ -398,6 +398,12 @@ export function placeholderText(obj: KubeObject, inner: string): string | undefi
     }
     return undefined;
   }
+  // Paths multiplied with ` * ` before `|product` (#404): a missing one counts as 1, nothing when none is there.
+  if (filter === "product") {
+    const numbers = splitOutsideQuotes(path, " * ").map((p) => numberOf(valueAt(obj, p.trim())));
+    if (numbers.every((n) => n === undefined)) return undefined;
+    return clipped(String(numbers.reduce<number>((a, n) => a * (n ?? 1), 1)), filters);
+  }
   // Paths added with `+` before `|sum` (#404): the numbers of every path there, nothing when none is.
   const added = filter === "sum" ? addedPaths(path) : [path];
   const text =
@@ -472,6 +478,28 @@ function filteredText(value: unknown, filter: string | undefined): string | unde
     if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
     const keys = Object.keys(value);
     return keys.length === 0 ? undefined : formatList(keys);
+  }
+  if (filter === "countAll") {
+    // The items of the lists in a list (#404): a PrometheusRule's rules over all its groups.
+    if (!Array.isArray(value)) return undefined;
+    return String(value.reduce<number>((n, item) => n + (Array.isArray(item) ? item.length : 0), 0));
+  }
+  if (filter === "selector") {
+    // A label selector as the API server writes one (#404): `app=web,tier in (a,b)`, requirements by key.
+    const selector = labelSelectorOf(value);
+    if (!selector) return undefined;
+    const parts: [string, string][] = Object.entries(selector.matchLabels).map(([k, v]) => [k, `${k}=${v}`]);
+    for (const { key, operator, values } of selector.matchExpressions) {
+      const list = [...values].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join(",");
+      const text =
+        operator === "In" ? `${key} in (${list})` : operator === "NotIn" ? `${key} notin (${list})` : operator === "Exists" ? key : operator === "DoesNotExist" ? `!${key}` : undefined;
+      if (text === undefined) return undefined;
+      parts.push([key, text]);
+    }
+    return parts
+      .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+      .map(([, text]) => text)
+      .join(",");
   }
   if (filter === "unique") {
     // Each text once, sorted by code point (#404): the policies a report names, as the built-in Kyverno message did.

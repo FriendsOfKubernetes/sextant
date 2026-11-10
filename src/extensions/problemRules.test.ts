@@ -249,6 +249,14 @@ describe("problem rules of extensions", () => {
       ],
     } as unknown as KubeObject;
     expect(placeholderText(report, ".results[*].policy|unique")).toBe("a, b");
+    // Products, nested counts and selectors as the API server writes them (#404).
+    const prom = { metadata: { name: "p" }, spec: { replicas: 2, shards: 3, groups: [{ rules: [1, 2] }, { rules: [3] }] } } as unknown as KubeObject;
+    expect(placeholderText(prom, ".spec.replicas * .spec.shards|product")).toBe("6");
+    expect(placeholderText(prom, ".spec.replicas * .spec.missing|product")).toBe("2");
+    expect(placeholderText(prom, ".spec.gone * .spec.missing|product")).toBeUndefined();
+    expect(placeholderText(prom, ".spec.groups[*].rules|countAll")).toBe("3");
+    const monitor = { metadata: { name: "m" }, spec: { selector: { matchLabels: { app: "web" }, matchExpressions: [{ key: "tier", operator: "In", values: ["b", "a"] }, { key: "canary", operator: "DoesNotExist" }] } } } as unknown as KubeObject;
+    expect(placeholderText(monitor, ".spec.selector|selector")).toBe("app=web,!canary,tier in (a,b)");
     // The text after a marker's last place (#404): a composed job's kind.
     const wl = { metadata: { name: "w", annotations: { gvk: "example.dev/v1, Kind=Widget" } } } as unknown as KubeObject;
     expect(placeholderText(wl, '.metadata.annotations["gvk"]|after:Kind=')).toBe("Widget");

@@ -1472,6 +1472,26 @@ pub(crate) fn check_message(
             continue;
         }
         // Paths added with `+` before `|sum` (#404): `{{.status.restarts + .status.jobs[*].restarts|sum}}`.
+        // Paths multiplied with ` * ` before `|product` (#404): a Prometheus' replicas times its shards.
+        let multiplied = split_outside_quotes(field, " * ");
+        if multiplied.len() > 1 {
+            if filters.first() != Some(&"product") {
+                return Err(at(
+                    path,
+                    "multiplies paths with ` * ` only before `|product`",
+                ));
+            }
+            if multiplied.len() > MAX_ADDED_PATHS {
+                return Err(at(
+                    path,
+                    format!("multiplies at most {MAX_ADDED_PATHS} paths"),
+                ));
+            }
+            for one in multiplied {
+                check_rule_path(one.trim(), kind, path, metadata_only)?;
+            }
+            continue;
+        }
         let added = added_paths(field);
         if added.len() > 1 && filters.first() != Some(&"sum") {
             return Err(at(path, "adds paths with `+` only before `|sum`"));
@@ -1568,7 +1588,7 @@ fn split_outside_quotes<'a>(field: &'a str, sep: &str) -> Vec<&'a str> {
 }
 
 /// What may follow a placeholder's path after `|` (#404).
-pub const PLACEHOLDER_FILTERS: [&str; 8] = [
+pub const PLACEHOLDER_FILTERS: [&str; 11] = [
     "firstLine",
     "lastSegment",
     "list",
@@ -1577,6 +1597,9 @@ pub const PLACEHOLDER_FILTERS: [&str; 8] = [
     "sum",
     "keys",
     "unique",
+    "countAll",
+    "selector",
+    "product",
 ];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.
