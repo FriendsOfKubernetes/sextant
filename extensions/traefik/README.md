@@ -46,7 +46,7 @@ Secrets, which were never judged for problems: their "Only problems" lists nothi
 
 **Columns**, in place of the CRDs' own printer columns (left out, as the built-in view did), after Namespace, in the
 built-in widths and order. The ids of `traefik.containo.us`'s columns are the same with `l-` in front (`l-ir-ep`,
-`l-ir-svc`, `l-ir-tls`, `l-irt-ep`, `l-irt-svc`, `l-irt-tls`, `l-iru-ep`, `l-iru-svc`, `l-mw-type`, `l-mwt-type`,
+`l-ir-hosts`, `l-ir-svc`, `l-ir-tls`, `l-irt-ep`, `l-irt-hosts`, `l-irt-svc`, `l-irt-tls`, `l-iru-ep`, `l-iru-svc`, `l-mw-type`, `l-mwt-type`,
 `l-ts-strat`, `l-ts-svc`, `l-to-min`, `l-to-auth`, `l-tst-def`, `l-tst-sec`, `l-st-sni`, `l-st-insec`, `l-st-sec`):
 - IngressRoutes, IngressRoutes TCP and UDP: **Entry points** (`ir-ep`, `irt-ep`, `iru-ep`), **Hosts** (`ir-hosts`,
   `irt-hosts`, HTTP and TCP only: every exact `Host(…)`/`HostSNI(…)` name of the match rules once, lower case, not `*`,
