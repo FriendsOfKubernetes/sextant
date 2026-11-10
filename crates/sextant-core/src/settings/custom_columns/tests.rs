@@ -365,6 +365,21 @@ fn a_match_reads_nested_fields_negates_and_compares_scalars_as_text() {
     let not_ready = vec![("type!".to_owned(), "Ready".to_owned())];
     let conditions = json!([{ "type": "Ready" }, { "type": "Synced" }, { "reason": "untyped" }]);
     assert_eq!(PathStep::matching(&not_ready, &conditions).len(), 2);
+    // Through a list on the way, any item will do: a connector with a failed task.
+    let failed_task = vec![("tasks.state".to_owned(), "FAILED".to_owned())];
+    let with_tasks = json!([
+        { "name": "a", "tasks": [{ "state": "RUNNING" }, { "state": "FAILED" }] },
+        { "name": "b", "tasks": [{ "state": "RUNNING" }] }
+    ]);
+    assert_eq!(
+        PathStep::pick(&failed_task, &with_tasks).unwrap()["name"],
+        "a"
+    );
+    let none_failed = vec![("tasks.state!".to_owned(), "FAILED".to_owned())];
+    assert_eq!(
+        PathStep::pick(&none_failed, &with_tasks).unwrap()["name"],
+        "b"
+    );
     assert!(parse_field_path(".a[b.c!=\"x\"]").is_some());
     for bad in [
         ".a[.b=\"x\"]",

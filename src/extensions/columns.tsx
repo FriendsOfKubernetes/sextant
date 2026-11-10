@@ -113,7 +113,8 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
     const toned = replaced.tone ? TONES[replaced.tone] : tone(text);
     // A case's own number sorts and filters a number column (#390); a text column sorts by a number or a filled text
     // (#404); its text is what shows.
-    const sort = typeof replaced.value === "string" ? (fillTemplate(replaced.value, obj) ?? text) : (replaced.value ?? text);
+    // A text sort key whose placeholder has no value gives no sort value (#404): such rows sort last, as with no value.
+    const sort = typeof replaced.value === "string" ? (fillTemplate(replaced.value, obj) ?? undefined) : (replaced.value ?? text);
     return { sort, text, draw: toned || column.tones ? <StatusText value={text} tone={toned ?? "neutral"} /> : text };
   }
   const looked = column.lookup === undefined ? undefined : lookupValue(obj, column.lookup);

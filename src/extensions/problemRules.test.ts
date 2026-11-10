@@ -192,6 +192,28 @@ describe("problem rules of extensions", () => {
     expect(placeholderText(o, ".status.trace|firstLine")).toBe("java.lang.Error: boom");
   });
 
+  it("chain filters, clip texts, add paths and match any item through a list (#404)", () => {
+    const o = {
+      metadata: { name: "c" },
+      status: {
+        trace: "\n  java.lang.Error: boom boom boom\n\tat X",
+        restarts: 2,
+        jobs: [{ counted: 1 }, { counted: 2 }],
+        connectors: [
+          { name: "a", tasks: [{ state: "RUNNING" }, { state: "FAILED" }] },
+          { name: "b", tasks: [{ state: "RUNNING" }] },
+        ],
+      },
+    } as unknown as KubeObject;
+    expect(placeholderText(o, ".status.trace|firstLine|clip:10")).toBe("java.lang.…");
+    expect(placeholderText(o, ".status.trace|firstLine|clip:300")).toBe("java.lang.Error: boom boom boom");
+    expect(placeholderText(o, ".status.restarts + .status.jobs[*].counted|sum")).toBe("5");
+    expect(placeholderText(o, ".status.missing + .status.jobs[*].counted|sum")).toBe("3");
+    expect(placeholderText(o, ".status.missing + .status.gone|sum")).toBeUndefined();
+    expect(placeholderText(o, '.status.connectors[tasks.state="FAILED",*].name|join')).toBe("a");
+    expect(placeholderText(o, '.status.connectors[tasks.state!="FAILED",*].name|join')).toBe("b");
+  });
+
   it("read field paths of the custom columns' grammar, nothing else", () => {
     expect(valueAt(cluster, ".status.ceph.health")).toBe("HEALTH_ERR");
     expect(valueAt(cluster, "status.items[1].name")).toBe("b");

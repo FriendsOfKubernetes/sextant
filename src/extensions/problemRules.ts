@@ -306,10 +306,42 @@ export function fillTemplate(template: string, obj: KubeObject, options: { empty
  * entries; `undefined` when there is nothing to show.
  */
 export function placeholderText(obj: KubeObject, inner: string): string | undefined {
-  const bar = inner.indexOf("|");
-  const path = bar < 0 ? inner : inner.slice(0, bar);
-  const filter = bar < 0 ? undefined : inner.slice(bar + 1).trim();
-  const value = valueAt(obj, path);
+  // Up to two filters in a row (`|firstLine|clip:300`, #404): the first reads the value, `clip:<n>` cuts the text.
+  const [path = "", ...filters] = inner.split("|").map((part, i) => (i === 0 ? part : part.trim()));
+  const clips = filters.filter((f) => f.startsWith("clip:"));
+  const filter = filters.find((f) => !f.startsWith("clip:"));
+  // Paths added with `+` before `|sum` (#404): the numbers of every path there, nothing when none is.
+  const added = filter === "sum" ? addedPaths(path) : [path];
+  const text =
+    added.length > 1
+      ? (() => {
+          const sums = added.map((p) => sumOf([valueAt(obj, p.trim())])).filter((n): n is number => n !== undefined);
+          return sums.length === 0 ? undefined : String(sums.reduce((a, b) => a + b, 0));
+        })()
+      : filteredText(valueAt(obj, path), filter);
+  if (text === undefined || clips.length === 0) return text;
+  const keep = Math.min(...clips.map((c) => Number(c.slice(5))));
+  const chars = [...text];
+  return chars.length <= keep ? text : `${chars.slice(0, keep).join("")}…`;
+}
+
+/** A placeholder's path split at each `+` outside a quoted match value (`added_paths`, #404). */
+export function addedPaths(field: string): string[] {
+  const out: string[] = [];
+  let quoted = false;
+  let start = 0;
+  for (let i = 0; i < field.length; i++) {
+    if (field[i] === '"') quoted = !quoted;
+    else if (field[i] === "+" && !quoted) {
+      out.push(field.slice(start, i));
+      start = i + 1;
+    }
+  }
+  out.push(field.slice(start));
+  return out;
+}
+
+function filteredText(value: unknown, filter: string | undefined): string | undefined {
   if (filter === "sum") {
     const n = sumOf(value);
     return n === undefined ? undefined : String(n);

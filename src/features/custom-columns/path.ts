@@ -55,12 +55,14 @@ function pairsFit(item: unknown, pairs: readonly (readonly [string, string])[]):
   return pairs.every(([raw, want]) => {
     const negated = raw.endsWith("!");
     const field = negated ? raw.slice(0, -1) : raw;
-    let at: unknown = item;
-    for (const part of field.split(".")) {
-      at = at !== null && typeof at === "object" && !Array.isArray(at) ? (at as Record<string, unknown>)[part] : undefined;
-    }
-    const text = typeof at === "string" || typeof at === "boolean" || typeof at === "number" ? String(at) : undefined;
-    return (text === want) !== negated;
+    // Through a list on the way, any of its items will do (#404): `tasks.state` of a connector with a failed task.
+    const reaches = (at: unknown, parts: readonly string[]): boolean => {
+      if (Array.isArray(at)) return at.some((item) => reaches(item, parts));
+      if (parts.length === 0) return (typeof at === "string" || typeof at === "boolean" || typeof at === "number") && String(at) === want;
+      if (at === null || typeof at !== "object") return false;
+      return reaches((at as Record<string, unknown>)[parts[0]!], parts.slice(1));
+    };
+    return reaches(item, field.split(".")) !== negated;
   });
 }
 const LABEL_NAME = /^[A-Za-z0-9]([A-Za-z0-9_.-]*[A-Za-z0-9])?$/;

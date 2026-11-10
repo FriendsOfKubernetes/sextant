@@ -266,7 +266,7 @@ export function extensionSourcesFor(
     }
     for (const { def, key } of judged) {
       def.judge = {
-        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? [], entry.facts.get(key) ?? []), max: MAX_SOURCE_OBJECTS },
+        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? [], entry.facts.get(key) ?? []), max: def.maxObjects ?? MAX_SOURCE_OBJECTS },
         judge: (problems, context) => judgeAcross(problems, context, { rules: entry.rules, targets }),
       };
     }

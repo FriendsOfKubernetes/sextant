@@ -574,13 +574,13 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 ));
             }
         }
-        if let Some(text) = &rule.reason_or {
-            if text.contains("{{") {
-                return Err(at(
-                    &here.key("reasonOr"),
-                    "is written as it shows: no `{{…}}`",
-                ));
-            }
+        if let Some(text) = &rule.reason_or
+            && text.contains("{{")
+        {
+            return Err(at(
+                &here.key("reasonOr"),
+                "is written as it shows: no `{{…}}`",
+            ));
         }
         if rule.since_unit.is_some() && rule.since.is_none() {
             return Err(at(
@@ -1241,24 +1241,62 @@ pub(crate) fn check_message(
     }
     for field in placeholders {
         // `{{path|filter}}` (#404): the value as its first line, last segment, a list joined, or a count.
-        let (field, filter) = match field.split_once('|') {
-            Some((f, filter)) => (f, Some(filter.trim())),
-            None => (field, None),
-        };
-        if let Some(filter) = filter {
-            if !PLACEHOLDER_FILTERS.contains(&filter) {
+        // Up to two filters in a row (`|firstLine|clip:300`, #404); `clip:<n>` keeps 1 to 1000 characters.
+        let mut parts = field.split('|');
+        let field = parts.next().unwrap_or_default();
+        let filters: Vec<&str> = parts.map(str::trim).collect();
+        if filters.len() > 2 {
+            return Err(at(path, "has at most two filters"));
+        }
+        // Paths added with `+` before `|sum` (#404): `{{.status.restarts + .status.jobs[*].restarts|sum}}`.
+        let added = added_paths(field);
+        if added.len() > 1 && filters.first() != Some(&"sum") {
+            return Err(at(path, "adds paths with `+` only before `|sum`"));
+        }
+        if added.len() > MAX_ADDED_PATHS {
+            return Err(at(path, format!("adds at most {MAX_ADDED_PATHS} paths")));
+        }
+        for filter in filters {
+            let clip = filter
+                .strip_prefix("clip:")
+                .and_then(|n| n.parse::<u32>().ok())
+                .is_some_and(|n| (1..=1000).contains(&n));
+            if !clip && !PLACEHOLDER_FILTERS.contains(&filter) {
                 return Err(at(
                     path,
                     format!(
-                        "has a filter `{filter}`: one of {}",
+                        "has a filter `{filter}`: one of {}, clip:<1 to 1000>",
                         PLACEHOLDER_FILTERS.join(", ")
                     ),
                 ));
             }
         }
-        check_rule_path(field.trim(), kind, path, metadata_only)?;
+        for added in added {
+            check_rule_path(added.trim(), kind, path, metadata_only)?;
+        }
     }
     Ok(())
+}
+
+/// The most paths a placeholder adds (#404).
+pub const MAX_ADDED_PATHS: usize = 4;
+
+/// A placeholder's path split at each `+` outside a quoted match value (#404); one path when there is none.
+pub fn added_paths(field: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let (mut quoted, mut start) = (false, 0);
+    for (i, c) in field.char_indices() {
+        match c {
+            '"' => quoted = !quoted,
+            '+' if !quoted => {
+                out.push(&field[start..i]);
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    out.push(&field[start..]);
+    out
 }
 
 /// What may follow a placeholder's path after `|` (#404).

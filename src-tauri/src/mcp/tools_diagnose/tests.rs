@@ -1052,14 +1052,13 @@ fn cluster_api_problems_are_never_given_to_agents() {
 /// by default (ADR-0116).
 #[test]
 fn dra_problems_are_never_given_to_agents() {
-    for category in ["dra"] {
-        assert!(answers::PROBLEM_CATEGORIES.contains(&category));
-        assert!(!answers::OPT_IN_CATEGORIES.contains(&category));
-        assert!(!answers::category_for_agents(
-            category,
-            &[category.to_owned()]
-        ));
-    }
+    let category = "dra";
+    assert!(answers::PROBLEM_CATEGORIES.contains(&category));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&category));
+    assert!(!answers::category_for_agents(
+        category,
+        &[category.to_owned()]
+    ));
 }
 
 /// Kueue (#246) problems are window views: agents get none of them — neither the queues (on by default) nor the

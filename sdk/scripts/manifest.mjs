@@ -923,14 +923,39 @@ function checkMessage(text, kind, segments, metadataOnly) {
   if (found.length > MAX_PLACEHOLDERS) fail(segments, `has at most ${MAX_PLACEHOLDERS} placeholders`);
   for (const raw of found) {
     // `{{path|filter}}` (#404).
-    const bar = raw.indexOf("|");
-    const field = bar < 0 ? raw : raw.slice(0, bar);
-    const filter = bar < 0 ? undefined : raw.slice(bar + 1).trim();
-    if (filter !== undefined && !PLACEHOLDER_FILTERS.includes(filter)) {
-      fail(segments, `has a filter \`${filter}\`: one of ${PLACEHOLDER_FILTERS.join(", ")}`);
+    // Up to two filters in a row (`|firstLine|clip:300`, #404); `clip:<n>` keeps 1 to 1000 characters.
+    const [field, ...filters] = raw.split("|");
+    if (filters.length > 2) fail(segments, "has at most two filters");
+    // Paths added with `+` before `|sum` (#404): `{{.status.restarts + .status.jobs[*].restarts|sum}}`.
+    const added = addedPaths(field);
+    if (added.length > 1 && filters[0]?.trim() !== "sum") fail(segments, "adds paths with `+` only before `|sum`");
+    if (added.length > MAX_ADDED_PATHS) fail(segments, `adds at most ${MAX_ADDED_PATHS} paths`);
+    for (const filter of filters.map((f) => f.trim())) {
+      const clip = /^clip:([0-9]{1,4})$/.exec(filter);
+      const clipOk = clip !== null && Number(clip[1]) >= 1 && Number(clip[1]) <= 1000;
+      if (!clipOk && !PLACEHOLDER_FILTERS.includes(filter)) fail(segments, `has a filter \`${filter}\`: one of ${PLACEHOLDER_FILTERS.join(", ")}, clip:<1 to 1000>`);
     }
-    checkRulePath(field.trim(), kind, segments, metadataOnly);
+    for (const one of added) checkRulePath(one.trim(), kind, segments, metadataOnly);
   }
+}
+
+/** `MAX_ADDED_PATHS` (#404). */
+const MAX_ADDED_PATHS = 4;
+
+/** `added_paths`: a placeholder's path split at each `+` outside a quoted match value. */
+export function addedPaths(field) {
+  const out = [];
+  let quoted = false;
+  let start = 0;
+  for (let i = 0; i < field.length; i++) {
+    if (field[i] === '"') quoted = !quoted;
+    else if (field[i] === "+" && !quoted) {
+      out.push(field.slice(start, i));
+      start = i + 1;
+    }
+  }
+  out.push(field.slice(start));
+  return out;
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */

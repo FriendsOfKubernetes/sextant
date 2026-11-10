@@ -201,16 +201,21 @@ fn pair_fits(pairs: &[(String, String)], item: &Value) -> bool {
         if !item.is_object() {
             return false;
         }
-        let found = field
-            .split('.')
-            .try_fold(item, |at, part| at.get(part))
-            .and_then(|v| match v {
-                Value::String(s) => Some(s.clone()),
-                Value::Bool(b) => Some(b.to_string()),
-                Value::Number(n) => Some(n.to_string()),
-                _ => None,
-            });
-        (found.as_deref() == Some(want.as_str())) != negated
+        // Through a list on the way, any of its items will do (#404): `tasks.state` of a connector with a failed task.
+        fn reaches(at: &Value, parts: &[&str], want: &str) -> bool {
+            match (at, parts.split_first()) {
+                (Value::Array(items), _) => items.iter().any(|item| reaches(item, parts, want)),
+                (_, Some((first, rest))) => {
+                    at.get(*first).is_some_and(|next| reaches(next, rest, want))
+                }
+                (Value::String(s), None) => s == want,
+                (Value::Bool(b), None) => b.to_string() == want,
+                (Value::Number(n), None) => n.to_string() == want,
+                _ => false,
+            }
+        }
+        let parts: Vec<&str> = field.split('.').collect();
+        reaches(item, &parts, want) != negated
     })
 }
 

@@ -1400,7 +1400,8 @@
           }
         ]
       }
-    }
+    },
+    {"name": "filter chains, clipping, added paths and any item through a list (sextantApi 4)", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "w", "title": "W", "kind": {"group": "kafka.strimzi.io", "kind": "KafkaConnector"}, "when": {"type": "exists", "path": ".status.connectorStatus.tasks[state.x=\"FAILED\"]"}, "message": "{{.status.trace|firstLine|clip:300}} {{.status.restarts + .status.jobs[*].counted|sum}} {{.status.connectors[tasks.state=\"FAILED\",*].name|join}}"}]}}
   ],
   "invalid": [
     {
@@ -4311,6 +4312,10 @@
     {"name": "notifyAs under sextantApi 3", "base": "minimal", "set": {"/sextantApi": 3, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "argoproj.io", "kind": "Workflow"}, "when": {"type": "exists", "path": ".a"}, "notifyAs": ".metadata.name", "message": "x"}]}, "path": "contributes.problems[0].notifyAs", "message": "needs sextantApi 4"},
     {"name": "notifyAs outside the metadata of a metadata-only source", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "a", "title": "A", "kind": {"group": "argoproj.io", "kind": "Workflow"}, "source": {"metadataOnly": true}, "when": {"type": "exists", "path": ".metadata.name"}, "notifyAs": ".spec.workflowTemplateRef.name", "message": "x"}]}, "path": "contributes.problems[0].notifyAs", "message": "must be under `.metadata`"},
     {"name": "a kind's problemWhen with missing", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/kinds": [{"group": "argoproj.io", "kind": "Workflow", "section": "wf", "sectionTitle": "Argo Workflows", "problemWhen": {"type": "missing", "path": ".spec.x", "kind": {"group": "", "kind": "ConfigMap"}}}]}, "path": "contributes.kinds[0].problemWhen.type", "message": "only problem rules"},
-    {"name": "two lists in one path", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "argoproj.io", "kind": "Workflow"}, "id": "a", "title": "A", "paths": [".status.nodes[type=\"Pod\",*].children[*]"]}]}, "path": "contributes.columns[0].paths[0]", "message": "must be a field path"}
+    {"name": "two lists in one path", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/columns": [{"kind": {"group": "argoproj.io", "kind": "Workflow"}, "id": "a", "title": "A", "paths": [".status.nodes[type=\"Pod\",*].children[*]"]}]}, "path": "contributes.columns[0].paths[0]", "message": "must be a field path"},
+    {"name": "three filters in a row", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "w", "title": "W", "kind": {"group": "kafka.strimzi.io", "kind": "KafkaConnector"}, "when": {"type": "exists", "path": ".status.connectorStatus.tasks[state.x=\"FAILED\"]"}, "message": "{{.status.trace|firstLine|clip:30|join}}"}]}, "path": "contributes.problems[0].message", "message": "at most two filters"},
+    {"name": "a clip past 1000", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "w", "title": "W", "kind": {"group": "kafka.strimzi.io", "kind": "KafkaConnector"}, "when": {"type": "exists", "path": ".status.connectorStatus.tasks[state.x=\"FAILED\"]"}, "message": "{{.status.trace|clip:1001}}"}]}, "path": "contributes.problems[0].message", "message": "has a filter `clip:1001`"},
+    {"name": "paths added without |sum", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "w", "title": "W", "kind": {"group": "kafka.strimzi.io", "kind": "KafkaConnector"}, "when": {"type": "exists", "path": ".status.connectorStatus.tasks[state.x=\"FAILED\"]"}, "message": "{{.status.a + .status.b|join}}"}]}, "path": "contributes.problems[0].message", "message": "only before `|sum`"},
+    {"name": "five paths added", "base": "minimal", "set": {"/sextantApi": 4, "/contributes/problems": [{"id": "w", "title": "W", "kind": {"group": "kafka.strimzi.io", "kind": "KafkaConnector"}, "when": {"type": "exists", "path": ".status.connectorStatus.tasks[state.x=\"FAILED\"]"}, "message": "{{.status.a + .status.b + .status.c + .status.d + .status.e|sum}}"}]}, "path": "contributes.problems[0].message", "message": "at most 4 paths"}
   ]
 }

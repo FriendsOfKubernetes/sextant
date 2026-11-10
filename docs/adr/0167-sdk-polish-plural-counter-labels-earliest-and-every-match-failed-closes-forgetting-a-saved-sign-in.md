@@ -197,3 +197,10 @@ panel's "Expand all"/"Collapse all" — read from Sextant's memory of details se
 `|join` joins a list with ", " in every language (`|list` follows the UI language); `|firstLine` is the first line that
 is not blank, trimmed; a text column case's `value` may be a text with the text's placeholders, the reason a row sorts
 by; a rule's `source.maxObjects` (1 to 20 000) replaces the 5000 Sextant watches for its rules.
+
+## Amendment: any item through a list, filter chains, clipping, a missing sort key (#404)
+
+A match step's field with dots reaches through a list on the way, and any of its items will do
+(`[tasks.state="FAILED"]` is a connector with a failed task); a placeholder takes up to two filters in a row, and
+`clip:<n>` (1 to 1000) cuts the text to `n` characters with "…" (`{{.trace|firstLine|clip:300}}`); a text sort key
+whose placeholder has no value gives the row no sort value, so it sorts last in both directions, as a missing value does.
