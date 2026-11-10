@@ -308,8 +308,16 @@ export function fillTemplate(template: string, obj: KubeObject, options: { empty
 export function placeholderText(obj: KubeObject, inner: string): string | undefined {
   // Up to two filters in a row (`|firstLine|clip:300`, #404): the first reads the value, `clip:<n>` cuts the text.
   const [path = "", ...filters] = inner.split("|").map((part, i) => (i === 0 ? part : part.trim()));
-  const clips = filters.filter((f) => f.startsWith("clip:"));
   const filter = filters.find((f) => !f.startsWith("clip:"));
+  // Paths tried in turn with `??` (#404): the first whose value is there and not an empty text.
+  const tried = splitOutsideQuotes(path, "??");
+  if (tried.length > 1) {
+    for (const one of tried) {
+      const text = filteredText(valueAt(obj, one.trim()), filter);
+      if (text !== undefined && text !== "") return clipped(text, filters);
+    }
+    return undefined;
+  }
   // Paths added with `+` before `|sum` (#404): the numbers of every path there, nothing when none is.
   const added = filter === "sum" ? addedPaths(path) : [path];
   const text =
@@ -319,7 +327,13 @@ export function placeholderText(obj: KubeObject, inner: string): string | undefi
           return sums.length === 0 ? undefined : String(sums.reduce((a, b) => a + b, 0));
         })()
       : filteredText(valueAt(obj, path), filter);
-  if (text === undefined || clips.length === 0) return text;
+  return text === undefined ? undefined : clipped(text, filters);
+}
+
+/** `text` cut by the shortest `clip:<n>` among `filters`, with "…"; as it is without one. */
+function clipped(text: string, filters: readonly string[]): string {
+  const clips = filters.filter((f) => f.startsWith("clip:"));
+  if (clips.length === 0) return text;
   const keep = Math.min(...clips.map((c) => Number(c.slice(5))));
   const chars = [...text];
   return chars.length <= keep ? text : `${chars.slice(0, keep).join("")}…`;
@@ -327,15 +341,23 @@ export function placeholderText(obj: KubeObject, inner: string): string | undefi
 
 /** A placeholder's path split at each `+` outside a quoted match value (`added_paths`, #404). */
 export function addedPaths(field: string): string[] {
+  return splitOutsideQuotes(field, "+");
+}
+
+/** `field` split at each `sep` outside a quoted match value (`split_outside_quotes`). */
+export function splitOutsideQuotes(field: string, sep: string): string[] {
   const out: string[] = [];
   let quoted = false;
   let start = 0;
-  for (let i = 0; i < field.length; i++) {
+  for (let i = 0; i < field.length; ) {
     if (field[i] === '"') quoted = !quoted;
-    else if (field[i] === "+" && !quoted) {
+    else if (!quoted && field.startsWith(sep, i)) {
       out.push(field.slice(start, i));
-      start = i + 1;
+      i += sep.length;
+      start = i;
+      continue;
     }
+    i += 1;
   }
   out.push(field.slice(start));
   return out;

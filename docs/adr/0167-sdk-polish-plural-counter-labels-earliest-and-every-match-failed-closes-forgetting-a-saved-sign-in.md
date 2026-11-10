@@ -213,3 +213,6 @@ A `list` column's `items` write each item of its lists (named by `paths` without
 that holds on the item, its paths read from the item, joined by `separator` (1 to 5 characters) or the UI language's
 list; an item none holds for is left out (Knative's traffic: "a-1 80% · latest 20%"). `count` and `sum` columns filter as
 numbers; a hover keeps up to 1000 characters where a cell keeps 200.
+A placeholder may try up to 4 paths in turn, `{{.message ?? .reason}}`, the first whose value is there and not an empty
+text (its filters apply to that one; `??` and `+` do not mix); a `filterBy: "value"` column whose sort key has no value
+leaves nothing to filter by.

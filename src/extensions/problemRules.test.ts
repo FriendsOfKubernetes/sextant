@@ -211,6 +211,12 @@ describe("problem rules of extensions", () => {
     expect(placeholderText(o, ".status.missing + .status.jobs[*].counted|sum")).toBe("3");
     expect(placeholderText(o, ".status.missing + .status.gone|sum")).toBeUndefined();
     expect(placeholderText(o, '.status.connectors[tasks.state="FAILED",*].name|join')).toBe("a");
+    // Paths tried in turn (#404): the first with a value that is not empty.
+    const c = { metadata: { name: "c" }, status: { message: "", reason: "Boom", note: "x" } } as unknown as KubeObject;
+    expect(placeholderText(c, ".status.message ?? .status.reason")).toBe("Boom");
+    expect(placeholderText(c, ".status.gone ?? .status.note ?? .status.reason")).toBe("x");
+    expect(placeholderText(c, ".status.gone ?? .status.message")).toBeUndefined();
+    expect(placeholderText(o, ".status.missing ?? .status.trace|firstLine|clip:10")).toBe("java.lang.…");
     expect(placeholderText(o, '.status.connectors[tasks.state!="FAILED",*].name|join')).toBe("b");
   });
 

@@ -1248,6 +1248,23 @@ pub(crate) fn check_message(
         if filters.len() > 2 {
             return Err(at(path, "has at most two filters"));
         }
+        // Paths tried in turn with `??` (#404): `{{.message ?? .reason}}`, the first with a value that is not empty.
+        let tried = split_outside_quotes(field, "??");
+        if tried.len() > MAX_ADDED_PATHS {
+            return Err(at(path, format!("tries at most {MAX_ADDED_PATHS} paths")));
+        }
+        if tried.len() > 1 && field.contains('+') && added_paths(field).len() > 1 {
+            return Err(at(
+                path,
+                "adds paths with `+` or tries them with `??`, not both",
+            ));
+        }
+        if tried.len() > 1 {
+            for one in tried {
+                check_rule_path(one.trim(), kind, path, metadata_only)?;
+            }
+            continue;
+        }
         // Paths added with `+` before `|sum` (#404): `{{.status.restarts + .status.jobs[*].restarts|sum}}`.
         let added = added_paths(field);
         if added.len() > 1 && filters.first() != Some(&"sum") {
@@ -1283,17 +1300,24 @@ pub const MAX_ADDED_PATHS: usize = 4;
 
 /// A placeholder's path split at each `+` outside a quoted match value (#404); one path when there is none.
 pub fn added_paths(field: &str) -> Vec<&str> {
+    split_outside_quotes(field, "+")
+}
+
+/// `field` split at each `sep` outside a quoted match value.
+fn split_outside_quotes<'a>(field: &'a str, sep: &str) -> Vec<&'a str> {
     let mut out = Vec::new();
-    let (mut quoted, mut start) = (false, 0);
-    for (i, c) in field.char_indices() {
-        match c {
-            '"' => quoted = !quoted,
-            '+' if !quoted => {
-                out.push(&field[start..i]);
-                start = i + 1;
-            }
-            _ => {}
+    let (mut quoted, mut start, mut i) = (false, 0, 0);
+    while i < field.len() {
+        let rest = &field[i..];
+        if rest.starts_with('"') {
+            quoted = !quoted;
+        } else if !quoted && rest.starts_with(sep) {
+            out.push(&field[start..i]);
+            i += sep.len();
+            start = i;
+            continue;
         }
+        i += rest.chars().next().map_or(1, char::len_utf8);
     }
     out.push(&field[start..]);
     out

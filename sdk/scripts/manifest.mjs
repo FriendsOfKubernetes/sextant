@@ -926,8 +926,15 @@ function checkMessage(text, kind, segments, metadataOnly) {
     // Up to two filters in a row (`|firstLine|clip:300`, #404); `clip:<n>` keeps 1 to 1000 characters.
     const [field, ...filters] = raw.split("|");
     if (filters.length > 2) fail(segments, "has at most two filters");
+    // Paths tried in turn with `??` (#404): `{{.message ?? .reason}}`, the first with a value that is not empty.
+    const tried = splitOutsideQuotes(field, "??");
+    if (tried.length > MAX_ADDED_PATHS) fail(segments, `tries at most ${MAX_ADDED_PATHS} paths`);
+    if (tried.length > 1 && addedPaths(field).length > 1) fail(segments, "adds paths with `+` or tries them with `??`, not both");
+    if (tried.length > 1) {
+      for (const one of tried) checkRulePath(one.trim(), kind, segments, metadataOnly);
+    }
     // Paths added with `+` before `|sum` (#404): `{{.status.restarts + .status.jobs[*].restarts|sum}}`.
-    const added = addedPaths(field);
+    const added = tried.length > 1 ? [] : addedPaths(field);
     if (added.length > 1 && filters[0]?.trim() !== "sum") fail(segments, "adds paths with `+` only before `|sum`");
     if (added.length > MAX_ADDED_PATHS) fail(segments, `adds at most ${MAX_ADDED_PATHS} paths`);
     for (const filter of filters.map((f) => f.trim())) {
@@ -944,15 +951,23 @@ const MAX_ADDED_PATHS = 4;
 
 /** `added_paths`: a placeholder's path split at each `+` outside a quoted match value. */
 export function addedPaths(field) {
+  return splitOutsideQuotes(field, "+");
+}
+
+/** `split_outside_quotes`: `field` split at each `sep` outside a quoted match value. */
+export function splitOutsideQuotes(field, sep) {
   const out = [];
   let quoted = false;
   let start = 0;
-  for (let i = 0; i < field.length; i++) {
+  for (let i = 0; i < field.length; ) {
     if (field[i] === '"') quoted = !quoted;
-    else if (field[i] === "+" && !quoted) {
+    else if (!quoted && field.startsWith(sep, i)) {
       out.push(field.slice(start, i));
-      start = i + 1;
+      i += sep.length;
+      start = i;
+      continue;
     }
+    i += 1;
   }
   out.push(field.slice(start));
   return out;

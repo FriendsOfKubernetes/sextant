@@ -270,8 +270,9 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
   };
 }
 
+/** The sort key as text; a case whose key has no value leaves nothing to filter by (#404), as the built-in had. */
 function filterValue(cell: Cell): string | undefined {
-  return cell.sort === undefined ? cell.text : String(cell.sort);
+  return cell.sort === undefined ? undefined : String(cell.sort);
 }
 
 function numericSort(sort: string | number | undefined): number | undefined {
