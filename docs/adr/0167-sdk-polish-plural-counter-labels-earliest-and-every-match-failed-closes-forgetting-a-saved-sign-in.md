@@ -270,3 +270,4 @@ Paths may end in `|min`/`|max` (the smallest or largest number, or the earliest 
 one (an HTTPProxy's `spec.tcpproxy.include`).
 From `sextantApi` 4 an extension has up to 60 rules over 30 kinds (a section counter counts up to 60), and `{{missing}}`
 names a namespace only when it is not the object's own.
+A manifest may hold 512 KiB (256 KiB before): the moved views' texts in 14 languages (Traefik, Knative, Cluster API).

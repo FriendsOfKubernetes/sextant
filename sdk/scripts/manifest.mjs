@@ -13,7 +13,7 @@ export const MANIFEST_FILE = "sextant-extension.json";
 export const SUPPORTED_API = 4;
 /** The oldest one it still reads: every extension once accepted keeps working (ADR-0142). */
 export const MIN_API = 1;
-export const MAX_MANIFEST_BYTES = 256 * 1024;
+export const MAX_MANIFEST_BYTES = 512 * 1024;
 export const SCHEMA_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
   "../../crates/sextant-core/src/extensions/manifest.schema.json",

@@ -36,7 +36,7 @@ describe("manifest validator", () => {
     expect(checkManifestBytes(new TextEncoder().encode("{"))).toEqual({ error: { path: "", message: "not valid JSON" } });
     const bom = new Uint8Array([0xef, 0xbb, 0xbf, ...good]);
     expect(checkManifestBytes(bom).error?.message).toBe("not valid JSON");
-    const huge = new Uint8Array(256 * 1024 + 1).fill(0x20);
+    const huge = new Uint8Array(512 * 1024 + 1).fill(0x20);
     expect(checkManifestBytes(huge).error?.message).toContain("too large");
     expect(formatManifestError({ path: "id", message: "must be a string" })).toBe(
       "sextant-extension.json: id: must be a string",

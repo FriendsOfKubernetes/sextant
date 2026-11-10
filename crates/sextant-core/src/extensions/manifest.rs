@@ -40,7 +40,7 @@ pub fn supports_api(api: u64) -> bool {
 }
 
 /// A manifest larger than this is refused before it is parsed.
-pub const MAX_MANIFEST_BYTES: usize = 256 * 1024;
+pub const MAX_MANIFEST_BYTES: usize = 512 * 1024;
 
 /// A manifest that cannot be used: where (`path`, e.g. `contributes.pages[0].id`; empty for the whole file) and why.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
