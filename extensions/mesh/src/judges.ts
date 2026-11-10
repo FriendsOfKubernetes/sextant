@@ -7,10 +7,21 @@
 //
 //   hosts             VirtualServices, DestinationRules, ServiceEntries, Services → UnknownHost, MissingDestinationRule,
 //                     MissingSubset (a Service's namespace is known only when the objects name at most 40 namespaces,
-//                     as the built-in store watched them)
+//                     as the built-in store watched them, and when its Services were read there: the Services are a
+//                     `partial` read, so a namespace Sextant could not read them in is unknown, as the built-in took a
+//                     refused namespace's Services)
 //   gateways          VirtualServices, Gateways → MissingGateway
 //   virtual-services  VirtualServices → InvalidVirtualService, ConflictingVirtualService
 //   tls               DestinationRules, PeerAuthentications → TlsConflict
+//
+// Each fact names what its finding rests on (`needs`, the built-in `MeshProblem.needs`): the lists it was judged against
+// and the objects its words name, so an agent that may read those gets it (ADR-0146, ADR-0168), as the built-in agents'
+// view kept a mesh finding only when everything it rested on was read.
+//
+// Every read is `partial`: Sextant sends what it could read and says where it could not. A finding is told only when
+// everything it rests on was read — the built-in agents' rule, now for the screen too: the built-in screen judged a
+// list the API server refused in some namespaces as if it were whole, which could name a "missing" object that is
+// only unreadable (ADR-0089: "unknown" over a guess). Where everything was read, the findings are the built-in's.
 //
 // Pure: it runs in the backend's sandbox with no host call and no network, and in tests directly.
 import type { KubeObject } from "@sextant/extension-sdk";
@@ -26,12 +37,26 @@ export interface JudgedInput {
   values: Record<string, unknown>;
 }
 
+/** What a finding rests on (the SDK's `JudgedNeed`): an object, a kind in a namespace, or (neither) everywhere. */
+export interface JudgedNeedOut {
+  kind: { group: string; kind: string };
+  namespace?: string;
+  name?: string;
+}
+
 /** One fact of an answer (the SDK's `JudgedFact`). */
 export interface JudgedOutput {
   uid: string;
   fact: string;
   values?: Record<string, string>;
+  needs?: JudgedNeedOut[];
 }
+
+/**
+ * Whether the objects of a kind were read in a namespace, `null`: in every namespace (the SDK's `isRead` over the
+ * judge's input).
+ */
+export type IsRead = (kind: { group: string; kind: string }, namespace: string | null) => boolean;
 
 /** As the built-in store: beyond this many namespaces no host is judged missing. */
 export const MAX_SERVICE_NAMESPACES = 40;
@@ -43,31 +68,31 @@ export const NAME = ".metadata.name";
 export type JudgeId = "hosts" | "gateways" | "virtual-services" | "tls";
 
 /** What each judge reads and the reasons it tells, with the names of each reason's values. */
-export const JUDGES: Record<JudgeId, { reads: { group: string; kind: string; path: string; optional?: boolean }[]; reasons: MeshProblemReason[] }> = {
+export const JUDGES: Record<JudgeId, { reads: { group: string; kind: string; path: string; optional?: boolean; partial?: boolean }[]; reasons: MeshProblemReason[] }> = {
   hosts: {
     reads: [
-      { group: "networking.istio.io", kind: "VirtualService", path: SPEC },
-      { group: "networking.istio.io", kind: "DestinationRule", path: SPEC, optional: true },
-      { group: "networking.istio.io", kind: "ServiceEntry", path: SPEC, optional: true },
-      { group: "", kind: "Service", path: NAME },
+      { group: "networking.istio.io", kind: "VirtualService", path: SPEC, partial: true },
+      { group: "networking.istio.io", kind: "DestinationRule", path: SPEC, optional: true, partial: true },
+      { group: "networking.istio.io", kind: "ServiceEntry", path: SPEC, optional: true, partial: true },
+      { group: "", kind: "Service", path: NAME, partial: true },
     ],
     reasons: ["UnknownHost", "MissingDestinationRule", "MissingSubset"],
   },
   gateways: {
     reads: [
-      { group: "networking.istio.io", kind: "VirtualService", path: SPEC },
-      { group: "networking.istio.io", kind: "Gateway", path: NAME },
+      { group: "networking.istio.io", kind: "VirtualService", path: SPEC, partial: true },
+      { group: "networking.istio.io", kind: "Gateway", path: NAME, partial: true },
     ],
     reasons: ["MissingGateway"],
   },
   "virtual-services": {
-    reads: [{ group: "networking.istio.io", kind: "VirtualService", path: SPEC }],
+    reads: [{ group: "networking.istio.io", kind: "VirtualService", path: SPEC, partial: true }],
     reasons: ["InvalidVirtualService", "ConflictingVirtualService"],
   },
   tls: {
     reads: [
-      { group: "networking.istio.io", kind: "DestinationRule", path: SPEC },
-      { group: "security.istio.io", kind: "PeerAuthentication", path: SPEC, optional: true },
+      { group: "networking.istio.io", kind: "DestinationRule", path: SPEC, partial: true },
+      { group: "security.istio.io", kind: "PeerAuthentication", path: SPEC, optional: true, partial: true },
     ],
     reasons: ["TlsConflict"],
   },
@@ -97,7 +122,7 @@ export function objectOf(o: JudgedInput): KubeObject {
 }
 
 /** The engines' input from the objects sent; kinds a judge does not read are empty (Gateways: not known). */
-export function analysisInput(objects: readonly JudgedInput[]): AnalysisInput {
+export function analysisInput(objects: readonly JudgedInput[], isRead: IsRead = () => true): AnalysisInput {
   const of = (kind: string, group: string) => objects.filter((o) => o.kind === kind && (o.apiVersion.split("/").length === 1 ? group === "" : o.apiVersion.startsWith(`${group}/`))).map(objectOf);
   const virtualServices = of("VirtualService", "networking.istio.io");
   const destinationRules = of("DestinationRule", "networking.istio.io");
@@ -126,19 +151,32 @@ export function analysisInput(objects: readonly JudgedInput[]): AnalysisInput {
     gateways: gateways.length > 0 || objects.some((o) => o.kind === "Gateway") ? gateways.map(parseIstioGateway) : undefined,
     serviceEntries: of("ServiceEntry", "networking.istio.io").map(parseServiceEntry),
     peerAuthentications: of("PeerAuthentication", "security.istio.io").map(parsePeerAuthentication),
-    serviceExists: (namespace, name) => (known.has(namespace) ? names.has(`${namespace}/${name}`) : undefined),
+    serviceExists: (namespace, name) => (known.has(namespace) && isRead(SERVICE, namespace) ? names.has(`${namespace}/${name}`) : undefined),
   };
 }
 
-/** The facts of one judge over the objects sent. */
-export function judge(id: JudgeId, objects: readonly JudgedInput[]): JudgedOutput[] {
+const SERVICE = { group: "", kind: "Service" };
+
+/** The facts of one judge over the objects sent; `isRead` says where its `partial` reads were read. */
+export function judge(id: JudgeId, objects: readonly JudgedInput[], isRead: IsRead = () => true): JudgedOutput[] {
   const { reasons } = JUDGES[id];
-  const input = analysisInput(objects);
+  const input = analysisInput(objects, isRead);
   // The gateways judge alone knows the Gateways (a read it needs): with none sent, there are none.
   if (id === "gateways") input.gateways ??= [];
   return meshProblems(input)
     .filter((p) => reasons.includes(p.reason))
-    .map((p) => ({ uid: p.uid, fact: factId(p.reason), values: Object.fromEntries(REASON_VALUES[p.reason].map((name) => [name, p.params[name] ?? ""])) }));
+    // Told only when everything it rests on was read.
+    .filter((p) => p.needs.every((n) => isRead(n.kind, n.namespace)))
+    .map((p) => ({
+      uid: p.uid,
+      fact: factId(p.reason),
+      values: Object.fromEntries(REASON_VALUES[p.reason].map((name) => [name, p.params[name] ?? ""])),
+      needs: p.needs.map((n) => ({
+        kind: { group: n.kind.group, kind: n.kind.kind },
+        ...(n.namespace !== null ? { namespace: n.namespace } : {}),
+        ...(n.name ? { name: n.name } : {}),
+      })),
+    }));
 }
 
 export const JUDGE_IDS = Object.keys(JUDGES) as JudgeId[];

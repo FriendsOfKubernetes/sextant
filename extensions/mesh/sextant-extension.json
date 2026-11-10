@@ -1540,7 +1540,8 @@
       },
       "paths": [
        ".spec"
-      ]
+      ],
+      "partial": true
      },
      {
       "kind": {
@@ -1550,7 +1551,8 @@
       "paths": [
        ".spec"
       ],
-      "optional": true
+      "optional": true,
+      "partial": true
      },
      {
       "kind": {
@@ -1560,7 +1562,8 @@
       "paths": [
        ".spec"
       ],
-      "optional": true
+      "optional": true,
+      "partial": true
      },
      {
       "kind": {
@@ -1569,7 +1572,8 @@
       },
       "paths": [
        ".metadata.name"
-      ]
+      ],
+      "partial": true
      }
     ],
     "facts": [
@@ -1606,7 +1610,8 @@
       },
       "paths": [
        ".spec"
-      ]
+      ],
+      "partial": true
      },
      {
       "kind": {
@@ -1615,7 +1620,8 @@
       },
       "paths": [
        ".metadata.name"
-      ]
+      ],
+      "partial": true
      }
     ],
     "facts": [
@@ -1637,7 +1643,8 @@
       },
       "paths": [
        ".spec"
-      ]
+      ],
+      "partial": true
      }
     ],
     "facts": [
@@ -1667,7 +1674,8 @@
       },
       "paths": [
        ".spec"
-      ]
+      ],
+      "partial": true
      },
      {
       "kind": {
@@ -1677,7 +1685,8 @@
       "paths": [
        ".spec"
       ],
-      "optional": true
+      "optional": true,
+      "partial": true
      }
     ],
     "facts": [

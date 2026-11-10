@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The manifest's declarative parts — the columns and the problem rules — judged by Sextant's own window engine
 // (src/extensions/problemRules.ts and columns.tsx, loaded at run time so the type check stays inside the extension)
 // and compared with what the built-in mesh views computed (ADR-0089): the built-in columns (`columns.tsx`, ported
@@ -8,7 +9,7 @@
 import type { KubeObject } from "@sextant/extension-sdk";
 import { dirname, join as joinPath } from "node:path";
 import { fileURLToPath } from "node:url";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import manifest from "../sextant-extension.json";
 import bookinfo from "../fixtures/bookinfo.json";
 import { parseAuthorizationPolicy } from "./engine/authz";
@@ -17,9 +18,18 @@ import { MESH_KINDS } from "./engine/kinds";
 import { parsePeerAuthentication } from "./engine/mtls";
 import { meshProblems, type AnalysisInput } from "./engine/problems";
 import judgeCalls from "../fixtures/judge-calls.json";
-import { factId, judge, JUDGE_IDS, JUDGES, REASON_VALUES, type JudgeId, type JudgedInput, type JudgedOutput } from "./judges";
+import { factId, JUDGE_IDS, JUDGES, REASON_VALUES, type JudgeId, type JudgedInput, type JudgedOutput } from "./judges";
 import { arr, get, record, str } from "./engine/util";
 import en from "./locales/en.json";
+
+// The backend runs here as built (`backend/main.ts` through the SDK's `defineBackend`), its component's host module
+// replaced by a stand-in that refuses every call, as Sextant refuses them while a judge runs.
+vi.mock("sextant:extension/host@1.0.0", () => ({
+  call: () => {
+    throw Object.assign(new Error("refused"), { payload: { code: "denied", message: "no host call while judging" } });
+  },
+  log: () => undefined,
+}));
 
 // ---------- Sextant's window engine ----------
 
@@ -47,8 +57,10 @@ interface Columns {
 }
 let engine: Engine;
 let columns: Columns;
+let handle: (method: string, params: string) => Promise<string>;
 const here = dirname(fileURLToPath(import.meta.url));
 beforeAll(async () => {
+  ({ handle } = await import("../backend/main"));
   engine = (await import(/* @vite-ignore */ joinPath(here, "../../../src/extensions/problemRules.ts"))) as Engine;
   columns = (await import(/* @vite-ignore */ joinPath(here, "../../../src/extensions/columns.tsx"))) as Columns;
 });
@@ -338,7 +350,8 @@ type Rule = (typeof manifest.contributes.problems)[number];
 const rules = manifest.contributes.problems as Rule[];
 type Judge = (typeof manifest.contributes.problemJudges)[number];
 const judgesOf = manifest.contributes.problemJudges as Judge[];
-type Found = { uid: string; reason: string; message: string };
+type Need = { kind: { group: string; kind: string }; namespace?: string; name?: string };
+type Found = { uid: string; reason: string; message: string; needs: Need[] };
 
 const groupOf = (o: KubeObject) => (o.apiVersion?.includes("/") ? o.apiVersion.split("/")[0]! : "");
 const reads = (judge: Judge, o: KubeObject) => judge.reads.find((r) => r.kind.group === groupOf(o) && r.kind.kind === o.kind);
@@ -360,16 +373,39 @@ function sent(judge: Judge, o: KubeObject): JudgedInput | null {
   };
 }
 
-/** Each judge's answer over the world, by judge id. */
-const answers = (world: KubeObject[]) =>
-  new Map(judgesOf.map((j) => [j.id, judge(j.id as JudgeId, world.map((o) => sent(j, o)).filter((o): o is JudgedInput => o !== null))]));
+/**
+ * The namespaces whose lists could not be read (refused there) — of Services only (`services`, as the built-in store's
+ * Services watch could be refused), or of every kind (`all`): the window sends none of their objects and says so for
+ * each `partial` read (`JudgedPartial`).
+ */
+type Unread = readonly string[];
+type Refused = "services" | "all";
+
+const refusedKind = (refused: Refused, kind: { group: string; kind: string }) => refused === "all" || (kind.group === "" && kind.kind === "Service");
+
+/** The input Sextant sends a judge: the objects read and, for a `partial` read read in part, where it was not. */
+function inputOf(j: Judge, world: KubeObject[], unread: Unread, refused: Refused): { objects: JudgedInput[]; partial?: unknown[] } {
+  const hidden = (o: KubeObject) => refusedKind(refused, { group: groupOf(o), kind: o.kind! }) && unread.includes(o.metadata.namespace ?? "");
+  const objects = world.filter((o) => !hidden(o)).map((o) => sent(j, o)).filter((o): o is JudgedInput => o !== null);
+  const partial = j.reads
+    .filter((r) => (r as { partial?: boolean }).partial && unread.length > 0 && refusedKind(refused, r.kind))
+    .map((r) => ({ kind: r.kind, unreadNamespaces: [...unread] }));
+  return partial.length > 0 ? { objects, partial } : { objects };
+}
+
+/** Each judge's answer over the world, by judge id: the built backend's, through `handle` as Sextant calls it. */
+async function answers(world: KubeObject[], unread: Unread = [], refused: Refused = "services"): Promise<Map<string, JudgedOutput[]>> {
+  const out = new Map<string, JudgedOutput[]>();
+  for (const j of judgesOf) out.set(j.id, JSON.parse(await handle(`problemJudge:${j.id}`, JSON.stringify(inputOf(j, world, unread, refused)))) as JudgedOutput[]);
+  return out;
+}
 
 /**
  * The extension's problems, as the window keeps them: a rule's `judged` lookup holds where its judge's answer gives
  * the fact for the object, and `{{fact:<name>}}` shows the fact's texts (`withFacts` of `problemsAcross.ts`).
  */
-function extensionProblems(world: KubeObject[]): Found[] {
-  const given = answers(world);
+async function extensionProblems(world: KubeObject[], unread: Unread = [], refused: Refused = "services"): Promise<Found[]> {
+  const given = await answers(world, unread, refused);
   const out: Found[] = [];
   for (const o of world) {
     for (const rule of rules.filter((r) => r.kind.group === groupOf(o) && r.kind.kind === o.kind)) {
@@ -380,15 +416,29 @@ function extensionProblems(world: KubeObject[]): Found[] {
         // `each` (ADR-0168 amendment): one problem per entry of the fact the answer gives for the object.
         expect((rule.when as { each?: boolean }).each).toBe(true);
         for (const fact of given.get(judged.judge)!.filter((f) => f.uid === o.metadata.uid && f.fact === judged.fact))
-          out.push({ uid: o.metadata.uid!, reason: d.reason, message: (d.message ?? "").replace(/\{\{fact:([A-Za-z][A-Za-z0-9-]*)\}\}/g, (_, n: string) => fact.values?.[n] ?? "") });
+          out.push({
+            uid: o.metadata.uid!,
+            reason: d.reason,
+            message: (d.message ?? "").replace(/\{\{fact:([A-Za-z][A-Za-z0-9-]*)\}\}/g, (_, n: string) => fact.values?.[n] ?? ""),
+            needs: fact.needs ?? [],
+          });
       }
     }
   }
   return out;
 }
 
+/**
+ * The built-in agents' view of the mesh findings (`agentMeshProblems` of `mcp-diagnostics/mesh.ts`): the findings of
+ * what was read, kept only when everything they rest on was read.
+ */
+function builtInReadProblems(world: KubeObject[], unread: Unread): Found[] {
+  const read = world.filter((o) => !unread.includes(o.metadata.namespace ?? ""));
+  return builtInProblems(read, unread).filter((p) => p.needs.every((n) => (n.namespace === undefined ? unread.length === 0 : !unread.includes(n.namespace))));
+}
+
 /** The built-in category's problems over the world, as the built-in store held the configuration. */
-function builtInProblems(world: KubeObject[]): Found[] {
+function builtInProblems(world: KubeObject[], unread: Unread = []): Found[] {
   const of = (group: string, kind: string) => world.filter((o) => o.kind === kind && groupOf(o) === group);
   const virtualServices = of("networking.istio.io", "VirtualService").map(parseVirtualService);
   const destinationRules = of("networking.istio.io", "DestinationRule").map(parseDestinationRule);
@@ -414,16 +464,19 @@ function builtInProblems(world: KubeObject[]): Found[] {
     gateways: of("networking.istio.io", "Gateway").map(parseIstioGateway),
     serviceEntries: of("networking.istio.io", "ServiceEntry").map(parseServiceEntry),
     peerAuthentications: of("security.istio.io", "PeerAuthentication").map(parsePeerAuthentication),
-    serviceExists: (ns, name) => (known.has(ns) ? services.has(`${ns}/${name}`) : undefined),
+    // A namespace whose Services were refused is not known (`services.forbidden`).
+    serviceExists: (ns, name) => (known.has(ns) && !unread.includes(ns) ? services.has(`${ns}/${name}`) : undefined),
   };
   return meshProblems(input).map((p) => ({
     uid: p.uid,
+    // What the built-in agents' view required read to keep the finding (`MeshProblem.needs`).
+    needs: p.needs.map((n) => ({ kind: { group: n.kind.group, kind: n.kind.kind }, ...(n.namespace !== null ? { namespace: n.namespace } : {}), ...(n.name ? { name: n.name } : {}) })),
     reason: p.reason,
     message: (en as Record<string, string>)[`problem.${p.reason}`]!.replace(/\{\{(\w+)\}\}/g, (_, k: string) => p.params[k] ?? ""),
   }));
 }
 
-const sorted = (list: Found[]) => [...list].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+const sorted = (list: Found[]) => [...list].sort((a, b) => `${a.uid}|${a.reason}|${a.message}`.localeCompare(`${b.uid}|${b.reason}|${b.message}`));
 const reasonsOf = (list: Found[]) => [...new Set(list.map((p) => p.reason))].sort();
 
 const at = (day: number) => `2026-01-${String(day).padStart(2, "0")}T00:00:00Z`;
@@ -480,9 +533,8 @@ describe("the problem rules, against the built-in category", () => {
     // Each judge reads what its engine reads, and declares every fact its rules use.
     for (const j of judgesOf) {
       const declared = JUDGES[j.id as JudgeId];
-      expect(j.reads.map((r) => [r.kind.group, r.kind.kind, r.paths, (r as { optional?: boolean }).optional ?? false])).toEqual(
-        declared.reads.map((r) => [r.group, r.kind, [r.path], r.optional ?? false]),
-      );
+      const flags = (r: { optional?: boolean; partial?: boolean }) => [r.optional ?? false, r.partial ?? false];
+      expect(j.reads.map((r) => [r.kind.group, r.kind.kind, r.paths, ...flags(r)])).toEqual(declared.reads.map((r) => [r.group, r.kind, [r.path], ...flags(r)]));
       expect(j.facts.map((f) => f.id)).toEqual(declared.reasons.map(factId));
       for (const reason of declared.reasons) {
         const fact = j.facts.find((f) => f.id === factId(reason));
@@ -492,51 +544,51 @@ describe("the problem rules, against the built-in category", () => {
     }
   });
 
-  it("say exactly what the built-in category said, with its messages, on the fixtures and every variant", () => {
+  it("say exactly what the built-in category said, with its messages, on the fixtures and every variant", async () => {
     const w = world();
     const want = builtInProblems(w);
     expect(reasonsOf(want)).toEqual(["ConflictingVirtualService", "InvalidVirtualService", "MissingDestinationRule", "MissingGateway", "MissingSubset", "TlsConflict", "UnknownHost"]);
     expect(want.length).toBeGreaterThan(12);
-    expect(sorted(extensionProblems(w))).toEqual(sorted(want));
+    expect(sorted(await extensionProblems(w))).toEqual(sorted(want));
   });
 
-  it("the cases the declarative rules missed: a gateway in another namespace, past the fifth, `*` past the tenth and with blanks", () => {
+  it("the cases the declarative rules missed: a gateway in another namespace, past the fifth, `*` past the tenth and with blanks", async () => {
     const w = world();
-    const found = extensionProblems(w).map((p) => p.message);
+    const found = (await extensionProblems(w)).map((p) => p.message);
     expect(found).toContain("Bound to gateway istio-ingress/gone, which does not exist.");
     expect(found).toContain("Bound to gateway shop/sixth-gone, which does not exist.");
     const late = w.find((o) => o.metadata.name === "star-late")!.metadata.uid;
-    expect(extensionProblems(w).filter((p) => p.uid === late).map((p) => p.reason)).toEqual(["InvalidVirtualService"]);
+    expect((await extensionProblems(w)).filter((p) => p.uid === late).map((p) => p.reason)).toEqual(["InvalidVirtualService"]);
   });
 
-  it("judge no host missing where the objects name more than 40 namespaces, as the built-in store watched none then", () => {
+  it("judge no host missing where the objects name more than 40 namespaces, as the built-in store watched none then", async () => {
     const many = [...Array.from({ length: 41 }, (_, i) => vsAt(`ns${i}`, "v", { hosts: ["a"], ...route("gone") })), svc("ns0", "other")];
     expect(builtInProblems(many)).toEqual([]);
-    expect(extensionProblems(many)).toEqual([]);
+    expect(await extensionProblems(many)).toEqual([]);
     const few = many.slice(0, 3);
-    expect(sorted(extensionProblems(few))).toEqual(sorted(builtInProblems(few)));
-    expect(extensionProblems(few)).toHaveLength(3);
+    expect(sorted(await extensionProblems(few))).toEqual(sorted(builtInProblems(few)));
+    expect(await extensionProblems(few)).toHaveLength(3);
   });
 
-  it("tell every finding of a reason on one object, in the built-in order", () => {
+  it("tell every finding of a reason on one object, in the built-in order", async () => {
     const many = [vsAt("shop", "many", { hosts: ["a"], ...route("g1", "g2", "g3", "g4", "g5", "g6", "g7") }), svc("shop", "a")];
     const built = builtInProblems(many);
     expect(built).toHaveLength(7);
-    expect(extensionProblems(many).map((p) => p.message)).toEqual(built.map((p) => p.message));
+    expect((await extensionProblems(many)).map((p) => p.message)).toEqual(built.map((p) => p.message));
   });
 
-  it("judge where the cluster serves no ServiceEntries, DestinationRules or PeerAuthentications, as the built-in took them as empty; not without Gateways", () => {
+  it("judge where the cluster serves no ServiceEntries, DestinationRules or PeerAuthentications, as the built-in took them as empty; not without Gateways", async () => {
     const optional = (j: Judge) => j.reads.filter((r) => (r as { optional?: boolean }).optional).map((r) => `${j.id}:${r.kind.kind}`);
     expect(judgesOf.flatMap(optional)).toEqual(["hosts:DestinationRule", "hosts:ServiceEntry", "tls:PeerAuthentication"]);
     // Without those kinds the world is the same as with none of their objects: the built-in's answer.
     const w = world().filter((o) => !["ServiceEntry", "DestinationRule", "PeerAuthentication"].includes(o.kind!));
-    expect(sorted(extensionProblems(w))).toEqual(sorted(builtInProblems(w)));
+    expect(sorted(await extensionProblems(w))).toEqual(sorted(builtInProblems(w)));
   });
 
-  it("an object's finding goes to the object the built-in named (the newer VirtualService, the DestinationRule)", () => {
+  it("an object's finding goes to the object the built-in named (the newer VirtualService, the DestinationRule)", async () => {
     const w = world();
     const by = new Map(w.map((o) => [o.metadata.uid, o.metadata.name]));
-    const ext = extensionProblems(w);
+    const ext = await extensionProblems(w);
     expect(ext.filter((p) => p.reason === "ConflictingVirtualService").map((p) => by.get(p.uid)).sort()).toEqual(["second", "shadowed"]);
     expect(ext.filter((p) => p.reason === "TlsConflict").map((p) => by.get(p.uid)).sort()).toEqual(["reviews", "simple"]);
   });
@@ -549,8 +601,52 @@ describe("the problem rules, against the built-in category", () => {
     for (const k of manifest.contributes.kinds) expect((k as { problemWhen?: unknown }).problemWhen, k.kind).toBeUndefined();
   });
 
-  it("answer the judge calls recorded in fixtures/judge-calls.json, which the real runtime answered alike", () => {
+  it("a namespace whose Services could not be read is unknown, as the built-in took a refused namespace's Services", async () => {
+    const w = world();
+    for (const unread of [["pay"], ["shop"], ["pay", "shop", "istio-ingress"]]) {
+      const want = builtInProblems(w, unread);
+      expect(sorted(await extensionProblems(w, unread)), unread.join()).toEqual(sorted(want));
+    }
+    // Refused in the namespace of a missing Service: no UnknownHost of it, where all read finds one.
+    const host = (list: Found[]) => list.filter((p) => p.message.includes("gone.pay.svc.cluster.local")).length;
+    expect(host(await extensionProblems(w))).toBe(1);
+    expect(host(await extensionProblems(w, ["pay"]))).toBe(0);
+  });
+
+  it("where whole namespaces could not be read, tell a finding only when all it rests on was read, as the built-in agents' view", async () => {
+    const w = world();
+    for (const unread of [["pay"], ["istio-ingress"], ["istio-system"], ["shop", "pay"]]) {
+      const got = await extensionProblems(w, unread, "all");
+      expect(sorted(got), unread.join()).toEqual(sorted(builtInReadProblems(w, unread)));
+    }
+    // Everything read: the built-in screen's findings, each one.
+    expect(sorted(builtInReadProblems(w, []))).toEqual(sorted(builtInProblems(w)));
+    // An unreadable gateway namespace: its gateway is not called missing (the built-in screen did, judging the refused
+    // list as whole).
+    const gone = (list: Found[]) => list.some((p) => p.message === "Bound to gateway istio-ingress/gone, which does not exist.");
+    expect(gone(await extensionProblems(w, ["istio-ingress"], "all"))).toBe(false);
+    expect(gone(builtInProblems(w.filter((o) => o.metadata.namespace !== "istio-ingress")))).toBe(true);
+  });
+
+  it("each finding says what it rests on, as the built-in agents' view required it read", async () => {
+    const w = world();
+    const want = builtInProblems(w);
+    const got = await extensionProblems(w);
+    const key = (p: Found) => `${p.uid}|${p.message}`;
+    expect(new Map(got.map((p) => [key(p), p.needs]))).toEqual(new Map(want.map((p) => [key(p), p.needs])));
+    // Something to rest on but the object for every reason judged across objects; the object alone for the host `*`.
+    for (const p of got) expect(p.needs.length > 0, p.reason).toBe(p.reason !== "InvalidVirtualService");
+    // Only kinds the judge reads, at most 20.
+    for (const p of got) {
+      const rule = rules.find((r) => r.reason === p.reason)!;
+      const j = judgesOf.find((x) => x.id === (rule.when as { judge: string }).judge)!;
+      expect(p.needs.length).toBeLessThanOrEqual(20);
+      for (const n of p.needs) expect(j.reads.some((r) => r.kind.group === n.kind.group && r.kind.kind === n.kind.kind), `${p.reason} ${n.kind.kind}`).toBe(true);
+    }
+  });
+
+  it("answer the judge calls recorded in fixtures/judge-calls.json, which the real runtime answered alike", async () => {
     for (const call of judgeCalls as { judge: JudgeId; params: { objects: JudgedInput[] }; answer: JudgedOutput[] }[])
-      expect(judge(call.judge, call.params.objects), call.judge).toEqual(call.answer);
+      expect(JSON.parse(await handle(`problemJudge:${call.judge}`, JSON.stringify(call.params))), call.judge).toEqual(call.answer);
   });
 });

@@ -290,21 +290,69 @@
      "host": "reviews",
      "subset": "v3",
      "rule": "reviews"
-    }
+    },
+    "needs": [
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "DestinationRule"
+      },
+      "namespace": "shop"
+     },
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "DestinationRule"
+      },
+      "namespace": "istio-system"
+     },
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "DestinationRule"
+      },
+      "namespace": "shop",
+      "name": "reviews"
+     }
+    ]
    },
    {
     "uid": "vs-unknown",
     "fact": "unknown-host",
     "values": {
      "host": "nope"
-    }
+    },
+    "needs": [
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "ServiceEntry"
+      }
+     },
+     {
+      "kind": {
+       "group": "",
+       "kind": "Service"
+      },
+      "namespace": "shop",
+      "name": "nope"
+     }
+    ]
    },
    {
     "uid": "vs-unknown",
     "fact": "unknown-host",
     "values": {
      "host": "httpbin.org"
-    }
+    },
+    "needs": [
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "ServiceEntry"
+      }
+     }
+    ]
    }
   ]
  },
@@ -552,7 +600,17 @@
     "fact": "missing-gateway",
     "values": {
      "gateway": "istio-ingress/gone"
-    }
+    },
+    "needs": [
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "Gateway"
+      },
+      "namespace": "istio-ingress",
+      "name": "gone"
+     }
+    ]
    }
   ]
  },
@@ -787,7 +845,8 @@
     "fact": "invalid-virtual-service",
     "values": {
      "host": "*"
-    }
+    },
+    "needs": []
    },
    {
     "uid": "vs-second",
@@ -796,7 +855,23 @@
      "host": "billing.pay.svc.cluster.local",
      "gateway": "mesh",
      "other": "pay/first"
-    }
+    },
+    "needs": [
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "VirtualService"
+      }
+     },
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "VirtualService"
+      },
+      "namespace": "pay",
+      "name": "first"
+     }
+    ]
    }
   ]
  },
@@ -865,8 +940,600 @@
      "host": "reviews",
      "mode": "SIMPLE",
      "policy": "default"
-    }
+    },
+    "needs": [
+     {
+      "kind": {
+       "group": "security.istio.io",
+       "kind": "PeerAuthentication"
+      },
+      "namespace": "shop"
+     },
+     {
+      "kind": {
+       "group": "security.istio.io",
+       "kind": "PeerAuthentication"
+      },
+      "namespace": "istio-system"
+     },
+     {
+      "kind": {
+       "group": "security.istio.io",
+       "kind": "PeerAuthentication"
+      },
+      "namespace": "shop",
+      "name": "default"
+     }
+    ]
    }
   ]
+ },
+ {
+  "judge": "hosts",
+  "params": {
+   "objects": [
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "reviews",
+      "namespace": "shop",
+      "uid": "vs-reviews",
+      "creationTimestamp": "2026-01-01T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "reviews"
+       ],
+       "http": [
+        {
+         "name": "beta-users",
+         "match": [
+          {
+           "headers": {
+            "x-user": {
+             "exact": "alice"
+            }
+           }
+          }
+         ],
+         "route": [
+          {
+           "destination": {
+            "host": "reviews",
+            "subset": "v2"
+           }
+          }
+         ]
+        },
+        {
+         "name": "default",
+         "retries": {
+          "attempts": 3,
+          "perTryTimeout": "2s"
+         },
+         "timeout": "10s",
+         "route": [
+          {
+           "destination": {
+            "host": "reviews",
+            "subset": "v1"
+           },
+           "weight": 80
+          },
+          {
+           "destination": {
+            "host": "reviews",
+            "subset": "v3"
+           },
+           "weight": 20
+          }
+         ]
+        }
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "storefront",
+      "namespace": "shop",
+      "uid": "vs-storefront",
+      "creationTimestamp": "2026-01-02T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "shop.example.com"
+       ],
+       "gateways": [
+        "istio-ingress/public"
+       ],
+       "http": [
+        {
+         "match": [
+          {
+           "uri": {
+            "prefix": "/reviews"
+           }
+          }
+         ],
+         "route": [
+          {
+           "destination": {
+            "host": "reviews",
+            "port": {
+             "number": 9080
+            }
+           }
+          }
+         ]
+        },
+        {
+         "route": [
+          {
+           "destination": {
+            "host": "web"
+           }
+          }
+         ]
+        }
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "DestinationRule",
+     "metadata": {
+      "name": "reviews",
+      "namespace": "shop",
+      "uid": "dr-reviews",
+      "creationTimestamp": "2026-01-01T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "host": "reviews",
+       "trafficPolicy": {
+        "tls": {
+         "mode": "SIMPLE"
+        }
+       },
+       "subsets": [
+        {
+         "name": "v1",
+         "labels": {
+          "version": "v1"
+         }
+        },
+        {
+         "name": "v2",
+         "labels": {
+          "version": "v2"
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "unknown",
+      "namespace": "shop",
+      "uid": "vs-unknown",
+      "creationTimestamp": "2026-01-05T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "u"
+       ],
+       "http": [
+        {
+         "route": [
+          {
+           "destination": {
+            "host": "nope"
+           }
+          },
+          {
+           "destination": {
+            "host": "httpbin.org"
+           }
+          }
+         ]
+        }
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "gw",
+      "namespace": "shop",
+      "uid": "vs-gw",
+      "creationTimestamp": "2026-01-05T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "g"
+       ],
+       "gateways": [
+        "istio-ingress/gone",
+        "istio-ingress/public"
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "star",
+      "namespace": "shop",
+      "uid": "vs-star",
+      "creationTimestamp": "2026-01-05T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        " * "
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "first",
+      "namespace": "pay",
+      "uid": "vs-first",
+      "creationTimestamp": "2026-01-01T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "billing"
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "second",
+      "namespace": "pay",
+      "uid": "vs-second",
+      "creationTimestamp": "2026-01-02T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "billing",
+        "billing.pay"
+       ]
+      }
+     }
+    }
+   ],
+   "partial": [
+    {
+     "kind": {
+      "group": "",
+      "kind": "Service"
+     },
+     "unreadNamespaces": [
+      "shop"
+     ]
+    }
+   ]
+  },
+  "answer": [
+   {
+    "uid": "vs-reviews",
+    "fact": "missing-subset",
+    "values": {
+     "host": "reviews",
+     "subset": "v3",
+     "rule": "reviews"
+    },
+    "needs": [
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "DestinationRule"
+      },
+      "namespace": "shop"
+     },
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "DestinationRule"
+      },
+      "namespace": "istio-system"
+     },
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "DestinationRule"
+      },
+      "namespace": "shop",
+      "name": "reviews"
+     }
+    ]
+   },
+   {
+    "uid": "vs-unknown",
+    "fact": "unknown-host",
+    "values": {
+     "host": "httpbin.org"
+    },
+    "needs": [
+     {
+      "kind": {
+       "group": "networking.istio.io",
+       "kind": "ServiceEntry"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "judge": "gateways",
+  "params": {
+   "objects": [
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "reviews",
+      "namespace": "shop",
+      "uid": "vs-reviews",
+      "creationTimestamp": "2026-01-01T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "reviews"
+       ],
+       "http": [
+        {
+         "name": "beta-users",
+         "match": [
+          {
+           "headers": {
+            "x-user": {
+             "exact": "alice"
+            }
+           }
+          }
+         ],
+         "route": [
+          {
+           "destination": {
+            "host": "reviews",
+            "subset": "v2"
+           }
+          }
+         ]
+        },
+        {
+         "name": "default",
+         "retries": {
+          "attempts": 3,
+          "perTryTimeout": "2s"
+         },
+         "timeout": "10s",
+         "route": [
+          {
+           "destination": {
+            "host": "reviews",
+            "subset": "v1"
+           },
+           "weight": 80
+          },
+          {
+           "destination": {
+            "host": "reviews",
+            "subset": "v3"
+           },
+           "weight": 20
+          }
+         ]
+        }
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "storefront",
+      "namespace": "shop",
+      "uid": "vs-storefront",
+      "creationTimestamp": "2026-01-02T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "shop.example.com"
+       ],
+       "gateways": [
+        "istio-ingress/public"
+       ],
+       "http": [
+        {
+         "match": [
+          {
+           "uri": {
+            "prefix": "/reviews"
+           }
+          }
+         ],
+         "route": [
+          {
+           "destination": {
+            "host": "reviews",
+            "port": {
+             "number": 9080
+            }
+           }
+          }
+         ]
+        },
+        {
+         "route": [
+          {
+           "destination": {
+            "host": "web"
+           }
+          }
+         ]
+        }
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "unknown",
+      "namespace": "shop",
+      "uid": "vs-unknown",
+      "creationTimestamp": "2026-01-05T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "u"
+       ],
+       "http": [
+        {
+         "route": [
+          {
+           "destination": {
+            "host": "nope"
+           }
+          },
+          {
+           "destination": {
+            "host": "httpbin.org"
+           }
+          }
+         ]
+        }
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "gw",
+      "namespace": "shop",
+      "uid": "vs-gw",
+      "creationTimestamp": "2026-01-05T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "g"
+       ],
+       "gateways": [
+        "istio-ingress/gone",
+        "istio-ingress/public"
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "star",
+      "namespace": "shop",
+      "uid": "vs-star",
+      "creationTimestamp": "2026-01-05T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        " * "
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "first",
+      "namespace": "pay",
+      "uid": "vs-first",
+      "creationTimestamp": "2026-01-01T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "billing"
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "second",
+      "namespace": "pay",
+      "uid": "vs-second",
+      "creationTimestamp": "2026-01-02T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "billing",
+        "billing.pay"
+       ]
+      }
+     }
+    }
+   ],
+   "partial": [
+    {
+     "kind": {
+      "group": "networking.istio.io",
+      "kind": "VirtualService"
+     },
+     "unreadNamespaces": [
+      "istio-ingress"
+     ]
+    },
+    {
+     "kind": {
+      "group": "networking.istio.io",
+      "kind": "Gateway"
+     },
+     "unreadNamespaces": [
+      "istio-ingress"
+     ]
+    }
+   ]
+  },
+  "answer": []
  }
 ]

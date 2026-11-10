@@ -28,7 +28,9 @@ extension.
   it, gateways that do not exist, the host `*` on the sidecars, VirtualServices shadowed by an older one, and TLS modes
   that STRICT mTLS refuses — the built-in checks, run by the extension's WebAssembly backend as problem judges
   (ADR-0168), with the built-in messages, every finding its own problem; "Only problems" on VirtualServices and
-  DestinationRules, and the section's counter counting the problems, as the built-in did.
+  DestinationRules, and the section's counter counting the problems, as the built-in did. A namespace whose lists could not be read
+  is unknown, a finding is told only when everything it rests on was read, and agents get one where they may read
+  that.
 - Installing asks for consent to read the Istio and Linkerd kinds, Services, Pods, Namespaces, Deployments,
   StatefulSets, DaemonSets and ReplicaSets, to judge VirtualServices and DestinationRules in problem rules, and to give
   its backend, for them, the `spec` of VirtualServices, DestinationRules, ServiceEntries and PeerAuthentications and

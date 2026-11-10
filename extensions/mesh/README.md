@@ -142,7 +142,8 @@ details sections, with the panel's "Expand all" and "Collapse all"); a closed bl
 
 As the built-in category "Service mesh": the extension's own category **Service mesh** (`ext:sextant.mesh`), on by
 default, counted on the Istio section. Agents get it only where the user lets them (Settings → AI agents (MCP),
-ADR-0146), and a judged problem only where they may read every kind its judge read. Every rule notifies at once (no
+ADR-0146), and a problem only where they may read what its finding rests on (its `needs`: the lists it was judged
+against and the objects its message names), as the built-in agents' view kept a mesh finding. Every rule notifies at once (no
 grace), with the built-in reason and message (`{{fact:…}}` fills in the host, subset, rule, gateway, mode, policy or
 other VirtualService).
 
@@ -152,12 +153,17 @@ below turns every finding of its reason into a problem of its own (`each`), in t
 serves no DestinationRules, ServiceEntries or PeerAuthentications, a judge gets none of them (an optional read), as the
 built-in took such a kind as empty; without Gateways no gateway is judged missing, as the built-in did.
 
+Every read is partial: Sextant sends what it could read and says in which namespaces it could not (the user's
+accessible namespaces, the extension's grant, lists the API server refused). A namespace whose Services could not be
+read is unknown, as the built-in store took a refused namespace's Services, and a finding is told only when everything
+it rests on was read — the built-in agents' rule. Where everything was read, the findings are the built-in's.
+
 | Judge | Reads | Tells |
 |---|---|---|
-| `hosts` | VirtualService (`.spec`), DestinationRule (`.spec`, optional), ServiceEntry (`.spec`, optional), Service (`.metadata.name`) | MissingDestinationRule, MissingSubset, UnknownHost |
-| `gateways` | VirtualService (`.spec`), Gateway (`.metadata.name`) | MissingGateway |
-| `virtual-services` | VirtualService (`.spec`) | ConflictingVirtualService, InvalidVirtualService |
-| `tls` | DestinationRule (`.spec`), PeerAuthentication (`.spec`, optional) | TlsConflict |
+| `hosts` | VirtualService (`.spec`, partial), DestinationRule (`.spec`, optional, partial), ServiceEntry (`.spec`, optional, partial), Service (`.metadata.name`, partial) | MissingDestinationRule, MissingSubset, UnknownHost |
+| `gateways` | VirtualService (`.spec`, partial), Gateway (`.metadata.name`, partial) | MissingGateway |
+| `virtual-services` | VirtualService (`.spec`, partial) | ConflictingVirtualService, InvalidVirtualService |
+| `tls` | DestinationRule (`.spec`, partial), PeerAuthentication (`.spec`, optional, partial) | TlsConflict |
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
@@ -169,9 +175,9 @@ built-in took such a kind as empty; without Gateways no gateway is judged missin
 | `conflicting-virtual-service` | VirtualService | `ConflictingVirtualService`: an older VirtualService has the same host on the sidecars (Istio uses only the oldest), or on the same Gateway with a catch-all route, and their exports overlap; every finding; judge `virtual-services` | none | no |
 | `tls-conflict` | DestinationRule | `TlsConflict`: a DestinationRule without a workload selector sets a TLS mode other than `ISTIO_MUTUAL` toward a Service whose namespace's (else the mesh's) PeerAuthentication is `STRICT`; every finding; judge `tls` | none | no |
 
-While a judge cannot tell — one of the lists it reads is loading, failed, capped, not served or not readable in a
-namespace, holds more than 5000 objects or 8 MiB, its call failed, or it answered more than 10 000 facts — its rules give
-no problem: "cannot tell", never a problem.
+While a judge cannot tell — one of the lists it reads is loading, failed, capped or not served (and not optional),
+holds more than 5000 objects or 8 MiB, its call failed, or it answered more than 10 000 facts — its rules give no
+problem: "cannot tell", never a problem.
 
 ## Metrics
 
@@ -201,15 +207,11 @@ None: the extension is read-only and has no action of its own (ADR-0089).
   deciding, an action Istio rejects being "unknown") are the built-in engines', ported unchanged, and say so where they
   matter.
 - Where it differs from the former built-in views, because the extension API cannot say it yet:
-  - **Problems a judge cannot tell** where the built-in could: a kind it reads that is served but not readable in a
-    namespace (Services of one namespace refused) makes the whole judge silent, where the built-in took that
-    namespace's Services as unknown and judged the rest; more than 5000 objects of a kind, 8 MiB in all or 10 000
-    findings likewise, where the built-in watched without a cap. Closed by a judge read that tells the judge which
-    namespaces it could not read (`reads[].partial: true`, the namespaces given beside the objects), and accepted
-    caps otherwise.
-  - **Agents** get a judged problem only where they may read every kind its judge read (ADR-0168), where the
-    built-in's mesh findings were kept when everything they rested on was readable to the agent (`needs`). Closed by
-    a judge's fact naming what it rests on (`needs: [{kind, namespace, name?}]`, re-checked in Rust as refs are).
+  - **A finding resting on an unreadable list is not told**, also on the screen: the built-in screen judged a list the
+    API server refused in some namespaces as if it were whole (a gateway there could be called missing) and kept that
+    only from agents. Deliberate (ADR-0089, "unknown" over a guess); where every list was read, nothing differs.
+  - **Caps**: more than 5000 objects of a kind, 8 MiB in all or 10 000 findings make a judge unable to tell, where the
+    built-in watched without a cap (accepted limits of ADR-0168).
   - **Hosts of a Gateway** drop the part up to the last `/` (`|after:/`), the built-in up to the first; an Istio
     gateway host has one `/` at most, so they differ only on a host Istio refuses. Closed by `|after:` taking the
     first place with a flag, if ever needed.
@@ -254,10 +256,11 @@ npx vitest run --config sdk/vitest.config.ts ../extensions/mesh
   answer each finding as a fact `<reason>-<n>` with the built-in message's values.
 - `src/manifest.test.ts` judges the manifest's columns and problem rules with Sextant's own window engine
   (`src/extensions/columns.tsx`, `src/extensions/problemRules.ts`) and compares them with the built-in columns and
-  `meshProblems` over the whole configuration on the fixtures in `fixtures/` and variants of them (every reason,
+  `meshProblems` over the whole configuration (and the built-in agents' rule where namespaces are unreadable), run through
+  the backend's own `handle`, on the fixtures in `fixtures/` and variants of them (every reason,
   the cases the built-in store's 40 namespaces left unjudged, every finding of a reason, kinds not served), pinning
   each difference
-  above; `fixtures/judge-calls.json` holds judge calls on the fixtures with the answers the built component gave in
+  above; `fixtures/judge-calls.json` holds judge calls on the fixtures (with lists refused in a namespace too) and the answers the built component gave in
   Sextant's runtime (`cargo run -p sextant-ext-runtime --example run -- dist/backend.wasm problemJudge:<id> <params>`),
   which the tests check the judges still give; `views.test.ts`
   drives the details, the block and the page through the SDK's test host, as the built-in view's tests did.
