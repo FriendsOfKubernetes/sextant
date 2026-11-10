@@ -8,4 +8,9 @@ export type JudgeRead = { kind: KindPattern,
 /**
  * Field paths of the rules' grammar (`.spec.hosts`, `.spec.http[*].route[*].destination`).
  */
-paths: Array<string>, };
+paths: Array<string>, 
+/**
+ * A kind the cluster may not serve: then the judge gets none of its objects, instead of not telling at all (a
+ * served kind not read in full still cannot tell). A ServiceEntry where Istio's CRDs leave it out.
+ */
+optional?: boolean, };

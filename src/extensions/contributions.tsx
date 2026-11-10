@@ -177,8 +177,9 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
     if ((SIDEBAR_SECTIONS as readonly string[]).includes(badge.section) || getSectionBadge(badge.section)) continue;
     const rules = badge.rules;
     const forms = badge.label;
+    const count = badge.count ?? "objects";
     removers.push(
-      registerSectionBadge(badge.section, (clusterId) => useExtensionSectionCount(clusterId, allCategories, rules), {
+      registerSectionBadge(badge.section, (clusterId) => useExtensionSectionCount(clusterId, allCategories, rules, count), {
         tone: "danger",
         labelKey: "extensions:host.sectionBadge",
         ...(forms ? { label: (count: number) => pluralLabel(forms, count) } : {}),

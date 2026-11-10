@@ -108,6 +108,8 @@ export async function startTestHost(options: TestHostOptions = {}): Promise<Test
     },
     "ui.navigate": () => null,
     "ui.openDetails": () => null,
+    // No icons in the stand-in: `ui.button(…, {icon})` draws none.
+    "ui.icon": () => null,
   };
   const handlers = { ...defaults, ...options.handlers };
 

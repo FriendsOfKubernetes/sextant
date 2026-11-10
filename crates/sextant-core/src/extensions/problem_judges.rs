@@ -46,8 +46,9 @@ pub const METHOD_PREFIX: &str = "problemJudge:";
 pub const MAX_JUDGED_OBJECTS_PER_KIND: usize = 5000;
 /// The objects of one call, as JSON, at most.
 pub const MAX_JUDGE_PAYLOAD_BYTES: usize = 8 * 1024 * 1024;
-/// Facts of one answer at most; a longer answer is refused whole.
-pub const MAX_JUDGED_FACTS: usize = 2000;
+/// Facts of one answer at most; a longer answer is refused whole. 10 000 (2000 at first): a rule judged `each` tells
+/// one problem per fact, so an object may have several of one fact, and 5000 objects a kind may each have some.
+pub const MAX_JUDGED_FACTS: usize = 10_000;
 /// A fact's text is clipped to this many characters (as a rule's placeholder value).
 pub const MAX_FACT_VALUE_CHARS: usize = 1000;
 
@@ -71,6 +72,11 @@ pub struct JudgeRead {
     pub kind: KindPattern,
     /// Field paths of the rules' grammar (`.spec.hosts`, `.spec.http[*].route[*].destination`).
     pub paths: Vec<String>,
+    /// A kind the cluster may not serve: then the judge gets none of its objects, instead of not telling at all (a
+    /// served kind not read in full still cannot tell). A ServiceEntry where Istio's CRDs leave it out.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub optional: Option<bool>,
 }
 
 /// A fact a judge may answer about an object, and the texts it may give with it.
@@ -140,7 +146,7 @@ pub fn fact_placeholder(inner: &str) -> Option<&str> {
 /// The `(judge, fact)` pairs of the `judged` conditions in `condition`.
 pub fn judged_in(condition: &ProblemCondition) -> Vec<(&str, &str)> {
     match condition {
-        ProblemCondition::Judged { judge, fact } => vec![(judge.as_str(), fact.as_str())],
+        ProblemCondition::Judged { judge, fact, .. } => vec![(judge.as_str(), fact.as_str())],
         ProblemCondition::All { of } | ProblemCondition::Any { of } => {
             of.iter().flat_map(judged_in).collect()
         }
@@ -480,8 +486,9 @@ fn shown(text: &str) -> String {
 }
 
 /// What a judge answered, as Sextant keeps it: a list of at most [`MAX_JUDGED_FACTS`] facts, each about an object it
-/// was given, of a fact it declares, with only the texts that fact names (cleaned and clipped); one fact per object
-/// and fact id. Facts outside that are left out and counted (the second item).
+/// was given, of a fact it declares, with only the texts that fact names (cleaned and clipped); one fact per object,
+/// fact id and texts — the same fact of an object again with other texts is kept (a rule judged `each` tells each),
+/// the very same again is not. Facts outside that are left out and counted (the second item).
 pub fn read_answer(
     judge: &ProblemJudgeContribution,
     sent: &[JudgedObject],
@@ -511,9 +518,6 @@ pub fn read_answer(
             left_out += 1;
             continue;
         };
-        if !seen.insert((uid.to_owned(), fact.id.clone())) {
-            continue;
-        }
         let values: BTreeMap<String, String> = item
             .get("values")
             .and_then(Value::as_object)
@@ -527,6 +531,9 @@ pub fn read_answer(
                     .collect()
             })
             .unwrap_or_default();
+        if !seen.insert((uid.to_owned(), fact.id.clone(), values.clone())) {
+            continue;
+        }
         out.push(JudgedFact {
             uid: uid.to_owned(),
             fact: fact.id.clone(),

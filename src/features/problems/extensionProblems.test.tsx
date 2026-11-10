@@ -425,4 +425,70 @@ describe("problems of extensions", () => {
     await waitFor(() => expect(sent).toHaveLength(2));
     await waitFor(() => expect(result.current).toBe(0));
   });
+
+  it("tell a problem for each entry a judge gives, with an optional read not served sent as none (ADR-0168 amendment)", async () => {
+    const VS: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "networking.istio.io", version: "v1", kind: "VirtualService" }, plural: "virtualservices" };
+    wb.backend.on("cluster_kinds", () => [VS]);
+    wb.backend.on("extension_problem_scopes", () => [
+      { kind: { group: "networking.istio.io", kind: "VirtualService" }, namespaces: { type: "all" } },
+      { kind: { group: "networking.istio.io", kind: "ServiceEntry" }, namespaces: { type: "all" } },
+    ]);
+    const judge: ProblemJudgeContribution = {
+      id: "hosts",
+      reads: [
+        { kind: { group: "networking.istio.io", kind: "VirtualService" }, paths: [".spec.hosts"] },
+        // Not served by this cluster: no ServiceEntry CRD.
+        { kind: { group: "networking.istio.io", kind: "ServiceEntry" }, paths: [".spec.hosts"], optional: true },
+      ],
+      facts: [{ id: "unknown-host", values: ["host"] }],
+    };
+    let hosts = ["a", "b"];
+    const sent: JudgedObject[][] = [];
+    wb.backend.on("extension_problem_judge", (args) => {
+      const { objects } = args as { objects: JudgedObject[] };
+      sent.push(objects);
+      return hosts.map((host) => ({ uid: "u-vs", fact: "unknown-host", values: { host } }));
+    });
+    unregister = registerExtensionProblems(
+      "mesh-ext",
+      "Mesh",
+      [
+        {
+          id: "unknown-host",
+          title: "Unknown host",
+          kind: { group: "networking.istio.io", kind: "VirtualService" },
+          when: { type: "judged", judge: "hosts", fact: "unknown-host", each: true },
+          graceMinutes: 0,
+          notify: true,
+          toldThroughOwner: false,
+          message: "{{fact:host}} is not known",
+        },
+      ],
+      undefined,
+      [judge],
+    );
+    const { result } = renderHook(() => ({
+      problems: useExtensionSectionCount("c1", ["ext:mesh-ext"], [], "problems"),
+      objects: useExtensionSectionCount("c1", ["ext:mesh-ext"], []),
+    }));
+    const vs = { apiVersion: "networking.istio.io/v1", kind: "VirtualService", metadata: { name: "web", namespace: "shop", uid: "u-vs" }, spec: { hosts: ["x"] } };
+    const vsWatch = await watchOf(wb, "VirtualService");
+    emitSnapshot(wb, vsWatch, [vs]);
+    await waitFor(() => expect(result.current.problems).toBe(2));
+    expect(result.current.objects).toBe(1);
+    expect(sent[0]!.map((o) => o.kind)).toEqual(["VirtualService"]);
+    const source = () => getSource(sourceKey("c1", { category: "ext:mesh-ext", kind: VS.kindRef, fieldSelector: null }))?.problems ?? [];
+    const first = source();
+    expect(first.map((p) => p.message)).toEqual(["a is not known", "b is not known"]);
+    expect(new Set(first.map((p) => p.key)).size).toBe(2);
+    expect(new Set(first.map((p) => p.notifyKey)).size).toBe(2);
+    const keyOfB = first[1]!.key;
+    // `a` goes, `c` comes: `b` keeps its identity.
+    hosts = ["b", "c"];
+    setJudgesClock(() => Date.now() + 60_000);
+    emitDelta(wb, vsWatch, [{ ...vs, spec: { hosts: ["y"] } }]);
+    await waitFor(() => expect(source().map((p) => p.message)).toEqual(["b is not known", "c is not known"]));
+    expect(source()[0]!.key).toBe(keyOfB);
+    expect(source()[1]!.key).not.toBe(first[0]!.key);
+  });
 });

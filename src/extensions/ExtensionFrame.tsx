@@ -8,6 +8,7 @@ import { useSettings, type ClusterId, type ExtensionInfo, type ObjectRef } from 
 import { useAppStore } from "../app/store";
 import { Button } from "../components";
 import { clampExpiryDays } from "../features/problems/model";
+import { useClusterKindsVersion } from "../resources/useKinds";
 import { createBridge, type Bridge } from "./bridge";
 import {
   frameUrl,
@@ -190,6 +191,8 @@ function FrameView({
   const [height, setHeight] = useState<number | null>(null);
   const { theme, tokens } = useFrameTheme();
   const certExpiryDays = clampExpiryDays(useSettings().settings?.notifications.certExpiryDays);
+  // Discovery of the frame's cluster (ADR-0167 amendment): a new context when the kinds it serves change.
+  const kindsVersion = useClusterKindsVersion(clusterId);
   const selectionKey = JSON.stringify(selection);
   const blocksKey = JSON.stringify(blocks?.choices ?? {});
   const setBlockOpen = useRef(blocks?.setOpen);
@@ -215,8 +218,9 @@ function FrameView({
       ...(uid !== null ? { uid } : {}),
       ...(blocks ? { blocks: JSON.parse(blocksKey) as Record<string, boolean> } : {}),
       certExpiryDays,
+      ...(kindsVersion !== undefined ? { kindsVersion } : {}),
     }),
-    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion, uid, blocksKey, blocks !== null, certExpiryDays],
+    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion, uid, blocksKey, blocks !== null, certExpiryDays, kindsVersion],
   );
   const services = info.manifest?.contributes.services ?? [];
   const latest = useRef({ context, name: info.name, autoHeight, onClose, onFailed, services, onHidden });

@@ -143,6 +143,7 @@ export const MANIFEST_SHAPES = {
     section: "required",
     rules: "optional",
     label: "optional",
+    count: "optional",
   }),
   ManifestMetricQuery: described<ManifestMetricQuery>(`${CONTRIBUTION}/metricQueries/items`, {
     id: "required",

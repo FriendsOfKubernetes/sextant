@@ -22,7 +22,7 @@ import {
 } from "../../api";
 import { compileRules, kindKeyOf, type RuleContext } from "../../extensions/problemRules";
 import { comparedPaths, factsOf, judgeAcross, judgedAcross, judgesOf, lookedUp, referrersOf, rowOf, selectedKinds, type AcrossTarget, type ReferrerRule } from "../../extensions/problemsAcross";
-import { judgedFact, judgeReads, observeJudge, type JudgeInput } from "../../extensions/problemJudges";
+import { judgedFact, judgedFacts, judgeReads, NOT_SERVED_ROWS, observeJudge, type JudgeInput } from "../../extensions/problemJudges";
 import { setExtensionDetector, setExtensionOptIn, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
 import { MAX_SOURCE_OBJECTS, type SourceDef } from "./sources";
 
@@ -310,16 +310,19 @@ export function extensionSourcesFor(
       }
     }
     // The judges' inputs (ADR-0168): each kind they read, with its source; a kind with no source here (not served,
-    // not readable) leaves the judge unable to tell.
+    // not readable) leaves the judge unable to tell — but an `optional` read the cluster does not serve is no objects
+    // (ADR-0168 amendment): a served kind without a source (not readable) still cannot tell.
     const judgeInputs = entry.judges.map((judge) => ({
       judge,
       inputs: judge.reads.map((read) => {
         const target = targets.find((t) => kindKeyOf(t) === kindKeyOf(read.kind));
-        return { read, target };
+        const notServed = !target && read.optional === true && !kinds.some((k) => kindKeyOf(k.kindRef) === kindKeyOf(read.kind));
+        return { read, target, notServed };
       }),
     }));
     const judges = {
       fact: (judge: string, fact: string, uid: string) => judgedFact(clusterId, entry.extensionId, judge, fact, uid),
+      entries: (judge: string, fact: string, uid: string) => judgedFacts(clusterId, entry.extensionId, judge, fact, uid),
       reads: (judge: string) => judgeReads(clusterId, entry.extensionId, judge),
     };
     for (const { def, key } of judged) {
@@ -343,7 +346,11 @@ export function extensionSourcesFor(
               clusterId,
               entry.extensionId,
               judge,
-              inputs.map(({ read, target }): JudgeInput => ({ read, kind: target?.kind ?? read.kind.kind, rows: target && context.target(target.def) })),
+              inputs.map(({ read, target, notServed }): JudgeInput =>
+                notServed
+                  ? { read, kind: read.kind.kind, rows: NOT_SERVED_ROWS, notServed: true }
+                  : { read, kind: target?.kind ?? read.kind.kind, rows: target && context.target(target.def) },
+              ),
             );
           }
           return judgeAcross(problems, context, { rules: entry.rules, targets, judges });

@@ -670,6 +670,9 @@ function checkRulePath(text, kind, segments, metadataOnly) {
   }
 }
 
+/** `checkRulePath` under another name, for a function with a `checkRulePath` of its own. */
+const checkRulePathOf = (text, kind, segments, metadataOnly) => checkRulePath(text, kind, segments, metadataOnly);
+
 function checkCondition(condition, kind, segments, depth, counter, inside = "top") {
   counter.count += 1;
   const [maxConditions, maxDepth] = conditionLimits(counter.api);
@@ -736,6 +739,8 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (counter.single) fail([...segments, "type"], "`judged` is decided by the extension's backend: only problem rules may use it");
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`judged\` needs sextantApi ${SOURCES_API} or later`);
     if (inside !== "top") fail([...segments, "type"], "`judged` cannot be inside `any` or `not`: a judge that cannot tell would make it unknown");
+    // One problem per fact (`each`): the rule's whole `when`, so nothing else decides which of them stand.
+    if (condition.each !== undefined && depth > 1) fail([...segments, "each"], "is only for a `judged` that is the rule's whole `when` (not inside `all`)");
     const judge = (counter.judges ?? []).find((j) => j.id === condition.judge);
     if (!judge) fail([...segments, "judge"], "is not the id of one of `contributes.problemJudges`");
     if (!judge.facts.some((f) => f.id === condition.fact)) fail([...segments, "fact"], `is not a fact of the judge \`${condition.judge}\``);
@@ -1115,8 +1120,17 @@ function checkProblemJudges(manifest) {
   });
 }
 
-/** Text with `{{<field path>}}` placeholders (`check_message`): each a path that reads no secret of `kind`. */
-function checkMessage(text, kind, segments, metadataOnly) {
+/**
+ * Text with `{{<field path>}}` placeholders (`check_message`): each a path that reads no secret of `kind`. With
+ * `item` (`check_item_message`, a list column's item text): `{{.}}` is the item itself and `$…` the object's path.
+ */
+function checkMessage(text, kind, segments, metadataOnly, item = false) {
+  // `check_placeholder_path`.
+  const checkRulePath = (path, kindOf, at, metadata) => {
+    const trimmed = path.trim();
+    if (item && trimmed === ".") return;
+    checkRulePathOf(item && trimmed.startsWith("$") ? trimmed.slice(1) : trimmed, kindOf, at, metadata);
+  };
   const found = placeholders(text);
   if (found === null) fail(segments, "has a `{{` without its `}}`");
   if (found.length > MAX_PLACEHOLDERS) fail(segments, `has at most ${MAX_PLACEHOLDERS} placeholders`);
@@ -1155,7 +1169,12 @@ function checkMessage(text, kind, segments, metadataOnly) {
       // `after:<marker>` (#404): the text after the marker's last place.
       const marker = filter.startsWith("after:") ? filter.slice(6) : undefined;
       const afterOk = marker !== undefined && Array.from(marker).length >= 1 && Array.from(marker).length <= 20 && !/[{}|"]/.test(marker) && !/\p{Cc}/u.test(marker);
-      if (!clipOk && !afterOk && !PLACEHOLDER_FILTERS.includes(filter)) fail(segments, `has a filter \`${filter}\`: one of ${PLACEHOLDER_FILTERS.join(", ")}, clip:<1 to 1000>, after:<marker>`);
+      // `fqdn:<path>`: a short name completed with the namespace at the path, as Kubernetes' DNS names a Service.
+      if (filter.startsWith("fqdn:")) {
+        checkRulePath(filter.slice(5), kind, segments, metadataOnly);
+        continue;
+      }
+      if (!clipOk && !afterOk && !PLACEHOLDER_FILTERS.includes(filter)) fail(segments, `has a filter \`${filter}\`: one of ${PLACEHOLDER_FILTERS.join(", ")}, clip:<1 to 1000>, after:<marker>, fqdn:<namespace path>`);
     }
     for (const one of added) checkRulePath(one.trim(), kind, segments, metadataOnly);
   }
@@ -1198,7 +1217,7 @@ export function splitOutsideQuotes(field, sep) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft"];
+const PLACEHOLDER_FILTERS = ["lower", "firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft"];
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
 
@@ -1301,6 +1320,7 @@ function checkSectionBadges(manifest) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "label"], `needs sextantApi ${WINDOW_API} or later`);
       checkLabelForms(badge.label, [...here, "label"]);
     }
+    if (badge.count !== undefined && manifest.sextantApi < WINDOW_API) fail([...here, "count"], `needs sextantApi ${WINDOW_API} or later`);
     (badge.rules ?? []).forEach((rule, j) => {
       if (!rules.some((r) => r.id === rule)) fail([...here, "rules", j], "is not the id of one of `contributes.problems`");
     });
@@ -1896,6 +1916,47 @@ function checkSeparator(sep, segments) {
 /** `MAX_ITEM_CASES` (#404). */
 const MAX_ITEM_CASES = 10;
 
+/** A list format (`is_list`): `list` or `firstPlus`. */
+const isList = (format) => format === "list" || format === "firstPlus";
+
+/** The paths an object condition reads, nested ones included (`condition_paths`). */
+export function conditionPaths(condition) {
+  const out = [];
+  const visit = (c) => {
+    if (c === null || typeof c !== "object") return;
+    for (const [key, value] of Object.entries(c)) {
+      if ((key === "path" || key === "otherPath") && typeof value === "string") out.push(value);
+      else if (key === "addPaths" && Array.isArray(value)) out.push(...value.filter((v) => typeof v === "string"));
+      else if (key === "of") (Array.isArray(value) ? value : [value]).forEach(visit);
+    }
+  };
+  visit(condition);
+  return out;
+}
+
+/** An item case's condition as `check_item_condition` checks it: a path `.` (the item itself) read as a harmless one. */
+function itemCondition(condition) {
+  const map = (c) => {
+    if (c === null || typeof c !== "object" || Array.isArray(c)) return c;
+    const out = { ...c };
+    for (const key of ["path", "otherPath"]) if (typeof out[key] === "string" && out[key].trim() === ".") out[key] = ".metadata.name";
+    if (Array.isArray(out.addPaths)) out.addPaths = out.addPaths.map((p) => (typeof p === "string" && p.trim() === "." ? ".metadata.name" : p));
+    if (Array.isArray(out.of)) out.of = out.of.map(map);
+    else if (out.of !== undefined) out.of = map(out.of);
+    return out;
+  };
+  return map(condition);
+}
+
+/** `reads_item_itself`: an item case that reads the item only as `.` and the object only through `$` paths. */
+function readsItemItself(c) {
+  const texts = (placeholders(c.text) ?? []).every((inner) => {
+    const [field = "", ...filters] = inner.split("|");
+    return filters.every((f) => !f.trim().startsWith("fqdn:") || f.trim().slice(5).trim().startsWith("$")) && (field.trim() === "." || field.trim().startsWith("$"));
+  });
+  return texts && conditionPaths(c.when).every((p) => p.trim() === "." || p.trim().startsWith("$"));
+}
+
 const COLUMN_FIELDS = ["sorted", "separator", "items", "filterBy", "joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
 
 function checkColumns(manifest) {
@@ -1912,7 +1973,8 @@ function checkColumns(manifest) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "filterBy"], `needs sextantApi ${WINDOW_API} or later`);
       if (column.filterBy !== "value" || (column.format ?? "text") !== "text" || (column.cases ?? []).length === 0) fail([...here, "filterBy"], 'is `"value"` on a text column with `cases`');
     }
-    if (column.sorted !== undefined && column.format !== "list") fail([...here, "sorted"], 'goes with `format: "list"`');
+    if (column.sorted !== undefined && !isList(column.format)) fail([...here, "sorted"], 'goes with `format: "list"` or `"firstPlus"`');
+    if (column.format === "firstPlus" && manifest.sextantApi < WINDOW_API) fail([...here, "format"], `\`firstPlus\` needs sextantApi ${WINDOW_API} or later`);
     if (column.separator !== undefined) {
       if (!["list", "entries"].includes(column.format) || column.items?.separator !== undefined) fail([...here, "separator"], 'goes with `format: "list"` or `"entries"` (with `items`, theirs)');
       checkSeparator(column.separator, [...here, "separator"]);
@@ -1920,19 +1982,23 @@ function checkColumns(manifest) {
     if (column.items !== undefined) {
       const at = [...here, "items"];
       if (manifest.sextantApi < WINDOW_API) fail(at, `needs sextantApi ${WINDOW_API} or later`);
-      if (column.format !== "list") fail(at, 'goes with `format: "list"`');
-      if ((column.paths ?? []).some((p) => p.includes("*"))) fail([...at, "cases"], "go with `paths` that name the lists themselves, without `*`");
+      if (!isList(column.format)) fail(at, 'goes with `format: "list"` or `"firstPlus"`');
+      if (column.format === "firstPlus" && column.items.separator !== undefined) fail([...at, "separator"], 'goes with `format: "list"`: `firstPlus` shows one item');
+      // Cases that read an item only as itself (`.`) and the object (`$…`) may go with `*` (`reads_item_itself`).
+      if ((column.paths ?? []).some((p) => p.includes("*")) && !column.items.cases.every(readsItemItself)) {
+        fail([...at, "cases"], "go with `paths` that name the lists themselves, without `*`, unless they read the item only as `.`");
+      }
       if (column.items.cases.length === 0 || column.items.cases.length > MAX_ITEM_CASES) fail([...at, "cases"], `has 1 to ${MAX_ITEM_CASES} cases`);
       column.items.cases.forEach((c, j) => {
-        checkObjectCondition(c.when, [column.kind], [...at, "cases", j, "when"], manifest.sextantApi);
+        checkObjectCondition(itemCondition(c.when), [column.kind], [...at, "cases", j, "when"], manifest.sextantApi);
         if (c.text.trim() === "" || Array.from(c.text).length > 200) fail([...at, "cases", j, "text"], "is a text of 1 to 200 characters");
-        checkMessage(c.text, column.kind, [...at, "cases", j, "text"], false);
+        checkMessage(c.text, column.kind, [...at, "cases", j, "text"], false, true);
       });
       if (column.items.separator !== undefined) checkSeparator(column.items.separator, [...at, "separator"]);
     }
     if (column.joinPaths !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "joinPaths"], `needs sextantApi ${WINDOW_API} or later`);
-      if (column.format !== "list") fail([...here, "joinPaths"], 'goes with `format: "list"`');
+      if (!isList(column.format)) fail([...here, "joinPaths"], 'goes with `format: "list"` or `"firstPlus"`');
     }
     if (column.afterColumn !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "afterColumn"], `needs sextantApi ${WINDOW_API} or later`);

@@ -59,6 +59,8 @@
 //   ui.close()                            → null       closes the frame's window (action) or dock tab
 //   ui.revealSection({id})                → null       details only: opens, scrolls to and focuses a section of the same
 //                                                      panel, Sextant's by id or the extension's own (since 0.30)
+//   ui.icon({name})                       → {svg}|null one of Sextant's icons (`src/components/icons.tsx`) as SVG markup,
+//                                                      `null` for a name outside the set (since 0.30): `ui.button`'s icon
 //   resources.unwatch({stream})           → null       stops a watch opened by `resources.watch`
 //   clusters.list, kinds, resources.list/get/getMany/watch/apply/patch/delete, logs.tail, secret.value, metrics.query,
 //   storage.get/set/remove ({session: true}: in memory for this run, since 0.30), exec.run
@@ -209,6 +211,11 @@ export interface HostContext {
    * frame warns as the problems do (since Sextant 0.30); a new context comes when it changes.
    */
   certExpiryDays?: number;
+  /**
+   * A number that moves on whenever the kinds the frame's cluster serves change (a CRD installed or removed while the
+   * frame shows; since Sextant 0.30): read `kinds` again when it does. Left out before the cluster's discovery came.
+   */
+  kindsVersion?: number;
 }
 
 /** Methods the backend serves (`METHODS` in `src-tauri/src/extensions/api.rs`). */
@@ -257,6 +264,7 @@ export const LOCAL_METHODS: readonly string[] = [
   "ui.revealSection",
   "ui.signIn",
   "ui.setHidden",
+  "ui.icon",
 ];
 
 /** Longest `ui.notify` text shown. */

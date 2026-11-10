@@ -14,7 +14,7 @@ import { getPage, registerPage, unregisterPage } from "../layout/pages";
 import { getSectionBadge } from "../layout/sectionBadges";
 import { i18n } from "../i18n";
 import { getResourceDef } from "../resources/registry";
-import { loadClusterKinds, resetClusterKinds } from "../resources/useKinds";
+import { loadClusterKinds, refreshClusterKinds, resetClusterKinds } from "../resources/useKinds";
 import { registerExtension, syncExtensions, unregisterExtension } from "./contributions";
 import { ExtensionSettingsFrame } from "./ExtensionFrame";
 import { resetExtensionsStore } from "./store";
@@ -217,6 +217,32 @@ describe("extension frames", () => {
     expect(posted).toHaveLength(before);
     act(() => useAppStore.getState().setNamespaces("c1", null));
     expect(posted.at(-1)).toMatchObject({ type: "context", context: { namespaces: null } });
+  });
+
+  it("send a new context when the kinds the cluster serves change (ADR-0167 amendment)", async () => {
+    let kinds = [{ kindRef: { group: "", version: "v1", kind: "Pod" }, plural: "pods", namespaced: true, verbs: ["list"], printerColumns: [] }];
+    backend.on("cluster_kinds", () => kinds);
+    resetClusterKinds();
+    await renderShell();
+    act(() => useAppStore.getState().setView("c1", "ext:demo.widgets:board"));
+    const frame = frameOf(screen.getByRole("main"));
+    const posted: { context?: { kindsVersion?: number } }[] = [];
+    vi.spyOn(frame.contentWindow!, "postMessage").mockImplementation((m: unknown) => void posted.push(m as never));
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", { data: { sextant: 1, doc: DOC, type: "ready" }, source: frame.contentWindow }));
+    });
+    act(() => loadClusterKinds("c1"));
+    await waitFor(() => expect(posted.at(-1)?.context?.kindsVersion).toBe(1));
+    const first = posted.at(-1)!.context!.kindsVersion!;
+    // The same kinds again: no new version.
+    const count = posted.length;
+    act(() => refreshClusterKinds("c1", { keep: true }));
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    expect(posted.slice(count).filter((m) => m.context !== undefined).map((m) => m.context!.kindsVersion)).not.toContain(first + 1);
+    // A CRD came: the version moves on.
+    kinds = [...kinds, { kindRef: { group: "networking.istio.io", version: "v1", kind: "ServiceEntry" }, plural: "serviceentries", namespaced: true, verbs: ["list"], printerColumns: [] }];
+    act(() => refreshClusterKinds("c1", { keep: true }));
+    await waitFor(() => expect(posted.at(-1)?.context?.kindsVersion).toBe(first + 1));
   });
 
   it("show the namespace filter the page follows above its frame", async () => {

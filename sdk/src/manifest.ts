@@ -126,7 +126,8 @@ export interface ManifestAction {
 }
 
 /** How a computed column shows its value (sextantApi 4). */
-export type ColumnFormat = "text" | "number" | "age" | "duration" | "ratio" | "list" | "count" | "sum" | "entries" | "cpu" | "bytes" | "dateTime";
+/** `firstPlus` (since Sextant 0.30): a list's first item and `+N` for the rest, every item on a line of the hover. */
+export type ColumnFormat = "text" | "number" | "age" | "duration" | "ratio" | "list" | "count" | "sum" | "entries" | "cpu" | "bytes" | "dateTime" | "firstPlus";
 /** The tone of a value, drawn as Sextant's status text. */
 export type ColumnTone = "ok" | "warning" | "error" | "neutral" | "muted";
 
@@ -178,15 +179,20 @@ export interface ManifestColumn {
   filterBy?: "value";
   /**
    * A `list` column's items each written by the first case that holds on the item (paths read from the item), joined by
-   * `separator`, else the UI language's list (since Sextant 0.30). The column's `paths` name the lists, without `*`.
+   * `separator`, else the UI language's list (since Sextant 0.30). The column's `paths` name the lists, without `*`
+   * unless the cases read the item only as itself: `{{.}}` is a text item, `{{$.metadata.namespace}}` reads the object
+   * (also in a `firstPlus` column).
    */
   /** What joins a `list` or `entries` column's texts instead of the UI language's list (since Sextant 0.30). */
   separator?: string;
   items?: { cases: { when: ProblemCondition; text: string }[]; separator?: string };
   /** A `list` column's items in the UI language's order (since Sextant 0.30). */
   sorted?: boolean;
-  /** A `list` column of every path's items in order, each once, not the first path's (since Sextant 0.30). */
-  joinPaths?: boolean;
+  /**
+   * A `list` (or `firstPlus`) column of every path's items in order, each once, not the first path's (since Sextant
+   * 0.30); `"keep"` keeps the repeats.
+   */
+  joinPaths?: boolean | "keep";
   /** Its width as Sextant's own columns give it: `<n>px` or `minmax(<n>px, <m>fr)` (since Sextant 0.30). */
   width?: string;
   /**
@@ -415,7 +421,12 @@ export interface ManifestAgentTool {
 export interface ManifestProblemJudge {
   id: string;
   /** The kinds it reads (1 to 10, never Secrets) and, of each, 1 to 40 field paths that read no secret. */
-  reads: Array<{ kind: KindPattern; paths: string[] }>;
+  reads: Array<{
+    kind: KindPattern;
+    paths: string[];
+    /** The cluster may not serve the kind: the judge then gets none of its objects instead of not telling. */
+    optional?: boolean;
+  }>;
   /** The facts it may answer (1 to 20), each with up to 5 names of texts a message shows as `{{fact:<name>}}`. */
   facts: Array<{ id: string; values?: string[] }>;
 }
@@ -498,6 +509,8 @@ export interface ManifestSectionBadge {
    * `{{count}}`: "{{count}} workflows failed recently" (since Sextant 0.30).
    */
   label?: Record<string, string>;
+  /** What it counts: `objects` with a problem, each once (the default), or the `problems` (since Sextant 0.30). */
+  count?: "objects" | "problems";
 }
 
 /** `sextant-extension.json` as written. */
@@ -582,7 +595,12 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
       problemCategories: (c.problemCategories ?? []).map((pc) => ({ id: pc.id, title: pc.title, optIn: pc.optIn ?? false })),
       ...(c.problemsTitle !== undefined ? { problemsTitle: c.problemsTitle } : {}),
-      sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [], ...(b.label ? { label: b.label } : {}) })),
+      sectionBadges: (c.sectionBadges ?? []).map((b) => ({
+        section: b.section,
+        rules: b.rules ?? [],
+        ...(b.label ? { label: b.label } : {}),
+        ...(b.count !== undefined ? { count: b.count } : {}),
+      })),
       commands: (c.commands ?? []).map((command) => ({ ...command, params: command.params ?? [], changes: command.changes ?? false })),
       kinds: (c.kinds ?? []).map((k) => ({ ...k, searchByDefault: k.searchByDefault ?? false, printerColumns: k.printerColumns ?? true })),
       sections: c.sections ?? [],

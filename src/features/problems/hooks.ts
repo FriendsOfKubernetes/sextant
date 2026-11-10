@@ -128,16 +128,23 @@ export function useProblemCount(clusterId: ClusterId): number {
 
 /**
  * The counter of an extension's own sidebar section (`contributes.sectionBadges`, ADR-0143): the objects with active
- * problems of the extension's category, of `rules` only when it names some (a problem's `group` is its rule's id).
+ * problems of the extension's category, of `rules` only when it names some (a problem's `group` is its rule's id);
+ * with `count: "problems"` (ADR-0167 amendment) the active problems themselves, as Sextant's own Istio counter.
  */
-export function useExtensionSectionCount(clusterId: ClusterId, all: readonly ProblemCategory[], rules: readonly string[]): number {
+export function useExtensionSectionCount(
+  clusterId: ClusterId,
+  all: readonly ProblemCategory[],
+  rules: readonly string[],
+  count: "objects" | "problems" = "objects",
+): number {
   // An opt-in category of the extension's own counts only while it is on (#410).
   const categories = useCategoriesOn(all);
   const active = useClusterProblems(clusterId, categories).active;
   // A problem about another object (a rule's `about`, #404) counts that object once: a ClusterPolicy, not each of its
   // DaemonSets.
   const counted = ({ object }: (typeof active)[number]) => `${object.kind.group}/${object.kind.kind}/${object.namespace ?? ""}/${object.name}`;
-  return new Set(active.filter((p) => rules.length === 0 || rules.includes(p.group ?? "")).map(counted)).size;
+  const named = active.filter((p) => rules.length === 0 || rules.includes(p.group ?? ""));
+  return count === "problems" ? new Set(named.map((p) => `${p.category}|${p.key}`)).size : new Set(named.map(counted)).size;
 }
 
 const EMPTY: readonly string[] = [];

@@ -68,13 +68,17 @@ function timeOf(value: unknown): number | undefined {
   return Number.isNaN(t) ? undefined : t;
 }
 
-/** An item's text by the first of `cases` that holds on it, its placeholders filled from the item (#404). */
-function itemText(cases: readonly { when: ColumnCase["when"]; text: string }[], item: unknown, now: number): string | undefined {
-  if (item === null || typeof item !== "object" || Array.isArray(item)) return undefined;
+/**
+ * An item's text by the first of `cases` that holds on it, its placeholders filled from the item (#404): an object
+ * item's paths, or a text item as `{{.}}` (ADR-0167 amendment); `$…` reads `root`, the column's object.
+ */
+function itemText(cases: readonly { when: ColumnCase["when"]; text: string }[], item: unknown, now: number, root: KubeObject): string | undefined {
+  const scalar = typeof item === "string" || typeof item === "number" || typeof item === "boolean";
+  if (!scalar && (item === null || typeof item !== "object" || Array.isArray(item))) return undefined;
   const obj = item as KubeObject;
   for (const c of cases) {
     if (!holdsNow(c, obj, now)) continue;
-    const filled = c.text.includes("{{") ? fillTemplate(c.text, obj) : c.text;
+    const filled = c.text.includes("{{") ? fillTemplate(c.text, item, { root }) : c.text;
     if (filled !== null) return filled;
   }
   return undefined;
@@ -136,6 +140,35 @@ interface Cell {
   draw: ReactNode;
 }
 
+/**
+ * A `list` or `firstPlus` column's texts (#395, #404): a list of scalars, anything else in it left out; `undefined`
+ * without a list or with no text. `joinPaths` (#404): every path's items in order, each once (a listener declared and
+ * one only in the status), or every repeat with `"keep"`; `items` write each item by the first case holding on it.
+ */
+function listTexts(column: ColumnContribution, obj: KubeObject, value: unknown, now: number): string[] | undefined {
+  const lists = column.joinPaths !== undefined && column.joinPaths !== false ? (column.paths ?? []).map((p) => valueAt(obj, p)).filter(Array.isArray) : [value];
+  if (!lists.some(Array.isArray)) return undefined;
+  const all = lists.flatMap((list) => (Array.isArray(list) ? list : []));
+  // `items` (#404): each item written by the first case holding on it; an item none holds for is left out.
+  const texts = column.items
+    ? all.map((item) => itemText(column.items!.cases, item, now, obj))
+    : all.filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean").map((v) => String(v));
+  const cleaned = texts.map((v) => (v === undefined ? "" : (cleanText(v) ?? ""))).filter((v) => v !== "");
+  // Joined lists name each item once (a listener declared and in the status); one list keeps its repeats (#404), and
+  // so does `"keep"` (an identity written both ways, as the built-in Linkerd view).
+  const once = column.joinPaths === true ? [...new Set(cleaned)] : cleaned;
+  // `sorted` (#404): in the UI language's order, as a built-in view sorted a stream's tags.
+  const shown = column.sorted ? [...once].sort(new Intl.Collator(currentLanguage()).compare) : once;
+  return shown.length === 0 ? undefined : shown;
+}
+
+/** A `firstPlus` column's hover: every item on a line of its own, as Sextant's own hosts columns. */
+function firstPlusTooltip(column: ColumnContribution, obj: KubeObject, now: number): string | undefined {
+  const looked = column.lookup === undefined ? undefined : lookupValue(obj, column.lookup);
+  const shown = listTexts(column, obj, looked !== undefined && looked !== null ? looked : firstValue(obj, column.paths), now);
+  return shown && textOf(shown.join("\n"), MAX_TOOLTIP_CHARS);
+}
+
 function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell {
   const replaced = caseOf(column, obj, now);
   const tone = (value: string | undefined): Tone | undefined => {
@@ -186,23 +219,18 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
       const text = `${part}/${whole}`;
       return { sort: whole === 0 ? 0 : part / whole, text, draw: text };
     }
-    case "list": {
-      // A list of scalars joined in the UI language (#395); anything else in it is left out. `joinPaths` (#404): every
-      // path's items in order, each once (a listener declared and one only in the status).
-      const lists = column.joinPaths ? (column.paths ?? []).map((p) => valueAt(obj, p)).filter(Array.isArray) : [value];
-      if (!lists.some(Array.isArray)) return { sort: undefined, text: undefined, draw: null };
-      const all = lists.flatMap((list) => (Array.isArray(list) ? list : []));
-      // `items` (#404): each item written by the first case holding on it; an item none holds for is left out.
-      const texts = column.items
-        ? all.map((item) => itemText(column.items!.cases, item, now))
-        : all.filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean").map((v) => String(v));
-      const cleaned = texts.map((v) => (v === undefined ? "" : (cleanText(v) ?? ""))).filter((v) => v !== "");
-      // Joined lists name each item once (a listener declared and in the status); one list keeps its repeats (#404).
-      const once = column.joinPaths ? [...new Set(cleaned)] : cleaned;
-      // `sorted` (#404): in the UI language's order, as a built-in view sorted a stream's tags.
-      const shown = column.sorted ? [...once].sort(new Intl.Collator(currentLanguage()).compare) : once;
+    case "list":
+    case "firstPlus": {
+      const shown = listTexts(column, obj, value, now);
+      if (shown === undefined) return { sort: undefined, text: undefined, draw: null };
+      // `firstPlus` (ADR-0167 amendment): the first and "+N" for the rest, as Sextant's own hosts columns; sorted and
+      // searched by that text, every item on a line of the hover.
+      if (column.format === "firstPlus") {
+        const [first, ...rest] = shown;
+        const text = textOf(rest.length > 0 ? `${first} +${rest.length}` : first) ?? "";
+        return { sort: text, text, draw: text };
+      }
       const separator = column.items?.separator ?? column.separator;
-      if (shown.length === 0) return { sort: undefined, text: undefined, draw: null };
       const text = textOf(separator === undefined ? formatList(shown) : shown.join(separator)) ?? "";
       return { sort: text, text, draw: text };
     }
@@ -287,7 +315,10 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
     render: (obj, ctx) => {
       const cell = cellOf(column, obj, ctx.now);
       // A list's hover is its whole text when it has none of its own (#404): a cell may cut it.
-      const title = caseOf(column, obj, ctx.now)?.tooltip ?? tooltip(obj) ?? (format === "list" && column.tooltipPaths === undefined ? cell.text : undefined);
+      const title =
+        caseOf(column, obj, ctx.now)?.tooltip ??
+        tooltip(obj) ??
+        (column.tooltipPaths !== undefined ? undefined : format === "list" ? cell.text : format === "firstPlus" && cell.text !== undefined ? firstPlusTooltip(column, obj, ctx.now) : undefined);
       return title === undefined ? cell.draw : <span title={title}>{cell.draw}</span>;
     },
     searchText: (obj, ctx) => {

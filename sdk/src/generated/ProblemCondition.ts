@@ -45,4 +45,9 @@ namespacePath?: string,
  * With a list, the items that count (#404): a reference to another provider (`name@provider`) left out.
  * Reads only the item, no time. `sextantApi` 4.
  */
-itemWhen?: ProblemCondition, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, } | { "type": "relatedBy", kind: KindPattern, pairs: Array<FieldPair>, when: ProblemCondition, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, } | { "type": "judged", judge: string, fact: string, };
+itemWhen?: ProblemCondition, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, } | { "type": "relatedBy", kind: KindPattern, pairs: Array<FieldPair>, when: ProblemCondition, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, } | { "type": "judged", judge: string, fact: string, 
+/**
+ * One problem for each time the answer gives the fact for the object, each with its own texts and an
+ * identity of them (notifications, "Only new since"), not one for the first; only as a rule's whole `when`.
+ */
+each?: boolean, };

@@ -31,6 +31,22 @@ pub struct SectionBadgeContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub label: Option<std::collections::BTreeMap<String, String>>,
+    /// What it counts: the objects with a problem (`objects`, the default) or the problems themselves (`problems`: a
+    /// VirtualService with two missing gateways counts two, as Sextant's own Istio counter did); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub count: Option<SectionBadgeCount>,
+}
+
+/// What a section counter counts (`SectionBadgeContribution.count`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum SectionBadgeCount {
+    /// The objects with an active problem, each once.
+    Objects,
+    /// The active problems.
+    Problems,
 }
 
 /// The CLDR plural forms a counter's label may give.
@@ -107,6 +123,15 @@ pub(crate) fn check_section_badges(manifest: &ExtensionManifest) -> Result<(), M
                 ));
             }
             check_label_forms(label, &here.key("label"), true)?;
+        }
+        if badge.count.is_some() && manifest.sextant_api < super::contributions::WINDOW_API {
+            return Err(at(
+                &here.key("count"),
+                format!(
+                    "needs sextantApi {} or later",
+                    super::contributions::WINDOW_API
+                ),
+            ));
         }
         for (j, rule) in badge.rules.iter().enumerate() {
             if !manifest.contributes.problems.iter().any(|r| &r.id == rule) {

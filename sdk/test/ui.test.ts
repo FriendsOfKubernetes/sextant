@@ -2,6 +2,8 @@
 import axe from "axe-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { block, blockOpen, button, chips, empty, errorState, fields, loading, namespaceSelect, objectLink, status, table, tabs } from "../src/ui";
+import { setIconSource } from "../src/icons";
+import { startTestHost } from "../src/testing";
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -111,3 +113,40 @@ describe("the shared controls", () => {
     expect(await violations()).toEqual([]);
   });
 });
+
+describe("a button's icon (since Sextant 0.30)", () => {
+  afterEach(() => setIconSource(null));
+
+  it("draws the SVG Sextant gives for the name before the label, hidden from readers, asked once per name", async () => {
+    const asked: string[] = [];
+    setIconSource((name) => {
+      asked.push(name);
+      return Promise.resolve(name === "requestCheck" ? '<svg class="icon"><path d="M0 0"/></svg>' : null);
+    });
+    const check = button("Check a request…", () => undefined, { icon: "requestCheck" });
+    const again = button("Check", () => undefined, { icon: "requestCheck", variant: "primary" });
+    const unknown = button("Other", () => undefined, { icon: "nope" });
+    document.body.append(check, again, unknown);
+    await vi.waitFor(() => expect(check.querySelector(".sx-icon svg")).not.toBeNull());
+    expect(check.textContent).toBe("Check a request…");
+    expect(check.firstElementChild?.getAttribute("aria-hidden")).toBe("true");
+    expect(again.className).toBe("primary sx-button--icon");
+    await vi.waitFor(() => expect(unknown.querySelector(".sx-icon")).toBeNull());
+    expect(asked).toEqual(["requestCheck", "nope"]);
+    expect(await violations()).toEqual([]);
+  });
+
+  it("asks the window through the connected client, and draws none without one", async () => {
+    const plain = button("Plain", () => undefined, { icon: "requestCheck" });
+    await vi.waitFor(() => expect(plain.querySelector(".sx-icon")).toBeNull());
+    const host = await startTestHost({ handlers: { "ui.icon": ({ name }: { name: string }) => ({ svg: `<svg data-name="${name}"></svg>` }) } });
+    try {
+      expect(await host.sextant.ui.icon("logs")).toBe('<svg data-name="logs"></svg>');
+      const node = button("Logs", () => undefined, { icon: "logs" });
+      await vi.waitFor(() => expect(node.querySelector("svg")?.getAttribute("data-name")).toBe("logs"));
+    } finally {
+      host.sextant.disconnect();
+    }
+  });
+});
+

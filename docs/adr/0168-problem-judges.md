@@ -84,3 +84,19 @@ rules cannot say the same way.
   activity line, 10 s. A misbehaving judge can only fail to tell (and, like any failing backend, be paused after three
   traps or timeouts in a row until reloaded, ADR-0131).
 - `problemJudges` is part of `sextantApi` 4 (unreleased at the time): no new API number.
+
+## Amendment: optional reads, a larger fact budget, one problem per fact (the mesh extension)
+
+- A read may be `optional: true`: where the cluster does not serve that kind (no ServiceEntry or Gateway CRD) the judge
+  gets none of its objects instead of not telling at all, as the built-in Istio checks took an unserved kind as empty;
+  a served kind that is not readable, capped or not read in full still cannot tell, and an unserved optional kind is not
+  among what an agent must be able to read (`JudgeInput.notServed`, `NOT_SERVED_ROWS`, left out of `judgeReads`).
+- An answer holds at most 10 000 facts (`MAX_JUDGED_FACTS`, 2000 before): with one problem per fact, 5000 objects a kind
+  may each have several; still a cap, a longer answer is refused whole. `read_answer` keeps one fact per object, fact id
+  *and texts* (the same fact again with other texts is kept, the very same is not); a rule without `each` uses the first.
+- `{"type": "judged", "judge", "fact", "each": true}`, only as a rule's whole `when` (not inside `all`, refused by
+  `check_condition`/`checkCondition`): one problem per entry of the fact the answer gives for the object, each with its
+  own `{{fact:…}}` texts, its `key` and `notifyKey` suffixed by a stable id of its texts (`entryKey` → `entryId`), and
+  dated from when that entry first came (`JudgedEntry.since`, kept across a failed call, forgotten when an answer no
+  longer gives it) where the object says no time, so notifications and "Only new since" follow each finding; so one
+  rule per reason suffices and nothing past a fifth finding is lost (`eachJudged` in `problemsAcross.ts`).

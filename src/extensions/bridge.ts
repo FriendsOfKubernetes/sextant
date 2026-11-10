@@ -19,6 +19,7 @@ import {
   type RequestId,
   type RequestMessage,
 } from "./protocol";
+import { iconSvg } from "./iconSvg";
 
 /** What the window does for `ui.*`; a handler throws (an `ApiError`) to answer with an error. */
 export interface BridgeUi {
@@ -176,6 +177,13 @@ export function createBridge(options: BridgeOptions): Bridge {
         return ui.signIn(request.params);
       case "ui.setHidden":
         return ui.setHidden(request.params);
+      case "ui.icon": {
+        // One of Sextant's icons as SVG (ADR-0167 amendment): `{svg}`, or `null` for a name outside the set.
+        const name = (request.params as { name?: unknown } | null | undefined)?.name;
+        if (typeof name !== "string" || name === "") throw new ProtocolFailure("invalid", "ui.icon needs {name}: an icon name of Sextant's");
+        const svg = iconSvg(name);
+        return svg === null ? null : { svg };
+      }
       case "resources.unwatch": {
         const stream = (request.params as { stream?: unknown } | null | undefined)?.stream;
         if (typeof stream !== "string" && typeof stream !== "number") {

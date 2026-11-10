@@ -124,6 +124,19 @@ describe("extension message bridge", () => {
     expect(backend.calls.filter((c) => c.cmd.startsWith("extension_"))).toEqual([]);
   });
 
+  it("answers ui.icon with the SVG of one of Sextant's icons, and nothing for any other name (ADR-0167 amendment)", async () => {
+    send({ sextant: 1, doc: DOC_A, id: 1, method: "ui.icon", params: { name: "requestCheck" } });
+    send({ sextant: 1, doc: DOC_A, id: 2, method: "ui.icon", params: { name: "no-such-icon" } });
+    send({ sextant: 1, doc: DOC_A, id: 3, method: "ui.icon", params: {} });
+    await postedCount(3);
+    const answer = posted[0] as { id: number; result: { svg: string } };
+    expect(answer.id).toBe(1);
+    expect(answer.result.svg).toMatch(/^<svg[^>]*aria-hidden="true"/);
+    expect(posted[1]).toEqual({ sextant: 1, doc: DOC_A, id: 2, result: null });
+    expect(posted[2]).toMatchObject({ id: 3, error: { code: "invalid" } });
+    expect(backend.calls.filter((c) => c.cmd.startsWith("extension_"))).toEqual([]);
+  });
+
   it("forwards API methods to the backend as the extension and returns the result", async () => {
     backend.on("extension_call", () => ({ items: [{ metadata: { name: "web-1" } }] }));
     send({ sextant: 1, doc: DOC_A, id: 7, method: "resources.list", params: { clusterId: "c1", kind: { kind: "Pod" } } });

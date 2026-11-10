@@ -48,6 +48,11 @@ export interface HostContext {
    * frame warns as the problems do (since Sextant 0.30); a new context comes when it changes.
    */
   certExpiryDays?: number;
+  /**
+   * A number that moves on whenever the kinds the frame's cluster serves change (a CRD installed or removed while the
+   * frame shows; since Sextant 0.30): read `kinds` again when it does. Left out before the cluster's discovery came.
+   */
+  kindsVersion?: number;
 }
 
 export interface ProtocolError {
@@ -117,6 +122,7 @@ export const LOCAL_METHODS = [
   "ui.revealSection",
   "ui.signIn",
   "ui.setHidden",
+  "ui.icon",
 ] as const;
 
 export type MethodName = (typeof REMOTE_METHODS)[number] | (typeof LOCAL_METHODS)[number];

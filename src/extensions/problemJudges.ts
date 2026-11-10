@@ -13,9 +13,16 @@
 //   `MAX_JUDGE_PAYLOAD_CHARS`, and after a failed or timed-out call: an earlier answer is never kept past a failure;
 // - an answer replaces the one before; while a newer call waits, the last answer stands.
 //
-//   observeJudge(clusterId, extensionId, judge, reads)   // from the judged sources' `judge`, on every look
-//   judgedFact(clusterId, extensionId, judgeId, fact, uid) // the fact's texts, or null
-//   onJudgeAnswer(listener)                                // the store looks again at the extension's sources
+// - a kind a read marks `optional` that the cluster does not serve is sent as no objects (the input's `notServed`);
+//   one that is served but not read in full still cannot tell;
+// - an answer may give a fact of an object several times, each with its own texts (a rule judged `each` tells one
+//   problem per entry, ADR-0168 amendment); each entry is remembered with the time it first came, kept across a
+//   failed call, so a problem it tells keeps its age.
+//
+//   observeJudge(clusterId, extensionId, judge, reads)    // from the judged sources' `judge`, on every look
+//   judgedFact(clusterId, extensionId, judgeId, fact, uid)  // the fact's first texts, or null
+//   judgedFacts(clusterId, extensionId, judgeId, fact, uid) // every entry of the fact with its key and first time
+//   onJudgeAnswer(listener)                                 // the store looks again at the extension's sources
 import { api, type JudgedFact, type JudgedObject, type ProblemJudgeContribution } from "../api";
 import type { JudgedRows } from "../features/problems/sources";
 
@@ -42,6 +49,19 @@ export interface JudgeInput {
   /** `kind` as served (the source's). */
   kind: string;
   rows: JudgedRows | undefined;
+  /** An `optional` read the cluster does not serve: no objects, nothing read (so nothing an agent must be able to read). */
+  notServed?: boolean;
+}
+
+/** The rows of an `optional` read the cluster does not serve: read in full, and empty. */
+export const NOT_SERVED_ROWS: JudgedRows = Object.freeze({ status: "ready", rows: new Map(), truncated: false, namespaces: null }) as JudgedRows;
+
+/** One entry of a fact the judge gave an object: its texts, the key they make, and when it first came (ms). */
+export interface JudgedEntry {
+  values: Record<string, string>;
+  /** Stable while the texts are the same: what tells the problems of an `each` rule apart. */
+  key: string;
+  since: number;
 }
 
 interface Runner {
@@ -57,8 +77,10 @@ interface Runner {
   inFlight: boolean;
   lastCallAt: number;
   timer?: ReturnType<typeof setTimeout>;
-  /** uid → fact → texts; `null`: cannot tell. */
-  answer: Map<string, Map<string, Record<string, string>>> | null;
+  /** uid → fact → its entries in the answer's order; `null`: cannot tell. */
+  answer: Map<string, Map<string, JudgedEntry[]>> | null;
+  /** `uid|fact|key` → when that entry first came; kept across a failure, pruned by the next answer. */
+  firstSeen: Map<string, number>;
   /** What the judge read: each kind and the namespaces its source watched. */
   reads: { group: string; kind: string; namespaces: readonly string[] | null }[];
 }
@@ -138,7 +160,7 @@ function send(runner: Runner): void {
       if (!current()) return;
       // The lists changed so that it cannot tell meanwhile: this answer is of objects no longer in hand.
       if (runner.key === undefined) return;
-      runner.answer = indexFacts(facts);
+      runner.answer = indexFacts(facts, runner.firstSeen, clock());
       told(runner);
       schedule(runner);
     },
@@ -159,13 +181,32 @@ function send(runner: Runner): void {
   );
 }
 
-function indexFacts(facts: readonly JudgedFact[]): Map<string, Map<string, Record<string, string>>> {
-  const out = new Map<string, Map<string, Record<string, string>>>();
+/** The key of a fact entry's texts: the same texts, the same key, whatever order they were given in. */
+export function entryKey(values: Readonly<Record<string, string>>): string {
+  return JSON.stringify(Object.keys(values).sort().map((name) => [name, values[name]]));
+}
+
+function indexFacts(facts: readonly JudgedFact[], firstSeen: Map<string, number>, now: number): Map<string, Map<string, JudgedEntry[]>> {
+  const out = new Map<string, Map<string, JudgedEntry[]>>();
+  const seen = new Map<string, number>();
   for (const { uid, fact, values } of facts) {
-    const of = out.get(uid) ?? new Map<string, Record<string, string>>();
-    if (!of.has(fact)) of.set(fact, values ?? {});
+    const of = out.get(uid) ?? new Map<string, JudgedEntry[]>();
+    const entries = of.get(fact) ?? [];
+    const texts = values ?? {};
+    const key = entryKey(texts);
+    // Rust keeps one of each; the same again changes nothing.
+    if (!entries.some((e) => e.key === key)) {
+      const slot = `${uid}|${fact}|${key}`;
+      const since = firstSeen.get(slot) ?? now;
+      seen.set(slot, since);
+      entries.push({ values: texts, key, since });
+    }
+    of.set(fact, entries);
     out.set(uid, of);
   }
+  // What the answer no longer gives is forgotten: it comes back as new.
+  firstSeen.clear();
+  for (const [slot, since] of seen) firstSeen.set(slot, since);
   return out;
 }
 
@@ -178,7 +219,7 @@ export function observeJudge(clusterId: string, extensionId: string, judge: Prob
   const key = runnerKey(clusterId, extensionId, judge.id);
   let runner = runners.get(key);
   if (!runner) {
-    runner = { clusterId, extensionId, judgeId: judge.id, seen: [], seenStatus: "", inFlight: false, lastCallAt: -Infinity, answer: null, reads: [] };
+    runner = { clusterId, extensionId, judgeId: judge.id, seen: [], seenStatus: "", inFlight: false, lastCallAt: -Infinity, answer: null, firstSeen: new Map(), reads: [] };
     runners.set(key, runner);
   }
   const seen = inputs.map((i) => i.rows?.rows);
@@ -186,7 +227,10 @@ export function observeJudge(clusterId: string, extensionId: string, judge: Prob
   if (status === runner.seenStatus && seen.length === runner.seen.length && seen.every((rows, i) => rows === runner.seen[i])) return;
   runner.seen = seen;
   runner.seenStatus = status;
-  runner.reads = inputs.map(({ read, rows }) => ({ group: read.kind.group, kind: read.kind.kind, namespaces: rows?.namespaces ?? null }));
+  // A kind not served was not read: an agent need not be able to read it to be told what the judge decided.
+  runner.reads = inputs
+    .filter((i) => !i.notServed)
+    .map(({ read, rows }) => ({ group: read.kind.group, kind: read.kind.kind, namespaces: rows?.namespaces ?? null }));
   const objects = objectsOf(inputs);
   const text = objects && JSON.stringify(objects);
   if (!objects || !text || text.length > MAX_JUDGE_PAYLOAD_CHARS) {
@@ -199,16 +243,23 @@ export function observeJudge(clusterId: string, extensionId: string, judge: Prob
   if (objects.length === 0) {
     runner.waiting = undefined;
     runner.answer = new Map();
+    runner.firstSeen.clear();
     return;
   }
   runner.waiting = { objects, key: text };
   schedule(runner);
 }
 
-/** The texts of `fact` the judge's latest answer gives for the object `uid`; `null` when it gives none or cannot tell. */
+/** The texts of `fact` the judge's latest answer gives for the object `uid` first; `null` when it gives none or cannot tell. */
 export function judgedFact(clusterId: string, extensionId: string, judgeId: string, fact: string, uid: string): Record<string, string> | null {
+  return judgedFacts(clusterId, extensionId, judgeId, fact, uid)?.[0]?.values ?? null;
+}
+
+/** Every entry of `fact` the judge's latest answer gives for the object `uid`, in its order; `null` when none or it cannot tell. */
+export function judgedFacts(clusterId: string, extensionId: string, judgeId: string, fact: string, uid: string): readonly JudgedEntry[] | null {
   const runner = runners.get(runnerKey(clusterId, extensionId, judgeId));
-  return runner?.answer?.get(uid)?.get(fact) ?? null;
+  const entries = runner?.answer?.get(uid)?.get(fact);
+  return entries && entries.length > 0 ? entries : null;
 }
 
 /** What the judge read in the cluster: each kind and the namespaces its source watched (`null`: every one). */

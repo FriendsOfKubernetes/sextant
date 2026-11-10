@@ -429,9 +429,9 @@
                 "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/fieldPath" }
               },
               "format": {
-                "description": "How the value is shown, sorted and filtered: `text` (default), `number`, `age` (a time), `duration` (from the time to `endPaths` or now), `ratio` (`value/totalPaths`; with the whole there, a missing value is 0, as Kubernetes leaves zero counts out).",
+                "description": "How the value is shown, sorted and filtered: `text` (default), `number`, `age` (a time), `duration` (from the time to `endPaths` or now), `ratio` (`value/totalPaths`; with the whole there, a missing value is 0, as Kubernetes leaves zero counts out), `firstPlus` (a list's first item and `+N` for the rest, every item on a line of its hover).",
                 "type": "string",
-                "enum": ["text", "number", "age", "duration", "ratio", "list", "count", "sum", "entries", "cpu", "bytes", "dateTime"]
+                "enum": ["text", "number", "age", "duration", "ratio", "list", "count", "sum", "entries", "cpu", "bytes", "dateTime", "firstPlus"]
               },
               "endPaths": {
                 "description": "`duration`: the end time, the first with a value; now without one.",
@@ -490,7 +490,7 @@
                       "required": ["when", "text"],
                       "properties": {
                         "when": { "$ref": "#/$defs/problemCondition" },
-                        "text": { "description": "Text with `{{<field path>}}` placeholders read from the item.", "type": "string", "minLength": 1, "maxLength": 200, "format": "non-blank", "pattern": "\\S" }
+                        "text": { "description": "Text with `{{<field path>}}` placeholders read from the item: `{{.}}` is the item itself (a text item), `{{$.metadata.namespace}}` reads the object.", "type": "string", "minLength": 1, "maxLength": 200, "format": "non-blank", "pattern": "\\S" }
                       }
                     }
                   },
@@ -498,7 +498,7 @@
                 }
               },
               "sorted": { "description": "A list column's items in the UI language's order (sextantApi 4).", "type": "boolean" },
-              "joinPaths": { "description": "A list column of every path's items in order, each once, not the first path's (sextantApi 4).", "type": "boolean" },
+              "joinPaths": { "description": "A list column of every path's items in order, each once (`true`) or every repeat kept (`\"keep\"`), not the first path's (sextantApi 4).", "oneOf": [{ "type": "boolean" }, { "type": "string", "enum": ["keep"] }] },
               "width": {
                 "description": "Its width: `<n>px`, or `minmax(<n>px, <m>fr)` (sextantApi 4).",
                 "type": "string",
@@ -756,7 +756,8 @@
                   "required": ["kind", "paths"],
                   "properties": {
                     "kind": { "$ref": "#/$defs/kind" },
-                    "paths": { "type": "array", "minItems": 1, "maxItems": 40, "items": { "$ref": "#/$defs/fieldPath" } }
+                    "paths": { "type": "array", "minItems": 1, "maxItems": 40, "items": { "$ref": "#/$defs/fieldPath" } },
+                    "optional": { "description": "The cluster may not serve the kind: the judge then gets none of its objects instead of not telling (a served kind not read in full still cannot tell).", "type": "boolean" }
                   }
                 }
               },
@@ -852,6 +853,11 @@
                 "type": "object",
                 "maxProperties": 6,
                 "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 80, "format": "non-blank", "pattern": "\\S" }
+              },
+              "count": {
+                "description": "What it counts: `objects` with an active problem, each once (the default), or the active `problems` themselves (sextantApi 4).",
+                "type": "string",
+                "enum": ["objects", "problems"]
               }
             }
           }
@@ -1375,7 +1381,8 @@
           "properties": {
             "type": { "const": "judged" },
             "judge": { "$ref": "#/$defs/contributionId" },
-            "fact": { "$ref": "#/$defs/contributionId" }
+            "fact": { "$ref": "#/$defs/contributionId" },
+            "each": { "description": "One problem for each time the answer gives the fact for the object, each with its own texts; only as the rule's whole `when` (not inside `all`).", "type": "boolean" }
           }
         },
         {

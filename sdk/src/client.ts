@@ -5,6 +5,7 @@
 // window but the parent, without `sextant: 1` or for another document are ignored. Calls get ids of their own and
 // answers are matched by id; a call without an answer in time fails with `timeout`. `resources.watch` updates arrive
 // under the id of the watch call, so the client listens before it sends the call.
+import { setIconSource } from "./icons";
 import type {
   ApplyParams,
   CallOptions,
@@ -249,6 +250,11 @@ export interface Sextant {
     signIn(params: { clusterId?: ClusterId; namespace: string; service: string }, options?: CallOptions): Promise<boolean>;
     /** A details section hides itself (title included) while it has nothing to show, and shows again (since 0.30). */
     setHidden(hidden: boolean, options?: CallOptions): Promise<void>;
+    /**
+     * One of Sextant's icons by name as SVG markup, `null` for a name Sextant does not have (since Sextant 0.30); what
+     * `ui.button(…, {icon})` of the UI kit draws.
+     */
+    icon(name: string, options?: CallOptions): Promise<string | null>;
   };
   /** Any method, by name. */
   call<M extends keyof Methods>(method: M, params: Methods[M]["params"], options?: CallOptions): Promise<Methods[M]["result"]>;
@@ -683,6 +689,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       setHidden: (hidden, o) => send<unknown>("ui.setHidden", { hidden }, o).then(() => undefined),
       setBlockOpen: (id, open, o) => send<unknown>("ui.setBlockOpen", { id, open }, o).then(() => undefined),
       revealSection: (id, o) => send<unknown>("ui.revealSection", { id }, o).then(() => undefined),
+      icon: (name, o) => send<{ svg?: unknown } | null>("ui.icon", { name }, o).then((r) => (r && typeof r.svg === "string" ? r.svg : null)),
       signIn: (params, o) =>
         onCluster<{ signedIn: boolean }>("ui.signIn", params, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.signedIn),
       close: (o) =>
@@ -746,6 +753,10 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       if (retry) clearTimeout(retry);
       connected = null;
       if (options.autoResize ?? AUTO_HEIGHT_VIEWS.has(value.context.view)) autoResize();
+      // The UI kit's buttons draw Sextant's icons through this connection (`ui.button(…, {icon})`).
+      const source = (name: string) => value.ui.icon(name);
+      setIconSource(source);
+      cleanups.push(() => setIconSource(null));
       resolve(value);
     };
   });

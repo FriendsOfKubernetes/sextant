@@ -162,6 +162,48 @@ fn what_a_judge_and_a_judged_rule_may_not_be() {
 }
 
 #[test]
+fn a_read_may_be_optional_and_a_rule_judged_each_is_its_whole_when() {
+    let mut optional = judge();
+    optional["reads"][1]["optional"] = json!(true);
+    let each =
+        json!({ "type": "judged", "judge": "routing", "fact": "unknown-host", "each": true });
+    let m = parsed(manifest_json(
+        json!([optional]),
+        json!([rule(each.clone(), "{{fact:host}} is not known")]),
+    ))
+    .unwrap();
+    assert_eq!(
+        m.contributes.problem_judges[0].reads[1].optional,
+        Some(true)
+    );
+    assert_eq!(m.contributes.problem_judges[0].reads[0].optional, None);
+    assert!(matches!(
+        m.contributes.problems[0].when,
+        ProblemCondition::Judged {
+            each: Some(true),
+            ..
+        }
+    ));
+    // Not beside other conditions: which of the facts stand would be decided by them.
+    assert_eq!(
+        refusal(manifest_json(
+            json!([judge()]),
+            json!([rule(
+                json!({ "type": "all", "of": [each, { "type": "exists", "path": ".spec" }] }),
+                "m"
+            )])
+        )),
+        "contributes.problems[0].when.of[0].each: is only for a `judged` that is the rule's whole `when` (not inside `all`)"
+    );
+    let mut bad = judge();
+    bad["reads"][1]["optional"] = json!("yes");
+    assert!(
+        refusal(manifest_json(json!([bad]), json!([rule(judged(), "m")])))
+            .starts_with("contributes.problemJudges[0].reads[1].optional")
+    );
+}
+
+#[test]
 fn the_rules_of_one_judge_belong_to_one_category() {
     let mut m = manifest_json(
         json!([judge()]),
@@ -271,7 +313,9 @@ fn an_answer_keeps_only_declared_facts_about_sent_objects() {
         json!([
             { "uid": "u1", "fact": "unknown-host", "values": { "host": "reviews\u{7}.shop", "extra": "no" } },
             { "uid": "u1", "fact": "unknown-host", "values": { "host": "second" } },
+            { "uid": "u1", "fact": "unknown-host", "values": { "host": "second", "extra": "again" } },
             { "uid": "u1", "fact": "conflict", "values": { "host": long } },
+            { "uid": "u1", "fact": "conflict" },
             { "uid": "u2", "fact": "conflict" },
             { "uid": "u1", "fact": "undeclared" },
             "not an object"
@@ -286,6 +330,12 @@ fn an_answer_keeps_only_declared_facts_about_sent_objects() {
                 uid: "u1".into(),
                 fact: "unknown-host".into(),
                 values: Some(BTreeMap::from([("host".into(), "reviews .shop".into())]))
+            },
+            // The same fact again with other texts is kept (a rule judged `each` tells it); the very same is not.
+            JudgedFact {
+                uid: "u1".into(),
+                fact: "unknown-host".into(),
+                values: Some(BTreeMap::from([("host".into(), "second".into())]))
             },
             JudgedFact {
                 uid: "u1".into(),

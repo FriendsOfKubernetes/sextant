@@ -28,9 +28,41 @@ const inflight = new Set<ClusterId>();
 const generations = new Map<ClusterId, number>();
 const listeners = new Set<() => void>();
 
+/** Per cluster: the kinds it serves as one text, and a number that moves on whenever that text changes. */
+const versions = new Map<ClusterId, { signature: string; version: number }>();
+
 function set(clusterId: ClusterId, value: ClusterKinds): void {
   cache.set(clusterId, value);
+  if (value.kinds) {
+    const signature = value.kinds
+      .map((k) => `${k.kindRef.group}/${k.kindRef.version}/${k.kindRef.kind}`)
+      .sort()
+      .join(",");
+    const known = versions.get(clusterId);
+    if (!known) versions.set(clusterId, { signature, version: 1 });
+    else if (known.signature !== signature) versions.set(clusterId, { signature, version: known.version + 1 });
+  }
   for (const fn of listeners) fn();
+}
+
+/**
+ * A number that moves on whenever the kinds the cluster serves change (a CRD installed or removed while connected):
+ * an extension's frame reads `kinds` again when its context's `kindsVersion` moves. `undefined` before discovery came.
+ */
+export function clusterKindsVersion(clusterId: ClusterId | null): number | undefined {
+  return clusterId ? versions.get(clusterId)?.version : undefined;
+}
+
+/** `clusterKindsVersion` that re-renders when it moves; it never loads discovery itself. */
+export function useClusterKindsVersion(clusterId: ClusterId | null): number | undefined {
+  return useSyncExternalStore(
+    (fn) => {
+      listeners.add(fn);
+      return () => listeners.delete(fn);
+    },
+    () => clusterKindsVersion(clusterId),
+    () => undefined,
+  );
 }
 
 /** Loads (once) the kinds the cluster serves. `refreshClusterKinds` reloads them (the clusters store calls it on
@@ -91,6 +123,7 @@ export function resetClusterKinds(): void {
   }
   crdWatches.clear();
   knownCrds.clear();
+  versions.clear();
   forgetCrdPrinterColumns();
   for (const fn of listeners) fn();
 }

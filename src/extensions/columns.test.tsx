@@ -194,4 +194,72 @@ describe("an extension's computed column", () => {
     );
     expect(col.value!({ metadata: { name: "a" }, status: { phase: "Progressing", reason: "AllCatalogSourcesHealthy" } } as unknown as KubeObject)).toBe("AllCatalogSourcesHealthy");
   });
+
+  it("show a list's first item and how many more, every item on a line of the hover, as the built-in hosts columns", () => {
+    const vs = { metadata: { name: "a", namespace: "shop" }, spec: { hosts: ["a.example.com", "b.example.com", "c"] } } as unknown as KubeObject;
+    const hosts = computedColumn("x", column({ paths: [".spec.hosts"], format: "firstPlus" }));
+    expect(hosts.searchText!(vs, ctx)).toBe("a.example.com +2");
+    expect(hosts.value(vs)).toBe("a.example.com +2");
+    expect(hosts.filter).toMatchObject({ type: "string" });
+    const { container } = render(<>{hosts.render!(vs, ctx)}</>);
+    expect(container.textContent).toBe("a.example.com +2");
+    expect(container.querySelector("span[title]")!.getAttribute("title")).toBe("a.example.com\nb.example.com\nc");
+    const one = { metadata: { name: "b" }, spec: { hosts: ["only"] } } as unknown as KubeObject;
+    expect(hosts.searchText!(one, ctx)).toBe("only");
+    expect(hosts.searchText!({ metadata: { name: "c" } } as KubeObject, ctx)).toBeFalsy();
+  });
+
+  it("write text items as themselves and with the object's fields, in lower case and completed as a Service's name", () => {
+    const vs = { metadata: { name: "a", namespace: "shop" }, spec: { gateways: ["mesh", "edge/public", "internal"] } } as unknown as KubeObject;
+    const gateways = computedColumn(
+      "x",
+      column({
+        paths: [".spec.gateways"],
+        format: "list",
+        items: {
+          cases: [
+            { when: { type: "equals", path: ".", value: "mesh" }, text: "mesh" },
+            { when: { type: "contains", path: ".", values: ["/"], ignoreCase: false }, text: "{{.}}" },
+            { when: { type: "exists", path: "." }, text: "{{$.metadata.namespace}}/{{.}}" },
+          ],
+          separator: ", ",
+        },
+      }),
+    );
+    expect(gateways.searchText!(vs, ctx)).toBe("mesh, edge/public, shop/internal");
+    const se = { metadata: { name: "e", namespace: "pay" }, spec: { hosts: ["Ledger", "api.example.com", "*"] } } as unknown as KubeObject;
+    const seHosts = computedColumn(
+      "x",
+      column({ paths: [".spec.hosts"], format: "firstPlus", items: { cases: [{ when: { type: "exists", path: "." }, text: "{{.|lower|fqdn:$.metadata.namespace}}" }] } }),
+    );
+    expect(seHosts.searchText!(se, ctx)).toBe("ledger.pay.svc.cluster.local +2");
+    const { container } = render(<>{seHosts.render!(se, ctx)}</>);
+    expect(container.querySelector("span[title]")!.getAttribute("title")).toBe("ledger.pay.svc.cluster.local\napi.example.com\n*");
+  });
+
+  it("name each host of a Gateway once after its namespace, and keep the repeats with joinPaths keep", () => {
+    const gw = {
+      metadata: { name: "g", namespace: "edge" },
+      spec: { servers: [{ hosts: ["shop/Web.example.com", "api.example.com"] }, { hosts: ["*/web.example.com", "x.example.com"] }] },
+    } as unknown as KubeObject;
+    const hosts = computedColumn(
+      "x",
+      column({
+        paths: [".spec.servers[*].hosts[*]"],
+        format: "firstPlus",
+        joinPaths: true,
+        items: {
+          cases: [
+            { when: { type: "contains", path: ".", values: ["/"], ignoreCase: false }, text: "{{.|after:/|lower}}" },
+            { when: { type: "exists", path: "." }, text: "{{.|lower}}" },
+          ],
+        },
+      }),
+    );
+    expect(hosts.searchText!(gw, ctx)).toBe("web.example.com +2");
+    const mtls = { metadata: { name: "m" }, spec: { identities: ["a", "b"], identityRefs: [{ name: "a" }] } } as unknown as KubeObject;
+    const paths = [".spec.identities", ".spec.identityRefs[*].name"];
+    expect(computedColumn("x", column({ paths, format: "list", joinPaths: "keep", separator: ", " })).searchText!(mtls, ctx)).toBe("a, b, a");
+    expect(computedColumn("x", column({ paths, format: "list", joinPaths: true, separator: ", " })).searchText!(mtls, ctx)).toBe("a, b");
+  });
 });

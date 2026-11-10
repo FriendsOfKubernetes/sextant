@@ -3,6 +3,7 @@ import type { ColumnCase } from "./ColumnCase";
 import type { ColumnFilterBy } from "./ColumnFilterBy";
 import type { ColumnFormat } from "./ColumnFormat";
 import type { ColumnItems } from "./ColumnItems";
+import type { ColumnJoin } from "./ColumnJoin";
 import type { ColumnLookup } from "./ColumnLookup";
 import type { ColumnTone } from "./ColumnTone";
 import type { KindPattern } from "./KindPattern";
@@ -71,9 +72,10 @@ separator?: string,
  */
 sorted?: boolean, 
 /**
- * A `list` column of every path's items in order, each once (#404), not the first path's; `sextantApi` 4.
+ * A `list` (or `firstPlus`) column of every path's items in order, each once (#404), not the first path's;
+ * `"keep"` keeps the repeats (an identity written both ways, as the built-in Linkerd view); `sextantApi` 4.
  */
-joinPaths?: boolean, 
+joinPaths?: ColumnJoin, 
 /**
  * Its width as Sextant's own columns give it (#403): `<n>px`, or `minmax(<n>px, <m>fr)`; `sextantApi` 4.
  */

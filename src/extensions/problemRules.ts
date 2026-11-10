@@ -46,13 +46,16 @@ export function sumOf(value: unknown): number | undefined {
 /** The key of a `related` condition's own `when` (#409): what a row of the named kind remembers of it. */
 export const factKey = (when: ProblemCondition): string => JSON.stringify(when);
 
-/** The value at a field path; `undefined` when the path does not parse or leads nowhere. */
-export function valueAt(obj: unknown, path: string): unknown {
+/**
+ * The value at a field path; `undefined` when the path does not parse or leads nowhere. In a list column's item
+ * (ADR-0167 amendment) `.` is the item itself and a path starting with `$` reads `root`, the object.
+ */
+export function valueAt(obj: unknown, path: string, root?: unknown): unknown {
   // A compared path may end in `|sum` (a list's numbers added) or `|count` (a list's items, a map's entries; #407).
   const bar = path.lastIndexOf("|");
   if (bar >= 0) {
     const filter = path.slice(bar + 1).trim();
-    const value = valueAt(obj, path.slice(0, bar));
+    const value = valueAt(obj, path.slice(0, bar), root);
     if (filter === "count") return Array.isArray(value) ? value.length : value !== null && typeof value === "object" ? Object.keys(value).length : undefined;
     if (filter === "sum") return sumOf(value);
     if (filter === "min" || filter === "max") return extremeOf(value, filter);
@@ -61,7 +64,10 @@ export function valueAt(obj: unknown, path: string): unknown {
     if (filter === "daysLeft") return daysLeftOf(value);
     return undefined;
   }
-  const steps = parseFieldPath(path.trim());
+  const trimmed = path.trim();
+  if (trimmed === ".") return obj;
+  if (trimmed.startsWith("$")) return valueAt(root ?? obj, trimmed.slice(1));
+  const steps = parseFieldPath(trimmed);
   return steps ? walk(obj, steps) : undefined;
 }
 
@@ -433,10 +439,10 @@ function sameScalar(value: unknown, expected: ProblemScalar): boolean {
  * `template` with each `{{path}}` replaced by the scalar value there (clipped); `null` when a placeholder has none
  * (an object, a list, nothing).
  */
-export function fillTemplate(template: string, obj: KubeObject, options: { emptyIsMissing?: boolean } = {}): string | null {
+export function fillTemplate(template: string, obj: unknown, options: { emptyIsMissing?: boolean; root?: unknown } = {}): string | null {
   let missing = false;
   const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, inner: string) => {
-    const shown = placeholderText(obj, inner);
+    const shown = placeholderText(obj, inner, options.root);
     if (shown === undefined || (options.emptyIsMissing && shown === "")) {
       missing = true;
       return "";
@@ -451,10 +457,16 @@ export function fillTemplate(template: string, obj: KubeObject, options: { empty
  * after its last `.` or `/`, `|list` a list's scalars joined in the UI language, `|count` a list's items or a map's
  * entries; `undefined` when there is nothing to show.
  */
-export function placeholderText(obj: KubeObject, inner: string): string | undefined {
+export function placeholderText(obj: unknown, inner: string, root?: unknown): string | undefined {
   // Up to two filters in a row (`|firstLine|clip:300`, #404): the first reads the value, `clip:<n>` cuts the text.
-  const [path = "", ...filters] = inner.split("|").map((part, i) => (i === 0 ? part : part.trim()));
+  const [path = "", ...rest] = inner.split("|").map((part, i) => (i === 0 ? part : part.trim()));
+  // `fqdn:<path>` (ADR-0167 amendment): a short name completed with the namespace at the path, after the other filter.
+  const fqdn = rest.find((f) => f.startsWith("fqdn:"))?.slice(5);
+  const filters = rest.filter((f) => !f.startsWith("fqdn:"));
   const filter = filters.find((f) => !f.startsWith("clip:") && !f.startsWith("after:"));
+  const valueAt = (from: unknown, p: string) => valueAtIn(from, p, root);
+  const clipped = (whole: string, list: readonly string[]) =>
+    clippedText(fqdn === undefined ? whole : fqdnOf(whole, valueAtIn(obj, fqdn, root)), list);
   // Paths tried in turn with `??` (#404): the first whose value is there and not an empty text.
   const tried = splitOutsideQuotes(path, "??");
   if (tried.length > 1) {
@@ -490,8 +502,20 @@ export function placeholderText(obj: KubeObject, inner: string): string | undefi
   return text === undefined ? undefined : clipped(text, filters);
 }
 
+/**
+ * A Service's short name completed as Kubernetes' DNS names it in `namespace` (`web` → `web.shop.svc.cluster.local`):
+ * a text without a dot that is not empty or `*`, trimmed; anything else, or without a namespace, as it is.
+ */
+export function fqdnOf(text: string, namespace: unknown): string {
+  const name = text.trim();
+  if (name === "" || name === "*" || name.includes(".") || typeof namespace !== "string" || namespace === "") return name;
+  return `${name}.${namespace}.svc.cluster.local`;
+}
+
+const valueAtIn = (obj: unknown, path: string, root: unknown) => valueAt(obj, path, root);
+
 /** `text` after an `after:<marker>`'s last place (#404) and cut by the shortest `clip:<n>`, with "…". */
-function clipped(whole: string, filters: readonly string[]): string | undefined {
+function clippedText(whole: string, filters: readonly string[]): string | undefined {
   const marker = filters.find((f) => f.startsWith("after:"))?.slice(6);
   const at = marker === undefined ? -1 : whole.lastIndexOf(marker);
   if (marker !== undefined && at < 0) return undefined;
@@ -605,6 +629,8 @@ function filteredText(value: unknown, filter: string | undefined): string | unde
   }
   if (!isScalar(value)) return undefined;
   const text = String(value);
+  // In lower case (ADR-0167 amendment): an Istio host as Istio compares it.
+  if (filter === "lower") return text.toLowerCase();
   // The first line that is not blank, trimmed (#404), as the built-in views read a trace.
   if (filter === "firstLine") return text.split(/\r?\n/).map((l) => l.trim()).find((l) => l !== "") ?? "";
   if (filter === "lastSegment") return text.slice(Math.max(text.lastIndexOf("."), text.lastIndexOf("/")) + 1);

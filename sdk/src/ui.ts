@@ -3,6 +3,7 @@
 // like it did. Plain DOM: no framework. `addUiStyles()` puts the styles in once (`fields`, `block` and the rest call
 // it themselves); the extension's own styles come later and win.
 import type { ObjectRef } from "./generated/ObjectRef";
+import { iconMarkup } from "./icons";
 
 /** The tone of a status word, as Sextant's tables and details colour it. */
 export type UiTone = "success" | "warning" | "danger" | "muted" | "neutral";
@@ -48,6 +49,10 @@ const UI_STYLES = `
 .sx-tab[aria-selected="true"] { color: var(--color-text); border-bottom-color: var(--color-accent); }
 .sx-loading { color: var(--color-text-muted); margin: 8px 0; }
 .sx-search { min-width: 12em; }
+.sx-button--icon { display: inline-flex; align-items: center; gap: 6px; }
+.sx-icon { display: inline-flex; flex: none; }
+.sx-icon:empty { display: none; }
+.sx-icon svg { width: var(--icon-size, 16px); height: var(--icon-size, 16px); }
 `;
 
 /** Puts the kit's styles into the document once (first in `<head>`, so the extension's own come later and win). */
@@ -211,17 +216,32 @@ export function objectLink(sextant: DetailsOpener, ref: ObjectRef, text: string 
   return button;
 }
 
-/** A button in Sextant's style: `primary` for the main action, `danger` for one that removes or stops something. */
+/**
+ * A button in Sextant's style: `primary` for the main action, `danger` for one that removes or stops something.
+ * `icon` (since Sextant 0.30): one of Sextant's icons by name (`requestCheck`, `logs`, …), before the label as on
+ * Sextant's own buttons; Sextant draws it, and a name it does not have shows no icon. The label stays the button's
+ * text, so the icon is decoration (hidden from screen readers).
+ */
 export function button(
   label: string,
   onClick: () => void,
-  options: { variant?: "default" | "primary" | "danger"; disabled?: boolean; title?: string } = {},
+  options: { variant?: "default" | "primary" | "danger"; disabled?: boolean; title?: string; icon?: string } = {},
 ): HTMLButtonElement {
-  const node = el("button", options.variant && options.variant !== "default" ? options.variant : "", label);
+  const variant = options.variant && options.variant !== "default" ? options.variant : "";
+  const node = el("button", options.icon ? `${variant} sx-button--icon`.trim() : variant, label);
   node.type = "button";
   node.disabled = options.disabled === true;
   if (options.title) node.title = options.title;
   node.addEventListener("click", onClick);
+  if (options.icon) {
+    const slot = el("span", "sx-icon");
+    slot.setAttribute("aria-hidden", "true");
+    node.prepend(slot);
+    void iconMarkup(options.icon).then((svg) => {
+      if (svg === null) slot.remove();
+      else slot.innerHTML = svg;
+    });
+  }
   return node;
 }
 

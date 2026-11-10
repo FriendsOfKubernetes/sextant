@@ -418,10 +418,11 @@ pub struct ColumnContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub sorted: Option<bool>,
-    /// A `list` column of every path's items in order, each once (#404), not the first path's; `sextantApi` 4.
+    /// A `list` (or `firstPlus`) column of every path's items in order, each once (#404), not the first path's;
+    /// `"keep"` keeps the repeats (an identity written both ways, as the built-in Linkerd view); `sextantApi` 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
-    pub join_paths: Option<bool>,
+    pub join_paths: Option<ColumnJoin>,
     /// Its width as Sextant's own columns give it (#403): `<n>px`, or `minmax(<n>px, <m>fr)`; `sextantApi` 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -454,6 +455,23 @@ pub struct ColumnLookup {
     pub or_else: Option<super::problems::ProblemScalar>,
 }
 
+/// How a list column joins its paths' items (`joinPaths`): `true` each once, `"keep"` with every repeat.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(untagged)]
+#[ts(export)]
+pub enum ColumnJoin {
+    Flag(bool),
+    Mode(ColumnJoinMode),
+}
+
+/// `joinPaths: "keep"`: every path's items in order, repeats kept.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ColumnJoinMode {
+    Keep,
+}
+
 /// How a computed column shows its value.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -478,6 +496,10 @@ pub enum ColumnFormat {
     Bytes,
     /// A time as a date and time in the UI language, sorted by the time (#404).
     DateTime,
+    /// A list's first item and `+N` for the rest ("a.example.com +2"), every item on a line of its hover, sorted and
+    /// searched by the text shown, as Sextant's own hosts columns; read like `list` (`items`, `joinPaths`,
+    /// `sorted`); `sextantApi` 4.
+    FirstPlus,
 }
 
 /// The tone of a shown value.

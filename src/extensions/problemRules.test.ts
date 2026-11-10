@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
-import { compileRules, detectRule, evaluate, fillTemplate, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, placeholderText, renderMessage, sameValue, valueAt } from "./problemRules";
+import { compileRules, detectRule, evaluate, fillTemplate, fqdnOf, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, placeholderText, renderMessage, sameValue, valueAt } from "./problemRules";
 
 const cluster: KubeObject = {
   apiVersion: "ceph.rook.io/v1",
@@ -531,3 +531,24 @@ describe("sameValue and templates (#368, #369, #370)", () => {
     expect(detectRule(rule, { ...failing, status: {} })[0]!.reason).toBe("Not ready");
   });
 });
+
+describe("placeholders of item texts (ADR-0167 amendment)", () => {
+  it("read the item as `.`, the object as `$…`, in lower case and as a Service's full name", () => {
+    const vs = { metadata: { name: "web", namespace: "Shop" } } as unknown as KubeObject;
+    expect(placeholderText("Reviews", ".", vs)).toBe("Reviews");
+    expect(placeholderText("Reviews", ".|lower", vs)).toBe("reviews");
+    expect(placeholderText("Reviews", "$.metadata.name", vs)).toBe("web");
+    expect(fillTemplate("{{$.metadata.namespace}}/{{.}}", "gw", { root: vs })).toBe("Shop/gw");
+    expect(placeholderText("Reviews", ".|lower|fqdn:$.metadata.name", vs)).toBe("reviews.web.svc.cluster.local");
+    expect(placeholderText(vs, ".metadata.name|fqdn:.metadata.name")).toBe("web.web.svc.cluster.local");
+    // Without a namespace, with a dot, empty or `*`: as it is.
+    expect(fqdnOf(" ledger ", undefined)).toBe("ledger");
+    expect(fqdnOf("api.example.com", "pay")).toBe("api.example.com");
+    expect(fqdnOf("*", "pay")).toBe("*");
+    expect(fqdnOf("", "pay")).toBe("");
+    // A condition on a text item reads it as `.`.
+    expect(evaluate({ type: "contains", path: ".", values: ["/"], ignoreCase: false }, "edge/public" as unknown as KubeObject).holds).toBe(true);
+    expect(valueAt("x", ".")).toBe("x");
+  });
+});
+

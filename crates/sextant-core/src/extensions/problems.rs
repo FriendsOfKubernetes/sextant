@@ -7,6 +7,7 @@
 //! [`MAX_PLACEHOLDERS`] placeholders; conditions nest at most [`MAX_DEPTH`] deep, [`MAX_CONDITIONS`] per rule.
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use ts_rs::TS;
 
 use super::manifest::{ExtensionManifest, ManifestError};
@@ -549,6 +550,11 @@ pub enum ProblemCondition {
     Judged {
         judge: String,
         fact: String,
+        /// One problem for each time the answer gives the fact for the object, each with its own texts and an
+        /// identity of them (notifications, "Only new since"), not one for the first; only as a rule's whole `when`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        each: Option<bool>,
     },
 }
 
@@ -1427,7 +1433,7 @@ fn check_condition<'k>(
             }
             Ok(())
         }
-        ProblemCondition::Judged { judge, fact } => {
+        ProblemCondition::Judged { judge, fact, each } => {
             if checks.single {
                 return Err(at(
                     &path.key("type"),
@@ -1444,6 +1450,13 @@ fn check_condition<'k>(
                 return Err(at(
                     &path.key("type"),
                     "`judged` cannot be inside `any` or `not`: a judge that cannot tell would make it unknown",
+                ));
+            }
+            // One problem per fact (`each`): the rule's whole `when`, so nothing else decides which of them stand.
+            if each.is_some() && depth > 1 {
+                return Err(at(
+                    &path.key("each"),
+                    "is only for a `judged` that is the rule's whole `when` (not inside `all`)",
                 ));
             }
             super::problem_judges::check_judged(checks.judges, judge, fact, kind, path)
@@ -1698,6 +1711,46 @@ pub(crate) fn check_message(
     path: &JsonPath,
     metadata_only: bool,
 ) -> Result<(), ManifestError> {
+    check_placeholders(text, kind, path, metadata_only, false)
+}
+
+/// An item text of a list column (`items.cases[].text`): a message whose placeholders read the item, where `{{.}}` is
+/// the item itself (a text item) and a path starting with `$` reads the object (`{{$.metadata.namespace}}`).
+pub(crate) fn check_item_message(
+    text: &str,
+    kind: &KindPattern,
+    path: &JsonPath,
+) -> Result<(), ManifestError> {
+    check_placeholders(text, kind, path, false, true)
+}
+
+/// A placeholder's path checked as a field path; in an item text `.` (the item) passes and `$…` is the object's path.
+fn check_placeholder_path(
+    text: &str,
+    kind: &KindPattern,
+    path: &JsonPath,
+    metadata_only: bool,
+    item: bool,
+) -> Result<(), ManifestError> {
+    let text = text.trim();
+    if item && text == "." {
+        return Ok(());
+    }
+    let text = if item {
+        text.strip_prefix('$').unwrap_or(text)
+    } else {
+        text
+    };
+    check_rule_path(text, kind, path, metadata_only)
+}
+
+fn check_placeholders(
+    text: &str,
+    kind: &KindPattern,
+    path: &JsonPath,
+    metadata_only: bool,
+    item: bool,
+) -> Result<(), ManifestError> {
     let placeholders = placeholders(text).ok_or_else(|| at(path, "has a `{{` without its `}}`"))?;
     if placeholders.len() > MAX_PLACEHOLDERS {
         return Err(at(
@@ -1736,7 +1789,7 @@ pub(crate) fn check_message(
                 if i == last && placeholder_literal(one.trim()).is_some() {
                     continue;
                 }
-                check_rule_path(one.trim(), kind, path, metadata_only)?;
+                check_placeholder_path(one, kind, path, metadata_only, item)?;
             }
             continue;
         }
@@ -1757,7 +1810,7 @@ pub(crate) fn check_message(
                 ));
             }
             for one in multiplied {
-                check_rule_path(one.trim(), kind, path, metadata_only)?;
+                check_placeholder_path(one, kind, path, metadata_only, item)?;
             }
             continue;
         }
@@ -1782,21 +1835,90 @@ pub(crate) fn check_message(
                     && !marker.contains(['{', '}', '|', '"'])
                     && !marker.chars().any(char::is_control)
             });
+            // `fqdn:<path>`: a short name completed with the namespace at the path, as Kubernetes' DNS names a
+            // Service (`web` → `web.shop.svc.cluster.local`).
+            if let Some(namespace) = filter.strip_prefix("fqdn:") {
+                check_placeholder_path(namespace, kind, path, metadata_only, item)?;
+                continue;
+            }
             if !clip && !after && !PLACEHOLDER_FILTERS.contains(&filter) {
                 return Err(at(
                     path,
                     format!(
-                        "has a filter `{filter}`: one of {}, clip:<1 to 1000>, after:<marker>",
+                        "has a filter `{filter}`: one of {}, clip:<1 to 1000>, after:<marker>, fqdn:<namespace path>",
                         PLACEHOLDER_FILTERS.join(", ")
                     ),
                 ));
             }
         }
         for added in added {
-            check_rule_path(added.trim(), kind, path, metadata_only)?;
+            check_placeholder_path(added, kind, path, metadata_only, item)?;
         }
     }
     Ok(())
+}
+
+/// The paths an object condition reads, nested ones included (`path`, `otherPath`, `addPaths`), as written.
+pub(crate) fn condition_paths(condition: &ProblemCondition) -> Vec<String> {
+    fn visit(value: &Value, out: &mut Vec<String>) {
+        let Value::Object(fields) = value else {
+            return;
+        };
+        for (key, field) in fields {
+            match (key.as_str(), field) {
+                ("path" | "otherPath", Value::String(text)) => out.push(text.clone()),
+                ("addPaths", Value::Array(items)) => {
+                    out.extend(items.iter().filter_map(Value::as_str).map(str::to_owned))
+                }
+                ("of", Value::Array(items)) => items.iter().for_each(|item| visit(item, out)),
+                ("of", item) => visit(item, out),
+                _ => {}
+            }
+        }
+    }
+    let mut out = Vec::new();
+    if let Ok(value) = serde_json::to_value(condition) {
+        visit(&value, &mut out);
+    }
+    out
+}
+
+/// A condition on a list column's item (`items.cases[].when`): an object condition whose path `.` reads the item
+/// itself (a text item, ADR-0167 amendment); every other path is checked as the column's.
+pub(crate) fn check_item_condition(
+    condition: &ProblemCondition,
+    kind: &KindPattern,
+    path: &JsonPath,
+    api: u32,
+) -> Result<(), ManifestError> {
+    fn itself(value: &mut Value) {
+        let Value::Object(fields) = value else {
+            return;
+        };
+        for (key, field) in fields.iter_mut() {
+            match (key.as_str(), field) {
+                ("path" | "otherPath", Value::String(text)) if text.trim() == "." => {
+                    // Checked as a path that reads no secret: the item is the value of a checked list path.
+                    *text = ".metadata.name".to_owned();
+                }
+                ("addPaths", Value::Array(items)) => {
+                    for item in items.iter_mut() {
+                        if item.as_str().is_some_and(|t| t.trim() == ".") {
+                            *item = Value::String(".metadata.name".to_owned());
+                        }
+                    }
+                }
+                ("of", Value::Array(items)) => items.iter_mut().for_each(itself),
+                ("of", item) => itself(item),
+                _ => {}
+            }
+        }
+    }
+    let mut value = serde_json::to_value(condition).map_err(|_| at(path, "is not a condition"))?;
+    itself(&mut value);
+    let checked: ProblemCondition =
+        serde_json::from_value(value).map_err(|_| at(path, "is not a condition"))?;
+    check_object_condition(&checked, std::slice::from_ref(kind), path, api)
 }
 
 /// A placeholder's literal fallback (#404): a number, or a text in double quotes of at most 40 characters without
@@ -1880,8 +2002,9 @@ fn split_outside_quotes<'a>(field: &'a str, sep: &str) -> Vec<&'a str> {
     out
 }
 
-/// What may follow a placeholder's path after `|` (#404).
-pub const PLACEHOLDER_FILTERS: [&str; 14] = [
+/// What may follow a placeholder's path after `|` (#404); `lower` writes a text in lower case.
+pub const PLACEHOLDER_FILTERS: [&str; 15] = [
+    "lower",
     "firstLine",
     "lastSegment",
     "list",

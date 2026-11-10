@@ -3,7 +3,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { JudgedObject, ProblemJudgeContribution } from "../api";
 import { mockBackend, type MockBackend } from "../api/mockBackend";
 import type { JudgedRows } from "../features/problems/sources";
-import { forgetJudges, judgedFact, judgeReads, JUDGE_INTERVAL_MS, observeJudge, onJudgeAnswer, setJudgesClock, type JudgeInput } from "./problemJudges";
+import {
+  entryKey,
+  forgetJudges,
+  judgedFact,
+  judgedFacts,
+  judgeReads,
+  JUDGE_INTERVAL_MS,
+  NOT_SERVED_ROWS,
+  observeJudge,
+  onJudgeAnswer,
+  setJudgesClock,
+  type JudgeInput,
+} from "./problemJudges";
 
 const JUDGE: ProblemJudgeContribution = {
   id: "routing",
@@ -136,6 +148,48 @@ describe("problem judges", () => {
     expect(sent).toHaveLength(2);
     await settle(60_000);
     expect(sent).toHaveLength(3);
+  });
+
+  it("keep every entry of a fact with its own texts, each with the time it first came", async () => {
+    backend.on("extension_problem_judge", (args) => {
+      const objects = (args as { objects: JudgedObject[] }).objects;
+      sent.push(objects);
+      const hosts = objects[0]!.values[".spec.hosts"] as string[];
+      return hosts.map((host) => ({ uid: "u1", fact: "unknown-host", values: { host } }));
+    });
+    observeJudge("c1", "mesh", JUDGE, input(rows([["u1", row("web", ["a", "b"])]])));
+    await settle();
+    const first = judgedFacts("c1", "mesh", "routing", "unknown-host", "u1");
+    expect(first?.map((e) => e.values)).toEqual([{ host: "a" }, { host: "b" }]);
+    expect(first?.map((e) => e.since)).toEqual([now, now]);
+    expect(first?.[0]?.key).toBe(entryKey({ host: "a" }));
+    // The first entry is what a rule without `each` shows.
+    expect(judgedFact("c1", "mesh", "routing", "unknown-host", "u1")).toEqual({ host: "a" });
+    const began = now;
+    observeJudge("c1", "mesh", JUDGE, input(rows([["u1", row("web", ["b", "c"])]])));
+    await settle(JUDGE_INTERVAL_MS);
+    const second = judgedFacts("c1", "mesh", "routing", "unknown-host", "u1");
+    // `b` keeps its time; `c` is new; `a` is gone.
+    expect(second?.map((e) => [e.values.host, e.since])).toEqual([
+      ["b", began],
+      ["c", now],
+    ]);
+  });
+
+  it("send an optional read the cluster does not serve as no objects, and leave it out of what an agent must read", async () => {
+    const judge: ProblemJudgeContribution = {
+      ...JUDGE,
+      reads: [JUDGE.reads[0]!, { kind: { group: "networking.istio.io", kind: "ServiceEntry" }, paths: [".spec.hosts"], optional: true }],
+    };
+    observeJudge("c1", "mesh", judge, [
+      ...input(rows([["u1", row("web", ["reviews"])]])),
+      { read: judge.reads[1]!, kind: "ServiceEntry", rows: NOT_SERVED_ROWS, notServed: true },
+    ]);
+    await settle();
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.map((o) => o.kind)).toEqual(["VirtualService"]);
+    expect(judgedFact("c1", "mesh", "routing", "unknown-host", "u1")).toEqual({ host: "reviews" });
+    expect(judgeReads("c1", "mesh", "routing")).toEqual([{ group: "networking.istio.io", kind: "VirtualService", namespaces: ["shop"] }]);
   });
 
   it("forget a cluster's answers when its connection goes", async () => {

@@ -12,7 +12,7 @@
 //   judgeAcross(problems, context, { rules, targets })   // the problems that stand
 import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
 import { evaluate, FACT_MARK, factKey, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, MISSING_MARK, numberOf, selectorMatches, valueAt, type Lookup } from "./problemRules";
-import type { JudgedRowPart } from "./problemJudges";
+import type { JudgedEntry, JudgedRowPart } from "./problemJudges";
 import { cleanText } from "../resources/uri";
 import { formatList } from "../i18n/format";
 import type { Problem } from "../features/problems/model";
@@ -142,6 +142,8 @@ export interface AcrossRules {
   judges?: {
     fact(judge: string, fact: string, uid: string): Record<string, string> | null;
     reads(judge: string): NonNullable<NonNullable<Lookup["judged"]>["reads"]>;
+    /** Every entry of the fact for the object (a rule judged `each`, ADR-0168 amendment); `null` when none or cannot tell. */
+    entries?(judge: string, fact: string, uid: string): readonly JudgedEntry[] | null;
   };
 }
 
@@ -294,6 +296,8 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
     const names = p.lookups ? missingNames(p) : [];
     if (names === null) return [];
     if (rule.newestPer !== undefined && !isNewest(p, rule.newestPer)) return [];
+    // A rule judged `each` (ADR-0168 amendment): one problem per entry of the fact, told apart by its texts.
+    if (rule.when.type === "judged" && rule.when.each === true) return eachJudged(p, rule.when, judges);
     const facts = judgedFacts(p, judges);
     if (facts === null) return [];
     let out = p;
@@ -328,6 +332,47 @@ function judgedFacts(
     marked.push({ ...lookup, judged: { ...lookup.judged, reads: judges.reads(lookup.judged.judge) } });
   }
   return { judged: true, values, lookups: marked };
+}
+
+/**
+ * The problems of a rule judged `each`: one per entry the judge's latest answer gives of its fact for the object,
+ * each with its texts in the message, keyed (and notified) by them, and dated from when the entry first came where
+ * the object says no time; none when the judge gives none or cannot tell.
+ */
+function eachJudged(p: Problem, when: { judge: string; fact: string }, judges: AcrossRules["judges"]): Problem[] {
+  const entries = judges?.entries?.(when.judge, when.fact, p.uid) ?? null;
+  if (!judges || entries === null) return [];
+  const lookups = (p.lookups ?? []).map((lookup) =>
+    lookup.judged ? { ...lookup, judged: { ...lookup.judged, reads: judges.reads(lookup.judged.judge) } } : lookup,
+  );
+  return entries.map((entry) => {
+    const id = entryId(entry.key);
+    // Later than the object: it began when the judge first gave it.
+    const shift = p.since === undefined ? Math.max(0, entry.since - p.firstSeen) : 0;
+    return {
+      ...p,
+      key: `${p.key}|${id}`,
+      notifyKey: `${p.notifyKey}|${id}`,
+      lookups,
+      firstSeen: p.firstSeen + shift,
+      activeAt: p.activeAt + shift,
+      ...(p.message !== undefined ? { message: withFacts(p.message, entry.values) } : {}),
+    };
+  });
+}
+
+/** A short stable id of an entry's key (53-bit FNV/cyrb-style hash in base 36). */
+export function entryId(key: string): string {
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < key.length; i++) {
+    const c = key.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 }
 
 /** A message with each `{{fact:<name>}}` filled from `values` (cleaned and clipped; nothing for a missing one). */

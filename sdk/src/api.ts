@@ -281,6 +281,7 @@ export interface Methods {
   "ui.setBlockOpen": { params: { id: string; open: boolean }; result: null };
   "ui.revealSection": { params: { id: string }; result: null };
   "ui.setHidden": { params: { hidden: boolean }; result: null };
+  "ui.icon": { params: { name: string }; result: { svg: string } | null };
   "ui.signIn": { params: { clusterId?: ClusterId; namespace: string; service: string }; result: { signedIn: boolean } };
   "resources.unwatch": { params: { stream: string | number }; result: null };
   "clusters.list": { params: undefined; result: ClusterSummary[] };

@@ -288,3 +288,27 @@ scrolls to and focuses a section of the same panel, Sextant's by its id or the e
 extension's), as the built-in Linkerd block's "Show request metrics"; `storage.*` with `session: true` keeps data in
 memory for this run only, apart from the stored data, under the same 1 MB (a form kept while pages change, never across
 a restart). The built-in `revealRequestHealth` now opens a collapsed section too (it clicked the `h3`, not its button).
+
+## Amendment: what the mesh extension's views still lacked
+
+A section counter's `count: "problems"` (`sextantApi` 4; `"objects"`, the default, counts each object once) counts the
+active problems themselves, as Sextant's own Istio counter counted its findings (`useExtensionSectionCount`).
+The column format `firstPlus` reads a list as `list` does (`items`, `joinPaths`, `sorted`; no `separator`) and shows its
+first text and `+N` for the rest, sorted and searched by that text, its hover every text on a line of its own: the
+built-in hosts columns. A list column's item case may read a text item as itself, `{{.}}` and a condition's path `.`,
+and the column's object as `{{$.<path>}}` (texts only, not conditions; checked as the object's paths by
+`check_item_message`/`check_item_condition`); cases that read the item only so may go with `paths` holding `*`
+(`.spec.servers[*].hosts[*]`), whose item is then the value the checked path reads. Placeholders gain `|lower` and
+`|fqdn:<namespace path>`: a text without a dot, not empty or `*`, completed as Kubernetes' DNS names a Service
+(`web` → `web.<namespace>.svc.cluster.local`, trimmed) — exactly what the built-in ServiceEntry hosts did after lower
+case, so no Istio knowledge comes into the core; `{{.|lower|fqdn:$.metadata.namespace}}`. A Gateway's hosts are
+`{{.|after:/|lower}}` where a host has a `/` (`after:` takes the text after the last `/`, the built-in the first; an
+Istio host `namespace/dnsName` has one), each once by `joinPaths: true`. `joinPaths: "keep"` keeps every path's items
+with their repeats (a Linkerd identity written both ways, as the built-in did).
+The SDK's `ui.button(label, onClick, {icon})` draws one of Sextant's icons before the label, as Sextant's own buttons:
+the frame asks the window's local method `ui.icon({name})` → `{svg}` (the host's own markup of `src/components/icons.tsx`,
+rendered once per name by `iconSvg`) or `null` for a name outside the set, which then shows no icon; the connected
+client hands the kit its `ui.icon` (`sdk/src/icons.ts`).
+A frame's context carries `kindsVersion`, a number that moves on whenever the kinds its cluster serves change (a CRD
+installed or removed while it shows; `clusterKindsVersion`, compared by the served kinds, not by each discovery), so a
+frame reads `kinds` again then, as the built-in views followed discovery; left out before discovery came.

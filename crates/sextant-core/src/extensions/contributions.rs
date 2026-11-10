@@ -332,8 +332,11 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                     format!("needs sextantApi {WINDOW_API} or later"),
                 ));
             }
-            if column.format != Some(ColumnFormat::List) {
-                return Err(at(&here.key("joinPaths"), "goes with `format: \"list\"`"));
+            if !is_list(column.format) {
+                return Err(at(
+                    &here.key("joinPaths"),
+                    "goes with `format: \"list\"` or `\"firstPlus\"`",
+                ));
             }
         }
         if let Some(id) = &column.after_column {
@@ -431,8 +434,17 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 ));
             }
         }
-        if column.sorted.is_some() && column.format != Some(ColumnFormat::List) {
-            return Err(at(&here.key("sorted"), "goes with `format: \"list\"`"));
+        if column.sorted.is_some() && !is_list(column.format) {
+            return Err(at(
+                &here.key("sorted"),
+                "goes with `format: \"list\"` or `\"firstPlus\"`",
+            ));
+        }
+        if column.format == Some(ColumnFormat::FirstPlus) && manifest.sextant_api < WINDOW_API {
+            return Err(at(
+                &here.key("format"),
+                format!("`firstPlus` needs sextantApi {WINDOW_API} or later"),
+            ));
         }
         for (j, case) in column.cases.iter().flatten().enumerate() {
             check_object_condition(
@@ -625,15 +637,25 @@ fn check_items(
     if manifest.sextant_api < WINDOW_API {
         return Err(at(here, format!("needs sextantApi {WINDOW_API} or later")));
     }
-    if column.format != Some(ColumnFormat::List) {
-        return Err(at(here, "goes with `format: \"list\"`"));
+    if !is_list(column.format) {
+        return Err(at(here, "goes with `format: \"list\"` or `\"firstPlus\"`"));
+    }
+    if column.format == Some(ColumnFormat::FirstPlus) && items.separator.is_some() {
+        return Err(at(
+            &here.key("separator"),
+            "goes with `format: \"list\"`: `firstPlus` shows one item",
+        ));
     }
     // Each item's paths read from the item: the column's paths name the lists themselves. A list path that holds no
-    // secret holds none in its items, so the items' paths are checked as the column's text placeholders are.
-    if column.paths.iter().flatten().any(|p| p.contains('*')) {
+    // secret holds none in its items, so the items' paths are checked as the column's text placeholders are. Cases
+    // that read an item only as itself (`.`) and the object (`$.…`) may go with `*`: the item is then the value the
+    // checked path reads (`.spec.servers[*].hosts[*]`).
+    if column.paths.iter().flatten().any(|p| p.contains('*'))
+        && !items.cases.iter().all(reads_item_itself)
+    {
         return Err(at(
             &here.key("cases"),
-            "go with `paths` that name the lists themselves, without `*`",
+            "go with `paths` that name the lists themselves, without `*`, unless they read the item only as `.`",
         ));
     }
     if items.cases.is_empty() || items.cases.len() > MAX_ITEM_CASES {
@@ -644,21 +666,45 @@ fn check_items(
     }
     for (j, case) in items.cases.iter().enumerate() {
         let at_case = here.key("cases").index(j);
-        check_object_condition(
+        super::problems::check_item_condition(
             &case.when,
-            std::slice::from_ref(&column.kind),
+            &column.kind,
             &at_case.key("when"),
             manifest.sextant_api,
         )?;
         if case.text.trim().is_empty() || case.text.chars().count() > 200 {
             return Err(at(&at_case.key("text"), "is a text of 1 to 200 characters"));
         }
-        check_message(&case.text, &column.kind, &at_case.key("text"), false)?;
+        super::problems::check_item_message(&case.text, &column.kind, &at_case.key("text"))?;
     }
     if let Some(separator) = &items.separator {
         check_separator(separator, &here.key("separator"))?;
     }
     Ok(())
+}
+
+/// A list format: `list` or `firstPlus`.
+fn is_list(format: Option<ColumnFormat>) -> bool {
+    matches!(format, Some(ColumnFormat::List | ColumnFormat::FirstPlus))
+}
+
+/// An item case that reads the item only as itself (`.`) and the object only through `$` paths.
+fn reads_item_itself(case: &super::manifest::ColumnItemCase) -> bool {
+    let placeholders = super::problems::placeholders(&case.text).unwrap_or_default();
+    let texts_ok = placeholders.iter().all(|inner| {
+        let mut parts = inner.split('|');
+        let field = parts.next().unwrap_or_default().trim();
+        let filters_ok = parts.all(|f| {
+            f.trim()
+                .strip_prefix("fqdn:")
+                .is_none_or(|p| p.trim().starts_with('$'))
+        });
+        filters_ok && (field == "." || field.starts_with('$'))
+    });
+    texts_ok
+        && super::problems::condition_paths(&case.when)
+            .iter()
+            .all(|p| p.trim() == "." || p.trim().starts_with('$'))
 }
 
 /// What joins a list's texts: 1 to 5 characters, no control characters or `{{`.
