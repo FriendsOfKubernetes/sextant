@@ -76,6 +76,7 @@ describe("the manifest's translations", () => {
         [`columns.${col.id}.cases.${i}.text`, cs.text] as [string, string],
         ...["zero", "one", "two", "few", "many"].map((f) => [`columns.${col.id}.cases.${i}.textForms.${f}`, cs.text] as [string, string]),
       ]),
+      ...((col as { items?: { cases: Case[] } }).items?.cases ?? []).map((cs, i) => [`columns.${col.id}.items.${i}.text`, cs.text] as [string, string]),
     ]),
     ...c.problems.flatMap((r) => [
       [`problems.${r.id}.title`, r.title] as [string, string],

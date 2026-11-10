@@ -5,6 +5,7 @@
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-in OpenShift view (ADR-0120) as an
 extension.
 
+- A Route's Services column shows each backend's share of the requests, as the built-in one did (`|share`).
 - **A sidebar section "OpenShift"** where the built-in one was, with Routes, Deployment Configs, Build Configs, Builds,
   Image Streams and Projects in Sextant's table, the built-in columns in their widths, sorted and filtered as the
   built-in ones, and "Only problems" on Routes, DeploymentConfigs, Builds and ImageStreams.

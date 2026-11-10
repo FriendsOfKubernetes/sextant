@@ -72,13 +72,19 @@ function timeOf(value: unknown): number | undefined {
  * An item's text by the first of `cases` that holds on it, its placeholders filled from the item (#404): an object
  * item's paths, or a text item as `{{.}}` (ADR-0167 amendment); `$…` reads `root`, the column's object.
  */
-function itemText(cases: readonly { when: ColumnCase["when"]; text: string }[], item: unknown, now: number, root: KubeObject): string | undefined {
+function itemText(
+  cases: readonly { when: ColumnCase["when"]; text: string }[],
+  item: unknown,
+  now: number,
+  root: KubeObject,
+  siblings: readonly unknown[],
+): string | undefined {
   const scalar = typeof item === "string" || typeof item === "number" || typeof item === "boolean";
   if (!scalar && (item === null || typeof item !== "object" || Array.isArray(item))) return undefined;
   const obj = item as KubeObject;
   for (const c of cases) {
     if (!holdsNow(c, obj, now)) continue;
-    const filled = c.text.includes("{{") ? fillTemplate(c.text, item, { root }) : c.text;
+    const filled = c.text.includes("{{") ? fillTemplate(c.text, item, { root, siblings }) : c.text;
     if (filled !== null) return filled;
   }
   return undefined;
@@ -146,12 +152,20 @@ interface Cell {
  * one only in the status), or every repeat with `"keep"`; `items` write each item by the first case holding on it.
  */
 function listTexts(column: ColumnContribution, obj: KubeObject, value: unknown, now: number): string[] | undefined {
-  const lists = column.joinPaths !== undefined && column.joinPaths !== false ? (column.paths ?? []).map((p) => valueAt(obj, p)).filter(Array.isArray) : [value];
+  // With `items`, a joined path holding one object is a list of it (ADR-0167 amendment): a Route's `spec.to` before
+  // its `spec.alternateBackends`.
+  const asList = (v: unknown): unknown => (column.items && v !== null && typeof v === "object" && !Array.isArray(v) ? [v] : v);
+  const lists =
+    column.joinPaths !== undefined && column.joinPaths !== false ? (column.paths ?? []).map((p) => asList(valueAt(obj, p))).filter(Array.isArray) : [value];
   if (!lists.some(Array.isArray)) return undefined;
   const all = lists.flatMap((list) => (Array.isArray(list) ? list : []));
   // `items` (#404): each item written by the first case holding on it; an item none holds for is left out.
   const texts = column.items
-    ? all.map((item) => itemText(column.items!.cases, item, now, obj))
+    ? (() => {
+        // `|share` reads the items the column writes (one a case holds for), as a Route's named backends.
+        const written = all.filter((item) => column.items!.cases.some((c) => item !== null && typeof item === "object" && holdsNow(c, item as KubeObject, now)));
+        return all.map((item) => itemText(column.items!.cases, item, now, obj, written));
+      })()
     : all.filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean").map((v) => String(v));
   const cleaned = texts.map((v) => (v === undefined ? "" : (cleanText(v) ?? ""))).filter((v) => v !== "");
   // Joined lists name each item once (a listener declared and in the status); one list keeps its repeats (#404), and

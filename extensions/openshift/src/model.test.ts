@@ -586,13 +586,15 @@ describe("the columns, against the built-in ones", () => {
     expect(cell("route-host", generated)).toBe("api.apps.ocp.example.com");
   });
 
-  it("Route: its Services by name, sorted as the built-in, without the shares (README)", () => {
-    const names = (o: KubeObject) => routeBackends(o).map((b) => b.name);
+  it("Route: its Services with each one's share of the requests, as the built-in wrote them", () => {
     for (const [label, o] of routeVariants()) {
-      expect(windowColumn("route-services").value(o), label).toBe(names(o).join(", ") || undefined);
-      // One backend: its name, as the built-in wrote it; several: their names in the UI language's list, where the
-      // built-in added each one's share ("frontend (80%), frontend-canary (20%)").
-      expect(cell("route-services", o), label).toBe(names(o).join(", ") || undefined);
+      const backends = routeBackends(o);
+      // One backend: its name; several: each with its share in the UI language's list ("frontend (80%), canary (20%)").
+      const builtIn =
+        backends.length === 1
+          ? backends[0]!.name
+          : backends.map((b) => `${b.name} (${new Intl.NumberFormat("en", { maximumFractionDigits: b.percent > 0 && b.percent < 1 ? 1 : 0 }).format(b.percent)}%)`).join(", ");
+      expect(cell("route-services", o) ?? "", label).toBe(builtIn);
     }
     const alone = find("Route", "frontend");
     delete sp(alone).to;

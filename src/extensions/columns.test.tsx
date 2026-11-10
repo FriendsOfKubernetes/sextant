@@ -85,6 +85,27 @@ describe("an extension's computed column", () => {
     expect(hoverOf({ listTooltip: false })).toBeUndefined();
   });
 
+  it("write an item's share of the list, an object path joined as one item (ADR-0167 amendment)", () => {
+    const backends = computedColumn(
+      "b",
+      column({
+        paths: [".spec.to", ".spec.alternateBackends"],
+        format: "list",
+        joinPaths: "keep",
+        separator: ", ",
+        items: { cases: [{ when: { type: "exists", path: ".name" }, text: "{{.name}} ({{.weight ?? 100|share}}%)" }] },
+      }),
+    );
+    const route = (alternates: unknown[], weight?: number) =>
+      ({ metadata: { name: "r" }, spec: { to: { name: "frontend", ...(weight !== undefined ? { weight } : {}) }, alternateBackends: alternates } }) as unknown as KubeObject;
+    expect(backends.searchText!(route([{ name: "canary", weight: 25 }], 75), ctx)).toBe("frontend (75%), canary (25%)");
+    // A weight left out counts as 100, as the router weighs it; all weights 0 is 0% each.
+    expect(backends.searchText!(route([{ name: "canary" }]), ctx)).toBe("frontend (50%), canary (50%)");
+    expect(backends.searchText!(route([{ name: "canary", weight: 0 }], 0), ctx)).toBe("frontend (0%), canary (0%)");
+    // One decimal below 1%, as the built-in column wrote it.
+    expect(backends.searchText!(route([{ name: "a", weight: 1 }], 199), ctx)).toBe("frontend (100%), a (0.5%)");
+  });
+
   it("write each list item by its first holding case, joined by the separator (#404)", () => {
     const route = {
       metadata: { name: "r" },

@@ -44,7 +44,8 @@ Builds, ImageStreams with a failing import.
 **Columns**, after Name and Namespace (a Project's after Name), in the built-in columns' widths:
 - Route: **Status** (`route-status`: Admitted, Rejected or Not admitted, coloured, the rejecting router's message or
   reason on hover, sorted and filtered by the state's name), **Host** (`route-host`: the host — `spec.host`, else the
-  one a router generated — and the path), **Services** (`route-services`: `spec.to` and the alternate backends by name),
+  one a router generated — and the path), **Services** (`route-services`: `spec.to` and the alternate backends, each with its share of the requests as the
+  router weighs them — `weight`, 100 when unset — with `|share`; one backend alone is its name),
   **TLS** (`route-tls`: the termination).
 - DeploymentConfig: **Status** (`dc-status`: Available, Rolling out, Failed, Cancelled, Unavailable, Paused or Not
   deployed from its conditions, coloured, why on hover, sorted and filtered by the state's name), **Ready**
@@ -163,10 +164,8 @@ the request — sent once on "Roll out" / "Start build", never repeated, and jou
 An OpenShift cluster (4.x) serving the kinds; each kind shows only where the cluster serves it.
 
 What the extension API cannot say yet, compared with the built-in view (issue #417):
-- **Route Services column**: several backends show their names only, where the built-in added each one's share of the
-  requests ("frontend (80%), frontend-canary (20%)"): the manifest has no division. (A `list` item placeholder giving
-  an item's number as a percent of the list's sum, a missing one counting as a default, would close it.) The details'
-  Backends block shows the shares.
+- **Route Services column** sorts by the text shown (each backend with its share), where the built-in sorted by the
+  names alone: rows differ in order only where their first names are equal.
 - **The ImageStream problem's message** comes from the first failing tag by name in code-point order, where the
   built-in sorted the tags with `localeCompare` (the two differ only for tags in mixed case or with punctuation).
 - **Failed Builds told by a later one**: `newestPer` + `newestBy` keep the Build with the highest build number

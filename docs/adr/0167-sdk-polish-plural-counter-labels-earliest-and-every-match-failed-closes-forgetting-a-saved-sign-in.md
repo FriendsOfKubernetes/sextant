@@ -417,3 +417,12 @@ namespace not listed cannot tell, as before. The built-in views listed Secrets, 
 namespaces their objects named; past 5000 objects cluster-wide the rules could not tell at all. The judges of the
 category's sources read their targets as the latest look built them (`currentTargets`): the problems store keeps a
 source's first definition, so a target that came later (a narrowed source, a CRD installed) was not seen before.
+
+## Amendment: an item's share of the list
+
+In a list column's item text, `|share` (first filter only; `check_filters` = the SDK's filter loop) writes the item's
+number as a percent of the same number over the items the column writes (one an item case holds for), each read the
+same way — `{{.weight ?? 100|share}}`, a weight left out counting as 100 as OpenShift's router weighs backends —, 0
+when they add up to 0, with one decimal below 1% as the built-in Route column wrote it. With `items`, a joined path
+holding one object is a list of it (`spec.to` before `spec.alternateBackends`). Rust now checks a placeholder's
+filters also after paths tried with `??`, as the SDK always did.

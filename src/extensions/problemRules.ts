@@ -8,7 +8,7 @@
 import type { KindRef, KubeObject, ObjectRef, ProblemCondition, ProblemContribution, ProblemScalar } from "../api";
 import { parseFieldPath, pickStep, type PathStep } from "../features/custom-columns/path";
 import { currentCertExpiryWarningMs, type Detected } from "../features/problems/model";
-import { currentLanguage, formatList } from "../i18n/format";
+import { currentLanguage, formatList, formatNumber } from "../i18n/format";
 import { formatBytes, formatCpu, parseQuantity } from "../features/metrics/format";
 import { cleanText } from "../resources/uri";
 import { hostsOf } from "../features/diagnose/traefikModel";
@@ -472,10 +472,14 @@ function sameScalar(value: unknown, expected: ProblemScalar): boolean {
  * `template` with each `{{path}}` replaced by the scalar value there (clipped); `null` when a placeholder has none
  * (an object, a list, nothing).
  */
-export function fillTemplate(template: string, obj: unknown, options: { emptyIsMissing?: boolean; root?: unknown } = {}): string | null {
+export function fillTemplate(
+  template: string,
+  obj: unknown,
+  options: { emptyIsMissing?: boolean; root?: unknown; siblings?: readonly unknown[] } = {},
+): string | null {
   let missing = false;
   const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, inner: string) => {
-    const shown = placeholderText(obj, inner, options.root);
+    const shown = placeholderText(obj, inner, options.root, options.siblings);
     if (shown === undefined || (options.emptyIsMissing && shown === "")) {
       missing = true;
       return "";
@@ -490,9 +494,27 @@ export function fillTemplate(template: string, obj: unknown, options: { emptyIsM
  * after its last `.` or `/`, `|list` a list's scalars joined in the UI language, `|count` a list's items or a map's
  * entries; `undefined` when there is nothing to show.
  */
-export function placeholderText(obj: unknown, inner: string, root?: unknown): string | undefined {
+export function placeholderText(obj: unknown, inner: string, root?: unknown, siblings?: readonly unknown[]): string | undefined {
   // Up to two filters in a row (`|firstLine|clip:300`, #404): the first reads the value, `clip:<n>` cuts the text.
   const [path = "", ...rest] = inner.split("|").map((part, i) => (i === 0 ? part : part.trim()));
+  // `|share` (ADR-0167 amendment): a list item's number as a percent of the same number over the list's items, each
+  // read the same way (`{{.weight ?? 100|share}}`); 0 when they add up to 0, as a router weighs backends.
+  if (rest[0] === "share") {
+    if (!siblings) return undefined;
+    const numberOfItem = (item: unknown): number | undefined => {
+      for (const [i, one] of splitOutsideQuotes(path, "??").entries()) {
+        const literal = i > 0 ? placeholderLiteral(one.trim()) : undefined;
+        const n = literal !== undefined ? numberOf(literal) : numberOf(valueAtIn(item, one.trim(), root));
+        if (n !== undefined) return n;
+      }
+      return undefined;
+    };
+    const own = numberOfItem(obj);
+    if (own === undefined) return undefined;
+    const total = siblings.reduce<number>((sum, item) => sum + (numberOfItem(item) ?? 0), 0);
+    const percent = total > 0 ? (own / total) * 100 : 0;
+    return formatNumber(percent, percent > 0 && percent < 1 ? 1 : 0);
+  }
   // `fqdn:<path>` (ADR-0167 amendment): a short name completed with the namespace at the path, after the other filter.
   const fqdn = rest.find((f) => f.startsWith("fqdn:"))?.slice(5);
   const filters = rest.filter((f) => !f.startsWith("fqdn:"));

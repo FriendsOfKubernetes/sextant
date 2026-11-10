@@ -1874,6 +1874,7 @@ fn check_placeholders(
                 "adds paths with `+` or tries them with `??`, not both",
             ));
         }
+        check_filters(&filters, kind, path, metadata_only, item)?;
         if tried.len() > 1 {
             let last = tried.len() - 1;
             for (i, one) in tried.into_iter().enumerate() {
@@ -1916,35 +1917,57 @@ fn check_placeholders(
         if added.len() > MAX_ADDED_PATHS {
             return Err(at(path, format!("adds at most {MAX_ADDED_PATHS} paths")));
         }
-        for filter in filters {
-            let clip = filter
-                .strip_prefix("clip:")
-                .and_then(|n| n.parse::<u32>().ok())
-                .is_some_and(|n| (1..=1000).contains(&n));
-            // `after:<marker>` (#404): the text after the marker's last place, `Kind=` of a composed job's GVK.
-            let after = filter.strip_prefix("after:").is_some_and(|marker| {
-                (1..=20).contains(&marker.chars().count())
-                    && !marker.contains(['{', '}', '|', '"'])
-                    && !marker.chars().any(char::is_control)
-            });
-            // `fqdn:<path>`: a short name completed with the namespace at the path, as Kubernetes' DNS names a
-            // Service (`web` → `web.shop.svc.cluster.local`).
-            if let Some(namespace) = filter.strip_prefix("fqdn:") {
-                check_placeholder_path(namespace, kind, path, metadata_only, item)?;
-                continue;
-            }
-            if !clip && !after && !PLACEHOLDER_FILTERS.contains(&filter) {
-                return Err(at(
-                    path,
-                    format!(
-                        "has a filter `{filter}`: one of {}, clip:<1 to 1000>, after:<marker>, fqdn:<namespace path>",
-                        PLACEHOLDER_FILTERS.join(", ")
-                    ),
-                ));
-            }
-        }
+        check_filters(&filters, kind, path, metadata_only, item)?;
         for added in added {
             check_placeholder_path(added, kind, path, metadata_only, item)?;
+        }
+    }
+    Ok(())
+}
+
+/// A placeholder's filters: the listed ones, `clip:<n>`, `after:<marker>`, `fqdn:<path>`, and `share` first in a list
+/// column's item text only (ADR-0167 amendment).
+fn check_filters(
+    filters: &[&str],
+    kind: &KindPattern,
+    path: &JsonPath,
+    metadata_only: bool,
+    item: bool,
+) -> Result<(), ManifestError> {
+    for (i, filter) in filters.iter().copied().enumerate() {
+        if filter == "share" {
+            if !item || i != 0 {
+                return Err(at(
+                    path,
+                    "has `|share` only first in a list column's item text: an item's share of the list",
+                ));
+            }
+            continue;
+        }
+        let clip = filter
+            .strip_prefix("clip:")
+            .and_then(|n| n.parse::<u32>().ok())
+            .is_some_and(|n| (1..=1000).contains(&n));
+        // `after:<marker>` (#404): the text after the marker's last place, `Kind=` of a composed job's GVK.
+        let after = filter.strip_prefix("after:").is_some_and(|marker| {
+            (1..=20).contains(&marker.chars().count())
+                && !marker.contains(['{', '}', '|', '"'])
+                && !marker.chars().any(char::is_control)
+        });
+        // `fqdn:<path>`: a short name completed with the namespace at the path, as Kubernetes' DNS names a Service
+        // (`web` → `web.shop.svc.cluster.local`).
+        if let Some(namespace) = filter.strip_prefix("fqdn:") {
+            check_placeholder_path(namespace, kind, path, metadata_only, item)?;
+            continue;
+        }
+        if !clip && !after && !PLACEHOLDER_FILTERS.contains(&filter) {
+            return Err(at(
+                path,
+                format!(
+                    "has a filter `{filter}`: one of {}, clip:<1 to 1000>, after:<marker>, fqdn:<namespace path>",
+                    PLACEHOLDER_FILTERS.join(", ")
+                ),
+            ));
         }
     }
     Ok(())

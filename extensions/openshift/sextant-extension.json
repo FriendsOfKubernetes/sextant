@@ -443,8 +443,23 @@
     "afterColumn": "route-host",
     "width": "minmax(140px, 1.5fr)",
     "paths": [
-     ".spec.to.name"
+     ".spec.to",
+     ".spec.alternateBackends"
     ],
+    "format": "list",
+    "joinPaths": "keep",
+    "items": {
+     "cases": [
+      {
+       "when": {
+        "type": "exists",
+        "path": ".name",
+        "nonEmpty": true
+       },
+       "text": "{{.name}} ({{.weight ?? 100|share}}%)"
+      }
+     ]
+    },
     "cases": [
      {
       "when": {
@@ -456,32 +471,37 @@
          "nonEmpty": true
         },
         {
-         "type": "above",
-         "path": ".spec.alternateBackends[*].name|count",
-         "value": 0
+         "type": "not",
+         "of": {
+          "type": "above",
+          "path": ".spec.alternateBackends[*].name|count",
+          "value": 0
+         }
         }
        ]
       },
-      "text": "{{.spec.to.name}}, {{.spec.alternateBackends[*].name|list}}",
-      "value": "{{.spec.to.name}}, {{.spec.alternateBackends[*].name|join}}"
+      "text": "{{.spec.to.name}}"
      },
      {
       "when": {
-       "type": "exists",
-       "path": ".spec.to.name",
-       "nonEmpty": true
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "exists",
+          "path": ".spec.to.name",
+          "nonEmpty": true
+         }
+        },
+        {
+         "type": "equals",
+         "path": ".spec.alternateBackends[*].name|count",
+         "value": 1
+        }
+       ]
       },
-      "text": "{{.spec.to.name}}",
-      "value": "{{.spec.to.name}}"
-     },
-     {
-      "when": {
-       "type": "above",
-       "path": ".spec.alternateBackends[*].name|count",
-       "value": 0
-      },
-      "text": "{{.spec.alternateBackends[*].name|list}}",
-      "value": "{{.spec.alternateBackends[*].name|join}}"
+      "text": "{{.spec.alternateBackends[*].name|join}}"
      }
     ]
    },
@@ -2108,6 +2128,7 @@
  },
  "translations": {
   "de": {
+   "columns.route-services.items.0.text": "{{.name}} ({{.weight ?? 100|share}} %)",
    "name": "OpenShift",
    "description": "Routes von OpenShift mit Zulassung und Backends, DeploymentConfigs mit Rollouts und Triggern, BuildConfigs mit ihren Builds, Builds mit Fehler und Pod-Logs, ImageStreams mit Tags und Projects, mit „Neueste ausrollen“ und „Build starten“; Probleme von Routes ohne Zulassung, fehlgeschlagenen Rollouts, kürzlich fehlgeschlagenen Builds und fehlschlagenden Importen.",
    "kinds.0.title": "Routes",
@@ -2172,6 +2193,7 @@
    "sectionBadges.openshift.label.other": "{{count}} Objekte erfordern Aufmerksamkeit"
   },
   "es": {
+   "columns.route-services.items.0.text": "{{.name}} ({{.weight ?? 100|share}} %)",
    "name": "OpenShift",
    "description": "Las Routes de OpenShift con su admisión y backends, DeploymentConfigs con sus rollouts y triggers, BuildConfigs con sus builds, Builds con su fallo y los logs del pod, ImageStreams con sus etiquetas y Projects, con «Desplegar lo último» e «Iniciar build»; problemas de Routes sin admitir, rollouts fallidos, Builds fallidas recientes e importaciones que fallan.",
    "kinds.0.title": "Routes",
@@ -2238,6 +2260,7 @@
    "sectionBadges.openshift.label.other": "{{count}} objetos requieren atención"
   },
   "fr": {
+   "columns.route-services.items.0.text": "{{.name}} ({{.weight ?? 100|share}} %)",
    "name": "OpenShift",
    "description": "Les Routes d'OpenShift avec leur admission et leurs backends, les DeploymentConfigs avec leurs rollouts et déclencheurs, les BuildConfigs avec leurs builds, les Builds avec leur échec et les logs du pod, les ImageStreams avec leurs tags et les Projects, avec « Déployer la dernière version » et « Lancer un build » ; problèmes des Routes non admises, des rollouts échoués, des Builds échoués récents et des imports qui échouent.",
    "kinds.0.title": "Routes",
@@ -2370,6 +2393,7 @@
    "sectionBadges.openshift.label.other": "{{count}} oggetti richiedono attenzione"
   },
   "ja": {
+   "columns.route-services.items.0.text": "{{.name}}（{{.weight ?? 100|share}}%）",
    "name": "OpenShift",
    "description": "OpenShift の Route (受け入れとバックエンド)、DeploymentConfig (ロールアウトとトリガー)、BuildConfig (ビルド)、Build (失敗と Pod のログ)、ImageStream (タグ)、Project。「最新をロールアウト」と「ビルドを開始」付き。受け入れられていない Route、失敗したロールアウト、最近失敗した Build、失敗しているインポートの問題。",
    "kinds.0.title": "Route",
@@ -2388,7 +2412,6 @@
    "columns.route-status.cases.2.text": "未受け入れ",
    "columns.route-host.title": "ホスト",
    "columns.route-services.title": "Service",
-   "columns.route-services.cases.0.text": "{{.spec.to.name}}、{{.spec.alternateBackends[*].name|list}}",
    "columns.route-tls.title": "TLS",
    "columns.dc-status.title": "状態",
    "columns.dc-status.cases.0.text": "一時停止中",
@@ -2629,6 +2652,7 @@
    "sectionBadges.openshift.label.other": "{{count}} objetos precisam de atenção"
   },
   "ru": {
+   "columns.route-services.items.0.text": "{{.name}} ({{.weight ?? 100|share}} %)",
    "name": "OpenShift",
    "description": "Routes OpenShift с приёмом роутерами и бэкендами, DeploymentConfigs с rollout'ами и триггерами, BuildConfigs со сборками, Builds со сбоем и логами пода, ImageStreams с тегами и Projects, с «Развернуть последнюю версию» и «Запустить сборку»; проблемы непринятых Routes, неудачных rollout'ов, недавно упавших Builds и неудающихся импортов.",
    "kinds.0.title": "Routes",
@@ -2697,6 +2721,7 @@
    "sectionBadges.openshift.label.other": "{{count}} объекта требуют внимания"
   },
   "tr": {
+   "columns.route-services.items.0.text": "{{.name}} (%{{.weight ?? 100|share}})",
    "name": "OpenShift",
    "description": "OpenShift'in kabul ve backend'leriyle Route'ları, rollout ve tetikleyicileriyle DeploymentConfig'leri, build'leriyle BuildConfig'leri, hatası ve pod loglarıyla Build'leri, etiketleriyle ImageStream'leri ve Project'leri; \"Son sürümü dağıt\" ve \"Derlemeyi başlat\" ile; kabul edilmeyen Route'ların, başarısız rollout'ların, yakın zamanda başarısız Build'lerin ve başarısız içe aktarmaların sorunları.",
    "kinds.0.title": "Routes",
@@ -2761,6 +2786,7 @@
    "sectionBadges.openshift.label.other": "{{count}} nesne ilgi gerektiriyor"
   },
   "uk": {
+   "columns.route-services.items.0.text": "{{.name}} ({{.weight ?? 100|share}} %)",
    "name": "OpenShift",
    "description": "Routes OpenShift із прийняттям роутерами та бекендами, DeploymentConfigs із rollout'ами й тригерами, BuildConfigs зі збірками, Builds зі збоєм і логами пода, ImageStreams із тегами та Projects, з «Розгорнути останню версію» і «Запустити збірку»; проблеми неприйнятих Routes, невдалих rollout'ів, нещодавно невдалих Builds і невдалих імпортів.",
    "kinds.0.title": "Routes",
@@ -2829,6 +2855,7 @@
    "sectionBadges.openshift.label.other": "{{count}} об’єкта потребують уваги"
   },
   "zh-CN": {
+   "columns.route-services.items.0.text": "{{.name}}（{{.weight ?? 100|share}}%）",
    "name": "OpenShift",
    "description": "OpenShift 的 Route（接纳与后端）、DeploymentConfig（发布与触发器）、BuildConfig（构建）、Build（失败与 Pod 日志）、ImageStream（标签）和 Project，提供“发布最新版本”和“启动构建”；未被接纳的 Route、失败的发布、最近失败的 Build 和失败的导入的问题。",
    "kinds.0.title": "Routes",
@@ -2847,7 +2874,6 @@
    "columns.route-status.cases.2.text": "未接受",
    "columns.route-host.title": "主机",
    "columns.route-services.title": "Service",
-   "columns.route-services.cases.0.text": "{{.spec.to.name}}、{{.spec.alternateBackends[*].name|list}}",
    "columns.route-tls.title": "TLS",
    "columns.dc-status.title": "状态",
    "columns.dc-status.cases.0.text": "已暂停",
@@ -2892,6 +2918,7 @@
    "sectionBadges.openshift.label.other": "{{count}} 个对象需要关注"
   },
   "zh-TW": {
+   "columns.route-services.items.0.text": "{{.name}}（{{.weight ?? 100|share}}%）",
    "name": "OpenShift",
    "description": "OpenShift 的 Route（接納與後端）、DeploymentConfig（發布與觸發器）、BuildConfig（建置）、Build（失敗與 Pod 日誌）、ImageStream（標籤）和 Project，提供「推出最新版本」和「啟動建置」；未被接納的 Route、失敗的發布、最近失敗的 Build 和失敗的匯入的問題。",
    "kinds.0.title": "Routes",
@@ -2910,7 +2937,6 @@
    "columns.route-status.cases.2.text": "未接受",
    "columns.route-host.title": "主機",
    "columns.route-services.title": "Service",
-   "columns.route-services.cases.0.text": "{{.spec.to.name}}、{{.spec.alternateBackends[*].name|list}}",
    "columns.route-tls.title": "TLS",
    "columns.dc-status.title": "狀態",
    "columns.dc-status.cases.0.text": "已暫停",

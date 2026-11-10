@@ -1239,7 +1239,12 @@ function checkMessage(text, kind, segments, metadataOnly, item = false) {
     const added = tried.length > 1 || multiplied.length > 1 ? [] : addedPaths(field);
     if (added.length > 1 && !["sum", "count"].includes(filters[0]?.trim() ?? "")) fail(segments, "adds paths with `+` only before `|sum` or `|count`");
     if (added.length > MAX_ADDED_PATHS) fail(segments, `adds at most ${MAX_ADDED_PATHS} paths`);
-    for (const filter of filters.map((f) => f.trim())) {
+    for (const [index, filter] of filters.map((f) => f.trim()).entries()) {
+      // `|share` (`check_filters`): an item's share of the list, first in a list column's item text only.
+      if (filter === "share") {
+        if (!item || index !== 0) fail(segments, "has `|share` only first in a list column's item text: an item's share of the list");
+        continue;
+      }
       const clip = /^clip:([0-9]{1,4})$/.exec(filter);
       const clipOk = clip !== null && Number(clip[1]) >= 1 && Number(clip[1]) <= 1000;
       // `after:<marker>` (#404): the text after the marker's last place.
