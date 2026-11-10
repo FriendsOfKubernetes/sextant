@@ -13,7 +13,8 @@ extension.
   proxy's state in plain words with Contour's errors and warnings, its virtual host and TLS (a delegated Secret with
   the TLSCertificateDelegation that allows it), routes with each service's share or mirror percent, a TCP proxy's
   services, includes with their states and the delegation tree; a delegation's Secrets and the namespaces that may use
-  them; an ExtensionService's state, settings and Services.
+  them; an ExtensionService's state, settings and Services. The tables' columns resize, Sextant remembers their widths, and words stay
+  whole, as in the built-in view.
 - **Problems** in the category "Contour", on by default and given to agents only where Settings → AI agents (MCP)
   lets them: invalid and orphaned HTTPProxies, after 2 minutes, notified and counted on the section; an orphan
   under an invalid proxy (through its includes or its TCP proxy's) is told through that proxy, as the built-in

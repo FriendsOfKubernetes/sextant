@@ -142,7 +142,7 @@ describe("details of a VPA", () => {
     expect(text()).toContain("Without the admission controller pods are created with the template's values");
     expect(text()).toContain("Looked for as the Deployments vpa-recommender");
     // Columns kept on one line, as the built-in tables' `nowrap`.
-    expect(cellsWith("587m / 1174m")[0]!.classList.contains("vpa-nowrap")).toBe(true);
+    expect(cellsWith("587m / 1174m")[0]!.classList.contains("sx-col--nowrap")).toBe(true);
   });
 
   it("an unsupported configuration says why", async () => {

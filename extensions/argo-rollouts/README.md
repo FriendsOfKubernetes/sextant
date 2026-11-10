@@ -60,7 +60,9 @@ Rollouts.
 - **Metrics** (`template-metrics`, on AnalysisTemplates and ClusterAnalysisTemplates): each metric and its provider;
   hidden, title included, for a template without metrics.
 
-The details are drawn with the SDK's UI kit, in the classes of Sextant's own details panel.
+The details are drawn with the SDK's UI kit, in the classes of Sextant's own details panel. The columns of their
+tables resize as the built-in view's did, and Sextant remembers their widths (Settings → Appearance resets them with
+every table's); words stay whole and names, phases and counts keep to one line, as there.
 
 **Actions on a Rollout**, each offered only where it applies; the selection bar says why not elsewhere:
 - **Promote** (`promote`, a button): leaves the pause and goes on to the next step, as

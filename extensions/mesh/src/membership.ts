@@ -88,7 +88,7 @@ function mtlsBlock(sextant: Sextant, config: MeshConfig, namespace: string, labe
     fieldsOf([["mtlsMode", r.mode]]),
     line(t(`mtls.meaning.${r.mode}`)),
     el("p", "mesh-line", r.policy ? t(`mtls.source.${r.source}`, { name: r.policy.name }) : t("mtls.source.default"), r.policy ? " " : null, r.policy ? meshLink(sextant, r.policy) : null),
-    r.ports.length > 0 ? table([t("columns.port"), t("columns.mtlsMode")], r.ports.map((p) => ({ cells: [p.port, p.mode] }))) : null,
+    r.ports.length > 0 ? table(sextant, "membershipPorts", [t("columns.port"), t("columns.mtlsMode")], r.ports.map((p) => ({ cells: [p.port, p.mode] }))) : null,
   ];
 }
 
@@ -152,6 +152,8 @@ function whoMayCallBlock(
     decision,
     result.verdicts.length > 0
       ? table(
+          sextant,
+          "authzVerdicts",
           [t("columns.policy"), t("columns.action"), t("columns.matches"), t("columns.notEvaluated")],
           result.verdicts.map((v) => ({
             cells: [meshLink(sextant, v.ref, undefined, namespace), v.dryRun ? t("authz.dryRunAction", { action: v.action }) : v.action, t(`authz.match.${v.match}`), v.unknown.join(", ")],

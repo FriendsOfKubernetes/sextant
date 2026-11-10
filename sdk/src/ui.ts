@@ -33,6 +33,9 @@ const UI_STYLES = `
 .sx-table th, .sx-table td { text-align: left; padding: 4px 8px 4px 0; height: auto; border-bottom: 1px solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }
 .sx-table th { color: var(--color-text-muted); font-weight: 500; }
 .sx-table--nowrap th, .sx-table--nowrap td { white-space: nowrap; overflow-wrap: normal; }
+.sx-table-wrap--words { max-width: 100%; overflow-x: auto; }
+.sx-table--words th, .sx-table--words td { overflow-wrap: normal; word-break: normal; }
+.sx-table .sx-col--nowrap { white-space: nowrap; }
 .sx-table--fixed > thead > tr > th, .sx-table--fixed > tbody > tr > td:not([colspan]) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
 .sx-resize { position: relative; }
 .sx-resize__handles { position: absolute; top: 0; left: 0; width: 100%; height: 0; z-index: 3; pointer-events: none; }
@@ -196,8 +199,12 @@ export interface TableOptions {
   sextant?: ColumnWidthKeeper;
   /** Stable ids of the columns, one per header (not translated): what the widths are kept under; by position otherwise. */
   columns?: readonly string[];
-  /** Cells on one line, never wrapped. */
-  nowrap?: boolean;
+  /**
+   * `true`: every cell on one line. A list, one per column (since Sextant 0.30): as Sextant's details tables, words
+   * stay whole — the columns marked `true` keep to one line, the others wrap only between words — and a table too wide
+   * for its place scrolls sideways.
+   */
+  nowrap?: boolean | readonly boolean[];
 }
 
 /** Widths set in this frame that Sextant's context does not tell yet, by table id (`null`: back to its own). */
@@ -230,14 +237,16 @@ let tableSeq = 0;
  * resize and Sextant remembers their widths.
  */
 export function table(headers: readonly string[], rows: readonly (readonly UiContent[])[], options: TableOptions = {}): HTMLElement {
-  const wrap = el("div", "sx-table-wrap");
-  const tableEl = el("table", options.nowrap ? "sx-table sx-table--nowrap" : "sx-table");
+  const perColumn = Array.isArray(options.nowrap) ? (options.nowrap as readonly boolean[]) : null;
+  const wrap = el("div", perColumn ? "sx-table-wrap sx-table-wrap--words" : "sx-table-wrap");
+  const tableEl = el("table", perColumn ? "sx-table sx-table--words" : options.nowrap === true ? "sx-table sx-table--nowrap" : "sx-table");
+  const colClass = (i: number) => (perColumn?.[i] === true ? "sx-col--nowrap" : "");
   if (options.label) tableEl.setAttribute("aria-label", options.label);
   const head = el("thead", "");
   const headRow = el("tr", "");
   const cells: HTMLTableCellElement[] = [];
   for (const header of headers) {
-    const th = el("th", "", header);
+    const th = el("th", colClass(cells.length), header);
     th.scope = "col";
     headRow.append(th);
     cells.push(th);
@@ -246,7 +255,7 @@ export function table(headers: readonly string[], rows: readonly (readonly UiCon
   const body = el("tbody", "");
   for (const row of rows) {
     const tr = el("tr", "");
-    for (const cell of row) tr.append(el("td", "", cell));
+    row.forEach((cell, i) => tr.append(el("td", colClass(i), cell)));
     body.append(tr);
   }
   tableEl.append(head, body);

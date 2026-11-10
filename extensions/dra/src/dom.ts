@@ -51,11 +51,12 @@ export function link(sextant: Sextant, kind: KindOf, name: string | undefined, n
   return button;
 }
 
-/** A table of the UI kit whose columns `nowrap` (by position, from 1) do not wrap, as the built-in tables. */
-export function table(className: string, headers: readonly string[], rows: readonly (readonly UiContent[])[], label: string): HTMLElement {
-  const node = ui.table(headers, rows, { label });
-  node.classList.add(className);
-  return node;
+/**
+ * A table of the UI kit whose columns resize and are remembered under `id` (the built-in table's own word), the columns
+ * `nowrap` marks kept on one line and the others wrapping between words, as the built-in tables.
+ */
+export function table(sextant: Sextant, id: string, nowrap: readonly boolean[], headers: readonly string[], rows: readonly (readonly UiContent[])[], label: string): HTMLElement {
+  return ui.table(headers, rows, { label, id, sextant, nowrap });
 }
 
 export function errorText(err: unknown): string {

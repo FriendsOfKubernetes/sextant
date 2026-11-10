@@ -21,7 +21,7 @@ export function readyText(obj: KubeObject): HTMLElement {
   return node;
 }
 
-export function runtimeView(obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
+export function runtimeView(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const yesNo = (v: boolean) => (v ? t("yes") : t("no"));
   const formats = formatsOf(obj).map((f) => [f.name, f.version ?? "", yesNo(f.autoSelect), f.priority === undefined ? "" : String(f.priority)]);
   const headers = ["name", "version", "autoSelect", "priority"].map((h) => t(`formats.${h}`));
@@ -33,7 +33,7 @@ export function runtimeView(obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS):
       ["multiNode", yesNo(isMultiNode(obj))],
       ["images", ui.chips(arr(get(obj, "spec", "containers")).map((c) => str(get(c, "image"))))],
     ]),
-    block(memory, "formats", t("formats.title"), () => tableOf(headers, formats, t("formats.title"))),
+    block(memory, "formats", t("formats.title"), () => tableOf(sextant, "formats", headers, formats, t("formats.title"), [true, true, true, true])),
   ]);
 }
 
@@ -68,7 +68,7 @@ export function graphView(sextant: Sextant, obj: KubeObject, memory: BlockMemory
     ...nodes.map(([name, node]) => {
       const title = t("graph.node", { name, type: str(get(node, "routerType")) ?? "" });
       // One id for every node, as the built-in blocks had: they open and close together.
-      return block(memory, "graphNode", title, () => tableOf(headers, stepRows(sextant, node, ns), title));
+      return block(memory, "graphNode", title, () => tableOf(sextant, "graphSteps", headers, stepRows(sextant, node, ns), title, [true, false, true, false, true]));
     }),
   ]);
 }

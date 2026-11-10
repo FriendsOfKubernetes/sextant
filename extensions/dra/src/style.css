@@ -52,18 +52,3 @@ body.compact {
   margin: 0 0 0.25rem;
   font-size: 1.25rem;
 }
-
-/* The columns the built-in tables kept on one line. */
-.dra-requests td:nth-child(1),
-.dra-requests td:nth-child(2),
-.dra-requests td:nth-child(4),
-.dra-devices td:nth-child(1),
-.dra-devices td:nth-child(3),
-.dra-results td:nth-child(1),
-.dra-results td:nth-child(2),
-.dra-results td:nth-child(3),
-.dra-pod-claims td:nth-child(1),
-.dra-pod-claims td:nth-child(2),
-.dra-pod-claims td:nth-child(3) {
-  white-space: nowrap;
-}

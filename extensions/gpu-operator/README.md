@@ -72,6 +72,9 @@ The operand namespace's DaemonSets are watched while the Components or DaemonSet
 with a note when more match), as the built-in view watched them. Every DaemonSet and node named is a link to its details
 in Sextant's panel.
 
+The tables' columns, on the page and in the details, resize (drag a header's right edge) and Sextant remembers their
+widths, as the built-in view's did; the same columns keep to one line, the others wrap between words.
+
 ## Permissions
 
 - **Read** ClusterPolicies and NVIDIADrivers (each section reads the object it shows), DaemonSets (the operand

@@ -99,8 +99,10 @@ function routeCard(route: HttpRoute): HTMLElement {
   return card;
 }
 
-function l4Table(routes: L4Route[]): HTMLElement {
+function l4Table(sextant: Sextant, routes: L4Route[]): HTMLElement {
   return table(
+    sextant,
+    "l4Routes",
     [t("l4.kind"), t("l4.match"), t("l4.destinations")],
     routes.map((r) => ({
       cells: [
@@ -143,7 +145,7 @@ function virtualServiceView(env: DetailsEnv, vs: VirtualService): UiContent[] {
       canCheck ? [check] : undefined,
     ),
     vs.http.length > 0 ? block(blocks, "httpRoutes", t("blocks.httpRoutes"), () => [muted(t("route.order")), ...vs.http.map(routeCard)]) : null,
-    vs.l4.length > 0 ? block(blocks, "l4Routes", t("blocks.l4Routes"), () => l4Table(vs.l4)) : null,
+    vs.l4.length > 0 ? block(blocks, "l4Routes", t("blocks.l4Routes"), () => l4Table(env.sextant, vs.l4)) : null,
   ];
 }
 
@@ -164,12 +166,14 @@ function destinationRuleView(env: DetailsEnv, obj: KubeObject): UiContent[] {
       ]),
     ),
     rule.portTls.length > 0
-      ? block(blocks, "portTls", t("blocks.portTls"), () => table([t("columns.port"), t("columns.tlsMode")], rule.portTls.map((p) => ({ cells: [p.port, p.mode] }))))
+      ? block(blocks, "portTls", t("blocks.portTls"), () => table(env.sextant, "portTls", [t("columns.port"), t("columns.tlsMode")], rule.portTls.map((p) => ({ cells: [p.port, p.mode] }))))
       : null,
     rule.subsets.length > 0
       ? block(blocks, "subsets", t("blocks.subsets"), () => [
           muted(t("dr.subsetsHint")),
           table(
+            env.sextant,
+            "subsets",
             [t("columns.name"), t("columns.labels"), t("columns.tlsMode")],
             rule.subsets.map((s) => ({ cells: [s.name, mapChips(s.labels), s.tlsMode ?? ""] })),
           ),
@@ -196,6 +200,8 @@ function gatewayView(env: DetailsEnv, obj: KubeObject): UiContent[] {
     block(blocks, "gateway", t("blocks.gateway"), () => [fieldsOf([["selector", mapChips(gateway.selector)]]), muted(t("gateway.selectorHint"))]),
     block(blocks, "servers", t("blocks.servers"), () =>
       table(
+        env.sextant,
+        "servers",
         [t("columns.port"), t("columns.protocol"), t("columns.hosts"), t("columns.tlsMode")],
         gateway.servers.map((s) => ({ cells: [s.port ?? "", s.protocol ?? "", formatList(s.hosts), s.tlsMode ?? ""] })),
       ),
@@ -284,7 +290,7 @@ function peerAuthenticationView(env: DetailsEnv, obj: KubeObject): UiContent[] {
     ]),
     pa.ports.length > 0
       ? block(env.blocks, "portMtls", t("blocks.portMtls"), () =>
-          table([t("columns.port"), t("columns.mtlsMode")], pa.ports.map((p) => ({ cells: [p.port, p.mode ?? "UNSET"] }))),
+          table(env.sextant, "portMtls", [t("columns.port"), t("columns.mtlsMode")], pa.ports.map((p) => ({ cells: [p.port, p.mode ?? "UNSET"] }))),
         )
       : null,
   ];
@@ -302,7 +308,7 @@ function requestAuthenticationView(env: DetailsEnv, obj: KubeObject): UiContent[
     block(env.blocks, "requestAuthentication", t("blocks.requestAuthentication"), () => [
       fieldsOf([scopeRow(obj)]),
       line(t("jwt.meaning")),
-      table([t("columns.issuer"), t("columns.audiences"), t("columns.keys")], rules),
+      table(env.sextant, "requestAuthentication", [t("columns.issuer"), t("columns.audiences"), t("columns.keys")], rules),
     ]),
   ];
 }
@@ -372,7 +378,7 @@ function serviceProfileView(env: DetailsEnv, obj: KubeObject): UiContent[] {
         : null,
     ]),
     block(env.blocks, "profileRoutes", t("blocks.profileRoutes"), () =>
-      table([t("columns.name"), t("columns.condition"), t("columns.retryable"), t("columns.timeout")], rows),
+      table(env.sextant, "profileRoutes", [t("columns.name"), t("columns.condition"), t("columns.retryable"), t("columns.timeout")], rows),
     ),
   ];
 }
@@ -515,7 +521,7 @@ function linkerdHttpRouteView(env: DetailsEnv, obj: KubeObject): UiContent[] {
         ["hostnames", ui.chips(arr(get(obj, "spec", "hostnames")).map(String))],
       ]),
     ),
-    block(env.blocks, "httpRoutes", t("blocks.httpRoutes"), () => table([t("columns.match"), t("columns.destinations")], rows)),
+    block(env.blocks, "httpRoutes", t("blocks.httpRoutes"), () => table(env.sextant, "httpRoutes", [t("columns.match"), t("columns.destinations")], rows)),
   ];
 }
 

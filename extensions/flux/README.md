@@ -87,6 +87,9 @@ namespaces, live. A kind you may not list is named under the table; the others s
 section): the Kustomizations and HelmReleases, in every namespace you may read, that take their artifact from it,
 live.
 
+The columns of these three tables resize as the built-in view's did, and Sextant remembers their widths, one set for
+the three as there (Settings → Appearance resets them with every table's).
+
 **Actions**, as buttons of the details bar on the Flux kinds and in the selection bar, one click each as in the
 built-in view:
 - **Reconcile now** (`reconcile`, several objects at once): sent at once, no window, no question.

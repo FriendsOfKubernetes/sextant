@@ -155,7 +155,7 @@ export function policyView(sextant: Sextant, policy: KubeObject, live: Live | un
       ["driver", driverByCrd(policy) ? t("fields.driverByCrd") : null],
     ]),
     ...stateNote(policy),
-    block(blocks, COMPONENTS_BLOCK, t("components.title"), [ui.table(headers, rows, { label: t("components.title") }), listNote(daemonSets, namespace)]),
+    block(blocks, COMPONENTS_BLOCK, t("components.title"), [ui.table(headers, rows, { label: t("components.title"), id: "components", sextant, nowrap: [true, true, true, false] }), listNote(daemonSets, namespace)]),
   ];
 }
 
@@ -169,7 +169,7 @@ export function driverView(sextant: Sextant, driver: KubeObject, live: Live | un
       ? ui.table(
           headers,
           owned.map((r) => [link(sextant, DAEMONSET, r.name, r.namespace), rolloutText(r)]),
-          { label: t("driver.daemonSets") },
+          { label: t("driver.daemonSets"), id: "driverDaemonSets", sextant, nowrap: [true, true] },
         )
       : !daemonSets.loading && namespace && remark(t("driver.none"));
   return [
@@ -186,14 +186,14 @@ export function driverView(sextant: Sextant, driver: KubeObject, live: Live | un
 }
 
 /** The GPU and MIG resources of a node: resource, capacity, allocatable. */
-function amountsTable(node: KubeObject): HTMLElement {
+function amountsTable(sextant: Sextant, node: KubeObject): HTMLElement {
   const rows = gpuNodeOf(node).amounts.map((a) => [a.resource, a.capacity ?? "", a.allocatable ?? ""]);
   if (rows.length === 0) return remark(t("node.noResources"));
   const headers = ["resource", "capacity", "allocatable"].map((h) => t(`node.${h}`));
-  return ui.table(headers, rows, { label: t("node.title") });
+  return ui.table(headers, rows, { label: t("node.title"), id: "nodeAmounts", sextant, nowrap: [true, true, true] });
 }
 
-export function nodeView(node: KubeObject, blocks: Blocks = ALL_OPEN): Node[] {
+export function nodeView(sextant: Sextant, node: KubeObject, blocks: Blocks = ALL_OPEN): Node[] {
   const gpu = gpuNodeOf(node);
   if (!hasGpu(gpu)) return [];
   const content = present([
@@ -205,7 +205,7 @@ export function nodeView(node: KubeObject, blocks: Blocks = ALL_OPEN): Node[] {
       ["migState", gpu.migState ? ui.status(gpu.migState, migStateTone(gpu.migState)) : null],
     ]),
     gpu.migState === "failed" && message(t("node.migFailed", { config: gpu.migConfig ?? "" })),
-    amountsTable(node),
+    amountsTable(sextant, node),
   ]);
   return [block(blocks, GPU_BLOCK, t("node.title"), content)];
 }
@@ -289,7 +289,7 @@ class Watches {
 function viewOf(sextant: Sextant, contribution: string, ref: ObjectRef, obj: KubeObject, live: Live | undefined, blocks: Blocks): Node[] | null {
   if (contribution === "gpu-operator" && isKind(ref.kind, CLUSTER_POLICY)) return policyView(sextant, obj, live, blocks);
   if (contribution === "gpu-operator" && isKind(ref.kind, NVIDIA_DRIVER)) return driverView(sextant, obj, live, blocks);
-  if (contribution === "gpu-node" && isKind(ref.kind, NODE)) return nodeView(obj, blocks);
+  if (contribution === "gpu-node" && isKind(ref.kind, NODE)) return nodeView(sextant, obj, blocks);
   return null;
 }
 

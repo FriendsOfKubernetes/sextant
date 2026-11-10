@@ -87,7 +87,9 @@ with the panel's "Expand all" and "Collapse all":
   components (at most 200), OLM v1's package, installed bundle and conditions, and the catalog's image, poll interval
   and base URL (text, never requested).
 
-Every object named is a link to its details in Sextant's panel.
+Every object named is a link to its details in Sextant's panel. The tables' columns resize (drag a header's right
+edge) and Sextant remembers their widths, as the built-in view's did; the same columns keep to one line, the others
+wrap between words.
 
 ## Permissions
 

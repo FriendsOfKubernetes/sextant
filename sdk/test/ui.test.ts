@@ -238,5 +238,10 @@ describe("a table whose columns resize (#417)", () => {
       expect(node.querySelector("colgroup")).toBeNull();
     }
     expect(table(["Name"], [["a"]], { nowrap: true }).querySelector("table")!.classList.contains("sx-table--nowrap")).toBe(true);
+    // Per column, as Sextant's details tables: words stay whole, the marked columns on one line.
+    const words = table(["Name", "Message"], [["web-1", "a long message"]], { nowrap: [true, false] });
+    expect(words.className).toContain("sx-table-wrap--words");
+    expect(words.querySelector("table")!.classList.contains("sx-table--words")).toBe(true);
+    expect([...words.querySelectorAll("th, td")].map((c) => c.className)).toEqual(["sx-col--nowrap", "", "sx-col--nowrap", ""]);
   });
 });

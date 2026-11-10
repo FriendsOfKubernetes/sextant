@@ -226,7 +226,7 @@ export function clusterView(sextant: Sextant, obj: KubeObject, related: Related,
       ["desired", ui.chips(desired)],
     ]),
     block(memory, "groups", t("groups.title"), [
-      groups.length > 0 && ui.table(groupHeaders, groups, { label: t("groups.title") }),
+      groups.length > 0 && ui.table(groupHeaders, groups, { label: t("groups.title"), id: "workerGroups", sextant, nowrap: [true, true, true, true, true] }),
       groups.length === 0 && remark(t("groups.none")),
     ]),
     block(
@@ -236,7 +236,7 @@ export function clusterView(sextant: Sextant, obj: KubeObject, related: Related,
       [
         loading && remark(t("pods.loading")),
         failed && remark(t("pods.error")),
-        listed.length > 0 && ui.table(podHeaders, listed, { label: t("pods.title") }),
+        listed.length > 0 && ui.table(podHeaders, listed, { label: t("pods.title"), id: "pods", sextant, nowrap: [true, true, true, true] }),
         !loading && !failed && pods.length === 0 && remark(t("pods.none")),
         pods.length > MAX_LISTED_PODS && remark(t("pods.more", { count: pods.length - MAX_LISTED_PODS })),
         truncated && remark(t("pods.truncated")),
@@ -294,8 +294,8 @@ export function jobView(sextant: Sextant, obj: KubeObject, memory: BlockMemory =
 
 // ---------- RayService ----------
 
-/** The Serve applications of one cluster: name, status, deployments (healthy of all) and the messages. */
-function appsTable(title: string, apps: ServeApp[]): HTMLElement | null {
+/** The Serve applications of one cluster: name, status, deployments (healthy of all) and the messages; its widths kept under the block's id. */
+function appsTable(sextant: Sextant, id: string, title: string, apps: ServeApp[]): HTMLElement | null {
   if (apps.length === 0) return null;
   const rows = apps.map((a) => [
     a.name,
@@ -311,7 +311,7 @@ function appsTable(title: string, apps: ServeApp[]): HTMLElement | null {
     ),
   ]);
   const headers = ["name", "status", "deployments", "message"].map((h) => t(`apps.${h}`));
-  return ui.table(headers, rows, { label: title });
+  return ui.table(headers, rows, { label: title, id, sextant, nowrap: [true, true, false, false] });
 }
 
 function serveClusterBlock(sextant: Sextant, memory: BlockMemory, id: string, title: string, cluster: ServeCluster, ns: string | null): HTMLElement | null {
@@ -322,7 +322,7 @@ function serveClusterBlock(sextant: Sextant, memory: BlockMemory, id: string, ti
       ["trafficPercent", cluster.trafficPercent === undefined ? null : t("percent", { value: cluster.trafficPercent })],
       ["targetCapacity", cluster.targetCapacity === undefined ? null : t("percent", { value: cluster.targetCapacity })],
     ]),
-    appsTable(title, cluster.apps),
+    appsTable(sextant, id, title, cluster.apps),
   ]);
 }
 

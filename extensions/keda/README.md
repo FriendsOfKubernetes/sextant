@@ -72,7 +72,9 @@ none. No value is ever read.
 
 The blocks open and close as the built-in panel's did, in Sextant's own memory of details sections, so "Expand all",
 "Collapse all" and Settings → Appearance apply to them. The managed HPA is watched by its name only while its block is
-open, as the built-in block watched it. Conditions, events and YAML are Sextant's own sections.
+open, as the built-in block watched it. Conditions, events and YAML are Sextant's own sections. The tables' columns
+resize (drag a header's right edge) and Sextant remembers their widths, as the built-in view's did; the same columns
+keep to one line, the others wrap between words.
 
 ## Permissions
 
@@ -117,7 +119,6 @@ None: it only reads.
     one, or a case text built of parts each with its own condition, would close it.)
   - **Triggers** hovers its whole text, as every list column does; the built-in cell had no hover. (A way to leave a
     column's hover out would close it.)
-  - The details tables' column widths cannot be dragged or remembered; the built-in tables' could.
 - Checked by tests on fixtures of KEDA's objects against the built-in readings (ported unchanged with the HPA's
   analysis); not yet tried on a live cluster.
 

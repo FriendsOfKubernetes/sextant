@@ -15,7 +15,8 @@ extension.
 - **Details:** an XRD's kinds and versions, a Composition's pipeline, a package's state; for claims, composites and
   managed resources of any custom resource group, their state in plain words and the chain Claim → composite → composed resources, read
   4 at a time and each shown as it comes. Their blocks open and close as Sextant remembers them, and a closed block
-  reads nothing.
+  reads nothing. The pipeline table's columns resize and are remembered, as the built-in one's were (#417), the
+  step on one line; widths set in the built-in view carry over.
 - **Problems:** the built-in category "Crossplane" as the extension's own, on by default — claims and composites not
   Synced, or not Ready for another reason than being created or deleted, after 2 minutes; one still being created after
   30; a paused one never; a composite with a claim told through the claim (`not-synced`, `not-ready-condition`,

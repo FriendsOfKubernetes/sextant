@@ -77,11 +77,15 @@ export function mapChips(value: unknown): HTMLElement | null {
   return ui.chips(Object.entries(map).map(([k, v]) => `${k}=${String(v)}`));
 }
 
-/** A table as the built-in `SimpleTable` (a row with `broken` marked red on its left). */
-export function table(headers: readonly string[], rows: readonly { cells: readonly UiContent[]; broken?: boolean }[]): HTMLElement {
+/**
+ * A table as the built-in `SimpleTable` (a row with `broken` marked red on its left): its columns resize and Sextant
+ * keeps their widths under `id` (the built-in table's `mesh.<id>` kept them by position, as these do).
+ */
+export function table(sextant: Sextant, id: string, headers: readonly string[], rows: readonly { cells: readonly UiContent[]; broken?: boolean }[]): HTMLElement {
   const node = ui.table(
     headers,
     rows.map((r) => r.cells),
+    { id, sextant },
   );
   const trs = node.querySelectorAll("tbody tr");
   rows.forEach((r, i) => {

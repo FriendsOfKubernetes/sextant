@@ -150,7 +150,7 @@ export function clusterView(sextant: Sextant, obj: KubeObject, memory: BlockMemo
       [t("fields.storage"), info.storageSize],
     ]),
     members.length > 0 &&
-      block(memory, "members", t("members.title"), ui.table([t("members.instance"), t("members.role"), t("members.health"), t("members.timeline")], members, { label: t("members.title") })),
+      block(memory, "members", t("members.title"), ui.table([t("members.instance"), t("members.role"), t("members.health"), t("members.timeline")], members, { label: t("members.title"), id: "instances", sextant, nowrap: [true, true, true, true] })),
     block(memory, "backups", t("backups"), backups),
   ]);
 }

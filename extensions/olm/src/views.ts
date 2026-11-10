@@ -104,7 +104,7 @@ export function operatorView(sextant: Sextant, obj: KubeObject, blocks: { block(
   const headers = ["kind", "name", "namespace", "conditions"].map((h) => t(`components.${h}`));
   return [
     blocks.block("components", t("components.title"), [
-      rows.length > 0 ? ui.table(headers, rows, { label: t("components.title") }) : remark(t("noComponents")),
+      rows.length > 0 ? ui.table(headers, rows, { label: t("components.title"), id: "operatorComponents", sextant, nowrap: [true, false, true, false] }) : remark(t("noComponents")),
       total > refs.length ? remark(t("moreComponents", { shown: refs.length, total, max: MAX_COMPONENTS })) : null,
     ]),
   ];

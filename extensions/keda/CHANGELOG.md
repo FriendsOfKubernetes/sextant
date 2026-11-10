@@ -12,4 +12,5 @@ Needs Sextant 0.30 (`sextantApi` 4). The first release: the KEDA part of Sextant
   ScaledObject's state in plain words, target, range, intervals and fallback, its triggers with their health, and the
   HPA KEDA manages with its verdict, causes and metrics (watched only while its block is open); a ScaledJob's state,
   maximum, strategy, image and triggers; where a (Cluster)TriggerAuthentication takes its parameters from, names only.
+  The tables' columns resize and Sextant remembers their widths, as the built-in tables'.
 - Installing asks for consent to read KEDA's kinds and HorizontalPodAutoscalers.

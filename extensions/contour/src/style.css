@@ -28,10 +28,6 @@ body.compact {
   color: var(--color-text-muted);
 }
 
-.ct-nowrap {
-  white-space: nowrap;
-}
-
 .ct-services {
   display: flex;
   flex-direction: column;

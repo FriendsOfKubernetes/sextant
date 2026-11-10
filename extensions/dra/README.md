@@ -81,6 +81,9 @@ sections (with "Expand all" and "Collapse all"), and a list is watched only whil
 Every object named is a link to its details in Sextant's panel; a link to a DRA object keeps the version of the
 object it comes from.
 
+The tables' columns, on the page and in the details, resize (drag a header's right edge) and Sextant remembers their
+widths, as the built-in view's did; the same columns keep to one line, the others wrap between words.
+
 ## Permissions
 
 - **Read** ResourceClaims, ResourceClaimTemplates, DeviceClasses and ResourceSlices (each section reads the object it

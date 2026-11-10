@@ -116,14 +116,17 @@ function lastError(obj: KubeObject, memory: BlockMemory): HTMLElement | null {
   return block(memory, "lastError", t("lastError"), element("p", { className: "eso-message", textContent: r.message }));
 }
 
-/** The keys by name: the Secret's key, the remote key and its property; nothing for none. */
-function keysTable(keys: RemoteKey[], label: string): HTMLElement | null {
+/**
+ * The keys by name: the Secret's key, the remote key and its property; nothing for none. Its columns resize and Sextant
+ * keeps their widths under `id` (the built-in `details:esoKeys`/`details:esoPushKeys`'s, by position).
+ */
+function keysTable(sextant: Sextant, id: string, keys: RemoteKey[], label: string): HTMLElement | null {
   if (keys.length === 0) return null;
   const headers = [t("keys.secretKey"), t("keys.remoteKey"), t("keys.property")];
   return ui.table(
     headers,
     keys.map((k) => [k.secretKey, k.remoteKey, k.property ?? ""]),
-    { label },
+    { label, id, sextant, nowrap: [true, false, false] },
   );
 }
 
@@ -172,18 +175,18 @@ export function externalSecretView(sextant: Sextant, obj: KubeObject, store: Sto
     ]),
     lastError(obj, memory),
     (keys.length > 0 || bulk.length > 0) &&
-      block(memory, "keys.title", t("keys.title"), [muted(t("keys.namesOnly")), keysTable(keys, t("keys.title")), fieldsOf([["dataFrom", ui.chips(bulk)]])]),
+      block(memory, "keys.title", t("keys.title"), [muted(t("keys.namesOnly")), keysTable(sextant, "keys", keys, t("keys.title")), fieldsOf([["dataFrom", ui.chips(bulk)]])]),
   ]);
 }
 
-export function clusterExternalSecretView(obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
+export function clusterExternalSecretView(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const failed = failedNamespaces(obj);
   const failedTable =
     failed.length > 0
       ? ui.table(
           [t("failedNamespaces.namespace"), t("failedNamespaces.reason")],
           failed.map((f) => [f.namespace, f.reason ?? ""]),
-          { label: t("failedNamespaces.title") },
+          { label: t("failedNamespaces.title"), id: "failedNamespaces", sextant, nowrap: [true, false] },
         )
       : null;
   return present([
@@ -225,7 +228,7 @@ export function pushSecretView(sextant: Sextant, obj: KubeObject, memory: BlockM
       ["lastSync", dateTime(lastSyncOf(obj))],
     ]),
     lastError(obj, memory),
-    keys.length > 0 && block(memory, "keys.pushTitle", t("keys.pushTitle"), keysTable(keys, t("keys.pushTitle"))),
+    keys.length > 0 && block(memory, "keys.pushTitle", t("keys.pushTitle"), keysTable(sextant, "pushKeys", keys, t("keys.pushTitle"))),
   ]);
 }
 
@@ -236,7 +239,7 @@ export function viewOf(sextant: Sextant, kind: string, obj: KubeObject, store?: 
     case "ExternalSecret":
       return externalSecretView(sextant, obj, store, memory);
     case "ClusterExternalSecret":
-      return clusterExternalSecretView(obj, memory);
+      return clusterExternalSecretView(sextant, obj, memory);
     case "SecretStore":
     case "ClusterSecretStore":
       return storeView(obj, memory);

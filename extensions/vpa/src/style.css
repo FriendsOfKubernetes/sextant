@@ -27,9 +27,3 @@ body.compact {
   margin: 0.25rem 0;
   color: var(--color-text-muted);
 }
-
-/* Table columns kept on one line, as the built-in tables' `nowrap` columns. */
-.sx-table .vpa-nowrap {
-  white-space: nowrap;
-  overflow-wrap: normal;
-}

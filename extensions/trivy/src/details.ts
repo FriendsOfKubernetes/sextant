@@ -88,10 +88,10 @@ function moreNote(top: Top<unknown>): HTMLElement | null {
 
 const present = (nodes: (Node | null | undefined | false)[]): Node[] => nodes.filter((n): n is Node => Boolean(n));
 
-export function vulnerabilityTable(top: Top<Vulnerability>): Node[] {
+export function vulnerabilityTable(sextant: Sextant, top: Top<Vulnerability>): Node[] {
   const headers = ["severity", "id", "package", "installed", "fixed"].map((h) => t(`table.${h}`));
   const rows = top.rows.map((v) => [severityBadge(v.severity), { content: v.id, title: v.title }, v.resource, v.installed, v.fixed ?? muted(t("noFix"))]);
-  return present([table(headers, rows), moreNote(top)]);
+  return present([table(sextant, "vulnerabilities", headers, rows), moreNote(top)]);
 }
 
 export function checkList(top: Top<Check>): Node[] {
@@ -107,16 +107,16 @@ export function checkList(top: Top<Check>): Node[] {
   return present([element("ul", { className: "sec-checks" }, ...items), moreNote(top)]);
 }
 
-export function secretTable(top: Top<ExposedSecret>): Node[] {
+export function secretTable(sextant: Sextant, top: Top<ExposedSecret>): Node[] {
   const headers = ["severity", "rule", "title", "target"].map((h) => t(`table.${h}`));
   const rows = top.rows.map((s) => [severityBadge(s.severity), s.rule, s.title, s.target]);
-  return present([table(headers, rows), moreNote(top)]);
+  return present([table(sextant, "secrets", headers, rows), moreNote(top)]);
 }
 
-export function controlTable(top: Top<ComplianceControl>): Node[] {
+export function controlTable(sextant: Sextant, top: Top<ComplianceControl>): Node[] {
   const headers = ["severity", "control", "title", "failed"].map((h) => t(`table.${h}`));
   const rows = top.rows.map((c) => [severityBadge(c.severity), c.id, c.name, String(c.failed)]);
-  return present([table(headers, rows), moreNote(top)]);
+  return present([table(sextant, "controls", headers, rows), moreNote(top)]);
 }
 
 /** A link to an object's details, labelled "Open <kind> <name>" as Sextant's links are. */
@@ -128,14 +128,14 @@ function objectLink(sextant: Sextant, ref: ObjectRef, text: string): HTMLElement
 
 // ---------- The report's details ----------
 
-function reportBody(shape: ReportShape, report: KubeObject): Node[] {
+function reportBody(sextant: Sextant, shape: ReportShape, report: KubeObject): Node[] {
   const counts = () => element("div", { className: "sec-report__counts" }, severityCounts(countsOf(report)));
   switch (shape) {
     case "vulnerabilities": {
       const top = topVulnerabilities(report);
       const head = counts();
       head.append(element("span", { className: "sec-note", textContent: t("fixable", { count: fixableCount(report) }) }));
-      return [head, ...(top.rows.length > 0 ? vulnerabilityTable(top) : [note(t("noVulnerabilities"))])];
+      return [head, ...(top.rows.length > 0 ? vulnerabilityTable(sextant, top) : [note(t("noVulnerabilities"))])];
     }
     case "checks": {
       const top = topFailedChecks(report);
@@ -143,11 +143,11 @@ function reportBody(shape: ReportShape, report: KubeObject): Node[] {
     }
     case "secrets": {
       const top = topSecrets(report);
-      return [counts(), ...(top.rows.length > 0 ? secretTable(top) : [note(t("noSecrets"))])];
+      return [counts(), ...(top.rows.length > 0 ? secretTable(sextant, top) : [note(t("noSecrets"))])];
     }
     case "compliance": {
       const c = compliance(report);
-      return [note(t("passFail", { pass: String(c.pass), fail: String(c.fail) })), ...(c.failing.rows.length > 0 ? controlTable(c.failing) : [])];
+      return [note(t("passFail", { pass: String(c.pass), fail: String(c.fail) })), ...(c.failing.rows.length > 0 ? controlTable(sextant, c.failing) : [])];
     }
     case "sbom": {
       const n = componentsCount(report);
@@ -177,7 +177,7 @@ export function reportView(sextant: Sextant, kind: Pick<KindRef, "group" | "kind
           image ? code(image) : null,
         );
       }
-      return [head, ...reportBody(def.shape, report)];
+      return [head, ...reportBody(sextant, def.shape, report)];
     }),
   ];
 }
@@ -244,7 +244,7 @@ function imageReport(sextant: Sextant, report: KubeObject): HTMLElement {
       openReport(sextant, report),
     ),
     counts,
-    ...(top.rows.length > 0 ? vulnerabilityTable(top) : [note(t("noVulnerabilities"))]),
+    ...(top.rows.length > 0 ? vulnerabilityTable(sextant, top) : [note(t("noVulnerabilities"))]),
   );
 }
 

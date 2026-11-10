@@ -78,6 +78,10 @@ were:
   open and close together, as the built-in ones did.
 - **TrainedModel** (`trained-model`): readiness, InferenceService, framework, storage URI, memory and URL.
 
+The traffic split, model formats and steps tables' columns resize and Sextant remembers their widths, as the built-in
+tables' (the widths set there carry over); words stay whole, and the columns the built-in kept on one line (every
+column of the traffic split and the model formats, a step's name, weight and dependency) still are.
+
 Every URI shown (storage URIs, also from `storageUris` and a container's `STORAGE_URI`, status URLs and addresses,
 component and step URLs) loses its userinfo, query and fragment, with "credentials and query hidden" where anything
 was; condition and failure messages have every URI in them cleaned the same way. Every object named is a link to its

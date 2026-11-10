@@ -69,7 +69,9 @@ HPA that fights it and its recommendation against this workload's template. It i
 no VPAs or no VPA targets the workload.
 
 The blocks open and close as the built-in panel's did, in Sextant's own memory of details sections, so "Expand all",
-"Collapse all" and Settings → Appearance apply to them. Conditions, events and YAML are Sextant's own sections.
+"Collapse all" and Settings → Appearance apply to them. Conditions, events and YAML are Sextant's own sections. The
+tables' columns resize (drag a header's right edge) and Sextant remembers their widths, as the built-in view's did;
+the same columns keep to one line, the others wrap between words.
 
 ## Permissions
 
@@ -146,7 +148,6 @@ None: it only reads.
   - The rules look up the cluster's HPAs in every namespace (at most 5000) wherever the extension's rules run; the
     built-in problems held HPAs only of the namespaces whose VPAs change running pods (at most 40), and only where VPAs
     are served. (Lookups narrowed to the namespaces of the judged objects would close it.)
-  - The details tables' column widths cannot be dragged or remembered; the built-in tables' could.
   - A VPA's target of a kind outside the six above (a custom workload such as an Argo Rollout) is not read, so its
     details say "The target has not been read"; the built-in view read any kind the cluster serves. (Reading every
     kind would need a permission on all kinds.)

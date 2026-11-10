@@ -105,7 +105,10 @@ body.compact {
   margin: 6px 0;
 }
 
+/* The table is the UI kit's resizable one (`ui.table`): `width` and `overflow-wrap` undo its `sx-table` rules, so it
+   keeps the built-in view's look. */
 .sec-table {
+  width: auto;
   border-collapse: collapse;
   font-size: 0.75rem;
 }
@@ -116,6 +119,7 @@ body.compact {
   text-align: left;
   border-bottom: 1px solid var(--color-border);
   vertical-align: top;
+  overflow-wrap: normal;
 }
 
 .sec-table th {

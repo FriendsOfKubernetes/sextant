@@ -44,16 +44,20 @@ export function fieldsOf(rows: readonly (readonly [string, UiContent])[]): HTMLE
 }
 
 /**
- * A table of the built-in view's (`table` of Sextant's details): nothing without rows, and the columns `nowrap` names
- * kept on one line.
+ * A table of the built-in view's (`table` of Sextant's details): nothing without rows, words kept whole, the columns
+ * `nowrap` names kept on one line; its columns resize and Sextant keeps their widths under `id` (by position, as the
+ * built-in `details:contour<Id>` kept them).
  */
-export function table(id: string, headers: readonly string[], rows: readonly (readonly UiContent[])[], nowrap: readonly number[] = []): HTMLElement | null {
+export function table(
+  sextant: Sextant,
+  id: string,
+  headers: readonly string[],
+  rows: readonly (readonly UiContent[])[],
+  nowrap: readonly number[] = [],
+): HTMLElement | null {
   if (rows.length === 0) return null;
-  const node = ui.table(headers, rows);
+  const node = ui.table(headers, rows, { id, sextant, nowrap: headers.map((_, i) => nowrap.includes(i)) });
   node.dataset.table = id;
-  for (const row of node.querySelectorAll("tr")) {
-    for (const i of nowrap) row.children[i]?.classList.add("ct-nowrap");
-  }
   return node;
 }
 

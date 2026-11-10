@@ -152,7 +152,7 @@ function referencesTable(sextant: Sextant, blocks: Blocks, checks: readonly RefC
     ui.status(t(`refState.${c.state}`, { kind: c.ref.badKind ?? "" }), STATE_TONE[c.state]),
   ]);
   const headers = [t("refs.kind"), t("refs.name"), t("refs.where"), t("refs.state")];
-  return block(blocks, REFS_BLOCK, t("refs.title"), () => ui.table(headers, rows, { label: t("refs.title") }));
+  return block(blocks, REFS_BLOCK, t("refs.title"), () => ui.table(headers, rows, { label: t("refs.title"), id: "references", sextant, nowrap: [true, false, false, false] }));
 }
 
 // ---------- per kind ----------
@@ -167,7 +167,7 @@ function routesTable(sextant: Sextant, blocks: Blocks, routes: readonly Route[],
     inlineOf(r.services.map((s) => serviceCell(sextant, s, group))),
   ]);
   const headers = [t("routes.number"), t("routes.match"), t("routes.priority"), t("routes.middlewares"), t("routes.services")];
-  return block(blocks, ROUTES_BLOCK, t("routes.title"), () => ui.table(headers, rows, { label: t("routes.title") }));
+  return block(blocks, ROUTES_BLOCK, t("routes.title"), () => ui.table(headers, rows, { label: t("routes.title"), id: "routes", sextant, nowrap: [true, false, true, false, false] }));
 }
 
 function routeView(sextant: Sextant, blocks: Blocks, kind: KindRef, obj: KubeObject): (Node | null)[] {

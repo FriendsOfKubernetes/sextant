@@ -80,6 +80,9 @@ not ready in Strimzi's words, and Strimzi's warnings (deprecated fields, unused 
 - **Failures** (connectors, MirrorMaker 2): each failed connector and task with the first line of its stack trace and
   the whole trace folded (at most 20 000 characters drawn).
 
+The tables (warnings, listeners, mirrors, connectors, tasks) keep the built-in ones' columns on one line (the rest wrap
+between words); their columns resize, and Sextant remembers their widths, as the built-in tables did.
+
 No actions: Edit and Delete are Sextant's own actions on every kind of the section.
 
 ## Permissions

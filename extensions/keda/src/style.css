@@ -49,9 +49,3 @@ body.compact {
 .as-summary:last-of-type {
   border-bottom: none;
 }
-
-/* Table columns kept on one line, as the built-in tables' `nowrap` columns. */
-.sx-table .as-nowrap {
-  white-space: nowrap;
-  overflow-wrap: normal;
-}

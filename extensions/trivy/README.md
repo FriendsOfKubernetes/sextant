@@ -69,7 +69,8 @@ the kinds the operator scans), its container and image; then by kind —
   which holds part of the secret;
 - compliance reports: passed and failed, and the 50 most severe failing controls with how many checks failed;
 - SBOM reports: the component count.
-A note says "Listed: the 50 most severe of N." when there are more.
+A note says "Listed: the 50 most severe of N." when there are more. The tables' columns resize, and Sextant remembers
+their widths, as the built-in view's tables did.
 
 **Image scans of a workload** (`scans`), on Pods, Deployments, StatefulSets, DaemonSets, ReplicaSets, Jobs and CronJobs,
 right after Sextant's own "Security" section: one block **Image scans (Trivy)** with the object's VulnerabilityReports
@@ -130,8 +131,6 @@ None: the extension is read-only and has no action of its own (ADR-0076).
     followed discovery, so it came as soon as Trivy Operator was installed. A notice of changed kinds would close it.
   - The image scans read the shown workload themselves, so the extension asks to read Pods and workloads; the built-in
     block used the panel's object.
-  - The details' tables cannot be resized and remembered, as Sextant's details tables are (#417).
-  - The blocks' memory is kept per section, so a block closed in the built-in view opens once again here (#417).
   - The image column treats a blank registry, tag or digest (only spaces) as missing; the built-in did so only for an
     empty one (#417, an `exists` that refuses only `""`). The counts read a count written as text too; the built-in
     took only JSON numbers. Trivy Operator writes neither.

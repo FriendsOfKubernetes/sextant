@@ -86,6 +86,9 @@ its own as the built-in section had none, its blocks opening and closing in Sext
   import error.
 - Project: display name, description, requester, node selector, phase, and its Namespace (a link).
 
+The details tables' columns resize (drag a header's right edge) and Sextant remembers their widths, as the built-in
+view's did; the same columns keep to one line, the others wrap between words.
+
 **Actions**, buttons of the details bar on their kinds:
 - **Rollout latest** (`rollout-latest`) on a DeploymentConfig: its window says what it does and shows the one request it
   sends (`POST …/deploymentconfigs/<name>/instantiate` with its body, as `oc rollout latest`); it reads the latest
@@ -175,8 +178,7 @@ What the extension API cannot say yet, compared with the built-in view (issue #4
 - **Build Duration column**: from `status.startTimestamp` to `status.completionTimestamp`, else to now; the built-in
   took `status.duration` first and counted to now only while the build ran (a finished build without a completion
   time showed nothing).
-- **Details tables** neither resize nor remember their column widths, and do not keep columns on one line, as the
-  built-in details tables did (`ui.table`). The "Build logs" button has no icon (`ui.button`).
+- **The "Build logs" button** has no icon (`ui.button`).
 - **Action windows** are titled by Sextant with the action's name; the built-in dialogs' title ("Roll out
   DeploymentConfig frontend?") is the window's first line.
 

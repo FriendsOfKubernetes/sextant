@@ -70,7 +70,8 @@ sections (Settings → Appearance), with the panel's "Expand all" and "Collapse 
   XRD's group, composite and claim kinds, versions with their flags (served, referenceable), default Composition,
   Established and Offered, and what that means in plain words; a Composition's composite type, mode, number of classic
   resources and its pipeline's steps with links to their Functions; a package's state in plain words, its first failing
-  condition, package, current revision and package, revision activation, Installed and Healthy.
+  condition, package, current revision and package, revision activation, Installed and Healthy. The pipeline table's
+  columns resize as the built-in one's did, and Sextant remembers their widths; the step keeps to one line, as there.
 - **Claims, composite resources and managed resources** (`crossplane-resource`, order 21, on every kind of a custom
   resource group — a group with a dot, not Kubernetes' own — as the built-in section was on kinds of installed APIs;
   hidden until it has something to show, and reading nothing on Crossplane's own kinds). A claim or composite is told by the XRDs (watched where the cluster

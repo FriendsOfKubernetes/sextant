@@ -75,7 +75,9 @@ The blocks open and close as the built-in panel's did, in Sextant's own memory o
 "Collapse all" and Settings → Appearance apply to them. What a block lists is watched as the built-in block watched it:
 every NodeClaim's events (`involvedObject.kind=NodeClaim`) while a NodePool's disruptions block is open; the NodePools
 (where the cluster serves them) while a NodeClaim's block is open, and its own events while their block is open — or
-once while it is closed, to know whether to show it. Conditions, events and YAML are Sextant's own sections.
+once while it is closed, to know whether to show it. Conditions, events and YAML are Sextant's own sections. The
+tables' columns resize (drag a header's right edge) and Sextant remembers their widths, as the built-in view's did;
+the same columns keep to one line, the others wrap between words.
 
 ## Permissions
 
@@ -124,7 +126,6 @@ None: it only reads.
     (The same going through a map's keys, in `atLeast`, would close it.)
   - A NodeClaim's disruption events that could not be read say "The list could not be read." with the cluster's
     message; the built-in block titled the error by its kind.
-  - The details tables' column widths cannot be dragged or remembered; the built-in tables' could.
 - Checked by tests on fixtures of Karpenter's objects against the built-in readings (ported unchanged); not yet tried on
   a live cluster.
 

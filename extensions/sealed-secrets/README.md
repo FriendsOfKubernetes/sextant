@@ -68,7 +68,9 @@ UI kit in the classes of Sextant's own details panel:
 
 The blocks open and close as the built-in ones (open at first, remembered in Sextant's own memory of details sections,
 with the panel's "Expand all" and "Collapse all"); a closed block draws and watches nothing: the Deployments are
-watched only while "Controller" is open, the sealing keys only while "Sealing keys" is open too.
+watched only while "Controller" is open, the sealing keys only while "Sealing keys" is open too. The tables keep the
+built-in ones' columns on one line (an image list wraps between words); their columns resize, and Sextant remembers
+their widths, as the built-in tables did.
 
 ## Permissions
 
@@ -122,9 +124,7 @@ None: the extension is read-only and has no action of its own (ADR-0109).
     would close it (#417).
   - The table's search finds Status and Scope by the words shown (Synced, Cluster-wide); the built-in matched their
     names (`ready`, `clusterWide`). Filters still go by the names.
-  - The details' tables are the SDK's: their columns cannot be resized and remembered, and do not keep from wrapping,
-    as Sextant's details tables do (#417); "Sealing keys" inside "Controller" keeps the outer block's heading level.
-  - The blocks' memory is kept per section, so a block closed in the built-in view opens once again here (#417).
+  - "Sealing keys" inside "Controller" keeps the outer block's heading level.
   - The extension's permission reads Secrets in every namespace; it only ever watches their metadata, as the built-in
     view did, but the grant itself does not say "metadata only".
 - Checked by tests on fixtures of Sealed Secrets objects (copied from the built-in view) against the built-in readings

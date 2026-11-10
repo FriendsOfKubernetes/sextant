@@ -88,16 +88,19 @@ export function fieldsOf(rows: readonly (readonly [string, UiContent])[]): HTMLE
   return list.childElementCount > 0 ? list : null;
 }
 
-/** A table whose columns marked `true` stay on one line; nothing without rows (as the built-in `table`). */
-export function tableOf(headers: readonly string[], rows: readonly (readonly UiContent[])[], nowrap: readonly boolean[]): HTMLElement | null {
+/**
+ * A table whose columns marked `true` stay on one line and the others wrap between words, its column widths resized and
+ * remembered under `id` (the built-in table's own word); nothing without rows (as the built-in `table`).
+ */
+export function tableOf(
+  sextant: Sextant,
+  id: string,
+  headers: readonly string[],
+  rows: readonly (readonly UiContent[])[],
+  nowrap: readonly boolean[],
+): HTMLElement | null {
   if (rows.length === 0) return null;
-  const view = ui.table(headers, rows);
-  for (const row of view.querySelectorAll("tr")) {
-    [...row.children].forEach((cell, i) => {
-      if (nowrap[i]) cell.classList.add("as-nowrap");
-    });
-  }
-  return view;
+  return ui.table(headers, rows, { id, sextant, nowrap });
 }
 
 /**

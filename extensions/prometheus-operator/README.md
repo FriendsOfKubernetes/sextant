@@ -77,6 +77,9 @@ The Prometheus and PrometheusAgent lists (every namespace, of the kinds the clus
 is shown or a "Picked up by" block is open; the Namespaces' labels (metadata only) only when one of them selects
 namespaces by labels; a monitor's targets while "Selects now" is open.
 
+The details' tables keep the built-in ones' columns on one line (the rest wrap between words); their columns resize,
+and Sextant remembers their widths, as the built-in tables did.
+
 ## Permissions
 
 - **Read** ServiceMonitors, PodMonitors, Probes, PrometheusRules, Prometheuses, Alertmanagers and PrometheusAgents in
@@ -148,8 +151,6 @@ None: the extension is read-only and has no action of its own (ADR-0100).
     rule the operator accepts has.
   - **Namespaces** sorts by the shown list; the built-in sorted by the names joined with commas (the same order but for
     the separators). An endpoint with neither a port name, a target port nor a number leaves nothing in **Ports**.
-  - The details' tables are the SDK's: their columns cannot be resized and remembered as Sextant's details tables can,
-    nor kept from wrapping.
 - Checked by tests on fixtures of Prometheus Operator's objects (copied from the built-in view) against the built-in
   readings and rules; not yet tried on a live cluster.
 

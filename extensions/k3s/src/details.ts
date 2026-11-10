@@ -101,7 +101,9 @@ function block(blocks: Blocks, id: string, title: string, content: UiContent, ac
 const fieldsOf = (rows: readonly (readonly [string, UiContent])[]): HTMLElement => ui.fields(rows.map(([key, value]) => [t(`fields.${key}`), value] as const));
 
 /** A small table, or nothing without rows (as the built-in `table`). */
-const tableOf = (headers: string[], rows: UiContent[][], label: string): HTMLElement | null => (rows.length > 0 ? ui.table(headers, rows, { label }) : null);
+/** A table whose columns resize and are remembered under `id` (the built-in table's own word), `nowrap` marking the columns kept on one line; nothing without rows. */
+const tableOf = (sextant: Sextant, id: string, nowrap: boolean[], headers: string[], rows: UiContent[][], label: string): HTMLElement | null =>
+  rows.length > 0 ? ui.table(headers, rows, { label, id, sextant, nowrap }) : null;
 
 const JOB_TONE: Record<JobState, "success" | "warning" | "danger" | "muted"> = { complete: "success", running: "warning", failed: "danger", pending: "muted" };
 
@@ -150,12 +152,12 @@ function valuesBlock(obj: KubeObject, blocks: Blocks): HTMLElement {
   return block(blocks, VALUES_BLOCK, t("values.title"), body);
 }
 
-/** The Secrets `valuesSecrets` names, with the keys read from each (never a value). */
-function valuesSecrets(sextant: Sextant, obj: KubeObject, blocks: Blocks): HTMLElement | null {
+/** The Secrets `valuesSecrets` names, with the keys read from each (never a value); `id` the table whose widths Sextant keeps. */
+function valuesSecrets(sextant: Sextant, id: string, obj: KubeObject, blocks: Blocks): HTMLElement | null {
   const ns = obj.metadata.namespace ?? null;
   const rows = valuesSecretsOf(obj).map((s) => [link(sextant, SECRET, s.name, ns), ui.chips(s.keys) ?? t("values.allKeys")]);
   if (rows.length === 0) return null;
-  return block(blocks, SECRETS_BLOCK, t("values.secrets"), tableOf([t("values.secret"), t("values.keys")], rows, t("values.secrets")));
+  return block(blocks, SECRETS_BLOCK, t("values.secrets"), tableOf(sextant, id, [true, false], [t("values.secret"), t("values.keys")], rows, t("values.secrets")));
 }
 
 function jobBlock(sextant: Sextant, chart: KubeObject, jobs: Listed, blocks: Blocks): HTMLElement {
@@ -220,7 +222,7 @@ export function chartView(sextant: Sextant, chart: KubeObject, jobsLive: Live | 
     ]),
     owner && remark(t("hint.bundled", { addon: owner.name })),
     jobBlock(sextant, chart, jobs, blocks),
-    valuesSecrets(sextant, chart, blocks),
+    valuesSecrets(sextant, "chartValuesSecrets", chart, blocks),
     valuesBlock(chart, blocks),
   ]);
 }
@@ -238,7 +240,7 @@ export function configView(sextant: Sextant, config: KubeObject, chartLive: Live
     ]),
     !loading && !chart && note(t("config.noChart", { name: target.name, namespace: target.namespace }), "warning"),
     remark(t("config.hint")),
-    valuesSecrets(sextant, config, blocks),
+    valuesSecrets(sextant, "configValuesSecrets", config, blocks),
     valuesBlock(config, blocks),
   ]);
 }
@@ -277,17 +279,17 @@ export const argsHiddenByHost = (node: KubeObject, distribution: string): boolea
   hiddenPaths(node).includes(`metadata.annotations[${JSON.stringify(`${distribution}.io/node-args`)}]`);
 
 /** A node's arguments: flag and value, a hidden one as "hidden"; what Sextant keeps from the extension, said so. */
-function argsContent(node: KubeObject, distribution: string): Node[] {
+function argsContent(sextant: Sextant, node: KubeObject, distribution: string): Node[] {
   if (argsHiddenByHost(node, distribution)) return [remark(t("node.argsHidden"))];
   const d = nodeDistributionOf(node);
   if (d.args === undefined) return [];
   if (d.args === null) return [remark(t("node.argsUnreadable"))];
   const rows = d.args.map((a) => [a.flag ?? "", a.hidden ? element("span", { className: "k3s-muted", textContent: t("node.hidden") }) : (a.value ?? "")]);
-  return present([tableOf([t("node.flag"), t("node.value")], rows, t("node.args")), remark(t("node.argsNote"))]);
+  return present([tableOf(sextant, "nodeArgs", [true, false], [t("node.flag"), t("node.value")], rows, t("node.args")), remark(t("node.argsNote"))]);
 }
 
 /** The "k3s" / "RKE2" block of a node; nothing on a node that tells no distribution. */
-export function nodeView(node: KubeObject, blocks: Blocks = ALL_OPEN): Node[] {
+export function nodeView(sextant: Sextant, node: KubeObject, blocks: Blocks = ALL_OPEN): Node[] {
   const d = nodeDistributionOf(node);
   if (!d.distribution) return [];
   const roles = d.roles.map((r) => t(`role.${r}`));
@@ -303,7 +305,7 @@ export function nodeView(node: KubeObject, blocks: Blocks = ALL_OPEN): Node[] {
       ["externalIp", d.externalIp ?? null],
       ["etcdMember", d.etcdMember ?? null],
     ]),
-    (d.args !== undefined || argsHiddenByHost(node, d.distribution)) && block(blocks, ARGS_BLOCK, t("node.args"), argsContent(node, d.distribution)),
+    (d.args !== undefined || argsHiddenByHost(node, d.distribution)) && block(blocks, ARGS_BLOCK, t("node.args"), argsContent(sextant, node, d.distribution)),
   ]);
   return [block(blocks, DISTRIBUTION_BLOCK, t(`distribution.${d.distribution}`), content)];
 }
@@ -390,7 +392,7 @@ function viewOf(sextant: Sextant, contribution: string, ref: ObjectRef, obj: Kub
     if (isKind(ref.kind, ADDON)) return addonView(obj);
     if (isKind(ref.kind, ETCD_SNAPSHOT)) return snapshotView(sextant, obj);
   }
-  if (contribution === "k3s-node" && isKind(ref.kind, NODE)) return nodeView(obj, blocks);
+  if (contribution === "k3s-node" && isKind(ref.kind, NODE)) return nodeView(sextant, obj, blocks);
   return null;
 }
 

@@ -13,7 +13,8 @@ extension.
 - **Details** (without a heading, as the built-in section): a Cluster's state, a switchover or failover in progress,
   hibernation, its instances with their roles and health, its backups and continuous archiving; a Backup's fields and
   error; a ScheduledBackup's schedule and runs; a Pooler's fields. The blocks open and close in Sextant's own memory
-  of details sections, with "Expand all" and "Collapse all".
+  of details sections, with "Expand all" and "Collapse all"; the Instances table's columns resize, and Sextant
+  remembers their widths, as the built-in table did.
 - **Problems:** Clusters not ready (after five minutes; a hibernated one never), failing continuous archiving or
   backups, Backups failed within a day (a phase in any case), counted on the section, with the built-in reasons, over
   up to 20 000 Clusters and Backups; "Only problems" as the built-in tables.

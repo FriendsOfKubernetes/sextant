@@ -31,6 +31,8 @@ export function refTable(sextant: Sextant, refs: FluxRef[]): HTMLElement {
   return ui.table(
     [t("related.kind"), t("related.name"), t("related.namespace")],
     refs.map((r) => [r.kind, objectLink(sextant, r), r.namespace ?? ""]),
+    // Resized and kept by Sextant as the built-in view's table was.
+    { id: "details", sextant },
   );
 }
 

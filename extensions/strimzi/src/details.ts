@@ -108,17 +108,17 @@ const readyRows = (obj: KubeObject): Row[] => [
 const note = (text: string, danger: boolean) => element("p", { className: danger ? "strimzi-note strimzi-note--danger" : "strimzi-note", textContent: text });
 const mutedText = (text: string) => element("span", { className: "strimzi-muted", textContent: text });
 
-function warningsBlock(obj: KubeObject): HTMLElement | null {
+function warningsBlock(sextant: Sextant, obj: KubeObject): HTMLElement | null {
   const warnings = warningsOf(obj);
   if (warnings.length === 0) return null;
   const rows = warnings.map((w) => [w.reason ?? "", w.message ?? ""]);
-  return block("warnings", t("warnings"), ui.table([t("warningReason"), t("warningMessage")], rows));
+  return block("warnings", t("warnings"), ui.table([t("warningReason"), t("warningMessage")], rows, { id: "warnings", sextant, nowrap: [true, false] }));
 }
 
 /** Why it is not ready, and the warnings Strimzi reports. */
-function messages(obj: KubeObject): Node[] {
+function messages(sextant: Sextant, obj: KubeObject): Node[] {
   const r = readinessOf(obj);
-  return present([r.state === "notReady" && r.message ? note(r.message, true) : null, warningsBlock(obj)]);
+  return present([r.state === "notReady" && r.message ? note(r.message, true) : null, warningsBlock(sextant, obj)]);
 }
 
 const kafkaLink = (sextant: Sextant, obj: KubeObject) =>
@@ -144,8 +144,9 @@ export function kafkaView(sextant: Sextant, obj: KubeObject): Node[] {
       l.bootstrapServers ?? "",
       l.addresses.length > 0 ? ui.chips(l.addresses) : mutedText(t("listeners.noAddress")),
     ]),
+    { id: "listeners", sextant, nowrap: [true, true, true, false, false] },
   );
-  return present([...messages(obj), fieldsOf(rows), listeners.length > 0 ? block("listeners", t("listeners.title"), listenersTable) : null]);
+  return present([...messages(sextant, obj), fieldsOf(rows), listeners.length > 0 ? block("listeners", t("listeners.title"), listenersTable) : null]);
 }
 
 export function nodePoolView(sextant: Sextant, obj: KubeObject): Node[] {
@@ -158,7 +159,7 @@ export function nodePoolView(sextant: Sextant, obj: KubeObject): Node[] {
     ["nodeIds", ui.chips(arr(get(obj, "status", "nodeIds")).map(String))],
     ["storage", str(get(obj, "spec", "storage", "type"))],
   ];
-  return present([...messages(obj), fieldsOf(rows)]);
+  return present([...messages(sextant, obj), fieldsOf(rows)]);
 }
 
 export function topicView(sextant: Sextant, obj: KubeObject): Node[] {
@@ -170,7 +171,7 @@ export function topicView(sextant: Sextant, obj: KubeObject): Node[] {
     ["topicReplicas", num(get(obj, "spec", "replicas"))?.toString()],
     ["config", ui.chips(Object.entries(record(get(obj, "spec", "config"))).map(([key, value]) => `${key}=${String(value)}`))],
   ];
-  return present([...messages(obj), fieldsOf(rows)]);
+  return present([...messages(sextant, obj), fieldsOf(rows)]);
 }
 
 export function userView(sextant: Sextant, obj: KubeObject): Node[] {
@@ -186,7 +187,7 @@ export function userView(sextant: Sextant, obj: KubeObject): Node[] {
     // The Secret's name only: a link to Sextant's own details of it; the extension never reads it.
     ["secret", link(sextant, { group: "", kind: "Secret" }, "v1", userSecretOf(obj), ns)],
   ];
-  return present([...messages(obj), fieldsOf(rows)]);
+  return present([...messages(sextant, obj), fieldsOf(rows)]);
 }
 
 /** One failure: what failed, the first line of its trace, and the whole trace folded. */
@@ -235,7 +236,7 @@ export function connectorFailures(connectors: readonly ConnectorStatus[]): HTMLE
   return items.length > 0 ? block("failures", t("connector.failuresTitle"), items) : null;
 }
 
-export function connectView(obj: KubeObject, mirror: boolean): Node[] {
+export function connectView(sextant: Sextant, obj: KubeObject, mirror: boolean): Node[] {
   const plugins = arr(get(obj, "status", "connectorPlugins")).length;
   const rows: Row[] = [
     ...readyRows(obj),
@@ -259,16 +260,20 @@ export function connectView(obj: KubeObject, mirror: boolean): Node[] {
     return [c.name ?? "", ui.status(state, stateTone(state)), formatList(c.tasks.map((task) => task.state ?? "")), count === undefined ? "" : String(count)];
   });
   return present([
-    ...messages(obj),
+    ...messages(sextant, obj),
     fieldsOf(rows),
     mirror && mirrors.length > 0
-      ? block("mirrors", t("mirrors.title"), ui.table([t("mirrors.source"), t("mirrors.target"), t("mirrors.topics")], mirrors))
+      ? block("mirrors", t("mirrors.title"), ui.table([t("mirrors.source"), t("mirrors.target"), t("mirrors.topics")], mirrors, { id: "mirrors", sextant, nowrap: [true, true, false] }))
       : null,
     connectors.length > 0
       ? block(
           "connectors",
           t("connectors.title"),
-          ui.table([t("connectors.name"), t("connectors.state"), t("connectors.tasks"), t("connectors.restarts")], connectors),
+          ui.table([t("connectors.name"), t("connectors.state"), t("connectors.tasks"), t("connectors.restarts")], connectors, {
+            id: "connectors",
+            sextant,
+            nowrap: [true, true, false, true],
+          }),
         )
       : null,
     connectorFailures(reported),
@@ -310,12 +315,13 @@ export function connectorView(sextant: Sextant, obj: KubeObject): Node[] {
   const tasksTable = ui.table(
     [t("connector.task"), t("connector.state"), t("connector.worker"), t("connector.error")],
     tasks.map((task) => [task.id, task.state ? ui.status(task.state, stateTone(task.state)) : "", task.workerId ?? "", firstLine(task.trace) ?? ""]),
+    { id: "tasks", sextant, nowrap: [true, true, true, false] },
   );
   return present([
     // With failures below, Strimzi's own NotReady text ("see connectorStatus") adds nothing.
     r.state === "notReady" && r.message && !failing ? note(r.message, true) : null,
     exhausted && failing ? note(t("connector.restartsExhausted", { count: restart.count }), false) : null,
-    warningsBlock(obj),
+    warningsBlock(sextant, obj),
     fieldsOf(rows),
     connector ? connectorFailures([connector]) : null,
     tasks.length > 0 ? block("tasks", t("connector.tasksTitle"), tasksTable) : null,
@@ -329,8 +335,8 @@ export function viewOf(sextant: Sextant, obj: KubeObject): Node[] {
   if (isKind(kind, KAFKA_NODE_POOL)) return nodePoolView(sextant, obj);
   if (isKind(kind, KAFKA_TOPIC)) return topicView(sextant, obj);
   if (isKind(kind, KAFKA_USER)) return userView(sextant, obj);
-  if (isKind(kind, KAFKA_CONNECT)) return connectView(obj, false);
-  if (isKind(kind, KAFKA_MIRROR_MAKER_2)) return connectView(obj, true);
+  if (isKind(kind, KAFKA_CONNECT)) return connectView(sextant, obj, false);
+  if (isKind(kind, KAFKA_MIRROR_MAKER_2)) return connectView(sextant, obj, true);
   if (isKind(kind, KAFKA_CONNECTOR)) return connectorView(sextant, obj);
   return [];
 }

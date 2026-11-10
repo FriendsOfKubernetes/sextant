@@ -13,7 +13,8 @@ extension.
   breaks its object or cannot be judged (another namespace, another provider, a list not read, the other group) — and
   per kind the routes with their match rules, middlewares and services, a TraefikService's children, a Middleware's
   chain, and the TLS and transport settings, each reference a link. Their blocks open and close as Sextant remembers
-  them, and a closed block watches nothing.
+  them, and a closed block watches nothing. The tables' columns resize and Sextant remembers their widths, as the
+  built-in view's.
 - **Problems:** routes' missing Services, TraefikServices, servers transports (HTTP and TCP) and middlewares (HTTP and
   TCP), parent routes, TLS options; a TraefikService's weighted, highest-random-weight, mirroring, mirror, failover and
   fallback services with their TraefikServices, servers transports and own middlewares; chained middlewares and the

@@ -64,9 +64,14 @@ function fieldsOf(rows: readonly (readonly [string, UiContent])[]): HTMLElement 
   return list.childElementCount > 0 ? list : null;
 }
 
-/** `ui.table`, or nothing without rows. */
-const tableOf = (headers: string[], rows: UiContent[][], label: string): HTMLElement | null =>
-  rows.length > 0 ? ui.table(headers, rows, { label }) : null;
+/** The built-in view's details tables: words stay whole, the columns marked `true` on one line. */
+const WORDS = [true, true, true, false];
+const METRIC_COLUMNS = [true, true, true, true, true, true, false, false];
+const FIRST_TWO = [true, true, false];
+
+/** `ui.table`, or nothing without rows; its columns resize and Sextant keeps their widths under `id`, as the built-in view's. */
+const tableOf = (sextant: Sextant, id: string, headers: string[], rows: UiContent[][], label: string, nowrap: readonly boolean[]): HTMLElement | null =>
+  rows.length > 0 ? ui.table(headers, rows, { label, id, sextant, nowrap }) : null;
 
 const present = (nodes: (Node | null)[]): Node[] => nodes.filter((n): n is Node => n !== null);
 
@@ -158,7 +163,7 @@ function replicaSetsView(sextant: Sextant, ro: KubeObject, lists: RolloutLists |
     t("availableOf", { available: s.available, desired: s.desired }),
   ]);
   const headers = ["name", "role", "revision", "available"].map((h) => t(`table.${h}`));
-  return listBlock(t("sections.replicaSets"), tableOf(headers, rows, t("sections.replicaSets")), list, "noReplicaSets");
+  return listBlock(t("sections.replicaSets"), tableOf(sextant, "rolloutReplicaSets", headers, rows, t("sections.replicaSets"), WORDS), list, "noReplicaSets");
 }
 
 function analysisRunsView(sextant: Sextant, ro: KubeObject, lists: RolloutLists | null, now: number): HTMLElement {
@@ -175,7 +180,7 @@ function analysisRunsView(sextant: Sextant, ro: KubeObject, lists: RolloutLists 
     ];
   });
   const headers = ["name", "phase", "started", "message"].map((h) => t(`table.${h}`));
-  return listBlock(t("sections.analysisRuns"), tableOf(headers, rows, t("sections.analysisRuns")), list, "noAnalysisRuns");
+  return listBlock(t("sections.analysisRuns"), tableOf(sextant, "rolloutAnalysisRuns", headers, rows, t("sections.analysisRuns"), WORDS), list, "noAnalysisRuns");
 }
 
 /** The whole Rollout section: what the lists say so far (`null` before they start). */
@@ -205,7 +210,7 @@ export function analysisRunView(sextant: Sextant, run: KubeObject): Node[] {
     m.failing?.message || m.message || null,
   ]);
   const headers = ["metric", "phase", "successful", "failed", "inconclusive", "error", "lastValue", "message"].map((h) => t(`table.${h}`));
-  const content = tableOf(headers, metrics, t("sections.metrics"));
+  const content = tableOf(sextant, "analysisMetrics", headers, metrics, t("sections.metrics"), METRIC_COLUMNS);
   return present([
     fieldsOf([
       [t("fields.phase"), phase ? ui.status(phase, analysisTone(phase)) : undefined],
@@ -235,8 +240,8 @@ export function experimentView(sextant: Sextant, exp: KubeObject): Node[] {
     ];
   });
   const head = (keys: string[]) => keys.map((h) => t(`table.${h}`));
-  const templateTable = tableOf(head(["template", "status", "message"]), templates, t("sections.templates"));
-  const analysisTable = tableOf(head(["name", "phase", "message"]), analyses, t("sections.analysisRuns"));
+  const templateTable = tableOf(sextant, "experimentTemplates", head(["template", "status", "message"]), templates, t("sections.templates"), FIRST_TWO);
+  const analysisTable = tableOf(sextant, "experimentAnalyses", head(["name", "phase", "message"]), analyses, t("sections.analysisRuns"), FIRST_TWO);
   return present([
     fieldsOf([
       [t("fields.phase"), phase ? ui.status(phase, analysisTone(phase)) : undefined],
@@ -248,15 +253,15 @@ export function experimentView(sextant: Sextant, exp: KubeObject): Node[] {
   ]);
 }
 
-export function templateView(obj: KubeObject): Node[] {
+export function templateView(sextant: Sextant, obj: KubeObject): Node[] {
   const rows = templateMetrics(obj).map((m) => [m.name, m.provider ?? null]);
-  return present([tableOf([t("table.metric"), t("table.provider")], rows, t("sections.metrics"))]);
+  return present([tableOf(sextant, "analysisTemplateMetrics", [t("table.metric"), t("table.provider")], rows, t("sections.metrics"), [true, true])]);
 }
 
 const VIEWS: Record<string, (sextant: Sextant, obj: KubeObject) => Node[]> = {
   "analysis-run": analysisRunView,
   experiment: experimentView,
-  "template-metrics": (_, obj) => templateView(obj),
+  "template-metrics": templateView,
 };
 
 /**

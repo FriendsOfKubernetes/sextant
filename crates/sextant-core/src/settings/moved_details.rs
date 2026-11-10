@@ -33,6 +33,9 @@ struct MovedBlock {
 struct MovedTable {
     old: String,
     new: String,
+    /// The core still draws the old table too (an HPA's metrics, a node's events): the widths are copied, not moved.
+    #[serde(default)]
+    copy: bool,
 }
 
 fn moved() -> &'static Moved {
@@ -69,7 +72,12 @@ pub(crate) fn move_details_choices(sections: &mut DetailsSections) {
 /// Moves the widths of moved tables.
 pub(crate) fn move_column_widths(widths: &mut ColumnWidths) {
     for table in &moved().tables {
-        if let Some(entry) = widths.remove(&table.old) {
+        let entry = if table.copy {
+            widths.get(&table.old).cloned()
+        } else {
+            widths.remove(&table.old)
+        };
+        if let Some(entry) = entry {
             widths.entry(table.new.clone()).or_insert(entry);
         }
     }
@@ -203,20 +211,28 @@ mod tests {
     }
 
     #[test]
-    fn the_crossplane_pages_widths_move_to_its_extension() {
+    fn the_moved_tables_widths_move_to_their_extensions() {
         let entry = TableColumnWidths {
             columns: BTreeMap::from([("1".to_owned(), 240)]),
             used: 5,
         };
         let mut widths = ColumnWidths::from([
             ("crossplane.composites".to_owned(), entry.clone()),
+            ("details:hpa.metrics".to_owned(), entry.clone()),
             ("helm.releases".to_owned(), entry.clone()),
         ]);
         move_column_widths(&mut widths);
         assert_eq!(
             widths.keys().cloned().collect::<Vec<_>>(),
-            ["ext:sextant.crossplane:composites", "helm.releases"]
+            [
+                "details:hpa.metrics",
+                "ext:sextant.crossplane:composites",
+                "ext:sextant.keda:hpaMetrics",
+                "helm.releases"
+            ]
         );
         assert_eq!(widths["ext:sextant.crossplane:composites"], entry);
+        // The core's HPA section still draws its metrics table: copied, not moved.
+        assert_eq!(widths["ext:sextant.keda:hpaMetrics"], entry);
     }
 }

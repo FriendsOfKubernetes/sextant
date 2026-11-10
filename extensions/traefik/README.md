@@ -90,6 +90,9 @@ both are), Services, and the Secrets it names — in the namespaces the referenc
 objects, as the built-in store kept them; and, where both groups are served, the other group's object of the same name.
 The blocks open and close as the built-in ones (open at first, remembered in Sextant's own memory of details
 sections, with the panel's "Expand all" and "Collapse all"); a closed block draws and watches nothing.
+The Routes and References tables keep the built-in ones' columns: they resize, Sextant remembers their widths (the
+widths set in the built-in view carry over), and the kind, the number and the priority keep to one line while the
+others wrap between words.
 
 ## Permissions
 
@@ -204,9 +207,6 @@ None: the extension is read-only and has no action of its own (ADR-0108).
     of the certificate of a Secret named by a path, the values never reaching the frame.
   - A rule title of the old group says `(containo.us)`, so that every title keeps within 80 characters in every
     language; kind titles and columns say `traefik.containo.us` in full.
-  - The details' tables are the SDK's: their columns cannot be resized and remembered, and do not keep from wrapping,
-    as Sextant's details tables do (#417); the blocks' memory is kept per section, so a block closed in the built-in
-    view opens once again here (#417).
   - The extension's permission reads Secrets in every namespace; it only ever watches their metadata, as the built-in
     view did, but the grant itself does not say "metadata only".
 - Checked by tests on fixtures of Traefik objects (copied from the built-in view) against the built-in readings and

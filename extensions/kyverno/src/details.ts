@@ -115,6 +115,11 @@ function summaryLine(summary: Summary): HTMLElement | null {
   return parts.length > 0 ? remark(i18n().formatList(parts)) : null;
 }
 
+/** The columns kept on one line, as the built-in tables' (the others wrap between words). */
+const RESULTS_NOWRAP = [true, true, true, false];
+const FAILURES_NOWRAP = [true, ...RESULTS_NOWRAP];
+const RULES_NOWRAP = [true, true, true, false];
+
 /** Results as a table: (object,) policy (a link), rule, result, message; at most `MAX_LISTED`. */
 function resultsTable(sextant: Sextant, results: readonly { result: PolicyResult; object?: ObjectRef }[], withObject = false): Node[] {
   const shown = results.slice(0, MAX_LISTED);
@@ -128,7 +133,13 @@ function resultsTable(sextant: Sextant, results: readonly { result: PolicyResult
   ]);
   // No table without rows, as the built-in details' tables.
   if (rows.length === 0) return [];
-  const table = ui.table(headers, rows, { label: t(withObject ? "policySummary.title" : "objectResults.title") });
+  // Sextant keeps the widths as it kept the built-in `details:kyvernoFailures`/`details:kyvernoResults` tables', by position.
+  const table = ui.table(headers, rows, {
+    label: t(withObject ? "policySummary.title" : "objectResults.title"),
+    id: withObject ? "failures" : "results",
+    sextant,
+    nowrap: withObject ? FAILURES_NOWRAP : RESULTS_NOWRAP,
+  });
   return results.length > shown.length ? [table, remark(t("results.more", { count: results.length - shown.length }))] : [table];
 }
 
@@ -232,7 +243,7 @@ export function policyView(sextant: Sextant, obj: KubeObject, discovery: Discove
       ? ui.table(
           ["name", "type", "mode", "kinds"].map((h) => t(`rules.${h}`)),
           rules.map((r) => [r.name, r.type ? t(`ruleType.${r.type}`) : "", r.mode ? t(`mode.${r.mode}`) : "", ui.chips(r.kinds)]),
-          { label: t("rules.name") },
+          { label: t("rules.name"), id: "rules", sextant, nowrap: RULES_NOWRAP },
         )
       : null;
   const nodes: (Node | null | undefined | false)[] = [

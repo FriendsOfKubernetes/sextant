@@ -120,6 +120,8 @@ only (at most 40 namespaces; beyond it no host is judged missing) — always for
 details, and for the other views only while the block or page that needs it is open. Kinds the cluster does not serve
 are never watched. The blocks open and close as the built-in ones (open at first, remembered in Sextant's own memory of
 details sections, with the panel's "Expand all" and "Collapse all"); a closed block draws and watches nothing.
+Every table of the details, the "Service mesh" block and Request routing has columns that resize, and Sextant remembers
+their widths, as the built-in view's did (the widths set there carry over).
 
 ## Permissions
 
@@ -215,9 +217,6 @@ None: the extension is read-only and has no action of its own (ADR-0089).
   - **Hosts of a Gateway** drop the part up to the last `/` (`|after:/`), the built-in up to the first; an Istio
     gateway host has one `/` at most, so they differ only on a host Istio refuses. Closed by `|after:` taking the
     first place with a flag, if ever needed.
-  - The details' tables are the SDK's: their columns cannot be resized and remembered, and do not keep from wrapping,
-    as Sextant's details tables do; the blocks' memory is kept per section, so a block closed in the built-in view
-    opens once again here (#417).
 - Checked by tests on the built-in view's fixtures (Bookinfo) and variants against the built-in engines, columns and
   views, whose tests were ported too; not yet tried on a live cluster.
 

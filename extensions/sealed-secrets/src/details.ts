@@ -75,9 +75,12 @@ function fieldsOf(rows: readonly (readonly [string, UiContent])[]): HTMLElement 
   return shown.length > 0 ? ui.fields(shown.map(([key, value]) => [t(`fields.${key}`), value] as const)) : null;
 }
 
-/** A table, or nothing without rows, as the built-in details' tables. */
-function tableOf(headers: string[], rows: UiContent[][], label: string): HTMLElement | null {
-  return rows.length > 0 ? ui.table(headers, rows, { label }) : null;
+/**
+ * A table, or nothing without rows, as the built-in details' tables: its columns resize and Sextant keeps their widths
+ * under `id` (the built-in `details:<id>`'s, by position); the columns marked in `nowrap` keep to one line.
+ */
+function tableOf(sextant: Sextant, id: string, headers: string[], rows: UiContent[][], label: string, nowrap: readonly boolean[]): HTMLElement | null {
+  return rows.length > 0 ? ui.table(headers, rows, { label, id, sextant, nowrap }) : null;
 }
 
 /** The Synced state in words, coloured; the controller's message as its tooltip. */
@@ -125,16 +128,19 @@ function failure(memory: BlockMemory, obj: KubeObject): HTMLElement | null {
 
 // ---------- the keys ----------
 
-function keys(memory: BlockMemory, obj: KubeObject): HTMLElement | null {
+function keys(sextant: Sextant, memory: BlockMemory, obj: KubeObject): HTMLElement | null {
   const sealed = sealedKeys(obj);
   const templated = templateOf(obj).dataKeys.map((k) => (k.omitted ? t("keys.omitted", { name: k.name }) : k.name));
   if (sealed.length === 0 && templated.length === 0) return null;
   return block(memory, KEYS_BLOCK, t("keys.title"), () => [
     remark(t("keys.namesOnly")),
     tableOf(
+      sextant,
+      "keys",
       [t("keys.name"), t("keys.size")],
       sealed.map((k) => [k.name, formatBytes(k.sealedBytes)]),
       t("keys.title"),
+      [true, true],
     ),
     fieldsOf([["templated", ui.chips(templated)]]),
   ]);
@@ -185,7 +191,7 @@ function sealingKeys(sextant: Sextant, live: Live | undefined): UiContent {
   return [
     value === undefined
       ? remark(t("loading"))
-      : tableOf([t("sealingKeys.name"), t("sealingKeys.state"), t("sealingKeys.created")], rows, t("sealingKeys.title")),
+      : tableOf(sextant, "sealingKeys", [t("sealingKeys.name"), t("sealingKeys.state"), t("sealingKeys.created")], rows, t("sealingKeys.title"), [true, true, true]),
     value !== undefined && rows.length === 0 && remark(t("sealingKeys.none")),
     remark(t("sealingKeys.certificateNotShown")),
   ];
@@ -201,7 +207,7 @@ function controllerBody(sextant: Sextant, memory: BlockMemory, found: Controller
     return [link(sextant, DEPLOYMENT, d.metadata.name, d.metadata.namespace ?? null), ui.status(t("controller.ready", { ready: s.ready, desired: s.desired }), tone), ui.chips(s.images)];
   });
   return [
-    tableOf([t("controller.deployment"), t("controller.replicas"), t("controller.image")], rows, t("controller.title")),
+    tableOf(sextant, "controller", [t("controller.deployment"), t("controller.replicas"), t("controller.image")], rows, t("controller.title"), [true, true, false]),
     block(memory, SEALING_KEYS_BLOCK, t("sealingKeys.title"), () => sealingKeys(sextant, keysLive())),
   ];
 }
@@ -236,7 +242,7 @@ export function sealedSecretView(sextant: Sextant, obj: KubeObject, memory: Bloc
       ["ownerReference", t(template.skipOwnerReferences ? "ownerReference.skipped" : "ownerReference.set")],
     ]),
     failure(memory, obj),
-    keys(memory, obj),
+    keys(sextant, memory, obj),
     block(memory, CONTROLLER_BLOCK, t("controller.title"), () => controllerBody(sextant, memory, controllers, () => lists.sealingKeys)),
   ];
   return nodes.filter((n): n is Node => n !== null);

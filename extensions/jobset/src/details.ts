@@ -122,7 +122,7 @@ function jobsBlock(sextant: Sextant, obj: KubeObject, jobs: Live, blocks: Blocks
   const content = !jobs.ready
     ? remark(t("loading"))
     : rows.length > 0
-      ? ui.table(headers, rows, { label: t("jobs.title") })
+      ? ui.table(headers, rows, { label: t("jobs.title"), id: "jobs", sextant, nowrap: [true, true, true, true, true, false] })
       : remark(jobs.failed ? t("listUnknown") : t("noJobs"));
   return block(blocks, "jobs", t("jobs.title"), [content, truncatedNote(jobs) || null]);
 }
@@ -141,7 +141,7 @@ function podsBlock(sextant: Sextant, obj: KubeObject, pods: Live, blocks: Blocks
   const content = !pods.ready
     ? remark(t("loading"))
     : rows.length > 0
-      ? ui.table(headers, rows, { label: t("pods.title") })
+      ? ui.table(headers, rows, { label: t("pods.title"), id: "pods", sextant, nowrap: [true, true, true] })
       : remark(pods.failed ? t("listUnknown") : t("noPods"));
   return block(blocks, "pods", t("pods.title"), [
     content,
@@ -219,8 +219,8 @@ export function jobSetView(sextant: Sextant, obj: KubeObject, related: { jobs?: 
       ["coordinator", coordinatorText],
       ["managedBy", str(get(obj, "spec", "managedBy"))],
     ]),
-    replicated.length > 0 && block(blocks, "replicated", t("replicated.title"), ui.table(repHeaders, replicated, { label: t("replicated.title") })),
-    rules.length > 0 && block(blocks, "rules", t("rules.title"), ui.table(ruleHeaders, rules, { label: t("rules.title") })),
+    replicated.length > 0 && block(blocks, "replicated", t("replicated.title"), ui.table(repHeaders, replicated, { label: t("replicated.title"), id: "replicated", sextant, nowrap: [true, true, true, true, true, true, true, false] })),
+    rules.length > 0 && block(blocks, "rules", t("rules.title"), ui.table(ruleHeaders, rules, { label: t("rules.title"), id: "rules", sextant, nowrap: [true, true, false, false] })),
     jobsBlock(sextant, obj, jobs, blocks),
     podsBlock(sextant, obj, pods, blocks),
   ]);

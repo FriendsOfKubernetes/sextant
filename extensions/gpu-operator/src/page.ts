@@ -48,7 +48,7 @@ export function pageView(sextant: Sextant, nodes: Listed): HTMLElement {
     !nodes.loading && total,
     nodes.truncated && remark(t("page.truncated", { count: MAX_GPU_NODES })),
     nodes.unavailable && remark(t("page.unavailable")),
-    rows.length > 0 && ui.table(headers, rows, { label: t("page.title") }),
+    rows.length > 0 && ui.table(headers, rows, { label: t("page.title"), id: "nodesPage", sextant, nowrap: [true, false, true, true, false, true, true] }),
   );
 }
 

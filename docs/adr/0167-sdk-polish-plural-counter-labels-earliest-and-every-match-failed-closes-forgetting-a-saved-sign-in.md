@@ -344,7 +344,11 @@ width is set, cut cells with their text as the tooltip), and Sextant keeps the w
 (`src/extensions/columnWidths.ts`), and every frame of the extension gets its own tables' widths in its context
 (`columnWidths`, by table and column) — never another extension's or Sextant's. The handles' names and hint are
 Sextant's own words in the UI language (`context.texts.resizeColumn`/`resizeHint`), so no extension translates them.
-`nowrap` keeps cells on one line.
+`nowrap: true` keeps every cell on one line; `nowrap` as a list, one per column, is Sextant's details tables' "words" mode
+(`table(id, headers, rows, columns)` in `src/features/details/ui.tsx`): the marked columns stay on one line, the rest wrap
+only between words, and a table too wide for its place scrolls sideways. Sextant's own extensions keep the built-in
+tables' column positions, so the version-3 migration moves each built-in table's widths (`details:<id>` or its own id)
+to the extension's (`moved_details.json` `tables`).
 The version-3 migration also carries over what the moved views left in the settings (`settings/moved_details.rs` over
 `moved_details.json`): each details block's open or closed choice under the path the built-in view wrote (0.29.2) moves
 to the extension's block (`ext:<extension>:<section>/<section>/<block>`), only under the kinds it names where an

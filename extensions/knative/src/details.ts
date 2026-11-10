@@ -144,7 +144,7 @@ export function trafficTable(sextant: Sextant, obj: KubeObject, memory: BlockMem
   ]);
   const headers = ["revision", "tag", "share", "latest", "url"].map((h) => t(`traffic.${h}`));
   const title = asked ? t("traffic.askedTitle") : t("traffic.title");
-  return block(memory, asked ? "askedTraffic" : "traffic", title, ui.table(headers, rows, { label: title }));
+  return block(memory, asked ? "askedTraffic" : "traffic", title, ui.table(headers, rows, { label: title, id: "traffic", sextant, nowrap: [true, true, true, false, false] }));
 }
 
 function serviceView(sextant: Sextant, kind: KindRef, obj: KubeObject, memory: BlockMemory): Node[] {

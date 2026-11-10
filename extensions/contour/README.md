@@ -90,7 +90,10 @@ SDK's UI kit in the classes of Sextant's own details panel:
 The blocks open and close as the built-in ones (open at first, remembered in Sextant's own memory of details sections,
 with the panel's "Expand all" and "Collapse all"). The includes' states and the delegation tree read every HTTPProxy of
 the cluster (at most 5000) only while their block is open, and a delegated TLS Secret's TLSCertificateDelegations are
-read in the Secret's namespace while the proxy's block is open.
+read in the Secret's namespace while the proxy's block is open. The tables' columns resize and Sextant remembers their widths, as the
+built-in view's (the widths set there carry over); words stay whole, and the columns the built-in kept on one line
+(a kind, type and reason, a route's number, an include's proxy and state, a Secret, a Service's name, port and
+weight) still are.
 
 ## Permissions
 
@@ -147,9 +150,6 @@ None: the extension is read-only and has no action of its own (ADR-0107).
     the rule cannot tell); the built-in judged them on the 5000 it kept.
   - The table's search finds Status by the words shown (Waiting for Contour); the built-in matched the state's names
     (`pending`). Filters still go by the names.
-  - The details' tables are the SDK's: their columns cannot be resized and remembered, and do not keep from wrapping,
-    as Sextant's details tables do (#417).
-  - The blocks' memory is kept per section, so a block closed in the built-in view opens once again here (#417).
 - Checked by tests on fixtures of Contour objects (copied from the built-in view) against the built-in readings, rules
   and columns; not yet tried on a live cluster.
 

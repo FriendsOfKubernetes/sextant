@@ -66,11 +66,16 @@ function withTimes(phrases: Phrase[]): Phrase[] {
 
 const causeText = (e: EventRow) => t(`karpenter.causes.${causeOf(`${e.reason} ${e.message}`)}`);
 
-/** The newest `MAX_EVENTS` of `events` as a table; `first` adds a leading column (the NodeClaim, a cause). */
-export function eventsTable(events: readonly EventRow[], first?: { header: string; cell: (e: EventRow) => string }): HTMLElement | null {
+/**
+ * The newest `MAX_EVENTS` of `events` as a table; `first` adds a leading column (the NodeClaim, a cause). Its widths are
+ * kept as the built-in table's: one table with the leading column, another without.
+ */
+export function eventsTable(sextant: Sextant, events: readonly EventRow[], first?: { header: string; cell: (e: EventRow) => string }): HTMLElement | null {
   const rows = newestEvents(events, MAX_EVENTS);
   const headers = [...(first ? [first.header] : []), ...["reason", "message", "age"].map((h) => t(`events.${h}`))];
   return tableOf(
+    sextant,
+    first ? "eventsWithCause" : "events",
     headers,
     rows.map((e) => [...(first ? [first.cell(e)] : []), e.type === "Warning" ? warning(e.reason) : element("span", { textContent: e.reason }), e.message, age(e.time)]),
     [...(first ? [true] : []), ...EVENT_NOWRAP],
@@ -97,6 +102,8 @@ export function nodePoolView(sextant: Sextant, pool: KubeObject, lists: PoolList
     );
     const headers = ["resource", "inUse", "limit"].map((h) => t(`karpenter.${h}`));
     const limitTable = tableOf(
+      sextant,
+      "limits",
       headers,
       limits.map((l) => [l.resource, l.used ?? "", l.reached ? ui.status(l.limit, "danger") : l.limit]),
       LIMIT_NOWRAP,
@@ -115,7 +122,7 @@ export function nodePoolView(sextant: Sextant, pool: KubeObject, lists: PoolList
         // A NodePool names its NodeClaims `<nodepool>-<suffix>`.
         const disruptions = (lists.claimEvents?.items ?? []).map(eventRow).filter((e) => e.involvedName.startsWith(`${name}-`) && isDisruptionEvent(e));
         if (disruptions.length === 0) return note(t("karpenter.noDisruptions"));
-        return eventsTable(disruptions, { header: t("karpenter.nodeClaim"), cell: (e) => `${e.involvedName} · ${causeText(e)}` });
+        return eventsTable(sextant, disruptions, { header: t("karpenter.nodeClaim"), cell: (e) => `${e.involvedName} · ${causeText(e)}` });
       }),
     ];
   };
@@ -175,7 +182,7 @@ export function nodeClaimView(sextant: Sextant, claim: KubeObject, lists: ClaimL
       ...phraseLines(withTimes(disruptionOf(claim, pool))),
       visible
         ? block(memory, BLOCKS.claimDisruptions, t("karpenter.disruptions"), (): UiContent =>
-            answer === "unknown" ? ui.errorState(lists.events?.error ?? t("listUnknown")) : eventsTable(disruptions, { header: t("karpenter.cause"), cell: causeText }),
+            answer === "unknown" ? ui.errorState(lists.events?.error ?? t("listUnknown")) : eventsTable(sextant, disruptions, { header: t("karpenter.cause"), cell: causeText }),
           )
         : null,
     ];

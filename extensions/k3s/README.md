@@ -91,6 +91,9 @@ A HelmChart's Jobs (at most 20, by the chart's label in its namespace) and its H
 HelmChart, are watched by name while the section shows, as the built-in view watched them. Every object named is a link
 to its details in Sextant's panel.
 
+The tables' columns, on the page and in the details, resize (drag a header's right edge) and Sextant remembers their
+widths, as the built-in view's did; the same columns keep to one line, the others wrap between words.
+
 ## Permissions
 
 - **Read** HelmCharts and HelmChartConfigs, Addons and etcd snapshots (the sections, the tables' details and the
@@ -185,9 +188,8 @@ None: the extension is read-only and has no action of its own (ADR-0123).
   - The Size column sorts by the amount and shows nothing for a size that is no quantity; the built-in column sorted
     by the text shown and showed such a size as it was.
   - The Install Job block's "Logs" button is a text button without the logs icon (the SDK's buttons have no icon).
-  - The details tables keep no column widths of their own and do not keep short columns on one line (the SDK's
-    `ui.table`); the ServiceLB Services are read in one `resources.getMany` instead of four at a time, so their
-    addresses come at once.
+  - The ServiceLB Services are read in one `resources.getMany` instead of four at a time, so their addresses come at
+    once.
   - Agents get the category only when the user lets them have the extension's problems (Settings → AI agents (MCP));
     the built-in category was never given to agents.
 - Checked by tests on fixtures of k3s's, RKE2's and helm-controller's objects (copied from the built-in view) against

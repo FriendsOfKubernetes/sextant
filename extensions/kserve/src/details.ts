@@ -149,7 +149,7 @@ function componentBlock(sextant: Sextant, obj: KubeObject, spec: ComponentSpec, 
     tr.latest ? t("yes") : t("no"),
   ]);
   const headers = ["revision", "percent", "tag", "latest"].map((h) => t(`traffic.${h}`));
-  return block(memory, componentBlockId(spec.name), t(`component.${spec.name}`), () => [fields, tableOf(headers, traffic, t(`component.${spec.name}`))]);
+  return block(memory, componentBlockId(spec.name), t(`component.${spec.name}`), () => [fields, tableOf(sextant, "traffic", headers, traffic, t(`component.${spec.name}`), [true, true, true, true])]);
 }
 
 function modelStatusBlock(obj: KubeObject, memory: BlockMemory): HTMLElement | null {
@@ -239,7 +239,7 @@ export function sectionView(sextant: Sextant, contribution: string, obj: KubeObj
       return serviceView(sextant, obj, related, memory);
     case "serving-runtime":
     case "cluster-serving-runtime":
-      return runtimeView(obj, memory);
+      return runtimeView(sextant, obj, memory);
     case "inference-graph":
       return graphView(sextant, obj, memory);
     case "trained-model":

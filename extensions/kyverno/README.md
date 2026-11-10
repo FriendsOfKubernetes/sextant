@@ -82,6 +82,9 @@ all" and "Collapse all"); a closed block draws and watches nothing:
   be read. Closed, it looks once — its title shows where there are results, it hides where there are none — and
   watches again when opened, as the built-in block did.
 
+The details' tables keep the built-in ones' columns on one line (the rest wrap between words); their columns resize,
+and Sextant remembers their widths, as the built-in tables did.
+
 ## Permissions
 
 - **Read** ClusterPolicies, Policies, PolicyReports, ClusterPolicyReports, EphemeralReports and ClusterEphemeralReports
@@ -141,8 +144,7 @@ None: the extension is read-only and has no action of its own (ADR-0101).
     Mode also reads a rule as Kyverno admits it — of one type, its actions as the CRDs' enum writes them — where the
     built-in read a rule of two types by the first and an action in any case.
   - Background filters by the shown Yes or No; the built-in filtered by its boolean.
-  - The details' tables are the SDK's: their columns cannot be resized and remembered as Sextant's details tables
-    can, and a block inside a block keeps the outer block's heading level.
+  - A block inside a block keeps the outer block's heading level.
   - An error in "Policy results" or "Results in reports" says "Something went wrong."; the built-in named the
     discovery error's own code and message.
   - "Policy results" is a frame on every object's details, hidden until it has found a report on the object.

@@ -42,11 +42,12 @@ function inlineList(nodes: readonly (Node | string | null)[]): HTMLElement | nul
   return shown.length > 0 ? ui.inline(shown) : null;
 }
 
-function sourcesTable(sources: readonly Source[]): HTMLElement | null {
+function sourcesTable(sextant: Sextant, sources: readonly Source[]): HTMLElement | null {
   if (sources.length === 0) return null;
   return ui.table(
     [t("sources.repo"), t("sources.path"), t("sources.targetRevision")],
     sources.map((s) => [s.repoURL, s.path ?? s.chart, s.targetRevision]),
+    { id: "sources", sextant },
   );
 }
 
@@ -83,7 +84,7 @@ export function applicationFields(sextant: Sextant, app: KubeObject): HTMLElemen
     ["operation", withMessage(statusWord(operationPhase(app), phaseTone), str(get(app, "status", "operationState", "message")))],
     ["operationStarted", when(str(get(app, "status", "operationState", "startedAt")))],
     ["operationFinished", when(str(get(app, "status", "operationState", "finishedAt")))],
-    ["sources", sourcesTable(sourcesOf(app))],
+    ["sources", sourcesTable(sextant, sourcesOf(app))],
     ["destination", destinationNode(sextant, applicationDestination(app))],
     ["syncPolicy", syncPolicy(app)],
     ["syncOptions", ui.chips(arr(get(app, "spec", "syncPolicy", "syncOptions")).map(str))],
@@ -98,13 +99,13 @@ export function applicationSetFields(sextant: Sextant, appSet: KubeObject): HTML
     ["generators", ui.chips(generatorTypes(appSet))],
     ["health", statusWord(str(get(appSet, "status", "health", "status")), healthTone)],
     ["project", str(get(template, "project"))],
-    ["sources", sourcesTable(sourcesOf({ spec: template }))],
+    ["sources", sourcesTable(sextant, sourcesOf({ spec: template }))],
     ["destination", destinationText(applicationDestination({ metadata: { name: "" }, spec: template as Record<string, unknown> })) || null],
     ["applications", inlineList(apps)],
   ]);
 }
 
-export function appProjectFields(project: KubeObject): HTMLElement {
+export function appProjectFields(sextant: Sextant, project: KubeObject): HTMLElement {
   const kinds = (field: string) =>
     ui.chips(
       arr(get(project, "spec", field)).map((k) => {
@@ -119,7 +120,10 @@ export function appProjectFields(project: KubeObject): HTMLElement {
     [
       "destinations",
       destinations.length > 0
-        ? ui.table([t("destinations.cluster"), t("destinations.namespace")], destinations.map((d) => [clusterOf(d), d.namespace]))
+        ? ui.table([t("destinations.cluster"), t("destinations.namespace")], destinations.map((d) => [clusterOf(d), d.namespace]), {
+            id: "destinations",
+            sextant,
+          })
         : null,
     ],
     ["clusterResourceWhitelist", kinds("clusterResourceWhitelist")],
@@ -133,7 +137,7 @@ export function appProjectFields(project: KubeObject): HTMLElement {
 /** The fields of whichever Argo CD kind `ref` is. */
 export function fieldsOf(sextant: Sextant, obj: KubeObject, ref: ObjectRef): HTMLElement {
   if (ref.kind.kind === "ApplicationSet") return applicationSetFields(sextant, obj);
-  if (ref.kind.kind === "AppProject") return appProjectFields(obj);
+  if (ref.kind.kind === "AppProject") return appProjectFields(sextant, obj);
   return applicationFields(sextant, obj);
 }
 

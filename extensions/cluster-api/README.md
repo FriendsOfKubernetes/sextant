@@ -78,6 +78,10 @@ built-in panel's did, remembered in Sextant's own memory of details sections (Se
 - MachineHealthCheck: why remediation is blocked, the selector, expected and healthy machines, remediations allowed,
   its limits, node startup timeout, the unhealthy Node and machine conditions and the checked machines.
 
+The columns of the Machines and condition tables resize as the built-in view's did, and Sextant remembers their widths
+(Settings → Appearance resets them with every table's); a Machine's state and the conditions keep to one line, as
+there.
+
 What a block reads is read only while it is open, as the built-in view's: the objects a reference names (at most 50,
 again when the object shown changes, never of a kind the cluster does not serve) while the first block is open; the
 Cluster's MachineDeployments, MachineSets and Machines, or an owner's Machines, by label in the object's namespace (at

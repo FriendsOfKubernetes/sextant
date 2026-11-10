@@ -10,7 +10,7 @@ extension.
 - **Details:** the Synced state with the controller's error in plain words, the scope, the target Secret and how it
   stands (metadata only), the template, the sealed keys by name and size, and the controller with its sealing keys
   (metadata only; the certificate is never read). Their blocks open and close as Sextant remembers them, and a closed
-  block watches nothing.
+  block watches nothing; the tables' columns resize, and Sextant remembers their widths, as the built-in tables did.
 - **Problems:** failed unseals (after 5 minutes) and synced SealedSecrets whose Secret is missing (after 2 minutes,
   told only where the Secrets are listed in full, metadata only), both notified, in the opt-in category "Sealed
   Secrets", counted on the section while it is on.

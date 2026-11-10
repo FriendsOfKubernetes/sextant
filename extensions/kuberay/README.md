@@ -78,6 +78,8 @@ own memory of details sections (Settings → Appearance), with the panel's "Expa
 
 Every object named is a link to its details in Sextant's panel. Messages from the cluster lose the credentials,
 queries and fragments of the URIs in them.
+The tables' columns resize (drag a header's right edge) and Sextant remembers their widths, as the built-in view's
+did; the same columns keep to one line, the others wrap between words.
 
 ## Permissions
 

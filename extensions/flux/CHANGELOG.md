@@ -10,6 +10,8 @@ agents' tools are new.
 - **Tools for AI agents** (#402): Reconcile, Suspend and Resume (`reconcile`, `suspend`, `resume`), answered by the
   extension's new backend, as Sextant's former MCP tool `gitops_action` did. Updating asks for consent to the tools;
   agents get them only once you turn the extension's tools on in Settings → AI agents (MCP).
+- **The tables of Applied resources, Resources and Used by** resize their columns and Sextant remembers the widths,
+  as the built-in view's did (#417); widths set in the built-in view carry over.
 
 ## 1.3.0 — 2026-11-07
 

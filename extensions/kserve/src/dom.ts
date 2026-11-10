@@ -80,9 +80,20 @@ export function fieldsOf(rows: readonly (readonly [string, UiContent])[], prefix
   return list.childElementCount > 0 ? list : null;
 }
 
-/** A table, or nothing without rows (as the built-in details' `table`). */
-export function tableOf(headers: string[], rows: UiContent[][], label: string): HTMLElement | null {
-  return rows.length > 0 ? ui.table(headers, rows, { label }) : null;
+/**
+ * A table, or nothing without rows (as the built-in details' `table`): words kept whole, the columns `nowrap` marks on
+ * one line; its columns resize and Sextant keeps their widths under `id` (by position, as the built-in
+ * `details:kserve<Id>` kept them).
+ */
+export function tableOf(
+  sextant: Sextant,
+  id: string,
+  headers: string[],
+  rows: UiContent[][],
+  label: string,
+  nowrap: readonly boolean[],
+): HTMLElement | null {
+  return rows.length > 0 ? ui.table(headers, rows, { label, id, sextant, nowrap }) : null;
 }
 
 /**

@@ -84,6 +84,8 @@ What a block lists is watched only while it is open, as the built-in view's: a C
 LocalQueues or waiting list is open, every Workload of the cluster (at most 5000, as the built-in problems source kept,
 saying when there are more) while a queue's waiting list is open; a job's Workloads while its Queue block is open, or
 once while it is closed to know whether to show it. Every object named is a link to its details in Sextant's panel.
+The tables' columns resize (drag a header's right edge) and Sextant remembers their widths, as the built-in view's
+did; the same columns keep to one line, the others wrap between words.
 
 ## Permissions
 

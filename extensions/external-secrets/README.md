@@ -69,8 +69,10 @@ sections, with the panel's "Expand all" and "Collapse all", as the built-in bloc
 - **PushSecret**: its state, source Secret and stores (links), refresh interval, last sync, the last error and the
   **Pushed keys** by name.
 
-The details are drawn with the SDK's UI kit, in the classes of Sextant's own details panel. Edit and Delete are
-Sextant's own actions on every kind of the section; the extension adds no action.
+The details are drawn with the SDK's UI kit, in the classes of Sextant's own details panel; the tables' first column
+keeps to one line (the others wrap between words), and their columns resize and Sextant remembers their widths, as the
+built-in tables did. Edit and Delete are Sextant's own actions on every kind of the section; the extension adds no
+action.
 
 ## Permissions
 
@@ -132,7 +134,6 @@ None: it only reads. Edit and Delete are Sextant's own actions, asked and confir
   - Cells are cut at 200 characters and cleaned of URI credentials, as every extension's.
   - A Ready condition's time that is not a time is not the problem's start; the reason is trimmed, cleaned and cut at
     100 characters, as every extension's.
-  - The details' tables are the UI kit's: their columns cannot be resized and the first does not keep to one line.
 - Problems are kept as Sextant keeps every extension's (at most 2000 objects with problems per kind and cluster).
 - Checked by tests on fixtures of the operator's objects (a failed ExternalSecret, an invalid ClusterSecretStore, a
   synced PushSecret); not yet tried on a live cluster.

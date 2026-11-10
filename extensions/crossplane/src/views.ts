@@ -102,6 +102,8 @@ function compositionView(sextant: Sextant, obj: KubeObject): Node[] {
       ? ui.table(
           [t("pipeline.step"), t("pipeline.function")],
           f.steps.map((s) => [s.step, link(sextant, FUNCTION, s.fn)]),
+          // Resized and kept by Sextant as the built-in pipeline table was; the step on one line, as there.
+          { id: "pipeline", sextant, nowrap: [true, false] },
         )
       : null;
   return present([

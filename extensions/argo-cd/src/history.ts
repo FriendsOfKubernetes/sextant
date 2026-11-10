@@ -7,7 +7,7 @@ import { element, when } from "./dom";
 import { t } from "./i18n";
 import { followShown, setHidden } from "./shown";
 
-export function historyView(app: KubeObject): HTMLElement {
+export function historyView(sextant: Sextant, app: KubeObject): HTMLElement {
   const entries = syncHistory(app);
   if (entries.length === 0) return ui.empty(t("history.empty"));
   const rows = entries.map((e) => [
@@ -20,13 +20,13 @@ export function historyView(app: KubeObject): HTMLElement {
   return ui.table(
     [t("history.id"), t("history.revision"), t("history.deployedAt"), t("history.initiatedBy"), t("history.source")],
     rows,
-    { label: t("history.title") },
+    { label: t("history.title"), id: "syncHistory", sextant },
   );
 }
 
 export function startHistory(sextant: Sextant, root: HTMLElement): () => void {
   return followShown(sextant, root, (app) => {
     setHidden(sextant, syncHistory(app).length === 0);
-    root.replaceChildren(historyView(app));
+    root.replaceChildren(historyView(sextant, app));
   });
 }

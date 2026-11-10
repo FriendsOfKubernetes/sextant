@@ -33,34 +33,28 @@ export interface Cell {
   title?: string;
 }
 
-function append(parent: Node, content: UiContent): void {
-  if (content === null || content === undefined || content === false) return;
-  if (Array.isArray(content)) {
-    for (const item of content as readonly UiContent[]) append(parent, item);
-    return;
-  }
-  parent.appendChild(typeof content === "string" || typeof content === "number" ? document.createTextNode(String(content)) : (content as Node));
-}
+const isCell = (cell: Cell | UiContent): cell is Cell => cell !== null && typeof cell === "object" && !Array.isArray(cell) && !(cell instanceof Node) && "content" in cell;
 
-/** A table of the built-in view (`sec-table` in `sec-table-wrap`). */
-export function table(headers: readonly string[], rows: readonly (readonly (Cell | UiContent)[])[]): HTMLElement {
-  const head = element("tr");
-  for (const header of headers) head.append(element("th", { scope: "col", textContent: header }));
-  const body = element("tbody");
-  for (const row of rows) {
-    const tr = element("tr");
-    for (const cell of row) {
-      const td = element("td");
-      const isCell = cell !== null && typeof cell === "object" && !Array.isArray(cell) && !(cell instanceof Node) && "content" in cell;
-      if (isCell) {
-        append(td, (cell as Cell).content);
-        if ((cell as Cell).title) td.title = (cell as Cell).title!;
-      } else append(td, cell as UiContent);
-      tr.append(td);
-    }
-    body.append(tr);
-  }
-  return element("div", { className: "sec-table-wrap" }, element("table", { className: "sec-table" }, element("thead", {}, head), body));
+/**
+ * A table of the built-in view (`sec-table` in `sec-table-wrap`): its columns resize and Sextant keeps their widths
+ * under `id`, by position, as it kept the built-in `security.<id>` table's.
+ */
+export function table(sextant: Sextant, id: string, headers: readonly string[], rows: readonly (readonly (Cell | UiContent)[])[]): HTMLElement {
+  const node = ui.table(
+    headers,
+    rows.map((row) => row.map((cell) => (isCell(cell) ? cell.content : cell))),
+    { id, sextant },
+  );
+  node.classList.add("sec-table-wrap");
+  node.querySelector("table")?.classList.add("sec-table");
+  const trs = node.querySelectorAll("tbody tr");
+  rows.forEach((row, r) =>
+    row.forEach((cell, c) => {
+      const td = trs[r]?.children[c];
+      if (isCell(cell) && cell.title && td instanceof HTMLElement) td.title = cell.title;
+    }),
+  );
+  return node;
 }
 
 export function errorText(err: unknown): string {

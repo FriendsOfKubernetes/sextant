@@ -117,6 +117,8 @@ function destinationsStep(sextant: Sextant, result: MeshRouteResult, pods: PodCo
     t("check.steps.destinations"),
     tone,
     table(
+      sextant,
+      "destinations",
       [t("columns.destination"), t("columns.weight"), t("columns.subset"), t("columns.destinationRule"), t("columns.tlsMode"), t("columns.pods")],
       result.destinations.map((d) => ({
         broken: !!d.problem,

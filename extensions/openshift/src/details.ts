@@ -155,7 +155,9 @@ function imageRef(sextant: Sextant, ref: Ref | undefined, ns: string | null): Ui
 }
 
 /** A table as the built-in view's: none without rows (the block's own remark says why). */
-const tableOf = (headers: string[], rows: UiContent[][], label: string): HTMLElement | null => (rows.length === 0 ? null : ui.table(headers, rows, { label }));
+/** A table whose columns resize and are remembered under `id` (the built-in table's own word), `nowrap` marking the columns kept on one line. */
+const tableOf = (sextant: Sextant, id: string, nowrap: boolean[], headers: string[], rows: UiContent[][], label: string): HTMLElement | null =>
+  rows.length === 0 ? null : ui.table(headers, rows, { label, id, sextant, nowrap });
 
 const yes = (value: boolean): string => (value ? t("yes") : t("no"));
 const present = (nodes: (Node | null | false | undefined)[]): Node[] => nodes.filter((n): n is Node => Boolean(n));
@@ -260,8 +262,8 @@ function routeView(sextant: Sextant, obj: KubeObject, related: Related, blocks: 
     state === "pending" ? note(t("routePending"), "warning") : null,
     fieldsOf(rows),
     tls?.key ? remark(t("keyHidden")) : null,
-    block(blocks, "backends", t("backends.title"), [tableOf(backendHeads, backends, t("backends.title")), backends.length === 0 && remark(t("backends.none"))]),
-    block(blocks, "routers", t("routers.title"), [tableOf(routerHeads, routers, t("routers.title")), routers.length === 0 && remark(t("routers.none"))]),
+    block(blocks, "backends", t("backends.title"), [tableOf(sextant, "routeBackends", [true, true, true, true], backendHeads, backends, t("backends.title")), backends.length === 0 && remark(t("backends.none"))]),
+    block(blocks, "routers", t("routers.title"), [tableOf(sextant, "routers", [true, false, true, false, true], routerHeads, routers, t("routers.title")), routers.length === 0 && remark(t("routers.none"))]),
   ]);
 }
 
@@ -317,11 +319,11 @@ function dcView(sextant: Sextant, obj: KubeObject, related: Related, blocks: Blo
     (state === "progressing" || state === "unavailable") && reason ? note(reason, "warning") : null,
     state === "paused" ? remark(t("pausedNote")) : null,
     fieldsOf(rows),
-    block(blocks, "triggers", t("triggers.title"), [tableOf(triggerHeads, triggers, t("triggers.title")), triggers.length === 0 && remark(t("triggers.none"))]),
+    block(blocks, "triggers", t("triggers.title"), [tableOf(sextant, "dcTriggers", [true, false, true, false], triggerHeads, triggers, t("triggers.title")), triggers.length === 0 && remark(t("triggers.none"))]),
     block(blocks, "rollouts", t("rollouts.title"), [
       loading && remark(t("loading")),
       failed && remark(t("listError")),
-      tableOf(rolloutHeads, listed, t("rollouts.title")),
+      tableOf(sextant, "rollouts", [true, true, true, true, false, true], rolloutHeads, listed, t("rollouts.title")),
       rcs !== undefined && !loading && !failed && rollouts.length === 0 && remark(t("rollouts.none")),
       rollouts.length > MAX_LISTED && remark(t("more", { count: rollouts.length - MAX_LISTED })),
       rcs?.truncated === true && remark(t("truncated")),
@@ -367,7 +369,7 @@ function buildConfigView(sextant: Sextant, obj: KubeObject, related: Related, bl
     block(blocks, "builds", t("builds.title"), [
       loading && remark(t("loading")),
       failed && remark(t("listError")),
-      tableOf(heads, buildRows, t("builds.title")),
+      tableOf(sextant, "builds", [true, true, true, true, false], heads, buildRows, t("builds.title")),
       listed !== undefined && !loading && !failed && builds.length === 0 && remark(t("builds.none")),
       builds.length > MAX_LISTED_BUILDS && remark(t("more", { count: builds.length - MAX_LISTED_BUILDS })),
       listed?.truncated === true && remark(t("truncated")),
@@ -423,7 +425,7 @@ function buildView(sextant: Sextant, obj: KubeObject, related: Related, blocks: 
 /** `sha256:` and the first 12 hex digits of an image's digest. */
 export const shortDigest = (image: string | undefined): string => (image ? image.replace(/^(sha256:[0-9a-f]{12})[0-9a-f]+$/, "$1") : "");
 
-function imageStreamView(obj: KubeObject, blocks: Blocks): Node[] {
+function imageStreamView(sextant: Sextant, obj: KubeObject, blocks: Blocks): Node[] {
   const repos = streamRepositories(obj);
   const tags = streamTags(obj);
   const failed = failedImports(obj);
@@ -444,7 +446,7 @@ function imageStreamView(obj: KubeObject, blocks: Blocks): Node[] {
   return present([
     failed.length > 0 ? note(t("importFailingNote", { count: failed.length }), "danger") : null,
     fieldsOf(rows),
-    block(blocks, "tags", t("tags.title"), [tableOf(heads, tagRows, t("tags.title")), tags.length === 0 && remark(t("tags.none"))]),
+    block(blocks, "tags", t("tags.title"), [tableOf(sextant, "tags", [true, false, false, true, true, false], heads, tagRows, t("tags.title")), tags.length === 0 && remark(t("tags.none"))]),
   ]);
 }
 
@@ -510,7 +512,7 @@ export function sectionView(sextant: Sextant, kind: ObjectRef["kind"], obj: Kube
   if (isKind(kind, DEPLOYMENT_CONFIG)) return dcView(sextant, obj, related, blocks);
   if (isKind(kind, BUILD_CONFIG)) return buildConfigView(sextant, obj, related, blocks);
   if (isKind(kind, BUILD)) return buildView(sextant, obj, related, blocks);
-  if (isKind(kind, IMAGE_STREAM)) return imageStreamView(obj, blocks);
+  if (isKind(kind, IMAGE_STREAM)) return imageStreamView(sextant, obj, blocks);
   if (isKind(kind, PROJECT)) return projectView(sextant, obj);
   return null;
 }

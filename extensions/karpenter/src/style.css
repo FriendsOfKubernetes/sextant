@@ -47,9 +47,3 @@ body.compact {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-
-/* Table columns kept on one line, as the built-in tables' `nowrap` columns. */
-.sx-table .as-nowrap {
-  white-space: nowrap;
-  overflow-wrap: normal;
-}

@@ -101,7 +101,7 @@ export function treeTable(sextant: Sextant, tree: TreeNode[], computed: Readonly
       healthCell(node, managed ? computed.get(managedKey(managed)) : undefined),
     ];
   });
-  const node = ui.table(headers, rows, { label: t("tree.title") });
+  const node = ui.table(headers, rows, { label: t("tree.title"), id: "tree", sextant });
   node.querySelector("table")?.classList.add("tree");
   node.querySelectorAll("tbody tr").forEach((row, i) => row.setAttribute("aria-level", String(flat[i]!.level)));
   return node;

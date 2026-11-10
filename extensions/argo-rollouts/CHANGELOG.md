@@ -12,6 +12,9 @@ Needs Sextant 0.30 (`sextantApi` 4), with `atLeast`, a column's `lookup` and `va
   traffic router reports stays in the details as the actual weight.
 - **Status** and the `degraded` rule count the newest spec as observed when `status.observedGeneration` is at least
   `metadata.generation` (it was: equal to), as the built-in view did; v0.9's hash still counts as observed.
+- **The details' tables** (ReplicaSets, Analysis runs, metrics, an Experiment's templates and analysis runs, a
+  template's metrics) resize their columns and Sextant remembers the widths, as the built-in view's did (#417); words
+  stay whole and names, phases and counts keep to one line, as there; widths set in the built-in view carry over.
 - No new permission or problem kind: updating asks for no consent again.
 
 ## 1.3.0 — 2026-11-07

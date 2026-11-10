@@ -123,7 +123,8 @@ export function cel(expressions: readonly string[]): HTMLElement | null {
 }
 
 /** The requests of a claim spec; a firstAvailable request lists its choices in order. */
-export function requestsTable(sextant: Sextant, requests: readonly Request[], apiVersion: string | undefined): HTMLElement {
+/** `id`: the table whose widths Sextant keeps (a claim's and a template's apart, as the built-in ones). */
+export function requestsTable(sextant: Sextant, id: string, requests: readonly Request[], apiVersion: string | undefined): HTMLElement {
   const classKind = kindAt(apiVersion, "DeviceClass");
   const rows: UiContent[][] = requests.flatMap((r) =>
     r.alternatives.map((a, i) => {
@@ -133,14 +134,14 @@ export function requestsTable(sextant: Sextant, requests: readonly Request[], ap
     }),
   );
   if (rows.length === 0) return remark(t("requests.none"));
-  return table("dra-requests", ["request", "class", "selectors", "amount"].map((h) => t(`requests.${h}`)), rows, t("requests.title"));
+  return table(sextant, id, [true, true, false, true], ["request", "class", "selectors", "amount"].map((h) => t(`requests.${h}`)), rows, t("requests.title"));
 }
 
 /**
  * The devices of `slices`, one row each, with the claim(s) that hold them from `allocation` (`undefined`: not known —
- * the claims could not be read in full). `max` rows at most.
+ * the claims could not be read in full). `max` rows at most; `id` the table whose widths Sextant keeps.
  */
-export function devicesTable(sextant: Sextant, slices: readonly KubeObject[], allocation: Map<string, Allocation[]> | undefined, max: number): UiContent {
+export function devicesTable(sextant: Sextant, id: string, slices: readonly KubeObject[], allocation: Map<string, Allocation[]> | undefined, max: number): UiContent {
   const rows: UiContent[][] = [];
   let total = 0;
   const sorted = [...slices].sort((a, b) => {
@@ -177,7 +178,7 @@ export function devicesTable(sextant: Sextant, slices: readonly KubeObject[], al
   }
   if (total === 0) return remark(t("devices.none"));
   return [
-    table("dra-devices", ["node", "driver", "device", "product", "capacity", "allocatedTo"].map((h) => t(`devices.${h}`)), rows, t("devices.title")),
+    table(sextant, id, [true, false, true, false, false, false], ["node", "driver", "device", "product", "capacity", "allocatedTo"].map((h) => t(`devices.${h}`)), rows, t("devices.title")),
     total > rows.length && remark(t("devices.cut", { count: rows.length, total })),
   ];
 }
@@ -187,7 +188,7 @@ export const draReasons = (reasons: readonly DraReason[]): HTMLElement[] => reas
 
 // ---------- ResourceClaim ----------
 
-function resultsTable(claim: KubeObject): HTMLElement {
+function resultsTable(sextant: Sextant, claim: KubeObject): HTMLElement {
   const rows = allocatedDevicesOf(claim).map((d) => {
     const notes: string[] = [];
     if (d.adminAccess) notes.push(t("results.adminAccess"));
@@ -195,7 +196,7 @@ function resultsTable(claim: KubeObject): HTMLElement {
     if (d.bindingPending.length > 0) notes.push(t("results.bindingPending", { conditions: d.bindingPending.join(", ") }));
     return [d.request, d.driver, `${d.pool} / ${d.device}`, notes.join(" ")];
   });
-  return table("dra-results", ["request", "driver", "device", "notes"].map((h) => t(`results.${h}`)), rows, t("results.title"));
+  return table(sextant, "results", [true, true, true, false], ["request", "driver", "device", "notes"].map((h) => t(`results.${h}`)), rows, t("results.title"));
 }
 
 /** The namespace's Pending pods that use a pending claim, with what the scheduler said. */
@@ -240,8 +241,8 @@ export function claimView(sextant: Sextant, claim: KubeObject, pods: Live | unde
       ["reservedFor", consumers.length > 0 ? ui.inline(consumers) : null],
     ]),
     state === "bindingFailed" ? message(t(`hint.${state}`)) : note(t(`hint.${state}`)),
-    block(blocks, BLOCKS.requests, t("requests.title"), () => requestsTable(sextant, requestsOf(claimSpecOf(claim)), claim.apiVersion)),
-    isAllocated(claim) && block(blocks, BLOCKS.results, t("results.title"), () => resultsTable(claim)),
+    block(blocks, BLOCKS.requests, t("requests.title"), () => requestsTable(sextant, "requests", requestsOf(claimSpecOf(claim)), claim.apiVersion)),
+    isAllocated(claim) && block(blocks, BLOCKS.results, t("results.title"), () => resultsTable(sextant, claim)),
     !isAllocated(claim) && block(blocks, BLOCKS.waiting, t("waiting.title"), () => waitingPods(sextant, claim, pods)),
   ]);
 }
@@ -249,7 +250,7 @@ export function claimView(sextant: Sextant, claim: KubeObject, pods: Live | unde
 // ---------- ResourceClaimTemplate, DeviceClass, ResourceSlice ----------
 
 export const templateView = (sextant: Sextant, template: KubeObject, blocks: Blocks = ALL_OPEN): UiContent[] => [
-  block(blocks, BLOCKS.requests, t("requests.title"), () => requestsTable(sextant, requestsOf(claimSpecOf(template)), template.apiVersion)),
+  block(blocks, BLOCKS.requests, t("requests.title"), () => requestsTable(sextant, "templateRequests", requestsOf(claimSpecOf(template)), template.apiVersion)),
 ];
 
 export function deviceClassView(obj: KubeObject, blocks: Blocks = ALL_OPEN): UiContent[] {
@@ -281,7 +282,7 @@ export function sliceView(sextant: Sextant, slice: KubeObject, claims: Live | un
       ["reach", scope.type === "node" ? link(sextant, NODE, scope.node) : t(`scope.${scope.type}`)],
       ["nodeSelector", scope.type === "selector" ? ui.chips(scope.text) : null],
     ]),
-    block(blocks, BLOCKS.devices, t("devices.title"), () => devicesTable(sextant, [slice], allocationOf(claims), DEVICE_ROWS)),
+    block(blocks, BLOCKS.devices, t("devices.title"), () => devicesTable(sextant, "sliceDevices", [slice], allocationOf(claims), DEVICE_ROWS)),
   ]);
 }
 
@@ -332,7 +333,7 @@ function podContent(sextant: Sextant, pod: KubeObject, claims: Live | undefined,
   const said = waiting ? schedulingCondition(pod).message : undefined;
   const reasons = draReasonsIn(said);
   return present([
-    table("dra-pod-claims", ["name", "claim", "state", "devices", "containers"].map((h) => t(`pod.${h}`)), rows, t("pod.title")),
+    table(sextant, "podClaims", [true, true, true, false, false], ["name", "claim", "state", "devices", "containers"].map((h) => t(`pod.${h}`)), rows, t("pod.title")),
     waiting && reasons.length > 0 && said ? message(said) : null,
     ...(waiting ? draReasons(reasons) : []),
     served === false && remark(t("pod.notServed")),
@@ -367,7 +368,7 @@ export function nodeWatches(node: string, slices: boolean, claims: boolean): Rec
 export function nodeView(sextant: Sextant, slices: Live | undefined, claims: Live | undefined, answer: NodeAnswer | null, blocks: Blocks = ALL_OPEN): UiContent[] {
   return [
     block(blocks, BLOCKS.node, t("node.title"), () => [
-      answer === null ? remark(t("loading")) : answer === "unknown" ? remark(t("devices.unknown")) : devicesTable(sextant, slices?.items ?? [], allocationOf(claims), NODE_DEVICE_ROWS),
+      answer === null ? remark(t("loading")) : answer === "unknown" ? remark(t("devices.unknown")) : devicesTable(sextant, "nodeDevices", slices?.items ?? [], allocationOf(claims), NODE_DEVICE_ROWS),
       slices?.truncated === true && remark(t("node.truncated", { count: MAX_SLICES })),
     ]),
   ];
@@ -404,6 +405,6 @@ export function pageView(sextant: Sextant, slices: Live | undefined, claims: Liv
     !loading && totals,
     slices?.truncated === true && remark(t("page.slicesTruncated", { count: MAX_SLICES })),
     !loading && allocation === undefined && claims?.ready === true && remark(t("page.claimsUnknown")),
-    !loading && devicesTable(sextant, slices.items, allocation, MAX_SHOWN),
+    !loading && devicesTable(sextant, "devicesPage", slices.items, allocation, MAX_SHOWN),
   ]);
 }

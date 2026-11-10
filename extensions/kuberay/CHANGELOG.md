@@ -12,7 +12,8 @@ extension.
   with "Expand all" and "Collapse all": a RayCluster's state and why, head pod and Service, worker groups and pods
   (at most 2000 kept, saying so), with head and worker logs (titled `raycluster/<name>`) in the Pods block's head;
   a RayJob's statuses, message, masked entrypoint, RayCluster and submitter Job with its logs; a RayService's
-  readiness, Serve applications of the active and pending clusters, and masked serve configuration.
+  readiness, Serve applications of the active and pending clusters, and masked serve configuration. The tables'
+  columns resize and Sextant remembers their widths, as the built-in tables'.
 - **Problems:** failed RayClusters or ones whose head pod is not ready, RayJobs failed in the last day (counted from
   their end, else start, else creation; notified again when the reason changes), and RayServices not ready or with a
   failed Serve application (the first by name, an invalid one's too), counted on the section, with the built-in

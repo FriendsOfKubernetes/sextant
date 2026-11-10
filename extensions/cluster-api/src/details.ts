@@ -460,7 +460,15 @@ function machineList(view: View, namespace: string | null, selector: string | un
     return [
       listed.unavailable ? muted(t("chain.unavailable")) : null,
       shown.length === 0 && !listed.unavailable ? muted(listed.loading ? t("chain.loading") : t("machines.none")) : null,
-      shown.length > 0 ? ui.table([t("machines.name"), t("machines.state"), t("machines.node")], rows, { label: t("machines.title") }) : null,
+      shown.length > 0
+        ? ui.table([t("machines.name"), t("machines.state"), t("machines.node")], rows, {
+            label: t("machines.title"),
+            // Resized and kept by Sextant as the built-in Machines table was; the state on one line, as there.
+            id: "machines",
+            sextant: view.sextant,
+            nowrap: [false, true, false],
+          })
+        : null,
       listed.items.length > MAX_LISTED ? muted(tCount("chain.more", listed.items.length - MAX_LISTED)) : null,
       listed.truncated ? muted(tCount("chain.truncated", MAX_CHAIN_OBJECTS)) : null,
     ];
@@ -549,9 +557,15 @@ function healthCheckView(view: View, obj: KubeObject): HTMLElement[] {
       const counts = healthCountsOf(obj);
       const blocked = remediationBlocked(obj);
       const targets = arr(get(obj, "status", "targets")).map(String);
-      const conditionTable = (label: string, list: UnhealthyCondition[]) =>
+      // Resized and kept by Sextant as the built-in condition tables were, every column on one line as there.
+      const conditionTable = (id: string, label: string, list: UnhealthyCondition[]) =>
         list.length > 0
-          ? ui.table([t("healthCheck.type"), t("healthCheck.status"), t("healthCheck.timeout")], list.map((c) => [c.type, c.status, c.timeout ?? ""]), { label })
+          ? ui.table([t("healthCheck.type"), t("healthCheck.status"), t("healthCheck.timeout")], list.map((c) => [c.type, c.status, c.timeout ?? ""]), {
+              label,
+              id,
+              sextant: view.sextant,
+              nowrap: [true, true, true],
+            })
           : null;
       const note =
         state === "blocked" || state === "remediating" ? t(`explain.healthCheck.${state}`, { healthy: String(counts.healthy ?? 0), expected: String(counts.expected ?? 0) }) : undefined;
@@ -568,8 +582,8 @@ function healthCheckView(view: View, obj: KubeObject): HTMLElement[] {
           ["maxUnhealthy", spec.maxUnhealthy],
           ["unhealthyRange", spec.unhealthyRange],
           ["nodeStartupTimeout", spec.nodeStartupTimeout],
-          ["unhealthyNodeConditions", conditionTable(t("fields.unhealthyNodeConditions"), spec.nodeConditions)],
-          ["unhealthyMachineConditions", conditionTable(t("fields.unhealthyMachineConditions"), spec.machineConditions)],
+          ["unhealthyNodeConditions", conditionTable("nodeConditions", t("fields.unhealthyNodeConditions"), spec.nodeConditions)],
+          ["unhealthyMachineConditions", conditionTable("machineConditions", t("fields.unhealthyMachineConditions"), spec.machineConditions)],
           ["targets", targets.length > 0 ? targetLinks(view, obj, targets) : undefined],
         ]),
       ];

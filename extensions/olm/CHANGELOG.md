@@ -15,7 +15,8 @@ Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-i
   requirements, CRDs, install modes and Deployments (at most 50, watched only while their block is open), a copy
   linking its original; an InstallPlan's approval, bundle lookups and steps; a catalog's registry, an OperatorGroup's
   targets, an Operator's components, OLM v1's conditions. Untitled sections, as the built-in one, whose blocks are
-  kept in Sextant's own memory of details sections.
+  kept in Sextant's own memory of details sections; their tables' columns resize and Sextant remembers their widths,
+  as the built-in tables'.
 - **Problems:** failed operators (originals only), Subscriptions that cannot be resolved, and InstallPlans that failed
   or are stuck (about the plan, the stall's grace starting again when its phase moves), and catalogs not ready,
   counted on the section, with the built-in reason when OLM gives none. Nothing approves an InstallPlan.

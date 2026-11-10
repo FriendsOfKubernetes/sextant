@@ -64,7 +64,9 @@ export interface PageInputs {
 }
 
 const fieldsOf = (rows: readonly (readonly [string, UiContent])[]): HTMLElement => ui.fields(rows.map(([key, value]) => [t(`fields.${key}`), value] as const));
-const tableOf = (headers: string[], rows: UiContent[][], label: string): HTMLElement | null => (rows.length > 0 ? ui.table(headers, rows, { label }) : null);
+/** A table whose columns resize and are remembered under `id` (the built-in table's own word), `nowrap` marking the columns kept on one line; nothing without rows. */
+const tableOf = (sextant: Sextant, id: string, nowrap: boolean[], headers: string[], rows: UiContent[][], label: string): HTMLElement | null =>
+  rows.length > 0 ? ui.table(headers, rows, { label, id, sextant, nowrap }) : null;
 
 function workloads(sextant: Sextant, list: WorkloadState[]): HTMLElement | null {
   if (list.length === 0) return null;
@@ -101,7 +103,7 @@ function componentsTable(sextant: Sextant, rows: ComponentRow[]): HTMLElement | 
     ),
     workloads(sextant, row.workloads),
   ]);
-  return tableOf(["component", "status", "from", "workloads"].map((h) => t(`components.${h}`)), body, t("components.title"));
+  return tableOf(sextant, "components", [true, true, false, false], ["component", "status", "from", "workloads"].map((h) => t(`components.${h}`)), body, t("components.title"));
 }
 
 /** The key a Service read by name is kept under. */
@@ -135,7 +137,7 @@ function serviceLbTable(sextant: Sextant, rows: ServiceLb[], services: PageInput
       addresses.length > 0 ? ui.chips(addresses) : svc ? t("serviceLb.noAddress") : services.loading ? t("loading") : t("serviceLb.serviceUnreadable"),
     ];
   });
-  const table = tableOf(["service", "daemonSet", "pods", "addresses"].map((h) => t(`serviceLb.${h}`)), body, t("serviceLb.title"));
+  const table = tableOf(sextant, "serviceLb", [true, true, true, false], ["service", "daemonSet", "pods", "addresses"].map((h) => t(`serviceLb.${h}`)), body, t("serviceLb.title"));
   return [table, rows.length > MAX_LISTED && remark(t("serviceLb.truncated", { limit: String(MAX_LISTED) }))].filter((n): n is HTMLElement => Boolean(n));
 }
 
@@ -194,7 +196,7 @@ export function pageView(sextant: Sextant, input: PageInputs): HTMLElement {
       summary,
       nodes.truncated && remark(t("page.nodesTruncated", { limit: String(MAX_NODES) })),
       nodes.unavailable && !nodes.loading && remark(t("page.nodesUnavailable")),
-      tableOf(["node", "distribution", "version", "role", "roles"].map((h) => t(`page.columns.${h}`)), nodeRows, t("page.summary")),
+      tableOf(sextant, "nodes", [true, true, true, true, false], ["node", "distribution", "version", "role", "roles"].map((h) => t(`page.columns.${h}`)), nodeRows, t("page.summary")),
     ),
     part(
       "k3s-components",

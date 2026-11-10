@@ -66,9 +66,10 @@ The columns have the built-in widths; the status columns sort and filter by the 
 
 The blocks (Instances, Backups, a Backup's Error) open and close with their titles, kept in Sextant's own memory of
 details sections as the built-in blocks were: per kind as Settings → Appearance says, with the panel's "Expand all"
-and "Collapse all". The details are drawn with the
-SDK's UI kit, in the classes of Sextant's own details panel. Edit and Delete are
-Sextant's own actions on every kind of the section; the extension adds no action.
+and "Collapse all". The details are drawn with the SDK's UI kit, in the classes of Sextant's own details panel; the
+Instances table keeps each column on one line, and its columns resize and Sextant remembers their widths, as the
+built-in table did. Edit and Delete are Sextant's own actions on every kind of the section; the extension adds no
+action.
 
 ## Permissions
 

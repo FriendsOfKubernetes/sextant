@@ -12,7 +12,8 @@ extension.
   ClusterQueue's quota against what is reserved and in use, its LocalQueues and waiting Workloads (every Workload of the
   cluster read, at most 5000, only while the list is open); why a Workload waits, was evicted or deactivated, its job,
   pod sets, admission checks and evictions; the flavors, cohorts and checks with the ClusterQueues that use them; a
-  **Queue** block on every job Kueue queues — labelled, or with a Workload Kueue made for it — with its Workload.
+  **Queue** block on every job Kueue queues — labelled, or with a Workload Kueue made for it — with its Workload. The
+  tables' columns resize and Sextant remembers their widths, as the built-in tables'.
 - **Problems:** queues that admit nothing in the category "Kueue queues", on by default; Workloads waiting too long,
   not queueable, deactivated by Kueue or evicted repeatedly in the opt-in category "Kueue Workloads waiting or
   evicted"; counted on the section. Neither category is given to agents, as the built-in ones were not.

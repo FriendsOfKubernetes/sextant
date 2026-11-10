@@ -11,7 +11,8 @@ extension.
   runtime; an InferenceGraph's nodes), their filters (states by name, node counts as numbers), and "Only problems".
 - **Details:** an InferenceService's state and why, URL, deployment mode, components with their revisions, traffic
   split and what KServe made for them, the model status and the serving runtime KServe chooses; a runtime's model
-  formats; an InferenceGraph's nodes and steps; a TrainedModel's InferenceService and storage. URIs never show their
+  formats; an InferenceGraph's nodes and steps; a TrainedModel's InferenceService and storage. The tables' columns
+  resize and Sextant remembers their widths, as the built-in ones'. URIs never show their
   credentials or query. Untitled sections as the built-in one, their blocks remembered in Sextant's own memory of
   details sections with "Expand all" and "Collapse all"; the runtimes and what KServe made watched only while their
   blocks are open, kept to the built-in caps by Sextant.

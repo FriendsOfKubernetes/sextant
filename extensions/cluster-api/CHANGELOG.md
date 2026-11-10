@@ -14,7 +14,8 @@ extension.
   Machines (watched only while open, at most 5000 each); a Machine's bootstrap and infrastructure objects, its Node and
   whether its Cluster is paused; the counts, templates and Machines of MachineDeployments, MachineSets and
   KubeadmControlPlanes; what a MachineHealthCheck checks and why remediation is blocked. A workload cluster Sextant has
-  opens on a click, in Sextant's own dialog.
+  opens on a click, in Sextant's own dialog. The Machines and condition tables' columns resize and are remembered, as
+  the built-in ones were (#417), with the same columns on one line; widths set in the built-in view carry over.
 - **Problems:** failed or unavailable Clusters and control planes, Machines failed or stuck provisioning, and blocked
   remediation, in the category "Cluster API", on by default and never given to agents; counted on the section. A
   paused Cluster's Machines and control planes have none, by their own Paused condition or, with only old

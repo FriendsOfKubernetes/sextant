@@ -185,7 +185,7 @@ export function subscriptionView(sextant: Sextant, obj: KubeObject, related: Rel
       ["subscriptionState", info.state],
       ["lastUpdated", dateTime(info.lastUpdated)],
     ]),
-    health.length > 0 && blocks.block("catalogHealth", t("catalogHealth.title"), ui.table(healthHeaders, health, { label: t("catalogHealth.title") })),
+    health.length > 0 && blocks.block("catalogHealth", t("catalogHealth.title"), ui.table(healthHeaders, health, { label: t("catalogHealth.title"), id: "catalogHealth", sextant, nowrap: [true, true, true] })),
   ]);
 }
 
@@ -212,7 +212,7 @@ function crdTable(sextant: Sextant, blocks: BlockMemory, id: string, title: stri
   if (crds.length === 0) return null;
   const rows = crds.map((c) => [link(sextant, CRD, c.name), c.kind ?? "", c.version ?? "", c.displayName ?? ""]);
   const headers = ["name", "kind", "version", "displayName"].map((h) => t(`crds.${h}`));
-  return blocks.block(id, title, ui.table(headers, rows, { label: title }));
+  return blocks.block(id, title, ui.table(headers, rows, { label: title, id, sextant, nowrap: [false, true, true, false] }));
 }
 
 function deploymentsBlock(sextant: Sextant, obj: KubeObject, deployments: Live | undefined, blocks: BlockMemory): HTMLElement | null {
@@ -238,7 +238,7 @@ function deploymentsBlock(sextant: Sextant, obj: KubeObject, deployments: Live |
   });
   const headers = ["name", "ready", "state"].map((h) => t(`deployments.${h}`));
   return blocks.block("deployments", t("deployments.title"), [
-    ui.table(headers, rows, { label: t("deployments.title") }),
+    ui.table(headers, rows, { label: t("deployments.title"), id: "csvDeployments", sextant, nowrap: [false, true, true] }),
     deployments?.truncated ? remark(t("truncated", { max: MAX_DEPLOYMENTS })) : null,
   ]);
 }
@@ -289,7 +289,7 @@ export function csvView(sextant: Sextant, obj: KubeObject, related: Related, blo
       ["installModes", ui.chips(modes.filter((m) => m.supported).map((m) => m.type))],
       ["unsupportedModes", ui.chips(modes.filter((m) => !m.supported).map((m) => m.type))],
     ]),
-    requirements.length > 0 && blocks.block("requirements", t("requirements.title"), ui.table(reqHeaders, requirements, { label: t("requirements.title") })),
+    requirements.length > 0 && blocks.block("requirements", t("requirements.title"), ui.table(reqHeaders, requirements, { label: t("requirements.title"), id: "csvRequirements", sextant, nowrap: [true, false, true, false] })),
     crdTable(sextant, blocks, "ownedCrds", t("crds.owned"), crdsOf(obj, "owned")),
     crdTable(sextant, blocks, "requiredCrds", t("crds.required"), crdsOf(obj, "required")),
     deploymentsBlock(sextant, obj, related.deployments, blocks),
@@ -322,10 +322,10 @@ export function installPlanView(sextant: Sextant, obj: KubeObject, blocks: Block
       ["catalogSource", link(sextant, CATALOG_SOURCE, info.source, info.sourceNamespace ?? null)],
       ["startTime", dateTime(info.startTime)],
     ]),
-    lookups.length > 0 && blocks.block("lookups", t("lookups.title"), ui.table(lookupHeaders, lookups, { label: t("lookups.title") })),
+    lookups.length > 0 && blocks.block("lookups", t("lookups.title"), ui.table(lookupHeaders, lookups, { label: t("lookups.title"), id: "planLookups", sextant, nowrap: [false, true, false] })),
     stepRows.length > 0 &&
       blocks.block("steps", t("steps.title"), [
-        ui.table(stepHeaders, stepRows, { label: t("steps.title") }),
+        ui.table(stepHeaders, stepRows, { label: t("steps.title"), id: "planSteps", sextant, nowrap: [false, true, false, true] }),
         total > steps.length ? remark(t("moreSteps", { shown: steps.length, total, max: MAX_STEPS })) : null,
       ]),
   ]);

@@ -15,7 +15,8 @@ view (ADR-0100) as an extension.
   addresses and node pools; a topic's name, partitions, replication and config; a user's authentication and its
   Secret by name; a Connect cluster's or MirrorMaker 2's mirrors and connectors; a connector's states, tasks and
   automatic restarts; failed connectors and tasks with their stack traces. Blocks open and close by their titles in
-  Sextant's own memory of details sections, with "Expand all" and "Collapse all".
+  Sextant's own memory of details sections, with "Expand all" and "Collapse all"; the tables' columns resize, and
+  Sextant remembers their widths, as the built-in tables did.
 - **Problems:** objects not ready for 5 minutes (Strimzi's reason, else `NotReady`), failed connectors and tasks with
   their trace's first line (cut at 300 characters) (after Strimzi's automatic restart had its chance), counting from `NotReady` or `Ready`
   False; a MirrorMaker 2's failed connectors and tasks, the connector named wherever it is;

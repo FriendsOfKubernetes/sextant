@@ -90,16 +90,13 @@ function fieldsOf(rows: readonly (readonly [string, UiContent])[]): HTMLElement 
   return list.childElementCount > 0 ? list : null;
 }
 
-/** A table whose columns marked `true` stay on one line; nothing without rows (as the built-in `table`). */
-function tableOf(headers: readonly string[], rows: readonly (readonly UiContent[])[], nowrap: readonly boolean[]): HTMLElement | null {
+/**
+ * A table whose columns marked `true` stay on one line and the others wrap between words, its column widths resized and
+ * remembered under `id` (the built-in table's own word); nothing without rows (as the built-in `table`).
+ */
+function tableOf(sextant: Sextant, id: string, headers: readonly string[], rows: readonly (readonly UiContent[])[], nowrap: readonly boolean[]): HTMLElement | null {
   if (rows.length === 0) return null;
-  const view = ui.table(headers, rows);
-  for (const row of view.querySelectorAll("tr")) {
-    [...row.children].forEach((cell, i) => {
-      if (nowrap[i]) cell.classList.add("vpa-nowrap");
-    });
-  }
-  return view;
+  return ui.table(headers, rows, { id, sextant, nowrap });
 }
 
 // ---------- Pieces shared by both sections ----------
@@ -123,8 +120,11 @@ const amount = (resource: string, value: number | undefined): string => (value =
 
 const CHANGES_NOWRAP = [true, true, true, true, false, true];
 
-/** The containers of the target's template with the VPA's recommendation and what a new pod would get. */
-export function changesTable(vpa: KubeObject, target: KubeObject): Node[] {
+/**
+ * The containers of the target's template with the VPA's recommendation and what a new pod would get; `id` the table
+ * whose widths Sextant keeps (the VPA's and a workload's apart, as the built-in ones).
+ */
+export function changesTable(sextant: Sextant, id: string, vpa: KubeObject, target: KubeObject): Node[] {
   const mode = updateModeOf(vpa);
   const recommendations = recommendationsOf(vpa);
   const changes = templateChanges(target, containerPoliciesOf(vpa), recommendations);
@@ -161,7 +161,7 @@ export function changesTable(vpa: KubeObject, target: KubeObject): Node[] {
     }
   }
   const headers = ["container", "resource", "now", "range", "target", "after"].map((h) => t(`table.${h}`));
-  const view = tableOf(headers, rows, CHANGES_NOWRAP);
+  const view = tableOf(sextant, id, headers, rows, CHANGES_NOWRAP);
   const requestsOnly = changes.some((c) => c.state === "scaled" && c.controlledValues === "RequestsOnly");
   const out: Node[] = [view ?? paragraph("muted", t("table.noContainers"))];
   if (extra.length > 0) out.push(paragraph("muted", t("table.notInTemplate", { containers: formatList(extra) })));
@@ -205,12 +205,12 @@ export interface VpaLists {
   components?: Live[];
 }
 
-function recommendationView(vpa: KubeObject, ref: TargetRef, lists: VpaLists, served: Served, blocks: Blocks): Node[] {
+function recommendationView(sextant: Sextant, vpa: KubeObject, ref: TargetRef, lists: VpaLists, served: Served, blocks: Blocks): Node[] {
   const target = lists.target?.ready && !lists.target.failed ? lists.target.items.find((o) => o.metadata.name === ref.name) : undefined;
   let body: Node;
   if (served({ group: ref.group, kind: ref.kind }) === false) body = paragraph("note", t("target.notServed", { kind: ref.kind }));
   else if (!target) body = paragraph("muted", t("target.notRead"));
-  else body = element("div", {}, ...changesTable(vpa, target));
+  else body = element("div", {}, ...changesTable(sextant, "recommendation", vpa, target));
   return [...conflictLines(vpa, lists.hpas?.items ?? [], target), block(blocks, BLOCKS.recommendation, t("recommendation.title"), body)];
 }
 
@@ -244,7 +244,7 @@ function componentsView(sextant: Sextant, vpa: KubeObject, lists: Live[] | undef
   const missing = COMPONENTS.some((c) => found[c].length === 0);
   const headers = ["component", "state", "deployment"].map((h) => t(`components.${h}`));
   return block(blocks, BLOCKS.components, title, [
-    tableOf(headers, rows, [true, true, false]),
+    tableOf(sextant, "components", headers, rows, [true, true, false]),
     ...notes.map((n) => paragraph("note", n)),
     missing && paragraph("muted", t("components.managed")),
   ]);
@@ -267,7 +267,7 @@ export function vpaView(sextant: Sextant, vpa: KubeObject, lists: VpaLists, serv
   return [
     ...(fields ? [fields] : []),
     ...stateNote(vpa),
-    ...(ref ? recommendationView(vpa, ref, lists, served, blocks) : []),
+    ...(ref ? recommendationView(sextant, vpa, ref, lists, served, blocks) : []),
     componentsView(sextant, vpa, lists.components, blocks),
   ];
 }
@@ -326,7 +326,7 @@ export function workloadView(
       ["mode", updateModeOf(vpa)],
       ["modeExplained", modeText(vpa)],
     ]);
-    one.append(...(rows ? [rows] : []), ...conflictLines(vpa, hpas, obj), ...changesTable(vpa, obj));
+    one.append(...(rows ? [rows] : []), ...conflictLines(vpa, hpas, obj), ...changesTable(sextant, "workload", vpa, obj));
     content.push(one);
   }
   return block(blocks, BLOCKS.workload, t("workload.title"), content);

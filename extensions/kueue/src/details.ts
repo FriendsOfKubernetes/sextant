@@ -174,7 +174,7 @@ const countRows = (obj: KubeObject): [string, UiContent][] => {
 // ---------- Queues ----------
 
 /** The quota table: flavor, resource, quota, reserved (with the borrowed part and the share of the quota), in use, limits. */
-function quotaTable(links: Links, rows: QuotaRow[], usage: boolean): HTMLElement {
+function quotaTable(sextant: Sextant, links: Links, rows: QuotaRow[], usage: boolean): HTMLElement {
   const reservedText = (r: QuotaRow) => {
     if (!r.reserved) return "";
     const base = r.percent === undefined ? r.reserved : t(percentKey("quota.ofQuota", r.percent), { value: r.reserved, percent: r.percent });
@@ -192,7 +192,9 @@ function quotaTable(links: Links, rows: QuotaRow[], usage: boolean): HTMLElement
     row.push(r.borrowingLimit ?? "", r.lendingLimit ?? "");
     return row;
   });
-  return ui.table(headers, cells, { label: t("quota.title") });
+  // The built-in table kept a ClusterQueue's widths and a Cohort's apart.
+  const id = usage ? "quota" : "cohortQuota";
+  return ui.table(headers, cells, { label: t("quota.title"), id, sextant, nowrap: headers.map(() => true) });
 }
 
 /** The Workloads of a list as rows, and whether the watch kept fewer than there are. */
@@ -201,7 +203,7 @@ export function rowsOf(list: Live): { rows: WorkloadRow[]; truncated: boolean } 
 }
 
 /** The waiting Workloads of a queue: link, LocalQueue, how long, and why (the reason and message Kueue wrote). */
-function waitingList(links: Links, waiting: WorkloadRow[], data: Live, truncated: boolean, showQueue: boolean): Node[] {
+function waitingList(sextant: Sextant, links: Links, waiting: WorkloadRow[], data: Live, truncated: boolean, showQueue: boolean): Node[] {
   if (!data.ready) return [remark(t("loading"))];
   if (data.failed) return [remark(t("waitingUnknown"))];
   const shown = waiting.slice(0, MAX_LISTED);
@@ -213,7 +215,7 @@ function waitingList(links: Links, waiting: WorkloadRow[], data: Live, truncated
   ]);
   const headers = [t("waiting.workload"), showQueue ? t("waiting.queue") : t("waiting.namespace"), t("waiting.since"), t("waiting.why")];
   return present([
-    waiting.length === 0 ? remark(t("noneWaiting")) : ui.table(headers, rows, { label: t("waiting.title") }),
+    waiting.length === 0 ? remark(t("noneWaiting")) : ui.table(headers, rows, { label: t("waiting.title"), id: "waiting", sextant, nowrap: [true, true, true, false] }),
     waiting.length > shown.length && remark(t("moreWaiting", { shown: shown.length, total: waiting.length })),
     truncated && remark(t("workloadsTruncated")),
   ]);
@@ -254,7 +256,7 @@ export function clusterQueueView(sextant: Sextant, obj: KubeObject, related: { l
       ["admissionChecks", ui.chips(admissionChecksOf(obj))],
       ...countRows(obj),
     ]),
-    block(blocks, "quota", t("quota.title"), quota.length > 0 ? quotaTable(links, quota, true) : remark(t("quota.none"))),
+    block(blocks, "quota", t("quota.title"), quota.length > 0 ? quotaTable(sextant, links, quota, true) : remark(t("quota.none"))),
     block(
       blocks,
       "localQueues",
@@ -262,10 +264,10 @@ export function clusterQueueView(sextant: Sextant, obj: KubeObject, related: { l
       !localQueues.ready
         ? remark(t("loading"))
         : lqRows.length > 0
-          ? ui.table(lqHeaders, lqRows, { label: t("localQueues") })
+          ? ui.table(lqHeaders, lqRows, { label: t("localQueues"), id: "localQueues", sextant, nowrap: [true, true, true, true] })
           : remark(localQueues.failed ? t("listUnknown") : t("noLocalQueues")),
     ),
-    block(blocks, "waiting", t("waiting.title"), waitingList(links, waiting, workloads, truncated, true)),
+    block(blocks, "waiting", t("waiting.title"), waitingList(sextant, links, waiting, workloads, truncated, true)),
   ]);
 }
 
@@ -286,8 +288,8 @@ export function localQueueView(sextant: Sextant, obj: KubeObject, related: { wor
       ["stopPolicy", str(get(obj, "spec", "stopPolicy"))],
       ...countRows(obj),
     ]),
-    usage.length > 0 && block(blocks, "usage", t("usage"), ui.table(usageHeaders, usage, { label: t("usage") })),
-    block(blocks, "waiting", t("waiting.title"), waitingList(links, waiting, workloads, truncated, false)),
+    usage.length > 0 && block(blocks, "usage", t("usage"), ui.table(usageHeaders, usage, { label: t("usage"), id: "usage", sextant, nowrap: [true, true, true, true] })),
+    block(blocks, "waiting", t("waiting.title"), waitingList(sextant, links, waiting, workloads, truncated, false)),
   ]);
 }
 
@@ -327,7 +329,7 @@ export function cohortView(sextant: Sextant, obj: KubeObject, related: { cluster
   return present([
     fieldsOf([["parent", links.cohort(parentCohortOf(obj))]]),
     block(blocks, "members", t("members"), clusterQueueLinks(links, related.clusterQueues ?? NONE, (cq) => cohortOf(cq) === name)),
-    quota.length > 0 && block(blocks, "quota", t("quota.title"), quotaTable(links, quota, false)),
+    quota.length > 0 && block(blocks, "quota", t("quota.title"), quotaTable(sextant, links, quota, false)),
   ]);
 }
 
@@ -418,9 +420,9 @@ export function workloadView(sextant: Sextant, obj: KubeObject, blocks: Blocks =
       ["requeueAt", dateTime(requeueAt)],
       ["maxExecution", num(get(obj, "spec", "maximumExecutionTimeSeconds"))?.toString()],
     ]),
-    podSets.length > 0 && block(blocks, "podSets", t("podSets.title"), ui.table(podSetHeaders, podSets, { label: t("podSets.title") })),
-    checks.length > 0 && block(blocks, "checks", t("checks.title"), ui.table(checkHeaders, checks, { label: t("checks.title") })),
-    evictions.length > 0 && block(blocks, "evictions", t("evictions.title"), ui.table(evictionHeaders, evictions, { label: t("evictions.title") })),
+    podSets.length > 0 && block(blocks, "podSets", t("podSets.title"), ui.table(podSetHeaders, podSets, { label: t("podSets.title"), id: "podSets", sextant, nowrap: [true, true, false, false] })),
+    checks.length > 0 && block(blocks, "checks", t("checks.title"), ui.table(checkHeaders, checks, { label: t("checks.title"), id: "checks", sextant, nowrap: [true, true, false, true] })),
+    evictions.length > 0 && block(blocks, "evictions", t("evictions.title"), ui.table(evictionHeaders, evictions, { label: t("evictions.title"), id: "evictions", sextant, nowrap: [true, true, true] })),
   ]);
 }
 

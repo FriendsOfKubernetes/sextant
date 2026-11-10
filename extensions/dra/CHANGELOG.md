@@ -14,6 +14,7 @@ Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-i
   open, capped as the built-in view's (500 slices, 1000 claims of a namespace, 5000 claims, 500 Pending Pods).
 - **On core kinds:** a Pod's **Devices** (its claims, their state and devices, and why it waits) and a Node's **DRA
   devices** (its slices' devices), each shown only where there is something to show.
+- **Tables** on the page and in the details whose columns resize and are remembered, as the built-in tables'.
 - **Problems:** one per Pod that waits for devices, as the built-in detector: a claim of its templates not made yet, a
   claim that does not exist, or one without devices while the scheduler names a DRA reason; only Pending Pods watched
   (at most 2000), counted on the section.

@@ -140,7 +140,7 @@ function proxyExplanation(obj: KubeObject): Node[] {
 }
 
 /** Contour's errors and warnings of the Valid condition, one row each. */
-export function issuesBlock(obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): HTMLElement | null {
+export function issuesBlock(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): HTMLElement | null {
   const valid = validCondition(obj);
   if (!valid) return null;
   const rows = [
@@ -148,7 +148,7 @@ export function issuesBlock(obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS):
     ...valid.warnings.map((w) => [t("issues.warning"), w.type, w.reason ?? "", w.message ?? ""]),
   ];
   const headers = ["kind", "type", "reason", "message"].map((h) => t(`issues.${h}`));
-  const body = table("issues", headers, rows, [0, 1, 2]);
+  const body = table(sextant, "issues", headers, rows, [0, 1, 2]);
   return body && block(memory, "issues", t("issues.title"), body);
 }
 
@@ -222,7 +222,7 @@ function routesBlock(sextant: Sextant, obj: KubeObject, memory: BlockMemory): HT
             : "",
   ]);
   const headers = ["number", "conditions", "services", "policies", "action"].map((h) => t(`routes.${h}`));
-  const body = table("routes", headers, rows, [0]);
+  const body = table(sextant, "routes", headers, rows, [0]);
   return body && block(memory, "routes", t("routes.title"), body);
 }
 
@@ -243,7 +243,7 @@ export function includesBlock(sextant: Sextant, obj: KubeObject, index: ProxyInd
     ];
   });
   const headers = ["proxy", "conditions", "state"].map((h) => t(`includes.${h}`));
-  const body = table("includes", headers, rows, [0, 2]);
+  const body = table(sextant, "includes", headers, rows, [0, 2]);
   return body && block(memory, "includes", t("includes.title"), body);
 }
 
@@ -299,7 +299,7 @@ export function proxyView(sextant: Sextant, obj: KubeObject, lists: Lists, memor
   return present([
     ...proxyExplanation(obj),
     hostFields(sextant, obj, lists),
-    issuesBlock(obj, memory),
+    issuesBlock(sextant, obj, memory),
     routesBlock(sextant, obj, memory),
     tcpBlock(sextant, obj, memory),
     includesBlock(sextant, obj, lists.index.index, memory),
@@ -316,7 +316,7 @@ export function delegationView(sextant: Sextant, obj: KubeObject): Node[] {
     d.targetNamespaces.includes("*") ? t("delegations.all") : ui.chips(d.targetNamespaces),
   ]);
   const headers = [t("delegations.secret"), t("delegations.targets")];
-  return [explanation(t("delegations.explain"), false), table("delegations", headers, rows, [0]) ?? remark(t("delegations.none"))];
+  return [explanation(t("delegations.explain"), false), table(sextant, "delegations", headers, rows, [0]) ?? remark(t("delegations.none"))];
 }
 
 export function extensionView(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
@@ -326,7 +326,7 @@ export function extensionView(sextant: Sextant, obj: KubeObject, memory: BlockMe
   const valid = validCondition(obj);
   const rows = f.services.map((s) => [link(sextant, SERVICE, s.name, namespace), s.port === undefined ? "" : String(s.port), s.weight === undefined ? "" : String(s.weight)]);
   const headers = ["service", "port", "weight"].map((h) => t(`extension.${h}`));
-  const services = table("services", headers, rows, [0, 1, 2]);
+  const services = table(sextant, "services", headers, rows, [0, 1, 2]);
   return present([
     valid?.status === "False" && explanation(t("explain.extensionInvalid", { reason: valid.errors[0]?.reason ?? valid.reason ?? "" }), true),
     fieldsOf([
@@ -337,7 +337,7 @@ export function extensionView(sextant: Sextant, obj: KubeObject, memory: BlockMe
       ["loadBalancing", f.loadBalancing],
       ["upstreamValidation", f.validated ? t("yes") : null],
     ]),
-    issuesBlock(obj, memory),
+    issuesBlock(sextant, obj, memory),
     services && block(memory, "services", t("extension.services"), services),
   ]);
 }

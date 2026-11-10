@@ -73,7 +73,7 @@ function triggersTable(sextant: Sextant, obj: KubeObject): HTMLElement | null {
     tr.health ? (tr.failures ? `${tr.health} (${tr.failures})` : tr.health) : "",
   ]);
   const headers = ["trigger", "metadata", "auth", "health"].map((h) => t(`keda.${h}`));
-  return tableOf(headers, rows, TRIGGER_NOWRAP);
+  return tableOf(sextant, "triggers", headers, rows, TRIGGER_NOWRAP);
 }
 
 // ---------- The managed HPA (the built-in `HpaSummary` with its metrics) ----------
@@ -86,7 +86,7 @@ function metricName(m: MetricRow): string {
   return parts.join(" ");
 }
 
-export function metricsTable(metrics: readonly MetricRow[]): HTMLElement | null {
+export function metricsTable(sextant: Sextant, metrics: readonly MetricRow[]): HTMLElement | null {
   if (metrics.length === 0) return note(t("hpa.noMetrics"));
   const proposes = (m: MetricRow): UiContent => {
     if (m.proposes === undefined) return warning(t("hpa.noValue"));
@@ -99,7 +99,7 @@ export function metricsTable(metrics: readonly MetricRow[]): HTMLElement | null 
     proposes(m),
   ]);
   const headers = ["metric", "current", "target", "proposes"].map((h) => t(`hpa.${h}`));
-  return tableOf(headers, rows, METRIC_NOWRAP);
+  return tableOf(sextant, "hpaMetrics", headers, rows, METRIC_NOWRAP);
 }
 
 /** One HPA in a few lines: a link, the replicas, the verdict, its causes and the metrics. */
@@ -111,7 +111,7 @@ export function hpaSummary(sextant: Sextant, hpa: KubeObject): HTMLElement {
     ["replicas", t("hpa.replicasNow", { current: a.current, desired: a.desired ?? a.current })],
     ["range", `${a.min}–${a.max}`],
   ]);
-  return element("div", { className: "as-summary" }, fields, phraseLine(a.verdict), ...phraseLines(a.causes), metricsTable(a.metrics));
+  return element("div", { className: "as-summary" }, fields, phraseLine(a.verdict), ...phraseLines(a.causes), metricsTable(sextant, a.metrics));
 }
 
 function managedHpa(sextant: Sextant, obj: KubeObject, hpas: Live | undefined): UiContent {
@@ -186,7 +186,7 @@ export function triggerAuthenticationView(sextant: Sextant, obj: KubeObject, mem
       ["podIdentity", podIdentity ?? null],
     ]),
     sources.length === 0 && !podIdentity ? note(t("keda.noSources")) : null,
-    tableOf(headers, rows, SOURCE_NOWRAP),
+    tableOf(sextant, "sources", headers, rows, SOURCE_NOWRAP),
   ];
   return [block(memory, BLOCKS.auth, t("keda.authTitle"), content)];
 }

@@ -71,7 +71,8 @@ tables had them.
 
 The Resources and Sync history sections hide themselves, title included, while an Application has none (as the
 built-in view showed nothing then). The blocks are drawn with the SDK's UI kit, so they look like Sextant's own
-details.
+details. The columns of the Resources, Sync history, sources and destinations tables resize as the built-in view's
+did, and Sextant remembers their widths (Settings → Appearance resets them with every table's).
 
 **Actions on Applications:**
 - **Sync…** (`sync`, a button): revision (the target revision by default; each source's own for a multi-source app),

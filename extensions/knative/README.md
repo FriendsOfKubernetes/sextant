@@ -84,7 +84,8 @@ following the panel's "Expand all" and "Collapse all". Each begins with why the 
 - **Service** (`service`), **Configuration** (`configuration`) and **Route** (`route`): state, URL, address in the
   cluster, the latest created and latest ready revisions; for a Service or Route the traffic split in a block of its
   own — each target's revision, tag, share, whether it follows the latest ready revision, and its URL — or, while none
-  is in effect, the split that was asked.
+  is in effect, the split that was asked; its columns resize and Sextant remembers their widths, as the built-in
+  table's (the widths set there carry over), the revision, tag and share on one line.
 - **Revision** (`revision`): state (scaled to zero, starting, the container unhealthy, resources unavailable), its
   Configuration and Service, generation, actual of desired replicas, routing state, images, requests per container
   at once and the request timeout.

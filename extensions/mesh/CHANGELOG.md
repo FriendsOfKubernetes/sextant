@@ -23,6 +23,8 @@ extension.
   answers — with the routes skipped and the VirtualServices that did not apply.
   "Check a request…" on a VirtualService closes the details and opens it prefilled; the form, headers included, is kept
   per cluster for the run only.
+- **Tables** of the details, the "Service mesh" block and Request routing with columns that resize, their widths
+  remembered by Sextant, as the built-in view's (the widths set there carry over).
 - **Problems**, in the category "Service mesh" (on by default, counted on the Istio section, given to agents only where
   you allow it), every one the built-in view found: unknown hosts, subsets without a destination rule or missing from
   it, gateways that do not exist, the host `*` on the sidecars, VirtualServices shadowed by an older one, and TLS modes

@@ -66,6 +66,9 @@ The replicated jobs, failure policy rules, Jobs and Pods blocks open and close w
 memory of details sections: as Settings → Appearance says (globally, per cluster, or this object only), and with the
 panel's "Expand all" and "Collapse all".
 
+The tables' columns resize (drag a header's right edge) and Sextant remembers their widths, as the built-in view's
+did; the same columns keep to one line, the others wrap between words.
+
 Every object named is a link to its details in Sextant's panel. Kueue's queue section on JobSets is Sextant's own and
 stays there.
 

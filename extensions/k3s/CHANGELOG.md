@@ -16,6 +16,7 @@ extension.
   **RKE2** block on k3s and RKE2 nodes. The blocks open and close in Sextant's memory of details sections. A node's
   arguments and a chart's `valuesContent` and `set`, which Sextant keeps from extensions, are said to be in the YAML
   section; what the extension does get of a chart's values is masked as before.
+- **Tables** on the page and in the details whose columns resize and are remembered, as the built-in tables'.
 - **Problems:** HelmCharts whose install failed (from the Job's failure, for a day) or keeps failing, and bundled
   components not available, in the built-in groups.
 - Installing asks for consent to read HelmCharts, HelmChartConfigs, Addons, etcd snapshots, Jobs, Nodes and Services,

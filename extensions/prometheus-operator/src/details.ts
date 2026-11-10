@@ -56,6 +56,11 @@ export const MAX_DETAIL_NAMESPACES = 20;
 /** Selected objects listed by name at most. */
 export const MAX_LISTED_TARGETS = 30;
 
+/** The columns kept on one line, as the built-in details tables' (the others wrap between words). */
+const ENDPOINTS_NOWRAP = [true, false, true, false];
+const GROUPS_NOWRAP = [false, true, true, true];
+const SELECTORS_NOWRAP = [true, false, false];
+
 /** A list watched while it is needed: its objects, whether the first answer came, whether it failed. */
 export interface Live {
   items: KubeObject[];
@@ -215,7 +220,7 @@ function targetsBody(sextant: Sextant, kind: KindOf, obj: KubeObject, targets: T
     ui.inline(shown.map((o) => link(sextant, type, o.metadata.name, o.metadata.namespace ?? null, key(o)))),
     objects.length > shown.length && note(t("targets.more", { count: objects.length - shown.length }), "muted"),
     // As the built-in table: none without an endpoint.
-    rows.length > 0 && ui.table(headers, rows, { label: t("targets.title") }),
+    rows.length > 0 && ui.table(headers, rows, { label: t("targets.title"), id: "endpoints", sextant, nowrap: ENDPOINTS_NOWRAP }),
   ]);
 }
 
@@ -254,7 +259,7 @@ export function ruleView(sextant: Sextant, kind: KindOf, obj: KubeObject, proms:
   const headers = ["name", "interval", "alerts", "records"].map((h) => t(`groups.${h}`));
   const rows = groups.map((g) => [g.name, g.interval ?? "", String(g.alerts), String(g.records)]);
   return [
-    block(blocks, "groups", t("groups.title"), () => (groups.length === 0 ? note(t("groups.none"), "muted") : ui.table(headers, rows, { label: t("groups.title") }))),
+    block(blocks, "groups", t("groups.title"), () => (groups.length === 0 ? note(t("groups.none"), "muted") : ui.table(headers, rows, { label: t("groups.title"), id: "groups", sextant, nowrap: GROUPS_NOWRAP }))),
     pickedUp(sextant, kind, obj, proms, blocks),
   ];
 }
@@ -284,7 +289,7 @@ const SELECTORS: [label: string, selector: string, namespaces: string][] = [
   ["rules", "ruleSelector", "ruleNamespaceSelector"],
 ];
 
-export function serverView(kind: KindOf, obj: KubeObject, blocks: Blocks = ALL_OPEN): Node[] {
+export function serverView(sextant: Sextant, kind: KindOf, obj: KubeObject, blocks: Blocks = ALL_OPEN): Node[] {
   const r = serverReadiness(obj);
   const spec = get(obj, "spec");
   const selectors = isKind(kind, PROMETHEUS)
@@ -302,7 +307,7 @@ export function serverView(kind: KindOf, obj: KubeObject, blocks: Blocks = ALL_O
       ["retention", str(get(spec, "retention"))],
       ["paused", get(spec, "paused") === true ? t("yes") : undefined],
     ]),
-    selectors.length > 0 && block(blocks, "selectors", t("selectors.title"), () => ui.table(headers, selectors, { label: t("selectors.title") })),
+    selectors.length > 0 && block(blocks, "selectors", t("selectors.title"), () => ui.table(headers, selectors, { label: t("selectors.title"), id: "selectors", sextant, nowrap: SELECTORS_NOWRAP })),
   ]);
 }
 
@@ -350,7 +355,7 @@ export function sectionView(sextant: Sextant, kind: KindOf, obj: KubeObject, ser
   if (isKind(kind, SERVICE_MONITOR, POD_MONITOR)) return monitorView(sextant, kind, obj, proms, related, blocks);
   if (isKind(kind, PROBE)) return probeView(sextant, kind, obj, proms, blocks);
   if (isKind(kind, PROMETHEUS_RULE)) return ruleView(sextant, kind, obj, proms, blocks);
-  if (isKind(kind, PROMETHEUS, ALERTMANAGER)) return serverView(kind, obj, blocks);
+  if (isKind(kind, PROMETHEUS, ALERTMANAGER)) return serverView(sextant, kind, obj, blocks);
   return null;
 }
 
