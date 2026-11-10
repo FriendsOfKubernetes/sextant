@@ -17,7 +17,6 @@
     "karpenter": "Karpenter",
     "vpa": "Vertical Pod Autoscaler",
     "volumeSnapshots": "Birim anlık görüntüleri",
-    "velero": "Velero",
     "istio": "Istio",
     "linkerd": "Linkerd",
     "traefik": "Traefik",

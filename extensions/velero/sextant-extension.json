@@ -1,0 +1,1313 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.velero",
+  "name": "Velero",
+  "version": "1.0.0",
+  "description": "Velero: backups, schedules, restores and storage locations with their phase, errors and warnings, and why one failed in plain words; back up a namespace and restore from a backup by creating Velero's own objects, shown first.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "velero",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "velero.io",
+              "kind": "Backup"
+            },
+            {
+              "group": "velero.io",
+              "kind": "Schedule"
+            },
+            {
+              "group": "velero.io",
+              "kind": "Restore"
+            },
+            {
+              "group": "velero.io",
+              "kind": "BackupStorageLocation"
+            },
+            {
+              "group": "velero.io",
+              "kind": "VolumeSnapshotLocation"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      },
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "velero.io",
+              "kind": "Backup"
+            },
+            {
+              "group": "velero.io",
+              "kind": "Restore"
+            }
+          ]
+        },
+        "actions": [
+          "modify"
+        ],
+        "confirm": false
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "velero.io",
+        "kind": "Backup",
+        "section": "velero",
+        "title": "Backups",
+        "icon": "veleroBackup",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "FailedValidation",
+                "Unavailable"
+              ]
+            },
+            {
+              "type": "endsWith",
+              "path": ".status.phase",
+              "values": [
+                "PartiallyFailed"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "group": "velero.io",
+        "kind": "Schedule",
+        "section": "velero",
+        "title": "Schedules",
+        "icon": "veleroSchedule",
+        "order": 20,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "FailedValidation",
+                "Unavailable"
+              ]
+            },
+            {
+              "type": "endsWith",
+              "path": ".status.phase",
+              "values": [
+                "PartiallyFailed"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "group": "velero.io",
+        "kind": "Restore",
+        "section": "velero",
+        "title": "Restores",
+        "icon": "veleroRestore",
+        "order": 30,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "FailedValidation",
+                "Unavailable"
+              ]
+            },
+            {
+              "type": "endsWith",
+              "path": ".status.phase",
+              "values": [
+                "PartiallyFailed"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "group": "velero.io",
+        "kind": "BackupStorageLocation",
+        "section": "velero",
+        "title": "Backup Storage Locations",
+        "icon": "veleroLocation",
+        "order": 40,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "FailedValidation",
+                "Unavailable"
+              ]
+            },
+            {
+              "type": "endsWith",
+              "path": ".status.phase",
+              "values": [
+                "PartiallyFailed"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "group": "velero.io",
+        "kind": "VolumeSnapshotLocation",
+        "section": "velero",
+        "title": "Volume Snapshot Locations",
+        "icon": "veleroLocation",
+        "order": 50,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "in",
+              "path": ".status.phase",
+              "values": [
+                "Failed",
+                "FailedValidation",
+                "Unavailable"
+              ]
+            },
+            {
+              "type": "endsWith",
+              "path": ".status.phase",
+              "values": [
+                "PartiallyFailed"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "sections": [
+      {
+        "section": "velero",
+        "title": "Velero",
+        "icon": "velero",
+        "after": "volumeSnapshots"
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "velero",
+        "title": "Velero",
+        "kinds": [
+          {
+            "group": "velero.io",
+            "kind": "Backup"
+          },
+          {
+            "group": "velero.io",
+            "kind": "Schedule"
+          },
+          {
+            "group": "velero.io",
+            "kind": "Restore"
+          },
+          {
+            "group": "velero.io",
+            "kind": "BackupStorageLocation"
+          },
+          {
+            "group": "velero.io",
+            "kind": "VolumeSnapshotLocation"
+          }
+        ],
+        "placement": "section",
+        "order": 21,
+        "heading": false
+      }
+    ],
+    "actions": [
+      {
+        "id": "back-up-namespace",
+        "title": "Back up namespace…",
+        "icon": "veleroBackup",
+        "kinds": [
+          {
+            "group": "",
+            "kind": "Namespace"
+          }
+        ],
+        "requiresKinds": [
+          {
+            "group": "velero.io",
+            "kind": "Backup"
+          }
+        ],
+        "when": {
+          "type": "not",
+          "of": {
+            "type": "equals",
+            "path": ".status.phase",
+            "value": "Terminating"
+          }
+        },
+        "placement": "more"
+      },
+      {
+        "id": "restore-backup",
+        "title": "Restore from this backup…",
+        "icon": "veleroRestore",
+        "kinds": [
+          {
+            "group": "velero.io",
+            "kind": "Backup"
+          }
+        ],
+        "when": {
+          "type": "not",
+          "of": {
+            "type": "equals",
+            "path": ".status.phase",
+            "value": "Deleting"
+          }
+        },
+        "placement": "more"
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Backup"
+        },
+        "id": "backup-namespaces",
+        "title": "Namespaces",
+        "afterColumn": "namespace",
+        "width": "minmax(120px, 1.5fr)",
+        "paths": [
+          ".spec.includedNamespaces"
+        ],
+        "format": "list",
+        "cases": [
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.includedNamespaces"
+                },
+                {
+                  "type": "below",
+                  "path": ".spec.includedNamespaces",
+                  "value": 1
+                }
+              ]
+            },
+            "text": "*"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Backup"
+        },
+        "id": "backup-phase",
+        "title": "Phase",
+        "afterColumn": "backup-namespaces",
+        "width": "150px",
+        "paths": [
+          ".status.phase"
+        ],
+        "tones": {
+          "Completed": "ok",
+          "Enabled": "ok",
+          "Available": "ok",
+          "Failed": "error",
+          "FailedValidation": "error",
+          "Unavailable": "error",
+          "*": "muted"
+        },
+        "cases": [
+          {
+            "when": {
+              "type": "endsWith",
+              "path": ".status.phase",
+              "values": [
+                "PartiallyFailed"
+              ]
+            },
+            "text": "{{.status.phase}}",
+            "tone": "warning"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Backup"
+        },
+        "id": "backup-errors",
+        "title": "Errors",
+        "afterColumn": "backup-phase",
+        "width": "80px",
+        "paths": [
+          ".status.errors"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".status.errors",
+              "value": 0
+            },
+            "text": "{{.status.errors}}",
+            "tone": "error",
+            "value": "{{.status.errors}}"
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.errors"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Backup"
+        },
+        "id": "backup-warnings",
+        "title": "Warnings",
+        "afterColumn": "backup-errors",
+        "width": "80px",
+        "paths": [
+          ".status.warnings"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".status.warnings",
+              "value": 0
+            },
+            "text": "{{.status.warnings}}",
+            "tone": "warning",
+            "value": "{{.status.warnings}}"
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.warnings"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Backup"
+        },
+        "id": "backup-completed",
+        "title": "Completed",
+        "afterColumn": "backup-warnings",
+        "width": "90px",
+        "paths": [
+          ".status.completionTimestamp"
+        ],
+        "format": "age"
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Schedule"
+        },
+        "id": "schedule-schedule",
+        "title": "Schedule",
+        "afterColumn": "namespace",
+        "width": "120px",
+        "paths": [
+          ".spec.schedule"
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Schedule"
+        },
+        "id": "schedule-namespaces",
+        "title": "Namespaces",
+        "afterColumn": "schedule-schedule",
+        "width": "minmax(120px, 1.5fr)",
+        "paths": [
+          ".spec.template.includedNamespaces"
+        ],
+        "format": "list",
+        "cases": [
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.template.includedNamespaces"
+                },
+                {
+                  "type": "below",
+                  "path": ".spec.template.includedNamespaces",
+                  "value": 1
+                }
+              ]
+            },
+            "text": "*"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Schedule"
+        },
+        "id": "schedule-paused",
+        "title": "Paused",
+        "afterColumn": "schedule-namespaces",
+        "width": "70px",
+        "paths": [
+          ".spec.paused"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.paused",
+              "value": true
+            },
+            "text": "true"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.paused",
+                "value": true
+              }
+            },
+            "text": ""
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Schedule"
+        },
+        "id": "schedule-phase",
+        "title": "Phase",
+        "afterColumn": "schedule-paused",
+        "width": "150px",
+        "paths": [
+          ".status.phase"
+        ],
+        "tones": {
+          "Completed": "ok",
+          "Enabled": "ok",
+          "Available": "ok",
+          "Failed": "error",
+          "FailedValidation": "error",
+          "Unavailable": "error",
+          "*": "muted"
+        },
+        "cases": [
+          {
+            "when": {
+              "type": "endsWith",
+              "path": ".status.phase",
+              "values": [
+                "PartiallyFailed"
+              ]
+            },
+            "text": "{{.status.phase}}",
+            "tone": "warning"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Schedule"
+        },
+        "id": "schedule-last-backup",
+        "title": "Last backup",
+        "afterColumn": "schedule-phase",
+        "width": "90px",
+        "paths": [
+          ".status.lastBackup"
+        ],
+        "format": "age"
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Restore"
+        },
+        "id": "restore-backup",
+        "title": "Backup",
+        "afterColumn": "namespace",
+        "width": "minmax(140px, 1.5fr)",
+        "paths": [
+          ".spec.backupName",
+          ".spec.scheduleName"
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Restore"
+        },
+        "id": "restore-phase",
+        "title": "Phase",
+        "afterColumn": "restore-backup",
+        "width": "150px",
+        "paths": [
+          ".status.phase"
+        ],
+        "tones": {
+          "Completed": "ok",
+          "Enabled": "ok",
+          "Available": "ok",
+          "Failed": "error",
+          "FailedValidation": "error",
+          "Unavailable": "error",
+          "*": "muted"
+        },
+        "cases": [
+          {
+            "when": {
+              "type": "endsWith",
+              "path": ".status.phase",
+              "values": [
+                "PartiallyFailed"
+              ]
+            },
+            "text": "{{.status.phase}}",
+            "tone": "warning"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Restore"
+        },
+        "id": "restore-errors",
+        "title": "Errors",
+        "afterColumn": "restore-phase",
+        "width": "80px",
+        "paths": [
+          ".status.errors"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".status.errors",
+              "value": 0
+            },
+            "text": "{{.status.errors}}",
+            "tone": "error",
+            "value": "{{.status.errors}}"
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.errors"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "Restore"
+        },
+        "id": "restore-warnings",
+        "title": "Warnings",
+        "afterColumn": "restore-errors",
+        "width": "80px",
+        "paths": [
+          ".status.warnings"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".status.warnings",
+              "value": 0
+            },
+            "text": "{{.status.warnings}}",
+            "tone": "warning",
+            "value": "{{.status.warnings}}"
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.warnings"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "BackupStorageLocation"
+        },
+        "id": "location-provider",
+        "title": "Provider",
+        "afterColumn": "namespace",
+        "width": "100px",
+        "paths": [
+          ".spec.provider"
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "BackupStorageLocation"
+        },
+        "id": "location-bucket",
+        "title": "Bucket",
+        "afterColumn": "location-provider",
+        "width": "minmax(120px, 1fr)",
+        "paths": [
+          ".spec.objectStorage.bucket"
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "BackupStorageLocation"
+        },
+        "id": "location-default",
+        "title": "Default",
+        "afterColumn": "location-bucket",
+        "width": "80px",
+        "paths": [
+          ".spec.default"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.default",
+              "value": true
+            },
+            "text": "true"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.default",
+                "value": true
+              }
+            },
+            "text": ""
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "BackupStorageLocation"
+        },
+        "id": "location-phase",
+        "title": "Phase",
+        "afterColumn": "location-default",
+        "width": "150px",
+        "paths": [
+          ".status.phase"
+        ],
+        "tones": {
+          "Completed": "ok",
+          "Enabled": "ok",
+          "Available": "ok",
+          "Failed": "error",
+          "FailedValidation": "error",
+          "Unavailable": "error",
+          "*": "muted"
+        },
+        "cases": [
+          {
+            "when": {
+              "type": "endsWith",
+              "path": ".status.phase",
+              "values": [
+                "PartiallyFailed"
+              ]
+            },
+            "text": "{{.status.phase}}",
+            "tone": "warning"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "BackupStorageLocation"
+        },
+        "id": "location-last-validated",
+        "title": "Validated",
+        "afterColumn": "location-phase",
+        "width": "90px",
+        "paths": [
+          ".status.lastValidationTime"
+        ],
+        "format": "age"
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "VolumeSnapshotLocation"
+        },
+        "id": "snapshot-location-provider",
+        "title": "Provider",
+        "afterColumn": "namespace",
+        "width": "120px",
+        "paths": [
+          ".spec.provider"
+        ]
+      },
+      {
+        "kind": {
+          "group": "velero.io",
+          "kind": "VolumeSnapshotLocation"
+        },
+        "id": "snapshot-location-phase",
+        "title": "Phase",
+        "afterColumn": "snapshot-location-provider",
+        "width": "150px",
+        "paths": [
+          ".status.phase"
+        ],
+        "tones": {
+          "Completed": "ok",
+          "Enabled": "ok",
+          "Available": "ok",
+          "Failed": "error",
+          "FailedValidation": "error",
+          "Unavailable": "error",
+          "*": "muted"
+        },
+        "cases": [
+          {
+            "when": {
+              "type": "endsWith",
+              "path": ".status.phase",
+              "values": [
+                "PartiallyFailed"
+              ]
+            },
+            "text": "{{.status.phase}}",
+            "tone": "warning"
+          }
+        ]
+      }
+    ]
+  },
+  "translations": {
+    "ru": {
+      "name": "Velero",
+      "description": "Velero: резервные копии, расписания, восстановления и места хранения с фазой, ошибками и предупреждениями, и простыми словами — почему что-то не удалось; резервная копия namespace и восстановление из копии через собственные объекты Velero, показанные заранее.",
+      "kinds.0.title": "Backups",
+      "kinds.1.title": "Schedules",
+      "kinds.2.title": "Restores",
+      "kinds.3.title": "Backup Storage Locations",
+      "kinds.4.title": "Volume Snapshot Locations",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "Резервная копия namespace…",
+      "actions.restore-backup.title": "Восстановить из этой копии…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "Фаза",
+      "columns.backup-errors.title": "Ошибки",
+      "columns.backup-warnings.title": "Предупреждения",
+      "columns.backup-completed.title": "Завершено",
+      "columns.schedule-schedule.title": "Расписание",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "Приостановлено",
+      "columns.schedule-phase.title": "Фаза",
+      "columns.schedule-last-backup.title": "Последняя копия",
+      "columns.restore-backup.title": "Резервная копия",
+      "columns.restore-phase.title": "Фаза",
+      "columns.restore-errors.title": "Ошибки",
+      "columns.restore-warnings.title": "Предупреждения",
+      "columns.location-provider.title": "Провайдер",
+      "columns.location-bucket.title": "Бакет",
+      "columns.location-default.title": "По умолчанию",
+      "columns.location-phase.title": "Фаза",
+      "columns.location-last-validated.title": "Проверено",
+      "columns.snapshot-location-provider.title": "Провайдер",
+      "columns.snapshot-location-phase.title": "Фаза"
+    },
+    "uk": {
+      "name": "Velero",
+      "description": "Velero: резервні копії, розклади, відновлення та місця зберігання з фазою, помилками й попередженнями, і простими словами — чому щось не вдалося; резервна копія namespace і відновлення з копії через власні об'єкти Velero, показані заздалегідь.",
+      "kinds.0.title": "Backups",
+      "kinds.1.title": "Schedules",
+      "kinds.2.title": "Restores",
+      "kinds.3.title": "Backup Storage Locations",
+      "kinds.4.title": "Volume Snapshot Locations",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "Резервна копія namespace…",
+      "actions.restore-backup.title": "Відновити з цієї копії…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "Фаза",
+      "columns.backup-errors.title": "Помилки",
+      "columns.backup-warnings.title": "Попередження",
+      "columns.backup-completed.title": "Завершено",
+      "columns.schedule-schedule.title": "Розклад",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "Призупинено",
+      "columns.schedule-phase.title": "Фаза",
+      "columns.schedule-last-backup.title": "Остання копія",
+      "columns.restore-backup.title": "Резервна копія",
+      "columns.restore-phase.title": "Фаза",
+      "columns.restore-errors.title": "Помилки",
+      "columns.restore-warnings.title": "Попередження",
+      "columns.location-provider.title": "Провайдер",
+      "columns.location-bucket.title": "Бакет",
+      "columns.location-default.title": "Типовий",
+      "columns.location-phase.title": "Фаза",
+      "columns.location-last-validated.title": "Перевірено",
+      "columns.snapshot-location-provider.title": "Провайдер",
+      "columns.snapshot-location-phase.title": "Фаза"
+    },
+    "de": {
+      "name": "Velero",
+      "description": "Velero: Backups, Zeitpläne, Wiederherstellungen und Speicherorte mit Phase, Fehlern und Warnungen und in einfachen Worten, warum etwas fehlschlug; einen Namespace sichern und aus einem Backup wiederherstellen, indem Veleros eigene Objekte erstellt werden, vorher angezeigt.",
+      "kinds.0.title": "Backups",
+      "kinds.1.title": "Schedules",
+      "kinds.2.title": "Restores",
+      "kinds.3.title": "Backup Storage Locations",
+      "kinds.4.title": "Volume Snapshot Locations",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "Namespace sichern…",
+      "actions.restore-backup.title": "Aus diesem Backup wiederherstellen…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "Phase",
+      "columns.backup-errors.title": "Fehler",
+      "columns.backup-warnings.title": "Warnungen",
+      "columns.backup-completed.title": "Abgeschlossen",
+      "columns.schedule-schedule.title": "Zeitplan",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "Pausiert",
+      "columns.schedule-phase.title": "Phase",
+      "columns.schedule-last-backup.title": "Letztes Backup",
+      "columns.restore-backup.title": "Backup",
+      "columns.restore-phase.title": "Phase",
+      "columns.restore-errors.title": "Fehler",
+      "columns.restore-warnings.title": "Warnungen",
+      "columns.location-provider.title": "Anbieter",
+      "columns.location-bucket.title": "Bucket",
+      "columns.location-default.title": "Standard",
+      "columns.location-phase.title": "Phase",
+      "columns.location-last-validated.title": "Geprüft",
+      "columns.snapshot-location-provider.title": "Anbieter",
+      "columns.snapshot-location-phase.title": "Phase"
+    },
+    "fr": {
+      "name": "Velero",
+      "description": "Velero : sauvegardes, planifications, restaurations et emplacements de stockage avec leur phase, leurs erreurs et avertissements, et en termes simples pourquoi l'un a échoué ; sauvegarder un namespace et restaurer depuis une sauvegarde en créant les objets de Velero lui-même, affichés d'abord.",
+      "kinds.0.title": "Backups",
+      "kinds.1.title": "Schedules",
+      "kinds.2.title": "Restores",
+      "kinds.3.title": "Backup Storage Locations",
+      "kinds.4.title": "Volume Snapshot Locations",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "Sauvegarder le namespace…",
+      "actions.restore-backup.title": "Restaurer depuis cette sauvegarde…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "Phase",
+      "columns.backup-errors.title": "Erreurs",
+      "columns.backup-warnings.title": "Avertissements",
+      "columns.backup-completed.title": "Terminé",
+      "columns.schedule-schedule.title": "Planification",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "En pause",
+      "columns.schedule-phase.title": "Phase",
+      "columns.schedule-last-backup.title": "Dernière sauvegarde",
+      "columns.restore-backup.title": "Sauvegarde",
+      "columns.restore-phase.title": "Phase",
+      "columns.restore-errors.title": "Erreurs",
+      "columns.restore-warnings.title": "Avertissements",
+      "columns.location-provider.title": "Fournisseur",
+      "columns.location-bucket.title": "Bucket",
+      "columns.location-default.title": "Par défaut",
+      "columns.location-phase.title": "Phase",
+      "columns.location-last-validated.title": "Vérifié",
+      "columns.snapshot-location-provider.title": "Fournisseur",
+      "columns.snapshot-location-phase.title": "Phase"
+    },
+    "es": {
+      "name": "Velero",
+      "description": "Velero: copias de seguridad, programaciones, restauraciones y ubicaciones de almacenamiento con su fase, errores y advertencias, y en palabras sencillas por qué falló alguno; respaldar un namespace y restaurar desde una copia creando los propios objetos de Velero, mostrados antes.",
+      "kinds.0.title": "Backups",
+      "kinds.1.title": "Schedules",
+      "kinds.2.title": "Restores",
+      "kinds.3.title": "Backup Storage Locations",
+      "kinds.4.title": "Volume Snapshot Locations",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "Hacer copia del namespace…",
+      "actions.restore-backup.title": "Restaurar desde esta copia…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "Fase",
+      "columns.backup-errors.title": "Errores",
+      "columns.backup-warnings.title": "Advertencias",
+      "columns.backup-completed.title": "Completado",
+      "columns.schedule-schedule.title": "Programación",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "En pausa",
+      "columns.schedule-phase.title": "Fase",
+      "columns.schedule-last-backup.title": "Última copia",
+      "columns.restore-backup.title": "Copia de seguridad",
+      "columns.restore-phase.title": "Fase",
+      "columns.restore-errors.title": "Errores",
+      "columns.restore-warnings.title": "Advertencias",
+      "columns.location-provider.title": "Proveedor",
+      "columns.location-bucket.title": "Bucket",
+      "columns.location-default.title": "Predeterminada",
+      "columns.location-phase.title": "Fase",
+      "columns.location-last-validated.title": "Validado",
+      "columns.snapshot-location-provider.title": "Proveedor",
+      "columns.snapshot-location-phase.title": "Fase"
+    },
+    "pt-BR": {
+      "name": "Velero",
+      "description": "Velero: backups, agendamentos, restaurações e locais de armazenamento com sua fase, erros e avisos, e em palavras simples por que algum falhou; fazer backup de um namespace e restaurar a partir de um backup criando os próprios objetos do Velero, mostrados antes.",
+      "kinds.0.title": "Backups",
+      "kinds.1.title": "Schedules",
+      "kinds.2.title": "Restores",
+      "kinds.3.title": "Backup Storage Locations",
+      "kinds.4.title": "Volume Snapshot Locations",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "Fazer backup do namespace…",
+      "actions.restore-backup.title": "Restaurar deste backup…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "Fase",
+      "columns.backup-errors.title": "Erros",
+      "columns.backup-warnings.title": "Avisos",
+      "columns.backup-completed.title": "Concluído",
+      "columns.schedule-schedule.title": "Agendamento",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "Pausado",
+      "columns.schedule-phase.title": "Fase",
+      "columns.schedule-last-backup.title": "Último backup",
+      "columns.restore-backup.title": "Backup",
+      "columns.restore-phase.title": "Fase",
+      "columns.restore-errors.title": "Erros",
+      "columns.restore-warnings.title": "Avisos",
+      "columns.location-provider.title": "Provedor",
+      "columns.location-bucket.title": "Bucket",
+      "columns.location-default.title": "Padrão",
+      "columns.location-phase.title": "Fase",
+      "columns.location-last-validated.title": "Validado",
+      "columns.snapshot-location-provider.title": "Provedor",
+      "columns.snapshot-location-phase.title": "Fase"
+    },
+    "it": {
+      "name": "Velero",
+      "description": "Velero: backup, pianificazioni, ripristini e posizioni di archiviazione con fase, errori e avvisi, e in parole semplici perché qualcosa non è riuscito; eseguire il backup di un namespace e ripristinare da un backup creando gli oggetti di Velero stesso, mostrati prima.",
+      "kinds.0.title": "Backups",
+      "kinds.1.title": "Schedules",
+      "kinds.2.title": "Restores",
+      "kinds.3.title": "Backup Storage Locations",
+      "kinds.4.title": "Volume Snapshot Locations",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "Esegui backup del namespace…",
+      "actions.restore-backup.title": "Ripristina da questo backup…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "Fase",
+      "columns.backup-errors.title": "Errori",
+      "columns.backup-warnings.title": "Avvisi",
+      "columns.backup-completed.title": "Completato",
+      "columns.schedule-schedule.title": "Pianificazione",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "In pausa",
+      "columns.schedule-phase.title": "Fase",
+      "columns.schedule-last-backup.title": "Ultimo backup",
+      "columns.restore-backup.title": "Backup",
+      "columns.restore-phase.title": "Fase",
+      "columns.restore-errors.title": "Errori",
+      "columns.restore-warnings.title": "Avvisi",
+      "columns.location-provider.title": "Provider",
+      "columns.location-bucket.title": "Bucket",
+      "columns.location-default.title": "Predefinita",
+      "columns.location-phase.title": "Fase",
+      "columns.location-last-validated.title": "Verificato",
+      "columns.snapshot-location-provider.title": "Provider",
+      "columns.snapshot-location-phase.title": "Fase"
+    },
+    "pl": {
+      "name": "Velero",
+      "description": "Velero: kopie zapasowe, harmonogramy, przywracania i lokalizacje przechowywania z fazą, błędami i ostrzeżeniami oraz prostymi słowami, dlaczego coś się nie udało; kopia zapasowa namespace i przywracanie z kopii przez utworzenie własnych obiektów Velero, pokazanych najpierw.",
+      "kinds.0.title": "Backups",
+      "kinds.1.title": "Schedules",
+      "kinds.2.title": "Restores",
+      "kinds.3.title": "Backup Storage Locations",
+      "kinds.4.title": "Volume Snapshot Locations",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "Kopia zapasowa namespace…",
+      "actions.restore-backup.title": "Przywróć z tej kopii…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "Faza",
+      "columns.backup-errors.title": "Błędy",
+      "columns.backup-warnings.title": "Ostrzeżenia",
+      "columns.backup-completed.title": "Zakończono",
+      "columns.schedule-schedule.title": "Harmonogram",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "Wstrzymano",
+      "columns.schedule-phase.title": "Faza",
+      "columns.schedule-last-backup.title": "Ostatnia kopia",
+      "columns.restore-backup.title": "Kopia zapasowa",
+      "columns.restore-phase.title": "Faza",
+      "columns.restore-errors.title": "Błędy",
+      "columns.restore-warnings.title": "Ostrzeżenia",
+      "columns.location-provider.title": "Dostawca",
+      "columns.location-bucket.title": "Bucket",
+      "columns.location-default.title": "Domyślna",
+      "columns.location-phase.title": "Faza",
+      "columns.location-last-validated.title": "Sprawdzono",
+      "columns.snapshot-location-provider.title": "Dostawca",
+      "columns.snapshot-location-phase.title": "Faza"
+    },
+    "tr": {
+      "name": "Velero",
+      "description": "Velero: aşaması, hataları ve uyarılarıyla yedekler, zamanlamalar, geri yüklemeler ve depolama konumları ve bir şeyin neden başarısız olduğu sade bir dille; Velero'nun kendi nesnelerini önce gösterip oluşturarak bir namespace'i yedekleme ve bir yedekten geri yükleme.",
+      "kinds.0.title": "Backups",
+      "kinds.1.title": "Schedules",
+      "kinds.2.title": "Restores",
+      "kinds.3.title": "Backup Storage Locations",
+      "kinds.4.title": "Volume Snapshot Locations",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "Namespace'i yedekle…",
+      "actions.restore-backup.title": "Bu yedekten geri yükle…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "Aşama",
+      "columns.backup-errors.title": "Hatalar",
+      "columns.backup-warnings.title": "Uyarılar",
+      "columns.backup-completed.title": "Tamamlandı",
+      "columns.schedule-schedule.title": "Zamanlama",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "Duraklatıldı",
+      "columns.schedule-phase.title": "Aşama",
+      "columns.schedule-last-backup.title": "Son yedek",
+      "columns.restore-backup.title": "Yedek",
+      "columns.restore-phase.title": "Aşama",
+      "columns.restore-errors.title": "Hatalar",
+      "columns.restore-warnings.title": "Uyarılar",
+      "columns.location-provider.title": "Sağlayıcı",
+      "columns.location-bucket.title": "Bucket",
+      "columns.location-default.title": "Varsayılan",
+      "columns.location-phase.title": "Aşama",
+      "columns.location-last-validated.title": "Doğrulandı",
+      "columns.snapshot-location-provider.title": "Sağlayıcı",
+      "columns.snapshot-location-phase.title": "Aşama"
+    },
+    "zh-CN": {
+      "name": "Velero",
+      "description": "Velero：备份、计划、恢复和存储位置及其阶段、错误和警告，并用平实的语言说明失败原因；通过创建 Velero 自己的对象（先行展示）来备份 namespace 和从备份恢复。",
+      "kinds.0.title": "Backup",
+      "kinds.1.title": "Schedule",
+      "kinds.2.title": "Restore",
+      "kinds.3.title": "BackupStorageLocation",
+      "kinds.4.title": "VolumeSnapshotLocation",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "备份 namespace…",
+      "actions.restore-backup.title": "从此备份恢复…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "阶段",
+      "columns.backup-errors.title": "错误",
+      "columns.backup-warnings.title": "警告",
+      "columns.backup-completed.title": "完成于",
+      "columns.schedule-schedule.title": "计划",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "已暂停",
+      "columns.schedule-phase.title": "阶段",
+      "columns.schedule-last-backup.title": "上次备份",
+      "columns.restore-backup.title": "备份",
+      "columns.restore-phase.title": "阶段",
+      "columns.restore-errors.title": "错误",
+      "columns.restore-warnings.title": "警告",
+      "columns.location-provider.title": "提供方",
+      "columns.location-bucket.title": "存储桶",
+      "columns.location-default.title": "默认",
+      "columns.location-phase.title": "阶段",
+      "columns.location-last-validated.title": "已验证",
+      "columns.snapshot-location-provider.title": "提供方",
+      "columns.snapshot-location-phase.title": "阶段"
+    },
+    "zh-TW": {
+      "name": "Velero",
+      "description": "Velero：備份、排程、還原和儲存位置及其階段、錯誤和警告，並以淺白的文字說明失敗原因；透過建立 Velero 自己的物件（先行顯示）來備份 namespace 和從備份還原。",
+      "kinds.0.title": "Backup",
+      "kinds.1.title": "Schedule",
+      "kinds.2.title": "Restore",
+      "kinds.3.title": "BackupStorageLocation",
+      "kinds.4.title": "VolumeSnapshotLocation",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "備份 namespace…",
+      "actions.restore-backup.title": "從此備份還原…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "階段",
+      "columns.backup-errors.title": "錯誤",
+      "columns.backup-warnings.title": "警告",
+      "columns.backup-completed.title": "完成時間",
+      "columns.schedule-schedule.title": "排程",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "已暫停",
+      "columns.schedule-phase.title": "階段",
+      "columns.schedule-last-backup.title": "上次備份",
+      "columns.restore-backup.title": "備份",
+      "columns.restore-phase.title": "階段",
+      "columns.restore-errors.title": "錯誤",
+      "columns.restore-warnings.title": "警告",
+      "columns.location-provider.title": "提供者",
+      "columns.location-bucket.title": "儲存貯體",
+      "columns.location-default.title": "預設",
+      "columns.location-phase.title": "階段",
+      "columns.location-last-validated.title": "已驗證",
+      "columns.snapshot-location-provider.title": "提供者",
+      "columns.snapshot-location-phase.title": "階段"
+    },
+    "ja": {
+      "name": "Velero",
+      "description": "Velero: バックアップ、スケジュール、リストア、ストレージの場所とそのフェーズ、エラー、警告、失敗の理由をわかりやすく表示します。Velero 自身のオブジェクトを先に表示してから作成し、namespace のバックアップとバックアップからのリストアを行います。",
+      "kinds.0.title": "Backup",
+      "kinds.1.title": "Schedule",
+      "kinds.2.title": "Restore",
+      "kinds.3.title": "BackupStorageLocation",
+      "kinds.4.title": "VolumeSnapshotLocation",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "namespace をバックアップ…",
+      "actions.restore-backup.title": "このバックアップから復元…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "フェーズ",
+      "columns.backup-errors.title": "エラー",
+      "columns.backup-warnings.title": "警告",
+      "columns.backup-completed.title": "完了",
+      "columns.schedule-schedule.title": "スケジュール",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "一時停止",
+      "columns.schedule-phase.title": "フェーズ",
+      "columns.schedule-last-backup.title": "最終バックアップ",
+      "columns.restore-backup.title": "バックアップ",
+      "columns.restore-phase.title": "フェーズ",
+      "columns.restore-errors.title": "エラー",
+      "columns.restore-warnings.title": "警告",
+      "columns.location-provider.title": "プロバイダー",
+      "columns.location-bucket.title": "バケット",
+      "columns.location-default.title": "既定",
+      "columns.location-phase.title": "フェーズ",
+      "columns.location-last-validated.title": "検証",
+      "columns.snapshot-location-provider.title": "プロバイダー",
+      "columns.snapshot-location-phase.title": "フェーズ"
+    },
+    "ko": {
+      "name": "Velero",
+      "description": "Velero: 백업, 일정, 복원, 스토리지 위치와 그 단계, 오류, 경고, 실패 이유를 쉬운 말로 보여 줍니다. Velero 자체 객체를 먼저 보여 준 뒤 만들어 namespace를 백업하고 백업에서 복원합니다.",
+      "kinds.0.title": "Backup",
+      "kinds.1.title": "Schedule",
+      "kinds.2.title": "Restore",
+      "kinds.3.title": "BackupStorageLocation",
+      "kinds.4.title": "VolumeSnapshotLocation",
+      "sections.velero.title": "Velero",
+      "detailsSections.velero.title": "Velero",
+      "actions.back-up-namespace.title": "namespace 백업…",
+      "actions.restore-backup.title": "이 백업에서 복원…",
+      "columns.backup-namespaces.title": "Namespaces",
+      "columns.backup-phase.title": "단계",
+      "columns.backup-errors.title": "오류",
+      "columns.backup-warnings.title": "경고",
+      "columns.backup-completed.title": "완료",
+      "columns.schedule-schedule.title": "일정",
+      "columns.schedule-namespaces.title": "Namespaces",
+      "columns.schedule-paused.title": "일시 중지됨",
+      "columns.schedule-phase.title": "단계",
+      "columns.schedule-last-backup.title": "마지막 백업",
+      "columns.restore-backup.title": "백업",
+      "columns.restore-phase.title": "단계",
+      "columns.restore-errors.title": "오류",
+      "columns.restore-warnings.title": "경고",
+      "columns.location-provider.title": "공급자",
+      "columns.location-bucket.title": "버킷",
+      "columns.location-default.title": "기본값",
+      "columns.location-phase.title": "단계",
+      "columns.location-last-validated.title": "검증",
+      "columns.snapshot-location-provider.title": "공급자",
+      "columns.snapshot-location-phase.title": "단계"
+    }
+  }
+}

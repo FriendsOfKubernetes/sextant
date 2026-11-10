@@ -7,9 +7,8 @@
 //    problems screen, the Cluster counter and the notifications (problems.ts).
 //  - VolumeSnapshots (when snapshot.storage.k8s.io is served): a discovered section with snapshots, classes and
 //    contents; "Create snapshot" on a bound claim and "Restore to a new PVC" on a ready snapshot.
-//  - Velero (when velero.io is served): a discovered section with backups, schedules, restores and locations, their
-//    phase, error and warning counts and failure reasons in plain words; "Back up namespace…" on a Namespace and
-//    "Restore from this backup…" on a Backup.
+//  - Velero is Sextant's own extension `extensions/velero` (ADR-0162 amendment), creating its objects through the
+//    extensions' `resources.create`.
 // Every object is created with one POST (`resource_create`) after a form and a confirmation that lists it; an object
 // of the same name is never touched. Agents and extensions get nothing new (they read these kinds with the generic tools).
 import "./storage.css";

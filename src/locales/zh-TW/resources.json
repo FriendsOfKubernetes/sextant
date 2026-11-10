@@ -17,7 +17,6 @@
     "karpenter": "Karpenter",
     "vpa": "Vertical Pod Autoscaler",
     "volumeSnapshots": "磁碟區快照",
-    "velero": "Velero",
     "istio": "Istio",
     "linkerd": "Linkerd",
     "traefik": "Traefik",

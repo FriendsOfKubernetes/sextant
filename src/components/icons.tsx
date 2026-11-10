@@ -165,7 +165,7 @@ import {
   PinOff as ViewsPinOff,
   Upload as ViewsUpload,
 } from "lucide-react";
-// Storage insights: VolumeSnapshots and Velero (#152).
+// Storage insights: VolumeSnapshots, and Velero's icons that Sextant's own extension names (#152).
 import {
   Aperture as StorageAperture,
   ArchiveRestore as StorageArchiveRestore,
@@ -522,7 +522,8 @@ const ICONS = {
   pin: ViewsPin,
   unpin: ViewsPinOff,
   upload: ViewsUpload,
-  // Storage insights (src/features/storage): the VolumeSnapshots and Velero sections, their kinds and actions.
+  // Storage insights (src/features/storage): the VolumeSnapshots section, its kinds and actions; the Velero section's,
+  // its kinds' and actions' are named by Sextant's own extension `extensions/velero`.
   volumeSnapshots: StorageCamera,
   volumeSnapshot: StorageCamera,
   volumeSnapshotClass: StorageAperture,

@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Подання інструментів кластера тепер розширення",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Knative, CloudNativePG, Strimzi, External Secrets, NVIDIA GPU Operator, JobSet, KubeRay, KServe та Operator Lifecycle Manager винесено із Sextant у його власні розширення з каталогу розширень, які оновлюються окремо. Установіть потрібні нижче: доти їхні розділи не показуються. Ваші налаштування сповіщень для них збережено, а бічна панель також пропонує їх у кластерах, де працюють ці інструменти."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, CloudNativePG, Strimzi, External Secrets, NVIDIA GPU Operator, JobSet, KubeRay, KServe та Operator Lifecycle Manager винесено із Sextant у його власні розширення з каталогу розширень, які оновлюються окремо. Установіть потрібні нижче: доти їхні розділи не показуються. Ваші налаштування сповіщень для них збережено, а бічна панель також пропонує їх у кластерах, де працюють ці інструменти."
     },
     "api4": {
       "title": "API розширень 4",
@@ -36,7 +36,8 @@
       "kuberay": "Кластери, завдання та сервіси Ray з їхніми логами",
       "kserve": "InferenceService, середовища виконання моделей і графи інференсу",
       "knative": "Сервіси, ревізії та маршрути Serving; брокери, тригери, канали та джерела Eventing",
-      "gpu-operator": "ClusterPolicy, драйвери NVIDIA, їхні компоненти та вузли з GPU"
+      "gpu-operator": "ClusterPolicy, драйвери NVIDIA, їхні компоненти та вузли з GPU",
+      "velero": "Резервні копії, розклади, відновлення та місця зберігання; резервна копія namespace і відновлення з копії"
     }
   }
 }

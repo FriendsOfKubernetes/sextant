@@ -28,8 +28,6 @@ const MORE: ActionId[] = [
   "rolloutUndo",
   "snapshotCreate",
   "snapshotRestore",
-  "veleroBackup",
-  "veleroRestore",
 ];
 
 /** Offered next to the name in the details header instead (#274); the table's row menu keeps them. */

@@ -2,37 +2,22 @@
 // confirmation lists is exactly what is applied:
 //   snapshotOf        — "Create snapshot" of a claim: a VolumeSnapshot in the claim's namespace;
 //   restoredClaimOf   — "Restore to a new PVC" of a ready snapshot: a claim in the snapshot's namespace whose
-//                       `dataSource` is the snapshot, at least the snapshot's restore size;
-//   veleroBackupOf    — "Back up namespace…": a Velero Backup of that one namespace, in Velero's namespace;
-//   veleroRestoreOf   — "Restore from this backup…": a Velero Restore, optionally into other namespaces.
-// With `existingResourcePolicy` unset (none) Velero skips most objects that already exist; some kinds (ServiceAccounts)
-// are merged.
+//                       `dataSource` is the snapshot, at least the snapshot's restore size.
 import type { KubeObject } from "../../api";
 import { parseQuantity } from "../metrics/format";
 import { SNAPSHOT_GROUP } from "./model";
 
 /** A DNS-1123 subdomain (most object names). */
 const SUBDOMAIN = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/;
-/** A DNS-1123 label (namespace names). */
-const LABEL = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
 /** A quantity of bytes as a claim takes it: "10Gi", "500M", "1073741824". */
 const SIZE = /^\d+(\.\d+)?(Ki|Mi|Gi|Ti|Pi|Ei|k|M|G|T|P|E)?$/;
-/** A Go duration as Velero reads a TTL: "720h", "72h0m0s", "30m". */
-const DURATION = /^(\d+h)?(\d+m)?(\d+s)?$/;
-
-/** Velero's own default TTL of a backup: 30 days. */
-export const DEFAULT_TTL = "720h0m0s";
 /** Access modes a restored claim can ask for. */
 export const ACCESS_MODES = ["ReadWriteOnce", "ReadWriteOncePod", "ReadWriteMany", "ReadOnlyMany"] as const;
 
-/** Names Velero also writes as label values: at most 63 characters. */
+/** Generated names stay within a label value's 63 characters. */
 const MAX_LABEL_NAME = 63;
 
 export const validName = (name: string): boolean => name.length <= 253 && SUBDOMAIN.test(name);
-/** A name Velero also writes into labels. */
-export const validVeleroName = (name: string): boolean => name.length <= MAX_LABEL_NAME && SUBDOMAIN.test(name);
-export const validNamespace = (name: string): boolean => name.length <= 63 && LABEL.test(name);
-export const validTtl = (ttl: string): boolean => ttl !== "" && DURATION.test(ttl);
 export const validSize = (size: string): boolean => SIZE.test(size);
 
 /** Whether `size` is a size and at least `minimum` (a quantity; none: any size). */
@@ -100,51 +85,6 @@ export function restoredClaimOf(f: RestoreClaimForm): KubeObject {
       accessModes: [f.accessMode],
       ...(f.volumeMode ? { volumeMode: f.volumeMode } : {}),
       resources: { requests: { storage: f.size } },
-    },
-  };
-}
-
-export interface BackupForm {
-  /** Velero's namespace. */
-  veleroNamespace: string;
-  name: string;
-  /** The namespace backed up. */
-  namespace: string;
-  ttl: string;
-  /** `""`: Velero's default location. */
-  storageLocation: string;
-}
-
-export function veleroBackupOf(f: BackupForm): KubeObject {
-  return {
-    apiVersion: "velero.io/v1",
-    kind: "Backup",
-    metadata: { name: f.name, namespace: f.veleroNamespace },
-    spec: {
-      includedNamespaces: [f.namespace],
-      ttl: f.ttl,
-      ...(f.storageLocation ? { storageLocation: f.storageLocation } : {}),
-    },
-  };
-}
-
-export interface RestoreForm {
-  veleroNamespace: string;
-  name: string;
-  backup: string;
-  /** Source namespace → target namespace; only the entries that differ are written. */
-  mapping: Record<string, string>;
-}
-
-export function veleroRestoreOf(f: RestoreForm): KubeObject {
-  const mapping = Object.fromEntries(Object.entries(f.mapping).filter(([from, to]) => to !== "" && to !== from));
-  return {
-    apiVersion: "velero.io/v1",
-    kind: "Restore",
-    metadata: { name: f.name, namespace: f.veleroNamespace },
-    spec: {
-      backupName: f.backup,
-      ...(Object.keys(mapping).length > 0 ? { namespaceMapping: mapping } : {}),
     },
   };
 }

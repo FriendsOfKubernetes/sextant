@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Las vistas de las herramientas del clúster ahora son extensiones",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Knative, CloudNativePG, Strimzi, External Secrets, NVIDIA GPU Operator, JobSet, KubeRay, KServe y Operator Lifecycle Manager salieron de Sextant y pasaron a sus propias extensiones del catálogo de extensiones, que se actualizan por separado. Instale abajo las que use: hasta entonces sus secciones no se muestran. Se conservó su configuración de notificaciones para ellas, y la barra lateral también las ofrece en los clústeres que ejecutan estas herramientas."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, CloudNativePG, Strimzi, External Secrets, NVIDIA GPU Operator, JobSet, KubeRay, KServe y Operator Lifecycle Manager salieron de Sextant y pasaron a sus propias extensiones del catálogo de extensiones, que se actualizan por separado. Instale abajo las que use: hasta entonces sus secciones no se muestran. Se conservó su configuración de notificaciones para ellas, y la barra lateral también las ofrece en los clústeres que ejecutan estas herramientas."
     },
     "api4": {
       "title": "API de extensiones 4",
@@ -36,7 +36,8 @@
       "kuberay": "Clústeres, trabajos y servicios de Ray con sus registros",
       "kserve": "InferenceServices, entornos de ejecución de modelos y grafos de inferencia",
       "knative": "Servicios, revisiones y rutas de Serving; brokers, triggers, canales y fuentes de Eventing",
-      "gpu-operator": "ClusterPolicies, controladores NVIDIA, sus componentes y nodos con GPU"
+      "gpu-operator": "ClusterPolicies, controladores NVIDIA, sus componentes y nodos con GPU",
+      "velero": "Copias de seguridad, programaciones, restauraciones y ubicaciones de almacenamiento; respaldar un namespace o restaurar una copia"
     }
   }
 }

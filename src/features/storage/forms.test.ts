@@ -6,11 +6,6 @@ import {
   stamp,
   suffixed,
   validName,
-  validNamespace,
-  validTtl,
-  validVeleroName,
-  veleroBackupOf,
-  veleroRestoreOf,
 } from "./forms";
 
 describe("the objects the forms build", () => {
@@ -53,28 +48,6 @@ describe("the objects the forms build", () => {
     expect(plain.spec).not.toHaveProperty("storageClassName");
     expect(plain.spec).not.toHaveProperty("volumeMode");
   });
-
-  it("a Velero backup of one namespace, in Velero's namespace", () => {
-    expect(veleroBackupOf({ veleroNamespace: "velero", name: "shop-20261019-1432", namespace: "shop", ttl: "720h0m0s", storageLocation: "" })).toEqual({
-      apiVersion: "velero.io/v1",
-      kind: "Backup",
-      metadata: { name: "shop-20261019-1432", namespace: "velero" },
-      spec: { includedNamespaces: ["shop"], ttl: "720h0m0s" },
-    });
-    expect(veleroBackupOf({ veleroNamespace: "v", name: "b", namespace: "shop", ttl: "1h", storageLocation: "aws" }).spec).toMatchObject({
-      storageLocation: "aws",
-    });
-  });
-
-  it("a Velero restore, mapping only the namespaces that change", () => {
-    expect(veleroRestoreOf({ veleroNamespace: "velero", name: "r1", backup: "b1", mapping: { shop: "shop-copy", db: "", api: "api" } })).toEqual({
-      apiVersion: "velero.io/v1",
-      kind: "Restore",
-      metadata: { name: "r1", namespace: "velero" },
-      spec: { backupName: "b1", namespaceMapping: { shop: "shop-copy" } },
-    });
-    expect(veleroRestoreOf({ veleroNamespace: "velero", name: "r1", backup: "b1", mapping: {} }).spec).toEqual({ backupName: "b1" });
-  });
 });
 
 describe("validation", () => {
@@ -87,20 +60,15 @@ describe("validation", () => {
     expect(sizeAtLeast("1Gi", undefined)).toBe(true);
   });
 
-  it("names, namespaces and durations", () => {
+  it("names", () => {
     expect(validName("data-0.snap")).toBe(true);
     expect(validName("Data")).toBe(false);
-    expect(validVeleroName("a".repeat(64))).toBe(false);
-    expect(validNamespace("shop.prod")).toBe(false);
-    expect(validTtl("720h0m0s")).toBe(true);
-    expect(validTtl("30d")).toBe(false);
-    expect(validTtl("")).toBe(false);
   });
 
   it("generated names fit in 63 characters", () => {
     expect(stamp(new Date(2026, 9, 19, 14, 32))).toBe("20261019-1432");
     const name = suffixed(`${"a".repeat(60)}-`, "20261019-1432");
     expect(name.length).toBeLessThanOrEqual(63);
-    expect(validVeleroName(name)).toBe(true);
+    expect(validName(name)).toBe(true);
   });
 });

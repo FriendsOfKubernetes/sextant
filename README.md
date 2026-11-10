@@ -37,7 +37,8 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
   them with your team (never credentials), and kubeconfig management: rename, duplicate, delete and merge contexts
   with a preview and a backup, and credential expiry.
 - **Power tools** — a YAML editor that knows the cluster's schema (completion, validation, Explain), storage
-  insights (volume usage, snapshots, Velero), a cost view from OpenCost or Kubecost, and terminal panes with snippets.
+  insights (volume usage, snapshots; Velero as Sextant's own extension), a cost view from OpenCost or Kubecost, and
+  terminal panes with snippets.
 - **Scale and reach** — Istio and Linkerd views with request routing and who may call a workload, comparing objects
   and namespaces across clusters (and drift from Helm), comfortable on clusters with tens of thousands of pods, and
   keyboard and screen-reader friendly.

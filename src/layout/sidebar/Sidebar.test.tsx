@@ -32,10 +32,10 @@ const GITOPS: ResourceDef[] = [
   ["istio", "source.toolkit.fluxcd.io", "GitRepository", "GitRepositories"],
   ["istio", "source.toolkit.fluxcd.io", "Bucket", "Buckets"],
   ["istio", "kustomize.toolkit.fluxcd.io", "Kustomization", "Kustomizations"],
-  ["velero", "argoproj.io", "Application", "Applications"],
+  ["volumeSnapshots", "argoproj.io", "Application", "Applications"],
 ].map(([section, group, kind, label], order) => ({
   kind: { group: group!, version: "v1", kind: kind! },
-  sidebar: { section: section as "istio" | "velero", order, labelKey: label! },
+  sidebar: { section: section as "istio" | "volumeSnapshots", order, labelKey: label! },
   columns: [],
   actions: [],
 }));
@@ -83,7 +83,7 @@ describe("discovered sections", () => {
   it("show only the kinds the cluster serves, before Custom Resources; a section without kinds is not drawn", async () => {
     render(<Sidebar clusterId="c1" />);
     await waitFor(() => expect(sections()).toContain("Istio"));
-    expect(sections()).not.toContain("Velero");
+    expect(sections()).not.toContain("Volume Snapshots");
     expect(sections().indexOf("Istio")).toBe(sections().indexOf("Custom Resources") - 1);
 
     fireEvent.click(screen.getByRole("button", { name: /Istio/ }));
@@ -101,7 +101,7 @@ describe("discovered sections", () => {
     const titles = sections().map((s) => s?.toLowerCase());
     expect(titles).toContain("workloads");
     expect(titles).not.toContain("argo workflows");
-    expect(titles).not.toContain("velero");
+    expect(titles).not.toContain("volume snapshots");
   });
 
   it("a section appears when its CRD is created while connected", async () => {
@@ -115,20 +115,20 @@ describe("discovered sections", () => {
     act(() => backend.emit("watch:crds", { type: "delta", upserted: [crd("applications")], deleted: [] }));
     await act(async () => void vi.advanceTimersByTime(CRD_REFRESH_DELAY));
 
-    await waitFor(() => expect(sections()).toContain("Velero"));
-    expect(sections().indexOf("Velero")).toBe(sections().indexOf("Istio") - 1);
+    await waitFor(() => expect(sections()).toContain("Volume Snapshots"));
+    expect(sections().indexOf("Volume Snapshots")).toBe(sections().indexOf("Istio") - 1);
     expect(backend.calls.filter((c) => c.cmd === "cluster_kinds_refresh")).toHaveLength(1);
   });
 
   it("show their pages only while the section has served kinds", async () => {
     const Page = () => null;
     registerPage({ id: "t-flux-page", section: "istio", order: 99, labelKey: "FluxPage", Component: Page });
-    registerPage({ id: "t-argo-page", section: "velero", order: 99, labelKey: "ArgoPage", Component: Page });
+    registerPage({ id: "t-argo-page", section: "volumeSnapshots", order: 99, labelKey: "ArgoPage", Component: Page });
     try {
       render(<Sidebar clusterId="c1" />);
       await waitFor(() => expect(sections()).toContain("Istio"));
-      // Velero is not served: its page alone does not draw the section.
-      expect(sections()).not.toContain("Velero");
+      // Volume Snapshots is not served: its page alone does not draw the section.
+      expect(sections()).not.toContain("Volume Snapshots");
       fireEvent.click(screen.getByRole("button", { name: /Istio/ }));
       expect(screen.getByRole("button", { name: "FluxPage" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "ArgoPage" })).toBeNull();

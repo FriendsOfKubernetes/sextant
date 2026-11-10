@@ -17,7 +17,6 @@
     "karpenter": "Karpenter",
     "vpa": "Vertical Pod Autoscaler",
     "volumeSnapshots": "Migawki woluminów",
-    "velero": "Velero",
     "istio": "Istio",
     "linkerd": "Linkerd",
     "traefik": "Traefik",

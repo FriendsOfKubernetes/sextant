@@ -2,12 +2,7 @@
   "sidebar": {
     "volumeSnapshots": "VolumeSnapshot",
     "volumeSnapshotClasses": "VolumeSnapshotClass",
-    "volumeSnapshotContents": "VolumeSnapshotContent",
-    "backups": "Backup",
-    "schedules": "Schedule",
-    "restores": "Restore",
-    "backupStorageLocations": "BackupStorageLocation",
-    "volumeSnapshotLocations": "VolumeSnapshotLocation"
+    "volumeSnapshotContents": "VolumeSnapshotContent"
   },
   "columns": {
     "state": "状态",
@@ -17,19 +12,7 @@
     "driver": "驱动",
     "deletionPolicy": "删除策略",
     "default": "默认",
-    "snapshot": "快照",
-    "namespaces": "Namespaces",
-    "phase": "阶段",
-    "errors": "错误",
-    "warnings": "警告",
-    "completed": "完成于",
-    "schedule": "计划",
-    "paused": "已暂停",
-    "lastBackup": "上次备份",
-    "backup": "备份",
-    "provider": "提供方",
-    "bucket": "存储桶",
-    "lastValidated": "已验证"
+    "snapshot": "快照"
   },
   "fields": {
     "state": "状态",
@@ -41,23 +24,7 @@
     "restoreSize": "恢复大小",
     "source": "源卷声明",
     "content": "内容",
-    "taken": "创建于",
-    "phase": "阶段",
-    "namespaces": "Namespaces",
-    "ttl": "保留时长 (TTL)",
-    "location": "存储位置",
-    "started": "开始于",
-    "completed": "完成于",
-    "expires": "过期于",
-    "backup": "备份",
-    "schedule": "计划",
-    "cron": "计划",
-    "lastBackup": "上次备份",
-    "provider": "提供方",
-    "bucket": "存储桶",
-    "prefix": "前缀",
-    "accessMode": "访问模式",
-    "lastValidated": "上次验证"
+    "taken": "创建于"
   },
   "usage": {
     "column": "用量",
@@ -136,46 +103,5 @@
     "defaultClass": "集群默认",
     "defaultClassNamed": "集群默认（{{name}}）",
     "accessMode": "访问模式"
-  },
-  "velero": {
-    "section": "Velero",
-    "everyNamespace": "所有 namespace",
-    "backupAction": "备份 namespace…",
-    "backupTitle": "备份 namespace {{namespace}}",
-    "backupNote": "Velero 将备份 {{namespace}} 中的所有对象，并在已配置时备份其卷。备份由 Velero 执行，而不是 Sextant。",
-    "invalidName": "请使用小写字母、数字、连字符和点，最多 63 个字符。",
-    "namespace": "Velero 的 namespace",
-    "noLocations": "未找到 BackupStorageLocation：Velero 可能尚未配置。",
-    "ttl": "保留时长 (TTL)",
-    "ttlHint": "时长，例如 720h0m0s（30 天，Velero 的默认值）；到期后 Velero 会删除备份。",
-    "invalidTtl": "请输入时长，例如 720h 或 72h30m。",
-    "location": "存储位置",
-    "defaultLocation": "Velero 的默认位置",
-    "restoreAction": "从此备份恢复…",
-    "restoreTitle": "从备份 {{name}} 恢复",
-    "restoreNote": "Velero 会跳过大多数已存在的对象（部分类型如 ServiceAccount 会被合并），并计为恢复的警告。",
-    "restoreNoteMapped": "对象将恢复到您指定的 namespace。Velero 会跳过大多数已存在的对象（部分类型如 ServiceAccount 会被合并），并计为恢复的警告。",
-    "restoreNotCompleted": "备份的阶段是 {{phase}}，而不是 Completed：恢复可能失败，或只恢复一部分。",
-    "allNamespaces": "该备份涵盖所有 namespace；每个都以原名称恢复。",
-    "mapping": "恢复到",
-    "mappingHint": "留空则恢复到同一个 namespace。",
-    "mapFrom": "将 namespace {{namespace}} 恢复到",
-    "invalidNamespace": "请输入 namespace 名称：小写字母、数字和连字符。",
-    "explain": {
-      "validation": "Velero 拒绝了它：{{errors}}",
-      "validationNoReason": "Velero 认为它无效并拒绝了它。",
-      "failed": "失败：{{reason}}",
-      "failedNoReason": "失败；Velero 未给出原因。",
-      "backupErrors_other": "{{count}} 个错误：部分对象或卷未备份。",
-      "restoreErrors_other": "{{count}} 个错误：部分对象未恢复。",
-      "warnings_other": "{{count}} 个警告。",
-      "backupLogs": "详细信息见日志：velero backup logs {{name}}",
-      "restoreLogs": "详细信息见日志：velero restore logs {{name}}",
-      "progress": "已完成 {{done}}/{{total}} 项。",
-      "deleting": "Velero 正在删除它。",
-      "paused": "已暂停：不会创建新的备份。",
-      "unavailable": "Velero 无法访问此存储位置：{{message}}",
-      "unavailableNoMessage": "Velero 无法访问此存储位置：请检查其凭据和存储桶。"
-    }
   }
 }

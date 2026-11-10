@@ -45,8 +45,6 @@ export type BuiltInActionId =
   // Storage insights (src/features/storage)
   | "snapshotCreate"
   | "snapshotRestore"
-  | "veleroBackup"
-  | "veleroRestore"
   // Favourites (src/features/views), offered for every kind through `extendActionsForAll`
   | "pin"
   | "unpin"
@@ -147,7 +145,6 @@ export const SIDEBAR_SECTIONS = [
   "karpenter",
   "vpa",
   "volumeSnapshots",
-  "velero",
   "istio",
   "linkerd",
   "traefik",
@@ -171,10 +168,11 @@ export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
  * section comes where it always was, after the Sextant section named here, whatever its manifest's `after` says.
  */
 export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, after: SidebarSection])[] = [
-  ["flux", "velero"],
-  ["argocd", "velero"],
-  ["argoRollouts", "velero"],
-  ["argoWorkflows", "velero"],
+  ["velero", "volumeSnapshots"],
+  ["flux", "volumeSnapshots"],
+  ["argocd", "volumeSnapshots"],
+  ["argoRollouts", "volumeSnapshots"],
+  ["argoWorkflows", "volumeSnapshots"],
   ["knative", "contour"],
   ["knativeEventing", "contour"],
   ["externalSecrets", "kyverno"],
@@ -200,7 +198,6 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "karpenter",
   "vpa",
   "volumeSnapshots",
-  "velero",
   "istio",
   "linkerd",
   "traefik",
@@ -236,7 +233,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   karpenter: "karpenter",
   vpa: "vpa",
   volumeSnapshots: "volumeSnapshots",
-  velero: "velero",
   istio: "istio",
   linkerd: "linkerd",
   traefik: "traefik",

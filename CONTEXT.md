@@ -614,7 +614,7 @@ A VolumeSnapshot object: a point-in-time copy of a claim made by the CSI driver.
 _Avoid_: backup, PV snapshot
 
 **Velero backup / restore**:
-Velero's Backup and Restore objects. Sextant creates one only from its form after a confirmation and only as a new object; it never runs the `velero` program.
+Velero's Backup and Restore objects. Sextant's own Velero extension (`extensions/velero`) creates one only from its form after a confirmation and only as a new object; it never runs the `velero` program.
 _Avoid_: snapshot, dump
 
 **Create-only**:

@@ -21,6 +21,7 @@ for other authors. The guide to writing one is the wiki page
 | JobSet (`sextant.jobset`) | [`jobset/`](jobset/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | JobSets with their replicated jobs, Jobs, pods, restarts and failures |
 | KubeRay (`sextant.kuberay`) | [`kuberay/`](kuberay/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | RayClusters, RayJobs and RayServices with their pods and logs |
 | KServe (`sextant.kserve`) | [`kserve/`](kserve/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | InferenceServices with the runtime KServe chooses, serving runtimes, inference graphs and trained models |
+| Velero (`sextant.velero`) | [`velero/`](velero/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Velero's backups, schedules, restores and storage locations, with Back up namespace and Restore from this backup |
 
 ## The documents of an extension
 

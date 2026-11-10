@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Le viste degli strumenti del cluster ora sono estensioni",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Knative, CloudNativePG, Strimzi, External Secrets, NVIDIA GPU Operator, JobSet, KubeRay, KServe e Operator Lifecycle Manager sono passati da Sextant alle sue estensioni del catalogo delle estensioni, aggiornate separatamente. Installa qui sotto quelle che usi: fino ad allora le loro sezioni non sono mostrate. Le tue impostazioni di notifica per esse sono state mantenute, e la barra laterale le propone anche nei cluster che eseguono questi strumenti."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, CloudNativePG, Strimzi, External Secrets, NVIDIA GPU Operator, JobSet, KubeRay, KServe e Operator Lifecycle Manager sono passati da Sextant alle sue estensioni del catalogo delle estensioni, aggiornate separatamente. Installa qui sotto quelle che usi: fino ad allora le loro sezioni non sono mostrate. Le tue impostazioni di notifica per esse sono state mantenute, e la barra laterale le propone anche nei cluster che eseguono questi strumenti."
     },
     "api4": {
       "title": "API delle estensioni 4",
@@ -36,7 +36,8 @@
       "kuberay": "Cluster, job e servizi Ray con i loro log",
       "kserve": "InferenceService, runtime di serving e grafi di inferenza",
       "knative": "Servizi, revisioni e route di Serving; broker, trigger, canali e sorgenti di Eventing",
-      "gpu-operator": "ClusterPolicy, driver NVIDIA, i loro componenti e i nodi GPU"
+      "gpu-operator": "ClusterPolicy, driver NVIDIA, i loro componenti e i nodi GPU",
+      "velero": "Backup, pianificazioni, ripristini e posizioni di archiviazione; backup di un namespace o ripristino da un backup"
     }
   }
 }

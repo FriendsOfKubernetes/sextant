@@ -10,7 +10,7 @@ import { watchBackend, type WatchBackend } from "../details/testing";
 import { CATEGORY_SOURCES, sourceKey } from "../problems/sources";
 import { acquireSource, getSource, resetProblemSources } from "../problems/store";
 import "./index";
-import { BACKUP, NAMESPACE, PVC, VOLUME_SNAPSHOT } from "./model";
+import { PVC, VOLUME_SNAPSHOT } from "./model";
 import { acquireVolumeUsage, getVolumeUsage, LINGER_MS, resetVolumeUsage, USAGE_POLL_MS, volumeUsageStats } from "./usageStore";
 
 function obj(kind: KindRef, name: string, namespace: string | undefined, extra: Record<string, unknown> = {}): KubeObject {
@@ -70,13 +70,11 @@ describe("actions are offered only where they can work", () => {
   const bound = obj(PVC, "data-0", "db", { status: { phase: "Bound" } });
   const ids = (o: KubeObject, kind: KindRef, list: ActionId[]) => getActionsFor([o], kind, list).map((a) => a.id);
 
-  it("snapshots of bound claims and Velero backups of namespaces need their APIs", async () => {
+  it("snapshots of bound claims need the snapshot API", async () => {
     expect(ids(bound, PVC, ["snapshotCreate"])).toEqual([]);
-    expect(ids(obj(NAMESPACE, "shop", undefined), NAMESPACE, ["veleroBackup"])).toEqual([]);
-    await serve([VOLUME_SNAPSHOT, BACKUP]);
+    await serve([VOLUME_SNAPSHOT]);
     expect(ids(bound, PVC, ["snapshotCreate"])).toEqual(["snapshotCreate"]);
     expect(ids(obj(PVC, "x", "db", { status: { phase: "Pending" } }), PVC, ["snapshotCreate"])).toEqual([]);
-    expect(ids(obj(NAMESPACE, "shop", undefined), NAMESPACE, ["veleroBackup"])).toEqual(["veleroBackup"]);
   });
 
   it("a snapshot is restored only once it is ready", () => {
@@ -163,43 +161,6 @@ describe("restore to a new PVC", () => {
     const yaml = calls("resource_create")[0]!.yaml as string;
     expect(yaml).toContain("dataSource:\n    apiGroup: snapshot.storage.k8s.io\n    kind: VolumeSnapshot\n    name: snap");
     expect(yaml).toContain("storage: 20Gi");
-  });
-});
-
-describe("Velero", () => {
-  it("backs up a namespace in Velero's namespace, found by its storage locations", async () => {
-    wb.backend.on("resource_create", () => ({}));
-    await run("veleroBackup", NAMESPACE, [obj(NAMESPACE, "shop", undefined)]);
-    const id = [...wb.specs.entries()].find(([, s]) => s.kind.kind === "BackupStorageLocation")![0];
-    act(() =>
-      wb.backend.emit(`watch:${id}`, {
-        type: "snapshot",
-        items: [obj({ group: "velero.io", version: "v1", kind: "BackupStorageLocation" }, "default", "backup-system", { spec: { default: true } })],
-      }),
-    );
-    expect((screen.getByLabelText("Velero namespace") as HTMLInputElement).value).toBe("backup-system");
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "shop-now" } });
-    fireEvent.click(screen.getByRole("button", { name: "Review" }));
-    expect(screen.getByRole("list", { name: "Objects to create" }).textContent).toBe("Backup backup-system/shop-now");
-    fireEvent.click(screen.getByRole("button", { name: "Create" }));
-    await screen.findByText("Created Backup backup-system/shop-now.");
-    expect(calls("resource_create")[0]!.yaml).toBe(
-      ["apiVersion: velero.io/v1", "kind: Backup", "metadata:", "  name: shop-now", "  namespace: backup-system", "spec:", "  includedNamespaces:", "  - shop", "  ttl: 720h0m0s", ""].join("\n"),
-    );
-  });
-
-  it("a restore says that Velero skips what already exists, and maps namespaces", async () => {
-    wb.backend.on("resource_create", () => ({}));
-    const backup = obj(BACKUP, "nightly", "velero", { spec: { includedNamespaces: ["shop"] }, status: { phase: "Completed" } });
-    await run("veleroRestore", BACKUP, [backup]);
-    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "nightly-copy" } });
-    fireEvent.change(screen.getByLabelText("Namespace shop into"), { target: { value: "shop-copy" } });
-    fireEvent.click(screen.getByRole("button", { name: "Review" }));
-    expect(screen.getByText(/Velero skips most objects that already exist/)).toBeTruthy();
-    expect(screen.getByRole("list", { name: "Objects to create" }).textContent).toBe("Restore velero/nightly-copy");
-    fireEvent.click(screen.getByRole("button", { name: "Create" }));
-    await screen.findByText("Created Restore velero/nightly-copy.");
-    expect(calls("resource_create")[0]!.yaml).toContain("namespaceMapping:\n    shop: shop-copy");
   });
 });
 

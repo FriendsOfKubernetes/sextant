@@ -1,0 +1,148 @@
+{
+  "backupCompleted": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Backup",
+    "metadata": { "name": "shop-20261019-1432", "namespace": "velero", "uid": "b1", "resourceVersion": "1001", "creationTimestamp": "2026-10-19T14:32:00Z", "labels": { "velero.io/storage-location": "default" } },
+    "spec": { "includedNamespaces": ["shop"], "ttl": "720h0m0s", "storageLocation": "default", "defaultVolumesToFsBackup": false, "snapshotMoveData": false },
+    "status": {
+      "version": 1,
+      "formatVersion": "1.1.0",
+      "phase": "Completed",
+      "startTimestamp": "2026-10-19T14:32:01Z",
+      "completionTimestamp": "2026-10-19T14:33:12Z",
+      "expiration": "2026-11-18T14:32:01Z",
+      "warnings": 2,
+      "progress": { "totalItems": 42, "itemsBackedUp": 42 }
+    }
+  },
+  "backupFailed": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Backup",
+    "metadata": { "name": "nightly-20261020020000", "namespace": "velero", "uid": "b2", "creationTimestamp": "2026-10-20T02:00:00Z", "labels": { "velero.io/schedule-name": "nightly" } },
+    "spec": { "includedNamespaces": ["shop", "db"], "ttl": "168h0m0s", "storageLocation": "default" },
+    "status": { "phase": "Failed", "failureReason": "error checking if backup already exists in object storage: rpc error: code = Unknown desc = AccessDenied", "errors": 3, "startTimestamp": "2026-10-20T02:00:01Z", "completionTimestamp": "2026-10-20T02:00:05Z" }
+  },
+  "backupPartiallyFailed": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Backup",
+    "metadata": { "name": "db-weekly", "namespace": "velero", "uid": "b3", "creationTimestamp": "2026-10-18T00:00:00Z" },
+    "spec": { "includedNamespaces": ["db"], "ttl": "720h0m0s" },
+    "status": { "phase": "PartiallyFailed", "errors": 2, "warnings": 1, "startTimestamp": "2026-10-18T00:00:01Z", "completionTimestamp": "2026-10-18T00:04:00Z", "expiration": "2026-11-17T00:00:01Z", "progress": { "totalItems": 120, "itemsBackedUp": 118 } }
+  },
+  "backupInProgress": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Backup",
+    "metadata": { "name": "everything", "namespace": "velero", "uid": "b4", "creationTimestamp": "2026-10-21T09:00:00Z" },
+    "spec": { "ttl": "720h0m0s" },
+    "status": { "phase": "InProgress", "startTimestamp": "2026-10-21T09:00:01Z", "progress": { "totalItems": 10, "itemsBackedUp": 3 } }
+  },
+  "backupFailedValidation": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Backup",
+    "metadata": { "name": "bad-location", "namespace": "velero", "uid": "b5", "creationTimestamp": "2026-10-21T10:00:00Z" },
+    "spec": { "includedNamespaces": ["*"], "storageLocation": "missing" },
+    "status": { "phase": "FailedValidation", "validationErrors": ["an existing backup storage location wasn't specified at backup creation time and the default 'missing' wasn't found", "an existing backup storage location is required"] }
+  },
+  "backupDeleting": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Backup",
+    "metadata": { "name": "old", "namespace": "velero", "uid": "b6", "creationTimestamp": "2026-09-01T00:00:00Z" },
+    "spec": { "includedNamespaces": [] },
+    "status": { "phase": "Deleting" }
+  },
+  "backupNew": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Backup",
+    "metadata": { "name": "fresh", "namespace": "velero", "uid": "b7", "creationTimestamp": "2026-10-21T11:00:00Z" },
+    "spec": { "includedNamespaces": ["shop"] }
+  },
+  "scheduleEnabled": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Schedule",
+    "metadata": { "name": "nightly", "namespace": "velero", "uid": "s1", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": { "schedule": "0 2 * * *", "paused": false, "useOwnerReferencesInBackup": false, "template": { "includedNamespaces": ["shop", "db"], "ttl": "168h0m0s", "storageLocation": "default" } },
+    "status": { "phase": "Enabled", "lastBackup": "2026-10-20T02:00:00Z" }
+  },
+  "schedulePaused": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Schedule",
+    "metadata": { "name": "hourly", "namespace": "velero", "uid": "s2", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": { "schedule": "@every 1h", "paused": true, "template": { "ttl": "24h0m0s" } },
+    "status": { "phase": "Enabled" }
+  },
+  "scheduleInvalid": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Schedule",
+    "metadata": { "name": "broken", "namespace": "velero", "uid": "s3", "creationTimestamp": "2026-10-01T00:00:00Z" },
+    "spec": { "schedule": "every night", "template": { "includedNamespaces": ["shop"] } },
+    "status": { "phase": "FailedValidation", "validationErrors": ["invalid schedule: expected exactly 5 fields, found 2: [every night]"] }
+  },
+  "restoreCompleted": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Restore",
+    "metadata": { "name": "shop-20261019-1432-20261021-0915", "namespace": "velero", "uid": "r1", "creationTimestamp": "2026-10-21T09:15:00Z" },
+    "spec": { "backupName": "shop-20261019-1432", "namespaceMapping": { "shop": "shop-copy" } },
+    "status": { "phase": "Completed", "warnings": 4, "startTimestamp": "2026-10-21T09:15:01Z", "completionTimestamp": "2026-10-21T09:15:40Z", "progress": { "totalItems": 42, "itemsRestored": 42 } }
+  },
+  "restorePartiallyFailed": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Restore",
+    "metadata": { "name": "nightly-restore", "namespace": "velero", "uid": "r2", "creationTimestamp": "2026-10-21T10:00:00Z" },
+    "spec": { "backupName": "nightly-20261019020000", "scheduleName": "nightly" },
+    "status": { "phase": "PartiallyFailed", "errors": 2, "warnings": 1, "startTimestamp": "2026-10-21T10:00:01Z", "completionTimestamp": "2026-10-21T10:01:00Z" }
+  },
+  "restoreFromSchedule": {
+    "apiVersion": "velero.io/v1",
+    "kind": "Restore",
+    "metadata": { "name": "latest-nightly", "namespace": "velero", "uid": "r3", "creationTimestamp": "2026-10-21T11:00:00Z" },
+    "spec": { "scheduleName": "nightly" },
+    "status": { "phase": "InProgress", "startTimestamp": "2026-10-21T11:00:01Z", "progress": { "totalItems": 50, "itemsRestored": 7 } }
+  },
+  "locationDefault": {
+    "apiVersion": "velero.io/v1",
+    "kind": "BackupStorageLocation",
+    "metadata": { "name": "default", "namespace": "velero", "uid": "l1", "creationTimestamp": "2026-09-01T00:00:00Z" },
+    "spec": { "provider": "aws", "default": true, "accessMode": "ReadWrite", "objectStorage": { "bucket": "velero-backups", "prefix": "prod" }, "config": { "region": "eu-west-1" } },
+    "status": { "phase": "Available", "lastValidationTime": "2026-10-21T11:59:00Z", "lastSyncedTime": "2026-10-21T11:59:30Z" }
+  },
+  "locationUnavailable": {
+    "apiVersion": "velero.io/v1",
+    "kind": "BackupStorageLocation",
+    "metadata": { "name": "archive", "namespace": "velero", "uid": "l2", "creationTimestamp": "2026-09-01T00:00:00Z" },
+    "spec": { "provider": "aws", "default": false, "accessMode": "ReadOnly", "objectStorage": { "bucket": "velero-archive" } },
+    "status": { "phase": "Unavailable", "message": "BackupStorageLocation \"archive\" is unavailable: rpc error: code = Unknown desc = AccessDenied: Access Denied status code: 403", "lastValidationTime": "2026-10-21T11:58:00Z" }
+  },
+  "locationOther": {
+    "apiVersion": "velero.io/v1",
+    "kind": "BackupStorageLocation",
+    "metadata": { "name": "secondary", "namespace": "backup-system", "uid": "l3", "creationTimestamp": "2026-09-01T00:00:00Z" },
+    "spec": { "provider": "gcp", "objectStorage": { "bucket": "other" } }
+  },
+  "snapshotLocation": {
+    "apiVersion": "velero.io/v1",
+    "kind": "VolumeSnapshotLocation",
+    "metadata": { "name": "default", "namespace": "velero", "uid": "v1", "creationTimestamp": "2026-09-01T00:00:00Z" },
+    "spec": { "provider": "aws", "config": { "region": "eu-west-1" } },
+    "status": { "phase": "Available" }
+  },
+  "snapshotLocationNoStatus": {
+    "apiVersion": "velero.io/v1",
+    "kind": "VolumeSnapshotLocation",
+    "metadata": { "name": "csi", "namespace": "velero", "uid": "v2", "creationTimestamp": "2026-09-01T00:00:00Z" },
+    "spec": { "provider": "velero.io/csi" }
+  },
+  "namespaceShop": {
+    "apiVersion": "v1",
+    "kind": "Namespace",
+    "metadata": { "name": "shop", "uid": "n1", "creationTimestamp": "2026-09-01T00:00:00Z" },
+    "spec": { "finalizers": ["kubernetes"] },
+    "status": { "phase": "Active" }
+  },
+  "namespaceTerminating": {
+    "apiVersion": "v1",
+    "kind": "Namespace",
+    "metadata": { "name": "gone", "uid": "n2", "creationTimestamp": "2026-09-01T00:00:00Z", "deletionTimestamp": "2026-10-21T12:00:00Z" },
+    "spec": { "finalizers": ["kubernetes"] },
+    "status": { "phase": "Terminating" }
+  }
+}

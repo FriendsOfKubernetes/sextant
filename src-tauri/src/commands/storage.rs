@@ -1,6 +1,6 @@
 //! Storage insights (#152): the fill level of every mounted PersistentVolumeClaim, from the kubelets' stats summaries
 //! or, when `nodes/proxy` is forbidden, from the Prometheus of the cluster settings. Read-only; the window polls it
-//! (once a minute, shared per cluster) only while a view needs it. Snapshots and Velero objects are created by
+//! (once a minute, shared per cluster) only while a view needs it. Snapshots and restored claims are created by
 //! `resource_create` — one POST after the window's own confirmation, so an object of the same name is never touched
 //! (the API server answers AlreadyExists) — limited to [`CHANGE_TIMEOUT`] and never repeated.
 
