@@ -9,6 +9,7 @@ import { useClustersStore } from "../features/clusters/clustersStore";
 import type { ClusterInfo } from "../api";
 import { resetSignIns, SignInHost } from "./signIn";
 import { hostUi } from "./ui";
+import { unregisterExtension } from "./contributions";
 
 let backend: MockBackend;
 const pod: KubeObject = {
@@ -87,6 +88,19 @@ describe("ui.openUrl", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
     await expect(answer).resolves.toEqual({ opened: false });
     expect(backend.openedUrls).toHaveLength(1);
+  });
+
+  it("declines the question of an extension that goes away", async () => {
+    render(<OpenUrlHost />);
+    let answer: Promise<{ opened: boolean }> | undefined;
+    act(() => {
+      answer = ui().openUrl({ url: "https://example.com/" });
+    });
+    expect(await screen.findByText("https://example.com/")).toBeInTheDocument();
+    act(() => unregisterExtension("demo.ext"));
+    await expect(answer).resolves.toEqual({ opened: false });
+    await waitFor(() => expect(screen.queryByText("https://example.com/")).toBeNull());
+    expect(backend.openedUrls).toEqual([]);
   });
 
   it("refuses anything but a plain http(s) address", () => {

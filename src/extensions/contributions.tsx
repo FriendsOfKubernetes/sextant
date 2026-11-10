@@ -45,6 +45,9 @@ import {
 import { ExtensionClusterSettingsFrame, ExtensionFrame } from "./ExtensionFrame";
 import { evaluate, kindKeyOf } from "./problemRules";
 import { endHeadlessActionsOf, startHeadlessAction } from "./headless";
+import { declineOpenCluster } from "./openCluster";
+import { declineOpenUrl } from "./openUrl";
+import { declineSignIns } from "./signIn";
 import { runPatchAction } from "./patchAction";
 import { pluralLabel } from "./pluralLabel";
 import { matchesSelector } from "./selector";
@@ -77,7 +80,15 @@ export function registerExtension(info: ExtensionInfo): void {
 /** Removes everything the extension contributed and whatever of it is open. */
 export function unregisterExtension(extensionId: string): void {
   removeRegistration(extensionId);
+  declineQuestionsOf(extensionId);
   closeOrphans();
+}
+
+/** The questions an extension that went away still asks (open a link, sign in, open a cluster) are declined. */
+function declineQuestionsOf(extensionId: string): void {
+  declineOpenUrl(extensionId);
+  declineSignIns(extensionId);
+  declineOpenCluster(extensionId);
 }
 
 /** Makes the registries match the installed extensions (only the active ones contribute). */
@@ -86,6 +97,7 @@ export function syncExtensions(list: readonly ExtensionInfo[]): void {
   for (const [id, registration] of [...registrations]) {
     const next = active.get(id);
     if (!next || signatureOf(next) !== registration.signature) removeRegistration(id);
+    if (!next) declineQuestionsOf(id);
   }
   for (const info of active.values()) {
     if (!registrations.has(info.id)) registrations.set(info.id, { signature: signatureOf(info), removers: contribute(info) });
