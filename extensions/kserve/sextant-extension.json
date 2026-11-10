@@ -322,6 +322,138 @@
           },
           {
             "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                      "value": "true"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "Stopped",
+                      "status": "True"
+                    }
+                  ]
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorConfigurationReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerConfigurationReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerConfigurationReady",
+                      "status": "False"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Stopped",
+            "tone": "muted",
+            "value": "stopped",
+            "tooltip": "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorReady\",status=\"False\"].reason ?? .status.conditions[type=\"TransformerReady\",status=\"False\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"TransformerReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerReady\",status=\"False\"].message ?? .status.conditions[type=\"ExplainerReady\",status=\"False\"].reason}}",
+              "{{.status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].reason ?? .status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].message}}",
+              "{{.status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].message ?? .status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].reason}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".metadata.annotations[\"serving.kserve.io/stop\"]",
+                      "value": "true"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "Stopped",
+                      "status": "True"
+                    }
+                  ]
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "condition",
+                      "conditionType": "LatestDeploymentReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "CanaryPredictorReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorRouteReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerRouteReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerRoutesReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "RoutesReady",
+                      "status": "False"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Stopped",
+            "tone": "muted",
+            "value": "stopped",
+            "tooltip": "{{.status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].message ?? .status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].reason ?? .status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].reason ?? .status.conditions[type=\"PredictorRouteReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorRouteReady\",status=\"False\"].reason}}",
+              "{{.status.conditions[type=\"TransformerRouteReady\",status=\"False\"].message ?? .status.conditions[type=\"TransformerRouteReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].message}}",
+              "{{.status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].reason ?? .status.conditions[type=\"RoutesReady\",status=\"False\"].message ?? .status.conditions[type=\"RoutesReady\",status=\"False\"].reason}}"
+            ]
+          },
+          {
+            "when": {
               "type": "any",
               "of": [
                 {
@@ -339,11 +471,9 @@
             "text": "Stopped",
             "tone": "muted",
             "value": "stopped",
-            "tooltip": "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].message}}",
+            "tooltip": "{{.status.conditions[type=\"IngressReady\",status=\"False\"].message ?? .status.conditions[type=\"IngressReady\",status=\"False\"].reason ?? .status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].message}}",
             "tooltipOr": [
-              "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].reason}}",
-              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].message}}",
-              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].reason}}"
+              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].reason ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}"
             ]
           },
           {
@@ -389,6 +519,158 @@
           },
           {
             "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.transitionStatus",
+                      "value": "InvalidSpec"
+                    },
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.states.activeModelState",
+                      "value": "FailedToLoad"
+                    },
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.states.targetModelState",
+                      "value": "FailedToLoad"
+                    },
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.transitionStatus",
+                      "value": "BlockedByFailedLoad"
+                    }
+                  ]
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorConfigurationReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerConfigurationReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerConfigurationReady",
+                      "status": "False"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed",
+            "tooltip": "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorReady\",status=\"False\"].reason ?? .status.conditions[type=\"TransformerReady\",status=\"False\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"TransformerReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerReady\",status=\"False\"].message ?? .status.conditions[type=\"ExplainerReady\",status=\"False\"].reason}}",
+              "{{.status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].reason ?? .status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].message}}",
+              "{{.status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].message ?? .status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].reason}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.transitionStatus",
+                      "value": "InvalidSpec"
+                    },
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.states.activeModelState",
+                      "value": "FailedToLoad"
+                    },
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.states.targetModelState",
+                      "value": "FailedToLoad"
+                    },
+                    {
+                      "type": "equals",
+                      "path": ".status.modelStatus.transitionStatus",
+                      "value": "BlockedByFailedLoad"
+                    }
+                  ]
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "condition",
+                      "conditionType": "LatestDeploymentReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "CanaryPredictorReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorRouteReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerRouteReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerRoutesReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "RoutesReady",
+                      "status": "False"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed",
+            "tooltip": "{{.status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].message ?? .status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].reason ?? .status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].reason ?? .status.conditions[type=\"PredictorRouteReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorRouteReady\",status=\"False\"].reason}}",
+              "{{.status.conditions[type=\"TransformerRouteReady\",status=\"False\"].message ?? .status.conditions[type=\"TransformerRouteReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].message}}",
+              "{{.status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].reason ?? .status.conditions[type=\"RoutesReady\",status=\"False\"].message ?? .status.conditions[type=\"RoutesReady\",status=\"False\"].reason}}"
+            ]
+          },
+          {
+            "when": {
               "type": "any",
               "of": [
                 {
@@ -416,11 +698,121 @@
             "text": "Failed",
             "tone": "error",
             "value": "failed",
-            "tooltip": "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].message}}",
+            "tooltip": "{{.status.conditions[type=\"IngressReady\",status=\"False\"].message ?? .status.conditions[type=\"IngressReady\",status=\"False\"].reason ?? .status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].message}}",
             "tooltipOr": [
-              "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].reason}}",
-              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].message}}",
-              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].reason}}"
+              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].reason ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "True"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorConfigurationReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerConfigurationReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerConfigurationReady",
+                      "status": "False"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "value": "ready",
+            "tooltip": "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorReady\",status=\"False\"].reason ?? .status.conditions[type=\"TransformerReady\",status=\"False\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"TransformerReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerReady\",status=\"False\"].message ?? .status.conditions[type=\"ExplainerReady\",status=\"False\"].reason}}",
+              "{{.status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].reason ?? .status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].message}}",
+              "{{.status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].message ?? .status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].reason}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "True"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "condition",
+                      "conditionType": "LatestDeploymentReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "CanaryPredictorReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorRouteReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerRouteReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerRoutesReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "RoutesReady",
+                      "status": "False"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "value": "ready",
+            "tooltip": "{{.status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].message ?? .status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].reason ?? .status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].reason ?? .status.conditions[type=\"PredictorRouteReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorRouteReady\",status=\"False\"].reason}}",
+              "{{.status.conditions[type=\"TransformerRouteReady\",status=\"False\"].message ?? .status.conditions[type=\"TransformerRouteReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].message}}",
+              "{{.status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].reason ?? .status.conditions[type=\"RoutesReady\",status=\"False\"].message ?? .status.conditions[type=\"RoutesReady\",status=\"False\"].reason}}"
             ]
           },
           {
@@ -432,11 +824,9 @@
             "text": "Ready",
             "tone": "ok",
             "value": "ready",
-            "tooltip": "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].message}}",
+            "tooltip": "{{.status.conditions[type=\"IngressReady\",status=\"False\"].message ?? .status.conditions[type=\"IngressReady\",status=\"False\"].reason ?? .status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].message}}",
             "tooltipOr": [
-              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].reason}}",
-              "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
-              "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}"
+              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].reason ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}"
             ]
           },
           {
@@ -449,18 +839,50 @@
                   "status": "False"
                 },
                 {
-                  "type": "condition",
-                  "conditionType": "PredictorReady",
-                  "status": "False"
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorConfigurationReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerConfigurationReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerConfigurationReady",
+                      "status": "False"
+                    }
+                  ]
                 }
               ]
             },
             "text": "Not ready",
             "tone": "warning",
             "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].message}}",
+            "tooltip": "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorReady\",status=\"False\"].reason ?? .status.conditions[type=\"TransformerReady\",status=\"False\"].message}}",
             "tooltipOr": [
-              "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].reason}}"
+              "{{.status.conditions[type=\"TransformerReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerReady\",status=\"False\"].message ?? .status.conditions[type=\"ExplainerReady\",status=\"False\"].reason}}",
+              "{{.status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].reason ?? .status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].message}}",
+              "{{.status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].message ?? .status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].reason}}"
             ]
           },
           {
@@ -473,282 +895,50 @@
                   "status": "False"
                 },
                 {
-                  "type": "condition",
-                  "conditionType": "TransformerReady",
-                  "status": "False"
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "condition",
+                      "conditionType": "LatestDeploymentReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "CanaryPredictorReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorRouteReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerRouteReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerRoutesReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "RoutesReady",
+                      "status": "False"
+                    }
+                  ]
                 }
               ]
             },
             "text": "Not ready",
             "tone": "warning",
             "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"TransformerReady\",status=\"False\"].message}}",
+            "tooltip": "{{.status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].message ?? .status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].reason ?? .status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].message}}",
             "tooltipOr": [
-              "{{.status.conditions[type=\"TransformerReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "ExplainerReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"ExplainerReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"ExplainerReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "PredictorConfigurationReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "TransformerConfigurationReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "ExplainerConfigurationReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "LatestDeploymentReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "CanaryPredictorReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "PredictorRouteReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"PredictorRouteReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"PredictorRouteReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "TransformerRouteReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"TransformerRouteReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"TransformerRouteReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "ExplainerRoutesReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "RoutesReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"RoutesReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"RoutesReady\",status=\"False\"].reason}}"
-            ]
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "condition",
-                  "conditionType": "Ready",
-                  "status": "False"
-                },
-                {
-                  "type": "condition",
-                  "conditionType": "IngressReady",
-                  "status": "False"
-                }
-              ]
-            },
-            "text": "Not ready",
-            "tone": "warning",
-            "value": "notReady",
-            "tooltip": "{{.status.conditions[type=\"IngressReady\",status=\"False\"].message}}",
-            "tooltipOr": [
-              "{{.status.conditions[type=\"IngressReady\",status=\"False\"].reason}}"
+              "{{.status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].reason ?? .status.conditions[type=\"PredictorRouteReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorRouteReady\",status=\"False\"].reason}}",
+              "{{.status.conditions[type=\"TransformerRouteReady\",status=\"False\"].message ?? .status.conditions[type=\"TransformerRouteReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].message}}",
+              "{{.status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].reason ?? .status.conditions[type=\"RoutesReady\",status=\"False\"].message ?? .status.conditions[type=\"RoutesReady\",status=\"False\"].reason}}"
             ]
           },
           {
@@ -760,11 +950,119 @@
             "text": "Not ready",
             "tone": "warning",
             "value": "notReady",
-            "tooltip": "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].message}}",
+            "tooltip": "{{.status.conditions[type=\"IngressReady\",status=\"False\"].message ?? .status.conditions[type=\"IngressReady\",status=\"False\"].reason ?? .status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].message}}",
             "tooltipOr": [
-              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].reason}}",
-              "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
-              "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}"
+              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].reason ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.name"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorConfigurationReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerConfigurationReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerConfigurationReady",
+                      "status": "False"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Progressing",
+            "tone": "warning",
+            "value": "progressing",
+            "tooltip": "{{.status.conditions[type=\"PredictorReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorReady\",status=\"False\"].reason ?? .status.conditions[type=\"TransformerReady\",status=\"False\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"TransformerReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerReady\",status=\"False\"].message ?? .status.conditions[type=\"ExplainerReady\",status=\"False\"].reason}}",
+              "{{.status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorConfigurationReady\",status=\"False\"].reason ?? .status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].message}}",
+              "{{.status.conditions[type=\"TransformerConfigurationReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].message ?? .status.conditions[type=\"ExplainerConfigurationReady\",status=\"False\"].reason}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.name"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "condition",
+                      "conditionType": "LatestDeploymentReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "CanaryPredictorReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "PredictorRouteReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "TransformerRouteReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "ExplainerRoutesReady",
+                      "status": "False"
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "RoutesReady",
+                      "status": "False"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Progressing",
+            "tone": "warning",
+            "value": "progressing",
+            "tooltip": "{{.status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].message ?? .status.conditions[type=\"LatestDeploymentReady\",status=\"False\"].reason ?? .status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"CanaryPredictorReady\",status=\"False\"].reason ?? .status.conditions[type=\"PredictorRouteReady\",status=\"False\"].message ?? .status.conditions[type=\"PredictorRouteReady\",status=\"False\"].reason}}",
+              "{{.status.conditions[type=\"TransformerRouteReady\",status=\"False\"].message ?? .status.conditions[type=\"TransformerRouteReady\",status=\"False\"].reason ?? .status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].message}}",
+              "{{.status.conditions[type=\"ExplainerRoutesReady\",status=\"False\"].reason ?? .status.conditions[type=\"RoutesReady\",status=\"False\"].message ?? .status.conditions[type=\"RoutesReady\",status=\"False\"].reason}}"
             ]
           },
           {
@@ -775,11 +1073,9 @@
             "text": "Progressing",
             "tone": "warning",
             "value": "progressing",
-            "tooltip": "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].message}}",
+            "tooltip": "{{.status.conditions[type=\"IngressReady\",status=\"False\"].message ?? .status.conditions[type=\"IngressReady\",status=\"False\"].reason ?? .status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].message}}",
             "tooltipOr": [
-              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].reason}}",
-              "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
-              "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}"
+              "{{.status.conditions[status=\"False\",type!=\"Ready\",type!=\"Stopped\"].reason ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}"
             ]
           }
         ],
@@ -3178,24 +3474,21 @@
       "columns.isvc-status.title": "Статус",
       "columns.isvc-status.cases.0.text": "Остановлен",
       "columns.isvc-status.cases.1.text": "Остановлен",
-      "columns.isvc-status.cases.2.text": "Сбой",
-      "columns.isvc-status.cases.3.text": "Сбой",
-      "columns.isvc-status.cases.4.text": "Готов",
-      "columns.isvc-status.cases.5.text": "Не готов",
-      "columns.isvc-status.cases.6.text": "Не готов",
-      "columns.isvc-status.cases.7.text": "Не готов",
-      "columns.isvc-status.cases.8.text": "Не готов",
-      "columns.isvc-status.cases.9.text": "Не готов",
-      "columns.isvc-status.cases.10.text": "Не готов",
+      "columns.isvc-status.cases.2.text": "Остановлен",
+      "columns.isvc-status.cases.3.text": "Остановлен",
+      "columns.isvc-status.cases.4.text": "Сбой",
+      "columns.isvc-status.cases.5.text": "Сбой",
+      "columns.isvc-status.cases.6.text": "Сбой",
+      "columns.isvc-status.cases.7.text": "Сбой",
+      "columns.isvc-status.cases.8.text": "Готов",
+      "columns.isvc-status.cases.9.text": "Готов",
+      "columns.isvc-status.cases.10.text": "Готов",
       "columns.isvc-status.cases.11.text": "Не готов",
       "columns.isvc-status.cases.12.text": "Не готов",
       "columns.isvc-status.cases.13.text": "Не готов",
-      "columns.isvc-status.cases.14.text": "Не готов",
-      "columns.isvc-status.cases.15.text": "Не готов",
-      "columns.isvc-status.cases.16.text": "Не готов",
-      "columns.isvc-status.cases.17.text": "Не готов",
-      "columns.isvc-status.cases.18.text": "Не готов",
-      "columns.isvc-status.cases.19.text": "В процессе",
+      "columns.isvc-status.cases.14.text": "В процессе",
+      "columns.isvc-status.cases.15.text": "В процессе",
+      "columns.isvc-status.cases.16.text": "В процессе",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "Формат модели",
       "columns.isvc-runtime.title": "Среда",
@@ -3255,24 +3548,21 @@
       "columns.isvc-status.title": "Статус",
       "columns.isvc-status.cases.0.text": "Зупинено",
       "columns.isvc-status.cases.1.text": "Зупинено",
-      "columns.isvc-status.cases.2.text": "Збій",
-      "columns.isvc-status.cases.3.text": "Збій",
-      "columns.isvc-status.cases.4.text": "Готовий",
-      "columns.isvc-status.cases.5.text": "Не готовий",
-      "columns.isvc-status.cases.6.text": "Не готовий",
-      "columns.isvc-status.cases.7.text": "Не готовий",
-      "columns.isvc-status.cases.8.text": "Не готовий",
-      "columns.isvc-status.cases.9.text": "Не готовий",
-      "columns.isvc-status.cases.10.text": "Не готовий",
+      "columns.isvc-status.cases.2.text": "Зупинено",
+      "columns.isvc-status.cases.3.text": "Зупинено",
+      "columns.isvc-status.cases.4.text": "Збій",
+      "columns.isvc-status.cases.5.text": "Збій",
+      "columns.isvc-status.cases.6.text": "Збій",
+      "columns.isvc-status.cases.7.text": "Збій",
+      "columns.isvc-status.cases.8.text": "Готовий",
+      "columns.isvc-status.cases.9.text": "Готовий",
+      "columns.isvc-status.cases.10.text": "Готовий",
       "columns.isvc-status.cases.11.text": "Не готовий",
       "columns.isvc-status.cases.12.text": "Не готовий",
       "columns.isvc-status.cases.13.text": "Не готовий",
-      "columns.isvc-status.cases.14.text": "Не готовий",
-      "columns.isvc-status.cases.15.text": "Не готовий",
-      "columns.isvc-status.cases.16.text": "Не готовий",
-      "columns.isvc-status.cases.17.text": "Не готовий",
-      "columns.isvc-status.cases.18.text": "Не готовий",
-      "columns.isvc-status.cases.19.text": "Триває",
+      "columns.isvc-status.cases.14.text": "Триває",
+      "columns.isvc-status.cases.15.text": "Триває",
+      "columns.isvc-status.cases.16.text": "Триває",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "Формат моделі",
       "columns.isvc-runtime.title": "Середовище",
@@ -3330,24 +3620,21 @@
       "columns.isvc-status.title": "Status",
       "columns.isvc-status.cases.0.text": "Gestoppt",
       "columns.isvc-status.cases.1.text": "Gestoppt",
-      "columns.isvc-status.cases.2.text": "Fehlgeschlagen",
-      "columns.isvc-status.cases.3.text": "Fehlgeschlagen",
-      "columns.isvc-status.cases.4.text": "Bereit",
-      "columns.isvc-status.cases.5.text": "Nicht bereit",
-      "columns.isvc-status.cases.6.text": "Nicht bereit",
-      "columns.isvc-status.cases.7.text": "Nicht bereit",
-      "columns.isvc-status.cases.8.text": "Nicht bereit",
-      "columns.isvc-status.cases.9.text": "Nicht bereit",
-      "columns.isvc-status.cases.10.text": "Nicht bereit",
+      "columns.isvc-status.cases.2.text": "Gestoppt",
+      "columns.isvc-status.cases.3.text": "Gestoppt",
+      "columns.isvc-status.cases.4.text": "Fehlgeschlagen",
+      "columns.isvc-status.cases.5.text": "Fehlgeschlagen",
+      "columns.isvc-status.cases.6.text": "Fehlgeschlagen",
+      "columns.isvc-status.cases.7.text": "Fehlgeschlagen",
+      "columns.isvc-status.cases.8.text": "Bereit",
+      "columns.isvc-status.cases.9.text": "Bereit",
+      "columns.isvc-status.cases.10.text": "Bereit",
       "columns.isvc-status.cases.11.text": "Nicht bereit",
       "columns.isvc-status.cases.12.text": "Nicht bereit",
       "columns.isvc-status.cases.13.text": "Nicht bereit",
-      "columns.isvc-status.cases.14.text": "Nicht bereit",
-      "columns.isvc-status.cases.15.text": "Nicht bereit",
-      "columns.isvc-status.cases.16.text": "Nicht bereit",
-      "columns.isvc-status.cases.17.text": "Nicht bereit",
-      "columns.isvc-status.cases.18.text": "Nicht bereit",
-      "columns.isvc-status.cases.19.text": "In Arbeit",
+      "columns.isvc-status.cases.14.text": "In Arbeit",
+      "columns.isvc-status.cases.15.text": "In Arbeit",
+      "columns.isvc-status.cases.16.text": "In Arbeit",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "Modellformat",
       "columns.isvc-runtime.title": "Runtime",
@@ -3406,24 +3693,21 @@
       "columns.isvc-status.title": "Statut",
       "columns.isvc-status.cases.0.text": "Arrêté",
       "columns.isvc-status.cases.1.text": "Arrêté",
-      "columns.isvc-status.cases.2.text": "Échec",
-      "columns.isvc-status.cases.3.text": "Échec",
-      "columns.isvc-status.cases.4.text": "Prêt",
-      "columns.isvc-status.cases.5.text": "Non prêt",
-      "columns.isvc-status.cases.6.text": "Non prêt",
-      "columns.isvc-status.cases.7.text": "Non prêt",
-      "columns.isvc-status.cases.8.text": "Non prêt",
-      "columns.isvc-status.cases.9.text": "Non prêt",
-      "columns.isvc-status.cases.10.text": "Non prêt",
+      "columns.isvc-status.cases.2.text": "Arrêté",
+      "columns.isvc-status.cases.3.text": "Arrêté",
+      "columns.isvc-status.cases.4.text": "Échec",
+      "columns.isvc-status.cases.5.text": "Échec",
+      "columns.isvc-status.cases.6.text": "Échec",
+      "columns.isvc-status.cases.7.text": "Échec",
+      "columns.isvc-status.cases.8.text": "Prêt",
+      "columns.isvc-status.cases.9.text": "Prêt",
+      "columns.isvc-status.cases.10.text": "Prêt",
       "columns.isvc-status.cases.11.text": "Non prêt",
       "columns.isvc-status.cases.12.text": "Non prêt",
       "columns.isvc-status.cases.13.text": "Non prêt",
-      "columns.isvc-status.cases.14.text": "Non prêt",
-      "columns.isvc-status.cases.15.text": "Non prêt",
-      "columns.isvc-status.cases.16.text": "Non prêt",
-      "columns.isvc-status.cases.17.text": "Non prêt",
-      "columns.isvc-status.cases.18.text": "Non prêt",
-      "columns.isvc-status.cases.19.text": "En cours",
+      "columns.isvc-status.cases.14.text": "En cours",
+      "columns.isvc-status.cases.15.text": "En cours",
+      "columns.isvc-status.cases.16.text": "En cours",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "Format du modèle",
       "columns.isvc-runtime.title": "Runtime",
@@ -3482,24 +3766,21 @@
       "columns.isvc-status.title": "Estado",
       "columns.isvc-status.cases.0.text": "Detenido",
       "columns.isvc-status.cases.1.text": "Detenido",
-      "columns.isvc-status.cases.2.text": "Fallido",
-      "columns.isvc-status.cases.3.text": "Fallido",
-      "columns.isvc-status.cases.4.text": "Listo",
-      "columns.isvc-status.cases.5.text": "No listo",
-      "columns.isvc-status.cases.6.text": "No listo",
-      "columns.isvc-status.cases.7.text": "No listo",
-      "columns.isvc-status.cases.8.text": "No listo",
-      "columns.isvc-status.cases.9.text": "No listo",
-      "columns.isvc-status.cases.10.text": "No listo",
+      "columns.isvc-status.cases.2.text": "Detenido",
+      "columns.isvc-status.cases.3.text": "Detenido",
+      "columns.isvc-status.cases.4.text": "Fallido",
+      "columns.isvc-status.cases.5.text": "Fallido",
+      "columns.isvc-status.cases.6.text": "Fallido",
+      "columns.isvc-status.cases.7.text": "Fallido",
+      "columns.isvc-status.cases.8.text": "Listo",
+      "columns.isvc-status.cases.9.text": "Listo",
+      "columns.isvc-status.cases.10.text": "Listo",
       "columns.isvc-status.cases.11.text": "No listo",
       "columns.isvc-status.cases.12.text": "No listo",
       "columns.isvc-status.cases.13.text": "No listo",
-      "columns.isvc-status.cases.14.text": "No listo",
-      "columns.isvc-status.cases.15.text": "No listo",
-      "columns.isvc-status.cases.16.text": "No listo",
-      "columns.isvc-status.cases.17.text": "No listo",
-      "columns.isvc-status.cases.18.text": "No listo",
-      "columns.isvc-status.cases.19.text": "En curso",
+      "columns.isvc-status.cases.14.text": "En curso",
+      "columns.isvc-status.cases.15.text": "En curso",
+      "columns.isvc-status.cases.16.text": "En curso",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "Formato del modelo",
       "columns.isvc-runtime.title": "Runtime",
@@ -3558,24 +3839,21 @@
       "columns.isvc-status.title": "Status",
       "columns.isvc-status.cases.0.text": "Parado",
       "columns.isvc-status.cases.1.text": "Parado",
-      "columns.isvc-status.cases.2.text": "Falhou",
-      "columns.isvc-status.cases.3.text": "Falhou",
-      "columns.isvc-status.cases.4.text": "Pronto",
-      "columns.isvc-status.cases.5.text": "Não pronto",
-      "columns.isvc-status.cases.6.text": "Não pronto",
-      "columns.isvc-status.cases.7.text": "Não pronto",
-      "columns.isvc-status.cases.8.text": "Não pronto",
-      "columns.isvc-status.cases.9.text": "Não pronto",
-      "columns.isvc-status.cases.10.text": "Não pronto",
+      "columns.isvc-status.cases.2.text": "Parado",
+      "columns.isvc-status.cases.3.text": "Parado",
+      "columns.isvc-status.cases.4.text": "Falhou",
+      "columns.isvc-status.cases.5.text": "Falhou",
+      "columns.isvc-status.cases.6.text": "Falhou",
+      "columns.isvc-status.cases.7.text": "Falhou",
+      "columns.isvc-status.cases.8.text": "Pronto",
+      "columns.isvc-status.cases.9.text": "Pronto",
+      "columns.isvc-status.cases.10.text": "Pronto",
       "columns.isvc-status.cases.11.text": "Não pronto",
       "columns.isvc-status.cases.12.text": "Não pronto",
       "columns.isvc-status.cases.13.text": "Não pronto",
-      "columns.isvc-status.cases.14.text": "Não pronto",
-      "columns.isvc-status.cases.15.text": "Não pronto",
-      "columns.isvc-status.cases.16.text": "Não pronto",
-      "columns.isvc-status.cases.17.text": "Não pronto",
-      "columns.isvc-status.cases.18.text": "Não pronto",
-      "columns.isvc-status.cases.19.text": "Em andamento",
+      "columns.isvc-status.cases.14.text": "Em andamento",
+      "columns.isvc-status.cases.15.text": "Em andamento",
+      "columns.isvc-status.cases.16.text": "Em andamento",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "Formato do modelo",
       "columns.isvc-runtime.title": "Runtime",
@@ -3634,24 +3912,21 @@
       "columns.isvc-status.title": "Stato",
       "columns.isvc-status.cases.0.text": "Fermato",
       "columns.isvc-status.cases.1.text": "Fermato",
-      "columns.isvc-status.cases.2.text": "Non riuscito",
-      "columns.isvc-status.cases.3.text": "Non riuscito",
-      "columns.isvc-status.cases.4.text": "Pronto",
-      "columns.isvc-status.cases.5.text": "Non pronto",
-      "columns.isvc-status.cases.6.text": "Non pronto",
-      "columns.isvc-status.cases.7.text": "Non pronto",
-      "columns.isvc-status.cases.8.text": "Non pronto",
-      "columns.isvc-status.cases.9.text": "Non pronto",
-      "columns.isvc-status.cases.10.text": "Non pronto",
+      "columns.isvc-status.cases.2.text": "Fermato",
+      "columns.isvc-status.cases.3.text": "Fermato",
+      "columns.isvc-status.cases.4.text": "Non riuscito",
+      "columns.isvc-status.cases.5.text": "Non riuscito",
+      "columns.isvc-status.cases.6.text": "Non riuscito",
+      "columns.isvc-status.cases.7.text": "Non riuscito",
+      "columns.isvc-status.cases.8.text": "Pronto",
+      "columns.isvc-status.cases.9.text": "Pronto",
+      "columns.isvc-status.cases.10.text": "Pronto",
       "columns.isvc-status.cases.11.text": "Non pronto",
       "columns.isvc-status.cases.12.text": "Non pronto",
       "columns.isvc-status.cases.13.text": "Non pronto",
-      "columns.isvc-status.cases.14.text": "Non pronto",
-      "columns.isvc-status.cases.15.text": "Non pronto",
-      "columns.isvc-status.cases.16.text": "Non pronto",
-      "columns.isvc-status.cases.17.text": "Non pronto",
-      "columns.isvc-status.cases.18.text": "Non pronto",
-      "columns.isvc-status.cases.19.text": "In corso",
+      "columns.isvc-status.cases.14.text": "In corso",
+      "columns.isvc-status.cases.15.text": "In corso",
+      "columns.isvc-status.cases.16.text": "In corso",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "Formato del modello",
       "columns.isvc-runtime.title": "Runtime",
@@ -3711,24 +3986,21 @@
       "columns.isvc-status.title": "Stan",
       "columns.isvc-status.cases.0.text": "Zatrzymany",
       "columns.isvc-status.cases.1.text": "Zatrzymany",
-      "columns.isvc-status.cases.2.text": "Błąd",
-      "columns.isvc-status.cases.3.text": "Błąd",
-      "columns.isvc-status.cases.4.text": "Gotowy",
-      "columns.isvc-status.cases.5.text": "Niegotowy",
-      "columns.isvc-status.cases.6.text": "Niegotowy",
-      "columns.isvc-status.cases.7.text": "Niegotowy",
-      "columns.isvc-status.cases.8.text": "Niegotowy",
-      "columns.isvc-status.cases.9.text": "Niegotowy",
-      "columns.isvc-status.cases.10.text": "Niegotowy",
+      "columns.isvc-status.cases.2.text": "Zatrzymany",
+      "columns.isvc-status.cases.3.text": "Zatrzymany",
+      "columns.isvc-status.cases.4.text": "Błąd",
+      "columns.isvc-status.cases.5.text": "Błąd",
+      "columns.isvc-status.cases.6.text": "Błąd",
+      "columns.isvc-status.cases.7.text": "Błąd",
+      "columns.isvc-status.cases.8.text": "Gotowy",
+      "columns.isvc-status.cases.9.text": "Gotowy",
+      "columns.isvc-status.cases.10.text": "Gotowy",
       "columns.isvc-status.cases.11.text": "Niegotowy",
       "columns.isvc-status.cases.12.text": "Niegotowy",
       "columns.isvc-status.cases.13.text": "Niegotowy",
-      "columns.isvc-status.cases.14.text": "Niegotowy",
-      "columns.isvc-status.cases.15.text": "Niegotowy",
-      "columns.isvc-status.cases.16.text": "Niegotowy",
-      "columns.isvc-status.cases.17.text": "Niegotowy",
-      "columns.isvc-status.cases.18.text": "Niegotowy",
-      "columns.isvc-status.cases.19.text": "W toku",
+      "columns.isvc-status.cases.14.text": "W toku",
+      "columns.isvc-status.cases.15.text": "W toku",
+      "columns.isvc-status.cases.16.text": "W toku",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "Format modelu",
       "columns.isvc-runtime.title": "Środowisko",
@@ -3786,24 +4058,21 @@
       "columns.isvc-status.title": "Durum",
       "columns.isvc-status.cases.0.text": "Durduruldu",
       "columns.isvc-status.cases.1.text": "Durduruldu",
-      "columns.isvc-status.cases.2.text": "Başarısız",
-      "columns.isvc-status.cases.3.text": "Başarısız",
-      "columns.isvc-status.cases.4.text": "Hazır",
-      "columns.isvc-status.cases.5.text": "Hazır değil",
-      "columns.isvc-status.cases.6.text": "Hazır değil",
-      "columns.isvc-status.cases.7.text": "Hazır değil",
-      "columns.isvc-status.cases.8.text": "Hazır değil",
-      "columns.isvc-status.cases.9.text": "Hazır değil",
-      "columns.isvc-status.cases.10.text": "Hazır değil",
+      "columns.isvc-status.cases.2.text": "Durduruldu",
+      "columns.isvc-status.cases.3.text": "Durduruldu",
+      "columns.isvc-status.cases.4.text": "Başarısız",
+      "columns.isvc-status.cases.5.text": "Başarısız",
+      "columns.isvc-status.cases.6.text": "Başarısız",
+      "columns.isvc-status.cases.7.text": "Başarısız",
+      "columns.isvc-status.cases.8.text": "Hazır",
+      "columns.isvc-status.cases.9.text": "Hazır",
+      "columns.isvc-status.cases.10.text": "Hazır",
       "columns.isvc-status.cases.11.text": "Hazır değil",
       "columns.isvc-status.cases.12.text": "Hazır değil",
       "columns.isvc-status.cases.13.text": "Hazır değil",
-      "columns.isvc-status.cases.14.text": "Hazır değil",
-      "columns.isvc-status.cases.15.text": "Hazır değil",
-      "columns.isvc-status.cases.16.text": "Hazır değil",
-      "columns.isvc-status.cases.17.text": "Hazır değil",
-      "columns.isvc-status.cases.18.text": "Hazır değil",
-      "columns.isvc-status.cases.19.text": "Sürüyor",
+      "columns.isvc-status.cases.14.text": "Sürüyor",
+      "columns.isvc-status.cases.15.text": "Sürüyor",
+      "columns.isvc-status.cases.16.text": "Sürüyor",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "Model biçimi",
       "columns.isvc-runtime.title": "Çalışma ortamı",
@@ -3860,24 +4129,21 @@
       "columns.isvc-status.title": "状态",
       "columns.isvc-status.cases.0.text": "已停止",
       "columns.isvc-status.cases.1.text": "已停止",
-      "columns.isvc-status.cases.2.text": "失败",
-      "columns.isvc-status.cases.3.text": "失败",
-      "columns.isvc-status.cases.4.text": "就绪",
-      "columns.isvc-status.cases.5.text": "未就绪",
-      "columns.isvc-status.cases.6.text": "未就绪",
-      "columns.isvc-status.cases.7.text": "未就绪",
-      "columns.isvc-status.cases.8.text": "未就绪",
-      "columns.isvc-status.cases.9.text": "未就绪",
-      "columns.isvc-status.cases.10.text": "未就绪",
+      "columns.isvc-status.cases.2.text": "已停止",
+      "columns.isvc-status.cases.3.text": "已停止",
+      "columns.isvc-status.cases.4.text": "失败",
+      "columns.isvc-status.cases.5.text": "失败",
+      "columns.isvc-status.cases.6.text": "失败",
+      "columns.isvc-status.cases.7.text": "失败",
+      "columns.isvc-status.cases.8.text": "就绪",
+      "columns.isvc-status.cases.9.text": "就绪",
+      "columns.isvc-status.cases.10.text": "就绪",
       "columns.isvc-status.cases.11.text": "未就绪",
       "columns.isvc-status.cases.12.text": "未就绪",
       "columns.isvc-status.cases.13.text": "未就绪",
-      "columns.isvc-status.cases.14.text": "未就绪",
-      "columns.isvc-status.cases.15.text": "未就绪",
-      "columns.isvc-status.cases.16.text": "未就绪",
-      "columns.isvc-status.cases.17.text": "未就绪",
-      "columns.isvc-status.cases.18.text": "未就绪",
-      "columns.isvc-status.cases.19.text": "进行中",
+      "columns.isvc-status.cases.14.text": "进行中",
+      "columns.isvc-status.cases.15.text": "进行中",
+      "columns.isvc-status.cases.16.text": "进行中",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "模型格式",
       "columns.isvc-runtime.title": "运行时",
@@ -3934,24 +4200,21 @@
       "columns.isvc-status.title": "狀態",
       "columns.isvc-status.cases.0.text": "已停止",
       "columns.isvc-status.cases.1.text": "已停止",
-      "columns.isvc-status.cases.2.text": "失敗",
-      "columns.isvc-status.cases.3.text": "失敗",
-      "columns.isvc-status.cases.4.text": "就緒",
-      "columns.isvc-status.cases.5.text": "未就緒",
-      "columns.isvc-status.cases.6.text": "未就緒",
-      "columns.isvc-status.cases.7.text": "未就緒",
-      "columns.isvc-status.cases.8.text": "未就緒",
-      "columns.isvc-status.cases.9.text": "未就緒",
-      "columns.isvc-status.cases.10.text": "未就緒",
+      "columns.isvc-status.cases.2.text": "已停止",
+      "columns.isvc-status.cases.3.text": "已停止",
+      "columns.isvc-status.cases.4.text": "失敗",
+      "columns.isvc-status.cases.5.text": "失敗",
+      "columns.isvc-status.cases.6.text": "失敗",
+      "columns.isvc-status.cases.7.text": "失敗",
+      "columns.isvc-status.cases.8.text": "就緒",
+      "columns.isvc-status.cases.9.text": "就緒",
+      "columns.isvc-status.cases.10.text": "就緒",
       "columns.isvc-status.cases.11.text": "未就緒",
       "columns.isvc-status.cases.12.text": "未就緒",
       "columns.isvc-status.cases.13.text": "未就緒",
-      "columns.isvc-status.cases.14.text": "未就緒",
-      "columns.isvc-status.cases.15.text": "未就緒",
-      "columns.isvc-status.cases.16.text": "未就緒",
-      "columns.isvc-status.cases.17.text": "未就緒",
-      "columns.isvc-status.cases.18.text": "未就緒",
-      "columns.isvc-status.cases.19.text": "進行中",
+      "columns.isvc-status.cases.14.text": "進行中",
+      "columns.isvc-status.cases.15.text": "進行中",
+      "columns.isvc-status.cases.16.text": "進行中",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "模型格式",
       "columns.isvc-runtime.title": "執行階段",
@@ -4008,24 +4271,21 @@
       "columns.isvc-status.title": "状態",
       "columns.isvc-status.cases.0.text": "停止",
       "columns.isvc-status.cases.1.text": "停止",
-      "columns.isvc-status.cases.2.text": "失敗",
-      "columns.isvc-status.cases.3.text": "失敗",
-      "columns.isvc-status.cases.4.text": "準備完了",
-      "columns.isvc-status.cases.5.text": "未準備",
-      "columns.isvc-status.cases.6.text": "未準備",
-      "columns.isvc-status.cases.7.text": "未準備",
-      "columns.isvc-status.cases.8.text": "未準備",
-      "columns.isvc-status.cases.9.text": "未準備",
-      "columns.isvc-status.cases.10.text": "未準備",
+      "columns.isvc-status.cases.2.text": "停止",
+      "columns.isvc-status.cases.3.text": "停止",
+      "columns.isvc-status.cases.4.text": "失敗",
+      "columns.isvc-status.cases.5.text": "失敗",
+      "columns.isvc-status.cases.6.text": "失敗",
+      "columns.isvc-status.cases.7.text": "失敗",
+      "columns.isvc-status.cases.8.text": "準備完了",
+      "columns.isvc-status.cases.9.text": "準備完了",
+      "columns.isvc-status.cases.10.text": "準備完了",
       "columns.isvc-status.cases.11.text": "未準備",
       "columns.isvc-status.cases.12.text": "未準備",
       "columns.isvc-status.cases.13.text": "未準備",
-      "columns.isvc-status.cases.14.text": "未準備",
-      "columns.isvc-status.cases.15.text": "未準備",
-      "columns.isvc-status.cases.16.text": "未準備",
-      "columns.isvc-status.cases.17.text": "未準備",
-      "columns.isvc-status.cases.18.text": "未準備",
-      "columns.isvc-status.cases.19.text": "進行中",
+      "columns.isvc-status.cases.14.text": "進行中",
+      "columns.isvc-status.cases.15.text": "進行中",
+      "columns.isvc-status.cases.16.text": "進行中",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "モデル形式",
       "columns.isvc-runtime.title": "ランタイム",
@@ -4082,24 +4342,21 @@
       "columns.isvc-status.title": "상태",
       "columns.isvc-status.cases.0.text": "중지됨",
       "columns.isvc-status.cases.1.text": "중지됨",
-      "columns.isvc-status.cases.2.text": "실패",
-      "columns.isvc-status.cases.3.text": "실패",
-      "columns.isvc-status.cases.4.text": "준비됨",
-      "columns.isvc-status.cases.5.text": "준비 안 됨",
-      "columns.isvc-status.cases.6.text": "준비 안 됨",
-      "columns.isvc-status.cases.7.text": "준비 안 됨",
-      "columns.isvc-status.cases.8.text": "준비 안 됨",
-      "columns.isvc-status.cases.9.text": "준비 안 됨",
-      "columns.isvc-status.cases.10.text": "준비 안 됨",
+      "columns.isvc-status.cases.2.text": "중지됨",
+      "columns.isvc-status.cases.3.text": "중지됨",
+      "columns.isvc-status.cases.4.text": "실패",
+      "columns.isvc-status.cases.5.text": "실패",
+      "columns.isvc-status.cases.6.text": "실패",
+      "columns.isvc-status.cases.7.text": "실패",
+      "columns.isvc-status.cases.8.text": "준비됨",
+      "columns.isvc-status.cases.9.text": "준비됨",
+      "columns.isvc-status.cases.10.text": "준비됨",
       "columns.isvc-status.cases.11.text": "준비 안 됨",
       "columns.isvc-status.cases.12.text": "준비 안 됨",
       "columns.isvc-status.cases.13.text": "준비 안 됨",
-      "columns.isvc-status.cases.14.text": "준비 안 됨",
-      "columns.isvc-status.cases.15.text": "준비 안 됨",
-      "columns.isvc-status.cases.16.text": "준비 안 됨",
-      "columns.isvc-status.cases.17.text": "준비 안 됨",
-      "columns.isvc-status.cases.18.text": "준비 안 됨",
-      "columns.isvc-status.cases.19.text": "진행 중",
+      "columns.isvc-status.cases.14.text": "진행 중",
+      "columns.isvc-status.cases.15.text": "진행 중",
+      "columns.isvc-status.cases.16.text": "진행 중",
       "columns.isvc-url.title": "URL",
       "columns.isvc-model-format.title": "모델 형식",
       "columns.isvc-runtime.title": "런타임",

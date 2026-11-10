@@ -573,25 +573,30 @@ describe("the columns, against the built-in ones", () => {
     expect(failingCondition(config)?.type).toBe("PredictorConfigurationReady");
   });
 
-  it("differ where the built-in hover chose among two False conditions of a state other than Not ready, or ran long", () => {
-    // Ready with two False conditions: the first in the object's list, not in KServe's order.
-    const two = isvc("sklearn-iris");
-    st(two).conditions.unshift({ type: "AnOddReady", status: "False", message: "odd" });
-    st(two).conditions.push({ type: "CanaryPredictorReady", status: "False", message: "the canary is gone" });
-    expect(serviceReason(two)).toBe("the canary is gone");
-    expect(drawn("isvc-status", two).title).toBe("odd");
-    // Stopped, or failed without the failure's message: PredictorReady when False, else the first False condition
-    // in the list; with only Ready False the built-in hover told Ready's, the cell tells nothing.
-    const stoppedReady = notReadyBy([]);
-    stoppedReady.metadata.annotations = { "serving.kserve.io/stop": "true" };
-    expect(serviceReason(stoppedReady)).toBe("not ready");
-    expect(drawn("isvc-status", stoppedReady).title).toBeUndefined();
-    const stoppedTwo = notReadyBy(["LatestDeploymentReady", "IngressReady"]);
-    stoppedTwo.metadata.annotations = { "serving.kserve.io/stop": "true" };
-    // As knative keeps them: by type.
-    st(stoppedTwo).conditions.sort((a, b) => a.type.localeCompare(b.type));
-    expect(serviceReason(stoppedTwo)).toBe("LatestDeploymentReady is down");
-    expect(drawn("isvc-status", stoppedTwo).title).toBe("IngressReady is down");
+  it("the state's hover follows KServe's order in every state, whatever order the object lists them in", () => {
+    /** `o` in state `state`, its conditions as Knative keeps them: by type. */
+    const inState = (o: KubeObject, state: string): KubeObject => {
+      const conditions = st(o).conditions;
+      if (state === "stopped") o.metadata.annotations = { "serving.kserve.io/stop": "true" };
+      if (state === "failed") st(o).modelStatus = { transitionStatus: "BlockedByFailedLoad", lastFailureInfo: { reason: "ModelLoadFailed" } };
+      if (state === "ready") conditions.find((c) => c.type === "Ready")!.status = "True";
+      if (state === "progressing") conditions.find((c) => c.type === "Ready")!.status = "Unknown";
+      conditions.sort((x, y) => x.type.localeCompare(y.type));
+      return o;
+    };
+    const falses: string[][] = [[], ...CAUSES.map((c) => [c]), ...CAUSES.slice(0, -1).map((c, i) => [c, CAUSES[CAUSES.length - 1 - (i % 3)]!])];
+    for (const state of ["stopped", "failed", "ready", "notReady", "progressing"])
+      for (const these of falses)
+        for (const odd of [false, true]) {
+          const o = notReadyBy(these, these.length !== 1);
+          if (odd) st(o).conditions.push({ type: "AnOddReady", status: "False", message: "odd" });
+          inState(o, state);
+          expect(serviceState(o), `${state} ${these.join()}`).toBe(state);
+          expect(drawn("isvc-status", o).title || undefined, `${state} ${these.join()} ${odd}`).toBe(serviceReason(o) || undefined);
+        }
+  });
+
+  it("differ where the built-in hover was empty or ran long", () => {
     // A False condition with neither a reason nor a message: the built-in hover said nothing, the cell tells Ready's.
     const [, emptyOdd] = services().find(([label]) => label === EMPTY_ODD)!;
     expect(serviceReason(emptyOdd)).toBe("");
@@ -658,9 +663,8 @@ describe("the columns, against the built-in ones", () => {
         const value = ready?.status === "True" ? "ready" : ready?.status === "False" ? "notReady" : "progressing";
         expect(cell(`${prefix}-status`, o)).toBe(en[`state.${value}` as keyof typeof en]);
         expect(sortOf(`${prefix}-status`, o)).toBe(ready?.status);
-        // Without a Ready condition the filter reads the words shown (the built-in one had no value): a missing sort
-        // key leaves the filter the text.
-        expect(filterOf(`${prefix}-status`, o)).toEqual({ type: "string", value: ready ? ready.status : en["state.progressing"] });
+        // Without a Ready condition no value, as the built-in one.
+        expect(filterOf(`${prefix}-status`, o)).toEqual({ type: "string", value: ready?.status });
         expect(drawn(`${prefix}-status`, o)).toEqual({
           title: ready?.status === "False" ? cleanText(ready.message || ready.reason) : undefined,
           tone: SERVICE_TONE[value],

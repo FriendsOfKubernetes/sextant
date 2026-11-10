@@ -151,17 +151,11 @@ None: the extension is read-only and has no action of its own.
 - KServe's CRDs; the section shows only the kinds the cluster serves. What KServe made is shown where the cluster
   serves Knative Serving, Deployments and Services.
 - Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - The Status column's hover where a column's 20 cases and a case's four tooltips do not reach: in a state other than
-    Not ready with two or more False conditions, it names `PredictorReady` when False (Stopped, Failed without the
-    failure's message) else the first False condition in the object's list (Knative keeps them by type), not the most
-    basic in KServe's order; a Stopped or Failed one with only `Ready` False shows none (the built-in one showed
-    `Ready`'s); a False condition with neither a reason nor a message gives way to `Ready`'s (the built-in hover was
-    empty). A path that picks by a fixed order of values would close it.
+  - The Status column's hover: a False condition with neither a reason nor a message gives way to the next one, else
+    `Ready`'s (the built-in hover was empty): a placeholder's `??` skips empty values.
   - A cell holds 200 characters and a hover 1000, then "…" (the built-in URL and hover were not cut).
   - Canary % filters as text (the built-in one as a number): a `sum` column would show the share of a single traffic
     entry, which the built-in left blank, and a blank case there sorts first rather than last.
-  - An InferenceGraph or TrainedModel without a `Ready` condition filters its Status as "Progressing" (the built-in
-    one had no value there): a case's sort key that is missing leaves the filter the text.
   - Blocks closed in the built-in view open again once: Sextant keeps an extension's blocks under its own sections.
 - Checked by tests on fixtures of KServe's objects (copied from the built-in view) against the built-in readings and
   rules; not yet tried on a live cluster.
