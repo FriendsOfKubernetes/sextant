@@ -1,9 +1,9 @@
 // The problem judges (ADR-0168) the backend answers: the built-in Istio checks (`meshProblems`, ported unchanged into
 // `engine/problems.ts`) run over the objects Sextant sends, each judge over the kinds its reasons need, so a kind a
-// cluster does not serve or an agent cannot read stops only the reasons that rest on it. Each finding becomes a fact
-// of its object — `<reason>-<n>`, the n-th finding of that reason on that object in the built-in order, at most
-// `PER_OBJECT` of each — with the built-in message's values; the manifest's rules turn the facts into problems with
-// the built-in messages.
+// cluster cannot read stops only the reasons that rest on it (a kind the built-in took as empty where it was not served
+// is an optional read). Each finding becomes a fact of its object, named by its reason (`unknown-host`, …) and given
+// once per finding with the built-in message's values, in the built-in order; the manifest's rules (`each`) turn
+// every fact into a problem with the built-in message.
 //
 //   hosts             VirtualServices, DestinationRules, ServiceEntries, Services → UnknownHost, MissingDestinationRule,
 //                     MissingSubset (a Service's namespace is known only when the objects name at most 40 namespaces,
@@ -33,8 +33,6 @@ export interface JudgedOutput {
   values?: Record<string, string>;
 }
 
-/** Findings of one reason on one object that get a fact of their own; more are not told. */
-export const PER_OBJECT = 5;
 /** As the built-in store: beyond this many namespaces no host is judged missing. */
 export const MAX_SERVICE_NAMESPACES = 40;
 
@@ -45,12 +43,12 @@ export const NAME = ".metadata.name";
 export type JudgeId = "hosts" | "gateways" | "virtual-services" | "tls";
 
 /** What each judge reads and the reasons it tells, with the names of each reason's values. */
-export const JUDGES: Record<JudgeId, { reads: { group: string; kind: string; path: string }[]; reasons: MeshProblemReason[] }> = {
+export const JUDGES: Record<JudgeId, { reads: { group: string; kind: string; path: string; optional?: boolean }[]; reasons: MeshProblemReason[] }> = {
   hosts: {
     reads: [
       { group: "networking.istio.io", kind: "VirtualService", path: SPEC },
-      { group: "networking.istio.io", kind: "DestinationRule", path: SPEC },
-      { group: "networking.istio.io", kind: "ServiceEntry", path: SPEC },
+      { group: "networking.istio.io", kind: "DestinationRule", path: SPEC, optional: true },
+      { group: "networking.istio.io", kind: "ServiceEntry", path: SPEC, optional: true },
       { group: "", kind: "Service", path: NAME },
     ],
     reasons: ["UnknownHost", "MissingDestinationRule", "MissingSubset"],
@@ -69,7 +67,7 @@ export const JUDGES: Record<JudgeId, { reads: { group: string; kind: string; pat
   tls: {
     reads: [
       { group: "networking.istio.io", kind: "DestinationRule", path: SPEC },
-      { group: "security.istio.io", kind: "PeerAuthentication", path: SPEC },
+      { group: "security.istio.io", kind: "PeerAuthentication", path: SPEC, optional: true },
     ],
     reasons: ["TlsConflict"],
   },
@@ -86,14 +84,8 @@ export const REASON_VALUES: Record<MeshProblemReason, string[]> = {
   ConflictingVirtualService: ["host", "gateway", "other"],
 };
 
-/** How many facts a reason has: one per finding, up to `PER_OBJECT`; a DestinationRule has one TLS conflict at most. */
-export const factsOf = (reason: MeshProblemReason): number => (reason === "TlsConflict" || reason === "InvalidVirtualService" ? 1 : PER_OBJECT);
-
-/** `UnknownHost` → `unknown-host`. */
-export const slug = (reason: MeshProblemReason): string => reason.replace(/[A-Z]/g, (c, i: number) => `${i > 0 ? "-" : ""}${c.toLowerCase()}`);
-
-/** The fact of the n-th (1-based) finding of a reason. */
-export const factId = (reason: MeshProblemReason, n: number): string => (factsOf(reason) === 1 ? slug(reason) : `${slug(reason)}-${n}`);
+/** The fact of a reason: `UnknownHost` → `unknown-host`. */
+export const factId = (reason: MeshProblemReason): string => reason.replace(/[A-Z]/g, (c, i: number) => `${i > 0 ? "-" : ""}${c.toLowerCase()}`);
 
 /** An object the engines can parse: its identity and its spec. */
 export function objectOf(o: JudgedInput): KubeObject {
@@ -142,20 +134,11 @@ export function analysisInput(objects: readonly JudgedInput[]): AnalysisInput {
 export function judge(id: JudgeId, objects: readonly JudgedInput[]): JudgedOutput[] {
   const { reasons } = JUDGES[id];
   const input = analysisInput(objects);
-  // The gateways judge alone knows the Gateways: with none sent, there are none (their list was read in full).
+  // The gateways judge alone knows the Gateways (a read it needs): with none sent, there are none.
   if (id === "gateways") input.gateways ??= [];
-  const counts = new Map<string, number>();
-  const out: JudgedOutput[] = [];
-  for (const p of meshProblems(input)) {
-    if (!reasons.includes(p.reason)) continue;
-    const key = `${p.uid}|${p.reason}`;
-    const n = (counts.get(key) ?? 0) + 1;
-    counts.set(key, n);
-    if (n > factsOf(p.reason)) continue;
-    const values = Object.fromEntries(REASON_VALUES[p.reason].map((name) => [name, p.params[name] ?? ""]));
-    out.push({ uid: p.uid, fact: factId(p.reason, n), values });
-  }
-  return out;
+  return meshProblems(input)
+    .filter((p) => reasons.includes(p.reason))
+    .map((p) => ({ uid: p.uid, fact: factId(p.reason), values: Object.fromEntries(REASON_VALUES[p.reason].map((name) => [name, p.params[name] ?? ""])) }));
 }
 
 export const JUDGE_IDS = Object.keys(JUDGES) as JudgeId[];

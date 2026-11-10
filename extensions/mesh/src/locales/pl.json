@@ -433,5 +433,6 @@
   "problem.TlsConflict": "Ustawia tryb TLS {{mode}} wobec {{host}}, którego obciążenia przyjmują tylko mTLS Istio (STRICT): wywołania się nie udają. Należy użyć ISTIO_MUTUAL.",
   "problem.ConflictingVirtualService": "Host {{host}} na {{gateway}} jest już zajęty przez starszą usługę wirtualną {{other}}: trasy tej usługi nie są osiągane.",
   "problem.InvalidVirtualService": "Ma host * przy powiązaniu z sidecarami (mesh): Istio ją odrzuca, więc żadna z jej tras nie jest używana.",
-  "linkerdViz": "linkerd-viz jest zainstalowany: odsetek powodzeń, liczba żądań i opóźnienie tych Podów są w sekcji „Żądania”."
+  "linkerdViz": "linkerd-viz jest zainstalowany: odsetek powodzeń, liczba żądań i opóźnienie tych Podów są w sekcji „Żądania”.",
+  "showRequests": "Pokaż metryki żądań"
 }

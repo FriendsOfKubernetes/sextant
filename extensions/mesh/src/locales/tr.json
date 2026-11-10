@@ -425,5 +425,6 @@
   "problem.TlsConflict": "Yalnızca Istio mTLS kabul eden (STRICT) iş yüklerine sahip {{host}} için TLS modunu {{mode}} yapıyor: çağrılar başarısız olur. ISTIO_MUTUAL kullanın.",
   "problem.ConflictingVirtualService": "{{gateway}} üzerindeki {{host}} ana makinesi daha eski {{other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
   "problem.InvalidVirtualService": "Sidecar'lara (mesh) bağlıyken * ana makinesine sahip: Istio onu reddeder, bu yüzden rotalarının hiçbiri kullanılmaz.",
-  "linkerdViz": "linkerd-viz kurulu: bu Pod'ların başarı oranı, istek hızı ve gecikmesi \"İstekler\" bölümünde."
+  "linkerdViz": "linkerd-viz kurulu: bu Pod'ların başarı oranı, istek hızı ve gecikmesi \"İstekler\" bölümünde.",
+  "showRequests": "İstek metriklerini göster"
 }

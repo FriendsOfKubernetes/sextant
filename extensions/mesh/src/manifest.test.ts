@@ -17,7 +17,7 @@ import { MESH_KINDS } from "./engine/kinds";
 import { parsePeerAuthentication } from "./engine/mtls";
 import { meshProblems, type AnalysisInput } from "./engine/problems";
 import judgeCalls from "../fixtures/judge-calls.json";
-import { factId, factsOf, judge, JUDGE_IDS, JUDGES, REASON_VALUES, type JudgeId, type JudgedInput, type JudgedOutput } from "./judges";
+import { factId, judge, JUDGE_IDS, JUDGES, REASON_VALUES, type JudgeId, type JudgedInput, type JudgedOutput } from "./judges";
 import { arr, get, record, str } from "./engine/util";
 import en from "./locales/en.json";
 
@@ -119,6 +119,7 @@ const builtIn = (id: string, obj: KubeObject) => {
 const BUILT_IN_HOVER: Record<string, (o: KubeObject) => string[]> = {
   "vs-hosts": (o) => parseVirtualService(o).hosts,
   "se-hosts": (o) => parseServiceEntry(o).hosts,
+  "gw-hosts": (o) => [...new Set(parseIstioGateway(o).servers.flatMap((s) => s.hosts))],
   "hr-hosts": (o) => arr(get(o, "spec", "hostnames")).map(String),
 };
 
@@ -219,22 +220,6 @@ const OBJECTS: Record<string, KubeObject[]> = {
 };
 const objectsOf = (group: string, kind: string) => OBJECTS[`${group}/${kind}`] ?? OBJECTS[kind] ?? [];
 
-/**
- * Where a column cannot say what the built-in said (README, "Requirements and limits"): the extension's cell for the
- * object, else `undefined` (the same as the built-in).
- */
-function known(id: string, o: KubeObject): string | undefined {
-  const name = o.metadata.name;
-  // Three or more gateways named without a namespace in a row are written as they are (5 placeholders per case).
-  if (id === "vs-gateways" && name === "gw4") return "a/x, shop/b, mesh";
-  if (id === "vs-gateways" && name === "gw5") return "a/x, b/y, c/z, mesh";
-  // 20 hosts and more: "+19+" (20 cases a column).
-  if (id === "vs-hosts" && name === "hosts-20") return "h0.example.com +19+";
-  // A Gateway's hosts: every host once as written (its `namespace/` part too), not "first +N" without it.
-  if (id === "gw-hosts") return [...new Set(arr(get(o, "spec", "servers")).flatMap((s) => arr(get(s, "hosts")).map(String)))].join(", ");
-  return undefined;
-}
-
 describe("the columns, against the built-in ones", () => {
   it("are the built-in columns of every kind, in its order and widths, after the namespace", () => {
     for (const def of MESH_KINDS) {
@@ -284,11 +269,11 @@ describe("the columns, against the built-in ones", () => {
     for (const k of manifest.contributes.kinds) expect(k.printerColumns, k.kind).toBe(false);
   });
 
-  it("show what the built-in columns showed on every object, but where pinned", () => {
+  it("show what the built-in columns showed on every object", () => {
     let compared = 0;
     for (const c of manifest.contributes.columns) {
       for (const o of objectsOf(c.kind.group, c.kind.kind)) {
-        const want = known(c.id, o) ?? builtIn(c.id, o);
+        const want = builtIn(c.id, o);
         // The built-in's `"Kind name"` of a missing part kept its space; Sextant trims a cell.
         expect(cell(c.id, o), `${c.id} ${o.metadata.name}`).toBe(want.trim());
         compared++;
@@ -297,26 +282,48 @@ describe("the columns, against the built-in ones", () => {
     expect(compared).toBeGreaterThan(80);
   });
 
-  it("hover a hosts column's hosts, joined by commas where the built-in put one per line", () => {
-    for (const id of ["vs-hosts", "se-hosts", "hr-hosts"]) {
+  it("hover a hosts column's hosts, one per line, as the built-in", () => {
+    for (const id of Object.keys(BUILT_IN_HOVER)) {
       const c = columnOf(id);
       for (const o of objectsOf(c.kind.group, c.kind.kind)) {
         const list = BUILT_IN_HOVER[id]!(o);
-        expect(hover(id, o), `${id} ${o.metadata.name}`).toBe(list.length > 0 ? list.join(", ") : undefined);
+        expect(hover(id, o), `${id} ${o.metadata.name}`).toBe(list.length > 0 ? list.join("\n") : undefined);
       }
     }
   });
 
-  it("a ServiceEntry's short host is shown as written, where the built-in wrote it in full", () => {
-    const short = obj(NET, "ServiceEntry", "shop", "short", { hosts: ["Billing"] });
-    expect(builtIn("se-hosts", short)).toBe("billing.shop.svc.cluster.local");
-    expect(cell("se-hosts", short)).toBe("Billing");
+  it("a ServiceEntry's short host in full and in lower case, as the built-in wrote it", () => {
+    for (const hosts of [["Billing"], [" Api.Example.COM ", "*", "x"], ["*.Wild.example.com", "short"]]) {
+      const o = obj(NET, "ServiceEntry", "shop", "short", { hosts });
+      expect(cell("se-hosts", o), hosts.join()).toBe(builtIn("se-hosts", o));
+      expect(hover("se-hosts", o), hosts.join()).toBe(parseServiceEntry(o).hosts.join("\n"));
+    }
   });
 
-  it("a Gateway's hosts: every host once, with its namespace part, where the built-in showed the first and how many more", () => {
-    const g = obj(NET, "Gateway", "gw", "many", { servers: [{ hosts: ["shop/a.example.com", "b.example.com"] }, { hosts: ["b.example.com"] }] });
-    expect(builtIn("gw-hosts", g)).toBe("a.example.com +1");
-    expect(cell("gw-hosts", g)).toBe("shop/a.example.com, b.example.com");
+  it("a Gateway's hosts without their namespace part, in lower case, each once: the first and how many more", () => {
+    const g = obj(NET, "Gateway", "gw", "many", { servers: [{ hosts: ["shop/A.example.com", "b.example.com"] }, { hosts: ["b.example.com", "*/b.example.com", "./c.example.com"] }] });
+    expect(builtIn("gw-hosts", g)).toBe("a.example.com +2");
+    expect(cell("gw-hosts", g)).toBe(builtIn("gw-hosts", g));
+  });
+
+  it("a VirtualService's gateways with their namespace, however many", () => {
+    for (const gateways of [["a", "b", "c"], ["a", "x/b", "mesh", "c", "d"], [], undefined]) {
+      const o = obj(NET, "VirtualService", "shop", "g", gateways === undefined ? { hosts: ["a"] } : { hosts: ["a"], gateways });
+      expect(cell("vs-gateways", o), JSON.stringify(gateways)).toBe(builtIn("vs-gateways", o));
+    }
+  });
+
+  it("hosts columns of any length: the first and how many more", () => {
+    for (const n of [25, 100]) {
+      const o = obj(NET, "VirtualService", "shop", "many", { hosts: hosts(n) });
+      expect(cell("vs-hosts", o)).toBe(builtIn("vs-hosts", o));
+    }
+  });
+
+  it("a Mesh TLS Authentication's identities with their repeats, as the built-in", () => {
+    const o = obj("policy.linkerd.io/v1alpha1", "MeshTLSAuthentication", "shop", "dup", { identities: ["web", "a"], identityRefs: [{ kind: "ServiceAccount", name: "web" }] });
+    expect(cell("mtls-ids", o)).toBe(builtIn("mtls-ids", o));
+    expect(cell("mtls-ids", o)).toBe("web, a, web");
   });
 
   it("numbers sort as numbers", () => {
@@ -370,9 +377,10 @@ function extensionProblems(world: KubeObject[]): Found[] {
         const lookups = d.lookups ?? [];
         expect(lookups.length).toBe(1);
         const judged = (lookups[0] as { judged?: { judge: string; fact: string } }).judged!;
-        const fact = given.get(judged.judge)!.find((f) => f.uid === o.metadata.uid && f.fact === judged.fact);
-        if (!fact) continue;
-        out.push({ uid: o.metadata.uid!, reason: d.reason, message: (d.message ?? "").replace(/\{\{fact:([A-Za-z][A-Za-z0-9-]*)\}\}/g, (_, n: string) => fact.values?.[n] ?? "") });
+        // `each` (ADR-0168 amendment): one problem per entry of the fact the answer gives for the object.
+        expect((rule.when as { each?: boolean }).each).toBe(true);
+        for (const fact of given.get(judged.judge)!.filter((f) => f.uid === o.metadata.uid && f.fact === judged.fact))
+          out.push({ uid: o.metadata.uid!, reason: d.reason, message: (d.message ?? "").replace(/\{\{fact:([A-Za-z][A-Za-z0-9-]*)\}\}/g, (_, n: string) => fact.values?.[n] ?? "") });
       }
     }
   }
@@ -472,13 +480,15 @@ describe("the problem rules, against the built-in category", () => {
     // Each judge reads what its engine reads, and declares every fact its rules use.
     for (const j of judgesOf) {
       const declared = JUDGES[j.id as JudgeId];
-      expect(j.reads.map((r) => [r.kind.group, r.kind.kind, r.paths])).toEqual(declared.reads.map((r) => [r.group, r.kind, [r.path]]));
-      for (const reason of declared.reasons)
-        for (let n = 1; n <= factsOf(reason); n++) {
-          const fact = j.facts.find((f) => f.id === factId(reason, n));
-          expect(fact?.values, `${j.id} ${reason} ${n}`).toEqual(REASON_VALUES[reason]);
-          expect(rules.some((r) => (r.when as { fact?: string }).fact === fact!.id)).toBe(true);
-        }
+      expect(j.reads.map((r) => [r.kind.group, r.kind.kind, r.paths, (r as { optional?: boolean }).optional ?? false])).toEqual(
+        declared.reads.map((r) => [r.group, r.kind, [r.path], r.optional ?? false]),
+      );
+      expect(j.facts.map((f) => f.id)).toEqual(declared.reasons.map(factId));
+      for (const reason of declared.reasons) {
+        const fact = j.facts.find((f) => f.id === factId(reason));
+        expect(fact?.values, `${j.id} ${reason}`).toEqual(REASON_VALUES[reason]);
+        expect(rules.filter((r) => (r.when as { fact?: string }).fact === fact!.id)).toHaveLength(1);
+      }
     }
   });
 
@@ -508,11 +518,19 @@ describe("the problem rules, against the built-in category", () => {
     expect(extensionProblems(few)).toHaveLength(3);
   });
 
-  it("tell at most five findings of a reason on one object, in the built-in order", () => {
-    const six = [vsAt("shop", "six", { hosts: ["a"], ...route("g1", "g2", "g3", "g4", "g5", "g6") }), svc("shop", "a")];
-    const built = builtInProblems(six);
-    expect(built).toHaveLength(6);
-    expect(extensionProblems(six).map((p) => p.message)).toEqual(built.slice(0, 5).map((p) => p.message));
+  it("tell every finding of a reason on one object, in the built-in order", () => {
+    const many = [vsAt("shop", "many", { hosts: ["a"], ...route("g1", "g2", "g3", "g4", "g5", "g6", "g7") }), svc("shop", "a")];
+    const built = builtInProblems(many);
+    expect(built).toHaveLength(7);
+    expect(extensionProblems(many).map((p) => p.message)).toEqual(built.map((p) => p.message));
+  });
+
+  it("judge where the cluster serves no ServiceEntries, DestinationRules or PeerAuthentications, as the built-in took them as empty; not without Gateways", () => {
+    const optional = (j: Judge) => j.reads.filter((r) => (r as { optional?: boolean }).optional).map((r) => `${j.id}:${r.kind.kind}`);
+    expect(judgesOf.flatMap(optional)).toEqual(["hosts:DestinationRule", "hosts:ServiceEntry", "tls:PeerAuthentication"]);
+    // Without those kinds the world is the same as with none of their objects: the built-in's answer.
+    const w = world().filter((o) => !["ServiceEntry", "DestinationRule", "PeerAuthentication"].includes(o.kind!));
+    expect(sorted(extensionProblems(w))).toEqual(sorted(builtInProblems(w)));
   });
 
   it("an object's finding goes to the object the built-in named (the newer VirtualService, the DestinationRule)", () => {
@@ -524,7 +542,8 @@ describe("the problem rules, against the built-in category", () => {
   });
 
   it("count on the Istio section, and give \"Only problems\" to VirtualServices and DestinationRules, as the built-in did", () => {
-    expect(manifest.contributes.sectionBadges).toEqual([{ section: "istio", label: { one: en.problemsCount_one, other: en.problemsCount_other } }]);
+    // As the built-in counter, which counted the findings, not the objects.
+    expect(manifest.contributes.sectionBadges).toEqual([{ section: "istio", count: "problems", label: { one: en.problemsCount_one, other: en.problemsCount_other } }]);
     const judged = new Set(rules.map((r) => `${r.kind.group}/${r.kind.kind}`));
     expect([...judged].sort()).toEqual(["networking.istio.io/DestinationRule", "networking.istio.io/VirtualService"]);
     for (const k of manifest.contributes.kinds) expect((k as { problemWhen?: unknown }).problemWhen, k.kind).toBeUndefined();

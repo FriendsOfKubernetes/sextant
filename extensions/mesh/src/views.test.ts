@@ -28,6 +28,9 @@ let host: TestHost;
 let root: HTMLElement;
 let stop: () => void = () => undefined;
 let hidden: boolean[] = [];
+/** The extension's session storage (`storage` with `session: true`): this run only, apart from the stored data. */
+let session = new Map<string, unknown>();
+let kindsAnswer: unknown[] = [];
 
 type Start = "details" | "membership" | "page";
 async function open(what: Start, options: { obj?: KubeObject; group?: string; version?: string; kinds?: unknown[]; blocks?: Record<string, boolean>; language?: string } = {}): Promise<void> {
@@ -35,6 +38,8 @@ async function open(what: Start, options: { obj?: KubeObject; group?: string; ve
   let blocks = options.blocks ?? {};
   const obj = options.obj;
   hidden = [];
+  session = new Map();
+  kindsAnswer = options.kinds ?? [...CORE, ...ISTIO];
   host = await startTestHost({
     context: {
       view: what === "page" ? "page" : "details",
@@ -46,7 +51,10 @@ async function open(what: Start, options: { obj?: KubeObject; group?: string; ve
     },
     handlers: {
       "resources.get": () => copy(obj),
-      kinds: () => options.kinds ?? [...CORE, ...ISTIO],
+      kinds: () => kindsAnswer,
+      "storage.get": ({ key, session: s }: { key: string; session?: boolean }) => ((s ? session : host.storage).has(key) ? (s ? session : host.storage).get(key) : null),
+      "storage.set": ({ key, value, session: s }: { key: string; value: unknown; session?: boolean }) => void (s ? session : host.storage).set(key, value),
+      "ui.revealSection": () => null,
       "ui.setHidden": ({ hidden: h }: { hidden: boolean }) => void hidden.push(h),
       "ui.setBlockOpen": (params: { id: string; open: boolean }) => {
         blocks = { ...blocks, [params.id]: params.open };
@@ -109,10 +117,14 @@ describe("details of a VirtualService", () => {
     await expect.poll(() => [...root.querySelectorAll("button")].find((b) => b.textContent === "Check a request…")).toBeTruthy();
     [...root.querySelectorAll("button")].find((b) => b.textContent === "Check a request…")!.click();
     await expect.poll(() => host.calls.some((c) => c.method === "ui.navigate")).toBe(true);
-    const stored = host.storage.get("check:test-cluster") as { form: { url: string; from: string; namespace: string }; checked: unknown };
+    // In the session storage only, as the built-in kept the form in memory; and the details close, as the built-in's did.
+    expect(host.storage.has("check:test-cluster")).toBe(false);
+    const stored = session.get("check:test-cluster") as { form: { url: string; from: string; namespace: string }; checked: unknown };
     expect(stored.form).toMatchObject({ url: "http://reviews/", from: "mesh", namespace: "shop" });
     expect(stored.checked).toEqual(stored.form);
-    expect(host.calls.find((c) => c.method === "ui.navigate")?.params).toEqual({ page: "request-check" });
+    expect(host.calls.find((c) => c.method === "ui.navigate")?.params).toEqual({ page: "request-check", closeDetails: true });
+    // The built-in button's icon.
+    expect(host.calls.some((c) => c.method === "ui.icon" && (c.params as { name: string }).name === "requestCheck")).toBe(true);
   });
 
   it("a closed block draws nothing, and is remembered in Sextant's memory", async () => {
@@ -192,6 +204,16 @@ describe("the Service mesh section of a pod", () => {
     await expect.poll(text).toContain("Denied");
   });
 
+  it("follows discovery: shown once the cluster serves Istio, as the built-in followed it", async () => {
+    const plain = { apiVersion: "v1", kind: "Pod", metadata: { name: "p", namespace: "shop" }, spec: { containers: [{ name: "app" }] } } as KubeObject;
+    await open("membership", { obj: plain, kinds: CORE });
+    await expect.poll(() => hidden.at(-1)).toBe(true);
+    kindsAnswer = [...CORE, ...ISTIO];
+    host.setContext({ kindsVersion: 2 });
+    await expect.poll(text).toContain("Not in the Istio mesh");
+    expect(hidden.at(-1)).toBe(false);
+  });
+
   it("is hidden where no mesh is served and the pod has no proxy", async () => {
     const plain = { apiVersion: "v1", kind: "Pod", metadata: { name: "p", namespace: "shop" }, spec: { containers: [{ name: "app" }] } } as KubeObject;
     await open("membership", { obj: plain, kinds: CORE });
@@ -212,6 +234,9 @@ describe("the Service mesh section of a pod", () => {
     await expect.poll(() => watchOf("Namespace", (p) => p.fieldSelector === "metadata.name=linkerd-viz")).toBeTruthy();
     watchOf("Namespace", (p) => p.fieldSelector === "metadata.name=linkerd-viz")!.emit(snapshot([{ kind: "Namespace", metadata: { name: "linkerd-viz" } } as KubeObject]));
     await expect.poll(text).toContain("linkerd-viz is installed");
+    // "Show request metrics" opens Sextant's Requests section of the same panel, as the built-in button did.
+    [...root.querySelectorAll("button")].find((b) => b.textContent === "Show request metrics")!.click();
+    await expect.poll(() => host.calls.find((c) => c.method === "ui.revealSection")?.params).toEqual({ id: "requestHealth" });
   });
 });
 
@@ -247,17 +272,19 @@ describe("the Request routing page", () => {
     watchOf("Service", (p) => p.namespaces?.includes("shop") === true && !p.metadataOnly)!.emit(snapshot(fx.services!));
     watchOf("Pod")!.emit(snapshot(fx.pods!));
     await expect.poll(() => root.querySelector("[data-step='destinations']")?.textContent).toContain("1 of 2 ready");
-    // The form is kept for the cluster, without the headers.
-    expect((host.storage.get("check:test-cluster") as { checked: { url: string } }).checked.url).toBe("http://reviews:9080/x");
+    // The form is kept for the cluster in this run's memory.
+    expect((session.get("check:test-cluster") as { checked: { url: string } }).checked.url).toBe("http://reviews:9080/x");
+    expect(host.storage.size).toBe(0);
   });
 
-  it("takes the header route; the headers are never stored", async () => {
+  it("takes the header route; the headers are kept for the run only, never on disk", async () => {
     await open("page");
     await feedIstio();
     await expect.poll(() => root.querySelector("[data-field=url]")).toBeTruthy();
     const result = await check("http://reviews.shop/", "x-user: alice");
     expect(result.querySelector("[data-step='route']")?.textContent).toContain("Header x-user is alice");
-    expect(JSON.stringify(host.storage.get("check:test-cluster"))).not.toContain("alice");
+    expect(JSON.stringify(session.get("check:test-cluster"))).toContain("x-user: alice");
+    expect(host.storage.size).toBe(0);
   });
 
   it("follows a request through an Istio gateway", async () => {
@@ -284,7 +311,7 @@ describe("the Request routing page", () => {
 
   it("opens prefilled and checked, as a VirtualService's “Check a request…” left it", async () => {
     await open("page");
-    host.storage.set("check:test-cluster", { form: { url: "http://reviews/", method: "GET", from: "mesh", namespace: "shop", labels: "", gateway: "" }, checked: { url: "http://reviews/", method: "GET", from: "mesh", namespace: "shop", labels: "", gateway: "" } });
+    session.set("check:test-cluster", { form: { url: "http://reviews/", method: "GET", from: "mesh", namespace: "shop", labels: "", gateway: "" }, checked: { url: "http://reviews/", method: "GET", from: "mesh", namespace: "shop", labels: "", gateway: "" } });
     stop();
     stop = startRequestCheck(host.sextant, root);
     await feedIstio();

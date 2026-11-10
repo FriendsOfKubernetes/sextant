@@ -56,7 +56,7 @@ function istioBlock(m: IstioMembership, template: boolean): UiContent[] {
   ];
 }
 
-function linkerdBlock(m: LinkerdMembership, template: boolean, viz: ListState | undefined): UiContent[] {
+function linkerdBlock(sextant: Sextant, m: LinkerdMembership, template: boolean, viz: ListState | undefined): UiContent[] {
   const on = m.inject === "enabled" || m.inject === "ingress";
   const sentence = template ? (on ? "membership.linkerd.injectedPods" : "membership.linkerd.noInjection") : `membership.linkerd.${m.mode}`;
   return [
@@ -67,9 +67,18 @@ function linkerdBlock(m: LinkerdMembership, template: boolean, viz: ListState | 
       ["controlPlane", m.controlPlane],
       ["proxyVersion", m.proxyVersion],
     ]),
-    // Golden metrics (#212) are in Sextant's "Requests" section; here only linkerd-viz's presence is told.
-    viz && viz.status === "ready" && viz.items.length > 0 ? muted(t("linkerdViz")) : null,
+    // Golden metrics (#212) are in Sextant's "Requests" section; here only linkerd-viz's presence is checked, to point
+    // there.
+    viz && viz.status === "ready" && viz.items.length > 0 ? el("p", "sx-muted mesh-muted", t("linkerdViz"), " ", showRequests(sextant)) : null,
   ];
+}
+
+/** The built-in "Show request metrics": opens, scrolls to and focuses Sextant's Requests section of the same panel. */
+function showRequests(sextant: Sextant): HTMLButtonElement {
+  const button = el("button", "sx-link", t("showRequests"));
+  button.type = "button";
+  button.addEventListener("click", () => void sextant.ui.revealSection("requestHealth").catch(() => undefined));
+  return button;
 }
 
 function mtlsBlock(sextant: Sextant, config: MeshConfig, namespace: string, labels: Record<string, string>): UiContent[] {
@@ -229,7 +238,7 @@ function sectionView(sextant: Sextant, state: State, blocks: Blocks, lists: List
     view.showAuthz ? block(blocks, BLOCKS.authz, t("blocks.whoMayCall"), () => whoMayCallBlock(sextant, config(), namespace, pod.labels, state.caller, onCaller)) : null,
     view.showLinkerd
       ? block(blocks, BLOCKS.linkerd, t("blocks.linkerdMembership"), () =>
-          linkerdBlock(view.linkerd, template, meshed && requestHealthApplies(ref.kind) ? lists.get(oneNamespace("linkerd-viz")) : undefined),
+          linkerdBlock(sextant, view.linkerd, template, meshed && requestHealthApplies(ref.kind) ? lists.get(oneNamespace("linkerd-viz")) : undefined),
         )
       : null,
   ];
@@ -302,7 +311,8 @@ export function startMembership(sextant: Sextant, root: HTMLElement): () => void
     },
   );
   const offBlocks = sextant.onContextChange(() => {
-    if (memory.follow()) schedule();
+    const kindsMoved = discovery.follow();
+    if (memory.follow() || kindsMoved) schedule();
   });
   return () => {
     stopped = true;

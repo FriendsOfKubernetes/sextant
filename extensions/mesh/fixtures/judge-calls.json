@@ -244,13 +244,48 @@
        ]
       }
      }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "first",
+      "namespace": "pay",
+      "uid": "vs-first",
+      "creationTimestamp": "2026-01-01T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "billing"
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "second",
+      "namespace": "pay",
+      "uid": "vs-second",
+      "creationTimestamp": "2026-01-02T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "billing",
+        "billing.pay"
+       ]
+      }
+     }
     }
    ]
   },
   "answer": [
    {
     "uid": "vs-reviews",
-    "fact": "missing-subset-1",
+    "fact": "missing-subset",
     "values": {
      "host": "reviews",
      "subset": "v3",
@@ -259,14 +294,14 @@
    },
    {
     "uid": "vs-unknown",
-    "fact": "unknown-host-1",
+    "fact": "unknown-host",
     "values": {
      "host": "nope"
     }
    },
    {
     "uid": "vs-unknown",
-    "fact": "unknown-host-2",
+    "fact": "unknown-host",
     "values": {
      "host": "httpbin.org"
     }
@@ -473,13 +508,48 @@
        ]
       }
      }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "first",
+      "namespace": "pay",
+      "uid": "vs-first",
+      "creationTimestamp": "2026-01-01T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "billing"
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "second",
+      "namespace": "pay",
+      "uid": "vs-second",
+      "creationTimestamp": "2026-01-02T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "billing",
+        "billing.pay"
+       ]
+      }
+     }
     }
    ]
   },
   "answer": [
    {
     "uid": "vs-gw",
-    "fact": "missing-gateway-1",
+    "fact": "missing-gateway",
     "values": {
      "gateway": "istio-ingress/gone"
     }
@@ -673,6 +743,41 @@
        ]
       }
      }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "first",
+      "namespace": "pay",
+      "uid": "vs-first",
+      "creationTimestamp": "2026-01-01T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "billing"
+       ]
+      }
+     }
+    },
+    {
+     "apiVersion": "networking.istio.io/v1",
+     "kind": "VirtualService",
+     "metadata": {
+      "name": "second",
+      "namespace": "pay",
+      "uid": "vs-second",
+      "creationTimestamp": "2026-01-02T00:00:00Z"
+     },
+     "values": {
+      ".spec": {
+       "hosts": [
+        "billing",
+        "billing.pay"
+       ]
+      }
+     }
     }
    ]
   },
@@ -682,6 +787,15 @@
     "fact": "invalid-virtual-service",
     "values": {
      "host": "*"
+    }
+   },
+   {
+    "uid": "vs-second",
+    "fact": "conflicting-virtual-service",
+    "values": {
+     "host": "billing.pay.svc.cluster.local",
+     "gateway": "mesh",
+     "other": "pay/first"
     }
    }
   ]

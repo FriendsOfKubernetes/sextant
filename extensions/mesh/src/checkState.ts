@@ -1,7 +1,7 @@
 // The form of the Istio request check (#155), and how a VirtualService's "Check a request…" opens the page prefilled.
-// The built-in kept the form per cluster in the window's memory while Sextant ran; a page frame starts anew each time it
-// is shown, so the form is kept in the extension's storage per cluster instead — without the headers, which may carry
-// credentials and are never written to disk (they are kept only while the page shows).
+// As the built-in kept it per cluster in the window's memory while Sextant ran, it is kept per cluster in the
+// extension's session storage (`storage` with `session: true`): in memory for this run only, never written to disk —
+// the headers too, which may carry credentials.
 import type { JsonValue, Sextant } from "@sextant/extension-sdk";
 import type { MeshRequestInput } from "./engine/routing";
 
@@ -40,7 +40,7 @@ export interface ClusterCheck {
 
 const storageKey = (clusterId: string) => `check:${clusterId}`;
 
-/** A stored form, read leniently (anything unexpected gives the empty form's value); headers are never stored. */
+/** A kept form, read leniently (anything unexpected gives the empty form's value). */
 function formOf(value: unknown): MeshForm | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const v = value as Record<string, unknown>;
@@ -48,7 +48,7 @@ function formOf(value: unknown): MeshForm | null {
   return {
     url: text("url"),
     method: text("method"),
-    headers: "",
+    headers: text("headers"),
     from: v.from === "gateway" ? "gateway" : "mesh",
     namespace: text("namespace"),
     labels: text("labels"),
@@ -59,6 +59,7 @@ function formOf(value: unknown): MeshForm | null {
 const stored = (form: MeshForm): JsonValue => ({
   url: form.url,
   method: form.method,
+  headers: form.headers,
   from: form.from,
   namespace: form.namespace,
   labels: form.labels,
@@ -68,7 +69,7 @@ const stored = (form: MeshForm): JsonValue => ({
 /** The cluster's form and the one last checked, as stored; the empty form without one. */
 export async function loadCheck(sextant: Sextant, clusterId: string): Promise<ClusterCheck> {
   try {
-    const value = (await sextant.storage.get(storageKey(clusterId))) as unknown;
+    const value = (await sextant.storage.get(storageKey(clusterId), { session: true })) as unknown;
     const v = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
     return { form: formOf(v.form) ?? EMPTY_MESH_FORM, checked: formOf(v.checked) };
   } catch {
@@ -77,16 +78,16 @@ export async function loadCheck(sextant: Sextant, clusterId: string): Promise<Cl
 }
 
 export async function saveCheck(sextant: Sextant, clusterId: string, check: ClusterCheck): Promise<void> {
-  await sextant.storage.set(storageKey(clusterId), { form: stored(check.form), checked: check.checked ? stored(check.checked) : null });
+  await sextant.storage.set(storageKey(clusterId), { form: stored(check.form), checked: check.checked ? stored(check.checked) : null }, { session: true });
 }
 
-/** Opens the request check with `form` filled in and checked. */
+/** Opens the request check with `form` filled in and checked, closing the details panel as the built-in did. */
 export async function openMeshCheck(sextant: Sextant, prefill: Partial<MeshForm>): Promise<void> {
   const clusterId = sextant.context.clusterId;
   if (!clusterId) return;
   const form = { ...EMPTY_MESH_FORM, ...prefill };
   await saveCheck(sextant, clusterId, { form, checked: form }).catch(() => undefined);
-  await sextant.ui.navigate(MESH_CHECK_PAGE).catch(() => undefined);
+  await sextant.ui.navigate(MESH_CHECK_PAGE, { closeDetails: true }).catch(() => undefined);
 }
 
 /** `key=value` pairs separated by commas or new lines; `bad` lists what could not be read. */

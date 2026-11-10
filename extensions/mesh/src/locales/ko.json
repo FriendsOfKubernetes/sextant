@@ -421,5 +421,6 @@
   "problem.TlsConflict": "{{host}}에 대해 TLS 모드를 {{mode}}(으)로 설정했지만 해당 워크로드는 Istio mTLS(STRICT)만 받습니다. 호출이 실패합니다. ISTIO_MUTUAL을 사용하세요.",
   "problem.ConflictingVirtualService": "{{gateway}}의 호스트 {{host}}은(는) 이미 더 오래된 가상 서비스 {{other}}이(가) 사용하고 있습니다. 이 가상 서비스의 경로에는 도달하지 않습니다.",
   "problem.InvalidVirtualService": "Sidecar(mesh)에 바인딩된 상태에서 호스트 *를 가집니다. Istio가 거부하므로 경로가 하나도 사용되지 않습니다.",
-  "linkerdViz": "linkerd-viz가 설치되어 있습니다. 이 Pod들의 성공률, 요청 속도, 지연 시간은 '요청' 섹션에 있습니다."
+  "linkerdViz": "linkerd-viz가 설치되어 있습니다. 이 Pod들의 성공률, 요청 속도, 지연 시간은 '요청' 섹션에 있습니다.",
+  "showRequests": "요청 메트릭 보기"
 }

@@ -421,5 +421,6 @@
   "problem.TlsConflict": "对 {{host}} 设置了 TLS 模式 {{mode}}，而其工作负载只接受 Istio mTLS（STRICT）：调用会失败。请使用 ISTIO_MUTUAL。",
   "problem.ConflictingVirtualService": "{{gateway}} 上的主机 {{host}} 已被更早的虚拟服务 {{other}} 占用：此虚拟服务的路由不会生效。",
   "problem.InvalidVirtualService": "绑定到 Sidecar（mesh）时使用了主机 *：Istio 会拒绝它，因此它的路由都不会被使用。",
-  "linkerdViz": "已安装 linkerd-viz：这些 Pod 的成功率、请求速率和延迟见“请求”部分。"
+  "linkerdViz": "已安装 linkerd-viz：这些 Pod 的成功率、请求速率和延迟见“请求”部分。",
+  "showRequests": "显示请求指标"
 }

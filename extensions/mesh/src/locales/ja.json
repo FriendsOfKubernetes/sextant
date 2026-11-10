@@ -421,5 +421,6 @@
   "problem.TlsConflict": "{{host}} への TLS モードを {{mode}} にしていますが、そのワークロードは Istio の mTLS (STRICT) しか受け付けません。呼び出しは失敗します。ISTIO_MUTUAL を使用してください。",
   "problem.ConflictingVirtualService": "{{gateway}} のホスト {{host}} は、より古い仮想サービス {{other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
   "problem.InvalidVirtualService": "Sidecar (mesh) にバインドされているのにホスト * を持っています。Istio が拒否するため、ルートはどれも使われません。",
-  "linkerdViz": "linkerd-viz がインストールされています。これらの Pod の成功率、リクエストレート、レイテンシは「リクエスト」セクションにあります。"
+  "linkerdViz": "linkerd-viz がインストールされています。これらの Pod の成功率、リクエストレート、レイテンシは「リクエスト」セクションにあります。",
+  "showRequests": "リクエストメトリクスを表示"
 }

@@ -40,7 +40,8 @@ agents get the mesh problems (`get_problems`) from this extension's rules and ju
 filters, selection bar and details, and Edit and Delete as on every kind:
 - Istio: Virtual Services, Destination Rules, Gateways, Service Entries, Sidecars, Workload Entries, Peer
   Authentications, Request Authentications, Authorization Policies, Telemetry, and the page **Request routing**
-  (`request-check`). The section's counter shows how many Istio objects have a problem of the rules below.
+  (`request-check`). The section's counter shows how many problems of the rules below the Istio objects have, as the built-in counted
+  its findings.
 - Linkerd: Service Profiles, Servers, HTTP Routes, Authorization Policies, Server Authorizations, Mesh TLS
   Authentications, Network Authentications.
 
@@ -48,12 +49,14 @@ filters, selection bar and details, and Edit and Delete as on every kind:
 
 **Columns**, in place of the CRDs' own printer columns (left out, as the built-in view did), after Namespace, in the
 built-in widths and order:
-- Virtual Services: **Hosts** (`vs-hosts`: the first host and how many more, every host in its hover), **Gateways**
+- Virtual Services: **Hosts** (`vs-hosts`: the first host and how many more, every host on a line of its own in its hover), **Gateways**
   (`vs-gateways`: `namespace/name` of each, `mesh` where none is set), **Routes** (`vs-routes`: HTTP, TCP and TLS
   routes).
 - Destination Rules: **Host** (`dr-host`), **Subsets** (`dr-subsets`), **TLS mode** (`dr-tls`).
-- Gateways: **Servers** (`gw-servers`: port/protocol of each), **Hosts** (`gw-hosts`).
-- Service Entries: **Hosts** (`se-hosts`), **Location** (`se-location`), **Resolution** (`se-resolution`).
+- Gateways: **Servers** (`gw-servers`: port/protocol of each), **Hosts** (`gw-hosts`: without their `namespace/` part, in lower case, each once,
+  the first and how many more).
+- Service Entries: **Hosts** (`se-hosts`: in lower case, a short name completed in the entry's namespace,
+  `<name>.<namespace>.svc.cluster.local`), **Location** (`se-location`), **Resolution** (`se-resolution`).
 - Sidecars: **Applies to** (`sc-applies`: the workload selector's labels, else every workload of the namespace — of the
   mesh in `istio-system`), **Egress hosts** (`sc-egress`: how many).
 - Workload Entries: **Address** (`we-address`), **Service account** (`we-sa`).
@@ -74,7 +77,7 @@ built-in widths and order:
 **Details** (`mesh`) of every Istio and Linkerd kind, untitled, in the built-in section's place (in place of the
 generic fields, before the conditions), drawn with the SDK's UI kit in the classes of Sextant's own details panel:
 - Virtual Service: its mesh problems (every problem the built-in found, below) as warning lines; hosts, gateways,
-  export and **Check a request…** (opens Request routing prefilled with its first host, its namespace or its gateway,
+  export and **Check a request…** (closes the details and opens Request routing prefilled with its first host, its namespace or its gateway,
   and checked); **HTTP routes** as cards ("Route 2 (default)": when — each match block's conditions in words — then —
   the weighted destinations and subsets, a delegate, a direct response or a redirect — and timeouts, retries, faults,
   mirroring and rewrites); **TCP and TLS routes** as a table.
@@ -99,7 +102,8 @@ kind's own fields (shown where the cluster serves Istio or Linkerd kinds, or the
   against the AuthorizationPolicies that apply — allowed, denied, up to the external authorizer, or "Cannot tell" with
   why — each policy's verdict and what it could not evaluate, and the policies attached by `targetRef` that are not.
 - **Linkerd membership**: proxy, native proxy or not, `linkerd.io/inject` and where it is set, the control plane, the
-  proxy version, "restart to join", and that linkerd-viz is installed (its metrics are in Sextant's Requests section).
+  proxy version, "restart to join", and that linkerd-viz is installed with **Show request metrics**, which opens Sextant's Requests section of the
+  same details.
 
 **Request routing** (`request-check`, Istio section): a URL, method and headers sent from a workload in the mesh (its
 namespace and labels) or into an Istio Gateway, and the result in steps — the gateway and its server, the
@@ -130,8 +134,8 @@ details sections, with the panel's "Expand all" and "Collapse all"); a closed bl
   Services their names only (each with its name, namespace, uid and creation time). The backend's code runs for them in
   Sextant's sandbox with no way to the cluster or the network (ADR-0168); Sextant asks for that separately at install,
   listing the kinds and fields.
-- The extension keeps the Request routing form per cluster in its storage — without the headers, which may carry
-  credentials and are never written to disk.
+- The extension keeps the Request routing form per cluster in its session storage: in memory for this run only, never
+  written to disk (the headers too, which may carry credentials), as the built-in kept it.
 - An update asks for consent again when it needs a new kind or action, or changes a grant.
 
 ## Problems
@@ -144,28 +148,29 @@ other VirtualService).
 
 The checks are the built-in view's (`meshProblems`, unchanged), run by the extension's backend as problem judges
 (ADR-0168): Sextant sends each judge the objects it reads, it answers which objects have which finding, and each rule
-below turns one finding into a problem. An object's findings of one reason are told up to five (the first five in the
-built-in order), each by its own rule.
+below turns every finding of its reason into a problem of its own (`each`), in the built-in order. Where the cluster
+serves no DestinationRules, ServiceEntries or PeerAuthentications, a judge gets none of them (an optional read), as the
+built-in took such a kind as empty; without Gateways no gateway is judged missing, as the built-in did.
 
 | Judge | Reads | Tells |
 |---|---|---|
-| `hosts` | VirtualService (`.spec`), DestinationRule (`.spec`), ServiceEntry (`.spec`), Service (`.metadata.name`) | MissingDestinationRule, MissingSubset, UnknownHost |
+| `hosts` | VirtualService (`.spec`), DestinationRule (`.spec`, optional), ServiceEntry (`.spec`, optional), Service (`.metadata.name`) | MissingDestinationRule, MissingSubset, UnknownHost |
 | `gateways` | VirtualService (`.spec`), Gateway (`.metadata.name`) | MissingGateway |
 | `virtual-services` | VirtualService (`.spec`) | ConflictingVirtualService, InvalidVirtualService |
-| `tls` | DestinationRule (`.spec`), PeerAuthentication (`.spec`) | TlsConflict |
+| `tls` | DestinationRule (`.spec`), PeerAuthentication (`.spec`, optional) | TlsConflict |
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
-| `unknown-host-1`, `unknown-host-2`, `unknown-host-3`, `unknown-host-4`, `unknown-host-5` | VirtualService | `UnknownHost`: a destination (HTTP, TCP or TLS route, or mirror) names a Service that does not exist (judged only where the objects name at most 40 namespaces) or a host no ServiceEntry covers — the first, second, third, fourth, fifth finding of the reason on the object; judge `hosts` | none | no |
-| `missing-destination-rule-1`, `missing-destination-rule-2`, `missing-destination-rule-3`, `missing-destination-rule-4`, `missing-destination-rule-5` | VirtualService | `MissingDestinationRule`: a destination names a subset, and no DestinationRule covers its host where a client of the VirtualService's namespace looks (its namespace, the Service's, `istio-system`; `exportTo`, wildcards, the most specific first) — the first, second, third, fourth, fifth finding of the reason on the object; judge `hosts` | none | no |
-| `missing-subset-1`, `missing-subset-2`, `missing-subset-3`, `missing-subset-4`, `missing-subset-5` | VirtualService | `MissingSubset`: the DestinationRule of the host has no subset of that name — the first, second, third, fourth, fifth finding of the reason on the object; judge `hosts` | none | no |
-| `missing-gateway-1`, `missing-gateway-2`, `missing-gateway-3`, `missing-gateway-4`, `missing-gateway-5` | VirtualService | `MissingGateway`: the VirtualService is bound to an Istio Gateway (`name` or `namespace/name`) that does not exist — the first, second, third, fourth, fifth finding of the reason on the object; judge `gateways` | none | no |
-| `invalid-virtual-service` | VirtualService | `InvalidVirtualService`: the host `*` (blanks around it too) while bound to the sidecars (`mesh`, or no gateways): Istio rejects it, so none of its routes are used; judge `virtual-services` | none | no |
-| `conflicting-virtual-service-1`, `conflicting-virtual-service-2`, `conflicting-virtual-service-3`, `conflicting-virtual-service-4`, `conflicting-virtual-service-5` | VirtualService | `ConflictingVirtualService`: an older VirtualService has the same host on the sidecars (Istio uses only the oldest), or on the same Gateway with a catch-all route, and their exports overlap — the first, second, third, fourth, fifth finding of the reason on the object; judge `virtual-services` | none | no |
-| `tls-conflict` | DestinationRule | `TlsConflict`: a DestinationRule without a workload selector sets a TLS mode other than `ISTIO_MUTUAL` toward a Service whose namespace's (else the mesh's) PeerAuthentication is `STRICT`; judge `tls` | none | no |
+| `unknown-host` | VirtualService | `UnknownHost`: a destination (HTTP, TCP or TLS route, or mirror) names a Service that does not exist (judged only where the objects name at most 40 namespaces) or a host no ServiceEntry covers; every finding; judge `hosts` | none | no |
+| `missing-destination-rule` | VirtualService | `MissingDestinationRule`: a destination names a subset, and no DestinationRule covers its host where a client of the VirtualService's namespace looks (its namespace, the Service's, `istio-system`; `exportTo`, wildcards, the most specific first); every finding; judge `hosts` | none | no |
+| `missing-subset` | VirtualService | `MissingSubset`: the DestinationRule of the host has no subset of that name; every finding; judge `hosts` | none | no |
+| `missing-gateway` | VirtualService | `MissingGateway`: the VirtualService is bound to an Istio Gateway (`name` or `namespace/name`) that does not exist; every finding; judge `gateways` | none | no |
+| `invalid-virtual-service` | VirtualService | `InvalidVirtualService`: the host `*` (blanks around it too) while bound to the sidecars (`mesh`, or no gateways): Istio rejects it, so none of its routes are used; every finding; judge `virtual-services` | none | no |
+| `conflicting-virtual-service` | VirtualService | `ConflictingVirtualService`: an older VirtualService has the same host on the sidecars (Istio uses only the oldest), or on the same Gateway with a catch-all route, and their exports overlap; every finding; judge `virtual-services` | none | no |
+| `tls-conflict` | DestinationRule | `TlsConflict`: a DestinationRule without a workload selector sets a TLS mode other than `ISTIO_MUTUAL` toward a Service whose namespace's (else the mesh's) PeerAuthentication is `STRICT`; every finding; judge `tls` | none | no |
 
 While a judge cannot tell — one of the lists it reads is loading, failed, capped, not served or not readable in a
-namespace, holds more than 5000 objects or 8 MiB, its call failed, or it answered more than 2000 facts — its rules give
+namespace, holds more than 5000 objects or 8 MiB, its call failed, or it answered more than 10 000 facts — its rules give
 no problem: "cannot tell", never a problem.
 
 ## Metrics
@@ -196,39 +201,21 @@ None: the extension is read-only and has no action of its own (ADR-0089).
   deciding, an action Istio rejects being "unknown") are the built-in engines', ported unchanged, and say so where they
   matter.
 - Where it differs from the former built-in views, because the extension API cannot say it yet:
-  - **Problems a judge cannot tell** where the built-in could: a list it reads that is not served or not readable in a
-    namespace (no ServiceEntry CRD, no Gateway CRD, Services of one namespace refused) makes the whole judge silent,
-    where the built-in took an unserved kind as empty and an unreadable namespace's Services as unknown; more than
-    5000 objects of a kind, 8 MiB in all or 2000 findings likewise. More than five findings of one reason on one
-    object are not told past the fifth. Closed by a judge's answer for objects whose reads are complete (a read kind
-    marked `optional`, given as empty when not served) and a larger fact budget.
-  - The **section's counter** counts objects with a problem, where the built-in counted problems (a VirtualService
-    with two missing gateways counts once).
-  - **Gateways column of a VirtualService**: three gateways named without a namespace, or four or more, are written as
-    they are, where the built-in put each one's namespace in front (a case text holds at most 5 placeholders). Closed
-    by a list column's item cases reading text items and the object (`{{item}}`, `{{.metadata.namespace}}`).
-  - **Hosts columns** (Virtual Services, Service Entries, HTTP Routes): exact up to 19 more hosts ("+19+" past it, 20
-    cases a column); the hover joins the hosts with commas where the built-in put one per line. A Service Entry's short
-    host is shown as written, where the built-in wrote it in full in the entry's namespace and in lower case. Closed by
-    a column format `firstPlus` and placeholder filters `|lower` and `|istioHost`.
-  - **Hosts of a Gateway**: every host once, as written (`*/shop.example.com`), where the built-in showed the first
-    without its `namespace/` part and how many more. Closed by `firstPlus` with an `|after:/` per item.
-  - **Mesh TLS Authentications' Identities** name each identity once (`joinPaths`); the built-in repeated one written
-    both ways.
-  - **"Check a request…"** leaves the details panel open over the page, where the built-in closed it. Closed by
-    `ui.navigate` closing the details when a details frame asks it (or a `closeDetails` option).
-  - **Request routing** keeps its form per cluster in the extension's storage, so it survives a restart, where the
-    built-in kept it only while Sextant ran; the headers are not kept at all when the page is left. Closed by a
-    session-only storage (`storage.session`).
-  - **Linkerd's "Show request metrics"** button, which opened Sextant's Requests section of the same details, is
-    gone; the line saying linkerd-viz is installed stays. Closed by a `ui.revealSection({id})` of Sextant's own
-    details sections.
+  - **Problems a judge cannot tell** where the built-in could: a kind it reads that is served but not readable in a
+    namespace (Services of one namespace refused) makes the whole judge silent, where the built-in took that
+    namespace's Services as unknown and judged the rest; more than 5000 objects of a kind, 8 MiB in all or 10 000
+    findings likewise, where the built-in watched without a cap. Closed by a judge read that tells the judge which
+    namespaces it could not read (`reads[].partial: true`, the namespaces given beside the objects), and accepted
+    caps otherwise.
+  - **Agents** get a judged problem only where they may read every kind its judge read (ADR-0168), where the
+    built-in's mesh findings were kept when everything they rested on was readable to the agent (`needs`). Closed by
+    a judge's fact naming what it rests on (`needs: [{kind, namespace, name?}]`, re-checked in Rust as refs are).
+  - **Hosts of a Gateway** drop the part up to the last `/` (`|after:/`), the built-in up to the first; an Istio
+    gateway host has one `/` at most, so they differ only on a host Istio refuses. Closed by `|after:` taking the
+    first place with a flag, if ever needed.
   - The details' tables are the SDK's: their columns cannot be resized and remembered, and do not keep from wrapping,
     as Sextant's details tables do; the blocks' memory is kept per section, so a block closed in the built-in view
-    opens once again here (#417). The "Check a request…" and "Check" buttons have no icon (the SDK's `ui.button`
-    takes none).
-  - What the cluster serves is read once per frame; the built-in followed discovery when a CRD was installed while a
-    view showed.
+    opens once again here (#417).
 - Checked by tests on the built-in view's fixtures (Bookinfo) and variants against the built-in engines, columns and
   views, whose tests were ported too; not yet tried on a live cluster.
 
@@ -268,7 +255,8 @@ npx vitest run --config sdk/vitest.config.ts ../extensions/mesh
 - `src/manifest.test.ts` judges the manifest's columns and problem rules with Sextant's own window engine
   (`src/extensions/columns.tsx`, `src/extensions/problemRules.ts`) and compares them with the built-in columns and
   `meshProblems` over the whole configuration on the fixtures in `fixtures/` and variants of them (every reason,
-  the cases the built-in store's 40 namespaces left unjudged, more than five findings), pinning each difference
+  the cases the built-in store's 40 namespaces left unjudged, every finding of a reason, kinds not served), pinning
+  each difference
   above; `fixtures/judge-calls.json` holds judge calls on the fixtures with the answers the built component gave in
   Sextant's runtime (`cargo run -p sextant-ext-runtime --example run -- dist/backend.wasm problemJudge:<id> <params>`),
   which the tests check the judges still give; `views.test.ts`

@@ -306,6 +306,7 @@
   "sectionBadges": [
    {
     "section": "istio",
+    "count": "problems",
     "label": {
      "one": "{{count}} Istio configuration problem",
      "other": "{{count}} Istio configuration problems"
@@ -432,190 +433,9 @@
     "afterColumn": "namespace",
     "width": "minmax(160px, 2fr)",
     "paths": [
-     ".spec.hosts[0]"
+     ".spec.hosts"
     ],
-    "cases": [
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 1
-      },
-      "text": "{{.spec.hosts[0]}}",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 2
-      },
-      "text": "{{.spec.hosts[0]}} +1",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 3
-      },
-      "text": "{{.spec.hosts[0]}} +2",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 4
-      },
-      "text": "{{.spec.hosts[0]}} +3",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 5
-      },
-      "text": "{{.spec.hosts[0]}} +4",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 6
-      },
-      "text": "{{.spec.hosts[0]}} +5",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 7
-      },
-      "text": "{{.spec.hosts[0]}} +6",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 8
-      },
-      "text": "{{.spec.hosts[0]}} +7",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 9
-      },
-      "text": "{{.spec.hosts[0]}} +8",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 10
-      },
-      "text": "{{.spec.hosts[0]}} +9",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 11
-      },
-      "text": "{{.spec.hosts[0]}} +10",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 12
-      },
-      "text": "{{.spec.hosts[0]}} +11",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 13
-      },
-      "text": "{{.spec.hosts[0]}} +12",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 14
-      },
-      "text": "{{.spec.hosts[0]}} +13",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 15
-      },
-      "text": "{{.spec.hosts[0]}} +14",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 16
-      },
-      "text": "{{.spec.hosts[0]}} +15",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 17
-      },
-      "text": "{{.spec.hosts[0]}} +16",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 18
-      },
-      "text": "{{.spec.hosts[0]}} +17",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 19
-      },
-      "text": "{{.spec.hosts[0]}} +18",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "above",
-       "path": ".spec.hosts|count",
-       "value": 19
-      },
-      "text": "{{.spec.hosts[0]}} +19+",
-      "tooltip": "{{.spec.hosts|join}}"
-     }
-    ]
+    "format": "firstPlus"
    },
    {
     "kind": {
@@ -627,8 +447,9 @@
     "afterColumn": "vs-hosts",
     "width": "minmax(120px, 2fr)",
     "paths": [
-     ".metadata.name"
+     ".spec.gateways"
     ],
+    "format": "list",
     "cases": [
      {
       "when": {
@@ -640,754 +461,38 @@
        }
       },
       "text": "mesh"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 1
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[0]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[0]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        }
-       ]
-      },
-      "text": "{{.metadata.namespace}}/{{.spec.gateways[0]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 1
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[0]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[0]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        }
-       ]
-      },
-      "text": "{{.spec.gateways[0]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 2
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[0]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[0]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[1]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[1]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        }
-       ]
-      },
-      "text": "{{.metadata.namespace}}/{{.spec.gateways[0]}}, {{.metadata.namespace}}/{{.spec.gateways[1]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 2
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[0]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[0]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[1]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[1]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        }
-       ]
-      },
-      "text": "{{.spec.gateways[0]}}, {{.metadata.namespace}}/{{.spec.gateways[1]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 2
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[0]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[0]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[1]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[1]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        }
-       ]
-      },
-      "text": "{{.metadata.namespace}}/{{.spec.gateways[0]}}, {{.spec.gateways[1]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 2
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[0]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[0]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[1]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[1]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        }
-       ]
-      },
-      "text": "{{.spec.gateways[0]}}, {{.spec.gateways[1]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 3
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[0]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[0]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[1]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[1]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[2]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[2]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        }
-       ]
-      },
-      "text": "{{.spec.gateways[0]}}, {{.metadata.namespace}}/{{.spec.gateways[1]}}, {{.metadata.namespace}}/{{.spec.gateways[2]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 3
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[0]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[0]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[1]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[1]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[2]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[2]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        }
-       ]
-      },
-      "text": "{{.metadata.namespace}}/{{.spec.gateways[0]}}, {{.spec.gateways[1]}}, {{.metadata.namespace}}/{{.spec.gateways[2]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 3
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[0]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[0]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[1]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[1]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[2]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[2]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        }
-       ]
-      },
-      "text": "{{.spec.gateways[0]}}, {{.spec.gateways[1]}}, {{.metadata.namespace}}/{{.spec.gateways[2]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 3
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[0]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[0]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[1]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[1]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[2]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[2]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        }
-       ]
-      },
-      "text": "{{.metadata.namespace}}/{{.spec.gateways[0]}}, {{.metadata.namespace}}/{{.spec.gateways[1]}}, {{.spec.gateways[2]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 3
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[0]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[0]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[1]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[1]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[2]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[2]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        }
-       ]
-      },
-      "text": "{{.spec.gateways[0]}}, {{.metadata.namespace}}/{{.spec.gateways[1]}}, {{.spec.gateways[2]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 3
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "equals",
-            "path": ".spec.gateways[0]",
-            "value": "mesh"
-           },
-           {
-            "type": "contains",
-            "path": ".spec.gateways[0]",
-            "values": [
-             "/"
-            ]
-           }
-          ]
-         }
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[1]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[1]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[2]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[2]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        }
-       ]
-      },
-      "text": "{{.metadata.namespace}}/{{.spec.gateways[0]}}, {{.spec.gateways[1]}}, {{.spec.gateways[2]}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".spec.gateways|count",
-         "value": 3
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[0]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[0]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[1]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[1]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.gateways[2]",
-           "value": "mesh"
-          },
-          {
-           "type": "contains",
-           "path": ".spec.gateways[2]",
-           "values": [
-            "/"
-           ]
-          }
-         ]
-        }
-       ]
-      },
-      "text": "{{.spec.gateways[0]}}, {{.spec.gateways[1]}}, {{.spec.gateways[2]}}"
-     },
-     {
-      "when": {
-       "type": "above",
-       "path": ".spec.gateways|count",
-       "value": 0
-      },
-      "text": "{{.spec.gateways|join}}"
      }
-    ]
+    ],
+    "items": {
+     "cases": [
+      {
+       "when": {
+        "type": "equals",
+        "path": ".",
+        "value": "mesh"
+       },
+       "text": "mesh"
+      },
+      {
+       "when": {
+        "type": "contains",
+        "path": ".",
+        "values": [
+         "/"
+        ]
+       },
+       "text": "{{.}}"
+      },
+      {
+       "when": {
+        "type": "exists",
+        "path": "."
+       },
+       "text": "{{$.metadata.namespace}}/{{.}}"
+      }
+     ],
+     "separator": ", "
+    }
    },
    {
     "kind": {
@@ -1558,9 +663,29 @@
     "paths": [
      ".spec.servers[*].hosts[*]"
     ],
-    "format": "list",
+    "format": "firstPlus",
     "joinPaths": true,
-    "separator": ", "
+    "items": {
+     "cases": [
+      {
+       "when": {
+        "type": "contains",
+        "path": ".",
+        "values": [
+         "/"
+        ]
+       },
+       "text": "{{.|after:/|lower}}"
+      },
+      {
+       "when": {
+        "type": "exists",
+        "path": "."
+       },
+       "text": "{{.|lower}}"
+      }
+     ]
+    }
    },
    {
     "kind": {
@@ -1572,190 +697,20 @@
     "afterColumn": "namespace",
     "width": "minmax(160px, 2fr)",
     "paths": [
-     ".spec.hosts[0]"
+     ".spec.hosts"
     ],
-    "cases": [
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 1
-      },
-      "text": "{{.spec.hosts[0]}}",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 2
-      },
-      "text": "{{.spec.hosts[0]}} +1",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 3
-      },
-      "text": "{{.spec.hosts[0]}} +2",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 4
-      },
-      "text": "{{.spec.hosts[0]}} +3",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 5
-      },
-      "text": "{{.spec.hosts[0]}} +4",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 6
-      },
-      "text": "{{.spec.hosts[0]}} +5",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 7
-      },
-      "text": "{{.spec.hosts[0]}} +6",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 8
-      },
-      "text": "{{.spec.hosts[0]}} +7",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 9
-      },
-      "text": "{{.spec.hosts[0]}} +8",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 10
-      },
-      "text": "{{.spec.hosts[0]}} +9",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 11
-      },
-      "text": "{{.spec.hosts[0]}} +10",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 12
-      },
-      "text": "{{.spec.hosts[0]}} +11",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 13
-      },
-      "text": "{{.spec.hosts[0]}} +12",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 14
-      },
-      "text": "{{.spec.hosts[0]}} +13",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 15
-      },
-      "text": "{{.spec.hosts[0]}} +14",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 16
-      },
-      "text": "{{.spec.hosts[0]}} +15",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 17
-      },
-      "text": "{{.spec.hosts[0]}} +16",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 18
-      },
-      "text": "{{.spec.hosts[0]}} +17",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hosts|count",
-       "value": 19
-      },
-      "text": "{{.spec.hosts[0]}} +18",
-      "tooltip": "{{.spec.hosts|join}}"
-     },
-     {
-      "when": {
-       "type": "above",
-       "path": ".spec.hosts|count",
-       "value": 19
-      },
-      "text": "{{.spec.hosts[0]}} +19+",
-      "tooltip": "{{.spec.hosts|join}}"
-     }
-    ]
+    "format": "firstPlus",
+    "items": {
+     "cases": [
+      {
+       "when": {
+        "type": "exists",
+        "path": "."
+       },
+       "text": "{{.|lower|fqdn:$.metadata.namespace}}"
+      }
+     ]
+    }
    },
    {
     "kind": {
@@ -2414,190 +1369,9 @@
     "afterColumn": "hr-parents",
     "width": "minmax(160px, 2fr)",
     "paths": [
-     ".spec.hostnames[0]"
+     ".spec.hostnames"
     ],
-    "cases": [
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 1
-      },
-      "text": "{{.spec.hostnames[0]}}",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 2
-      },
-      "text": "{{.spec.hostnames[0]}} +1",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 3
-      },
-      "text": "{{.spec.hostnames[0]}} +2",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 4
-      },
-      "text": "{{.spec.hostnames[0]}} +3",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 5
-      },
-      "text": "{{.spec.hostnames[0]}} +4",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 6
-      },
-      "text": "{{.spec.hostnames[0]}} +5",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 7
-      },
-      "text": "{{.spec.hostnames[0]}} +6",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 8
-      },
-      "text": "{{.spec.hostnames[0]}} +7",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 9
-      },
-      "text": "{{.spec.hostnames[0]}} +8",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 10
-      },
-      "text": "{{.spec.hostnames[0]}} +9",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 11
-      },
-      "text": "{{.spec.hostnames[0]}} +10",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 12
-      },
-      "text": "{{.spec.hostnames[0]}} +11",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 13
-      },
-      "text": "{{.spec.hostnames[0]}} +12",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 14
-      },
-      "text": "{{.spec.hostnames[0]}} +13",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 15
-      },
-      "text": "{{.spec.hostnames[0]}} +14",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 16
-      },
-      "text": "{{.spec.hostnames[0]}} +15",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 17
-      },
-      "text": "{{.spec.hostnames[0]}} +16",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 18
-      },
-      "text": "{{.spec.hostnames[0]}} +17",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "equals",
-       "path": ".spec.hostnames|count",
-       "value": 19
-      },
-      "text": "{{.spec.hostnames[0]}} +18",
-      "tooltip": "{{.spec.hostnames|join}}"
-     },
-     {
-      "when": {
-       "type": "above",
-       "path": ".spec.hostnames|count",
-       "value": 19
-      },
-      "text": "{{.spec.hostnames[0]}} +19+",
-      "tooltip": "{{.spec.hostnames|join}}"
-     }
-    ]
+    "format": "firstPlus"
    },
    {
     "kind": {
@@ -2736,7 +1510,7 @@
      ".spec.identityRefs[*].name"
     ],
     "format": "list",
-    "joinPaths": true,
+    "joinPaths": "keep",
     "separator": ", "
    },
    {
@@ -2775,7 +1549,8 @@
       },
       "paths": [
        ".spec"
-      ]
+      ],
+      "optional": true
      },
      {
       "kind": {
@@ -2784,7 +1559,8 @@
       },
       "paths": [
        ".spec"
-      ]
+      ],
+      "optional": true
      },
      {
       "kind": {
@@ -2798,104 +1574,20 @@
     ],
     "facts": [
      {
-      "id": "unknown-host-1",
+      "id": "unknown-host",
       "values": [
        "host"
       ]
      },
      {
-      "id": "unknown-host-2",
-      "values": [
-       "host"
-      ]
-     },
-     {
-      "id": "unknown-host-3",
-      "values": [
-       "host"
-      ]
-     },
-     {
-      "id": "unknown-host-4",
-      "values": [
-       "host"
-      ]
-     },
-     {
-      "id": "unknown-host-5",
-      "values": [
-       "host"
-      ]
-     },
-     {
-      "id": "missing-destination-rule-1",
+      "id": "missing-destination-rule",
       "values": [
        "host",
        "subset"
       ]
      },
      {
-      "id": "missing-destination-rule-2",
-      "values": [
-       "host",
-       "subset"
-      ]
-     },
-     {
-      "id": "missing-destination-rule-3",
-      "values": [
-       "host",
-       "subset"
-      ]
-     },
-     {
-      "id": "missing-destination-rule-4",
-      "values": [
-       "host",
-       "subset"
-      ]
-     },
-     {
-      "id": "missing-destination-rule-5",
-      "values": [
-       "host",
-       "subset"
-      ]
-     },
-     {
-      "id": "missing-subset-1",
-      "values": [
-       "host",
-       "subset",
-       "rule"
-      ]
-     },
-     {
-      "id": "missing-subset-2",
-      "values": [
-       "host",
-       "subset",
-       "rule"
-      ]
-     },
-     {
-      "id": "missing-subset-3",
-      "values": [
-       "host",
-       "subset",
-       "rule"
-      ]
-     },
-     {
-      "id": "missing-subset-4",
-      "values": [
-       "host",
-       "subset",
-       "rule"
-      ]
-     },
-     {
-      "id": "missing-subset-5",
+      "id": "missing-subset",
       "values": [
        "host",
        "subset",
@@ -2928,31 +1620,7 @@
     ],
     "facts": [
      {
-      "id": "missing-gateway-1",
-      "values": [
-       "gateway"
-      ]
-     },
-     {
-      "id": "missing-gateway-2",
-      "values": [
-       "gateway"
-      ]
-     },
-     {
-      "id": "missing-gateway-3",
-      "values": [
-       "gateway"
-      ]
-     },
-     {
-      "id": "missing-gateway-4",
-      "values": [
-       "gateway"
-      ]
-     },
-     {
-      "id": "missing-gateway-5",
+      "id": "missing-gateway",
       "values": [
        "gateway"
       ]
@@ -2980,39 +1648,7 @@
       ]
      },
      {
-      "id": "conflicting-virtual-service-1",
-      "values": [
-       "host",
-       "gateway",
-       "other"
-      ]
-     },
-     {
-      "id": "conflicting-virtual-service-2",
-      "values": [
-       "host",
-       "gateway",
-       "other"
-      ]
-     },
-     {
-      "id": "conflicting-virtual-service-3",
-      "values": [
-       "host",
-       "gateway",
-       "other"
-      ]
-     },
-     {
-      "id": "conflicting-virtual-service-4",
-      "values": [
-       "host",
-       "gateway",
-       "other"
-      ]
-     },
-     {
-      "id": "conflicting-virtual-service-5",
+      "id": "conflicting-virtual-service",
       "values": [
        "host",
        "gateway",
@@ -3040,7 +1676,8 @@
       },
       "paths": [
        ".spec"
-      ]
+      ],
+      "optional": true
      }
     ],
     "facts": [
@@ -3057,8 +1694,8 @@
   ],
   "problems": [
    {
-    "id": "unknown-host-1",
-    "title": "Virtual service routes to an unknown host (1)",
+    "id": "unknown-host",
+    "title": "Virtual service routes to an unknown host",
     "kind": {
      "group": "networking.istio.io",
      "kind": "VirtualService"
@@ -3066,14 +1703,15 @@
     "when": {
      "type": "judged",
      "judge": "hosts",
-     "fact": "unknown-host-1"
+     "fact": "unknown-host",
+     "each": true
     },
     "reason": "UnknownHost",
     "message": "Routes to {{fact:host}}, which no Service or ServiceEntry has: the proxy answers 503."
    },
    {
-    "id": "unknown-host-2",
-    "title": "Virtual service routes to an unknown host (2)",
+    "id": "missing-destination-rule",
+    "title": "Virtual service routes to a subset with no destination rule",
     "kind": {
      "group": "networking.istio.io",
      "kind": "VirtualService"
@@ -3081,74 +1719,15 @@
     "when": {
      "type": "judged",
      "judge": "hosts",
-     "fact": "unknown-host-2"
-    },
-    "reason": "UnknownHost",
-    "message": "Routes to {{fact:host}}, which no Service or ServiceEntry has: the proxy answers 503."
-   },
-   {
-    "id": "unknown-host-3",
-    "title": "Virtual service routes to an unknown host (3)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "unknown-host-3"
-    },
-    "reason": "UnknownHost",
-    "message": "Routes to {{fact:host}}, which no Service or ServiceEntry has: the proxy answers 503."
-   },
-   {
-    "id": "unknown-host-4",
-    "title": "Virtual service routes to an unknown host (4)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "unknown-host-4"
-    },
-    "reason": "UnknownHost",
-    "message": "Routes to {{fact:host}}, which no Service or ServiceEntry has: the proxy answers 503."
-   },
-   {
-    "id": "unknown-host-5",
-    "title": "Virtual service routes to an unknown host (5)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "unknown-host-5"
-    },
-    "reason": "UnknownHost",
-    "message": "Routes to {{fact:host}}, which no Service or ServiceEntry has: the proxy answers 503."
-   },
-   {
-    "id": "missing-destination-rule-1",
-    "title": "Virtual service routes to a subset with no destination rule (1)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "missing-destination-rule-1"
+     "fact": "missing-destination-rule",
+     "each": true
     },
     "reason": "MissingDestinationRule",
     "message": "Routes to subset {{fact:subset}} of {{fact:host}}, but no destination rule covers that host: the proxy answers 503."
    },
    {
-    "id": "missing-destination-rule-2",
-    "title": "Virtual service routes to a subset with no destination rule (2)",
+    "id": "missing-subset",
+    "title": "Virtual service routes to a subset its destination rule lacks",
     "kind": {
      "group": "networking.istio.io",
      "kind": "VirtualService"
@@ -3156,134 +1735,15 @@
     "when": {
      "type": "judged",
      "judge": "hosts",
-     "fact": "missing-destination-rule-2"
-    },
-    "reason": "MissingDestinationRule",
-    "message": "Routes to subset {{fact:subset}} of {{fact:host}}, but no destination rule covers that host: the proxy answers 503."
-   },
-   {
-    "id": "missing-destination-rule-3",
-    "title": "Virtual service routes to a subset with no destination rule (3)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "missing-destination-rule-3"
-    },
-    "reason": "MissingDestinationRule",
-    "message": "Routes to subset {{fact:subset}} of {{fact:host}}, but no destination rule covers that host: the proxy answers 503."
-   },
-   {
-    "id": "missing-destination-rule-4",
-    "title": "Virtual service routes to a subset with no destination rule (4)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "missing-destination-rule-4"
-    },
-    "reason": "MissingDestinationRule",
-    "message": "Routes to subset {{fact:subset}} of {{fact:host}}, but no destination rule covers that host: the proxy answers 503."
-   },
-   {
-    "id": "missing-destination-rule-5",
-    "title": "Virtual service routes to a subset with no destination rule (5)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "missing-destination-rule-5"
-    },
-    "reason": "MissingDestinationRule",
-    "message": "Routes to subset {{fact:subset}} of {{fact:host}}, but no destination rule covers that host: the proxy answers 503."
-   },
-   {
-    "id": "missing-subset-1",
-    "title": "Virtual service routes to a subset its destination rule lacks (1)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "missing-subset-1"
+     "fact": "missing-subset",
+     "each": true
     },
     "reason": "MissingSubset",
     "message": "Routes to subset {{fact:subset}} of {{fact:host}}, which destination rule {{fact:rule}} does not define: the proxy answers 503."
    },
    {
-    "id": "missing-subset-2",
-    "title": "Virtual service routes to a subset its destination rule lacks (2)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "missing-subset-2"
-    },
-    "reason": "MissingSubset",
-    "message": "Routes to subset {{fact:subset}} of {{fact:host}}, which destination rule {{fact:rule}} does not define: the proxy answers 503."
-   },
-   {
-    "id": "missing-subset-3",
-    "title": "Virtual service routes to a subset its destination rule lacks (3)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "missing-subset-3"
-    },
-    "reason": "MissingSubset",
-    "message": "Routes to subset {{fact:subset}} of {{fact:host}}, which destination rule {{fact:rule}} does not define: the proxy answers 503."
-   },
-   {
-    "id": "missing-subset-4",
-    "title": "Virtual service routes to a subset its destination rule lacks (4)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "missing-subset-4"
-    },
-    "reason": "MissingSubset",
-    "message": "Routes to subset {{fact:subset}} of {{fact:host}}, which destination rule {{fact:rule}} does not define: the proxy answers 503."
-   },
-   {
-    "id": "missing-subset-5",
-    "title": "Virtual service routes to a subset its destination rule lacks (5)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "hosts",
-     "fact": "missing-subset-5"
-    },
-    "reason": "MissingSubset",
-    "message": "Routes to subset {{fact:subset}} of {{fact:host}}, which destination rule {{fact:rule}} does not define: the proxy answers 503."
-   },
-   {
-    "id": "missing-gateway-1",
-    "title": "Virtual service bound to a missing gateway (1)",
+    "id": "missing-gateway",
+    "title": "Virtual service bound to a missing gateway",
     "kind": {
      "group": "networking.istio.io",
      "kind": "VirtualService"
@@ -3291,67 +1751,8 @@
     "when": {
      "type": "judged",
      "judge": "gateways",
-     "fact": "missing-gateway-1"
-    },
-    "reason": "MissingGateway",
-    "message": "Bound to gateway {{fact:gateway}}, which does not exist."
-   },
-   {
-    "id": "missing-gateway-2",
-    "title": "Virtual service bound to a missing gateway (2)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "gateways",
-     "fact": "missing-gateway-2"
-    },
-    "reason": "MissingGateway",
-    "message": "Bound to gateway {{fact:gateway}}, which does not exist."
-   },
-   {
-    "id": "missing-gateway-3",
-    "title": "Virtual service bound to a missing gateway (3)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "gateways",
-     "fact": "missing-gateway-3"
-    },
-    "reason": "MissingGateway",
-    "message": "Bound to gateway {{fact:gateway}}, which does not exist."
-   },
-   {
-    "id": "missing-gateway-4",
-    "title": "Virtual service bound to a missing gateway (4)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "gateways",
-     "fact": "missing-gateway-4"
-    },
-    "reason": "MissingGateway",
-    "message": "Bound to gateway {{fact:gateway}}, which does not exist."
-   },
-   {
-    "id": "missing-gateway-5",
-    "title": "Virtual service bound to a missing gateway (5)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "gateways",
-     "fact": "missing-gateway-5"
+     "fact": "missing-gateway",
+     "each": true
     },
     "reason": "MissingGateway",
     "message": "Bound to gateway {{fact:gateway}}, which does not exist."
@@ -3366,14 +1767,15 @@
     "when": {
      "type": "judged",
      "judge": "virtual-services",
-     "fact": "invalid-virtual-service"
+     "fact": "invalid-virtual-service",
+     "each": true
     },
     "reason": "InvalidVirtualService",
     "message": "Has the host * while bound to the sidecars (mesh): Istio rejects it, so none of its routes are used."
    },
    {
-    "id": "conflicting-virtual-service-1",
-    "title": "Virtual service's host taken by an older one (1)",
+    "id": "conflicting-virtual-service",
+    "title": "Virtual service's host taken by an older one",
     "kind": {
      "group": "networking.istio.io",
      "kind": "VirtualService"
@@ -3381,67 +1783,8 @@
     "when": {
      "type": "judged",
      "judge": "virtual-services",
-     "fact": "conflicting-virtual-service-1"
-    },
-    "reason": "ConflictingVirtualService",
-    "message": "Host {{fact:host}} on {{fact:gateway}} is already taken by the older virtual service {{fact:other}}: the routes of this one are not reached."
-   },
-   {
-    "id": "conflicting-virtual-service-2",
-    "title": "Virtual service's host taken by an older one (2)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "virtual-services",
-     "fact": "conflicting-virtual-service-2"
-    },
-    "reason": "ConflictingVirtualService",
-    "message": "Host {{fact:host}} on {{fact:gateway}} is already taken by the older virtual service {{fact:other}}: the routes of this one are not reached."
-   },
-   {
-    "id": "conflicting-virtual-service-3",
-    "title": "Virtual service's host taken by an older one (3)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "virtual-services",
-     "fact": "conflicting-virtual-service-3"
-    },
-    "reason": "ConflictingVirtualService",
-    "message": "Host {{fact:host}} on {{fact:gateway}} is already taken by the older virtual service {{fact:other}}: the routes of this one are not reached."
-   },
-   {
-    "id": "conflicting-virtual-service-4",
-    "title": "Virtual service's host taken by an older one (4)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "virtual-services",
-     "fact": "conflicting-virtual-service-4"
-    },
-    "reason": "ConflictingVirtualService",
-    "message": "Host {{fact:host}} on {{fact:gateway}} is already taken by the older virtual service {{fact:other}}: the routes of this one are not reached."
-   },
-   {
-    "id": "conflicting-virtual-service-5",
-    "title": "Virtual service's host taken by an older one (5)",
-    "kind": {
-     "group": "networking.istio.io",
-     "kind": "VirtualService"
-    },
-    "when": {
-     "type": "judged",
-     "judge": "virtual-services",
-     "fact": "conflicting-virtual-service-5"
+     "fact": "conflicting-virtual-service",
+     "each": true
     },
     "reason": "ConflictingVirtualService",
     "message": "Host {{fact:host}} on {{fact:gateway}} is already taken by the older virtual service {{fact:other}}: the routes of this one are not reached."
@@ -3456,7 +1799,8 @@
     "when": {
      "type": "judged",
      "judge": "tls",
-     "fact": "tls-conflict"
+     "fact": "tls-conflict",
+     "each": true
     },
     "reason": "TlsConflict",
     "message": "Sets TLS mode {{fact:mode}} toward {{fact:host}}, whose workloads accept only Istio mTLS (STRICT): calls fail. Use ISTIO_MUTUAL."
@@ -3515,58 +1859,18 @@
    "columns.sa-server.cases.2.text": "Jeder Workload des Namespace",
    "columns.mtls-ids.title": "Identitäten",
    "columns.na-networks.title": "Netze",
-   "problems.unknown-host-1.title": "Virtual Service leitet an einen unbekannten Host (1)",
-   "problems.unknown-host-1.message": "Leitet an {{fact:host}} weiter, den kein Service und kein ServiceEntry hat: Der Proxy antwortet mit 503.",
-   "problems.unknown-host-2.title": "Virtual Service leitet an einen unbekannten Host (2)",
-   "problems.unknown-host-2.message": "Leitet an {{fact:host}} weiter, den kein Service und kein ServiceEntry hat: Der Proxy antwortet mit 503.",
-   "problems.unknown-host-3.title": "Virtual Service leitet an einen unbekannten Host (3)",
-   "problems.unknown-host-3.message": "Leitet an {{fact:host}} weiter, den kein Service und kein ServiceEntry hat: Der Proxy antwortet mit 503.",
-   "problems.unknown-host-4.title": "Virtual Service leitet an einen unbekannten Host (4)",
-   "problems.unknown-host-4.message": "Leitet an {{fact:host}} weiter, den kein Service und kein ServiceEntry hat: Der Proxy antwortet mit 503.",
-   "problems.unknown-host-5.title": "Virtual Service leitet an einen unbekannten Host (5)",
-   "problems.unknown-host-5.message": "Leitet an {{fact:host}} weiter, den kein Service und kein ServiceEntry hat: Der Proxy antwortet mit 503.",
-   "problems.missing-destination-rule-1.title": "Virtual Service leitet an ein Subset ohne Destination Rule (1)",
-   "problems.missing-destination-rule-1.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, aber keine Zielregel deckt diesen Host ab: Der Proxy antwortet mit 503.",
-   "problems.missing-destination-rule-2.title": "Virtual Service leitet an ein Subset ohne Destination Rule (2)",
-   "problems.missing-destination-rule-2.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, aber keine Zielregel deckt diesen Host ab: Der Proxy antwortet mit 503.",
-   "problems.missing-destination-rule-3.title": "Virtual Service leitet an ein Subset ohne Destination Rule (3)",
-   "problems.missing-destination-rule-3.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, aber keine Zielregel deckt diesen Host ab: Der Proxy antwortet mit 503.",
-   "problems.missing-destination-rule-4.title": "Virtual Service leitet an ein Subset ohne Destination Rule (4)",
-   "problems.missing-destination-rule-4.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, aber keine Zielregel deckt diesen Host ab: Der Proxy antwortet mit 503.",
-   "problems.missing-destination-rule-5.title": "Virtual Service leitet an ein Subset ohne Destination Rule (5)",
-   "problems.missing-destination-rule-5.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, aber keine Zielregel deckt diesen Host ab: Der Proxy antwortet mit 503.",
-   "problems.missing-subset-1.title": "Virtual Service leitet an ein Subset, das der Destination Rule fehlt (1)",
-   "problems.missing-subset-1.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, das die Zielregel {{fact:rule}} nicht definiert: Der Proxy antwortet mit 503.",
-   "problems.missing-subset-2.title": "Virtual Service leitet an ein Subset, das der Destination Rule fehlt (2)",
-   "problems.missing-subset-2.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, das die Zielregel {{fact:rule}} nicht definiert: Der Proxy antwortet mit 503.",
-   "problems.missing-subset-3.title": "Virtual Service leitet an ein Subset, das der Destination Rule fehlt (3)",
-   "problems.missing-subset-3.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, das die Zielregel {{fact:rule}} nicht definiert: Der Proxy antwortet mit 503.",
-   "problems.missing-subset-4.title": "Virtual Service leitet an ein Subset, das der Destination Rule fehlt (4)",
-   "problems.missing-subset-4.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, das die Zielregel {{fact:rule}} nicht definiert: Der Proxy antwortet mit 503.",
-   "problems.missing-subset-5.title": "Virtual Service leitet an ein Subset, das der Destination Rule fehlt (5)",
-   "problems.missing-subset-5.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, das die Zielregel {{fact:rule}} nicht definiert: Der Proxy antwortet mit 503.",
-   "problems.missing-gateway-1.title": "Virtual Service an ein fehlendes Gateway gebunden (1)",
-   "problems.missing-gateway-1.message": "An das Gateway {{fact:gateway}} gebunden, das es nicht gibt.",
-   "problems.missing-gateway-2.title": "Virtual Service an ein fehlendes Gateway gebunden (2)",
-   "problems.missing-gateway-2.message": "An das Gateway {{fact:gateway}} gebunden, das es nicht gibt.",
-   "problems.missing-gateway-3.title": "Virtual Service an ein fehlendes Gateway gebunden (3)",
-   "problems.missing-gateway-3.message": "An das Gateway {{fact:gateway}} gebunden, das es nicht gibt.",
-   "problems.missing-gateway-4.title": "Virtual Service an ein fehlendes Gateway gebunden (4)",
-   "problems.missing-gateway-4.message": "An das Gateway {{fact:gateway}} gebunden, das es nicht gibt.",
-   "problems.missing-gateway-5.title": "Virtual Service an ein fehlendes Gateway gebunden (5)",
-   "problems.missing-gateway-5.message": "An das Gateway {{fact:gateway}} gebunden, das es nicht gibt.",
+   "problems.unknown-host.title": "Virtual Service leitet an einen unbekannten Host",
+   "problems.unknown-host.message": "Leitet an {{fact:host}} weiter, den kein Service und kein ServiceEntry hat: Der Proxy antwortet mit 503.",
+   "problems.missing-destination-rule.title": "Virtual Service leitet an ein Subset ohne Destination Rule",
+   "problems.missing-destination-rule.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, aber keine Zielregel deckt diesen Host ab: Der Proxy antwortet mit 503.",
+   "problems.missing-subset.title": "Virtual Service leitet an ein Subset, das der Destination Rule fehlt",
+   "problems.missing-subset.message": "Leitet an Subset {{fact:subset}} von {{fact:host}} weiter, das die Zielregel {{fact:rule}} nicht definiert: Der Proxy antwortet mit 503.",
+   "problems.missing-gateway.title": "Virtual Service an ein fehlendes Gateway gebunden",
+   "problems.missing-gateway.message": "An das Gateway {{fact:gateway}} gebunden, das es nicht gibt.",
    "problems.invalid-virtual-service.title": "Virtual Service abgelehnt: Host * bei den Sidecars",
    "problems.invalid-virtual-service.message": "Hat den Host *, obwohl an die Sidecars (mesh) gebunden: Istio lehnt ihn ab, daher wird keine seiner Routen verwendet.",
-   "problems.conflicting-virtual-service-1.title": "Host des Virtual Service von einem älteren belegt (1)",
-   "problems.conflicting-virtual-service-1.message": "Host {{fact:host}} auf {{fact:gateway}} ist bereits durch den älteren virtuellen Service {{fact:other}} belegt: Die Routen dieses Service werden nicht erreicht.",
-   "problems.conflicting-virtual-service-2.title": "Host des Virtual Service von einem älteren belegt (2)",
-   "problems.conflicting-virtual-service-2.message": "Host {{fact:host}} auf {{fact:gateway}} ist bereits durch den älteren virtuellen Service {{fact:other}} belegt: Die Routen dieses Service werden nicht erreicht.",
-   "problems.conflicting-virtual-service-3.title": "Host des Virtual Service von einem älteren belegt (3)",
-   "problems.conflicting-virtual-service-3.message": "Host {{fact:host}} auf {{fact:gateway}} ist bereits durch den älteren virtuellen Service {{fact:other}} belegt: Die Routen dieses Service werden nicht erreicht.",
-   "problems.conflicting-virtual-service-4.title": "Host des Virtual Service von einem älteren belegt (4)",
-   "problems.conflicting-virtual-service-4.message": "Host {{fact:host}} auf {{fact:gateway}} ist bereits durch den älteren virtuellen Service {{fact:other}} belegt: Die Routen dieses Service werden nicht erreicht.",
-   "problems.conflicting-virtual-service-5.title": "Host des Virtual Service von einem älteren belegt (5)",
-   "problems.conflicting-virtual-service-5.message": "Host {{fact:host}} auf {{fact:gateway}} ist bereits durch den älteren virtuellen Service {{fact:other}} belegt: Die Routen dieses Service werden nicht erreicht.",
+   "problems.conflicting-virtual-service.title": "Host des Virtual Service von einem älteren belegt",
+   "problems.conflicting-virtual-service.message": "Host {{fact:host}} auf {{fact:gateway}} ist bereits durch den älteren virtuellen Service {{fact:other}} belegt: Die Routen dieses Service werden nicht erreicht.",
    "problems.tls-conflict.title": "TLS-Modus der Destination Rule von STRICT-mTLS abgelehnt",
    "problems.tls-conflict.message": "Setzt den TLS-Modus {{fact:mode}} für {{fact:host}}, dessen Workloads nur Istio-mTLS annehmen (STRICT): Aufrufe schlagen fehl. Verwenden Sie ISTIO_MUTUAL."
   },
@@ -3622,58 +1926,18 @@
    "columns.sa-server.cases.2.text": "Todas las cargas de trabajo del namespace",
    "columns.mtls-ids.title": "Identidades",
    "columns.na-networks.title": "Redes",
-   "problems.unknown-host-1.title": "El servicio virtual enruta a un host desconocido (1)",
-   "problems.unknown-host-1.message": "Envía a {{fact:host}}, que no tiene ningún Service ni ServiceEntry: el proxy responde 503.",
-   "problems.unknown-host-2.title": "El servicio virtual enruta a un host desconocido (2)",
-   "problems.unknown-host-2.message": "Envía a {{fact:host}}, que no tiene ningún Service ni ServiceEntry: el proxy responde 503.",
-   "problems.unknown-host-3.title": "El servicio virtual enruta a un host desconocido (3)",
-   "problems.unknown-host-3.message": "Envía a {{fact:host}}, que no tiene ningún Service ni ServiceEntry: el proxy responde 503.",
-   "problems.unknown-host-4.title": "El servicio virtual enruta a un host desconocido (4)",
-   "problems.unknown-host-4.message": "Envía a {{fact:host}}, que no tiene ningún Service ni ServiceEntry: el proxy responde 503.",
-   "problems.unknown-host-5.title": "El servicio virtual enruta a un host desconocido (5)",
-   "problems.unknown-host-5.message": "Envía a {{fact:host}}, que no tiene ningún Service ni ServiceEntry: el proxy responde 503.",
-   "problems.missing-destination-rule-1.title": "El servicio virtual enruta a un subset sin regla de destino (1)",
-   "problems.missing-destination-rule-1.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, pero ninguna regla de destino cubre ese host: el proxy responde 503.",
-   "problems.missing-destination-rule-2.title": "El servicio virtual enruta a un subset sin regla de destino (2)",
-   "problems.missing-destination-rule-2.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, pero ninguna regla de destino cubre ese host: el proxy responde 503.",
-   "problems.missing-destination-rule-3.title": "El servicio virtual enruta a un subset sin regla de destino (3)",
-   "problems.missing-destination-rule-3.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, pero ninguna regla de destino cubre ese host: el proxy responde 503.",
-   "problems.missing-destination-rule-4.title": "El servicio virtual enruta a un subset sin regla de destino (4)",
-   "problems.missing-destination-rule-4.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, pero ninguna regla de destino cubre ese host: el proxy responde 503.",
-   "problems.missing-destination-rule-5.title": "El servicio virtual enruta a un subset sin regla de destino (5)",
-   "problems.missing-destination-rule-5.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, pero ninguna regla de destino cubre ese host: el proxy responde 503.",
-   "problems.missing-subset-1.title": "El servicio virtual enruta a un subset que falta en su regla de destino (1)",
-   "problems.missing-subset-1.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, que la regla de destino {{fact:rule}} no define: el proxy responde 503.",
-   "problems.missing-subset-2.title": "El servicio virtual enruta a un subset que falta en su regla de destino (2)",
-   "problems.missing-subset-2.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, que la regla de destino {{fact:rule}} no define: el proxy responde 503.",
-   "problems.missing-subset-3.title": "El servicio virtual enruta a un subset que falta en su regla de destino (3)",
-   "problems.missing-subset-3.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, que la regla de destino {{fact:rule}} no define: el proxy responde 503.",
-   "problems.missing-subset-4.title": "El servicio virtual enruta a un subset que falta en su regla de destino (4)",
-   "problems.missing-subset-4.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, que la regla de destino {{fact:rule}} no define: el proxy responde 503.",
-   "problems.missing-subset-5.title": "El servicio virtual enruta a un subset que falta en su regla de destino (5)",
-   "problems.missing-subset-5.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, que la regla de destino {{fact:rule}} no define: el proxy responde 503.",
-   "problems.missing-gateway-1.title": "Servicio virtual vinculado a un gateway inexistente (1)",
-   "problems.missing-gateway-1.message": "Vinculado a la puerta de enlace {{fact:gateway}}, que no existe.",
-   "problems.missing-gateway-2.title": "Servicio virtual vinculado a un gateway inexistente (2)",
-   "problems.missing-gateway-2.message": "Vinculado a la puerta de enlace {{fact:gateway}}, que no existe.",
-   "problems.missing-gateway-3.title": "Servicio virtual vinculado a un gateway inexistente (3)",
-   "problems.missing-gateway-3.message": "Vinculado a la puerta de enlace {{fact:gateway}}, que no existe.",
-   "problems.missing-gateway-4.title": "Servicio virtual vinculado a un gateway inexistente (4)",
-   "problems.missing-gateway-4.message": "Vinculado a la puerta de enlace {{fact:gateway}}, que no existe.",
-   "problems.missing-gateway-5.title": "Servicio virtual vinculado a un gateway inexistente (5)",
-   "problems.missing-gateway-5.message": "Vinculado a la puerta de enlace {{fact:gateway}}, que no existe.",
+   "problems.unknown-host.title": "El servicio virtual enruta a un host desconocido",
+   "problems.unknown-host.message": "Envía a {{fact:host}}, que no tiene ningún Service ni ServiceEntry: el proxy responde 503.",
+   "problems.missing-destination-rule.title": "El servicio virtual enruta a un subset sin regla de destino",
+   "problems.missing-destination-rule.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, pero ninguna regla de destino cubre ese host: el proxy responde 503.",
+   "problems.missing-subset.title": "El servicio virtual enruta a un subset que falta en su regla de destino",
+   "problems.missing-subset.message": "Envía al subconjunto {{fact:subset}} de {{fact:host}}, que la regla de destino {{fact:rule}} no define: el proxy responde 503.",
+   "problems.missing-gateway.title": "Servicio virtual vinculado a un gateway inexistente",
+   "problems.missing-gateway.message": "Vinculado a la puerta de enlace {{fact:gateway}}, que no existe.",
    "problems.invalid-virtual-service.title": "Servicio virtual rechazado: host * en los sidecars",
    "problems.invalid-virtual-service.message": "Tiene el host * estando vinculado a los sidecars (mesh): Istio lo rechaza, así que no se usa ninguna de sus rutas.",
-   "problems.conflicting-virtual-service-1.title": "Host del servicio virtual ocupado por uno más antiguo (1)",
-   "problems.conflicting-virtual-service-1.message": "El host {{fact:host}} en {{fact:gateway}} ya lo ocupa el servicio virtual más antiguo {{fact:other}}: las rutas de este no se alcanzan.",
-   "problems.conflicting-virtual-service-2.title": "Host del servicio virtual ocupado por uno más antiguo (2)",
-   "problems.conflicting-virtual-service-2.message": "El host {{fact:host}} en {{fact:gateway}} ya lo ocupa el servicio virtual más antiguo {{fact:other}}: las rutas de este no se alcanzan.",
-   "problems.conflicting-virtual-service-3.title": "Host del servicio virtual ocupado por uno más antiguo (3)",
-   "problems.conflicting-virtual-service-3.message": "El host {{fact:host}} en {{fact:gateway}} ya lo ocupa el servicio virtual más antiguo {{fact:other}}: las rutas de este no se alcanzan.",
-   "problems.conflicting-virtual-service-4.title": "Host del servicio virtual ocupado por uno más antiguo (4)",
-   "problems.conflicting-virtual-service-4.message": "El host {{fact:host}} en {{fact:gateway}} ya lo ocupa el servicio virtual más antiguo {{fact:other}}: las rutas de este no se alcanzan.",
-   "problems.conflicting-virtual-service-5.title": "Host del servicio virtual ocupado por uno más antiguo (5)",
-   "problems.conflicting-virtual-service-5.message": "El host {{fact:host}} en {{fact:gateway}} ya lo ocupa el servicio virtual más antiguo {{fact:other}}: las rutas de este no se alcanzan.",
+   "problems.conflicting-virtual-service.title": "Host del servicio virtual ocupado por uno más antiguo",
+   "problems.conflicting-virtual-service.message": "El host {{fact:host}} en {{fact:gateway}} ya lo ocupa el servicio virtual más antiguo {{fact:other}}: las rutas de este no se alcanzan.",
    "problems.tls-conflict.title": "Modo TLS de la regla de destino rechazado por mTLS STRICT",
    "problems.tls-conflict.message": "Fija el modo TLS {{fact:mode}} hacia {{fact:host}}, cuyas cargas de trabajo solo aceptan mTLS de Istio (STRICT): las llamadas fallan. Use ISTIO_MUTUAL."
   },
@@ -3729,58 +1993,18 @@
    "columns.sa-server.cases.2.text": "Toutes les charges de travail du namespace",
    "columns.mtls-ids.title": "Identités",
    "columns.na-networks.title": "Réseaux",
-   "problems.unknown-host-1.title": "Le service virtuel route vers un hôte inconnu (1)",
-   "problems.unknown-host-1.message": "Envoie vers {{fact:host}}, qu'aucun Service ni ServiceEntry ne porte : le proxy répond 503.",
-   "problems.unknown-host-2.title": "Le service virtuel route vers un hôte inconnu (2)",
-   "problems.unknown-host-2.message": "Envoie vers {{fact:host}}, qu'aucun Service ni ServiceEntry ne porte : le proxy répond 503.",
-   "problems.unknown-host-3.title": "Le service virtuel route vers un hôte inconnu (3)",
-   "problems.unknown-host-3.message": "Envoie vers {{fact:host}}, qu'aucun Service ni ServiceEntry ne porte : le proxy répond 503.",
-   "problems.unknown-host-4.title": "Le service virtuel route vers un hôte inconnu (4)",
-   "problems.unknown-host-4.message": "Envoie vers {{fact:host}}, qu'aucun Service ni ServiceEntry ne porte : le proxy répond 503.",
-   "problems.unknown-host-5.title": "Le service virtuel route vers un hôte inconnu (5)",
-   "problems.unknown-host-5.message": "Envoie vers {{fact:host}}, qu'aucun Service ni ServiceEntry ne porte : le proxy répond 503.",
-   "problems.missing-destination-rule-1.title": "Le service virtuel route vers un subset sans règle de destination (1)",
-   "problems.missing-destination-rule-1.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, mais aucune règle de destination ne couvre cet hôte : le proxy répond 503.",
-   "problems.missing-destination-rule-2.title": "Le service virtuel route vers un subset sans règle de destination (2)",
-   "problems.missing-destination-rule-2.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, mais aucune règle de destination ne couvre cet hôte : le proxy répond 503.",
-   "problems.missing-destination-rule-3.title": "Le service virtuel route vers un subset sans règle de destination (3)",
-   "problems.missing-destination-rule-3.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, mais aucune règle de destination ne couvre cet hôte : le proxy répond 503.",
-   "problems.missing-destination-rule-4.title": "Le service virtuel route vers un subset sans règle de destination (4)",
-   "problems.missing-destination-rule-4.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, mais aucune règle de destination ne couvre cet hôte : le proxy répond 503.",
-   "problems.missing-destination-rule-5.title": "Le service virtuel route vers un subset sans règle de destination (5)",
-   "problems.missing-destination-rule-5.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, mais aucune règle de destination ne couvre cet hôte : le proxy répond 503.",
-   "problems.missing-subset-1.title": "Le service virtuel route vers un subset absent de sa règle de destination (1)",
-   "problems.missing-subset-1.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, que la règle de destination {{fact:rule}} ne définit pas : le proxy répond 503.",
-   "problems.missing-subset-2.title": "Le service virtuel route vers un subset absent de sa règle de destination (2)",
-   "problems.missing-subset-2.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, que la règle de destination {{fact:rule}} ne définit pas : le proxy répond 503.",
-   "problems.missing-subset-3.title": "Le service virtuel route vers un subset absent de sa règle de destination (3)",
-   "problems.missing-subset-3.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, que la règle de destination {{fact:rule}} ne définit pas : le proxy répond 503.",
-   "problems.missing-subset-4.title": "Le service virtuel route vers un subset absent de sa règle de destination (4)",
-   "problems.missing-subset-4.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, que la règle de destination {{fact:rule}} ne définit pas : le proxy répond 503.",
-   "problems.missing-subset-5.title": "Le service virtuel route vers un subset absent de sa règle de destination (5)",
-   "problems.missing-subset-5.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, que la règle de destination {{fact:rule}} ne définit pas : le proxy répond 503.",
-   "problems.missing-gateway-1.title": "Service virtuel lié à un gateway absent (1)",
-   "problems.missing-gateway-1.message": "Lié à la passerelle {{fact:gateway}}, qui n'existe pas.",
-   "problems.missing-gateway-2.title": "Service virtuel lié à un gateway absent (2)",
-   "problems.missing-gateway-2.message": "Lié à la passerelle {{fact:gateway}}, qui n'existe pas.",
-   "problems.missing-gateway-3.title": "Service virtuel lié à un gateway absent (3)",
-   "problems.missing-gateway-3.message": "Lié à la passerelle {{fact:gateway}}, qui n'existe pas.",
-   "problems.missing-gateway-4.title": "Service virtuel lié à un gateway absent (4)",
-   "problems.missing-gateway-4.message": "Lié à la passerelle {{fact:gateway}}, qui n'existe pas.",
-   "problems.missing-gateway-5.title": "Service virtuel lié à un gateway absent (5)",
-   "problems.missing-gateway-5.message": "Lié à la passerelle {{fact:gateway}}, qui n'existe pas.",
+   "problems.unknown-host.title": "Le service virtuel route vers un hôte inconnu",
+   "problems.unknown-host.message": "Envoie vers {{fact:host}}, qu'aucun Service ni ServiceEntry ne porte : le proxy répond 503.",
+   "problems.missing-destination-rule.title": "Le service virtuel route vers un subset sans règle de destination",
+   "problems.missing-destination-rule.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, mais aucune règle de destination ne couvre cet hôte : le proxy répond 503.",
+   "problems.missing-subset.title": "Le service virtuel route vers un subset absent de sa règle de destination",
+   "problems.missing-subset.message": "Envoie vers le sous-ensemble {{fact:subset}} de {{fact:host}}, que la règle de destination {{fact:rule}} ne définit pas : le proxy répond 503.",
+   "problems.missing-gateway.title": "Service virtuel lié à un gateway absent",
+   "problems.missing-gateway.message": "Lié à la passerelle {{fact:gateway}}, qui n'existe pas.",
    "problems.invalid-virtual-service.title": "Service virtuel refusé : hôte * sur les sidecars",
    "problems.invalid-virtual-service.message": "A l'hôte * alors qu'il est lié aux sidecars (mesh) : Istio le rejette, aucune de ses routes n'est donc utilisée.",
-   "problems.conflicting-virtual-service-1.title": "Hôte du service virtuel pris par un plus ancien (1)",
-   "problems.conflicting-virtual-service-1.message": "L'hôte {{fact:host}} sur {{fact:gateway}} est déjà pris par le service virtuel plus ancien {{fact:other}} : les routes de celui-ci ne sont pas atteintes.",
-   "problems.conflicting-virtual-service-2.title": "Hôte du service virtuel pris par un plus ancien (2)",
-   "problems.conflicting-virtual-service-2.message": "L'hôte {{fact:host}} sur {{fact:gateway}} est déjà pris par le service virtuel plus ancien {{fact:other}} : les routes de celui-ci ne sont pas atteintes.",
-   "problems.conflicting-virtual-service-3.title": "Hôte du service virtuel pris par un plus ancien (3)",
-   "problems.conflicting-virtual-service-3.message": "L'hôte {{fact:host}} sur {{fact:gateway}} est déjà pris par le service virtuel plus ancien {{fact:other}} : les routes de celui-ci ne sont pas atteintes.",
-   "problems.conflicting-virtual-service-4.title": "Hôte du service virtuel pris par un plus ancien (4)",
-   "problems.conflicting-virtual-service-4.message": "L'hôte {{fact:host}} sur {{fact:gateway}} est déjà pris par le service virtuel plus ancien {{fact:other}} : les routes de celui-ci ne sont pas atteintes.",
-   "problems.conflicting-virtual-service-5.title": "Hôte du service virtuel pris par un plus ancien (5)",
-   "problems.conflicting-virtual-service-5.message": "L'hôte {{fact:host}} sur {{fact:gateway}} est déjà pris par le service virtuel plus ancien {{fact:other}} : les routes de celui-ci ne sont pas atteintes.",
+   "problems.conflicting-virtual-service.title": "Hôte du service virtuel pris par un plus ancien",
+   "problems.conflicting-virtual-service.message": "L'hôte {{fact:host}} sur {{fact:gateway}} est déjà pris par le service virtuel plus ancien {{fact:other}} : les routes de celui-ci ne sont pas atteintes.",
    "problems.tls-conflict.title": "Mode TLS de la règle de destination refusé par le mTLS STRICT",
    "problems.tls-conflict.message": "Fixe le mode TLS {{fact:mode}} vers {{fact:host}}, dont les charges de travail n'acceptent que le mTLS d'Istio (STRICT) : les appels échouent. Utilisez ISTIO_MUTUAL."
   },
@@ -3836,58 +2060,18 @@
    "columns.sa-server.cases.2.text": "Tutti i carichi di lavoro del namespace",
    "columns.mtls-ids.title": "Identità",
    "columns.na-networks.title": "Reti",
-   "problems.unknown-host-1.title": "Il servizio virtuale instrada verso un host sconosciuto (1)",
-   "problems.unknown-host-1.message": "Instrada verso {{fact:host}}, che nessun Service o ServiceEntry ha: il proxy risponde 503.",
-   "problems.unknown-host-2.title": "Il servizio virtuale instrada verso un host sconosciuto (2)",
-   "problems.unknown-host-2.message": "Instrada verso {{fact:host}}, che nessun Service o ServiceEntry ha: il proxy risponde 503.",
-   "problems.unknown-host-3.title": "Il servizio virtuale instrada verso un host sconosciuto (3)",
-   "problems.unknown-host-3.message": "Instrada verso {{fact:host}}, che nessun Service o ServiceEntry ha: il proxy risponde 503.",
-   "problems.unknown-host-4.title": "Il servizio virtuale instrada verso un host sconosciuto (4)",
-   "problems.unknown-host-4.message": "Instrada verso {{fact:host}}, che nessun Service o ServiceEntry ha: il proxy risponde 503.",
-   "problems.unknown-host-5.title": "Il servizio virtuale instrada verso un host sconosciuto (5)",
-   "problems.unknown-host-5.message": "Instrada verso {{fact:host}}, che nessun Service o ServiceEntry ha: il proxy risponde 503.",
-   "problems.missing-destination-rule-1.title": "Il servizio virtuale instrada verso un subset senza regola di destinazione (1)",
-   "problems.missing-destination-rule-1.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, ma nessuna regola di destinazione copre quell'host: il proxy risponde 503.",
-   "problems.missing-destination-rule-2.title": "Il servizio virtuale instrada verso un subset senza regola di destinazione (2)",
-   "problems.missing-destination-rule-2.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, ma nessuna regola di destinazione copre quell'host: il proxy risponde 503.",
-   "problems.missing-destination-rule-3.title": "Il servizio virtuale instrada verso un subset senza regola di destinazione (3)",
-   "problems.missing-destination-rule-3.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, ma nessuna regola di destinazione copre quell'host: il proxy risponde 503.",
-   "problems.missing-destination-rule-4.title": "Il servizio virtuale instrada verso un subset senza regola di destinazione (4)",
-   "problems.missing-destination-rule-4.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, ma nessuna regola di destinazione copre quell'host: il proxy risponde 503.",
-   "problems.missing-destination-rule-5.title": "Il servizio virtuale instrada verso un subset senza regola di destinazione (5)",
-   "problems.missing-destination-rule-5.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, ma nessuna regola di destinazione copre quell'host: il proxy risponde 503.",
-   "problems.missing-subset-1.title": "Il servizio virtuale instrada a un subset assente nella sua DestinationRule (1)",
-   "problems.missing-subset-1.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, che la regola di destinazione {{fact:rule}} non definisce: il proxy risponde 503.",
-   "problems.missing-subset-2.title": "Il servizio virtuale instrada a un subset assente nella sua DestinationRule (2)",
-   "problems.missing-subset-2.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, che la regola di destinazione {{fact:rule}} non definisce: il proxy risponde 503.",
-   "problems.missing-subset-3.title": "Il servizio virtuale instrada a un subset assente nella sua DestinationRule (3)",
-   "problems.missing-subset-3.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, che la regola di destinazione {{fact:rule}} non definisce: il proxy risponde 503.",
-   "problems.missing-subset-4.title": "Il servizio virtuale instrada a un subset assente nella sua DestinationRule (4)",
-   "problems.missing-subset-4.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, che la regola di destinazione {{fact:rule}} non definisce: il proxy risponde 503.",
-   "problems.missing-subset-5.title": "Il servizio virtuale instrada a un subset assente nella sua DestinationRule (5)",
-   "problems.missing-subset-5.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, che la regola di destinazione {{fact:rule}} non definisce: il proxy risponde 503.",
-   "problems.missing-gateway-1.title": "Servizio virtuale legato a un gateway mancante (1)",
-   "problems.missing-gateway-1.message": "Associato al gateway {{fact:gateway}}, che non esiste.",
-   "problems.missing-gateway-2.title": "Servizio virtuale legato a un gateway mancante (2)",
-   "problems.missing-gateway-2.message": "Associato al gateway {{fact:gateway}}, che non esiste.",
-   "problems.missing-gateway-3.title": "Servizio virtuale legato a un gateway mancante (3)",
-   "problems.missing-gateway-3.message": "Associato al gateway {{fact:gateway}}, che non esiste.",
-   "problems.missing-gateway-4.title": "Servizio virtuale legato a un gateway mancante (4)",
-   "problems.missing-gateway-4.message": "Associato al gateway {{fact:gateway}}, che non esiste.",
-   "problems.missing-gateway-5.title": "Servizio virtuale legato a un gateway mancante (5)",
-   "problems.missing-gateway-5.message": "Associato al gateway {{fact:gateway}}, che non esiste.",
+   "problems.unknown-host.title": "Il servizio virtuale instrada verso un host sconosciuto",
+   "problems.unknown-host.message": "Instrada verso {{fact:host}}, che nessun Service o ServiceEntry ha: il proxy risponde 503.",
+   "problems.missing-destination-rule.title": "Il servizio virtuale instrada verso un subset senza regola di destinazione",
+   "problems.missing-destination-rule.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, ma nessuna regola di destinazione copre quell'host: il proxy risponde 503.",
+   "problems.missing-subset.title": "Il servizio virtuale instrada a un subset assente nella sua DestinationRule",
+   "problems.missing-subset.message": "Instrada verso il sottoinsieme {{fact:subset}} di {{fact:host}}, che la regola di destinazione {{fact:rule}} non definisce: il proxy risponde 503.",
+   "problems.missing-gateway.title": "Servizio virtuale legato a un gateway mancante",
+   "problems.missing-gateway.message": "Associato al gateway {{fact:gateway}}, che non esiste.",
    "problems.invalid-virtual-service.title": "Servizio virtuale rifiutato: host * sui sidecar",
    "problems.invalid-virtual-service.message": "Ha l'host * pur essendo associato ai sidecar (mesh): Istio lo rifiuta, quindi nessuna delle sue route viene usata.",
-   "problems.conflicting-virtual-service-1.title": "Host del servizio virtuale occupato da uno più vecchio (1)",
-   "problems.conflicting-virtual-service-1.message": "L'host {{fact:host}} su {{fact:gateway}} è già occupato dal servizio virtuale più vecchio {{fact:other}}: le route di questo non vengono raggiunte.",
-   "problems.conflicting-virtual-service-2.title": "Host del servizio virtuale occupato da uno più vecchio (2)",
-   "problems.conflicting-virtual-service-2.message": "L'host {{fact:host}} su {{fact:gateway}} è già occupato dal servizio virtuale più vecchio {{fact:other}}: le route di questo non vengono raggiunte.",
-   "problems.conflicting-virtual-service-3.title": "Host del servizio virtuale occupato da uno più vecchio (3)",
-   "problems.conflicting-virtual-service-3.message": "L'host {{fact:host}} su {{fact:gateway}} è già occupato dal servizio virtuale più vecchio {{fact:other}}: le route di questo non vengono raggiunte.",
-   "problems.conflicting-virtual-service-4.title": "Host del servizio virtuale occupato da uno più vecchio (4)",
-   "problems.conflicting-virtual-service-4.message": "L'host {{fact:host}} su {{fact:gateway}} è già occupato dal servizio virtuale più vecchio {{fact:other}}: le route di questo non vengono raggiunte.",
-   "problems.conflicting-virtual-service-5.title": "Host del servizio virtuale occupato da uno più vecchio (5)",
-   "problems.conflicting-virtual-service-5.message": "L'host {{fact:host}} su {{fact:gateway}} è già occupato dal servizio virtuale più vecchio {{fact:other}}: le route di questo non vengono raggiunte.",
+   "problems.conflicting-virtual-service.title": "Host del servizio virtuale occupato da uno più vecchio",
+   "problems.conflicting-virtual-service.message": "L'host {{fact:host}} su {{fact:gateway}} è già occupato dal servizio virtuale più vecchio {{fact:other}}: le route di questo non vengono raggiunte.",
    "problems.tls-conflict.title": "Modalità TLS della regola di destinazione rifiutata da mTLS STRICT",
    "problems.tls-conflict.message": "Imposta la modalità TLS {{fact:mode}} verso {{fact:host}}, i cui carichi di lavoro accettano solo l'mTLS di Istio (STRICT): le chiamate falliscono. Usare ISTIO_MUTUAL."
   },
@@ -3962,58 +2146,18 @@
    "columns.sa-server.cases.2.text": "namespace のすべてのワークロード",
    "columns.mtls-ids.title": "ID",
    "columns.na-networks.title": "ネットワーク",
-   "problems.unknown-host-1.title": "仮想サービスが不明なホストにルーティング (1)",
-   "problems.unknown-host-1.message": "{{fact:host}} へルーティングしていますが、このホストを持つ Service も ServiceEntry もありません。プロキシは 503 を返します。",
-   "problems.unknown-host-2.title": "仮想サービスが不明なホストにルーティング (2)",
-   "problems.unknown-host-2.message": "{{fact:host}} へルーティングしていますが、このホストを持つ Service も ServiceEntry もありません。プロキシは 503 を返します。",
-   "problems.unknown-host-3.title": "仮想サービスが不明なホストにルーティング (3)",
-   "problems.unknown-host-3.message": "{{fact:host}} へルーティングしていますが、このホストを持つ Service も ServiceEntry もありません。プロキシは 503 を返します。",
-   "problems.unknown-host-4.title": "仮想サービスが不明なホストにルーティング (4)",
-   "problems.unknown-host-4.message": "{{fact:host}} へルーティングしていますが、このホストを持つ Service も ServiceEntry もありません。プロキシは 503 を返します。",
-   "problems.unknown-host-5.title": "仮想サービスが不明なホストにルーティング (5)",
-   "problems.unknown-host-5.message": "{{fact:host}} へルーティングしていますが、このホストを持つ Service も ServiceEntry もありません。プロキシは 503 を返します。",
-   "problems.missing-destination-rule-1.title": "仮想サービスが宛先ルールのないサブセットにルーティング (1)",
-   "problems.missing-destination-rule-1.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、このホストを対象とする宛先ルールがありません。プロキシは 503 を返します。",
-   "problems.missing-destination-rule-2.title": "仮想サービスが宛先ルールのないサブセットにルーティング (2)",
-   "problems.missing-destination-rule-2.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、このホストを対象とする宛先ルールがありません。プロキシは 503 を返します。",
-   "problems.missing-destination-rule-3.title": "仮想サービスが宛先ルールのないサブセットにルーティング (3)",
-   "problems.missing-destination-rule-3.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、このホストを対象とする宛先ルールがありません。プロキシは 503 を返します。",
-   "problems.missing-destination-rule-4.title": "仮想サービスが宛先ルールのないサブセットにルーティング (4)",
-   "problems.missing-destination-rule-4.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、このホストを対象とする宛先ルールがありません。プロキシは 503 を返します。",
-   "problems.missing-destination-rule-5.title": "仮想サービスが宛先ルールのないサブセットにルーティング (5)",
-   "problems.missing-destination-rule-5.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、このホストを対象とする宛先ルールがありません。プロキシは 503 を返します。",
-   "problems.missing-subset-1.title": "仮想サービスが宛先ルールにないサブセットにルーティング (1)",
-   "problems.missing-subset-1.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、宛先ルール {{fact:rule}} にこのサブセットは定義されていません。プロキシは 503 を返します。",
-   "problems.missing-subset-2.title": "仮想サービスが宛先ルールにないサブセットにルーティング (2)",
-   "problems.missing-subset-2.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、宛先ルール {{fact:rule}} にこのサブセットは定義されていません。プロキシは 503 を返します。",
-   "problems.missing-subset-3.title": "仮想サービスが宛先ルールにないサブセットにルーティング (3)",
-   "problems.missing-subset-3.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、宛先ルール {{fact:rule}} にこのサブセットは定義されていません。プロキシは 503 を返します。",
-   "problems.missing-subset-4.title": "仮想サービスが宛先ルールにないサブセットにルーティング (4)",
-   "problems.missing-subset-4.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、宛先ルール {{fact:rule}} にこのサブセットは定義されていません。プロキシは 503 を返します。",
-   "problems.missing-subset-5.title": "仮想サービスが宛先ルールにないサブセットにルーティング (5)",
-   "problems.missing-subset-5.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、宛先ルール {{fact:rule}} にこのサブセットは定義されていません。プロキシは 503 を返します。",
-   "problems.missing-gateway-1.title": "存在しないゲートウェイにバインドされた仮想サービス (1)",
-   "problems.missing-gateway-1.message": "存在しないゲートウェイ {{fact:gateway}} にバインドされています。",
-   "problems.missing-gateway-2.title": "存在しないゲートウェイにバインドされた仮想サービス (2)",
-   "problems.missing-gateway-2.message": "存在しないゲートウェイ {{fact:gateway}} にバインドされています。",
-   "problems.missing-gateway-3.title": "存在しないゲートウェイにバインドされた仮想サービス (3)",
-   "problems.missing-gateway-3.message": "存在しないゲートウェイ {{fact:gateway}} にバインドされています。",
-   "problems.missing-gateway-4.title": "存在しないゲートウェイにバインドされた仮想サービス (4)",
-   "problems.missing-gateway-4.message": "存在しないゲートウェイ {{fact:gateway}} にバインドされています。",
-   "problems.missing-gateway-5.title": "存在しないゲートウェイにバインドされた仮想サービス (5)",
-   "problems.missing-gateway-5.message": "存在しないゲートウェイ {{fact:gateway}} にバインドされています。",
+   "problems.unknown-host.title": "仮想サービスが不明なホストにルーティング",
+   "problems.unknown-host.message": "{{fact:host}} へルーティングしていますが、このホストを持つ Service も ServiceEntry もありません。プロキシは 503 を返します。",
+   "problems.missing-destination-rule.title": "仮想サービスが宛先ルールのないサブセットにルーティング",
+   "problems.missing-destination-rule.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、このホストを対象とする宛先ルールがありません。プロキシは 503 を返します。",
+   "problems.missing-subset.title": "仮想サービスが宛先ルールにないサブセットにルーティング",
+   "problems.missing-subset.message": "{{fact:host}} のサブセット {{fact:subset}} へルーティングしていますが、宛先ルール {{fact:rule}} にこのサブセットは定義されていません。プロキシは 503 を返します。",
+   "problems.missing-gateway.title": "存在しないゲートウェイにバインドされた仮想サービス",
+   "problems.missing-gateway.message": "存在しないゲートウェイ {{fact:gateway}} にバインドされています。",
    "problems.invalid-virtual-service.title": "仮想サービスが拒否されました: サイドカーでホスト *",
    "problems.invalid-virtual-service.message": "Sidecar (mesh) にバインドされているのにホスト * を持っています。Istio が拒否するため、ルートはどれも使われません。",
-   "problems.conflicting-virtual-service-1.title": "仮想サービスのホストが古いものに使われている (1)",
-   "problems.conflicting-virtual-service-1.message": "{{fact:gateway}} のホスト {{fact:host}} は、より古い仮想サービス {{fact:other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
-   "problems.conflicting-virtual-service-2.title": "仮想サービスのホストが古いものに使われている (2)",
-   "problems.conflicting-virtual-service-2.message": "{{fact:gateway}} のホスト {{fact:host}} は、より古い仮想サービス {{fact:other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
-   "problems.conflicting-virtual-service-3.title": "仮想サービスのホストが古いものに使われている (3)",
-   "problems.conflicting-virtual-service-3.message": "{{fact:gateway}} のホスト {{fact:host}} は、より古い仮想サービス {{fact:other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
-   "problems.conflicting-virtual-service-4.title": "仮想サービスのホストが古いものに使われている (4)",
-   "problems.conflicting-virtual-service-4.message": "{{fact:gateway}} のホスト {{fact:host}} は、より古い仮想サービス {{fact:other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
-   "problems.conflicting-virtual-service-5.title": "仮想サービスのホストが古いものに使われている (5)",
-   "problems.conflicting-virtual-service-5.message": "{{fact:gateway}} のホスト {{fact:host}} は、より古い仮想サービス {{fact:other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
+   "problems.conflicting-virtual-service.title": "仮想サービスのホストが古いものに使われている",
+   "problems.conflicting-virtual-service.message": "{{fact:gateway}} のホスト {{fact:host}} は、より古い仮想サービス {{fact:other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
    "problems.tls-conflict.title": "宛先ルールの TLS モードが STRICT mTLS に拒否される",
    "problems.tls-conflict.message": "{{fact:host}} への TLS モードを {{fact:mode}} にしていますが、そのワークロードは Istio の mTLS (STRICT) しか受け付けません。呼び出しは失敗します。ISTIO_MUTUAL を使用してください。"
   },
@@ -4072,58 +2216,18 @@
    "columns.sa-server.cases.2.text": "namespace의 모든 워크로드",
    "columns.mtls-ids.title": "ID",
    "columns.na-networks.title": "네트워크",
-   "problems.unknown-host-1.title": "가상 서비스가 알 수 없는 호스트로 라우팅 (1)",
-   "problems.unknown-host-1.message": "{{fact:host}}(으)로 라우팅하지만 이 호스트를 가진 Service나 ServiceEntry가 없습니다. 프록시가 503으로 응답합니다.",
-   "problems.unknown-host-2.title": "가상 서비스가 알 수 없는 호스트로 라우팅 (2)",
-   "problems.unknown-host-2.message": "{{fact:host}}(으)로 라우팅하지만 이 호스트를 가진 Service나 ServiceEntry가 없습니다. 프록시가 503으로 응답합니다.",
-   "problems.unknown-host-3.title": "가상 서비스가 알 수 없는 호스트로 라우팅 (3)",
-   "problems.unknown-host-3.message": "{{fact:host}}(으)로 라우팅하지만 이 호스트를 가진 Service나 ServiceEntry가 없습니다. 프록시가 503으로 응답합니다.",
-   "problems.unknown-host-4.title": "가상 서비스가 알 수 없는 호스트로 라우팅 (4)",
-   "problems.unknown-host-4.message": "{{fact:host}}(으)로 라우팅하지만 이 호스트를 가진 Service나 ServiceEntry가 없습니다. 프록시가 503으로 응답합니다.",
-   "problems.unknown-host-5.title": "가상 서비스가 알 수 없는 호스트로 라우팅 (5)",
-   "problems.unknown-host-5.message": "{{fact:host}}(으)로 라우팅하지만 이 호스트를 가진 Service나 ServiceEntry가 없습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-destination-rule-1.title": "가상 서비스가 대상 규칙이 없는 서브셋으로 라우팅 (1)",
-   "problems.missing-destination-rule-1.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 이 호스트를 다루는 대상 규칙이 없습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-destination-rule-2.title": "가상 서비스가 대상 규칙이 없는 서브셋으로 라우팅 (2)",
-   "problems.missing-destination-rule-2.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 이 호스트를 다루는 대상 규칙이 없습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-destination-rule-3.title": "가상 서비스가 대상 규칙이 없는 서브셋으로 라우팅 (3)",
-   "problems.missing-destination-rule-3.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 이 호스트를 다루는 대상 규칙이 없습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-destination-rule-4.title": "가상 서비스가 대상 규칙이 없는 서브셋으로 라우팅 (4)",
-   "problems.missing-destination-rule-4.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 이 호스트를 다루는 대상 규칙이 없습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-destination-rule-5.title": "가상 서비스가 대상 규칙이 없는 서브셋으로 라우팅 (5)",
-   "problems.missing-destination-rule-5.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 이 호스트를 다루는 대상 규칙이 없습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-subset-1.title": "가상 서비스가 대상 규칙에 없는 서브셋으로 라우팅 (1)",
-   "problems.missing-subset-1.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 대상 규칙 {{fact:rule}}에 이 하위 집합이 정의되어 있지 않습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-subset-2.title": "가상 서비스가 대상 규칙에 없는 서브셋으로 라우팅 (2)",
-   "problems.missing-subset-2.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 대상 규칙 {{fact:rule}}에 이 하위 집합이 정의되어 있지 않습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-subset-3.title": "가상 서비스가 대상 규칙에 없는 서브셋으로 라우팅 (3)",
-   "problems.missing-subset-3.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 대상 규칙 {{fact:rule}}에 이 하위 집합이 정의되어 있지 않습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-subset-4.title": "가상 서비스가 대상 규칙에 없는 서브셋으로 라우팅 (4)",
-   "problems.missing-subset-4.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 대상 규칙 {{fact:rule}}에 이 하위 집합이 정의되어 있지 않습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-subset-5.title": "가상 서비스가 대상 규칙에 없는 서브셋으로 라우팅 (5)",
-   "problems.missing-subset-5.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 대상 규칙 {{fact:rule}}에 이 하위 집합이 정의되어 있지 않습니다. 프록시가 503으로 응답합니다.",
-   "problems.missing-gateway-1.title": "없는 게이트웨이에 바인딩된 가상 서비스 (1)",
-   "problems.missing-gateway-1.message": "존재하지 않는 게이트웨이 {{fact:gateway}}에 바인딩되어 있습니다.",
-   "problems.missing-gateway-2.title": "없는 게이트웨이에 바인딩된 가상 서비스 (2)",
-   "problems.missing-gateway-2.message": "존재하지 않는 게이트웨이 {{fact:gateway}}에 바인딩되어 있습니다.",
-   "problems.missing-gateway-3.title": "없는 게이트웨이에 바인딩된 가상 서비스 (3)",
-   "problems.missing-gateway-3.message": "존재하지 않는 게이트웨이 {{fact:gateway}}에 바인딩되어 있습니다.",
-   "problems.missing-gateway-4.title": "없는 게이트웨이에 바인딩된 가상 서비스 (4)",
-   "problems.missing-gateway-4.message": "존재하지 않는 게이트웨이 {{fact:gateway}}에 바인딩되어 있습니다.",
-   "problems.missing-gateway-5.title": "없는 게이트웨이에 바인딩된 가상 서비스 (5)",
-   "problems.missing-gateway-5.message": "존재하지 않는 게이트웨이 {{fact:gateway}}에 바인딩되어 있습니다.",
+   "problems.unknown-host.title": "가상 서비스가 알 수 없는 호스트로 라우팅",
+   "problems.unknown-host.message": "{{fact:host}}(으)로 라우팅하지만 이 호스트를 가진 Service나 ServiceEntry가 없습니다. 프록시가 503으로 응답합니다.",
+   "problems.missing-destination-rule.title": "가상 서비스가 대상 규칙이 없는 서브셋으로 라우팅",
+   "problems.missing-destination-rule.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 이 호스트를 다루는 대상 규칙이 없습니다. 프록시가 503으로 응답합니다.",
+   "problems.missing-subset.title": "가상 서비스가 대상 규칙에 없는 서브셋으로 라우팅",
+   "problems.missing-subset.message": "{{fact:host}}의 하위 집합 {{fact:subset}}(으)로 라우팅하지만 대상 규칙 {{fact:rule}}에 이 하위 집합이 정의되어 있지 않습니다. 프록시가 503으로 응답합니다.",
+   "problems.missing-gateway.title": "없는 게이트웨이에 바인딩된 가상 서비스",
+   "problems.missing-gateway.message": "존재하지 않는 게이트웨이 {{fact:gateway}}에 바인딩되어 있습니다.",
    "problems.invalid-virtual-service.title": "가상 서비스 거부됨: 사이드카에 호스트 *",
    "problems.invalid-virtual-service.message": "Sidecar(mesh)에 바인딩된 상태에서 호스트 *를 가집니다. Istio가 거부하므로 경로가 하나도 사용되지 않습니다.",
-   "problems.conflicting-virtual-service-1.title": "가상 서비스의 호스트를 더 오래된 것이 사용 중 (1)",
-   "problems.conflicting-virtual-service-1.message": "{{fact:gateway}}의 호스트 {{fact:host}}은(는) 이미 더 오래된 가상 서비스 {{fact:other}}이(가) 사용하고 있습니다. 이 가상 서비스의 경로에는 도달하지 않습니다.",
-   "problems.conflicting-virtual-service-2.title": "가상 서비스의 호스트를 더 오래된 것이 사용 중 (2)",
-   "problems.conflicting-virtual-service-2.message": "{{fact:gateway}}의 호스트 {{fact:host}}은(는) 이미 더 오래된 가상 서비스 {{fact:other}}이(가) 사용하고 있습니다. 이 가상 서비스의 경로에는 도달하지 않습니다.",
-   "problems.conflicting-virtual-service-3.title": "가상 서비스의 호스트를 더 오래된 것이 사용 중 (3)",
-   "problems.conflicting-virtual-service-3.message": "{{fact:gateway}}의 호스트 {{fact:host}}은(는) 이미 더 오래된 가상 서비스 {{fact:other}}이(가) 사용하고 있습니다. 이 가상 서비스의 경로에는 도달하지 않습니다.",
-   "problems.conflicting-virtual-service-4.title": "가상 서비스의 호스트를 더 오래된 것이 사용 중 (4)",
-   "problems.conflicting-virtual-service-4.message": "{{fact:gateway}}의 호스트 {{fact:host}}은(는) 이미 더 오래된 가상 서비스 {{fact:other}}이(가) 사용하고 있습니다. 이 가상 서비스의 경로에는 도달하지 않습니다.",
-   "problems.conflicting-virtual-service-5.title": "가상 서비스의 호스트를 더 오래된 것이 사용 중 (5)",
-   "problems.conflicting-virtual-service-5.message": "{{fact:gateway}}의 호스트 {{fact:host}}은(는) 이미 더 오래된 가상 서비스 {{fact:other}}이(가) 사용하고 있습니다. 이 가상 서비스의 경로에는 도달하지 않습니다.",
+   "problems.conflicting-virtual-service.title": "가상 서비스의 호스트를 더 오래된 것이 사용 중",
+   "problems.conflicting-virtual-service.message": "{{fact:gateway}}의 호스트 {{fact:host}}은(는) 이미 더 오래된 가상 서비스 {{fact:other}}이(가) 사용하고 있습니다. 이 가상 서비스의 경로에는 도달하지 않습니다.",
    "problems.tls-conflict.title": "대상 규칙의 TLS 모드가 STRICT mTLS에 거부됨",
    "problems.tls-conflict.message": "{{fact:host}}에 대해 TLS 모드를 {{fact:mode}}(으)로 설정했지만 해당 워크로드는 Istio mTLS(STRICT)만 받습니다. 호출이 실패합니다. ISTIO_MUTUAL을 사용하세요."
   },
@@ -4183,58 +2287,18 @@
    "columns.sa-server.cases.2.text": "Każde obciążenie namespace",
    "columns.mtls-ids.title": "Tożsamości",
    "columns.na-networks.title": "Sieci",
-   "problems.unknown-host-1.title": "Usługa wirtualna kieruje do nieznanego hosta (1)",
-   "problems.unknown-host-1.message": "Kieruje do {{fact:host}}, którego nie ma żaden Service ani ServiceEntry: proxy odpowiada 503.",
-   "problems.unknown-host-2.title": "Usługa wirtualna kieruje do nieznanego hosta (2)",
-   "problems.unknown-host-2.message": "Kieruje do {{fact:host}}, którego nie ma żaden Service ani ServiceEntry: proxy odpowiada 503.",
-   "problems.unknown-host-3.title": "Usługa wirtualna kieruje do nieznanego hosta (3)",
-   "problems.unknown-host-3.message": "Kieruje do {{fact:host}}, którego nie ma żaden Service ani ServiceEntry: proxy odpowiada 503.",
-   "problems.unknown-host-4.title": "Usługa wirtualna kieruje do nieznanego hosta (4)",
-   "problems.unknown-host-4.message": "Kieruje do {{fact:host}}, którego nie ma żaden Service ani ServiceEntry: proxy odpowiada 503.",
-   "problems.unknown-host-5.title": "Usługa wirtualna kieruje do nieznanego hosta (5)",
-   "problems.unknown-host-5.message": "Kieruje do {{fact:host}}, którego nie ma żaden Service ani ServiceEntry: proxy odpowiada 503.",
-   "problems.missing-destination-rule-1.title": "Usługa wirtualna kieruje do podzbioru bez reguły docelowej (1)",
-   "problems.missing-destination-rule-1.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, ale żadna reguła docelowa nie obejmuje tego hosta: proxy odpowiada 503.",
-   "problems.missing-destination-rule-2.title": "Usługa wirtualna kieruje do podzbioru bez reguły docelowej (2)",
-   "problems.missing-destination-rule-2.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, ale żadna reguła docelowa nie obejmuje tego hosta: proxy odpowiada 503.",
-   "problems.missing-destination-rule-3.title": "Usługa wirtualna kieruje do podzbioru bez reguły docelowej (3)",
-   "problems.missing-destination-rule-3.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, ale żadna reguła docelowa nie obejmuje tego hosta: proxy odpowiada 503.",
-   "problems.missing-destination-rule-4.title": "Usługa wirtualna kieruje do podzbioru bez reguły docelowej (4)",
-   "problems.missing-destination-rule-4.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, ale żadna reguła docelowa nie obejmuje tego hosta: proxy odpowiada 503.",
-   "problems.missing-destination-rule-5.title": "Usługa wirtualna kieruje do podzbioru bez reguły docelowej (5)",
-   "problems.missing-destination-rule-5.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, ale żadna reguła docelowa nie obejmuje tego hosta: proxy odpowiada 503.",
-   "problems.missing-subset-1.title": "Usługa wirtualna kieruje do podzbioru, którego brak w regule docelowej (1)",
-   "problems.missing-subset-1.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, którego reguła docelowa {{fact:rule}} nie definiuje: proxy odpowiada 503.",
-   "problems.missing-subset-2.title": "Usługa wirtualna kieruje do podzbioru, którego brak w regule docelowej (2)",
-   "problems.missing-subset-2.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, którego reguła docelowa {{fact:rule}} nie definiuje: proxy odpowiada 503.",
-   "problems.missing-subset-3.title": "Usługa wirtualna kieruje do podzbioru, którego brak w regule docelowej (3)",
-   "problems.missing-subset-3.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, którego reguła docelowa {{fact:rule}} nie definiuje: proxy odpowiada 503.",
-   "problems.missing-subset-4.title": "Usługa wirtualna kieruje do podzbioru, którego brak w regule docelowej (4)",
-   "problems.missing-subset-4.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, którego reguła docelowa {{fact:rule}} nie definiuje: proxy odpowiada 503.",
-   "problems.missing-subset-5.title": "Usługa wirtualna kieruje do podzbioru, którego brak w regule docelowej (5)",
-   "problems.missing-subset-5.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, którego reguła docelowa {{fact:rule}} nie definiuje: proxy odpowiada 503.",
-   "problems.missing-gateway-1.title": "Usługa wirtualna powiązana z brakującą bramą (1)",
-   "problems.missing-gateway-1.message": "Powiązany z bramą {{fact:gateway}}, która nie istnieje.",
-   "problems.missing-gateway-2.title": "Usługa wirtualna powiązana z brakującą bramą (2)",
-   "problems.missing-gateway-2.message": "Powiązany z bramą {{fact:gateway}}, która nie istnieje.",
-   "problems.missing-gateway-3.title": "Usługa wirtualna powiązana z brakującą bramą (3)",
-   "problems.missing-gateway-3.message": "Powiązany z bramą {{fact:gateway}}, która nie istnieje.",
-   "problems.missing-gateway-4.title": "Usługa wirtualna powiązana z brakującą bramą (4)",
-   "problems.missing-gateway-4.message": "Powiązany z bramą {{fact:gateway}}, która nie istnieje.",
-   "problems.missing-gateway-5.title": "Usługa wirtualna powiązana z brakującą bramą (5)",
-   "problems.missing-gateway-5.message": "Powiązany z bramą {{fact:gateway}}, która nie istnieje.",
+   "problems.unknown-host.title": "Usługa wirtualna kieruje do nieznanego hosta",
+   "problems.unknown-host.message": "Kieruje do {{fact:host}}, którego nie ma żaden Service ani ServiceEntry: proxy odpowiada 503.",
+   "problems.missing-destination-rule.title": "Usługa wirtualna kieruje do podzbioru bez reguły docelowej",
+   "problems.missing-destination-rule.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, ale żadna reguła docelowa nie obejmuje tego hosta: proxy odpowiada 503.",
+   "problems.missing-subset.title": "Usługa wirtualna kieruje do podzbioru, którego brak w regule docelowej",
+   "problems.missing-subset.message": "Kieruje do podzbioru {{fact:subset}} hosta {{fact:host}}, którego reguła docelowa {{fact:rule}} nie definiuje: proxy odpowiada 503.",
+   "problems.missing-gateway.title": "Usługa wirtualna powiązana z brakującą bramą",
+   "problems.missing-gateway.message": "Powiązany z bramą {{fact:gateway}}, która nie istnieje.",
    "problems.invalid-virtual-service.title": "Usługa wirtualna odrzucona: host * na sidecarach",
    "problems.invalid-virtual-service.message": "Ma host * przy powiązaniu z sidecarami (mesh): Istio ją odrzuca, więc żadna z jej tras nie jest używana.",
-   "problems.conflicting-virtual-service-1.title": "Host usługi wirtualnej zajęty przez starszą (1)",
-   "problems.conflicting-virtual-service-1.message": "Host {{fact:host}} na {{fact:gateway}} jest już zajęty przez starszą usługę wirtualną {{fact:other}}: trasy tej usługi nie są osiągane.",
-   "problems.conflicting-virtual-service-2.title": "Host usługi wirtualnej zajęty przez starszą (2)",
-   "problems.conflicting-virtual-service-2.message": "Host {{fact:host}} na {{fact:gateway}} jest już zajęty przez starszą usługę wirtualną {{fact:other}}: trasy tej usługi nie są osiągane.",
-   "problems.conflicting-virtual-service-3.title": "Host usługi wirtualnej zajęty przez starszą (3)",
-   "problems.conflicting-virtual-service-3.message": "Host {{fact:host}} na {{fact:gateway}} jest już zajęty przez starszą usługę wirtualną {{fact:other}}: trasy tej usługi nie są osiągane.",
-   "problems.conflicting-virtual-service-4.title": "Host usługi wirtualnej zajęty przez starszą (4)",
-   "problems.conflicting-virtual-service-4.message": "Host {{fact:host}} na {{fact:gateway}} jest już zajęty przez starszą usługę wirtualną {{fact:other}}: trasy tej usługi nie są osiągane.",
-   "problems.conflicting-virtual-service-5.title": "Host usługi wirtualnej zajęty przez starszą (5)",
-   "problems.conflicting-virtual-service-5.message": "Host {{fact:host}} na {{fact:gateway}} jest już zajęty przez starszą usługę wirtualną {{fact:other}}: trasy tej usługi nie są osiągane.",
+   "problems.conflicting-virtual-service.title": "Host usługi wirtualnej zajęty przez starszą",
+   "problems.conflicting-virtual-service.message": "Host {{fact:host}} na {{fact:gateway}} jest już zajęty przez starszą usługę wirtualną {{fact:other}}: trasy tej usługi nie są osiągane.",
    "problems.tls-conflict.title": "Tryb TLS reguły docelowej odrzucany przez mTLS STRICT",
    "problems.tls-conflict.message": "Ustawia tryb TLS {{fact:mode}} wobec {{fact:host}}, którego obciążenia przyjmują tylko mTLS Istio (STRICT): wywołania się nie udają. Należy użyć ISTIO_MUTUAL."
   },
@@ -4289,58 +2353,18 @@
    "columns.sa-server.cases.2.text": "Todas as cargas de trabalho do namespace",
    "columns.mtls-ids.title": "Identidades",
    "columns.na-networks.title": "Redes",
-   "problems.unknown-host-1.title": "Serviço virtual roteia para um host desconhecido (1)",
-   "problems.unknown-host-1.message": "Envia para {{fact:host}}, que nenhum Service ou ServiceEntry tem: o proxy responde 503.",
-   "problems.unknown-host-2.title": "Serviço virtual roteia para um host desconhecido (2)",
-   "problems.unknown-host-2.message": "Envia para {{fact:host}}, que nenhum Service ou ServiceEntry tem: o proxy responde 503.",
-   "problems.unknown-host-3.title": "Serviço virtual roteia para um host desconhecido (3)",
-   "problems.unknown-host-3.message": "Envia para {{fact:host}}, que nenhum Service ou ServiceEntry tem: o proxy responde 503.",
-   "problems.unknown-host-4.title": "Serviço virtual roteia para um host desconhecido (4)",
-   "problems.unknown-host-4.message": "Envia para {{fact:host}}, que nenhum Service ou ServiceEntry tem: o proxy responde 503.",
-   "problems.unknown-host-5.title": "Serviço virtual roteia para um host desconhecido (5)",
-   "problems.unknown-host-5.message": "Envia para {{fact:host}}, que nenhum Service ou ServiceEntry tem: o proxy responde 503.",
-   "problems.missing-destination-rule-1.title": "Serviço virtual roteia para um subset sem regra de destino (1)",
-   "problems.missing-destination-rule-1.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, mas nenhuma regra de destino cobre esse host: o proxy responde 503.",
-   "problems.missing-destination-rule-2.title": "Serviço virtual roteia para um subset sem regra de destino (2)",
-   "problems.missing-destination-rule-2.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, mas nenhuma regra de destino cobre esse host: o proxy responde 503.",
-   "problems.missing-destination-rule-3.title": "Serviço virtual roteia para um subset sem regra de destino (3)",
-   "problems.missing-destination-rule-3.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, mas nenhuma regra de destino cobre esse host: o proxy responde 503.",
-   "problems.missing-destination-rule-4.title": "Serviço virtual roteia para um subset sem regra de destino (4)",
-   "problems.missing-destination-rule-4.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, mas nenhuma regra de destino cobre esse host: o proxy responde 503.",
-   "problems.missing-destination-rule-5.title": "Serviço virtual roteia para um subset sem regra de destino (5)",
-   "problems.missing-destination-rule-5.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, mas nenhuma regra de destino cobre esse host: o proxy responde 503.",
-   "problems.missing-subset-1.title": "Serviço virtual roteia para um subset ausente da regra de destino (1)",
-   "problems.missing-subset-1.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, que a regra de destino {{fact:rule}} não define: o proxy responde 503.",
-   "problems.missing-subset-2.title": "Serviço virtual roteia para um subset ausente da regra de destino (2)",
-   "problems.missing-subset-2.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, que a regra de destino {{fact:rule}} não define: o proxy responde 503.",
-   "problems.missing-subset-3.title": "Serviço virtual roteia para um subset ausente da regra de destino (3)",
-   "problems.missing-subset-3.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, que a regra de destino {{fact:rule}} não define: o proxy responde 503.",
-   "problems.missing-subset-4.title": "Serviço virtual roteia para um subset ausente da regra de destino (4)",
-   "problems.missing-subset-4.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, que a regra de destino {{fact:rule}} não define: o proxy responde 503.",
-   "problems.missing-subset-5.title": "Serviço virtual roteia para um subset ausente da regra de destino (5)",
-   "problems.missing-subset-5.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, que a regra de destino {{fact:rule}} não define: o proxy responde 503.",
-   "problems.missing-gateway-1.title": "Serviço virtual vinculado a um gateway ausente (1)",
-   "problems.missing-gateway-1.message": "Vinculado ao gateway {{fact:gateway}}, que não existe.",
-   "problems.missing-gateway-2.title": "Serviço virtual vinculado a um gateway ausente (2)",
-   "problems.missing-gateway-2.message": "Vinculado ao gateway {{fact:gateway}}, que não existe.",
-   "problems.missing-gateway-3.title": "Serviço virtual vinculado a um gateway ausente (3)",
-   "problems.missing-gateway-3.message": "Vinculado ao gateway {{fact:gateway}}, que não existe.",
-   "problems.missing-gateway-4.title": "Serviço virtual vinculado a um gateway ausente (4)",
-   "problems.missing-gateway-4.message": "Vinculado ao gateway {{fact:gateway}}, que não existe.",
-   "problems.missing-gateway-5.title": "Serviço virtual vinculado a um gateway ausente (5)",
-   "problems.missing-gateway-5.message": "Vinculado ao gateway {{fact:gateway}}, que não existe.",
+   "problems.unknown-host.title": "Serviço virtual roteia para um host desconhecido",
+   "problems.unknown-host.message": "Envia para {{fact:host}}, que nenhum Service ou ServiceEntry tem: o proxy responde 503.",
+   "problems.missing-destination-rule.title": "Serviço virtual roteia para um subset sem regra de destino",
+   "problems.missing-destination-rule.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, mas nenhuma regra de destino cobre esse host: o proxy responde 503.",
+   "problems.missing-subset.title": "Serviço virtual roteia para um subset ausente da regra de destino",
+   "problems.missing-subset.message": "Envia para o subconjunto {{fact:subset}} de {{fact:host}}, que a regra de destino {{fact:rule}} não define: o proxy responde 503.",
+   "problems.missing-gateway.title": "Serviço virtual vinculado a um gateway ausente",
+   "problems.missing-gateway.message": "Vinculado ao gateway {{fact:gateway}}, que não existe.",
    "problems.invalid-virtual-service.title": "Serviço virtual rejeitado: host * nos sidecars",
    "problems.invalid-virtual-service.message": "Tem o host * estando vinculado aos sidecars (mesh): o Istio o rejeita, então nenhuma de suas rotas é usada.",
-   "problems.conflicting-virtual-service-1.title": "Host do serviço virtual ocupado por um mais antigo (1)",
-   "problems.conflicting-virtual-service-1.message": "O host {{fact:host}} em {{fact:gateway}} já é ocupado pelo serviço virtual mais antigo {{fact:other}}: as rotas deste não são alcançadas.",
-   "problems.conflicting-virtual-service-2.title": "Host do serviço virtual ocupado por um mais antigo (2)",
-   "problems.conflicting-virtual-service-2.message": "O host {{fact:host}} em {{fact:gateway}} já é ocupado pelo serviço virtual mais antigo {{fact:other}}: as rotas deste não são alcançadas.",
-   "problems.conflicting-virtual-service-3.title": "Host do serviço virtual ocupado por um mais antigo (3)",
-   "problems.conflicting-virtual-service-3.message": "O host {{fact:host}} em {{fact:gateway}} já é ocupado pelo serviço virtual mais antigo {{fact:other}}: as rotas deste não são alcançadas.",
-   "problems.conflicting-virtual-service-4.title": "Host do serviço virtual ocupado por um mais antigo (4)",
-   "problems.conflicting-virtual-service-4.message": "O host {{fact:host}} em {{fact:gateway}} já é ocupado pelo serviço virtual mais antigo {{fact:other}}: as rotas deste não são alcançadas.",
-   "problems.conflicting-virtual-service-5.title": "Host do serviço virtual ocupado por um mais antigo (5)",
-   "problems.conflicting-virtual-service-5.message": "O host {{fact:host}} em {{fact:gateway}} já é ocupado pelo serviço virtual mais antigo {{fact:other}}: as rotas deste não são alcançadas.",
+   "problems.conflicting-virtual-service.title": "Host do serviço virtual ocupado por um mais antigo",
+   "problems.conflicting-virtual-service.message": "O host {{fact:host}} em {{fact:gateway}} já é ocupado pelo serviço virtual mais antigo {{fact:other}}: as rotas deste não são alcançadas.",
    "problems.tls-conflict.title": "Modo TLS da regra de destino recusado pelo mTLS STRICT",
    "problems.tls-conflict.message": "Define o modo TLS {{fact:mode}} para {{fact:host}}, cujas cargas de trabalho só aceitam o mTLS do Istio (STRICT): as chamadas falham. Use ISTIO_MUTUAL."
   },
@@ -4402,58 +2426,18 @@
    "columns.sa-server.cases.2.text": "Все рабочие нагрузки namespace",
    "columns.mtls-ids.title": "Идентичности",
    "columns.na-networks.title": "Сети",
-   "problems.unknown-host-1.title": "Виртуальный сервис направляет на неизвестный хост (1)",
-   "problems.unknown-host-1.message": "Направляет на {{fact:host}}, но такого хоста нет ни у одного Service или ServiceEntry: прокси отвечает 503.",
-   "problems.unknown-host-2.title": "Виртуальный сервис направляет на неизвестный хост (2)",
-   "problems.unknown-host-2.message": "Направляет на {{fact:host}}, но такого хоста нет ни у одного Service или ServiceEntry: прокси отвечает 503.",
-   "problems.unknown-host-3.title": "Виртуальный сервис направляет на неизвестный хост (3)",
-   "problems.unknown-host-3.message": "Направляет на {{fact:host}}, но такого хоста нет ни у одного Service или ServiceEntry: прокси отвечает 503.",
-   "problems.unknown-host-4.title": "Виртуальный сервис направляет на неизвестный хост (4)",
-   "problems.unknown-host-4.message": "Направляет на {{fact:host}}, но такого хоста нет ни у одного Service или ServiceEntry: прокси отвечает 503.",
-   "problems.unknown-host-5.title": "Виртуальный сервис направляет на неизвестный хост (5)",
-   "problems.unknown-host-5.message": "Направляет на {{fact:host}}, но такого хоста нет ни у одного Service или ServiceEntry: прокси отвечает 503.",
-   "problems.missing-destination-rule-1.title": "Виртуальный сервис направляет на подмножество без правила назначения (1)",
-   "problems.missing-destination-rule-1.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, но ни одно правило назначения не описывает этот хост: прокси отвечает 503.",
-   "problems.missing-destination-rule-2.title": "Виртуальный сервис направляет на подмножество без правила назначения (2)",
-   "problems.missing-destination-rule-2.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, но ни одно правило назначения не описывает этот хост: прокси отвечает 503.",
-   "problems.missing-destination-rule-3.title": "Виртуальный сервис направляет на подмножество без правила назначения (3)",
-   "problems.missing-destination-rule-3.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, но ни одно правило назначения не описывает этот хост: прокси отвечает 503.",
-   "problems.missing-destination-rule-4.title": "Виртуальный сервис направляет на подмножество без правила назначения (4)",
-   "problems.missing-destination-rule-4.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, но ни одно правило назначения не описывает этот хост: прокси отвечает 503.",
-   "problems.missing-destination-rule-5.title": "Виртуальный сервис направляет на подмножество без правила назначения (5)",
-   "problems.missing-destination-rule-5.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, но ни одно правило назначения не описывает этот хост: прокси отвечает 503.",
-   "problems.missing-subset-1.title": "Виртуальный сервис направляет на подмножество, которого нет в правиле (1)",
-   "problems.missing-subset-1.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, которого нет в правиле назначения {{fact:rule}}: прокси отвечает 503.",
-   "problems.missing-subset-2.title": "Виртуальный сервис направляет на подмножество, которого нет в правиле (2)",
-   "problems.missing-subset-2.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, которого нет в правиле назначения {{fact:rule}}: прокси отвечает 503.",
-   "problems.missing-subset-3.title": "Виртуальный сервис направляет на подмножество, которого нет в правиле (3)",
-   "problems.missing-subset-3.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, которого нет в правиле назначения {{fact:rule}}: прокси отвечает 503.",
-   "problems.missing-subset-4.title": "Виртуальный сервис направляет на подмножество, которого нет в правиле (4)",
-   "problems.missing-subset-4.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, которого нет в правиле назначения {{fact:rule}}: прокси отвечает 503.",
-   "problems.missing-subset-5.title": "Виртуальный сервис направляет на подмножество, которого нет в правиле (5)",
-   "problems.missing-subset-5.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, которого нет в правиле назначения {{fact:rule}}: прокси отвечает 503.",
-   "problems.missing-gateway-1.title": "Виртуальный сервис привязан к несуществующему шлюзу (1)",
-   "problems.missing-gateway-1.message": "Привязан к шлюзу {{fact:gateway}}, которого не существует.",
-   "problems.missing-gateway-2.title": "Виртуальный сервис привязан к несуществующему шлюзу (2)",
-   "problems.missing-gateway-2.message": "Привязан к шлюзу {{fact:gateway}}, которого не существует.",
-   "problems.missing-gateway-3.title": "Виртуальный сервис привязан к несуществующему шлюзу (3)",
-   "problems.missing-gateway-3.message": "Привязан к шлюзу {{fact:gateway}}, которого не существует.",
-   "problems.missing-gateway-4.title": "Виртуальный сервис привязан к несуществующему шлюзу (4)",
-   "problems.missing-gateway-4.message": "Привязан к шлюзу {{fact:gateway}}, которого не существует.",
-   "problems.missing-gateway-5.title": "Виртуальный сервис привязан к несуществующему шлюзу (5)",
-   "problems.missing-gateway-5.message": "Привязан к шлюзу {{fact:gateway}}, которого не существует.",
+   "problems.unknown-host.title": "Виртуальный сервис направляет на неизвестный хост",
+   "problems.unknown-host.message": "Направляет на {{fact:host}}, но такого хоста нет ни у одного Service или ServiceEntry: прокси отвечает 503.",
+   "problems.missing-destination-rule.title": "Виртуальный сервис направляет на подмножество без правила назначения",
+   "problems.missing-destination-rule.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, но ни одно правило назначения не описывает этот хост: прокси отвечает 503.",
+   "problems.missing-subset.title": "Виртуальный сервис направляет на подмножество, которого нет в правиле",
+   "problems.missing-subset.message": "Направляет на подмножество {{fact:subset}} хоста {{fact:host}}, которого нет в правиле назначения {{fact:rule}}: прокси отвечает 503.",
+   "problems.missing-gateway.title": "Виртуальный сервис привязан к несуществующему шлюзу",
+   "problems.missing-gateway.message": "Привязан к шлюзу {{fact:gateway}}, которого не существует.",
    "problems.invalid-virtual-service.title": "Виртуальный сервис отклонён: хост * на sidecar-прокси",
    "problems.invalid-virtual-service.message": "Имеет хост * при привязке к sidecar (mesh): Istio его отклоняет, поэтому ни один из его маршрутов не используется.",
-   "problems.conflicting-virtual-service-1.title": "Хост виртуального сервиса занят более старым (1)",
-   "problems.conflicting-virtual-service-1.message": "Хост {{fact:host}} на {{fact:gateway}} уже занят более старым виртуальным сервисом {{fact:other}}: маршруты этого не используются.",
-   "problems.conflicting-virtual-service-2.title": "Хост виртуального сервиса занят более старым (2)",
-   "problems.conflicting-virtual-service-2.message": "Хост {{fact:host}} на {{fact:gateway}} уже занят более старым виртуальным сервисом {{fact:other}}: маршруты этого не используются.",
-   "problems.conflicting-virtual-service-3.title": "Хост виртуального сервиса занят более старым (3)",
-   "problems.conflicting-virtual-service-3.message": "Хост {{fact:host}} на {{fact:gateway}} уже занят более старым виртуальным сервисом {{fact:other}}: маршруты этого не используются.",
-   "problems.conflicting-virtual-service-4.title": "Хост виртуального сервиса занят более старым (4)",
-   "problems.conflicting-virtual-service-4.message": "Хост {{fact:host}} на {{fact:gateway}} уже занят более старым виртуальным сервисом {{fact:other}}: маршруты этого не используются.",
-   "problems.conflicting-virtual-service-5.title": "Хост виртуального сервиса занят более старым (5)",
-   "problems.conflicting-virtual-service-5.message": "Хост {{fact:host}} на {{fact:gateway}} уже занят более старым виртуальным сервисом {{fact:other}}: маршруты этого не используются.",
+   "problems.conflicting-virtual-service.title": "Хост виртуального сервиса занят более старым",
+   "problems.conflicting-virtual-service.message": "Хост {{fact:host}} на {{fact:gateway}} уже занят более старым виртуальным сервисом {{fact:other}}: маршруты этого не используются.",
    "problems.tls-conflict.title": "Режим TLS правила назначения отвергается mTLS STRICT",
    "problems.tls-conflict.message": "Задаёт режим TLS {{fact:mode}} для {{fact:host}}, а его рабочие нагрузки принимают только mTLS Istio (STRICT): вызовы не проходят. Используйте ISTIO_MUTUAL."
   },
@@ -4513,58 +2497,18 @@
    "columns.sa-server.cases.2.text": "Namespace'in her iş yükü",
    "columns.mtls-ids.title": "Kimlikler",
    "columns.na-networks.title": "Ağlar",
-   "problems.unknown-host-1.title": "Sanal hizmet bilinmeyen bir ana bilgisayara yönlendiriyor (1)",
-   "problems.unknown-host-1.message": "Hiçbir Service veya ServiceEntry'de olmayan {{fact:host}} adresine yönlendiriyor: proxy 503 yanıtı veriyor.",
-   "problems.unknown-host-2.title": "Sanal hizmet bilinmeyen bir ana bilgisayara yönlendiriyor (2)",
-   "problems.unknown-host-2.message": "Hiçbir Service veya ServiceEntry'de olmayan {{fact:host}} adresine yönlendiriyor: proxy 503 yanıtı veriyor.",
-   "problems.unknown-host-3.title": "Sanal hizmet bilinmeyen bir ana bilgisayara yönlendiriyor (3)",
-   "problems.unknown-host-3.message": "Hiçbir Service veya ServiceEntry'de olmayan {{fact:host}} adresine yönlendiriyor: proxy 503 yanıtı veriyor.",
-   "problems.unknown-host-4.title": "Sanal hizmet bilinmeyen bir ana bilgisayara yönlendiriyor (4)",
-   "problems.unknown-host-4.message": "Hiçbir Service veya ServiceEntry'de olmayan {{fact:host}} adresine yönlendiriyor: proxy 503 yanıtı veriyor.",
-   "problems.unknown-host-5.title": "Sanal hizmet bilinmeyen bir ana bilgisayara yönlendiriyor (5)",
-   "problems.unknown-host-5.message": "Hiçbir Service veya ServiceEntry'de olmayan {{fact:host}} adresine yönlendiriyor: proxy 503 yanıtı veriyor.",
-   "problems.missing-destination-rule-1.title": "Sanal hizmet hedef kuralı olmayan bir alt kümeye yönlendiriyor (1)",
-   "problems.missing-destination-rule-1.message": "{{fact:host}} için {{fact:subset}} alt kümesine yönlendiriyor, ancak bu ana makineyi kapsayan bir hedef kuralı yok: proxy 503 yanıtı veriyor.",
-   "problems.missing-destination-rule-2.title": "Sanal hizmet hedef kuralı olmayan bir alt kümeye yönlendiriyor (2)",
-   "problems.missing-destination-rule-2.message": "{{fact:host}} için {{fact:subset}} alt kümesine yönlendiriyor, ancak bu ana makineyi kapsayan bir hedef kuralı yok: proxy 503 yanıtı veriyor.",
-   "problems.missing-destination-rule-3.title": "Sanal hizmet hedef kuralı olmayan bir alt kümeye yönlendiriyor (3)",
-   "problems.missing-destination-rule-3.message": "{{fact:host}} için {{fact:subset}} alt kümesine yönlendiriyor, ancak bu ana makineyi kapsayan bir hedef kuralı yok: proxy 503 yanıtı veriyor.",
-   "problems.missing-destination-rule-4.title": "Sanal hizmet hedef kuralı olmayan bir alt kümeye yönlendiriyor (4)",
-   "problems.missing-destination-rule-4.message": "{{fact:host}} için {{fact:subset}} alt kümesine yönlendiriyor, ancak bu ana makineyi kapsayan bir hedef kuralı yok: proxy 503 yanıtı veriyor.",
-   "problems.missing-destination-rule-5.title": "Sanal hizmet hedef kuralı olmayan bir alt kümeye yönlendiriyor (5)",
-   "problems.missing-destination-rule-5.message": "{{fact:host}} için {{fact:subset}} alt kümesine yönlendiriyor, ancak bu ana makineyi kapsayan bir hedef kuralı yok: proxy 503 yanıtı veriyor.",
-   "problems.missing-subset-1.title": "Sanal hizmet hedef kuralında olmayan bir alt kümeye yönlendiriyor (1)",
-   "problems.missing-subset-1.message": "{{fact:host}} için {{fact:rule}} hedef kuralının tanımlamadığı {{fact:subset}} alt kümesine yönlendiriyor: proxy 503 yanıtı veriyor.",
-   "problems.missing-subset-2.title": "Sanal hizmet hedef kuralında olmayan bir alt kümeye yönlendiriyor (2)",
-   "problems.missing-subset-2.message": "{{fact:host}} için {{fact:rule}} hedef kuralının tanımlamadığı {{fact:subset}} alt kümesine yönlendiriyor: proxy 503 yanıtı veriyor.",
-   "problems.missing-subset-3.title": "Sanal hizmet hedef kuralında olmayan bir alt kümeye yönlendiriyor (3)",
-   "problems.missing-subset-3.message": "{{fact:host}} için {{fact:rule}} hedef kuralının tanımlamadığı {{fact:subset}} alt kümesine yönlendiriyor: proxy 503 yanıtı veriyor.",
-   "problems.missing-subset-4.title": "Sanal hizmet hedef kuralında olmayan bir alt kümeye yönlendiriyor (4)",
-   "problems.missing-subset-4.message": "{{fact:host}} için {{fact:rule}} hedef kuralının tanımlamadığı {{fact:subset}} alt kümesine yönlendiriyor: proxy 503 yanıtı veriyor.",
-   "problems.missing-subset-5.title": "Sanal hizmet hedef kuralında olmayan bir alt kümeye yönlendiriyor (5)",
-   "problems.missing-subset-5.message": "{{fact:host}} için {{fact:rule}} hedef kuralının tanımlamadığı {{fact:subset}} alt kümesine yönlendiriyor: proxy 503 yanıtı veriyor.",
-   "problems.missing-gateway-1.title": "Sanal hizmet olmayan bir ağ geçidine bağlı (1)",
-   "problems.missing-gateway-1.message": "Var olmayan {{fact:gateway}} ağ geçidine bağlı.",
-   "problems.missing-gateway-2.title": "Sanal hizmet olmayan bir ağ geçidine bağlı (2)",
-   "problems.missing-gateway-2.message": "Var olmayan {{fact:gateway}} ağ geçidine bağlı.",
-   "problems.missing-gateway-3.title": "Sanal hizmet olmayan bir ağ geçidine bağlı (3)",
-   "problems.missing-gateway-3.message": "Var olmayan {{fact:gateway}} ağ geçidine bağlı.",
-   "problems.missing-gateway-4.title": "Sanal hizmet olmayan bir ağ geçidine bağlı (4)",
-   "problems.missing-gateway-4.message": "Var olmayan {{fact:gateway}} ağ geçidine bağlı.",
-   "problems.missing-gateway-5.title": "Sanal hizmet olmayan bir ağ geçidine bağlı (5)",
-   "problems.missing-gateway-5.message": "Var olmayan {{fact:gateway}} ağ geçidine bağlı.",
+   "problems.unknown-host.title": "Sanal hizmet bilinmeyen bir ana bilgisayara yönlendiriyor",
+   "problems.unknown-host.message": "Hiçbir Service veya ServiceEntry'de olmayan {{fact:host}} adresine yönlendiriyor: proxy 503 yanıtı veriyor.",
+   "problems.missing-destination-rule.title": "Sanal hizmet hedef kuralı olmayan bir alt kümeye yönlendiriyor",
+   "problems.missing-destination-rule.message": "{{fact:host}} için {{fact:subset}} alt kümesine yönlendiriyor, ancak bu ana makineyi kapsayan bir hedef kuralı yok: proxy 503 yanıtı veriyor.",
+   "problems.missing-subset.title": "Sanal hizmet hedef kuralında olmayan bir alt kümeye yönlendiriyor",
+   "problems.missing-subset.message": "{{fact:host}} için {{fact:rule}} hedef kuralının tanımlamadığı {{fact:subset}} alt kümesine yönlendiriyor: proxy 503 yanıtı veriyor.",
+   "problems.missing-gateway.title": "Sanal hizmet olmayan bir ağ geçidine bağlı",
+   "problems.missing-gateway.message": "Var olmayan {{fact:gateway}} ağ geçidine bağlı.",
    "problems.invalid-virtual-service.title": "Sanal hizmet reddedildi: sidecar'larda * ana bilgisayarı",
    "problems.invalid-virtual-service.message": "Sidecar'lara (mesh) bağlıyken * ana makinesine sahip: Istio onu reddeder, bu yüzden rotalarının hiçbiri kullanılmaz.",
-   "problems.conflicting-virtual-service-1.title": "Sanal hizmetin ana bilgisayarı daha eski biri tarafından alınmış (1)",
-   "problems.conflicting-virtual-service-1.message": "{{fact:gateway}} üzerindeki {{fact:host}} ana makinesi daha eski {{fact:other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
-   "problems.conflicting-virtual-service-2.title": "Sanal hizmetin ana bilgisayarı daha eski biri tarafından alınmış (2)",
-   "problems.conflicting-virtual-service-2.message": "{{fact:gateway}} üzerindeki {{fact:host}} ana makinesi daha eski {{fact:other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
-   "problems.conflicting-virtual-service-3.title": "Sanal hizmetin ana bilgisayarı daha eski biri tarafından alınmış (3)",
-   "problems.conflicting-virtual-service-3.message": "{{fact:gateway}} üzerindeki {{fact:host}} ana makinesi daha eski {{fact:other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
-   "problems.conflicting-virtual-service-4.title": "Sanal hizmetin ana bilgisayarı daha eski biri tarafından alınmış (4)",
-   "problems.conflicting-virtual-service-4.message": "{{fact:gateway}} üzerindeki {{fact:host}} ana makinesi daha eski {{fact:other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
-   "problems.conflicting-virtual-service-5.title": "Sanal hizmetin ana bilgisayarı daha eski biri tarafından alınmış (5)",
-   "problems.conflicting-virtual-service-5.message": "{{fact:gateway}} üzerindeki {{fact:host}} ana makinesi daha eski {{fact:other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
+   "problems.conflicting-virtual-service.title": "Sanal hizmetin ana bilgisayarı daha eski biri tarafından alınmış",
+   "problems.conflicting-virtual-service.message": "{{fact:gateway}} üzerindeki {{fact:host}} ana makinesi daha eski {{fact:other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
    "problems.tls-conflict.title": "Hedef kuralının TLS kipi STRICT mTLS tarafından reddediliyor",
    "problems.tls-conflict.message": "Yalnızca Istio mTLS kabul eden (STRICT) iş yüklerine sahip {{fact:host}} için TLS modunu {{fact:mode}} yapıyor: çağrılar başarısız olur. ISTIO_MUTUAL kullanın."
   },
@@ -4626,58 +2570,18 @@
    "columns.sa-server.cases.2.text": "Усі робочі навантаження namespace",
    "columns.mtls-ids.title": "Ідентичності",
    "columns.na-networks.title": "Мережі",
-   "problems.unknown-host-1.title": "Віртуальний сервіс спрямовує на невідомий хост (1)",
-   "problems.unknown-host-1.message": "Спрямовує на {{fact:host}}, але такого хоста немає в жодного Service чи ServiceEntry: проксі відповідає 503.",
-   "problems.unknown-host-2.title": "Віртуальний сервіс спрямовує на невідомий хост (2)",
-   "problems.unknown-host-2.message": "Спрямовує на {{fact:host}}, але такого хоста немає в жодного Service чи ServiceEntry: проксі відповідає 503.",
-   "problems.unknown-host-3.title": "Віртуальний сервіс спрямовує на невідомий хост (3)",
-   "problems.unknown-host-3.message": "Спрямовує на {{fact:host}}, але такого хоста немає в жодного Service чи ServiceEntry: проксі відповідає 503.",
-   "problems.unknown-host-4.title": "Віртуальний сервіс спрямовує на невідомий хост (4)",
-   "problems.unknown-host-4.message": "Спрямовує на {{fact:host}}, але такого хоста немає в жодного Service чи ServiceEntry: проксі відповідає 503.",
-   "problems.unknown-host-5.title": "Віртуальний сервіс спрямовує на невідомий хост (5)",
-   "problems.unknown-host-5.message": "Спрямовує на {{fact:host}}, але такого хоста немає в жодного Service чи ServiceEntry: проксі відповідає 503.",
-   "problems.missing-destination-rule-1.title": "Віртуальний сервіс спрямовує на підмножину без правила призначення (1)",
-   "problems.missing-destination-rule-1.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, але жодне правило призначення не описує цей хост: проксі відповідає 503.",
-   "problems.missing-destination-rule-2.title": "Віртуальний сервіс спрямовує на підмножину без правила призначення (2)",
-   "problems.missing-destination-rule-2.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, але жодне правило призначення не описує цей хост: проксі відповідає 503.",
-   "problems.missing-destination-rule-3.title": "Віртуальний сервіс спрямовує на підмножину без правила призначення (3)",
-   "problems.missing-destination-rule-3.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, але жодне правило призначення не описує цей хост: проксі відповідає 503.",
-   "problems.missing-destination-rule-4.title": "Віртуальний сервіс спрямовує на підмножину без правила призначення (4)",
-   "problems.missing-destination-rule-4.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, але жодне правило призначення не описує цей хост: проксі відповідає 503.",
-   "problems.missing-destination-rule-5.title": "Віртуальний сервіс спрямовує на підмножину без правила призначення (5)",
-   "problems.missing-destination-rule-5.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, але жодне правило призначення не описує цей хост: проксі відповідає 503.",
-   "problems.missing-subset-1.title": "Віртуальний сервіс спрямовує на підмножину, якої немає в правилі (1)",
-   "problems.missing-subset-1.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, якої немає в правилі призначення {{fact:rule}}: проксі відповідає 503.",
-   "problems.missing-subset-2.title": "Віртуальний сервіс спрямовує на підмножину, якої немає в правилі (2)",
-   "problems.missing-subset-2.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, якої немає в правилі призначення {{fact:rule}}: проксі відповідає 503.",
-   "problems.missing-subset-3.title": "Віртуальний сервіс спрямовує на підмножину, якої немає в правилі (3)",
-   "problems.missing-subset-3.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, якої немає в правилі призначення {{fact:rule}}: проксі відповідає 503.",
-   "problems.missing-subset-4.title": "Віртуальний сервіс спрямовує на підмножину, якої немає в правилі (4)",
-   "problems.missing-subset-4.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, якої немає в правилі призначення {{fact:rule}}: проксі відповідає 503.",
-   "problems.missing-subset-5.title": "Віртуальний сервіс спрямовує на підмножину, якої немає в правилі (5)",
-   "problems.missing-subset-5.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, якої немає в правилі призначення {{fact:rule}}: проксі відповідає 503.",
-   "problems.missing-gateway-1.title": "Віртуальний сервіс прив'язано до відсутнього шлюзу (1)",
-   "problems.missing-gateway-1.message": "Прив'язаний до шлюзу {{fact:gateway}}, якого не існує.",
-   "problems.missing-gateway-2.title": "Віртуальний сервіс прив'язано до відсутнього шлюзу (2)",
-   "problems.missing-gateway-2.message": "Прив'язаний до шлюзу {{fact:gateway}}, якого не існує.",
-   "problems.missing-gateway-3.title": "Віртуальний сервіс прив'язано до відсутнього шлюзу (3)",
-   "problems.missing-gateway-3.message": "Прив'язаний до шлюзу {{fact:gateway}}, якого не існує.",
-   "problems.missing-gateway-4.title": "Віртуальний сервіс прив'язано до відсутнього шлюзу (4)",
-   "problems.missing-gateway-4.message": "Прив'язаний до шлюзу {{fact:gateway}}, якого не існує.",
-   "problems.missing-gateway-5.title": "Віртуальний сервіс прив'язано до відсутнього шлюзу (5)",
-   "problems.missing-gateway-5.message": "Прив'язаний до шлюзу {{fact:gateway}}, якого не існує.",
+   "problems.unknown-host.title": "Віртуальний сервіс спрямовує на невідомий хост",
+   "problems.unknown-host.message": "Спрямовує на {{fact:host}}, але такого хоста немає в жодного Service чи ServiceEntry: проксі відповідає 503.",
+   "problems.missing-destination-rule.title": "Віртуальний сервіс спрямовує на підмножину без правила призначення",
+   "problems.missing-destination-rule.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, але жодне правило призначення не описує цей хост: проксі відповідає 503.",
+   "problems.missing-subset.title": "Віртуальний сервіс спрямовує на підмножину, якої немає в правилі",
+   "problems.missing-subset.message": "Спрямовує на підмножину {{fact:subset}} хоста {{fact:host}}, якої немає в правилі призначення {{fact:rule}}: проксі відповідає 503.",
+   "problems.missing-gateway.title": "Віртуальний сервіс прив'язано до відсутнього шлюзу",
+   "problems.missing-gateway.message": "Прив'язаний до шлюзу {{fact:gateway}}, якого не існує.",
    "problems.invalid-virtual-service.title": "Віртуальний сервіс відхилено: хост * на sidecar-проксі",
    "problems.invalid-virtual-service.message": "Має хост * при прив'язці до sidecar (mesh): Istio його відхиляє, тож жоден із його маршрутів не використовується.",
-   "problems.conflicting-virtual-service-1.title": "Хост віртуального сервісу зайнятий старішим (1)",
-   "problems.conflicting-virtual-service-1.message": "Хост {{fact:host}} на {{fact:gateway}} уже зайнятий старішим віртуальним сервісом {{fact:other}}: маршрути цього не використовуються.",
-   "problems.conflicting-virtual-service-2.title": "Хост віртуального сервісу зайнятий старішим (2)",
-   "problems.conflicting-virtual-service-2.message": "Хост {{fact:host}} на {{fact:gateway}} уже зайнятий старішим віртуальним сервісом {{fact:other}}: маршрути цього не використовуються.",
-   "problems.conflicting-virtual-service-3.title": "Хост віртуального сервісу зайнятий старішим (3)",
-   "problems.conflicting-virtual-service-3.message": "Хост {{fact:host}} на {{fact:gateway}} уже зайнятий старішим віртуальним сервісом {{fact:other}}: маршрути цього не використовуються.",
-   "problems.conflicting-virtual-service-4.title": "Хост віртуального сервісу зайнятий старішим (4)",
-   "problems.conflicting-virtual-service-4.message": "Хост {{fact:host}} на {{fact:gateway}} уже зайнятий старішим віртуальним сервісом {{fact:other}}: маршрути цього не використовуються.",
-   "problems.conflicting-virtual-service-5.title": "Хост віртуального сервісу зайнятий старішим (5)",
-   "problems.conflicting-virtual-service-5.message": "Хост {{fact:host}} на {{fact:gateway}} уже зайнятий старішим віртуальним сервісом {{fact:other}}: маршрути цього не використовуються.",
+   "problems.conflicting-virtual-service.title": "Хост віртуального сервісу зайнятий старішим",
+   "problems.conflicting-virtual-service.message": "Хост {{fact:host}} на {{fact:gateway}} уже зайнятий старішим віртуальним сервісом {{fact:other}}: маршрути цього не використовуються.",
    "problems.tls-conflict.title": "Режим TLS правила призначення відхиляється mTLS STRICT",
    "problems.tls-conflict.message": "Задає режим TLS {{fact:mode}} для {{fact:host}}, а його робочі навантаження приймають лише mTLS Istio (STRICT): виклики не проходять. Використовуйте ISTIO_MUTUAL."
   },
@@ -4736,58 +2640,18 @@
    "columns.sa-server.cases.2.text": "namespace 中的所有工作负载",
    "columns.mtls-ids.title": "身份",
    "columns.na-networks.title": "网络",
-   "problems.unknown-host-1.title": "虚拟服务路由到未知主机 (1)",
-   "problems.unknown-host-1.message": "路由到 {{fact:host}}，但没有任何 Service 或 ServiceEntry 拥有该主机：代理返回 503。",
-   "problems.unknown-host-2.title": "虚拟服务路由到未知主机 (2)",
-   "problems.unknown-host-2.message": "路由到 {{fact:host}}，但没有任何 Service 或 ServiceEntry 拥有该主机：代理返回 503。",
-   "problems.unknown-host-3.title": "虚拟服务路由到未知主机 (3)",
-   "problems.unknown-host-3.message": "路由到 {{fact:host}}，但没有任何 Service 或 ServiceEntry 拥有该主机：代理返回 503。",
-   "problems.unknown-host-4.title": "虚拟服务路由到未知主机 (4)",
-   "problems.unknown-host-4.message": "路由到 {{fact:host}}，但没有任何 Service 或 ServiceEntry 拥有该主机：代理返回 503。",
-   "problems.unknown-host-5.title": "虚拟服务路由到未知主机 (5)",
-   "problems.unknown-host-5.message": "路由到 {{fact:host}}，但没有任何 Service 或 ServiceEntry 拥有该主机：代理返回 503。",
-   "problems.missing-destination-rule-1.title": "虚拟服务路由到没有目标规则的子集 (1)",
-   "problems.missing-destination-rule-1.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但没有目标规则覆盖该主机：代理返回 503。",
-   "problems.missing-destination-rule-2.title": "虚拟服务路由到没有目标规则的子集 (2)",
-   "problems.missing-destination-rule-2.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但没有目标规则覆盖该主机：代理返回 503。",
-   "problems.missing-destination-rule-3.title": "虚拟服务路由到没有目标规则的子集 (3)",
-   "problems.missing-destination-rule-3.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但没有目标规则覆盖该主机：代理返回 503。",
-   "problems.missing-destination-rule-4.title": "虚拟服务路由到没有目标规则的子集 (4)",
-   "problems.missing-destination-rule-4.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但没有目标规则覆盖该主机：代理返回 503。",
-   "problems.missing-destination-rule-5.title": "虚拟服务路由到没有目标规则的子集 (5)",
-   "problems.missing-destination-rule-5.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但没有目标规则覆盖该主机：代理返回 503。",
-   "problems.missing-subset-1.title": "虚拟服务路由到目标规则中没有的子集 (1)",
-   "problems.missing-subset-1.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目标规则 {{fact:rule}} 未定义该子集：代理返回 503。",
-   "problems.missing-subset-2.title": "虚拟服务路由到目标规则中没有的子集 (2)",
-   "problems.missing-subset-2.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目标规则 {{fact:rule}} 未定义该子集：代理返回 503。",
-   "problems.missing-subset-3.title": "虚拟服务路由到目标规则中没有的子集 (3)",
-   "problems.missing-subset-3.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目标规则 {{fact:rule}} 未定义该子集：代理返回 503。",
-   "problems.missing-subset-4.title": "虚拟服务路由到目标规则中没有的子集 (4)",
-   "problems.missing-subset-4.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目标规则 {{fact:rule}} 未定义该子集：代理返回 503。",
-   "problems.missing-subset-5.title": "虚拟服务路由到目标规则中没有的子集 (5)",
-   "problems.missing-subset-5.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目标规则 {{fact:rule}} 未定义该子集：代理返回 503。",
-   "problems.missing-gateway-1.title": "虚拟服务绑定到不存在的网关 (1)",
-   "problems.missing-gateway-1.message": "绑定到不存在的网关 {{fact:gateway}}。",
-   "problems.missing-gateway-2.title": "虚拟服务绑定到不存在的网关 (2)",
-   "problems.missing-gateway-2.message": "绑定到不存在的网关 {{fact:gateway}}。",
-   "problems.missing-gateway-3.title": "虚拟服务绑定到不存在的网关 (3)",
-   "problems.missing-gateway-3.message": "绑定到不存在的网关 {{fact:gateway}}。",
-   "problems.missing-gateway-4.title": "虚拟服务绑定到不存在的网关 (4)",
-   "problems.missing-gateway-4.message": "绑定到不存在的网关 {{fact:gateway}}。",
-   "problems.missing-gateway-5.title": "虚拟服务绑定到不存在的网关 (5)",
-   "problems.missing-gateway-5.message": "绑定到不存在的网关 {{fact:gateway}}。",
+   "problems.unknown-host.title": "虚拟服务路由到未知主机",
+   "problems.unknown-host.message": "路由到 {{fact:host}}，但没有任何 Service 或 ServiceEntry 拥有该主机：代理返回 503。",
+   "problems.missing-destination-rule.title": "虚拟服务路由到没有目标规则的子集",
+   "problems.missing-destination-rule.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但没有目标规则覆盖该主机：代理返回 503。",
+   "problems.missing-subset.title": "虚拟服务路由到目标规则中没有的子集",
+   "problems.missing-subset.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目标规则 {{fact:rule}} 未定义该子集：代理返回 503。",
+   "problems.missing-gateway.title": "虚拟服务绑定到不存在的网关",
+   "problems.missing-gateway.message": "绑定到不存在的网关 {{fact:gateway}}。",
    "problems.invalid-virtual-service.title": "虚拟服务被拒绝：边车上的主机 *",
    "problems.invalid-virtual-service.message": "绑定到 Sidecar（mesh）时使用了主机 *：Istio 会拒绝它，因此它的路由都不会被使用。",
-   "problems.conflicting-virtual-service-1.title": "虚拟服务的主机已被更早的占用 (1)",
-   "problems.conflicting-virtual-service-1.message": "{{fact:gateway}} 上的主机 {{fact:host}} 已被更早的虚拟服务 {{fact:other}} 占用：此虚拟服务的路由不会生效。",
-   "problems.conflicting-virtual-service-2.title": "虚拟服务的主机已被更早的占用 (2)",
-   "problems.conflicting-virtual-service-2.message": "{{fact:gateway}} 上的主机 {{fact:host}} 已被更早的虚拟服务 {{fact:other}} 占用：此虚拟服务的路由不会生效。",
-   "problems.conflicting-virtual-service-3.title": "虚拟服务的主机已被更早的占用 (3)",
-   "problems.conflicting-virtual-service-3.message": "{{fact:gateway}} 上的主机 {{fact:host}} 已被更早的虚拟服务 {{fact:other}} 占用：此虚拟服务的路由不会生效。",
-   "problems.conflicting-virtual-service-4.title": "虚拟服务的主机已被更早的占用 (4)",
-   "problems.conflicting-virtual-service-4.message": "{{fact:gateway}} 上的主机 {{fact:host}} 已被更早的虚拟服务 {{fact:other}} 占用：此虚拟服务的路由不会生效。",
-   "problems.conflicting-virtual-service-5.title": "虚拟服务的主机已被更早的占用 (5)",
-   "problems.conflicting-virtual-service-5.message": "{{fact:gateway}} 上的主机 {{fact:host}} 已被更早的虚拟服务 {{fact:other}} 占用：此虚拟服务的路由不会生效。",
+   "problems.conflicting-virtual-service.title": "虚拟服务的主机已被更早的占用",
+   "problems.conflicting-virtual-service.message": "{{fact:gateway}} 上的主机 {{fact:host}} 已被更早的虚拟服务 {{fact:other}} 占用：此虚拟服务的路由不会生效。",
    "problems.tls-conflict.title": "目标规则的 TLS 模式被 STRICT mTLS 拒绝",
    "problems.tls-conflict.message": "对 {{fact:host}} 设置了 TLS 模式 {{fact:mode}}，而其工作负载只接受 Istio mTLS（STRICT）：调用会失败。请使用 ISTIO_MUTUAL。"
   },
@@ -4846,58 +2710,18 @@
    "columns.sa-server.cases.2.text": "namespace 中的所有工作負載",
    "columns.mtls-ids.title": "身分",
    "columns.na-networks.title": "網路",
-   "problems.unknown-host-1.title": "虛擬服務路由到未知主機 (1)",
-   "problems.unknown-host-1.message": "路由到 {{fact:host}}，但沒有任何 Service 或 ServiceEntry 擁有該主機：代理回應 503。",
-   "problems.unknown-host-2.title": "虛擬服務路由到未知主機 (2)",
-   "problems.unknown-host-2.message": "路由到 {{fact:host}}，但沒有任何 Service 或 ServiceEntry 擁有該主機：代理回應 503。",
-   "problems.unknown-host-3.title": "虛擬服務路由到未知主機 (3)",
-   "problems.unknown-host-3.message": "路由到 {{fact:host}}，但沒有任何 Service 或 ServiceEntry 擁有該主機：代理回應 503。",
-   "problems.unknown-host-4.title": "虛擬服務路由到未知主機 (4)",
-   "problems.unknown-host-4.message": "路由到 {{fact:host}}，但沒有任何 Service 或 ServiceEntry 擁有該主機：代理回應 503。",
-   "problems.unknown-host-5.title": "虛擬服務路由到未知主機 (5)",
-   "problems.unknown-host-5.message": "路由到 {{fact:host}}，但沒有任何 Service 或 ServiceEntry 擁有該主機：代理回應 503。",
-   "problems.missing-destination-rule-1.title": "虛擬服務路由到沒有目的地規則的子集 (1)",
-   "problems.missing-destination-rule-1.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但沒有目的地規則涵蓋該主機：代理回應 503。",
-   "problems.missing-destination-rule-2.title": "虛擬服務路由到沒有目的地規則的子集 (2)",
-   "problems.missing-destination-rule-2.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但沒有目的地規則涵蓋該主機：代理回應 503。",
-   "problems.missing-destination-rule-3.title": "虛擬服務路由到沒有目的地規則的子集 (3)",
-   "problems.missing-destination-rule-3.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但沒有目的地規則涵蓋該主機：代理回應 503。",
-   "problems.missing-destination-rule-4.title": "虛擬服務路由到沒有目的地規則的子集 (4)",
-   "problems.missing-destination-rule-4.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但沒有目的地規則涵蓋該主機：代理回應 503。",
-   "problems.missing-destination-rule-5.title": "虛擬服務路由到沒有目的地規則的子集 (5)",
-   "problems.missing-destination-rule-5.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但沒有目的地規則涵蓋該主機：代理回應 503。",
-   "problems.missing-subset-1.title": "虛擬服務路由到目的地規則中沒有的子集 (1)",
-   "problems.missing-subset-1.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目的地規則 {{fact:rule}} 未定義該子集：代理回應 503。",
-   "problems.missing-subset-2.title": "虛擬服務路由到目的地規則中沒有的子集 (2)",
-   "problems.missing-subset-2.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目的地規則 {{fact:rule}} 未定義該子集：代理回應 503。",
-   "problems.missing-subset-3.title": "虛擬服務路由到目的地規則中沒有的子集 (3)",
-   "problems.missing-subset-3.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目的地規則 {{fact:rule}} 未定義該子集：代理回應 503。",
-   "problems.missing-subset-4.title": "虛擬服務路由到目的地規則中沒有的子集 (4)",
-   "problems.missing-subset-4.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目的地規則 {{fact:rule}} 未定義該子集：代理回應 503。",
-   "problems.missing-subset-5.title": "虛擬服務路由到目的地規則中沒有的子集 (5)",
-   "problems.missing-subset-5.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目的地規則 {{fact:rule}} 未定義該子集：代理回應 503。",
-   "problems.missing-gateway-1.title": "虛擬服務繫結到不存在的閘道 (1)",
-   "problems.missing-gateway-1.message": "繫結到不存在的閘道 {{fact:gateway}}。",
-   "problems.missing-gateway-2.title": "虛擬服務繫結到不存在的閘道 (2)",
-   "problems.missing-gateway-2.message": "繫結到不存在的閘道 {{fact:gateway}}。",
-   "problems.missing-gateway-3.title": "虛擬服務繫結到不存在的閘道 (3)",
-   "problems.missing-gateway-3.message": "繫結到不存在的閘道 {{fact:gateway}}。",
-   "problems.missing-gateway-4.title": "虛擬服務繫結到不存在的閘道 (4)",
-   "problems.missing-gateway-4.message": "繫結到不存在的閘道 {{fact:gateway}}。",
-   "problems.missing-gateway-5.title": "虛擬服務繫結到不存在的閘道 (5)",
-   "problems.missing-gateway-5.message": "繫結到不存在的閘道 {{fact:gateway}}。",
+   "problems.unknown-host.title": "虛擬服務路由到未知主機",
+   "problems.unknown-host.message": "路由到 {{fact:host}}，但沒有任何 Service 或 ServiceEntry 擁有該主機：代理回應 503。",
+   "problems.missing-destination-rule.title": "虛擬服務路由到沒有目的地規則的子集",
+   "problems.missing-destination-rule.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但沒有目的地規則涵蓋該主機：代理回應 503。",
+   "problems.missing-subset.title": "虛擬服務路由到目的地規則中沒有的子集",
+   "problems.missing-subset.message": "路由到 {{fact:host}} 的子集 {{fact:subset}}，但目的地規則 {{fact:rule}} 未定義該子集：代理回應 503。",
+   "problems.missing-gateway.title": "虛擬服務繫結到不存在的閘道",
+   "problems.missing-gateway.message": "繫結到不存在的閘道 {{fact:gateway}}。",
    "problems.invalid-virtual-service.title": "虛擬服務遭拒：邊車上的主機 *",
    "problems.invalid-virtual-service.message": "繫結到 Sidecar（mesh）時使用了主機 *：Istio 會拒絕它，因此它的路由都不會被使用。",
-   "problems.conflicting-virtual-service-1.title": "虛擬服務的主機已被較早的占用 (1)",
-   "problems.conflicting-virtual-service-1.message": "{{fact:gateway}} 上的主機 {{fact:host}} 已被較早的虛擬服務 {{fact:other}} 佔用：此虛擬服務的路由不會生效。",
-   "problems.conflicting-virtual-service-2.title": "虛擬服務的主機已被較早的占用 (2)",
-   "problems.conflicting-virtual-service-2.message": "{{fact:gateway}} 上的主機 {{fact:host}} 已被較早的虛擬服務 {{fact:other}} 佔用：此虛擬服務的路由不會生效。",
-   "problems.conflicting-virtual-service-3.title": "虛擬服務的主機已被較早的占用 (3)",
-   "problems.conflicting-virtual-service-3.message": "{{fact:gateway}} 上的主機 {{fact:host}} 已被較早的虛擬服務 {{fact:other}} 佔用：此虛擬服務的路由不會生效。",
-   "problems.conflicting-virtual-service-4.title": "虛擬服務的主機已被較早的占用 (4)",
-   "problems.conflicting-virtual-service-4.message": "{{fact:gateway}} 上的主機 {{fact:host}} 已被較早的虛擬服務 {{fact:other}} 佔用：此虛擬服務的路由不會生效。",
-   "problems.conflicting-virtual-service-5.title": "虛擬服務的主機已被較早的占用 (5)",
-   "problems.conflicting-virtual-service-5.message": "{{fact:gateway}} 上的主機 {{fact:host}} 已被較早的虛擬服務 {{fact:other}} 佔用：此虛擬服務的路由不會生效。",
+   "problems.conflicting-virtual-service.title": "虛擬服務的主機已被較早的占用",
+   "problems.conflicting-virtual-service.message": "{{fact:gateway}} 上的主機 {{fact:host}} 已被較早的虛擬服務 {{fact:other}} 佔用：此虛擬服務的路由不會生效。",
    "problems.tls-conflict.title": "目的地規則的 TLS 模式被 STRICT mTLS 拒絕",
    "problems.tls-conflict.message": "對 {{fact:host}} 設定了 TLS 模式 {{fact:mode}}，而其工作負載只接受 Istio mTLS（STRICT）：呼叫會失敗。請使用 ISTIO_MUTUAL。"
   }

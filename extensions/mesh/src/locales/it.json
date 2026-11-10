@@ -429,5 +429,6 @@
   "problem.TlsConflict": "Imposta la modalità TLS {{mode}} verso {{host}}, i cui carichi di lavoro accettano solo l'mTLS di Istio (STRICT): le chiamate falliscono. Usare ISTIO_MUTUAL.",
   "problem.ConflictingVirtualService": "L'host {{host}} su {{gateway}} è già occupato dal servizio virtuale più vecchio {{other}}: le route di questo non vengono raggiunte.",
   "problem.InvalidVirtualService": "Ha l'host * pur essendo associato ai sidecar (mesh): Istio lo rifiuta, quindi nessuna delle sue route viene usata.",
-  "linkerdViz": "linkerd-viz è installato: tasso di successo, tasso di richieste e latenza di questi pod sono nella sezione «Richieste»."
+  "linkerdViz": "linkerd-viz è installato: tasso di successo, tasso di richieste e latenza di questi pod sono nella sezione «Richieste».",
+  "showRequests": "Mostra le metriche delle richieste"
 }

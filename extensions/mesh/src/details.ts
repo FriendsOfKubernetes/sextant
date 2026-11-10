@@ -116,13 +116,16 @@ function virtualServiceView(env: DetailsEnv, vs: VirtualService): UiContent[] {
   const { sextant, blocks } = env;
   const firstHost = vs.hosts.find((h) => !h.startsWith("*")) ?? vs.hosts[0]?.replace(/^\*\./, "www.");
   const gateway = vs.gateways.find((g) => g !== "mesh");
-  const check = ui.button(t("check.open"), () =>
+  const check = ui.button(
+    t("check.open"),
+    () =>
     void openMeshCheck(sextant, {
       url: firstHost ? `http://${firstHost}/` : "",
       from: vs.gateways.includes("mesh") || !gateway ? "mesh" : "gateway",
       namespace: vs.namespace,
       gateway: gateway ?? "",
     }),
+    { icon: "requestCheck" },
   );
   const canCheck = !vs.delegate && vs.http.length > 0;
   return [
@@ -664,7 +667,8 @@ export function startDetails(sextant: Sextant, root: HTMLElement): () => void {
     },
   );
   const offBlocks = sextant.onContextChange(() => {
-    if (memory.follow()) schedule();
+    const kindsMoved = discovery.follow();
+    if (memory.follow() || kindsMoved) schedule();
   });
   return () => {
     stopped = true;

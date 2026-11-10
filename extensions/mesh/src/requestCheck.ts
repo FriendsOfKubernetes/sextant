@@ -255,7 +255,7 @@ function errorLine(text: string): HTMLElement {
 
 export function formView(form: MeshForm, config: MeshConfig, errors: Errors, onChange: (patch: Partial<MeshForm>) => void, onSubmit: () => void): HTMLFormElement {
   const gateways = config.gateways ?? [];
-  const check = el("button", "primary", t("check.form.check"));
+  const check = ui.button(t("check.form.check"), () => undefined, { variant: "primary", icon: "requestCheck" });
   check.type = "submit";
   const headers = el("textarea", "gw-check__headers");
   headers.rows = 2;
@@ -402,8 +402,12 @@ export function startRequestCheck(sextant: Sextant, root: HTMLElement): () => vo
     loaded = true;
     render();
   });
+  const offKinds = sextant.onContextChange(() => {
+    if (discovery.follow()) schedule();
+  });
   return () => {
     stopped = true;
+    offKinds();
     lists.stop();
   };
 }

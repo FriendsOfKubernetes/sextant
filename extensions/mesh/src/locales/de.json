@@ -425,5 +425,6 @@
   "problem.TlsConflict": "Setzt den TLS-Modus {{mode}} für {{host}}, dessen Workloads nur Istio-mTLS annehmen (STRICT): Aufrufe schlagen fehl. Verwenden Sie ISTIO_MUTUAL.",
   "problem.ConflictingVirtualService": "Host {{host}} auf {{gateway}} ist bereits durch den älteren virtuellen Service {{other}} belegt: Die Routen dieses Service werden nicht erreicht.",
   "problem.InvalidVirtualService": "Hat den Host *, obwohl an die Sidecars (mesh) gebunden: Istio lehnt ihn ab, daher wird keine seiner Routen verwendet.",
-  "linkerdViz": "linkerd-viz ist installiert: Erfolgsrate, Anfragerate und Latenz dieser Pods stehen im Abschnitt „Anfragen“."
+  "linkerdViz": "linkerd-viz ist installiert: Erfolgsrate, Anfragerate und Latenz dieser Pods stehen im Abschnitt „Anfragen“.",
+  "showRequests": "Anfragemetriken anzeigen"
 }

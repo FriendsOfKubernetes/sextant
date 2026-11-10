@@ -3,7 +3,8 @@
 // kind the cluster serves (VirtualServices, DestinationRules, Gateways, ServiceEntries, Sidecars, PeerAuthentications,
 // AuthorizationPolicies — few, small objects) in all namespaces, plus a metadata-only watch of the Services in the
 // namespaces those objects name (at most `MAX_SERVICE_NAMESPACES`; beyond it no host is judged missing). Kinds the
-// cluster does not serve are never watched and nothing is watched before discovery. Sextant's extension watch hub
+// cluster does not serve are never watched and nothing is watched before discovery, which is read again when it changes
+// (`Discovery`). Sextant's extension watch hub
 // shares each list with the other frames of the extension (ADR-0145), as the built-in shared its watches between views.
 import { trackObjects, type KindRef, type KubeObject, type ResourceKind, type Sextant, type Watch, type WatchParams } from "@sextant/extension-sdk";
 import { parseAuthorizationPolicy, type AuthzPolicy } from "./engine/authz";
@@ -220,22 +221,31 @@ export function meshConfig(lists: Lists, kinds: readonly ResourceKind[] | undefi
   return config;
 }
 
-/** What the cluster serves, asked once per frame (discovery), and told to `changed` when it comes. */
+/**
+ * What the cluster serves (discovery), asked when first needed and again whenever the context's `kindsVersion` moves (a
+ * CRD installed or removed while the view shows), as the built-in views followed discovery; `changed` hears each answer.
+ */
 export class Discovery {
   kinds: ResourceKind[] | undefined;
   private asked = false;
+  private version: number | undefined;
+  private reading = 0;
 
   constructor(
     private readonly sextant: Sextant,
     private readonly changed: () => void,
-  ) {}
+  ) {
+    this.version = sextant.context.kindsVersion;
+  }
 
-  /** The answer, asking for it the first time; `undefined` until it comes (or when it fails). */
+  /** The answer, asking for it the first time; until it comes the one before (`undefined` before the first). */
   get(): ResourceKind[] | undefined {
     if (!this.asked) {
       this.asked = true;
+      const attempt = ++this.reading;
       this.sextant.kinds().then(
         (kinds) => {
+          if (attempt !== this.reading) return;
           this.kinds = kinds;
           this.changed();
         },
@@ -243,6 +253,16 @@ export class Discovery {
       );
     }
     return this.kinds;
+  }
+
+  /** After a context change: whether discovery moved on (the next `get` asks again). */
+  follow(): boolean {
+    const version = this.sextant.context.kindsVersion;
+    if (version === this.version) return false;
+    this.version = version;
+    if (!this.asked) return false;
+    this.asked = false;
+    return true;
   }
 
   served(kind: Pick<KindRef, "group" | "kind">): boolean {
