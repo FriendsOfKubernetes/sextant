@@ -27,6 +27,7 @@ export const OFFERS: readonly ExtensionOffer[] = [
   { id: "sextant.external-secrets", tool: "External Secrets", matches: (k) => k.group === "external-secrets.io" },
   { id: "sextant.cnpg", tool: "CloudNativePG", matches: (k) => k.group === "postgresql.cnpg.io" },
   { id: "sextant.strimzi", tool: "Strimzi", matches: (k) => k.group === "kafka.strimzi.io" },
+  { id: "sextant.dra", tool: "Dynamic Resource Allocation", matches: (k) => k.group === "resource.k8s.io" },
   { id: "sextant.gpu-operator", tool: "NVIDIA GPU Operator", matches: (k) => k.group === "nvidia.com" && k.kind === "ClusterPolicy" },
   { id: "sextant.kueue", tool: "Kueue", matches: (k) => k.group === "kueue.x-k8s.io" },
   { id: "sextant.jobset", tool: "JobSet", matches: (k) => k.group === "jobset.x-k8s.io" },

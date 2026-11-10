@@ -1,0 +1,69 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields, tables,
+   status words and links are the SDK's UI kit (`ui`, classes `sx-*`). */
+body.compact {
+  padding: 8px 0;
+}
+
+/* Dynamic Resource Allocation: CEL expressions as text, the scheduler's words, notes, the devices page, as the
+   built-in views drew them. */
+.dra-cel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dra-cel__expr {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dra-message {
+  margin: 0.25rem 0;
+  padding: 0.375rem 0.625rem;
+  border-left: 3px solid var(--color-danger);
+  overflow-wrap: anywhere;
+}
+
+.dra-note {
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.dra-muted {
+  margin: 0.25rem 0;
+  color: var(--color-text-muted);
+}
+
+.dra-waiting,
+.dra-config {
+  margin: 0.5rem 0;
+}
+
+.dra-page {
+  padding: 1rem 1.5rem 2rem;
+  min-width: 0;
+}
+
+.dra-page__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+}
+
+/* The columns the built-in tables kept on one line. */
+.dra-requests td:nth-child(1),
+.dra-requests td:nth-child(2),
+.dra-requests td:nth-child(4),
+.dra-devices td:nth-child(1),
+.dra-devices td:nth-child(3),
+.dra-results td:nth-child(1),
+.dra-results td:nth-child(2),
+.dra-results td:nth-child(3),
+.dra-pod-claims td:nth-child(1),
+.dra-pod-claims td:nth-child(2),
+.dra-pod-claims td:nth-child(3) {
+  white-space: nowrap;
+}

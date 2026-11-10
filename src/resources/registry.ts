@@ -155,7 +155,6 @@ export const SIDEBAR_SECTIONS = [
   "clusterApi",
   "k3s",
   "helmController",
-  "dra",
   "openshift",
   "customResources",
 ] as const;
@@ -177,12 +176,13 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
   ["externalSecrets", "crossplane"],
   ["cnpg", "sealedSecrets"],
   ["strimzi", "sealedSecrets"],
-  ["gpuOperator", "dra"],
-  ["kueue", "dra"],
-  ["jobset", "dra"],
-  ["kuberay", "dra"],
-  ["kserve", "dra"],
-  ["olm", "dra"],
+  ["dra", "helmController"],
+  ["gpuOperator", "helmController"],
+  ["kueue", "helmController"],
+  ["jobset", "helmController"],
+  ["kuberay", "helmController"],
+  ["kserve", "helmController"],
+  ["olm", "helmController"],
 ];
 
 /**
@@ -208,7 +208,6 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "clusterApi",
   "k3s",
   "helmController",
-  "dra",
   "openshift",
 ]);
 
@@ -241,7 +240,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   clusterApi: "clusterApi",
   k3s: "k3s",
   helmController: "helmController",
-  dra: "dra",
   openshift: "openshift",
   customResources: "customResources",
   settings: "settings",

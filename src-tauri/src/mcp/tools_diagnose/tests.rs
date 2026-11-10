@@ -1048,17 +1048,19 @@ fn cluster_api_problems_are_never_given_to_agents() {
     ));
 }
 
-/// Dynamic Resource Allocation (#244) problems are a window view: agents get none of them, though the category is on
-/// by default (ADR-0116).
+/// Dynamic Resource Allocation (#244) moved into Sextant's own extension (ADR-0162 amendment): agents get none of its
+/// problems under the old name, nor the extension's unless the user lets them (ADR-0146) — never by default.
 #[test]
 fn dra_problems_are_never_given_to_agents() {
     let category = "dra";
-    assert!(answers::PROBLEM_CATEGORIES.contains(&category));
+    assert!(!answers::PROBLEM_CATEGORIES.contains(&category));
     assert!(!answers::OPT_IN_CATEGORIES.contains(&category));
     assert!(!answers::category_for_agents(
         category,
         &[category.to_owned()]
     ));
+    assert_eq!(answers::moved_category(category), "ext:sextant.dra");
+    assert!(!answers::category_for_agents("ext:sextant.dra", &[]));
 }
 
 /// Kueue's queues and Workloads (#246) and Kyverno's policy failures (#213) moved into categories of their extensions'

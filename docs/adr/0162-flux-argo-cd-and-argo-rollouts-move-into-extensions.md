@@ -132,3 +132,16 @@ turns `kueue` (on by default) into `ext:sextant.kueue:queues` (`MOVED_PROBLEM_CA
 category) and the opt-in `kueueWorkloads` and `policies` into `ext:sextant.kueue:workloads` and
 `ext:sextant.kyverno:policies` (`MOVED_OPT_IN_CATEGORIES`); none of them is ever given to agents, as before, and
 `get_problems` still refuses the old names.
+
+## Amendment: Dynamic Resource Allocation
+
+`extensions/dra` (`sextant.dra`, 1.0.0) takes the Dynamic Resource Allocation view (ADR-0116): the four
+`resource.k8s.io` kinds in the section `dra`, the "Devices" page, and the Pod "Devices" and Node "DRA devices" details
+blocks. The section keeps its place right after `helmController` (the sections that were placed after `dra` —
+`gpuOperator`, `kueue`, `jobset`, `kuberay`, `kserve` and `olm` — are now anchored to `helmController` behind it, so the
+order is unchanged), and the sidebar offers it where `resource.k8s.io` is served. Its wait is told by rules over the
+Pending Pods that look the ResourceClaims up (`missing`, the looked-up claim's allocation), which #409 lacked when the GPU
+Operator moved; where the extension still differs is listed in its README. The version-3 migration moves the category
+`dra` (on by default) to `ext:sextant.dra` (`MOVED_PROBLEM_CATEGORIES`, never for agents by default, as before).
+`resource.k8s.io` stays among Kubernetes' own groups (`src/resources/useKinds.ts`), so without the extension its kinds
+are not listed under Custom Resources either.

@@ -660,7 +660,8 @@ const ICONS = {
   clusterServingRuntime: KServeMemoryStick,
   inferenceGraph: KServeWorkflow,
   trainedModel: KServeGraduationCap,
-  // Dynamic Resource Allocation (#244): the section, its kinds and the devices page.
+  // Dynamic Resource Allocation (#244): the section, its kinds and the devices page, named by Sextant's own extension
+  // `extensions/dra`.
   dra: DraMicrochip,
   resourceClaim: DraTicketCheck,
   resourceClaimTemplate: DraTickets,

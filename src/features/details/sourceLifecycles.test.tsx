@@ -11,8 +11,6 @@ import { WorkloadAutoscalingSection } from "../autoscaling/WorkloadSection";
 import { NODE_CLAIM, NODE_POOL, HPA, SCALED_OBJECT } from "../autoscaling/model";
 import { ClusterApiSection } from "../cluster-api/details";
 import { CAPI_CLUSTER, MACHINE_DEPLOYMENT, MACHINE_SET, MACHINE } from "../cluster-api/model";
-import { DraSection } from "../dra/details";
-import { RESOURCE_CLAIM, RESOURCE_SLICE } from "../dra/model";
 import { resetSharedWatches, setWatchLinger } from "../resource-map/watches";
 import { ClaimUsageSection } from "../storage/UsageViews";
 import { LINGER_MS, USAGE_POLL_MS, resetVolumeUsage, useVolumeUsage } from "../storage/usageStore";
@@ -37,7 +35,7 @@ beforeEach(async () => {
   wb = watchBackend(); settings = defaultAppSettings();
   wb.backend.on("settings_get", () => settings);
   wb.backend.on("settings_update", args => settings = args.settings as AppSettings);
-  const kinds = [POD, PVC, SERVICE, DEPLOYMENT, CAPI_CLUSTER, MACHINE_DEPLOYMENT, MACHINE_SET, MACHINE, RESOURCE_CLAIM, RESOURCE_SLICE, NODE_POOL, NODE_CLAIM, HPA, SCALED_OBJECT, SERVICE_MONITOR, PROMETHEUS, PROMETHEUS_AGENT, KSERVICE, XRD];
+  const kinds = [POD, PVC, SERVICE, DEPLOYMENT, CAPI_CLUSTER, MACHINE_DEPLOYMENT, MACHINE_SET, MACHINE, NODE_POOL, NODE_CLAIM, HPA, SCALED_OBJECT, SERVICE_MONITOR, PROMETHEUS, PROMETHEUS_AGENT, KSERVICE, XRD];
   wb.backend.on("cluster_kinds", () => kinds.map((kindRef): ResourceKind => ({ kindRef, plural: kindRef.kind.toLowerCase() + "s", namespaced: !["NodePool", "NodeClaim", "ResourceSlice"].includes(kindRef.kind), verbs: ["list", "watch"], printerColumns: [] })));
   await loadSettings();
 });
@@ -83,17 +81,6 @@ it("releases every Machine chain list and renders a fresh snapshot after reopeni
   const next = await watchOf(wb, "Machine"); expect(ids).not.toContain(next);
   emitSnapshot(wb, next, [{ apiVersion: "cluster.x-k8s.io/v1beta2", kind: "Machine", metadata: { name: "fresh-machine", namespace: "demo" } }]);
   expect(await screen.findByText("fresh-machine")).toBeInTheDocument();
-});
-
-it("releases ResourceSlice allocation claims and accepts a new allocation after reopening", async () => {
-  const ref = refOf(RESOURCE_SLICE, "slice", null);
-  const obj: KubeObject = { apiVersion: "resource.k8s.io/v1", kind: "ResourceSlice", metadata: { name: "slice" }, spec: { driver: "test", pool: { name: "pool" }, devices: [{ name: "gpu" }] } };
-  render(card(ref, <DraSection clusterId="c1" objectRef={ref} obj={obj} />));
-  const id = await watchOf(wb, "ResourceClaim"); toggle("dra:devices.title");
-  await waitFor(() => expect(wb.backend.listenerCount(`watch:${id}`)).toBe(0));
-  toggle("dra:devices.title"); const next = await watchOf(wb, "ResourceClaim"); expect(next).not.toBe(id);
-  emitSnapshot(wb, next, [{ apiVersion: "resource.k8s.io/v1", kind: "ResourceClaim", metadata: { name: "fresh-claim", namespace: "demo" }, status: { allocation: { devices: { results: [{ request: "gpu", driver: "test", pool: "pool", device: "gpu" }] } } } }]);
-  expect(await screen.findByText("demo/fresh-claim")).toBeInTheDocument();
 });
 
 it("releases only NodeClaim event ownership when the Node Disruptions child closes", async () => {

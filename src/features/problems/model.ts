@@ -15,7 +15,6 @@ import { contourProblems } from "../contour/problemRules";
 import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../cluster-api/model";
 import { isSealedSecret } from "../sealed-secrets/model";
 import { isVpa } from "../vpa/model";
-import { DRA_GROUP } from "../dra/model";
 import { isHelmControllerKind, isK3sKind } from "../k3s/model";
 import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
 import { MONITORING_GROUP, prometheusOperatorProblems } from "../prometheus-operator/model";
@@ -50,7 +49,6 @@ export const PROBLEM_CATEGORIES = [
   "crossplane",
   "clusterApi",
   "k3s",
-  "dra",
   "openshift",
   "sealedSecrets",
   "prometheusOperator",
@@ -180,7 +178,7 @@ export interface Detected {
   /** The id of the extension rule that found it: a rule's `group` may name no rule (#409). */
   rule?: string;
   /** An extension's rule with `missing` (ADR-0144): the objects that must not exist for the problem to stand. */
-  lookups?: { group: string; kind: string; name: string; fact?: string }[];
+  lookups?: import("../../extensions/problemRules").Lookup[];
   /** An extension's rule told through the owner (ADR-0144): the uid of the object's controller. */
   ownerUid?: string;
   /** What a notification is about instead of the object (an extension rule's `notifyAs`, #394): one per identity. */
@@ -281,8 +279,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (isVpa(kind)) return "vpa";
   // Cluster API (#243): Clusters, KubeadmControlPlanes, Machines and MachineHealthChecks, judged by features/cluster-api.
   if (isClusterApiProblemKind(kind)) return "clusterApi";
-  // Dynamic Resource Allocation (#244): pods waiting for devices, judged by the provider of features/dra.
-  if (kind.group === DRA_GROUP) return "dra";
   // k3s and RKE2 (#270): HelmCharts and the bundled components, judged by the provider of features/k3s.
   if (isHelmControllerKind(kind) || isK3sKind(kind)) return "k3s";
   // KubeRay (#248): RayClusters, RayJobs and RayServices; KServe (#249): InferenceServices.
@@ -709,7 +705,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "reflector": // Mirrors are judged against their sources: the provider of features/reflector finds them.
     case "sealedSecrets": // A missing target Secret is another object: the provider of features/sealed-secrets finds both.
     case "vpa": // A conflict with an HPA spans two objects: the provider of features/vpa finds every VPA problem.
-    case "dra": // A pod waits for a claim (two objects): the provider of features/dra finds it.
     case "k3s": // A chart's outcome is its Job, components are Deployments: the provider of features/k3s finds them.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:

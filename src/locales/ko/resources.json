@@ -25,7 +25,6 @@
     "sealedSecrets": "Sealed Secrets",
     "prometheusOperator": "Prometheus Operator",
     "clusterApi": "Cluster API",
-    "dra": "Dynamic Resource Allocation",
     "openshift": "OpenShift",
     "customResources": "사용자 지정 리소스",
     "k3s": "k3s / RKE2",

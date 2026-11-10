@@ -198,7 +198,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "crossplane",
     "clusterApi",
     "k3s",
-    "dra",
     "openshift",
     "sealedSecrets",
     "prometheusOperator",
@@ -240,8 +239,6 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "vpa",
     // Cluster API (#243): a window view of 0.22.0.
     "clusterApi",
-    // Dynamic Resource Allocation (#244): a window view of 0.23.0.
-    "dra",
     // k3s and RKE2 HelmCharts and bundled components (#270): a window view of 0.25.0.
     "k3s",
     // OpenShift Routes, DeploymentConfigs, Builds and ImageStreams (#267): a window view of 0.25.0.

@@ -779,7 +779,7 @@ pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 2] = [
 /// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
 /// the extension (or `<extension id>:<category id>` for a category of the extension's own, #410; only with `false`,
 /// as agents never get those), and whether agents got the category by default.
-pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 14] = [
+pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 15] = [
     ("flux", "sextant.flux", true),
     ("argocd", "sextant.argo-cd", true),
     ("rollouts", "sextant.argo-rollouts", false),
@@ -798,6 +798,8 @@ pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 14] = [
     ("knative", "sextant.knative", false),
     // NVIDIA GPU Operator: a window view, never for agents.
     ("gpuOperator", "sextant.gpu-operator", false),
+    // Dynamic Resource Allocation (on by default): a window view, never for agents.
+    ("dra", "sextant.dra", false),
     // Kueue's queues (on by default) became the extension's own category `queues` (#410): a window view, never for
     // agents.
     ("kueue", "sextant.kueue:queues", false),
@@ -1352,7 +1354,7 @@ mod tests {
         std::fs::write(
             &path,
             r#"{ "settingsVersion": 2,
-                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm", "kueue"],
+                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm", "kueue", "dra"],
                                     "enabledCategories": ["security", "kueueWorkloads", "policies"] },
                  "mcp": { "extensionProblems": ["sextant.argo-cd", "acme.widgets"] } }"#,
         )
@@ -1369,7 +1371,8 @@ mod tests {
                 "ext:sextant.argo-workflows",
                 "ext:sextant.olm",
                 // Kueue's queues, on by default, became a category of the extension's own (#410).
-                "ext:sextant.kueue:queues"
+                "ext:sextant.kueue:queues",
+                "ext:sextant.dra"
             ]
         );
         // An opt-in category turned on stays on as the extension's own (#410).

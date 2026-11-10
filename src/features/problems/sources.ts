@@ -19,7 +19,6 @@ import {
 import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operator/model";
 import { SEALED_SECRET } from "../sealed-secrets/model";
 import { VPA } from "../vpa/model";
-import { RESOURCE_CLAIM as DRA_CLAIM } from "../dra/model";
 import { HELM_CHART as K3S_HELM_CHART } from "../k3s/model";
 import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
 import { BUILD as OPENSHIFT_BUILD, DEPLOYMENT_CONFIG as OPENSHIFT_DC, IMAGE_STREAM as OPENSHIFT_IMAGE_STREAM, ROUTE as OPENSHIFT_ROUTE } from "../openshift/model";
@@ -172,10 +171,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
     const def = tool("clusterApi", kind, kind === CAPI_MACHINE ? MAX_SOURCE_OBJECTS : undefined);
     return isCapiKind(kind, CAPI_MACHINE, CAPI_KCP) ? { ...def, across: { ...CAPI_PAUSED_ACROSS, from: tool("clusterApi", CAPI_CLUSTER) } } : def;
   }),
-  // Dynamic Resource Allocation (#244): pods the scheduler has not placed because a claim has no devices, judged by
-  // the provider of features/dra (`external`: Pending pods and their namespaces' claims), held only where
-  // ResourceClaims are served.
-  dra: [{ category: "dra", kind: DRA_CLAIM, fieldSelector: null, discovered: true, external: true }],
   // k3s and RKE2 (#270): HelmCharts whose install Job failed or keeps failing, bundled components' Deployments not
   // available, judged by the provider of features/k3s (`external`: the Job and the Deployments are other objects), held
   // only where HelmCharts are served (its watches are bounded there).
