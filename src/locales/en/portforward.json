@@ -72,7 +72,6 @@
     "user": "Manual",
     "agent": "AI agent",
     "vcluster": "Internal · vcluster",
-    "argoCd": "Internal · Argo CD",
     "extension": "Extension",
     "extensionInternal": "Internal · extension"
   },

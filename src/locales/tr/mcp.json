@@ -106,7 +106,6 @@
     "drain_node": "Bir düğümü drain et",
     "trigger_cronjob": "Bir CronJob'u şimdi çalıştır",
     "suspend_cronjob": "Bir CronJob'u askıya al veya sürdür",
-    "gitops_action": "GitOps eylemi",
     "helm_install": "Bir Helm yayını yükle",
     "helm_upgrade": "Bir Helm yayınını yükselt",
     "helm_rollback": "Bir Helm yayınını geri al",

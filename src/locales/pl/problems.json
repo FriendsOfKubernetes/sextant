@@ -34,7 +34,6 @@
     "events": "Zdarzenia ostrzegawcze"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "Kontener {{container}}",
     "restarts_one": "Kontener {{container}} był restartowany ({{count}} restart)",
     "restarts_few": "Kontener {{container}} był restartowany ({{count}} restarty)",

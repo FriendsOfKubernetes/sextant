@@ -105,7 +105,6 @@
     "drain_node": "腾空节点",
     "trigger_cronjob": "立即运行 CronJob",
     "suspend_cronjob": "暂停或恢复 CronJob",
-    "gitops_action": "GitOps 操作",
     "helm_install": "安装 Helm 发布",
     "helm_upgrade": "升级 Helm 发布",
     "helm_rollback": "回滚 Helm 发布",

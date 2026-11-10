@@ -28,7 +28,6 @@
     "events": "警告イベント"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "コンテナー {{container}}",
     "restarts_other": "コンテナー {{container}} が再起動しました (再起動 {{count}} 回)",
     "replicas": "{{desired}} 個中 {{ready}} 個のレプリカが準備完了",

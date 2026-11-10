@@ -72,7 +72,6 @@
     "user": "Ręczne",
     "agent": "Agent AI",
     "vcluster": "Wewnętrzne · vcluster",
-    "argoCd": "Wewnętrzne · Argo CD",
     "extension": "Rozszerzenie",
     "extensionInternal": "Wewnętrzne · rozszerzenie"
   },

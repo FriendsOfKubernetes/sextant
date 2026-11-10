@@ -54,6 +54,5 @@
     "suggested": "資源最佳化依使用歷史建議將 CPU 限制設為 {{limit}}。",
     "seeRightsizing": "「資源最佳化」區段在有足夠的使用歷史後會建議一個限制。"
   },
-  "showRequests": "顯示要求指標",
   "linkerdViz": "已安裝 linkerd-viz：這些 Pod 的成功率、要求速率與延遲請見「要求」區段。"
 }

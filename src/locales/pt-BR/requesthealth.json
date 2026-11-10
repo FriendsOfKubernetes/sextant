@@ -54,6 +54,5 @@
     "suggested": "O dimensionamento de recursos sugere um limite de CPU de {{limit}} pelo seu histórico de uso.",
     "seeRightsizing": "A seção \"Dimensionamento de recursos\" sugere um limite quando tiver histórico de uso suficiente."
   },
-  "showRequests": "Mostrar métricas de requisições",
   "linkerdViz": "O linkerd-viz está instalado: a taxa de sucesso, a taxa de requisições e a latência destes pods estão na seção \"Requisições\"."
 }

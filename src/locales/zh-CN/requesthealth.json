@@ -54,6 +54,5 @@
     "suggested": "资源调优根据使用历史建议将 CPU 限制设为 {{limit}}。",
     "seeRightsizing": "“资源调优”部分在有足够的使用历史后会建议一个限制。"
   },
-  "showRequests": "显示请求指标",
   "linkerdViz": "已安装 linkerd-viz：这些 Pod 的成功率、请求速率和延迟见“请求”部分。"
 }

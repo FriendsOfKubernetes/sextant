@@ -8,7 +8,9 @@ import { getAction, runAction } from "../actions/registry";
 import { ARGO_ROLLOUT as ROLLOUT } from "../../resources/gitopsKinds";
 import { emitDelta, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import "./index";
-import { planRestart, POD, REPLICA_SET } from "./model";
+import { planRestart, POD } from "./model";
+
+const REPLICA_SET = { group: "apps", version: "v1", kind: "ReplicaSet" };
 import { RestartDialog } from "./RestartDialog";
 import { restartRunOf } from "./runStore";
 import { resetClustersStore, useClustersStore } from "../clusters/clustersStore";

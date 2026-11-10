@@ -72,7 +72,6 @@
     "user": "수동",
     "agent": "AI 에이전트",
     "vcluster": "내부 연결 · vcluster",
-    "argoCd": "내부 연결 · Argo CD",
     "extension": "확장 프로그램",
     "extensionInternal": "내부 연결 · 확장 프로그램"
   },

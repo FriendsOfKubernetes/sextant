@@ -72,7 +72,6 @@
     "user": "Вручную",
     "agent": "ИИ-агент",
     "vcluster": "Служебный · vcluster",
-    "argoCd": "Служебный · Argo CD",
     "extension": "Расширение",
     "extensionInternal": "Служебный · расширение"
   },

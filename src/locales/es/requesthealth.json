@@ -54,6 +54,5 @@
     "suggested": "El ajuste de recursos sugiere un límite de CPU de {{limit}} a partir de su historial de uso.",
     "seeRightsizing": "La sección «Ajuste de recursos» sugiere un límite cuando tiene suficiente historial de uso."
   },
-  "showRequests": "Mostrar las métricas de solicitudes",
   "linkerdViz": "linkerd-viz está instalado: la tasa de éxito, la tasa de solicitudes y la latencia de estos pods están en la sección «Solicitudes»."
 }

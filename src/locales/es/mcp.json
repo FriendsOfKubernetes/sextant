@@ -107,7 +107,6 @@
     "drain_node": "Vaciar un nodo",
     "trigger_cronjob": "Ejecutar un CronJob ahora",
     "suspend_cronjob": "Suspender o reanudar un CronJob",
-    "gitops_action": "Acción de GitOps",
     "helm_install": "Instalar una release de Helm",
     "helm_upgrade": "Actualizar una release de Helm",
     "helm_rollback": "Revertir una release de Helm",

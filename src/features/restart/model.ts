@@ -21,7 +21,6 @@ import { ARGO_ROLLOUT, isKindOf } from "../../resources/gitopsKinds";
 const { arr, get, str } = status;
 
 export const POD: KindRef = { group: "", version: "v1", kind: "Pod" };
-export const REPLICA_SET: KindRef = { group: "apps", version: "v1", kind: "ReplicaSet" };
 
 /** How long the pods of an unowned ReplicaSet wait for each replacement to be ready before the rest are left alone. */
 export const REPLACEMENT_TIMEOUT_MS = 5 * 60_000;

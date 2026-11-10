@@ -72,7 +72,6 @@
     "user": "手動",
     "agent": "AI 代理",
     "vcluster": "內部連線 · vcluster",
-    "argoCd": "內部連線 · Argo CD",
     "extension": "擴充功能",
     "extensionInternal": "內部連線 · 擴充功能"
   },

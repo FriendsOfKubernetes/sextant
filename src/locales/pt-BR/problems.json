@@ -32,7 +32,6 @@
     "events": "Eventos de aviso"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "Contêiner {{container}}",
     "restarts_one": "O contêiner {{container}} foi reiniciado ({{count}} reinício)",
     "restarts_many": "O contêiner {{container}} foi reiniciado ({{count}} reinícios)",

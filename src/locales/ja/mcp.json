@@ -105,7 +105,6 @@
     "drain_node": "ノードをドレイン",
     "trigger_cronjob": "CronJob を今すぐ実行",
     "suspend_cronjob": "CronJob を一時停止 / 再開",
-    "gitops_action": "GitOps の操作",
     "helm_install": "Helm リリースをインストール",
     "helm_upgrade": "Helm リリースをアップグレード",
     "helm_rollback": "Helm リリースをロールバック",

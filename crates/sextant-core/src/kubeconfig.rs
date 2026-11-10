@@ -676,12 +676,6 @@ impl KubeconfigRegistry {
         ))
     }
 
-    /// SHA-256 (lowercase hex) of the certificate authority the cluster entry of `id` trusts now
-    /// ([`certificate_authority_sha256_of`]).
-    pub fn certificate_authority_sha256(&self, id: &ClusterId) -> CoreResult<Option<String>> {
-        certificate_authority_sha256_of(&self.kubeconfig_for(id)?)
-    }
-
     /// The [`ServerBinding`] the cluster entry of `id` gives now ([`ServerBinding::of`]).
     pub fn server_binding(&self, id: &ClusterId) -> CoreResult<ServerBinding> {
         ServerBinding::of(&self.kubeconfig_for(id)?)
@@ -1436,7 +1430,9 @@ contexts:
         let path = fx.write("home/.kube/config", &kubeconfig);
         let registry = fx.registry();
         let ca = |context: &str| {
-            registry.certificate_authority_sha256(&ClusterId::for_context(&path, context))
+            certificate_authority_sha256_of(
+                &registry.kubeconfig_for(&ClusterId::for_context(&path, context))?,
+            )
         };
         // printf 'ca-der' | sha256sum
         let data = ca("data").unwrap().unwrap();

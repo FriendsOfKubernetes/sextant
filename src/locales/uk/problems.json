@@ -34,7 +34,6 @@
     "events": "Події Warning"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "Контейнер {{container}}",
     "restarts_one": "Контейнер {{container}} перезапускався ({{count}} перезапуск)",
     "restarts_few": "Контейнер {{container}} перезапускався ({{count}} перезапуски)",

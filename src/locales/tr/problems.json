@@ -30,7 +30,6 @@
     "events": "Uyarı olayları"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "Kapsayıcı {{container}}",
     "restarts_one": "Kapsayıcı {{container}} yeniden başladı ({{count}} yeniden başlatma)",
     "restarts_other": "Kapsayıcı {{container}} yeniden başladı ({{count}} yeniden başlatma)",

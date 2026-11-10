@@ -1,5 +1,6 @@
-// The one cleaner for URIs and free text from cluster objects that the AI-serving views show (KServe, KubeRay;
-// ADR-0115): a URI loses its userinfo (`user:token@`), its query (`?X-Amz-Signature=…`, an Azure SAS) and its
+// The one cleaner for URIs and free text from cluster objects that Sextant shows: extensions' columns and problem
+// messages, the details' fields and the OpenShift Route diagnosis (ADR-0115; the KServe and KubeRay extensions keep a
+// copy of their own): a URI loses its userinfo (`user:token@`), its query (`?X-Amz-Signature=…`, an Azure SAS) and its
 // fragment, and a free text (a condition's or a failure's message) gets the same done to every URI-looking part of
 // it. Pure functions.
 
@@ -57,9 +58,6 @@ function cleanMain(main: string): SafeUri {
   const text = main.replace(/^[^/]*@/, "");
   return { text, hidden: text !== main };
 }
-
-/** The shown text of a URI, `undefined` for nothing. */
-export const safeUriText = (value: string | undefined): string | undefined => safeUri(value)?.text;
 
 /**
  * URI-looking parts of a free text: `scheme:/…` (one slash or more), and `user:password@host…` without a scheme. A

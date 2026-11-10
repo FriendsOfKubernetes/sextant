@@ -30,7 +30,6 @@
     "events": "Warning events"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "Container {{container}}",
     "restarts_one": "Container {{container}} restarted ({{count}} restart)",
     "restarts_other": "Container {{container}} restarted ({{count}} restarts)",

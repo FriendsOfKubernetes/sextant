@@ -28,7 +28,6 @@
     "events": "Warning 이벤트"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "컨테이너 {{container}}",
     "restarts_other": "컨테이너 {{container}}이(가) 다시 시작됨(다시 시작 {{count}}회)",
     "replicas": "복제본 {{desired}}개 중 {{ready}}개 준비됨",

@@ -54,6 +54,5 @@
     "suggested": "Right-Sizing schlägt aus seinem Nutzungsverlauf ein CPU-Limit von {{limit}} vor.",
     "seeRightsizing": "Der Abschnitt „Right-Sizing“ schlägt ein Limit vor, sobald er genug Nutzungsverlauf hat."
   },
-  "showRequests": "Anfragemetriken anzeigen",
   "linkerdViz": "linkerd-viz ist installiert: Erfolgsrate, Anfragerate und Latenz dieser Pods stehen im Abschnitt „Anfragen“."
 }

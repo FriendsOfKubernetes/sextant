@@ -54,6 +54,5 @@
     "suggested": "Right-sizing suggests a CPU limit of {{limit}} from its usage history.",
     "seeRightsizing": "The Right-sizing section suggests a limit once it has enough usage history."
   },
-  "showRequests": "Show request metrics",
   "linkerdViz": "linkerd-viz is installed: the success rate, request rate and latency of these pods are in the Requests section."
 }

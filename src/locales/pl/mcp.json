@@ -108,7 +108,6 @@
     "drain_node": "Opróżnienie węzła",
     "trigger_cronjob": "Natychmiastowe uruchomienie CronJob",
     "suspend_cronjob": "Wstrzymanie lub wznowienie CronJob",
-    "gitops_action": "Akcja GitOps",
     "helm_install": "Instalacja wydania Helm",
     "helm_upgrade": "Uaktualnienie wydania Helm",
     "helm_rollback": "Wycofanie wydania Helm",

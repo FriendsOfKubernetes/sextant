@@ -32,7 +32,6 @@
     "events": "Eventi di avviso"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "Container {{container}}",
     "restarts_one": "Il container {{container}} è stato riavviato ({{count}} riavvio)",
     "restarts_many": "Il container {{container}} è stato riavviato ({{count}} di riavvii)",

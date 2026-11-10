@@ -54,6 +54,5 @@
     "suggested": "Le dimensionnement suggère une limite de CPU de {{limit}} d'après son historique d'utilisation.",
     "seeRightsizing": "La section « Dimensionnement » suggère une limite dès qu'elle dispose d'assez d'historique d'utilisation."
   },
-  "showRequests": "Afficher les métriques de requêtes",
   "linkerdViz": "linkerd-viz est installé : le taux de succès, le débit de requêtes et la latence de ces pods sont dans la section « Requêtes »."
 }

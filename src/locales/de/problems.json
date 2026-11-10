@@ -30,7 +30,6 @@
     "events": "Warnereignisse"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "Container {{container}}",
     "restarts_one": "Container {{container}} neu gestartet ({{count}} Neustart)",
     "restarts_other": "Container {{container}} neu gestartet ({{count}} Neustarts)",

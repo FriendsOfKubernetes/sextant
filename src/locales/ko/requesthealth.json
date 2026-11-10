@@ -54,6 +54,5 @@
     "suggested": "적정 크기 조정은 사용 기록을 바탕으로 CPU 제한 {{limit}}을(를) 제안합니다.",
     "seeRightsizing": "'적정 크기 조정' 섹션은 사용 기록이 충분히 쌓이면 제한을 제안합니다."
   },
-  "showRequests": "요청 메트릭 보기",
   "linkerdViz": "linkerd-viz가 설치되어 있습니다. 이 Pod들의 성공률, 요청 속도, 지연 시간은 '요청' 섹션에 있습니다."
 }

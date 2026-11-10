@@ -54,6 +54,5 @@
     "suggested": "Dopasowanie zasobów na podstawie historii użycia proponuje limit CPU {{limit}}.",
     "seeRightsizing": "Sekcja „Dopasowanie zasobów” zaproponuje limit, gdy zbierze dość historii użycia."
   },
-  "showRequests": "Pokaż metryki żądań",
   "linkerdViz": "linkerd-viz jest zainstalowany: odsetek powodzeń, liczba żądań i opóźnienie tych Podów są w sekcji „Żądania”."
 }

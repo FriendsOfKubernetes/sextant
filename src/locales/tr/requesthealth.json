@@ -54,6 +54,5 @@
     "suggested": "Doğru boyutlandırma, kullanım geçmişine göre {{limit}} CPU limiti öneriyor.",
     "seeRightsizing": "\"Doğru boyutlandırma\" bölümü yeterli kullanım geçmişi olunca bir limit önerir."
   },
-  "showRequests": "İstek metriklerini göster",
   "linkerdViz": "linkerd-viz kurulu: bu Pod'ların başarı oranı, istek hızı ve gecikmesi \"İstekler\" bölümünde."
 }

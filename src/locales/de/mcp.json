@@ -106,7 +106,6 @@
     "drain_node": "Knoten leeren (drain)",
     "trigger_cronjob": "CronJob jetzt ausführen",
     "suspend_cronjob": "CronJob anhalten oder fortsetzen",
-    "gitops_action": "GitOps-Aktion",
     "helm_install": "Helm-Release installieren",
     "helm_upgrade": "Helm-Release aktualisieren",
     "helm_rollback": "Helm-Release zurücksetzen",

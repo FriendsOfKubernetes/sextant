@@ -105,7 +105,6 @@
     "drain_node": "노드 drain",
     "trigger_cronjob": "CronJob 지금 실행",
     "suspend_cronjob": "CronJob 일시 중단 또는 재개",
-    "gitops_action": "GitOps 작업",
     "helm_install": "Helm 릴리스 설치",
     "helm_upgrade": "Helm 릴리스 업그레이드",
     "helm_rollback": "Helm 릴리스 롤백",

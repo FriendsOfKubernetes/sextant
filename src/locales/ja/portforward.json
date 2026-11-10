@@ -72,7 +72,6 @@
     "user": "手動",
     "agent": "AI エージェント",
     "vcluster": "内部接続 · vcluster",
-    "argoCd": "内部接続 · Argo CD",
     "extension": "拡張機能",
     "extensionInternal": "内部接続 · 拡張機能"
   },

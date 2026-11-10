@@ -28,7 +28,6 @@
     "events": "警告事件"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "容器 {{container}}",
     "restarts_other": "容器 {{container}} 已重启（{{count}} 次）",
     "replicas": "{{ready}}/{{desired}} 个副本就绪",

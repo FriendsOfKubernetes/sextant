@@ -32,7 +32,6 @@
     "events": "Événements d'avertissement"
   },
   "messages": {
-    "analysisRun": "AnalysisRun {{name}}",
     "container": "Conteneur {{container}}",
     "restarts_one": "Le conteneur {{container}} a redémarré ({{count}} redémarrage)",
     "restarts_many": "Le conteneur {{container}} a redémarré ({{count}} de redémarrages)",

@@ -108,7 +108,6 @@
     "drain_node": "Освободить узел (drain)",
     "trigger_cronjob": "Запустить CronJob сейчас",
     "suspend_cronjob": "Приостановить или возобновить CronJob",
-    "gitops_action": "Действие GitOps",
     "helm_install": "Установить релиз Helm",
     "helm_upgrade": "Обновить релиз Helm",
     "helm_rollback": "Откатить релиз Helm",
