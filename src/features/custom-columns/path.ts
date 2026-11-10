@@ -176,7 +176,8 @@ export function parseFieldPath(path: string): PathStep[] | null {
     expectName = false;
   }
   // `*` gives a list; the steps after it read each item (#404). One list per path.
-  if (steps.filter((s) => "match" in s && s.all).length > 1) return null;
+  // Two lists at most (#404), flattened into one.
+  if (steps.filter((s) => "match" in s && s.all).length > 2) return null;
   return steps.length > 0 ? steps : null;
 }
 

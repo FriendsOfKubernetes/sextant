@@ -250,3 +250,6 @@ Placeholders gain `|product` (paths multiplied with ` * `, a missing one countin
 selector as the built-in views wrote one, labels first, each part in the object's order: `app=web,tier in (a,b)`).
 From `sextantApi` 4 an extension has up to 40 problem rules (a section counter counts up to 40), and a match step takes
 up to 12 pairs, enough for "the first False condition but these types" (Cluster API).
+A path may hold two lists (`[*]` twice), the second's items of every first's item read as one flat list (a proxy's
+delegations' namespaces); `+` adds counts before `|count` too (a scalar counting 1); a text condition's values may hold
+the object's own texts (`{{.metadata.namespace}}/`), a value whose placeholder has none left out.

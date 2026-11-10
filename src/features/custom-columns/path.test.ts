@@ -212,7 +212,9 @@ describe("the earliest match and every match (#399)", () => {
     expect(formatFieldPath(parseFieldPath(".spec.listeners[*].name")!)).toBe(".spec.listeners[*].name");
     expect(parseFieldPath(".spec.c[<name]")).toEqual([{ key: "spec" }, { key: "c" }, { match: [], earliest: "name" }]);
     expect(formatFieldPath(parseFieldPath(".spec.c[<name]")!)).toBe(".spec.c[<name]");
-    expect(parseFieldPath(".a[*].b[*]")).toBeNull();
+    // Two lists, flattened into one (#404); three are too many.
+    expect(parseFieldPath(".a[*].b[*]")).not.toBeNull();
+    expect(parseFieldPath(".a[*].b[*].c[*]")).toBeNull();
     expect(parseFieldPath('.a[b="1",<]')).toBeNull();
     const nodes = {
       a: { phase: "Failed", finishedAt: "2026-11-07T10:05:00Z", n: "late" },

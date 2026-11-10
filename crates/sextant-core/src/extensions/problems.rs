@@ -876,14 +876,38 @@ fn check_condition<'k>(
         ));
     }
     match condition {
-        ProblemCondition::Contains { path: field, .. }
-        | ProblemCondition::StartsWith { path: field, .. }
-        | ProblemCondition::EndsWith { path: field, .. } => {
+        ProblemCondition::Contains {
+            path: field,
+            values,
+            ..
+        }
+        | ProblemCondition::StartsWith {
+            path: field,
+            values,
+            ..
+        }
+        | ProblemCondition::EndsWith {
+            path: field,
+            values,
+            ..
+        } => {
             if checks.api < SOURCES_API {
                 return Err(at(
                     &path.key("type"),
                     format!("text conditions need sextantApi {SOURCES_API} or later"),
                 ));
+            }
+            // A value may hold the object's own texts (#404): `{{.metadata.namespace}}/`, a Secret named in its own
+            // namespace.
+            for (i, value) in values.iter().enumerate() {
+                if value.contains("{{") {
+                    check_message(
+                        value,
+                        kind,
+                        &path.key("values").index(i),
+                        checks.metadata_only,
+                    )?;
+                }
             }
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
         }
@@ -1493,8 +1517,11 @@ pub(crate) fn check_message(
             continue;
         }
         let added = added_paths(field);
-        if added.len() > 1 && filters.first() != Some(&"sum") {
-            return Err(at(path, "adds paths with `+` only before `|sum`"));
+        if added.len() > 1 && !matches!(filters.first(), Some(&"sum" | &"count")) {
+            return Err(at(
+                path,
+                "adds paths with `+` only before `|sum` or `|count`",
+            ));
         }
         if added.len() > MAX_ADDED_PATHS {
             return Err(at(path, format!("adds at most {MAX_ADDED_PATHS} paths")));

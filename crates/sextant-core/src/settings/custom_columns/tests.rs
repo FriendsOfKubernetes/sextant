@@ -319,7 +319,9 @@ fn a_match_takes_the_earliest_by_a_field_or_every_match_as_the_last_step() {
         &parse_field_path(".spec.containers[<name]").unwrap()[2],
         PathStep::Match { pairs, pick: MatchPick::Earliest(f) } if pairs.is_empty() && f == "name"
     ));
-    assert_eq!(parse_field_path(".a[*].b[*]"), None);
+    // Two lists, flattened into one (#404); three are too many.
+    assert!(parse_field_path(".a[*].b[*]").is_some());
+    assert_eq!(parse_field_path(".a[*].b[*].c[*]"), None);
     assert_eq!(parse_field_path(".a[b=\"1\",<]"), None);
     assert_eq!(parse_field_path(".a[<]"), None);
     assert_eq!(parse_field_path(".a[b=\"1\",*,c=\"2\"]"), None);

@@ -616,8 +616,8 @@ export function parseFieldPath(path) {
     steps.push({ key: chars.slice(start, i).join("") });
     expectName = false;
   }
-  // The steps after `*` read each item (#404); one list per path.
-  if (steps.filter((s) => s.pick === "all").length > 1) return null;
+  // The steps after `*` read each item (#404); two lists at most, flattened into one.
+  if (steps.filter((s) => s.pick === "all").length > 2) return null;
   return steps.length > 0 ? steps : null;
 }
 
@@ -702,6 +702,10 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
   }
   if (condition.type === "contains" || condition.type === "startsWith" || condition.type === "endsWith") {
     if (counter.api < SOURCES_API) fail([...segments, "type"], `text conditions need sextantApi ${SOURCES_API} or later`);
+    // A value may hold the object's own texts (#404).
+    condition.values.forEach((v, i) => {
+      if (v.includes("{{")) checkMessage(v, kind, [...segments, "values", i], counter.metadataOnly);
+    });
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
     return;
   }
@@ -1000,7 +1004,7 @@ function checkMessage(text, kind, segments, metadataOnly) {
       for (const one of multiplied) checkRulePath(one.trim(), kind, segments, metadataOnly);
     }
     const added = tried.length > 1 || multiplied.length > 1 ? [] : addedPaths(field);
-    if (added.length > 1 && filters[0]?.trim() !== "sum") fail(segments, "adds paths with `+` only before `|sum`");
+    if (added.length > 1 && !["sum", "count"].includes(filters[0]?.trim() ?? "")) fail(segments, "adds paths with `+` only before `|sum` or `|count`");
     if (added.length > MAX_ADDED_PATHS) fail(segments, `adds at most ${MAX_ADDED_PATHS} paths`);
     for (const filter of filters.map((f) => f.trim())) {
       const clip = /^clip:([0-9]{1,4})$/.exec(filter);

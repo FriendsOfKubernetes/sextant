@@ -379,7 +379,8 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
             )
         })
         .count();
-    (!steps.is_empty() && lists <= 1).then_some(steps)
+    // Two lists at most (#404): the second's items of every first's item, one flat list (delegations' namespaces).
+    (!steps.is_empty() && lists <= 2).then_some(steps)
 }
 
 /// Whether a field path reads a core Secret's values (`data`, `stringData` or anything inside them).

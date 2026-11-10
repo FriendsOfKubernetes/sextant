@@ -249,6 +249,12 @@ describe("problem rules of extensions", () => {
       ],
     } as unknown as KubeObject;
     expect(placeholderText(report, ".results[*].policy|unique")).toBe("a, b");
+    // `+` before `|count`, a scalar counting 1; two lists flattened; a text condition's value from the object (#404).
+    const proxy = { metadata: { name: "p", namespace: "own" }, spec: { includes: [{ name: "a" }, { name: "b" }], tcpproxy: { include: { name: "t" } }, delegations: [{ targetNamespaces: ["x", "y"] }, { targetNamespaces: ["z"] }], tls: "own/cert" } } as unknown as KubeObject;
+    expect(placeholderText(proxy, ".spec.includes + .spec.tcpproxy.include|count")).toBe("3");
+    expect(valueAt(proxy, ".spec.delegations[*].targetNamespaces[*]")).toEqual(["x", "y", "z"]);
+    expect(evaluate({ type: "startsWith", path: ".spec.tls", values: ["{{.metadata.namespace}}/"], ignoreCase: false }, proxy).holds).toBe(true);
+    expect(evaluate({ type: "startsWith", path: ".spec.tls", values: ["{{.metadata.missing}}/"], ignoreCase: false }, proxy).holds).toBe(false);
     // Products, nested counts and selectors as the API server writes them (#404).
     const prom = { metadata: { name: "p" }, spec: { replicas: 2, shards: 3, groups: [{ rules: [1, 2] }, { rules: [3] }] } } as unknown as KubeObject;
     expect(placeholderText(prom, ".spec.replicas * .spec.shards|product")).toBe("6");

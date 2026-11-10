@@ -72,7 +72,9 @@ function walk(obj: unknown, steps: readonly PathStep[]): unknown {
       // `*` (#404): the steps after it read each item; the ones that lead nowhere are left out.
       if (step.all && n < steps.length - 1) {
         const rest = steps.slice(n + 1);
-        return (at as unknown[]).map((item) => walk(item, rest)).filter((v) => v !== undefined);
+        const read = (at as unknown[]).map((item) => walk(item, rest)).filter((v) => v !== undefined);
+        // A second `*` later in the path (#404): its lists of every item are one flat list.
+        return rest.some((s) => "match" in s && s.all) ? read.flatMap((v) => (Array.isArray(v) ? v : [v])) : read;
       }
     } else {
       if (Array.isArray(at) || !Object.prototype.hasOwnProperty.call(at, step.key)) return undefined;
@@ -197,13 +199,18 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       if (typeof value !== "string") return NO;
       const fold = (text: string) => (condition.ignoreCase ? text.toLowerCase() : text);
       const text = fold(value);
+      // A value may hold the object's own texts (#404); one whose placeholder has no value is left out.
+      const wanted = condition.values.flatMap((v) => {
+        const filled = v.includes("{{") ? fillTemplate(v, obj) : v;
+        return filled === null || filled === "" ? [] : [filled];
+      });
       const test =
         condition.type === "contains"
           ? (v: string) => text.includes(fold(v))
           : condition.type === "startsWith"
             ? (v: string) => text.startsWith(fold(v))
             : (v: string) => text.endsWith(fold(v));
-      return { holds: condition.values.some(test) };
+      return { holds: wanted.some(test) };
     }
     case "exists": {
       const value = valueAt(obj, condition.path);
@@ -405,12 +412,16 @@ export function placeholderText(obj: KubeObject, inner: string): string | undefi
     return clipped(String(numbers.reduce<number>((a, n) => a * (n ?? 1), 1)), filters);
   }
   // Paths added with `+` before `|sum` (#404): the numbers of every path there, nothing when none is.
-  const added = filter === "sum" ? addedPaths(path) : [path];
+  const added = filter === "sum" || filter === "count" ? addedPaths(path) : [path];
+  // `+` before `|count` (#404): each path's count added, a scalar there counting 1, nothing when no path has a value.
+  const countOf = (v: unknown): number | undefined =>
+    Array.isArray(v) ? v.length : v !== null && typeof v === "object" ? Object.keys(v).length : v === undefined || v === null ? undefined : 1;
   const text =
     added.length > 1
       ? (() => {
-          const sums = added.map((p) => sumOf([valueAt(obj, p.trim())])).filter((n): n is number => n !== undefined);
-          return sums.length === 0 ? undefined : String(sums.reduce((a, b) => a + b, 0));
+          const parts = added.map((p) => (filter === "count" ? countOf(valueAt(obj, p.trim())) : sumOf([valueAt(obj, p.trim())])));
+          const known = parts.filter((n): n is number => n !== undefined);
+          return known.length === 0 ? undefined : String(known.reduce((a, b) => a + b, 0));
         })()
       : filteredText(valueAt(obj, path), filter);
   return text === undefined ? undefined : clipped(text, filters);
