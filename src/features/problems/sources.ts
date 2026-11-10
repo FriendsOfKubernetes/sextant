@@ -7,7 +7,6 @@ import { COUNTED_KINDS } from "../gateway-api/problems";
 import { CONTOUR_ACROSS } from "../contour/across";
 import { HTTP_PROXY } from "../contour/model";
 import { INGRESS_ROUTE as TRAEFIK_INGRESS_ROUTE } from "../traefik/model";
-import { CLUSTER_POLICY_REPORT, POLICY_REPORT } from "../kyverno/model";
 import { XRD } from "../crossplane/model";
 import { CAPI_PAUSED_ACROSS } from "../cluster-api/across";
 import {
@@ -22,7 +21,6 @@ import { SEALED_SECRET } from "../sealed-secrets/model";
 import { VPA } from "../vpa/model";
 import { RESOURCE_CLAIM as DRA_CLAIM } from "../dra/model";
 import { HELM_CHART as K3S_HELM_CHART } from "../k3s/model";
-import { CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE, WORKLOAD as KUEUE_WORKLOAD } from "../kueue/model";
 import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
 import { BUILD as OPENSHIFT_BUILD, DEPLOYMENT_CONFIG as OPENSHIFT_DC, IMAGE_STREAM as OPENSHIFT_IMAGE_STREAM, ROUTE as OPENSHIFT_ROUTE } from "../openshift/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
@@ -142,12 +140,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   pods: [builtIn("pods", POD)],
   workloads: [builtIn("workloads", DEPLOYMENT), builtIn("workloads", STATEFULSET), builtIn("workloads", DAEMONSET)],
   jobs: [builtIn("jobs", JOB)],
-  // Kueue (#246): ClusterQueues that admit nothing and LocalQueues of a missing ClusterQueue; LocalQueues are one per
-  // team namespace: capped.
-  kueue: [tool("kueue", KUEUE_CLUSTER_QUEUE), tool("kueue", KUEUE_LOCAL_QUEUE, MAX_SOURCE_OBJECTS)],
-  // Kueue Workloads (#246, opt-in): waiting for quota, not queueable, evicted repeatedly; each one holds its jobs' pod
-  // templates and a batch cluster queues thousands: capped. The same watch feeds the queues' pending lists (a row tap).
-  kueueWorkloads: [tool("kueueWorkloads", KUEUE_WORKLOAD, MAX_SOURCE_OBJECTS)],
   // Vertical Pod Autoscaler (#242): configurations the recommender cannot use, VPAs that match no pod, and VPAs that
   // fight an HPA over the same resource, judged by the provider of features/vpa (`external`: the HPA is another
   // object), held only where VPAs are served.
@@ -167,9 +159,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
   // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
   crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],
-  // Kyverno policy failures (#213, opt-in): the reports Kyverno writes, one per resource.
-  // One report per resource: capped.
-  policies: [tool("policies", POLICY_REPORT, MAX_SOURCE_OBJECTS), tool("policies", CLUSTER_POLICY_REPORT, MAX_SOURCE_OBJECTS)],
   // Sealed Secrets (#240): failed unseals and synced SealedSecrets whose Secret is missing, judged by the provider of
   // features/sealed-secrets (`external`: the Secret is another object), held only where SealedSecrets are served.
   sealedSecrets: [{ category: "sealedSecrets", kind: SEALED_SECRET, fieldSelector: null, discovered: true, external: true }],

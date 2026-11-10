@@ -119,3 +119,16 @@ order is unchanged), "Back up namespace…" and "Restore from this backup…" th
 amendment), and an offer where `velero.io` is served. Velero had no problem category, so the migration has nothing to
 move. Volume usage, VolumeSnapshots and their actions stay in the core's `src/features/storage/`, and so does the window's
 `resource_create`, which they still use.
+
+## Amendment: Kueue and Kyverno
+
+`extensions/kueue` (`sextant.kueue`, 1.0.0) takes the Kueue view and its "Queue" details section on the jobs Kueue
+queues; `extensions/kyverno` (`sextant.kyverno`, 1.0.0) takes the Kyverno view and "Policy results" on every object's
+details. Their sections keep their places (`kyverno` right after `crossplane`, with `externalSecrets` now anchored to
+`crossplane` behind it; `kueue` right after `gpuOperator`, with `jobset`, `kuberay`, `kserve` and `olm` now anchored to
+`dra` behind it, so the order is unchanged), and the sidebar offers them where `kueue.x-k8s.io` and `kyverno.io` are
+served. Their problems move into categories of the extensions' own (`problemCategories`, #410): the version-3 migration
+turns `kueue` (on by default) into `ext:sextant.kueue:queues` (`MOVED_PROBLEM_CATEGORIES`, its extension part naming the
+category) and the opt-in `kueueWorkloads` and `policies` into `ext:sextant.kueue:workloads` and
+`ext:sextant.kyverno:policies` (`MOVED_OPT_IN_CATEGORIES`); none of them is ever given to agents, as before, and
+`get_problems` still refuses the old names.

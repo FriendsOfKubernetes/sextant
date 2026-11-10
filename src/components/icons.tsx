@@ -575,6 +575,7 @@ const ICONS = {
   crossplanePackage: CrossplanePackage,
   crossplaneFunction: CrossplaneFunction,
   crossplaneComposites: CrossplaneGitFork,
+  // Kyverno's section and kinds, named by Sextant's own extension `extensions/kyverno`.
   kyverno: KyvernoShieldHalf,
   kyvernoPolicy: KyvernoGavel,
   kyvernoReport: KyvernoClipboardCheck,
@@ -617,7 +618,7 @@ const ICONS = {
   capiMachine: CapiServer,
   capiHealthCheck: CapiHeartPulse,
   capiResourceSet: CapiPackagePlus,
-  // Kueue (#246): the section and its kinds.
+  // Kueue (#246): the section and its kinds, named by Sextant's own extension `extensions/kueue`.
   kueue: KueueListTodo,
   kueueClusterQueue: KueueRows3,
   kueueLocalQueue: KueueListOrdered,

@@ -84,13 +84,6 @@ export function ProblemsPage({ clusterId }: PageProps) {
         </label>
         <label className="problems__choice">
           <Checkbox
-            checked={categories.includes("policies")}
-            onChange={(e) => void updateSettings(setCategory("policies", e.target.checked)).catch(() => undefined)}
-          />
-          {t("problems:showPolicies")}
-        </label>
-        <label className="problems__choice">
-          <Checkbox
             checked={categories.includes("prometheusOperator")}
             onChange={(e) => void updateSettings(setCategory("prometheusOperator", e.target.checked)).catch(() => undefined)}
           />
@@ -116,13 +109,6 @@ export function ProblemsPage({ clusterId }: PageProps) {
             onChange={(e) => void updateSettings(setCategory("sealedSecrets", e.target.checked)).catch(() => undefined)}
           />
           {t("problems:showSealedSecrets")}
-        </label>
-        <label className="problems__choice">
-          <Checkbox
-            checked={categories.includes("kueueWorkloads")}
-            onChange={(e) => void updateSettings(setCategory("kueueWorkloads", e.target.checked)).catch(() => undefined)}
-          />
-          {t("problems:showKueueWorkloads")}
         </label>
         <label className="problems__choice">
           <Checkbox

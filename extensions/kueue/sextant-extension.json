@@ -1,0 +1,3278 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.kueue",
+  "name": "Kueue",
+  "version": "1.0.0",
+  "description": "Kueue's queues and Workloads: ClusterQueues with their quota against what is reserved and in use, LocalQueues, Workloads with why they wait or were evicted, flavors, cohorts, admission checks and priority classes, and the queue of every job Kueue queues; problems of queues that admit nothing and, opt-in, of Workloads waiting too long, not queueable or evicted repeatedly. Read-only.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "kueue",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "kueue.x-k8s.io",
+              "kind": "ClusterQueue"
+            },
+            {
+              "group": "kueue.x-k8s.io",
+              "kind": "LocalQueue"
+            },
+            {
+              "group": "kueue.x-k8s.io",
+              "kind": "Workload"
+            },
+            {
+              "group": "kueue.x-k8s.io",
+              "kind": "ResourceFlavor"
+            },
+            {
+              "group": "kueue.x-k8s.io",
+              "kind": "Cohort"
+            },
+            {
+              "group": "kueue.x-k8s.io",
+              "kind": "AdmissionCheck"
+            },
+            {
+              "group": "kueue.x-k8s.io",
+              "kind": "WorkloadPriorityClass"
+            },
+            {
+              "group": "batch",
+              "kind": "Job"
+            },
+            {
+              "group": "jobset.x-k8s.io",
+              "kind": "JobSet"
+            },
+            {
+              "group": "ray.io",
+              "kind": "RayJob"
+            },
+            {
+              "group": "ray.io",
+              "kind": "RayCluster"
+            },
+            {
+              "group": "kubeflow.org",
+              "kind": "PyTorchJob"
+            },
+            {
+              "group": "kubeflow.org",
+              "kind": "TFJob"
+            },
+            {
+              "group": "kubeflow.org",
+              "kind": "XGBoostJob"
+            },
+            {
+              "group": "kubeflow.org",
+              "kind": "PaddleJob"
+            },
+            {
+              "group": "kubeflow.org",
+              "kind": "JAXJob"
+            },
+            {
+              "group": "kubeflow.org",
+              "kind": "MPIJob"
+            },
+            {
+              "group": "trainer.kubeflow.org",
+              "kind": "TrainJob"
+            },
+            {
+              "group": "leaderworkerset.x-k8s.io",
+              "kind": "LeaderWorkerSet"
+            },
+            {
+              "group": "workload.codeflare.dev",
+              "kind": "AppWrapper"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "kueue.x-k8s.io",
+        "kind": "ClusterQueue",
+        "section": "kueue",
+        "title": "Cluster Queues",
+        "icon": "kueueClusterQueue",
+        "order": 10,
+        "printerColumns": false
+      },
+      {
+        "group": "kueue.x-k8s.io",
+        "kind": "LocalQueue",
+        "section": "kueue",
+        "title": "Local Queues",
+        "icon": "kueueLocalQueue",
+        "order": 20,
+        "printerColumns": false
+      },
+      {
+        "group": "kueue.x-k8s.io",
+        "kind": "Workload",
+        "section": "kueue",
+        "title": "Workloads",
+        "icon": "kueueWorkload",
+        "order": 30,
+        "printerColumns": false
+      },
+      {
+        "group": "kueue.x-k8s.io",
+        "kind": "ResourceFlavor",
+        "section": "kueue",
+        "title": "Resource Flavors",
+        "icon": "kueueResourceFlavor",
+        "order": 40,
+        "printerColumns": false
+      },
+      {
+        "group": "kueue.x-k8s.io",
+        "kind": "Cohort",
+        "section": "kueue",
+        "title": "Cohorts",
+        "icon": "kueueCohort",
+        "order": 50,
+        "printerColumns": false
+      },
+      {
+        "group": "kueue.x-k8s.io",
+        "kind": "AdmissionCheck",
+        "section": "kueue",
+        "title": "Admission Checks",
+        "icon": "kueueAdmissionCheck",
+        "order": 60,
+        "printerColumns": false
+      },
+      {
+        "group": "kueue.x-k8s.io",
+        "kind": "WorkloadPriorityClass",
+        "section": "kueue",
+        "title": "Workload Priority Classes",
+        "icon": "kueuePriorityClass",
+        "order": 70,
+        "printerColumns": false
+      }
+    ],
+    "sections": [
+      {
+        "section": "kueue",
+        "title": "Kueue",
+        "icon": "kueue",
+        "after": "dra"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "kueue",
+        "label": {
+          "one": "{{count}} object needs attention",
+          "other": "{{count}} objects need attention"
+        }
+      }
+    ],
+    "problemCategories": [
+      {
+        "id": "queues",
+        "title": "Kueue queues",
+        "optIn": false
+      },
+      {
+        "id": "workloads",
+        "title": "Kueue Workloads waiting or evicted",
+        "optIn": true
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "kueue",
+        "title": "Kueue",
+        "kinds": [
+          {
+            "group": "kueue.x-k8s.io",
+            "kind": "ClusterQueue"
+          },
+          {
+            "group": "kueue.x-k8s.io",
+            "kind": "LocalQueue"
+          },
+          {
+            "group": "kueue.x-k8s.io",
+            "kind": "Workload"
+          },
+          {
+            "group": "kueue.x-k8s.io",
+            "kind": "ResourceFlavor"
+          },
+          {
+            "group": "kueue.x-k8s.io",
+            "kind": "Cohort"
+          },
+          {
+            "group": "kueue.x-k8s.io",
+            "kind": "AdmissionCheck"
+          },
+          {
+            "group": "kueue.x-k8s.io",
+            "kind": "WorkloadPriorityClass"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      },
+      {
+        "id": "queue",
+        "title": "Queue",
+        "kinds": [
+          {
+            "group": "batch",
+            "kind": "Job"
+          },
+          {
+            "group": "jobset.x-k8s.io",
+            "kind": "JobSet"
+          },
+          {
+            "group": "ray.io",
+            "kind": "RayJob"
+          },
+          {
+            "group": "ray.io",
+            "kind": "RayCluster"
+          },
+          {
+            "group": "kubeflow.org",
+            "kind": "PyTorchJob"
+          },
+          {
+            "group": "kubeflow.org",
+            "kind": "TFJob"
+          },
+          {
+            "group": "kubeflow.org",
+            "kind": "XGBoostJob"
+          },
+          {
+            "group": "kubeflow.org",
+            "kind": "PaddleJob"
+          },
+          {
+            "group": "kubeflow.org",
+            "kind": "JAXJob"
+          },
+          {
+            "group": "kubeflow.org",
+            "kind": "MPIJob"
+          },
+          {
+            "group": "trainer.kubeflow.org",
+            "kind": "TrainJob"
+          },
+          {
+            "group": "leaderworkerset.x-k8s.io",
+            "kind": "LeaderWorkerSet"
+          },
+          {
+            "group": "workload.codeflare.dev",
+            "kind": "AppWrapper"
+          }
+        ],
+        "placement": "section",
+        "order": 25,
+        "heading": false,
+        "startHidden": true
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "ClusterQueue"
+        },
+        "id": "cq-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Active\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.deletionTimestamp"
+            },
+            "text": "Terminating",
+            "tone": "muted",
+            "value": "terminating",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.conditions[type=\"Active\"]"
+            },
+            "text": "Unknown",
+            "tone": "neutral",
+            "value": "unknown"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Active",
+              "status": "True"
+            },
+            "text": "Active",
+            "tone": "ok",
+            "value": "active",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Active\"].reason",
+              "value": "Stopped"
+            },
+            "text": "Stopped",
+            "tone": "muted",
+            "value": "stopped",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Active\"].reason",
+              "value": "Terminating"
+            },
+            "text": "Terminating",
+            "tone": "muted",
+            "value": "terminating",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Active",
+              "status": "False"
+            },
+            "text": "Inactive",
+            "tone": "error",
+            "value": "inactive",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Unknown",
+            "tone": "neutral",
+            "value": "unknown",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          }
+        ],
+        "filterBy": "value",
+        "width": "110px",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "ClusterQueue"
+        },
+        "id": "cq-cohort",
+        "title": "Cohort",
+        "paths": [
+          ".spec.cohortName",
+          ".spec.cohort"
+        ],
+        "width": "minmax(120px, 1fr)",
+        "afterColumn": "cq-status"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "ClusterQueue"
+        },
+        "id": "cq-pending",
+        "title": "Pending",
+        "paths": [
+          ".status.pendingWorkloads"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.pendingWorkloads"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "width": "90px",
+        "afterColumn": "cq-cohort"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "ClusterQueue"
+        },
+        "id": "cq-reserving",
+        "title": "Reserving",
+        "paths": [
+          ".status.reservingWorkloads"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.reservingWorkloads"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "width": "90px",
+        "afterColumn": "cq-pending"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "ClusterQueue"
+        },
+        "id": "cq-admitted",
+        "title": "Admitted",
+        "paths": [
+          ".status.admittedWorkloads"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.admittedWorkloads"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "width": "90px",
+        "afterColumn": "cq-reserving"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "ClusterQueue"
+        },
+        "id": "cq-strategy",
+        "title": "Strategy",
+        "paths": [
+          ".spec.queueingStrategy"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".spec.queueingStrategy"
+            },
+            "text": "BestEffortFIFO"
+          }
+        ],
+        "width": "130px",
+        "afterColumn": "cq-admitted"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "LocalQueue"
+        },
+        "id": "lq-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Active\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.deletionTimestamp"
+            },
+            "text": "Terminating",
+            "tone": "muted",
+            "value": "terminating",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.conditions[type=\"Active\"]"
+            },
+            "text": "Unknown",
+            "tone": "neutral",
+            "value": "unknown"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Active",
+              "status": "True"
+            },
+            "text": "Active",
+            "tone": "ok",
+            "value": "active",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Active\"].reason",
+              "value": "Stopped"
+            },
+            "text": "Stopped",
+            "tone": "muted",
+            "value": "stopped",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Active\"].reason",
+              "value": "Terminating"
+            },
+            "text": "Terminating",
+            "tone": "muted",
+            "value": "terminating",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Active",
+              "status": "False"
+            },
+            "text": "Inactive",
+            "tone": "error",
+            "value": "inactive",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Unknown",
+            "tone": "neutral",
+            "value": "unknown",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          }
+        ],
+        "filterBy": "value",
+        "width": "110px",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "LocalQueue"
+        },
+        "id": "lq-cluster-queue",
+        "title": "ClusterQueue",
+        "paths": [
+          ".spec.clusterQueue"
+        ],
+        "width": "minmax(120px, 1fr)",
+        "afterColumn": "lq-status"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "LocalQueue"
+        },
+        "id": "lq-pending",
+        "title": "Pending",
+        "paths": [
+          ".status.pendingWorkloads"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.pendingWorkloads"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "width": "90px",
+        "afterColumn": "lq-cluster-queue"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "LocalQueue"
+        },
+        "id": "lq-reserving",
+        "title": "Reserving",
+        "paths": [
+          ".status.reservingWorkloads"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.reservingWorkloads"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "width": "90px",
+        "afterColumn": "lq-pending"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "LocalQueue"
+        },
+        "id": "lq-admitted",
+        "title": "Admitted",
+        "paths": [
+          ".status.admittedWorkloads"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.admittedWorkloads"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "width": "90px",
+        "afterColumn": "lq-reserving"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "id": "wl-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"QuotaReserved\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Finished",
+              "status": "True",
+              "reason": "Failed"
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed",
+            "tooltip": "{{.status.conditions[type=\"Finished\"].reason}}: {{.status.conditions[type=\"Finished\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Finished\"].reason}}",
+              "{{.status.conditions[type=\"Finished\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Finished",
+              "status": "True"
+            },
+            "text": "Finished",
+            "tone": "ok",
+            "value": "finished",
+            "tooltip": "{{.status.conditions[type=\"Finished\"].reason}}: {{.status.conditions[type=\"Finished\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Finished\"].reason}}",
+              "{{.status.conditions[type=\"Finished\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.active",
+              "value": false
+            },
+            "text": "Deactivated",
+            "tone": "muted",
+            "value": "deactivated",
+            "tooltip": "{{.status.conditions[type=\"Evicted\"].reason}}: {{.status.conditions[type=\"Evicted\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Evicted\"].reason}}",
+              "{{.status.conditions[type=\"Evicted\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Admitted",
+              "status": "True"
+            },
+            "text": "Admitted",
+            "tone": "ok",
+            "value": "admitted"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Evicted",
+                  "status": "True"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "QuotaReserved",
+                    "status": "True"
+                  }
+                }
+              ]
+            },
+            "text": "Evicted",
+            "tone": "warning",
+            "value": "evicted",
+            "tooltip": "{{.status.conditions[type=\"Evicted\"].reason}}: {{.status.conditions[type=\"Evicted\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Evicted\"].reason}}",
+              "{{.status.conditions[type=\"Evicted\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "QuotaReserved",
+              "status": "True"
+            },
+            "text": "Quota reserved",
+            "tone": "warning",
+            "value": "checking",
+            "tooltip": "{{.status.conditions[type=\"Admitted\"].reason}}: {{.status.conditions[type=\"Admitted\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Admitted\"].reason}}",
+              "{{.status.conditions[type=\"Admitted\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "QuotaReserved",
+                  "status": "False"
+                },
+                {
+                  "type": "in",
+                  "path": ".status.conditions[type=\"QuotaReserved\"].reason",
+                  "values": [
+                    "Inadmissible",
+                    "Misconfigured",
+                    "DRAResourcesUnresolved"
+                  ]
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "any",
+                    "of": [
+                      {
+                        "type": "contains",
+                        "path": ".status.conditions[type=\"QuotaReserved\"].message",
+                        "values": [
+                          " is stopped",
+                          " is inactive"
+                        ]
+                      },
+                      {
+                        "type": "startsWith",
+                        "path": ".status.conditions[type=\"QuotaReserved\"].message",
+                        "values": [
+                          "is stopped",
+                          "is inactive"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            "text": "Inadmissible",
+            "tone": "error",
+            "value": "inadmissible",
+            "tooltip": "{{.status.conditions[type=\"QuotaReserved\"].reason}}: {{.status.conditions[type=\"QuotaReserved\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"QuotaReserved\"].reason}}",
+              "{{.status.conditions[type=\"QuotaReserved\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Pending",
+            "tone": "warning",
+            "value": "pending",
+            "tooltip": "{{.status.conditions[type=\"QuotaReserved\"].reason}}: {{.status.conditions[type=\"QuotaReserved\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"QuotaReserved\"].reason}}",
+              "{{.status.conditions[type=\"QuotaReserved\"].message}}"
+            ]
+          }
+        ],
+        "filterBy": "value",
+        "width": "120px",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "id": "wl-queue",
+        "title": "LocalQueue",
+        "paths": [
+          ".spec.queueName"
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "wl-status"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "id": "wl-cluster-queue",
+        "title": "ClusterQueue",
+        "paths": [
+          ".status.admission.clusterQueue"
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "wl-queue"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "id": "wl-owner",
+        "title": "Owner",
+        "paths": [
+          ".metadata.ownerReferences[controller=\"true\"].name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.ownerReferences[controller=\"true\"].apiVersion"
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.ownerReferences[controller=\"true\"].kind"
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.ownerReferences[controller=\"true\"].name"
+                }
+              ]
+            },
+            "text": "{{.metadata.ownerReferences[controller=\"true\"].kind}}/{{.metadata.ownerReferences[controller=\"true\"].name}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".metadata.ownerReferences[controller=\"true\"]"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".metadata.ownerReferences[0].apiVersion"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".metadata.ownerReferences[0].kind"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".metadata.ownerReferences[0].name"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "{{.metadata.ownerReferences[0].kind}}/{{.metadata.ownerReferences[0].name}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "contains",
+                  "path": ".metadata.annotations[\"kueue.x-k8s.io/job-owner-gvk\"]",
+                  "values": [
+                    ", Kind="
+                  ]
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "endsWith",
+                    "path": ".metadata.annotations[\"kueue.x-k8s.io/job-owner-gvk\"]",
+                    "values": [
+                      ", Kind="
+                    ]
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.annotations[\"kueue.x-k8s.io/job-owner-name\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"kueue.x-k8s.io/job-owner-name\"]",
+                    "value": ""
+                  }
+                }
+              ]
+            },
+            "text": "{{.metadata.annotations[\"kueue.x-k8s.io/job-owner-gvk\"]|after:, Kind=}}/{{.metadata.annotations[\"kueue.x-k8s.io/job-owner-name\"]}}"
+          }
+        ],
+        "width": "minmax(140px, 1.5fr)",
+        "afterColumn": "wl-cluster-queue"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "id": "wl-priority",
+        "title": "Priority",
+        "paths": [
+          ".spec.priority"
+        ],
+        "format": "number",
+        "width": "80px",
+        "afterColumn": "wl-owner"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "id": "wl-evictions",
+        "title": "Evictions",
+        "paths": [
+          ".status.schedulingStats.evictions[*].count|sum",
+          ".status.requeueState.count"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.schedulingStats.evictions[0]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.requeueState.count"
+                }
+              ]
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.schedulingStats.evictions[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "above",
+                    "path": ".status.schedulingStats.evictions[*].count|sum",
+                    "value": -1
+                  }
+                }
+              ]
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "width": "90px",
+        "afterColumn": "wl-priority"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "ResourceFlavor"
+        },
+        "id": "rf-node-labels",
+        "title": "Node labels",
+        "paths": [
+          ".spec.nodeLabels"
+        ],
+        "format": "entries",
+        "separator": ", ",
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "ResourceFlavor"
+        },
+        "id": "rf-topology",
+        "title": "Topology",
+        "paths": [
+          ".spec.topologyName"
+        ],
+        "width": "120px",
+        "afterColumn": "rf-node-labels"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Cohort"
+        },
+        "id": "cohort-parent",
+        "title": "Parent",
+        "paths": [
+          ".spec.parentName"
+        ],
+        "width": "minmax(120px, 1fr)",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "AdmissionCheck"
+        },
+        "id": "ac-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Active\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.deletionTimestamp"
+            },
+            "text": "Terminating",
+            "tone": "muted",
+            "value": "terminating",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.conditions[type=\"Active\"]"
+            },
+            "text": "Unknown",
+            "tone": "neutral",
+            "value": "unknown"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Active",
+              "status": "True"
+            },
+            "text": "Active",
+            "tone": "ok",
+            "value": "active",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Active\"].reason",
+              "value": "Stopped"
+            },
+            "text": "Stopped",
+            "tone": "muted",
+            "value": "stopped",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Active\"].reason",
+              "value": "Terminating"
+            },
+            "text": "Terminating",
+            "tone": "muted",
+            "value": "terminating",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Active",
+              "status": "False"
+            },
+            "text": "Inactive",
+            "tone": "error",
+            "value": "inactive",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Unknown",
+            "tone": "neutral",
+            "value": "unknown",
+            "tooltip": "{{.status.conditions[type=\"Active\"].reason}}: {{.status.conditions[type=\"Active\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Active\"].reason}}",
+              "{{.status.conditions[type=\"Active\"].message}}"
+            ]
+          }
+        ],
+        "filterBy": "value",
+        "width": "110px",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "AdmissionCheck"
+        },
+        "id": "ac-controller",
+        "title": "Controller",
+        "paths": [
+          ".spec.controllerName"
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "ac-status"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "WorkloadPriorityClass"
+        },
+        "id": "pc-value",
+        "title": "Value",
+        "paths": [
+          ".value"
+        ],
+        "format": "number",
+        "width": "90px",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "WorkloadPriorityClass"
+        },
+        "id": "pc-description",
+        "title": "Description",
+        "paths": [
+          ".description"
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "pc-value"
+      }
+    ],
+    "problems": [
+      {
+        "id": "cluster-queue-inactive",
+        "title": "ClusterQueue inactive",
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "ClusterQueue"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Active",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "in",
+                "path": ".status.conditions[type=\"Active\"].reason",
+                "values": [
+                  "Stopped",
+                  "Terminating"
+                ]
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Active\"].lastTransitionTime"
+                },
+                {
+                  "type": "olderThan",
+                  "path": ".status.conditions[type=\"Active\"].lastTransitionTime",
+                  "minutes": 2
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Active\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "{{.status.conditions[type=\"Active\"].reason}}",
+        "reasonOr": "Inactive",
+        "message": "{{.status.conditions[type=\"Active\"].message}}",
+        "group": "inactive",
+        "category": "queues"
+      },
+      {
+        "id": "local-queue-without-cluster-queue",
+        "title": "LocalQueue of a missing ClusterQueue",
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "LocalQueue"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Active",
+              "status": "False",
+              "reason": "ClusterQueueDoesNotExist"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Active\"].lastTransitionTime"
+                },
+                {
+                  "type": "olderThan",
+                  "path": ".status.conditions[type=\"Active\"].lastTransitionTime",
+                  "minutes": 2
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Active\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "ClusterQueueDoesNotExist",
+        "message": "{{.status.conditions[type=\"Active\"].message}}",
+        "group": "inactive",
+        "category": "queues"
+      },
+      {
+        "id": "workload-pending-quota",
+        "title": "Workload waiting for quota",
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Finished",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.active",
+                "value": false
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Admitted",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Evicted",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "QuotaReserved",
+              "status": "False"
+            },
+            {
+              "type": "in",
+              "path": ".status.conditions[type=\"QuotaReserved\"].reason",
+              "values": [
+                "Pending",
+                "WaitingForQuota",
+                "NoMatchingFlavor",
+                "ExceedsMaxQuota",
+                "TopologyPlacementFailed",
+                "WaitingForPreemptedWorkloads",
+                "WaitingForPodsReady",
+                "Waiting"
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"QuotaReserved\"].lastTransitionTime"
+                },
+                {
+                  "type": "olderThan",
+                  "path": ".status.conditions[type=\"QuotaReserved\"].lastTransitionTime",
+                  "minutes": 30
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"QuotaReserved\"].lastTransitionTime",
+        "graceMinutes": 30,
+        "reason": "PendingQuota",
+        "message": "{{.status.conditions[type=\"QuotaReserved\"].message}}",
+        "group": "pending",
+        "category": "workloads"
+      },
+      {
+        "id": "workload-inadmissible",
+        "title": "Workload that cannot be queued",
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Finished",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.active",
+                "value": false
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Admitted",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Evicted",
+                "status": "True"
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "QuotaReserved",
+              "status": "False"
+            },
+            {
+              "type": "in",
+              "path": ".status.conditions[type=\"QuotaReserved\"].reason",
+              "values": [
+                "Inadmissible",
+                "Misconfigured",
+                "DRAResourcesUnresolved"
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "contains",
+                    "path": ".status.conditions[type=\"QuotaReserved\"].message",
+                    "values": [
+                      " is stopped",
+                      " is inactive"
+                    ]
+                  },
+                  {
+                    "type": "startsWith",
+                    "path": ".status.conditions[type=\"QuotaReserved\"].message",
+                    "values": [
+                      "is stopped",
+                      "is inactive"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"QuotaReserved\"].lastTransitionTime"
+                },
+                {
+                  "type": "olderThan",
+                  "path": ".status.conditions[type=\"QuotaReserved\"].lastTransitionTime",
+                  "minutes": 5
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"QuotaReserved\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "Inadmissible",
+        "message": "{{.status.conditions[type=\"QuotaReserved\"].message}}",
+        "group": "pending",
+        "category": "workloads"
+      },
+      {
+        "id": "workload-deactivated",
+        "title": "Workload deactivated by Kueue",
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Finished",
+                "status": "True"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".spec.active",
+              "value": false
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "contains",
+                  "path": ".status.conditions[type=\"Evicted\"].reason",
+                  "values": [
+                    "RequeuingLimitExceeded",
+                    "MaximumExecutionTimeExceeded",
+                    "AdmissionCheck"
+                  ]
+                },
+                {
+                  "type": "contains",
+                  "path": ".status.conditions[type=\"DeactivationTarget\"].reason",
+                  "values": [
+                    "RequeuingLimitExceeded",
+                    "MaximumExecutionTimeExceeded",
+                    "AdmissionCheck"
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "any",
+                      "of": [
+                        {
+                          "type": "absent",
+                          "path": ".status.conditions[type=\"Evicted\"].reason"
+                        },
+                        {
+                          "type": "in",
+                          "path": ".status.conditions[type=\"Evicted\"].reason",
+                          "values": [
+                            "InactiveWorkload",
+                            "Deactivated"
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "any",
+                      "of": [
+                        {
+                          "type": "all",
+                          "of": [
+                            {
+                              "type": "in",
+                              "path": ".status.schedulingStats.evictions[0].reason",
+                              "values": [
+                                "InactiveWorkload",
+                                "Deactivated"
+                              ]
+                            },
+                            {
+                              "type": "contains",
+                              "path": ".status.schedulingStats.evictions[0].underlyingCause",
+                              "values": [
+                                "RequeuingLimitExceeded",
+                                "MaximumExecutionTimeExceeded",
+                                "AdmissionCheck"
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "all",
+                          "of": [
+                            {
+                              "type": "in",
+                              "path": ".status.schedulingStats.evictions[1].reason",
+                              "values": [
+                                "InactiveWorkload",
+                                "Deactivated"
+                              ]
+                            },
+                            {
+                              "type": "contains",
+                              "path": ".status.schedulingStats.evictions[1].underlyingCause",
+                              "values": [
+                                "RequeuingLimitExceeded",
+                                "MaximumExecutionTimeExceeded",
+                                "AdmissionCheck"
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "all",
+                          "of": [
+                            {
+                              "type": "in",
+                              "path": ".status.schedulingStats.evictions[2].reason",
+                              "values": [
+                                "InactiveWorkload",
+                                "Deactivated"
+                              ]
+                            },
+                            {
+                              "type": "contains",
+                              "path": ".status.schedulingStats.evictions[2].underlyingCause",
+                              "values": [
+                                "RequeuingLimitExceeded",
+                                "MaximumExecutionTimeExceeded",
+                                "AdmissionCheck"
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "all",
+                          "of": [
+                            {
+                              "type": "in",
+                              "path": ".status.schedulingStats.evictions[3].reason",
+                              "values": [
+                                "InactiveWorkload",
+                                "Deactivated"
+                              ]
+                            },
+                            {
+                              "type": "contains",
+                              "path": ".status.schedulingStats.evictions[3].underlyingCause",
+                              "values": [
+                                "RequeuingLimitExceeded",
+                                "MaximumExecutionTimeExceeded",
+                                "AdmissionCheck"
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "all",
+                          "of": [
+                            {
+                              "type": "in",
+                              "path": ".status.schedulingStats.evictions[4].reason",
+                              "values": [
+                                "InactiveWorkload",
+                                "Deactivated"
+                              ]
+                            },
+                            {
+                              "type": "contains",
+                              "path": ".status.schedulingStats.evictions[4].underlyingCause",
+                              "values": [
+                                "RequeuingLimitExceeded",
+                                "MaximumExecutionTimeExceeded",
+                                "AdmissionCheck"
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "all",
+                          "of": [
+                            {
+                              "type": "in",
+                              "path": ".status.schedulingStats.evictions[5].reason",
+                              "values": [
+                                "InactiveWorkload",
+                                "Deactivated"
+                              ]
+                            },
+                            {
+                              "type": "contains",
+                              "path": ".status.schedulingStats.evictions[5].underlyingCause",
+                              "values": [
+                                "RequeuingLimitExceeded",
+                                "MaximumExecutionTimeExceeded",
+                                "AdmissionCheck"
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "any",
+                          "of": [
+                            {
+                              "type": "exists",
+                              "path": ".status.schedulingStats.evictions[reason=\"InactiveWorkload\",underlyingCause=\"RequeuingLimitExceeded\"]"
+                            },
+                            {
+                              "type": "exists",
+                              "path": ".status.schedulingStats.evictions[reason=\"InactiveWorkload\",underlyingCause=\"MaximumExecutionTimeExceeded\"]"
+                            },
+                            {
+                              "type": "exists",
+                              "path": ".status.schedulingStats.evictions[reason=\"InactiveWorkload\",underlyingCause=\"AdmissionCheck\"]"
+                            },
+                            {
+                              "type": "exists",
+                              "path": ".status.schedulingStats.evictions[reason=\"Deactivated\",underlyingCause=\"RequeuingLimitExceeded\"]"
+                            },
+                            {
+                              "type": "exists",
+                              "path": ".status.schedulingStats.evictions[reason=\"Deactivated\",underlyingCause=\"MaximumExecutionTimeExceeded\"]"
+                            },
+                            {
+                              "type": "exists",
+                              "path": ".status.schedulingStats.evictions[reason=\"Deactivated\",underlyingCause=\"AdmissionCheck\"]"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Evicted\"].lastTransitionTime",
+        "reason": "Deactivated",
+        "message": "{{.status.conditions[type=\"Evicted\"].message}}",
+        "group": "deactivated",
+        "category": "workloads"
+      },
+      {
+        "id": "workload-evicted-repeatedly",
+        "title": "Workload evicted repeatedly",
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Finished",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.active",
+                "value": false
+              }
+            },
+            {
+              "type": "exists",
+              "path": ".status.schedulingStats.evictions[0]"
+            },
+            {
+              "type": "above",
+              "path": ".status.schedulingStats.evictions[*].count|sum",
+              "value": 2
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Evicted",
+                  "status": "True"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Evicted\"].lastTransitionTime"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "olderThan",
+                    "path": ".status.conditions[type=\"Evicted\"].lastTransitionTime",
+                    "minutes": 60
+                  }
+                }
+              ]
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Evicted\"].message"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.conditions[type=\"Evicted\"].message",
+                    "value": ""
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Evicted\"].lastTransitionTime",
+        "reason": "EvictedRepeatedly",
+        "message": "{{.status.conditions[type=\"Evicted\"].message}}",
+        "group": "evicted",
+        "stamp": [
+          ".status.schedulingStats.evictions[*].count|sum"
+        ],
+        "category": "workloads"
+      },
+      {
+        "id": "workload-evicted-repeatedly-unexplained",
+        "title": "Workload evicted repeatedly (no message)",
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Finished",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.active",
+                "value": false
+              }
+            },
+            {
+              "type": "exists",
+              "path": ".status.schedulingStats.evictions[0]"
+            },
+            {
+              "type": "above",
+              "path": ".status.schedulingStats.evictions[*].count|sum",
+              "value": 2
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Evicted",
+                  "status": "True"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Evicted\"].lastTransitionTime"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "olderThan",
+                    "path": ".status.conditions[type=\"Evicted\"].lastTransitionTime",
+                    "minutes": 60
+                  }
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Evicted\"].message"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Evicted\"].message",
+                  "value": ""
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Evicted\"].lastTransitionTime",
+        "reason": "EvictedRepeatedly",
+        "message": "Evictions so far: {{.status.schedulingStats.evictions[*].count|sum}}",
+        "group": "evicted",
+        "stamp": [
+          ".status.schedulingStats.evictions[*].count|sum"
+        ],
+        "category": "workloads"
+      },
+      {
+        "id": "workload-evicted-repeatedly-requeued",
+        "title": "Workload evicted repeatedly (requeue count)",
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Finished",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.active",
+                "value": false
+              }
+            },
+            {
+              "type": "absent",
+              "path": ".status.schedulingStats.evictions[0]"
+            },
+            {
+              "type": "above",
+              "path": ".status.requeueState.count",
+              "value": 2
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Evicted",
+                  "status": "True"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Evicted\"].lastTransitionTime"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "olderThan",
+                    "path": ".status.conditions[type=\"Evicted\"].lastTransitionTime",
+                    "minutes": 60
+                  }
+                }
+              ]
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Evicted\"].message"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".status.conditions[type=\"Evicted\"].message",
+                    "value": ""
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Evicted\"].lastTransitionTime",
+        "reason": "EvictedRepeatedly",
+        "message": "{{.status.conditions[type=\"Evicted\"].message}}",
+        "group": "evicted",
+        "stamp": [
+          ".status.requeueState.count"
+        ],
+        "category": "workloads"
+      },
+      {
+        "id": "workload-evicted-requeued-unexplained",
+        "title": "Workload evicted repeatedly (requeue count, no message)",
+        "kind": {
+          "group": "kueue.x-k8s.io",
+          "kind": "Workload"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Finished",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.active",
+                "value": false
+              }
+            },
+            {
+              "type": "absent",
+              "path": ".status.schedulingStats.evictions[0]"
+            },
+            {
+              "type": "above",
+              "path": ".status.requeueState.count",
+              "value": 2
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Evicted",
+                  "status": "True"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Evicted\"].lastTransitionTime"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "olderThan",
+                    "path": ".status.conditions[type=\"Evicted\"].lastTransitionTime",
+                    "minutes": 60
+                  }
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Evicted\"].message"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Evicted\"].message",
+                  "value": ""
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Evicted\"].lastTransitionTime",
+        "reason": "EvictedRepeatedly",
+        "message": "Evictions so far: {{.status.requeueState.count}}",
+        "group": "evicted",
+        "stamp": [
+          ".status.requeueState.count"
+        ],
+        "category": "workloads"
+      }
+    ]
+  },
+  "translations": {
+    "de": {
+      "name": "Kueue",
+      "description": "Warteschlangen und Workloads von Kueue: ClusterQueues mit ihrem Kontingent gegenüber dem Reservierten und Genutzten, LocalQueues, Workloads mit Grund für Warten oder Verdrängung, Flavors, Cohorts, Admission Checks und Prioritätsklassen sowie die Warteschlange jedes Jobs, den Kueue einreiht; Probleme von Warteschlangen, die nichts zulassen, und auf Wunsch von Workloads, die zu lange warten, nicht eingereiht werden können oder wiederholt verdrängt wurden. Nur lesend.",
+      "kinds.0.title": "Cluster Queues",
+      "kinds.1.title": "Local Queues",
+      "kinds.2.title": "Workloads",
+      "kinds.3.title": "Resource Flavors",
+      "kinds.4.title": "Cohorts",
+      "kinds.5.title": "Admission Checks",
+      "kinds.6.title": "Workload Priority Classes",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.one": "{{count}} Objekt erfordert Aufmerksamkeit",
+      "sectionBadges.kueue.label.other": "{{count}} Objekte erfordern Aufmerksamkeit",
+      "problemCategories.queues.title": "Kueue-Warteschlangen",
+      "problemCategories.workloads.title": "Wartende oder verdrängte Kueue-Workloads",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "Warteschlange",
+      "columns.cq-status.title": "Status",
+      "columns.cq-status.cases.0.text": "Wird gelöscht",
+      "columns.cq-status.cases.1.text": "Unbekannt",
+      "columns.cq-status.cases.2.text": "Aktiv",
+      "columns.cq-status.cases.3.text": "Angehalten",
+      "columns.cq-status.cases.4.text": "Wird gelöscht",
+      "columns.cq-status.cases.5.text": "Inaktiv",
+      "columns.cq-status.cases.6.text": "Unbekannt",
+      "columns.cq-cohort.title": "Kohorte",
+      "columns.cq-pending.title": "Wartend",
+      "columns.cq-reserving.title": "Reservierend",
+      "columns.cq-admitted.title": "Zugelassen",
+      "columns.cq-strategy.title": "Strategie",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "Status",
+      "columns.lq-status.cases.0.text": "Wird gelöscht",
+      "columns.lq-status.cases.1.text": "Unbekannt",
+      "columns.lq-status.cases.2.text": "Aktiv",
+      "columns.lq-status.cases.3.text": "Angehalten",
+      "columns.lq-status.cases.4.text": "Wird gelöscht",
+      "columns.lq-status.cases.5.text": "Inaktiv",
+      "columns.lq-status.cases.6.text": "Unbekannt",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "Wartend",
+      "columns.lq-reserving.title": "Reservierend",
+      "columns.lq-admitted.title": "Zugelassen",
+      "columns.wl-status.title": "Status",
+      "columns.wl-status.cases.0.text": "Fehlgeschlagen",
+      "columns.wl-status.cases.1.text": "Beendet",
+      "columns.wl-status.cases.2.text": "Deaktiviert",
+      "columns.wl-status.cases.3.text": "Zugelassen",
+      "columns.wl-status.cases.4.text": "Verdrängt",
+      "columns.wl-status.cases.5.text": "Kontingent reserviert",
+      "columns.wl-status.cases.6.text": "Nicht zulässig",
+      "columns.wl-status.cases.7.text": "Wartend",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "Besitzer",
+      "columns.wl-priority.title": "Priorität",
+      "columns.wl-evictions.title": "Verdrängungen",
+      "columns.rf-node-labels.title": "Node-Labels",
+      "columns.rf-topology.title": "Topologie",
+      "columns.cohort-parent.title": "Übergeordnet",
+      "columns.ac-status.title": "Status",
+      "columns.ac-status.cases.0.text": "Wird gelöscht",
+      "columns.ac-status.cases.1.text": "Unbekannt",
+      "columns.ac-status.cases.2.text": "Aktiv",
+      "columns.ac-status.cases.3.text": "Angehalten",
+      "columns.ac-status.cases.4.text": "Wird gelöscht",
+      "columns.ac-status.cases.5.text": "Inaktiv",
+      "columns.ac-status.cases.6.text": "Unbekannt",
+      "columns.ac-controller.title": "Controller",
+      "columns.pc-value.title": "Wert",
+      "columns.pc-description.title": "Beschreibung",
+      "problems.cluster-queue-inactive.title": "ClusterQueue inaktiv",
+      "problems.local-queue-without-cluster-queue.title": "LocalQueue einer fehlenden ClusterQueue",
+      "problems.workload-pending-quota.title": "Workload wartet auf Kontingent",
+      "problems.workload-inadmissible.title": "Workload kann nicht eingereiht werden",
+      "problems.workload-deactivated.title": "Von Kueue deaktivierter Workload",
+      "problems.workload-evicted-repeatedly.title": "Wiederholt verdrängter Workload",
+      "problems.workload-evicted-repeatedly-unexplained.title": "Wiederholt verdrängter Workload (ohne Meldung)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "Bisherige Verdrängungen: {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "Wiederholt verdrängter Workload (Zähler der Neueinreihungen)",
+      "problems.workload-evicted-requeued-unexplained.title": "Wiederholt verdrängter Workload (Zähler der Neueinreihungen, ohne Meldung)",
+      "problems.workload-evicted-requeued-unexplained.message": "Bisherige Verdrängungen: {{.status.requeueState.count}}"
+    },
+    "es": {
+      "name": "Kueue",
+      "description": "Las colas y Workloads de Kueue: ClusterQueues con su cuota frente a lo reservado y lo usado, LocalQueues, Workloads con por qué esperan o fueron desalojados, flavors, cohorts, admission checks y clases de prioridad, y la cola de cada job que Kueue encola; problemas de colas que no admiten nada y, si se activa, de Workloads que esperan demasiado, no se pueden encolar o se desalojan una y otra vez. Solo lectura.",
+      "kinds.0.title": "Cluster Queues",
+      "kinds.1.title": "Local Queues",
+      "kinds.2.title": "Workloads",
+      "kinds.3.title": "Resource Flavors",
+      "kinds.4.title": "Cohorts",
+      "kinds.5.title": "Admission Checks",
+      "kinds.6.title": "Workload Priority Classes",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.one": "{{count}} objeto requiere atención",
+      "sectionBadges.kueue.label.many": "{{count}} de objetos requieren atención",
+      "sectionBadges.kueue.label.other": "{{count}} objetos requieren atención",
+      "problemCategories.queues.title": "Colas de Kueue",
+      "problemCategories.workloads.title": "Workloads de Kueue en espera o desalojados",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "Cola",
+      "columns.cq-status.title": "Estado",
+      "columns.cq-status.cases.0.text": "Eliminándose",
+      "columns.cq-status.cases.1.text": "Desconocido",
+      "columns.cq-status.cases.2.text": "Activa",
+      "columns.cq-status.cases.3.text": "Detenida",
+      "columns.cq-status.cases.4.text": "Eliminándose",
+      "columns.cq-status.cases.5.text": "Inactiva",
+      "columns.cq-status.cases.6.text": "Desconocido",
+      "columns.cq-cohort.title": "Cohorte",
+      "columns.cq-pending.title": "Pendientes",
+      "columns.cq-reserving.title": "Reservando",
+      "columns.cq-admitted.title": "Admitidos",
+      "columns.cq-strategy.title": "Estrategia",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "Estado",
+      "columns.lq-status.cases.0.text": "Eliminándose",
+      "columns.lq-status.cases.1.text": "Desconocido",
+      "columns.lq-status.cases.2.text": "Activa",
+      "columns.lq-status.cases.3.text": "Detenida",
+      "columns.lq-status.cases.4.text": "Eliminándose",
+      "columns.lq-status.cases.5.text": "Inactiva",
+      "columns.lq-status.cases.6.text": "Desconocido",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "Pendientes",
+      "columns.lq-reserving.title": "Reservando",
+      "columns.lq-admitted.title": "Admitidos",
+      "columns.wl-status.title": "Estado",
+      "columns.wl-status.cases.0.text": "Fallido",
+      "columns.wl-status.cases.1.text": "Terminado",
+      "columns.wl-status.cases.2.text": "Desactivado",
+      "columns.wl-status.cases.3.text": "Admitido",
+      "columns.wl-status.cases.4.text": "Desalojado",
+      "columns.wl-status.cases.5.text": "Cuota reservada",
+      "columns.wl-status.cases.6.text": "Inadmisible",
+      "columns.wl-status.cases.7.text": "Pendiente",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "Propietario",
+      "columns.wl-priority.title": "Prioridad",
+      "columns.wl-evictions.title": "Desalojos",
+      "columns.rf-node-labels.title": "Labels de nodos",
+      "columns.rf-topology.title": "Topología",
+      "columns.cohort-parent.title": "Padre",
+      "columns.ac-status.title": "Estado",
+      "columns.ac-status.cases.0.text": "Eliminándose",
+      "columns.ac-status.cases.1.text": "Desconocido",
+      "columns.ac-status.cases.2.text": "Activa",
+      "columns.ac-status.cases.3.text": "Detenida",
+      "columns.ac-status.cases.4.text": "Eliminándose",
+      "columns.ac-status.cases.5.text": "Inactiva",
+      "columns.ac-status.cases.6.text": "Desconocido",
+      "columns.ac-controller.title": "Controlador",
+      "columns.pc-value.title": "Valor",
+      "columns.pc-description.title": "Descripción",
+      "problems.cluster-queue-inactive.title": "ClusterQueue inactiva",
+      "problems.local-queue-without-cluster-queue.title": "LocalQueue de una ClusterQueue que falta",
+      "problems.workload-pending-quota.title": "Workload esperando cuota",
+      "problems.workload-inadmissible.title": "Workload que no se puede encolar",
+      "problems.workload-deactivated.title": "Workload desactivado por Kueue",
+      "problems.workload-evicted-repeatedly.title": "Workload desalojado repetidamente",
+      "problems.workload-evicted-repeatedly-unexplained.title": "Workload desalojado repetidamente (sin mensaje)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "Desalojos hasta ahora: {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "Workload desalojado repetidamente (recuento de reencolados)",
+      "problems.workload-evicted-requeued-unexplained.title": "Workload desalojado repetidamente (recuento de reencolados, sin mensaje)",
+      "problems.workload-evicted-requeued-unexplained.message": "Desalojos hasta ahora: {{.status.requeueState.count}}"
+    },
+    "fr": {
+      "name": "Kueue",
+      "description": "Les files d'attente et Workloads de Kueue : les ClusterQueues avec leur quota face à ce qui est réservé et utilisé, les LocalQueues, les Workloads avec pourquoi ils attendent ou ont été évincés, les flavors, cohorts, admission checks et classes de priorité, et la file d'attente de chaque job mis en file par Kueue ; les problèmes des files qui n'admettent rien et, sur option, des Workloads qui attendent trop longtemps, ne peuvent pas être mis en file ou sont évincés à répétition. Lecture seule.",
+      "kinds.0.title": "Cluster Queues",
+      "kinds.1.title": "Local Queues",
+      "kinds.2.title": "Workloads",
+      "kinds.3.title": "Resource Flavors",
+      "kinds.4.title": "Cohorts",
+      "kinds.5.title": "Admission Checks",
+      "kinds.6.title": "Workload Priority Classes",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.one": "{{count}} objet requiert votre attention",
+      "sectionBadges.kueue.label.many": "{{count}} d'objets requièrent votre attention",
+      "sectionBadges.kueue.label.other": "{{count}} objets requièrent votre attention",
+      "problemCategories.queues.title": "Files d'attente Kueue",
+      "problemCategories.workloads.title": "Workloads Kueue en attente ou évincés",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "File d'attente",
+      "columns.cq-status.title": "Statut",
+      "columns.cq-status.cases.0.text": "En suppression",
+      "columns.cq-status.cases.1.text": "Inconnu",
+      "columns.cq-status.cases.2.text": "Active",
+      "columns.cq-status.cases.3.text": "Arrêtée",
+      "columns.cq-status.cases.4.text": "En suppression",
+      "columns.cq-status.cases.5.text": "Inactive",
+      "columns.cq-status.cases.6.text": "Inconnu",
+      "columns.cq-cohort.title": "Cohorte",
+      "columns.cq-pending.title": "En attente",
+      "columns.cq-reserving.title": "Réservant",
+      "columns.cq-admitted.title": "Admis",
+      "columns.cq-strategy.title": "Stratégie",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "Statut",
+      "columns.lq-status.cases.0.text": "En suppression",
+      "columns.lq-status.cases.1.text": "Inconnu",
+      "columns.lq-status.cases.2.text": "Active",
+      "columns.lq-status.cases.3.text": "Arrêtée",
+      "columns.lq-status.cases.4.text": "En suppression",
+      "columns.lq-status.cases.5.text": "Inactive",
+      "columns.lq-status.cases.6.text": "Inconnu",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "En attente",
+      "columns.lq-reserving.title": "Réservant",
+      "columns.lq-admitted.title": "Admis",
+      "columns.wl-status.title": "Statut",
+      "columns.wl-status.cases.0.text": "Échec",
+      "columns.wl-status.cases.1.text": "Terminé",
+      "columns.wl-status.cases.2.text": "Désactivé",
+      "columns.wl-status.cases.3.text": "Admis",
+      "columns.wl-status.cases.4.text": "Évincé",
+      "columns.wl-status.cases.5.text": "Quota réservé",
+      "columns.wl-status.cases.6.text": "Inadmissible",
+      "columns.wl-status.cases.7.text": "En attente",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "Propriétaire",
+      "columns.wl-priority.title": "Priorité",
+      "columns.wl-evictions.title": "Évictions",
+      "columns.rf-node-labels.title": "Labels des nœuds",
+      "columns.rf-topology.title": "Topologie",
+      "columns.cohort-parent.title": "Parent",
+      "columns.ac-status.title": "Statut",
+      "columns.ac-status.cases.0.text": "En suppression",
+      "columns.ac-status.cases.1.text": "Inconnu",
+      "columns.ac-status.cases.2.text": "Active",
+      "columns.ac-status.cases.3.text": "Arrêtée",
+      "columns.ac-status.cases.4.text": "En suppression",
+      "columns.ac-status.cases.5.text": "Inactive",
+      "columns.ac-status.cases.6.text": "Inconnu",
+      "columns.ac-controller.title": "Contrôleur",
+      "columns.pc-value.title": "Valeur",
+      "columns.pc-description.title": "Description",
+      "problems.cluster-queue-inactive.title": "ClusterQueue qui n'admet rien",
+      "problems.local-queue-without-cluster-queue.title": "LocalQueue d'une ClusterQueue absente",
+      "problems.workload-pending-quota.title": "Workload en attente de quota",
+      "problems.workload-inadmissible.title": "Workload impossible à mettre en file",
+      "problems.workload-deactivated.title": "Workload désactivé par Kueue",
+      "problems.workload-evicted-repeatedly.title": "Workload évincé à répétition",
+      "problems.workload-evicted-repeatedly-unexplained.title": "Workload évincé à répétition (sans message)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "Évictions jusqu'ici : {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "Workload évincé à répétition (compte des remises en file)",
+      "problems.workload-evicted-requeued-unexplained.title": "Workload évincé à répétition (compte des remises en file, sans message)",
+      "problems.workload-evicted-requeued-unexplained.message": "Évictions jusqu'ici : {{.status.requeueState.count}}"
+    },
+    "it": {
+      "name": "Kueue",
+      "description": "Code e Workload di Kueue: ClusterQueue con la loro quota rispetto a quanto è riservato e in uso, LocalQueue, Workload con il motivo per cui attendono o sono stati espulsi, flavor, cohort, admission check e classi di priorità, e la coda di ogni job che Kueue accoda; problemi delle code che non ammettono nulla e, su richiesta, dei Workload che attendono troppo, non possono essere accodati o vengono espulsi ripetutamente. Sola lettura.",
+      "kinds.0.title": "Cluster Queues",
+      "kinds.1.title": "Local Queues",
+      "kinds.2.title": "Workloads",
+      "kinds.3.title": "Resource Flavors",
+      "kinds.4.title": "Cohorts",
+      "kinds.5.title": "Admission Checks",
+      "kinds.6.title": "Workload Priority Classes",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.one": "{{count}} oggetto richiede attenzione",
+      "sectionBadges.kueue.label.many": "{{count}} di oggetti richiedono attenzione",
+      "sectionBadges.kueue.label.other": "{{count}} oggetti richiedono attenzione",
+      "problemCategories.queues.title": "Code di Kueue",
+      "problemCategories.workloads.title": "Workload di Kueue in attesa o espulsi",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "Coda",
+      "columns.cq-status.title": "Stato",
+      "columns.cq-status.cases.0.text": "In eliminazione",
+      "columns.cq-status.cases.1.text": "Sconosciuto",
+      "columns.cq-status.cases.2.text": "Attiva",
+      "columns.cq-status.cases.3.text": "Fermata",
+      "columns.cq-status.cases.4.text": "In eliminazione",
+      "columns.cq-status.cases.5.text": "Inattiva",
+      "columns.cq-status.cases.6.text": "Sconosciuto",
+      "columns.cq-cohort.title": "Coorte",
+      "columns.cq-pending.title": "In attesa",
+      "columns.cq-reserving.title": "Con riserva",
+      "columns.cq-admitted.title": "Ammessi",
+      "columns.cq-strategy.title": "Strategia",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "Stato",
+      "columns.lq-status.cases.0.text": "In eliminazione",
+      "columns.lq-status.cases.1.text": "Sconosciuto",
+      "columns.lq-status.cases.2.text": "Attiva",
+      "columns.lq-status.cases.3.text": "Fermata",
+      "columns.lq-status.cases.4.text": "In eliminazione",
+      "columns.lq-status.cases.5.text": "Inattiva",
+      "columns.lq-status.cases.6.text": "Sconosciuto",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "In attesa",
+      "columns.lq-reserving.title": "Con riserva",
+      "columns.lq-admitted.title": "Ammessi",
+      "columns.wl-status.title": "Stato",
+      "columns.wl-status.cases.0.text": "Fallito",
+      "columns.wl-status.cases.1.text": "Terminato",
+      "columns.wl-status.cases.2.text": "Disattivato",
+      "columns.wl-status.cases.3.text": "Ammesso",
+      "columns.wl-status.cases.4.text": "Espulso",
+      "columns.wl-status.cases.5.text": "Quota riservata",
+      "columns.wl-status.cases.6.text": "Non ammissibile",
+      "columns.wl-status.cases.7.text": "In attesa",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "Proprietario",
+      "columns.wl-priority.title": "Priorità",
+      "columns.wl-evictions.title": "Espulsioni",
+      "columns.rf-node-labels.title": "Label dei nodi",
+      "columns.rf-topology.title": "Topologia",
+      "columns.cohort-parent.title": "Padre",
+      "columns.ac-status.title": "Stato",
+      "columns.ac-status.cases.0.text": "In eliminazione",
+      "columns.ac-status.cases.1.text": "Sconosciuto",
+      "columns.ac-status.cases.2.text": "Attiva",
+      "columns.ac-status.cases.3.text": "Fermata",
+      "columns.ac-status.cases.4.text": "In eliminazione",
+      "columns.ac-status.cases.5.text": "Inattiva",
+      "columns.ac-status.cases.6.text": "Sconosciuto",
+      "columns.ac-controller.title": "Controller",
+      "columns.pc-value.title": "Valore",
+      "columns.pc-description.title": "Descrizione",
+      "problems.cluster-queue-inactive.title": "ClusterQueue inattiva",
+      "problems.local-queue-without-cluster-queue.title": "LocalQueue di una ClusterQueue mancante",
+      "problems.workload-pending-quota.title": "Workload in attesa di quota",
+      "problems.workload-inadmissible.title": "Workload che non può essere accodato",
+      "problems.workload-deactivated.title": "Workload disattivato da Kueue",
+      "problems.workload-evicted-repeatedly.title": "Workload espulso ripetutamente",
+      "problems.workload-evicted-repeatedly-unexplained.title": "Workload espulso ripetutamente (senza messaggio)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "Espulsioni finora: {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "Workload espulso ripetutamente (conteggio dei riaccodamenti)",
+      "problems.workload-evicted-requeued-unexplained.title": "Workload espulso ripetutamente (conteggio dei riaccodamenti, senza messaggio)",
+      "problems.workload-evicted-requeued-unexplained.message": "Espulsioni finora: {{.status.requeueState.count}}"
+    },
+    "ja": {
+      "name": "Kueue",
+      "description": "Kueue のキューと Workload: 予約済み・使用中の量と比べた ClusterQueue のクォータ、LocalQueue、待機中または退避された理由付きの Workload、フレーバー、コホート、Admission Check、優先度クラス、そして Kueue がキューに入れる各ジョブのキュー。何も受け付けないキューの問題と、オプトインで、長く待ちすぎている・キューに入れられない・繰り返し退避された Workload の問題。読み取り専用。",
+      "kinds.0.title": "ClusterQueue",
+      "kinds.1.title": "LocalQueue",
+      "kinds.2.title": "Workload",
+      "kinds.3.title": "ResourceFlavor",
+      "kinds.4.title": "Cohort",
+      "kinds.5.title": "AdmissionCheck",
+      "kinds.6.title": "WorkloadPriorityClass",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.other": "対応が必要なオブジェクトが {{count}} 件あります",
+      "problemCategories.queues.title": "Kueue のキュー",
+      "problemCategories.workloads.title": "待機中または退避された Kueue の Workload",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "キュー",
+      "columns.cq-status.title": "状態",
+      "columns.cq-status.cases.0.text": "削除中",
+      "columns.cq-status.cases.1.text": "不明",
+      "columns.cq-status.cases.2.text": "アクティブ",
+      "columns.cq-status.cases.3.text": "停止",
+      "columns.cq-status.cases.4.text": "削除中",
+      "columns.cq-status.cases.5.text": "非アクティブ",
+      "columns.cq-status.cases.6.text": "不明",
+      "columns.cq-cohort.title": "コホート",
+      "columns.cq-pending.title": "待機中",
+      "columns.cq-reserving.title": "予約中",
+      "columns.cq-admitted.title": "受け入れ済み",
+      "columns.cq-strategy.title": "戦略",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "状態",
+      "columns.lq-status.cases.0.text": "削除中",
+      "columns.lq-status.cases.1.text": "不明",
+      "columns.lq-status.cases.2.text": "アクティブ",
+      "columns.lq-status.cases.3.text": "停止",
+      "columns.lq-status.cases.4.text": "削除中",
+      "columns.lq-status.cases.5.text": "非アクティブ",
+      "columns.lq-status.cases.6.text": "不明",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "待機中",
+      "columns.lq-reserving.title": "予約中",
+      "columns.lq-admitted.title": "受け入れ済み",
+      "columns.wl-status.title": "状態",
+      "columns.wl-status.cases.0.text": "失敗",
+      "columns.wl-status.cases.1.text": "完了",
+      "columns.wl-status.cases.2.text": "無効化",
+      "columns.wl-status.cases.3.text": "受け入れ済み",
+      "columns.wl-status.cases.4.text": "退避",
+      "columns.wl-status.cases.5.text": "クォータ予約済み",
+      "columns.wl-status.cases.6.text": "受け入れ不可",
+      "columns.wl-status.cases.7.text": "待機中",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "所有者",
+      "columns.wl-priority.title": "優先度",
+      "columns.wl-evictions.title": "退避回数",
+      "columns.rf-node-labels.title": "ノードの label",
+      "columns.rf-topology.title": "トポロジー",
+      "columns.cohort-parent.title": "親",
+      "columns.ac-status.title": "状態",
+      "columns.ac-status.cases.0.text": "削除中",
+      "columns.ac-status.cases.1.text": "不明",
+      "columns.ac-status.cases.2.text": "アクティブ",
+      "columns.ac-status.cases.3.text": "停止",
+      "columns.ac-status.cases.4.text": "削除中",
+      "columns.ac-status.cases.5.text": "非アクティブ",
+      "columns.ac-status.cases.6.text": "不明",
+      "columns.ac-controller.title": "コントローラー",
+      "columns.pc-value.title": "値",
+      "columns.pc-description.title": "説明",
+      "problems.cluster-queue-inactive.title": "非アクティブな ClusterQueue",
+      "problems.local-queue-without-cluster-queue.title": "存在しない ClusterQueue の LocalQueue",
+      "problems.workload-pending-quota.title": "クォータ待ちの Workload",
+      "problems.workload-inadmissible.title": "キューに入れられない Workload",
+      "problems.workload-deactivated.title": "Kueue に非アクティブ化された Workload",
+      "problems.workload-evicted-repeatedly.title": "繰り返し退避された Workload",
+      "problems.workload-evicted-repeatedly-unexplained.title": "繰り返し退避された Workload (メッセージなし)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "これまでの退避回数: {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "繰り返し退避された Workload (再キュー回数)",
+      "problems.workload-evicted-requeued-unexplained.title": "繰り返し退避された Workload (再キュー回数、メッセージなし)",
+      "problems.workload-evicted-requeued-unexplained.message": "これまでの退避回数: {{.status.requeueState.count}}"
+    },
+    "ko": {
+      "name": "Kueue",
+      "description": "Kueue의 큐와 Workload: 예약 및 사용 중인 양과 비교한 ClusterQueue의 할당량, LocalQueue, 대기하거나 축출된 이유가 있는 Workload, 플레이버, 코호트, Admission Check, 우선순위 클래스, 그리고 Kueue가 큐에 넣는 모든 작업의 큐. 아무것도 수락하지 않는 큐의 문제와, 옵트인 시 너무 오래 대기하거나 큐에 넣을 수 없거나 반복해서 축출된 Workload의 문제. 읽기 전용.",
+      "kinds.0.title": "ClusterQueue",
+      "kinds.1.title": "LocalQueue",
+      "kinds.2.title": "Workload",
+      "kinds.3.title": "ResourceFlavor",
+      "kinds.4.title": "Cohort",
+      "kinds.5.title": "AdmissionCheck",
+      "kinds.6.title": "WorkloadPriorityClass",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.other": "주의가 필요한 개체 {{count}}개",
+      "problemCategories.queues.title": "Kueue 큐",
+      "problemCategories.workloads.title": "대기 중이거나 축출된 Kueue Workload",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "큐",
+      "columns.cq-status.title": "상태",
+      "columns.cq-status.cases.0.text": "삭제 중",
+      "columns.cq-status.cases.1.text": "알 수 없음",
+      "columns.cq-status.cases.2.text": "활성",
+      "columns.cq-status.cases.3.text": "중지됨",
+      "columns.cq-status.cases.4.text": "삭제 중",
+      "columns.cq-status.cases.5.text": "비활성",
+      "columns.cq-status.cases.6.text": "알 수 없음",
+      "columns.cq-cohort.title": "코호트",
+      "columns.cq-pending.title": "대기 중",
+      "columns.cq-reserving.title": "예약 중",
+      "columns.cq-admitted.title": "승인됨",
+      "columns.cq-strategy.title": "전략",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "상태",
+      "columns.lq-status.cases.0.text": "삭제 중",
+      "columns.lq-status.cases.1.text": "알 수 없음",
+      "columns.lq-status.cases.2.text": "활성",
+      "columns.lq-status.cases.3.text": "중지됨",
+      "columns.lq-status.cases.4.text": "삭제 중",
+      "columns.lq-status.cases.5.text": "비활성",
+      "columns.lq-status.cases.6.text": "알 수 없음",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "대기 중",
+      "columns.lq-reserving.title": "예약 중",
+      "columns.lq-admitted.title": "승인됨",
+      "columns.wl-status.title": "상태",
+      "columns.wl-status.cases.0.text": "실패",
+      "columns.wl-status.cases.1.text": "완료",
+      "columns.wl-status.cases.2.text": "비활성화됨",
+      "columns.wl-status.cases.3.text": "승인됨",
+      "columns.wl-status.cases.4.text": "축출됨",
+      "columns.wl-status.cases.5.text": "할당량 예약됨",
+      "columns.wl-status.cases.6.text": "승인 불가",
+      "columns.wl-status.cases.7.text": "대기 중",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "소유자",
+      "columns.wl-priority.title": "우선순위",
+      "columns.wl-evictions.title": "축출 횟수",
+      "columns.rf-node-labels.title": "노드 label",
+      "columns.rf-topology.title": "토폴로지",
+      "columns.cohort-parent.title": "상위",
+      "columns.ac-status.title": "상태",
+      "columns.ac-status.cases.0.text": "삭제 중",
+      "columns.ac-status.cases.1.text": "알 수 없음",
+      "columns.ac-status.cases.2.text": "활성",
+      "columns.ac-status.cases.3.text": "중지됨",
+      "columns.ac-status.cases.4.text": "삭제 중",
+      "columns.ac-status.cases.5.text": "비활성",
+      "columns.ac-status.cases.6.text": "알 수 없음",
+      "columns.ac-controller.title": "컨트롤러",
+      "columns.pc-value.title": "값",
+      "columns.pc-description.title": "설명",
+      "problems.cluster-queue-inactive.title": "비활성 ClusterQueue",
+      "problems.local-queue-without-cluster-queue.title": "없는 ClusterQueue의 LocalQueue",
+      "problems.workload-pending-quota.title": "할당량을 기다리는 Workload",
+      "problems.workload-inadmissible.title": "큐에 넣을 수 없는 Workload",
+      "problems.workload-deactivated.title": "Kueue가 비활성화한 Workload",
+      "problems.workload-evicted-repeatedly.title": "반복해서 축출된 Workload",
+      "problems.workload-evicted-repeatedly-unexplained.title": "반복해서 축출된 Workload (메시지 없음)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "지금까지 축출된 횟수: {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "반복해서 축출된 Workload (재큐 횟수)",
+      "problems.workload-evicted-requeued-unexplained.title": "반복해서 축출된 Workload (재큐 횟수, 메시지 없음)",
+      "problems.workload-evicted-requeued-unexplained.message": "지금까지 축출된 횟수: {{.status.requeueState.count}}"
+    },
+    "pl": {
+      "name": "Kueue",
+      "description": "Kolejki i Workloady Kueue: ClusterQueue z limitem wobec tego, co zarezerwowane i używane, LocalQueue, Workloady z powodem oczekiwania lub eksmisji, flavory, cohorty, admission checki i klasy priorytetu oraz kolejka każdego joba, którego Kueue kolejkuje; problemy kolejek, które niczego nie przyjmują, i na życzenie Workloadów czekających zbyt długo, niemożliwych do zakolejkowania lub wielokrotnie eksmitowanych. Tylko do odczytu.",
+      "kinds.0.title": "Cluster Queues",
+      "kinds.1.title": "Local Queues",
+      "kinds.2.title": "Workloads",
+      "kinds.3.title": "Resource Flavors",
+      "kinds.4.title": "Cohorts",
+      "kinds.5.title": "Admission Checks",
+      "kinds.6.title": "Workload Priority Classes",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.one": "{{count}} obiekt wymaga uwagi",
+      "sectionBadges.kueue.label.few": "{{count}} obiekty wymagają uwagi",
+      "sectionBadges.kueue.label.many": "{{count}} obiektów wymaga uwagi",
+      "sectionBadges.kueue.label.other": "{{count}} obiektu wymaga uwagi",
+      "problemCategories.queues.title": "Kolejki Kueue",
+      "problemCategories.workloads.title": "Oczekujące lub eksmitowane Workloady Kueue",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "Kolejka",
+      "columns.cq-status.title": "Status",
+      "columns.cq-status.cases.0.text": "Usuwana",
+      "columns.cq-status.cases.1.text": "Nieznany",
+      "columns.cq-status.cases.2.text": "Aktywna",
+      "columns.cq-status.cases.3.text": "Zatrzymana",
+      "columns.cq-status.cases.4.text": "Usuwana",
+      "columns.cq-status.cases.5.text": "Nieaktywna",
+      "columns.cq-status.cases.6.text": "Nieznany",
+      "columns.cq-cohort.title": "Kohorta",
+      "columns.cq-pending.title": "Oczekujące",
+      "columns.cq-reserving.title": "Rezerwujące",
+      "columns.cq-admitted.title": "Dopuszczone",
+      "columns.cq-strategy.title": "Strategia",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "Status",
+      "columns.lq-status.cases.0.text": "Usuwana",
+      "columns.lq-status.cases.1.text": "Nieznany",
+      "columns.lq-status.cases.2.text": "Aktywna",
+      "columns.lq-status.cases.3.text": "Zatrzymana",
+      "columns.lq-status.cases.4.text": "Usuwana",
+      "columns.lq-status.cases.5.text": "Nieaktywna",
+      "columns.lq-status.cases.6.text": "Nieznany",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "Oczekujące",
+      "columns.lq-reserving.title": "Rezerwujące",
+      "columns.lq-admitted.title": "Dopuszczone",
+      "columns.wl-status.title": "Status",
+      "columns.wl-status.cases.0.text": "Niepowodzenie",
+      "columns.wl-status.cases.1.text": "Zakończony",
+      "columns.wl-status.cases.2.text": "Dezaktywowany",
+      "columns.wl-status.cases.3.text": "Dopuszczony",
+      "columns.wl-status.cases.4.text": "Eksmitowany",
+      "columns.wl-status.cases.5.text": "Limit zarezerwowany",
+      "columns.wl-status.cases.6.text": "Niedopuszczalny",
+      "columns.wl-status.cases.7.text": "Oczekuje",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "Właściciel",
+      "columns.wl-priority.title": "Priorytet",
+      "columns.wl-evictions.title": "Eksmisje",
+      "columns.rf-node-labels.title": "Etykiety węzłów",
+      "columns.rf-topology.title": "Topologia",
+      "columns.cohort-parent.title": "Nadrzędna",
+      "columns.ac-status.title": "Status",
+      "columns.ac-status.cases.0.text": "Usuwana",
+      "columns.ac-status.cases.1.text": "Nieznany",
+      "columns.ac-status.cases.2.text": "Aktywna",
+      "columns.ac-status.cases.3.text": "Zatrzymana",
+      "columns.ac-status.cases.4.text": "Usuwana",
+      "columns.ac-status.cases.5.text": "Nieaktywna",
+      "columns.ac-status.cases.6.text": "Nieznany",
+      "columns.ac-controller.title": "Kontroler",
+      "columns.pc-value.title": "Wartość",
+      "columns.pc-description.title": "Opis",
+      "problems.cluster-queue-inactive.title": "Nieaktywna ClusterQueue",
+      "problems.local-queue-without-cluster-queue.title": "LocalQueue nieistniejącej ClusterQueue",
+      "problems.workload-pending-quota.title": "Workload czeka na limit",
+      "problems.workload-inadmissible.title": "Workload, którego nie można zakolejkować",
+      "problems.workload-deactivated.title": "Workload dezaktywowany przez Kueue",
+      "problems.workload-evicted-repeatedly.title": "Wielokrotnie eksmitowany Workload",
+      "problems.workload-evicted-repeatedly-unexplained.title": "Wielokrotnie eksmitowany Workload (bez komunikatu)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "Dotychczasowe eksmisje: {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "Wielokrotnie eksmitowany Workload (licznik ponownych kolejkowań)",
+      "problems.workload-evicted-requeued-unexplained.title": "Wielokrotnie eksmitowany Workload (licznik kolejkowań, bez komunikatu)",
+      "problems.workload-evicted-requeued-unexplained.message": "Dotychczasowe eksmisje: {{.status.requeueState.count}}"
+    },
+    "pt-BR": {
+      "name": "Kueue",
+      "description": "As filas e Workloads do Kueue: ClusterQueues com sua cota diante do que está reservado e em uso, LocalQueues, Workloads com o motivo de esperarem ou terem sido removidos, flavors, cohorts, admission checks e classes de prioridade, e a fila de cada job que o Kueue enfileira; problemas de filas que não admitem nada e, se ativado, de Workloads que esperam demais, não podem ser enfileirados ou são removidos repetidamente. Somente leitura.",
+      "kinds.0.title": "Cluster Queues",
+      "kinds.1.title": "Local Queues",
+      "kinds.2.title": "Workloads",
+      "kinds.3.title": "Resource Flavors",
+      "kinds.4.title": "Cohorts",
+      "kinds.5.title": "Admission Checks",
+      "kinds.6.title": "Workload Priority Classes",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.one": "{{count}} objeto precisa de atenção",
+      "sectionBadges.kueue.label.many": "{{count}} de objetos precisam de atenção",
+      "sectionBadges.kueue.label.other": "{{count}} objetos precisam de atenção",
+      "problemCategories.queues.title": "Filas do Kueue",
+      "problemCategories.workloads.title": "Workloads do Kueue em espera ou removidos",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "Fila",
+      "columns.cq-status.title": "Status",
+      "columns.cq-status.cases.0.text": "Sendo excluída",
+      "columns.cq-status.cases.1.text": "Desconhecido",
+      "columns.cq-status.cases.2.text": "Ativa",
+      "columns.cq-status.cases.3.text": "Parada",
+      "columns.cq-status.cases.4.text": "Sendo excluída",
+      "columns.cq-status.cases.5.text": "Inativa",
+      "columns.cq-status.cases.6.text": "Desconhecido",
+      "columns.cq-cohort.title": "Coorte",
+      "columns.cq-pending.title": "Pendentes",
+      "columns.cq-reserving.title": "Reservando",
+      "columns.cq-admitted.title": "Admitidos",
+      "columns.cq-strategy.title": "Estratégia",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "Status",
+      "columns.lq-status.cases.0.text": "Sendo excluída",
+      "columns.lq-status.cases.1.text": "Desconhecido",
+      "columns.lq-status.cases.2.text": "Ativa",
+      "columns.lq-status.cases.3.text": "Parada",
+      "columns.lq-status.cases.4.text": "Sendo excluída",
+      "columns.lq-status.cases.5.text": "Inativa",
+      "columns.lq-status.cases.6.text": "Desconhecido",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "Pendentes",
+      "columns.lq-reserving.title": "Reservando",
+      "columns.lq-admitted.title": "Admitidos",
+      "columns.wl-status.title": "Status",
+      "columns.wl-status.cases.0.text": "Falhou",
+      "columns.wl-status.cases.1.text": "Concluído",
+      "columns.wl-status.cases.2.text": "Desativado",
+      "columns.wl-status.cases.3.text": "Admitido",
+      "columns.wl-status.cases.4.text": "Removido",
+      "columns.wl-status.cases.5.text": "Cota reservada",
+      "columns.wl-status.cases.6.text": "Inadmissível",
+      "columns.wl-status.cases.7.text": "Pendente",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "Dono",
+      "columns.wl-priority.title": "Prioridade",
+      "columns.wl-evictions.title": "Remoções",
+      "columns.rf-node-labels.title": "Labels dos nós",
+      "columns.rf-topology.title": "Topologia",
+      "columns.cohort-parent.title": "Pai",
+      "columns.ac-status.title": "Status",
+      "columns.ac-status.cases.0.text": "Sendo excluída",
+      "columns.ac-status.cases.1.text": "Desconhecido",
+      "columns.ac-status.cases.2.text": "Ativa",
+      "columns.ac-status.cases.3.text": "Parada",
+      "columns.ac-status.cases.4.text": "Sendo excluída",
+      "columns.ac-status.cases.5.text": "Inativa",
+      "columns.ac-status.cases.6.text": "Desconhecido",
+      "columns.ac-controller.title": "Controlador",
+      "columns.pc-value.title": "Valor",
+      "columns.pc-description.title": "Descrição",
+      "problems.cluster-queue-inactive.title": "ClusterQueue inativa",
+      "problems.local-queue-without-cluster-queue.title": "LocalQueue de uma ClusterQueue ausente",
+      "problems.workload-pending-quota.title": "Workload aguardando cota",
+      "problems.workload-inadmissible.title": "Workload que não pode ser enfileirado",
+      "problems.workload-deactivated.title": "Workload desativado pelo Kueue",
+      "problems.workload-evicted-repeatedly.title": "Workload removido repetidamente",
+      "problems.workload-evicted-repeatedly-unexplained.title": "Workload removido repetidamente (sem mensagem)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "Remoções até agora: {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "Workload removido repetidamente (contagem de reenfileiramentos)",
+      "problems.workload-evicted-requeued-unexplained.title": "Workload removido repetidamente (contagem de reenfileiramentos, sem mensagem)",
+      "problems.workload-evicted-requeued-unexplained.message": "Remoções até agora: {{.status.requeueState.count}}"
+    },
+    "ru": {
+      "name": "Kueue",
+      "description": "Очереди и Workload Kueue: ClusterQueue с квотой против зарезервированного и используемого, LocalQueue, Workload с причиной ожидания или вытеснения, флейворы, когорты, admission check и классы приоритета, а также очередь каждого задания, которое ставит в очередь Kueue; проблемы очередей, которые ничего не допускают, и по желанию — Workload, ждущих слишком долго, не встающих в очередь или вытесняемых снова и снова. Только чтение.",
+      "kinds.0.title": "Cluster Queues",
+      "kinds.1.title": "Local Queues",
+      "kinds.2.title": "Workloads",
+      "kinds.3.title": "Resource Flavors",
+      "kinds.4.title": "Cohorts",
+      "kinds.5.title": "Admission Checks",
+      "kinds.6.title": "Workload Priority Classes",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.one": "{{count}} объект требует внимания",
+      "sectionBadges.kueue.label.few": "{{count}} объекта требуют внимания",
+      "sectionBadges.kueue.label.many": "{{count}} объектов требуют внимания",
+      "sectionBadges.kueue.label.other": "{{count}} объекта требуют внимания",
+      "problemCategories.queues.title": "Очереди Kueue",
+      "problemCategories.workloads.title": "Ожидающие и вытесненные Workload Kueue",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "Очередь",
+      "columns.cq-status.title": "Статус",
+      "columns.cq-status.cases.0.text": "Удаляется",
+      "columns.cq-status.cases.1.text": "Неизвестно",
+      "columns.cq-status.cases.2.text": "Активна",
+      "columns.cq-status.cases.3.text": "Остановлена",
+      "columns.cq-status.cases.4.text": "Удаляется",
+      "columns.cq-status.cases.5.text": "Неактивна",
+      "columns.cq-status.cases.6.text": "Неизвестно",
+      "columns.cq-cohort.title": "Когорта",
+      "columns.cq-pending.title": "Ожидают",
+      "columns.cq-reserving.title": "Резервируют",
+      "columns.cq-admitted.title": "Допущены",
+      "columns.cq-strategy.title": "Стратегия",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "Статус",
+      "columns.lq-status.cases.0.text": "Удаляется",
+      "columns.lq-status.cases.1.text": "Неизвестно",
+      "columns.lq-status.cases.2.text": "Активна",
+      "columns.lq-status.cases.3.text": "Остановлена",
+      "columns.lq-status.cases.4.text": "Удаляется",
+      "columns.lq-status.cases.5.text": "Неактивна",
+      "columns.lq-status.cases.6.text": "Неизвестно",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "Ожидают",
+      "columns.lq-reserving.title": "Резервируют",
+      "columns.lq-admitted.title": "Допущены",
+      "columns.wl-status.title": "Статус",
+      "columns.wl-status.cases.0.text": "Сбой",
+      "columns.wl-status.cases.1.text": "Завершён",
+      "columns.wl-status.cases.2.text": "Деактивирован",
+      "columns.wl-status.cases.3.text": "Допущен",
+      "columns.wl-status.cases.4.text": "Вытеснен",
+      "columns.wl-status.cases.5.text": "Квота зарезервирована",
+      "columns.wl-status.cases.6.text": "Недопустим",
+      "columns.wl-status.cases.7.text": "Ожидает",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "Владелец",
+      "columns.wl-priority.title": "Приоритет",
+      "columns.wl-evictions.title": "Вытеснения",
+      "columns.rf-node-labels.title": "Метки узлов",
+      "columns.rf-topology.title": "Топология",
+      "columns.cohort-parent.title": "Родитель",
+      "columns.ac-status.title": "Статус",
+      "columns.ac-status.cases.0.text": "Удаляется",
+      "columns.ac-status.cases.1.text": "Неизвестно",
+      "columns.ac-status.cases.2.text": "Активна",
+      "columns.ac-status.cases.3.text": "Остановлена",
+      "columns.ac-status.cases.4.text": "Удаляется",
+      "columns.ac-status.cases.5.text": "Неактивна",
+      "columns.ac-status.cases.6.text": "Неизвестно",
+      "columns.ac-controller.title": "Контроллер",
+      "columns.pc-value.title": "Значение",
+      "columns.pc-description.title": "Описание",
+      "problems.cluster-queue-inactive.title": "Неактивная ClusterQueue",
+      "problems.local-queue-without-cluster-queue.title": "LocalQueue несуществующей ClusterQueue",
+      "problems.workload-pending-quota.title": "Workload ждёт квоту",
+      "problems.workload-inadmissible.title": "Workload нельзя поставить в очередь",
+      "problems.workload-deactivated.title": "Workload деактивирован Kueue",
+      "problems.workload-evicted-repeatedly.title": "Workload вытесняется снова и снова",
+      "problems.workload-evicted-repeatedly-unexplained.title": "Workload вытесняется снова и снова (без сообщения)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "Вытеснений на данный момент: {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "Workload вытесняется снова и снова (счётчик повторных постановок в очередь)",
+      "problems.workload-evicted-requeued-unexplained.title": "Workload вытесняется снова и снова (счётчик постановок в очередь, без описания)",
+      "problems.workload-evicted-requeued-unexplained.message": "Вытеснений на данный момент: {{.status.requeueState.count}}"
+    },
+    "tr": {
+      "name": "Kueue",
+      "description": "Kueue kuyrukları ve Workload'ları: ayrılmış ve kullanımdaki miktara karşı kotalarıyla ClusterQueue'lar, LocalQueue'lar, neden beklediği veya tahliye edildiğiyle Workload'lar, flavor'lar, cohort'lar, admission check'ler ve öncelik sınıfları ile Kueue'nun kuyruğa aldığı her işin kuyruğu; hiçbir şey kabul etmeyen kuyrukların sorunları ve isteğe bağlı olarak çok uzun bekleyen, kuyruğa alınamayan veya tekrar tekrar tahliye edilen Workload'ların sorunları. Salt okunur.",
+      "kinds.0.title": "Cluster Queues",
+      "kinds.1.title": "Local Queues",
+      "kinds.2.title": "Workloads",
+      "kinds.3.title": "Resource Flavors",
+      "kinds.4.title": "Cohorts",
+      "kinds.5.title": "Admission Checks",
+      "kinds.6.title": "Workload Priority Classes",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.one": "{{count}} nesne ilgi gerektiriyor",
+      "sectionBadges.kueue.label.other": "{{count}} nesne ilgi gerektiriyor",
+      "problemCategories.queues.title": "Kueue kuyrukları",
+      "problemCategories.workloads.title": "Bekleyen veya tahliye edilen Kueue Workload'ları",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "Kuyruk",
+      "columns.cq-status.title": "Durum",
+      "columns.cq-status.cases.0.text": "Siliniyor",
+      "columns.cq-status.cases.1.text": "Bilinmiyor",
+      "columns.cq-status.cases.2.text": "Etkin",
+      "columns.cq-status.cases.3.text": "Durduruldu",
+      "columns.cq-status.cases.4.text": "Siliniyor",
+      "columns.cq-status.cases.5.text": "Etkin değil",
+      "columns.cq-status.cases.6.text": "Bilinmiyor",
+      "columns.cq-cohort.title": "Kohort",
+      "columns.cq-pending.title": "Bekleyen",
+      "columns.cq-reserving.title": "Ayıran",
+      "columns.cq-admitted.title": "Kabul edilen",
+      "columns.cq-strategy.title": "Strateji",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "Durum",
+      "columns.lq-status.cases.0.text": "Siliniyor",
+      "columns.lq-status.cases.1.text": "Bilinmiyor",
+      "columns.lq-status.cases.2.text": "Etkin",
+      "columns.lq-status.cases.3.text": "Durduruldu",
+      "columns.lq-status.cases.4.text": "Siliniyor",
+      "columns.lq-status.cases.5.text": "Etkin değil",
+      "columns.lq-status.cases.6.text": "Bilinmiyor",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "Bekleyen",
+      "columns.lq-reserving.title": "Ayıran",
+      "columns.lq-admitted.title": "Kabul edilen",
+      "columns.wl-status.title": "Durum",
+      "columns.wl-status.cases.0.text": "Başarısız",
+      "columns.wl-status.cases.1.text": "Bitti",
+      "columns.wl-status.cases.2.text": "Devre dışı",
+      "columns.wl-status.cases.3.text": "Kabul edildi",
+      "columns.wl-status.cases.4.text": "Tahliye edildi",
+      "columns.wl-status.cases.5.text": "Kota ayrıldı",
+      "columns.wl-status.cases.6.text": "Kabul edilemez",
+      "columns.wl-status.cases.7.text": "Bekliyor",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "Sahip",
+      "columns.wl-priority.title": "Öncelik",
+      "columns.wl-evictions.title": "Tahliyeler",
+      "columns.rf-node-labels.title": "Düğüm label'ları",
+      "columns.rf-topology.title": "Topoloji",
+      "columns.cohort-parent.title": "Üst",
+      "columns.ac-status.title": "Durum",
+      "columns.ac-status.cases.0.text": "Siliniyor",
+      "columns.ac-status.cases.1.text": "Bilinmiyor",
+      "columns.ac-status.cases.2.text": "Etkin",
+      "columns.ac-status.cases.3.text": "Durduruldu",
+      "columns.ac-status.cases.4.text": "Siliniyor",
+      "columns.ac-status.cases.5.text": "Etkin değil",
+      "columns.ac-status.cases.6.text": "Bilinmiyor",
+      "columns.ac-controller.title": "Denetleyici",
+      "columns.pc-value.title": "Değer",
+      "columns.pc-description.title": "Açıklama",
+      "problems.cluster-queue-inactive.title": "Etkin olmayan ClusterQueue",
+      "problems.local-queue-without-cluster-queue.title": "Eksik bir ClusterQueue'nun LocalQueue'su",
+      "problems.workload-pending-quota.title": "Kota bekleyen Workload",
+      "problems.workload-inadmissible.title": "Kuyruğa alınamayan Workload",
+      "problems.workload-deactivated.title": "Kueue tarafından devre dışı bırakılan Workload",
+      "problems.workload-evicted-repeatedly.title": "Tekrar tekrar tahliye edilen Workload",
+      "problems.workload-evicted-repeatedly-unexplained.title": "Tekrar tekrar tahliye edilen Workload (ileti yok)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "Şimdiye kadarki tahliyeler: {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "Tekrar tekrar tahliye edilen Workload (yeniden kuyruğa alma sayısı)",
+      "problems.workload-evicted-requeued-unexplained.title": "Tekrar tekrar tahliye edilen Workload (yeniden kuyruğa alma sayısı, ileti yok)",
+      "problems.workload-evicted-requeued-unexplained.message": "Şimdiye kadarki tahliyeler: {{.status.requeueState.count}}"
+    },
+    "uk": {
+      "name": "Kueue",
+      "description": "Черги та Workload Kueue: ClusterQueue з квотою порівняно із зарезервованим і використовуваним, LocalQueue, Workload із причиною очікування чи витіснення, флейвори, когорти, admission check і класи пріоритету, а також черга кожного завдання, яке Kueue ставить у чергу; проблеми черг, що нічого не допускають, і за бажанням — Workload, які чекають надто довго, не можуть стати в чергу або витісняються знову й знову. Лише читання.",
+      "kinds.0.title": "Cluster Queues",
+      "kinds.1.title": "Local Queues",
+      "kinds.2.title": "Workloads",
+      "kinds.3.title": "Resource Flavors",
+      "kinds.4.title": "Cohorts",
+      "kinds.5.title": "Admission Checks",
+      "kinds.6.title": "Workload Priority Classes",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.one": "{{count}} об'єкт потребує уваги",
+      "sectionBadges.kueue.label.few": "{{count}} об'єкти потребують уваги",
+      "sectionBadges.kueue.label.many": "{{count}} об'єктів потребують уваги",
+      "sectionBadges.kueue.label.other": "{{count}} об'єкта потребують уваги",
+      "problemCategories.queues.title": "Черги Kueue",
+      "problemCategories.workloads.title": "Очікувані та витіснені Workload Kueue",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "Черга",
+      "columns.cq-status.title": "Статус",
+      "columns.cq-status.cases.0.text": "Видаляється",
+      "columns.cq-status.cases.1.text": "Невідомо",
+      "columns.cq-status.cases.2.text": "Активна",
+      "columns.cq-status.cases.3.text": "Зупинена",
+      "columns.cq-status.cases.4.text": "Видаляється",
+      "columns.cq-status.cases.5.text": "Неактивна",
+      "columns.cq-status.cases.6.text": "Невідомо",
+      "columns.cq-cohort.title": "Когорта",
+      "columns.cq-pending.title": "Очікують",
+      "columns.cq-reserving.title": "Резервують",
+      "columns.cq-admitted.title": "Допущені",
+      "columns.cq-strategy.title": "Стратегія",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "Статус",
+      "columns.lq-status.cases.0.text": "Видаляється",
+      "columns.lq-status.cases.1.text": "Невідомо",
+      "columns.lq-status.cases.2.text": "Активна",
+      "columns.lq-status.cases.3.text": "Зупинена",
+      "columns.lq-status.cases.4.text": "Видаляється",
+      "columns.lq-status.cases.5.text": "Неактивна",
+      "columns.lq-status.cases.6.text": "Невідомо",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "Очікують",
+      "columns.lq-reserving.title": "Резервують",
+      "columns.lq-admitted.title": "Допущені",
+      "columns.wl-status.title": "Статус",
+      "columns.wl-status.cases.0.text": "Збій",
+      "columns.wl-status.cases.1.text": "Завершено",
+      "columns.wl-status.cases.2.text": "Деактивовано",
+      "columns.wl-status.cases.3.text": "Допущено",
+      "columns.wl-status.cases.4.text": "Витіснено",
+      "columns.wl-status.cases.5.text": "Квоту зарезервовано",
+      "columns.wl-status.cases.6.text": "Неприпустимий",
+      "columns.wl-status.cases.7.text": "Очікує",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "Власник",
+      "columns.wl-priority.title": "Пріоритет",
+      "columns.wl-evictions.title": "Витіснення",
+      "columns.rf-node-labels.title": "Мітки вузлів",
+      "columns.rf-topology.title": "Топологія",
+      "columns.cohort-parent.title": "Батьківська",
+      "columns.ac-status.title": "Статус",
+      "columns.ac-status.cases.0.text": "Видаляється",
+      "columns.ac-status.cases.1.text": "Невідомо",
+      "columns.ac-status.cases.2.text": "Активна",
+      "columns.ac-status.cases.3.text": "Зупинена",
+      "columns.ac-status.cases.4.text": "Видаляється",
+      "columns.ac-status.cases.5.text": "Неактивна",
+      "columns.ac-status.cases.6.text": "Невідомо",
+      "columns.ac-controller.title": "Контролер",
+      "columns.pc-value.title": "Значення",
+      "columns.pc-description.title": "Опис",
+      "problems.cluster-queue-inactive.title": "Неактивна ClusterQueue",
+      "problems.local-queue-without-cluster-queue.title": "LocalQueue неіснуючої ClusterQueue",
+      "problems.workload-pending-quota.title": "Workload чекає на квоту",
+      "problems.workload-inadmissible.title": "Workload не можна поставити в чергу",
+      "problems.workload-deactivated.title": "Workload деактивовано Kueue",
+      "problems.workload-evicted-repeatedly.title": "Workload витісняється знову й знову",
+      "problems.workload-evicted-repeatedly-unexplained.title": "Workload витісняється знову й знову (без повідомлення)",
+      "problems.workload-evicted-repeatedly-unexplained.message": "Витіснень наразі: {{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "Workload витісняється знову й знову (лічильник повторних постановок у чергу)",
+      "problems.workload-evicted-requeued-unexplained.title": "Workload витісняється знову й знову (лічильник постановок у чергу, без опису)",
+      "problems.workload-evicted-requeued-unexplained.message": "Витіснень наразі: {{.status.requeueState.count}}"
+    },
+    "zh-CN": {
+      "name": "Kueue",
+      "description": "Kueue 的队列与 Workload：ClusterQueue 的配额与已预留、已使用量的对比，LocalQueue，等待或被驱逐原因的 Workload，flavor、cohort、准入检查与优先级类，以及 Kueue 排队的每个作业的队列；不接纳任何负载的队列的问题，以及（可选启用）等待过久、无法排队或被反复驱逐的 Workload 的问题。只读。",
+      "kinds.0.title": "ClusterQueue",
+      "kinds.1.title": "LocalQueue",
+      "kinds.2.title": "Workload",
+      "kinds.3.title": "ResourceFlavor",
+      "kinds.4.title": "Cohort",
+      "kinds.5.title": "AdmissionCheck",
+      "kinds.6.title": "WorkloadPriorityClass",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.other": "{{count}} 个对象需要关注",
+      "problemCategories.queues.title": "Kueue 队列",
+      "problemCategories.workloads.title": "等待中或被驱逐的 Kueue Workload",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "队列",
+      "columns.cq-status.title": "状态",
+      "columns.cq-status.cases.0.text": "删除中",
+      "columns.cq-status.cases.1.text": "未知",
+      "columns.cq-status.cases.2.text": "活跃",
+      "columns.cq-status.cases.3.text": "已停止",
+      "columns.cq-status.cases.4.text": "删除中",
+      "columns.cq-status.cases.5.text": "不活跃",
+      "columns.cq-status.cases.6.text": "未知",
+      "columns.cq-cohort.title": "队列组",
+      "columns.cq-pending.title": "等待中",
+      "columns.cq-reserving.title": "预留中",
+      "columns.cq-admitted.title": "已准入",
+      "columns.cq-strategy.title": "策略",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "状态",
+      "columns.lq-status.cases.0.text": "删除中",
+      "columns.lq-status.cases.1.text": "未知",
+      "columns.lq-status.cases.2.text": "活跃",
+      "columns.lq-status.cases.3.text": "已停止",
+      "columns.lq-status.cases.4.text": "删除中",
+      "columns.lq-status.cases.5.text": "不活跃",
+      "columns.lq-status.cases.6.text": "未知",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "等待中",
+      "columns.lq-reserving.title": "预留中",
+      "columns.lq-admitted.title": "已准入",
+      "columns.wl-status.title": "状态",
+      "columns.wl-status.cases.0.text": "失败",
+      "columns.wl-status.cases.1.text": "已完成",
+      "columns.wl-status.cases.2.text": "已停用",
+      "columns.wl-status.cases.3.text": "已准入",
+      "columns.wl-status.cases.4.text": "已驱逐",
+      "columns.wl-status.cases.5.text": "已预留配额",
+      "columns.wl-status.cases.6.text": "无法准入",
+      "columns.wl-status.cases.7.text": "等待中",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "所有者",
+      "columns.wl-priority.title": "优先级",
+      "columns.wl-evictions.title": "驱逐次数",
+      "columns.rf-node-labels.title": "节点 label",
+      "columns.rf-topology.title": "拓扑",
+      "columns.cohort-parent.title": "上级",
+      "columns.ac-status.title": "状态",
+      "columns.ac-status.cases.0.text": "删除中",
+      "columns.ac-status.cases.1.text": "未知",
+      "columns.ac-status.cases.2.text": "活跃",
+      "columns.ac-status.cases.3.text": "已停止",
+      "columns.ac-status.cases.4.text": "删除中",
+      "columns.ac-status.cases.5.text": "不活跃",
+      "columns.ac-status.cases.6.text": "未知",
+      "columns.ac-controller.title": "控制器",
+      "columns.pc-value.title": "值",
+      "columns.pc-description.title": "描述",
+      "problems.cluster-queue-inactive.title": "非活动的 ClusterQueue",
+      "problems.local-queue-without-cluster-queue.title": "所属 ClusterQueue 不存在的 LocalQueue",
+      "problems.workload-pending-quota.title": "等待配额的 Workload",
+      "problems.workload-inadmissible.title": "无法排队的 Workload",
+      "problems.workload-deactivated.title": "被 Kueue 停用的 Workload",
+      "problems.workload-evicted-repeatedly.title": "被反复驱逐的 Workload",
+      "problems.workload-evicted-repeatedly-unexplained.title": "被反复驱逐的 Workload（无消息）",
+      "problems.workload-evicted-repeatedly-unexplained.message": "迄今被驱逐次数：{{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "被反复驱逐的 Workload（重新排队次数）",
+      "problems.workload-evicted-requeued-unexplained.title": "被反复驱逐的 Workload（重新排队次数，无消息）",
+      "problems.workload-evicted-requeued-unexplained.message": "迄今被驱逐次数：{{.status.requeueState.count}}"
+    },
+    "zh-TW": {
+      "name": "Kueue",
+      "description": "Kueue 的佇列與 Workload：ClusterQueue 的配額與已保留、使用中量的對比，LocalQueue，等待或被驅逐原因的 Workload，flavor、cohort、准入檢查與優先順序類別，以及 Kueue 排入佇列的每個作業的佇列；不接納任何負載的佇列的問題，以及（可選擇啟用）等待過久、無法排入佇列或被反覆驅逐的 Workload 的問題。唯讀。",
+      "kinds.0.title": "ClusterQueue",
+      "kinds.1.title": "LocalQueue",
+      "kinds.2.title": "Workload",
+      "kinds.3.title": "ResourceFlavor",
+      "kinds.4.title": "Cohort",
+      "kinds.5.title": "AdmissionCheck",
+      "kinds.6.title": "WorkloadPriorityClass",
+      "sections.kueue.title": "Kueue",
+      "sectionBadges.kueue.label.other": "{{count}} 個物件需要注意",
+      "problemCategories.queues.title": "Kueue 佇列",
+      "problemCategories.workloads.title": "等待中或被驅逐的 Kueue Workload",
+      "detailsSections.kueue.title": "Kueue",
+      "detailsSections.queue.title": "佇列",
+      "columns.cq-status.title": "狀態",
+      "columns.cq-status.cases.0.text": "刪除中",
+      "columns.cq-status.cases.1.text": "未知",
+      "columns.cq-status.cases.2.text": "作用中",
+      "columns.cq-status.cases.3.text": "已停止",
+      "columns.cq-status.cases.4.text": "刪除中",
+      "columns.cq-status.cases.5.text": "非作用中",
+      "columns.cq-status.cases.6.text": "未知",
+      "columns.cq-cohort.title": "佇列群組",
+      "columns.cq-pending.title": "等待中",
+      "columns.cq-reserving.title": "保留中",
+      "columns.cq-admitted.title": "已准入",
+      "columns.cq-strategy.title": "策略",
+      "columns.cq-strategy.cases.0.text": "BestEffortFIFO",
+      "columns.lq-status.title": "狀態",
+      "columns.lq-status.cases.0.text": "刪除中",
+      "columns.lq-status.cases.1.text": "未知",
+      "columns.lq-status.cases.2.text": "作用中",
+      "columns.lq-status.cases.3.text": "已停止",
+      "columns.lq-status.cases.4.text": "刪除中",
+      "columns.lq-status.cases.5.text": "非作用中",
+      "columns.lq-status.cases.6.text": "未知",
+      "columns.lq-cluster-queue.title": "ClusterQueue",
+      "columns.lq-pending.title": "等待中",
+      "columns.lq-reserving.title": "保留中",
+      "columns.lq-admitted.title": "已准入",
+      "columns.wl-status.title": "狀態",
+      "columns.wl-status.cases.0.text": "失敗",
+      "columns.wl-status.cases.1.text": "已完成",
+      "columns.wl-status.cases.2.text": "已停用",
+      "columns.wl-status.cases.3.text": "已准入",
+      "columns.wl-status.cases.4.text": "已驅逐",
+      "columns.wl-status.cases.5.text": "已保留配額",
+      "columns.wl-status.cases.6.text": "無法准入",
+      "columns.wl-status.cases.7.text": "等待中",
+      "columns.wl-queue.title": "LocalQueue",
+      "columns.wl-cluster-queue.title": "ClusterQueue",
+      "columns.wl-owner.title": "擁有者",
+      "columns.wl-priority.title": "優先順序",
+      "columns.wl-evictions.title": "驅逐次數",
+      "columns.rf-node-labels.title": "節點 label",
+      "columns.rf-topology.title": "拓撲",
+      "columns.cohort-parent.title": "上層",
+      "columns.ac-status.title": "狀態",
+      "columns.ac-status.cases.0.text": "刪除中",
+      "columns.ac-status.cases.1.text": "未知",
+      "columns.ac-status.cases.2.text": "作用中",
+      "columns.ac-status.cases.3.text": "已停止",
+      "columns.ac-status.cases.4.text": "刪除中",
+      "columns.ac-status.cases.5.text": "非作用中",
+      "columns.ac-status.cases.6.text": "未知",
+      "columns.ac-controller.title": "控制器",
+      "columns.pc-value.title": "值",
+      "columns.pc-description.title": "描述",
+      "problems.cluster-queue-inactive.title": "非作用中的 ClusterQueue",
+      "problems.local-queue-without-cluster-queue.title": "所屬 ClusterQueue 不存在的 LocalQueue",
+      "problems.workload-pending-quota.title": "等待配額的 Workload",
+      "problems.workload-inadmissible.title": "無法排入佇列的 Workload",
+      "problems.workload-deactivated.title": "被 Kueue 停用的 Workload",
+      "problems.workload-evicted-repeatedly.title": "被反覆驅逐的 Workload",
+      "problems.workload-evicted-repeatedly-unexplained.title": "被反覆驅逐的 Workload（無訊息）",
+      "problems.workload-evicted-repeatedly-unexplained.message": "至今被驅逐次數：{{.status.schedulingStats.evictions[*].count|sum}}",
+      "problems.workload-evicted-repeatedly-requeued.title": "被反覆驅逐的 Workload（重新排入佇列次數）",
+      "problems.workload-evicted-requeued-unexplained.title": "被反覆驅逐的 Workload（重新排入佇列次數，無訊息）",
+      "problems.workload-evicted-requeued-unexplained.message": "至今被驅逐次數：{{.status.requeueState.count}}"
+    }
+  }
+}

@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "叢集工具的檢視現在是擴充功能",
-      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、CloudNativePG、Strimzi、External Secrets、NVIDIA GPU Operator、JobSet、KubeRay、KServe 與 Operator Lifecycle Manager 已從 Sextant 移到擴充功能目錄中它自己的擴充功能，這些擴充功能會個別更新。請在下方安裝你使用的擴充功能：在此之前不會顯示它們的區段。你為它們設定的通知已保留，側邊欄也會在執行這些工具的叢集中推薦它們。"
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Kyverno、CloudNativePG、Strimzi、External Secrets、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe 與 Operator Lifecycle Manager 已從 Sextant 移到擴充功能目錄中它自己的擴充功能，這些擴充功能會個別更新。請在下方安裝你使用的擴充功能：在此之前不會顯示它們的區段。你為它們設定的通知已保留，側邊欄也會在執行這些工具的叢集中推薦它們。"
     },
     "api4": {
       "title": "擴充功能 API 4",
@@ -37,7 +37,9 @@
       "kserve": "InferenceService、服務執行環境與推論圖",
       "knative": "Serving 的服務、修訂版與路由；Eventing 的代理、觸發器、通道與事件來源",
       "gpu-operator": "ClusterPolicy、NVIDIA 驅動程式、其元件與 GPU 節點",
-      "velero": "備份、排程、還原和儲存位置；備份 namespace 和從備份還原"
+      "velero": "備份、排程、還原和儲存位置；備份 namespace 和從備份還原",
+      "kueue": "含配額與用量的 ClusterQueue、LocalQueue、Workload 及其等待原因",
+      "kyverno": "含模式與結果的原則、原則報告以及每個物件的結果"
     }
   }
 }

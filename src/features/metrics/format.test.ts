@@ -28,6 +28,6 @@ describe("shares in percent", () => {
     expect(t("metrics:percentOf", 0.5)).toBe("<1% · 5m / 1");
     expect(t("metrics:requests.shareOfLimit", 0.2)).toBe("<1% of limit");
     expect(t("metrics:requests.shareOfRequest", 12)).toBe("12% of request");
-    expect(i18n.t(percentKey("kueue:quota.ofQuota", 0.3), { value: "10m", percent: 0.3 })).toBe("10m (<1%)");
+    expect(i18n.t(percentKey("nodepods:resources.share", 0.3), { value: "10m", percent: 0.3 })).toBe("10m (<1%)");
   });
 });

@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "クラスターツールのビューは拡張機能になりました",
-      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、CloudNativePG、Strimzi、External Secrets、NVIDIA GPU Operator、JobSet、KubeRay、KServe、Operator Lifecycle Manager は Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Kyverno、CloudNativePG、Strimzi、External Secrets、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe、Operator Lifecycle Manager は Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
     },
     "api4": {
       "title": "拡張機能 API 4",
@@ -37,7 +37,9 @@
       "kserve": "InferenceService、サービングランタイム、推論グラフ",
       "knative": "Serving のサービス、リビジョン、ルート。Eventing のブローカー、トリガー、チャネル、ソース",
       "gpu-operator": "ClusterPolicy、NVIDIA ドライバー、そのコンポーネントと GPU ノード",
-      "velero": "バックアップ、スケジュール、リストア、ストレージの場所。namespace のバックアップとバックアップからのリストア"
+      "velero": "バックアップ、スケジュール、リストア、ストレージの場所。namespace のバックアップとバックアップからのリストア",
+      "kueue": "クォータと使用量付きの ClusterQueue、LocalQueue、Workload とその待機理由",
+      "kyverno": "モードと結果付きのポリシー、ポリシーレポート、各オブジェクトの結果"
     }
   }
 }

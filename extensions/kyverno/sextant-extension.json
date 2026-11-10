@@ -1,0 +1,4011 @@
+{
+ "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+ "id": "sextant.kyverno",
+ "name": "Kyverno",
+ "version": "1.0.0",
+ "description": "Kyverno's ClusterPolicies and Policies with their readiness, mode (Enforce or Audit) and rules, the policy reports with their results, a policy's results over its reports with the objects that fail it, and \"Policy results\" in the details of every object; opt-in problems of objects that fail policy rules. Read-only.",
+ "author": "Sextant",
+ "sextantApi": 4,
+ "entry": "index.html",
+ "icon": "kyverno",
+ "permissions": {
+  "clusters": {
+   "type": "all"
+  },
+  "rules": [
+   {
+    "namespaces": {
+     "type": "all"
+    },
+    "kinds": {
+     "type": "only",
+     "kinds": [
+      {
+       "group": "kyverno.io",
+       "kind": "ClusterPolicy"
+      },
+      {
+       "group": "kyverno.io",
+       "kind": "Policy"
+      },
+      {
+       "group": "wgpolicyk8s.io",
+       "kind": "PolicyReport"
+      },
+      {
+       "group": "wgpolicyk8s.io",
+       "kind": "ClusterPolicyReport"
+      },
+      {
+       "group": "reports.kyverno.io",
+       "kind": "EphemeralReport"
+      },
+      {
+       "group": "reports.kyverno.io",
+       "kind": "ClusterEphemeralReport"
+      }
+     ]
+    },
+    "actions": [
+     "read"
+    ]
+   }
+  ]
+ },
+ "contributes": {
+  "kinds": [
+   {
+    "group": "kyverno.io",
+    "kind": "ClusterPolicy",
+    "section": "kyverno",
+    "title": "Cluster Policies",
+    "icon": "kyvernoPolicy",
+    "order": 10,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "any",
+     "of": [
+      {
+       "type": "condition",
+       "conditionType": "Ready",
+       "status": "False"
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "in",
+          "path": ".status.conditions[type=\"Ready\"].status",
+          "values": [
+           "True",
+           "False",
+           "Unknown"
+          ]
+         }
+        },
+        {
+         "type": "equals",
+         "path": ".status.ready",
+         "value": false
+        }
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "group": "kyverno.io",
+    "kind": "Policy",
+    "section": "kyverno",
+    "title": "Policies",
+    "icon": "kyvernoPolicy",
+    "order": 11,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "any",
+     "of": [
+      {
+       "type": "condition",
+       "conditionType": "Ready",
+       "status": "False"
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "in",
+          "path": ".status.conditions[type=\"Ready\"].status",
+          "values": [
+           "True",
+           "False",
+           "Unknown"
+          ]
+         }
+        },
+        {
+         "type": "equals",
+         "path": ".status.ready",
+         "value": false
+        }
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "group": "wgpolicyk8s.io",
+    "kind": "PolicyReport",
+    "section": "kyverno",
+    "title": "Policy Reports",
+    "icon": "kyvernoReport",
+    "order": 20,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "any",
+     "of": [
+      {
+       "type": "above",
+       "path": ".summary.fail",
+       "value": 0
+      },
+      {
+       "type": "above",
+       "path": ".summary.error",
+       "value": 0
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".summary"
+        },
+        {
+         "type": "any",
+         "of": [
+          {
+           "type": "above",
+           "path": ".results[result=\"fail\",*]",
+           "value": 0
+          },
+          {
+           "type": "above",
+           "path": ".results[result=\"error\",*]",
+           "value": 0
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "group": "wgpolicyk8s.io",
+    "kind": "ClusterPolicyReport",
+    "section": "kyverno",
+    "title": "Cluster Policy Reports",
+    "icon": "kyvernoReport",
+    "order": 21,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "any",
+     "of": [
+      {
+       "type": "above",
+       "path": ".summary.fail",
+       "value": 0
+      },
+      {
+       "type": "above",
+       "path": ".summary.error",
+       "value": 0
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".summary"
+        },
+        {
+         "type": "any",
+         "of": [
+          {
+           "type": "above",
+           "path": ".results[result=\"fail\",*]",
+           "value": 0
+          },
+          {
+           "type": "above",
+           "path": ".results[result=\"error\",*]",
+           "value": 0
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "group": "reports.kyverno.io",
+    "kind": "EphemeralReport",
+    "section": "kyverno",
+    "title": "Ephemeral Reports",
+    "icon": "kyvernoReport",
+    "order": 30,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "any",
+     "of": [
+      {
+       "type": "above",
+       "path": ".spec.summary.fail",
+       "value": 0
+      },
+      {
+       "type": "above",
+       "path": ".spec.summary.error",
+       "value": 0
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".spec.summary"
+        },
+        {
+         "type": "any",
+         "of": [
+          {
+           "type": "above",
+           "path": ".spec.results[result=\"fail\",*]",
+           "value": 0
+          },
+          {
+           "type": "above",
+           "path": ".spec.results[result=\"error\",*]",
+           "value": 0
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "group": "reports.kyverno.io",
+    "kind": "ClusterEphemeralReport",
+    "section": "kyverno",
+    "title": "Cluster Ephemeral Reports",
+    "icon": "kyvernoReport",
+    "order": 31,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "any",
+     "of": [
+      {
+       "type": "above",
+       "path": ".spec.summary.fail",
+       "value": 0
+      },
+      {
+       "type": "above",
+       "path": ".spec.summary.error",
+       "value": 0
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".spec.summary"
+        },
+        {
+         "type": "any",
+         "of": [
+          {
+           "type": "above",
+           "path": ".spec.results[result=\"fail\",*]",
+           "value": 0
+          },
+          {
+           "type": "above",
+           "path": ".spec.results[result=\"error\",*]",
+           "value": 0
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "sections": [
+   {
+    "section": "kyverno",
+    "title": "Kyverno",
+    "icon": "kyverno",
+    "after": "crossplane"
+   }
+  ],
+  "sectionBadges": [
+   {
+    "section": "kyverno",
+    "label": {
+     "one": "{{count}} object fails policy rules",
+     "other": "{{count}} objects fail policy rules"
+    }
+   }
+  ],
+  "problemCategories": [
+   {
+    "id": "policies",
+    "title": "Kyverno policy failures",
+    "optIn": true
+   }
+  ],
+  "detailsSections": [
+   {
+    "id": "cluster-policy",
+    "title": "ClusterPolicy",
+    "kinds": [
+     {
+      "group": "kyverno.io",
+      "kind": "ClusterPolicy"
+     }
+    ],
+    "placement": "section",
+    "order": 20,
+    "heading": false
+   },
+   {
+    "id": "policy",
+    "title": "Policy",
+    "kinds": [
+     {
+      "group": "kyverno.io",
+      "kind": "Policy"
+     }
+    ],
+    "placement": "section",
+    "order": 20,
+    "heading": false
+   },
+   {
+    "id": "policy-report",
+    "title": "PolicyReport",
+    "kinds": [
+     {
+      "group": "wgpolicyk8s.io",
+      "kind": "PolicyReport"
+     }
+    ],
+    "placement": "section",
+    "order": 20,
+    "heading": false
+   },
+   {
+    "id": "cluster-policy-report",
+    "title": "ClusterPolicyReport",
+    "kinds": [
+     {
+      "group": "wgpolicyk8s.io",
+      "kind": "ClusterPolicyReport"
+     }
+    ],
+    "placement": "section",
+    "order": 20,
+    "heading": false
+   },
+   {
+    "id": "ephemeral-report",
+    "title": "EphemeralReport",
+    "kinds": [
+     {
+      "group": "reports.kyverno.io",
+      "kind": "EphemeralReport"
+     }
+    ],
+    "placement": "section",
+    "order": 20,
+    "heading": false
+   },
+   {
+    "id": "cluster-ephemeral-report",
+    "title": "ClusterEphemeralReport",
+    "kinds": [
+     {
+      "group": "reports.kyverno.io",
+      "kind": "ClusterEphemeralReport"
+     }
+    ],
+    "placement": "section",
+    "order": 20,
+    "heading": false
+   },
+   {
+    "id": "policy-results",
+    "title": "Policy results",
+    "kinds": [
+     {
+      "group": "*",
+      "kind": "*"
+     }
+    ],
+    "placement": "section",
+    "order": 34,
+    "heading": false,
+    "startHidden": true
+   }
+  ],
+  "columns": [
+   {
+    "kind": {
+     "group": "kyverno.io",
+     "kind": "ClusterPolicy"
+    },
+    "id": "cluster-policy-ready",
+    "title": "Ready",
+    "afterColumn": "name",
+    "width": "90px",
+    "filterBy": "value",
+    "paths": [
+     ".status.conditions[type=\"Ready\"]"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.conditions[type=\"Ready\"].status",
+       "value": "True"
+      },
+      "text": "Ready",
+      "tone": "ok",
+      "value": "True"
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.conditions[type=\"Ready\"].status",
+       "value": "False"
+      },
+      "text": "Not ready",
+      "tone": "error",
+      "value": "False"
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.conditions[type=\"Ready\"].status",
+       "value": "Unknown"
+      },
+      "text": "Pending",
+      "tone": "warning",
+      "value": "Unknown"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "in",
+          "path": ".status.conditions[type=\"Ready\"].status",
+          "values": [
+           "True",
+           "False",
+           "Unknown"
+          ]
+         }
+        },
+        {
+         "type": "equals",
+         "path": ".status.ready",
+         "value": true
+        }
+       ]
+      },
+      "text": "Ready",
+      "tone": "ok",
+      "value": "True"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "in",
+          "path": ".status.conditions[type=\"Ready\"].status",
+          "values": [
+           "True",
+           "False",
+           "Unknown"
+          ]
+         }
+        },
+        {
+         "type": "equals",
+         "path": ".status.ready",
+         "value": false
+        }
+       ]
+      },
+      "text": "Not ready",
+      "tone": "error",
+      "value": "False"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "kyverno.io",
+     "kind": "ClusterPolicy"
+    },
+    "id": "cluster-policy-mode",
+    "title": "Mode",
+    "afterColumn": "cluster-policy-ready",
+    "width": "90px",
+    "filterBy": "value",
+    "paths": [
+     ".spec.rules"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "any",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.rules[validate.failureAction=\"Enforce\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[validate.failureAction=\"enforce\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[verifyImages.failureAction=\"Enforce\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[verifyImages.failureAction=\"enforce\"]"
+          },
+          {
+           "type": "all",
+           "of": [
+            {
+             "type": "equals",
+             "path": ".spec.validationFailureAction",
+             "value": "enforce",
+             "ignoreCase": true
+            },
+            {
+             "type": "any",
+             "of": [
+              {
+               "type": "atLeast",
+               "path": ".spec.rules[*].validate",
+               "addPaths": [
+                ".spec.rules[validate.failureAction!=\"Enforce\",validate.failureAction!=\"enforce\",validate.failureAction!=\"Audit\",validate.failureAction!=\"audit\",*]"
+               ],
+               "otherPath": ".spec.rules",
+               "offset": 1
+              },
+              {
+               "type": "atLeast",
+               "path": ".spec.rules[*].verifyImages",
+               "addPaths": [
+                ".spec.rules[verifyImages.failureAction!=\"Enforce\",verifyImages.failureAction!=\"enforce\",verifyImages.failureAction!=\"Audit\",verifyImages.failureAction!=\"audit\",*]"
+               ],
+               "otherPath": ".spec.rules",
+               "offset": 1
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "any",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.rules[validate.failureAction=\"Audit\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[validate.failureAction=\"audit\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[verifyImages.failureAction=\"Audit\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[verifyImages.failureAction=\"audit\"]"
+          },
+          {
+           "type": "all",
+           "of": [
+            {
+             "type": "not",
+             "of": {
+              "type": "equals",
+              "path": ".spec.validationFailureAction",
+              "value": "enforce",
+              "ignoreCase": true
+             }
+            },
+            {
+             "type": "any",
+             "of": [
+              {
+               "type": "atLeast",
+               "path": ".spec.rules[*].validate",
+               "addPaths": [
+                ".spec.rules[validate.failureAction!=\"Enforce\",validate.failureAction!=\"enforce\",validate.failureAction!=\"Audit\",validate.failureAction!=\"audit\",*]"
+               ],
+               "otherPath": ".spec.rules",
+               "offset": 1
+              },
+              {
+               "type": "atLeast",
+               "path": ".spec.rules[*].verifyImages",
+               "addPaths": [
+                ".spec.rules[verifyImages.failureAction!=\"Enforce\",verifyImages.failureAction!=\"enforce\",verifyImages.failureAction!=\"Audit\",verifyImages.failureAction!=\"audit\",*]"
+               ],
+               "otherPath": ".spec.rules",
+               "offset": 1
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      "text": "Mixed",
+      "tone": "neutral",
+      "value": "Mixed"
+     },
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".spec.rules[validate.failureAction=\"Enforce\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[validate.failureAction=\"enforce\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[verifyImages.failureAction=\"Enforce\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[verifyImages.failureAction=\"enforce\"]"
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "equals",
+           "path": ".spec.validationFailureAction",
+           "value": "enforce",
+           "ignoreCase": true
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "atLeast",
+             "path": ".spec.rules[*].validate",
+             "addPaths": [
+              ".spec.rules[validate.failureAction!=\"Enforce\",validate.failureAction!=\"enforce\",validate.failureAction!=\"Audit\",validate.failureAction!=\"audit\",*]"
+             ],
+             "otherPath": ".spec.rules",
+             "offset": 1
+            },
+            {
+             "type": "atLeast",
+             "path": ".spec.rules[*].verifyImages",
+             "addPaths": [
+              ".spec.rules[verifyImages.failureAction!=\"Enforce\",verifyImages.failureAction!=\"enforce\",verifyImages.failureAction!=\"Audit\",verifyImages.failureAction!=\"audit\",*]"
+             ],
+             "otherPath": ".spec.rules",
+             "offset": 1
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      "text": "Enforce",
+      "tone": "warning",
+      "value": "Enforce"
+     },
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".spec.rules[validate.failureAction=\"Audit\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[validate.failureAction=\"audit\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[verifyImages.failureAction=\"Audit\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[verifyImages.failureAction=\"audit\"]"
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "not",
+           "of": {
+            "type": "equals",
+            "path": ".spec.validationFailureAction",
+            "value": "enforce",
+            "ignoreCase": true
+           }
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "atLeast",
+             "path": ".spec.rules[*].validate",
+             "addPaths": [
+              ".spec.rules[validate.failureAction!=\"Enforce\",validate.failureAction!=\"enforce\",validate.failureAction!=\"Audit\",validate.failureAction!=\"audit\",*]"
+             ],
+             "otherPath": ".spec.rules",
+             "offset": 1
+            },
+            {
+             "type": "atLeast",
+             "path": ".spec.rules[*].verifyImages",
+             "addPaths": [
+              ".spec.rules[verifyImages.failureAction!=\"Enforce\",verifyImages.failureAction!=\"enforce\",verifyImages.failureAction!=\"Audit\",verifyImages.failureAction!=\"audit\",*]"
+             ],
+             "otherPath": ".spec.rules",
+             "offset": 1
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      "text": "Audit",
+      "tone": "neutral",
+      "value": "Audit"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "kyverno.io",
+     "kind": "ClusterPolicy"
+    },
+    "id": "cluster-policy-background",
+    "title": "Background",
+    "afterColumn": "cluster-policy-mode",
+    "width": "100px",
+    "paths": [
+     ".spec.background"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "equals",
+       "path": ".spec.background",
+       "value": false
+      },
+      "text": "No",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "not",
+       "of": {
+        "type": "equals",
+        "path": ".spec.background",
+        "value": false
+       }
+      },
+      "text": "Yes",
+      "value": 1
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "kyverno.io",
+     "kind": "ClusterPolicy"
+    },
+    "id": "cluster-policy-rules",
+    "title": "Rules",
+    "afterColumn": "cluster-policy-background",
+    "width": "70px",
+    "paths": [
+     ".spec.rules"
+    ],
+    "format": "count",
+    "cases": [
+     {
+      "when": {
+       "type": "not",
+       "of": {
+        "type": "exists",
+        "path": ".spec.rules[*]"
+       }
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "kyverno.io",
+     "kind": "ClusterPolicy"
+    },
+    "id": "cluster-policy-message",
+    "title": "Message",
+    "afterColumn": "cluster-policy-rules",
+    "width": "minmax(160px, 3fr)",
+    "paths": [
+     ".status.conditions[type=\"Ready\"].message"
+    ],
+    "tooltipPaths": [
+     ".status.conditions[type=\"Ready\"].message"
+    ]
+   },
+   {
+    "kind": {
+     "group": "kyverno.io",
+     "kind": "Policy"
+    },
+    "id": "policy-ready",
+    "title": "Ready",
+    "afterColumn": "namespace",
+    "width": "90px",
+    "filterBy": "value",
+    "paths": [
+     ".status.conditions[type=\"Ready\"]"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.conditions[type=\"Ready\"].status",
+       "value": "True"
+      },
+      "text": "Ready",
+      "tone": "ok",
+      "value": "True"
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.conditions[type=\"Ready\"].status",
+       "value": "False"
+      },
+      "text": "Not ready",
+      "tone": "error",
+      "value": "False"
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.conditions[type=\"Ready\"].status",
+       "value": "Unknown"
+      },
+      "text": "Pending",
+      "tone": "warning",
+      "value": "Unknown"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "in",
+          "path": ".status.conditions[type=\"Ready\"].status",
+          "values": [
+           "True",
+           "False",
+           "Unknown"
+          ]
+         }
+        },
+        {
+         "type": "equals",
+         "path": ".status.ready",
+         "value": true
+        }
+       ]
+      },
+      "text": "Ready",
+      "tone": "ok",
+      "value": "True"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "in",
+          "path": ".status.conditions[type=\"Ready\"].status",
+          "values": [
+           "True",
+           "False",
+           "Unknown"
+          ]
+         }
+        },
+        {
+         "type": "equals",
+         "path": ".status.ready",
+         "value": false
+        }
+       ]
+      },
+      "text": "Not ready",
+      "tone": "error",
+      "value": "False"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "kyverno.io",
+     "kind": "Policy"
+    },
+    "id": "policy-mode",
+    "title": "Mode",
+    "afterColumn": "policy-ready",
+    "width": "90px",
+    "filterBy": "value",
+    "paths": [
+     ".spec.rules"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "any",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.rules[validate.failureAction=\"Enforce\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[validate.failureAction=\"enforce\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[verifyImages.failureAction=\"Enforce\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[verifyImages.failureAction=\"enforce\"]"
+          },
+          {
+           "type": "all",
+           "of": [
+            {
+             "type": "equals",
+             "path": ".spec.validationFailureAction",
+             "value": "enforce",
+             "ignoreCase": true
+            },
+            {
+             "type": "any",
+             "of": [
+              {
+               "type": "atLeast",
+               "path": ".spec.rules[*].validate",
+               "addPaths": [
+                ".spec.rules[validate.failureAction!=\"Enforce\",validate.failureAction!=\"enforce\",validate.failureAction!=\"Audit\",validate.failureAction!=\"audit\",*]"
+               ],
+               "otherPath": ".spec.rules",
+               "offset": 1
+              },
+              {
+               "type": "atLeast",
+               "path": ".spec.rules[*].verifyImages",
+               "addPaths": [
+                ".spec.rules[verifyImages.failureAction!=\"Enforce\",verifyImages.failureAction!=\"enforce\",verifyImages.failureAction!=\"Audit\",verifyImages.failureAction!=\"audit\",*]"
+               ],
+               "otherPath": ".spec.rules",
+               "offset": 1
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "any",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.rules[validate.failureAction=\"Audit\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[validate.failureAction=\"audit\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[verifyImages.failureAction=\"Audit\"]"
+          },
+          {
+           "type": "exists",
+           "path": ".spec.rules[verifyImages.failureAction=\"audit\"]"
+          },
+          {
+           "type": "all",
+           "of": [
+            {
+             "type": "not",
+             "of": {
+              "type": "equals",
+              "path": ".spec.validationFailureAction",
+              "value": "enforce",
+              "ignoreCase": true
+             }
+            },
+            {
+             "type": "any",
+             "of": [
+              {
+               "type": "atLeast",
+               "path": ".spec.rules[*].validate",
+               "addPaths": [
+                ".spec.rules[validate.failureAction!=\"Enforce\",validate.failureAction!=\"enforce\",validate.failureAction!=\"Audit\",validate.failureAction!=\"audit\",*]"
+               ],
+               "otherPath": ".spec.rules",
+               "offset": 1
+              },
+              {
+               "type": "atLeast",
+               "path": ".spec.rules[*].verifyImages",
+               "addPaths": [
+                ".spec.rules[verifyImages.failureAction!=\"Enforce\",verifyImages.failureAction!=\"enforce\",verifyImages.failureAction!=\"Audit\",verifyImages.failureAction!=\"audit\",*]"
+               ],
+               "otherPath": ".spec.rules",
+               "offset": 1
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      "text": "Mixed",
+      "tone": "neutral",
+      "value": "Mixed"
+     },
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".spec.rules[validate.failureAction=\"Enforce\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[validate.failureAction=\"enforce\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[verifyImages.failureAction=\"Enforce\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[verifyImages.failureAction=\"enforce\"]"
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "equals",
+           "path": ".spec.validationFailureAction",
+           "value": "enforce",
+           "ignoreCase": true
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "atLeast",
+             "path": ".spec.rules[*].validate",
+             "addPaths": [
+              ".spec.rules[validate.failureAction!=\"Enforce\",validate.failureAction!=\"enforce\",validate.failureAction!=\"Audit\",validate.failureAction!=\"audit\",*]"
+             ],
+             "otherPath": ".spec.rules",
+             "offset": 1
+            },
+            {
+             "type": "atLeast",
+             "path": ".spec.rules[*].verifyImages",
+             "addPaths": [
+              ".spec.rules[verifyImages.failureAction!=\"Enforce\",verifyImages.failureAction!=\"enforce\",verifyImages.failureAction!=\"Audit\",verifyImages.failureAction!=\"audit\",*]"
+             ],
+             "otherPath": ".spec.rules",
+             "offset": 1
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      "text": "Enforce",
+      "tone": "warning",
+      "value": "Enforce"
+     },
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".spec.rules[validate.failureAction=\"Audit\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[validate.failureAction=\"audit\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[verifyImages.failureAction=\"Audit\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".spec.rules[verifyImages.failureAction=\"audit\"]"
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "not",
+           "of": {
+            "type": "equals",
+            "path": ".spec.validationFailureAction",
+            "value": "enforce",
+            "ignoreCase": true
+           }
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "atLeast",
+             "path": ".spec.rules[*].validate",
+             "addPaths": [
+              ".spec.rules[validate.failureAction!=\"Enforce\",validate.failureAction!=\"enforce\",validate.failureAction!=\"Audit\",validate.failureAction!=\"audit\",*]"
+             ],
+             "otherPath": ".spec.rules",
+             "offset": 1
+            },
+            {
+             "type": "atLeast",
+             "path": ".spec.rules[*].verifyImages",
+             "addPaths": [
+              ".spec.rules[verifyImages.failureAction!=\"Enforce\",verifyImages.failureAction!=\"enforce\",verifyImages.failureAction!=\"Audit\",verifyImages.failureAction!=\"audit\",*]"
+             ],
+             "otherPath": ".spec.rules",
+             "offset": 1
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      "text": "Audit",
+      "tone": "neutral",
+      "value": "Audit"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "kyverno.io",
+     "kind": "Policy"
+    },
+    "id": "policy-background",
+    "title": "Background",
+    "afterColumn": "policy-mode",
+    "width": "100px",
+    "paths": [
+     ".spec.background"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "equals",
+       "path": ".spec.background",
+       "value": false
+      },
+      "text": "No",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "not",
+       "of": {
+        "type": "equals",
+        "path": ".spec.background",
+        "value": false
+       }
+      },
+      "text": "Yes",
+      "value": 1
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "kyverno.io",
+     "kind": "Policy"
+    },
+    "id": "policy-rules",
+    "title": "Rules",
+    "afterColumn": "policy-background",
+    "width": "70px",
+    "paths": [
+     ".spec.rules"
+    ],
+    "format": "count",
+    "cases": [
+     {
+      "when": {
+       "type": "not",
+       "of": {
+        "type": "exists",
+        "path": ".spec.rules[*]"
+       }
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "kyverno.io",
+     "kind": "Policy"
+    },
+    "id": "policy-message",
+    "title": "Message",
+    "afterColumn": "policy-rules",
+    "width": "minmax(160px, 3fr)",
+    "paths": [
+     ".status.conditions[type=\"Ready\"].message"
+    ],
+    "tooltipPaths": [
+     ".status.conditions[type=\"Ready\"].message"
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "PolicyReport"
+    },
+    "id": "policy-report-object",
+    "title": "Object",
+    "afterColumn": "namespace",
+    "width": "minmax(160px, 2fr)",
+    "paths": [
+     ".scope"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".scope.apiVersion"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".scope.apiVersion",
+          "value": ""
+         }
+        },
+        {
+         "type": "exists",
+         "path": ".scope.kind"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".scope.kind",
+          "value": ""
+         }
+        },
+        {
+         "type": "exists",
+         "path": ".scope.name"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".scope.name",
+          "value": ""
+         }
+        }
+       ]
+      },
+      "text": "{{.scope.kind}}/{{.scope.name}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "PolicyReport"
+    },
+    "id": "policy-report-pass",
+    "title": "Pass",
+    "afterColumn": "policy-report-object",
+    "width": "70px",
+    "paths": [
+     ".summary.pass",
+     ".results[result=\"pass\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".summary"
+          },
+          {
+           "type": "absent",
+           "path": ".summary.pass"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "PolicyReport"
+    },
+    "id": "policy-report-fail",
+    "title": "Fail",
+    "afterColumn": "policy-report-pass",
+    "width": "70px",
+    "paths": [
+     ".summary.fail",
+     ".results[result=\"fail\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".summary"
+          },
+          {
+           "type": "absent",
+           "path": ".summary.fail"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "above",
+       "path": ".summary.fail",
+       "value": 0
+      },
+      "text": "{{.summary.fail}}",
+      "tone": "error",
+      "value": "{{.summary.fail}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".summary"
+        },
+        {
+         "type": "above",
+         "path": ".results[result=\"fail\",*]|count",
+         "value": 0
+        }
+       ]
+      },
+      "text": "{{.results[result=\"fail\",*]|count}}",
+      "tone": "error",
+      "value": "{{.results[result=\"fail\",*]|count}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "PolicyReport"
+    },
+    "id": "policy-report-warn",
+    "title": "Warn",
+    "afterColumn": "policy-report-fail",
+    "width": "70px",
+    "paths": [
+     ".summary.warn",
+     ".results[result=\"warn\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".summary"
+          },
+          {
+           "type": "absent",
+           "path": ".summary.warn"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "PolicyReport"
+    },
+    "id": "policy-report-error",
+    "title": "Error",
+    "afterColumn": "policy-report-warn",
+    "width": "70px",
+    "paths": [
+     ".summary.error",
+     ".results[result=\"error\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".summary"
+          },
+          {
+           "type": "absent",
+           "path": ".summary.error"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "above",
+       "path": ".summary.error",
+       "value": 0
+      },
+      "text": "{{.summary.error}}",
+      "tone": "error",
+      "value": "{{.summary.error}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".summary"
+        },
+        {
+         "type": "above",
+         "path": ".results[result=\"error\",*]|count",
+         "value": 0
+        }
+       ]
+      },
+      "text": "{{.results[result=\"error\",*]|count}}",
+      "tone": "error",
+      "value": "{{.results[result=\"error\",*]|count}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "PolicyReport"
+    },
+    "id": "policy-report-skip",
+    "title": "Skip",
+    "afterColumn": "policy-report-error",
+    "width": "70px",
+    "paths": [
+     ".summary.skip",
+     ".results[result=\"skip\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".summary"
+          },
+          {
+           "type": "absent",
+           "path": ".summary.skip"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "ClusterPolicyReport"
+    },
+    "id": "cluster-policy-report-object",
+    "title": "Object",
+    "afterColumn": "name",
+    "width": "minmax(160px, 2fr)",
+    "paths": [
+     ".scope"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".scope.apiVersion"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".scope.apiVersion",
+          "value": ""
+         }
+        },
+        {
+         "type": "exists",
+         "path": ".scope.kind"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".scope.kind",
+          "value": ""
+         }
+        },
+        {
+         "type": "exists",
+         "path": ".scope.name"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".scope.name",
+          "value": ""
+         }
+        }
+       ]
+      },
+      "text": "{{.scope.kind}}/{{.scope.name}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "ClusterPolicyReport"
+    },
+    "id": "cluster-policy-report-pass",
+    "title": "Pass",
+    "afterColumn": "cluster-policy-report-object",
+    "width": "70px",
+    "paths": [
+     ".summary.pass",
+     ".results[result=\"pass\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".summary"
+          },
+          {
+           "type": "absent",
+           "path": ".summary.pass"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "ClusterPolicyReport"
+    },
+    "id": "cluster-policy-report-fail",
+    "title": "Fail",
+    "afterColumn": "cluster-policy-report-pass",
+    "width": "70px",
+    "paths": [
+     ".summary.fail",
+     ".results[result=\"fail\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".summary"
+          },
+          {
+           "type": "absent",
+           "path": ".summary.fail"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "above",
+       "path": ".summary.fail",
+       "value": 0
+      },
+      "text": "{{.summary.fail}}",
+      "tone": "error",
+      "value": "{{.summary.fail}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".summary"
+        },
+        {
+         "type": "above",
+         "path": ".results[result=\"fail\",*]|count",
+         "value": 0
+        }
+       ]
+      },
+      "text": "{{.results[result=\"fail\",*]|count}}",
+      "tone": "error",
+      "value": "{{.results[result=\"fail\",*]|count}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "ClusterPolicyReport"
+    },
+    "id": "cluster-policy-report-warn",
+    "title": "Warn",
+    "afterColumn": "cluster-policy-report-fail",
+    "width": "70px",
+    "paths": [
+     ".summary.warn",
+     ".results[result=\"warn\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".summary"
+          },
+          {
+           "type": "absent",
+           "path": ".summary.warn"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "ClusterPolicyReport"
+    },
+    "id": "cluster-policy-report-error",
+    "title": "Error",
+    "afterColumn": "cluster-policy-report-warn",
+    "width": "70px",
+    "paths": [
+     ".summary.error",
+     ".results[result=\"error\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".summary"
+          },
+          {
+           "type": "absent",
+           "path": ".summary.error"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "above",
+       "path": ".summary.error",
+       "value": 0
+      },
+      "text": "{{.summary.error}}",
+      "tone": "error",
+      "value": "{{.summary.error}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".summary"
+        },
+        {
+         "type": "above",
+         "path": ".results[result=\"error\",*]|count",
+         "value": 0
+        }
+       ]
+      },
+      "text": "{{.results[result=\"error\",*]|count}}",
+      "tone": "error",
+      "value": "{{.results[result=\"error\",*]|count}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "ClusterPolicyReport"
+    },
+    "id": "cluster-policy-report-skip",
+    "title": "Skip",
+    "afterColumn": "cluster-policy-report-error",
+    "width": "70px",
+    "paths": [
+     ".summary.skip",
+     ".results[result=\"skip\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".summary"
+          },
+          {
+           "type": "absent",
+           "path": ".summary.skip"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "EphemeralReport"
+    },
+    "id": "ephemeral-report-object",
+    "title": "Object",
+    "afterColumn": "namespace",
+    "width": "minmax(160px, 2fr)",
+    "paths": [
+     ".spec.owner"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".spec.owner.apiVersion"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".spec.owner.apiVersion",
+          "value": ""
+         }
+        },
+        {
+         "type": "exists",
+         "path": ".spec.owner.kind"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".spec.owner.kind",
+          "value": ""
+         }
+        },
+        {
+         "type": "exists",
+         "path": ".spec.owner.name"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".spec.owner.name",
+          "value": ""
+         }
+        }
+       ]
+      },
+      "text": "{{.spec.owner.kind}}/{{.spec.owner.name}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "EphemeralReport"
+    },
+    "id": "ephemeral-report-pass",
+    "title": "Pass",
+    "afterColumn": "ephemeral-report-object",
+    "width": "70px",
+    "paths": [
+     ".spec.summary.pass",
+     ".spec.results[result=\"pass\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "absent",
+           "path": ".spec.summary.pass"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "EphemeralReport"
+    },
+    "id": "ephemeral-report-fail",
+    "title": "Fail",
+    "afterColumn": "ephemeral-report-pass",
+    "width": "70px",
+    "paths": [
+     ".spec.summary.fail",
+     ".spec.results[result=\"fail\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "absent",
+           "path": ".spec.summary.fail"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "above",
+       "path": ".spec.summary.fail",
+       "value": 0
+      },
+      "text": "{{.spec.summary.fail}}",
+      "tone": "error",
+      "value": "{{.spec.summary.fail}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".spec.summary"
+        },
+        {
+         "type": "above",
+         "path": ".spec.results[result=\"fail\",*]|count",
+         "value": 0
+        }
+       ]
+      },
+      "text": "{{.spec.results[result=\"fail\",*]|count}}",
+      "tone": "error",
+      "value": "{{.spec.results[result=\"fail\",*]|count}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "EphemeralReport"
+    },
+    "id": "ephemeral-report-warn",
+    "title": "Warn",
+    "afterColumn": "ephemeral-report-fail",
+    "width": "70px",
+    "paths": [
+     ".spec.summary.warn",
+     ".spec.results[result=\"warn\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "absent",
+           "path": ".spec.summary.warn"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "EphemeralReport"
+    },
+    "id": "ephemeral-report-error",
+    "title": "Error",
+    "afterColumn": "ephemeral-report-warn",
+    "width": "70px",
+    "paths": [
+     ".spec.summary.error",
+     ".spec.results[result=\"error\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "absent",
+           "path": ".spec.summary.error"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "above",
+       "path": ".spec.summary.error",
+       "value": 0
+      },
+      "text": "{{.spec.summary.error}}",
+      "tone": "error",
+      "value": "{{.spec.summary.error}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".spec.summary"
+        },
+        {
+         "type": "above",
+         "path": ".spec.results[result=\"error\",*]|count",
+         "value": 0
+        }
+       ]
+      },
+      "text": "{{.spec.results[result=\"error\",*]|count}}",
+      "tone": "error",
+      "value": "{{.spec.results[result=\"error\",*]|count}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "EphemeralReport"
+    },
+    "id": "ephemeral-report-skip",
+    "title": "Skip",
+    "afterColumn": "ephemeral-report-error",
+    "width": "70px",
+    "paths": [
+     ".spec.summary.skip",
+     ".spec.results[result=\"skip\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "absent",
+           "path": ".spec.summary.skip"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "ClusterEphemeralReport"
+    },
+    "id": "cluster-ephemeral-report-object",
+    "title": "Object",
+    "afterColumn": "name",
+    "width": "minmax(160px, 2fr)",
+    "paths": [
+     ".spec.owner"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".spec.owner.apiVersion"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".spec.owner.apiVersion",
+          "value": ""
+         }
+        },
+        {
+         "type": "exists",
+         "path": ".spec.owner.kind"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".spec.owner.kind",
+          "value": ""
+         }
+        },
+        {
+         "type": "exists",
+         "path": ".spec.owner.name"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".spec.owner.name",
+          "value": ""
+         }
+        }
+       ]
+      },
+      "text": "{{.spec.owner.kind}}/{{.spec.owner.name}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "ClusterEphemeralReport"
+    },
+    "id": "cluster-ephemeral-report-pass",
+    "title": "Pass",
+    "afterColumn": "cluster-ephemeral-report-object",
+    "width": "70px",
+    "paths": [
+     ".spec.summary.pass",
+     ".spec.results[result=\"pass\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "absent",
+           "path": ".spec.summary.pass"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "ClusterEphemeralReport"
+    },
+    "id": "cluster-ephemeral-report-fail",
+    "title": "Fail",
+    "afterColumn": "cluster-ephemeral-report-pass",
+    "width": "70px",
+    "paths": [
+     ".spec.summary.fail",
+     ".spec.results[result=\"fail\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "absent",
+           "path": ".spec.summary.fail"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "above",
+       "path": ".spec.summary.fail",
+       "value": 0
+      },
+      "text": "{{.spec.summary.fail}}",
+      "tone": "error",
+      "value": "{{.spec.summary.fail}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".spec.summary"
+        },
+        {
+         "type": "above",
+         "path": ".spec.results[result=\"fail\",*]|count",
+         "value": 0
+        }
+       ]
+      },
+      "text": "{{.spec.results[result=\"fail\",*]|count}}",
+      "tone": "error",
+      "value": "{{.spec.results[result=\"fail\",*]|count}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "ClusterEphemeralReport"
+    },
+    "id": "cluster-ephemeral-report-warn",
+    "title": "Warn",
+    "afterColumn": "cluster-ephemeral-report-fail",
+    "width": "70px",
+    "paths": [
+     ".spec.summary.warn",
+     ".spec.results[result=\"warn\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "absent",
+           "path": ".spec.summary.warn"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "ClusterEphemeralReport"
+    },
+    "id": "cluster-ephemeral-report-error",
+    "title": "Error",
+    "afterColumn": "cluster-ephemeral-report-warn",
+    "width": "70px",
+    "paths": [
+     ".spec.summary.error",
+     ".spec.results[result=\"error\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "absent",
+           "path": ".spec.summary.error"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "above",
+       "path": ".spec.summary.error",
+       "value": 0
+      },
+      "text": "{{.spec.summary.error}}",
+      "tone": "error",
+      "value": "{{.spec.summary.error}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".spec.summary"
+        },
+        {
+         "type": "above",
+         "path": ".spec.results[result=\"error\",*]|count",
+         "value": 0
+        }
+       ]
+      },
+      "text": "{{.spec.results[result=\"error\",*]|count}}",
+      "tone": "error",
+      "value": "{{.spec.results[result=\"error\",*]|count}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "reports.kyverno.io",
+     "kind": "ClusterEphemeralReport"
+    },
+    "id": "cluster-ephemeral-report-skip",
+    "title": "Skip",
+    "afterColumn": "cluster-ephemeral-report-error",
+    "width": "70px",
+    "paths": [
+     ".spec.summary.skip",
+     ".spec.results[result=\"skip\",*]|count"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "absent",
+           "path": ".spec.summary.skip"
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".spec.summary"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.results[*]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   }
+  ],
+  "problems": [
+   {
+    "id": "report-failures",
+    "title": "PolicyReport: policy rules fail",
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "PolicyReport"
+    },
+    "category": "policies",
+    "when": {
+     "type": "above",
+     "path": ".results[result=\"fail\",*]|count",
+     "value": 0
+    },
+    "since": ".results[result=\"fail\",<timestamp.seconds].timestamp.seconds",
+    "sinceUnit": "seconds",
+    "reason": "PolicyViolation",
+    "group": "policies",
+    "notify": true,
+    "about": {
+     "apiVersionPath": ".scope.apiVersion",
+     "kindPath": ".scope.kind",
+     "namePath": ".scope.name",
+     "namespacePath": ".scope.namespace"
+    },
+    "message": "{{.results[result=\"fail\",*]|count}} policy rules fail: {{.results[result=\"fail\",*].policy|unique}}",
+    "pluralBy": ".results[result=\"fail\",*]|count",
+    "messageForms": {
+     "one": "{{.results[result=\"fail\",*]|count}} policy rule fails: {{.results[result=\"fail\",*].policy|unique}}"
+    }
+   },
+   {
+    "id": "report-errors",
+    "title": "PolicyReport: policy rules not evaluated",
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "PolicyReport"
+    },
+    "category": "policies",
+    "when": {
+     "type": "above",
+     "path": ".results[result=\"error\",*]|count",
+     "value": 0
+    },
+    "since": ".results[result=\"error\",<timestamp.seconds].timestamp.seconds",
+    "sinceUnit": "seconds",
+    "reason": "PolicyError",
+    "group": "policies",
+    "notify": false,
+    "about": {
+     "apiVersionPath": ".scope.apiVersion",
+     "kindPath": ".scope.kind",
+     "namePath": ".scope.name",
+     "namespacePath": ".scope.namespace"
+    },
+    "message": "{{.results[result=\"error\",*]|count}} policy rules could not be evaluated: {{.results[result=\"error\",*].policy|unique}}",
+    "pluralBy": ".results[result=\"error\",*]|count",
+    "messageForms": {
+     "one": "{{.results[result=\"error\",*]|count}} policy rule could not be evaluated: {{.results[result=\"error\",*].policy|unique}}"
+    }
+   },
+   {
+    "id": "cluster-report-failures",
+    "title": "ClusterPolicyReport: policy rules fail",
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "ClusterPolicyReport"
+    },
+    "category": "policies",
+    "when": {
+     "type": "above",
+     "path": ".results[result=\"fail\",*]|count",
+     "value": 0
+    },
+    "since": ".results[result=\"fail\",<timestamp.seconds].timestamp.seconds",
+    "sinceUnit": "seconds",
+    "reason": "PolicyViolation",
+    "group": "policies",
+    "notify": true,
+    "about": {
+     "apiVersionPath": ".scope.apiVersion",
+     "kindPath": ".scope.kind",
+     "namePath": ".scope.name",
+     "namespacePath": ".scope.namespace"
+    },
+    "message": "{{.results[result=\"fail\",*]|count}} policy rules fail: {{.results[result=\"fail\",*].policy|unique}}",
+    "pluralBy": ".results[result=\"fail\",*]|count",
+    "messageForms": {
+     "one": "{{.results[result=\"fail\",*]|count}} policy rule fails: {{.results[result=\"fail\",*].policy|unique}}"
+    }
+   },
+   {
+    "id": "cluster-report-errors",
+    "title": "ClusterPolicyReport: policy rules not evaluated",
+    "kind": {
+     "group": "wgpolicyk8s.io",
+     "kind": "ClusterPolicyReport"
+    },
+    "category": "policies",
+    "when": {
+     "type": "above",
+     "path": ".results[result=\"error\",*]|count",
+     "value": 0
+    },
+    "since": ".results[result=\"error\",<timestamp.seconds].timestamp.seconds",
+    "sinceUnit": "seconds",
+    "reason": "PolicyError",
+    "group": "policies",
+    "notify": false,
+    "about": {
+     "apiVersionPath": ".scope.apiVersion",
+     "kindPath": ".scope.kind",
+     "namePath": ".scope.name",
+     "namespacePath": ".scope.namespace"
+    },
+    "message": "{{.results[result=\"error\",*]|count}} policy rules could not be evaluated: {{.results[result=\"error\",*].policy|unique}}",
+    "pluralBy": ".results[result=\"error\",*]|count",
+    "messageForms": {
+     "one": "{{.results[result=\"error\",*]|count}} policy rule could not be evaluated: {{.results[result=\"error\",*].policy|unique}}"
+    }
+   }
+  ]
+ },
+ "translations": {
+  "de": {
+   "description": "ClusterPolicies und Policies von Kyverno mit Bereitschaft, Modus (Enforce oder Audit) und Regeln, die Policy-Reports mit ihren Ergebnissen, die Ergebnisse einer Richtlinie über ihre Reports mit den Objekten, die sie verletzen, und „Richtlinienergebnisse“ in den Details jedes Objekts; Probleme von Objekten, die Richtlinienregeln verletzen, nach Wahl. Nur lesend.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.one": "{{count}} Objekt verstößt gegen Richtlinienregeln",
+   "sectionBadges.kyverno.label.other": "{{count}} Objekte verstoßen gegen Richtlinienregeln",
+   "problemCategories.policies.title": "Kyverno-Richtlinienverstöße",
+   "detailsSections.policy-results.title": "Richtlinienergebnisse",
+   "columns.cluster-policy-ready.title": "Bereit",
+   "columns.cluster-policy-ready.cases.0.text": "Bereit",
+   "columns.cluster-policy-ready.cases.1.text": "Nicht bereit",
+   "columns.cluster-policy-ready.cases.2.text": "Ausstehend",
+   "columns.cluster-policy-ready.cases.3.text": "Bereit",
+   "columns.cluster-policy-ready.cases.4.text": "Nicht bereit",
+   "columns.cluster-policy-mode.title": "Modus",
+   "columns.cluster-policy-mode.cases.0.text": "Gemischt",
+   "columns.cluster-policy-background.title": "Hintergrund",
+   "columns.cluster-policy-background.cases.0.text": "Nein",
+   "columns.cluster-policy-background.cases.1.text": "Ja",
+   "columns.cluster-policy-rules.title": "Regeln",
+   "columns.cluster-policy-message.title": "Meldung",
+   "columns.policy-ready.title": "Bereit",
+   "columns.policy-ready.cases.0.text": "Bereit",
+   "columns.policy-ready.cases.1.text": "Nicht bereit",
+   "columns.policy-ready.cases.2.text": "Ausstehend",
+   "columns.policy-ready.cases.3.text": "Bereit",
+   "columns.policy-ready.cases.4.text": "Nicht bereit",
+   "columns.policy-mode.title": "Modus",
+   "columns.policy-mode.cases.0.text": "Gemischt",
+   "columns.policy-background.title": "Hintergrund",
+   "columns.policy-background.cases.0.text": "Nein",
+   "columns.policy-background.cases.1.text": "Ja",
+   "columns.policy-rules.title": "Regeln",
+   "columns.policy-message.title": "Meldung",
+   "columns.policy-report-object.title": "Objekt",
+   "columns.policy-report-pass.title": "Bestanden",
+   "columns.policy-report-fail.title": "Verstoß",
+   "columns.policy-report-warn.title": "Warnung",
+   "columns.policy-report-error.title": "Fehler",
+   "columns.policy-report-skip.title": "Übersprungen",
+   "columns.cluster-policy-report-object.title": "Objekt",
+   "columns.cluster-policy-report-pass.title": "Bestanden",
+   "columns.cluster-policy-report-fail.title": "Verstoß",
+   "columns.cluster-policy-report-warn.title": "Warnung",
+   "columns.cluster-policy-report-error.title": "Fehler",
+   "columns.cluster-policy-report-skip.title": "Übersprungen",
+   "columns.ephemeral-report-object.title": "Objekt",
+   "columns.ephemeral-report-pass.title": "Bestanden",
+   "columns.ephemeral-report-fail.title": "Verstoß",
+   "columns.ephemeral-report-warn.title": "Warnung",
+   "columns.ephemeral-report-error.title": "Fehler",
+   "columns.ephemeral-report-skip.title": "Übersprungen",
+   "columns.cluster-ephemeral-report-object.title": "Objekt",
+   "columns.cluster-ephemeral-report-pass.title": "Bestanden",
+   "columns.cluster-ephemeral-report-fail.title": "Verstoß",
+   "columns.cluster-ephemeral-report-warn.title": "Warnung",
+   "columns.cluster-ephemeral-report-error.title": "Fehler",
+   "columns.cluster-ephemeral-report-skip.title": "Übersprungen",
+   "problems.report-failures.title": "PolicyReport: Regeln schlagen fehl",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} Richtlinienregeln schlagen fehl: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} Richtlinienregel schlägt fehl: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport: Regeln nicht ausgewertet",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} Richtlinienregeln konnten nicht ausgewertet werden: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} Richtlinienregel konnte nicht ausgewertet werden: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport: Regeln schlagen fehl",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} Richtlinienregeln schlagen fehl: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} Richtlinienregel schlägt fehl: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport: Regeln nicht ausgewertet",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} Richtlinienregeln konnten nicht ausgewertet werden: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} Richtlinienregel konnte nicht ausgewertet werden: {{.results[result=\"error\",*].policy|unique}}"
+  },
+  "es": {
+   "description": "ClusterPolicies y Policies de Kyverno con su disponibilidad, modo (Enforce o Audit) y reglas, los informes de políticas con sus resultados, los resultados de una política en sus informes con los objetos que la incumplen, y «Resultados de políticas» en los detalles de cada objeto; problemas opcionales de objetos que incumplen reglas de política. Solo lectura.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.one": "{{count}} objeto incumple reglas de política",
+   "sectionBadges.kyverno.label.many": "{{count}} de objetos incumplen reglas de política",
+   "sectionBadges.kyverno.label.other": "{{count}} objetos incumplen reglas de política",
+   "problemCategories.policies.title": "Fallos de políticas de Kyverno",
+   "detailsSections.policy-results.title": "Resultados de políticas",
+   "columns.cluster-policy-ready.title": "Lista",
+   "columns.cluster-policy-ready.cases.0.text": "Lista",
+   "columns.cluster-policy-ready.cases.1.text": "No lista",
+   "columns.cluster-policy-ready.cases.2.text": "Pendiente",
+   "columns.cluster-policy-ready.cases.3.text": "Lista",
+   "columns.cluster-policy-ready.cases.4.text": "No lista",
+   "columns.cluster-policy-mode.title": "Modo",
+   "columns.cluster-policy-mode.cases.0.text": "Mixto",
+   "columns.cluster-policy-background.title": "Segundo plano",
+   "columns.cluster-policy-background.cases.1.text": "Sí",
+   "columns.cluster-policy-rules.title": "Reglas",
+   "columns.cluster-policy-message.title": "Mensaje",
+   "columns.policy-ready.title": "Lista",
+   "columns.policy-ready.cases.0.text": "Lista",
+   "columns.policy-ready.cases.1.text": "No lista",
+   "columns.policy-ready.cases.2.text": "Pendiente",
+   "columns.policy-ready.cases.3.text": "Lista",
+   "columns.policy-ready.cases.4.text": "No lista",
+   "columns.policy-mode.title": "Modo",
+   "columns.policy-mode.cases.0.text": "Mixto",
+   "columns.policy-background.title": "Segundo plano",
+   "columns.policy-background.cases.1.text": "Sí",
+   "columns.policy-rules.title": "Reglas",
+   "columns.policy-message.title": "Mensaje",
+   "columns.policy-report-object.title": "Objeto",
+   "columns.policy-report-pass.title": "Correctos",
+   "columns.policy-report-fail.title": "Fallos",
+   "columns.policy-report-warn.title": "Avisos",
+   "columns.policy-report-error.title": "Errores",
+   "columns.policy-report-skip.title": "Omitidos",
+   "columns.cluster-policy-report-object.title": "Objeto",
+   "columns.cluster-policy-report-pass.title": "Correctos",
+   "columns.cluster-policy-report-fail.title": "Fallos",
+   "columns.cluster-policy-report-warn.title": "Avisos",
+   "columns.cluster-policy-report-error.title": "Errores",
+   "columns.cluster-policy-report-skip.title": "Omitidos",
+   "columns.ephemeral-report-object.title": "Objeto",
+   "columns.ephemeral-report-pass.title": "Correctos",
+   "columns.ephemeral-report-fail.title": "Fallos",
+   "columns.ephemeral-report-warn.title": "Avisos",
+   "columns.ephemeral-report-error.title": "Errores",
+   "columns.ephemeral-report-skip.title": "Omitidos",
+   "columns.cluster-ephemeral-report-object.title": "Objeto",
+   "columns.cluster-ephemeral-report-pass.title": "Correctos",
+   "columns.cluster-ephemeral-report-fail.title": "Fallos",
+   "columns.cluster-ephemeral-report-warn.title": "Avisos",
+   "columns.cluster-ephemeral-report-error.title": "Errores",
+   "columns.cluster-ephemeral-report-skip.title": "Omitidos",
+   "problems.report-failures.title": "PolicyReport: reglas que fallan",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} reglas de política fallan: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} regla de política falla: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} de reglas de política fallan: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport: reglas no evaluadas",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} reglas de política no se pudieron evaluar: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} regla de política no se pudo evaluar: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} de reglas de política no se pudieron evaluar: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport: reglas que fallan",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} reglas de política fallan: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} regla de política falla: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} de reglas de política fallan: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport: reglas no evaluadas",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} reglas de política no se pudieron evaluar: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} regla de política no se pudo evaluar: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} de reglas de política no se pudieron evaluar: {{.results[result=\"error\",*].policy|unique}}"
+  },
+  "fr": {
+   "description": "Les ClusterPolicies et Policies de Kyverno avec leur état, leur mode (Enforce ou Audit) et leurs règles, les rapports de politiques avec leurs résultats, les résultats d’une politique dans ses rapports avec les objets qui l’enfreignent, et « Résultats des politiques » dans les détails de chaque objet ; problèmes facultatifs des objets qui enfreignent des règles. Lecture seule.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.one": "{{count}} objet enfreint des règles de politique",
+   "sectionBadges.kyverno.label.many": "{{count}} d’objets enfreignent des règles de politique",
+   "sectionBadges.kyverno.label.other": "{{count}} objets enfreignent des règles de politique",
+   "problemCategories.policies.title": "Échecs des politiques Kyverno",
+   "detailsSections.policy-results.title": "Résultats des politiques",
+   "columns.cluster-policy-ready.title": "Prête",
+   "columns.cluster-policy-ready.cases.0.text": "Prête",
+   "columns.cluster-policy-ready.cases.1.text": "Pas prête",
+   "columns.cluster-policy-ready.cases.2.text": "En attente",
+   "columns.cluster-policy-ready.cases.3.text": "Prête",
+   "columns.cluster-policy-ready.cases.4.text": "Pas prête",
+   "columns.cluster-policy-mode.cases.0.text": "Mixte",
+   "columns.cluster-policy-background.title": "Arrière-plan",
+   "columns.cluster-policy-background.cases.0.text": "Non",
+   "columns.cluster-policy-background.cases.1.text": "Oui",
+   "columns.cluster-policy-rules.title": "Règles",
+   "columns.policy-ready.title": "Prête",
+   "columns.policy-ready.cases.0.text": "Prête",
+   "columns.policy-ready.cases.1.text": "Pas prête",
+   "columns.policy-ready.cases.2.text": "En attente",
+   "columns.policy-ready.cases.3.text": "Prête",
+   "columns.policy-ready.cases.4.text": "Pas prête",
+   "columns.policy-mode.cases.0.text": "Mixte",
+   "columns.policy-background.title": "Arrière-plan",
+   "columns.policy-background.cases.0.text": "Non",
+   "columns.policy-background.cases.1.text": "Oui",
+   "columns.policy-rules.title": "Règles",
+   "columns.policy-report-object.title": "Objet",
+   "columns.policy-report-pass.title": "Réussite",
+   "columns.policy-report-fail.title": "Échec",
+   "columns.policy-report-warn.title": "Avert.",
+   "columns.policy-report-error.title": "Erreur",
+   "columns.policy-report-skip.title": "Ignoré",
+   "columns.cluster-policy-report-object.title": "Objet",
+   "columns.cluster-policy-report-pass.title": "Réussite",
+   "columns.cluster-policy-report-fail.title": "Échec",
+   "columns.cluster-policy-report-warn.title": "Avert.",
+   "columns.cluster-policy-report-error.title": "Erreur",
+   "columns.cluster-policy-report-skip.title": "Ignoré",
+   "columns.ephemeral-report-object.title": "Objet",
+   "columns.ephemeral-report-pass.title": "Réussite",
+   "columns.ephemeral-report-fail.title": "Échec",
+   "columns.ephemeral-report-warn.title": "Avert.",
+   "columns.ephemeral-report-error.title": "Erreur",
+   "columns.ephemeral-report-skip.title": "Ignoré",
+   "columns.cluster-ephemeral-report-object.title": "Objet",
+   "columns.cluster-ephemeral-report-pass.title": "Réussite",
+   "columns.cluster-ephemeral-report-fail.title": "Échec",
+   "columns.cluster-ephemeral-report-warn.title": "Avert.",
+   "columns.cluster-ephemeral-report-error.title": "Erreur",
+   "columns.cluster-ephemeral-report-skip.title": "Ignoré",
+   "problems.report-failures.title": "PolicyReport : des règles échouent",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} règles de politique en échec : {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} règle de politique en échec : {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} de règles de politique en échec : {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport : règles non évaluées",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} règles de politique n’ont pas pu être évaluées : {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} règle de politique n’a pas pu être évaluée : {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} de règles de politique n’ont pas pu être évaluées : {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport : des règles échouent",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} règles de politique en échec : {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} règle de politique en échec : {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} de règles de politique en échec : {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport : règles non évaluées",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} règles de politique n’ont pas pu être évaluées : {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} règle de politique n’a pas pu être évaluée : {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} de règles de politique n’ont pas pu être évaluées : {{.results[result=\"error\",*].policy|unique}}"
+  },
+  "it": {
+   "description": "ClusterPolicy e Policy di Kyverno con prontezza, modalità (Enforce o Audit) e regole, i report delle policy con i loro risultati, i risultati di una policy nei suoi report con gli oggetti che non la rispettano, e «Risultati delle policy» nei dettagli di ogni oggetto; problemi facoltativi degli oggetti che non rispettano regole di policy. Sola lettura.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.one": "{{count}} oggetto viola regole di policy",
+   "sectionBadges.kyverno.label.many": "{{count}} di oggetti violano regole di policy",
+   "sectionBadges.kyverno.label.other": "{{count}} oggetti violano regole di policy",
+   "problemCategories.policies.title": "Violazioni delle policy Kyverno",
+   "detailsSections.policy-results.title": "Risultati delle policy",
+   "columns.cluster-policy-ready.title": "Pronta",
+   "columns.cluster-policy-ready.cases.0.text": "Pronta",
+   "columns.cluster-policy-ready.cases.1.text": "Non pronta",
+   "columns.cluster-policy-ready.cases.2.text": "In attesa",
+   "columns.cluster-policy-ready.cases.3.text": "Pronta",
+   "columns.cluster-policy-ready.cases.4.text": "Non pronta",
+   "columns.cluster-policy-mode.title": "Modalità",
+   "columns.cluster-policy-mode.cases.0.text": "Misto",
+   "columns.cluster-policy-background.title": "In background",
+   "columns.cluster-policy-background.cases.1.text": "Sì",
+   "columns.cluster-policy-rules.title": "Regole",
+   "columns.cluster-policy-message.title": "Messaggio",
+   "columns.policy-ready.title": "Pronta",
+   "columns.policy-ready.cases.0.text": "Pronta",
+   "columns.policy-ready.cases.1.text": "Non pronta",
+   "columns.policy-ready.cases.2.text": "In attesa",
+   "columns.policy-ready.cases.3.text": "Pronta",
+   "columns.policy-ready.cases.4.text": "Non pronta",
+   "columns.policy-mode.title": "Modalità",
+   "columns.policy-mode.cases.0.text": "Misto",
+   "columns.policy-background.title": "In background",
+   "columns.policy-background.cases.1.text": "Sì",
+   "columns.policy-rules.title": "Regole",
+   "columns.policy-message.title": "Messaggio",
+   "columns.policy-report-object.title": "Oggetto",
+   "columns.policy-report-pass.title": "Superati",
+   "columns.policy-report-fail.title": "Violazioni",
+   "columns.policy-report-warn.title": "Avvisi",
+   "columns.policy-report-error.title": "Errori",
+   "columns.policy-report-skip.title": "Saltati",
+   "columns.cluster-policy-report-object.title": "Oggetto",
+   "columns.cluster-policy-report-pass.title": "Superati",
+   "columns.cluster-policy-report-fail.title": "Violazioni",
+   "columns.cluster-policy-report-warn.title": "Avvisi",
+   "columns.cluster-policy-report-error.title": "Errori",
+   "columns.cluster-policy-report-skip.title": "Saltati",
+   "columns.ephemeral-report-object.title": "Oggetto",
+   "columns.ephemeral-report-pass.title": "Superati",
+   "columns.ephemeral-report-fail.title": "Violazioni",
+   "columns.ephemeral-report-warn.title": "Avvisi",
+   "columns.ephemeral-report-error.title": "Errori",
+   "columns.ephemeral-report-skip.title": "Saltati",
+   "columns.cluster-ephemeral-report-object.title": "Oggetto",
+   "columns.cluster-ephemeral-report-pass.title": "Superati",
+   "columns.cluster-ephemeral-report-fail.title": "Violazioni",
+   "columns.cluster-ephemeral-report-warn.title": "Avvisi",
+   "columns.cluster-ephemeral-report-error.title": "Errori",
+   "columns.cluster-ephemeral-report-skip.title": "Saltati",
+   "problems.report-failures.title": "PolicyReport: regole non rispettate",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} regole di policy non rispettate: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} regola di policy non rispettata: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} di regole di policy non rispettate: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport: regole non valutate",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} regole di policy non sono state valutate: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} regola di policy non è stata valutata: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} di regole di policy non sono state valutate: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport: regole non rispettate",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} regole di policy non rispettate: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} regola di policy non rispettata: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} di regole di policy non rispettate: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport: regole non valutate",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} regole di policy non sono state valutate: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} regola di policy non è stata valutata: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} di regole di policy non sono state valutate: {{.results[result=\"error\",*].policy|unique}}"
+  },
+  "ja": {
+   "description": "Kyverno の ClusterPolicy と Policy の準備状態・モード（Enforce または Audit）・ルール、ポリシーレポートとその結果、ポリシーのレポート全体での結果と違反しているオブジェクト、そしてすべてのオブジェクトの詳細の「ポリシーの結果」。ポリシールールに違反するオブジェクトの問題（任意）。読み取り専用。",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.other": "{{count}} 件のオブジェクトがポリシールールに違反しています",
+   "problemCategories.policies.title": "Kyverno ポリシー違反",
+   "detailsSections.policy-results.title": "ポリシーの結果",
+   "columns.cluster-policy-ready.title": "準備完了",
+   "columns.cluster-policy-ready.cases.0.text": "準備完了",
+   "columns.cluster-policy-ready.cases.1.text": "準備未完了",
+   "columns.cluster-policy-ready.cases.2.text": "保留中",
+   "columns.cluster-policy-ready.cases.3.text": "準備完了",
+   "columns.cluster-policy-ready.cases.4.text": "準備未完了",
+   "columns.cluster-policy-mode.title": "モード",
+   "columns.cluster-policy-mode.cases.0.text": "混在",
+   "columns.cluster-policy-background.title": "バックグラウンド",
+   "columns.cluster-policy-background.cases.0.text": "いいえ",
+   "columns.cluster-policy-background.cases.1.text": "はい",
+   "columns.cluster-policy-rules.title": "ルール",
+   "columns.cluster-policy-message.title": "メッセージ",
+   "columns.policy-ready.title": "準備完了",
+   "columns.policy-ready.cases.0.text": "準備完了",
+   "columns.policy-ready.cases.1.text": "準備未完了",
+   "columns.policy-ready.cases.2.text": "保留中",
+   "columns.policy-ready.cases.3.text": "準備完了",
+   "columns.policy-ready.cases.4.text": "準備未完了",
+   "columns.policy-mode.title": "モード",
+   "columns.policy-mode.cases.0.text": "混在",
+   "columns.policy-background.title": "バックグラウンド",
+   "columns.policy-background.cases.0.text": "いいえ",
+   "columns.policy-background.cases.1.text": "はい",
+   "columns.policy-rules.title": "ルール",
+   "columns.policy-message.title": "メッセージ",
+   "columns.policy-report-object.title": "オブジェクト",
+   "columns.policy-report-pass.title": "合格",
+   "columns.policy-report-fail.title": "違反",
+   "columns.policy-report-warn.title": "警告",
+   "columns.policy-report-error.title": "エラー",
+   "columns.policy-report-skip.title": "スキップ",
+   "columns.cluster-policy-report-object.title": "オブジェクト",
+   "columns.cluster-policy-report-pass.title": "合格",
+   "columns.cluster-policy-report-fail.title": "違反",
+   "columns.cluster-policy-report-warn.title": "警告",
+   "columns.cluster-policy-report-error.title": "エラー",
+   "columns.cluster-policy-report-skip.title": "スキップ",
+   "columns.ephemeral-report-object.title": "オブジェクト",
+   "columns.ephemeral-report-pass.title": "合格",
+   "columns.ephemeral-report-fail.title": "違反",
+   "columns.ephemeral-report-warn.title": "警告",
+   "columns.ephemeral-report-error.title": "エラー",
+   "columns.ephemeral-report-skip.title": "スキップ",
+   "columns.cluster-ephemeral-report-object.title": "オブジェクト",
+   "columns.cluster-ephemeral-report-pass.title": "合格",
+   "columns.cluster-ephemeral-report-fail.title": "違反",
+   "columns.cluster-ephemeral-report-warn.title": "警告",
+   "columns.cluster-ephemeral-report-error.title": "エラー",
+   "columns.cluster-ephemeral-report-skip.title": "スキップ",
+   "problems.report-failures.title": "PolicyReport: ルール違反",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} 件のポリシールールが失敗：{{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport: ルールを評価できない",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} 件のポリシールールを評価できませんでした：{{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport: ルール違反",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} 件のポリシールールが失敗：{{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport: ルールを評価できない",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} 件のポリシールールを評価できませんでした：{{.results[result=\"error\",*].policy|unique}}"
+  },
+  "ko": {
+   "description": "Kyverno의 ClusterPolicy와 Policy의 준비 상태, 모드(Enforce 또는 Audit), 규칙, 정책 보고서와 그 결과, 보고서 전체에 걸친 정책의 결과와 이를 위반하는 오브젝트, 모든 오브젝트 세부 정보의 \"정책 결과\". 정책 규칙을 위반하는 오브젝트의 문제(선택). 읽기 전용.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.other": "객체 {{count}}개가 정책 규칙을 위반합니다",
+   "problemCategories.policies.title": "Kyverno 정책 위반",
+   "detailsSections.policy-results.title": "정책 결과",
+   "columns.cluster-policy-ready.title": "준비됨",
+   "columns.cluster-policy-ready.cases.0.text": "준비됨",
+   "columns.cluster-policy-ready.cases.1.text": "준비 안 됨",
+   "columns.cluster-policy-ready.cases.2.text": "대기 중",
+   "columns.cluster-policy-ready.cases.3.text": "준비됨",
+   "columns.cluster-policy-ready.cases.4.text": "준비 안 됨",
+   "columns.cluster-policy-mode.title": "모드",
+   "columns.cluster-policy-mode.cases.0.text": "혼합",
+   "columns.cluster-policy-background.title": "백그라운드",
+   "columns.cluster-policy-background.cases.0.text": "아니요",
+   "columns.cluster-policy-background.cases.1.text": "예",
+   "columns.cluster-policy-rules.title": "규칙",
+   "columns.cluster-policy-message.title": "메시지",
+   "columns.policy-ready.title": "준비됨",
+   "columns.policy-ready.cases.0.text": "준비됨",
+   "columns.policy-ready.cases.1.text": "준비 안 됨",
+   "columns.policy-ready.cases.2.text": "대기 중",
+   "columns.policy-ready.cases.3.text": "준비됨",
+   "columns.policy-ready.cases.4.text": "준비 안 됨",
+   "columns.policy-mode.title": "모드",
+   "columns.policy-mode.cases.0.text": "혼합",
+   "columns.policy-background.title": "백그라운드",
+   "columns.policy-background.cases.0.text": "아니요",
+   "columns.policy-background.cases.1.text": "예",
+   "columns.policy-rules.title": "규칙",
+   "columns.policy-message.title": "메시지",
+   "columns.policy-report-object.title": "객체",
+   "columns.policy-report-pass.title": "통과",
+   "columns.policy-report-fail.title": "위반",
+   "columns.policy-report-warn.title": "경고",
+   "columns.policy-report-error.title": "오류",
+   "columns.policy-report-skip.title": "건너뜀",
+   "columns.cluster-policy-report-object.title": "객체",
+   "columns.cluster-policy-report-pass.title": "통과",
+   "columns.cluster-policy-report-fail.title": "위반",
+   "columns.cluster-policy-report-warn.title": "경고",
+   "columns.cluster-policy-report-error.title": "오류",
+   "columns.cluster-policy-report-skip.title": "건너뜀",
+   "columns.ephemeral-report-object.title": "객체",
+   "columns.ephemeral-report-pass.title": "통과",
+   "columns.ephemeral-report-fail.title": "위반",
+   "columns.ephemeral-report-warn.title": "경고",
+   "columns.ephemeral-report-error.title": "오류",
+   "columns.ephemeral-report-skip.title": "건너뜀",
+   "columns.cluster-ephemeral-report-object.title": "객체",
+   "columns.cluster-ephemeral-report-pass.title": "통과",
+   "columns.cluster-ephemeral-report-fail.title": "위반",
+   "columns.cluster-ephemeral-report-warn.title": "경고",
+   "columns.cluster-ephemeral-report-error.title": "오류",
+   "columns.cluster-ephemeral-report-skip.title": "건너뜀",
+   "problems.report-failures.title": "PolicyReport: 규칙 위반",
+   "problems.report-failures.message": "정책 규칙 {{.results[result=\"fail\",*]|count}}개 실패: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport: 규칙 평가 불가",
+   "problems.report-errors.message": "정책 규칙 {{.results[result=\"error\",*]|count}}개를 평가할 수 없음: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport: 규칙 위반",
+   "problems.cluster-report-failures.message": "정책 규칙 {{.results[result=\"fail\",*]|count}}개 실패: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport: 규칙 평가 불가",
+   "problems.cluster-report-errors.message": "정책 규칙 {{.results[result=\"error\",*]|count}}개를 평가할 수 없음: {{.results[result=\"error\",*].policy|unique}}"
+  },
+  "pl": {
+   "description": "ClusterPolicy i Policy Kyverno z gotowością, trybem (Enforce lub Audit) i regułami, raporty zasad z ich wynikami, wyniki zasady w jej raportach z obiektami, które jej nie spełniają, oraz „Wyniki zasad” w szczegółach każdego obiektu; opcjonalne problemy obiektów, które nie spełniają reguł zasad. Tylko do odczytu.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.one": "{{count}} obiekt narusza reguły zasad",
+   "sectionBadges.kyverno.label.few": "{{count}} obiekty naruszają reguły zasad",
+   "sectionBadges.kyverno.label.many": "{{count}} obiektów narusza reguły zasad",
+   "sectionBadges.kyverno.label.other": "{{count}} obiektu narusza reguły zasad",
+   "problemCategories.policies.title": "Naruszenia zasad Kyverno",
+   "detailsSections.policy-results.title": "Wyniki zasad",
+   "columns.cluster-policy-ready.title": "Gotowe",
+   "columns.cluster-policy-ready.cases.0.text": "Gotowe",
+   "columns.cluster-policy-ready.cases.1.text": "Niegotowe",
+   "columns.cluster-policy-ready.cases.2.text": "Oczekuje",
+   "columns.cluster-policy-ready.cases.3.text": "Gotowe",
+   "columns.cluster-policy-ready.cases.4.text": "Niegotowe",
+   "columns.cluster-policy-mode.title": "Tryb",
+   "columns.cluster-policy-mode.cases.0.text": "Mieszany",
+   "columns.cluster-policy-background.title": "W tle",
+   "columns.cluster-policy-background.cases.0.text": "Nie",
+   "columns.cluster-policy-background.cases.1.text": "Tak",
+   "columns.cluster-policy-rules.title": "Reguły",
+   "columns.cluster-policy-message.title": "Komunikat",
+   "columns.policy-ready.title": "Gotowe",
+   "columns.policy-ready.cases.0.text": "Gotowe",
+   "columns.policy-ready.cases.1.text": "Niegotowe",
+   "columns.policy-ready.cases.2.text": "Oczekuje",
+   "columns.policy-ready.cases.3.text": "Gotowe",
+   "columns.policy-ready.cases.4.text": "Niegotowe",
+   "columns.policy-mode.title": "Tryb",
+   "columns.policy-mode.cases.0.text": "Mieszany",
+   "columns.policy-background.title": "W tle",
+   "columns.policy-background.cases.0.text": "Nie",
+   "columns.policy-background.cases.1.text": "Tak",
+   "columns.policy-rules.title": "Reguły",
+   "columns.policy-message.title": "Komunikat",
+   "columns.policy-report-object.title": "Obiekt",
+   "columns.policy-report-pass.title": "Zgodne",
+   "columns.policy-report-fail.title": "Naruszenia",
+   "columns.policy-report-warn.title": "Ostrz.",
+   "columns.policy-report-error.title": "Błędy",
+   "columns.policy-report-skip.title": "Pominięte",
+   "columns.cluster-policy-report-object.title": "Obiekt",
+   "columns.cluster-policy-report-pass.title": "Zgodne",
+   "columns.cluster-policy-report-fail.title": "Naruszenia",
+   "columns.cluster-policy-report-warn.title": "Ostrz.",
+   "columns.cluster-policy-report-error.title": "Błędy",
+   "columns.cluster-policy-report-skip.title": "Pominięte",
+   "columns.ephemeral-report-object.title": "Obiekt",
+   "columns.ephemeral-report-pass.title": "Zgodne",
+   "columns.ephemeral-report-fail.title": "Naruszenia",
+   "columns.ephemeral-report-warn.title": "Ostrz.",
+   "columns.ephemeral-report-error.title": "Błędy",
+   "columns.ephemeral-report-skip.title": "Pominięte",
+   "columns.cluster-ephemeral-report-object.title": "Obiekt",
+   "columns.cluster-ephemeral-report-pass.title": "Zgodne",
+   "columns.cluster-ephemeral-report-fail.title": "Naruszenia",
+   "columns.cluster-ephemeral-report-warn.title": "Ostrz.",
+   "columns.cluster-ephemeral-report-error.title": "Błędy",
+   "columns.cluster-ephemeral-report-skip.title": "Pominięte",
+   "problems.report-failures.title": "PolicyReport: niespełnione reguły",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} reguły zasad nie jest spełnione: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} reguła zasad nie jest spełniona: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.few": "{{.results[result=\"fail\",*]|count}} reguły zasad nie są spełnione: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} reguł zasad nie jest spełnionych: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport: nieocenione reguły",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} reguły zasad nie udało się ocenić: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} reguły zasad nie udało się ocenić: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.few": "{{.results[result=\"error\",*]|count}} reguł zasad nie udało się ocenić: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} reguł zasad nie udało się ocenić: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport: niespełnione reguły",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} reguły zasad nie jest spełnione: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} reguła zasad nie jest spełniona: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.few": "{{.results[result=\"fail\",*]|count}} reguły zasad nie są spełnione: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} reguł zasad nie jest spełnionych: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport: nieocenione reguły",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} reguły zasad nie udało się ocenić: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} reguły zasad nie udało się ocenić: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.few": "{{.results[result=\"error\",*]|count}} reguł zasad nie udało się ocenić: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} reguł zasad nie udało się ocenić: {{.results[result=\"error\",*].policy|unique}}"
+  },
+  "pt-BR": {
+   "description": "ClusterPolicies e Policies do Kyverno com prontidão, modo (Enforce ou Audit) e regras, os relatórios de políticas com seus resultados, os resultados de uma política em seus relatórios com os objetos que a violam, e \"Resultados de políticas\" nos detalhes de cada objeto; problemas opcionais de objetos que violam regras de política. Somente leitura.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.one": "{{count}} objeto viola regras de política",
+   "sectionBadges.kyverno.label.many": "{{count}} de objetos violam regras de política",
+   "sectionBadges.kyverno.label.other": "{{count}} objetos violam regras de política",
+   "problemCategories.policies.title": "Falhas de políticas do Kyverno",
+   "detailsSections.policy-results.title": "Resultados de políticas",
+   "columns.cluster-policy-ready.title": "Pronta",
+   "columns.cluster-policy-ready.cases.0.text": "Pronta",
+   "columns.cluster-policy-ready.cases.1.text": "Não pronta",
+   "columns.cluster-policy-ready.cases.2.text": "Pendente",
+   "columns.cluster-policy-ready.cases.3.text": "Pronta",
+   "columns.cluster-policy-ready.cases.4.text": "Não pronta",
+   "columns.cluster-policy-mode.title": "Modo",
+   "columns.cluster-policy-mode.cases.0.text": "Misto",
+   "columns.cluster-policy-background.title": "Segundo plano",
+   "columns.cluster-policy-background.cases.0.text": "Não",
+   "columns.cluster-policy-background.cases.1.text": "Sim",
+   "columns.cluster-policy-rules.title": "Regras",
+   "columns.cluster-policy-message.title": "Mensagem",
+   "columns.policy-ready.title": "Pronta",
+   "columns.policy-ready.cases.0.text": "Pronta",
+   "columns.policy-ready.cases.1.text": "Não pronta",
+   "columns.policy-ready.cases.2.text": "Pendente",
+   "columns.policy-ready.cases.3.text": "Pronta",
+   "columns.policy-ready.cases.4.text": "Não pronta",
+   "columns.policy-mode.title": "Modo",
+   "columns.policy-mode.cases.0.text": "Misto",
+   "columns.policy-background.title": "Segundo plano",
+   "columns.policy-background.cases.0.text": "Não",
+   "columns.policy-background.cases.1.text": "Sim",
+   "columns.policy-rules.title": "Regras",
+   "columns.policy-message.title": "Mensagem",
+   "columns.policy-report-object.title": "Objeto",
+   "columns.policy-report-pass.title": "Aprovados",
+   "columns.policy-report-fail.title": "Falhas",
+   "columns.policy-report-warn.title": "Avisos",
+   "columns.policy-report-error.title": "Erros",
+   "columns.policy-report-skip.title": "Ignorados",
+   "columns.cluster-policy-report-object.title": "Objeto",
+   "columns.cluster-policy-report-pass.title": "Aprovados",
+   "columns.cluster-policy-report-fail.title": "Falhas",
+   "columns.cluster-policy-report-warn.title": "Avisos",
+   "columns.cluster-policy-report-error.title": "Erros",
+   "columns.cluster-policy-report-skip.title": "Ignorados",
+   "columns.ephemeral-report-object.title": "Objeto",
+   "columns.ephemeral-report-pass.title": "Aprovados",
+   "columns.ephemeral-report-fail.title": "Falhas",
+   "columns.ephemeral-report-warn.title": "Avisos",
+   "columns.ephemeral-report-error.title": "Erros",
+   "columns.ephemeral-report-skip.title": "Ignorados",
+   "columns.cluster-ephemeral-report-object.title": "Objeto",
+   "columns.cluster-ephemeral-report-pass.title": "Aprovados",
+   "columns.cluster-ephemeral-report-fail.title": "Falhas",
+   "columns.cluster-ephemeral-report-warn.title": "Avisos",
+   "columns.cluster-ephemeral-report-error.title": "Erros",
+   "columns.cluster-ephemeral-report-skip.title": "Ignorados",
+   "problems.report-failures.title": "PolicyReport: regras falham",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} regras de política falham: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} regra de política falha: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} de regras de política falham: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport: regras não avaliadas",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} regras de política não puderam ser avaliadas: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} regra de política não pôde ser avaliada: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} de regras de política não puderam ser avaliadas: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport: regras falham",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} regras de política falham: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} regra de política falha: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} de regras de política falham: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport: regras não avaliadas",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} regras de política não puderam ser avaliadas: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} regra de política não pôde ser avaliada: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} de regras de política não puderam ser avaliadas: {{.results[result=\"error\",*].policy|unique}}"
+  },
+  "ru": {
+   "description": "ClusterPolicy и Policy Kyverno с готовностью, режимом (Enforce или Audit) и правилами, отчёты политик с их результатами, результаты политики по её отчётам с объектами, которые её нарушают, и «Результаты политик» в подробностях любого объекта; проблемы объектов, нарушающих правила политик, по выбору. Только чтение.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.one": "{{count}} объект нарушает правила политик",
+   "sectionBadges.kyverno.label.few": "{{count}} объекта нарушают правила политик",
+   "sectionBadges.kyverno.label.many": "{{count}} объектов нарушают правила политик",
+   "sectionBadges.kyverno.label.other": "{{count}} объекта нарушают правила политик",
+   "problemCategories.policies.title": "Нарушения политик Kyverno",
+   "detailsSections.policy-results.title": "Результаты политик",
+   "columns.cluster-policy-ready.title": "Готова",
+   "columns.cluster-policy-ready.cases.0.text": "Готова",
+   "columns.cluster-policy-ready.cases.1.text": "Не готова",
+   "columns.cluster-policy-ready.cases.2.text": "Ожидает",
+   "columns.cluster-policy-ready.cases.3.text": "Готова",
+   "columns.cluster-policy-ready.cases.4.text": "Не готова",
+   "columns.cluster-policy-mode.title": "Режим",
+   "columns.cluster-policy-mode.cases.0.text": "Смешанный",
+   "columns.cluster-policy-background.title": "Фоновая проверка",
+   "columns.cluster-policy-background.cases.0.text": "Нет",
+   "columns.cluster-policy-background.cases.1.text": "Да",
+   "columns.cluster-policy-rules.title": "Правила",
+   "columns.cluster-policy-message.title": "Сообщение",
+   "columns.policy-ready.title": "Готова",
+   "columns.policy-ready.cases.0.text": "Готова",
+   "columns.policy-ready.cases.1.text": "Не готова",
+   "columns.policy-ready.cases.2.text": "Ожидает",
+   "columns.policy-ready.cases.3.text": "Готова",
+   "columns.policy-ready.cases.4.text": "Не готова",
+   "columns.policy-mode.title": "Режим",
+   "columns.policy-mode.cases.0.text": "Смешанный",
+   "columns.policy-background.title": "Фоновая проверка",
+   "columns.policy-background.cases.0.text": "Нет",
+   "columns.policy-background.cases.1.text": "Да",
+   "columns.policy-rules.title": "Правила",
+   "columns.policy-message.title": "Сообщение",
+   "columns.policy-report-object.title": "Объект",
+   "columns.policy-report-pass.title": "Пройдено",
+   "columns.policy-report-fail.title": "Нарушено",
+   "columns.policy-report-warn.title": "Предупр.",
+   "columns.policy-report-error.title": "Ошибки",
+   "columns.policy-report-skip.title": "Пропущено",
+   "columns.cluster-policy-report-object.title": "Объект",
+   "columns.cluster-policy-report-pass.title": "Пройдено",
+   "columns.cluster-policy-report-fail.title": "Нарушено",
+   "columns.cluster-policy-report-warn.title": "Предупр.",
+   "columns.cluster-policy-report-error.title": "Ошибки",
+   "columns.cluster-policy-report-skip.title": "Пропущено",
+   "columns.ephemeral-report-object.title": "Объект",
+   "columns.ephemeral-report-pass.title": "Пройдено",
+   "columns.ephemeral-report-fail.title": "Нарушено",
+   "columns.ephemeral-report-warn.title": "Предупр.",
+   "columns.ephemeral-report-error.title": "Ошибки",
+   "columns.ephemeral-report-skip.title": "Пропущено",
+   "columns.cluster-ephemeral-report-object.title": "Объект",
+   "columns.cluster-ephemeral-report-pass.title": "Пройдено",
+   "columns.cluster-ephemeral-report-fail.title": "Нарушено",
+   "columns.cluster-ephemeral-report-warn.title": "Предупр.",
+   "columns.cluster-ephemeral-report-error.title": "Ошибки",
+   "columns.cluster-ephemeral-report-skip.title": "Пропущено",
+   "problems.report-failures.title": "PolicyReport: правила нарушены",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} правила политик не выполнено: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} правило политик не выполнено: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.few": "{{.results[result=\"fail\",*]|count}} правила политик не выполнены: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} правил политик не выполнено: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport: правила не проверены",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} правила политик не удалось проверить: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} правило политик не удалось проверить: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.few": "{{.results[result=\"error\",*]|count}} правила политик не удалось проверить: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} правил политик не удалось проверить: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport: правила нарушены",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} правила политик не выполнено: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} правило политик не выполнено: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.few": "{{.results[result=\"fail\",*]|count}} правила политик не выполнены: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} правил политик не выполнено: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport: правила не проверены",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} правила политик не удалось проверить: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} правило политик не удалось проверить: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.few": "{{.results[result=\"error\",*]|count}} правила политик не удалось проверить: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} правил политик не удалось проверить: {{.results[result=\"error\",*].policy|unique}}"
+  },
+  "tr": {
+   "description": "Kyverno'nun ClusterPolicy ve Policy nesneleri hazır olma durumu, modu (Enforce veya Audit) ve kurallarıyla, ilke raporları sonuçlarıyla, bir ilkenin raporlarındaki sonuçları onu ihlal eden nesnelerle ve her nesnenin ayrıntılarında \"İlke sonuçları\"; ilke kurallarını ihlal eden nesnelerin isteğe bağlı sorunları. Salt okunur.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.one": "{{count}} nesne ilke kurallarını ihlal ediyor",
+   "sectionBadges.kyverno.label.other": "{{count}} nesne ilke kurallarını ihlal ediyor",
+   "problemCategories.policies.title": "Kyverno ilkesi ihlalleri",
+   "detailsSections.policy-results.title": "İlke sonuçları",
+   "columns.cluster-policy-ready.title": "Hazır",
+   "columns.cluster-policy-ready.cases.0.text": "Hazır",
+   "columns.cluster-policy-ready.cases.1.text": "Hazır değil",
+   "columns.cluster-policy-ready.cases.2.text": "Bekliyor",
+   "columns.cluster-policy-ready.cases.3.text": "Hazır",
+   "columns.cluster-policy-ready.cases.4.text": "Hazır değil",
+   "columns.cluster-policy-mode.title": "Mod",
+   "columns.cluster-policy-mode.cases.0.text": "Karma",
+   "columns.cluster-policy-background.title": "Arka plan",
+   "columns.cluster-policy-background.cases.0.text": "Hayır",
+   "columns.cluster-policy-background.cases.1.text": "Evet",
+   "columns.cluster-policy-rules.title": "Kurallar",
+   "columns.cluster-policy-message.title": "İleti",
+   "columns.policy-ready.title": "Hazır",
+   "columns.policy-ready.cases.0.text": "Hazır",
+   "columns.policy-ready.cases.1.text": "Hazır değil",
+   "columns.policy-ready.cases.2.text": "Bekliyor",
+   "columns.policy-ready.cases.3.text": "Hazır",
+   "columns.policy-ready.cases.4.text": "Hazır değil",
+   "columns.policy-mode.title": "Mod",
+   "columns.policy-mode.cases.0.text": "Karma",
+   "columns.policy-background.title": "Arka plan",
+   "columns.policy-background.cases.0.text": "Hayır",
+   "columns.policy-background.cases.1.text": "Evet",
+   "columns.policy-rules.title": "Kurallar",
+   "columns.policy-message.title": "İleti",
+   "columns.policy-report-object.title": "Nesne",
+   "columns.policy-report-pass.title": "Geçti",
+   "columns.policy-report-fail.title": "İhlal",
+   "columns.policy-report-warn.title": "Uyarı",
+   "columns.policy-report-error.title": "Hata",
+   "columns.policy-report-skip.title": "Atlandı",
+   "columns.cluster-policy-report-object.title": "Nesne",
+   "columns.cluster-policy-report-pass.title": "Geçti",
+   "columns.cluster-policy-report-fail.title": "İhlal",
+   "columns.cluster-policy-report-warn.title": "Uyarı",
+   "columns.cluster-policy-report-error.title": "Hata",
+   "columns.cluster-policy-report-skip.title": "Atlandı",
+   "columns.ephemeral-report-object.title": "Nesne",
+   "columns.ephemeral-report-pass.title": "Geçti",
+   "columns.ephemeral-report-fail.title": "İhlal",
+   "columns.ephemeral-report-warn.title": "Uyarı",
+   "columns.ephemeral-report-error.title": "Hata",
+   "columns.ephemeral-report-skip.title": "Atlandı",
+   "columns.cluster-ephemeral-report-object.title": "Nesne",
+   "columns.cluster-ephemeral-report-pass.title": "Geçti",
+   "columns.cluster-ephemeral-report-fail.title": "İhlal",
+   "columns.cluster-ephemeral-report-warn.title": "Uyarı",
+   "columns.cluster-ephemeral-report-error.title": "Hata",
+   "columns.cluster-ephemeral-report-skip.title": "Atlandı",
+   "problems.report-failures.title": "PolicyReport: kurallar ihlal ediliyor",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} ilke kuralı başarısız: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} ilke kuralı başarısız: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport: kurallar değerlendirilemedi",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} ilke kuralı değerlendirilemedi: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} ilke kuralı değerlendirilemedi: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport: kurallar ihlal ediliyor",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} ilke kuralı başarısız: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} ilke kuralı başarısız: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport: kurallar değerlendirilemedi",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} ilke kuralı değerlendirilemedi: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} ilke kuralı değerlendirilemedi: {{.results[result=\"error\",*].policy|unique}}"
+  },
+  "uk": {
+   "description": "ClusterPolicy і Policy Kyverno з готовністю, режимом (Enforce або Audit) і правилами, звіти політик з їхніми результатами, результати політики за її звітами з об’єктами, що її порушують, і «Результати політик» у подробицях будь-якого об’єкта; проблеми об’єктів, що порушують правила політик, на вибір. Лише читання.",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.one": "{{count}} об’єкт порушує правила політик",
+   "sectionBadges.kyverno.label.few": "{{count}} об’єкти порушують правила політик",
+   "sectionBadges.kyverno.label.many": "{{count}} об’єктів порушують правила політик",
+   "sectionBadges.kyverno.label.other": "{{count}} об’єкта порушують правила політик",
+   "problemCategories.policies.title": "Порушення політик Kyverno",
+   "detailsSections.policy-results.title": "Результати політик",
+   "columns.cluster-policy-ready.title": "Готова",
+   "columns.cluster-policy-ready.cases.0.text": "Готова",
+   "columns.cluster-policy-ready.cases.1.text": "Не готова",
+   "columns.cluster-policy-ready.cases.2.text": "Очікує",
+   "columns.cluster-policy-ready.cases.3.text": "Готова",
+   "columns.cluster-policy-ready.cases.4.text": "Не готова",
+   "columns.cluster-policy-mode.title": "Режим",
+   "columns.cluster-policy-mode.cases.0.text": "Змішаний",
+   "columns.cluster-policy-background.title": "Фонова перевірка",
+   "columns.cluster-policy-background.cases.0.text": "Ні",
+   "columns.cluster-policy-background.cases.1.text": "Так",
+   "columns.cluster-policy-rules.title": "Правила",
+   "columns.cluster-policy-message.title": "Повідомлення",
+   "columns.policy-ready.title": "Готова",
+   "columns.policy-ready.cases.0.text": "Готова",
+   "columns.policy-ready.cases.1.text": "Не готова",
+   "columns.policy-ready.cases.2.text": "Очікує",
+   "columns.policy-ready.cases.3.text": "Готова",
+   "columns.policy-ready.cases.4.text": "Не готова",
+   "columns.policy-mode.title": "Режим",
+   "columns.policy-mode.cases.0.text": "Змішаний",
+   "columns.policy-background.title": "Фонова перевірка",
+   "columns.policy-background.cases.0.text": "Ні",
+   "columns.policy-background.cases.1.text": "Так",
+   "columns.policy-rules.title": "Правила",
+   "columns.policy-message.title": "Повідомлення",
+   "columns.policy-report-object.title": "Об’єкт",
+   "columns.policy-report-pass.title": "Пройдено",
+   "columns.policy-report-fail.title": "Порушено",
+   "columns.policy-report-warn.title": "Попер.",
+   "columns.policy-report-error.title": "Помилки",
+   "columns.policy-report-skip.title": "Пропущено",
+   "columns.cluster-policy-report-object.title": "Об’єкт",
+   "columns.cluster-policy-report-pass.title": "Пройдено",
+   "columns.cluster-policy-report-fail.title": "Порушено",
+   "columns.cluster-policy-report-warn.title": "Попер.",
+   "columns.cluster-policy-report-error.title": "Помилки",
+   "columns.cluster-policy-report-skip.title": "Пропущено",
+   "columns.ephemeral-report-object.title": "Об’єкт",
+   "columns.ephemeral-report-pass.title": "Пройдено",
+   "columns.ephemeral-report-fail.title": "Порушено",
+   "columns.ephemeral-report-warn.title": "Попер.",
+   "columns.ephemeral-report-error.title": "Помилки",
+   "columns.ephemeral-report-skip.title": "Пропущено",
+   "columns.cluster-ephemeral-report-object.title": "Об’єкт",
+   "columns.cluster-ephemeral-report-pass.title": "Пройдено",
+   "columns.cluster-ephemeral-report-fail.title": "Порушено",
+   "columns.cluster-ephemeral-report-warn.title": "Попер.",
+   "columns.cluster-ephemeral-report-error.title": "Помилки",
+   "columns.cluster-ephemeral-report-skip.title": "Пропущено",
+   "problems.report-failures.title": "PolicyReport: правила порушено",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} правила політик не виконано: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} правило політик не виконано: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.few": "{{.results[result=\"fail\",*]|count}} правила політик не виконано: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} правил політик не виконано: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport: правила не перевірено",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} правила політик не вдалося перевірити: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} правило політик не вдалося перевірити: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.few": "{{.results[result=\"error\",*]|count}} правила політик не вдалося перевірити: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} правил політик не вдалося перевірити: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport: правила порушено",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} правила політик не виконано: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.one": "{{.results[result=\"fail\",*]|count}} правило політик не виконано: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.few": "{{.results[result=\"fail\",*]|count}} правила політик не виконано: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-failures.messageForms.many": "{{.results[result=\"fail\",*]|count}} правил політик не виконано: {{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport: правила не перевірено",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} правила політик не вдалося перевірити: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.one": "{{.results[result=\"error\",*]|count}} правило політик не вдалося перевірити: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.few": "{{.results[result=\"error\",*]|count}} правила політик не вдалося перевірити: {{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-errors.messageForms.many": "{{.results[result=\"error\",*]|count}} правил політик не вдалося перевірити: {{.results[result=\"error\",*].policy|unique}}"
+  },
+  "zh-CN": {
+   "description": "Kyverno 的 ClusterPolicy 和 Policy 及其就绪状态、模式（Enforce 或 Audit）和规则，策略报告及其结果，一个策略在其报告中的结果和未通过它的对象，以及每个对象详情中的“策略结果”；可选的未通过策略规则的对象问题。只读。",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.other": "{{count}} 个对象违反策略规则",
+   "problemCategories.policies.title": "Kyverno 策略违规",
+   "detailsSections.policy-results.title": "策略结果",
+   "columns.cluster-policy-ready.title": "就绪",
+   "columns.cluster-policy-ready.cases.0.text": "就绪",
+   "columns.cluster-policy-ready.cases.1.text": "未就绪",
+   "columns.cluster-policy-ready.cases.2.text": "等待中",
+   "columns.cluster-policy-ready.cases.3.text": "就绪",
+   "columns.cluster-policy-ready.cases.4.text": "未就绪",
+   "columns.cluster-policy-mode.title": "模式",
+   "columns.cluster-policy-mode.cases.0.text": "混合",
+   "columns.cluster-policy-background.title": "后台",
+   "columns.cluster-policy-background.cases.0.text": "否",
+   "columns.cluster-policy-background.cases.1.text": "是",
+   "columns.cluster-policy-rules.title": "规则",
+   "columns.cluster-policy-message.title": "消息",
+   "columns.policy-ready.title": "就绪",
+   "columns.policy-ready.cases.0.text": "就绪",
+   "columns.policy-ready.cases.1.text": "未就绪",
+   "columns.policy-ready.cases.2.text": "等待中",
+   "columns.policy-ready.cases.3.text": "就绪",
+   "columns.policy-ready.cases.4.text": "未就绪",
+   "columns.policy-mode.title": "模式",
+   "columns.policy-mode.cases.0.text": "混合",
+   "columns.policy-background.title": "后台",
+   "columns.policy-background.cases.0.text": "否",
+   "columns.policy-background.cases.1.text": "是",
+   "columns.policy-rules.title": "规则",
+   "columns.policy-message.title": "消息",
+   "columns.policy-report-object.title": "对象",
+   "columns.policy-report-pass.title": "通过",
+   "columns.policy-report-fail.title": "违规",
+   "columns.policy-report-warn.title": "警告",
+   "columns.policy-report-error.title": "错误",
+   "columns.policy-report-skip.title": "跳过",
+   "columns.cluster-policy-report-object.title": "对象",
+   "columns.cluster-policy-report-pass.title": "通过",
+   "columns.cluster-policy-report-fail.title": "违规",
+   "columns.cluster-policy-report-warn.title": "警告",
+   "columns.cluster-policy-report-error.title": "错误",
+   "columns.cluster-policy-report-skip.title": "跳过",
+   "columns.ephemeral-report-object.title": "对象",
+   "columns.ephemeral-report-pass.title": "通过",
+   "columns.ephemeral-report-fail.title": "违规",
+   "columns.ephemeral-report-warn.title": "警告",
+   "columns.ephemeral-report-error.title": "错误",
+   "columns.ephemeral-report-skip.title": "跳过",
+   "columns.cluster-ephemeral-report-object.title": "对象",
+   "columns.cluster-ephemeral-report-pass.title": "通过",
+   "columns.cluster-ephemeral-report-fail.title": "违规",
+   "columns.cluster-ephemeral-report-warn.title": "警告",
+   "columns.cluster-ephemeral-report-error.title": "错误",
+   "columns.cluster-ephemeral-report-skip.title": "跳过",
+   "problems.report-failures.title": "PolicyReport：规则未通过",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} 条策略规则未通过：{{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport：规则无法评估",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} 条策略规则无法评估：{{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport：规则未通过",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} 条策略规则未通过：{{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport：规则无法评估",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} 条策略规则无法评估：{{.results[result=\"error\",*].policy|unique}}"
+  },
+  "zh-TW": {
+   "description": "Kyverno 的 ClusterPolicy 與 Policy 及其就緒狀態、模式（Enforce 或 Audit）與規則，原則報告及其結果，一個原則在其報告中的結果與未通過它的物件，以及每個物件詳細資料中的「原則結果」；可選的未通過原則規則的物件問題。唯讀。",
+   "kinds.0.title": "Cluster Policies",
+   "kinds.2.title": "Policy Reports",
+   "kinds.3.title": "Cluster Policy Reports",
+   "kinds.4.title": "Ephemeral Reports",
+   "kinds.5.title": "Cluster Ephemeral Reports",
+   "sectionBadges.kyverno.label.other": "{{count}} 個物件違反原則規則",
+   "problemCategories.policies.title": "Kyverno 原則違規",
+   "detailsSections.policy-results.title": "原則結果",
+   "columns.cluster-policy-ready.title": "就緒",
+   "columns.cluster-policy-ready.cases.0.text": "就緒",
+   "columns.cluster-policy-ready.cases.1.text": "未就緒",
+   "columns.cluster-policy-ready.cases.2.text": "等待中",
+   "columns.cluster-policy-ready.cases.3.text": "就緒",
+   "columns.cluster-policy-ready.cases.4.text": "未就緒",
+   "columns.cluster-policy-mode.title": "模式",
+   "columns.cluster-policy-mode.cases.0.text": "混合",
+   "columns.cluster-policy-background.title": "背景",
+   "columns.cluster-policy-background.cases.0.text": "否",
+   "columns.cluster-policy-background.cases.1.text": "是",
+   "columns.cluster-policy-rules.title": "規則",
+   "columns.cluster-policy-message.title": "訊息",
+   "columns.policy-ready.title": "就緒",
+   "columns.policy-ready.cases.0.text": "就緒",
+   "columns.policy-ready.cases.1.text": "未就緒",
+   "columns.policy-ready.cases.2.text": "等待中",
+   "columns.policy-ready.cases.3.text": "就緒",
+   "columns.policy-ready.cases.4.text": "未就緒",
+   "columns.policy-mode.title": "模式",
+   "columns.policy-mode.cases.0.text": "混合",
+   "columns.policy-background.title": "背景",
+   "columns.policy-background.cases.0.text": "否",
+   "columns.policy-background.cases.1.text": "是",
+   "columns.policy-rules.title": "規則",
+   "columns.policy-message.title": "訊息",
+   "columns.policy-report-object.title": "物件",
+   "columns.policy-report-pass.title": "通過",
+   "columns.policy-report-fail.title": "違規",
+   "columns.policy-report-warn.title": "警告",
+   "columns.policy-report-error.title": "錯誤",
+   "columns.policy-report-skip.title": "略過",
+   "columns.cluster-policy-report-object.title": "物件",
+   "columns.cluster-policy-report-pass.title": "通過",
+   "columns.cluster-policy-report-fail.title": "違規",
+   "columns.cluster-policy-report-warn.title": "警告",
+   "columns.cluster-policy-report-error.title": "錯誤",
+   "columns.cluster-policy-report-skip.title": "略過",
+   "columns.ephemeral-report-object.title": "物件",
+   "columns.ephemeral-report-pass.title": "通過",
+   "columns.ephemeral-report-fail.title": "違規",
+   "columns.ephemeral-report-warn.title": "警告",
+   "columns.ephemeral-report-error.title": "錯誤",
+   "columns.ephemeral-report-skip.title": "略過",
+   "columns.cluster-ephemeral-report-object.title": "物件",
+   "columns.cluster-ephemeral-report-pass.title": "通過",
+   "columns.cluster-ephemeral-report-fail.title": "違規",
+   "columns.cluster-ephemeral-report-warn.title": "警告",
+   "columns.cluster-ephemeral-report-error.title": "錯誤",
+   "columns.cluster-ephemeral-report-skip.title": "略過",
+   "problems.report-failures.title": "PolicyReport：規則未通過",
+   "problems.report-failures.message": "{{.results[result=\"fail\",*]|count}} 條原則規則未通過：{{.results[result=\"fail\",*].policy|unique}}",
+   "problems.report-errors.title": "PolicyReport：規則無法評估",
+   "problems.report-errors.message": "{{.results[result=\"error\",*]|count}} 條原則規則無法評估：{{.results[result=\"error\",*].policy|unique}}",
+   "problems.cluster-report-failures.title": "ClusterPolicyReport：規則未通過",
+   "problems.cluster-report-failures.message": "{{.results[result=\"fail\",*]|count}} 條原則規則未通過：{{.results[result=\"fail\",*].policy|unique}}",
+   "problems.cluster-report-errors.title": "ClusterPolicyReport：規則無法評估",
+   "problems.cluster-report-errors.message": "{{.results[result=\"error\",*]|count}} 條原則規則無法評估：{{.results[result=\"error\",*].policy|unique}}"
+  }
+ }
+}

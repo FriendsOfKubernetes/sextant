@@ -1061,19 +1061,23 @@ fn dra_problems_are_never_given_to_agents() {
     ));
 }
 
-/// Kueue (#246) problems are window views: agents get none of them — neither the queues (on by default) nor the
-/// opt-in Kueue Workloads, even when turned on (ADR-0114).
+/// Kueue's queues and Workloads (#246) and Kyverno's policy failures (#213) moved into categories of their extensions'
+/// own (ADR-0162 amendment, #410): agents get none of them, under the old names or the new ones, even when turned on.
 #[test]
-fn kueue_problems_are_never_given_to_agents() {
-    for category in ["kueue", "kueueWorkloads"] {
-        assert!(answers::PROBLEM_CATEGORIES.contains(&category));
-        assert!(!answers::category_for_agents(
-            category,
-            &[category.to_owned()]
-        ));
+fn kueue_and_kyverno_problems_are_never_given_to_agents() {
+    for old in ["kueue", "kueueWorkloads", "policies"] {
+        assert!(!answers::PROBLEM_CATEGORIES.contains(&old));
+        assert!(!answers::OPT_IN_CATEGORIES.contains(&old));
+        assert!(!answers::category_for_agents(old, &[old.to_owned()]));
     }
-    assert!(answers::OPT_IN_CATEGORIES.contains(&"kueueWorkloads"));
-    assert!(!answers::OPT_IN_CATEGORIES.contains(&"kueue"));
+    assert_eq!(answers::moved_category("kueue"), "ext:sextant.kueue:queues");
+    for moved in [
+        "ext:sextant.kueue:queues",
+        "ext:sextant.kueue:workloads",
+        "ext:sextant.kyverno:policies",
+    ] {
+        assert!(!answers::category_for_agents(moved, &[moved.to_owned()]));
+    }
 }
 
 /// k3s / RKE2 problems (#270) — failed HelmChart installs and bundled components not available — are a window view:

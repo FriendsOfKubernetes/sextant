@@ -188,8 +188,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "pods",
     "workloads",
     "jobs",
-    "kueue",
-    "kueueWorkloads",
     "vpa",
     "volumes",
     "certificates",
@@ -202,7 +200,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "k3s",
     "dra",
     "openshift",
-    "policies",
     "sealedSecrets",
     "prometheusOperator",
     "reflector",
@@ -214,22 +211,20 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "events",
 ];
 /// Categories that count only while the user turned them on (`OPT_IN_CATEGORIES` there).
-pub const OPT_IN_CATEGORIES: [&str; 11] = [
+pub const OPT_IN_CATEGORIES: [&str; 9] = [
     "security",
     "credentials",
     "disk",
     "practices",
-    "policies",
     "prometheusOperator",
     "traefik",
     "reflector",
     "sealedSecrets",
-    "kueueWorkloads",
     "alerts",
 ];
 /// Never given to agents: expiring kubeconfig credentials are the app user's, not the cluster's (ADR-0084).
-/// Knative, Crossplane and Kyverno policy problems (#213) are window views of this build: agents get nothing new.
-/// So are External Secrets, CloudNativePG, Strimzi and Prometheus Operator problems (#213).
+/// Crossplane problems (#213) are window views of this build: agents get nothing new. So are Prometheus Operator
+/// problems (#213).
 pub const NEVER_FOR_AGENTS: &[&str] = &[
     "credentials",
     // Traefik references (#232): a window view of 0.20.0.
@@ -237,7 +232,6 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     // Contour proxies (#233): a window view of 0.20.0.
     "contour",
     "crossplane",
-    "policies",
     // Sealed Secrets (#240): a window view of 0.21.0.
     "sealedSecrets",
     // Reflector mirrors (#241): a window view of 0.21.0.
@@ -246,9 +240,6 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "vpa",
     // Cluster API (#243): a window view of 0.22.0.
     "clusterApi",
-    // Kueue queues and Workloads (#246) and JobSets (#247): window views of 0.23.0.
-    "kueue",
-    "kueueWorkloads",
     // Dynamic Resource Allocation (#244): a window view of 0.23.0.
     "dra",
     // k3s and RKE2 HelmCharts and bundled components (#270): a window view of 0.25.0.
@@ -272,7 +263,9 @@ pub fn category_for_agents(category: &str, enabled: &[String]) -> bool {
         && (!OPT_IN_CATEGORIES.contains(&category) || enabled.iter().any(|c| c == category))
 }
 
-/// `category`, or the extension's category it moved into (`flux`, `argocd`, `rollouts`; ADR-0162).
+/// `category`, or the extension's category it moved into (`flux`, `argocd`, `rollouts`; ADR-0162). A category that
+/// moved into a category of an extension's own (`kueue` → `ext:sextant.kueue:queues`, #410) is still refused: agents
+/// never get those.
 pub fn moved_category(category: &str) -> String {
     sextant_core::settings::MOVED_PROBLEM_CATEGORIES
         .iter()

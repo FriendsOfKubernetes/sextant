@@ -1,0 +1,28 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields, tables,
+   status words and links are the SDK's UI kit (`ui`, classes `sx-*`). */
+body.compact {
+  padding: 8px 0;
+}
+
+/* The explanations, messages and remarks, as the built-in view drew them (its cert-manager classes). */
+.ky-explain {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.ky-explain--danger {
+  border-left-color: var(--color-danger);
+}
+
+.ky-message {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.ky-muted {
+  margin: 4px 0;
+  color: var(--color-text-muted);
+}

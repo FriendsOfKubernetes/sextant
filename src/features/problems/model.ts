@@ -12,13 +12,11 @@ import { status } from "../../resources";
 import { kindFromApiVersion } from "../../resources/refs";
 import { eventTimestamp, involvedObject } from "../events/model";
 import { contourProblems } from "../contour/problemRules";
-import { policyProblems } from "../kyverno/problemRules";
 import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../cluster-api/model";
 import { isSealedSecret } from "../sealed-secrets/model";
 import { isVpa } from "../vpa/model";
 import { DRA_GROUP } from "../dra/model";
 import { isHelmControllerKind, isK3sKind } from "../k3s/model";
-import { isKind as isKueueKind, KUEUE_GROUP, CLUSTER_QUEUE as KUEUE_CLUSTER_QUEUE, LOCAL_QUEUE as KUEUE_LOCAL_QUEUE, queueProblems as kueueQueueProblems, workloadProblems as kueueWorkloadProblems, WORKLOAD as KUEUE_WORKLOAD } from "../kueue/model";
 import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
 import { MONITORING_GROUP, prometheusOperatorProblems } from "../prometheus-operator/model";
 import {
@@ -42,8 +40,6 @@ export const PROBLEM_CATEGORIES = [
   "pods",
   "workloads",
   "jobs",
-  "kueue",
-  "kueueWorkloads",
   "vpa",
   "volumes",
   "certificates",
@@ -56,7 +52,6 @@ export const PROBLEM_CATEGORIES = [
   "k3s",
   "dra",
   "openshift",
-  "policies",
   "sealedSecrets",
   "prometheusOperator",
   "reflector",
@@ -82,15 +77,12 @@ export const NOTIFY_CATEGORIES: readonly BuiltInCategory[] = PROBLEM_CATEGORIES.
  * workload's spec, not incidents, and a cluster usually has privileged system pods, so they would only add noise unless
  * asked for. Their sources are their own (`sourceKey`), so nothing of them is computed or kept while they are off.
  * Best-practice findings (#207) are lasting states too, and most clusters have many.
- * Kyverno policy failures (#213, `policies`) too: an Audit policy can fail on hundreds of objects at once.
  * Prometheus Operator findings (`prometheusOperator`) judge every ServiceMonitor and PodMonitor against metadata
  * lists of the Services and Pods they look at: a cost a cluster pays only when asked for. So do Traefik findings
  * (`traefik`, #232): every Traefik object of the cluster and metadata of the Services they name.
  * And Reflector mirrors (`reflector`, #241): metadata of every Secret and ConfigMap of the cluster. And Sealed Secrets
  * (`sealedSecrets`, #240, amended ADR-0109): every SealedSecret of the cluster and metadata lists of Secrets, a
  * background cost like Traefik's and Reflector's, so it is asked for the same way.
- * And Kueue Workloads (`kueueWorkloads`, #246, ADR-0114): every Workload of the cluster with its pod templates (≤ 5000);
- * the queues themselves (`kueue`) are few and on by default.
  * And firing alerts (`alerts`, #264, ADR-0119): Prometheus' and Alertmanager's alerts polled once a minute.
  */
 export const OPT_IN_CATEGORIES: readonly BuiltInCategory[] = [
@@ -98,12 +90,10 @@ export const OPT_IN_CATEGORIES: readonly BuiltInCategory[] = [
   "credentials",
   "disk",
   "practices",
-  "policies",
   "prometheusOperator",
   "traefik",
   "reflector",
   "sealedSecrets",
-  "kueueWorkloads",
   "alerts",
 ];
 
@@ -276,16 +266,10 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (same(kind, NODE)) return "nodes";
   if (same(kind, DEPLOYMENT) || same(kind, STATEFULSET) || same(kind, DAEMONSET)) return "workloads";
   if (same(kind, JOB)) return "jobs";
-  // Kueue (#246): queues that admit nothing; Workloads waiting or evicted (opt-in, `kueueWorkloads`).
-  if (kind.group === KUEUE_GROUP && isKueueKind(kind, KUEUE_CLUSTER_QUEUE, KUEUE_LOCAL_QUEUE)) return "kueue";
-  if (kind.group === KUEUE_GROUP && isKueueKind(kind, KUEUE_WORKLOAD)) return "kueueWorkloads";
-  // JobSet (#247): failed JobSets and restarts near the limit.
   if (same(kind, PVC)) return "volumes";
   if (same(kind, EVENT)) return "events";
   if (same(kind, CERTIFICATE)) return "certificates";
   if (kind.group === "gateway.networking.k8s.io") return "gateway";
-  // Knative Services and Configurations (#213); Kyverno policy reports (#213, opt-in).
-  if (kind.group === "wgpolicyk8s.io") return "policies";
   // Contour HTTPProxies (#233): invalid and orphaned ones.
   if (kind.group === "projectcontour.io" && kind.kind === "HTTPProxy") return "contour";
   // External Secrets, CloudNativePG, Strimzi and Prometheus Operator (#213): judged by their sections' own helpers.
@@ -694,10 +678,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return daemonSetProblems(obj);
     case "jobs":
       return jobProblems(obj);
-    case "kueue":
-      return kueueQueueProblems(kind, obj);
-    case "kueueWorkloads":
-      return kueueWorkloadProblems(obj);
     case "volumes":
       return claimProblems(obj);
     case "events":
@@ -708,8 +688,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return gatewayProblems(obj, kind);
     case "contour":
       return contourProblems(kind, obj);
-    case "policies":
-      return policyProblems(kind, obj);
     case "clusterApi":
       return capiProblems(kind, obj);
     case "openshift":
