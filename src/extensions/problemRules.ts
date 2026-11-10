@@ -9,6 +9,7 @@ import type { KindRef, KubeObject, ObjectRef, ProblemCondition, ProblemContribut
 import { parseFieldPath, pickStep, type PathStep } from "../features/custom-columns/path";
 import type { Detected } from "../features/problems/model";
 import { currentLanguage, formatList } from "../i18n/format";
+import { formatBytes, formatCpu, parseQuantity } from "../features/metrics/format";
 import { cleanText } from "../resources/uri";
 
 /** A placeholder shows at most this many characters of its value: a controller's whole condition message (#373). */
@@ -55,6 +56,8 @@ export function valueAt(obj: unknown, path: string): unknown {
     if (filter === "count") return Array.isArray(value) ? value.length : value !== null && typeof value === "object" ? Object.keys(value).length : undefined;
     if (filter === "sum") return sumOf(value);
     if (filter === "min" || filter === "max") return extremeOf(value, filter);
+    // A Kubernetes quantity ("64Gi", "500m") as its amount (#404): a NodePool's usage against its limit.
+    if (filter === "quantity") return parseQuantity(value);
     return undefined;
   }
   const steps = parseFieldPath(path.trim());
@@ -528,6 +531,14 @@ function filteredText(value: unknown, filter: string | undefined): string | unde
     if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
     const keys = Object.keys(value);
     return keys.length === 0 ? undefined : formatList(keys);
+  }
+  if (filter === "cpu" || filter === "bytes") {
+    // A quantity written as Sextant writes its own (#404): "250m", "4"; "45.9GiB".
+    const amount = parseQuantity(value);
+    if (amount === undefined) return undefined;
+    if (filter === "bytes") return formatBytes(amount);
+    const milli = Math.round(amount * 1000);
+    return milli % 1000 === 0 && milli > 0 ? String(milli / 1000) : formatCpu(milli);
   }
   if (filter === "countAll") {
     // The items of the lists in a list (#404): a PrometheusRule's rules over all its groups.

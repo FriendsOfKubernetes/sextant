@@ -1426,10 +1426,11 @@ pub(crate) fn numeric_path<'t>(
         return Ok(text);
     };
     // `|min`/`|max` (#404): a list's smallest or largest number, or earliest or latest time.
-    if !matches!(filter.trim(), "sum" | "count" | "min" | "max") {
+    // `|quantity` (#404): a Kubernetes quantity ("64Gi", "500m") read as its amount.
+    if !matches!(filter.trim(), "sum" | "count" | "min" | "max" | "quantity") {
         return Err(at(
             path,
-            "ends in `|sum`, `|count`, `|min` or `|max`, or in no filter",
+            "ends in `|sum`, `|count`, `|min`, `|max` or `|quantity`, or in no filter",
         ));
     }
     if api < SOURCES_API {
@@ -1769,7 +1770,7 @@ fn split_outside_quotes<'a>(field: &'a str, sep: &str) -> Vec<&'a str> {
 }
 
 /// What may follow a placeholder's path after `|` (#404).
-pub const PLACEHOLDER_FILTERS: [&str; 11] = [
+pub const PLACEHOLDER_FILTERS: [&str; 13] = [
     "firstLine",
     "lastSegment",
     "list",
@@ -1781,6 +1782,8 @@ pub const PLACEHOLDER_FILTERS: [&str; 11] = [
     "countAll",
     "selector",
     "product",
+    "cpu",
+    "bytes",
 ];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.

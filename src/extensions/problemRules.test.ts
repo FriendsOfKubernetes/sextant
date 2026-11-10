@@ -254,6 +254,12 @@ describe("problem rules of extensions", () => {
     expect(valueAt(stream, ".status.tags[*].conditions[*].t|min")).toBe("2026-11-01T00:00:00Z");
     expect(valueAt(stream, ".status.tags[*].conditions[*].t|max")).toBe("2026-11-02T00:00:00Z");
     expect(valueAt(stream, ".status.n|max")).toBe(3);
+    // Quantities (#404): amounts in conditions, written as Sextant writes them in texts.
+    const pool = { metadata: { name: "p" }, status: { resources: { memory: "48093964Ki", cpu: "1500m" } }, spec: { limits: { memory: "64Gi" } } } as unknown as KubeObject;
+    expect(valueAt(pool, ".spec.limits.memory|quantity")).toBe(64 * 1024 ** 3);
+    expect(placeholderText(pool, ".status.resources.memory|bytes")).toBe("45.9GiB");
+    expect(placeholderText(pool, ".status.resources.cpu|cpu")).toBe("1500m");
+    expect(evaluate({ type: "atLeast", path: ".status.resources.memory|quantity", otherPath: ".spec.limits.memory|quantity" }, pool).holds).toBe(false);
     // `+` before `|count`, a scalar counting 1; two lists flattened; a text condition's value from the object (#404).
     const proxy = { metadata: { name: "p", namespace: "own" }, spec: { includes: [{ name: "a" }, { name: "b" }], tcpproxy: { include: { name: "t" } }, delegations: [{ targetNamespaces: ["x", "y"] }, { targetNamespaces: ["z"] }], tls: "own/cert" } } as unknown as KubeObject;
     expect(placeholderText(proxy, ".spec.includes + .spec.tcpproxy.include|count")).toBe("3");
