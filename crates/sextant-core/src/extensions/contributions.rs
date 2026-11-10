@@ -293,6 +293,17 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 ));
             }
         }
+        if column.join_paths.is_some() {
+            if manifest.sextant_api < WINDOW_API {
+                return Err(at(
+                    &here.key("joinPaths"),
+                    format!("needs sextantApi {WINDOW_API} or later"),
+                ));
+            }
+            if column.format != Some(ColumnFormat::List) {
+                return Err(at(&here.key("joinPaths"), "goes with `format: \"list\"`"));
+            }
+        }
         if let Some(id) = &column.after_column {
             if manifest.sextant_api < WINDOW_API {
                 return Err(at(
@@ -511,8 +522,9 @@ fn is_column_id(text: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b':'))
 }
 
-fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 9] {
+fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 10] {
     [
+        ("joinPaths", column.join_paths.is_some()),
         ("paths", column.paths.is_some()),
         ("lookup", column.lookup.is_some()),
         ("valueText", column.value_text.is_some()),

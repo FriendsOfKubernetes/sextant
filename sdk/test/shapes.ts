@@ -219,6 +219,7 @@ export const MANIFEST_SHAPES = {
     tooltipPaths: "optional",
     cases: "optional",
     afterColumn: "optional",
+    joinPaths: "optional",
     width: "optional",
     lookup: "optional",
     valueText: "optional",

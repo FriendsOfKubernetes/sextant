@@ -394,6 +394,10 @@ pub struct ColumnContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub after_column: Option<String>,
+    /// A `list` column of every path's items in order, each once (#404), not the first path's; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub join_paths: Option<bool>,
     /// Its width as Sextant's own columns give it (#403): `<n>px`, or `minmax(<n>px, <m>fr)`; `sextantApi` 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -1103,6 +1107,7 @@ mod tests {
                 tooltip_paths: None,
                 cases: None,
                 after_column: None,
+                join_paths: None,
                 width: None,
                 lookup: None,
                 value_text: None,

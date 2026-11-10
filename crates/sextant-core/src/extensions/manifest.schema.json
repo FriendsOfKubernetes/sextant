@@ -472,6 +472,7 @@
                 "format": "non-blank",
                 "pattern": "\\S"
               },
+              "joinPaths": { "description": "A list column of every path's items in order, each once, not the first path's (sextantApi 4).", "type": "boolean" },
               "width": {
                 "description": "Its width: `<n>px`, or `minmax(<n>px, <m>fr)` (sextantApi 4).",
                 "type": "string",

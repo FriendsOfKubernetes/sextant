@@ -1630,7 +1630,7 @@ function checkActionPatch(patch, segments) {
   walk(patch, segments);
 }
 
-const COLUMN_FIELDS = ["paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
+const COLUMN_FIELDS = ["joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
 
 function checkColumns(manifest) {
   const list = ["contributes", "columns"];
@@ -1641,6 +1641,10 @@ function checkColumns(manifest) {
     if (column.width !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "width"], `needs sextantApi ${WINDOW_API} or later`);
       if (!isColumnWidth(column.width)) fail([...here, "width"], "is `<n>px` or `minmax(<n>px, <m>fr)`, n from 40 to 600 and m from 0.5 to 5");
+    }
+    if (column.joinPaths !== undefined) {
+      if (manifest.sextantApi < WINDOW_API) fail([...here, "joinPaths"], `needs sextantApi ${WINDOW_API} or later`);
+      if (column.format !== "list") fail([...here, "joinPaths"], 'goes with `format: "list"`');
     }
     if (column.afterColumn !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "afterColumn"], `needs sextantApi ${WINDOW_API} or later`);

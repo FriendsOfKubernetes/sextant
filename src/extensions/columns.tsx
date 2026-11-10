@@ -148,12 +148,19 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
       return { sort: whole === 0 ? 0 : part / whole, text, draw: text };
     }
     case "list": {
-      // A list of scalars joined in the UI language (#395); anything else in it is left out.
-      if (!Array.isArray(value)) return { sort: undefined, text: undefined, draw: null };
-      const items = value
-        .filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean")
-        .map((v) => cleanText(String(v)) ?? "")
-        .filter((v) => v !== "");
+      // A list of scalars joined in the UI language (#395); anything else in it is left out. `joinPaths` (#404): every
+      // path's items in order, each once (a listener declared and one only in the status).
+      const lists = column.joinPaths ? (column.paths ?? []).map((p) => valueAt(obj, p)).filter(Array.isArray) : [value];
+      if (!lists.some(Array.isArray)) return { sort: undefined, text: undefined, draw: null };
+      const items = [
+        ...new Set(
+          lists
+            .flatMap((list) => (Array.isArray(list) ? list : []))
+            .filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+            .map((v) => cleanText(String(v)) ?? "")
+            .filter((v) => v !== ""),
+        ),
+      ];
       if (items.length === 0) return { sort: undefined, text: undefined, draw: null };
       const text = textOf(formatList(items)) ?? "";
       return { sort: text, text, draw: text };

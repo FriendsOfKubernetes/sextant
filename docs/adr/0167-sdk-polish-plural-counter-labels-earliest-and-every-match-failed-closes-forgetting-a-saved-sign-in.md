@@ -204,3 +204,5 @@ A match step's field with dots reaches through a list on the way, and any of its
 (`[tasks.state="FAILED"]` is a connector with a failed task); a placeholder takes up to two filters in a row, and
 `clip:<n>` (1 to 1000) cuts the text to `n` characters with "…" (`{{.trace|firstLine|clip:300}}`); a text sort key
 whose placeholder has no value gives the row no sort value, so it sorts last in both directions, as a missing value does.
+A `list` column with `joinPaths` shows every path's items in order, each once (a listener declared and one only in the
+status), not the first path's; `exists.nonEmpty` takes a blank text for nothing too.

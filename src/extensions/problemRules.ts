@@ -154,8 +154,8 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
     }
     case "exists": {
       const value = valueAt(obj, condition.path);
-      // `nonEmpty` (#405): an empty text is nothing too.
-      return { holds: value !== undefined && value !== null && !(condition.nonEmpty && value === "") };
+      // `nonEmpty` (#405): an empty or blank text is nothing too.
+      return { holds: value !== undefined && value !== null && !(condition.nonEmpty && typeof value === "string" && value.trim() === "") };
     }
     case "absent": {
       const value = valueAt(obj, condition.path);

@@ -48,6 +48,20 @@ describe("an extension's computed column", () => {
     expect(computedColumn("x", column({ paths: [".metadata.labels"], format: "entries" })).searchText!(o, ctx)).toBe("app=shop, tier=web");
   });
 
+  it("join every path's list with joinPaths, each item once (#404)", () => {
+    const o = {
+      metadata: { name: "k" },
+      spec: { listeners: [{ name: "plain" }, { name: "tls" }] },
+      status: { listeners: [{ name: "tls" }, { name: "old" }] },
+    } as unknown as KubeObject;
+    const paths = [".spec.listeners[*].name", ".status.listeners[*].name"];
+    expect(computedColumn("x", column({ paths, format: "list" })).searchText!(o, ctx)).toBe("plain, tls");
+    expect(computedColumn("x", column({ paths, format: "list", joinPaths: true })).searchText!(o, ctx)).toBe("plain, tls, old");
+    const statusOnly = { metadata: { name: "k" }, status: { listeners: [{ name: "old" }] } } as unknown as KubeObject;
+    expect(computedColumn("x", column({ paths, format: "list", joinPaths: true })).searchText!(statusOnly, ctx)).toBe("old");
+    expect(computedColumn("x", column({ paths, format: "list", joinPaths: true })).searchText!({ metadata: { name: "e" } } as KubeObject, ctx)).toBeFalsy();
+  });
+
   it("tones any other value with the \"*\" tone (#403)", () => {
     const toned = computedColumn("x", column({ paths: [".status.phase"], tones: { Running: "ok", "*": "warning" } }));
     const at = (phase: string) => render(<>{toned.render!({ metadata: { name: "a" }, status: { phase } } as unknown as KubeObject, ctx)}</>).container;

@@ -51,6 +51,10 @@ cases?: Array<ColumnCase>,
  */
 afterColumn?: string, 
 /**
+ * A `list` column of every path's items in order, each once (#404), not the first path's; `sextantApi` 4.
+ */
+joinPaths?: boolean, 
+/**
  * Its width as Sextant's own columns give it (#403): `<n>px`, or `minmax(<n>px, <m>fr)`; `sextantApi` 4.
  */
 width?: string, 
