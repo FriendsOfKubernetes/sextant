@@ -27,11 +27,11 @@ import {
   type ResourceKind,
   type RuleSource,
 } from "../../api";
-import { compileRules, kindKeyOf, type RuleContext } from "../../extensions/problemRules";
+import { compileRules, kindKeyOf, type Lookup, type RuleContext } from "../../extensions/problemRules";
 import { comparedPaths, factsOf, judgeAcross, judgedAcross, judgesOf, lookedUp, referrersOf, rowOf, selectedKinds, type AcrossTarget, type ReferrerRule } from "../../extensions/problemsAcross";
 import { judgedFact, judgedFacts, judgeReads, NOT_SERVED_ROWS, observeJudge, type JudgeInput } from "../../extensions/problemJudges";
 import { setExtensionDetector, setExtensionOptIn, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
-import { MAX_SOURCE_OBJECTS, type JudgedRows, type SourceDef } from "./sources";
+import { MAX_SOURCE_OBJECTS, sourceKey, type JudgedRows, type SourceDef } from "./sources";
 
 interface Entry {
   category: ExtensionCategory;
@@ -64,6 +64,67 @@ interface Entry {
   judgedPaths: ReadonlyMap<string, readonly string[]>;
   /** Where its `kindsFrom` rules' kinds come from (one per extension); their detector is under `FROM_KEY`. */
   kindsFrom?: KindsFrom;
+  /** `group/kind` of the looked-up kinds listed only where the lookups name (`contributes.narrowLookups`). */
+  narrowed: ReadonlySet<string>;
+}
+
+/** `cluster|category` → the targets of its rules across objects as the latest look built them. */
+const currentTargets = new Map<string, AcrossTarget[]>();
+
+/** A narrowed lookup kind is listed in at most this many namespaces; past it, wherever the extension may read. */
+export const MAX_NARROWED_NAMESPACES = 40;
+
+/**
+ * `cluster|extension|source` → per narrowed kind the namespaces the judged objects' lookups name there (`null`: every
+ * one, a `selectsNone` of every namespace), as the source's latest problems had them.
+ */
+const lookupNamespaces = new Map<string, Map<string, Set<string> | null>>();
+let lookupTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** The key a source's lookups are kept under: `cluster|extension|category|source`. */
+const lookupKey = (clusterId: ClusterId, entry: Pick<Entry, "extensionId" | "category">, def: SourceDef): string =>
+  `${clusterId}|${entry.extensionId}|${entry.category}|${sourceKey(clusterId, def)}`;
+
+/** Where the lookups of a source's problems point, for the narrowed kinds; a change rebuilds the sources shortly after. */
+function noteLookups(key: string, narrowed: ReadonlySet<string>, problems: readonly { lookups?: readonly Lookup[]; object: { namespace: string | null } }[]): void {
+  const found = new Map<string, Set<string> | null>();
+  for (const p of problems) {
+    for (const lookup of p.lookups ?? []) {
+      const kind = kindKeyOf(lookup);
+      if (!narrowed.has(kind) || found.get(kind) === null) continue;
+      const namespaces = lookup.selects ? lookup.selects.namespaces : [lookup.namespace ?? p.object.namespace ?? ""];
+      if (namespaces === null) {
+        found.set(kind, null);
+        continue;
+      }
+      const set = found.get(kind) ?? new Set<string>();
+      for (const ns of namespaces) if (ns !== "") set.add(ns);
+      found.set(kind, set);
+    }
+  }
+  const text = (m: Map<string, Set<string> | null> | undefined) =>
+    JSON.stringify([...(m ?? new Map()).entries()].map(([k, v]) => [k, v === null ? null : [...v].sort()]).sort());
+  if (text(found) === text(lookupNamespaces.get(key))) return;
+  lookupNamespaces.set(key, found);
+  if (lookupTimer === undefined) {
+    lookupTimer = setTimeout(() => {
+      lookupTimer = undefined;
+      changed();
+    }, REFRESH_DELAY_MS);
+  }
+}
+
+/** The namespaces a narrowed kind is listed in for the extension in the cluster: `undefined` while no source said. */
+function narrowedNamespaces(clusterId: ClusterId, extensionId: string, kind: string): Set<string> | null | undefined {
+  const prefix = `${clusterId}|${extensionId}|`;
+  let out: Set<string> | null | undefined;
+  for (const [key, kinds] of lookupNamespaces) {
+    if (!key.startsWith(prefix) || !kinds.has(kind)) continue;
+    const these = kinds.get(kind)!;
+    if (these === null) return null;
+    out = new Set([...(out ?? []), ...these]);
+  }
+  return out;
 }
 
 /** The kind `kindsFrom` rules are compiled under: no kind's key (a kind has no `#`). */
@@ -114,6 +175,7 @@ export function registerExtensionProblems(
   rules: readonly ProblemContribution[],
   own?: { id: string; optIn: boolean },
   manifestJudges: readonly ProblemJudgeContribution[] = [],
+  narrowLookups: readonly { group: string; kind: string }[] = [],
 ): () => void {
   const category = categoryOfExtension(extensionId, own?.id);
   // Rules of kinds from definitions are one detector, applied to the sources of the kinds Rust says are defined.
@@ -161,6 +223,7 @@ export function registerExtensionProblems(
     judges,
     judgedPaths,
     ...(kindsFrom ? { kindsFrom } : {}),
+    narrowed: new Set(narrowLookups.map(kindKeyOf)),
   };
   entries.set(category, entry);
   forgetScopes(extensionId);
@@ -338,6 +401,8 @@ export function scopesKnown(clusterId: ClusterId, categories: readonly ProblemCa
 
 /** Forgets the scopes of a cluster (a connection that ended or began: its context may differ). */
 export function forgetClusterScopes(clusterId: ClusterId): void {
+  for (const k of [...lookupNamespaces.keys()]) if (k.startsWith(`${clusterId}|`)) lookupNamespaces.delete(k);
+  for (const k of [...currentTargets.keys()]) if (k.startsWith(`${clusterId}|`)) currentTargets.delete(k);
   let any = false;
   for (const key of [...scopes.keys()]) {
     if (key.startsWith(`${clusterId}|`)) {
@@ -365,6 +430,7 @@ export function extensionSourcesFor(
     if (!entry || !scope || scope === "loading" || !kinds) continue;
     const judged: { def: SourceDef; key: string }[] = [];
     const targets: AcrossTarget[] = [];
+    const targetsKey = `${clusterId}|${category}`;
     for (const { kind, namespaces, definedBy, moreDefinitions } of scope) {
       const key = kindKeyOf(kind);
       // A kind its definitions define (`kindsFrom`): its rules only, where Rust found it defined.
@@ -391,6 +457,20 @@ export function extensionSourcesFor(
         });
         continue;
       }
+      // A kind only looked up and listed in part (`narrowLookups`): just the namespaces the judged objects' lookups name
+      // (within those it may read), nothing before any source said, everywhere past `MAX_NARROWED_NAMESPACES`.
+      let listedIn: readonly string[] | undefined = everywhere ? undefined : namespaces.namespaces;
+      if (entry.narrowed.has(key) && served.namespaced) {
+        const needed = narrowedNamespaces(clusterId, entry.extensionId, key);
+        if (needed !== null) {
+          if (needed === undefined || needed.size === 0) continue;
+          if (needed.size <= MAX_NARROWED_NAMESPACES) {
+            const within = [...needed].filter((ns) => everywhere || namespaces.namespaces.includes(ns)).sort();
+            if (within.length === 0) continue;
+            listedIn = within;
+          }
+        }
+      }
       const def: SourceDef = {
         category,
         kind: served.kindRef,
@@ -399,7 +479,7 @@ export function extensionSourcesFor(
         discovered: true,
         // The rules' own cap (#404), else Sextant's.
         maxObjects: source?.maxObjects ?? MAX_SOURCE_OBJECTS,
-        ...(everywhere || !served.namespaced ? {} : { namespaces: namespaces.namespaces }),
+        ...(listedIn === undefined || !served.namespaced ? {} : { namespaces: listedIn }),
         ...(source?.labelSelector ? { labelSelector: source.labelSelector } : {}),
         // A kind only looked up by name or labels (`missing`, `selectsNone`, #404) is listed metadata-only: a Secret never
         // with a value, Services and Pods without their specs. `related`/`relatedBy` read fields, so theirs stay whole,
@@ -437,6 +517,13 @@ export function extensionSourcesFor(
       entries: (judge: string, fact: string, uid: string) => judgedFacts(clusterId, entry.extensionId, judge, fact, uid),
       reads: (judge: string) => judgeReads(clusterId, entry.extensionId, judge),
     };
+    currentTargets.set(targetsKey, targets);
+    // What sources of this category no longer stand said is forgotten (another namespace filter, a reconnect).
+    if (entry.narrowed.size > 0) {
+      const current = new Set(judged.map(({ def }) => lookupKey(clusterId, entry, def)));
+      const prefix = `${clusterId}|${entry.extensionId}|${entry.category}|`;
+      for (const k of [...lookupNamespaces.keys()]) if (k.startsWith(prefix) && !current.has(k)) lookupNamespaces.delete(k);
+    }
     for (const { def, key } of judged) {
       def.judge = {
         tap: {
@@ -454,6 +541,8 @@ export function extensionSourcesFor(
           max: def.maxObjects ?? MAX_SOURCE_OBJECTS,
         },
         judge: (problems, context) => {
+          // Where these problems' lookups point, for the kinds listed only there (`narrowLookups`).
+          if (entry.narrowed.size > 0) noteLookups(lookupKey(clusterId, entry, def), entry.narrowed, problems);
           // The definitions' rows: what they define may have changed (`kindsFrom`).
           if (entry.kindsFrom && kindKeyOf(entry.kindsFrom.kind) === key) noteDefinitions(clusterId, entry.extensionId, context.rows);
           for (const { judge, inputs } of judgeInputs) {
@@ -468,7 +557,9 @@ export function extensionSourcesFor(
               ),
             );
           }
-          return judgeAcross(problems, context, { rules: entry.rules, targets, judges });
+          // The targets as the latest look built them: the store keeps a source's first definition, and a narrowed kind's
+          // source may have come (or gone) since.
+          return judgeAcross(problems, context, { rules: entry.rules, targets: currentTargets.get(targetsKey) ?? targets, judges });
         },
       };
     }

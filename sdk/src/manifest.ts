@@ -404,6 +404,11 @@ export interface ManifestContributions {
   agentTools?: ManifestAgentTool[];
   /** Problems the backend decides for rules' `judged` conditions; needs `sextantApi` 4 and a `backend` (since Sextant 0.30). */
   problemJudges?: ManifestProblemJudge[];
+  /**
+   * Kinds the rules only look up, which Sextant then lists in just the namespaces the judged objects' lookups name (at
+   * most 40; past that every namespace) instead of the whole cluster; needs `sextantApi` 4 (since Sextant 0.30).
+   */
+  narrowLookups?: KindPattern[];
   /** The extension's own sidebar sections: title, header icon, place; needs `sextantApi` 4. */
   sections?: ManifestSection[];
   /** A tab in a cluster's settings (`view=settings` with the contribution `clusterSettings`, that cluster in the context); needs `sextantApi` 4. */
@@ -637,6 +642,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
       problemCategories: (c.problemCategories ?? []).map((pc) => ({ id: pc.id, title: pc.title, optIn: pc.optIn ?? false })),
       ...(c.problemsTitle !== undefined ? { problemsTitle: c.problemsTitle } : {}),
+      ...(c.narrowLookups !== undefined && c.narrowLookups.length > 0 ? { narrowLookups: c.narrowLookups } : {}),
       sectionBadges: (c.sectionBadges ?? []).map((b) => ({
         section: b.section,
         rules: b.rules ?? [],

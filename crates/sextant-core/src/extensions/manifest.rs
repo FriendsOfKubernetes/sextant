@@ -170,6 +170,11 @@ pub struct Contributions {
     pub agent_tools: Vec<AgentToolContribution>,
     /// Problems the backend decides for the rules' `judged` conditions (ADR-0168); `sextantApi` 4.
     pub problem_judges: Vec<super::problem_judges::ProblemJudgeContribution>,
+    /// Kinds the rules only look up, listed by the window in just the namespaces the judged objects' lookups name
+    /// (ADR-0167 amendment); `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[ts(as = "Option<Vec<crate::access::KindPattern>>", optional)]
+    pub narrow_lookups: Vec<crate::access::KindPattern>,
     /// The extension's own sidebar sections: title, icon and place (ADR-0160); `sextantApi` 4.
     pub sections: Vec<SectionContribution>,
     /// A tab of the extension's in a cluster's settings (ADR-0160); `sextantApi` 4.
@@ -714,6 +719,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     contributions::check_actions(&manifest)?;
     contributions::check_details_sections(&manifest)?;
     super::problems::check_problem_categories(&manifest)?;
+    super::problems::check_narrow_lookups(&manifest)?;
     contributions::check_columns(&manifest)?;
     contributions::check_kinds(&manifest)?;
     contributions::check_permissions(&manifest)?;

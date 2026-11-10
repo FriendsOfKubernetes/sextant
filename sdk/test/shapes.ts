@@ -87,6 +87,7 @@ export const MANIFEST_SHAPES = {
     sectionBadges: "optional",
     problemCategories: "optional",
     problemsTitle: "optional",
+    narrowLookups: "optional",
     commands: "optional",
     kinds: "optional",
     menuItems: "optional",

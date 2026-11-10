@@ -234,6 +234,53 @@ pub struct ProblemCategoryContribution {
 /// Categories of one extension besides its main one.
 pub const MAX_PROBLEM_CATEGORIES: usize = 5;
 
+/// `contributes.narrowLookups` (ADR-0167 amendment): kinds some rule looks up (`missing`, `related`, `relatedBy`,
+/// `selectsNone`), that no rule judges, no `kindsFrom` reads and no judge reads, each once.
+pub(crate) fn check_narrow_lookups(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
+    let list = JsonPath::default().key("contributes").key("narrowLookups");
+    let kinds = &manifest.contributes.narrow_lookups;
+    if kinds.is_empty() {
+        return Ok(());
+    }
+    if manifest.sextant_api < SOURCES_API {
+        return Err(at(
+            &list,
+            format!("needs sextantApi {SOURCES_API} or later"),
+        ));
+    }
+    let mut looked: Vec<&KindPattern> = Vec::new();
+    for rule in &manifest.contributes.problems {
+        looked_up(&rule.when, &mut looked);
+    }
+    let judged = super::problem_judges::judge_kinds(manifest);
+    for (i, kind) in kinds.iter().enumerate() {
+        let here = list.index(i);
+        if kinds[..i].iter().any(|k| same_kind(k, kind)) {
+            return Err(at(&here, "is named twice"));
+        }
+        if !looked.iter().any(|k| same_kind(k, kind)) {
+            return Err(at(
+                &here,
+                "is no kind the rules look up (`missing`, `related`, `relatedBy`, `selectsNone`)",
+            ));
+        }
+        let judges_it = manifest.contributes.problems.iter().any(|rule| {
+            same_kind(&rule.kind, kind)
+                || rule
+                    .kinds_from
+                    .as_ref()
+                    .is_some_and(|f| same_kind(&f.kind, kind))
+        }) || judged.iter().any(|k| same_kind(k, kind));
+        if judges_it {
+            return Err(at(
+                &here,
+                "is a kind the rules or judges read whole: only a kind they only look up is listed in part",
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// `contributes.problemCategories` and each rule's `category` (#410).
 pub(crate) fn check_problem_categories(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
     let list = JsonPath::default()

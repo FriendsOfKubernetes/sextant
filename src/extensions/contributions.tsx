@@ -183,10 +183,11 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
   const mainRules = contributes.problems.filter((rule) => rule.category === undefined);
   // A rule's `judged` condition (ADR-0168) names one of the extension's problem judges, which its backend answers.
   const judges = contributes.problemJudges ?? [];
-  if (mainRules.length > 0) removers.push(registerExtensionProblems(extensionId, contributes.problemsTitle ?? info.name, mainRules, undefined, judges));
+  const narrow = contributes.narrowLookups ?? [];
+  if (mainRules.length > 0) removers.push(registerExtensionProblems(extensionId, contributes.problemsTitle ?? info.name, mainRules, undefined, judges, narrow));
   for (const own of contributes.problemCategories ?? []) {
     const rules = contributes.problems.filter((rule) => rule.category === own.id);
-    if (rules.length > 0) removers.push(registerExtensionProblems(extensionId, own.title, rules, { id: own.id, optIn: own.optIn }, judges));
+    if (rules.length > 0) removers.push(registerExtensionProblems(extensionId, own.title, rules, { id: own.id, optIn: own.optIn }, judges, narrow));
   }
   const allCategories = [
     ...(mainRules.length > 0 ? [categoryOfExtension(extensionId)] : []),

@@ -430,6 +430,55 @@ describe("problems of extensions", () => {
     await waitFor(() => expect(result.current).toBe(0));
   });
 
+  it("list a looked-up kind of `narrowLookups` only in the namespaces the judged objects' lookups name", async () => {
+    const SEALED: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "bitnami.com", version: "v1alpha1", kind: "SealedSecret" }, plural: "sealedsecrets" };
+    const SECRET: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "", version: "v1", kind: "Secret" }, plural: "secrets" };
+    wb.backend.on("cluster_kinds", () => [SEALED, SECRET]);
+    wb.backend.on("extension_problem_scopes", () => [
+      { kind: { group: "bitnami.com", kind: "SealedSecret" }, namespaces: { type: "all" } },
+      { kind: { group: "", kind: "Secret" }, namespaces: { type: "all" } },
+    ]);
+    unregister = registerExtensionProblems(
+      "sealed-ext",
+      "Sealed Secrets",
+      [
+        {
+          id: "target-missing",
+          title: "Target missing",
+          kind: { group: "bitnami.com", kind: "SealedSecret" },
+          when: { type: "missing", path: ".metadata.name", kind: { group: "", kind: "Secret" } },
+          graceMinutes: 0,
+          notify: true,
+          toldThroughOwner: false,
+          message: "{{.metadata.name}} has no Secret",
+        },
+      ],
+      undefined,
+      [],
+      [{ group: "", kind: "Secret" }],
+    );
+    const { result } = renderHook(() => useProblemCount("c1"));
+    const sealed = (name: string, namespace: string) => ({
+      apiVersion: "bitnami.com/v1alpha1",
+      kind: "SealedSecret",
+      metadata: { name, namespace, uid: `u-${namespace}-${name}` },
+    });
+    const secretWatches = () => [...wb.specs.entries()].filter(([, spec]) => spec.kind.kind === "Secret");
+    const sealedWatch = await watchOf(wb, "SealedSecret");
+    // Before any SealedSecret said where its Secret is, no Secret is listed at all.
+    expect(secretWatches()).toEqual([]);
+    emitSnapshot(wb, sealedWatch, [sealed("db", "team-a"), sealed("api", "team-b")]);
+    await waitFor(() => expect(secretWatches().length).toBeGreaterThan(0), { timeout: 3000 });
+    const [secrets, spec] = secretWatches()[0]!;
+    expect(spec.namespaces).toEqual(["team-a", "team-b"]);
+    expect(spec.metadataOnly).toBe(true);
+    emitSnapshot(wb, secrets, [{ apiVersion: "v1", kind: "Secret", metadata: { name: "db", namespace: "team-a", uid: "s1" } }]);
+    await waitFor(() => expect(result.current).toBe(1));
+    // A SealedSecret in another namespace: the Secrets are listed there too.
+    emitDelta(wb, sealedWatch, [sealed("web", "team-c")]);
+    await waitFor(() => expect(secretWatches().some(([, sp]) => sp.namespaces?.includes("team-c"))).toBe(true), { timeout: 3000 });
+  });
+
   it("judge rules of kinds from definitions on the kinds Rust says are defined, and ask again when the definitions change", async () => {
     const XRD: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "apiextensions.crossplane.io", version: "v1", kind: "CompositeResourceDefinition" }, plural: "compositeresourcedefinitions", namespaced: false };
     const XDB: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "example.org", version: "v1", kind: "XDatabase" }, plural: "xdatabases", namespaced: false };

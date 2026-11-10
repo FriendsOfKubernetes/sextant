@@ -404,3 +404,16 @@ reason `missing` stayed out of `any`). Mixed with any other condition, or under 
 (`evaluate`) gives every lookup of such an `any` the same `anyOf` key, branch by branch and item by item, so
 `{{missing}}` names what was found in the object's own order. DRA's waiting Pods — any number of claims, any of them
 missing or without devices — needed it.
+
+## Amendment: looked-up kinds listed only where the lookups name
+
+`contributes.narrowLookups` (`sextantApi` 4; `check_narrow_lookups` = `checkNarrowLookups`): kinds the rules only look
+up (`missing`, `related`, `relatedBy`, `selectsNone`) — never a kind a rule judges, a `kindsFrom` reads or a judge
+reads. The window lists such a kind only in the namespaces the judged objects' lookups name (`noteLookups` from each
+judged source's problems, keyed `cluster|extension|category|source`; within those the extension may read; a
+`selectsNone` of every namespace, or more than `MAX_NARROWED_NAMESPACES` = 40, lists it wherever it may read, as
+before), nothing until a source said, and a change rebuilds the sources `REFRESH_DELAY_MS` later. A lookup in a
+namespace not listed cannot tell, as before. The built-in views listed Secrets, claims, HPAs and Services only in the
+namespaces their objects named; past 5000 objects cluster-wide the rules could not tell at all. The judges of the
+category's sources read their targets as the latest look built them (`currentTargets`): the problems store keeps a
+source's first definition, so a target that came later (a narrowed source, a CRD installed) was not seen before.

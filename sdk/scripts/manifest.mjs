@@ -1414,6 +1414,24 @@ export function isColumnWidth(text) {
 }
 
 /** `check_problem_categories` (#410): categories besides the main one, and each rule's `category`. */
+/** `contributes.narrowLookups` (`check_narrow_lookups`): kinds the rules only look up, each once. */
+function checkNarrowLookups(manifest) {
+  const kinds = manifest.contributes?.narrowLookups ?? [];
+  const list = ["contributes", "narrowLookups"];
+  if (kinds.length === 0) return;
+  if (manifest.sextantApi < SOURCES_API) fail(list, `needs sextantApi ${SOURCES_API} or later`);
+  const rules = manifest.contributes?.problems ?? [];
+  const looked = rules.flatMap((rule) => lookedUpKinds(rule.when));
+  const judged = (manifest.contributes?.problemJudges ?? []).flatMap((judge) => (judge.reads ?? []).map((read) => read.kind));
+  kinds.forEach((kind, i) => {
+    const here = [...list, i];
+    if (kinds.slice(0, i).some((k) => sameKind(k, kind))) fail(here, "is named twice");
+    if (!looked.some((k) => sameKind(k, kind))) fail(here, "is no kind the rules look up (`missing`, `related`, `relatedBy`, `selectsNone`)");
+    const judgesIt = rules.some((rule) => (rule.kind && sameKind(rule.kind, kind)) || (rule.kindsFrom && sameKind(rule.kindsFrom.kind, kind))) || judged.some((k) => sameKind(k, kind));
+    if (judgesIt) fail(here, "is a kind the rules or judges read whole: only a kind they only look up is listed in part");
+  });
+}
+
 function checkProblemCategories(manifest) {
   const list = ["contributes", "problemCategories"];
   const categories = manifest.contributes?.problemCategories ?? [];
@@ -2253,6 +2271,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     checkTranslations(value);
     checkSectionBadges(value);
     checkProblemCategories(value);
+    checkNarrowLookups(value);
     checkCommands(value);
     checkActions(value);
     checkDetailsSections(value);

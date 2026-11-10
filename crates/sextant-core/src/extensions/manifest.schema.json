@@ -822,6 +822,12 @@
           "required": ["title"],
           "properties": { "title": { "$ref": "#/$defs/title" } }
         },
+        "narrowLookups": {
+          "description": "Kinds the rules only look up, listed in just the namespaces the judged objects' lookups name (sextantApi 4).",
+          "type": "array",
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/kind" }
+        },
         "problemsTitle": {
           "description": "The title of the extension's main problem category, its name when unset (sextantApi 4).",
           "$ref": "#/$defs/title"

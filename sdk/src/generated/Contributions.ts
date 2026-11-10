@@ -6,6 +6,7 @@ import type { CommandContribution } from "./CommandContribution";
 import type { DetailsSectionContribution } from "./DetailsSectionContribution";
 import type { DockActionContribution } from "./DockActionContribution";
 import type { KindContribution } from "./KindContribution";
+import type { KindPattern } from "./KindPattern";
 import type { MenuItemContribution } from "./MenuItemContribution";
 import type { MetricQuery } from "./MetricQuery";
 import type { PageContribution } from "./PageContribution";
@@ -65,6 +66,11 @@ agentTools: Array<AgentToolContribution>,
  * Problems the backend decides for the rules' `judged` conditions (ADR-0168); `sextantApi` 4.
  */
 problemJudges: Array<ProblemJudgeContribution>, 
+/**
+ * Kinds the rules only look up, listed by the window in just the namespaces the judged objects' lookups name
+ * (ADR-0167 amendment); `sextantApi` 4.
+ */
+narrowLookups?: Array<KindPattern>, 
 /**
  * The extension's own sidebar sections: title, icon and place (ADR-0160); `sextantApi` 4.
  */
