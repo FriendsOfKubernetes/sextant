@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "クラスターツールのビューは拡張機能になりました",
-      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Contour、Kyverno、CloudNativePG、Strimzi、External Secrets、Sealed Secrets、Prometheus Operator、Vertical Pod Autoscaler、Cluster API、k3s / RKE2、Dynamic Resource Allocation、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe、Operator Lifecycle Manager、OpenShift は Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Traefik、Contour、Kyverno、CloudNativePG、Strimzi、External Secrets、Sealed Secrets、Prometheus Operator、Vertical Pod Autoscaler、Cluster API、k3s / RKE2、Dynamic Resource Allocation、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe、Operator Lifecycle Manager、OpenShift は Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
     },
     "api4": {
       "title": "拡張機能 API 4",
@@ -46,6 +46,7 @@
       "prometheus-operator": "ServiceMonitor、PodMonitor、Probe とその選択対象、PrometheusRule、Prometheus、Alertmanager",
       "cluster-api": "Cluster とその状態、コントロールプレーン、ワークロードクラスターの Node までの MachineDeployment、MachineSet、Machine、MachineHealthCheck と ClusterResourceSet",
       "k3s": "ノード、同梱コンポーネント、ServiceLB を含むディストリビューション、インストール Job 付きの HelmChart、HelmChartConfig、Addon、etcd スナップショット",
+      "traefik": "IngressRoute、Middleware、TraefikService、TLSOption、TLSStore、ServersTransport と、すべての参照の確認",
       "contour": "状態と最初のエラー、仮想ホストと TLS、各サービスの割合を含むルート、インクルードと委任ツリー付きの HTTPProxy、TLSCertificateDelegation と ExtensionService",
       "openshift": "受け入れ状況とバックエンド付きの Route、ロールアウト付きの DeploymentConfig、ログ付きの BuildConfig と Build、ImageStream と Project、Rollout latest と Start build"
     }

@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "叢集工具的檢視現在是擴充功能",
-      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Contour、Kyverno、CloudNativePG、Strimzi、External Secrets、Sealed Secrets、Prometheus Operator、Vertical Pod Autoscaler、Cluster API、k3s / RKE2、Dynamic Resource Allocation、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe、Operator Lifecycle Manager 與 OpenShift 已從 Sextant 移到擴充功能目錄中它自己的擴充功能，這些擴充功能會個別更新。請在下方安裝你使用的擴充功能：在此之前不會顯示它們的區段。你為它們設定的通知已保留，側邊欄也會在執行這些工具的叢集中推薦它們。"
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Traefik、Contour、Kyverno、CloudNativePG、Strimzi、External Secrets、Sealed Secrets、Prometheus Operator、Vertical Pod Autoscaler、Cluster API、k3s / RKE2、Dynamic Resource Allocation、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe、Operator Lifecycle Manager 與 OpenShift 已從 Sextant 移到擴充功能目錄中它自己的擴充功能，這些擴充功能會個別更新。請在下方安裝你使用的擴充功能：在此之前不會顯示它們的區段。你為它們設定的通知已保留，側邊欄也會在執行這些工具的叢集中推薦它們。"
     },
     "api4": {
       "title": "擴充功能 API 4",
@@ -46,6 +46,7 @@
       "prometheus-operator": "ServiceMonitor、PodMonitor 與 Probe 及其選取的對象、PrometheusRule、Prometheus 與 Alertmanager",
       "cluster-api": "Cluster 及其狀態、控制平面、直到工作負載叢集 Node 的 MachineDeployment、MachineSet 與 Machine、MachineHealthCheck 與 ClusterResourceSet",
       "k3s": "發行版及其節點、內建元件和 ServiceLB，帶安裝 Job 的 HelmChart、HelmChartConfig、Addon 和 etcd 快照",
+      "traefik": "IngressRoute、Middleware、TraefikService、TLSOption、TLSStore 和 ServersTransport，並檢查每個參照",
       "contour": "HTTPProxy 及其狀態和首個錯誤、虛擬主機和 TLS、帶各服務比例的路由、include 和委派樹，TLSCertificateDelegation 和 ExtensionService",
       "openshift": "帶准入情況和後端的 Route、帶發布紀錄的 DeploymentConfig、帶日誌的 BuildConfig 和 Build、ImageStream 和 Project，以及 Rollout latest 和 Start build"
     }

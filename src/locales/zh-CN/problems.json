@@ -21,7 +21,6 @@
     "certificates": "证书",
     "gateway": "Gateway API",
     "mesh": "服务网格",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "安全",
@@ -49,15 +48,12 @@
     "meshTlsConflict": "对 {{host}} 设置了 TLS 模式 {{mode}}，而其工作负载只接受 Istio mTLS（STRICT）：调用会失败。请使用 ISTIO_MUTUAL。",
     "meshConflictingVirtualService": "{{gateway}} 上的主机 {{host}} 已被更早的虚拟服务 {{other}} 占用：此虚拟服务的路由不会生效。",
     "meshInvalidVirtualService": "绑定到 Sidecar（mesh）时使用了主机 *：Istio 会拒绝它，因此它的路由都不会被使用。",
-    "traefikMissingReference": "引用了不存在的对象：{{refs}}。Traefik 会跳过依赖它们的部分。",
-    "traefikSkippedRoute": "Traefik 跳过其路由 {{routes}}：match 规则为空，或 kind 不是 Rule。",
     "reflectorStale": "Reflector 尚未将源 {{source}} 的当前版本复制到此镜像。",
     "reflectorNotAllowed": "源 {{source}} 已不再允许此 namespace，且镜像已过时。",
     "reflectorSourceMissing": "源 {{source}} 不存在。"
   },
   "showDisk": "磁盘即将用满",
   "showPractices": "最佳实践发现",
-  "showTraefik": "Traefik 引用",
   "showReflector": "Reflector 镜像",
   "showAlerts": "触发中的告警（Prometheus 和 Alertmanager）"
 }

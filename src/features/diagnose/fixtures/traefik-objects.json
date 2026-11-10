@@ -1,0 +1,467 @@
+{
+  "_source": "Shapes from Traefik's documentation (routing/providers/kubernetes-crd, middlewares, TLS) and pkg/provider/kubernetes/crd/traefikio/v1alpha1; names adapted.",
+  "ingressRoute": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "IngressRoute",
+    "metadata": {
+      "name": "myingressroute",
+      "namespace": "default",
+      "uid": "uid-myingressroute",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "entryPoints": [
+        "websecure"
+      ],
+      "routes": [
+        {
+          "match": "Host(`foo.example.net`) && PathPrefix(`/bar`)",
+          "kind": "Rule",
+          "priority": 10,
+          "middlewares": [
+            {
+              "name": "secured",
+              "namespace": "default"
+            }
+          ],
+          "services": [
+            {
+              "kind": "Service",
+              "name": "foo",
+              "namespace": "default",
+              "port": 80,
+              "weight": 10,
+              "passHostHeader": true
+            }
+          ]
+        },
+        {
+          "match": "Host(`foo.example.net`) && PathPrefix(`/wrr`)",
+          "kind": "Rule",
+          "services": [
+            {
+              "kind": "TraefikService",
+              "name": "wrr1"
+            }
+          ]
+        },
+        {
+          "match": "PathPrefix(`/dashboard`)",
+          "kind": "Rule",
+          "services": [
+            {
+              "kind": "TraefikService",
+              "name": "api@internal"
+            }
+          ]
+        }
+      ],
+      "tls": {
+        "secretName": "supersecret",
+        "options": {
+          "name": "opt",
+          "namespace": "default"
+        },
+        "domains": [
+          {
+            "main": "foo.example.net"
+          }
+        ]
+      }
+    }
+  },
+  "wrr": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "TraefikService",
+    "metadata": {
+      "name": "wrr1",
+      "namespace": "default",
+      "uid": "uid-wrr1",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "weighted": {
+        "services": [
+          {
+            "name": "svc1",
+            "port": 80,
+            "weight": 1
+          },
+          {
+            "name": "mirror1",
+            "kind": "TraefikService",
+            "weight": 1
+          }
+        ]
+      }
+    }
+  },
+  "mirror": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "TraefikService",
+    "metadata": {
+      "name": "mirror1",
+      "namespace": "default",
+      "uid": "uid-mirror1",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "mirroring": {
+        "name": "svc1",
+        "port": 80,
+        "mirrors": [
+          {
+            "name": "svc2",
+            "port": 80,
+            "percent": 20
+          }
+        ]
+      }
+    }
+  },
+  "chain": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "Middleware",
+    "metadata": {
+      "name": "secured",
+      "namespace": "default",
+      "uid": "uid-secured",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "chain": {
+        "middlewares": [
+          {
+            "name": "https-only"
+          },
+          {
+            "name": "known-ips"
+          },
+          {
+            "name": "auth-users"
+          }
+        ]
+      }
+    }
+  },
+  "httpsOnly": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "Middleware",
+    "metadata": {
+      "name": "https-only",
+      "namespace": "default",
+      "uid": "uid-https-only",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "redirectScheme": {
+        "scheme": "https"
+      }
+    }
+  },
+  "knownIps": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "Middleware",
+    "metadata": {
+      "name": "known-ips",
+      "namespace": "default",
+      "uid": "uid-known-ips",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "ipAllowList": {
+        "sourceRange": [
+          "192.168.1.7",
+          "127.0.0.1/32"
+        ]
+      }
+    }
+  },
+  "authUsers": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "Middleware",
+    "metadata": {
+      "name": "auth-users",
+      "namespace": "default",
+      "uid": "uid-auth-users",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "basicAuth": {
+        "secret": "authsecret"
+      }
+    }
+  },
+  "tlsOption": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "TLSOption",
+    "metadata": {
+      "name": "opt",
+      "namespace": "default",
+      "uid": "uid-opt",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "minVersion": "VersionTLS12",
+      "sniStrict": true,
+      "clientAuth": {
+        "secretNames": [
+          "client-ca"
+        ],
+        "clientAuthType": "RequireAndVerifyClientCert"
+      }
+    }
+  },
+  "tlsStore": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "TLSStore",
+    "metadata": {
+      "name": "default",
+      "namespace": "default",
+      "uid": "uid-default",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "defaultCertificate": {
+        "secretName": "default-certificate"
+      }
+    }
+  },
+  "transport": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "ServersTransport",
+    "metadata": {
+      "name": "mytransport",
+      "namespace": "default",
+      "uid": "uid-mytransport",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "serverName": "foobar",
+      "insecureSkipVerify": true,
+      "rootCAsSecrets": [
+        "foobar"
+      ],
+      "certificatesSecrets": [
+        "foobar"
+      ]
+    }
+  },
+  "tcpRoute": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "IngressRouteTCP",
+    "metadata": {
+      "name": "ingressroutetcpfoo",
+      "namespace": "default",
+      "uid": "uid-ingressroutetcpfoo",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "entryPoints": [
+        "footcp"
+      ],
+      "routes": [
+        {
+          "match": "HostSNI(`*`)",
+          "services": [
+            {
+              "name": "foo",
+              "port": 8080,
+              "weight": 10
+            }
+          ]
+        }
+      ],
+      "tls": {
+        "passthrough": true
+      }
+    }
+  },
+  "udpRoute": {
+    "apiVersion": "traefik.io/v1alpha1",
+    "kind": "IngressRouteUDP",
+    "metadata": {
+      "name": "ingressrouteudpfoo",
+      "namespace": "default",
+      "uid": "uid-ingressrouteudpfoo",
+      "resourceVersion": "1",
+      "creationTimestamp": "2026-10-01T10:00:00Z"
+    },
+    "spec": {
+      "entryPoints": [
+        "fooudp"
+      ],
+      "routes": [
+        {
+          "services": [
+            {
+              "name": "foo",
+              "port": 8080,
+              "weight": 10
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "services": [
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "foo",
+        "namespace": "default",
+        "uid": "svc-foo",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-01T10:00:00Z"
+      },
+      "spec": {
+        "selector": {
+          "app": "foo"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": 8080
+          },
+          {
+            "name": "tcp",
+            "port": 8080,
+            "protocol": "TCP",
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "svc1",
+        "namespace": "default",
+        "uid": "svc-svc1",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-01T10:00:00Z"
+      },
+      "spec": {
+        "selector": {
+          "app": "svc1"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": 8080
+          },
+          {
+            "name": "tcp",
+            "port": 8080,
+            "protocol": "TCP",
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "svc2",
+        "namespace": "default",
+        "uid": "svc-svc2",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-01T10:00:00Z"
+      },
+      "spec": {
+        "selector": {
+          "app": "svc2"
+        },
+        "ports": [
+          {
+            "name": "http",
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": 8080
+          },
+          {
+            "name": "tcp",
+            "port": 8080,
+            "protocol": "TCP",
+            "targetPort": 8080
+          }
+        ]
+      }
+    }
+  ],
+  "secrets": [
+    {
+      "apiVersion": "v1",
+      "kind": "Secret",
+      "metadata": {
+        "name": "supersecret",
+        "namespace": "default",
+        "uid": "sec-supersecret",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-01T10:00:00Z"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Secret",
+      "metadata": {
+        "name": "authsecret",
+        "namespace": "default",
+        "uid": "sec-authsecret",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-01T10:00:00Z"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Secret",
+      "metadata": {
+        "name": "client-ca",
+        "namespace": "default",
+        "uid": "sec-client-ca",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-01T10:00:00Z"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Secret",
+      "metadata": {
+        "name": "default-certificate",
+        "namespace": "default",
+        "uid": "sec-default-certificate",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-01T10:00:00Z"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Secret",
+      "metadata": {
+        "name": "foobar",
+        "namespace": "default",
+        "uid": "sec-foobar",
+        "resourceVersion": "1",
+        "creationTimestamp": "2026-10-01T10:00:00Z"
+      }
+    }
+  ]
+}

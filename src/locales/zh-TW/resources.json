@@ -18,7 +18,6 @@
     "volumeSnapshots": "磁碟區快照",
     "istio": "Istio",
     "linkerd": "Linkerd",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "customResources": "自訂資源"
   },

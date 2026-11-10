@@ -88,7 +88,7 @@ function errorText(error: ApiError, t: (key: string) => string): string | undefi
   return undefined;
 }
 
-export function TlsCertificateView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
+function TlsCertificateView({ clusterId, obj }: { clusterId: ClusterId; obj: KubeObject }) {
   const { t } = useTranslation();
   const namespace = obj.metadata?.namespace ?? "";
   const name = obj.metadata?.name ?? "";

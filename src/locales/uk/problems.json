@@ -27,7 +27,6 @@
     "certificates": "Сертифікати",
     "gateway": "Gateway API",
     "mesh": "Сервісна мережа",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "Безпека",
@@ -61,15 +60,12 @@
     "meshTlsConflict": "Задає режим TLS {{mode}} для {{host}}, а його робочі навантаження приймають лише mTLS Istio (STRICT): виклики не проходять. Використовуйте ISTIO_MUTUAL.",
     "meshConflictingVirtualService": "Хост {{host}} на {{gateway}} уже зайнятий старішим віртуальним сервісом {{other}}: маршрути цього не використовуються.",
     "meshInvalidVirtualService": "Має хост * при прив'язці до sidecar (mesh): Istio його відхиляє, тож жоден із його маршрутів не використовується.",
-    "traefikMissingReference": "Посилається на об'єкти, яких не існує: {{refs}}. Traefik пропускає те, що від них залежить.",
-    "traefikSkippedRoute": "Traefik пропускає його маршрути {{routes}}: порожнє правило match або kind, відмінний від Rule.",
     "reflectorStale": "Reflector не скопіював у це дзеркало поточну версію джерела {{source}}.",
     "reflectorNotAllowed": "Джерело {{source}} більше не дозволяє цей namespace, а дзеркало застаріло.",
     "reflectorSourceMissing": "Джерело {{source}} не існує."
   },
   "showDisk": "Диск майже заповнений",
   "showPractices": "Зауваження щодо найкращих практик",
-  "showTraefik": "Посилання Traefik",
   "showReflector": "Дзеркала Reflector",
   "showAlerts": "Активні алерти (Prometheus і Alertmanager)"
 }

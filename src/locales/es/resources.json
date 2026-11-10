@@ -18,7 +18,6 @@
     "volumeSnapshots": "Instantáneas de volumen",
     "istio": "Istio",
     "linkerd": "Linkerd",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "customResources": "Recursos personalizados"
   },

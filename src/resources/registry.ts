@@ -143,7 +143,6 @@ export const SIDEBAR_SECTIONS = [
   "volumeSnapshots",
   "istio",
   "linkerd",
-  "traefik",
   "crossplane",
   "customResources",
 ] as const;
@@ -160,11 +159,12 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
   ["argocd", "volumeSnapshots"],
   ["argoRollouts", "volumeSnapshots"],
   ["argoWorkflows", "volumeSnapshots"],
-  // Contour came after Traefik, Knative's two sections after Contour: all are extension sections now, so they hang off
-  // `traefik`, in this order.
-  ["contour", "traefik"],
-  ["knative", "traefik"],
-  ["knativeEventing", "traefik"],
+  // Traefik came after Linkerd, Contour after Traefik, Knative's two sections after Contour: all are extension sections
+  // now, so they hang off `linkerd`, in this order.
+  ["traefik", "linkerd"],
+  ["contour", "linkerd"],
+  ["knative", "linkerd"],
+  ["knativeEventing", "linkerd"],
   ["kyverno", "crossplane"],
   ["externalSecrets", "crossplane"],
   ["sealedSecrets", "crossplane"],
@@ -201,7 +201,6 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "volumeSnapshots",
   "istio",
   "linkerd",
-  "traefik",
   "crossplane",
 ]);
 
@@ -225,7 +224,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   volumeSnapshots: "volumeSnapshots",
   istio: "istio",
   linkerd: "linkerd",
-  traefik: "traefik",
   crossplane: "crossplane",
   customResources: "customResources",
   settings: "settings",

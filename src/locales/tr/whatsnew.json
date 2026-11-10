@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Küme araçlarının görünümleri artık uzantı",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager ve OpenShift, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager ve OpenShift, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
     },
     "api4": {
       "title": "Eklenti API 4",
@@ -46,6 +46,7 @@
       "prometheus-operator": "Seçtikleriyle ServiceMonitor'lar, PodMonitor'lar ve Probe'lar, PrometheusRule'lar, Prometheus'lar ve Alertmanager'lar",
       "cluster-api": "Durumlarıyla Cluster'lar, control plane'ler, iş yükü kümesinin Node'larına kadar MachineDeployment'lar, MachineSet'ler ve Machine'ler, MachineHealthCheck'ler ve ClusterResourceSet'ler",
       "k3s": "Düğümleri, birlikte gelen bileşenleri ve ServiceLB ile dağıtım, kurulum Job'larıyla HelmChart'lar, HelmChartConfig'ler, Addon'lar ve etcd anlık görüntüleri",
+      "traefik": "IngressRoute'lar, Middleware'ler, TraefikService'ler, TLSOption'lar, TLSStore'lar ve ServersTransport'lar, her başvuru denetlenerek",
       "contour": "Durumları ve ilk hatalarıyla, sanal ana bilgisayar ve TLS'leriyle, her servisin payıyla rotaları, include'ları ve yetki devri ağacıyla HTTPProxy'ler; TLSCertificateDelegation'lar ve ExtensionService'ler",
       "openshift": "Kabul durumları ve arka uçlarıyla Route'lar, dağıtımlarıyla DeploymentConfig'ler, günlükleriyle BuildConfig'ler ve Build'ler, ImageStream'ler ve Project'ler; Rollout latest ve Start build"
     }

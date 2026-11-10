@@ -279,3 +279,25 @@ inline-secret rows of Routes and BuildConfigs stay, so the host blanks those fie
 so does the access store's reading of OpenShift projects (ADR-0124). Where the extension still differs (the Route
 Services column's shares, an ImageStream problem's time, the newest Build by creation rather than by number, the Tags
 column's order, plurals above 18 imports, a finished Build's duration) is listed in its README.
+
+## Amendment: Traefik
+
+`extensions/traefik` (`sextant.traefik`, 1.0.0) takes the Traefik view (ADR-0108): IngressRoutes (HTTP, TCP, UDP),
+Middlewares (HTTP, TCP), TraefikServices, TLSOptions, TLSStores and ServersTransports (HTTP, TCP) of `traefik.io` and,
+where still served, `traefik.containo.us`, in the section `traefik` with the built-in columns, "Only problems" and
+details (every reference with what it finds and why one breaks its object or cannot be judged, per kind the routes,
+a TraefikService's children, a Middleware's chain, the TLS and transport settings). The section keeps its place after
+`linkerd`; Contour's and Knative's two sections, which came after it and hung off `traefik` in
+`EXTENSION_SECTION_PLACES`, now hang off `linkerd` too, behind it, so the order is unchanged. The sidebar offers the
+extension where `traefik.io` or `traefik.containo.us` is served. Broken references and routes Traefik skips are rules
+of the extension's own opt-in category `traefik`; the version-3 migration moves the opt-in category `traefik`, when the
+user turned it on, to `ext:sextant.traefik:traefik` (`MOVED_OPT_IN_CATEGORIES`, never for agents, as before), and the
+Problems page's own toggle goes (the page lists the extension's opt-in category with the others). The details' TLS
+certificate block, which drew cert-manager's `TlsCertificateView` for a route's Secret, goes with the view
+(`TlsCertificateView` stays cert-manager's own, used by its TLS section). The traffic diagnosis of an IngressRoute of
+either group stays Sextant's own, for the window and agents' `diagnose_service`, whether the extension is installed or
+not: `src/features/diagnose/traefik.ts`, registered with the "Diagnose" action and the "Diagnosis" tab by
+`diagnose/register.tsx`, reading the route through `diagnose/traefikModel.ts` — the part of the former `model.ts` and
+`resolve.ts` it needs (the groups, routes and their references in the shapes of Traefik's types, a TraefikService's
+children, and what a reference finds: another namespace, another provider and the old group only stay unknown) — with
+its fixture and its texts as `diagnose:traefik.*`. Where the extension still differs is listed in its README.

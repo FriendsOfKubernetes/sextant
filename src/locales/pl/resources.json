@@ -18,7 +18,6 @@
     "volumeSnapshots": "Migawki woluminów",
     "istio": "Istio",
     "linkerd": "Linkerd",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "customResources": "Zasoby niestandardowe"
   },

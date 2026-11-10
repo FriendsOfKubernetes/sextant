@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Widoki narzędzi klastra są teraz rozszerzeniami",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager i OpenShift przeniesiono z Sextant do jego własnych rozszerzeń z katalogu rozszerzeń, aktualizowanych osobno. Zainstaluj poniżej te, których używasz: do tego czasu ich sekcje nie są pokazywane. Twoje ustawienia powiadomień dla nich zostały zachowane, a pasek boczny proponuje je też w klastrach, w których działają te narzędzia."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager i OpenShift przeniesiono z Sextant do jego własnych rozszerzeń z katalogu rozszerzeń, aktualizowanych osobno. Zainstaluj poniżej te, których używasz: do tego czasu ich sekcje nie są pokazywane. Twoje ustawienia powiadomień dla nich zostały zachowane, a pasek boczny proponuje je też w klastrach, w których działają te narzędzia."
     },
     "api4": {
       "title": "API rozszerzeń 4",
@@ -46,6 +46,7 @@
       "prometheus-operator": "ServiceMonitory, PodMonitory i Probe z tym, co wybierają, PrometheusRule, Prometheusy i Alertmanagery",
       "cluster-api": "Clustery z ich stanem, control plane'y, MachineDeploymenty, MachineSety i Machine'y aż do Node'ów klastra roboczego, MachineHealthChecki i ClusterResourceSety",
       "k3s": "Dystrybucja z jej węzłami, wbudowanymi komponentami i ServiceLB, HelmCharty z ich Jobem instalacji, HelmChartConfigi, Addony i migawki etcd",
+      "traefik": "IngressRoute, Middleware, TraefikService, TLSOption, TLSStore i ServersTransport, z każdym sprawdzonym odwołaniem",
       "contour": "HTTPProxy z ich stanem i pierwszym błędem, hostem wirtualnym i TLS, trasami z udziałem każdej usługi, includes i drzewem delegacji; TLSCertificateDelegation i ExtensionService",
       "openshift": "Route z ich dopuszczeniem i backendami, DeploymentConfig z ich wdrożeniami, BuildConfig i Build z ich logami, ImageStream i Project; Rollout latest i Start build"
     }

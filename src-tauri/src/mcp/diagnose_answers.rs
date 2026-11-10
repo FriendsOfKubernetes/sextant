@@ -192,7 +192,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "certificates",
     "gateway",
     "mesh",
-    "traefik",
     "crossplane",
     "reflector",
     "security",
@@ -203,12 +202,11 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "events",
 ];
 /// Categories that count only while the user turned them on (`OPT_IN_CATEGORIES` there).
-pub const OPT_IN_CATEGORIES: [&str; 7] = [
+pub const OPT_IN_CATEGORIES: [&str; 6] = [
     "security",
     "credentials",
     "disk",
     "practices",
-    "traefik",
     "reflector",
     "alerts",
 ];
@@ -216,8 +214,6 @@ pub const OPT_IN_CATEGORIES: [&str; 7] = [
 /// Crossplane problems (#213) are window views of this build: agents get nothing new.
 pub const NEVER_FOR_AGENTS: &[&str] = &[
     "credentials",
-    // Traefik references (#232): a window view of 0.20.0.
-    "traefik",
     "crossplane",
     // Reflector mirrors (#241): a window view of 0.21.0.
     "reflector",

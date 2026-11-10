@@ -201,7 +201,7 @@ import {
   ShieldHalf as KyvernoShieldHalf,
   SquareFunction as CrossplaneFunction,
 } from "lucide-react";
-// Traefik (#232).
+// Traefik (#232), named by Sextant's own extension `extensions/traefik`.
 import {
   Combine as TraefikCombine,
   Shuffle as TraefikShuffle,
@@ -548,7 +548,7 @@ const ICONS = {
   knativeRevision: KnativeGitCommit,
   knativeRoute: KnativeRoute,
   knativeDomain: KnativeGlobe,
-  // Traefik (#232).
+  // Traefik (#232): the section and its kinds, named by Sextant's own extension `extensions/traefik`.
   traefik: TraefikCone,
   traefikRoute: TraefikShuffle,
   traefikMiddleware: TraefikCombine,

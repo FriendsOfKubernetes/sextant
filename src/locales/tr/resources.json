@@ -18,7 +18,6 @@
     "volumeSnapshots": "Birim anlık görüntüleri",
     "istio": "Istio",
     "linkerd": "Linkerd",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "customResources": "Özel kaynaklar"
   },

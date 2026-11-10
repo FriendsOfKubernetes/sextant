@@ -18,7 +18,6 @@
     "volumeSnapshots": "볼륨 스냅샷",
     "istio": "Istio",
     "linkerd": "Linkerd",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "customResources": "사용자 지정 리소스"
   },

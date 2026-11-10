@@ -23,7 +23,6 @@
     "certificates": "Sertifikalar",
     "gateway": "Gateway API",
     "mesh": "Hizmet ağı",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "Güvenlik",
@@ -53,15 +52,12 @@
     "meshTlsConflict": "Yalnızca Istio mTLS kabul eden (STRICT) iş yüklerine sahip {{host}} için TLS modunu {{mode}} yapıyor: çağrılar başarısız olur. ISTIO_MUTUAL kullanın.",
     "meshConflictingVirtualService": "{{gateway}} üzerindeki {{host}} ana makinesi daha eski {{other}} sanal hizmeti tarafından zaten alınmış: bunun rotalarına ulaşılmıyor.",
     "meshInvalidVirtualService": "Sidecar'lara (mesh) bağlıyken * ana makinesine sahip: Istio onu reddeder, bu yüzden rotalarının hiçbiri kullanılmaz.",
-    "traefikMissingReference": "Var olmayan nesnelere başvuruyor: {{refs}}. Traefik onlara bağlı olanı atlar.",
-    "traefikSkippedRoute": "Traefik {{routes}} rotalarını atlar: boş bir match kuralı ya da Rule dışında bir kind.",
     "reflectorStale": "Reflector, kaynak {{source}} nesnesinin güncel sürümünü bu yansıya kopyalamadı.",
     "reflectorNotAllowed": "Kaynak {{source}} artık bu namespace'e izin vermiyor ve yansı güncel değil.",
     "reflectorSourceMissing": "Kaynak {{source}} mevcut değil."
   },
   "showDisk": "Disk neredeyse dolu",
   "showPractices": "En iyi uygulama bulguları",
-  "showTraefik": "Traefik başvuruları",
   "showReflector": "Reflector yansıları",
   "showAlerts": "Tetiklenen uyarılar (Prometheus ve Alertmanager)"
 }

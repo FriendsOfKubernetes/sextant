@@ -25,7 +25,6 @@
     "certificates": "Certificats",
     "gateway": "Gateway API",
     "mesh": "Maillage de services",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "Sécurité",
@@ -57,15 +56,12 @@
     "meshTlsConflict": "Fixe le mode TLS {{mode}} vers {{host}}, dont les charges de travail n'acceptent que le mTLS d'Istio (STRICT) : les appels échouent. Utilisez ISTIO_MUTUAL.",
     "meshConflictingVirtualService": "L'hôte {{host}} sur {{gateway}} est déjà pris par le service virtuel plus ancien {{other}} : les routes de celui-ci ne sont pas atteintes.",
     "meshInvalidVirtualService": "A l'hôte * alors qu'il est lié aux sidecars (mesh) : Istio le rejette, aucune de ses routes n'est donc utilisée.",
-    "traefikMissingReference": "Fait référence à des objets qui n'existent pas : {{refs}}. Traefik ignore ce qui en dépend.",
-    "traefikSkippedRoute": "Traefik ignore ses routes {{routes}} : une règle match vide ou un kind autre que Rule.",
     "reflectorStale": "Reflector n’a pas copié la version actuelle de la source {{source}} dans ce miroir.",
     "reflectorNotAllowed": "La source {{source}} n’autorise plus ce namespace, et le miroir n’est plus à jour.",
     "reflectorSourceMissing": "La source {{source}} n’existe pas."
   },
   "showDisk": "Disque presque plein",
   "showPractices": "Constats de bonnes pratiques",
-  "showTraefik": "Références Traefik",
   "showReflector": "Miroirs Reflector",
   "showAlerts": "Alertes déclenchées (Prometheus et Alertmanager)"
 }

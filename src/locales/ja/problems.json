@@ -21,7 +21,6 @@
     "certificates": "証明書",
     "gateway": "Gateway API",
     "mesh": "サービスメッシュ",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "セキュリティ",
@@ -49,15 +48,12 @@
     "meshTlsConflict": "{{host}} への TLS モードを {{mode}} にしていますが、そのワークロードは Istio の mTLS (STRICT) しか受け付けません。呼び出しは失敗します。ISTIO_MUTUAL を使用してください。",
     "meshConflictingVirtualService": "{{gateway}} のホスト {{host}} は、より古い仮想サービス {{other}} がすでに使用しています。この仮想サービスのルートには到達しません。",
     "meshInvalidVirtualService": "Sidecar (mesh) にバインドされているのにホスト * を持っています。Istio が拒否するため、ルートはどれも使われません。",
-    "traefikMissingReference": "存在しないオブジェクトを参照しています: {{refs}}。Traefik はそれに依存する部分をスキップします。",
-    "traefikSkippedRoute": "Traefik はルート {{routes}} をスキップします: match ルールが空か、kind が Rule ではありません。",
     "reflectorStale": "Reflector はソース {{source}} の現在のバージョンをこのミラーにコピーしていません。",
     "reflectorNotAllowed": "ソース {{source}} はこの namespace を許可しなくなり、ミラーは古くなっています。",
     "reflectorSourceMissing": "ソース {{source}} は存在しません。"
   },
   "showDisk": "ディスク残りわずか",
   "showPractices": "ベストプラクティスの指摘",
-  "showTraefik": "Traefik の参照",
   "showReflector": "Reflector のミラー",
   "showAlerts": "発火中のアラート (Prometheus と Alertmanager)"
 }

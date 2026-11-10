@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { KubeObject } from "../../api";
 import { copy } from "../details/testing";
-import { INGRESS_ROUTE } from "../traefik/model";
-import { chainStatus, firstBroken, type Chain, type ClusterView } from "./model";
 import { diagnose, diagnosedKind } from "./engine";
+import { chainStatus, firstBroken, type Chain, type ClusterView } from "./model";
+import "./register";
 import { NS, certificate, pod, service, slice, view, type ViewInput } from "./testData";
 import { diagnoseIngressRoute } from "./traefik";
+import { INGRESS_ROUTE } from "./traefikModel";
 
 const WEB = { app: "web" };
 const steps = (chain: Chain) => [...chain.findings.map((f) => `${f.id}:${f.status}`), ...(chain.stopped ? ["…"] : [])];
@@ -61,13 +62,13 @@ describe("an IngressRoute's path", () => {
     expect(steps(backend).slice(0, 2)).toEqual(["traefik.service:ok", "service.selector:ok"]);
     expect(chainStatus(chain)).toBe("ok");
     // No status to read: said once, as a note of the first link.
-    expect(chain.findings[0]!.notes?.[0]?.key).toBe("traefik:diagnose.noStatus");
+    expect(chain.findings[0]!.notes?.[0]?.key).toBe("diagnose:traefik.noStatus");
   });
 
   it("breaks on a middleware or Service that does not exist", () => {
     const noMiddleware = diagnoseIngressRoute(simple, INGRESS_ROUTE, withTraefik(healthy, []));
     expect(steps(noMiddleware.chains[0]!)).toEqual(["traefik.rule:ok", "traefik.middleware.0:broken", "…"]);
-    expect(firstBroken(noMiddleware)?.text).toEqual({ key: "traefik:diagnose.refMissing", params: { kind: "Middleware", name: "auth", namespace: NS } });
+    expect(firstBroken(noMiddleware)?.text).toEqual({ key: "diagnose:traefik.refMissing", params: { kind: "Middleware", name: "auth", namespace: NS } });
     const noService = diagnoseIngressRoute(simple, INGRESS_ROUTE, withTraefik({ ...healthy, services: [] }, [traefik("Middleware", "auth", {})]));
     expect(steps(noService.chains[0]!.chains[0]!)).toEqual(["traefik.service:broken", "…"]);
   });
@@ -104,7 +105,7 @@ describe("an IngressRoute's path", () => {
     const mirror = wrr.chains[1]!;
     expect(steps(mirror)).toEqual(["traefik.weight:warn", "traefik.service:ok"]);
     expect(steps(mirror.chains[1]!)).toEqual(["traefik.service:broken", "…"]);
-    expect(mirror.chains[1]!.title?.key).toBe("traefik:diagnose.mirrorTitle");
+    expect(mirror.chains[1]!.title?.key).toBe("diagnose:traefik.mirrorTitle");
     expect(steps(chain.chains[1]!.chains[0]!)).toEqual(["traefik.service:ok"]);
   });
 
@@ -123,7 +124,7 @@ describe("an IngressRoute's path", () => {
     (wrongHost.spec as { routes: { match: string }[] }).routes[0]!.match = "Host(`other.example.com`)";
     const uncovered = diagnoseIngressRoute(wrongHost, INGRESS_ROUTE, good);
     expect(steps(uncovered)).toEqual(["traefik.entryPoints:ok", "traefik.tls:warn", "traefik.tls.options:ok"]);
-    expect(uncovered.findings[1]!.notes?.[0]?.key).toBe("traefik:diagnose.tlsSniNote");
+    expect(uncovered.findings[1]!.notes?.[0]?.key).toBe("diagnose:traefik.tlsSniNote");
     expect(steps(uncovered.chains[0]!)).toEqual(["traefik.rule:ok"]);
     expect(steps(uncovered.chains[0]!.chains[0]!).slice(0, 2)).toEqual(["traefik.service:ok", "service.selector:ok"]);
     expect(chainStatus(uncovered)).toBe("warn");
@@ -138,7 +139,7 @@ describe("an IngressRoute's path", () => {
     );
     const old = diagnoseIngressRoute(tls, INGRESS_ROUTE, expired);
     expect(steps(old)).toEqual(["traefik.entryPoints:ok", "traefik.tls:broken", "traefik.tls.options:ok"]);
-    expect(firstBroken(old)?.text.key).toBe("traefik:diagnose.tlsExpired");
+    expect(firstBroken(old)?.text.key).toBe("diagnose:traefik.tlsExpired");
     expect(steps(old.chains[0]!)).toEqual(["traefik.rule:ok"]);
   });
 
@@ -153,7 +154,7 @@ describe("an IngressRoute's path", () => {
     });
     const onlyOld = diagnoseIngressRoute(simple, INGRESS_ROUTE, both([legacy("Middleware", "auth")]));
     expect(steps(onlyOld.chains[0]!)).toEqual(["traefik.rule:ok", "traefik.middleware.0:unknown"]);
-    expect(onlyOld.chains[0]!.findings[1]!.text.key).toBe("traefik:diagnose.refLegacyOnly");
+    expect(onlyOld.chains[0]!.findings[1]!.text.key).toBe("diagnose:traefik.refLegacyOnly");
     // In traefik.io: found, whatever the old group holds.
     const inBoth = diagnoseIngressRoute(simple, INGRESS_ROUTE, both([legacy("Middleware", "auth"), traefik("Middleware", "auth", {})]));
     expect(steps(inBoth.chains[0]!)).toEqual(["traefik.rule:ok", "traefik.middleware.0:ok"]);

@@ -21,7 +21,6 @@
     "certificates": "인증서",
     "gateway": "Gateway API",
     "mesh": "서비스 메시",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "보안",
@@ -49,15 +48,12 @@
     "meshTlsConflict": "{{host}}에 대해 TLS 모드를 {{mode}}(으)로 설정했지만 해당 워크로드는 Istio mTLS(STRICT)만 받습니다. 호출이 실패합니다. ISTIO_MUTUAL을 사용하세요.",
     "meshConflictingVirtualService": "{{gateway}}의 호스트 {{host}}은(는) 이미 더 오래된 가상 서비스 {{other}}이(가) 사용하고 있습니다. 이 가상 서비스의 경로에는 도달하지 않습니다.",
     "meshInvalidVirtualService": "Sidecar(mesh)에 바인딩된 상태에서 호스트 *를 가집니다. Istio가 거부하므로 경로가 하나도 사용되지 않습니다.",
-    "traefikMissingReference": "존재하지 않는 오브젝트를 참조합니다: {{refs}}. Traefik은 그것에 의존하는 부분을 건너뜁니다.",
-    "traefikSkippedRoute": "Traefik이 라우트 {{routes}}을(를) 건너뜁니다: match 규칙이 비어 있거나 kind가 Rule이 아닙니다.",
     "reflectorStale": "Reflector가 소스 {{source}}의 현재 버전을 이 미러에 복사하지 않았습니다.",
     "reflectorNotAllowed": "소스 {{source}}가 더 이상 이 namespace를 허용하지 않으며 미러가 오래되었습니다.",
     "reflectorSourceMissing": "소스 {{source}}가 존재하지 않습니다."
   },
   "showDisk": "디스크 거의 가득 참",
   "showPractices": "모범 사례 발견 사항",
-  "showTraefik": "Traefik 참조",
   "showReflector": "Reflector 미러",
   "showAlerts": "발생 중인 경보 (Prometheus 및 Alertmanager)"
 }

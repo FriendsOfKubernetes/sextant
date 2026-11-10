@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Las vistas de las herramientas del clúster ahora son extensiones",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager y OpenShift salieron de Sextant y pasaron a sus propias extensiones del catálogo de extensiones, que se actualizan por separado. Instale abajo las que use: hasta entonces sus secciones no se muestran. Se conservó su configuración de notificaciones para ellas, y la barra lateral también las ofrece en los clústeres que ejecutan estas herramientas."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager y OpenShift salieron de Sextant y pasaron a sus propias extensiones del catálogo de extensiones, que se actualizan por separado. Instale abajo las que use: hasta entonces sus secciones no se muestran. Se conservó su configuración de notificaciones para ellas, y la barra lateral también las ofrece en los clústeres que ejecutan estas herramientas."
     },
     "api4": {
       "title": "API de extensiones 4",
@@ -46,6 +46,7 @@
       "prometheus-operator": "ServiceMonitors, PodMonitors y Probes con lo que seleccionan, PrometheusRules, Prometheus y Alertmanagers",
       "cluster-api": "Clusters con su estado, planos de control, MachineDeployments, MachineSets y Machines hasta los Nodes del clúster de carga de trabajo, MachineHealthChecks y ClusterResourceSets",
       "k3s": "La distribución con sus nodos, componentes incluidos y ServiceLB, HelmCharts con su Job de instalación, HelmChartConfigs, Addons e instantáneas de etcd",
+      "traefik": "IngressRoutes, Middlewares, TraefikServices, TLSOptions, TLSStores y ServersTransports, con cada referencia comprobada",
       "contour": "HTTPProxies con su estado y primer error, host virtual y TLS, rutas con la parte de cada servicio, includes y el árbol de delegación; TLSCertificateDelegations y ExtensionServices",
       "openshift": "Routes con su admisión y sus backends, DeploymentConfigs con sus despliegues, BuildConfigs y Builds con sus logs, ImageStreams y Projects; Rollout latest y Start build"
     }

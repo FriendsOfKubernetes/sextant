@@ -84,13 +84,6 @@ export function ProblemsPage({ clusterId }: PageProps) {
         </label>
         <label className="problems__choice">
           <Checkbox
-            checked={categories.includes("traefik")}
-            onChange={(e) => void updateSettings(setCategory("traefik", e.target.checked)).catch(() => undefined)}
-          />
-          {t("problems:showTraefik")}
-        </label>
-        <label className="problems__choice">
-          <Checkbox
             checked={categories.includes("reflector")}
             onChange={(e) => void updateSettings(setCategory("reflector", e.target.checked)).catch(() => undefined)}
           />

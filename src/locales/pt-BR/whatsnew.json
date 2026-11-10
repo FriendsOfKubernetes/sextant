@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "As visualizações das ferramentas do cluster agora são extensões",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager e OpenShift saíram do Sextant para suas próprias extensões do catálogo de extensões, atualizadas separadamente. Instale abaixo as que você usa: até lá, suas seções não são exibidas. Suas configurações de notificação para elas foram mantidas, e a barra lateral também as oferece nos clusters que executam essas ferramentas."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager e OpenShift saíram do Sextant para suas próprias extensões do catálogo de extensões, atualizadas separadamente. Instale abaixo as que você usa: até lá, suas seções não são exibidas. Suas configurações de notificação para elas foram mantidas, e a barra lateral também as oferece nos clusters que executam essas ferramentas."
     },
     "api4": {
       "title": "API de extensões 4",
@@ -46,6 +46,7 @@
       "prometheus-operator": "ServiceMonitors, PodMonitors e Probes com o que selecionam, PrometheusRules, Prometheus e Alertmanagers",
       "cluster-api": "Clusters com seu estado, control planes, MachineDeployments, MachineSets e Machines até os Nodes do cluster de workload, MachineHealthChecks e ClusterResourceSets",
       "k3s": "A distribuição com seus nós, componentes incluídos e ServiceLB, HelmCharts com seu Job de instalação, HelmChartConfigs, Addons e snapshots do etcd",
+      "traefik": "IngressRoutes, Middlewares, TraefikServices, TLSOptions, TLSStores e ServersTransports, com cada referência verificada",
       "contour": "HTTPProxies com seu estado e primeiro erro, host virtual e TLS, rotas com a parte de cada serviço, includes e a árvore de delegação; TLSCertificateDelegations e ExtensionServices",
       "openshift": "Routes com sua admissão e backends, DeploymentConfigs com seus rollouts, BuildConfigs e Builds com seus logs, ImageStreams e Projects; Rollout latest e Start build"
     }

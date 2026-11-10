@@ -994,14 +994,18 @@ async fn opt_in_problem_categories_are_computed_only_while_the_user_has_them_on(
     state.close_all();
 }
 
-/// Traefik's broken references (#232) are a window view: agents get none of them, even when the category is on.
+/// Traefik's broken references (#232) moved into the opt-in category of the Traefik extension's own (ADR-0162
+/// amendment, #410): agents get none of them, under the old name or the new one, even when turned on.
 #[test]
 fn traefik_problems_are_never_given_to_agents() {
-    assert!(answers::PROBLEM_CATEGORIES.contains(&"traefik"));
+    assert!(!answers::PROBLEM_CATEGORIES.contains(&"traefik"));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&"traefik"));
     assert!(!answers::category_for_agents(
         "traefik",
         &["traefik".to_owned()]
     ));
+    let moved = "ext:sextant.traefik:traefik";
+    assert!(!answers::category_for_agents(moved, &[moved.to_owned()]));
 }
 
 /// Sealed Secrets problems (#240) moved into the opt-in category of the Sealed Secrets extension's own (ADR-0162

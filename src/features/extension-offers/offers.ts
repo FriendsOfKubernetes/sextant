@@ -23,6 +23,8 @@ export const OFFERS: readonly ExtensionOffer[] = [
   { id: "sextant.argo-workflows", tool: "Argo Workflows", matches: (k) => k.group === "argoproj.io" && k.kind === "Workflow" },
   { id: "sextant.vpa", tool: "Vertical Pod Autoscaler", matches: (k) => k.group === "autoscaling.k8s.io" && k.kind === "VerticalPodAutoscaler" },
   { id: "sextant.velero", tool: "Velero", matches: (k) => k.group === "velero.io" },
+  // Traefik: by its kinds of `traefik.io` or, on an older Traefik, `traefik.containo.us`.
+  { id: "sextant.traefik", tool: "Traefik", matches: (k) => k.group === "traefik.io" || k.group === "traefik.containo.us" },
   { id: "sextant.contour", tool: "Contour", matches: (k) => k.group === "projectcontour.io" },
   { id: "sextant.knative", tool: "Knative", matches: (k) => k.group === "serving.knative.dev" || k.group === "eventing.knative.dev" },
   { id: "sextant.kyverno", tool: "Kyverno", matches: (k) => k.group === "kyverno.io" },

@@ -18,7 +18,6 @@
     "volumeSnapshots": "卷快照",
     "istio": "Istio",
     "linkerd": "Linkerd",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "customResources": "自定义资源"
   },

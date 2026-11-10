@@ -1,4 +1,5 @@
-// The path through a Traefik IngressRoute (#232), registered as a route kind of the traffic diagnosis (`routeKinds.ts`):
+// The path through a Traefik IngressRoute (#232), registered as a route kind of the traffic diagnosis (`routeKinds.ts`)
+// by `register.tsx`:
 // the entry points it is served on, its TLS (the Secret's certificate read by the core, the TLSOption it names), then
 // each route — a match rule Traefik accepts, every middleware it names, and each service: a Kubernetes Service on into
 // the Service's own checks (`service.ts`), or a TraefikService followed through its weighted, mirrored, highest random
@@ -10,25 +11,28 @@
 // picks a certificate by the requested name among all it holds, so a missing Secret, one without a valid certificate
 // and a certificate that does not cover a host are warnings, and the routes, middlewares and services after them are
 // still followed. Where both groups are served, a Traefik object is looked up in `traefik.io` (all Traefik v3 reads);
-// one only in `traefik.containo.us` is unknown.
+// one only in `traefik.containo.us` is unknown. The Traefik views are Sextant's own extension `extensions/traefik` since
+// 0.30 (ADR-0162 amendment); this diagnosis stays Sextant's own, reading the objects through `traefikModel.ts`.
 import type { KindRef, KubeObject } from "../../api";
 import {
+  checkRef,
   hostsOf,
   INGRESS_ROUTE,
   isTraefik,
+  LEGACY_GROUP,
   routeSpec,
   traefikServiceRefs,
-  TRAEFIK_GROUPS,
-  LEGACY_GROUP,
   TRAEFIK_GROUP,
+  TRAEFIK_GROUPS,
+  type Lookup,
   type Ref,
   type RefKind,
+  type RefState,
   type Route,
-} from "../traefik/model";
-import { checkRef, type Lookup, type RefState } from "../traefik/resolve";
+} from "./traefikModel";
 import { Walk, type Chain, type ClusterView, type Finding, type LinkRef, type Param, type Phrase } from "./model";
 import { linkOf, nameOf, namespaceOf, SECRET, SERVICE } from "./objects";
-import { registerRouteDiagnoser, type ListRef } from "./routeKinds";
+import type { ListRef, RouteDiagnoser } from "./routeKinds";
 import { diagnoseService } from "./service";
 import { certificateNames, hostCovered } from "./tls";
 
@@ -38,7 +42,7 @@ export const MAX_TRAEFIK_DEPTH = 4;
 /** Namespaces whose Traefik objects a diagnosis lists (the route's own first). */
 export const MAX_LISTED_NAMESPACES = 4;
 
-const phrase = (key: string, params?: Record<string, Param>): Phrase => ({ key: `traefik:diagnose.${key}`, params });
+const phrase = (key: string, params?: Record<string, Param>): Phrase => ({ key: `diagnose:traefik.${key}`, params });
 
 /** The Traefik kinds a diagnosis lists (both groups; the hook watches only the served ones). */
 const LISTED: RefKind[] = ["Middleware", "TraefikService", "TLSOption", "TLSStore"];
@@ -282,7 +286,8 @@ function ownNamespaces(obj: KubeObject | null, own: string, kinds: readonly RefK
   return [...new Set([own, ...refs.filter((r) => kinds.includes(r.kind) && !r.provider).map((r) => r.namespace)])];
 }
 
-registerRouteDiagnoser({
+/** The IngressRoute of either group as a route kind of the traffic diagnosis (registered by `register.tsx`). */
+export const traefikDiagnoser: RouteDiagnoser = {
   appliesTo: (kind) => isTraefik(kind, INGRESS_ROUTE),
   namespaces: (obj, own) => ownNamespaces(obj, own, ["Service", "TraefikService"]),
   lists: (obj, own): ListRef[] =>
@@ -292,4 +297,4 @@ registerRouteDiagnoser({
     return name ? [{ namespace: own, name }] : [];
   },
   diagnose: diagnoseIngressRoute,
-});
+};

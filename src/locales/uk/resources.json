@@ -18,7 +18,6 @@
     "volumeSnapshots": "Знімки томів",
     "istio": "Istio",
     "linkerd": "Linkerd",
-    "traefik": "Traefik",
     "crossplane": "Crossplane",
     "customResources": "Користувацькі ресурси"
   },

@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Представления инструментов кластера теперь расширения",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager и OpenShift вынесены из Sextant в его собственные расширения из каталога расширений, которые обновляются отдельно. Установите нужные ниже: до этого их разделы не показываются. Ваши настройки уведомлений для них сохранены, а боковая панель тоже предлагает их в кластерах, где работают эти инструменты."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager и OpenShift вынесены из Sextant в его собственные расширения из каталога расширений, которые обновляются отдельно. Установите нужные ниже: до этого их разделы не показываются. Ваши настройки уведомлений для них сохранены, а боковая панель тоже предлагает их в кластерах, где работают эти инструменты."
     },
     "api4": {
       "title": "API расширений 4",
@@ -46,6 +46,7 @@
       "prometheus-operator": "ServiceMonitor, PodMonitor и Probe с тем, что они выбирают, PrometheusRule, Prometheus и Alertmanager",
       "cluster-api": "Cluster с состоянием, control plane, MachineDeployment, MachineSet и Machine вплоть до Node рабочего кластера, MachineHealthCheck и ClusterResourceSet",
       "k3s": "Дистрибутив с его узлами, встроенными компонентами и ServiceLB, HelmChart с их Job установки, HelmChartConfig, Addon и снимки etcd",
+      "traefik": "IngressRoute, Middleware, TraefikService, TLSOption, TLSStore и ServersTransport с проверкой каждой ссылки",
       "contour": "HTTPProxy с их состоянием и первой ошибкой, виртуальным хостом и TLS, маршрутами с долей каждого сервиса, включениями и деревом делегирования; TLSCertificateDelegation и ExtensionService",
       "openshift": "Route с их допуском и бэкендами, DeploymentConfig с их выкатками, BuildConfig и Build с их логами, ImageStream и Project; Rollout latest и Start build"
     }

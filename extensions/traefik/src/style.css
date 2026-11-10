@@ -1,0 +1,24 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields, tables,
+   status words and links are the SDK's UI kit (`ui`, classes `sx-*`). */
+body.compact {
+  padding: 8px 0;
+}
+
+/* The built-in view's notes (cert-manager's `cm-explain`, `cm-explain--danger`, `cm-muted`). */
+.traefik-note {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.traefik-note--danger {
+  border-left-color: var(--color-danger);
+}
+
+.traefik-note--muted {
+  margin: 4px 0;
+  padding: 0;
+  border-left: none;
+  color: var(--color-text-muted);
+}

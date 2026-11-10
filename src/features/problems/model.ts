@@ -36,7 +36,6 @@ export const PROBLEM_CATEGORIES = [
   "certificates",
   "gateway",
   "mesh",
-  "traefik",
   "crossplane",
   "reflector",
   "security",
@@ -61,9 +60,8 @@ export const NOTIFY_CATEGORIES: readonly BuiltInCategory[] = PROBLEM_CATEGORIES.
  * workload's spec, not incidents, and a cluster usually has privileged system pods, so they would only add noise unless
  * asked for. Their sources are their own (`sourceKey`), so nothing of them is computed or kept while they are off.
  * Best-practice findings (#207) are lasting states too, and most clusters have many.
- * Traefik findings (`traefik`, #232) judge every Traefik object of the cluster against metadata of the Services they
- * name: a cost a cluster pays only when asked for.
- * And Reflector mirrors (`reflector`, #241): metadata of every Secret and ConfigMap of the cluster.
+ * Reflector mirrors (`reflector`, #241) read metadata of every Secret and ConfigMap of the cluster: a cost a cluster
+ * pays only when asked for.
  * And firing alerts (`alerts`, #264, ADR-0119): Prometheus' and Alertmanager's alerts polled once a minute.
  */
 export const OPT_IN_CATEGORIES: readonly BuiltInCategory[] = [
@@ -71,7 +69,6 @@ export const OPT_IN_CATEGORIES: readonly BuiltInCategory[] = [
   "credentials",
   "disk",
   "practices",
-  "traefik",
   "reflector",
   "alerts",
 ];
@@ -652,7 +649,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "disk":
     case "alerts": // Firing alerts come from Prometheus and Alertmanager: the provider of features/alerts.
     case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
-    case "traefik": // Broken references span several objects: the provider of features/traefik finds them.
     case "reflector": // Mirrors are judged against their sources: the provider of features/reflector finds them.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:

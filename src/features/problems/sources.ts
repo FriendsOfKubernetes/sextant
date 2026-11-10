@@ -4,7 +4,6 @@
 import type { KindRef, KubeObject, ResourceKind } from "../../api";
 import { findKind } from "../../resources";
 import { COUNTED_KINDS } from "../gateway-api/problems";
-import { INGRESS_ROUTE as TRAEFIK_INGRESS_ROUTE } from "../traefik/model";
 import { XRD } from "../crossplane/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
 import {
@@ -111,9 +110,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // Istio routing and mTLS mistakes (#155): judged across objects by the provider of features/mesh (`external`), held
   // only where the cluster serves VirtualServices.
   mesh: [{ category: "mesh", kind: { group: "networking.istio.io", version: "v1", kind: "VirtualService" }, fieldSelector: null, discovered: true, external: true }],
-  // Traefik (#232, opt-in): references to objects that do not exist, judged across objects by the provider of
-  // features/traefik (`external`), held only where the cluster serves IngressRoutes (traefik.io); no Secret is listed.
-  traefik: [{ category: "traefik", kind: TRAEFIK_INGRESS_ROUTE, fieldSelector: null, discovered: true, external: true }],
   // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
   // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
   crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],

@@ -771,7 +771,7 @@ pub fn migrate(settings: &mut AppSettings) {
 
 /// The opt-in problem categories of Sextant's own that moved into categories of its first-party extensions' own
 /// (`problemCategories`, #410): the old category and the new one, `ext:<extension id>:<category id>`. Never for agents.
-pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 4] = [
+pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 5] = [
     ("kueueWorkloads", "ext:sextant.kueue:workloads"),
     ("policies", "ext:sextant.kyverno:policies"),
     ("sealedSecrets", "ext:sextant.sealed-secrets:sealed-secrets"),
@@ -779,6 +779,7 @@ pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 4] = [
         "prometheusOperator",
         "ext:sextant.prometheus-operator:prometheus-operator",
     ),
+    ("traefik", "ext:sextant.traefik:traefik"),
 ];
 
 /// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
@@ -1370,7 +1371,7 @@ mod tests {
             &path,
             r#"{ "settingsVersion": 2,
                  "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm", "kueue", "dra", "vpa", "clusterApi", "k3s", "contour", "openshift"],
-                                    "enabledCategories": ["security", "kueueWorkloads", "policies", "sealedSecrets", "prometheusOperator"] },
+                                    "enabledCategories": ["security", "kueueWorkloads", "policies", "sealedSecrets", "prometheusOperator", "traefik"] },
                  "mcp": { "extensionProblems": ["sextant.argo-cd", "acme.widgets"] } }"#,
         )
         .unwrap();
@@ -1403,7 +1404,8 @@ mod tests {
                 "ext:sextant.kueue:workloads",
                 "ext:sextant.kyverno:policies",
                 "ext:sextant.sealed-secrets:sealed-secrets",
-                "ext:sextant.prometheus-operator:prometheus-operator"
+                "ext:sextant.prometheus-operator:prometheus-operator",
+                "ext:sextant.traefik:traefik"
             ]
         );
         assert_eq!(
