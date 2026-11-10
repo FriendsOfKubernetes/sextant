@@ -78,7 +78,8 @@ export interface ManifestDetailsSection {
   /**
    * The kinds it shows on: kinds, or `{group: "*", kind: "*"}` alone (every kind), or `{group: "*.<domain>", kind:
    * "*"}` (every kind of a group ending in `.<domain>`, a domain of custom resource groups such as `upbound.io`, without
-   * a `when`; since Sextant 0.30).
+   * a `when`; since Sextant 0.30), or `{group: "*.*", kind: "*"}` (every kind of a custom resource group: a group with
+   * a dot, not Kubernetes' own; without a `when`; since Sextant 0.30).
    */
   kinds: KindPattern[];
   order?: number;

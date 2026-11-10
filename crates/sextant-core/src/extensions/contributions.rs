@@ -67,6 +67,13 @@ pub fn group_suffix(kind: &KindPattern) -> Option<&str> {
     kind.group.strip_prefix("*.").filter(|_| kind.kind == "*")
 }
 
+/// Whether a kind pattern is a details section's "every kind of a custom resource group" (`{"group": "*.*", "kind":
+/// "*"}`, `sextantApi` 4): a kind matches when its group is a custom resource's ([`is_custom_group`]) — the claims,
+/// composite and managed resources of any Crossplane API, never a core object or one of Kubernetes' own groups.
+pub fn is_every_custom_group(kind: &KindPattern) -> bool {
+    kind.group == "*.*" && kind.kind == "*"
+}
+
 /// A pattern's domain is a custom resource's group: a DNS name with a dot, not Kubernetes' own.
 fn is_group_domain(domain: &str) -> bool {
     is_custom_group(domain)
@@ -132,6 +139,7 @@ pub(crate) fn check_details_sections(manifest: &ExtensionManifest) -> Result<(),
             }
             let here = list.index(i).key("kinds").index(k);
             match group_suffix(kind) {
+                _ if is_every_custom_group(kind) => {}
                 Some(domain) if is_group_domain(domain) => {}
                 Some(_) => {
                     return Err(at(
@@ -142,7 +150,7 @@ pub(crate) fn check_details_sections(manifest: &ExtensionManifest) -> Result<(),
                 None => {
                     return Err(at(
                         &here,
-                        "is every kind (`*`/`*`), the kinds of the groups under a domain (`*.upbound.io`/`*`), or one kind",
+                        "is every kind (`*`/`*`), every kind of a custom resource group (`*.*`/`*`), the kinds of the groups under a domain (`*.upbound.io`/`*`), or one kind",
                     ));
                 }
             }

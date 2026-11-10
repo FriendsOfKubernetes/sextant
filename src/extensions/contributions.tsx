@@ -147,9 +147,19 @@ function matches(kinds: readonly KindPattern[], kind: Pick<KindRef, "group" | "k
   );
 }
 
-/** `{"group": "*.<domain>", "kind": "*"}`: a kind of a group ending in `.<domain>` (a details section's, Rust's `group_suffix`). */
+/** A custom resource's group: a dot, not Kubernetes' own (Rust's `is_custom_group`). */
+export function isCustomGroup(group: string): boolean {
+  const g = group.toLowerCase();
+  return g.includes(".") && !g.includes("*") && g.trim() !== "" && g !== "k8s.io" && !g.endsWith(".k8s.io") && !g.endsWith(".kubernetes.io");
+}
+
+/**
+ * `{"group": "*.<domain>", "kind": "*"}`: a kind of a group ending in `.<domain>` (a details section's, Rust's
+ * `group_suffix`); `{"group": "*.*", "kind": "*"}`: a kind of any custom resource group (`is_every_custom_group`).
+ */
 export function underDomain(pattern: KindPattern, kind: Pick<KindRef, "group" | "kind">): boolean {
   if (pattern.kind !== "*" || !pattern.group.startsWith("*.")) return false;
+  if (pattern.group === "*.*") return isCustomGroup(kind.group);
   return kind.group.toLowerCase().endsWith(pattern.group.slice(1).toLowerCase());
 }
 

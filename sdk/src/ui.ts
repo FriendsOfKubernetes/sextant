@@ -32,6 +32,15 @@ const UI_STYLES = `
 .sx-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
 .sx-table th, .sx-table td { text-align: left; padding: 4px 8px 4px 0; height: auto; border-bottom: 1px solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }
 .sx-table th { color: var(--color-text-muted); font-weight: 500; }
+.sx-table--nowrap th, .sx-table--nowrap td { white-space: nowrap; overflow-wrap: normal; }
+.sx-table--fixed > thead > tr > th, .sx-table--fixed > tbody > tr > td:not([colspan]) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
+.sx-resize { position: relative; }
+.sx-resize__handles { position: absolute; top: 0; left: 0; width: 100%; height: 0; z-index: 3; pointer-events: none; }
+.sx-resize__handle { position: absolute; width: 8px; cursor: col-resize; touch-action: none; outline: none; pointer-events: auto; }
+.sx-resize__handle::after { content: ""; position: absolute; top: 20%; bottom: 20%; left: 3px; width: 2px; border-radius: 1px; background: transparent; }
+.sx-resize__handle:hover::after, .sx-resize__handle:active::after, .sx-resize__handle:focus-visible::after { background: var(--color-accent); }
+.sx-resize__handle:focus-visible { outline: 2px solid var(--color-focus, var(--color-accent)); outline-offset: -2px; }
+.sx-visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .sx-table tr:hover td { background: transparent; }
 .sx-status--success { color: var(--color-success); }
 .sx-status--warning { color: var(--color-warning); }
@@ -157,17 +166,81 @@ export function fields(rows: readonly FieldRow[]): HTMLElement {
   return list;
 }
 
-/** A table with a header row; `rows` hold one cell per header. */
-export function table(headers: readonly string[], rows: readonly (readonly UiContent[])[], options: { label?: string } = {}): HTMLElement {
+/** Narrowest column a user can make, in pixels (as Sextant's own tables). */
+export const MIN_COLUMN_WIDTH = 48;
+/** Widest column, in pixels. */
+export const MAX_COLUMN_WIDTH = 1600;
+const WIDTH_STEP = 16;
+const WIDTH_STEP_LARGE = 64;
+/** Half a handle's width: it sits on the column's right edge. */
+const HANDLE_HALF = 4;
+
+/** What a table whose columns resize needs of the client (`connect()`'s `Sextant`): its context and `ui.setColumnWidth`. */
+export interface ColumnWidthKeeper {
+  readonly context: {
+    columnWidths?: Readonly<Record<string, Readonly<Record<string, number>>>>;
+    texts?: { resizeColumn: string; resizeHint: string };
+  };
+  ui: { setColumnWidth(table: string, column: string, width: number | null): Promise<void> };
+}
+
+export interface TableOptions {
+  /** The table's accessible name. */
+  label?: string;
+  /**
+   * Since Sextant 0.30, with `sextant`: the user can resize the columns (drag a header's right edge, or its handle's
+   * arrow keys), and Sextant keeps the widths under this id (letters, digits, `-`, `_`, `.`), as it keeps its own
+   * tables'. A resized table keeps each cell on one line, cut with an ellipsis (the whole text in its tooltip).
+   */
+  id?: string;
+  sextant?: ColumnWidthKeeper;
+  /** Stable ids of the columns, one per header (not translated): what the widths are kept under; by position otherwise. */
+  columns?: readonly string[];
+  /** Cells on one line, never wrapped. */
+  nowrap?: boolean;
+}
+
+/** Widths set in this frame that Sextant's context does not tell yet, by table id (`null`: back to its own). */
+const pendingWidths = new Map<string, Map<string, number | null>>();
+
+function clampWidth(px: number): number {
+  if (!Number.isFinite(px)) return MIN_COLUMN_WIDTH;
+  return Math.round(Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, px)));
+}
+
+/** The table's widths: Sextant's, with what this frame set since (dropped once the context says the same). */
+function widthsOf(id: string, keeper: ColumnWidthKeeper): Record<string, number> {
+  const saved = keeper.context.columnWidths?.[id] ?? {};
+  const out: Record<string, number> = {};
+  for (const [column, width] of Object.entries(saved)) if (typeof width === "number" && Number.isFinite(width)) out[column] = clampWidth(width);
+  const pending = pendingWidths.get(id);
+  for (const [column, width] of pending ?? []) {
+    if ((width === null && out[column] === undefined) || width === out[column]) pending!.delete(column);
+    else if (width === null) delete out[column];
+    else out[column] = width;
+  }
+  if (pending && pending.size === 0) pendingWidths.delete(id);
+  return out;
+}
+
+let tableSeq = 0;
+
+/**
+ * A table with a header row; `rows` hold one cell per header. With `id` and `sextant` (since Sextant 0.30) its columns
+ * resize and Sextant remembers their widths.
+ */
+export function table(headers: readonly string[], rows: readonly (readonly UiContent[])[], options: TableOptions = {}): HTMLElement {
   const wrap = el("div", "sx-table-wrap");
-  const tableEl = el("table", "sx-table");
+  const tableEl = el("table", options.nowrap ? "sx-table sx-table--nowrap" : "sx-table");
   if (options.label) tableEl.setAttribute("aria-label", options.label);
   const head = el("thead", "");
   const headRow = el("tr", "");
+  const cells: HTMLTableCellElement[] = [];
   for (const header of headers) {
     const th = el("th", "", header);
     th.scope = "col";
     headRow.append(th);
+    cells.push(th);
   }
   head.append(headRow);
   const body = el("tbody", "");
@@ -178,7 +251,214 @@ export function table(headers: readonly string[], rows: readonly (readonly UiCon
   }
   tableEl.append(head, body);
   wrap.append(tableEl);
+  const { id, sextant } = options;
+  if (id !== undefined && sextant && /^[A-Za-z0-9._-]{1,80}$/.test(id) && cells.length > 0) {
+    const keys = headers.map((_, i) => {
+      const key = options.columns?.[i];
+      return typeof key === "string" && /^[A-Za-z0-9._-]{1,80}$/.test(key) ? key : String(i);
+    });
+    resizable(wrap, tableEl, cells, headers, keys, id, sextant);
+  }
   return wrap;
+}
+
+/** The handles over a table's header, one per named column: drag, double-click, or the keys of Sextant's own tables. */
+function resizable(
+  wrap: HTMLElement,
+  tableEl: HTMLTableElement,
+  cells: readonly HTMLTableCellElement[],
+  headers: readonly string[],
+  keys: readonly string[],
+  id: string,
+  keeper: ColumnWidthKeeper,
+): void {
+  wrap.classList.add("sx-resize");
+  const texts = keeper.context.texts;
+  const colgroup = document.createElement("colgroup");
+  const cols = keys.map(() => colgroup.appendChild(document.createElement("col")));
+  tableEl.prepend(colgroup);
+  const layer = el("div", "sx-resize__handles");
+  const hint = el(
+    "span",
+    "sx-visually-hidden",
+    texts?.resizeHint ?? "Left and Right arrows change the width (Shift: larger steps), Enter restores the default width, Control with Left or Right moves to another column.",
+  );
+  hint.id = `sx-resize-hint-${++tableSeq}`;
+  layer.append(hint);
+  wrap.prepend(layer);
+  /** The widths the columns had in the table's own layout, for the columns the user did not resize. */
+  let natural: number[] | null = null;
+  const measured = () => cells.map((c) => Math.round(c.getBoundingClientRect().width) || MIN_COLUMN_WIDTH);
+  const fixed = () => tableEl.classList.contains("sx-table--fixed");
+  const widthAt = (i: number, widths: Record<string, number>) => widths[keys[i]!] ?? natural?.[i] ?? MIN_COLUMN_WIDTH;
+  const fix = (widths: Record<string, number>) => {
+    if (!fixed()) natural = measured();
+    let total = 0;
+    cols.forEach((col, i) => {
+      const width = widthAt(i, widths);
+      col.style.width = `${width}px`;
+      total += width;
+    });
+    tableEl.classList.add("sx-table--fixed");
+    tableEl.style.tableLayout = "fixed";
+    tableEl.style.width = `${total}px`;
+  };
+  const unfix = () => {
+    for (const col of cols) col.style.width = "";
+    tableEl.classList.remove("sx-table--fixed");
+    tableEl.style.tableLayout = "";
+    tableEl.style.width = "";
+    natural = null;
+  };
+  const layout = () => {
+    const widths = widthsOf(id, keeper);
+    if (keys.some((k) => widths[k] !== undefined)) fix(widths);
+    else unfix();
+  };
+  const handles: HTMLElement[] = [];
+  const place = () => {
+    const box = tableEl.getBoundingClientRect();
+    const headBox = tableEl.tHead?.getBoundingClientRect();
+    const last = tableEl.offsetLeft + box.width - 2 * HANDLE_HALF;
+    for (const handle of handles) {
+      const cell = cells[Number(handle.dataset.index)]!;
+      handle.style.left = `${Math.round(Math.min(tableEl.offsetLeft + cell.getBoundingClientRect().right - box.left - HANDLE_HALF, last))}px`;
+      handle.style.top = `${headBox ? Math.round(tableEl.offsetTop + headBox.top - box.top) : 0}px`;
+      handle.style.height = `${headBox ? Math.round(headBox.height) : 0}px`;
+    }
+  };
+  const current = (i: number) => (fixed() ? widthAt(i, widthsOf(id, keeper)) : Math.round(cells[i]!.getBoundingClientRect().width) || MIN_COLUMN_WIDTH);
+  const preview = (i: number, px: number) => {
+    const widths = { ...widthsOf(id, keeper), [keys[i]!]: px };
+    fix(widths);
+    place();
+  };
+  const commit = (i: number, px: number | null) => {
+    const key = keys[i]!;
+    const pending = pendingWidths.get(id) ?? new Map<string, number | null>();
+    pending.set(key, px);
+    pendingWidths.set(id, pending);
+    void keeper.ui.setColumnWidth(id, key, px).catch(() => undefined);
+    layout();
+    place();
+    for (const handle of handles) handle.setAttribute("aria-valuenow", String(current(Number(handle.dataset.index))));
+  };
+  headers.forEach((name, i) => {
+    if (name.trim() === "") return;
+    const handle = el("div", "sx-resize__handle");
+    handle.dataset.index = String(i);
+    handle.setAttribute("role", "separator");
+    handle.setAttribute("aria-orientation", "vertical");
+    handle.setAttribute("aria-label", (texts?.resizeColumn ?? "Resize column {{name}}").split("{{name}}").join(name));
+    handle.setAttribute("aria-valuemin", String(MIN_COLUMN_WIDTH));
+    handle.setAttribute("aria-valuemax", String(MAX_COLUMN_WIDTH));
+    handle.setAttribute("aria-describedby", hint.id);
+    handle.tabIndex = handles.length === 0 ? 0 : -1;
+    let drag: { pointer: number; startX: number; start: number; latest: number | null; frame: number } | null = null;
+    handle.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      handle.setPointerCapture?.(e.pointerId);
+      drag = { pointer: e.pointerId, startX: e.clientX, start: current(i), latest: null, frame: 0 };
+    });
+    handle.addEventListener("pointermove", (e) => {
+      const d = drag;
+      if (!d || d.pointer !== e.pointerId) return;
+      d.latest = clampWidth(d.start + e.clientX - d.startX);
+      if (d.frame !== 0) return;
+      d.frame = requestAnimationFrame(() => {
+        d.frame = 0;
+        if (d.latest !== null) preview(i, d.latest);
+      });
+    });
+    const end = (e: PointerEvent) => {
+      const d = drag;
+      if (!d || d.pointer !== e.pointerId) return;
+      drag = null;
+      if (d.frame !== 0) cancelAnimationFrame(d.frame);
+      if (handle.hasPointerCapture?.(e.pointerId)) handle.releasePointerCapture(e.pointerId);
+      if (d.latest !== null) commit(i, d.latest);
+    };
+    handle.addEventListener("pointerup", end);
+    handle.addEventListener("pointercancel", end);
+    handle.addEventListener("lostpointercapture", end);
+    handle.addEventListener("click", (e) => e.stopPropagation());
+    handle.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+      commit(i, null);
+    });
+    handle.addEventListener("focus", () => {
+      for (const other of handles) other.tabIndex = other === handle ? 0 : -1;
+      handle.setAttribute("aria-valuenow", String(current(i)));
+    });
+    handle.addEventListener("keydown", (e) => {
+      if (e.altKey) return;
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        e.preventDefault();
+        e.stopPropagation();
+        const at = handles.indexOf(handle) + (e.key === "ArrowLeft" ? -1 : 1);
+        handles[Math.max(0, Math.min(handles.length - 1, at))]?.focus();
+        return;
+      }
+      const step = e.shiftKey ? WIDTH_STEP_LARGE : WIDTH_STEP;
+      const now = current(i);
+      const target =
+        e.key === "ArrowLeft" ? clampWidth(now - step)
+        : e.key === "ArrowRight" ? clampWidth(now + step)
+        : e.key === "Home" ? MIN_COLUMN_WIDTH
+        : e.key === "End" ? MAX_COLUMN_WIDTH
+        : e.key === "Enter" ? null
+        : undefined;
+      if (target === undefined) return;
+      e.preventDefault();
+      e.stopPropagation();
+      commit(i, target);
+    });
+    handles.push(handle);
+    layer.append(handle);
+  });
+  // A cut cell shows its whole text as its tooltip.
+  tableEl.addEventListener("mouseover", (e) => {
+    const cell = (e.target as HTMLElement).closest?.("td, th");
+    if (!(cell instanceof HTMLElement) || !tableEl.contains(cell) || !fixed()) return;
+    const text = cell.textContent?.trim() ?? "";
+    if (text && cell.scrollWidth > cell.clientWidth && !cell.hasAttribute("title")) {
+      cell.setAttribute("title", text);
+      cell.dataset.sxCut = "";
+    } else if (cell.dataset.sxCut !== undefined && cell.scrollWidth <= cell.clientWidth) {
+      cell.removeAttribute("title");
+      delete cell.dataset.sxCut;
+    }
+  });
+  // Laid out once the table is in the document and has its size; the handles follow every change of size after.
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    layout();
+    place();
+    for (const handle of handles) handle.setAttribute("aria-valuenow", String(current(Number(handle.dataset.index))));
+  };
+  if (typeof ResizeObserver === "undefined") {
+    start();
+    return;
+  }
+  const sizes = new ResizeObserver(() => {
+    // Taken out of the document (a redraw): nothing to follow any more.
+    if (!tableEl.isConnected) {
+      if (started) sizes.disconnect();
+      return;
+    }
+    if (!started) {
+      if (tableEl.getBoundingClientRect().width === 0) return;
+      start();
+      return;
+    }
+    place();
+  });
+  sizes.observe(tableEl);
+  for (const cell of cells) sizes.observe(cell);
 }
 
 /** A status word in its tone's colour; the word itself is shown, so colour is never the only sign. */

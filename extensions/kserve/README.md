@@ -156,7 +156,6 @@ None: the extension is read-only and has no action of its own.
   - A cell holds 200 characters and a hover 1000, then "…" (the built-in URL and hover were not cut).
   - Canary % filters as text (the built-in one as a number): a `sum` column would show the share of a single traffic
     entry, which the built-in left blank, and a blank case there sorts first rather than last.
-  - Blocks closed in the built-in view open again once: Sextant keeps an extension's blocks under its own sections.
 - Checked by tests on fixtures of KServe's objects (copied from the built-in view) against the built-in readings and
   rules; not yet tried on a live cluster.
 

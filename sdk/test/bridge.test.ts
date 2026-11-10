@@ -35,6 +35,7 @@ const ui = {
   openUrl: vi.fn(() => Promise.resolve({ opened: false })),
   openCluster: vi.fn(() => Promise.resolve({ opened: false })),
       setBlockOpen: vi.fn(),
+      setColumnWidth: vi.fn(),
       revealSection: vi.fn(),
   signIn: vi.fn(() => Promise.resolve({ signedIn: false })),
   setHidden: vi.fn(),

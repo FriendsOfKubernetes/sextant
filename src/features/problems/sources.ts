@@ -56,6 +56,11 @@ export interface SourceDef {
   judge?: JudgeDef;
   /** A kind an extension's definitions define (`kindsFrom`): its `kindsFrom` rules judge it. */
   defined?: boolean;
+  /**
+   * A definition kind of which the cluster holds more objects than an extension's `kindsFrom` reads (`max`): the kinds
+   * the others define are not judged, so the source counts as truncated, as a capped list does.
+   */
+  moreDefinitions?: boolean;
 }
 
 /** A source's problems judged with its rows and its category's other sources (`SourceDef.judge`). */
@@ -185,13 +190,13 @@ function builtInSources(category: ProblemCategory): readonly SourceDef[] {
 /** The store's key of a source in a cluster. */
 export function sourceKey(
   clusterId: string,
-  def: Pick<SourceDef, "kind" | "fieldSelector" | "namespaces" | "labelSelector" | "metadataOnly" | "defined"> & { category?: ProblemCategory },
+  def: Pick<SourceDef, "kind" | "fieldSelector" | "namespaces" | "labelSelector" | "metadataOnly" | "defined" | "moreDefinitions"> & { category?: ProblemCategory },
 ): string {
   const { group, version, kind } = def.kind;
   const key = `${clusterId}|${group}/${version}/${kind}|${def.fieldSelector ?? ""}`;
   // An extension's rules judge their own sources, over the namespaces the extension may read, with their rules' source.
   if (def.category?.startsWith("ext:")) {
-    return `${key}|${def.category}|${def.namespaces?.join(",") ?? "*"}|${def.labelSelector ?? ""}|${def.metadataOnly ? "meta" : ""}${def.defined ? "|defined" : ""}`;
+    return `${key}|${def.category}|${def.namespaces?.join(",") ?? "*"}|${def.labelSelector ?? ""}|${def.metadataOnly ? "meta" : ""}${def.defined ? "|defined" : ""}${def.moreDefinitions ? "|more" : ""}`;
   }
   // A security source judges the same kinds as pods and workloads by other rules: a source of its own; so is the
   // provider's source of full claims, which watches nothing.

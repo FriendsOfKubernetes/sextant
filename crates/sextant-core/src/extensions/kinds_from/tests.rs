@@ -231,16 +231,23 @@ async fn rust_lists_the_definitions_to_decide_the_kinds_they_define() {
     let agreed = kinds_from_of(&m);
     let everything = reading(KindScope::All);
     let scopes = problem_scopes(&everything, "ctx", &problem_kinds(&m));
-    let defined = defined_scopes(&mgr, &id, "ctx", &everything, &m, &agreed, &scopes).await;
+    let mut defined = scopes.clone();
+    defined_scopes(&mgr, &id, "ctx", &everything, &m, &agreed, &mut defined).await;
     assert_eq!(
-        defined,
+        defined[..scopes.len()],
+        scopes[..],
+        "one definition: not more than `max`"
+    );
+    assert_eq!(
+        defined[scopes.len()..],
         ["XDatabase", "Database"]
             .map(|kind| ProblemScope {
                 kind: KindPattern::new("example.org", kind),
                 namespaces: NamespaceScope::All,
                 defined_by: Some(KindPattern::new(XRD.0, XRD.1)),
+                more_definitions: false,
             })
-            .to_vec()
+            .to_vec()[..]
     );
 
     // A defined kind the extension may not read is left out; so is everything when the definitions may not be read
@@ -252,20 +259,20 @@ async fn rust_lists_the_definitions_to_decide_the_kinds_they_define() {
         ],
     });
     let scopes_some = problem_scopes(&some, "ctx", &problem_kinds(&m));
-    let only = defined_scopes(&mgr, &id, "ctx", &some, &m, &agreed, &scopes_some).await;
-    assert_eq!(only.len(), 1);
-    assert_eq!(only[0].kind, KindPattern::new("example.org", "Database"));
+    let mut only = scopes_some.clone();
+    defined_scopes(&mgr, &id, "ctx", &some, &m, &agreed, &mut only).await;
+    assert_eq!(only.len(), scopes_some.len() + 1);
+    assert_eq!(
+        only.last().unwrap().kind,
+        KindPattern::new("example.org", "Database")
+    );
     let before = api.requests().len();
-    assert!(
-        defined_scopes(&mgr, &id, "ctx", &everything, &m, &agreed, &[])
-            .await
-            .is_empty()
-    );
-    assert!(
-        defined_scopes(&mgr, &id, "ctx", &everything, &m, &[], &scopes)
-            .await
-            .is_empty()
-    );
+    let mut none = Vec::new();
+    defined_scopes(&mgr, &id, "ctx", &everything, &m, &agreed, &mut none).await;
+    assert!(none.is_empty());
+    let mut not_agreed = scopes.clone();
+    defined_scopes(&mgr, &id, "ctx", &everything, &m, &[], &mut not_agreed).await;
+    assert_eq!(not_agreed, scopes);
     assert_eq!(api.requests().len(), before, "nothing is listed for them");
 }
 
@@ -283,17 +290,79 @@ async fn a_list_that_fails_defines_nothing() {
     let m = parsed(manifest_json(json!([rule("a")]))).unwrap();
     let everything = reading(KindScope::All);
     let scopes = problem_scopes(&everything, "ctx", &problem_kinds(&m));
+    let mut defined = scopes.clone();
+    defined_scopes(
+        &mgr,
+        &id,
+        "ctx",
+        &everything,
+        &m,
+        &kinds_from_of(&m),
+        &mut defined,
+    )
+    .await;
+    assert_eq!(defined, scopes);
+}
+
+#[tokio::test]
+async fn more_definitions_than_max_are_told_on_the_definition_kinds_scope() {
+    let api = FakeApi::start(|req: &Request| match req.path.as_str() {
+        "/apis/apiextensions.crossplane.io/v1/compositeresourcedefinitions" => Reply::json(
+            200,
+            json!({ "kind": "CompositeResourceDefinitionList", "apiVersion": "apiextensions.crossplane.io/v1",
+                    "metadata": {}, "items": [
+                        xrd("c", "example.org", "XCache", None),
+                        xrd("a", "example.org", "XDatabase", Some("Database")),
+                        xrd("b", "example.org", "XBucket", None),
+                    ] })
+            .to_string(),
+        ),
+        _ => with_xrds(req),
+    })
+    .await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+    let mut two = rule("a");
+    two["kindsFrom"]["max"] = json!(2);
+    let m = parsed(manifest_json(json!([two]))).unwrap();
+    let everything = reading(KindScope::All);
+    let scopes = problem_scopes(&everything, "ctx", &problem_kinds(&m));
+    let mut defined = scopes.clone();
+    defined_scopes(
+        &mgr,
+        &id,
+        "ctx",
+        &everything,
+        &m,
+        &kinds_from_of(&m),
+        &mut defined,
+    )
+    .await;
+    let definition = defined
+        .iter()
+        .find(|s| s.kind == KindPattern::new(XRD.0, XRD.1))
+        .unwrap();
+    assert!(definition.more_definitions, "three definitions, two read");
+    // The first two by name: a and b, not c.
+    let kinds: Vec<&str> = defined
+        .iter()
+        .filter(|s| s.defined_by.is_some())
+        .map(|s| s.kind.kind.as_str())
+        .collect();
+    assert_eq!(kinds, ["XDatabase", "Database", "XBucket"]);
     assert!(
-        defined_scopes(
-            &mgr,
-            &id,
-            "ctx",
-            &everything,
-            &m,
-            &kinds_from_of(&m),
-            &scopes
-        )
-        .await
-        .is_empty()
+        defined
+            .iter()
+            .filter(|s| s.defined_by.is_some())
+            .all(|s| !s.more_definitions)
+    );
+    assert_eq!(
+        serde_json::to_value(definition).unwrap()["moreDefinitions"],
+        json!(true)
+    );
+    assert!(
+        serde_json::to_value(&defined[defined.len() - 1])
+            .unwrap()
+            .get("moreDefinitions")
+            .is_none()
     );
 }

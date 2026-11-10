@@ -170,3 +170,73 @@ describe("a button's icon (since Sextant 0.30)", () => {
   });
 });
 
+describe("a table whose columns resize (#417)", () => {
+  const keeper = (widths?: Record<string, number>) => {
+    const set = vi.fn<(table: string, column: string, width: number | null) => Promise<void>>(() => Promise.resolve());
+    return {
+      set,
+      context: {
+        ...(widths ? { columnWidths: { pods: widths } } : {}),
+        texts: { resizeColumn: "Spalte {{name}} anpassen", resizeHint: "Pfeiltasten ändern die Breite." },
+      },
+      ui: { setColumnWidth: set },
+    };
+  };
+
+  it("draws a handle per named column with Sextant's words, one tab stop, and stays accessible", async () => {
+    const k = keeper();
+    const node = table(["Name", "", "Phase"], [["web-1", "", "Running"]], { label: "Pods", id: "pods", sextant: k, columns: ["name", "check", "phase"] });
+    document.body.append(node);
+    const handles = [...node.querySelectorAll<HTMLElement>("[role='separator']")];
+    expect(handles.map((h) => h.getAttribute("aria-label"))).toEqual(["Spalte Name anpassen", "Spalte Phase anpassen"]);
+    expect(handles.map((h) => h.tabIndex)).toEqual([0, -1]);
+    expect(document.getElementById(handles[0]!.getAttribute("aria-describedby")!)?.textContent).toBe("Pfeiltasten ändern die Breite.");
+    // The handles are not inside the header cells: the columns keep their names.
+    expect([...node.querySelectorAll("th")].map((th) => th.textContent)).toEqual(["Name", "", "Phase"]);
+    expect(node.querySelector("table")!.classList.contains("sx-table--fixed")).toBe(false);
+    node.remove();
+    document.body.append(table(["Name", "Phase"], [["web-1", "Running"]], { label: "Pods", id: "pods", sextant: k }));
+    expect(await violations()).toEqual([]);
+  });
+
+  it("keeps the widths the keys and a double-click give through ui.setColumnWidth, and lays out the saved ones", () => {
+    const k = keeper({ phase: 200 });
+    const node = table(["Name", "Phase"], [["web-1", "Running"]], { id: "pods", sextant: k, columns: ["name", "phase"] });
+    document.body.append(node);
+    const tableEl = node.querySelector("table")!;
+    const cols = [...tableEl.querySelectorAll("col")];
+    expect(tableEl.classList.contains("sx-table--fixed")).toBe(true);
+    expect(cols[1]!.style.width).toBe("200px");
+    const [name, phase] = [...node.querySelectorAll<HTMLElement>("[role='separator']")];
+    phase!.focus();
+    expect(phase!.getAttribute("aria-valuenow")).toBe("200");
+    phase!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    expect(k.set).toHaveBeenLastCalledWith("pods", "phase", 216);
+    expect(cols[1]!.style.width).toBe("216px");
+    phase!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", shiftKey: true, bubbles: true }));
+    expect(k.set).toHaveBeenLastCalledWith("pods", "phase", 152);
+    phase!.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
+    expect(k.set).toHaveBeenLastCalledWith("pods", "phase", 1600);
+    // Control with an arrow moves to the next handle, and the tab stop follows.
+    phase!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", ctrlKey: true, bubbles: true }));
+    expect(document.activeElement).toBe(name);
+    expect([name!.tabIndex, phase!.tabIndex]).toEqual([0, -1]);
+    // A redraw before Sextant's context tells the new width keeps it.
+    const again = table(["Name", "Phase"], [["web-1", "Running"]], { id: "pods", sextant: k, columns: ["name", "phase"] });
+    expect(again.querySelectorAll("col")[1]!.style.width).toBe("1600px");
+    // Back to its own width: no width of the user's left, so the table takes its own layout again.
+    phase!.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    expect(k.set).toHaveBeenLastCalledWith("pods", "phase", null);
+    expect(tableEl.classList.contains("sx-table--fixed")).toBe(false);
+    expect(cols[1]!.style.width).toBe("");
+  });
+
+  it("is a plain table without an id or a client, or with ids it cannot keep", () => {
+    for (const options of [{}, { id: "pods" }, { id: "no spaces", sextant: keeper() }]) {
+      const node = table(["Name"], [["web-1"]], options);
+      expect(node.querySelector("[role='separator']")).toBeNull();
+      expect(node.querySelector("colgroup")).toBeNull();
+    }
+    expect(table(["Name"], [["a"]], { nowrap: true }).querySelector("table")!.classList.contains("sx-table--nowrap")).toBe(true);
+  });
+});

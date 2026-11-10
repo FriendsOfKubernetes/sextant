@@ -19,6 +19,7 @@ import {
   type FrameView,
   type HostContext,
 } from "./protocol";
+import { extensionColumnWidths } from "./columnWidths";
 import { useExtension, useExtensionFiles } from "./store";
 import { useFrameTheme } from "./theme";
 import { hostUi } from "./ui";
@@ -190,7 +191,10 @@ function FrameView({
   const bridge = useRef<Bridge | null>(null);
   const [height, setHeight] = useState<number | null>(null);
   const { theme, tokens } = useFrameTheme();
-  const certExpiryDays = clampExpiryDays(useSettings().settings?.notifications.certExpiryDays);
+  const { settings } = useSettings();
+  const certExpiryDays = clampExpiryDays(settings?.notifications.certExpiryDays);
+  // The widths the user gave the extension's own tables (#417), as a key: other settings changes are no change.
+  const widthsKey = JSON.stringify(extensionColumnWidths(settings, info.id));
   // Discovery of the frame's cluster (ADR-0167 amendment): a new context when the kinds it serves change.
   const kindsVersion = useClusterKindsVersion(clusterId);
   const selectionKey = JSON.stringify(selection);
@@ -219,8 +223,11 @@ function FrameView({
       ...(blocks ? { blocks: JSON.parse(blocksKey) as Record<string, boolean> } : {}),
       certExpiryDays,
       ...(kindsVersion !== undefined ? { kindsVersion } : {}),
+      ...(widthsKey !== "{}" ? { columnWidths: JSON.parse(widthsKey) as Record<string, Record<string, number>> } : {}),
+      // The SDK's controls in Sextant's own words; `{{name}}` is filled in by the SDK.
+      texts: { resizeColumn: t("resources:table.resizeColumn", { name: "{{name}}" }), resizeHint: t("resources:table.resizeHint") },
     }),
-    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion, uid, blocksKey, blocks !== null, certExpiryDays, kindsVersion],
+    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, t, tokens, selectionKey, resourceVersion, uid, blocksKey, blocks !== null, certExpiryDays, kindsVersion, widthsKey],
   );
   const services = info.manifest?.contributes.services ?? [];
   const latest = useRef({ context, name: info.name, autoHeight, onClose, onFailed, services, onHidden });

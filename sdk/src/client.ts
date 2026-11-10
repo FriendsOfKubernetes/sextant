@@ -238,6 +238,12 @@ export interface Sextant {
      */
     setBlockOpen(id: string, open: boolean, options?: CallOptions): Promise<void>;
     /**
+     * Keeps the width of a column of the extension's own table in Sextant's memory, as Sextant keeps its own tables'
+     * (since Sextant 0.30): what `context.columnWidths[table][column]` tells next time; `null` gives the column its own
+     * width back. `ui.table` with an `id` calls it when the user resizes a column. Ids: letters, digits, `-`, `_`, `.`.
+     */
+    setColumnWidth(table: string, column: string, width: number | null, options?: CallOptions): Promise<void>;
+    /**
      * Details only (since Sextant 0.30): opens, scrolls to and focuses a section of the same details panel — one of
      * Sextant's by its id (`requestHealth`) or the extension's own by its manifest id; `notFound` when it is not shown.
      */
@@ -688,6 +694,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
         send<{ opened: boolean; found?: number }>("ui.openCluster", target, { timeoutMs: CONFIRM_TIMEOUT, ...o }),
       setHidden: (hidden, o) => send<unknown>("ui.setHidden", { hidden }, o).then(() => undefined),
       setBlockOpen: (id, open, o) => send<unknown>("ui.setBlockOpen", { id, open }, o).then(() => undefined),
+      setColumnWidth: (table, column, width, o) => send<unknown>("ui.setColumnWidth", { table, column, width }, o).then(() => undefined),
       revealSection: (id, o) => send<unknown>("ui.revealSection", { id }, o).then(() => undefined),
       icon: (name, o) => send<{ svg?: unknown } | null>("ui.icon", { name }, o).then((r) => (r && typeof r.svg === "string" ? r.svg : null)),
       signIn: (params, o) =>

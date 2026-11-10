@@ -322,3 +322,32 @@ could not be checked against kinds unknown until shown); any other `*` in a sect
 managed resources of a vendor's providers (`*.upbound.io`) get their block without a frame on every core object. The
 UI kit's `ui.checkbox(label, onChange, {checked, disabled, title})` draws Sextant's own checkbox
 (`src/components/checkbox.css`, both themes' marks) instead of the browser's: "Only problems" on an extension's page.
+
+## Amendment: every kind of a custom resource group, more definitions than a `kindsFrom` reads, and resizable kit tables
+
+A details section's kind may also be `{"group": "*.*", "kind": "*"}` (`sextantApi` 4; `is_every_custom_group` in
+`contributions.rs`, checked alike by `checkDetailsSections`, matched by `underDomain` in the window): every kind of a
+custom resource group (`is_custom_group`: a group with a dot, not `k8s.io`, `*.k8s.io` or `*.kubernetes.io`), never
+with a `when`. Crossplane's claims, composite resources and managed resources are of groups the XRDs and providers
+pick, so no domain names them; the built-in section was registered on kinds of installed APIs, and so is this one —
+never on a core object or one of Kubernetes' own groups.
+`extension_problem_scopes` marks the definition kind's scope `moreDefinitions` when the cluster holds more objects of it
+than the `kindsFrom` reads (`max`; Rust counts them as it lists them in `kinds_from::defined_scopes`), and the window's
+source of that kind then counts as truncated (`SourceDef.moreDefinitions`): the category tells it judges a part, as the
+built-in Crossplane category did past 20 XRDs.
+The UI kit's `ui.table(headers, rows, {label, id, sextant, columns, nowrap})`: with an `id` and the connected client its
+columns resize as Sextant's own plain tables do (`ResizableTable`: a handle over each named header's right edge, drag,
+double-click for the column's own width, the APG window-splitter keys with one tab stop, `table-layout: fixed` once a
+width is set, cut cells with their text as the tooltip), and Sextant keeps the widths: the frame's local method
+`ui.setColumnWidth({table, column, width | null})` (ids `[A-Za-z0-9._-]{1,80}`) writes them into
+`AppSettings.columnWidths` under `ext:<extension id>:<table id>` with the same caps and pause as Sextant's tables
+(`src/extensions/columnWidths.ts`), and every frame of the extension gets its own tables' widths in its context
+(`columnWidths`, by table and column) — never another extension's or Sextant's. The handles' names and hint are
+Sextant's own words in the UI language (`context.texts.resizeColumn`/`resizeHint`), so no extension translates them.
+`nowrap` keeps cells on one line.
+The version-3 migration also carries over what the moved views left in the settings (`settings/moved_details.rs` over
+`moved_details.json`): each details block's open or closed choice under the path the built-in view wrote (0.29.2) moves
+to the extension's block (`ext:<extension>:<section>/<section>/<block>`), only under the kinds it names where an
+extension split one section by kind, in the global bank and each cluster's; and the built-in Crossplane page's widths
+(`crossplane.composites`) to `ext:sextant.crossplane:composites`. A choice already kept under the new key wins. The
+Argo, Argo CD and Flux extensions draw no collapsible blocks, so theirs have nowhere to go.

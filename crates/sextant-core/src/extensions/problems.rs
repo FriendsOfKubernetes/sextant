@@ -2142,6 +2142,11 @@ pub struct ProblemScope {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub defined_by: Option<KindPattern>,
+    /// A definition kind (`kindsFrom`) of which the cluster holds more objects than the `kindsFrom` reads (`max`): the
+    /// kinds the others define are not judged, so the category is told it judges a part (as a capped list is).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[ts(optional, as = "Option<bool>")]
+    pub more_definitions: bool,
 }
 
 /// For each kind of `kinds` (agreed to by the user), where its rules run in the cluster with context `cluster_name`:
@@ -2171,6 +2176,7 @@ pub fn problem_scopes(
                 kind: kind.clone(),
                 namespaces,
                 defined_by: None,
+                more_definitions: false,
             })
         })
         .collect()
@@ -2313,11 +2319,13 @@ mod tests {
                         namespaces: vec!["rook-ceph".into()]
                     },
                     defined_by: None,
+                    more_definitions: false,
                 },
                 ProblemScope {
                     kind: kind("", "Node"),
                     namespaces: NamespaceScope::All,
                     defined_by: None,
+                    more_definitions: false,
                 },
             ],
             "a kind the extension may not read is left out"

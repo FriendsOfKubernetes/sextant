@@ -14,8 +14,9 @@ their amendment: kinds read from definitions, `kindsFrom`), ADR-0139 (Sextant's 
 (translations), ADR-0143 (the section's counter), ADR-0152 (kinds in a section of their own), ADR-0153 (computed
 columns), ADR-0160 (the section's icon and place, the UI kit), ADR-0161 (printer columns left out, paths picking an
 item), ADR-0165 (a kind's own "Only problems") and ADR-0167 (column widths, match steps with `!=`, untitled details
-sections hidden until shown, a details section on every kind, capped watches, details blocks in Sextant's own memory,
-`kindsVersion`, the UI kit's checkbox).
+sections hidden until shown, a details section on every kind of a custom resource group, capped watches, details blocks
+in Sextant's own memory, `kindsVersion`, the UI kit's checkbox and resizable tables, more definitions than a
+`kindsFrom` reads).
 
 ## At a glance
 
@@ -40,7 +41,8 @@ details, and Edit and Delete as on every kind.
 (the composite and claim kinds of the first 20 XRDs by name that the cluster serves), with its kind and role, name and
 link, namespace, state (Failed, Progressing, Unknown, Paused or Ready, coloured), Synced, Ready, the first failing
 condition's reason and message, and Composition; problems first, then by kind, namespace and name; "Only problems"
-(Sextant's own checkbox) leaves out all but the failed ones. It shows at most 500 rows; each claim or composite list is
+(Sextant's own checkbox) leaves out all but the failed ones. Its columns resize as the built-in page's did, and Sextant
+remembers their widths (Settings → Appearance resets them with every table's). It shows at most 500 rows; each claim or composite list is
 kept to 5000 objects by Sextant, and the page says when it lists only a part or only the first XRDs' kinds. The lists
 are watched only while the page shows; a kind an XRD defines that the cluster does not serve yet is looked up again a
 second after the XRDs change, and every kind again when the cluster's kinds change (a CRD installed or removed).
@@ -69,9 +71,9 @@ sections (Settings → Appearance), with the panel's "Expand all" and "Collapse 
   Established and Offered, and what that means in plain words; a Composition's composite type, mode, number of classic
   resources and its pipeline's steps with links to their Functions; a package's state in plain words, its first failing
   condition, package, current revision and package, revision activation, Installed and Healthy.
-- **Claims, composite resources and managed resources** (`crossplane-resource`, order 21, on every kind; hidden until
-  it has something to show, and reading nothing on a kind that cannot be Crossplane's: one without a dot in its group,
-  of a `*.k8s.io` group, or Crossplane's own). A claim or composite is told by the XRDs (watched where the cluster
+- **Claims, composite resources and managed resources** (`crossplane-resource`, order 21, on every kind of a custom
+  resource group — a group with a dot, not Kubernetes' own — as the built-in section was on kinds of installed APIs;
+  hidden until it has something to show, and reading nothing on Crossplane's own kinds). A claim or composite is told by the XRDs (watched where the cluster
   serves them, while its first block is open, or the chain block is and the object is known to be one; their kind
 looked up again when the cluster's kinds change), a managed
   resource by its shape (`spec.forProvider` or `spec.providerConfigRef`). A claim's or composite's block: its state in
@@ -109,7 +111,8 @@ False with reason `ReconcilePaused`) has none, and neither has a composite that 
 per object (group `not-ready`). Of the rules at most one holds: the one of the condition that fails first as the
 built-in view read it (`Synced` first, then the first other False condition but `Ready`, `Ready` last), its reason the
 condition's own (else the fallback named below), its message the condition's, counted from the condition's
-`lastTransitionTime` (else from when Sextant first saw it).
+`lastTransitionTime` (else from when Sextant first saw it). With more than 20 XRDs, or a claim or composite list Sextant
+capped at 5000 objects, the Problems page says it shows a part, as the built-in category did.
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
@@ -143,25 +146,12 @@ None: the extension is read-only and has no action of its own (ADR-0101).
 
 - Crossplane's CRDs; the section shows only the kinds the cluster serves, and the page only XRDs' kinds the cluster
   serves.
-- Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - **Read on every kind.** The built-in view read with your own access only; the extension needs a grant for kinds it
-    cannot name in advance (claims, composites and managed resources of any provider). ADR-0137's amendment left a
-    permission rule by `kindsFrom` out on purpose (Read is decided per call against the grant alone, and the access
-    rules agents share parse strictly); a group domain (`*.upbound.io`) would not cover claims and composites, whose
-    groups are the XRDs' own.
-  - "Claims, composite resources and managed resources" is a frame on every object's details, hidden unless it has
-    something to show (on a core object it reads nothing); the built-in section was registered only on kinds of
-    installed APIs. A details section's kinds by a group domain (`*.upbound.io`, ADR-0167) would keep it off core
-    objects but leave out the claims and composites of every other group; the smallest addition: a details section on
-    "every kind of a custom resource group" (a group with a dot, not `*.k8s.io`).
-  - The page's table is the SDK's: its columns cannot be resized and remembered as the built-in page's could (#417).
-  - The problems of a cluster with more than 20 XRDs, or with a claim or composite list Sextant capped at 5000 objects,
-    were marked as a part ("truncated") by the built-in category; the extension's category marks a capped list, but not
-    the XRDs beyond the first 20 (Rust picks them; `kindsFrom` answers no count). The smallest addition: a `truncated`
-    flag on `extension_problem_scopes`' answer when a `kindsFrom` found more than `max` definitions.
-  - A problem notifies as `<uid>|not-ready` where the built-in's was `<uid>|notReady`: a notification shown just before
-    the update is not held back by its cooldown once more.
-  - Blocks closed in the built-in view open again once: Sextant keeps an extension's blocks under its own sections.
+- Where it differs from the former built-in view:
+  - **Read on every kind**, asked at install. The built-in view read with your own access; the extension reads with it
+    too, but only within what you grant it. It cannot ask for less without showing less: a composite resource
+    composes objects of any kind (Crossplane v2 composes Deployments, Services and the like, not only managed
+    resources), and its chain reads each of them, as the built-in did. What a narrower grant leaves out shows as
+    "Cannot be read".
   - On objects Crossplane never writes the rules can read otherwise: a condition without a `type` or with a status that
     is no text counts in the rules' "first other False condition" and its `status` match, where the built-in left it
     out; a claim reference whose names are blank text, or a reason that is an empty text (`""` was the built-in's

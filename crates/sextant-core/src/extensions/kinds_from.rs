@@ -311,9 +311,11 @@ pub fn defined_kinds(
 
 /// Where the `kindsFrom` rules run in the cluster `cluster` (context `context`) for an extension granted `granted`
 /// and the `kindsFrom` agreed to (`agreed`, each also in the manifest): for each kind the definitions define
-/// ([`defined_kinds`]) that the extension may read somewhere, a scope `definedBy` the definition kind. The definitions
-/// are listed with the user's connection only where the extension may read them (`scopes`: the manifest's own kinds'
-/// scopes, among them the definition kind's); a list that fails defines nothing.
+/// ([`defined_kinds`]) that the extension may read somewhere, a scope `definedBy` the definition kind, added to
+/// `scopes`. The definitions are listed with the user's connection only where the extension may read them (`scopes`:
+/// the manifest's own kinds' scopes, among them the definition kind's); a list that fails defines nothing. When the
+/// cluster holds more definitions than the `kindsFrom` reads (`max`), the definition kind's scope says so
+/// (`moreDefinitions`).
 pub async fn defined_scopes(
     mgr: &ClusterManager,
     cluster: &ClusterId,
@@ -321,20 +323,22 @@ pub async fn defined_scopes(
     granted: &ExtensionPermissions,
     manifest: &ExtensionManifest,
     agreed: &[KindsFrom],
-    scopes: &[ProblemScope],
-) -> Vec<ProblemScope> {
+    scopes: &mut Vec<ProblemScope>,
+) {
     let named = problem_kinds(manifest);
     let mut out: Vec<ProblemScope> = Vec::new();
     for from in kinds_from_of(manifest)
         .into_iter()
         .filter(|f| agreed.contains(f))
     {
-        let Some(scope) = scopes.iter().find(|s| {
-            s.kind.group.eq_ignore_ascii_case(&from.kind.group)
+        let Some(at) = scopes.iter().position(|s| {
+            s.defined_by.is_none()
+                && s.kind.group.eq_ignore_ascii_case(&from.kind.group)
                 && s.kind.kind.eq_ignore_ascii_case(&from.kind.kind)
         }) else {
             continue;
         };
+        let scope = &scopes[at];
         let kind = KindRef {
             group: from.kind.group.clone(),
             version: String::new(),
@@ -370,6 +374,7 @@ pub async fn defined_scopes(
             continue;
         }
         let defined = defined_kinds(&from, &definitions, &named);
+        scopes[at].more_definitions = definitions.len() > from.max as usize;
         for found in problem_scopes(granted, context, &defined) {
             out.push(ProblemScope {
                 defined_by: Some(from.kind.clone()),
@@ -377,7 +382,7 @@ pub async fn defined_scopes(
             });
         }
     }
-    out
+    scopes.extend(out);
 }
 
 #[cfg(test)]

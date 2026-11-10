@@ -7,6 +7,7 @@ import { openSelectorLogsTab } from "../features/logs/multi/open";
 import { askOpenCluster } from "./openCluster";
 import { askOpenUrl } from "./openUrl";
 import { askSignIn } from "./signIn";
+import { COLUMN_WIDTH_ID, saveExtensionColumnWidth } from "./columnWidths";
 import { getPage } from "../layout/pages";
 import { findResourceDef, parseViewId } from "../resources/registry";
 import type { BridgeUi } from "./bridge";
@@ -159,6 +160,15 @@ export function hostUi(options: HostUiOptions): BridgeUi {
       if (heading?.getAttribute("aria-expanded") === "false") heading.click();
       section.scrollIntoView?.({ block: "start", behavior: "smooth" });
       heading?.focus();
+    },
+    setColumnWidth(params) {
+      const bad = () =>
+        new ApiError("invalid", "ui.setColumnWidth needs {table, column, width}: ids of letters, digits, `-`, `_` and `.`, and a width in pixels or null");
+      if (!isRecord(params) || typeof params.table !== "string" || typeof params.column !== "string") throw bad();
+      if (!COLUMN_WIDTH_ID.test(params.table) || !COLUMN_WIDTH_ID.test(params.column)) throw bad();
+      const width = params.width;
+      if (width !== null && (typeof width !== "number" || !Number.isFinite(width))) throw bad();
+      saveExtensionColumnWidth(options.extensionId, params.table, params.column, width);
     },
     setBlockOpen(params) {
       const bad = () => new ApiError("invalid", "ui.setBlockOpen needs {id, open}: a block id of letters, digits, `-`, `_` and `.`");

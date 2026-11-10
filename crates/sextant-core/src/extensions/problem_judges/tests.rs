@@ -225,11 +225,13 @@ fn scope_all() -> Vec<ProblemScope> {
                 namespaces: vec!["shop".into()],
             },
             defined_by: None,
+            more_definitions: false,
         },
         ProblemScope {
             kind: KindPattern::new("", "Service"),
             namespaces: NamespaceScope::All,
             defined_by: None,
+            more_definitions: false,
         },
     ]
 }
@@ -408,6 +410,7 @@ fn a_partial_read_says_where_it_was_not_read() {
             namespaces: vec!["b".into(), "a".into()],
         },
         defined_by: None,
+        more_definitions: false,
     }];
     let said = project_partial(
         &judge,

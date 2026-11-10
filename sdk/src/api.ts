@@ -279,6 +279,7 @@ export interface Methods {
   "ui.openUrl": { params: { url: string }; result: { opened: boolean } };
   "ui.openCluster": { params: { host: string; port: number; node?: string }; result: { opened: boolean; found?: number } };
   "ui.setBlockOpen": { params: { id: string; open: boolean }; result: null };
+  "ui.setColumnWidth": { params: { table: string; column: string; width: number | null }; result: null };
   "ui.revealSection": { params: { id: string }; result: null };
   "ui.setHidden": { params: { hidden: boolean }; result: null };
   "ui.icon": { params: { name: string }; result: { svg: string } | null };

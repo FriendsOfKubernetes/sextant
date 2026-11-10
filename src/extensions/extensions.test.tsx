@@ -1,6 +1,7 @@
 import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mockBackend, type ExtensionInfo, type ExtensionManifest, type KubeObject, type MockBackend } from "../api";
+import { getSettingsSnapshot, mockBackend, updateSettings, type ExtensionInfo, type ExtensionManifest, type KubeObject, type MockBackend } from "../api";
+import { flushExtensionColumnWidths } from "./columnWidths";
 import { resetAppStore, useAppStore } from "../app/store";
 import { getActionsFor, resetActions, runAction } from "../features/actions/registry";
 import { useClusterMenuItems } from "../features/clusters/menuItems";
@@ -489,6 +490,31 @@ describe("contributions of an extension", () => {
     }
   });
 
+  it("put a details section of every custom resource group on custom kinds only, never a core or Kubernetes one", () => {
+    const managed: ExtensionManifest = {
+      ...manifest,
+      sextantApi: 4,
+      contributes: {
+        ...manifest.contributes,
+        detailsSections: [{ id: "managed", title: "Crossplane", kinds: [{ group: "*.*", kind: "*" }], placement: "section" }],
+      },
+    };
+    registerExtension(info({ manifest: managed }));
+    try {
+      const has = (group: string, kind: string) =>
+        getDetailsSections({ group, version: "v1", kind }).some((s) => s.id === "ext:demo.widgets:managed");
+      expect(has("s3.aws.upbound.io", "Bucket")).toBe(true);
+      expect(has("example.org", "XDatabase")).toBe(true);
+      expect(has("", "Pod")).toBe(false);
+      expect(has("apps", "Deployment")).toBe(false);
+      expect(has("networking.k8s.io", "Ingress")).toBe(false);
+      expect(has("k8s.io", "Thing")).toBe(false);
+      expect(has("metrics.kubernetes.io", "Thing")).toBe(false);
+    } finally {
+      unregisterExtension("demo.widgets");
+    }
+  });
+
   it("put a details section of a domain's groups only on kinds of those groups, never a core one", () => {
     const managed: ExtensionManifest = {
       ...manifest,
@@ -615,6 +641,40 @@ describe("contributions of an extension", () => {
     await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { blocks: { pods: false } } }));
     fireEvent.click(within(panel).getByRole("button", { name: "Expand all" }));
     await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { blocks: { "*": true } } }));
+  });
+
+  it("keep the widths of an extension's own table under its own key and tell them in every frame's context (#417)", async () => {
+    await renderShell();
+    act(() => useAppStore.getState().openDetails(widgetRef));
+    const panel = screen.getByRole("complementary", { name: "Details" });
+    await waitFor(() => expect(frameOf(panel)).not.toBeNull());
+    const frame = frameOf(panel);
+    const posted: unknown[] = [];
+    vi.spyOn(frame.contentWindow!, "postMessage").mockImplementation((m: unknown) => void posted.push(m));
+    const send = (data: Record<string, unknown>) =>
+      act(() => {
+        window.dispatchEvent(new MessageEvent("message", { data: { sextant: 1, doc: DOC, ...data }, source: frame.contentWindow }));
+      });
+    send({ type: "ready" });
+    // Sextant's own words for the SDK's resize handles, `{{name}}` left for the SDK.
+    await waitFor(() =>
+      expect(posted.at(-1)).toMatchObject({ type: "context", context: { texts: { resizeColumn: "Resize column {{name}}", resizeHint: expect.stringContaining("Enter") } } }),
+    );
+    expect((posted.at(-1) as { context: Record<string, unknown> }).context.columnWidths).toBeUndefined();
+    send({ type: "request", id: 8, method: "ui.setColumnWidth", params: { table: "pods", column: "name", width: 9999 } });
+    act(() => flushExtensionColumnWidths());
+    await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { columnWidths: { pods: { name: 1600 } } } }));
+    expect(getSettingsSnapshot()?.columnWidths?.["ext:demo.widgets:pods"]?.columns).toEqual({ name: 1600 });
+    // Another table of Sextant's, or of another extension, is never told.
+    await act(() => updateSettings((c) => ({ ...c, columnWidths: { ...c.columnWidths, "helm.releases": { columns: { name: 300 }, used: 1 }, "ext:other.ext:pods": { columns: { a: 100 }, used: 1 } } })));
+    await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context" }));
+    expect((posted.at(-1) as { context: { columnWidths: unknown } }).context.columnWidths).toEqual({ pods: { name: 1600 } });
+    send({ type: "request", id: 9, method: "ui.setColumnWidth", params: { table: "pods", column: "name", width: null } });
+    act(() => flushExtensionColumnWidths());
+    await waitFor(() => expect((posted.at(-1) as { context: Record<string, unknown> }).context.columnWidths).toBeUndefined());
+    // Ids it cannot keep are refused.
+    send({ type: "request", id: 10, method: "ui.setColumnWidth", params: { table: "../x", column: "name", width: 100 } });
+    await waitFor(() => expect(posted.at(-1)).toMatchObject({ id: 10, error: { code: "invalid" } }));
   });
 
   it("give a details section the height the frame asks for", async () => {

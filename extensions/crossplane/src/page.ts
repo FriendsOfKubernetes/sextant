@@ -59,7 +59,8 @@ export function pageView(sextant: Sextant, state: PageState, onlyProblems: boole
             element("span", { className: "xp-table__names" }, row.failing?.reason ?? "", row.failing?.message ? element("div", { className: "xp-message", textContent: row.failing.message }) : null),
             row.composition ?? "",
           ]),
-          { label: t("page.title") },
+          // Columns the user resizes, kept by Sextant as the built-in page kept them (by position).
+          { label: t("page.title"), id: "composites", sextant },
         )
       : null;
   return element(

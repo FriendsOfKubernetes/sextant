@@ -19,7 +19,8 @@ use crate::state::AppState;
 /// (disabled, failed, or asking for more than was granted) or whose rules were not agreed to. The kinds a `kindsFrom`
 /// reads from definitions come last, `definedBy` that definition kind: decided here by listing the definitions with
 /// the user's connection where the extension may read them (`kinds_from::defined_scopes`), never taken from the
-/// window.
+/// window. The definition kind's scope says when the cluster holds more definitions than a `kindsFrom` reads
+/// (`moreDefinitions`), so the window marks the category as a part.
 #[tauri::command]
 pub async fn extension_problem_scopes(
     host: State<'_, ExtensionHost>,
@@ -55,17 +56,16 @@ pub async fn extension_problem_scopes(
         return Ok(Vec::new());
     };
     if let (Some(manifest), Some(agreed)) = (manifest, entry.granted_kinds_from.as_deref()) {
-        let defined = defined_scopes(
+        defined_scopes(
             &state.clusters,
             &cluster_id,
             &context,
             &entry.granted,
             &manifest,
             agreed,
-            &scopes,
+            &mut scopes,
         )
         .await;
-        scopes.extend(defined);
     }
     Ok(scopes)
 }

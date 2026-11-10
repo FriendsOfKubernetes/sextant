@@ -14,7 +14,7 @@ import { categoriesOfExtension, registerExtensionProblems } from "./extensionCat
 import { isOptIn } from "./model";
 import { setCategory } from "../notifications/prefs";
 import { updateSettings } from "../../api";
-import { useExtensionSectionCount, useProblemCount } from "./hooks";
+import { useClusterProblems, useExtensionSectionCount, useProblemCount } from "./hooks";
 import "./index";
 import { ProblemsPage } from "./ProblemsPage";
 import { acquireSource, getSource, resetProblemSources } from "./store";
@@ -488,6 +488,14 @@ describe("problems of extensions", () => {
     const claims = await watchOf(wb, "Database");
     expect(wb.specs.get(claims)!.namespaces).toEqual(["team"]);
     emitSnapshot(wb, claims, [failing("Database", "db", "team")]);
+    await waitFor(() => expect(result.current).toBe(2));
+    const sources = renderHook(() => useClusterProblems("c1", ["ext:crossplane-ext"]));
+    expect(sources.result.current.sources.some((s) => s.truncated)).toBe(false);
+
+    // More definitions than the `kindsFrom` reads (Rust counted them): the category judges a part.
+    found = [{ ...found[0]!, moreDefinitions: true }, ...found.slice(1)];
+    emitDelta(wb, definitions, [xrd("Database"), { ...xrd(), metadata: { name: "xcaches.example.org", uid: "u-xrd-2" }, spec: { group: "example.org", names: { kind: "XCache" } } }]);
+    await waitFor(() => expect(sources.result.current.sources.some((s) => s.truncated)).toBe(true), { timeout: 3000 });
     await waitFor(() => expect(result.current).toBe(2));
   });
 

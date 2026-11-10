@@ -211,6 +211,8 @@ function publish(entry: Entry, patch: Partial<SourceState> = {}): void {
   const judge = entry.state.def.judge;
   if (judge) problems = judge.judge(problems, judgeContext(entry, judge.tap.id));
   entry.state = { ...entry.state, ...patch, problems };
+  // A definition kind with more definitions than its `kindsFrom` reads: always a part.
+  if (entry.state.def.moreDefinitions === true) entry.state.truncated = true;
   changed();
   // Sources judged with this one's rows or problems (its category's, in its cluster) look again.
   if (entry.state.category.startsWith("ext:") && !republishing) {
@@ -494,7 +496,7 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
   let entry = entries.get(key);
   if (!entry) {
     const created: Entry = {
-      state: { key, clusterId, category: def.category, def, status: "loading", problems: [], truncated: false },
+      state: { key, clusterId, category: def.category, def, status: "loading", problems: [], truncated: def.moreDefinitions === true },
       byUid: new Map(),
       refs: 0,
       stop: () => undefined,

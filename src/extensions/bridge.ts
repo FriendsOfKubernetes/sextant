@@ -36,6 +36,8 @@ export interface BridgeUi {
   openCluster(params: unknown): Promise<{ opened: boolean; found?: number }>;
   /** Keeps a details frame's block open or closed in Sextant's memory (#416). */
   setBlockOpen(params: unknown): void;
+  /** Keeps the width of a column of the extension's own table (`ui.table` with an `id`, #417). */
+  setColumnWidth(params: unknown): void;
   revealSection(params: unknown): void;
   /** Hides or shows the frame's details section (ADR-0161). */
   setHidden(params: unknown): void;
@@ -171,6 +173,8 @@ export function createBridge(options: BridgeOptions): Bridge {
         return ui.openCluster(request.params);
       case "ui.setBlockOpen":
         return ui.setBlockOpen(request.params);
+      case "ui.setColumnWidth":
+        return ui.setColumnWidth(request.params);
       case "ui.revealSection":
         return ui.revealSection(request.params);
       case "ui.signIn":

@@ -68,6 +68,7 @@ beforeEach(() => {
     close: vi.fn<Fn>(),
     setHidden: vi.fn<Fn>(),
     setBlockOpen: vi.fn<Fn>(),
+    setColumnWidth: vi.fn<Fn>(),
     revealSection: vi.fn<Fn>(),
     openLogs: vi.fn<(params: unknown) => Promise<void>>(() => Promise.resolve()),
     openUrl: vi.fn<(params: unknown) => Promise<{ opened: boolean }>>(() => Promise.resolve({ opened: true })),

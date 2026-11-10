@@ -13,4 +13,9 @@ namespaces: NamespaceScope,
 /**
  * A kind the objects of this definition kind define (`kindsFrom`): only the rules with `kindsFrom` run on it.
  */
-definedBy?: KindPattern, };
+definedBy?: KindPattern, 
+/**
+ * A definition kind (`kindsFrom`) of which the cluster holds more objects than the `kindsFrom` reads (`max`): the
+ * kinds the others define are not judged, so the category is told it judges a part (as a capped list is).
+ */
+moreDefinitions?: boolean, };

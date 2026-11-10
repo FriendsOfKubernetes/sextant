@@ -33,6 +33,7 @@ pub use terminal_tools::TerminalToolsSettings;
 pub mod appearance;
 pub mod custom_columns;
 pub mod known_namespaces;
+mod moved_details;
 pub mod observability;
 pub use observability::ObservabilityLinks;
 pub mod practices;
@@ -726,6 +727,8 @@ impl SettingsStore {
 /// Version 2 → 3: Flux, Argo CD and Argo Rollouts moved into Sextant's own extensions (ADR-0162); a notification
 /// category the user turned off stays off under the extension's category, and agents, which got Flux and Argo CD
 /// problems by default, keep getting them from the extensions ([`MOVED_PROBLEM_CATEGORIES`]).
+/// The details blocks the user opened or closed in the moved views, and their tables' widths, move to the extensions'
+/// own (`moved_details`).
 pub fn migrate(settings: &mut AppSettings) {
     if settings.settings_version < 1 {
         if settings.language == "en" {
@@ -761,6 +764,12 @@ pub fn migrate(settings: &mut AppSettings) {
                 settings.mcp.extension_problems.push(id);
             }
         }
+        // The moved views' details blocks and table widths, as the user left them (ADR-0167 amendment).
+        moved_details::move_details_choices(&mut settings.appearance.details_sections);
+        for cluster in settings.clusters.values_mut() {
+            moved_details::move_details_choices(&mut cluster.details_sections);
+        }
+        moved_details::move_column_widths(&mut settings.column_widths);
         // A file of Sextant 0.29 or earlier: the user updated, and "What's new" tells what moved (ADR-0166).
         if settings.whats_new.seen_version.is_none() {
             settings.whats_new.seen_version = Some(whats_new::BEFORE_0_30.to_owned());
@@ -1440,6 +1449,52 @@ mod tests {
         let (_, store) = store_in(&fresh);
         assert!(store.get().mcp.extension_problems.is_empty());
         assert_eq!(store.get().whats_new.seen_version, None);
+    }
+
+    #[test]
+    fn the_moved_views_blocks_and_widths_move_to_their_extensions_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        std::fs::write(
+            &path,
+            r#"{ "settingsVersion": 2,
+                 "appearance": { "detailsSections": { "example.org/XDatabase": { "crossplaneResource/crossplane:chain.title": false } } },
+                 "clusters": { "c1": { "detailsSections": { "/Secret": { "tlsCertificate/certmanager:tls.title": false } } } },
+                 "columnWidths": { "crossplane.composites": { "columns": { "1": 240 }, "used": 5 } } }"#,
+        )
+        .unwrap();
+        let store = SettingsStore::open(path.clone());
+        let s = store.get();
+        assert_eq!(
+            s.appearance.details_sections["example.org/XDatabase"],
+            BTreeMap::from([(
+                "ext:sextant.crossplane:crossplane-resource/crossplane-resource/chain".to_owned(),
+                false
+            )])
+        );
+        assert_eq!(
+            s.clusters["c1"].details_sections["/Secret"],
+            BTreeMap::from([("tlsCertificate/tls:section.title".to_owned(), false)])
+        );
+        assert_eq!(
+            s.column_widths["ext:sextant.crossplane:composites"].columns["1"],
+            240
+        );
+        assert!(!s.column_widths.contains_key("crossplane.composites"));
+        // Once: a path written under the old name later is the user's, and stays.
+        store
+            .update(|s| {
+                s.appearance
+                    .details_sections
+                    .entry("example.org/XDatabase".to_owned())
+                    .or_default()
+                    .insert("crossplaneResource/crossplane:chain.title".to_owned(), true);
+            })
+            .unwrap();
+        assert!(
+            SettingsStore::open(path).get().appearance.details_sections["example.org/XDatabase"]
+                .contains_key("crossplaneResource/crossplane:chain.title")
+        );
     }
 
     #[test]

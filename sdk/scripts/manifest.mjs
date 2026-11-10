@@ -1911,12 +1911,14 @@ function checkDetailsSections(manifest) {
     (section.kinds ?? []).forEach((kind, k) => {
       if ((kind.group === "*" && kind.kind === "*") || (!kind.group.includes("*") && kind.kind !== "*")) return;
       const at = [...list, i, "kinds", k];
+      // `*.*`/`*`: every kind of a custom resource group (`is_every_custom_group` in Rust).
+      const everyCustom = kind.group === "*.*" && kind.kind === "*";
       const domain = kind.group.startsWith("*.") && kind.kind === "*" ? kind.group.slice(2) : undefined;
       if (domain === undefined) {
-        fail(at, "is every kind (`*`/`*`), the kinds of the groups under a domain (`*.upbound.io`/`*`), or one kind");
+        fail(at, "is every kind (`*`/`*`), every kind of a custom resource group (`*.*`/`*`), the kinds of the groups under a domain (`*.upbound.io`/`*`), or one kind");
       }
       const labels = domain.split(".");
-      if (!isCustomGroup(domain) || domain.length > 240 || !labels.every((l) => l !== "" && l.length <= 63 && /^[a-z0-9-]+$/.test(l))) {
+      if (!everyCustom && (!isCustomGroup(domain) || domain.length > 240 || !labels.every((l) => l !== "" && l.length <= 63 && /^[a-z0-9-]+$/.test(l)))) {
         fail([...at, "group"], "is `*.` and a domain of custom resource groups, such as `*.upbound.io` (not Kubernetes' own)");
       }
       if (manifest.sextantApi < WINDOW_API) fail(at, `needs sextantApi ${WINDOW_API} or later`);

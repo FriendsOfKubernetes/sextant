@@ -53,6 +53,17 @@ export interface HostContext {
    * frame shows; since Sextant 0.30): read `kinds` again when it does. Left out before the cluster's discovery came.
    */
   kindsVersion?: number;
+  /**
+   * The widths the user gave the columns of the extension's own tables (`ui.table` with an `id`), by table id and
+   * column id, in pixels (since Sextant 0.30); a column it does not name keeps its own width. Kept by Sextant as its own
+   * tables' widths are; changed by `ui.setColumnWidth`.
+   */
+  columnWidths?: Record<string, Record<string, number>>;
+  /**
+   * Sextant's own words for the SDK's controls, in the UI language (since Sextant 0.30): `resizeColumn` ("Resize
+   * column {{name}}") and `resizeHint` (how the keys change a column's width).
+   */
+  texts?: { resizeColumn: string; resizeHint: string };
 }
 
 export interface ProtocolError {
@@ -119,6 +130,7 @@ export const LOCAL_METHODS = [
   "ui.openUrl",
   "ui.openCluster",
   "ui.setBlockOpen",
+  "ui.setColumnWidth",
   "ui.revealSection",
   "ui.signIn",
   "ui.setHidden",

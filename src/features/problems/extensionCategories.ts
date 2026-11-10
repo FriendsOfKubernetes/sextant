@@ -365,7 +365,7 @@ export function extensionSourcesFor(
     if (!entry || !scope || scope === "loading" || !kinds) continue;
     const judged: { def: SourceDef; key: string }[] = [];
     const targets: AcrossTarget[] = [];
-    for (const { kind, namespaces, definedBy } of scope) {
+    for (const { kind, namespaces, definedBy, moreDefinitions } of scope) {
       const key = kindKeyOf(kind);
       // A kind its definitions define (`kindsFrom`): its rules only, where Rust found it defined.
       const defined = definedBy !== undefined;
@@ -412,6 +412,8 @@ export function extensionSourcesFor(
           !(entry.kindsFrom && kindKeyOf(entry.kindsFrom.kind) === key && ![entry.kindsFrom.groupPath, ...entry.kindsFrom.kindPaths].every(underMetadata)))
           ? { metadataOnly: true }
           : {}),
+        // The cluster holds more definitions than the `kindsFrom` reads (Rust counted them): a part is judged.
+        ...(moreDefinitions === true ? { moreDefinitions: true } : {}),
       };
       out.push(def);
       if (entry.across.has(key)) {
