@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "As visualizações das ferramentas do cluster agora são extensões",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe e Operator Lifecycle Manager saíram do Sextant para suas próprias extensões do catálogo de extensões, atualizadas separadamente. Instale abaixo as que você usa: até lá, suas seções não são exibidas. Suas configurações de notificação para elas foram mantidas, e a barra lateral também as oferece nos clusters que executam essas ferramentas."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe e Operator Lifecycle Manager saíram do Sextant para suas próprias extensões do catálogo de extensões, atualizadas separadamente. Instale abaixo as que você usa: até lá, suas seções não são exibidas. Suas configurações de notificação para elas foram mantidas, e a barra lateral também as oferece nos clusters que executam essas ferramentas."
     },
     "api4": {
       "title": "API de extensões 4",
@@ -40,7 +40,8 @@
       "dra": "ResourceClaims com seus dispositivos, templates de claims, classes de dispositivos, ResourceSlices e a página Dispositivos",
       "velero": "Backups, agendamentos, restaurações e locais de armazenamento; backup de um namespace ou restauração de um backup",
       "kueue": "ClusterQueues com cota e uso, LocalQueues, Workloads e por que esperam",
-      "kyverno": "Políticas com seu modo e resultados, relatórios de políticas e os resultados de cada objeto"
+      "kyverno": "Políticas com seu modo e resultados, relatórios de políticas e os resultados de cada objeto",
+      "sealed-secrets": "SealedSecrets com seu estado de sincronização, escopo, Secret de destino e chaves seladas, e o controlador com suas chaves de selagem"
     }
   }
 }

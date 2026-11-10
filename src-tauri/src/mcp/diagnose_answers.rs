@@ -199,7 +199,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "clusterApi",
     "k3s",
     "openshift",
-    "sealedSecrets",
     "prometheusOperator",
     "reflector",
     "security",
@@ -210,7 +209,7 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "events",
 ];
 /// Categories that count only while the user turned them on (`OPT_IN_CATEGORIES` there).
-pub const OPT_IN_CATEGORIES: [&str; 9] = [
+pub const OPT_IN_CATEGORIES: [&str; 8] = [
     "security",
     "credentials",
     "disk",
@@ -218,7 +217,6 @@ pub const OPT_IN_CATEGORIES: [&str; 9] = [
     "prometheusOperator",
     "traefik",
     "reflector",
-    "sealedSecrets",
     "alerts",
 ];
 /// Never given to agents: expiring kubeconfig credentials are the app user's, not the cluster's (ADR-0084).
@@ -231,8 +229,6 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     // Contour proxies (#233): a window view of 0.20.0.
     "contour",
     "crossplane",
-    // Sealed Secrets (#240): a window view of 0.21.0.
-    "sealedSecrets",
     // Reflector mirrors (#241): a window view of 0.21.0.
     "reflector",
     // Vertical Pod Autoscaler (#242): a window view of 0.22.0.

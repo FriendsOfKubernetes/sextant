@@ -27,7 +27,6 @@
     "crossplane": "Crossplane",
     "clusterApi": "Cluster API",
     "openshift": "OpenShift",
-    "sealedSecrets": "Sealed Secrets",
     "prometheusOperator": "Prometheus Operator",
     "reflector": "Reflector",
     "security": "安全性",
@@ -58,7 +57,6 @@
     "meshInvalidVirtualService": "繫結到 Sidecar（mesh）時使用了主機 *：Istio 會拒絕它，因此它的路由都不會被使用。",
     "traefikMissingReference": "參照了不存在的物件：{{refs}}。Traefik 會略過依賴它們的部分。",
     "traefikSkippedRoute": "Traefik 略過其路由 {{routes}}：match 規則為空，或 kind 不是 Rule。",
-    "sealedSecretTargetMissing": "顯示已同步，但其 Secret {{name}} 不存在。",
     "vpaNoPodsMatched": "沒有任何 Pod 與之相符，因此沒有建議。",
     "vpaHpaConflict": "HPA {{hpa}} 依 {{resources}} 調整同一工作負載的規模，而此 VPA 在 {{mode}} 模式下會修改這些資源：兩者互相衝突。",
     "serviceMonitorSelectsNothing": "在下列 namespace 中未選取任何 Service：{{namespaces}}",
@@ -76,6 +74,5 @@
   "showPrometheusOperator": "Prometheus Operator 監視器與伺服器",
   "showTraefik": "Traefik 參照",
   "showReflector": "Reflector 鏡像",
-  "showSealedSecrets": "Sealed Secrets 解封",
   "showAlerts": "觸發中的告警（Prometheus 和 Alertmanager）"
 }

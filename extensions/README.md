@@ -25,6 +25,7 @@ for other authors. The guide to writing one is the wiki page
 | Kueue (`sextant.kueue`) | [`kueue/`](kueue/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | ClusterQueues with their quota against what is reserved and in use, LocalQueues, Workloads and why they wait, and the queue of every job Kueue queues, read-only, with their problems |
 | Kyverno (`sextant.kyverno`) | [`kyverno/`](kyverno/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | ClusterPolicies and Policies with their mode, policy reports, and the policy results of every object, read-only, with opt-in problems |
 | Dynamic Resource Allocation (`sextant.dra`) | [`dra/`](dra/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | ResourceClaims with their state, requests and devices, claim templates, device classes, ResourceSlices, the Devices page and the devices of Pods and Nodes, read-only, with their problems |
+| Sealed Secrets (`sextant.sealed-secrets`) | [`sealed-secrets/`](sealed-secrets/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | SealedSecrets with their unseal state, scope, target Secret and sealed keys by name, and the controller with its sealing keys, read-only, with opt-in problems |
 
 ## The documents of an extension
 

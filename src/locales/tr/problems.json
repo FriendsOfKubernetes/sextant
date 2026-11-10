@@ -29,7 +29,6 @@
     "crossplane": "Crossplane",
     "clusterApi": "Cluster API",
     "openshift": "OpenShift",
-    "sealedSecrets": "Sealed Secrets",
     "prometheusOperator": "Prometheus Operator",
     "reflector": "Reflector",
     "security": "Güvenlik",
@@ -62,7 +61,6 @@
     "meshInvalidVirtualService": "Sidecar'lara (mesh) bağlıyken * ana makinesine sahip: Istio onu reddeder, bu yüzden rotalarının hiçbiri kullanılmaz.",
     "traefikMissingReference": "Var olmayan nesnelere başvuruyor: {{refs}}. Traefik onlara bağlı olanı atlar.",
     "traefikSkippedRoute": "Traefik {{routes}} rotalarını atlar: boş bir match kuralı ya da Rule dışında bir kind.",
-    "sealedSecretTargetMissing": "Eşitlenmiş görünüyor, ancak Secret {{name}} mevcut değil.",
     "vpaNoPodsMatched": "Hiçbir Pod onunla eşleşmiyor, bu yüzden öneri yok.",
     "vpaHpaConflict": "HPA {{hpa}}, aynı iş yükünü bu VPA'nın {{mode}} modunda değiştirdiği {{resources}} üzerinden ölçeklendiriyor: ikisi birbiriyle çatışıyor.",
     "serviceMonitorSelectsNothing": "Şu namespace'lerde hiçbir Service seçmiyor: {{namespaces}}",
@@ -80,6 +78,5 @@
   "showPrometheusOperator": "Prometheus Operator izleyicileri ve sunucuları",
   "showTraefik": "Traefik başvuruları",
   "showReflector": "Reflector yansıları",
-  "showSealedSecrets": "Sealed Secrets mühür açma",
   "showAlerts": "Tetiklenen uyarılar (Prometheus ve Alertmanager)"
 }

@@ -17,7 +17,6 @@ import {
   PROBLEM_KINDS as CAPI_PROBLEM_KINDS,
 } from "../cluster-api/model";
 import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operator/model";
-import { SEALED_SECRET } from "../sealed-secrets/model";
 import { VPA } from "../vpa/model";
 import { HELM_CHART as K3S_HELM_CHART } from "../k3s/model";
 import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
@@ -158,9 +157,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
   // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
   crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],
-  // Sealed Secrets (#240): failed unseals and synced SealedSecrets whose Secret is missing, judged by the provider of
-  // features/sealed-secrets (`external`: the Secret is another object), held only where SealedSecrets are served.
-  sealedSecrets: [{ category: "sealedSecrets", kind: SEALED_SECRET, fieldSelector: null, discovered: true, external: true }],
   // CloudNativePG (#213): unhealthy Clusters, failing archiving or backups, failed Backups.
   // Cluster API (#243): failed or unavailable Clusters and KubeadmControlPlanes, Machines failed or stuck
   // provisioning, MachineHealthChecks that stopped remediating; a management cluster can hold thousands of Machines:

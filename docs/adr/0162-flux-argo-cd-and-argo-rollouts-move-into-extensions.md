@@ -145,3 +145,19 @@ Operator moved; where the extension still differs is listed in its README. The v
 `dra` (on by default) to `ext:sextant.dra` (`MOVED_PROBLEM_CATEGORIES`, never for agents by default, as before).
 `resource.k8s.io` stays among Kubernetes' own groups (`src/resources/useKinds.ts`), so without the extension its kinds
 are not listed under Custom Resources either.
+
+## Amendment: Sealed Secrets
+
+`extensions/sealed-secrets` (`sextant.sealed-secrets`, 1.0.0) takes the Sealed Secrets view (ADR-0109): SealedSecrets
+in the section `sealedSecrets` with the built-in columns, "Only problems" and details (the Synced state and the
+controller's error in words, the scope, the target Secret and how it stands, the sealed keys by name and size, the
+controller and its sealing keys), Secrets read as metadata only and the sealing certificate never. The section keeps its
+place right after `crossplane`, behind `kyverno` and `externalSecrets` (`cnpg` and `strimzi`, which were placed after
+`sealedSecrets`, are now anchored to `crossplane` behind it, so the order is unchanged), and the sidebar offers it where
+`bitnami.com` SealedSecrets are served. Its problems are rules of the extension's own opt-in category (`problemCategories`,
+#410): failed unseals, and synced SealedSecrets whose Secret is missing, told by `missing` against a metadata-only
+Secret list. The version-3 migration turns the opt-in `sealedSecrets` into `ext:sextant.sealed-secrets:sealed-secrets`
+(`MOVED_OPT_IN_CATEGORIES`); it is never given to agents, as before, `get_problems` still refuses the old name, and the
+Problems page's own toggle for it is gone (the extension's category has the toggle every opt-in extension category
+gets). Where the extension still differs — the Secrets it lists to tell a missing one, the table's search by the shown
+words, the SDK's details tables and the blocks' memory (#417) — is listed in its README.

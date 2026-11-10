@@ -13,7 +13,6 @@ import { kindFromApiVersion } from "../../resources/refs";
 import { eventTimestamp, involvedObject } from "../events/model";
 import { contourProblems } from "../contour/problemRules";
 import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../cluster-api/model";
-import { isSealedSecret } from "../sealed-secrets/model";
 import { isVpa } from "../vpa/model";
 import { isHelmControllerKind, isK3sKind } from "../k3s/model";
 import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
@@ -50,7 +49,6 @@ export const PROBLEM_CATEGORIES = [
   "clusterApi",
   "k3s",
   "openshift",
-  "sealedSecrets",
   "prometheusOperator",
   "reflector",
   "security",
@@ -78,9 +76,7 @@ export const NOTIFY_CATEGORIES: readonly BuiltInCategory[] = PROBLEM_CATEGORIES.
  * Prometheus Operator findings (`prometheusOperator`) judge every ServiceMonitor and PodMonitor against metadata
  * lists of the Services and Pods they look at: a cost a cluster pays only when asked for. So do Traefik findings
  * (`traefik`, #232): every Traefik object of the cluster and metadata of the Services they name.
- * And Reflector mirrors (`reflector`, #241): metadata of every Secret and ConfigMap of the cluster. And Sealed Secrets
- * (`sealedSecrets`, #240, amended ADR-0109): every SealedSecret of the cluster and metadata lists of Secrets, a
- * background cost like Traefik's and Reflector's, so it is asked for the same way.
+ * And Reflector mirrors (`reflector`, #241): metadata of every Secret and ConfigMap of the cluster.
  * And firing alerts (`alerts`, #264, ADR-0119): Prometheus' and Alertmanager's alerts polled once a minute.
  */
 export const OPT_IN_CATEGORIES: readonly BuiltInCategory[] = [
@@ -91,7 +87,6 @@ export const OPT_IN_CATEGORIES: readonly BuiltInCategory[] = [
   "prometheusOperator",
   "traefik",
   "reflector",
-  "sealedSecrets",
   "alerts",
 ];
 
@@ -273,8 +268,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   // Contour HTTPProxies (#233): invalid and orphaned ones.
   if (kind.group === "projectcontour.io" && kind.kind === "HTTPProxy") return "contour";
   // External Secrets, CloudNativePG, Strimzi and Prometheus Operator (#213): judged by their sections' own helpers.
-  // Sealed Secrets (#240): judged by the provider of features/sealed-secrets (the target Secret is another object).
-  if (isSealedSecret(kind)) return "sealedSecrets";
   // Vertical Pod Autoscaler (#242): judged by the provider of features/vpa (HPA conflicts span two objects).
   if (isVpa(kind)) return "vpa";
   // Cluster API (#243): Clusters, KubeadmControlPlanes, Machines and MachineHealthChecks, judged by features/cluster-api.
@@ -703,7 +696,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
     case "traefik": // Broken references span several objects: the provider of features/traefik finds them.
     case "reflector": // Mirrors are judged against their sources: the provider of features/reflector finds them.
-    case "sealedSecrets": // A missing target Secret is another object: the provider of features/sealed-secrets finds both.
     case "vpa": // A conflict with an HPA spans two objects: the provider of features/vpa finds every VPA problem.
     case "k3s": // A chart's outcome is its Job, components are Deployments: the provider of features/k3s finds them.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.

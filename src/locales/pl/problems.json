@@ -33,7 +33,6 @@
     "crossplane": "Crossplane",
     "clusterApi": "Cluster API",
     "openshift": "OpenShift",
-    "sealedSecrets": "Sealed Secrets",
     "prometheusOperator": "Prometheus Operator",
     "reflector": "Reflector",
     "security": "Bezpieczeństwo",
@@ -70,7 +69,6 @@
     "meshInvalidVirtualService": "Ma host * przy powiązaniu z sidecarami (mesh): Istio ją odrzuca, więc żadna z jej tras nie jest używana.",
     "traefikMissingReference": "Odwołuje się do obiektów, które nie istnieją: {{refs}}. Traefik pomija to, co od nich zależy.",
     "traefikSkippedRoute": "Traefik pomija jego trasy {{routes}}: pusta reguła match lub kind inny niż Rule.",
-    "sealedSecretTargetMissing": "Jest oznaczony jako zsynchronizowany, ale jego Secret {{name}} nie istnieje.",
     "vpaNoPodsMatched": "Żaden Pod do niego nie pasuje, więc nie ma rekomendacji.",
     "vpaHpaConflict": "HPA {{hpa}} skaluje to samo obciążenie według {{resources}}, które ten VPA zmienia w trybie {{mode}}: oba działają przeciwko sobie.",
     "serviceMonitorSelectsNothing": "Nie wybiera żadnego Service w namespace: {{namespaces}}",
@@ -88,6 +86,5 @@
   "showPrometheusOperator": "Monitory i serwery Prometheus Operator",
   "showTraefik": "Odwołania Traefik",
   "showReflector": "Kopie lustrzane Reflector",
-  "showSealedSecrets": "Odpieczętowanie Sealed Secrets",
   "showAlerts": "Aktywne alerty (Prometheus i Alertmanager)"
 }

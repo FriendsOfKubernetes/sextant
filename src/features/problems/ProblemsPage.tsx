@@ -105,13 +105,6 @@ export function ProblemsPage({ clusterId }: PageProps) {
         </label>
         <label className="problems__choice">
           <Checkbox
-            checked={categories.includes("sealedSecrets")}
-            onChange={(e) => void updateSettings(setCategory("sealedSecrets", e.target.checked)).catch(() => undefined)}
-          />
-          {t("problems:showSealedSecrets")}
-        </label>
-        <label className="problems__choice">
-          <Checkbox
             checked={categories.includes("alerts")}
             onChange={(e) => void updateSettings(setCategory("alerts", e.target.checked)).catch(() => undefined)}
           />

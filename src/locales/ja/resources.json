@@ -22,7 +22,6 @@
     "traefik": "Traefik",
     "contour": "Contour",
     "crossplane": "Crossplane",
-    "sealedSecrets": "Sealed Secrets",
     "prometheusOperator": "Prometheus Operator",
     "clusterApi": "Cluster API",
     "openshift": "OpenShift",

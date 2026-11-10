@@ -33,7 +33,6 @@
     "crossplane": "Crossplane",
     "clusterApi": "Cluster API",
     "openshift": "OpenShift",
-    "sealedSecrets": "Sealed Secrets",
     "prometheusOperator": "Prometheus Operator",
     "reflector": "Reflector",
     "security": "Безпека",
@@ -70,7 +69,6 @@
     "meshInvalidVirtualService": "Має хост * при прив'язці до sidecar (mesh): Istio його відхиляє, тож жоден із його маршрутів не використовується.",
     "traefikMissingReference": "Посилається на об'єкти, яких не існує: {{refs}}. Traefik пропускає те, що від них залежить.",
     "traefikSkippedRoute": "Traefik пропускає його маршрути {{routes}}: порожнє правило match або kind, відмінний від Rule.",
-    "sealedSecretTargetMissing": "Позначений як синхронізований, але його Secret {{name}} не існує.",
     "vpaNoPodsMatched": "Жоден Pod йому не відповідає, тому рекомендації немає.",
     "vpaHpaConflict": "HPA {{hpa}} масштабує те саме робоче навантаження за {{resources}}, які цей VPA змінює в режимі {{mode}}: вони заважають одне одному.",
     "serviceMonitorSelectsNothing": "Не вибирає жодного Service у namespace: {{namespaces}}",
@@ -88,6 +86,5 @@
   "showPrometheusOperator": "Монітори й сервери Prometheus Operator",
   "showTraefik": "Посилання Traefik",
   "showReflector": "Дзеркала Reflector",
-  "showSealedSecrets": "Розпечатування Sealed Secrets",
   "showAlerts": "Активні алерти (Prometheus і Alertmanager)"
 }

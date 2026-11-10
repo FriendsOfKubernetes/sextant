@@ -1,23 +1,36 @@
-// What the Sealed Secrets section reads from Bitnami Sealed Secrets objects (bitnami.com/v1alpha1 SealedSecret), as
-// the controller writes and reads them (bitnami-labs/sealed-secrets: pkg/apis/sealedsecrets/v1alpha1/types.go and
-// sealedsecret_expansion.go, pkg/controller/controller.go). Pure functions, no React.
+// What the extension reads from Bitnami Sealed Secrets objects (bitnami.com/v1alpha1 SealedSecret), as the controller
+// writes and reads them (bitnami-labs/sealed-secrets: pkg/apis/sealedsecrets/v1alpha1/types.go and
+// sealedsecret_expansion.go, pkg/controller/controller.go). Pure functions: the former built-in view's model
+// (ADR-0109), ported unchanged, with its problem detector kept as the reference the manifest's rule is tested against.
 //
 // Nothing here reads or shows a value: of `spec.encryptedData` only the key names and the sizes of the sealed
 // (ciphertext) values are taken, of `spec.template.data` only the key names; the target Secret is named and linked,
 // and the views look at its metadata only (ADR-0109).
-import type { KindRef, KubeObject } from "../../api";
-import { status } from "../../resources";
-import type { Tone } from "../../resources/status";
+import type { KindRef, KubeObject, UiTone } from "@sextant/extension-sdk";
 
-const { arr, get, num, record, str } = status;
+// ---------- Reading fields ----------
+
+export function get(value: unknown, ...path: string[]): unknown {
+  let current = value;
+  for (const key of path) {
+    if (current === null || typeof current !== "object" || Array.isArray(current)) return undefined;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current;
+}
+
+export const str = (value: unknown): string | undefined => (typeof value === "string" ? value : undefined);
+export const num = (value: unknown): number | undefined => (typeof value === "number" ? value : undefined);
+export const arr = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
+export const record = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 
 export const SEALED_GROUP = "bitnami.com";
 export const SEALED_SECRET: KindRef = { group: SEALED_GROUP, version: "v1alpha1", kind: "SealedSecret" };
 export const SECRET: KindRef = { group: "", version: "v1", kind: "Secret" };
 export const DEPLOYMENT: KindRef = { group: "apps", version: "v1", kind: "Deployment" };
 
-export const isSealedSecret = (kind: Pick<KindRef, "group" | "kind">): boolean =>
-  kind.group === SEALED_GROUP && kind.kind === SEALED_SECRET.kind;
+export const isSealedSecret = (kind: Pick<KindRef, "group" | "kind">): boolean => kind.group === SEALED_GROUP && kind.kind === SEALED_SECRET.kind;
 
 // ---------- The controller's annotations and names ----------
 
@@ -45,6 +58,7 @@ const annotation = (obj: unknown, key: string): string | undefined => str(get(ob
 
 /** Synced (True and current), failed (False), progressing (no status yet, or a status of an older generation). */
 export type SyncState = "ready" | "progressing" | "failed";
+export const SYNC_STATES: readonly SyncState[] = ["ready", "progressing", "failed"];
 
 export interface Sync {
   state: SyncState;
@@ -84,7 +98,7 @@ export function syncOf(obj: KubeObject): Sync {
   };
 }
 
-export const SYNC_TONE: Record<SyncState, Tone> = { ready: "success", progressing: "warning", failed: "danger" };
+export const SYNC_TONE: Record<SyncState, UiTone> = { ready: "success", progressing: "warning", failed: "danger" };
 
 /** The "Only problems" filter: a failed unseal or update. */
 export const isProblem = (obj: KubeObject): boolean => syncOf(obj).state === "failed";
@@ -92,6 +106,7 @@ export const isProblem = (obj: KubeObject): boolean => syncOf(obj).state === "fa
 // ---------- Scope ----------
 
 export type Scope = "strict" | "namespaceWide" | "clusterWide";
+export const SCOPES: readonly Scope[] = ["strict", "namespaceWide", "clusterWide"];
 
 /**
  * The scope the SealedSecret was sealed for, from its own annotations as the controller reads them when it decrypts
@@ -177,7 +192,7 @@ export function targetRelation(sealed: KubeObject, secret: KubeObject): TargetRe
   return controller ? "ownedByOther" : "unmanaged";
 }
 
-export const RELATION_TONE: Record<TargetRelation, Tone> = {
+export const RELATION_TONE: Record<TargetRelation, UiTone> = {
   owned: "success",
   managed: "success",
   patched: "success",
@@ -219,3 +234,39 @@ export function controllerSummary(deployment: KubeObject): ControllerSummary {
 
 /** A key Secret by its label (`active`, `compromised`); its data is never read. */
 export const keyState = (secret: KubeObject): string | undefined => str(get(secret, "metadata", "labels", KEY_LABEL));
+
+// ---------- The built-in problems (the reference of the manifest's rule) ----------
+
+/** The built-in category's graces: a failed unseal after 5 minutes, a missing Secret after 2. */
+export const SYNC_GRACE_MS = 5 * 60_000;
+export const TARGET_GRACE_MS = 2 * 60_000;
+
+export interface BuiltInProblem {
+  reason: "SyncFailed" | "TargetMissing";
+  message?: string;
+  since?: string;
+  /** When it counts: `since` (else when first seen) plus the grace. */
+  activeAt: number;
+}
+
+const time = (value: string | undefined): number | undefined => {
+  if (!value) return undefined;
+  const t = Date.parse(value);
+  return Number.isNaN(t) ? undefined : t;
+};
+
+/**
+ * The built-in provider's problems of one SealedSecret (`toProblems`): a failed unseal of the current generation, and
+ * a synced one whose Secret is missing from a list read in full (`exists` false; `undefined` is not judged).
+ */
+export function builtInProblems(obj: KubeObject, exists: (namespace: string, name: string) => boolean | undefined, firstSeen: number): BuiltInProblem[] {
+  if (obj.metadata?.deletionTimestamp) return [];
+  const sync = syncOf(obj);
+  const out: BuiltInProblem[] = [];
+  if (sync.state === "failed")
+    out.push({ reason: "SyncFailed", message: sync.message, since: sync.since, activeAt: (time(sync.since) ?? firstSeen) + SYNC_GRACE_MS });
+  const target = targetName(obj);
+  if (sync.state === "ready" && target && exists(obj.metadata?.namespace ?? "", target) === false)
+    out.push({ reason: "TargetMissing", activeAt: firstSeen + TARGET_GRACE_MS });
+  return out;
+}

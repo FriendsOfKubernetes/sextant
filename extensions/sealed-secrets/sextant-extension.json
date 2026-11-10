@@ -1,0 +1,684 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.sealed-secrets",
+  "name": "Sealed Secrets",
+  "version": "1.0.0",
+  "description": "Bitnami Sealed Secrets: SealedSecrets with the controller's Synced state and its error in plain words, the scope they were sealed for, the target Secret and how it stands (from its metadata only), the sealed keys by name and size, and the controller with its sealing keys (metadata only; the certificate is never read); opt-in problems of failed unseals. Read-only, and never a value, sealed or decrypted.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "sealedSecrets",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "bitnami.com",
+              "kind": "SealedSecret"
+            },
+            {
+              "group": "",
+              "kind": "Secret"
+            },
+            {
+              "group": "apps",
+              "kind": "Deployment"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "bitnami.com",
+        "kind": "SealedSecret",
+        "section": "sealedSecrets",
+        "title": "Sealed Secrets",
+        "icon": "sealedSecret",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "all",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Synced\"].status",
+              "value": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".metadata.generation",
+                "otherPath": ".status.observedGeneration",
+                "offset": 1
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "sections": [
+      {
+        "section": "sealedSecrets",
+        "title": "Sealed Secrets",
+        "icon": "sealedSecrets",
+        "after": "crossplane"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "sealedSecrets",
+        "label": {
+          "one": "{{count}} object needs attention",
+          "other": "{{count}} objects need attention"
+        }
+      }
+    ],
+    "problemCategories": [
+      {
+        "id": "sealed-secrets",
+        "title": "Sealed Secrets",
+        "optIn": true
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "sealed-secret",
+        "title": "SealedSecret",
+        "kinds": [
+          {
+            "group": "bitnami.com",
+            "kind": "SealedSecret"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "bitnami.com",
+          "kind": "SealedSecret"
+        },
+        "id": "status",
+        "title": "Status",
+        "afterColumn": "namespace",
+        "width": "100px",
+        "filterBy": "value",
+        "paths": [
+          ".status.conditions[type=\"Synced\"].status"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Synced\"].message"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Synced\"].status",
+                  "value": "True"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "atLeast",
+                    "path": ".metadata.generation",
+                    "otherPath": ".status.observedGeneration",
+                    "offset": 1
+                  }
+                }
+              ]
+            },
+            "text": "Synced",
+            "tone": "ok",
+            "value": "ready"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "atLeast",
+                  "path": ".metadata.generation",
+                  "otherPath": ".status.observedGeneration",
+                  "offset": 1
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "in",
+                    "path": ".status.conditions[type=\"Synced\"].status",
+                    "values": [
+                      "True",
+                      "False"
+                    ]
+                  }
+                }
+              ]
+            },
+            "text": "Pending",
+            "tone": "warning",
+            "value": "progressing"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Synced\"].status",
+                  "value": "False"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "atLeast",
+                    "path": ".metadata.generation",
+                    "otherPath": ".status.observedGeneration",
+                    "offset": 1
+                  }
+                }
+              ]
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "bitnami.com",
+          "kind": "SealedSecret"
+        },
+        "id": "scope",
+        "title": "Scope",
+        "afterColumn": "status",
+        "width": "130px",
+        "paths": [
+          ".metadata.annotations[\"sealedsecrets.bitnami.com/cluster-wide\"]"
+        ],
+        "filterBy": "value",
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".metadata.annotations[\"sealedsecrets.bitnami.com/cluster-wide\"]",
+              "value": "true"
+            },
+            "text": "Cluster-wide",
+            "value": "clusterWide"
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".metadata.annotations[\"sealedsecrets.bitnami.com/namespace-wide\"]",
+              "value": "true"
+            },
+            "text": "Namespace-wide",
+            "value": "namespaceWide"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"sealedsecrets.bitnami.com/cluster-wide\"]",
+                    "value": "true"
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"sealedsecrets.bitnami.com/namespace-wide\"]",
+                    "value": "true"
+                  }
+                ]
+              }
+            },
+            "text": "Strict",
+            "value": "strict"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "bitnami.com",
+          "kind": "SealedSecret"
+        },
+        "id": "keys",
+        "title": "Keys",
+        "afterColumn": "scope",
+        "width": "70px",
+        "paths": [
+          ".spec.encryptedData"
+        ],
+        "format": "count",
+        "cases": [
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "above",
+                "path": ".spec.encryptedData|count",
+                "value": -1
+              }
+            },
+            "text": "0",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "bitnami.com",
+          "kind": "SealedSecret"
+        },
+        "id": "message",
+        "title": "Message",
+        "afterColumn": "keys",
+        "width": "minmax(160px, 2fr)",
+        "paths": [
+          ".status.conditions[type=\"Synced\"].message"
+        ]
+      }
+    ],
+    "problems": [
+      {
+        "id": "sync-failed",
+        "title": "SealedSecret: unsealing failed",
+        "kind": {
+          "group": "bitnami.com",
+          "kind": "SealedSecret"
+        },
+        "category": "sealed-secrets",
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "condition",
+              "conditionType": "Synced",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".metadata.generation",
+                "otherPath": ".status.observedGeneration",
+                "offset": 1
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Synced\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "notify": true,
+        "reason": "SyncFailed",
+        "message": "{{.status.conditions[type=\"Synced\"].message}}"
+      },
+      {
+        "id": "target-missing",
+        "title": "SealedSecret: its Secret is missing",
+        "kind": {
+          "group": "bitnami.com",
+          "kind": "SealedSecret"
+        },
+        "category": "sealed-secrets",
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Synced\"].status",
+              "value": "True"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "atLeast",
+                "path": ".metadata.generation",
+                "otherPath": ".status.observedGeneration",
+                "offset": 1
+              }
+            },
+            {
+              "type": "missing",
+              "path": ".metadata.name",
+              "kind": {
+                "group": "",
+                "kind": "Secret"
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "notify": true,
+        "reason": "TargetMissing",
+        "message": "Says it is synced, but its Secret {{.metadata.name}} does not exist."
+      }
+    ]
+  },
+  "translations": {
+    "de": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets: SealedSecrets mit dem Synced-Zustand des Controllers und seinem Fehler in Klartext, dem Geltungsbereich, für den sie versiegelt wurden, dem Ziel-Secret und wie es steht (nur aus seinen Metadaten), den versiegelten Schlüsseln nach Name und Größe sowie dem Controller mit seinen Versiegelungsschlüsseln (nur Metadaten; das Zertifikat wird nie gelesen); Probleme fehlgeschlagener Entschlüsselungen nach Wahl. Nur lesend, und nie ein Wert, versiegelt oder entschlüsselt.",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.one": "{{count}} Objekt erfordert Aufmerksamkeit",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} Objekte erfordern Aufmerksamkeit",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "Status",
+      "columns.scope.title": "Geltungsbereich",
+      "columns.keys.title": "Schlüssel",
+      "columns.message.title": "Meldung",
+      "columns.status.cases.0.text": "Synchronisiert",
+      "columns.status.cases.1.text": "Ausstehend",
+      "columns.status.cases.2.text": "Fehlgeschlagen",
+      "columns.scope.cases.0.text": "Clusterweit",
+      "columns.scope.cases.1.text": "Namespace-weit",
+      "columns.scope.cases.2.text": "Strikt",
+      "problems.sync-failed.title": "SealedSecret: Entschlüsselung fehlgeschlagen",
+      "problems.target-missing.title": "SealedSecret: sein Secret fehlt",
+      "problems.target-missing.message": "Gilt als synchronisiert, aber sein Secret {{.metadata.name}} existiert nicht."
+    },
+    "es": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets: SealedSecrets con el estado Synced del controlador y su error en palabras sencillas, el ámbito para el que se sellaron, el Secret de destino y cómo está (solo por sus metadatos), las claves selladas por nombre y tamaño, y el controlador con sus claves de sellado (solo metadatos; el certificado nunca se lee); problemas de descifrados fallidos, a elección. Solo lectura, y nunca un valor, sellado ni descifrado.",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.one": "{{count}} objeto requiere atención",
+      "sectionBadges.sealedSecrets.label.many": "{{count}} de objetos requieren atención",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} objetos requieren atención",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "Estado",
+      "columns.scope.title": "Ámbito",
+      "columns.keys.title": "Claves",
+      "columns.message.title": "Mensaje",
+      "columns.status.cases.0.text": "Sincronizado",
+      "columns.status.cases.1.text": "Pendiente",
+      "columns.status.cases.2.text": "Fallido",
+      "columns.scope.cases.0.text": "En todo el clúster",
+      "columns.scope.cases.1.text": "En el namespace",
+      "columns.scope.cases.2.text": "Estricto",
+      "problems.sync-failed.title": "SealedSecret: el descifrado falló",
+      "problems.target-missing.title": "SealedSecret: falta su Secret",
+      "problems.target-missing.message": "Figura como sincronizado, pero su Secret {{.metadata.name}} no existe."
+    },
+    "fr": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets : les SealedSecrets avec l'état Synced du contrôleur et son erreur en clair, la portée pour laquelle ils ont été scellés, le Secret cible et son état (d'après ses seules métadonnées), les clés scellées par nom et taille, et le contrôleur avec ses clés de scellement (métadonnées seulement ; le certificat n'est jamais lu) ; problèmes de déchiffrements échoués, au choix. En lecture seule, et jamais une valeur, scellée ou déchiffrée.",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.one": "{{count}} objet requiert votre attention",
+      "sectionBadges.sealedSecrets.label.many": "{{count}} d'objets requièrent votre attention",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} objets requièrent votre attention",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "Statut",
+      "columns.scope.title": "Portée",
+      "columns.keys.title": "Clés",
+      "columns.message.title": "Message",
+      "columns.status.cases.0.text": "Synchronisé",
+      "columns.status.cases.1.text": "En attente",
+      "columns.status.cases.2.text": "Échec",
+      "columns.scope.cases.0.text": "Dans tout le cluster",
+      "columns.scope.cases.1.text": "Dans le namespace",
+      "columns.scope.cases.2.text": "Strict",
+      "problems.sync-failed.title": "SealedSecret : échec du déchiffrement",
+      "problems.target-missing.title": "SealedSecret : son Secret est absent",
+      "problems.target-missing.message": "Indiqué comme synchronisé, mais son Secret {{.metadata.name}} n'existe pas."
+    },
+    "it": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets: SealedSecret con lo stato Synced del controller e il suo errore in parole semplici, l'ambito per cui sono stati sigillati, il Secret di destinazione e come si trova (solo dai suoi metadati), le chiavi sigillate per nome e dimensione, e il controller con le sue chiavi di sigillatura (solo metadati; il certificato non viene mai letto); problemi di decifrature non riuscite, a scelta. Sola lettura, e mai un valore, sigillato o decifrato.",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.one": "{{count}} oggetto richiede attenzione",
+      "sectionBadges.sealedSecrets.label.many": "{{count}} di oggetti richiedono attenzione",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} oggetti richiedono attenzione",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "Stato",
+      "columns.scope.title": "Ambito",
+      "columns.keys.title": "Chiavi",
+      "columns.message.title": "Messaggio",
+      "columns.status.cases.0.text": "Sincronizzato",
+      "columns.status.cases.1.text": "In attesa",
+      "columns.status.cases.2.text": "Non riuscito",
+      "columns.scope.cases.0.text": "In tutto il cluster",
+      "columns.scope.cases.1.text": "Nel namespace",
+      "columns.scope.cases.2.text": "Rigoroso",
+      "problems.sync-failed.title": "SealedSecret: decifratura non riuscita",
+      "problems.target-missing.title": "SealedSecret: manca il suo Secret",
+      "problems.target-missing.message": "Risulta sincronizzato, ma il suo Secret {{.metadata.name}} non esiste."
+    },
+    "ja": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets: コントローラーの Synced 状態とそのエラーをわかりやすく示した SealedSecret、封印されたスコープ、対象の Secret とその状態 (メタデータのみから)、封印されたキーの名前とサイズ、コントローラーとその封印キー (メタデータのみ。証明書は読み取りません)。復号に失敗した問題は選択制。読み取り専用で、封印された値も復号した値も表示しません。",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.other": "対応が必要なオブジェクトが {{count}} 件あります",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "状態",
+      "columns.scope.title": "スコープ",
+      "columns.keys.title": "キー",
+      "columns.message.title": "メッセージ",
+      "columns.status.cases.0.text": "同期済み",
+      "columns.status.cases.1.text": "保留中",
+      "columns.status.cases.2.text": "失敗",
+      "columns.scope.cases.0.text": "クラスター全体",
+      "columns.scope.cases.1.text": "namespace 全体",
+      "columns.scope.cases.2.text": "厳格",
+      "problems.sync-failed.title": "SealedSecret: 復号に失敗しました",
+      "problems.target-missing.title": "SealedSecret: Secret がありません",
+      "problems.target-missing.message": "同期済みとされていますが、Secret {{.metadata.name}} が存在しません。"
+    },
+    "ko": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets: 컨트롤러의 Synced 상태와 그 오류를 쉬운 말로 보여 주는 SealedSecret, 봉인된 범위, 대상 Secret과 그 상태(메타데이터만으로), 봉인된 키의 이름과 크기, 컨트롤러와 그 봉인 키(메타데이터만, 인증서는 읽지 않음). 복호화 실패 문제는 선택 사항. 읽기 전용이며, 봉인된 값이든 복호화된 값이든 값은 절대 표시하지 않습니다.",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.other": "주의가 필요한 개체 {{count}}개",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "상태",
+      "columns.scope.title": "범위",
+      "columns.keys.title": "키",
+      "columns.message.title": "메시지",
+      "columns.status.cases.0.text": "동기화됨",
+      "columns.status.cases.1.text": "대기 중",
+      "columns.status.cases.2.text": "실패",
+      "columns.scope.cases.0.text": "클러스터 범위",
+      "columns.scope.cases.1.text": "namespace 범위",
+      "columns.scope.cases.2.text": "엄격",
+      "problems.sync-failed.title": "SealedSecret: 복호화 실패",
+      "problems.target-missing.title": "SealedSecret: Secret이 없음",
+      "problems.target-missing.message": "동기화됨으로 표시되지만 Secret {{.metadata.name}}이(가) 존재하지 않습니다."
+    },
+    "pl": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets: SealedSecrety ze stanem Synced kontrolera i jego błędem opisanym prostymi słowami, zakresem, dla którego je zapieczętowano, docelowym Secretem i jego stanem (tylko z metadanych), zapieczętowanymi kluczami według nazwy i rozmiaru oraz kontrolerem z jego kluczami pieczętowania (tylko metadane; certyfikat nigdy nie jest odczytywany); problemy nieudanych odszyfrowań do wyboru. Tylko do odczytu i nigdy żadna wartość, zapieczętowana ani odszyfrowana.",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.one": "{{count}} obiekt wymaga uwagi",
+      "sectionBadges.sealedSecrets.label.few": "{{count}} obiekty wymagają uwagi",
+      "sectionBadges.sealedSecrets.label.many": "{{count}} obiektów wymaga uwagi",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} obiektu wymaga uwagi",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "Stan",
+      "columns.scope.title": "Zakres",
+      "columns.keys.title": "Klucze",
+      "columns.message.title": "Komunikat",
+      "columns.status.cases.0.text": "Zsynchronizowany",
+      "columns.status.cases.1.text": "Oczekuje",
+      "columns.status.cases.2.text": "Błąd",
+      "columns.scope.cases.0.text": "W całym klastrze",
+      "columns.scope.cases.1.text": "W obrębie namespace",
+      "columns.scope.cases.2.text": "Ścisły",
+      "problems.sync-failed.title": "SealedSecret: odszyfrowanie nie powiodło się",
+      "problems.target-missing.title": "SealedSecret: brak jego Secretu",
+      "problems.target-missing.message": "Jest oznaczony jako zsynchronizowany, ale jego Secret {{.metadata.name}} nie istnieje."
+    },
+    "pt-BR": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets: SealedSecrets com o estado Synced do controlador e seu erro em palavras simples, o escopo para o qual foram selados, o Secret de destino e como ele está (só por seus metadados), as chaves seladas por nome e tamanho, e o controlador com suas chaves de selagem (só metadados; o certificado nunca é lido); problemas de descriptografias com falha, opcionais. Somente leitura, e nunca um valor, selado ou descriptografado.",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.one": "{{count}} objeto precisa de atenção",
+      "sectionBadges.sealedSecrets.label.many": "{{count}} de objetos precisam de atenção",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} objetos precisam de atenção",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "Status",
+      "columns.scope.title": "Escopo",
+      "columns.keys.title": "Chaves",
+      "columns.message.title": "Mensagem",
+      "columns.status.cases.0.text": "Sincronizado",
+      "columns.status.cases.1.text": "Pendente",
+      "columns.status.cases.2.text": "Falhou",
+      "columns.scope.cases.0.text": "Em todo o cluster",
+      "columns.scope.cases.1.text": "No namespace",
+      "columns.scope.cases.2.text": "Estrito",
+      "problems.sync-failed.title": "SealedSecret: falha ao descriptografar",
+      "problems.target-missing.title": "SealedSecret: seu Secret está ausente",
+      "problems.target-missing.message": "Consta como sincronizado, mas seu Secret {{.metadata.name}} não existe."
+    },
+    "ru": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets: SealedSecret с состоянием Synced контроллера и его ошибкой простыми словами, областью, для которой они запечатаны, целевым Secret и его состоянием (только по метаданным), запечатанными ключами по имени и размеру, а также контроллером и его ключами запечатывания (только метаданные; сертификат никогда не читается); проблемы неудачной расшифровки по выбору. Только чтение и никогда никаких значений, ни запечатанных, ни расшифрованных.",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.one": "{{count}} объект требует внимания",
+      "sectionBadges.sealedSecrets.label.few": "{{count}} объекта требуют внимания",
+      "sectionBadges.sealedSecrets.label.many": "{{count}} объектов требуют внимания",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} объекта требуют внимания",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "Статус",
+      "columns.scope.title": "Область",
+      "columns.keys.title": "Ключи",
+      "columns.message.title": "Сообщение",
+      "columns.status.cases.0.text": "Синхронизирован",
+      "columns.status.cases.1.text": "Ожидает",
+      "columns.status.cases.2.text": "Ошибка",
+      "columns.scope.cases.0.text": "Во всём кластере",
+      "columns.scope.cases.1.text": "В пределах namespace",
+      "columns.scope.cases.2.text": "Строгая",
+      "problems.sync-failed.title": "SealedSecret: не удалось расшифровать",
+      "problems.target-missing.title": "SealedSecret: его Secret отсутствует",
+      "problems.target-missing.message": "Отмечен как синхронизированный, но его Secret {{.metadata.name}} не существует."
+    },
+    "tr": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets: denetleyicinin Synced durumu ve hatası sade bir dille gösterilen SealedSecret'lar, mühürlendikleri kapsam, hedef Secret ve durumu (yalnızca meta verisinden), mühürlü anahtarların adları ve boyutları, ve denetleyici ile mühürleme anahtarları (yalnızca meta veri; sertifika hiç okunmaz); başarısız şifre çözmelerin sorunları isteğe bağlı. Salt okunur; mühürlü ya da çözülmüş hiçbir değer gösterilmez.",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.one": "{{count}} nesne ilgi gerektiriyor",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} nesne ilgi gerektiriyor",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "Durum",
+      "columns.scope.title": "Kapsam",
+      "columns.keys.title": "Anahtarlar",
+      "columns.message.title": "İleti",
+      "columns.status.cases.0.text": "Eşitlendi",
+      "columns.status.cases.1.text": "Bekliyor",
+      "columns.status.cases.2.text": "Başarısız",
+      "columns.scope.cases.0.text": "Küme genelinde",
+      "columns.scope.cases.1.text": "Namespace genelinde",
+      "columns.scope.cases.2.text": "Katı",
+      "problems.sync-failed.title": "SealedSecret: şifre çözme başarısız",
+      "problems.target-missing.title": "SealedSecret: Secret'ı eksik",
+      "problems.target-missing.message": "Eşitlenmiş görünüyor, ancak Secret {{.metadata.name}} mevcut değil."
+    },
+    "uk": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets: SealedSecret зі станом Synced контролера та його помилкою простими словами, областю, для якої їх запечатано, цільовим Secret і його станом (лише за метаданими), запечатаними ключами за назвою та розміром, а також контролером і його ключами запечатування (лише метадані; сертифікат ніколи не читається); проблеми невдалого розшифрування на вибір. Лише читання й ніколи жодних значень, ні запечатаних, ні розшифрованих.",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.one": "{{count}} об'єкт потребує уваги",
+      "sectionBadges.sealedSecrets.label.few": "{{count}} об'єкти потребують уваги",
+      "sectionBadges.sealedSecrets.label.many": "{{count}} об'єктів потребують уваги",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} об'єкта потребують уваги",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "Статус",
+      "columns.scope.title": "Область",
+      "columns.keys.title": "Ключі",
+      "columns.message.title": "Повідомлення",
+      "columns.status.cases.0.text": "Синхронізовано",
+      "columns.status.cases.1.text": "Очікує",
+      "columns.status.cases.2.text": "Помилка",
+      "columns.scope.cases.0.text": "У всьому кластері",
+      "columns.scope.cases.1.text": "У межах namespace",
+      "columns.scope.cases.2.text": "Сувора",
+      "problems.sync-failed.title": "SealedSecret: не вдалося розшифрувати",
+      "problems.target-missing.title": "SealedSecret: його Secret відсутній",
+      "problems.target-missing.message": "Позначений як синхронізований, але його Secret {{.metadata.name}} не існує."
+    },
+    "zh-CN": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets：SealedSecret 及控制器的 Synced 状态和以通俗语言说明的错误、其密封范围、目标 Secret 及其状态（仅根据元数据）、按名称和大小列出的已密封键，以及控制器及其密封密钥（仅元数据；从不读取证书）；解密失败的问题可选启用。只读，从不显示任何值，无论是密封的还是解密的。",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} 个对象需要关注",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "状态",
+      "columns.scope.title": "范围",
+      "columns.keys.title": "键",
+      "columns.message.title": "消息",
+      "columns.status.cases.0.text": "已同步",
+      "columns.status.cases.1.text": "等待中",
+      "columns.status.cases.2.text": "失败",
+      "columns.scope.cases.0.text": "集群范围",
+      "columns.scope.cases.1.text": "命名空间范围",
+      "columns.scope.cases.2.text": "严格",
+      "problems.sync-failed.title": "SealedSecret：解密失败",
+      "problems.target-missing.title": "SealedSecret：其 Secret 缺失",
+      "problems.target-missing.message": "显示已同步，但其 Secret {{.metadata.name}} 不存在。"
+    },
+    "zh-TW": {
+      "name": "Sealed Secrets",
+      "description": "Bitnami Sealed Secrets：SealedSecret 及控制器的 Synced 狀態與以淺白文字說明的錯誤、其密封範圍、目標 Secret 及其狀態（僅依據中繼資料）、依名稱與大小列出的已密封金鑰，以及控制器與其密封金鑰（僅中繼資料；從不讀取憑證）；解密失敗的問題可選擇啟用。唯讀，從不顯示任何值，無論是密封的或解密的。",
+      "kinds.0.title": "Sealed Secrets",
+      "sections.sealedSecrets.title": "Sealed Secrets",
+      "sectionBadges.sealedSecrets.label.other": "{{count}} 個物件需要注意",
+      "problemCategories.sealed-secrets.title": "Sealed Secrets",
+      "columns.status.title": "狀態",
+      "columns.scope.title": "範圍",
+      "columns.keys.title": "金鑰",
+      "columns.message.title": "訊息",
+      "columns.status.cases.0.text": "已同步",
+      "columns.status.cases.1.text": "等待中",
+      "columns.status.cases.2.text": "失敗",
+      "columns.scope.cases.0.text": "叢集範圍",
+      "columns.scope.cases.1.text": "命名空間範圍",
+      "columns.scope.cases.2.text": "嚴格",
+      "problems.sync-failed.title": "SealedSecret：解密失敗",
+      "problems.target-missing.title": "SealedSecret：其 Secret 遺失",
+      "problems.target-missing.message": "顯示已同步，但其 Secret {{.metadata.name}} 不存在。"
+    }
+  }
+}

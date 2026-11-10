@@ -1004,16 +1004,18 @@ fn traefik_problems_are_never_given_to_agents() {
     ));
 }
 
-/// Sealed Secrets problems (#240) are a window view: agents get none of them, even when the opt-in category is on
-/// (ADR-0109, amended).
+/// Sealed Secrets problems (#240) moved into the opt-in category of the Sealed Secrets extension's own (ADR-0162
+/// amendment, #410): agents get none of them, under the old name or the new one, even when turned on.
 #[test]
 fn sealed_secrets_problems_are_never_given_to_agents() {
-    assert!(answers::PROBLEM_CATEGORIES.contains(&"sealedSecrets"));
-    assert!(answers::OPT_IN_CATEGORIES.contains(&"sealedSecrets"));
+    assert!(!answers::PROBLEM_CATEGORIES.contains(&"sealedSecrets"));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&"sealedSecrets"));
     assert!(!answers::category_for_agents(
         "sealedSecrets",
         &["sealedSecrets".to_owned()]
     ));
+    let moved = "ext:sextant.sealed-secrets:sealed-secrets";
+    assert!(!answers::category_for_agents(moved, &[moved.to_owned()]));
 }
 
 /// Reflector mirror problems (#241) are a window view: agents get none of them, even when the category is on.

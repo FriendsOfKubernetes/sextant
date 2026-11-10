@@ -600,7 +600,7 @@ const ICONS = {
   externalSecret: EsoFileKey,
   secretStore: EsoVault,
   pushSecret: EsoCloudUpload,
-  // Sealed Secrets (#240): the section and its kind.
+  // Sealed Secrets (#240): the section and its kind, named by Sextant's own extension `extensions/sealed-secrets`.
   sealedSecrets: SealedFolderLock,
   sealedSecret: FileLock,
   cnpg: CnpgDatabase,

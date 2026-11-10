@@ -27,7 +27,6 @@
     "crossplane": "Crossplane",
     "clusterApi": "Cluster API",
     "openshift": "OpenShift",
-    "sealedSecrets": "Sealed Secrets",
     "prometheusOperator": "Prometheus Operator",
     "reflector": "Reflector",
     "security": "セキュリティ",
@@ -58,7 +57,6 @@
     "meshInvalidVirtualService": "Sidecar (mesh) にバインドされているのにホスト * を持っています。Istio が拒否するため、ルートはどれも使われません。",
     "traefikMissingReference": "存在しないオブジェクトを参照しています: {{refs}}。Traefik はそれに依存する部分をスキップします。",
     "traefikSkippedRoute": "Traefik はルート {{routes}} をスキップします: match ルールが空か、kind が Rule ではありません。",
-    "sealedSecretTargetMissing": "同期済みとされていますが、Secret {{name}} が存在しません。",
     "vpaNoPodsMatched": "一致する Pod がないため、推奨値がありません。",
     "vpaHpaConflict": "HPA {{hpa}} は同じワークロードを {{resources}} でスケールしていますが、この VPA は {{mode}} モードでそれを変更します。両者が競合します。",
     "serviceMonitorSelectsNothing": "次の namespace で Service を 1 つも選択していません: {{namespaces}}",
@@ -76,6 +74,5 @@
   "showPrometheusOperator": "Prometheus Operator のモニターとサーバー",
   "showTraefik": "Traefik の参照",
   "showReflector": "Reflector のミラー",
-  "showSealedSecrets": "Sealed Secrets の復号",
   "showAlerts": "発火中のアラート (Prometheus と Alertmanager)"
 }

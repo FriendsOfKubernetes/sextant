@@ -771,9 +771,10 @@ pub fn migrate(settings: &mut AppSettings) {
 
 /// The opt-in problem categories of Sextant's own that moved into categories of its first-party extensions' own
 /// (`problemCategories`, #410): the old category and the new one, `ext:<extension id>:<category id>`. Never for agents.
-pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 2] = [
+pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 3] = [
     ("kueueWorkloads", "ext:sextant.kueue:workloads"),
     ("policies", "ext:sextant.kyverno:policies"),
+    ("sealedSecrets", "ext:sextant.sealed-secrets:sealed-secrets"),
 ];
 
 /// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
@@ -1355,7 +1356,7 @@ mod tests {
             &path,
             r#"{ "settingsVersion": 2,
                  "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm", "kueue", "dra"],
-                                    "enabledCategories": ["security", "kueueWorkloads", "policies"] },
+                                    "enabledCategories": ["security", "kueueWorkloads", "policies", "sealedSecrets"] },
                  "mcp": { "extensionProblems": ["sextant.argo-cd", "acme.widgets"] } }"#,
         )
         .unwrap();
@@ -1381,7 +1382,8 @@ mod tests {
             [
                 "security",
                 "ext:sextant.kueue:workloads",
-                "ext:sextant.kyverno:policies"
+                "ext:sextant.kyverno:policies",
+                "ext:sextant.sealed-secrets:sealed-secrets"
             ]
         );
         assert_eq!(

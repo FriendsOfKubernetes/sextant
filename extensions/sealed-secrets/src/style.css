@@ -1,0 +1,25 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields, tables,
+   status words and links are the SDK's UI kit (`ui`, classes `sx-*`). */
+body.compact {
+  padding: 8px 0;
+}
+
+/* The controller's error, notes that explain it and muted lines of the details, as the built-in view drew them. */
+.ss-message {
+  margin: 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-danger);
+  overflow-wrap: anywhere;
+}
+
+.ss-note {
+  margin: 4px 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.ss-muted {
+  margin: 4px 0;
+  color: var(--color-text-muted);
+}
