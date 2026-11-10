@@ -1086,6 +1086,18 @@
           }
         },
         {
+          "description": "The text at `path` ends with one of `values`, in any case with `ignoreCase` (sextantApi 4).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path", "values"],
+          "properties": {
+            "type": { "const": "endsWith" },
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "values": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 256 } },
+            "ignoreCase": { "type": "boolean", "default": false }
+          }
+        },
+        {
           "type": "object",
           "additionalProperties": false,
           "required": ["type", "path"],

@@ -144,12 +144,18 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
     }
     // Text conditions (#405): a string value only; no pattern language, so no backtracking.
     case "contains":
-    case "startsWith": {
+    case "startsWith":
+    case "endsWith": {
       const value = valueAt(obj, condition.path);
       if (typeof value !== "string") return NO;
       const fold = (text: string) => (condition.ignoreCase ? text.toLowerCase() : text);
       const text = fold(value);
-      const test = condition.type === "contains" ? (v: string) => text.includes(fold(v)) : (v: string) => text.startsWith(fold(v));
+      const test =
+        condition.type === "contains"
+          ? (v: string) => text.includes(fold(v))
+          : condition.type === "startsWith"
+            ? (v: string) => text.startsWith(fold(v))
+            : (v: string) => text.endsWith(fold(v));
       return { holds: condition.values.some(test) };
     }
     case "exists": {

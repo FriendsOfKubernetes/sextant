@@ -700,7 +700,7 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (condition.minutes < 1 || condition.minutes > 10080) fail([...segments, "minutes"], "must be 1 to 10080 minutes");
     return;
   }
-  if (condition.type === "contains" || condition.type === "startsWith") {
+  if (condition.type === "contains" || condition.type === "startsWith" || condition.type === "endsWith") {
     if (counter.api < SOURCES_API) fail([...segments, "type"], `text conditions need sextantApi ${SOURCES_API} or later`);
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
     return;
@@ -1725,9 +1725,10 @@ function checkColumns(manifest) {
       checkMessage(c.text, column.kind, [...here, "cases", j, "text"], false);
       if (c.value !== undefined) {
         // A text column's value may be a text with placeholders, the reason a row sorts by (#404).
-        const bad = 'goes with `format: "number"` or `"text"` (a text only with `"text"`)';
+        const bad = 'goes with `format: "number"`, `"text"`, `"count"` or `"sum"`';
         if (typeof c.value === "string") {
-          if (format !== "text") fail([...here, "cases", j, "value"], bad);
+          // On a number, count or sum column the filled text is read as a number (#404).
+          if (!["number", "text", "count", "sum"].includes(format)) fail([...here, "cases", j, "value"], bad);
           if (c.value.trim() === "" || Array.from(c.value).length > 200) fail([...here, "cases", j, "value"], "is a text of 1 to 200 characters");
           checkMessage(c.value, column.kind, [...here, "cases", j, "value"], false);
         } else if (!["number", "text", "count", "sum"].includes(format)) fail([...here, "cases", j, "value"], bad);

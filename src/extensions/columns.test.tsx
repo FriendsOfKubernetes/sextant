@@ -104,6 +104,17 @@ describe("an extension's computed column", () => {
     expect(container.querySelector("span")?.getAttribute("title")).toBe("a-1 80% · latest 20% · c 5%");
   });
 
+  it("read a number column's case key from a path, and judge endsWith (#404)", () => {
+    const backup = { metadata: { name: "b" }, status: { errors: 3, phase: "UploadingPartiallyFailed" } } as unknown as KubeObject;
+    const errors = computedColumn(
+      "e",
+      column({ paths: [".status.errors"], format: "number", cases: [{ when: { type: "above", path: ".status.errors", value: 0 }, text: "{{.status.errors}}", tone: "error", value: "{{.status.errors}}" }] }),
+    );
+    expect(errors.filter!.value!(backup, ctx)).toBe(3);
+    const phase = computedColumn("p", column({ paths: [".status.phase"], cases: [{ when: { type: "endsWith", path: ".status.phase", values: ["PartiallyFailed"], ignoreCase: false }, text: "Partly failed" }] }));
+    expect(phase.searchText!(backup, ctx)).toBe("Partly failed");
+  });
+
   it("join every path's list with joinPaths, each item once (#404)", () => {
     const o = {
       metadata: { name: "k" },

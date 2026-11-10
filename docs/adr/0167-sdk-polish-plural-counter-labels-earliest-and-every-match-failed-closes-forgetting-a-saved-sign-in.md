@@ -218,3 +218,6 @@ text (its filters apply to that one; `??` and `+` do not mix); a `filterBy: "val
 leaves nothing to filter by.
 One list keeps its repeated items (two traffic targets of one revision); only `joinPaths` names each item once; a list
 column without hover paths of its own hovers its whole text.
+The text condition `endsWith` joins `contains` and `startsWith` (a phase `…PartiallyFailed`); a case's text `value` on a
+`number`, `count` or `sum` column is filled and read as a number, so an error count coloured by its case sorts and
+filters as the count.

@@ -346,6 +346,13 @@ pub enum ProblemCondition {
         #[serde(default, rename = "ignoreCase")]
         ignore_case: bool,
     },
+    /// The text at `path` ends with one of `values` (#404), as `contains`: a phase `…PartiallyFailed`. `sextantApi` 4.
+    EndsWith {
+        path: String,
+        values: Vec<String>,
+        #[serde(default, rename = "ignoreCase")]
+        ignore_case: bool,
+    },
     /// `path` holds a value (not `null`).
     Exists {
         path: String,
@@ -794,7 +801,8 @@ fn check_condition<'k>(
     }
     match condition {
         ProblemCondition::Contains { path: field, .. }
-        | ProblemCondition::StartsWith { path: field, .. } => {
+        | ProblemCondition::StartsWith { path: field, .. }
+        | ProblemCondition::EndsWith { path: field, .. } => {
             if checks.api < SOURCES_API {
                 return Err(at(
                     &path.key("type"),

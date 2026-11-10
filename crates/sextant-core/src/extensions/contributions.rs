@@ -455,7 +455,17 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                             | ColumnFormat::Count
                             | ColumnFormat::Sum
                     ) => {}
-                Some(serde_json::Value::String(text)) if format == ColumnFormat::Text => {
+                // On a number, count or sum column the filled text is read as a number (#404): an error count coloured
+                // by its case still sorts and filters as the count.
+                Some(serde_json::Value::String(text))
+                    if matches!(
+                        format,
+                        ColumnFormat::Text
+                            | ColumnFormat::Number
+                            | ColumnFormat::Count
+                            | ColumnFormat::Sum
+                    ) =>
+                {
                     if text.trim().is_empty() || text.chars().count() > 200 {
                         return Err(at(
                             &here.key("cases").index(j).key("value"),
@@ -472,7 +482,7 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 Some(_) => {
                     return Err(at(
                         &here.key("cases").index(j).key("value"),
-                        "goes with `format: \"number\"` or `\"text\"` (a text only with `\"text\"`)",
+                        "goes with `format: \"number\"`, `\"text\"`, `\"count\"` or `\"sum\"`",
                     ));
                 }
             }

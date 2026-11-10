@@ -13,7 +13,7 @@ ignoreCase?: boolean, } | { "type": "in", path: string, values: Array<ProblemSca
 /**
  * Texts compared in lower case (#405): a phase written `Failed` or `failed`.
  */
-ignoreCase?: boolean, } | { "type": "contains", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "startsWith", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "exists", path: string, 
+ignoreCase?: boolean, } | { "type": "contains", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "startsWith", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "endsWith", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "exists", path: string, 
 /**
  * An empty text counts as nothing too (#405): a primary named `""`.
  */
