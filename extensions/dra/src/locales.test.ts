@@ -90,7 +90,7 @@ describe("the manifest's translations", () => {
     ]
       .filter((key) => !wordless(key))
       .sort();
-    expect(keys.length).toBeGreaterThan(60);
+    expect(keys.length).toBeGreaterThan(40);
     expect(Object.keys(translations).sort()).toEqual(SEXTANT_LANGUAGES.filter((l) => l !== "en"));
     const badge = (key: string) => key.startsWith("sectionBadges.");
     for (const [language, texts] of Object.entries(translations)) {

@@ -64,8 +64,11 @@ interface Detected {
   activeFrom?: number;
   until?: number;
   notify: boolean;
-  /** The objects the rule looks up (`related`: with the fact its own `when` must hold for, by `factKey`). */
-  lookups?: { group: string; kind: string; name: string; fact?: string }[];
+  /**
+   * The objects the rule looks up (`related`: with the fact its own `when` must hold for, by `factKey`); of those
+   * with the same `anyOf` (an `any` of lookups), one is enough.
+   */
+  lookups?: { group: string; kind: string; name: string; fact?: string; anyOf?: string }[];
   /** The object the problem is about when it is not the judged one (`about`). */
   object?: { kind: { group: string; version: string; kind: string }; namespace: string | null; name: string };
   notifyAs?: string;
@@ -103,14 +106,18 @@ const sameKind = (a: { group: string; kind: string }, b: { group: string; kind: 
 
 /**
  * Whether the objects a problem looks up stand as the window's `judgeAcross` asks (`src/extensions/problemsAcross.ts`):
- * a `related` object there among `objects` with its fact holding, a `missing` one not there.
+ * a `related` object there among `objects` with its fact holding, a `missing` one not there; of an `any` of lookups
+ * (the same `anyOf`), one standing is enough.
  */
 function lookupsStand(d: Detected, objects: KubeObject[]): boolean {
-  return (d.lookups ?? []).every((lookup) => {
+  const stands = (lookup: NonNullable<Detected["lookups"]>[number]) => {
     const found = objects.find((o) => sameKind(kindOfObj(o), lookup) && o.metadata.name === lookup.name);
     if (lookup.fact === undefined) return found === undefined;
     return found !== undefined && engine.evaluate(JSON.parse(lookup.fact), found).holds;
-  });
+  };
+  const lookups = d.lookups ?? [];
+  const groups = new Set(lookups.flatMap((l) => (l.anyOf === undefined ? [] : [l.anyOf])));
+  return lookups.every((l) => l.anyOf !== undefined || stands(l)) && [...groups].every((g) => lookups.some((l) => l.anyOf === g && stands(l)));
 }
 
 /** The window's problems with the object each is about (`about`, else the judged one), first seen at `firstSeen`. */
@@ -384,13 +391,44 @@ describe("the problem rules, against the built-in ones", () => {
     }
   });
 
-  it("differ where a rule cannot reach: a component turned off, a DaemonSet the operator does not own", () => {
+  it("judge a component only while its ClusterPolicy turns it on, as the built-in rule did", () => {
     // policyReady turns DCGM off: the built-in rule left its DaemonSet (the operator deletes it when it next reconciles)
-    // alone; a rule of the DaemonSet cannot tell which spec field of its ClusterPolicy to read.
+    // alone, and so does the rule, asking the policy the component's own switch.
     const policy = fx("policyReady");
     const dcgm = ownedBy({ apiVersion: "apps/v1", kind: "DaemonSet", metadata: { name: "nvidia-dcgm", namespace: "gpu-operator", uid: "dcgm" }, status: { desiredNumberScheduled: 2, numberReady: 1 } }, policy);
     expect(gpuProblems({ policies: [policy], drivers: [], daemonSets: [dcgm], failedNodes: [] }, NOW)).toEqual([]);
-    expect(windowProblems([policy, dcgm], NOW).map((p) => `${p.kind}/${p.name}:${p.reason}`)).toEqual(["ClusterPolicy/cluster-policy:ComponentNotReady"]);
+    expect(windowProblems([policy, dcgm], NOW)).toEqual([]);
+    // Every component (but the driver, judged by its own rules) under every switch of its own, of sandbox workloads and
+    // their mode, in every state of the policy.
+    const behind = { desiredNumberScheduled: 2, numberReady: 1, updatedNumberScheduled: 1 };
+    const noneUpdated = { desiredNumberScheduled: 2, numberReady: 2 };
+    let judged = 0;
+    for (const def of COMPONENTS.filter((c) => c.id !== "driver")) {
+      for (const enabled of [true, false, undefined, "true"]) {
+        for (const sandbox of [true, false, undefined]) {
+          for (const mode of ["kubevirt", "kata", undefined]) {
+            for (const state of ["notReady", "ready", "ignored"]) {
+              const p = fx("policyReady");
+              const sp = spec(p);
+              if (enabled === undefined) delete sp[def.field ?? def.id];
+              else sp[def.field ?? def.id] = { ...(sp[def.field ?? def.id] as object), enabled };
+              sp.sandboxWorkloads = { ...(sandbox === undefined ? {} : { enabled: sandbox }), ...(mode === undefined ? {} : { mode }) };
+              st(p).state = state;
+              for (const status of [behind, noneUpdated]) {
+                const ds = ownedBy({ apiVersion: "apps/v1", kind: "DaemonSet", metadata: { name: def.daemonSet, namespace: "gpu-operator", uid: def.id }, status }, p);
+                const label = `${def.id} ${String(enabled)} ${String(sandbox)} ${String(mode)} ${state} ${JSON.stringify(status)}`;
+                expectSame({ policies: [p], daemonSets: [ds] }, label);
+                if (gpuProblems({ policies: [p], drivers: [], daemonSets: [ds], failedNodes: [] }, NOW).some((x) => x.reason === "ComponentNotReady")) judged++;
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(judged).toBeGreaterThan(100);
+  });
+
+  it("differ where a rule cannot reach: a DaemonSet the operator does not own", () => {
     // A DaemonSet of the component's name that the operator does not own: the built-in rule judged it by its name.
     const stray = fx("dsDriver");
     expect(windowProblems([fx("policyNotReady"), stray], NOW).filter((p) => p.reason === "ComponentNotReady")).toEqual([]);

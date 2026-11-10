@@ -105,25 +105,19 @@ one problem per Pod (reason `DraWaiting`), whose text is the scheduler's message
 that are not allocated or do not exist: …" with the claims; one notification per Pod's owner. The rules watch only the
 Pending Pods (`status.phase=Pending` on the API server, at most 2000) and look the ResourceClaims up.
 
-The rules hold on shapes of the Pod's claims that exclude each other, so that at most one stands: a claim it names
-(`spec.resourceClaims[].resourceClaimName`) and a claim the resource claim controller made from a template
-(`status.resourceClaimStatuses[].resourceClaimName`, a "made" claim). All of them are the one notification group
+The rules exclude each other, so that at most one stands for a Pod. They read the claims a Pod names
+(`spec.resourceClaims[].resourceClaimName`) and those the resource claim controller made from its templates
+(`status.resourceClaimStatuses[].resourceClaimName`, "made" claims), any number of each in any order, and look each up
+among the ResourceClaims (one `any` of `missing` and `related` lookups). All of them are the one notification group
 `claims-not-created` (a rule's id: the window's judge across objects finds the rule of a problem by its group).
 
 | Id | When it holds | Text |
 |---|---|---|
 | `claims-not-created` | A claim of its templates is not made yet (fewer `status.resourceClaimStatuses` than template entries) | The scheduler's message |
-| `named-claim-missing`, `made-claim-missing` | Its one claim (named, or made) does not exist | The scheduler's message |
-| `named-claim-unallocated`, `made-claim-unallocated` | Its one claim exists without devices, and the message names a DRA reason | The scheduler's message |
-| `named-made-first-missing`, `two-named-first-missing`, `two-made-first-missing` | Of a named and a made claim (two named, two made), the named (first) one does not exist | The scheduler's message |
-| `named-made-second-missing`, `two-named-second-missing`, `two-made-second-missing` | The first exists, the made (second) one does not | The scheduler's message |
-| `named-made-first-unallocated`, `two-named-first-unallocated`, `two-made-first-unallocated` | Both exist, the first without devices, and the message names a DRA reason | The scheduler's message |
-| `named-made-second-unallocated`, `two-named-second-unallocated`, `two-made-second-unallocated` | The first has devices, the second exists without, and the message names a DRA reason | The scheduler's message |
+| `claim-missing` | Every template claim is made, a claim it names or was made does not exist, and the message names no DRA reason | The scheduler's message |
+| `claim-without-devices` | Every template claim is made, a claim it names or was made does not exist or exists without devices, and the message names a DRA reason | The scheduler's message |
 | `claims-not-created-no-message` | As `claims-not-created`, without the scheduler's message | The sentence with every claim of the Pod |
-| `named-claim-missing-no-message`, `made-claim-missing-no-message` | As `…-claim-missing`, without the message | The sentence with the claim |
-| `named-made-both-missing-no-message`, `two-named-both-missing-no-message`, `two-made-both-missing-no-message` | Neither of its two claims exists, without the message | The sentence with both |
-| `named-made-first-missing-no-message`, `two-named-first-missing-no-message`, `two-made-first-missing-no-message` | The first does not exist, the second does, without the message | The sentence with the first |
-| `named-made-second-missing-no-message`, `two-named-second-missing-no-message`, `two-made-second-missing-no-message` | The first exists, the second does not, without the message | The sentence with the second |
+| `claim-missing-no-message` | Every template claim is made and a claim it names or was made does not exist, without the message | The sentence with the claims that do not exist or have no devices |
 
 A claim that cannot be looked up (the cluster's ResourceClaims not read in full, at most 5000, or not readable) is
 "cannot tell", never a problem. The counter on the section counts the Pods.
@@ -156,16 +150,15 @@ None: the extension is read-only. It has no action of its own.
     a Pod whose scheduler message names a DRA reason; a rule's looked-up claim is "cannot tell" then, so only a Pod
     whose template claims are not made yet is told. A rule condition (or a rule-level fallback) for "the looked-up
     list cannot tell" would close it.
-  - **Pods with more than two claims**, or with two in an order the rules do not look at (a named claim not among the
-    first two entries, a made one after a status entry without a name), are told only when a template claim is not
-    made yet. A rule judges a looked-up claim only at one path, and `missing`/`related` cannot be inside `any` or
-    `not`, so "any claim of the list is missing / exists without devices" takes a rule per shape of the list, and 29
-    of the 30 rules are used for one and two claims. `missing`/`related` over a `[*]` path (any item), or allowed in
-    `any`, would make it one rule.
-  - **The sentence without the scheduler's message** names the claims that do not exist; the built-in one also named
-    a second claim that exists without devices, and named them in the Pod's order (a named one and a made one: the
-    named one first here). For a Pod with a template claim not made yet it names every claim of the Pod (the built-in
-    one: those without devices). The same per-shape limit; a placeholder of the looked-up claims' names would close it.
+  - **The sentence without the scheduler's message** names the claims that do not exist or have no devices, as the
+    built-in one, but takes the named and the made ones in turn (the first named, the first made, the second named,
+    …), and the made ones in the order of `status.resourceClaimStatuses`; the built-in one followed
+    `spec.resourceClaims`. So the order is the Pod's where its claims are all named, all made and recorded in the
+    Pod's order (the resource claim controller decides that order), or named and made in turn. A path step from a
+    Pod's claim entry to the controller's entry of the same name would close it. For a Pod with a template claim not
+    made yet it names every claim of the Pod; the built-in one named those without devices: the entries not made yet
+    (no path picks an entry without a status entry of its name) and the claims looked up (that problem stands whatever
+    the lookups find, and a lookup cannot be put under `not`).
   - **What the rules watch.** The built-in detector looked at the ResourceClaims of only the namespaces where a Pending
     Pod waits (at most 40) and nothing on a cluster without a DeviceClass; here every ResourceClaim of the cluster is
     looked up (at most 5000: beyond it, claims cannot be told), and the Pending Pods are watched on any cluster (a Pod
@@ -189,8 +182,9 @@ None: the extension is read-only. It has no action of its own.
   - List columns (Device classes, Reserved for, Drivers) hover their whole text, which the built-in cells did not.
 - Checked by tests on fixtures of every `resource.k8s.io` version (copied from the built-in view) against the
   built-in readings, columns and problem detector — the rules through Sextant's own window engine and judge across
-  objects, for every state of one and two claims with and without the scheduler's message —; not yet tried on a live
-  cluster.
+  objects, for every Pod of one to three claims (named, made, not made yet or not needed, in every order, made ones
+  recorded in both orders), every state of each claim and every kind of scheduler message, and Pods of four —; not yet
+  tried on a live cluster.
 
 ## Troubleshooting
 

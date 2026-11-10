@@ -21,5 +21,8 @@ Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-i
   ClusterPolicy or NVIDIADriver, not of one ignored, disabled or being deleted, the driver's only while the policy
   deploys it, never the retired Kata manager's; its grace starting again while the rollout moves) and nodes whose MIG
   configuration failed, counted on the section.
+- **A component turned off is not judged**, as the built-in rule: each component rule asks the DaemonSet's ClusterPolicy
+  whether it turns that component on (an `any` of `related` lookups, one per component); the sandbox components have
+  rules of their own (`sandbox-not-rolled-out` and its twin).
 - Installing asks for consent to read ClusterPolicies, NVIDIADrivers, DaemonSets and Nodes, and to judge them in
   problem rules.

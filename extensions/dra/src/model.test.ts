@@ -456,12 +456,15 @@ interface Entry {
 }
 const DR_MESSAGE = (podScheduled(f.podWaiting!).message as string);
 const CPU_MESSAGE = "0/3 nodes are available: 3 Insufficient cpu.";
-/** A waiting pod with these claims; `message` null: PodScheduled without one; undefined: no PodScheduled at all. */
-function waiting(entries: Entry[], message: string | null | undefined, statuses = true): KubeObject {
+/**
+ * A waiting pod with these claims; `message` null: PodScheduled without one; undefined: no PodScheduled at all.
+ * `statuses`: the controller's entries in the Pod's order, the other way round, or none.
+ */
+function waiting(entries: Entry[], message: string | null | undefined, statuses: boolean | "reversed" = true): KubeObject {
   const pod = copy(f.podWaiting!);
   sp(pod).resourceClaims = entries.map((e) => (e.template ? { name: e.name, resourceClaimTemplateName: "tpl" } : { name: e.name, resourceClaimName: e.claim }));
   const made = entries.filter((e) => e.template && !e.unrecorded).map((e) => ({ name: e.name, ...(e.claim ? { resourceClaimName: e.claim } : {}) }));
-  if (statuses && made.length > 0) st(pod).resourceClaimStatuses = made;
+  if (statuses && made.length > 0) st(pod).resourceClaimStatuses = statuses === "reversed" ? made.reverse() : made;
   else delete st(pod).resourceClaimStatuses;
   if (message === undefined) delete st(pod).conditions;
   else if (message === null) delete podScheduled(pod).message;
@@ -474,19 +477,40 @@ const PREFIX = EN_PROBLEMS.claims.slice(0, EN_PROBLEMS.claims.indexOf("{{"));
 /** The claims a message without the scheduler's words names. */
 const listed = (message: string | undefined) => (message?.startsWith(PREFIX) ? message.slice(PREFIX.length, -1).split(/,\s?/) : []);
 
-const SHAPES: Record<string, Entry[]> = {
-  named: [{ name: "gpu", claim: "a" }],
-  made: [{ name: "gpu", claim: "a", template: true }],
-  "named, made": [{ name: "gpu", claim: "a" }, { name: "scratch", claim: "b", template: true }],
-  "made, named": [{ name: "scratch", claim: "b", template: true }, { name: "gpu", claim: "a" }],
-  "two named": [{ name: "gpu", claim: "a" }, { name: "nic", claim: "b" }],
-  "two made": [{ name: "gpu", claim: "a", template: true }, { name: "nic", claim: "b", template: true }],
-};
+type EntryType = "named" | "made" | "unmade" | "unneeded";
+const TYPES: EntryType[] = ["named", "made", "unmade", "unneeded"];
+/** Every sequence of `length` entry types. */
+const sequences = (length: number): EntryType[][] => (length === 0 ? [[]] : sequences(length - 1).flatMap((s) => TYPES.map((t) => [...s, t])));
+/** The entries of a shape: entry `e<i>`, naming claim `n<i>` or made claim `m<i>` (none when not made or not needed). */
+const entriesOf = (types: EntryType[]): Entry[] =>
+  types.map((t, i) =>
+    t === "named"
+      ? { name: `e${i}`, claim: `n${i}` }
+      : t === "made"
+        ? { name: `e${i}`, claim: `m${i}`, template: true }
+        : t === "unmade"
+          ? { name: `e${i}`, template: true, unrecorded: true }
+          : { name: `e${i}`, template: true },
+  );
 const STATES: ClaimState2[] = ["missing", "unallocated", "allocated"];
+/** Every state of each looked-up claim (named or made) of a shape. */
+const statesOf = (entries: Entry[]): ClaimState2[][] =>
+  entries.reduce<ClaimState2[][]>((combos, e) => combos.flatMap((c) => (e.claim ? STATES.map((s) => [...c, s]) : [[...c, "missing" as const]])), [[]]);
+/**
+ * The order the rule names the claims in: an `any` of lookups goes branch by branch, item by item — the first named
+ * claim, the first made one (by `status.resourceClaimStatuses`), the second named one, … ("Requirements and limits").
+ */
+function namedOrder(pod: KubeObject, gaps: readonly string[]): string[] {
+  const named = ((sp(pod).resourceClaims as Rec[]) ?? []).flatMap((c) => (typeof c.resourceClaimName === "string" ? [c.resourceClaimName] : []));
+  const made = ((st(pod).resourceClaimStatuses as Rec[] | undefined) ?? []).flatMap((c) => (typeof c.resourceClaimName === "string" ? [c.resourceClaimName] : []));
+  const out: string[] = [];
+  for (let i = 0; i < Math.max(named.length, made.length); i++) for (const name of [named[i], made[i]]) if (name !== undefined && gaps.includes(name)) out.push(name);
+  return out;
+}
 
 describe("the problem rules, against the built-in detector", () => {
   it("are one notification group, with the built-in reason, source, grace and since", () => {
-    expect(RULES.length).toBeLessThanOrEqual(30);
+    expect(RULES.map((r) => r.id)).toEqual(["claims-not-created", "claim-missing", "claim-without-devices", "claims-not-created-no-message", "claim-missing-no-message"]);
     for (const rule of RULES) {
       expect(rule.kind).toEqual({ group: "", kind: "Pod" });
       // The group is a rule's id, so the window's judge across objects finds a rule for every problem.
@@ -500,39 +524,64 @@ describe("the problem rules, against the built-in detector", () => {
     }
   });
 
-  it("tell one problem per Pod, as the built-in one, for every state of one or two claims and every message", () => {
+  it("tell one problem per Pod, as the built-in one, for any number of claims in any order, every state and every message", () => {
     let compared = 0;
-    let unlisted = 0;
-    for (const [shape, entries] of Object.entries(SHAPES)) {
-      const names = entries.map((e) => e.claim!);
-      const combos: ClaimState2[][] = names.length === 1 ? STATES.map((s) => [s]) : STATES.flatMap((a) => STATES.map((b) => [a, b]));
-      for (const states of combos) {
-        const list = names.flatMap((n, i) => (states[i] === "missing" ? [] : [claimNamed(n, states[i] as "allocated" | "unallocated")]));
-        for (const message of [DR_MESSAGE, CPU_MESSAGE, null, undefined]) {
-          const pod = waiting(entries, message);
-          const label = `${shape} ${states.join("/")} ${String(message).slice(0, 20)}`;
-          const builtIn = draProblem(pod, claimMap(list));
-          const rules = standing(pod, list);
-          compared++;
-          expect(rules.length, label).toBe(builtIn ? 1 : 0);
-          if (!builtIn) continue;
-          const [p] = rules;
-          expect([p!.reason, p!.since, p!.graceMs], label).toEqual(["DraWaiting", builtIn.since, WAIT_GRACE_MS]);
-          expect(p!.key, label).toBe(`${pod.metadata.uid}|DraWaiting`);
-          if (builtIn.message) {
-            expect(p!.message, label).toBe(builtIn.message);
-            continue;
+    let reordered = 0;
+    for (const length of [1, 2, 3]) {
+      for (const types of sequences(length)) {
+        const entries = entriesOf(types);
+        for (const states of statesOf(entries)) {
+          const list = entries.flatMap((e, i) => (e.claim && states[i] !== "missing" ? [claimNamed(e.claim, states[i] as "allocated" | "unallocated")] : []));
+          const orders: (true | "reversed")[] = entries.filter((e) => e.template && !e.unrecorded).length > 1 ? [true, "reversed"] : [true];
+          for (const order of orders) {
+            for (const message of [DR_MESSAGE, CPU_MESSAGE, null, undefined]) {
+              const pod = waiting(entries, message, order);
+              const label = `${types.join(",")} ${states.join("/")} ${String(order)} ${String(message).slice(0, 20)}`;
+              const builtIn = draProblem(pod, claimMap(list));
+              const rules = standing(pod, list);
+              compared++;
+              expect(rules.length, label).toBe(builtIn ? 1 : 0);
+              if (!builtIn) continue;
+              const [p] = rules;
+              expect([p!.reason, p!.since, p!.graceMs], label).toEqual(["DraWaiting", builtIn.since, WAIT_GRACE_MS]);
+              expect(p!.key, label).toBe(`${pod.metadata.uid}|DraWaiting`);
+              if (builtIn.message) {
+                expect(p!.message, label).toBe(builtIn.message);
+                continue;
+              }
+              // A claim of its templates not made yet: every claim of the Pod ("Requirements and limits").
+              if (types.includes("unmade")) {
+                expect(listed(p!.message), label).toEqual(entries.map((e) => e.name));
+                continue;
+              }
+              // Without the scheduler's words: the built-in sentence's claims — those that do not exist and those
+              // without devices —, the named and made ones taken in turn.
+              const claims = builtIn.claims ?? [];
+              expect(listed(p!.message), label).toEqual(namedOrder(pod, claims));
+              expect([...listed(p!.message)].sort(), label).toEqual([...claims].sort());
+              if (listed(p!.message).join() !== claims.join()) reordered++;
+            }
           }
-          // Without the scheduler's words: the claims that do not exist, as the built-in sentence; it also named a
-          // second claim that exists without devices, and the claims in the Pod's order ("Requirements and limits").
-          const gone = (builtIn.claims ?? []).filter((n) => states[names.indexOf(n)] === "missing");
-          expect(listed(p!.message).sort(), label).toEqual(gone.sort());
-          if (gone.length !== builtIn.claims?.length) unlisted++;
         }
       }
     }
-    expect(compared).toBe(4 * (3 + 3 + 4 * 9));
-    expect(unlisted).toBeGreaterThan(0);
+    expect(compared).toBeGreaterThan(2000);
+    // Not in the Pod's order where named and made claims do not take turns, or made ones are recorded otherwise.
+    expect(reordered).toBeGreaterThan(0);
+  });
+
+  it("name the claims in the Pod's order where they are all named, all made and recorded in its order, or named and made in turn", () => {
+    for (const entries of [
+      entriesOf(["named", "named", "named", "named"]),
+      entriesOf(["made", "made", "made", "unneeded"]),
+      entriesOf(["named", "made", "named", "made"]),
+    ]) {
+      const list = [claimNamed(entries[1]!.claim!, "unallocated"), claimNamed(entries[2]!.claim!, "allocated")];
+      const pod = waiting(entries, null);
+      const builtIn = draProblem(pod, claimMap(list))!;
+      expect(builtIn.claims).toHaveLength(entries.filter((e) => e.claim).length - 1);
+      expect(standing(pod, list).map((p) => listed(p.message))).toEqual([builtIn.claims]);
+    }
   });
 
   it("claims of its templates not created yet: the scheduler's message, or every claim of the Pod", () => {
@@ -606,20 +655,24 @@ describe("the problem rules, against the built-in detector", () => {
     }
   });
 
-  it("cannot tell while the claims are not read in full, nor judge more than two claims", () => {
+  it("cannot tell while the claims are not read in full", () => {
     // Without the claims the built-in detector counted a Pod whose scheduler message names a DRA reason; a rule's
     // looked-up claim is "cannot tell" then ("Requirements and limits").
     expect(draProblem(f.podWaiting!, undefined)).toBeDefined();
     expect(standing(f.podWaiting!, undefined)).toEqual([]);
-    const three = waiting(
-      [
-        { name: "a", claim: "a" },
-        { name: "b", claim: "b" },
-        { name: "c", claim: "c" },
-      ],
-      DR_MESSAGE,
-    );
-    expect(draProblem(three, new Map())?.claims).toEqual(["a", "b", "c"]);
-    expect(standing(three, [])).toEqual([]);
+    const three = (message: string | null) =>
+      waiting(
+        [
+          { name: "a", claim: "a" },
+          { name: "b", claim: "b" },
+          { name: "c", claim: "c", template: true },
+        ],
+        message,
+      );
+    expect(draProblem(three(DR_MESSAGE), new Map())?.claims).toEqual(["a", "b", "c"]);
+    expect(standing(three(DR_MESSAGE), []).map((p) => p.message)).toEqual([DR_MESSAGE]);
+    expect(standing(three(null), []).map((p) => listed(p.message))).toEqual([["a", "c", "b"]]);
+    expect(standing(three(DR_MESSAGE), undefined)).toEqual([]);
+    expect(standing(three(null), undefined)).toEqual([]);
   });
 });

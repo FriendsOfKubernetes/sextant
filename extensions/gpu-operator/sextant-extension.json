@@ -1239,27 +1239,6 @@
      "type": "all",
      "of": [
       {
-       "type": "in",
-       "path": ".metadata.name",
-       "values": [
-        "nvidia-container-toolkit-daemonset",
-        "nvidia-device-plugin-daemonset",
-        "nvidia-dcgm",
-        "nvidia-dcgm-exporter",
-        "gpu-feature-discovery",
-        "nvidia-mig-manager",
-        "nvidia-node-status-exporter",
-        "nvidia-operator-validator",
-        "nvidia-vgpu-manager-daemonset",
-        "nvidia-vgpu-device-manager",
-        "nvidia-vfio-manager",
-        "nvidia-sandbox-device-plugin-daemonset",
-        "nvidia-kata-sandbox-device-plugin-daemonset",
-        "nvidia-sandbox-validator",
-        "nvidia-cc-manager"
-       ]
-      },
-      {
        "type": "exists",
        "path": ".status.updatedNumberScheduled"
       },
@@ -1290,32 +1269,286 @@
        ]
       },
       {
-       "type": "related",
-       "path": ".metadata.ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
-       "kind": {
-        "group": "nvidia.com",
-        "kind": "ClusterPolicy"
-       },
-       "when": {
-        "type": "all",
-        "of": [
-         {
-          "type": "not",
-          "of": {
-           "type": "in",
-           "path": ".status.state",
-           "values": [
-            "ignored",
-            "disabled"
-           ]
-          }
+       "type": "any",
+       "of": [
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-container-toolkit-daemonset\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
          },
-         {
-          "type": "absent",
-          "path": ".metadata.deletionTimestamp"
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.toolkit.enabled",
+             "value": false
+            }
+           }
+          ]
          }
-        ]
-       }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-device-plugin-daemonset\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.devicePlugin.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-dcgm\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.dcgm.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-dcgm-exporter\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.dcgmExporter.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"gpu-feature-discovery\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.gfd.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-mig-manager\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.migManager.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-node-status-exporter\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.nodeStatusExporter.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-operator-validator\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           }
+          ]
+         }
+        }
+       ]
       }
      ]
     },
@@ -1349,26 +1582,717 @@
      "type": "all",
      "of": [
       {
-       "type": "in",
-       "path": ".metadata.name",
-       "values": [
-        "nvidia-container-toolkit-daemonset",
-        "nvidia-device-plugin-daemonset",
-        "nvidia-dcgm",
-        "nvidia-dcgm-exporter",
-        "gpu-feature-discovery",
-        "nvidia-mig-manager",
-        "nvidia-node-status-exporter",
-        "nvidia-operator-validator",
-        "nvidia-vgpu-manager-daemonset",
-        "nvidia-vgpu-device-manager",
-        "nvidia-vfio-manager",
-        "nvidia-sandbox-device-plugin-daemonset",
-        "nvidia-kata-sandbox-device-plugin-daemonset",
-        "nvidia-sandbox-validator",
-        "nvidia-cc-manager"
+       "type": "absent",
+       "path": ".status.updatedNumberScheduled"
+      },
+      {
+       "type": "above",
+       "path": ".status.desiredNumberScheduled",
+       "value": 0
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "atLeast",
+          "path": ".status.numberReady",
+          "otherPath": ".status.desiredNumberScheduled"
+         }
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "atLeast",
+          "path": ".status.updatedNumberScheduled",
+          "otherPath": ".status.desiredNumberScheduled"
+         }
+        }
        ]
       },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-container-toolkit-daemonset\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.toolkit.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-device-plugin-daemonset\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.devicePlugin.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-dcgm\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.dcgm.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-dcgm-exporter\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.dcgmExporter.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"gpu-feature-discovery\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.gfd.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-mig-manager\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "not",
+            "of": {
+             "type": "equals",
+             "path": ".spec.migManager.enabled",
+             "value": false
+            }
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-node-status-exporter\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.nodeStatusExporter.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-operator-validator\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    },
+    "about": {
+     "kind": {
+      "group": "nvidia.com",
+      "kind": "ClusterPolicy",
+      "version": "v1"
+     },
+     "namePath": ".metadata.ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+     "clusterScoped": true
+    },
+    "stamp": [
+     ".status.numberReady",
+     ".status.updatedNumberScheduled",
+     ".status.desiredNumberScheduled"
+    ],
+    "graceMinutes": 10,
+    "reason": "ComponentNotReady",
+    "group": "component-not-ready",
+    "message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} of {{.status.desiredNumberScheduled}} Pods ready, 0 updated."
+   },
+   {
+    "id": "sandbox-not-rolled-out",
+    "title": "Sandbox component DaemonSet not rolled out",
+    "kind": {
+     "group": "apps",
+     "kind": "DaemonSet"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "exists",
+       "path": ".status.updatedNumberScheduled"
+      },
+      {
+       "type": "above",
+       "path": ".status.desiredNumberScheduled",
+       "value": 0
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "atLeast",
+          "path": ".status.numberReady",
+          "otherPath": ".status.desiredNumberScheduled"
+         }
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "atLeast",
+          "path": ".status.updatedNumberScheduled",
+          "otherPath": ".status.desiredNumberScheduled"
+         }
+        }
+       ]
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-vgpu-manager-daemonset\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "equals",
+            "path": ".spec.vgpuManager.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-vgpu-device-manager\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "equals",
+            "path": ".spec.vgpuDeviceManager.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-vfio-manager\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "equals",
+            "path": ".spec.vfioManager.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-sandbox-device-plugin-daemonset\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "absent",
+              "path": ".spec.sandboxWorkloads.mode"
+             },
+             {
+              "type": "equals",
+              "path": ".spec.sandboxWorkloads.mode",
+              "value": "kubevirt"
+             }
+            ]
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxDevicePlugin.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-kata-sandbox-device-plugin-daemonset\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "absent",
+              "path": ".spec.sandboxWorkloads.mode"
+             },
+             {
+              "type": "equals",
+              "path": ".spec.sandboxWorkloads.mode",
+              "value": "kata"
+             }
+            ]
+           },
+           {
+            "type": "equals",
+            "path": ".spec.kataSandboxDevicePlugin.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-sandbox-validator\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-cc-manager\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "absent",
+              "path": ".spec.sandboxWorkloads.mode"
+             },
+             {
+              "type": "equals",
+              "path": ".spec.sandboxWorkloads.mode",
+              "value": "kata"
+             }
+            ]
+           },
+           {
+            "type": "equals",
+            "path": ".spec.ccManager.enabled",
+            "value": true
+           }
+          ]
+         }
+        }
+       ]
+      }
+     ]
+    },
+    "about": {
+     "kind": {
+      "group": "nvidia.com",
+      "kind": "ClusterPolicy",
+      "version": "v1"
+     },
+     "namePath": ".metadata.ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+     "clusterScoped": true
+    },
+    "stamp": [
+     ".status.numberReady",
+     ".status.updatedNumberScheduled",
+     ".status.desiredNumberScheduled"
+    ],
+    "graceMinutes": 10,
+    "reason": "ComponentNotReady",
+    "group": "component-not-ready",
+    "message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} of {{.status.desiredNumberScheduled}} Pods ready, {{.status.updatedNumberScheduled}} updated."
+   },
+   {
+    "id": "sandbox-not-rolled-out-none-updated",
+    "title": "Sandbox component DaemonSet not rolled out, no Pod updated",
+    "kind": {
+     "group": "apps",
+     "kind": "DaemonSet"
+    },
+    "when": {
+     "type": "all",
+     "of": [
       {
        "type": "absent",
        "path": ".status.updatedNumberScheduled"
@@ -1400,32 +2324,312 @@
        ]
       },
       {
-       "type": "related",
-       "path": ".metadata.ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
-       "kind": {
-        "group": "nvidia.com",
-        "kind": "ClusterPolicy"
-       },
-       "when": {
-        "type": "all",
-        "of": [
-         {
-          "type": "not",
-          "of": {
-           "type": "in",
-           "path": ".status.state",
-           "values": [
-            "ignored",
-            "disabled"
-           ]
-          }
+       "type": "any",
+       "of": [
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-vgpu-manager-daemonset\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
          },
-         {
-          "type": "absent",
-          "path": ".metadata.deletionTimestamp"
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "equals",
+            "path": ".spec.vgpuManager.enabled",
+            "value": true
+           }
+          ]
          }
-        ]
-       }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-vgpu-device-manager\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "equals",
+            "path": ".spec.vgpuDeviceManager.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-vfio-manager\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "equals",
+            "path": ".spec.vfioManager.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-sandbox-device-plugin-daemonset\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "absent",
+              "path": ".spec.sandboxWorkloads.mode"
+             },
+             {
+              "type": "equals",
+              "path": ".spec.sandboxWorkloads.mode",
+              "value": "kubevirt"
+             }
+            ]
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxDevicePlugin.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-kata-sandbox-device-plugin-daemonset\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "absent",
+              "path": ".spec.sandboxWorkloads.mode"
+             },
+             {
+              "type": "equals",
+              "path": ".spec.sandboxWorkloads.mode",
+              "value": "kata"
+             }
+            ]
+           },
+           {
+            "type": "equals",
+            "path": ".spec.kataSandboxDevicePlugin.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-sandbox-validator\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           }
+          ]
+         }
+        },
+        {
+         "type": "related",
+         "path": "[name=\"nvidia-cc-manager\"].ownerReferences[kind=\"ClusterPolicy\",apiVersion=\"nvidia.com/v1\"].name",
+         "kind": {
+          "group": "nvidia.com",
+          "kind": "ClusterPolicy"
+         },
+         "when": {
+          "type": "all",
+          "of": [
+           {
+            "type": "not",
+            "of": {
+             "type": "in",
+             "path": ".status.state",
+             "values": [
+              "ignored",
+              "disabled"
+             ]
+            }
+           },
+           {
+            "type": "absent",
+            "path": ".metadata.deletionTimestamp"
+           },
+           {
+            "type": "equals",
+            "path": ".spec.sandboxWorkloads.enabled",
+            "value": true
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "absent",
+              "path": ".spec.sandboxWorkloads.mode"
+             },
+             {
+              "type": "equals",
+              "path": ".spec.sandboxWorkloads.mode",
+              "value": "kata"
+             }
+            ]
+           },
+           {
+            "type": "equals",
+            "path": ".spec.ccManager.enabled",
+            "value": true
+           }
+          ]
+         }
+        }
+       ]
       }
      ]
     },
@@ -1975,6 +3179,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} von {{.status.desiredNumberScheduled}} Pods bereit, {{.status.updatedNumberScheduled}} aktualisiert.",
    "problems.component-not-rolled-out-none-updated.title": "Komponenten-DaemonSet nicht ausgerollt, kein Pod aktualisiert",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} von {{.status.desiredNumberScheduled}} Pods bereit, 0 aktualisiert.",
+   "problems.sandbox-not-rolled-out.title": "Sandbox-Komponenten-DaemonSet nicht ausgerollt",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} von {{.status.desiredNumberScheduled}} Pods bereit, {{.status.updatedNumberScheduled}} aktualisiert.",
+   "problems.sandbox-not-rolled-out-none-updated.title": "Sandbox-Komponenten-DaemonSet nicht ausgerollt, kein Pod aktualisiert",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} von {{.status.desiredNumberScheduled}} Pods bereit, 0 aktualisiert.",
    "problems.policy-driver-rollout.title": "Treiber-DaemonSet einer ClusterPolicy nicht ausgerollt",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} von {{.status.desiredNumberScheduled}} Pods bereit, {{.status.updatedNumberScheduled}} aktualisiert.",
    "problems.policy-driver-rollout-none-updated.title": "Treiber-DaemonSet einer ClusterPolicy nicht ausgerollt, kein Pod aktualisiert",
@@ -2068,6 +3276,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods listos, {{.status.updatedNumberScheduled}} actualizados.",
    "problems.component-not-rolled-out-none-updated.title": "DaemonSet del componente no desplegado, ningún Pod actualizado",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods listos, 0 actualizados.",
+   "problems.sandbox-not-rolled-out.title": "DaemonSet del componente de sandbox no desplegado",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods listos, {{.status.updatedNumberScheduled}} actualizados.",
+   "problems.sandbox-not-rolled-out-none-updated.title": "DaemonSet del componente de sandbox no desplegado, ningún Pod actualizado",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods listos, 0 actualizados.",
    "problems.policy-driver-rollout.title": "DaemonSet de controlador de ClusterPolicy no desplegado",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods listos, {{.status.updatedNumberScheduled}} actualizados.",
    "problems.policy-driver-rollout-none-updated.title": "DaemonSet de controlador de ClusterPolicy no desplegado, ningún Pod actualizado",
@@ -2161,6 +3373,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}} : {{.status.numberReady}} sur {{.status.desiredNumberScheduled}} Pods prêts, {{.status.updatedNumberScheduled}} à jour.",
    "problems.component-not-rolled-out-none-updated.title": "DaemonSet du composant non déployé, aucun Pod mis à jour",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}} : {{.status.numberReady}} sur {{.status.desiredNumberScheduled}} Pods prêts, 0 à jour.",
+   "problems.sandbox-not-rolled-out.title": "DaemonSet du composant sandbox non déployé",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}} : {{.status.numberReady}} sur {{.status.desiredNumberScheduled}} Pods prêts, {{.status.updatedNumberScheduled}} à jour.",
+   "problems.sandbox-not-rolled-out-none-updated.title": "DaemonSet du composant sandbox non déployé, aucun Pod mis à jour",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}} : {{.status.numberReady}} sur {{.status.desiredNumberScheduled}} Pods prêts, 0 à jour.",
    "problems.policy-driver-rollout.title": "DaemonSet du pilote d'une ClusterPolicy non déployé",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}} : {{.status.numberReady}} sur {{.status.desiredNumberScheduled}} Pods prêts, {{.status.updatedNumberScheduled}} à jour.",
    "problems.policy-driver-rollout-none-updated.title": "DaemonSet du pilote d'une ClusterPolicy non déployé, aucun Pod mis à jour",
@@ -2254,6 +3470,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} di {{.status.desiredNumberScheduled}} Pod pronti, {{.status.updatedNumberScheduled}} aggiornati.",
    "problems.component-not-rolled-out-none-updated.title": "DaemonSet del componente non distribuito, nessun Pod aggiornato",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} di {{.status.desiredNumberScheduled}} Pod pronti, 0 aggiornati.",
+   "problems.sandbox-not-rolled-out.title": "DaemonSet del componente sandbox non distribuito",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} di {{.status.desiredNumberScheduled}} Pod pronti, {{.status.updatedNumberScheduled}} aggiornati.",
+   "problems.sandbox-not-rolled-out-none-updated.title": "DaemonSet del componente sandbox non distribuito, nessun Pod aggiornato",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} di {{.status.desiredNumberScheduled}} Pod pronti, 0 aggiornati.",
    "problems.policy-driver-rollout.title": "DaemonSet del driver di ClusterPolicy non distribuito",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} di {{.status.desiredNumberScheduled}} Pod pronti, {{.status.updatedNumberScheduled}} aggiornati.",
    "problems.policy-driver-rollout-none-updated.title": "DaemonSet del driver di ClusterPolicy non distribuito, nessun Pod aggiornato",
@@ -2345,6 +3565,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} 個中 {{.status.numberReady}} 個の Pod が準備完了、{{.status.updatedNumberScheduled}} 個更新済み。",
    "problems.component-not-rolled-out-none-updated.title": "コンポーネントの DaemonSet がロールアウトされていません（更新済みの Pod なし）",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} 個中 {{.status.numberReady}} 個の Pod が準備完了、0 個更新済み。",
+   "problems.sandbox-not-rolled-out.title": "サンドボックスコンポーネントの DaemonSet がロールアウトされていません",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} 個中 {{.status.numberReady}} 個の Pod が準備完了、{{.status.updatedNumberScheduled}} 個更新済み。",
+   "problems.sandbox-not-rolled-out-none-updated.title": "サンドボックスコンポーネントの DaemonSet がロールアウトされていません（更新済みの Pod なし）",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} 個中 {{.status.numberReady}} 個の Pod が準備完了、0 個更新済み。",
    "problems.policy-driver-rollout.title": "ClusterPolicy のドライバー DaemonSet がロールアウトされていません",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} 個中 {{.status.numberReady}} 個の Pod が準備完了、{{.status.updatedNumberScheduled}} 個更新済み。",
    "problems.policy-driver-rollout-none-updated.title": "ClusterPolicy のドライバー DaemonSet がロールアウトされていません（更新済みの Pod なし）",
@@ -2436,6 +3660,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: Pod {{.status.desiredNumberScheduled}}개 중 {{.status.numberReady}}개 준비됨, {{.status.updatedNumberScheduled}}개 업데이트됨.",
    "problems.component-not-rolled-out-none-updated.title": "구성 요소 DaemonSet이 롤아웃되지 않음, 업데이트된 Pod 없음",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: Pod {{.status.desiredNumberScheduled}}개 중 {{.status.numberReady}}개 준비됨, 0개 업데이트됨.",
+   "problems.sandbox-not-rolled-out.title": "샌드박스 구성 요소 DaemonSet이 롤아웃되지 않음",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}: Pod {{.status.desiredNumberScheduled}}개 중 {{.status.numberReady}}개 준비됨, {{.status.updatedNumberScheduled}}개 업데이트됨.",
+   "problems.sandbox-not-rolled-out-none-updated.title": "샌드박스 구성 요소 DaemonSet이 롤아웃되지 않음, 업데이트된 Pod 없음",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: Pod {{.status.desiredNumberScheduled}}개 중 {{.status.numberReady}}개 준비됨, 0개 업데이트됨.",
    "problems.policy-driver-rollout.title": "ClusterPolicy의 드라이버 DaemonSet이 롤아웃되지 않음",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}: Pod {{.status.desiredNumberScheduled}}개 중 {{.status.numberReady}}개 준비됨, {{.status.updatedNumberScheduled}}개 업데이트됨.",
    "problems.policy-driver-rollout-none-updated.title": "ClusterPolicy의 드라이버 DaemonSet이 롤아웃되지 않음, 업데이트된 Pod 없음",
@@ -2530,6 +3758,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: gotowe {{.status.numberReady}} z {{.status.desiredNumberScheduled}} Podów, zaktualizowane {{.status.updatedNumberScheduled}}.",
    "problems.component-not-rolled-out-none-updated.title": "DaemonSet komponentu niewdrożony, żaden Pod nie zaktualizowany",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: gotowe {{.status.numberReady}} z {{.status.desiredNumberScheduled}} Podów, zaktualizowane 0.",
+   "problems.sandbox-not-rolled-out.title": "DaemonSet komponentu piaskownicy niewdrożony",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}: gotowe {{.status.numberReady}} z {{.status.desiredNumberScheduled}} Podów, zaktualizowane {{.status.updatedNumberScheduled}}.",
+   "problems.sandbox-not-rolled-out-none-updated.title": "DaemonSet komponentu piaskownicy niewdrożony, żaden Pod nie zaktualizowany",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: gotowe {{.status.numberReady}} z {{.status.desiredNumberScheduled}} Podów, zaktualizowane 0.",
    "problems.policy-driver-rollout.title": "DaemonSet sterownika ClusterPolicy niewdrożony",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}: gotowe {{.status.numberReady}} z {{.status.desiredNumberScheduled}} Podów, zaktualizowane {{.status.updatedNumberScheduled}}.",
    "problems.policy-driver-rollout-none-updated.title": "DaemonSet sterownika ClusterPolicy niewdrożony, żaden Pod nie zaktualizowany",
@@ -2623,6 +3855,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods prontos, {{.status.updatedNumberScheduled}} atualizados.",
    "problems.component-not-rolled-out-none-updated.title": "DaemonSet do componente não implantado, nenhum Pod atualizado",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods prontos, 0 atualizados.",
+   "problems.sandbox-not-rolled-out.title": "DaemonSet do componente de sandbox não implantado",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods prontos, {{.status.updatedNumberScheduled}} atualizados.",
+   "problems.sandbox-not-rolled-out-none-updated.title": "DaemonSet do componente de sandbox não implantado, nenhum Pod atualizado",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods prontos, 0 atualizados.",
    "problems.policy-driver-rollout.title": "DaemonSet do driver de um ClusterPolicy não implantado",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}: {{.status.numberReady}} de {{.status.desiredNumberScheduled}} Pods prontos, {{.status.updatedNumberScheduled}} atualizados.",
    "problems.policy-driver-rollout-none-updated.title": "DaemonSet do driver de um ClusterPolicy não implantado, nenhum Pod atualizado",
@@ -2717,6 +3953,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} из {{.status.desiredNumberScheduled}} Pod, обновлено {{.status.updatedNumberScheduled}}.",
    "problems.component-not-rolled-out-none-updated.title": "DaemonSet компонента не развёрнут, ни один Pod не обновлён",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} из {{.status.desiredNumberScheduled}} Pod, обновлено 0.",
+   "problems.sandbox-not-rolled-out.title": "DaemonSet компонента песочницы не развёрнут",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} из {{.status.desiredNumberScheduled}} Pod, обновлено {{.status.updatedNumberScheduled}}.",
+   "problems.sandbox-not-rolled-out-none-updated.title": "DaemonSet компонента песочницы не развёрнут, ни один Pod не обновлён",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} из {{.status.desiredNumberScheduled}} Pod, обновлено 0.",
    "problems.policy-driver-rollout.title": "DaemonSet драйвера ClusterPolicy не развёрнут",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} из {{.status.desiredNumberScheduled}} Pod, обновлено {{.status.updatedNumberScheduled}}.",
    "problems.policy-driver-rollout-none-updated.title": "DaemonSet драйвера ClusterPolicy не развёрнут, ни один Pod не обновлён",
@@ -2809,6 +4049,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} Pod'dan {{.status.numberReady}} hazır, {{.status.updatedNumberScheduled}} güncel.",
    "problems.component-not-rolled-out-none-updated.title": "Bileşen DaemonSet'i dağıtılmadı, hiçbir Pod güncellenmedi",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} Pod'dan {{.status.numberReady}} hazır, 0 güncel.",
+   "problems.sandbox-not-rolled-out.title": "Sandbox bileşeni DaemonSet'i dağıtılmadı",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} Pod'dan {{.status.numberReady}} hazır, {{.status.updatedNumberScheduled}} güncel.",
+   "problems.sandbox-not-rolled-out-none-updated.title": "Sandbox bileşeni DaemonSet'i dağıtılmadı, hiçbir Pod güncellenmedi",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} Pod'dan {{.status.numberReady}} hazır, 0 güncel.",
    "problems.policy-driver-rollout.title": "Bir ClusterPolicy'nin sürücü DaemonSet'i dağıtılmadı",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}: {{.status.desiredNumberScheduled}} Pod'dan {{.status.numberReady}} hazır, {{.status.updatedNumberScheduled}} güncel.",
    "problems.policy-driver-rollout-none-updated.title": "Bir ClusterPolicy'nin sürücü DaemonSet'i dağıtılmadı, hiçbir Pod güncellenmedi",
@@ -2903,6 +4147,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} з {{.status.desiredNumberScheduled}} Pod, оновлено {{.status.updatedNumberScheduled}}.",
    "problems.component-not-rolled-out-none-updated.title": "DaemonSet компонента не розгорнуто, жоден Pod не оновлено",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} з {{.status.desiredNumberScheduled}} Pod, оновлено 0.",
+   "problems.sandbox-not-rolled-out.title": "DaemonSet компонента пісочниці не розгорнуто",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} з {{.status.desiredNumberScheduled}} Pod, оновлено {{.status.updatedNumberScheduled}}.",
+   "problems.sandbox-not-rolled-out-none-updated.title": "DaemonSet компонента пісочниці не розгорнуто, жоден Pod не оновлено",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} з {{.status.desiredNumberScheduled}} Pod, оновлено 0.",
    "problems.policy-driver-rollout.title": "DaemonSet драйвера ClusterPolicy не розгорнуто",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}: готово {{.status.numberReady}} з {{.status.desiredNumberScheduled}} Pod, оновлено {{.status.updatedNumberScheduled}}.",
    "problems.policy-driver-rollout-none-updated.title": "DaemonSet драйвера ClusterPolicy не розгорнуто, жоден Pod не оновлено",
@@ -2994,6 +4242,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 个 Pod 就绪，{{.status.updatedNumberScheduled}} 个已更新。",
    "problems.component-not-rolled-out-none-updated.title": "组件 DaemonSet 未完成发布，没有 Pod 已更新",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 个 Pod 就绪，0 个已更新。",
+   "problems.sandbox-not-rolled-out.title": "沙箱组件 DaemonSet 未完成发布",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 个 Pod 就绪，{{.status.updatedNumberScheduled}} 个已更新。",
+   "problems.sandbox-not-rolled-out-none-updated.title": "沙箱组件 DaemonSet 未完成发布，没有 Pod 已更新",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 个 Pod 就绪，0 个已更新。",
    "problems.policy-driver-rollout.title": "ClusterPolicy 的驱动 DaemonSet 未完成发布",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 个 Pod 就绪，{{.status.updatedNumberScheduled}} 个已更新。",
    "problems.policy-driver-rollout-none-updated.title": "ClusterPolicy 的驱动 DaemonSet 未完成发布，没有 Pod 已更新",
@@ -3085,6 +4337,10 @@
    "problems.component-not-rolled-out.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 個 Pod 就緒，{{.status.updatedNumberScheduled}} 個已更新。",
    "problems.component-not-rolled-out-none-updated.title": "元件 DaemonSet 未完成推出，沒有 Pod 已更新",
    "problems.component-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 個 Pod 就緒，0 個已更新。",
+   "problems.sandbox-not-rolled-out.title": "沙箱元件 DaemonSet 未完成推出",
+   "problems.sandbox-not-rolled-out.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 個 Pod 就緒，{{.status.updatedNumberScheduled}} 個已更新。",
+   "problems.sandbox-not-rolled-out-none-updated.title": "沙箱元件 DaemonSet 未完成推出，沒有 Pod 已更新",
+   "problems.sandbox-not-rolled-out-none-updated.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 個 Pod 就緒，0 個已更新。",
    "problems.policy-driver-rollout.title": "ClusterPolicy 的驅動程式 DaemonSet 未完成推出",
    "problems.policy-driver-rollout.message": "DaemonSet {{.metadata.name}}：{{.status.numberReady}}/{{.status.desiredNumberScheduled}} 個 Pod 就緒，{{.status.updatedNumberScheduled}} 個已更新。",
    "problems.policy-driver-rollout-none-updated.title": "ClusterPolicy 的驅動程式 DaemonSet 未完成推出，沒有 Pod 已更新",

@@ -18,6 +18,9 @@ Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-i
 - **Problems:** one per Pod that waits for devices, as the built-in detector: a claim of its templates not made yet, a
   claim that does not exist, or one without devices while the scheduler names a DRA reason; only Pending Pods watched
   (at most 2000), counted on the section.
+- **Pods with any number of claims, in any order** are told as the built-in detector told them, by five rules instead of
+  29 (an `any` of `missing` and `related` lookups over every claim the Pod names or was made for), and the sentence
+  without the scheduler's message names the claims without devices as well as those that do not exist.
 - **Columns** with the built-in widths and sort orders, every pod, class and driver listed.
 - Installing asks for consent to read the `resource.k8s.io` kinds and Pods, and to judge Pods (looking
   ResourceClaims up) in problem rules.

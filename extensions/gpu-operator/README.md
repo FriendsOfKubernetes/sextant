@@ -98,8 +98,14 @@ A component that is not rolled out is a problem **about its ClusterPolicy or NVI
 naming the DaemonSet in its message and notifying once for the object; its 10 minutes start again whenever the
 DaemonSet's ready, updated or scheduled count moves, so a rollout that progresses stays quiet. The DaemonSet's owner is
 looked up by name among the ClusterPolicies or NVIDIADrivers Sextant watches for the rules above ("cannot tell", so no
-problem, until they are read). Because Kubernetes leaves `updatedNumberScheduled` out when it is 0 and a message is one
-template, each component rule has a twin for "0 updated".
+problem, until they are read). Whether the ClusterPolicy turns the component on is asked of it as the built-in rule
+read it (the component's `enabled`, else the operator's default; a sandbox component only with
+`sandboxWorkloads.enabled`, and those of one mode only in that `sandboxWorkloads.mode` or none): one `related` lookup
+per component in one `any`, each reading the owner's name only from that component's DaemonSet (the path
+`[name="<DaemonSet>"].ownerReferences[…].name` picks, among the DaemonSet's own values, its metadata only when its
+name is that one). An `any` has at most ten branches, so the sandbox components have rules of their own. Because
+Kubernetes leaves `updatedNumberScheduled` out when it is 0 and a message is one template, each component rule has a
+twin for "0 updated".
 
 | Id | Kind judged | Problem about | When it holds | Grace | Told by another object |
 |---|---|---|---|---|---|
@@ -107,7 +113,8 @@ template, each component rule has a twin for "0 updated".
 | `policy-not-ready-plain` | ClusterPolicy | Itself | The same with neither message | As above | No |
 | `driver-not-ready` | NVIDIADriver | Itself | As `policy-not-ready` | As above | No |
 | `driver-not-ready-plain` | NVIDIADriver | Itself | As `policy-not-ready-plain` | As above | No |
-| `component-not-rolled-out`, `component-not-rolled-out-none-updated` | DaemonSet | Its ClusterPolicy | Named as a component's DaemonSet in the operator's manifests (every component but the driver and the retired Kata manager), controlled by a ClusterPolicy that is not ignored, disabled or being deleted, pods scheduled, and fewer ready or updated than scheduled (the twin: none updated) | 10 min from when its counts last moved | No |
+| `component-not-rolled-out`, `component-not-rolled-out-none-updated` | DaemonSet | Its ClusterPolicy | Named as a component's DaemonSet in the operator's manifests (the toolkit, device plugin, DCGM, DCGM exporter, GPU Feature Discovery, MIG manager, node status exporter and validator), controlled by a ClusterPolicy that is not ignored, disabled or being deleted and turns that component on, pods scheduled, and fewer ready or updated than scheduled (the twin: none updated) | 10 min from when its counts last moved | No |
+| `sandbox-not-rolled-out`, `sandbox-not-rolled-out-none-updated` | DaemonSet | Its ClusterPolicy | As above, for the sandbox components (vGPU manager, vGPU device manager, VFIO manager, sandbox and Kata sandbox device plugins, sandbox validator, CC manager; never the retired Kata manager) | As above | No |
 | `policy-driver-rollout`, `policy-driver-rollout-none-updated` | DaemonSet | Its ClusterPolicy | The driver's DaemonSet (`nvidia-driver-daemonset`, or with its kernel and OS suffix) of a ClusterPolicy as above that turns the driver on and does not leave it to NVIDIADriver objects, not rolled out as above | As above | No |
 | `driver-rollout`, `driver-rollout-none-updated` | DaemonSet | Its NVIDIADriver | Controlled by an NVIDIADriver that is not ignored, disabled or being deleted, not rolled out as above | As above | No |
 | `mig-config-failed` | Node | Itself | `nvidia.com/mig.config.state=failed` (nodes picked by that label on the API server, metadata only) | 2 min from when it is first seen | No |
@@ -138,12 +145,6 @@ None: the extension is read-only and has no action of its own (ADR-0116).
   section shows only where the cluster serves them. The GPU block and page read node labels written by GPU Feature
   Discovery and the MIG manager.
 - Where it still differs from the former built-in view, because the extension API cannot say it yet:
-  - A component rule cannot tell whether the policy turns that component on: a rule of a DaemonSet can ask its
-    ClusterPolicy only one fixed condition (a `related` condition cannot sit inside `any`), and one rule per component
-    with its twin for "0 updated" would make 39 rules where a manifest may have 30. So a DaemonSet of a component the
-    policy turns off is judged too (the operator deletes such a DaemonSet when it next reconciles; the built-in rule
-    left it alone). A placeholder's literal fallback (`{{.status.updatedNumberScheduled ?? 0}}`) or `related` inside
-    `any` would close it.
   - A component's DaemonSet is found by its controller, the ClusterPolicy or NVIDIADriver, in any namespace; the
     built-in rule found the policy's by name in the operand namespace, even one the operator did not own (a condition
     of the named object cannot compare it with the judged one's namespace).
@@ -161,7 +162,8 @@ None: the extension is read-only and has no action of its own (ADR-0116).
   - The rules watch every DaemonSet of the cluster (up to Sextant's 5000 for a rule's source), the built-in category
     only those of the operand namespaces (up to 1000).
 - Checked by tests on fixtures of the operator's objects (copied from the built-in view) against the built-in readings
-  and rules; not yet tried on a live cluster.
+  and rules — every component under every value of its own switch, of sandbox workloads and their mode, and the
+  policy's state —; not yet tried on a live cluster.
 
 ## Troubleshooting
 
