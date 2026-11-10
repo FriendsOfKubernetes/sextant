@@ -314,7 +314,7 @@ export function fillTemplate(template: string, obj: KubeObject, options: { empty
 export function placeholderText(obj: KubeObject, inner: string): string | undefined {
   // Up to two filters in a row (`|firstLine|clip:300`, #404): the first reads the value, `clip:<n>` cuts the text.
   const [path = "", ...filters] = inner.split("|").map((part, i) => (i === 0 ? part : part.trim()));
-  const filter = filters.find((f) => !f.startsWith("clip:"));
+  const filter = filters.find((f) => !f.startsWith("clip:") && !f.startsWith("after:"));
   // Paths tried in turn with `??` (#404): the first whose value is there and not an empty text.
   const tried = splitOutsideQuotes(path, "??");
   if (tried.length > 1) {
@@ -323,7 +323,8 @@ export function placeholderText(obj: KubeObject, inner: string): string | undefi
       const literal = i === tried.length - 1 ? placeholderLiteral(one.trim()) : undefined;
       if (literal !== undefined) return literal;
       const text = filteredText(valueAt(obj, one.trim()), filter);
-      if (text !== undefined && text !== "") return clipped(text, filters);
+      const shown = text === undefined || text === "" ? undefined : clipped(text, filters);
+      if (shown !== undefined) return shown;
     }
     return undefined;
   }
@@ -339,8 +340,13 @@ export function placeholderText(obj: KubeObject, inner: string): string | undefi
   return text === undefined ? undefined : clipped(text, filters);
 }
 
-/** `text` cut by the shortest `clip:<n>` among `filters`, with "…"; as it is without one. */
-function clipped(text: string, filters: readonly string[]): string {
+/** `text` after an `after:<marker>`'s last place (#404) and cut by the shortest `clip:<n>`, with "…". */
+function clipped(whole: string, filters: readonly string[]): string | undefined {
+  const marker = filters.find((f) => f.startsWith("after:"))?.slice(6);
+  const at = marker === undefined ? -1 : whole.lastIndexOf(marker);
+  if (marker !== undefined && at < 0) return undefined;
+  const text = marker === undefined ? whole : whole.slice(at + marker.length);
+  if (text === "") return undefined;
   const clips = filters.filter((f) => f.startsWith("clip:"));
   if (clips.length === 0) return text;
   const keep = Math.min(...clips.map((c) => Number(c.slice(5))));

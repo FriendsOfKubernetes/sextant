@@ -249,6 +249,10 @@ describe("problem rules of extensions", () => {
       ],
     } as unknown as KubeObject;
     expect(placeholderText(report, ".results[*].policy|unique")).toBe("a, b");
+    // The text after a marker's last place (#404): a composed job's kind.
+    const wl = { metadata: { name: "w", annotations: { gvk: "example.dev/v1, Kind=Widget" } } } as unknown as KubeObject;
+    expect(placeholderText(wl, '.metadata.annotations["gvk"]|after:Kind=')).toBe("Widget");
+    expect(placeholderText(wl, '.metadata.name|after:Kind=')).toBeUndefined();
     expect(placeholderText(report, ".results[<timestamp.seconds].policy")).toBe("a");
     expect(placeholderText(o, '.status.connectors[tasks.state!="FAILED",*].name|join')).toBe("b");
   });

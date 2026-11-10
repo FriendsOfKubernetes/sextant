@@ -960,7 +960,10 @@ function checkMessage(text, kind, segments, metadataOnly) {
     for (const filter of filters.map((f) => f.trim())) {
       const clip = /^clip:([0-9]{1,4})$/.exec(filter);
       const clipOk = clip !== null && Number(clip[1]) >= 1 && Number(clip[1]) <= 1000;
-      if (!clipOk && !PLACEHOLDER_FILTERS.includes(filter)) fail(segments, `has a filter \`${filter}\`: one of ${PLACEHOLDER_FILTERS.join(", ")}, clip:<1 to 1000>`);
+      // `after:<marker>` (#404): the text after the marker's last place.
+      const marker = filter.startsWith("after:") ? filter.slice(6) : undefined;
+      const afterOk = marker !== undefined && Array.from(marker).length >= 1 && Array.from(marker).length <= 20 && !/[{}|"]/.test(marker) && !/\p{Cc}/u.test(marker);
+      if (!clipOk && !afterOk && !PLACEHOLDER_FILTERS.includes(filter)) fail(segments, `has a filter \`${filter}\`: one of ${PLACEHOLDER_FILTERS.join(", ")}, clip:<1 to 1000>, after:<marker>`);
     }
     for (const one of added) checkRulePath(one.trim(), kind, segments, metadataOnly);
   }

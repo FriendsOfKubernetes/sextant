@@ -1337,11 +1337,17 @@ pub(crate) fn check_message(
                 .strip_prefix("clip:")
                 .and_then(|n| n.parse::<u32>().ok())
                 .is_some_and(|n| (1..=1000).contains(&n));
-            if !clip && !PLACEHOLDER_FILTERS.contains(&filter) {
+            // `after:<marker>` (#404): the text after the marker's last place, `Kind=` of a composed job's GVK.
+            let after = filter.strip_prefix("after:").is_some_and(|marker| {
+                (1..=20).contains(&marker.chars().count())
+                    && !marker.contains(['{', '}', '|', '"'])
+                    && !marker.chars().any(char::is_control)
+            });
+            if !clip && !after && !PLACEHOLDER_FILTERS.contains(&filter) {
                 return Err(at(
                     path,
                     format!(
-                        "has a filter `{filter}`: one of {}, clip:<1 to 1000>",
+                        "has a filter `{filter}`: one of {}, clip:<1 to 1000>, after:<marker>",
                         PLACEHOLDER_FILTERS.join(", ")
                     ),
                 ));
