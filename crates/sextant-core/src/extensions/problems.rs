@@ -1852,7 +1852,8 @@ fn check_placeholders(
     }
     for field in placeholders {
         // `{{missing}}` (#404): a rule's message names the objects its `missing` of a list did not find.
-        if field.trim() == "missing" {
+        // `{{found}}` (ADR-0167 amendment): the objects its `related` or `relatedBy` found, an HPA fighting a VPA.
+        if field.trim() == "missing" || field.trim() == "found" {
             continue;
         }
         // `{{path|filter}}` (#404): the value as its first line, last segment, a list joined, or a count.

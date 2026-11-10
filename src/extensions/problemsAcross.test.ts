@@ -219,6 +219,14 @@ describe("relatedBy (#404)", () => {
     expect(judged(hpaRows([hpa("api", "team-a", "api", "cpu")]))).toEqual([]);
   });
 
+  it("names the objects it found in `{{found}}`", () => {
+    const named = { ...CONFLICT, message: "HPA {{found}} scales the same workload" };
+    const found = (rows: JudgedRows) =>
+      judgeAcross([problemOf(named, vpa)], { rows: undefined, target: (def) => (def === HPA_DEF ? rows : undefined), problemUids: () => new Set() }, { rules: new Map([[named.id, named]]), targets });
+    expect(found(hpaRows([hpa("web-hpa", "team-a", "web", "cpu"), hpa("other", "team-a", "api", "cpu")]))[0]?.message).toBe("HPA web-hpa scales the same workload");
+    expect(found(hpaRows([hpa("a", "team-a", "web", "cpu"), hpa("b", "team-a", "web", "cpu")]))[0]?.message).toMatch(/^HPA a\W+b scales/);
+  });
+
   it("cannot tell while the list is not read in full or not watched there", () => {
     expect(judged(hpaRows([hpa("web", "team-a", "web", "cpu")], { truncated: true }))).toEqual([]);
     expect(judged(hpaRows([hpa("web", "team-a", "web", "cpu")], { namespaces: ["team-b"] }))).toEqual([]);

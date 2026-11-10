@@ -1213,6 +1213,8 @@ function checkMessage(text, kind, segments, metadataOnly, item = false) {
   for (const raw of found) {
     // `{{missing}}` (#404): a rule's message names the objects its `missing` of a list did not find.
     if (raw.trim() === "missing") continue;
+    // `{{found}}` (ADR-0167 amendment): the objects its `related` or `relatedBy` found.
+    if (raw.trim() === "found") continue;
     // `{{path|filter}}` (#404).
     // Up to two filters in a row (`|firstLine|clip:300`, #404); `clip:<n>` keeps 1 to 1000 characters.
     const [field, ...filters] = raw.split("|");

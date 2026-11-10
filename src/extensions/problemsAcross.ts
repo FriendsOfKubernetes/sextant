@@ -11,7 +11,7 @@
 //
 //   judgeAcross(problems, context, { rules, targets })   // the problems that stand
 import type { JudgedNeed, KubeObject, ProblemCondition, ProblemContribution } from "../api";
-import { evaluate, FACT_MARK, factKey, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, MISSING_MARK, numberOf, selectorMatches, valueAt, type Lookup } from "./problemRules";
+import { evaluate, FACT_MARK, factKey, FOUND_MARK, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, MISSING_MARK, numberOf, selectorMatches, valueAt, type Lookup } from "./problemRules";
 import type { JudgedEntry, JudgedRowPart } from "./problemJudges";
 import { cleanText } from "../resources/uri";
 import { formatList } from "../i18n/format";
@@ -201,22 +201,39 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
       }
       const namespace = target.namespaced ? (lookup.namespace ?? p.object.namespace ?? "") : "";
       // `relatedBy` (#404): a row of the namespace holding every text, with its fact holding.
-      if (lookup.by) {
-        if (target.namespaced && watched !== null && !watched?.includes(namespace)) return false;
-        const by = lookup.by;
-        return [...known.values()].some(
-          (row) =>
-            (!target.namespaced || row.namespace === namespace) &&
-            by.every(([path, value]) => row.values?.[path] === value) &&
-            (lookup.fact === undefined || row.facts?.[lookup.fact] === true),
-        );
-      }
+      if (lookup.by) return relatedRows(p, lookup).length > 0;
       if (target.namespaced && watched !== null && !watched?.includes(namespace)) return false;
       const row = known.get(`${namespace}/${lookup.name}`);
       // `related` (#409): there, with its fact holding; `missing`: not there.
       if (lookup.fact !== undefined) return row?.facts?.[lookup.fact] === true;
       return row === undefined;
     }
+  };
+  /** The rows a `relatedBy` finds: of the namespace, holding every text, with its fact; none while it cannot tell. */
+  const relatedRows = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): AcrossRow[] => {
+    const target = targets.find((t) => sameKind(t, lookup));
+    const known = target ? namesOf(target) : null;
+    if (!target || !known || !lookup.by) return [];
+    const watched = context.target(target.def)?.namespaces;
+    const namespace = target.namespaced ? (lookup.namespace ?? p.object.namespace ?? "") : "";
+    if (target.namespaced && watched !== null && !watched?.includes(namespace)) return [];
+    const by = lookup.by;
+    return [...known.values()].filter(
+      (row) =>
+        (!target.namespaced || row.namespace === namespace) &&
+        by.every(([path, value]) => row.values?.[path] === value) &&
+        (lookup.fact === undefined || row.facts?.[lookup.fact] === true),
+    );
+  };
+  /** The names the `related` and `relatedBy` lookups found (`{{found}}`), each once, in their order. */
+  const foundNames = (p: Problem): string[] => {
+    const out: string[] = [];
+    const shown = (namespace: string | undefined, name: string) => (namespace && namespace !== p.object.namespace ? `${namespace}/${name}` : name);
+    for (const lookup of p.lookups ?? []) {
+      if (lookup.by) for (const row of relatedRows(p, lookup)) out.push(shown(row.namespace, row.name));
+      else if (lookup.fact !== undefined && holds(p, lookup)) out.push(shown(lookup.namespace, lookup.name));
+    }
+    return [...new Set(out)];
   };
   /**
    * The names a problem's lookups found missing, when its lookups hold: each plain one, and of each `missing` of a
@@ -316,6 +333,8 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
     let out = p;
     // `{{missing}}` (#404): the names a `missing` of a list did not find, in the UI language's list.
     if (out.message?.includes(MISSING_MARK)) out = { ...out, message: out.message.split(MISSING_MARK).join(formatList(names)) };
+    // `{{found}}` (ADR-0167 amendment): the objects a `related` or `relatedBy` found, an HPA fighting a VPA.
+    if (out.message?.includes(FOUND_MARK)) out = { ...out, message: out.message.split(FOUND_MARK).join(formatList(foundNames(out))) };
     if (facts.judged) out = { ...out, lookups: facts.lookups, ...(out.message !== undefined ? { message: withFacts(out.message, facts.values) } : {}) };
     return [out];
   });

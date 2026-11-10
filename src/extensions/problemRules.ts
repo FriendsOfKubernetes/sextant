@@ -716,6 +716,9 @@ function messageOf(rule: ProblemContribution, obj: KubeObject): string {
 /** Where a message names the objects a `missing` of a list did not find (#404); `judgeAcross` fills it. */
 export const MISSING_MARK = "{{missing}}";
 
+/** Where a message names the objects a `related` or `relatedBy` found (ADR-0167 amendment); `judgeAcross` fills it. */
+export const FOUND_MARK = "{{found}}";
+
 /** Where a message shows a text of a judge's fact (`{{fact:<name>}}`, ADR-0168); `judgeAcross` fills it. */
 export const FACT_MARK = /\{\{\s*fact:\s*([A-Za-z][A-Za-z0-9-]*)\s*\}\}/g;
 
@@ -723,6 +726,7 @@ export function renderMessage(template: string, obj: KubeObject): string {
   const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, inner: string) => {
     // `{{missing}}` (#404) is filled once the rows say which named objects are not there (`judgeAcross`).
     if (inner.trim() === "missing") return MISSING_MARK;
+    if (inner.trim() === "found") return FOUND_MARK;
     // `{{fact:<name>}}` (ADR-0168) once the judge's answer gives it.
     const fact = /^\s*fact:\s*([A-Za-z][A-Za-z0-9-]*)\s*$/.exec(inner);
     if (fact) return `{{fact:${fact[1]}}}`;

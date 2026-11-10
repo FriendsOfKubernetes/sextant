@@ -426,3 +426,10 @@ same way — `{{.weight ?? 100|share}}`, a weight left out counting as 100 as Op
 when they add up to 0, with one decimal below 1% as the built-in Route column wrote it. With `items`, a joined path
 holding one object is a list of it (`spec.to` before `spec.alternateBackends`). Rust now checks a placeholder's
 filters also after paths tried with `??`, as the SDK always did.
+
+## Amendment: the objects a lookup found
+
+A problem message may say `{{found}}` (Rust and the SDK accept it as `{{missing}}`): `judgeAcross` fills it with the
+objects its `related` lookups found with their fact and its `relatedBy` lookups' matching rows, each once, in the UI
+language's list (`namespace/name` outside the object's own namespace). The built-in VPA problem named the HPA it
+fought with.
