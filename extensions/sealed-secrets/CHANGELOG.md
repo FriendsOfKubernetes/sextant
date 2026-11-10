@@ -16,3 +16,5 @@ extension.
   Secrets", counted on the section while it is on.
 - Installing asks for consent to read SealedSecrets, Secrets (watched as metadata only) and Deployments, to judge
   SealedSecrets in problem rules and to list Secrets' names for them.
+- The rules' Secrets are listed only in the namespaces of the synced SealedSecrets (`narrowLookups`), as the
+  built-in listed them, up to 40 namespaces, then wherever the extension may read.

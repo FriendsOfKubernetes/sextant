@@ -21,3 +21,5 @@ Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-i
   that scales the same workload on a resource the VPA changes; counted on the section.
 - Installing asks for consent to read VPAs, their checkpoints, HPAs and the workloads a VPA can target, and to judge
   VPAs (looking up HPAs) in problem rules.
+- The rules' HPAs are listed only in the namespaces of the VPAs that change running pods (`narrowLookups`), as the
+  built-in held them, up to 40 namespaces, then wherever the extension may read.

@@ -144,9 +144,11 @@ None: the extension is read-only and has no action of its own (ADR-0100).
     selector matching the judged object's labels and a namespace selector matching its namespace; `relatedBy` joins
     equal field texts in the judged object's namespace only. The details still say it.
   - **Selects nothing** is judged on the namespaces the monitor names, also when every Prometheus that picks it up has
-    `ignoreNamespaceSelectors` (then the built-in judged its own namespace only). The Services' and Pods' metadata is
-    listed cluster-wide, at most 5000 of each, for the rules (the built-in listed it only in the at most 40 namespaces
-    the monitors named): beyond 5000 it cannot tell, but it judges monitors of any number of namespaces.
+    `ignoreNamespaceSelectors` (then the built-in judged its own namespace only). The Services' (Pods') metadata is
+    listed for the rules only in the namespaces the ServiceMonitors (PodMonitors) name (`narrowLookups`), as the
+    built-in listed it in the namespaces the monitors looked in, within those the extension may read. Past 40
+    namespaces of a kind it is listed in every namespace the extension may read, at most 5000 (beyond that it cannot
+    tell); the built-in judged no monitor then.
   - **Rules** counts every rule of every group; the built-in counted those with an `alert` or `record` name, which every
     rule the operator accepts has.
   - **Namespaces** sorts by the shown list; the built-in sorted by the names joined with commas (the same order but for

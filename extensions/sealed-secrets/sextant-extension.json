@@ -385,6 +385,12 @@
         "reason": "TargetMissing",
         "message": "Says it is synced, but its Secret {{.metadata.name}} does not exist."
       }
+    ],
+    "narrowLookups": [
+      {
+        "group": "",
+        "kind": "Secret"
+      }
     ]
   },
   "translations": {

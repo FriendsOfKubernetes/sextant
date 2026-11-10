@@ -1364,6 +1364,16 @@
         "message": "Selects no Pod in the namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
         "notify": true
       }
+    ],
+    "narrowLookups": [
+      {
+        "group": "",
+        "kind": "Service"
+      },
+      {
+        "group": "",
+        "kind": "Pod"
+      }
     ]
   },
   "translations": {

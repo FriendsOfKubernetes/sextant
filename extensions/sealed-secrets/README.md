@@ -85,8 +85,8 @@ their widths, as the built-in tables did.
 ## Problems
 
 As the built-in category `sealedSecrets`: the extension's own category **Sealed Secrets** (`sealed-secrets`), opt-in —
-off until turned on on the Problems page, because it lists every SealedSecret of a cluster and the metadata of its
-Secrets.
+off until turned on on the Problems page, because it lists every SealedSecret of a cluster and the metadata of the
+Secrets in their namespaces.
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
@@ -118,10 +118,10 @@ None: the extension is read-only and has no action of its own (ADR-0109).
 - The Sealed Secrets CRD (`bitnami.com/v1alpha1`); the section shows only where the cluster serves it. A controller
   under another name or label than kubeseal's default and the Helm chart's is not found.
 - Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - To tell a missing Secret, Sextant lists Secrets (metadata only) in every namespace the extension may read, capped
-    at 5000: on a cluster with more Secrets than that it cannot tell, and says nothing. The built-in listed only the
-    namespaces of synced SealedSecrets (at most 20, else it could not tell). Lookups narrowed to the namespaces judged
-    would close it (#417).
+  - To tell a missing Secret, Sextant lists Secrets (metadata only) in the namespaces of the SealedSecrets that say
+    they are synced (`narrowLookups`), as the built-in did, within those the extension may read. Past 40 such
+    namespaces it lists them in every namespace the extension may read, at most 5000, and beyond that it cannot tell;
+    the built-in stopped at 20 namespaces and then could not tell at all.
   - The table's search finds Status and Scope by the words shown (Synced, Cluster-wide); the built-in matched their
     names (`ready`, `clusterWide`). Filters still go by the names.
   - The extension's permission reads Secrets in every namespace; it only ever watches their metadata, as the built-in

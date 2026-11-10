@@ -20,3 +20,5 @@ as an extension.
   up are told in their details only (see "Requirements and limits" in the README).
 - Installing asks for consent to read Prometheus Operator's kinds, Services, Pods and Namespaces, and to judge
   monitors, Prometheuses and Alertmanagers in problem rules, looking up Services and Pods.
+- The rules' Services and Pods are listed only in the namespaces the monitors name (`narrowLookups`), as the built-in
+  listed them, up to 40 namespaces of each, then wherever the extension may read.

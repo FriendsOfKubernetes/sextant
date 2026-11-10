@@ -1591,6 +1591,12 @@
         "message": "An HPA scales the same workload on memory, which this VPA changes in mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: the two fight.",
         "group": "hpa-conflict"
       }
+    ],
+    "narrowLookups": [
+      {
+        "group": "autoscaling",
+        "kind": "HorizontalPodAutoscaler"
+      }
     ]
   },
   "translations": {

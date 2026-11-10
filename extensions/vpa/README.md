@@ -105,7 +105,7 @@ as the built-in problems named them, and each reason notifies once per VPA. A gr
 Whether the VPA controls a resource is read from its policies alone, as the built-in problems read it: no policies, or a
 policy not Off that controls it (its `controlledResources`, cpu and memory when unset). An HPA's resource is a `Resource`
 metric with a `Utilization` target (an HPA without metrics is the API's default CPU); an AverageValue or Value target
-does not fight. A fight is judged only while the cluster's HPAs are read in full. The message says "An HPA": the
+does not fight. A fight is judged only while the HPAs of the VPA's namespace are read in full. The message says "An HPA": the
 rules cannot name the HPA they found.
 
 ## Metrics
@@ -148,9 +148,12 @@ None: it only reads.
   - A policy with an empty `controlledResources` list (or one of other resources only) counts as the default (cpu and
     memory) in the rules; the built-in problem counted no resource. (A match step that tells a missing field from a
     present one would close it.)
-  - The rules look up the cluster's HPAs in every namespace (at most 5000) wherever the extension's rules run; the
-    built-in problems held HPAs only of the namespaces whose VPAs change running pods (at most 40), and only where VPAs
-    are served. (Lookups narrowed to the namespaces of the judged objects would close it.)
+  - The rules' HPAs are listed only in the namespaces of the VPAs a fight rule judges up to the HPA lookup
+    (`narrowLookups`: not being deleted, in a mode that changes running pods, and with no container policies or one not
+    Off), within those the extension may read, and not at all where no VPA is served; the built-in held the HPAs of the
+    namespaces of every VPA in such a mode, also one whose policies are all Off, which cannot fight, so no problem
+    differs. Past 40 such namespaces the extension lists HPAs in every namespace it may read (at most 5000, beyond that
+    it cannot tell); the built-in judged no fight then.
   - A VPA's target of a kind outside the six above (a custom workload such as an Argo Rollout) is not read, so its
     details say "The target has not been read"; the built-in view read any kind the cluster serves. (Reading every
     kind would need a permission on all kinds.)
