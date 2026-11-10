@@ -268,3 +268,5 @@ Paths may end in `|min`/`|max` (the smallest or largest number, or the earliest 
 `newestBy` ranks `newestPer`'s newest by a number instead of the creation time (a Build's `openshift.io/build.number`);
 `toldThroughReferrer.alsoPaths` (at most 3) name more places a referrer names others, a single object read as a list of
 one (an HTTPProxy's `spec.tcpproxy.include`).
+From `sextantApi` 4 an extension has up to 60 rules over 30 kinds (a section counter counts up to 60), and `{{missing}}`
+names a namespace only when it is not the object's own.

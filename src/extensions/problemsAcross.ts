@@ -187,7 +187,8 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
         continue;
       }
       const found = lists.get(lookup.anyOf) ?? [];
-      if (holds(p, lookup)) found.push(lookup.namespace ? `${lookup.namespace}/${lookup.name}` : lookup.name);
+      // The namespace only when it is not the object's own (#404).
+      if (holds(p, lookup)) found.push(lookup.namespace && lookup.namespace !== p.object.namespace ? `${lookup.namespace}/${lookup.name}` : lookup.name);
       lists.set(lookup.anyOf, found);
     }
     for (const found of lists.values()) if (found.length === 0) return null;

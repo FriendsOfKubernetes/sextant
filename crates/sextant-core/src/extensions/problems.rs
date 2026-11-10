@@ -27,11 +27,11 @@ pub const MAX_SELECTOR_CHARS: usize = 1000;
 /// Rules per extension before `sextantApi` 4.
 pub const MAX_RULES: usize = 20;
 /// Rules per extension from `sextantApi` 4 (the schema's `maxItems`).
-pub const MAX_RULES_4: usize = 40;
+pub const MAX_RULES_4: usize = 60;
 /// Kinds the rules of one extension judge before `sextantApi` 4.
 pub const MAX_KINDS: usize = 10;
 /// Kinds the rules of one extension judge from `sextantApi` 4 (Knative's and Crossplane's views need more).
-pub const MAX_KINDS_4: usize = 20;
+pub const MAX_KINDS_4: usize = 30;
 
 /// The rules and the kinds they judge an extension of `api` may have: an older Sextant reads only older manifests, so
 /// the limits grow with the version.

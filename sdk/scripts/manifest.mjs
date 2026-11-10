@@ -503,7 +503,7 @@ function checkUniqueIds(manifest) {
 
 const PROBLEMS_API = 2;
 /** `rule_limits`: rules and the kinds they judge, more from sextantApi 4. */
-const ruleLimits = (api) => (api >= 4 ? [40, 20] : [20, 10]);
+const ruleLimits = (api) => (api >= 4 ? [60, 30] : [20, 10]);
 const MAX_CONDITIONS = 20;
 const MAX_DEPTH = 3;
 /** From sextantApi 4 (#381): an older Sextant reads only older manifests, so the limits grow with the version. */
