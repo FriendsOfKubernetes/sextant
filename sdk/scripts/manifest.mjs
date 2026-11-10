@@ -1291,7 +1291,7 @@ export function splitOutsideQuotes(field, sep) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["lower", "firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft"];
+const PLACEHOLDER_FILTERS = ["lower", "firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft", "ruleHosts"];
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
 

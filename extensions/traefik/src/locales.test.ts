@@ -79,7 +79,7 @@ describe("the manifest's translations", () => {
   const sameAllowed = (text: string) =>
     text === "" ||
     /^\{\{[^}]+\}\}$/.test(text) ||
-    /^(weighted|mirroring|highestRandomWeight|failover|TLS|Passthrough|Type|Services|Secrets)$/.test(text) ||
+    /^(weighted|mirroring|highestRandomWeight|failover|TLS|Passthrough|Type|Services|Secrets|Hosts)$/.test(text) ||
     /^(IngressRoutes|IngressRoutes TCP|IngressRoutes UDP|Middlewares|Middlewares TCP|Traefik Services|TLS Options|TLS Stores|Servers Transports|Servers Transports TCP)( \(traefik\.containo\.us\))?$/.test(text);
 
   it("translate every text of the manifest into every language Sextant has", () => {

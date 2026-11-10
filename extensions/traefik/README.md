@@ -48,7 +48,9 @@ Secrets, which were never judged for problems: their "Only problems" lists nothi
 built-in widths and order. The ids of `traefik.containo.us`'s columns are the same with `l-` in front (`l-ir-ep`,
 `l-ir-svc`, `l-ir-tls`, `l-irt-ep`, `l-irt-svc`, `l-irt-tls`, `l-iru-ep`, `l-iru-svc`, `l-mw-type`, `l-mwt-type`,
 `l-ts-strat`, `l-ts-svc`, `l-to-min`, `l-to-auth`, `l-tst-def`, `l-tst-sec`, `l-st-sni`, `l-st-insec`, `l-st-sec`):
-- IngressRoutes, IngressRoutes TCP and UDP: **Entry points** (`ir-ep`, `irt-ep`, `iru-ep`), **Services** (`ir-svc`,
+- IngressRoutes, IngressRoutes TCP and UDP: **Entry points** (`ir-ep`, `irt-ep`, `iru-ep`), **Hosts** (`ir-hosts`,
+  `irt-hosts`, HTTP and TCP only: every exact `Host(…)`/`HostSNI(…)` name of the match rules once, lower case, not `*`,
+  with the `ruleHosts` filter, as the built-in column), **Services** (`ir-svc`,
   `irt-svc`, `iru-svc`: the services of every route, each once, in order, `name@provider` as written) and, but on UDP,
   **TLS** (`ir-tls`, `irt-tls`: "TLS", or "Passthrough" for a TCP route passing TLS through; sorted by "TLS").
 - Middlewares and Middlewares TCP: **Type** (`mw-type`, `mwt-type`: the middleware's field, `stripPrefix`,
@@ -192,9 +194,6 @@ None: the extension is read-only and has no action of its own (ADR-0108).
     checking), came from judging each row's references across objects; a column case cannot read the row's problems.
     Closed by a column case condition `{"type": "problem"}` (the row has an active problem of the extension's rules),
     with "cannot tell" for rows whose lookups are not read.
-  - **No Hosts column.** The built-in parsed the `Host(…)`/`HostSNI(…)` arguments of the routes' match rules (exact
-    names, lower case, not `*`, each once); no placeholder filter reads arguments out of a text. Closed by a filter
-    `|ruleHosts` (the quoted arguments of `Host`/`HostSNI` calls, lower case, without `*`, each once) for list columns.
   - **The skipped routes are not numbered.** The built-in message named them ("Traefik skips its routes 1, 3: …"); the
     rule says "some of its routes". Closed by a placeholder filter `|positions` (the 1-based places of a `[…,*]` step's
     matches).

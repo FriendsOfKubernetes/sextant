@@ -2032,7 +2032,7 @@ fn split_outside_quotes<'a>(field: &'a str, sep: &str) -> Vec<&'a str> {
 }
 
 /// What may follow a placeholder's path after `|` (#404); `lower` writes a text in lower case.
-pub const PLACEHOLDER_FILTERS: [&str; 15] = [
+pub const PLACEHOLDER_FILTERS: [&str; 16] = [
     "lower",
     "firstLine",
     "lastSegment",
@@ -2048,6 +2048,9 @@ pub const PLACEHOLDER_FILTERS: [&str; 15] = [
     "cpu",
     "bytes",
     "daysLeft",
+    // The exact host names of Traefik-style match rules: the quoted arguments of `Host(…)`/`HostSNI(…)`, lower case,
+    // not `*`, each once, joined with ", " (as the built-in Traefik Hosts column; `hostsOf` in the window).
+    "ruleHosts",
 ];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.

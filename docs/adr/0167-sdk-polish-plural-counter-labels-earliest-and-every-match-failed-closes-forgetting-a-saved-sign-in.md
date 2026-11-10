@@ -386,3 +386,10 @@ whose name the shown object holds at that path, in its namespace, and nothing wh
 read and parsed as ADR-0069 says (`tls_certificate_info`, with the user's access, only `tls.crt`/`ca.crt`, values
 wiped in Rust), and nothing of the Secret reaches the extension: it names a field, as a link would. The built-in
 Traefik view showed a route's TLS Secret this way; the user chose this over leaving it to the Secret's own details.
+
+## Amendment: the hosts of match rules
+
+The placeholder filter `|ruleHosts` (`PLACEHOLDER_FILTERS` in Rust and the SDK): of a match rule, or a list of them,
+the quoted arguments of `Host(…)` and `HostSNI(…)` calls, lower case, not `*`, each once, joined with ", " — the window's
+`hostsOf` of `src/features/diagnose/traefikModel.ts`, which the core's own IngressRoute diagnosis reads. The built-in
+Traefik tables had a Hosts column so; no regular expression or pattern reaches the manifest (#405).

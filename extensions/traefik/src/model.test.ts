@@ -724,16 +724,18 @@ const joined = (values: readonly (string | undefined)[]) => {
 };
 
 describe("the columns, against the built-in ones", () => {
-  it("are the built-in columns after the namespace, but the references' state and the routes' hosts", () => {
+  it("are the built-in columns after the namespace, but the references' state", () => {
     const of = (group: string, kind: string) => manifest.contributes.columns.filter((c) => c.kind.group === group && c.kind.kind === kind).map((c) => [c.title, c.width]);
     for (const group of [TRAEFIK_GROUP, LEGACY_GROUP]) {
       expect(of(group, "IngressRoute")).toEqual([
         ["Entry points", "minmax(100px, 1fr)"],
+        ["Hosts", "minmax(140px, 2fr)"],
         ["Services", "minmax(140px, 2fr)"],
         ["TLS", "70px"],
       ]);
       expect(of(group, "IngressRouteTCP")).toEqual(of(group, "IngressRoute"));
-      expect(of(group, "IngressRouteUDP")).toEqual(of(group, "IngressRoute").slice(0, 2));
+      // UDP routes have no hosts, as in the built-in table.
+      expect(of(group, "IngressRouteUDP")).toEqual([of(group, "IngressRoute")[0], of(group, "IngressRoute")[2]]);
       expect(of(group, "Middleware")).toEqual([["Type", "minmax(120px, 1fr)"]]);
       expect(of(group, "MiddlewareTCP")).toEqual([["Type", "minmax(120px, 1fr)"]]);
       expect(of(group, "TraefikService")).toEqual([
@@ -875,9 +877,16 @@ describe("the columns, against the built-in ones", () => {
     });
   }
 
-  it("differ where the API cannot say it: no state column, no hosts, every key of a middleware", () => {
+  it("write a route's hosts as the built-in Hosts column did: every exact Host/HostSNI name once", () => {
+    for (const [id, kind, obj] of [["ir-hosts", INGRESS_ROUTE, fx.ingressRoute!], ["irt-hosts", INGRESS_ROUTE_TCP, fx.tcpRoute!]] as const) {
+      const builtIn = [...new Set(routeSpec(kind, obj).routes.flatMap((r) => hostsOf(r.match)))].join(", ");
+      expect(cell(id, obj) ?? "", id).toBe(builtIn);
+    }
+  });
+
+  it("differ where the API cannot say it: no state column, every key of a middleware", () => {
     const ids = manifest.contributes.columns.map((c) => c.id);
-    expect(ids.some((id) => id.endsWith("-state") || id.endsWith("-hosts"))).toBe(false);
+    expect(ids.some((id) => id.endsWith("-state"))).toBe(false);
     const two = copy(fx.httpsOnly!);
     (two.spec as Record<string, unknown>).stripPrefix = { prefixes: ["/a"] };
     expect(middlewareType(two)).toBe("redirectScheme");

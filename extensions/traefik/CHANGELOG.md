@@ -7,7 +7,7 @@ extension.
 
 - **A sidebar section "Traefik"** in its built-in place, with IngressRoutes (HTTP, TCP, UDP), Middlewares (HTTP, TCP),
   TraefikServices, TLSOptions, TLSStores and ServersTransports (HTTP, TCP) of `traefik.io` and of `traefik.containo.us`
-  in Sextant's table, the built-in columns (entry points, services, TLS, type, strategy, TLS settings, Secrets, server
+  in Sextant's table, the built-in columns (entry points, hosts, services, TLS, type, strategy, TLS settings, Secrets, server
   name, verification) with their widths, and "Only problems".
 - **Details:** what can be judged without a status — every reference with what it finds and, in plain words, why one
   breaks its object or cannot be judged (another namespace, another provider, a list not read, the other group) — and

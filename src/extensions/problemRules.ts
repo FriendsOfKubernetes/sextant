@@ -11,6 +11,7 @@ import { currentCertExpiryWarningMs, type Detected } from "../features/problems/
 import { currentLanguage, formatList } from "../i18n/format";
 import { formatBytes, formatCpu, parseQuantity } from "../features/metrics/format";
 import { cleanText } from "../resources/uri";
+import { hostsOf } from "../features/diagnose/traefikModel";
 
 /** A placeholder shows at most this many characters of its value: a controller's whole condition message (#373). */
 export const MAX_VALUE_CHARS = 1000;
@@ -623,6 +624,12 @@ function filteredText(value: unknown, filter: string | undefined): string | unde
       parts.push(text);
     }
     return parts.join(",");
+  }
+  if (filter === "ruleHosts") {
+    // The exact hosts of match rules (`Host(…)`, `HostSNI(…)`), each once, joined as the built-in Traefik column did.
+    const rules = Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : typeof value === "string" ? [value] : [];
+    const hosts = [...new Set(rules.flatMap(hostsOf))];
+    return hosts.length === 0 ? undefined : hosts.join(", ");
   }
   if (filter === "unique") {
     // Each text once, sorted by code point (#404): the policies a report names, as the built-in Kyverno message did.

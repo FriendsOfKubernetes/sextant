@@ -552,3 +552,20 @@ describe("placeholders of item texts (ADR-0167 amendment)", () => {
   });
 });
 
+describe("the ruleHosts filter", () => {
+  it("names the exact hosts of match rules once, as the built-in Traefik Hosts column", () => {
+    const route = {
+      spec: {
+        routes: [
+          { match: "Host(`Shop.example.com`) && PathPrefix(`/api`)" },
+          { match: "Host(`shop.example.com`, `www.example.com`) || HostRegexp(`^.+\\.example\\.com$`)" },
+          { match: "HostSNI(`*`)" },
+          { match: "HostSNI(`db.example.com`)" },
+        ],
+      },
+    };
+    expect(fillTemplate("{{.spec.routes[*].match|ruleHosts}}", route)).toBe("shop.example.com, www.example.com, db.example.com");
+    expect(fillTemplate("{{.spec.routes[*].match|ruleHosts}}", { spec: { routes: [{ match: "PathPrefix(`/`)" }] } })).toBeNull();
+  });
+});
+
