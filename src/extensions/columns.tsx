@@ -14,6 +14,8 @@ import { formatList } from "../i18n/format";
 
 /** Longest text a computed cell shows. */
 export const MAX_CELL_CHARS = 200;
+/** A hover holds more than a cell (#404): a condition's whole message, a URL. */
+export const MAX_TOOLTIP_CHARS = 1000;
 
 const TONES: Record<ColumnTone, Tone> = { ok: "success", warning: "warning", error: "danger", neutral: "neutral", muted: "muted" };
 
@@ -44,11 +46,11 @@ export function firstValue(obj: KubeObject, paths: readonly string[] | undefined
   return undefined;
 }
 
-/** A scalar as text, clipped; anything else is no value. */
-function textOf(value: unknown): string | undefined {
+/** A scalar as text, clipped (to `max`, a cell's by default); anything else is no value. */
+function textOf(value: unknown, max = MAX_CELL_CHARS): string | undefined {
   if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") return undefined;
   const chars = Array.from(String(value));
-  return chars.length > MAX_CELL_CHARS ? `${chars.slice(0, MAX_CELL_CHARS).join("")}…` : chars.join("");
+  return chars.length > max ? `${chars.slice(0, max).join("")}…` : chars.join("");
 }
 
 
@@ -59,8 +61,20 @@ function timeOf(value: unknown): number | undefined {
   return Number.isNaN(t) ? undefined : t;
 }
 
+/** An item's text by the first of `cases` that holds on it, its placeholders filled from the item (#404). */
+function itemText(cases: readonly { when: ColumnCase["when"]; text: string }[], item: unknown, now: number): string | undefined {
+  if (item === null || typeof item !== "object" || Array.isArray(item)) return undefined;
+  const obj = item as KubeObject;
+  for (const c of cases) {
+    if (!holdsNow(c, obj, now)) continue;
+    const filled = c.text.includes("{{") ? fillTemplate(c.text, obj) : c.text;
+    if (filled !== null) return filled;
+  }
+  return undefined;
+}
+
 /** Whether a case's condition holds at `now` (a condition holding only from or until a time counts within it). */
-function holdsNow(c: ColumnCase, obj: KubeObject, now: number): boolean {
+function holdsNow(c: Pick<ColumnCase, "when">, obj: KubeObject, now: number): boolean {
   const verdict = evaluate(c.when, obj);
   if (!verdict.holds) return false;
   if (verdict.activeFrom !== undefined && verdict.activeFrom > now) return false;
@@ -87,7 +101,7 @@ function caseOf(column: ColumnContribution, obj: KubeObject, now: number): Colum
     return {
       ...c,
       text: filled === c.text ? c.text : (textOf(cleanText(filled) ?? "") ?? ""),
-      tooltip: tooltip === null || tooltip === undefined ? undefined : (textOf(cleanText(tooltip) ?? "") ?? undefined),
+      tooltip: tooltip === null || tooltip === undefined ? undefined : (textOf(cleanText(tooltip) ?? "", MAX_TOOLTIP_CHARS) ?? undefined),
     };
   }
   return undefined;
@@ -152,17 +166,15 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
       // path's items in order, each once (a listener declared and one only in the status).
       const lists = column.joinPaths ? (column.paths ?? []).map((p) => valueAt(obj, p)).filter(Array.isArray) : [value];
       if (!lists.some(Array.isArray)) return { sort: undefined, text: undefined, draw: null };
-      const items = [
-        ...new Set(
-          lists
-            .flatMap((list) => (Array.isArray(list) ? list : []))
-            .filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean")
-            .map((v) => cleanText(String(v)) ?? "")
-            .filter((v) => v !== ""),
-        ),
-      ];
-      if (items.length === 0) return { sort: undefined, text: undefined, draw: null };
-      const text = textOf(formatList(items)) ?? "";
+      const all = lists.flatMap((list) => (Array.isArray(list) ? list : []));
+      // `items` (#404): each item written by the first case holding on it; an item none holds for is left out.
+      const texts = column.items
+        ? all.map((item) => itemText(column.items!.cases, item, now))
+        : all.filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean").map((v) => String(v));
+      const shown = [...new Set(texts.map((v) => (v === undefined ? "" : (cleanText(v) ?? ""))).filter((v) => v !== ""))];
+      const separator = column.items?.separator;
+      if (shown.length === 0) return { sort: undefined, text: undefined, draw: null };
+      const text = textOf(separator === undefined ? formatList(shown) : shown.join(separator)) ?? "";
       return { sort: text, text, draw: text };
     }
     case "count": {
@@ -218,7 +230,7 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
   const format = column.format ?? "text";
   const timed = format === "age" || format === "duration" || (column.cases ?? []).length > 0;
   // Cluster text is cleaned wherever it shows, as case texts are: no credentials of a URI in a hover.
-  const tooltip = (obj: KubeObject) => textOf(cleanText(textOf(firstValue(obj, column.tooltipPaths))));
+  const tooltip = (obj: KubeObject) => textOf(cleanText(textOf(firstValue(obj, column.tooltipPaths), MAX_TOOLTIP_CHARS)), MAX_TOOLTIP_CHARS);
   return {
     id,
     title: column.title,
@@ -244,7 +256,8 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
     },
     searchTextTimed: timed,
     filter:
-      format === "number" || format === "ratio"
+      // A count or a sum filters as a number (#404), as a number column does.
+      format === "number" || format === "ratio" || format === "count" || format === "sum"
         ? { type: "number", value: (obj, ctx) => numericSort(cellOf(column, obj, ctx.now).sort) }
         : format === "age"
           ? { type: "age", value: (obj, ctx) => ageMs(cellOf(column, obj, ctx.now).sort, ctx.now) }

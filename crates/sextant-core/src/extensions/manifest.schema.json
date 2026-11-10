@@ -473,6 +473,29 @@
                 "pattern": "\\S"
               },
               "filterBy": { "description": "\"value\": a text column filters by its cases' values, not the translated texts shown (sextantApi 4).", "type": "string", "enum": ["value"] },
+              "items": {
+                "description": "A list column's items each written by the first case that holds on the item, joined by `separator` (sextantApi 4).",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["cases"],
+                "properties": {
+                  "cases": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["when", "text"],
+                      "properties": {
+                        "when": { "$ref": "#/$defs/problemCondition" },
+                        "text": { "description": "Text with `{{<field path>}}` placeholders read from the item.", "type": "string", "minLength": 1, "maxLength": 200, "format": "non-blank", "pattern": "\\S" }
+                      }
+                    }
+                  },
+                  "separator": { "type": "string", "minLength": 1, "maxLength": 5 }
+                }
+              },
               "joinPaths": { "description": "A list column of every path's items in order, each once, not the first path's (sextantApi 4).", "type": "boolean" },
               "width": {
                 "description": "Its width: `<n>px`, or `minmax(<n>px, <m>fr)` (sextantApi 4).",

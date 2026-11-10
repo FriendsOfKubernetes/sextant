@@ -89,6 +89,17 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
                 Text::Template(text, 40),
             );
         }
+        for (i, case) in column
+            .items
+            .iter()
+            .flat_map(|items| &items.cases)
+            .enumerate()
+        {
+            out.insert(
+                format!("columns.{}.items.{i}.text", column.id),
+                Text::Template(&case.text, 200),
+            );
+        }
         for (i, case) in column.cases.iter().flatten().enumerate() {
             // An empty text is nothing to translate (#404).
             if !case.text.is_empty() {

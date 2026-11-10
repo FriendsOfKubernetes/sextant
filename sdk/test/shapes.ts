@@ -220,6 +220,7 @@ export const MANIFEST_SHAPES = {
     cases: "optional",
     afterColumn: "optional",
     filterBy: "optional",
+    items: "optional",
     joinPaths: "optional",
     width: "optional",
     lookup: "optional",

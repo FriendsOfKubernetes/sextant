@@ -293,15 +293,14 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 ));
             }
         }
-        if let Some(by) = &column.filter_by {
+        if column.filter_by.is_some() {
             if manifest.sextant_api < WINDOW_API {
                 return Err(at(
                     &here.key("filterBy"),
                     format!("needs sextantApi {WINDOW_API} or later"),
                 ));
             }
-            if by != "value"
-                || column.format.unwrap_or(ColumnFormat::Text) != ColumnFormat::Text
+            if column.format.unwrap_or(ColumnFormat::Text) != ColumnFormat::Text
                 || column.cases.as_ref().is_none_or(|c| c.is_empty())
             {
                 return Err(at(
@@ -309,6 +308,9 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                     "is `\"value\"` on a text column with `cases`",
                 ));
             }
+        }
+        if let Some(items) = &column.items {
+            check_items(manifest, column, items, &here.key("items"))?;
         }
         if column.join_paths.is_some() {
             if manifest.sextant_api < WINDOW_API {
@@ -550,8 +552,67 @@ fn is_column_id(text: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b':'))
 }
 
-fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 11] {
+/// The most cases of a column's `items` (#404).
+pub const MAX_ITEM_CASES: usize = 10;
+
+/// A `list` column's `items` (#404): over paths of a list each (no `*`), 1 to 10 cases on the item, a short separator.
+fn check_items(
+    manifest: &ExtensionManifest,
+    column: &ColumnContribution,
+    items: &super::manifest::ColumnItems,
+    here: &JsonPath,
+) -> Result<(), ManifestError> {
+    if manifest.sextant_api < WINDOW_API {
+        return Err(at(here, format!("needs sextantApi {WINDOW_API} or later")));
+    }
+    if column.format != Some(ColumnFormat::List) {
+        return Err(at(here, "goes with `format: \"list\"`"));
+    }
+    // Each item's paths read from the item: the column's paths name the lists themselves. A list path that holds no
+    // secret holds none in its items, so the items' paths are checked as the column's text placeholders are.
+    if column.paths.iter().flatten().any(|p| p.contains('*')) {
+        return Err(at(
+            &here.key("cases"),
+            "go with `paths` that name the lists themselves, without `*`",
+        ));
+    }
+    if items.cases.is_empty() || items.cases.len() > MAX_ITEM_CASES {
+        return Err(at(
+            &here.key("cases"),
+            format!("has 1 to {MAX_ITEM_CASES} cases"),
+        ));
+    }
+    for (j, case) in items.cases.iter().enumerate() {
+        let at_case = here.key("cases").index(j);
+        check_object_condition(
+            &case.when,
+            std::slice::from_ref(&column.kind),
+            &at_case.key("when"),
+            manifest.sextant_api,
+        )?;
+        if case.text.trim().is_empty() || case.text.chars().count() > 200 {
+            return Err(at(&at_case.key("text"), "is a text of 1 to 200 characters"));
+        }
+        check_message(&case.text, &column.kind, &at_case.key("text"), false)?;
+    }
+    if let Some(separator) = &items.separator {
+        let count = separator.chars().count();
+        if !(1..=5).contains(&count)
+            || separator.chars().any(char::is_control)
+            || separator.contains("{{")
+        {
+            return Err(at(
+                &here.key("separator"),
+                "is 1 to 5 characters, no control characters or `{{`",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 12] {
     [
+        ("items", column.items.is_some()),
         ("filterBy", column.filter_by.is_some()),
         ("joinPaths", column.join_paths.is_some()),
         ("paths", column.paths.is_some()),

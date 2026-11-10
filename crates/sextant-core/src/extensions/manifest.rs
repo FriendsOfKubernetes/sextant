@@ -397,7 +397,12 @@ pub struct ColumnContribution {
     /// `"value"`: a text column filters by its cases' `value`s, not the translated texts shown (#404); `sextantApi` 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
-    pub filter_by: Option<String>,
+    pub filter_by: Option<ColumnFilterBy>,
+    /// A `list` column's items each written by the first of its cases that holds on the item (#404), joined by
+    /// `separator`; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub items: Option<ColumnItems>,
     /// A `list` column of every path's items in order, each once (#404), not the first path's; `sextantApi` 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -465,6 +470,37 @@ pub enum ColumnTone {
     Neutral,
     /// Greyed: a steady state that is neither good nor bad (hibernated, paused, completed; #403).
     Muted,
+}
+
+/// What a text column filters by (#404).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ColumnFilterBy {
+    /// The cases' `value`s.
+    Value,
+}
+
+/// A `list` column's items, each written by a case of its own (#404).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ColumnItems {
+    /// Each item's text, the first case that holds on it; an item none holds for is left out.
+    pub cases: Vec<ColumnItemCase>,
+    /// What joins the items' texts (1 to 5 characters); the UI language's list without it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub separator: Option<String>,
+}
+
+/// An item's text where a condition on the item holds: paths read from the item (`.revisionName`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ColumnItemCase {
+    pub when: ProblemCondition,
+    pub text: String,
 }
 
 /// A text a column shows where `when` holds.
@@ -1112,6 +1148,7 @@ mod tests {
                 cases: None,
                 after_column: None,
                 filter_by: None,
+                items: None,
                 join_paths: None,
                 width: None,
                 lookup: None,

@@ -45,6 +45,9 @@ describe("an extension's computed column", () => {
     expect(computedColumn("x", column({ paths: [".spec.listeners"], format: "count" })).searchText!(o, ctx)).toBe("2");
     expect(computedColumn("x", column({ paths: [".metadata.labels"], format: "count" })).searchText!(o, ctx)).toBe("2");
     expect(computedColumn("x", column({ paths: [".spec.jobs[*].restarts"], format: "sum" })).searchText!(o, ctx)).toBe("3");
+    // A count or a sum filters as a number (#404).
+    expect(computedColumn("x", column({ paths: [".spec.jobs[*].restarts"], format: "sum" })).filter).toMatchObject({ type: "number" });
+    expect(computedColumn("x", column({ paths: [".spec.listeners"], format: "count" })).filter!.value!(o, ctx)).toBe(2);
     expect(computedColumn("x", column({ paths: [".metadata.labels"], format: "entries" })).searchText!(o, ctx)).toBe("app=shop, tier=web");
   });
 
@@ -65,6 +68,36 @@ describe("an extension's computed column", () => {
     const store = { metadata: { name: "s" }, spec: { provider: { vault: { server: "x" } } } } as unknown as KubeObject;
     const provider = computedColumn("p", column({ paths: [".spec.provider"], cases: [{ when: { type: "exists", path: ".spec.provider" }, text: "{{.spec.provider|keys}}" }] }));
     expect(provider.searchText!(store, ctx)).toBe("vault");
+  });
+
+  it("write each list item by its first holding case, joined by the separator (#404)", () => {
+    const route = {
+      metadata: { name: "r" },
+      status: {
+        traffic: [
+          { revisionName: "a-1", percent: 80 },
+          { latestRevision: true, percent: 20 },
+          { revisionName: "a-0", percent: 0 },
+          { configurationName: "c", percent: 5 },
+        ],
+      },
+    } as unknown as KubeObject;
+    const traffic = computedColumn(
+      "t",
+      column({
+        paths: [".status.traffic"],
+        format: "list",
+        items: {
+          separator: " · ",
+          cases: [
+            { when: { type: "all", of: [{ type: "above", path: ".percent", value: 0 }, { type: "exists", path: ".revisionName" }] }, text: "{{.revisionName}} {{.percent}}%" },
+            { when: { type: "all", of: [{ type: "above", path: ".percent", value: 0 }, { type: "equals", path: ".latestRevision", value: true }] }, text: "latest {{.percent}}%" },
+            { when: { type: "above", path: ".percent", value: 0 }, text: "{{.configurationName}} {{.percent}}%" },
+          ],
+        },
+      }),
+    );
+    expect(traffic.searchText!(route, ctx)).toBe("a-1 80% · latest 20% · c 5%");
   });
 
   it("join every path's list with joinPaths, each item once (#404)", () => {

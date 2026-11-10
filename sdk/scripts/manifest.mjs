@@ -1225,6 +1225,7 @@ export function translatableTexts(manifest) {
   for (const column of c.columns ?? []) {
     out.set(`columns.${column.id}.title`, title);
     if (column.valueText !== undefined) out.set(`columns.${column.id}.valueText`, { max: 40, message: column.valueText });
+    (column.items?.cases ?? []).forEach((c, i) => out.set(`columns.${column.id}.items.${i}.text`, { max: 200, message: c.text }));
     (column.cases ?? []).forEach((c, i) => {
       // An empty text is nothing to translate (#404).
       if (c.text !== "") out.set(`columns.${column.id}.cases.${i}.text`, { max: 200, message: c.text });
@@ -1631,7 +1632,10 @@ function checkActionPatch(patch, segments) {
   walk(patch, segments);
 }
 
-const COLUMN_FIELDS = ["filterBy", "joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
+/** `MAX_ITEM_CASES` (#404). */
+const MAX_ITEM_CASES = 10;
+
+const COLUMN_FIELDS = ["items", "filterBy", "joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
 
 function checkColumns(manifest) {
   const list = ["contributes", "columns"];
@@ -1646,6 +1650,20 @@ function checkColumns(manifest) {
     if (column.filterBy !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "filterBy"], `needs sextantApi ${WINDOW_API} or later`);
       if (column.filterBy !== "value" || (column.format ?? "text") !== "text" || (column.cases ?? []).length === 0) fail([...here, "filterBy"], 'is `"value"` on a text column with `cases`');
+    }
+    if (column.items !== undefined) {
+      const at = [...here, "items"];
+      if (manifest.sextantApi < WINDOW_API) fail(at, `needs sextantApi ${WINDOW_API} or later`);
+      if (column.format !== "list") fail(at, 'goes with `format: "list"`');
+      if ((column.paths ?? []).some((p) => p.includes("*"))) fail([...at, "cases"], "go with `paths` that name the lists themselves, without `*`");
+      if (column.items.cases.length === 0 || column.items.cases.length > MAX_ITEM_CASES) fail([...at, "cases"], `has 1 to ${MAX_ITEM_CASES} cases`);
+      column.items.cases.forEach((c, j) => {
+        checkObjectCondition(c.when, [column.kind], [...at, "cases", j, "when"], manifest.sextantApi);
+        if (c.text.trim() === "" || Array.from(c.text).length > 200) fail([...at, "cases", j, "text"], "is a text of 1 to 200 characters");
+        checkMessage(c.text, column.kind, [...at, "cases", j, "text"], false);
+      });
+      const sep = column.items.separator;
+      if (sep !== undefined && (Array.from(sep).length < 1 || Array.from(sep).length > 5 || /\p{Cc}/u.test(sep) || sep.includes("{{"))) fail([...at, "separator"], "is 1 to 5 characters, no control characters or `{{`");
     }
     if (column.joinPaths !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "joinPaths"], `needs sextantApi ${WINDOW_API} or later`);

@@ -209,3 +209,7 @@ status), not the first path's; `exists.nonEmpty` takes a blank text for nothing 
 A text column with `filterBy: "value"` filters by its cases' `value`s (a state's name in every language) instead of the
 translated texts shown; a case's text may be empty (a blank cell, nothing to translate) that still sorts by its
 `value`; the placeholder filter `|keys` names a map's keys (a SecretStore's provider, the one key of `spec.provider`).
+A `list` column's `items` write each item of its lists (named by `paths` without `*`) by the first of up to 10 cases
+that holds on the item, its paths read from the item, joined by `separator` (1 to 5 characters) or the UI language's
+list; an item none holds for is left out (Knative's traffic: "a-1 80% · latest 20%"). `count` and `sum` columns filter as
+numbers; a hover keeps up to 1000 characters where a cell keeps 200.
