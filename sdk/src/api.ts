@@ -272,13 +272,14 @@ export interface MetricQueryParams extends OnCluster {
 export interface Methods {
   "context.get": { params: undefined; result: HostContext };
   "ui.openDetails": { params: RefInput; result: null };
-  "ui.navigate": { params: { page: string }; result: null };
+  "ui.navigate": { params: { page: string; closeDetails?: boolean }; result: null };
   "ui.notify": { params: { text: string }; result: null };
   "ui.close": { params: { failed?: string } | undefined; result: null };
   "ui.openLogs": { params: OpenLogsParams; result: null };
   "ui.openUrl": { params: { url: string }; result: { opened: boolean } };
   "ui.openCluster": { params: { host: string; port: number; node?: string }; result: { opened: boolean; found?: number } };
   "ui.setBlockOpen": { params: { id: string; open: boolean }; result: null };
+  "ui.revealSection": { params: { id: string }; result: null };
   "ui.setHidden": { params: { hidden: boolean }; result: null };
   "ui.signIn": { params: { clusterId?: ClusterId; namespace: string; service: string }; result: { signedIn: boolean } };
   "resources.unwatch": { params: { stream: string | number }; result: null };
@@ -298,9 +299,9 @@ export interface Methods {
   "secret.value": { params: SecretParams & { clusterId: ClusterId }; result: string };
   "metrics.query": { params: MetricQueryParams & { clusterId: ClusterId }; result: MetricAnswer };
   "exec.run": { params: ExecParams & { clusterId: ClusterId }; result: ExecResult };
-  "storage.get": { params: { key: string }; result: JsonValue };
-  "storage.set": { params: { key: string; value: JsonValue }; result: null };
-  "storage.remove": { params: { key: string }; result: null };
+  "storage.get": { params: { key: string; session?: boolean }; result: JsonValue };
+  "storage.set": { params: { key: string; value: JsonValue; session?: boolean }; result: null };
+  "storage.remove": { params: { key: string; session?: boolean }; result: null };
   "backend.call": { params: { method: string; params?: JsonValue }; result: JsonValue };
   "portForward.start": { params: ForwardStartParams & { clusterId: ClusterId }; result: ForwardResult };
   "portForward.list": { params: { clusterId?: ClusterId }; result: { forwards: ForwardInfo[] } };

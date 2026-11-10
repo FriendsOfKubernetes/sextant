@@ -52,13 +52,16 @@
 //
 //   context.get()                         → HostContext
 //   ui.openDetails(ref: ObjectRef)        → null       opens the details panel of the object (in the active cluster)
-//   ui.navigate({page})                   → null       opens a page: one of the extension's own page ids, a page id of
-//                                                      Sextant, or a table view (`kind:<group>/<Kind>`)
+//   ui.navigate({page, closeDetails?})    → null       opens a page: one of the extension's own page ids, a page id of
+//                                                      Sextant, or a table view (`kind:<group>/<Kind>`); with
+//                                                      `closeDetails: true` the details panel closes (since 0.30)
 //   ui.notify({text})                     → null       a short notice in the window (at most 500 characters)
 //   ui.close()                            → null       closes the frame's window (action) or dock tab
+//   ui.revealSection({id})                → null       details only: opens, scrolls to and focuses a section of the same
+//                                                      panel, Sextant's by id or the extension's own (since 0.30)
 //   resources.unwatch({stream})           → null       stops a watch opened by `resources.watch`
 //   clusters.list, kinds, resources.list/get/getMany/watch/apply/patch/delete, logs.tail, secret.value, metrics.query,
-//   storage.get/set/remove, exec.run
+//   storage.get/set/remove ({session: true}: in memory for this run, since 0.30), exec.run
 //                                                      backend methods (`src-tauri/src/extensions/api.rs`)
 //
 // The host sends the frame no object data of its own: the context names the selected objects (`selection`) and the
@@ -251,6 +254,7 @@ export const LOCAL_METHODS: readonly string[] = [
   "ui.openUrl",
   "ui.openCluster",
   "ui.setBlockOpen",
+  "ui.revealSection",
   "ui.signIn",
   "ui.setHidden",
 ];

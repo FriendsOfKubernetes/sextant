@@ -132,10 +132,14 @@ export const host = {
   secret: { value: (params: Params<"secret.value">) => callApi("secret.value", params) },
   metrics: { query: (params: Params<"metrics.query">) => callApi("metrics.query", params) },
   exec: { run: (params: Params<"exec.run">) => callApi("exec.run", params) },
+  /** The extension's data; `{session: true}` (since Sextant 0.30): this run's only, in memory. */
   storage: {
-    get: <T extends JsonValue = JsonValue>(key: string) => callApi("storage.get", { key }) as T | null,
-    set: (key: string, value: JsonValue) => void callApi("storage.set", { key, value }),
-    remove: (key: string) => void callApi("storage.remove", { key }),
+    get: <T extends JsonValue = JsonValue>(key: string, o?: { session?: boolean }) =>
+      callApi("storage.get", o?.session === true ? { key, session: true } : { key }) as T | null,
+    set: (key: string, value: JsonValue, o?: { session?: boolean }) =>
+      void callApi("storage.set", o?.session === true ? { key, value, session: true } : { key, value }),
+    remove: (key: string, o?: { session?: boolean }) =>
+      void callApi("storage.remove", o?.session === true ? { key, session: true } : { key }),
   },
   /** A credential the manifest declares and the user entered in Sextant, or `null`. */
   credentials: {

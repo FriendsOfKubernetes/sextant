@@ -159,6 +159,7 @@ function openPage(html: string, context: HostContext): Document {
       openUrl: vi.fn(() => Promise.resolve({ opened: false })),
       openCluster: vi.fn(() => Promise.resolve({ opened: false })),
       setBlockOpen: vi.fn(),
+      revealSection: vi.fn(),
   signIn: vi.fn(() => Promise.resolve({ signedIn: false })),
   setHidden: vi.fn(),
     },

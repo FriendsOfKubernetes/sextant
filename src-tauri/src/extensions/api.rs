@@ -377,8 +377,8 @@ pub struct ExtensionApi {
     /// One core watch per list for every extension frame that watches it (#334, ADR-0145).
     watches: Arc<WatchHub>,
     emitter: RwLock<Option<ApiEmitter>>,
-    /// One `storage` change at a time.
-    storage: Arc<Mutex<()>>,
+    /// One `storage` change at a time; the session storage (`session: true`, in memory only) of each extension.
+    storage: Arc<Mutex<SessionStorage>>,
     /// The port forwards extensions started (ADR-0156), and Sextant's own for their service requests (ADR-0158).
     pub forwards: Arc<ExtensionForwards>,
     /// Session tokens of service requests (ADR-0158), in memory only.
@@ -414,7 +414,7 @@ impl ExtensionApi {
             streams: Arc::new(ExtensionStreams::default()),
             watches: Arc::new(WatchHub::default()),
             emitter: RwLock::new(None),
-            storage: Arc::new(Mutex::new(())),
+            storage: Arc::new(Mutex::new(SessionStorage::default())),
             forwards: Arc::new(ExtensionForwards::default()),
             sessions: Arc::new(ServiceSessions::default()),
         }
@@ -680,18 +680,31 @@ async fn blocking<T: Send + 'static>(
 }
 
 /// `storage.*` (blocking: reads, writes and syncs the file; `storage` is held for the whole change).
+/// What extensions keep with `session: true` (since Sextant 0.30): in memory, gone when Sextant quits, with the same
+/// limits as the stored data; an extension's is dropped when it is no longer installed and active.
+pub type SessionStorage = HashMap<String, Map<String, Value>>;
+
 fn storage_call(
     host: &ExtensionHost,
-    storage: &Mutex<()>,
+    storage: &Mutex<SessionStorage>,
     extension_id: &str,
     method: &str,
-    params: Value,
+    mut params: Value,
 ) -> CoreResult<Value> {
+    let session = match params.as_object_mut().and_then(|p| p.remove("session")) {
+        None | Some(Value::Bool(false)) => false,
+        Some(Value::Bool(true)) => true,
+        Some(_) => return Err(invalid(format!("{method}: `session` is true or false"))),
+    };
+    let mut sessions = lock(storage);
     if host.active(extension_id).is_none() {
+        sessions.remove(extension_id);
         return Err(inactive(extension_id));
     }
+    if session {
+        return session_storage_call(&mut sessions, extension_id, method, params);
+    }
     let path = host.storage_dir().join(format!("{extension_id}.json"));
-    let _one_at_a_time = lock(storage);
     let mut data = read_storage(&path, extension_id)?;
     match method {
         "storage.get" => {
@@ -713,6 +726,52 @@ fn storage_call(
             if data.remove(storage_key(&args.key)?).is_some() {
                 write_storage(&path, &data)?;
                 forget_if_removed(host, extension_id, &path);
+            }
+            Ok(Value::Null)
+        }
+    }
+}
+
+fn session_storage_call(
+    sessions: &mut SessionStorage,
+    extension_id: &str,
+    method: &str,
+    params: Value,
+) -> CoreResult<Value> {
+    match method {
+        "storage.get" => {
+            let args: KeyArgs = parse(method, params)?;
+            let key = storage_key(&args.key)?;
+            Ok(sessions
+                .get(extension_id)
+                .and_then(|data| data.get(key))
+                .cloned()
+                .unwrap_or(Value::Null))
+        }
+        "storage.set" => {
+            let args: SetArgs = parse(method, params)?;
+            let key = storage_key(&args.key)?.to_owned();
+            let mut data = sessions.get(extension_id).cloned().unwrap_or_default();
+            data.insert(key, args.value);
+            let bytes = serde_json::to_vec(&data).map_err(|e| CoreError::other(e.to_string()))?;
+            if bytes.len() > MAX_STORAGE_BYTES {
+                return Err(invalid(format!(
+                    "an extension's session storage holds at most {} KB; this would make it {} KB",
+                    MAX_STORAGE_BYTES / 1024,
+                    bytes.len().div_ceil(1024)
+                )));
+            }
+            sessions.insert(extension_id.to_owned(), data);
+            Ok(Value::Null)
+        }
+        _ => {
+            let args: KeyArgs = parse(method, params)?;
+            let key = storage_key(&args.key)?;
+            if let Some(data) = sessions.get_mut(extension_id) {
+                data.remove(key);
+                if data.is_empty() {
+                    sessions.remove(extension_id);
+                }
             }
             Ok(Value::Null)
         }

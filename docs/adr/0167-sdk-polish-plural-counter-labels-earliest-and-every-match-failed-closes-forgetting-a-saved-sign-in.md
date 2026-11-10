@@ -282,3 +282,9 @@ and a frame's context carries `certExpiryDays` (the user's warning days, sent ag
 cert-manager extension's "Expires in" column and details warn as Sextant's own did.
 `contributes.problemsTitle` (`sextantApi` 4, translated) titles an extension's main problem category, its name when
 unset: the cert-manager extension's "Certificates", still the one category agents may be given (ADR-0146).
+For the mesh extension's details and request check: `ui.navigate({page, closeDetails: true})` closes the details panel as
+Sextant's own "Check a request…" does (without it nothing changes); `ui.revealSection({id})` (details frames only) opens,
+scrolls to and focuses a section of the same panel, Sextant's by its id or the extension's own (never another
+extension's), as the built-in Linkerd block's "Show request metrics"; `storage.*` with `session: true` keeps data in
+memory for this run only, apart from the stored data, under the same 1 MB (a form kept while pages change, never across
+a restart). The built-in `revealRequestHealth` now opens a collapsed section too (it clicked the `h3`, not its button).

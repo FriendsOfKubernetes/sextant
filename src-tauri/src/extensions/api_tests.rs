@@ -749,6 +749,66 @@ async fn storage_keeps_one_object_per_extension_up_to_a_megabyte() {
     assert_eq!(err.code, ErrorCode::Denied);
 }
 
+#[tokio::test]
+async fn session_storage_stays_in_memory_apart_from_the_stored_data() {
+    let env = Env::new();
+    env.install("widgets", perms(all_clusters(), &[], &["read"], false));
+    let call = |method: &str, params: Value| {
+        let (api, host) = (&env.api, &env.host);
+        let method = method.to_owned();
+        async move { api.call(host, "widgets", &method, params, None).await }
+    };
+    call(
+        "storage.set",
+        json!({ "key": "form", "value": { "host": "a" }, "session": true }),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        call("storage.get", json!({ "key": "form", "session": true })).await,
+        Ok(json!({ "host": "a" }))
+    );
+    // Not in the stored data, and never on disk.
+    assert_eq!(
+        call("storage.get", json!({ "key": "form" })).await,
+        Ok(Value::Null)
+    );
+    assert!(!env.host.storage_dir().join("widgets.json").exists());
+    let err = call(
+        "storage.set",
+        json!({ "key": "big", "value": "x".repeat(MAX_STORAGE_BYTES), "session": true }),
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid);
+    let err = call("storage.get", json!({ "key": "form", "session": "yes" }))
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid);
+    call("storage.remove", json!({ "key": "form", "session": true }))
+        .await
+        .unwrap();
+    assert_eq!(
+        call("storage.get", json!({ "key": "form", "session": true })).await,
+        Ok(Value::Null)
+    );
+    // A removed extension's session data goes too.
+    call(
+        "storage.set",
+        json!({ "key": "form", "value": 1, "session": true }),
+    )
+    .await
+    .unwrap();
+    env.host.remove("widgets").unwrap();
+    assert_eq!(
+        call("storage.get", json!({ "key": "form", "session": true }))
+            .await
+            .unwrap_err()
+            .code,
+        ErrorCode::Denied
+    );
+}
+
 fn pending_stream(
     extension: &str,
     cluster: &str,

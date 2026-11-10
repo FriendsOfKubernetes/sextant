@@ -30,6 +30,8 @@ export interface HostUiOptions {
   setHidden?: (hidden: boolean) => void;
   /** `ui.setBlockOpen`: keeps a block's choice in Sextant's memory of details sections (#416); details frames only. */
   setBlockOpen?: (block: string, open: boolean) => void;
+  /** The frame's element while it shows a details section (`ui.revealSection`); `null` in any other view. */
+  detailsFrame?: () => HTMLElement | null;
 }
 
 /** Longest label selector `ui.openLogs` takes (as a problem rule's source). */
@@ -59,6 +61,9 @@ export function hostUi(options: HostUiOptions): BridgeUi {
       const sextantPage = !page.startsWith("ext:") && (getPage(page) !== undefined || parseViewId(page) !== null);
       const view = getPage(own) ? own : sextantPage ? page : null;
       if (!view) throw new ApiError("notFound", `no page ${page}`);
+      // `closeDetails: true` (since Sextant 0.30): the page takes the place of the details panel, as Sextant's own
+      // "Check a request…" does.
+      if (isRecord(params) && params.closeDetails === true) useAppStore.getState().closeDetails();
       useAppStore.getState().setView(clusterId, view);
     },
     notify(params) {
@@ -134,6 +139,26 @@ export function hostUi(options: HostUiOptions): BridgeUi {
     },
     openCluster(params) {
       return askOpenCluster(options.extensionId, options.extensionName(), params);
+    },
+    revealSection(params) {
+      // A section of the same details panel (since Sextant 0.30): one of Sextant's by its id, or the extension's own by
+      // its manifest id; opened if collapsed, scrolled to and focused, as Sextant's own "Show request metrics".
+      const id = isRecord(params) ? params.id : undefined;
+      if (typeof id !== "string" || !/^[A-Za-z0-9_.-]{1,64}$/.test(id)) {
+        throw new ApiError("invalid", "ui.revealSection needs {id}: a details section id of letters, digits, `-`, `_` and `.`");
+      }
+      const frame = options.detailsFrame?.() ?? null;
+      if (!frame) throw new ApiError("invalid", "ui.revealSection is for a details section's frame");
+      const panel = frame.closest(".details");
+      const own = contributionKey(options.extensionId, id);
+      const find = (key: string) => panel?.querySelector<HTMLElement>(`[data-section="${CSS.escape(key)}"]`) ?? null;
+      const section = find(own) ?? find(id);
+      if (!section) throw new ApiError("notFound", `no details section ${id} is shown`);
+      // The heading's button first (a selector list would give the `h3` around it, which is first in the document).
+      const heading = section.querySelector<HTMLElement>("h3 button") ?? section.querySelector<HTMLElement>("h3");
+      if (heading?.getAttribute("aria-expanded") === "false") heading.click();
+      section.scrollIntoView?.({ block: "start", behavior: "smooth" });
+      heading?.focus();
     },
     setBlockOpen(params) {
       const bad = () => new ApiError("invalid", "ui.setBlockOpen needs {id, open}: a block id of letters, digits, `-`, `_` and `.`");

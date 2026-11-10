@@ -27,7 +27,8 @@ export function revealRequestHealth(from: Element): void {
     scope = scope.parentElement;
   }
   if (!section) return;
-  const heading = section.querySelector<HTMLElement>("h3 button, h3");
+  // The heading's button first: a selector list gives the `h3` around it (first in the document), which never opens.
+  const heading = section.querySelector<HTMLElement>("h3 button") ?? section.querySelector<HTMLElement>("h3");
   if (heading?.getAttribute("aria-expanded") === "false") heading.click();
   section.scrollIntoView?.({ block: "start", behavior: "smooth" });
   heading?.focus();

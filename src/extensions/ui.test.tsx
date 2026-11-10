@@ -183,3 +183,39 @@ describe("ui.openCluster (#413)", () => {
     await expect(answer).resolves.toEqual({ opened: true });
   });
 });
+
+describe("ui.navigate", () => {
+  it("leaves the details panel open, and closes it with closeDetails (since 0.30)", () => {
+    useAppStore.getState().setActiveCluster("c1");
+    const ref = { kind: { group: "", version: "v1", kind: "Pod" }, namespace: "team-a", name: "web-1" };
+    useAppStore.getState().openDetails(ref);
+    ui().navigate({ page: "kind:/Pod" });
+    expect(useAppStore.getState().details).not.toBeNull();
+    ui().navigate({ page: "kind:/Pod", closeDetails: true });
+    expect(useAppStore.getState().details).toBeNull();
+    expect(useAppStore.getState().clusterViews.c1?.view).toBe("kind:/Pod");
+  });
+});
+
+describe("ui.revealSection", () => {
+  it("opens a collapsed section of the same details panel, Sextant's or the extension's own, details frames only", () => {
+    document.body.innerHTML = `<aside class="details">
+      <section data-section="requestHealth"><h3><button aria-expanded="false">Requests</button></h3></section>
+      <section data-section="ext:demo.ext:mine"><h3><button aria-expanded="true">Mine</button></h3></section>
+      <iframe id="f"></iframe></aside>`;
+    const frame = document.getElementById("f") as HTMLElement;
+    const heading = document.querySelector<HTMLButtonElement>('[data-section="requestHealth"] button')!;
+    heading.addEventListener("click", () => heading.setAttribute("aria-expanded", "true"));
+    const details = hostUi({ extensionId: "demo.ext", extensionName: () => "Demo", clusterId: () => "c1", detailsFrame: () => frame });
+    details.revealSection({ id: "requestHealth" });
+    expect(heading.getAttribute("aria-expanded")).toBe("true");
+    expect(document.activeElement).toBe(heading);
+    details.revealSection({ id: "mine" });
+    expect(document.activeElement?.textContent).toBe("Mine");
+    expect(() => details.revealSection({ id: "ext:other.ext:x" })).toThrow(/needs \{id\}/);
+    expect(() => details.revealSection({ id: "gone" })).toThrow(/no details section/);
+    expect(() => details.revealSection({ id: "a b" })).toThrow(/needs \{id\}/);
+    expect(() => ui().revealSection({ id: "requestHealth" })).toThrow(/details section's frame/);
+    document.body.innerHTML = "";
+  });
+});

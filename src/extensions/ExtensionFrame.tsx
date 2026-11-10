@@ -237,6 +237,7 @@ function FrameView({
         services: () => latest.current.services,
         setHidden: (hidden) => latest.current.onHidden?.(hidden),
         setBlockOpen: (block, open) => setBlockOpen.current?.(block, open),
+        detailsFrame: () => (latest.current.context.view === "details" ? frame.current : null),
         close: (failed) => latest.current.onClose?.(failed),
       }),
       onResize: (next) => {

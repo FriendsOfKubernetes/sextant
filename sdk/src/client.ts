@@ -189,17 +189,23 @@ export interface Sextant {
   backend: {
     call<T = JsonValue>(method: string, params?: JsonValue, options?: CallOptions): Promise<T>;
   };
-  /** The extension's own data, kept by Sextant (at most 1 MB in all). */
+  /**
+   * The extension's own data, kept by Sextant (at most 1 MB in all). With `session: true` (since Sextant 0.30) the
+   * data of this run only: kept in memory, apart from the stored data, gone when Sextant quits (at most 1 MB too).
+   */
   storage: {
-    get<T extends JsonValue = JsonValue>(key: string, options?: CallOptions): Promise<T | null>;
-    set(key: string, value: JsonValue, options?: CallOptions): Promise<void>;
-    remove(key: string, options?: CallOptions): Promise<void>;
+    get<T extends JsonValue = JsonValue>(key: string, options?: CallOptions & { session?: boolean }): Promise<T | null>;
+    set(key: string, value: JsonValue, options?: CallOptions & { session?: boolean }): Promise<void>;
+    remove(key: string, options?: CallOptions & { session?: boolean }): Promise<void>;
   };
   ui: {
     /** Opens the details panel of an object (in the active cluster). */
     openDetails(ref: RefInput | ObjectRef, options?: CallOptions): Promise<void>;
-    /** Opens a page: one of the extension's own page ids, a Sextant page, or a table view (`kind:<group>/<Kind>`). */
-    navigate(page: string, options?: CallOptions): Promise<void>;
+    /**
+     * Opens a page: one of the extension's own page ids, a Sextant page, or a table view (`kind:<group>/<Kind>`).
+     * `closeDetails: true` closes the details panel too, as Sextant's own "Check a request…" (since Sextant 0.30).
+     */
+    navigate(page: string, options?: CallOptions & { closeDetails?: boolean }): Promise<void>;
     /** A short notice in Sextant's window (at most 500 characters). */
     notify(text: string, options?: CallOptions): Promise<void>;
     /**
@@ -230,6 +236,11 @@ export interface Sextant {
      * "Collapse all" of the panel. `id`: letters, digits, `-`, `_`, `.`.
      */
     setBlockOpen(id: string, open: boolean, options?: CallOptions): Promise<void>;
+    /**
+     * Details only (since Sextant 0.30): opens, scrolls to and focuses a section of the same details panel — one of
+     * Sextant's by its id (`requestHealth`) or the extension's own by its manifest id; `notFound` when it is not shown.
+     */
+    revealSection(id: string, options?: CallOptions): Promise<void>;
     /**
      * Asks the user to sign in to a service of the manifest that declares `signIn`, in Sextant's own dialog (since
      * Sextant 0.30); `true` once they did. What they type goes to Sextant, never to the extension: use it in a request
@@ -653,13 +664,15 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       call: (method, params, o) => send("backend.call", params === undefined ? { method } : { method, params }, o),
     },
     storage: {
-      get: (key, o) => send("storage.get", { key }, o),
-      set: (key, value, o) => send<unknown>("storage.set", { key, value }, o).then(() => undefined),
-      remove: (key, o) => send<unknown>("storage.remove", { key }, o).then(() => undefined),
+      get: (key, o) => send("storage.get", o?.session === true ? { key, session: true } : { key }, o),
+      set: (key, value, o) =>
+        send<unknown>("storage.set", o?.session === true ? { key, value, session: true } : { key, value }, o).then(() => undefined),
+      remove: (key, o) => send<unknown>("storage.remove", o?.session === true ? { key, session: true } : { key }, o).then(() => undefined),
     },
     ui: {
       openDetails: (ref, o) => send<unknown>("ui.openDetails", ref, o).then(() => undefined),
-      navigate: (page, o) => send<unknown>("ui.navigate", { page }, o).then(() => undefined),
+      navigate: (page, o) =>
+        send<unknown>("ui.navigate", o?.closeDetails === true ? { page, closeDetails: true } : { page }, o).then(() => undefined),
       notify: (text, o) => send<unknown>("ui.notify", { text }, o).then(() => undefined),
       // The user answers these: no timeout of the default length.
       openLogs: (params, o) => send<unknown>("ui.openLogs", params, o).then(() => undefined),
@@ -669,6 +682,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
         send<{ opened: boolean; found?: number }>("ui.openCluster", target, { timeoutMs: CONFIRM_TIMEOUT, ...o }),
       setHidden: (hidden, o) => send<unknown>("ui.setHidden", { hidden }, o).then(() => undefined),
       setBlockOpen: (id, open, o) => send<unknown>("ui.setBlockOpen", { id, open }, o).then(() => undefined),
+      revealSection: (id, o) => send<unknown>("ui.revealSection", { id }, o).then(() => undefined),
       signIn: (params, o) =>
         onCluster<{ signedIn: boolean }>("ui.signIn", params, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.signedIn),
       close: (o) =>

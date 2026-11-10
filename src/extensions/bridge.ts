@@ -35,6 +35,7 @@ export interface BridgeUi {
   openCluster(params: unknown): Promise<{ opened: boolean; found?: number }>;
   /** Keeps a details frame's block open or closed in Sextant's memory (#416). */
   setBlockOpen(params: unknown): void;
+  revealSection(params: unknown): void;
   /** Hides or shows the frame's details section (ADR-0161). */
   setHidden(params: unknown): void;
   /** Asks the user to sign in to a service of the extension in Sextant's own dialog (ADR-0160); `{signedIn}`. */
@@ -169,6 +170,8 @@ export function createBridge(options: BridgeOptions): Bridge {
         return ui.openCluster(request.params);
       case "ui.setBlockOpen":
         return ui.setBlockOpen(request.params);
+      case "ui.revealSection":
+        return ui.revealSection(request.params);
       case "ui.signIn":
         return ui.signIn(request.params);
       case "ui.setHidden":

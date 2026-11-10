@@ -114,6 +114,7 @@ export const LOCAL_METHODS = [
   "ui.openUrl",
   "ui.openCluster",
   "ui.setBlockOpen",
+  "ui.revealSection",
   "ui.signIn",
   "ui.setHidden",
 ] as const;
