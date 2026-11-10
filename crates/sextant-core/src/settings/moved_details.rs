@@ -115,15 +115,18 @@ mod tests {
         assert!(blocks.len() > 150);
         for ((old, _), new) in &blocks {
             assert!(!old.starts_with("ext:"), "{old}");
-            let ok = new.starts_with("tlsCertificate/") || {
-                // `ext:<extension>:<section>/<section>/<block>`
-                let mut parts = new.splitn(3, '/');
-                let (scope, again, block) = (parts.next().unwrap(), parts.next(), parts.next());
-                let section = scope.rsplit(':').next().unwrap();
-                scope.starts_with("ext:sextant.")
-                    && again == Some(section)
-                    && block.is_some_and(|b| !b.contains('/'))
-            };
+            // A core section kept, or Sextant's own certificate view of an extension's section (its nested blocks too).
+            let ok = new.starts_with("tlsCertificate/")
+                || new.starts_with("ext:sextant.traefik:certificate/certificate")
+                || {
+                    // `ext:<extension>:<section>/<section>/<block>`
+                    let mut parts = new.splitn(3, '/');
+                    let (scope, again, block) = (parts.next().unwrap(), parts.next(), parts.next());
+                    let section = scope.rsplit(':').next().unwrap();
+                    scope.starts_with("ext:sextant.")
+                        && again == Some(section)
+                        && block.is_some_and(|b| !b.contains('/'))
+                };
             assert!(ok, "{new}");
         }
     }

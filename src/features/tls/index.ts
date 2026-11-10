@@ -10,7 +10,8 @@
 import { registerDetailsSection } from "../../layout/details/registry";
 import { registerPage } from "../../layout/pages";
 import { TlsCertificatesPage } from "./TlsPage";
-import { TlsCertificateSection } from "./TlsSection";
+import { registerCertificateView } from "../../extensions/certificateView";
+import { SecretCertificate, TlsCertificateSection } from "./TlsSection";
 import "./tls.css";
 
 export const TLS_PAGE_ID = "tlsCertificates";
@@ -22,6 +23,9 @@ registerDetailsSection({
   appliesTo: (kind) => kind.group === "" && kind.kind === "Secret",
   Component: TlsCertificateSection,
 });
+
+// Extensions' `certificate` details sections draw this view of the Secret an object names (ADR-0167 amendment).
+registerCertificateView(SecretCertificate);
 
 registerPage({
   id: TLS_PAGE_ID,

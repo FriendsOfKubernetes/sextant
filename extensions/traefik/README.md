@@ -79,6 +79,11 @@ conditions), drawn with the SDK's UI kit in the classes of Sextant's own details
   percentages) and fallback; a Middleware's type and chained middlewares; a TLSOption's minimum and maximum TLS
   versions, client authentication and strict SNI; a TLSStore's default certificate; a ServersTransport's server name
   and backend certificate verification.
+- **Certificate** (`certificate`, order 21, on IngressRoutes and IngressRoutes TCP of both groups that name a TLS
+  Secret at `spec.tls.secretName`): Sextant's own view of that Secret's certificate (subject, names, validity,
+  issuer, key, chain and CA), as the built-in "Certificate" block showed it: Sextant reads and parses the Secret
+  itself (`detailsSections[].certificate`, ADR-0069), and nothing of it reaches the extension. Its open or closed
+  state carries over from the built-in block.
 - **References** (the table): every reference — kind, name (a link; `namespace/name` in another namespace), where it
   is (route, middleware of a service, TLS, parent, service, mirror, fallback, chain, error pages, Secret, servers
   transport) and what it finds (found, does not exist, in another namespace, another provider's object, cannot tell,
@@ -202,9 +207,6 @@ None: the extension is read-only and has no action of its own (ADR-0108).
     kinds looked up in order (`kinds`, the first served).
   - A Middleware's **Type** names every key of its `spec` (`|keys`), where the built-in named the first; a Middleware
     has one.
-  - **The route TLS Secret's certificate** (the built-in's "Certificate" block through Sextant's TLS reader, ADR-0069)
-    is not shown: an extension cannot ask Sextant to parse a Secret's certificate. Closed by a host-drawn details block
-    of the certificate of a Secret named by a path, the values never reaching the frame.
   - A rule title of the old group says `(containo.us)`, so that every title keeps within 80 characters in every
     language; kind titles and columns say `traefik.containo.us` in full.
   - The extension's permission reads Secrets in every namespace; it only ever watches their metadata, as the built-in

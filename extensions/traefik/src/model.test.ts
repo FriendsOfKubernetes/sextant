@@ -680,9 +680,17 @@ describe("the kinds, against the built-in registrations", () => {
   });
 
   it("the details section `traefik` on every kind of both groups, untitled, in place of the generic fields (order 20)", () => {
-    expect(manifest.contributes.detailsSections).toEqual([
+    expect(manifest.contributes.detailsSections[0]).toEqual(
       { id: "traefik", title: "Traefik", kinds: TRAEFIK_KINDS.map((d) => ({ group: d.kind.group, kind: d.kind.kind })), placement: "section", order: 20, heading: false },
-    ]);
+    );
+  });
+
+  it("the route TLS Secret's certificate as Sextant's own view, after it (order 21), on the routes that name one", () => {
+    const routes = ["traefik.io", "traefik.containo.us"].flatMap((group) => ["IngressRoute", "IngressRouteTCP"].map((kind) => ({ group, kind })));
+    expect(manifest.contributes.detailsSections[1]).toEqual(
+      { id: "certificate", title: "Certificate", kinds: routes, placement: "section", order: 21, certificate: { secretNamePath: ".spec.tls.secretName" } },
+    );
+    expect(manifest.contributes.detailsSections).toHaveLength(2);
   });
 
   it("read only what the built-in read: the Traefik kinds, Services and Secrets (metadata only), nothing changed", () => {

@@ -22,6 +22,8 @@ import { resetNamespaceRestore } from "../namespaces";
 import { resetProblemSources } from "../problems/store";
 import tlsSecretJson from "./fixtures/tls-secret.json";
 import "./index";
+import { certificateView } from "../../extensions/certificateView";
+import { SecretCertificate } from "./TlsSection";
 import { clampExpiryDays, DAY_MS, expiryOf } from "./model";
 import { TlsCertificatesPage } from "./TlsPage";
 import { ExpiryText } from "./ExpiryText";
@@ -263,5 +265,11 @@ describe("the TLS certificates page", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
     await waitFor(() => expect(wb.backend.calls.filter((c) => c.cmd === "tls_expiry_scan")).toHaveLength(2));
+  });
+});
+
+describe("the certificate view for extensions", () => {
+  it("is Sextant's own, registered by the TLS feature (ADR-0167 amendment)", () => {
+    expect(certificateView()).toBe(SecretCertificate);
   });
 });

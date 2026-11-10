@@ -95,6 +95,12 @@ export interface ManifestDetailsSection {
   heading?: boolean;
   /** Hidden until the frame shows it with `ui.setHidden(false)` (a `section`; since Sextant 0.30). */
   startHidden?: boolean;
+  /**
+   * Sextant's own TLS certificate view (since Sextant 0.30) of the Secret whose name the shown object holds at
+   * `secretNamePath`, in its namespace, instead of a frame: Sextant reads and parses the certificate, and nothing of it
+   * reaches the extension. Shown only where the object names one; kinds one by one.
+   */
+  certificate?: { secretNamePath: string };
 }
 
 export interface ManifestAction {

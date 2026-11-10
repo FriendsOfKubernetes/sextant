@@ -12,7 +12,8 @@ extension.
 - **Details:** what can be judged without a status — every reference with what it finds and, in plain words, why one
   breaks its object or cannot be judged (another namespace, another provider, a list not read, the other group) — and
   per kind the routes with their match rules, middlewares and services, a TraefikService's children, a Middleware's
-  chain, and the TLS and transport settings, each reference a link. Their blocks open and close as Sextant remembers
+  chain, and the TLS and transport settings, each reference a link; a route's TLS Secret's certificate in Sextant's own
+  view (`detailsSections[].certificate`), as the built-in "Certificate" block. Their blocks open and close as Sextant remembers
   them, and a closed block watches nothing. The tables' columns resize and Sextant remembers their widths, as the
   built-in view's.
 - **Problems:** routes' missing Services, TraefikServices, servers transports (HTTP and TCP) and middlewares (HTTP and

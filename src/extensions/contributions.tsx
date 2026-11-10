@@ -19,7 +19,8 @@ import { NamespaceFilter } from "../features/namespaces";
 import { useExtensionSectionCount } from "../features/problems/hooks";
 import { sourcesOf } from "../features/problems/store";
 import { judgedAcross } from "./problemsAcross";
-import { useDetailsDisclosureBank } from "../layout/details/disclosure";
+import { DetailsBlock, useDetailsDisclosureBank } from "../layout/details/disclosure";
+import { certificateView } from "./certificateView";
 import { registerDetailsSection, unregisterDetailsSection, type DetailsSectionProps } from "../layout/details/registry";
 import {
   getDockTabComponent,
@@ -43,7 +44,7 @@ import {
   unregisterClusterSettingsTab,
 } from "../features/clusters/settingsRegistry";
 import { ExtensionClusterSettingsFrame, ExtensionFrame } from "./ExtensionFrame";
-import { evaluate, kindKeyOf } from "./problemRules";
+import { evaluate, kindKeyOf, valueAt } from "./problemRules";
 import { endHeadlessActionsOf, startHeadlessAction } from "./headless";
 import { declineOpenCluster } from "./openCluster";
 import { declineOpenUrl } from "./openUrl";
@@ -235,10 +236,12 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
       appliesTo: (kind) =>
         section.kinds.some((k) => (k.group === "*" && k.kind === "*") || underDomain(k, kind)) || matches(section.kinds, kind),
       ...(section.when !== undefined ? { appliesToObject: ((when) => (obj: KubeObject) => holdsNow(when, obj))(section.when) } : {}),
-      Component: detailsComponent(extensionId, section.id, section.title, section.placement === "tab", {
-        heading: section.heading !== false,
-        startHidden: section.startHidden === true,
-      }),
+      Component: section.certificate
+        ? certificateComponent(section.certificate.secretNamePath, section.title)
+        : detailsComponent(extensionId, section.id, section.title, section.placement === "tab", {
+            heading: section.heading !== false,
+            startHidden: section.startHidden === true,
+          }),
     });
     removers.push(() => unregisterDetailsSection(id));
   }
@@ -504,6 +507,24 @@ function detailsComponent(
         {look.heading && <h3 className="ext-section__title">{title}</h3>}
         {frame}
       </div>
+    );
+  };
+}
+
+/**
+ * A details section that is Sextant's own certificate view of the Secret the object names at `path`, in its namespace
+ * (ADR-0167 amendment): no frame; nothing of the Secret reaches the extension. Nothing where the object names none.
+ */
+function certificateComponent(path: string, title: string): ComponentType<DetailsSectionProps> {
+  return function ExtensionCertificate({ clusterId, obj }: DetailsSectionProps) {
+    const name = obj ? valueAt(obj, path) : undefined;
+    const namespace = obj?.metadata?.namespace;
+    const View = certificateView();
+    if (!View || typeof name !== "string" || name.trim() === "" || typeof namespace !== "string" || namespace === "") return null;
+    return (
+      <DetailsBlock id="certificate" title={title}>
+        <View clusterId={clusterId} namespace={namespace} name={name} />
+      </DetailsBlock>
     );
   };
 }

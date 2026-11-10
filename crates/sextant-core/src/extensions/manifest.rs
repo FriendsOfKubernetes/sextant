@@ -277,6 +277,20 @@ pub struct DetailsSectionContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub start_hidden: Option<bool>,
+    /// Sextant's own TLS certificate view of the Secret this names, drawn by the window instead of a frame (ADR-0069
+    /// readings; the values never reach the extension). A `section` only; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub certificate: Option<CertificateSection>,
+}
+
+/// A details section that is Sextant's certificate view of a Secret named by the shown object.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[ts(export)]
+pub struct CertificateSection {
+    /// The field holding the Secret's name, in the shown object's namespace (`.spec.tls.secretName`).
+    pub secret_name_path: String,
 }
 
 /// An action on objects of the listed kinds: the details action bar and the table row menu (`view=action`).

@@ -2,6 +2,7 @@ import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@te
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getSettingsSnapshot, mockBackend, updateSettings, type ExtensionInfo, type ExtensionManifest, type KubeObject, type MockBackend } from "../api";
 import { flushExtensionColumnWidths } from "./columnWidths";
+import { registerCertificateView } from "./certificateView";
 import { resetAppStore, useAppStore } from "../app/store";
 import { getActionsFor, resetActions, runAction } from "../features/actions/registry";
 import { useClusterMenuItems } from "../features/clusters/menuItems";
@@ -485,6 +486,43 @@ describe("contributions of an extension", () => {
       ]) {
         expect(getDetailsSections(kind).map((s) => s.id), kind.kind).toContain("ext:demo.widgets:results");
       }
+    } finally {
+      unregisterExtension("demo.widgets");
+    }
+  });
+
+  it("draw Sextant's own certificate view of the Secret an object names, without a frame (ADR-0167 amendment)", async () => {
+    const route = { group: "traefik.io", version: "v1alpha1", kind: "IngressRoute" };
+    const certificate: ExtensionManifest = {
+      ...manifest,
+      sextantApi: 4,
+      contributes: {
+        ...manifest.contributes,
+        detailsSections: [
+          { id: "certificate", title: "Certificate", kinds: [{ group: "traefik.io", kind: "IngressRoute" }], placement: "section", certificate: { secretNamePath: ".spec.tls.secretName" } },
+        ],
+      },
+    };
+    // Sextant's own view, as the TLS feature registers it (its own tests cover what it shows).
+    const asked: unknown[] = [];
+    registerCertificateView((props) => {
+      asked.push(props);
+      return <span>{`certificate of ${props.namespace}/${props.name}`}</span>;
+    });
+    registerExtension(info({ manifest: certificate }));
+    try {
+      const section = getDetailsSections(route).find((s) => s.id === "ext:demo.widgets:certificate")!;
+      expect(section).toBeDefined();
+      const Section = section.Component;
+      const obj = { apiVersion: "traefik.io/v1alpha1", kind: "IngressRoute", metadata: { name: "shop", namespace: "web", uid: "r1" }, spec: { tls: { secretName: "shop-tls" } } } as KubeObject;
+      const { container, unmount } = render(<Section clusterId="c1" objectRef={{ kind: route, namespace: "web", name: "shop" }} obj={obj} />);
+      expect(container.textContent).toContain("certificate of web/shop-tls");
+      expect(container.querySelector("iframe")).toBeNull();
+      expect(asked).toEqual([expect.objectContaining({ clusterId: "c1", namespace: "web", name: "shop-tls" })]);
+      unmount();
+      // An object that names no Secret shows nothing.
+      const none = render(<Section clusterId="c1" objectRef={{ kind: route, namespace: "web", name: "x" }} obj={{ ...obj, spec: {} } as KubeObject} />);
+      expect(none.container.textContent).toBe("");
     } finally {
       unregisterExtension("demo.widgets");
     }

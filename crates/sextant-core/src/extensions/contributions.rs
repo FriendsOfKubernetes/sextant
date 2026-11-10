@@ -164,6 +164,39 @@ pub(crate) fn check_details_sections(manifest: &ExtensionManifest) -> Result<(),
                 ));
             }
         }
+        if let Some(certificate) = &section.certificate {
+            let here = list.index(i).key("certificate");
+            if manifest.sextant_api < WINDOW_API {
+                return Err(at(&here, format!("needs sextantApi {WINDOW_API} or later")));
+            }
+            if section.placement != super::manifest::DetailsPlacement::Section {
+                return Err(at(&here, "is for a `section`, not a tab"));
+            }
+            if section.start_hidden.is_some() {
+                return Err(at(
+                    &list.index(i).key("startHidden"),
+                    "is for a frame: a certificate section shows only where the object names a Secret",
+                ));
+            }
+            if section
+                .kinds
+                .iter()
+                .any(|k| k.group.contains('*') || k.kind.contains('*'))
+            {
+                return Err(at(
+                    &list.index(i).key("kinds"),
+                    "names its kinds one by one: a certificate section reads a field of each",
+                ));
+            }
+            for kind in &section.kinds {
+                super::problems::check_rule_path(
+                    &certificate.secret_name_path,
+                    kind,
+                    &here.key("secretNamePath"),
+                    false,
+                )?;
+            }
+        }
         let Some(when) = &section.when else { continue };
         let here = list.index(i).key("when");
         if manifest.sextant_api < WINDOW_API {

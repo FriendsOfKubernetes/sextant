@@ -376,3 +376,13 @@ read any of them with the user's own access; the user chose this over Read on ev
 `has_any_permission` (used for list scopes, the kinds an extension sees and its problem scopes) count it, and
 `is_within` asks again for a wider domain. The agents' access model (`access.rs`) is unchanged: an agent working
 through an extension still gets no more than its own access. The consent screen says it in its own sentence.
+
+## Amendment: Sextant's own certificate view as an extension's details section
+
+A details section may be `certificate: {secretNamePath}` (`sextantApi` 4, a `section`, kinds named one by one, no
+`startHidden`; `check_details_sections` = `checkDetailsSections`, the path checked as a rule path of each kind): the
+window draws no frame but Sextant's own TLS certificate view (`SecretCertificate` in `src/features/tls/`) of the Secret
+whose name the shown object holds at that path, in its namespace, and nothing where it holds none. The certificate is
+read and parsed as ADR-0069 says (`tls_certificate_info`, with the user's access, only `tls.crt`/`ca.crt`, values
+wiped in Rust), and nothing of the Secret reaches the extension: it names a field, as a link would. The built-in
+Traefik view showed a route's TLS Secret this way; the user chose this over leaving it to the Secret's own details.

@@ -194,7 +194,10 @@
     {"old": "autoscalingNodePool/autoscaling:karpenter.poolTitle/autoscaling:karpenter.recentDisruptions", "new": "ext:sextant.karpenter:node-pool/node-pool/pool.disruptions"},
     {"old": "trivyReport/security:trivy.reportTitle", "new": "ext:sextant.trivy:report/report/report"},
     {"old": "security/security:details.title/security:trivy.section", "new": "ext:sextant.trivy:scans/scans/scans"},
-    {"old": "storageVelero/storage:velero.section", "new": "ext:sextant.velero:velero/velero/velero"}
+    {"old": "storageVelero/storage:velero.section", "new": "ext:sextant.velero:velero/velero/velero"},
+    {"old": "traefik/details:sections.fields/traefik:fields.certificate", "new": "ext:sextant.traefik:certificate/certificate", "kinds": ["traefik.io/IngressRoute", "traefik.io/IngressRouteTCP", "traefik.containo.us/IngressRoute", "traefik.containo.us/IngressRouteTCP"]},
+    {"old": "traefik/details:sections.fields/traefik:fields.certificate/certmanager:tls.chainTitle", "new": "ext:sextant.traefik:certificate/certificate/tls:section.chainTitle", "kinds": ["traefik.io/IngressRoute", "traefik.io/IngressRouteTCP", "traefik.containo.us/IngressRoute", "traefik.containo.us/IngressRouteTCP"]},
+    {"old": "traefik/details:sections.fields/traefik:fields.certificate/certmanager:tls.caTitle", "new": "ext:sextant.traefik:certificate/certificate/tls:section.caTitle", "kinds": ["traefik.io/IngressRoute", "traefik.io/IngressRouteTCP", "traefik.containo.us/IngressRoute", "traefik.containo.us/IngressRouteTCP"]}
   ],
   "tables": [
     {"old": "crossplane.composites", "new": "ext:sextant.crossplane:composites"},

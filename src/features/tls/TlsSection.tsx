@@ -130,6 +130,16 @@ function TlsCertificateView({ clusterId, obj }: { clusterId: ClusterId; obj: Kub
   );
 }
 
+/**
+ * The certificate of the Secret `name` in `namespace`, as Sextant's own TLS section shows it: an extension's details
+ * section (`certificate.secretNamePath`, ADR-0167 amendment) names the Secret, and Sextant reads and parses it here.
+ */
+export function SecretCertificate({ clusterId, namespace, name }: { clusterId: ClusterId; namespace: string; name: string }) {
+  return <TlsCertificateView clusterId={clusterId} obj={secretRef(namespace, name)} />;
+}
+
+const secretRef = (namespace: string, name: string): KubeObject => ({ apiVersion: "v1", kind: "Secret", metadata: { namespace, name } }) as KubeObject;
+
 /** The `tlsCertificate` details section of Secrets. */
 export function TlsCertificateSection({ clusterId, obj }: DetailsSectionProps) {
   const { t } = useTranslation();

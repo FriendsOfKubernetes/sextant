@@ -1939,6 +1939,17 @@ function checkDetailsSections(manifest) {
       if (manifest.sextantApi < WINDOW_API) fail(at, `needs sextantApi ${WINDOW_API} or later`);
       if (section.when !== undefined) fail([...list, i, "when"], "is not for a section of the kinds of a domain's groups");
     });
+    // `certificate` (`check_details_sections`): Sextant's own certificate view of a Secret the object names.
+    if (section.certificate !== undefined) {
+      const at = [...list, i, "certificate"];
+      if (manifest.sextantApi < WINDOW_API) fail(at, `needs sextantApi ${WINDOW_API} or later`);
+      if (section.placement !== "section") fail(at, "is for a `section`, not a tab");
+      if (section.startHidden !== undefined) fail([...list, i, "startHidden"], "is for a frame: a certificate section shows only where the object names a Secret");
+      if ((section.kinds ?? []).some((k) => k.group.includes("*") || k.kind.includes("*"))) {
+        fail([...list, i, "kinds"], "names its kinds one by one: a certificate section reads a field of each");
+      }
+      for (const kind of section.kinds ?? []) checkRulePath(section.certificate.secretNamePath, kind, [...at, "secretNamePath"], false);
+    }
     if (section.when === undefined) return;
     const here = [...list, i, "when"];
     if (manifest.sextantApi < WINDOW_API) fail(here, `needs sextantApi ${WINDOW_API} or later`);

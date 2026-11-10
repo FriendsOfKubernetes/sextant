@@ -62,6 +62,8 @@ describe("the manifest's translations", () => {
   const english = new Map<string, string>([
     ["description", manifest.description],
     ...c.kinds.map((k, i) => [`kinds.${i}.title`, k.title] as const),
+    // The certificate section's title; the untitled `traefik` section's is the name.
+    ...c.detailsSections.filter((d) => d.id !== "traefik").map((d) => [`detailsSections.${d.id}.title`, d.title] as const),
     ...c.problemCategories.map((p) => [`problemCategories.${p.id}.title`, p.title] as const),
     ...c.columns.flatMap((col) => [
       [`columns.${col.id}.title`, col.title] as const,

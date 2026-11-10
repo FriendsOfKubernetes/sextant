@@ -334,7 +334,14 @@
               "placement": { "type": "string", "enum": ["section", "tab"] },
               "when": { "description": "Shown only for objects for which this holds (sextantApi 4).", "$ref": "#/$defs/problemCondition" },
               "heading": { "description": "false: no visible heading; the title stays its accessible name (a section, sextantApi 4).", "type": "boolean" },
-              "startHidden": { "description": "Hidden until its frame shows it with ui.setHidden(false) (a section, sextantApi 4).", "type": "boolean" }
+              "startHidden": { "description": "Hidden until its frame shows it with ui.setHidden(false) (a section, sextantApi 4).", "type": "boolean" },
+              "certificate": {
+                "description": "Sextant's own TLS certificate view of the Secret whose name is at `secretNamePath`, in the shown object's namespace, instead of a frame (a section, sextantApi 4).",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["secretNamePath"],
+                "properties": { "secretNamePath": { "type": "string", "minLength": 1, "maxLength": 300 } }
+              }
             }
           }
         },

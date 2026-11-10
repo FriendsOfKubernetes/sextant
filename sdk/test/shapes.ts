@@ -203,6 +203,7 @@ export const MANIFEST_SHAPES = {
     when: "optional",
     heading: "optional",
     startHidden: "optional",
+    certificate: "optional",
   }),
   ManifestAction: described<ManifestAction>(`${CONTRIBUTION}/actions/items`, {
     id: "required",
