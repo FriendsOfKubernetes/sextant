@@ -273,3 +273,7 @@ names a namespace only when it is not the object's own.
 A manifest may hold 512 KiB (256 KiB before): the moved views' texts in 14 languages (Traefik, Knative, Cluster API).
 Kubernetes quantities: a compared path may end in `|quantity` (the amount of "64Gi", "500m"), and a placeholder's
 `|cpu`/`|bytes` write one as Sextant writes its own ("1500m", "45.9GiB") — a NodePool's usage against its limits.
+`expiring` (`sextantApi` 4) holds while the time at a path is no more days away than the user's
+`notifications.certExpiryDays` (14 by default), and a problem it gives moves when that setting changes, as Sextant's
+own certificate problems do (`expiresAt`, `applyCertExpiryDays`); `olderThan.minutes` may be 0 (expired at once) — a
+cert-manager Certificate's `status.notAfter`.

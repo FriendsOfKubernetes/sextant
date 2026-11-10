@@ -700,6 +700,12 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (condition.minutes < 1 || condition.minutes > 10080) fail([...segments, "minutes"], "must be 1 to 10080 minutes");
     return;
   }
+  if (condition.type === "expiring") {
+    // The user's certificate warning days before the time (#404).
+    if (counter.api < SOURCES_API) fail([...segments, "type"], `\`expiring\` needs sextantApi ${SOURCES_API} or later`);
+    checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
+    return;
+  }
   if (condition.type === "contains" || condition.type === "startsWith" || condition.type === "endsWith") {
     if (counter.api < SOURCES_API) fail([...segments, "type"], `text conditions need sextantApi ${SOURCES_API} or later`);
     // A value may hold the object's own texts (#404).
@@ -1672,7 +1678,7 @@ function numericPath(text, api, segments) {
 
 /** `uses_time`: a condition that holds only from or until a time. */
 function usesTime(condition) {
-  if (condition.type === "olderThan" || condition.type === "enteredWithin") return true;
+  if (condition.type === "olderThan" || condition.type === "enteredWithin" || condition.type === "expiring") return true;
   if (condition.type === "all" || condition.type === "any") return condition.of.some(usesTime);
   if (condition.type === "not") return usesTime(condition.of);
   return false;

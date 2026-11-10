@@ -438,6 +438,12 @@ pub enum ProblemCondition {
         minutes: u32,
     },
     /// The time at `path` (RFC 3339) is more than `minutes` ago.
+    /// The time at `path` is no further away than the user's certificate warning (`notifications.certExpiryDays`)
+    /// and not yet past (#404): a cert-manager Certificate's `notAfter` "expiring", moved when the setting changes.
+    /// `sextantApi` 4.
+    Expiring {
+        path: String,
+    },
     OlderThan {
         path: String,
         minutes: u32,
@@ -1013,6 +1019,15 @@ fn check_condition<'k>(
         | ProblemCondition::OlderThan { path: field, .. } => {
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
         }
+        ProblemCondition::Expiring { path: field } => {
+            if checks.api < SOURCES_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`expiring` needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
+        }
         ProblemCondition::Same {
             path: field,
             other_path,
@@ -1448,7 +1463,9 @@ pub(crate) fn numeric_path<'t>(
 /// Whether a condition holds only from or until a time (`olderThan`, `enteredWithin`).
 fn uses_time(condition: &ProblemCondition) -> bool {
     match condition {
-        ProblemCondition::OlderThan { .. } | ProblemCondition::EnteredWithin { .. } => true,
+        ProblemCondition::OlderThan { .. }
+        | ProblemCondition::EnteredWithin { .. }
+        | ProblemCondition::Expiring { .. } => true,
         ProblemCondition::All { of } | ProblemCondition::Any { of } => of.iter().any(uses_time),
         ProblemCondition::Not { of } => uses_time(of),
         _ => false,

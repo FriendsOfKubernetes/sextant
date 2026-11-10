@@ -7,7 +7,7 @@
 //   renderMessage(template, obj) // `{{path}}` placeholders filled with scalar values, cleaned and capped
 import type { KindRef, KubeObject, ObjectRef, ProblemCondition, ProblemContribution, ProblemScalar } from "../api";
 import { parseFieldPath, pickStep, type PathStep } from "../features/custom-columns/path";
-import type { Detected } from "../features/problems/model";
+import { currentCertExpiryWarningMs, type Detected } from "../features/problems/model";
 import { currentLanguage, formatList } from "../i18n/format";
 import { formatBytes, formatCpu, parseQuantity } from "../features/metrics/format";
 import { cleanText } from "../resources/uri";
@@ -194,6 +194,8 @@ export interface Verdict {
   until?: number;
   /** When the state began, as an entry of `.status.conditions` says (its `lastTransitionTime`). */
   since?: string;
+  /** `expiring` (#404): the time it is about, so the store moves the warning when the setting changes. */
+  expiresAt?: number;
 }
 
 const NO: Verdict = { holds: false };
@@ -281,6 +283,12 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       // `offset` (#407): added to the other value first.
       return { holds: a !== undefined && b !== undefined && a >= b + (condition.offset ?? 0) };
     }
+    case "expiring": {
+      // The user's certificate warning before the time, until it (#404); the store moves it when the setting changes.
+      const t = timeOf(valueAt(obj, condition.path));
+      if (t === undefined) return NO;
+      return { holds: true, activeFrom: t - currentCertExpiryWarningMs(), until: t, expiresAt: t };
+    }
     case "olderThan": {
       const value = valueAt(obj, condition.path);
       const t = timeOf(value);
@@ -348,18 +356,21 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       let until: number | undefined;
       let since: string | undefined;
       let lookups: Lookup[] | undefined;
+      let expiresAt: number | undefined;
       for (const inner of condition.of) {
         const v = evaluate(inner, obj, ctx);
         if (!v.holds) return NO;
         if (v.activeFrom !== undefined) activeFrom = Math.max(activeFrom ?? v.activeFrom, v.activeFrom);
         if (v.until !== undefined) until = Math.min(until ?? v.until, v.until);
         since ??= v.since;
+        expiresAt ??= v.expiresAt;
         if (v.lookups) lookups = [...(lookups ?? []), ...v.lookups];
       }
       // A window that closes before it opens never holds.
       if (activeFrom !== undefined && until !== undefined && until <= activeFrom) return NO;
       const verdict: Verdict = { holds: true, activeFrom, since };
       if (until !== undefined) verdict.until = until;
+      if (expiresAt !== undefined) verdict.expiresAt = expiresAt;
       if (lookups) verdict.lookups = lookups;
       return verdict;
     }
@@ -640,6 +651,8 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject, ctx: Rule
       since: typeof since === "string" && timeOf(since) !== undefined ? since : undefined,
       graceMs: rule.graceMinutes > 0 ? rule.graceMinutes * MINUTE_MS : undefined,
       activeFrom: verdict.activeFrom,
+      // `expiring` (#404): the store moves the warning when the setting changes (`applyCertExpiryDays`).
+      ...(verdict.expiresAt !== undefined ? { expiresAt: verdict.expiresAt } : {}),
       ...(verdict.until !== undefined ? { until: verdict.until } : {}),
       notify: rule.notify,
       ...(verdict.lookups ? { lookups: verdict.lookups } : {}),

@@ -21,6 +21,18 @@ const cluster: KubeObject = {
 const holds = (condition: ProblemCondition) => evaluate(condition, cluster).holds;
 
 describe("problem rules of extensions", () => {
+  it("tell a time expiring within the user's warning days, moved with the setting (#404)", () => {
+    const now = Date.now();
+    const cert = { metadata: { name: "c" }, status: { notAfter: new Date(now + 10 * 24 * 3600_000).toISOString() } } as unknown as KubeObject;
+    const v = evaluate({ type: "expiring", path: ".status.notAfter" }, cert);
+    expect(v.holds).toBe(true);
+    expect(v.expiresAt).toBe(Date.parse((cert.status as { notAfter: string }).notAfter));
+    expect(v.activeFrom).toBe(v.expiresAt! - 14 * 24 * 3600_000);
+    expect(v.until).toBe(v.expiresAt);
+    const rule = { id: "e", title: "E", kind: { group: "cert-manager.io", kind: "Certificate" }, when: { type: "expiring", path: ".status.notAfter" }, message: "m", graceMinutes: 0, notify: true, toldThroughOwner: false } as unknown as ProblemContribution;
+    expect(detectRule(rule, cert)[0]).toMatchObject({ expiresAt: v.expiresAt, activeFrom: v.activeFrom, until: v.expiresAt });
+  });
+
   it("pick the message by the plural form of its count in the UI language (#404)", () => {
     const rule = {
       id: "fail",

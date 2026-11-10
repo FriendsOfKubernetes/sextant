@@ -1183,13 +1183,23 @@
           }
         },
         {
+          "description": "The time at `path` is no further away than the user's certificate warning days and not yet past; moved when that setting changes (sextantApi 4).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path"],
+          "properties": {
+            "type": { "const": "expiring" },
+            "path": { "$ref": "#/$defs/fieldPath" }
+          }
+        },
+        {
           "type": "object",
           "additionalProperties": false,
           "required": ["type", "path", "minutes"],
           "properties": {
             "type": { "const": "olderThan" },
             "path": { "$ref": "#/$defs/fieldPath" },
-            "minutes": { "type": "integer", "minimum": 1, "maximum": 525600 },
+            "minutes": { "type": "integer", "minimum": 0, "maximum": 525600 },
             "orUnreadable": { "description": "Holds at once for a value that is there but no time (sextantApi 4).", "type": "boolean" }
           }
         },
