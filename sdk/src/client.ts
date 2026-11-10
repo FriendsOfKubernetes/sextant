@@ -134,6 +134,12 @@ export interface Sextant {
      */
     patchMany<T = KubeObject>(params: PatchManyParams, options?: CallOptions): Promise<PatchManyResult<T>>;
     delete(params: DeleteParams, options?: CallOptions): Promise<void>;
+    /**
+     * `oc rollout latest` of a DeploymentConfig or `oc start-build` of a BuildConfig (since Sextant 0.30): Sextant
+     * builds the request from the name, asks as for any change (Modify), and answers the ReplicationController or
+     * Build it made. Nothing else is posted to a subresource.
+     */
+    instantiate(params: DeleteParams, options?: CallOptions): Promise<ObjectRef>;
   };
   logs: { tail(params: LogsParams, options?: CallOptions): Promise<string> };
   /** One value of a Secret (needs the "Secret values" permission). */
@@ -256,6 +262,7 @@ const CHANGES: ReadonlySet<string> = new Set([
   "resources.patch",
   "resources.patchMany",
   "resources.delete",
+  "resources.instantiate",
   "portForward.start",
   "ui.openLogs",
   "service.request",
@@ -624,6 +631,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       patch: (params, o) => onCluster("resources.patch", params, o),
       patchMany: (params, o) => onCluster("resources.patchMany", params, o),
       delete: (params, o) => onCluster<unknown>("resources.delete", params, o).then(() => undefined),
+      instantiate: (params, o) => onCluster("resources.instantiate", params, o),
     },
     logs: { tail: (params, o) => onCluster("logs.tail", params, o) },
     secret: { value: (params, o) => onCluster("secret.value", params, o) },

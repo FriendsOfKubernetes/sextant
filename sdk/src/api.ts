@@ -293,6 +293,7 @@ export interface Methods {
   "resources.patch": { params: PatchParams & { clusterId: ClusterId }; result: KubeObject };
   "resources.patchMany": { params: PatchManyParams & { clusterId: ClusterId }; result: PatchManyResult };
   "resources.delete": { params: DeleteParams & { clusterId: ClusterId }; result: null };
+  "resources.instantiate": { params: DeleteParams & { clusterId: ClusterId }; result: ObjectRef };
   "logs.tail": { params: LogsParams & { clusterId: ClusterId }; result: string };
   "secret.value": { params: SecretParams & { clusterId: ClusterId }; result: string };
   "metrics.query": { params: MetricQueryParams & { clusterId: ClusterId }; result: MetricAnswer };

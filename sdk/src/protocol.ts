@@ -79,6 +79,7 @@ export const REMOTE_METHODS = [
   "resources.patch",
   "resources.patchMany",
   "resources.delete",
+  "resources.instantiate",
   "logs.tail",
   "secret.value",
   "metrics.query",

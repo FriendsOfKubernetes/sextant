@@ -60,14 +60,20 @@ mod tests {
                 .any(|t| forbidden.iter().any(|f| t.contains(f))),
             "{tools:?}"
         );
+        // Extensions reach the two actions only through `resources.instantiate` (ADR-0120 amendment): the core builds
+        // the request from the name, Modify on the object, asked as any change; agents never.
         let methods = crate::extensions::api::METHODS;
+        assert!(methods.contains(&"resources.instantiate"));
         assert!(
-            !methods.iter().any(|m| {
-                let m = m.to_lowercase();
-                ["openshift", "instantiate", "rollout", "build"]
-                    .iter()
-                    .any(|f| m.contains(f))
-            }),
+            !methods
+                .iter()
+                .filter(|m| **m != "resources.instantiate")
+                .any(|m| {
+                    let m = m.to_lowercase();
+                    ["openshift", "instantiate", "rollout", "build"]
+                        .iter()
+                        .any(|f| m.contains(f))
+                }),
             "{methods:?}"
         );
     }

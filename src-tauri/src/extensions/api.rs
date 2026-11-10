@@ -94,7 +94,7 @@ pub const MAX_GET_MANY: usize = 50;
 pub const GET_MANY_AT_ONCE: usize = 4;
 
 /// The methods `extension_call` serves (`ui.*` and the context are the window's).
-pub const METHODS: [&str; 26] = [
+pub const METHODS: [&str; 27] = [
     "clusters.list",
     "kinds",
     "resources.list",
@@ -106,6 +106,7 @@ pub const METHODS: [&str; 26] = [
     "resources.patch",
     "resources.patchMany",
     "resources.delete",
+    "resources.instantiate",
     "logs.tail",
     "secret.value",
     "storage.get",
@@ -516,6 +517,7 @@ impl ExtensionApi {
             "resources.patch" => call.patch(params).await,
             "resources.patchMany" => call.patch_many(params).await,
             "resources.delete" => call.delete(params).await,
+            "resources.instantiate" => call.instantiate(params).await,
             "logs.tail" => call.logs(params).await,
             "secret.value" => call.secret_value(params).await,
             "metrics.query" => call.metric_query(params).await,
@@ -1679,6 +1681,57 @@ impl<'a> ExtCall<'a> {
         )
         .await?;
         Ok(Value::Null)
+    }
+
+    /// `oc rollout latest` of a DeploymentConfig or `oc start-build` of a BuildConfig (ADR-0120 amendment): the core
+    /// builds the one request from the name and checks it as the window's actions do; Modify on the object, asked as
+    /// any change is, the request shown. Nothing else is ever posted to a subresource.
+    async fn instantiate(&self, params: Value) -> CoreResult<Value> {
+        let args: ObjectArgs = parse(&self.method, params)?;
+        let cluster = self.open(&args.cluster_id).await?;
+        let object = self.object(&cluster, &args.object).await?;
+        let kind = (object.kind.group.as_str(), object.kind.kind.as_str());
+        let request = match kind {
+            ("apps.openshift.io", "DeploymentConfig") => {
+                resources::openshift::deployment_request(&object.name)
+            }
+            ("build.openshift.io", "BuildConfig") => {
+                resources::openshift::build_request(&object.name)
+            }
+            _ => {
+                return Err(invalid(
+                    "only a DeploymentConfig (rollout latest) or a BuildConfig (start build) is instantiated",
+                ));
+            }
+        };
+        let summary = CallSummary {
+            tool: self.method.clone(),
+            target: describe(&object),
+            details: Some(first_lines(&request.to_string())),
+        };
+        self.check(
+            &cluster,
+            &[requirement(&object, AccessAction::Modify)],
+            &summary,
+        )
+        .await?;
+        let mgr = &self.api.clusters;
+        let made = if kind.1 == "DeploymentConfig" {
+            with_timeout(
+                CHANGE_TIMEOUT,
+                "the rollout",
+                resources::openshift::rollout_latest(mgr, &cluster.id, &object),
+            )
+            .await?
+        } else {
+            with_timeout(
+                CHANGE_TIMEOUT,
+                "the build",
+                resources::openshift::start_build(mgr, &cluster.id, &object),
+            )
+            .await?
+        };
+        to_value(&made)
     }
 
     async fn logs(&self, params: Value) -> CoreResult<Value> {

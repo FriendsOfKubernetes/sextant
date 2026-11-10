@@ -79,6 +79,7 @@ export const host = {
     create: (params: Params<"resources.create">) => callApi("resources.create", params),
     patch: (params: Params<"resources.patch">) => callApi("resources.patch", params),
     delete: (params: Params<"resources.delete">) => callApi("resources.delete", params),
+    instantiate: (params: Params<"resources.instantiate">) => callApi("resources.instantiate", params),
   },
   logs: { tail: (params: Params<"logs.tail">) => callApi("logs.tail", params) },
   secret: { value: (params: Params<"secret.value">) => callApi("secret.value", params) },
