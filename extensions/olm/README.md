@@ -44,34 +44,41 @@ Install Plans the failed ones.
   (`subscription-source`), **Approval** (`subscription-approval`, Automatic when unset, as OLM reads it),
   **Installed CSV** (`subscription-installed`) and **State** (`subscription-state`: Resolution failed, Install plan
   failed, Upgrade failed, Waiting for approval, Upgrade pending, Upgrade available, Up to date or Pending, coloured,
-  the failing condition's message on hover).
+  the failing condition's message on hover; sorted by the state, as the built-in column).
 - Cluster Service Versions: **Display name** (`csv-display-name`), **Version** (`csv-version`), **Phase**
-  (`csv-phase`, coloured, the reason and message on hover) and **Copy of** (`csv-copied-from`: for a copy, the
-  namespace of its original).
-- Install Plans: **CSVs** (`install-plan-csvs`), **Approval** (`install-plan-approval`), **Approved**
-  (`install-plan-approved`) and **Phase** (`install-plan-phase`, coloured).
+  (`csv-phase`, coloured — Replacing and Deleting muted —, the reason and message on hover) and **Copy of**
+  (`csv-copied-from`: for a copy, the namespace of its original).
+- Install Plans: **CSVs** (`install-plan-csvs`, joined with commas in every language), **Approval** (`install-plan-approval`),
+  **Approved** (`install-plan-approved`, No before Yes when sorted) and **Phase** (`install-plan-phase`, coloured).
 - Catalog Sources: **Display name** (`catalog-source-display-name`), **Type** (`catalog-source-type`), **Publisher**
   (`catalog-source-publisher`) and **Connection** (`catalog-source-connection`: the registry's gRPC state, coloured,
   the catalog's message on hover).
-- Operator Groups: **Target namespaces** (`operator-group-targets`: "All namespaces", else the namespaces OLM
-  reports, else the requested ones) and **Upgrade strategy** (`operator-group-upgrade-strategy`, Default when unset).
+- Operator Groups: **Target namespaces** (`operator-group-targets`: "All namespaces", sorted first, else the
+  namespaces OLM reports, else the requested ones) and **Upgrade strategy** (`operator-group-upgrade-strategy`, Default when unset).
 - Operators: **Components** (`operator-components`).
 - Cluster Extensions: **Package** (`cluster-extension-package`), **Installed version**
   (`cluster-extension-installed-version`), **Installed** (`cluster-extension-installed`) and **Progressing**
-  (`cluster-extension-progressing`): each condition as "Status (Reason)", coloured, its message on hover;
-  Progressing True while retrying, blocked or past its deadline is a warning.
-- Cluster Catalogs: **Image** (`cluster-catalog-image`), **Serving** (`cluster-catalog-serving`) and **Unpacked**
-  (`cluster-catalog-last-unpacked`, an age).
+  (`cluster-extension-progressing`): each condition as "Status (Reason)", coloured, its message on hover, Installed
+  sorted by the status and Progressing by the reason (without one, last in either direction); Progressing True while
+  retrying, blocked or past its deadline is a warning.
+- Cluster Catalogs: **Image** (`cluster-catalog-image`), **Serving** (`cluster-catalog-serving`, sorted by the
+  status) and **Unpacked** (`cluster-catalog-last-unpacked`, an age).
 
-**Details**, a section per kind, drawn with the SDK's UI kit in the classes of Sextant's own details panel:
+Each column has the built-in column's width.
+
+**Details**, a section per kind without a heading of its own (as the built-in one), drawn with the SDK's UI kit in the
+classes of Sextant's own details panel. Its blocks open and close with their titles and are kept in Sextant's own
+memory of details sections, as Settings → Appearance says (for every object, per cluster, or for this object only),
+with the panel's "Expand all" and "Collapse all":
 - **Subscription** (`subscription`): why it failed or what it waits for, the pending upgrade, its package, channel,
   catalog, approval, starting, installed and current CSV, its InstallPlan, and the catalogs' health. The installed CSV
   and the InstallPlan are watched by name while the section shows, for their phases.
 - **ClusterServiceVersion** (`csv`): why it failed, unmet requirements, its phase, version, provider, `replaces`,
-  `skips`, the Subscription that installed it (the namespace's Subscriptions are watched for it), install modes, the
-  requirements, owned and required CRDs, and the Deployments of its install strategy with ready/desired and
-  availability (watched by the labels OLM puts on them: `olm.owner=<csv>,olm.owner.kind=ClusterServiceVersion`). A
-  copy says it is one and links its original instead.
+  `skips`, the Subscription that installed it (the namespace's Subscriptions are watched for it, at most 500), install
+  modes, the requirements, owned and required CRDs, and the Deployments of its install strategy with ready/desired and
+  availability (watched by the labels OLM puts on them, `olm.owner=<csv>,olm.owner.kind=ClusterServiceVersion`, only
+  while their block is open, at most 50: beyond that it says "Only the first 50 are listed." and cannot tell a missing
+  one). A copy says it is one and links its original instead.
 - **InstallPlan** (`install-plan`): that Sextant does not approve install plans, why it failed, its approval, CSVs and
   catalog, bundle lookups and steps (at most 200). A step's manifest is never shown.
 - **CatalogSource** (`catalog-source`), **OperatorGroup** (`operator-group`), **Operator** (`operator`),
@@ -98,20 +105,23 @@ As the built-in category `olm`, on by default. ClusterServiceVersions are watche
 the rules' source is the label selector `!olm.copiedFrom`, so the API server drops every copy OLM keeps in a target
 namespace, and the rules skip a copy OLM marked only by `status.reason: Copied` or by an `olm.operatorNamespace`
 annotation of another namespace. InstallPlans are never watched for problems: the Subscription tells the plan it uses
-now. Waiting for an approval is never a problem. Every rule may notify; a rule's reason is the object's own (the
-condition's or the CSV's reason), and the `-unnamed` rules give the built-in fallback reason when the object gives
-none.
+now, and a problem of that plan is about the plan (the problems screen opens it), notified once per Subscription.
+Waiting for an approval is never a problem. Every rule may notify; a rule's reason is the object's own (the
+condition's or the CSV's reason), else the built-in word (`Failed`, `ResolutionFailed`, `InstallPlanFailed`). A time
+that does not read as one counts at once for "Only problems", as the built-in filter counted it.
 
-| Id | Kind | When it holds | Grace | Told by another object |
+| Id | Kind | When it holds | Grace | About |
 |---|---|---|---|---|
-| `csv-failed` | ClusterServiceVersion | An original in phase Failed, with a reason | 5 min from `status.lastTransitionTime` | No |
-| `csv-failed-unnamed` | ClusterServiceVersion | The same without a reason (reason "Failed") | 5 min | No |
-| `resolution-failed` | Subscription | `ResolutionFailed` is True, with a reason | 10 min from the condition's change | No |
-| `resolution-failed-unnamed` | Subscription | The same without a reason (reason "ResolutionFailed") | 10 min | No |
-| `install-plan-failed` | Subscription | `InstallPlanFailed` is True: its current InstallPlan failed | None | No |
-| `install-plan-failed-unnamed` | Subscription | The same without a reason (reason "InstallPlanFailed") | None | No |
-| `install-plan-stuck` | Subscription | `InstallPlanPending` is True with reason Planning, Installing or InstallPlanNotYetReconciled | 30 min from the condition's change | No |
-| `catalog-not-ready` | CatalogSource | The registry's connection state is neither READY nor IDLE | 10 min from when Sextant first saw it | No |
+| `csv-failed` | ClusterServiceVersion | An original in phase Failed | 5 min from `status.lastTransitionTime` | The CSV |
+| `resolution-failed` | Subscription | `ResolutionFailed` is True | 10 min from the condition's change | The Subscription |
+| `install-plan-failed` | Subscription | `InstallPlanFailed` is True: its current InstallPlan failed | None | The InstallPlan `status.installPlanRef` names |
+| `install-plan-failed-old-ref` | Subscription | The same, with only the deprecated `status.installplan` naming the plan | None | The InstallPlan it names |
+| `install-plan-stuck` | Subscription | `InstallPlanPending` is True with reason Planning, Installing or InstallPlanNotYetReconciled | 30 min from the condition's change, else from when the phase last moved | The InstallPlan `status.installPlanRef` names |
+| `install-plan-stuck-old-ref` | Subscription | The same, with only `status.installplan` naming the plan | As above | The InstallPlan it names |
+| `catalog-not-ready` | CatalogSource | The registry's connection state is neither READY nor IDLE | 10 min from when Sextant first saw it | The CatalogSource |
+
+`about` reads one path, so a Subscription an older OLM wrote with only `status.installplan` has the `-old-ref` twin
+of each plan rule; one naming no plan gets a problem about itself, as the built-in view gave.
 
 ## Metrics
 
@@ -138,21 +148,7 @@ console action.
 ## Requirements and limits
 
 - OLM's CRDs (OLM v0, OLM v1, or both); the section shows only the kinds the cluster serves.
-- Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - A Subscription's "InstallPlan failed" and "stuck" problems are about the Subscription; the built-in ones were
-    about its InstallPlan, which the problems screen opened.
-  - A stuck InstallPlan whose condition has no time counts from when Sextant first saw it; the built-in rule started
-    again when the plan's phase moved.
-  - The CSV phases Replacing and Deleting are drawn in the neutral colour (the built-in table muted them).
-  - The State, Approved, Installed and Progressing columns sort by the text shown; the CSVs column joins the names as
-    a list in the UI language ("a, b and c"), where the built-in one wrote them with commas.
-  - "Only problems" on Subscriptions and Cluster Service Versions leaves out an object whose condition time does not
-    read as a time; the built-in filter counted it at once.
-  - The details are a titled section per kind (the built-in one had no title of its own); its blocks are always open
-    when shown (the built-in panel remembered closed blocks), and a CSV's Deployments are watched while the section
-    shows, open or closed.
-  - The lists the details watch are not capped (the built-in view listed at most 50 Deployments of a CSV and 500
-    Subscriptions of a namespace); each is narrowed to one namespace by name or OLM's labels.
+- No difference from the former built-in view is known.
 - Checked by tests on fixtures of OLM's objects (copied from the built-in view) against the built-in readings and
   rules; not yet tried on a live cluster.
 
@@ -160,7 +156,8 @@ console action.
 
 - **No "Operators (OLM)" section:** the cluster serves none of OLM's kinds, or the extension is disabled.
 - **A CSV's Deployments say "Cannot tell":** the extension may not read Deployments there, or the CSV's name is too
-  long to be a label value (over 63 characters), so OLM could not have labelled them either.
+  long to be a label value (over 63 characters), so OLM could not have labelled them either, or more than 50
+  Deployments carry its labels ("Only the first 50 are listed.").
 - **"Sextant refused: …" in a section:** the extension's permissions do not cover the object. Check Settings →
   Extensions → Operator Lifecycle Manager.
 - **A copied CSV shows no requirements or Deployments:** they are its original's; follow the "Original" link.

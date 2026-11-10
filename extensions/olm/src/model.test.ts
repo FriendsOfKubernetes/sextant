@@ -16,6 +16,7 @@ import {
   CLUSTER_CATALOG,
   CLUSTER_EXTENSION,
   componentsOf,
+  conditionOf,
   conditionText,
   copiedFrom,
   crdsOf,
@@ -83,6 +84,9 @@ interface Detected {
   activeFrom?: number;
   until?: number;
   notify: boolean;
+  object?: { kind: { group: string; version: string; kind: string }; namespace: string | null; name: string };
+  notifyAs?: string;
+  stamp?: string;
 }
 interface Engine {
   evaluate(condition: unknown, obj: KubeObject): Verdict;
@@ -98,10 +102,19 @@ interface Columns {
 }
 let engine: Engine;
 let columns: Columns;
+/** Sextant's table comparison (src/components/Table/ResourceTable.tsx): how a column's values sort. */
+let compareCellValues: (a: unknown, b: unknown) => number;
+let startI18n: (language: string) => Promise<unknown>;
 const here = dirname(fileURLToPath(import.meta.url));
 beforeAll(async () => {
   engine = (await import(/* @vite-ignore */ join(here, "../../../src/extensions/problemRules.ts"))) as Engine;
   columns = (await import(/* @vite-ignore */ join(here, "../../../src/extensions/columns.tsx"))) as Columns;
+  // Sextant's own texts, so lists join as in the window (`common:list.separator`).
+  ({ startI18n } = (await import(/* @vite-ignore */ join(here, "../../../src/i18n/index.ts"))) as { startI18n: typeof startI18n });
+  await startI18n("en");
+  ({ compareCellValues } = (await import(/* @vite-ignore */ join(here, "../../../src/components/Table/ResourceTable.tsx"))) as {
+    compareCellValues: typeof compareCellValues;
+  });
 });
 
 const holdsNow = (condition: unknown, obj: KubeObject, now: number) => {
@@ -135,12 +148,29 @@ function expectSameProblems(kind: KindOf, obj: KubeObject): void {
   const expected = olmProblems(kind, obj).map((d) => ({
     reason: d.reason,
     message: messageOf(d),
-    since: d.since,
+    // A start that is no time counted as none (the problems store's `time(since) ?? firstSeen`): the window leaves it out.
+    since: d.since && !Number.isNaN(Date.parse(d.since)) ? d.since : undefined,
     graceMs: d.graceMs,
     group: BUILT_IN_GROUPS[d.group ?? d.reason],
+    // The InstallPlan the problem is about, in the window's shape, its version that of Sextant's own kind.
+    object: d.about && { kind: { ...d.about.kind }, namespace: d.about.namespace, name: d.about.name },
+    // The built-in progress was the plan's phase: the rule's stamp holds the same value.
+    stamp: d.stamp === undefined ? undefined : JSON.stringify([d.stamp]),
   }));
-  const found = windowProblems(kind, obj).map((d) => ({ reason: d.reason, message: d.message, since: d.since, graceMs: d.graceMs, group: d.group }));
+  const found = windowProblems(kind, obj).map((d) => ({
+    reason: d.reason,
+    message: d.message,
+    since: d.since,
+    graceMs: d.graceMs,
+    group: d.group,
+    object: d.object,
+    stamp: d.stamp,
+  }));
   expect(found, `${kind.kind} ${obj.metadata.namespace}/${obj.metadata.name}`).toEqual(expected);
+  // Notifications stay one per Subscription (by its uid), as the built-in identity, even about its InstallPlan.
+  for (const d of windowProblems(kind, obj)) {
+    if (d.object && obj.metadata.uid) expect(d.notifyAs).toBe(`${kind.group}/${kind.kind}/${obj.metadata.namespace}/${obj.metadata.uid}`);
+  }
   // Every rule may notify, as every built-in one did (`notify` is left at its default, true).
   for (const rule of manifest.contributes.problems) expect((rule as { notify?: boolean }).notify).toBeUndefined();
 }
@@ -168,7 +198,40 @@ function subscriptions(): KubeObject[] {
   st(available).state = "UpgradeAvailable";
   const deleting = sub("strimzi-kafka-operator");
   deleting.metadata.deletionTimestamp = "2026-10-21T08:30:00Z";
-  return [...ofKind("Subscription"), moving, fresh, installing, planning, unnamed, planUnnamed, upgradeFailed, available, deleting];
+  // A Subscription naming its plan only in the deprecated `status.installplan`, and one naming none.
+  const oldRef = sub("broken-operator");
+  delete st(oldRef).installPlanRef;
+  st(oldRef).installplan = { apiVersion: "operators.coreos.com/v1alpha1", kind: "InstallPlan", name: "install-z3v8b", uuid: "ip-broken" };
+  const oldRefStuck = sub("etcd");
+  delete st(oldRefStuck).installPlanRef;
+  st(oldRefStuck).conditions = [{ type: "InstallPlanPending", status: "True", reason: "Installing", lastTransitionTime: "2026-10-21T09:00:00Z" }];
+  const noRef = sub("broken-operator");
+  delete st(noRef).installPlanRef;
+  // Condition times that do not read as times: the built-in filter counted them at once.
+  const garbled = sub("strimzi-kafka-operator");
+  for (const c of st(garbled).conditions as Record<string, unknown>[]) c.lastTransitionTime = "yesterday";
+  const blank = sub("strimzi-kafka-operator");
+  for (const c of st(blank).conditions as Record<string, unknown>[]) c.lastTransitionTime = "";
+  const garbledPlan = sub("etcd");
+  st(garbledPlan).conditions = [{ type: "InstallPlanPending", status: "True", reason: "Planning", lastTransitionTime: 1761037200 }];
+  return [
+    ...ofKind("Subscription"),
+    moving,
+    fresh,
+    installing,
+    planning,
+    unnamed,
+    planUnnamed,
+    upgradeFailed,
+    available,
+    deleting,
+    oldRef,
+    oldRefStuck,
+    noRef,
+    garbled,
+    blank,
+    garbledPlan,
+  ];
 }
 
 function csvs(): KubeObject[] {
@@ -190,7 +253,32 @@ function csvs(): KubeObject[] {
   const replacing = csv("prometheusoperator.0.70.0");
   st(replacing).phase = "Installing";
   delete st(replacing).reason;
-  return [...ofKind("ClusterServiceVersion"), byReason, byAnnotation, failedByAnnotation, leaked, unnamed, timeless, deleting, replacing];
+  const garbled = csv("broken-operator.v1.0.0");
+  st(garbled).lastTransitionTime = "not a time";
+  const blank = csv("broken-operator.v1.0.0");
+  st(blank).lastTransitionTime = "";
+  const emptyReason = csv("broken-operator.v1.0.0");
+  st(emptyReason).reason = "";
+  const replaced = csv("prometheusoperator.0.70.0");
+  st(replaced).phase = "Replacing";
+  const removing = csv("etcdoperator.v0.9.2");
+  st(removing).phase = "Deleting";
+  return [
+    ...ofKind("ClusterServiceVersion"),
+    byReason,
+    byAnnotation,
+    failedByAnnotation,
+    leaked,
+    unnamed,
+    timeless,
+    deleting,
+    replacing,
+    garbled,
+    blank,
+    emptyReason,
+    replaced,
+    removing,
+  ];
 }
 
 function catalogs(): KubeObject[] {
@@ -203,6 +291,58 @@ function catalogs(): KubeObject[] {
   const deleting = catalog("broken-catalog");
   deleting.metadata.deletionTimestamp = "2026-10-21T08:30:00Z";
   return [...ofKind("CatalogSource"), idle, connecting, plain, deleting];
+}
+
+function installPlans(): KubeObject[] {
+  const names = (n: number) => {
+    const p = plan("install-p7x2k");
+    (p.spec as Record<string, unknown>).clusterServiceVersionNames = Array.from({ length: n }, (_, i) => `operator-${String.fromCharCode(97 + ((i * 7) % 26))}.v${i}`);
+    (p.spec as Record<string, unknown>).approved = n % 2 === 0;
+    return p;
+  };
+  return [...ofKind("InstallPlan"), names(0), names(2), names(3), names(4), names(5), names(6)];
+}
+
+function operatorGroups(): KubeObject[] {
+  const unreconciled = find("OperatorGroup", "team-a");
+  delete st(unreconciled).namespaces;
+  // An empty list in the status: the built-in view fell back to the requested namespaces.
+  const empty = find("OperatorGroup", "team-a");
+  st(empty).namespaces = [];
+  (empty.spec as Record<string, unknown>).targetNamespaces = ["team-c", "team-b"];
+  const several = find("OperatorGroup", "team-a");
+  st(several).namespaces = ["team-a", "team-d"];
+  return [...ofKind("OperatorGroup"), unreconciled, empty, several];
+}
+
+function extensions(): KubeObject[] {
+  const out = ofKind("ClusterExtension");
+  for (const base of ofKind("ClusterExtension")) {
+    for (const [status, reason] of [
+      ["True", "Succeeded"],
+      ["False", "Succeeded"],
+      ["True", "Retrying"],
+      ["True", "Blocked"],
+      ["False", "Failed"],
+      ["True", "InvalidConfiguration"],
+      ["True", "ProgressDeadlineExceeded"],
+      ["Unknown", "Succeeded"],
+      ["True", "RollingOut"],
+      ["False", "Aborted"],
+      ["True", undefined],
+      ["False", undefined],
+    ] as const) {
+      const e = copy(base);
+      for (const c of st(e).conditions as Record<string, unknown>[]) {
+        c.status = status;
+        if (c.type !== "Progressing") continue;
+        if (reason === undefined) delete c.reason;
+        else c.reason = reason;
+      }
+      out.push(e);
+    }
+  }
+  return out;
 }
 
 // ---------- The model ----------
@@ -238,7 +378,7 @@ describe("the model", () => {
     const copied = csv("prometheusoperator.0.70.0", "default");
     expect(isCopy(copied)).toBe(true);
     expect(copiedFrom(copied)).toBe("operators");
-    const [byReason, byAnnotation] = csvs().slice(-8);
+    const [byReason, byAnnotation] = csvs().slice(-13);
     expect(isCopy(byReason!)).toBe(true);
     expect(isCopy(byAnnotation!)).toBe(true);
     expect(copiedFrom(byAnnotation!)).toBe("operators");
@@ -311,6 +451,33 @@ describe("the problem rules, against the built-in category olm", () => {
     expect(stuck).toMatchObject({ reason: "InstallPlanStuck", graceMs: PLAN_STUCK_MS, message: "The Subscription's InstallPlan has been in phase Installing for more than 30 minutes." });
   });
 
+  it("an InstallPlan's failure or stall is about the plan, notified once per Subscription; the stall's grace restarts with the phase", () => {
+    const failedOn = (o: KubeObject) => windowProblems(SUBSCRIPTION, o).find((d) => d.group === "install-plan-failed")!;
+    const planRef = { kind: { group: "operators.coreos.com", version: "v1alpha1", kind: "InstallPlan" }, namespace: "operators", name: "install-z3v8b" };
+    expect(failedOn(sub("broken-operator"))).toMatchObject({ object: planRef, notifyAs: "operators.coreos.com/Subscription/operators/sub-broken" });
+    const [, , , , , , , , , , oldRef, oldRefStuck, noRef] = subscriptions().slice(-16);
+    expect(failedOn(oldRef!).object).toEqual(planRef);
+    // Naming no plan, the problem is about the Subscription itself.
+    expect(failedOn(noRef!).object).toBeUndefined();
+    const stuck = (o: KubeObject) => windowProblems(SUBSCRIPTION, o).find((d) => d.group === "install-plan-stuck")!;
+    expect(stuck(oldRefStuck!).object).toMatchObject({ name: "install-q9w4m" });
+    const [installing, planning] = [subscriptions()[6]!, subscriptions()[7]!];
+    expect(stuck(installing).stamp).not.toBe(stuck(planning).stamp);
+    expect(stuck(installing).stamp).toBe(stuck(copy(installing)).stamp);
+    // One rule per finding: the reason falls back to the built-in word when OLM gives none (`reasonOr`).
+    expect(manifest.contributes.problems.map((r) => r.id)).toEqual([
+      "csv-failed",
+      "resolution-failed",
+      "install-plan-failed",
+      "install-plan-failed-old-ref",
+      "install-plan-stuck",
+      "install-plan-stuck-old-ref",
+      "catalog-not-ready",
+    ]);
+    expect(windowProblems(SUBSCRIPTION, subscriptions()[8]!)).toMatchObject([{ reason: "ResolutionFailed" }]);
+    expect(windowProblems(SUBSCRIPTION, subscriptions()[9]!)).toMatchObject([{ reason: "InstallPlanFailed" }]);
+  });
+
   it("a catalog not READY (nor IDLE) for ten minutes from when it was first seen", () => {
     const [broken] = windowProblems(CATALOG_SOURCE, catalog("broken-catalog"));
     expect(broken).toMatchObject({ reason: "CatalogSourceNotReady", graceMs: CATALOG_GRACE_MS });
@@ -364,7 +531,6 @@ function drawn(id: string, obj: KubeObject): Drawn {
   if (title !== undefined) node = node!.props!.children as typeof node;
   return { title, tone: node?.props?.tone };
 }
-const toneOf = (tone: string) => (tone === "muted" ? "neutral" : tone);
 const subState = (o: KubeObject) => en[`subscriptionState.${subscriptionState(o)}` as keyof typeof en];
 
 describe("the columns, against the built-in ones", () => {
@@ -405,15 +571,15 @@ describe("the columns, against the built-in ones", () => {
       expect(cell("csv-version", o)).toBe(info.version);
       expect(cell("csv-phase", o)).toBe(info.phase);
       const title = [info.reason, info.message].filter(Boolean).join(": ");
-      expect(drawn("csv-phase", o)).toEqual({ title: title || undefined, tone: toneOf(phaseTone(info.phase)) });
+      expect(drawn("csv-phase", o)).toEqual({ title: title || undefined, tone: phaseTone(info.phase) });
       expect(cell("csv-copied-from", o), `${o.metadata.namespace}/${o.metadata.name}`).toBe(copiedFrom(o));
     }
   });
 
   it("of InstallPlans: CSVs, approval, approved and the phase", () => {
-    for (const o of ofKind("InstallPlan")) {
+    for (const o of installPlans()) {
       const info = installPlanInfo(o);
-      expect(cell("install-plan-csvs", o)).toBe(info.csvNames.join(", "));
+      expect(cell("install-plan-csvs", o)).toBe(info.csvNames.join(", ") || undefined);
       expect(cell("install-plan-approval", o)).toBe(info.approval);
       expect(cell("install-plan-approved", o)).toBe(info.approved ? "Yes" : "No");
       expect(cell("install-plan-phase", o)).toBe(info.phase);
@@ -435,9 +601,11 @@ describe("the columns, against the built-in ones", () => {
     expect(drawn("catalog-source-connection", catalog("operatorhubio-catalog")).tone).toBe("success");
     expect(cell("operator-group-targets", find("OperatorGroup", "global-operators"))).toBe("All namespaces");
     expect(cell("operator-group-targets", find("OperatorGroup", "team-a"))).toBe("team-a");
-    const unreconciled = find("OperatorGroup", "team-a");
-    delete st(unreconciled).namespaces;
-    expect(cell("operator-group-targets", unreconciled)).toBe("team-a");
+    for (const o of operatorGroups()) {
+      const info = operatorGroupInfo(o);
+      const shown = info.allNamespaces ? "All namespaces" : (info.namespaces.length > 0 ? info.namespaces : info.targetNamespaces).join(", ");
+      expect(cell("operator-group-targets", o), o.metadata.name).toBe(shown);
+    }
     for (const o of ofKind("OperatorGroup")) expect(cell("operator-group-upgrade-strategy", o)).toBe(operatorGroupInfo(o).upgradeStrategy);
     const op = find("Operator", "prometheus.operators");
     expect(cell("operator-components", op)).toBe(String(componentsOf(op).total));
@@ -479,6 +647,112 @@ describe("the columns, against the built-in ones", () => {
   });
 });
 
+/** Sorted as the table sorts (values missing last in either direction), by `value`; the names in that order. */
+function sortedBy(list: KubeObject[], value: (o: KubeObject) => unknown, descending = false): string[] {
+  const rows = list.map((o, i) => ({ key: `${i}:${o.metadata.name}`, value: value(o) }));
+  rows.sort((a, b) => {
+    if (a.value === undefined || b.value === undefined) return a.value === undefined ? (b.value === undefined ? (a.key < b.key ? -1 : 1) : 1) : -1;
+    return (descending ? -1 : 1) * compareCellValues(a.value, b.value) || (a.key < b.key ? -1 : 1);
+  });
+  return rows.map((r) => r.key);
+}
+
+describe("the columns' widths and order, against the built-in ones", () => {
+  it("have the built-in widths", () => {
+    const widths = Object.fromEntries(manifest.contributes.columns.map((c) => [c.id, (c as { width?: string }).width]));
+    expect(widths).toEqual({
+      "subscription-package": undefined,
+      "subscription-channel": "minmax(80px, 1fr)",
+      "subscription-source": undefined,
+      "subscription-approval": "100px",
+      "subscription-installed": "minmax(140px, 2fr)",
+      "subscription-state": "150px",
+      "csv-display-name": undefined,
+      "csv-version": "100px",
+      "csv-phase": "120px",
+      "csv-copied-from": "minmax(100px, 1fr)",
+      "install-plan-csvs": "minmax(160px, 3fr)",
+      "install-plan-approval": "100px",
+      "install-plan-approved": "90px",
+      "install-plan-phase": "140px",
+      "catalog-source-display-name": undefined,
+      "catalog-source-type": "100px",
+      "catalog-source-publisher": undefined,
+      "catalog-source-connection": "160px",
+      "operator-group-targets": "minmax(160px, 3fr)",
+      "operator-group-upgrade-strategy": "140px",
+      "operator-components": "110px",
+      "cluster-extension-package": undefined,
+      "cluster-extension-installed-version": "120px",
+      "cluster-extension-installed": "140px",
+      "cluster-extension-progressing": "180px",
+      "cluster-catalog-image": "minmax(180px, 3fr)",
+      "cluster-catalog-serving": "160px",
+      "cluster-catalog-last-unpacked": "110px",
+    });
+  });
+
+  it("sort the State, Approved, CSVs, targets and components as the built-in values did", () => {
+    const value = (id: string) => (o: KubeObject) => windowColumn(id).value(o);
+    const subs = subscriptions();
+    expect(sortedBy(subs, value("subscription-state"))).toEqual(sortedBy(subs, subscriptionState));
+    const plans = installPlans();
+    expect(sortedBy(plans, value("install-plan-approved"))).toEqual(sortedBy(plans, (o) => installPlanInfo(o).approved));
+    expect(sortedBy(plans, value("install-plan-csvs"))).toEqual(sortedBy(plans, (o) => installPlanInfo(o).csvNames.join(", ") || undefined));
+    const groups = operatorGroups();
+    const targets = (o: KubeObject) => {
+      const info = operatorGroupInfo(o);
+      return info.allNamespaces ? "*" : (info.namespaces.length > 0 ? info.namespaces : info.targetNamespaces).join(", ") || undefined;
+    };
+    expect(sortedBy(groups, value("operator-group-targets"))).toEqual(sortedBy(groups, targets));
+    const ops = ofKind("Operator");
+    const bare = copy(ops[0]!);
+    delete st(bare).components;
+    expect(sortedBy([...ops, bare], value("operator-components"))).toEqual(sortedBy([...ops, bare], (o) => componentsOf(o).total));
+  });
+
+  it("join an InstallPlan's CSVs with commas in every language, as the built-in column", async () => {
+    await startI18n("ja");
+    try {
+      for (const o of installPlans()) {
+        const names = installPlanInfo(o).csvNames;
+        expect(cell("install-plan-csvs", o), `${names.length}`).toBe(names.join(", ") || undefined);
+      }
+      // An OperatorGroup's targets were the UI language's list in the built-in column, sorted by the names with commas.
+      const several = operatorGroups().at(-1)!;
+      expect(cell("operator-group-targets", several)).toBe("team-a、team-d");
+      expect(windowColumn("operator-group-targets").value(several)).toBe("team-a, team-d");
+    } finally {
+      await startI18n("en");
+    }
+  });
+
+  it("sort OLM v1's conditions by status, and Progressing by OLM's reasons, as the built-in values did", () => {
+    const value = (id: string) => (o: KubeObject) => windowColumn(id).value(o);
+    const exts = extensions();
+    expect(sortedBy(exts, value("cluster-extension-installed"))).toEqual(sortedBy(exts, (o) => conditionOf(o, "Installed")?.status));
+    // Progressing by its reason, any reason; one without a reason last in either direction, as the built-in column.
+    const progressing = (o: KubeObject) => conditionOf(o, "Progressing")?.reason;
+    expect(exts.filter((o) => progressing(o) === undefined && conditionOf(o, "Progressing")).length).toBeGreaterThan(1);
+    for (const descending of [false, true]) {
+      expect(sortedBy(exts, value("cluster-extension-progressing"), descending)).toEqual(sortedBy(exts, progressing, descending));
+    }
+    for (const o of exts.filter((e) => progressing(e) === undefined && conditionOf(e, "Progressing"))) {
+      expect(windowColumn("cluster-extension-progressing").value(o)).toBeUndefined();
+      expect(cell("cluster-extension-progressing", o)).toBe(conditionText(o, "Progressing")!.text);
+    }
+    const cats = ofKind("ClusterCatalog").flatMap((o) =>
+      ["True", "False", "Unknown"].map((status) => {
+        const c = copy(o);
+        for (const x of st(c).conditions as Record<string, unknown>[]) if (x.type === "Serving") x.status = status;
+        return c;
+      }),
+    );
+    expect(sortedBy(cats, value("cluster-catalog-serving"))).toEqual(sortedBy(cats, (o) => conditionOf(o, "Serving")?.status));
+    for (const o of cats) expect(cell("cluster-catalog-serving", o)).toBe(conditionText(o, "Serving")!.text);
+  });
+});
+
 describe("the manifest", () => {
   it("lists the eight kinds in the section olm, each with a details section of its own", () => {
     expect(manifest.contributes.kinds.map((k) => [k.kind, k.section, k.order])).toEqual([
@@ -496,6 +770,8 @@ describe("the manifest", () => {
       const kind = DETAILS[section.id]!;
       expect(section.kinds).toEqual([{ group: kind.group, kind: kind.kind }]);
       expect(section.order).toBe(20);
+      // Untitled, as the built-in section: the kind's name stays its accessible name.
+      expect(section.heading).toBe(false);
     }
   });
 

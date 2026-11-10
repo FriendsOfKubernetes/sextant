@@ -132,5 +132,6 @@
   "components.kind": "Tür",
   "components.name": "Ad",
   "components.namespace": "Namespace",
-  "components.conditions": "Koşullar"
+  "components.conditions": "Koşullar",
+  "truncated": "Yalnızca ilk {{max}} tanesi listeleniyor."
 }

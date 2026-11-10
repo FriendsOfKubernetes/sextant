@@ -131,5 +131,6 @@
   "components.kind": "Kind",
   "components.name": "名前",
   "components.namespace": "Namespace",
-  "components.conditions": "条件"
+  "components.conditions": "条件",
+  "truncated": "最初の {{max}} 件のみを表示しています。"
 }

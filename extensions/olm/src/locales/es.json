@@ -133,5 +133,6 @@
   "components.kind": "Kind",
   "components.name": "Nombre",
   "components.namespace": "Namespace",
-  "components.conditions": "Condiciones"
+  "components.conditions": "Condiciones",
+  "truncated": "Solo se listan los primeros {{max}}."
 }

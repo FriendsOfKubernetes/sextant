@@ -98,19 +98,15 @@ export function operatorGroupView(sextant: Sextant, obj: KubeObject): Node[] {
   ]);
 }
 
-export function operatorView(sextant: Sextant, obj: KubeObject): Node[] {
+export function operatorView(sextant: Sextant, obj: KubeObject, blocks: { block(id: string, title: string, content: UiContent): HTMLElement }): Node[] {
   const { refs, total } = componentsOf(obj);
   const rows = refs.map((r) => [r.kind, link(sextant, kindFrom(r.apiVersion, r.kind), r.name, r.namespace ?? null), r.namespace ?? "", ui.chips(r.conditions)]);
   const headers = ["kind", "name", "namespace", "conditions"].map((h) => t(`components.${h}`));
   return [
-    ui.block(
-      t("components.title"),
-      [
-        rows.length > 0 ? ui.table(headers, rows, { label: t("components.title") }) : remark(t("noComponents")),
-        total > refs.length ? remark(t("moreComponents", { shown: refs.length, total, max: MAX_COMPONENTS })) : null,
-      ],
-      { collapsible: true },
-    ),
+    blocks.block("components", t("components.title"), [
+      rows.length > 0 ? ui.table(headers, rows, { label: t("components.title") }) : remark(t("noComponents")),
+      total > refs.length ? remark(t("moreComponents", { shown: refs.length, total, max: MAX_COMPONENTS })) : null,
+    ]),
   ];
 }
 

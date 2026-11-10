@@ -134,5 +134,6 @@
   "components.kind": "Kind",
   "components.name": "Ім’я",
   "components.namespace": "Namespace",
-  "components.conditions": "Умови"
+  "components.conditions": "Умови",
+  "truncated": "Показано лише перші {{max}}."
 }

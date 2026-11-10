@@ -95,11 +95,17 @@
                     {
                       "type": "olderThan",
                       "path": ".status.conditions[type=\"ResolutionFailed\"].lastTransitionTime",
-                      "minutes": 10
+                      "minutes": 10,
+                      "orUnreadable": true
                     },
                     {
                       "type": "absent",
                       "path": ".status.conditions[type=\"ResolutionFailed\"].lastTransitionTime"
+                    },
+                    {
+                      "type": "equals",
+                      "path": ".status.conditions[type=\"ResolutionFailed\"].lastTransitionTime",
+                      "value": ""
                     }
                   ]
                 }
@@ -155,11 +161,17 @@
                     {
                       "type": "olderThan",
                       "path": ".status.conditions[type=\"InstallPlanPending\"].lastTransitionTime",
-                      "minutes": 30
+                      "minutes": 30,
+                      "orUnreadable": true
                     },
                     {
                       "type": "absent",
                       "path": ".status.conditions[type=\"InstallPlanPending\"].lastTransitionTime"
+                    },
+                    {
+                      "type": "equals",
+                      "path": ".status.conditions[type=\"InstallPlanPending\"].lastTransitionTime",
+                      "value": ""
                     }
                   ]
                 }
@@ -220,11 +232,17 @@
                 {
                   "type": "olderThan",
                   "path": ".status.lastTransitionTime",
-                  "minutes": 5
+                  "minutes": 5,
+                  "orUnreadable": true
                 },
                 {
                   "type": "absent",
                   "path": ".status.lastTransitionTime"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.lastTransitionTime",
+                  "value": ""
                 }
               ]
             }
@@ -344,7 +362,8 @@
           }
         ],
         "placement": "section",
-        "order": 20
+        "order": 20,
+        "heading": false
       },
       {
         "id": "csv",
@@ -356,7 +375,8 @@
           }
         ],
         "placement": "section",
-        "order": 20
+        "order": 20,
+        "heading": false
       },
       {
         "id": "install-plan",
@@ -368,7 +388,8 @@
           }
         ],
         "placement": "section",
-        "order": 20
+        "order": 20,
+        "heading": false
       },
       {
         "id": "catalog-source",
@@ -380,7 +401,8 @@
           }
         ],
         "placement": "section",
-        "order": 20
+        "order": 20,
+        "heading": false
       },
       {
         "id": "operator-group",
@@ -392,7 +414,8 @@
           }
         ],
         "placement": "section",
-        "order": 20
+        "order": 20,
+        "heading": false
       },
       {
         "id": "operator",
@@ -404,7 +427,8 @@
           }
         ],
         "placement": "section",
-        "order": 20
+        "order": 20,
+        "heading": false
       },
       {
         "id": "cluster-extension",
@@ -416,7 +440,8 @@
           }
         ],
         "placement": "section",
-        "order": 20
+        "order": 20,
+        "heading": false
       },
       {
         "id": "cluster-catalog",
@@ -428,7 +453,8 @@
           }
         ],
         "placement": "section",
-        "order": 20
+        "order": 20,
+        "heading": false
       }
     ],
     "columns": [
@@ -454,6 +480,7 @@
         "paths": [
           ".spec.channel"
         ],
+        "width": "minmax(80px, 1fr)",
         "afterColumn": "subscription-package"
       },
       {
@@ -478,21 +505,16 @@
         "paths": [
           ".spec.installPlanApproval"
         ],
+        "width": "100px",
         "cases": [
           {
             "when": {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".spec.installPlanApproval"
-                },
-                {
-                  "type": "equals",
-                  "path": ".spec.installPlanApproval",
-                  "value": ""
-                }
-              ]
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".spec.installPlanApproval",
+                "nonEmpty": true
+              }
             },
             "text": "Automatic"
           }
@@ -509,6 +531,7 @@
         "paths": [
           ".status.installedCSV"
         ],
+        "width": "minmax(140px, 2fr)",
         "afterColumn": "subscription-approval"
       },
       {
@@ -521,6 +544,7 @@
         "paths": [
           ".status.state"
         ],
+        "width": "150px",
         "cases": [
           {
             "when": {
@@ -530,6 +554,7 @@
             },
             "text": "Resolution failed",
             "tone": "error",
+            "value": "resolutionFailed",
             "tooltip": "{{.status.conditions[type=\"ResolutionFailed\"].message}}"
           },
           {
@@ -540,6 +565,7 @@
             },
             "text": "Install plan failed",
             "tone": "error",
+            "value": "installPlanFailed",
             "tooltip": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}"
           },
           {
@@ -549,7 +575,8 @@
               "value": "UpgradeFailed"
             },
             "text": "Upgrade failed",
-            "tone": "error"
+            "tone": "error",
+            "value": "upgradeFailed"
           },
           {
             "when": {
@@ -560,6 +587,7 @@
             },
             "text": "Waiting for approval",
             "tone": "warning",
+            "value": "waitingApproval",
             "tooltip": "{{.status.conditions[type=\"InstallPlanPending\"].message}}"
           },
           {
@@ -576,27 +604,13 @@
                   "of": [
                     {
                       "type": "exists",
-                      "path": ".status.installedCSV"
-                    },
-                    {
-                      "type": "not",
-                      "of": {
-                        "type": "equals",
-                        "path": ".status.installedCSV",
-                        "value": ""
-                      }
+                      "path": ".status.installedCSV",
+                      "nonEmpty": true
                     },
                     {
                       "type": "exists",
-                      "path": ".status.currentCSV"
-                    },
-                    {
-                      "type": "not",
-                      "of": {
-                        "type": "equals",
-                        "path": ".status.currentCSV",
-                        "value": ""
-                      }
+                      "path": ".status.currentCSV",
+                      "nonEmpty": true
                     },
                     {
                       "type": "not",
@@ -611,7 +625,8 @@
               ]
             },
             "text": "Upgrade pending",
-            "tone": "warning"
+            "tone": "warning",
+            "value": "upgradePending"
           },
           {
             "when": {
@@ -620,7 +635,8 @@
               "value": "UpgradeAvailable"
             },
             "text": "Upgrade available",
-            "tone": "warning"
+            "tone": "warning",
+            "value": "upgradeAvailable"
           },
           {
             "when": {
@@ -629,7 +645,8 @@
               "value": "AtLatestKnown"
             },
             "text": "Up to date",
-            "tone": "ok"
+            "tone": "ok",
+            "value": "atLatest"
           },
           {
             "when": {
@@ -637,7 +654,8 @@
               "path": ".metadata.name"
             },
             "text": "Pending",
-            "tone": "neutral"
+            "tone": "neutral",
+            "value": "pending"
           }
         ],
         "afterColumn": "subscription-installed"
@@ -664,6 +682,7 @@
         "paths": [
           ".spec.version"
         ],
+        "width": "100px",
         "afterColumn": "csv-display-name"
       },
       {
@@ -676,12 +695,15 @@
         "paths": [
           ".status.phase"
         ],
+        "width": "120px",
         "tones": {
           "Succeeded": "ok",
           "Failed": "error",
           "Pending": "warning",
           "InstallReady": "warning",
-          "Installing": "warning"
+          "Installing": "warning",
+          "Replacing": "muted",
+          "Deleting": "muted"
         },
         "cases": [
           {
@@ -690,39 +712,18 @@
               "of": [
                 {
                   "type": "exists",
-                  "path": ".status.phase"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.phase",
-                    "value": ""
-                  }
+                  "path": ".status.phase",
+                  "nonEmpty": true
                 },
                 {
                   "type": "exists",
-                  "path": ".status.reason"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.reason",
-                    "value": ""
-                  }
+                  "path": ".status.reason",
+                  "nonEmpty": true
                 },
                 {
                   "type": "exists",
-                  "path": ".status.message"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.message",
-                    "value": ""
-                  }
+                  "path": ".status.message",
+                  "nonEmpty": true
                 }
               ]
             },
@@ -735,27 +736,13 @@
               "of": [
                 {
                   "type": "exists",
-                  "path": ".status.phase"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.phase",
-                    "value": ""
-                  }
+                  "path": ".status.phase",
+                  "nonEmpty": true
                 },
                 {
                   "type": "exists",
-                  "path": ".status.reason"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.reason",
-                    "value": ""
-                  }
+                  "path": ".status.reason",
+                  "nonEmpty": true
                 }
               ]
             },
@@ -768,27 +755,13 @@
               "of": [
                 {
                   "type": "exists",
-                  "path": ".status.phase"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.phase",
-                    "value": ""
-                  }
+                  "path": ".status.phase",
+                  "nonEmpty": true
                 },
                 {
                   "type": "exists",
-                  "path": ".status.message"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.message",
-                    "value": ""
-                  }
+                  "path": ".status.message",
+                  "nonEmpty": true
                 }
               ]
             },
@@ -808,6 +781,7 @@
         "paths": [
           ".metadata.labels[\"olm.copiedFrom\"]"
         ],
+        "width": "minmax(100px, 1fr)",
         "cases": [
           {
             "when": {
@@ -856,7 +830,16 @@
         "paths": [
           ".spec.clusterServiceVersionNames"
         ],
-        "format": "list",
+        "width": "minmax(160px, 3fr)",
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.clusterServiceVersionNames[0]"
+            },
+            "text": "{{.spec.clusterServiceVersionNames|join}}"
+          }
+        ],
         "afterColumn": "namespace"
       },
       {
@@ -869,6 +852,7 @@
         "paths": [
           ".spec.approval"
         ],
+        "width": "100px",
         "afterColumn": "install-plan-csvs"
       },
       {
@@ -881,6 +865,7 @@
         "paths": [
           ".spec.approved"
         ],
+        "width": "90px",
         "cases": [
           {
             "when": {
@@ -888,14 +873,16 @@
               "path": ".spec.approved",
               "value": true
             },
-            "text": "Yes"
+            "text": "Yes",
+            "value": 1
           },
           {
             "when": {
               "type": "exists",
               "path": ".metadata.name"
             },
-            "text": "No"
+            "text": "No",
+            "value": 0
           }
         ],
         "afterColumn": "install-plan-approval"
@@ -910,6 +897,7 @@
         "paths": [
           ".status.phase"
         ],
+        "width": "140px",
         "tones": {
           "Complete": "ok",
           "Failed": "error",
@@ -941,6 +929,7 @@
         "paths": [
           ".spec.sourceType"
         ],
+        "width": "100px",
         "afterColumn": "catalog-source-display-name"
       },
       {
@@ -968,6 +957,7 @@
         "tooltipPaths": [
           ".status.message"
         ],
+        "width": "160px",
         "tones": {
           "READY": "ok",
           "IDLE": "neutral",
@@ -988,7 +978,7 @@
           ".status.namespaces",
           ".spec.targetNamespaces"
         ],
-        "format": "list",
+        "width": "minmax(160px, 3fr)",
         "cases": [
           {
             "when": {
@@ -996,7 +986,24 @@
               "path": ".status.namespaces[0]",
               "value": ""
             },
-            "text": "All namespaces"
+            "text": "All namespaces",
+            "value": "*"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.namespaces[0]"
+            },
+            "text": "{{.status.namespaces|list}}",
+            "value": "{{.status.namespaces|join}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.targetNamespaces[0]"
+            },
+            "text": "{{.spec.targetNamespaces|list}}",
+            "value": "{{.spec.targetNamespaces|join}}"
           }
         ],
         "afterColumn": "namespace"
@@ -1011,21 +1018,16 @@
         "paths": [
           ".spec.upgradeStrategy"
         ],
+        "width": "140px",
         "cases": [
           {
             "when": {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".spec.upgradeStrategy"
-                },
-                {
-                  "type": "equals",
-                  "path": ".spec.upgradeStrategy",
-                  "value": ""
-                }
-              ]
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".spec.upgradeStrategy",
+                "nonEmpty": true
+              }
             },
             "text": "Default"
           }
@@ -1042,7 +1044,8 @@
         "paths": [
           ".status.components.refs"
         ],
-        "format": "number",
+        "format": "count",
+        "width": "110px",
         "cases": [
           {
             "when": {
@@ -1077,6 +1080,7 @@
         "paths": [
           ".status.install.bundle.version"
         ],
+        "width": "120px",
         "afterColumn": "cluster-extension-package"
       },
       {
@@ -1089,6 +1093,7 @@
         "paths": [
           ".status.conditions[type=\"Installed\"].status"
         ],
+        "width": "140px",
         "cases": [
           {
             "when": {
@@ -1101,20 +1106,14 @@
                 },
                 {
                   "type": "exists",
-                  "path": ".status.conditions[type=\"Installed\"].reason"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.conditions[type=\"Installed\"].reason",
-                    "value": ""
-                  }
+                  "path": ".status.conditions[type=\"Installed\"].reason",
+                  "nonEmpty": true
                 }
               ]
             },
             "text": "{{.status.conditions[type=\"Installed\"].status}} ({{.status.conditions[type=\"Installed\"].reason}})",
             "tone": "ok",
+            "value": "{{.status.conditions[type=\"Installed\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Installed\"].message}}"
           },
           {
@@ -1125,6 +1124,7 @@
             },
             "text": "{{.status.conditions[type=\"Installed\"].status}}",
             "tone": "ok",
+            "value": "{{.status.conditions[type=\"Installed\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Installed\"].message}}"
           },
           {
@@ -1138,20 +1138,14 @@
                 },
                 {
                   "type": "exists",
-                  "path": ".status.conditions[type=\"Installed\"].reason"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.conditions[type=\"Installed\"].reason",
-                    "value": ""
-                  }
+                  "path": ".status.conditions[type=\"Installed\"].reason",
+                  "nonEmpty": true
                 }
               ]
             },
             "text": "{{.status.conditions[type=\"Installed\"].status}} ({{.status.conditions[type=\"Installed\"].reason}})",
             "tone": "error",
+            "value": "{{.status.conditions[type=\"Installed\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Installed\"].message}}"
           },
           {
@@ -1162,6 +1156,7 @@
             },
             "text": "{{.status.conditions[type=\"Installed\"].status}}",
             "tone": "error",
+            "value": "{{.status.conditions[type=\"Installed\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Installed\"].message}}"
           },
           {
@@ -1174,20 +1169,14 @@
                 },
                 {
                   "type": "exists",
-                  "path": ".status.conditions[type=\"Installed\"].reason"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.conditions[type=\"Installed\"].reason",
-                    "value": ""
-                  }
+                  "path": ".status.conditions[type=\"Installed\"].reason",
+                  "nonEmpty": true
                 }
               ]
             },
             "text": "{{.status.conditions[type=\"Installed\"].status}} ({{.status.conditions[type=\"Installed\"].reason}})",
             "tone": "neutral",
+            "value": "{{.status.conditions[type=\"Installed\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Installed\"].message}}"
           },
           {
@@ -1197,6 +1186,7 @@
             },
             "text": "{{.status.conditions[type=\"Installed\"].status}}",
             "tone": "neutral",
+            "value": "{{.status.conditions[type=\"Installed\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Installed\"].message}}"
           }
         ],
@@ -1212,11 +1202,62 @@
         "paths": [
           ".status.conditions[type=\"Progressing\"].reason"
         ],
+        "width": "180px",
         "cases": [
           {
             "when": {
               "type": "all",
               "of": [
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".status.conditions[type=\"Progressing\"].status"
+                    },
+                    {
+                      "type": "any",
+                      "of": [
+                        {
+                          "type": "equals",
+                          "path": ".status.conditions[type=\"Progressing\"].status",
+                          "value": "False"
+                        },
+                        {
+                          "type": "in",
+                          "path": ".status.conditions[type=\"Progressing\"].reason",
+                          "values": [
+                            "Retrying",
+                            "Blocked",
+                            "InvalidConfiguration",
+                            "ProgressDeadlineExceeded",
+                            "Failed"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Progressing\"].reason",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Progressing\"].status}} ({{.status.conditions[type=\"Progressing\"].reason}})",
+            "tone": "warning",
+            "value": "{{.status.conditions[type=\"Progressing\"].reason}}",
+            "tooltip": "{{.status.conditions[type=\"Progressing\"].message}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Progressing\"].status"
+                },
                 {
                   "type": "any",
                   "of": [
@@ -1237,49 +1278,12 @@
                       ]
                     }
                   ]
-                },
-                {
-                  "type": "exists",
-                  "path": ".status.conditions[type=\"Progressing\"].reason"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.conditions[type=\"Progressing\"].reason",
-                    "value": ""
-                  }
-                }
-              ]
-            },
-            "text": "{{.status.conditions[type=\"Progressing\"].status}} ({{.status.conditions[type=\"Progressing\"].reason}})",
-            "tone": "warning",
-            "tooltip": "{{.status.conditions[type=\"Progressing\"].message}}"
-          },
-          {
-            "when": {
-              "type": "any",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".status.conditions[type=\"Progressing\"].status",
-                  "value": "False"
-                },
-                {
-                  "type": "in",
-                  "path": ".status.conditions[type=\"Progressing\"].reason",
-                  "values": [
-                    "Retrying",
-                    "Blocked",
-                    "InvalidConfiguration",
-                    "ProgressDeadlineExceeded",
-                    "Failed"
-                  ]
                 }
               ]
             },
             "text": "{{.status.conditions[type=\"Progressing\"].status}}",
             "tone": "warning",
+            "value": "{{.status.conditions[type=\"Progressing\"].reason}}",
             "tooltip": "{{.status.conditions[type=\"Progressing\"].message}}"
           },
           {
@@ -1292,20 +1296,14 @@
                 },
                 {
                   "type": "exists",
-                  "path": ".status.conditions[type=\"Progressing\"].reason"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.conditions[type=\"Progressing\"].reason",
-                    "value": ""
-                  }
+                  "path": ".status.conditions[type=\"Progressing\"].reason",
+                  "nonEmpty": true
                 }
               ]
             },
             "text": "{{.status.conditions[type=\"Progressing\"].status}} ({{.status.conditions[type=\"Progressing\"].reason}})",
             "tone": "ok",
+            "value": "{{.status.conditions[type=\"Progressing\"].reason}}",
             "tooltip": "{{.status.conditions[type=\"Progressing\"].message}}"
           },
           {
@@ -1315,6 +1313,7 @@
             },
             "text": "{{.status.conditions[type=\"Progressing\"].status}}",
             "tone": "ok",
+            "value": "{{.status.conditions[type=\"Progressing\"].reason}}",
             "tooltip": "{{.status.conditions[type=\"Progressing\"].message}}"
           }
         ],
@@ -1330,6 +1329,7 @@
         "paths": [
           ".spec.source.image.ref"
         ],
+        "width": "minmax(180px, 3fr)",
         "afterColumn": "name"
       },
       {
@@ -1342,6 +1342,7 @@
         "paths": [
           ".status.conditions[type=\"Serving\"].status"
         ],
+        "width": "160px",
         "cases": [
           {
             "when": {
@@ -1354,20 +1355,14 @@
                 },
                 {
                   "type": "exists",
-                  "path": ".status.conditions[type=\"Serving\"].reason"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.conditions[type=\"Serving\"].reason",
-                    "value": ""
-                  }
+                  "path": ".status.conditions[type=\"Serving\"].reason",
+                  "nonEmpty": true
                 }
               ]
             },
             "text": "{{.status.conditions[type=\"Serving\"].status}} ({{.status.conditions[type=\"Serving\"].reason}})",
             "tone": "ok",
+            "value": "{{.status.conditions[type=\"Serving\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Serving\"].message}}"
           },
           {
@@ -1378,6 +1373,7 @@
             },
             "text": "{{.status.conditions[type=\"Serving\"].status}}",
             "tone": "ok",
+            "value": "{{.status.conditions[type=\"Serving\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Serving\"].message}}"
           },
           {
@@ -1391,20 +1387,14 @@
                 },
                 {
                   "type": "exists",
-                  "path": ".status.conditions[type=\"Serving\"].reason"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.conditions[type=\"Serving\"].reason",
-                    "value": ""
-                  }
+                  "path": ".status.conditions[type=\"Serving\"].reason",
+                  "nonEmpty": true
                 }
               ]
             },
             "text": "{{.status.conditions[type=\"Serving\"].status}} ({{.status.conditions[type=\"Serving\"].reason}})",
             "tone": "error",
+            "value": "{{.status.conditions[type=\"Serving\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Serving\"].message}}"
           },
           {
@@ -1415,6 +1405,7 @@
             },
             "text": "{{.status.conditions[type=\"Serving\"].status}}",
             "tone": "error",
+            "value": "{{.status.conditions[type=\"Serving\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Serving\"].message}}"
           },
           {
@@ -1427,20 +1418,14 @@
                 },
                 {
                   "type": "exists",
-                  "path": ".status.conditions[type=\"Serving\"].reason"
-                },
-                {
-                  "type": "not",
-                  "of": {
-                    "type": "equals",
-                    "path": ".status.conditions[type=\"Serving\"].reason",
-                    "value": ""
-                  }
+                  "path": ".status.conditions[type=\"Serving\"].reason",
+                  "nonEmpty": true
                 }
               ]
             },
             "text": "{{.status.conditions[type=\"Serving\"].status}} ({{.status.conditions[type=\"Serving\"].reason}})",
             "tone": "neutral",
+            "value": "{{.status.conditions[type=\"Serving\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Serving\"].message}}"
           },
           {
@@ -1450,6 +1435,7 @@
             },
             "text": "{{.status.conditions[type=\"Serving\"].status}}",
             "tone": "neutral",
+            "value": "{{.status.conditions[type=\"Serving\"].status}}",
             "tooltip": "{{.status.conditions[type=\"Serving\"].message}}"
           }
         ],
@@ -1466,6 +1452,7 @@
           ".status.lastUnpacked"
         ],
         "format": "age",
+        "width": "110px",
         "afterColumn": "cluster-catalog-serving"
       }
     ],
@@ -1517,94 +1504,13 @@
                   "otherPath": ".metadata.namespace"
                 }
               ]
-            },
-            {
-              "type": "exists",
-              "path": ".status.reason"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.reason",
-                "value": ""
-              }
             }
           ]
         },
         "since": ".status.lastTransitionTime",
         "graceMinutes": 5,
         "reason": "{{.status.reason}}",
-        "message": "{{.status.message}}",
-        "group": "failed"
-      },
-      {
-        "id": "csv-failed-unnamed",
-        "title": "ClusterServiceVersion failed (no reason given)",
-        "kind": {
-          "group": "operators.coreos.com",
-          "kind": "ClusterServiceVersion"
-        },
-        "source": {
-          "labelSelector": "!olm.copiedFrom"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "equals",
-              "path": ".status.phase",
-              "value": "Failed"
-            },
-            {
-              "type": "absent",
-              "path": ".metadata.labels[\"olm.copiedFrom\"]"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.reason",
-                "value": "Copied"
-              }
-            },
-            {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".metadata.annotations[\"olm.operatorNamespace\"]"
-                },
-                {
-                  "type": "same",
-                  "path": ".metadata.annotations[\"olm.operatorNamespace\"]",
-                  "otherPath": ".metadata.namespace"
-                }
-              ]
-            },
-            {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.reason"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.reason",
-                  "value": ""
-                }
-              ]
-            }
-          ]
-        },
-        "since": ".status.lastTransitionTime",
-        "graceMinutes": 5,
-        "reason": "Failed",
+        "reasonOr": "Failed",
         "message": "{{.status.message}}",
         "group": "failed"
       },
@@ -1626,63 +1532,12 @@
               "type": "condition",
               "conditionType": "ResolutionFailed",
               "status": "True"
-            },
-            {
-              "type": "exists",
-              "path": ".status.conditions[type=\"ResolutionFailed\"].reason"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.conditions[type=\"ResolutionFailed\"].reason",
-                "value": ""
-              }
             }
           ]
         },
         "graceMinutes": 10,
         "reason": "{{.status.conditions[type=\"ResolutionFailed\"].reason}}",
-        "message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-        "group": "resolution-failed"
-      },
-      {
-        "id": "resolution-failed-unnamed",
-        "title": "Subscription cannot be resolved (no reason given)",
-        "kind": {
-          "group": "operators.coreos.com",
-          "kind": "Subscription"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "condition",
-              "conditionType": "ResolutionFailed",
-              "status": "True"
-            },
-            {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.conditions[type=\"ResolutionFailed\"].reason"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.conditions[type=\"ResolutionFailed\"].reason",
-                  "value": ""
-                }
-              ]
-            }
-          ]
-        },
-        "graceMinutes": 10,
-        "reason": "ResolutionFailed",
+        "reasonOr": "ResolutionFailed",
         "message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
         "group": "resolution-failed"
       },
@@ -1707,25 +1562,27 @@
             },
             {
               "type": "exists",
-              "path": ".status.conditions[type=\"InstallPlanFailed\"].reason"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.conditions[type=\"InstallPlanFailed\"].reason",
-                "value": ""
-              }
+              "path": ".status.installPlanRef.name"
             }
           ]
         },
         "reason": "{{.status.conditions[type=\"InstallPlanFailed\"].reason}}",
+        "reasonOr": "InstallPlanFailed",
         "message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-        "group": "install-plan-failed"
+        "group": "install-plan-failed",
+        "about": {
+          "kind": {
+            "group": "operators.coreos.com",
+            "version": "v1alpha1",
+            "kind": "InstallPlan"
+          },
+          "namePath": ".status.installPlanRef.name"
+        },
+        "notifyAs": ".metadata.uid"
       },
       {
-        "id": "install-plan-failed-unnamed",
-        "title": "Subscription's InstallPlan failed (no reason given)",
+        "id": "install-plan-failed-old-ref",
+        "title": "Subscription's InstallPlan failed (older OLM)",
         "kind": {
           "group": "operators.coreos.com",
           "kind": "Subscription"
@@ -1743,24 +1600,24 @@
               "status": "True"
             },
             {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.conditions[type=\"InstallPlanFailed\"].reason"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.conditions[type=\"InstallPlanFailed\"].reason",
-                  "value": ""
-                }
-              ]
+              "type": "absent",
+              "path": ".status.installPlanRef.name"
             }
           ]
         },
-        "reason": "InstallPlanFailed",
+        "reason": "{{.status.conditions[type=\"InstallPlanFailed\"].reason}}",
+        "reasonOr": "InstallPlanFailed",
         "message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-        "group": "install-plan-failed"
+        "group": "install-plan-failed",
+        "about": {
+          "kind": {
+            "group": "operators.coreos.com",
+            "version": "v1alpha1",
+            "kind": "InstallPlan"
+          },
+          "namePath": ".status.installplan.name"
+        },
+        "notifyAs": ".metadata.uid"
       },
       {
         "id": "install-plan-stuck",
@@ -1798,12 +1655,89 @@
                   "reason": "InstallPlanNotYetReconciled"
                 }
               ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.installPlanRef.name"
             }
           ]
         },
         "graceMinutes": 30,
         "reason": "InstallPlanStuck",
-        "message": "The Subscription's InstallPlan has been in phase {{.status.conditions[type=\"InstallPlanPending\"].reason}} for more than 30 minutes."
+        "message": "The Subscription's InstallPlan has been in phase {{.status.conditions[type=\"InstallPlanPending\"].reason}} for more than 30 minutes.",
+        "group": "install-plan-stuck",
+        "stamp": [
+          ".status.conditions[type=\"InstallPlanPending\"].reason"
+        ],
+        "about": {
+          "kind": {
+            "group": "operators.coreos.com",
+            "version": "v1alpha1",
+            "kind": "InstallPlan"
+          },
+          "namePath": ".status.installPlanRef.name"
+        },
+        "notifyAs": ".metadata.uid"
+      },
+      {
+        "id": "install-plan-stuck-old-ref",
+        "title": "Subscription's InstallPlan stuck (older OLM)",
+        "kind": {
+          "group": "operators.coreos.com",
+          "kind": "Subscription"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "InstallPlanPending",
+                  "status": "True",
+                  "reason": "Planning"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "InstallPlanPending",
+                  "status": "True",
+                  "reason": "Installing"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "InstallPlanPending",
+                  "status": "True",
+                  "reason": "InstallPlanNotYetReconciled"
+                }
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".status.installPlanRef.name"
+            }
+          ]
+        },
+        "graceMinutes": 30,
+        "reason": "InstallPlanStuck",
+        "message": "The Subscription's InstallPlan has been in phase {{.status.conditions[type=\"InstallPlanPending\"].reason}} for more than 30 minutes.",
+        "group": "install-plan-stuck",
+        "stamp": [
+          ".status.conditions[type=\"InstallPlanPending\"].reason"
+        ],
+        "about": {
+          "kind": {
+            "group": "operators.coreos.com",
+            "version": "v1alpha1",
+            "kind": "InstallPlan"
+          },
+          "namePath": ".status.installplan.name"
+        },
+        "notifyAs": ".metadata.uid"
       },
       {
         "id": "catalog-not-ready",
@@ -1894,6 +1828,7 @@
       "columns.csv-copied-from.title": "Копия из",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "Одобрение",
       "columns.install-plan-approved.title": "Одобрен",
       "columns.install-plan-approved.cases.0.text": "Да",
@@ -1905,6 +1840,8 @@
       "columns.catalog-source-connection.title": "Подключение",
       "columns.operator-group-targets.title": "Целевые namespace",
       "columns.operator-group-targets.cases.0.text": "Все namespace",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "Стратегия обновления",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "Компоненты",
@@ -1950,18 +1887,16 @@
       "columns.cluster-catalog-last-unpacked.title": "Распакован",
       "problems.csv-failed.title": "ClusterServiceVersion завершилась ошибкой",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion завершилась ошибкой (причина не указана)",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Subscription не удаётся разрешить",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Subscription не удаётся разрешить (причина не указана)",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "InstallPlan этой Subscription завершился ошибкой",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "InstallPlan этой Subscription завершился ошибкой (причина не указана)",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "InstallPlan этой Subscription завершился ошибкой (старый OLM)",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "InstallPlan этой Subscription завис",
       "problems.install-plan-stuck.message": "InstallPlan этой Subscription находится в фазе {{.status.conditions[type=\"InstallPlanPending\"].reason}} больше 30 минут.",
+      "problems.install-plan-stuck-old-ref.title": "InstallPlan этой Subscription завис (старый OLM)",
+      "problems.install-plan-stuck-old-ref.message": "InstallPlan этой Subscription находится в фазе {{.status.conditions[type=\"InstallPlanPending\"].reason}} больше 30 минут.",
       "problems.catalog-not-ready.title": "CatalogSource не готов",
       "problems.catalog-not-ready.message": "Подключение к реестру каталога: {{.status.connectionState.lastObservedState}}. Subscription не могут получать из него операторы.",
       "sectionBadges.olm.label.one": "{{count}} объект OLM требует внимания",
@@ -2019,6 +1954,7 @@
       "columns.csv-copied-from.title": "Копія з",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "Схвалення",
       "columns.install-plan-approved.title": "Схвалено",
       "columns.install-plan-approved.cases.0.text": "Так",
@@ -2030,6 +1966,8 @@
       "columns.catalog-source-connection.title": "Підключення",
       "columns.operator-group-targets.title": "Цільові namespace",
       "columns.operator-group-targets.cases.0.text": "Усі namespace",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "Стратегія оновлення",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "Компоненти",
@@ -2075,18 +2013,16 @@
       "columns.cluster-catalog-last-unpacked.title": "Розпаковано",
       "problems.csv-failed.title": "ClusterServiceVersion завершилася помилкою",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion завершилася помилкою (причину не вказано)",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Subscription не вдається розв’язати",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Subscription не вдається розв’язати (причину не вказано)",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "InstallPlan цієї Subscription завершився помилкою",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "InstallPlan цієї Subscription завершився помилкою (причину не вказано)",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "InstallPlan цієї Subscription завершився помилкою (старий OLM)",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "InstallPlan цієї Subscription завис",
       "problems.install-plan-stuck.message": "InstallPlan цієї Subscription перебуває у фазі {{.status.conditions[type=\"InstallPlanPending\"].reason}} понад 30 хвилин.",
+      "problems.install-plan-stuck-old-ref.title": "InstallPlan цієї Subscription завис (старий OLM)",
+      "problems.install-plan-stuck-old-ref.message": "InstallPlan цієї Subscription перебуває у фазі {{.status.conditions[type=\"InstallPlanPending\"].reason}} понад 30 хвилин.",
       "problems.catalog-not-ready.title": "CatalogSource не готовий",
       "problems.catalog-not-ready.message": "Підключення до реєстру каталогу: {{.status.connectionState.lastObservedState}}. Subscription не можуть отримувати з нього оператори.",
       "sectionBadges.olm.label.one": "{{count}} об’єкт OLM потребує уваги",
@@ -2144,6 +2080,7 @@
       "columns.csv-copied-from.title": "Kopie von",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSVs",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "Genehmigung",
       "columns.install-plan-approved.title": "Genehmigt",
       "columns.install-plan-approved.cases.0.text": "Ja",
@@ -2155,6 +2092,8 @@
       "columns.catalog-source-connection.title": "Verbindung",
       "columns.operator-group-targets.title": "Ziel-Namespaces",
       "columns.operator-group-targets.cases.0.text": "Alle Namespaces",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "Upgrade-Strategie",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "Komponenten",
@@ -2200,18 +2139,16 @@
       "columns.cluster-catalog-last-unpacked.title": "Entpackt",
       "problems.csv-failed.title": "ClusterServiceVersion fehlgeschlagen",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion fehlgeschlagen (ohne Grund)",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Subscription nicht auflösbar",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Subscription nicht auflösbar (ohne Grund)",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "InstallPlan der Subscription fehlgeschlagen",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "InstallPlan der Subscription fehlgeschlagen (ohne Grund)",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "InstallPlan der Subscription fehlgeschlagen (älteres OLM)",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "InstallPlan der Subscription hängt",
       "problems.install-plan-stuck.message": "Der InstallPlan der Subscription ist seit über 30 Minuten in der Phase {{.status.conditions[type=\"InstallPlanPending\"].reason}}.",
+      "problems.install-plan-stuck-old-ref.title": "InstallPlan der Subscription hängt (älteres OLM)",
+      "problems.install-plan-stuck-old-ref.message": "Der InstallPlan der Subscription ist seit über 30 Minuten in der Phase {{.status.conditions[type=\"InstallPlanPending\"].reason}}.",
       "problems.catalog-not-ready.title": "CatalogSource nicht bereit",
       "problems.catalog-not-ready.message": "Die Verbindung zur Registry des Katalogs ist {{.status.connectionState.lastObservedState}}: Subscriptions können nichts daraus auflösen.",
       "sectionBadges.olm.label.one": "{{count}} OLM-Objekt erfordert Aufmerksamkeit",
@@ -2267,6 +2204,7 @@
       "columns.csv-copied-from.title": "Copie de",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "Approbation",
       "columns.install-plan-approved.title": "Approuvé",
       "columns.install-plan-approved.cases.0.text": "Oui",
@@ -2278,6 +2216,8 @@
       "columns.catalog-source-connection.title": "Connexion",
       "columns.operator-group-targets.title": "Namespaces cibles",
       "columns.operator-group-targets.cases.0.text": "Tous les namespaces",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "Stratégie de mise à niveau",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "Composants",
@@ -2323,18 +2263,16 @@
       "columns.cluster-catalog-last-unpacked.title": "Décompressé",
       "problems.csv-failed.title": "ClusterServiceVersion en échec",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion en échec (sans raison)",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Subscription impossible à résoudre",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Subscription impossible à résoudre (sans raison)",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "InstallPlan de la Subscription en échec",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "InstallPlan de la Subscription en échec (sans raison)",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "InstallPlan de la Subscription en échec (OLM plus ancien)",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "InstallPlan de la Subscription bloqué",
       "problems.install-plan-stuck.message": "L'InstallPlan de la Subscription est en phase {{.status.conditions[type=\"InstallPlanPending\"].reason}} depuis plus de 30 minutes.",
+      "problems.install-plan-stuck-old-ref.title": "InstallPlan de la Subscription bloqué (OLM plus ancien)",
+      "problems.install-plan-stuck-old-ref.message": "L'InstallPlan de la Subscription est en phase {{.status.conditions[type=\"InstallPlanPending\"].reason}} depuis plus de 30 minutes.",
       "problems.catalog-not-ready.title": "CatalogSource pas prête",
       "problems.catalog-not-ready.message": "La connexion au registre du catalogue est {{.status.connectionState.lastObservedState}} : les Subscriptions ne peuvent rien y résoudre.",
       "sectionBadges.olm.label.one": "{{count}} objet OLM requiert votre attention",
@@ -2391,6 +2329,7 @@
       "columns.csv-copied-from.title": "Copia de",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "Aprobación",
       "columns.install-plan-approved.title": "Aprobado",
       "columns.install-plan-approved.cases.0.text": "Sí",
@@ -2402,6 +2341,8 @@
       "columns.catalog-source-connection.title": "Conexión",
       "columns.operator-group-targets.title": "Namespaces de destino",
       "columns.operator-group-targets.cases.0.text": "Todos los namespaces",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "Estrategia de actualización",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "Componentes",
@@ -2447,18 +2388,16 @@
       "columns.cluster-catalog-last-unpacked.title": "Desempaquetado",
       "problems.csv-failed.title": "ClusterServiceVersion fallida",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion fallida (sin motivo)",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "La Subscription no se puede resolver",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "La Subscription no se puede resolver (sin motivo)",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "InstallPlan de la Subscription fallido",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "InstallPlan de la Subscription fallido (sin motivo)",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "InstallPlan de la Subscription fallido (OLM antiguo)",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "InstallPlan de la Subscription atascado",
       "problems.install-plan-stuck.message": "El InstallPlan de la Subscription lleva más de 30 minutos en la fase {{.status.conditions[type=\"InstallPlanPending\"].reason}}.",
+      "problems.install-plan-stuck-old-ref.title": "InstallPlan de la Subscription atascado (OLM antiguo)",
+      "problems.install-plan-stuck-old-ref.message": "El InstallPlan de la Subscription lleva más de 30 minutos en la fase {{.status.conditions[type=\"InstallPlanPending\"].reason}}.",
       "problems.catalog-not-ready.title": "CatalogSource no está lista",
       "problems.catalog-not-ready.message": "La conexión con el registro del catálogo está en {{.status.connectionState.lastObservedState}}: las Subscriptions no pueden resolver nada desde él.",
       "sectionBadges.olm.label.one": "{{count}} objeto de OLM requiere atención",
@@ -2515,6 +2454,7 @@
       "columns.csv-copied-from.title": "Cópia de",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSVs",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "Aprovação",
       "columns.install-plan-approved.title": "Aprovado",
       "columns.install-plan-approved.cases.0.text": "Sim",
@@ -2526,6 +2466,8 @@
       "columns.catalog-source-connection.title": "Conexão",
       "columns.operator-group-targets.title": "Namespaces de destino",
       "columns.operator-group-targets.cases.0.text": "Todos os namespaces",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "Estratégia de atualização",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "Componentes",
@@ -2571,18 +2513,16 @@
       "columns.cluster-catalog-last-unpacked.title": "Descompactado",
       "problems.csv-failed.title": "ClusterServiceVersion com falha",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion com falha (sem motivo)",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "A Subscription não pode ser resolvida",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "A Subscription não pode ser resolvida (sem motivo)",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "InstallPlan da Subscription com falha",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "InstallPlan da Subscription com falha (sem motivo)",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "InstallPlan da Subscription com falha (OLM mais antigo)",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "InstallPlan da Subscription travado",
       "problems.install-plan-stuck.message": "O InstallPlan da Subscription está na fase {{.status.conditions[type=\"InstallPlanPending\"].reason}} há mais de 30 minutos.",
+      "problems.install-plan-stuck-old-ref.title": "InstallPlan da Subscription travado (OLM mais antigo)",
+      "problems.install-plan-stuck-old-ref.message": "O InstallPlan da Subscription está na fase {{.status.conditions[type=\"InstallPlanPending\"].reason}} há mais de 30 minutos.",
       "problems.catalog-not-ready.title": "CatalogSource não está pronta",
       "problems.catalog-not-ready.message": "A conexão com o registro do catálogo está em {{.status.connectionState.lastObservedState}}: as Subscriptions não conseguem resolver nada a partir dele.",
       "sectionBadges.olm.label.one": "{{count}} objeto do OLM precisa de atenção",
@@ -2639,6 +2579,7 @@
       "columns.csv-copied-from.title": "Copia di",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "Approvazione",
       "columns.install-plan-approved.title": "Approvato",
       "columns.install-plan-approved.cases.0.text": "Sì",
@@ -2650,6 +2591,8 @@
       "columns.catalog-source-connection.title": "Connessione",
       "columns.operator-group-targets.title": "Namespace di destinazione",
       "columns.operator-group-targets.cases.0.text": "Tutti i namespace",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "Strategia di aggiornamento",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "Componenti",
@@ -2695,18 +2638,16 @@
       "columns.cluster-catalog-last-unpacked.title": "Estratto",
       "problems.csv-failed.title": "ClusterServiceVersion non riuscita",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion non riuscita (senza motivo)",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Subscription non risolvibile",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Subscription non risolvibile (senza motivo)",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "InstallPlan della Subscription non riuscito",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "InstallPlan della Subscription non riuscito (senza motivo)",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "InstallPlan della Subscription non riuscito (OLM precedente)",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "InstallPlan della Subscription bloccato",
       "problems.install-plan-stuck.message": "L'InstallPlan della Subscription è nella fase {{.status.conditions[type=\"InstallPlanPending\"].reason}} da più di 30 minuti.",
+      "problems.install-plan-stuck-old-ref.title": "InstallPlan della Subscription bloccato (OLM precedente)",
+      "problems.install-plan-stuck-old-ref.message": "L'InstallPlan della Subscription è nella fase {{.status.conditions[type=\"InstallPlanPending\"].reason}} da più di 30 minuti.",
       "problems.catalog-not-ready.title": "CatalogSource non pronta",
       "problems.catalog-not-ready.message": "La connessione al registro del catalogo è {{.status.connectionState.lastObservedState}}: le Subscription non possono risolvere nulla da esso.",
       "sectionBadges.olm.label.one": "{{count}} oggetto OLM richiede attenzione",
@@ -2763,6 +2704,7 @@
       "columns.csv-copied-from.title": "Kopia z",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "Zatwierdzanie",
       "columns.install-plan-approved.title": "Zatwierdzony",
       "columns.install-plan-approved.cases.0.text": "Tak",
@@ -2774,6 +2716,8 @@
       "columns.catalog-source-connection.title": "Połączenie",
       "columns.operator-group-targets.title": "Docelowe namespace’y",
       "columns.operator-group-targets.cases.0.text": "Wszystkie namespace’y",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "Strategia aktualizacji",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "Komponenty",
@@ -2819,18 +2763,16 @@
       "columns.cluster-catalog-last-unpacked.title": "Rozpakowano",
       "problems.csv-failed.title": "ClusterServiceVersion nie powiódł się",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion nie powiódł się (bez podanej przyczyny)",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Nie można rozwiązać Subscription",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Nie można rozwiązać Subscription (bez podanej przyczyny)",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "InstallPlan Subscription nie powiódł się",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "InstallPlan Subscription nie powiódł się (bez podanej przyczyny)",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "InstallPlan Subscription nie powiódł się (starszy OLM)",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "InstallPlan Subscription utknął",
       "problems.install-plan-stuck.message": "InstallPlan tej Subscription jest w fazie {{.status.conditions[type=\"InstallPlanPending\"].reason}} od ponad 30 minut.",
+      "problems.install-plan-stuck-old-ref.title": "InstallPlan Subscription utknął (starszy OLM)",
+      "problems.install-plan-stuck-old-ref.message": "InstallPlan tej Subscription jest w fazie {{.status.conditions[type=\"InstallPlanPending\"].reason}} od ponad 30 minut.",
       "problems.catalog-not-ready.title": "CatalogSource nie jest gotowy",
       "problems.catalog-not-ready.message": "Połączenie z rejestrem katalogu: {{.status.connectionState.lastObservedState}}. Subscription nie mogą z niego rozwiązywać operatorów.",
       "sectionBadges.olm.label.one": "{{count}} obiekt OLM wymaga uwagi",
@@ -2888,6 +2830,7 @@
       "columns.csv-copied-from.title": "Kopyası",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV'ler",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "Onay",
       "columns.install-plan-approved.title": "Onaylandı",
       "columns.install-plan-approved.cases.0.text": "Evet",
@@ -2899,6 +2842,8 @@
       "columns.catalog-source-connection.title": "Bağlantı",
       "columns.operator-group-targets.title": "Hedef namespace'ler",
       "columns.operator-group-targets.cases.0.text": "Tüm namespace'ler",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "Yükseltme stratejisi",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "Bileşenler",
@@ -2944,18 +2889,16 @@
       "columns.cluster-catalog-last-unpacked.title": "Açıldı",
       "problems.csv-failed.title": "ClusterServiceVersion başarısız",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion başarısız (neden belirtilmedi)",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Subscription çözümlenemiyor",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Subscription çözümlenemiyor (neden belirtilmedi)",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "Subscription'ın InstallPlan'ı başarısız",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "Subscription'ın InstallPlan'ı başarısız (neden belirtilmedi)",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "Subscription'ın InstallPlan'ı başarısız (eski OLM)",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "Subscription'ın InstallPlan'ı takıldı",
       "problems.install-plan-stuck.message": "Subscription'ın InstallPlan'ı 30 dakikadan uzun süredir {{.status.conditions[type=\"InstallPlanPending\"].reason}} aşamasında.",
+      "problems.install-plan-stuck-old-ref.title": "Subscription'ın InstallPlan'ı takıldı (eski OLM)",
+      "problems.install-plan-stuck-old-ref.message": "Subscription'ın InstallPlan'ı 30 dakikadan uzun süredir {{.status.conditions[type=\"InstallPlanPending\"].reason}} aşamasında.",
       "problems.catalog-not-ready.title": "CatalogSource hazır değil",
       "problems.catalog-not-ready.message": "Kataloğun kayıt defteri bağlantısı {{.status.connectionState.lastObservedState}}: Subscription'lar bu katalogdan çözümleme yapamaz.",
       "sectionBadges.olm.label.one": "{{count}} OLM nesnesi ilgi gerektiriyor",
@@ -3011,6 +2954,7 @@
       "columns.csv-copied-from.title": "副本来源",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "批准",
       "columns.install-plan-approved.title": "已批准",
       "columns.install-plan-approved.cases.0.text": "是",
@@ -3022,6 +2966,8 @@
       "columns.catalog-source-connection.title": "连接",
       "columns.operator-group-targets.title": "目标 namespace",
       "columns.operator-group-targets.cases.0.text": "所有 namespace",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "升级策略",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "组件",
@@ -3067,18 +3013,16 @@
       "columns.cluster-catalog-last-unpacked.title": "解包时间",
       "problems.csv-failed.title": "ClusterServiceVersion 失败",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion 失败（未给出原因）",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Subscription 无法解析",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Subscription 无法解析（未给出原因）",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "Subscription 的 InstallPlan 失败",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "Subscription 的 InstallPlan 失败（未给出原因）",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "Subscription 的 InstallPlan 失败（旧版 OLM）",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "Subscription 的 InstallPlan 卡住",
       "problems.install-plan-stuck.message": "该 Subscription 的 InstallPlan 处于 {{.status.conditions[type=\"InstallPlanPending\"].reason}} 阶段已超过 30 分钟。",
+      "problems.install-plan-stuck-old-ref.title": "Subscription 的 InstallPlan 卡住（旧版 OLM）",
+      "problems.install-plan-stuck-old-ref.message": "该 Subscription 的 InstallPlan 处于 {{.status.conditions[type=\"InstallPlanPending\"].reason}} 阶段已超过 30 分钟。",
       "problems.catalog-not-ready.title": "CatalogSource 未就绪",
       "problems.catalog-not-ready.message": "目录的注册表连接状态为 {{.status.connectionState.lastObservedState}}：Subscription 无法从中解析。",
       "sectionBadges.olm.label.other": "{{count}} 个 OLM 对象需要关注"
@@ -3133,6 +3077,7 @@
       "columns.csv-copied-from.title": "複本來源",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "核准",
       "columns.install-plan-approved.title": "已核准",
       "columns.install-plan-approved.cases.0.text": "是",
@@ -3144,6 +3089,8 @@
       "columns.catalog-source-connection.title": "連線",
       "columns.operator-group-targets.title": "目標 namespace",
       "columns.operator-group-targets.cases.0.text": "所有 namespace",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "升級策略",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "元件",
@@ -3189,18 +3136,16 @@
       "columns.cluster-catalog-last-unpacked.title": "解壓縮時間",
       "problems.csv-failed.title": "ClusterServiceVersion 失敗",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion 失敗（未提供原因）",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Subscription 無法解析",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Subscription 無法解析（未提供原因）",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "Subscription 的 InstallPlan 失敗",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "Subscription 的 InstallPlan 失敗（未提供原因）",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "Subscription 的 InstallPlan 失敗（舊版 OLM）",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "Subscription 的 InstallPlan 卡住",
       "problems.install-plan-stuck.message": "此 Subscription 的 InstallPlan 處於 {{.status.conditions[type=\"InstallPlanPending\"].reason}} 階段已超過 30 分鐘。",
+      "problems.install-plan-stuck-old-ref.title": "Subscription 的 InstallPlan 卡住（舊版 OLM）",
+      "problems.install-plan-stuck-old-ref.message": "此 Subscription 的 InstallPlan 處於 {{.status.conditions[type=\"InstallPlanPending\"].reason}} 階段已超過 30 分鐘。",
       "problems.catalog-not-ready.title": "CatalogSource 未就緒",
       "problems.catalog-not-ready.message": "目錄的登錄連線狀態為 {{.status.connectionState.lastObservedState}}：Subscription 無法從中解析。",
       "sectionBadges.olm.label.other": "{{count}} 個 OLM 物件需要注意"
@@ -3255,6 +3200,7 @@
       "columns.csv-copied-from.title": "コピー元",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "承認",
       "columns.install-plan-approved.title": "承認済み",
       "columns.install-plan-approved.cases.0.text": "はい",
@@ -3266,6 +3212,8 @@
       "columns.catalog-source-connection.title": "接続",
       "columns.operator-group-targets.title": "対象 namespace",
       "columns.operator-group-targets.cases.0.text": "すべての namespace",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "アップグレード戦略",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "コンポーネント",
@@ -3311,18 +3259,16 @@
       "columns.cluster-catalog-last-unpacked.title": "展開日時",
       "problems.csv-failed.title": "ClusterServiceVersion が失敗しました",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion が失敗しました（理由なし）",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Subscription を解決できません",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Subscription を解決できません（理由なし）",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "Subscription の InstallPlan が失敗しました",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "Subscription の InstallPlan が失敗しました（理由なし）",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "Subscription の InstallPlan が失敗しました（古い OLM）",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "Subscription の InstallPlan が停滞しています",
       "problems.install-plan-stuck.message": "Subscription の InstallPlan が 30 分以上 {{.status.conditions[type=\"InstallPlanPending\"].reason}} フェーズのままです。",
+      "problems.install-plan-stuck-old-ref.title": "Subscription の InstallPlan が停滞しています（古い OLM）",
+      "problems.install-plan-stuck-old-ref.message": "Subscription の InstallPlan が 30 分以上 {{.status.conditions[type=\"InstallPlanPending\"].reason}} フェーズのままです。",
       "problems.catalog-not-ready.title": "CatalogSource の準備ができていません",
       "problems.catalog-not-ready.message": "カタログのレジストリ接続は {{.status.connectionState.lastObservedState}} です。Subscription はこのカタログから解決できません。",
       "sectionBadges.olm.label.other": "対応が必要な OLM オブジェクトが {{count}} 件あります"
@@ -3377,6 +3323,7 @@
       "columns.csv-copied-from.title": "복사 원본",
       "columns.csv-copied-from.cases.0.text": "{{.metadata.annotations[\"olm.operatorNamespace\"]}}",
       "columns.install-plan-csvs.title": "CSV",
+      "columns.install-plan-csvs.cases.0.text": "{{.spec.clusterServiceVersionNames|join}}",
       "columns.install-plan-approval.title": "승인",
       "columns.install-plan-approved.title": "승인됨",
       "columns.install-plan-approved.cases.0.text": "예",
@@ -3388,6 +3335,8 @@
       "columns.catalog-source-connection.title": "연결",
       "columns.operator-group-targets.title": "대상 namespace",
       "columns.operator-group-targets.cases.0.text": "모든 namespace",
+      "columns.operator-group-targets.cases.1.text": "{{.status.namespaces|list}}",
+      "columns.operator-group-targets.cases.2.text": "{{.spec.targetNamespaces|list}}",
       "columns.operator-group-upgrade-strategy.title": "업그레이드 전략",
       "columns.operator-group-upgrade-strategy.cases.0.text": "Default",
       "columns.operator-components.title": "구성 요소",
@@ -3433,18 +3382,16 @@
       "columns.cluster-catalog-last-unpacked.title": "압축 해제",
       "problems.csv-failed.title": "ClusterServiceVersion 실패",
       "problems.csv-failed.message": "{{.status.message}}",
-      "problems.csv-failed-unnamed.title": "ClusterServiceVersion 실패 (사유 없음)",
-      "problems.csv-failed-unnamed.message": "{{.status.message}}",
       "problems.resolution-failed.title": "Subscription을 확인할 수 없음",
       "problems.resolution-failed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
-      "problems.resolution-failed-unnamed.title": "Subscription을 확인할 수 없음 (사유 없음)",
-      "problems.resolution-failed-unnamed.message": "{{.status.conditions[type=\"ResolutionFailed\"].message}}",
       "problems.install-plan-failed.title": "Subscription의 InstallPlan 실패",
       "problems.install-plan-failed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
-      "problems.install-plan-failed-unnamed.title": "Subscription의 InstallPlan 실패 (사유 없음)",
-      "problems.install-plan-failed-unnamed.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
+      "problems.install-plan-failed-old-ref.title": "Subscription의 InstallPlan 실패 (이전 OLM)",
+      "problems.install-plan-failed-old-ref.message": "{{.status.conditions[type=\"InstallPlanFailed\"].message}}",
       "problems.install-plan-stuck.title": "Subscription의 InstallPlan 정체",
       "problems.install-plan-stuck.message": "Subscription의 InstallPlan이 30분 넘게 {{.status.conditions[type=\"InstallPlanPending\"].reason}} 단계에 있습니다.",
+      "problems.install-plan-stuck-old-ref.title": "Subscription의 InstallPlan 정체 (이전 OLM)",
+      "problems.install-plan-stuck-old-ref.message": "Subscription의 InstallPlan이 30분 넘게 {{.status.conditions[type=\"InstallPlanPending\"].reason}} 단계에 있습니다.",
       "problems.catalog-not-ready.title": "CatalogSource 준비 안 됨",
       "problems.catalog-not-ready.message": "카탈로그 레지스트리 연결 상태가 {{.status.connectionState.lastObservedState}}입니다. Subscription이 이 카탈로그에서 해석할 수 없습니다.",
       "sectionBadges.olm.label.other": "주의가 필요한 OLM 개체 {{count}}개"

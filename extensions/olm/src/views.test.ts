@@ -31,10 +31,22 @@ let host: TestHost;
 let root: HTMLElement;
 let stop: () => void = () => undefined;
 
-async function open(obj: KubeObject): Promise<void> {
+/** The block choices Sextant keeps for the kind (its memory of details sections), as `ui.setBlockOpen` writes them. */
+let blocks: Record<string, boolean> = {};
+
+async function open(obj: KubeObject, remembered: Record<string, boolean> = {}): Promise<void> {
+  blocks = { ...remembered };
   host = await startTestHost({
-    context: { view: "details", contribution: SECTION[obj.kind!], selection: [ref(obj)], resourceVersion: "1" },
-    handlers: { "resources.get": () => structuredClone(obj) },
+    context: { view: "details", contribution: SECTION[obj.kind!], selection: [ref(obj)], resourceVersion: "1", blocks },
+    handlers: {
+      "resources.get": () => structuredClone(obj),
+      "ui.setBlockOpen": (params) => {
+        const { id, open } = params as { id: string; open: boolean };
+        blocks = { ...blocks, [id]: open };
+        host.setContext({ blocks });
+        return null;
+      },
+    },
   });
   root = document.createElement("main");
   document.body.append(root);
@@ -51,7 +63,9 @@ afterEach(() => {
 
 const text = () => root.textContent ?? "";
 const byLabel = (label: string) => [...root.querySelectorAll("button")].filter((b) => b.getAttribute("aria-label") === label);
-const watchParams = (w: TestWatch) => w.params as { kind: { kind: string }; namespaces?: string[]; fieldSelector?: string; labelSelector?: string };
+const watchParams = (w: TestWatch) =>
+  w.params as { kind: { kind: string }; namespaces?: string[]; fieldSelector?: string; labelSelector?: string; maxObjects?: number };
+const toggle = (title: string) => [...root.querySelectorAll<HTMLButtonElement>(".sx-block__toggle")].find((b) => b.textContent === title)!;
 const watchOf = (kind: string) => host.watches.find((w) => watchParams(w).kind.kind === kind && !w.stopped);
 const snapshot = (items: KubeObject[]): WatchUpdate => ({ type: "snapshot", items: items as never });
 
@@ -101,6 +115,59 @@ describe("details", () => {
     (installed.status as Record<string, unknown>).installedCSV = "broken-operator.v1.0.0";
     watchOf("Subscription")!.emit(snapshot([installed]));
     await expect.poll(() => byLabel("Open Subscription broken-operator")).toHaveLength(1);
+  });
+
+  it("lists at most 50 Deployments of a CSV and 500 Subscriptions of its namespace, saying so as the built-in view", async () => {
+    await open(find("ClusterServiceVersion", "broken-operator.v1.0.0", "operators"));
+    await expect.poll(() => watchOf("Deployment")).toBeDefined();
+    expect(watchParams(watchOf("Deployment")!).maxObjects).toBe(50);
+    expect(watchParams(watchOf("Subscription")!).maxObjects).toBe(500);
+    watchOf("Deployment")!.emit(snapshot([find("Deployment", "broken-operator")]));
+    watchOf("Deployment")!.emit({ type: "capped", total: 60 } as never);
+    await expect.poll(text).toContain("Only the first 50 are listed.");
+    // A Deployment not among the first 50 cannot be told missing.
+    expect(text()).toContain("Cannot tell");
+    expect(text()).not.toContain("Not found");
+    stop();
+    host.close();
+    await open(find("Subscription", "etcd"));
+    await expect.poll(() => watchOf("InstallPlan")).toBeDefined();
+    expect(watchParams(watchOf("InstallPlan")!).maxObjects).toBe(1);
+    expect(watchParams(watchOf("ClusterServiceVersion")!).maxObjects).toBe(1);
+  });
+
+  it("watches a CSV's Deployments only while their block is open, its blocks in Sextant's memory of details sections", async () => {
+    await open(find("ClusterServiceVersion", "broken-operator.v1.0.0", "operators"));
+    await expect.poll(() => watchOf("Deployment")).toBeDefined();
+    toggle("Deployments").focus();
+    toggle("Deployments").click();
+    await expect.poll(() => watchOf("Deployment")).toBeUndefined();
+    expect(toggle("Deployments").getAttribute("aria-expanded")).toBe("false");
+    // Drawn again, the toggle keeps the focus.
+    expect(document.activeElement).toBe(toggle("Deployments"));
+    await expect.poll(() => blocks).toEqual({ deployments: false });
+    toggle("Requirements").click();
+    await expect.poll(() => blocks).toEqual({ deployments: false, requirements: false });
+    toggle("Deployments").click();
+    await expect.poll(() => watchOf("Deployment")).toBeDefined();
+    await expect.poll(() => blocks).toEqual({ deployments: true, requirements: false });
+    // The panel's "Collapse all": every block closes, the Deployments unwatched; "Expand all" opens them again.
+    host.setContext({ blocks: { "*": false } });
+    await expect.poll(() => watchOf("Deployment")).toBeUndefined();
+    expect(toggle("Requirements").getAttribute("aria-expanded")).toBe("false");
+    host.setContext({ blocks: { "*": true } });
+    await expect.poll(() => watchOf("Deployment")).toBeDefined();
+    expect(toggle("Requirements").getAttribute("aria-expanded")).toBe("true");
+    stop();
+    host.close();
+    // Another CSV opens with the blocks as Sextant remembers them, its Deployments never watched while closed.
+    await open(find("ClusterServiceVersion", "prometheusoperator.0.70.0", "operators"), { deployments: false, requirements: false });
+    await expect.poll(() => watchOf("Subscription")).toBeDefined();
+    expect(host.watches.some((w) => watchParams(w).kind.kind === "Deployment")).toBe(false);
+    expect(toggle("Deployments").getAttribute("aria-expanded")).toBe("false");
+    expect(toggle("Requirements").getAttribute("aria-expanded")).toBe("false");
+    expect(toggle("Owned CRDs").getAttribute("aria-expanded")).toBe("true");
+    expect(host.storage.size).toBe(0);
   });
 
   it("of a CSV whose Deployments cannot be listed: cannot tell", async () => {

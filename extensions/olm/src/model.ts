@@ -285,6 +285,11 @@ export interface Requirement {
   message?: string;
 }
 
+/** Deployments of one CSV listed at most (the built-in view's cap). */
+export const MAX_DEPLOYMENTS = 50;
+/** Subscriptions of one namespace listed at most, to find the one that installed a CSV (the built-in view's cap). */
+export const MAX_SUBSCRIPTIONS = 500;
+
 /** `status.requirementStatus`: what the CSV needs (CRDs, APIs, permissions) and whether each is there. */
 export function requirementsOf(csv: KubeObject): Requirement[] {
   return arr(get(csv, "status", "requirementStatus")).map((r) => ({
@@ -687,7 +692,9 @@ export interface Found {
   since?: string;
   graceMs?: number;
   /** The problem is about this object, not the one judged (the Subscription's InstallPlan). */
-  about?: Ref;
+  about?: { kind: KindOf; namespace: string | null; name: string };
+  /** Its progress: when it changes, the problem counts as first seen again (the plan's phase). */
+  stamp?: string;
 }
 
 function csvProblems(csv: KubeObject): Found[] {
@@ -701,7 +708,7 @@ function csvProblems(csv: KubeObject): Found[] {
 function subscriptionProblems(sub: KubeObject): Found[] {
   const out: Found[] = [];
   const info = subscriptionInfo(sub);
-  const plan = info.installPlan;
+  const plan = info.installPlan ? { kind: INSTALL_PLAN, namespace: info.installPlan.namespace ?? null, name: info.installPlan.name } : undefined;
   const resolution = conditionOf(sub, "ResolutionFailed");
   if (resolution?.status === "True") {
     out.push({
@@ -720,7 +727,14 @@ function subscriptionProblems(sub: KubeObject): Found[] {
   }
   const pending = conditionOf(sub, "InstallPlanPending");
   if (pending?.status === "True" && MOVING_PLAN.includes(pending.reason ?? "")) {
-    out.push({ reason: "InstallPlanStuck", messageParams: { phase: pending.reason ?? "" }, since: pending.since, graceMs: PLAN_STUCK_MS, about: plan });
+    out.push({
+      reason: "InstallPlanStuck",
+      messageParams: { phase: pending.reason ?? "" },
+      since: pending.since,
+      graceMs: PLAN_STUCK_MS,
+      stamp: pending.reason,
+      about: plan,
+    });
   }
   return out;
 }
