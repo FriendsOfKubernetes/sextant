@@ -282,6 +282,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -342,6 +343,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -393,6 +395,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -457,6 +460,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -472,248 +476,18 @@
     "kind": {"group":"serving.knative.dev","kind":"Route"},
     "id": "route-traffic",
     "title": "Traffic",
-    "paths": [".status.conditions[type=\"Ready\",type!=\"Ready\"].reason"],
+    "paths": [".status.traffic",".spec.traffic"],
+    "format": "list",
     "width": "minmax(160px, 2fr)",
-    "cases": [
-     {
-      "when": {"type":"all","of":[{"type":"above","path":".status.traffic[0].percent","value":0},{"type":"atLeast","path":".status.traffic[0].percent","otherPath":".status.traffic[*].percent|sum"}]},
-      "text": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}%",
-      "tooltip": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}%"
-     },
-     {
-      "when": {"type":"all","of":[{"type":"above","path":".status.traffic[1].percent","value":0},{"type":"atLeast","path":".status.traffic[1].percent","otherPath":".status.traffic[*].percent|sum"}]},
-      "text": "{{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}%",
-      "tooltip": "{{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}%"
-     },
-     {
-      "when": {"type":"all","of":[{"type":"above","path":".status.traffic[2].percent","value":0},{"type":"atLeast","path":".status.traffic[2].percent","otherPath":".status.traffic[*].percent|sum"}]},
-      "text": "{{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}%",
-      "tooltip": "{{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}%"
-     },
-     {
-      "when": {"type":"all","of":[{"type":"above","path":".status.traffic[3].percent","value":0},{"type":"atLeast","path":".status.traffic[3].percent","otherPath":".status.traffic[*].percent|sum"}]},
-      "text": "{{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}%",
-      "tooltip": "{{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}%"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[0].percent","value":0},
-        {"type":"above","path":".status.traffic[1].percent","value":0},
-        {"type":"atLeast","path":".status.traffic[0].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[1].percent"]}
-       ]
-      },
-      "text": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}%",
-      "tooltip": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}%"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[0].percent","value":0},
-        {"type":"above","path":".status.traffic[2].percent","value":0},
-        {"type":"atLeast","path":".status.traffic[0].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[2].percent"]}
-       ]
-      },
-      "text": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}%",
-      "tooltip": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}%"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[0].percent","value":0},
-        {"type":"above","path":".status.traffic[3].percent","value":0},
-        {"type":"atLeast","path":".status.traffic[0].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[3].percent"]}
-       ]
-      },
-      "text": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}%",
-      "tooltip": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}%"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[1].percent","value":0},
-        {"type":"above","path":".status.traffic[2].percent","value":0},
-        {"type":"atLeast","path":".status.traffic[1].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[2].percent"]}
-       ]
-      },
-      "text": "{{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}% · {{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}%",
-      "tooltip": "{{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}% · {{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}%"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[1].percent","value":0},
-        {"type":"above","path":".status.traffic[3].percent","value":0},
-        {"type":"atLeast","path":".status.traffic[1].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[3].percent"]}
-       ]
-      },
-      "text": "{{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}%",
-      "tooltip": "{{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}%"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[2].percent","value":0},
-        {"type":"above","path":".status.traffic[3].percent","value":0},
-        {"type":"atLeast","path":".status.traffic[2].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[3].percent"]}
-       ]
-      },
-      "text": "{{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}%",
-      "tooltip": "{{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}%"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[0].percent","value":0},
-        {"type":"above","path":".status.traffic[1].percent","value":0},
-        {"type":"not","of":{"type":"atLeast","path":".status.traffic[0].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[1].percent"]}}
-       ]
-      },
-      "text": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}% · …",
-      "tooltip": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}% · …"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[0].percent","value":0},
-        {"type":"above","path":".status.traffic[2].percent","value":0},
-        {"type":"not","of":{"type":"above","path":".status.traffic[1].percent","value":0}},
-        {"type":"not","of":{"type":"atLeast","path":".status.traffic[0].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[2].percent"]}}
-       ]
-      },
-      "text": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}% · …",
-      "tooltip": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}% · …"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[0].percent","value":0},
-        {"type":"above","path":".status.traffic[3].percent","value":0},
-        {"type":"not","of":{"type":"above","path":".status.traffic[1].percent","value":0}},
-        {"type":"not","of":{"type":"above","path":".status.traffic[2].percent","value":0}},
-        {"type":"not","of":{"type":"atLeast","path":".status.traffic[0].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[3].percent"]}}
-       ]
-      },
-      "text": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}% · …",
-      "tooltip": "{{.status.traffic[0].revisionName}} {{.status.traffic[0].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}% · …"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[1].percent","value":0},
-        {"type":"above","path":".status.traffic[2].percent","value":0},
-        {"type":"not","of":{"type":"above","path":".status.traffic[0].percent","value":0}},
-        {"type":"not","of":{"type":"atLeast","path":".status.traffic[1].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[2].percent"]}}
-       ]
-      },
-      "text": "{{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}% · {{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}% · …",
-      "tooltip": "{{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}% · {{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}% · …"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[1].percent","value":0},
-        {"type":"above","path":".status.traffic[3].percent","value":0},
-        {"type":"not","of":{"type":"above","path":".status.traffic[0].percent","value":0}},
-        {"type":"not","of":{"type":"above","path":".status.traffic[2].percent","value":0}},
-        {"type":"not","of":{"type":"atLeast","path":".status.traffic[1].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[3].percent"]}}
-       ]
-      },
-      "text": "{{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}% · …",
-      "tooltip": "{{.status.traffic[1].revisionName}} {{.status.traffic[1].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}% · …"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"above","path":".status.traffic[2].percent","value":0},
-        {"type":"above","path":".status.traffic[3].percent","value":0},
-        {"type":"not","of":{"type":"above","path":".status.traffic[0].percent","value":0}},
-        {"type":"not","of":{"type":"above","path":".status.traffic[1].percent","value":0}},
-        {"type":"not","of":{"type":"atLeast","path":".status.traffic[2].percent","otherPath":".status.traffic[*].percent|sum","addPaths":[".status.traffic[3].percent"]}}
-       ]
-      },
-      "text": "{{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}% · …",
-      "tooltip": "{{.status.traffic[2].revisionName}} {{.status.traffic[2].percent}}% · {{.status.traffic[3].revisionName}} {{.status.traffic[3].percent}}% · …"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "all",
-         "of": [
-          {"type":"absent","path":".status.traffic[0]"},
-          {"type":"above","path":".spec.traffic[0].percent","value":0},
-          {"type":"atLeast","path":".spec.traffic[0].percent","otherPath":".spec.traffic[*].percent|sum"}
-         ]
-        },
-        {"type":"exists","path":".spec.traffic[0].revisionName"}
-       ]
-      },
-      "text": "{{.spec.traffic[0].revisionName}} {{.spec.traffic[0].percent}}%",
-      "tooltip": "{{.spec.traffic[0].revisionName}} {{.spec.traffic[0].percent}}%"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "all",
-         "of": [
-          {"type":"absent","path":".status.traffic[0]"},
-          {"type":"above","path":".spec.traffic[0].percent","value":0},
-          {"type":"atLeast","path":".spec.traffic[0].percent","otherPath":".spec.traffic[*].percent|sum"}
-         ]
-        },
-        {"type":"equals","path":".spec.traffic[0].latestRevision","value":true}
-       ]
-      },
-      "text": "latest {{.spec.traffic[0].percent}}%",
-      "tooltip": "latest {{.spec.traffic[0].percent}}%",
-      "value": " {{.spec.traffic[0].percent}}%"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "all",
-         "of": [
-          {"type":"absent","path":".status.traffic[0]"},
-          {"type":"above","path":".spec.traffic[0].percent","value":0},
-          {"type":"atLeast","path":".spec.traffic[0].percent","otherPath":".spec.traffic[*].percent|sum"}
-         ]
-        },
-        {"type":"exists","path":".spec.traffic[0].configurationName"}
-       ]
-      },
-      "text": "{{.spec.traffic[0].configurationName}} {{.spec.traffic[0].percent}}%",
-      "tooltip": "{{.spec.traffic[0].configurationName}} {{.spec.traffic[0].percent}}%"
-     },
-     {
-      "when": {
-       "type": "any",
-       "of": [
-        {"type":"above","path":".status.traffic[*].percent|sum","value":0},
-        {"type":"all","of":[{"type":"absent","path":".status.traffic[0]"},{"type":"above","path":".spec.traffic[*].percent|sum","value":0}]}
-       ]
-      },
-      "text": "…",
-      "tooltip": "…"
-     }
-    ],
+    "items": {
+     "cases": [
+      {"when":{"type":"all","of":[{"type":"above","path":".percent","value":0},{"type":"exists","path":".revisionName"}]},"text":"{{.revisionName}} {{.percent}}%"},
+      {"when":{"type":"all","of":[{"type":"above","path":".percent","value":0},{"type":"equals","path":".latestRevision","value":true}]},"text":"latest {{.percent}}%"},
+      {"when":{"type":"all","of":[{"type":"above","path":".percent","value":0},{"type":"exists","path":".configurationName"}]},"text":"{{.configurationName}} {{.percent}}%"},
+      {"when":{"type":"above","path":".percent","value":0},"text":"? {{.percent}}%"}
+     ],
+     "separator": " · "
+    },
     "afterColumn": "route-url"
    },
    {
@@ -749,6 +523,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -801,6 +576,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -853,6 +629,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -862,8 +639,10 @@
     "paths": [".status.conditions[type=\"Ready\",type!=\"Ready\"].reason"],
     "width": "minmax(100px, 1fr)",
     "cases": [
-     {"when":{"type":"exists","path":".spec.brokerRef.name","nonEmpty":true},"text":"{{.spec.brokerRef.name}}"},
-     {"when":{"type":"exists","path":".spec.broker","nonEmpty":true},"text":"{{.spec.broker}}"}
+     {
+      "when": {"type":"any","of":[{"type":"exists","path":".spec.brokerRef.name","nonEmpty":true},{"type":"exists","path":".spec.broker","nonEmpty":true}]},
+      "text": "{{.spec.brokerRef.name ?? .spec.broker}}"
+     }
     ],
     "afterColumn": "trigger-status"
    },
@@ -871,75 +650,10 @@
     "kind": {"group":"eventing.knative.dev","kind":"Trigger"},
     "id": "trigger-filter",
     "title": "Filter",
-    "paths": [".status.conditions[type=\"Ready\",type!=\"Ready\"].reason"],
+    "paths": [".spec.filters"],
+    "format": "list",
     "width": "minmax(140px, 2fr)",
     "cases": [
-     {
-      "when": {
-       "type": "all",
-       "of": [{"type":"equals","path":".spec.filters|count","value":1},{"type":"equals","path":".spec.filters[0]|count","value":1},{"type":"exists","path":".spec.filters[0].cesql","nonEmpty":true}]
-      },
-      "text": "{{.spec.filters[0].cesql}}",
-      "tooltip": "{{.spec.filters[0].cesql}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"equals","path":".spec.filters|count","value":1},
-        {"type":"equals","path":".spec.filters[0]|count","value":1},
-        {"type":"equals","path":".spec.filters[0].exact|count","value":1},
-        {"type":"exists","path":".spec.filters[0].exact.type"}
-       ]
-      },
-      "text": "type={{.spec.filters[0].exact.type}}",
-      "tooltip": "type={{.spec.filters[0].exact.type}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"equals","path":".spec.filters|count","value":1},
-        {"type":"equals","path":".spec.filters[0]|count","value":1},
-        {"type":"equals","path":".spec.filters[0].prefix|count","value":1},
-        {"type":"exists","path":".spec.filters[0].prefix.type"}
-       ]
-      },
-      "text": "type={{.spec.filters[0].prefix.type}}*",
-      "tooltip": "type={{.spec.filters[0].prefix.type}}*"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"equals","path":".spec.filters|count","value":1},
-        {"type":"equals","path":".spec.filters[0]|count","value":1},
-        {"type":"equals","path":".spec.filters[0].suffix|count","value":1},
-        {"type":"exists","path":".spec.filters[0].suffix.type"}
-       ]
-      },
-      "text": "type=*{{.spec.filters[0].suffix.type}}",
-      "tooltip": "type=*{{.spec.filters[0].suffix.type}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"equals","path":".spec.filters|count","value":1},
-        {"type":"equals","path":".spec.filters[0]|count","value":1},
-        {"type":"equals","path":".spec.filters[0].exact|count","value":2},
-        {"type":"exists","path":".spec.filters[0].exact.source"},
-        {"type":"exists","path":".spec.filters[0].exact.type"}
-       ]
-      },
-      "text": "source={{.spec.filters[0].exact.source}}, type={{.spec.filters[0].exact.type}}",
-      "tooltip": "source={{.spec.filters[0].exact.source}}, type={{.spec.filters[0].exact.type}}"
-     },
-     {
-      "when": {"type":"all","of":[{"type":"equals","path":".spec.filters[0].exact|count","value":1},{"type":"exists","path":".spec.filters[0].exact.type"}]},
-      "text": "type={{.spec.filters[0].exact.type}}, …",
-      "tooltip": "type={{.spec.filters[0].exact.type}}, …"
-     },
      {
       "when": {
        "type": "all",
@@ -1042,22 +756,124 @@
      },
      {
       "when": {
-       "type": "any",
+       "type": "all",
        "of": [
-        {"type":"all","of":[{"type":"exists","path":".spec.filters[0]"},{"type":"any","of":[{"type":"above","path":".spec.filters[0]|count","value":0},{"type":"exists","path":".spec.filters[1]"}]}]},
-        {
-         "type": "all",
-         "of": [
-          {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-          {"type":"above","path":".spec.filter.attributes|count","value":0}
-         ]
-        }
+        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
+        {"type":"equals","path":".spec.filter.attributes|count","value":1}
+       ]
+      },
+      "text": "{{.spec.filter.attributes|keys}}={{.spec.filter.attributes[*]|join}}",
+      "tooltip": "{{.spec.filter.attributes|keys}}={{.spec.filter.attributes[*]|join}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
+        {"type":"above","path":".spec.filter.attributes|count","value":0}
        ]
       },
       "text": "…",
       "tooltip": "…"
      }
     ],
+    "items": {
+     "cases": [
+      {
+       "when": {
+        "type": "all",
+        "of": [
+         {"type":"equals","path":".exact|count","value":1},
+         {"type":"not","of":{"type":"above","path":".prefix|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".suffix|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".all|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".any|count","value":0}},
+         {"type":"not","of":{"type":"exists","path":".not"}},
+         {"type":"not","of":{"type":"exists","path":".cesql","nonEmpty":true}}
+        ]
+       },
+       "text": "{{.exact|keys}}={{.exact[*]|join}}"
+      },
+      {
+       "when": {
+        "type": "all",
+        "of": [
+         {"type":"equals","path":".prefix|count","value":1},
+         {"type":"not","of":{"type":"above","path":".exact|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".suffix|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".all|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".any|count","value":0}},
+         {"type":"not","of":{"type":"exists","path":".not"}},
+         {"type":"not","of":{"type":"exists","path":".cesql","nonEmpty":true}}
+        ]
+       },
+       "text": "{{.prefix|keys}}={{.prefix[*]|join}}*"
+      },
+      {
+       "when": {
+        "type": "all",
+        "of": [
+         {"type":"equals","path":".suffix|count","value":1},
+         {"type":"not","of":{"type":"above","path":".exact|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".prefix|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".all|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".any|count","value":0}},
+         {"type":"not","of":{"type":"exists","path":".not"}},
+         {"type":"not","of":{"type":"exists","path":".cesql","nonEmpty":true}}
+        ]
+       },
+       "text": "{{.suffix|keys}}=*{{.suffix[*]|join}}"
+      },
+      {
+       "when": {
+        "type": "all",
+        "of": [
+         {"type":"exists","path":".cesql","nonEmpty":true},
+         {"type":"not","of":{"type":"above","path":".exact|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".prefix|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".suffix|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".all|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".any|count","value":0}},
+         {"type":"not","of":{"type":"exists","path":".not"}}
+        ]
+       },
+       "text": "{{.cesql}}"
+      },
+      {
+       "when": {
+        "type": "all",
+        "of": [
+         {"type":"equals","path":".exact|count","value":2},
+         {"type":"exists","path":".exact.source"},
+         {"type":"exists","path":".exact.type"},
+         {"type":"not","of":{"type":"above","path":".prefix|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".suffix|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".all|count","value":0}},
+         {"type":"not","of":{"type":"above","path":".any|count","value":0}},
+         {"type":"not","of":{"type":"exists","path":".not"}},
+         {"type":"not","of":{"type":"exists","path":".cesql","nonEmpty":true}}
+        ]
+       },
+       "text": "source={{.exact.source}}, type={{.exact.type}}"
+      },
+      {
+       "when": {
+        "type": "any",
+        "of": [
+         {"type":"above","path":".exact|count","value":0},
+         {"type":"above","path":".prefix|count","value":0},
+         {"type":"above","path":".suffix|count","value":0},
+         {"type":"above","path":".all|count","value":0},
+         {"type":"above","path":".any|count","value":0},
+         {"type":"exists","path":".not"},
+         {"type":"exists","path":".cesql","nonEmpty":true}
+        ]
+       },
+       "text": "…"
+      }
+     ],
+     "separator": ", "
+    },
     "afterColumn": "trigger-broker"
    },
    {
@@ -1123,6 +939,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -1167,6 +984,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -1211,6 +1029,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -1311,6 +1130,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -1365,6 +1185,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -1419,6 +1240,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {"kind":{"group":"sources.knative.dev","kind":"ApiServerSource"},"id":"api-server-source-mode","title":"Mode","paths":[".spec.mode"],"width":"100px","afterColumn":"api-server-source-status"},
@@ -1482,6 +1304,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -1552,6 +1375,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -1614,6 +1438,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -1676,6 +1501,7 @@
      {"when":{"type":"condition","conditionType":"Ready","status":"Unknown"},"text":"Progressing","tone":"warning","value":"progressing"},
      {"when":{"type":"exists","path":".metadata.name"},"text":"Unknown","tone":"muted","value":"unknown"}
     ],
+    "filterBy": "value",
     "afterColumn": "namespace"
    },
    {
@@ -2418,8 +2244,7 @@
    "columns.route-status.cases.3.text": "Unbekannt",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "Traffic",
-   "columns.route-traffic.cases.17.text": "neueste {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "neueste {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "neueste {{.percent}}%",
    "columns.route-reason.title": "Grund",
    "columns.domain-mapping-status.title": "Status",
    "columns.domain-mapping-status.cases.0.text": "Bereit",
@@ -2612,8 +2437,7 @@
    "columns.route-status.cases.3.text": "Desconocido",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "Tráfico",
-   "columns.route-traffic.cases.17.text": "última {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "última {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "última {{.percent}}%",
    "columns.route-reason.title": "Motivo",
    "columns.domain-mapping-status.title": "Estado",
    "columns.domain-mapping-status.cases.0.text": "Listo",
@@ -2806,8 +2630,7 @@
    "columns.route-status.cases.3.text": "Inconnu",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "Trafic",
-   "columns.route-traffic.cases.17.text": "dernière {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "dernière {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "dernière {{.percent}}%",
    "columns.route-reason.title": "Raison",
    "columns.domain-mapping-status.title": "État",
    "columns.domain-mapping-status.cases.0.text": "Prêt",
@@ -3000,8 +2823,7 @@
    "columns.route-status.cases.3.text": "Sconosciuto",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "Traffico",
-   "columns.route-traffic.cases.17.text": "più recente {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "più recente {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "più recente {{.percent}}%",
    "columns.route-reason.title": "Motivo",
    "columns.domain-mapping-status.title": "Stato",
    "columns.domain-mapping-status.cases.0.text": "Pronto",
@@ -3190,8 +3012,7 @@
    "columns.route-status.cases.3.text": "不明",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "トラフィック",
-   "columns.route-traffic.cases.17.text": "最新 {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "最新 {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "最新 {{.percent}}%",
    "columns.route-reason.title": "理由",
    "columns.domain-mapping-status.title": "状態",
    "columns.domain-mapping-status.cases.0.text": "準備完了",
@@ -3380,8 +3201,7 @@
    "columns.route-status.cases.3.text": "알 수 없음",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "트래픽",
-   "columns.route-traffic.cases.17.text": "최신 {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "최신 {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "최신 {{.percent}}%",
    "columns.route-reason.title": "이유",
    "columns.domain-mapping-status.title": "상태",
    "columns.domain-mapping-status.cases.0.text": "준비됨",
@@ -3576,8 +3396,7 @@
    "columns.route-status.cases.3.text": "Nieznany",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "Ruch",
-   "columns.route-traffic.cases.17.text": "najnowsza {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "najnowsza {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "najnowsza {{.percent}}%",
    "columns.route-reason.title": "Przyczyna",
    "columns.domain-mapping-status.title": "Stan",
    "columns.domain-mapping-status.cases.0.text": "Gotowy",
@@ -3770,8 +3589,7 @@
    "columns.route-status.cases.3.text": "Desconhecido",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "Tráfego",
-   "columns.route-traffic.cases.17.text": "mais recente {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "mais recente {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "mais recente {{.percent}}%",
    "columns.route-reason.title": "Motivo",
    "columns.domain-mapping-status.title": "Estado",
    "columns.domain-mapping-status.cases.0.text": "Pronto",
@@ -3966,8 +3784,7 @@
    "columns.route-status.cases.3.text": "Неизвестно",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "Трафик",
-   "columns.route-traffic.cases.17.text": "последняя {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "последняя {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "последняя {{.percent}}%",
    "columns.route-reason.title": "Причина",
    "columns.domain-mapping-status.title": "Состояние",
    "columns.domain-mapping-status.cases.0.text": "Готов",
@@ -4158,8 +3975,7 @@
    "columns.route-status.cases.3.text": "Bilinmiyor",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "Trafik",
-   "columns.route-traffic.cases.17.text": "en son {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "en son {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "en son {{.percent}}%",
    "columns.route-reason.title": "Neden",
    "columns.domain-mapping-status.title": "Durum",
    "columns.domain-mapping-status.cases.0.text": "Hazır",
@@ -4354,8 +4170,7 @@
    "columns.route-status.cases.3.text": "Невідомо",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "Трафік",
-   "columns.route-traffic.cases.17.text": "остання {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "остання {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "остання {{.percent}}%",
    "columns.route-reason.title": "Причина",
    "columns.domain-mapping-status.title": "Стан",
    "columns.domain-mapping-status.cases.0.text": "Готовий",
@@ -4544,8 +4359,7 @@
    "columns.route-status.cases.3.text": "未知",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "流量",
-   "columns.route-traffic.cases.17.text": "最新 {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "最新 {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "最新 {{.percent}}%",
    "columns.route-reason.title": "原因",
    "columns.domain-mapping-status.title": "状态",
    "columns.domain-mapping-status.cases.0.text": "就绪",
@@ -4734,8 +4548,7 @@
    "columns.route-status.cases.3.text": "未知",
    "columns.route-url.title": "URL",
    "columns.route-traffic.title": "流量",
-   "columns.route-traffic.cases.17.text": "最新 {{.spec.traffic[0].percent}}%",
-   "columns.route-traffic.cases.17.tooltip": "最新 {{.spec.traffic[0].percent}}%",
+   "columns.route-traffic.items.1.text": "最新 {{.percent}}%",
    "columns.route-reason.title": "原因",
    "columns.domain-mapping-status.title": "狀態",
    "columns.domain-mapping-status.cases.0.text": "就緒",

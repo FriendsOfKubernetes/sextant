@@ -42,7 +42,7 @@ condition is False.
 
 **Columns**, after Name and Namespace, in place of the CRDs' own printer columns (left out, as the built-in view did),
 with the built-in columns' widths. Every kind begins with **Status** (Ready, Progressing, Failed or Unknown from
-`Ready`, coloured, Unknown muted, sorted by the state) and ends with **Reason** (the reason of the first False
+`Ready`, coloured, Unknown muted, sorted and filtered by the state's name) and ends with **Reason** (the reason of the first False
 condition other than `Ready` — a Revision's `Active` left out — else of `Ready`, while the object is not ready):
 - Services: `ksvc-status`, **URL** (`ksvc-url`), **Latest created** (`ksvc-latest-created`), **Latest ready**
   (`ksvc-latest-ready`), `ksvc-reason`.
@@ -51,13 +51,13 @@ condition other than `Ready` — a Revision's `Active` left out — else of `Rea
 - Revisions: `revision-status`, **Configuration** (`revision-configuration`, its label), **Generation**
   (`revision-generation`), **Replicas** (`revision-replicas`: actual/desired), `revision-reason` (a revision scaled to
   zero is ready, with no reason).
-- Routes: `route-status`, **URL** (`route-url`), **Traffic** (`route-traffic`: each revision with a share, "name 80%
-  · name 20%", or the split asked while none is in effect), `route-reason`.
+- Routes: `route-status`, **URL** (`route-url`), **Traffic** (`route-traffic`: every target with a share, "name 80%
+  · latest 20%", or the split asked while none is in effect), `route-reason`.
 - Domain Mappings: `domain-mapping-status`, **URL** (`domain-mapping-url`), **Target** (`domain-mapping-target`),
   `domain-mapping-reason`.
 - Brokers: `broker-status`, **Class** (`broker-class`), **Address** (`broker-address`), `broker-reason`.
 - Triggers: `trigger-status`, **Broker** (`trigger-broker`: `spec.brokerRef.name`, else `spec.broker`), **Filter**
-  (`trigger-filter`: `type=…`, `source=…`, a CESQL expression), **Subscriber** (`trigger-subscriber`: `Kind/name`, with
+  (`trigger-filter`: each filter's attributes, `type=…`, `source=…*`, or a CESQL expression, joined with ", "), **Subscriber** (`trigger-subscriber`: `Kind/name`, with
   its URI, or the URI), `trigger-reason`.
 - Channels and In-Memory Channels: `channel-status`, **Address** (`channel-address`), `channel-reason`;
   `in-memory-channel-status`, `in-memory-channel-address`, `in-memory-channel-reason`.
@@ -187,15 +187,14 @@ None: the extension is read-only and has no action of its own.
 
 - Knative Serving's or Eventing's CRDs; each section shows only the kinds the cluster serves.
 - Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - Traffic: a case's text says at most five values, two targets, so the summary is exact for one or two shares among
-    the first four targets of `status.traffic`; of three shares or more it shows the first two and "…", and "…" alone
-    for a first share past the fourth target. A split only asked (`spec.traffic`, nothing in effect yet) is exact when
-    its first target has the whole share, else "…". A list projection (each item's name and share, joined with " · ")
-    would close it (#404).
-  - Filter: exact for one filter of one CESQL expression, one exact, prefix or suffix `type`, or an exact `source` and
-    `type`, and for the older attributes of a `type`, a `source` or both; otherwise its first exact type and "…", or
-    "…" alone. An attribute's name cannot be a placeholder, nor `all`/`any`/`not` be written out (a text projection of
-    the filter tree would close it, #404).
+  - Traffic sorts by the text shown, the latest revision by its word; the built-in sorted it with no word there (an
+    item's own sort text would close it).
+  - Filter: each filter of `spec.filters` is exact when it has terms of one dialect only — one exact, prefix or suffix
+    attribute, a CESQL expression, or an exact `source` and `type` — and "…" otherwise: several dialects in one filter,
+    several attributes of one dialect, and the nested `all`, `any` and `not`, which a case cannot write out (a text
+    projection of the filter tree would close it, #404). The older `spec.filter.attributes` are exact for a `type`, a
+    `source`, both, or one attribute of another name (whose empty value shows `name=` where the built-in wrote
+    `name=*`); more attributes show "…".
   - Text cells and problem messages lose the credentials and query of any URI in them and are clipped (200 characters
     a cell, 1200 a message), as every extension text from the cluster is; the built-in ones showed them as written.
   - A problem whose reason Knative wrote as an empty text says "NotReady" (the built-in one said nothing); Knative

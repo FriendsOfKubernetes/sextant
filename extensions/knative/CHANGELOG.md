@@ -7,8 +7,9 @@ views (ADR-0101, ADR-0106) as an extension.
 
 - **Two sidebar sections, "Knative Serving" and "Knative Eventing",** with Services, Configurations, Revisions, Routes
   and Domain Mappings, and Brokers, Triggers, Channels, In-Memory Channels, Subscriptions, Sequences, Parallels and
-  the sources in Sextant's tables, with the built-in columns (their widths, the states sorted and Unknown muted, the
-  first failing condition's reason) and "Only problems".
+  the sources in Sextant's tables, with the built-in columns (their widths, the states sorted and filtered by name and
+  Unknown muted, the first failing condition's reason, every target of the traffic split and each filter of a Trigger, their whole text on hover)
+  and "Only problems".
 - **Details:** why an object is not ready in plain words; a Service's revisions and traffic split; a Revision's
   replicas and images; where an Eventing object sends its events, a Trigger's filter in words, and the event path from
   the sources through a Broker or Channel to the subscribers — in the built-in section's blocks, kept open or closed in

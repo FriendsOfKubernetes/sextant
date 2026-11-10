@@ -91,6 +91,7 @@ interface Engine {
 }
 interface WindowColumn {
   width?: string;
+  filter?: { value(obj: KubeObject, ctx: { now: number; t: (key: string, values?: { count?: number }) => string }): unknown };
   value(obj: KubeObject): unknown;
   render(obj: KubeObject, ctx: { now: number }): unknown;
   searchText(obj: KubeObject, ctx: { now: number; t: (key: string, values?: { count?: number }) => string }): string | null | undefined;
@@ -546,6 +547,7 @@ describe("the columns, against the built-in ones", () => {
       expect(drawn(`${prefix}-status`, o).tone).toBe(HEALTH_TONE[state]);
       // Sorted by the state, as the built-in column's value.
       expect(windowColumn(`${prefix}-status`).value(o)).toBe(state);
+      expect(windowColumn(`${prefix}-status`).filter?.value(o, { now: NOW, t: T })).toBe(state);
       expect(cell(`${prefix}-reason`, o) || undefined, `${o.kind} ${o.metadata.name}`).toBe(failingCondition(o)?.reason || undefined);
       expect(windowColumn(`${prefix}-reason`).value(o) || undefined).toBe(failingCondition(o)?.reason || undefined);
     }
@@ -612,7 +614,7 @@ describe("the columns, against the built-in ones", () => {
     for (const o of domainMappings()) expect(cell("domain-mapping-target", o)).toBe(mappingRef(o).name);
   });
 
-  it("of Routes: the traffic split as the built-in summary, for up to two shares among the first four targets", () => {
+  it("of Routes: the traffic split as the built-in summary, every target with a share", () => {
     const base = routes()[0]!;
     const route = (traffic: unknown[] | undefined, spec?: unknown[]) => {
       const o = copy(base);
@@ -628,38 +630,20 @@ describe("the columns, against the built-in ones", () => {
       route([t("a", 100), t("b"), t("c")]),
       route([t("a"), t("b", 30), t("c"), t("d", 70)]),
       route([t("a", 0), t("b", 0), t("c", 25), t("d", 75)]),
+      route([10, 20, 30, 40].map((p, i) => t(`r${i}`, p))),
+      route([50, 0, 0, 0, 50].map((p, i) => t(`r${i}`, p))),
       route([t("a"), t("b")]),
       route(undefined, [{ configurationName: "hello", percent: 100 }]),
-      route(undefined, [{ revisionName: "hello-00001", percent: 0 }, { latestRevision: true, percent: 100 }]),
+      route(undefined, [{ revisionName: "hello-00001", percent: 40 }, { latestRevision: true, percent: 60 }]),
+      route(undefined, [{ percent: 100 }]),
+      // One revision twice with the same share, under two tags: both are said.
+      route([{ revisionName: "a", percent: 50, tag: "x" }, { revisionName: "a", percent: 50, tag: "y" }]),
     ];
     for (const o of variants) {
-      const { targets, asked } = trafficSplit(o);
-      const shares = targets.map((x, i) => [i, x.percent ?? 0] as const).filter(([, p]) => p > 0).map(([i]) => i);
-      const summary = trafficSummary(o, word("latest")!);
-      const parts = summary.split(" · ");
-      // A case says at most five values: two targets of the first four; asked, only the first one alone.
-      const expected =
-        shares.length === 0
-          ? undefined
-          : asked
-            ? shares.length === 1 && shares[0] === 0
-              ? summary
-              : "…"
-            : shares.length <= 2 && shares.every((i) => i < 4)
-              ? summary
-              : shares[1]! < 4
-                ? `${parts.slice(0, 2).join(" · ")} · …`
-                : "…";
+      const expected = trafficSummary(o, word("latest")!) || undefined;
       expect(cell("route-traffic", o), JSON.stringify(st(o).traffic ?? o.spec)).toBe(expected);
       expect(drawn("route-traffic", o).title).toBe(expected);
-      // Sorted by the summary with no word for the latest revision, as the built-in column's value.
-      if (expected === summary) expect(windowColumn("route-traffic").value(o)).toBe(trafficSummary(o, ""));
     }
-    const many = routes()[0]!;
-    st(many).traffic = [10, 20, 30, 40].map((percent, i) => ({ revisionName: `r${i}`, percent }));
-    expect(cell("route-traffic", many)).toBe("r0 10% · r1 20% · …");
-    st(many).traffic = [50, 0, 0, 0, 50].map((percent, i) => ({ revisionName: `r${i}`, percent }));
-    expect(cell("route-traffic", many)).toBe("…");
   });
 
   it("of Eventing: class, address, Broker, filter, destinations, channel, steps, schedule, topics and mode", () => {
@@ -705,7 +689,7 @@ describe("the columns, against the built-in ones", () => {
     expect(windowColumn("sequence-steps").value(sequence)).toBe(0);
   });
 
-  it("of Triggers: the filter as the built-in text for one CESQL expression, type or source and type, else its start and …", () => {
+  it("of Triggers: the filter as the built-in text, each filter of one attribute or CESQL expression, else …", () => {
     const trigger = find("Trigger", "my-service-trigger");
     const withSpec = (spec: Record<string, unknown>) => {
       const o = copy(trigger);
@@ -733,15 +717,22 @@ describe("the columns, against the built-in ones", () => {
       withSpec({ filters: [{}] }),
       withSpec({ filters: [] }),
       withSpec({}),
+      withSpec({ filter: { attributes: { subject: "x" } } }),
+      withSpec({ filters: [{ exact: { subject: "s" } }, { prefix: { source: "/orders/" } }, { suffix: { subject: ".json" } }] }),
+      withSpec({ filters: [{ exact: { type: "t" } }, {}, { cesql: "a = 'b'" }] }),
+      withSpec({ filters: [{ exact: { type: "t" }, prefix: {}, all: [] }] }),
+      withSpec({ filters: [{ exact: { type: "t" } }, { exact: { type: "t" } }] }),
     ];
     for (const o of exact) {
       const expected = filterText(triggerFilter(o).terms) || undefined;
       expect(cell("trigger-filter", o), JSON.stringify(o.spec)).toBe(expected);
       expect(drawn("trigger-filter", o).title).toBe(expected);
     }
+    // Beyond what the cases say: nested terms, or several dialects in one filter, are "…".
     expect(cell("trigger-filter", find("Trigger", "orders-trigger"))).toBe("type=com.example.order, …");
     expect(cell("trigger-filter", withSpec({ filters: [{ any: [{ exact: { type: "a" } }] }] }))).toBe("…");
-    expect(cell("trigger-filter", withSpec({ filter: { attributes: { subject: "x" } } }))).toBe("…");
+    expect(cell("trigger-filter", withSpec({ filters: [{ exact: { type: "a" }, cesql: "x" }] }))).toBe("…");
+    expect(cell("trigger-filter", withSpec({ filter: { attributes: { source: "/a", subject: "x" } } }))).toBe("…");
   });
 });
 

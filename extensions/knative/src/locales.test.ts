@@ -75,6 +75,7 @@ describe("the manifest's translations", () => {
         [`columns.${col.id}.cases.${i}.text`, cs.text] as const,
         ...(cs.tooltip === undefined ? [] : [[`columns.${col.id}.cases.${i}.tooltip`, cs.tooltip] as const]),
       ]),
+      ...((col as { items?: { cases: Case[] } }).items?.cases ?? []).map((cs, i) => [`columns.${col.id}.items.${i}.text`, cs.text] as const),
     ]),
     ...c.problems.flatMap((r) => [[`problems.${r.id}.title`, r.title] as const, [`problems.${r.id}.message`, r.message] as const]),
   ]);
