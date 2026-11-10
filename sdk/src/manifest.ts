@@ -271,6 +271,10 @@ export interface ManifestProblem {
   category?: string;
   /** The reason when `reason` comes out empty, as written, instead of the title (since Sextant 0.30). */
   reasonOr?: string;
+  /** The number whose CLDR plural form picks the message, with `messageForms` (since Sextant 0.30). */
+  pluralBy?: string;
+  /** The message by CLDR plural form besides `other`, which is `message` (since Sextant 0.30). */
+  messageForms?: Partial<Record<"zero" | "one" | "two" | "few" | "many", string>>;
   /** Paths tried in order when `since` gives no time (since Sextant 0.30). */
   sinceOr?: string[];
   /**

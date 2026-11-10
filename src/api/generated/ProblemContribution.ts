@@ -69,6 +69,15 @@ category?: string,
  */
 reasonOr?: string, 
 /**
+ * The number whose CLDR plural form picks the message (#404): a numeric path, `|count`/`|sum` allowed; with
+ * `messageForms`. `sextantApi` 4.
+ */
+pluralBy?: string, 
+/**
+ * The message by plural form besides `other`, which is `message` (#404): `{"one": "1 policy failed: …"}`.
+ */
+messageForms?: { [key in string]: string }, 
+/**
  * Field paths tried in order when `since` gives no time (`endTime`, else `startTime`, else the creation; #407).
  * `sextantApi` 4.
  */

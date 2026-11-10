@@ -12,6 +12,14 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
   const texts = chosen === undefined ? undefined : translations[chosen];
   if (!texts) return manifest;
   const text = (key: string, english: string) => texts[key] ?? english;
+  const formsOf = (prefix: string): Record<string, string> | undefined => {
+    const forms = Object.fromEntries(
+      Object.entries(texts)
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, value]) => [key.slice(prefix.length), value]),
+    );
+    return Object.keys(forms).length > 0 ? forms : undefined;
+  };
   const c = manifest.contributes;
   const localized: ExtensionManifest = {
     ...manifest,
@@ -44,6 +52,9 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
         ...col,
         title: text(`columns.${col.id}.title`, col.title),
         ...(col.valueText !== undefined ? { valueText: text(`columns.${col.id}.valueText`, col.valueText) } : {}),
+        ...(col.items !== undefined
+          ? { items: { ...col.items, cases: col.items.cases.map((cs, i) => ({ ...cs, text: text(`columns.${col.id}.items.${i}.text`, cs.text) })) } }
+          : {}),
         ...(col.cases !== undefined
           ? {
               cases: col.cases.map((cs, i) => ({
@@ -94,6 +105,8 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
         ...r,
         title: text(`problems.${r.id}.title`, r.title),
         message: text(`problems.${r.id}.message`, r.message),
+        // The language's own plural forms when it translates any, else the English ones (#404).
+        ...(r.messageForms !== undefined ? { messageForms: formsOf(`problems.${r.id}.messageForms.`) ?? r.messageForms } : {}),
       })),
       problemCategories: (c.problemCategories ?? []).map((pc) => ({ ...pc, title: text(`problemCategories.${pc.id}.title`, pc.title) })),
       metricQueries: c.metricQueries.map((q) => ({ ...q, title: text(`metricQueries.${q.id}.title`, q.title) })),

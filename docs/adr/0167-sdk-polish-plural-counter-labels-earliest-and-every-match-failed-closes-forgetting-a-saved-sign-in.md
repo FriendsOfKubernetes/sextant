@@ -223,3 +223,7 @@ The text condition `endsWith` joins `contains` and `startsWith` (a phase `…Par
 filters as the count.
 The last path a placeholder tries may be a literal, a number or a short text in double quotes (`{{.status.updated ?? 0}}`,
 `{{.value ?? "*"}}`); an extension's section counter counts a problem about another object (`about`) as that object, once.
+A rule's message may go by plural form: `pluralBy` names the number (a numeric path, `|count`/`|sum` allowed) and
+`messageForms` the forms besides `other`, which stays `message`; the window picks the form the UI language's CLDR rules
+give, and a translation gives every form its language needs (`problems.<id>.messageForms.<form>`) with the English
+message's placeholders. A list column's item texts are translated as the other texts are.

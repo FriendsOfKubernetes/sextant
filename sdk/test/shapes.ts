@@ -160,6 +160,8 @@ export const MANIFEST_SHAPES = {
     notifyAs: "optional",
     category: "optional",
     reasonOr: "optional",
+    pluralBy: "optional",
+    messageForms: "optional",
     sinceOr: "optional",
     about: "optional",
     stamp: "optional",

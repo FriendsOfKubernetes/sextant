@@ -886,10 +886,25 @@ function checkProblems(manifest) {
       checkMessage(rule.reason, rule.kind, [...here, "reason"], metadataOnly);
     }
     if (rule.since !== undefined) checkRulePath(rule.since, rule.kind, [...here, "since"], metadataOnly);
-    for (const field of ["reasonOr", "sinceOr", "about", "stamp", "notifyAgainOn", "sinceUnit"]) {
+    for (const field of ["reasonOr", "sinceOr", "about", "stamp", "notifyAgainOn", "sinceUnit", "pluralBy", "messageForms"]) {
       if (rule[field] !== undefined && manifest.sextantApi < SOURCES_API) fail([...here, field], `needs sextantApi ${SOURCES_API} or later`);
     }
     if (rule.reasonOr !== undefined && rule.reasonOr.includes("{{")) fail([...here, "reasonOr"], "is written as it shows: no `{{…}}`");
+    // The message by plural form (#404).
+    if (rule.pluralBy !== undefined && rule.messageForms === undefined) fail([...here, "pluralBy"], "goes with `messageForms`");
+    if (rule.messageForms !== undefined && rule.pluralBy === undefined) fail([...here, "messageForms"], "goes with `pluralBy`");
+    if (rule.pluralBy !== undefined && rule.messageForms !== undefined) {
+      checkRulePath(numericPath(rule.pluralBy, manifest.sextantApi, [...here, "pluralBy"]), rule.kind, [...here, "pluralBy"], metadataOnly);
+      const forms = sortedKeys(rule.messageForms);
+      if (forms.length === 0) fail([...here, "messageForms"], "gives at least one form");
+      for (const form of forms) {
+        const at = [...here, "messageForms", form];
+        if (form === "other" || !PLURAL_FORMS.includes(form)) fail(at, "is a CLDR plural form besides `other` (the `message`): zero, one, two, few or many");
+        const text = rule.messageForms[form];
+        if (text.trim() === "" || Array.from(text).length > 300) fail(at, "is a text of 1 to 300 characters");
+        checkMessage(text, rule.kind, at, metadataOnly);
+      }
+    }
     if (rule.sinceOr !== undefined && rule.since === undefined) fail([...here, "sinceOr"], "falls back from `since`: the rule needs a `since`");
     if (rule.sinceUnit !== undefined && rule.since === undefined) fail([...here, "sinceUnit"], "says how `since` is written: the rule needs a `since`");
     (rule.sinceOr ?? []).forEach((path, j) => checkRulePath(path, rule.kind, [...here, "sinceOr", j], metadataOnly));
@@ -1282,6 +1297,10 @@ export function translatableTexts(manifest) {
   for (const rule of c.problems ?? []) {
     out.set(`problems.${rule.id}.title`, title);
     out.set(`problems.${rule.id}.message`, { max: 300, message: rule.message });
+    // Every plural form a language may need, each with the English message's placeholders (#404).
+    if (rule.pluralBy !== undefined) {
+      for (const form of PLURAL_FORMS) if (form !== "other") out.set(`problems.${rule.id}.messageForms.${form}`, { max: 300, message: rule.message });
+    }
   }
   for (const category of c.problemCategories ?? []) out.set(`problemCategories.${category.id}.title`, title);
   for (const command of c.commands ?? []) out.set(`commands.${command.id}.title`, title);

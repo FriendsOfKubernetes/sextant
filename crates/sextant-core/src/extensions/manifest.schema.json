@@ -839,6 +839,18 @@
           "description": "Rules with the same group notify once per object for all of them (sextantApi 4).",
           "$ref": "#/$defs/contributionId"
         },
+        "pluralBy": {
+          "description": "The number whose CLDR plural form picks the message, with `messageForms` (sextantApi 4).",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "messageForms": {
+          "description": "The message by CLDR plural form besides `other`, which is `message` (sextantApi 4).",
+          "type": "object",
+          "maxProperties": 5,
+          "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 300 }
+        },
         "reasonOr": {
           "description": "The reason when `reason` comes out empty, as written (sextantApi 4).",
           "type": "string",

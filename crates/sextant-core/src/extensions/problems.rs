@@ -124,6 +124,15 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub reason_or: Option<String>,
+    /// The number whose CLDR plural form picks the message (#404): a numeric path, `|count`/`|sum` allowed; with
+    /// `messageForms`. `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub plural_by: Option<String>,
+    /// The message by plural form besides `other`, which is `message` (#404): `{"one": "1 policy failed: …"}`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub message_forms: Option<std::collections::BTreeMap<String, String>>,
     /// Field paths tried in order when `since` gives no time (`endTime`, else `startTime`, else the creation; #407).
     /// `sextantApi` 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -573,6 +582,8 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             ("stamp", rule.stamp.is_some()),
             ("notifyAgainOn", rule.notify_again_on.is_some()),
             ("sinceUnit", rule.since_unit.is_some()),
+            ("pluralBy", rule.plural_by.is_some()),
+            ("messageForms", rule.message_forms.is_some()),
         ] {
             if set && manifest.sextant_api < SOURCES_API {
                 return Err(at(
@@ -588,6 +599,38 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 &here.key("reasonOr"),
                 "is written as it shows: no `{{…}}`",
             ));
+        }
+        match (&rule.plural_by, &rule.message_forms) {
+            (None, None) => {}
+            (Some(by), Some(forms)) => {
+                let by_at = here.key("pluralBy");
+                let by = numeric_path(by, manifest.sextant_api, &by_at)?;
+                check_rule_path(by, &rule.kind, &by_at, metadata_only)?;
+                if forms.is_empty() {
+                    return Err(at(&here.key("messageForms"), "gives at least one form"));
+                }
+                for (form, text) in forms {
+                    let form_at = here.key("messageForms").key(form);
+                    if form == "other"
+                        || !super::section_badges::PLURAL_FORMS.contains(&form.as_str())
+                    {
+                        return Err(at(
+                            &form_at,
+                            "is a CLDR plural form besides `other` (the `message`): zero, one, two, few or many",
+                        ));
+                    }
+                    if text.trim().is_empty() || text.chars().count() > 300 {
+                        return Err(at(&form_at, "is a text of 1 to 300 characters"));
+                    }
+                    check_message(text, &rule.kind, &form_at, metadata_only)?;
+                }
+            }
+            (Some(_), None) => {
+                return Err(at(&here.key("pluralBy"), "goes with `messageForms`"));
+            }
+            (None, Some(_)) => {
+                return Err(at(&here.key("messageForms"), "goes with `pluralBy`"));
+            }
         }
         if rule.since_unit.is_some() && rule.since.is_none() {
             return Err(at(

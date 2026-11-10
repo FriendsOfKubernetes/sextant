@@ -21,6 +21,24 @@ const cluster: KubeObject = {
 const holds = (condition: ProblemCondition) => evaluate(condition, cluster).holds;
 
 describe("problem rules of extensions", () => {
+  it("pick the message by the plural form of its count in the UI language (#404)", () => {
+    const rule = {
+      id: "fail",
+      title: "Fail",
+      kind: { group: "wgpolicyk8s.io", kind: "PolicyReport" },
+      when: { type: "exists", path: ".results" },
+      message: "{{.results|count}} policies failed",
+      pluralBy: ".results|count",
+      messageForms: { one: "{{.results|count}} policy failed", few: "{{.results|count}} few" },
+      graceMinutes: 0,
+      notify: true,
+      toldThroughOwner: false,
+    } as unknown as ProblemContribution;
+    const report = (n: number) => ({ metadata: { name: "r" }, results: Array.from({ length: n }, () => ({ result: "fail" })) }) as unknown as KubeObject;
+    expect(detectRule(rule, report(1))[0]!.message).toBe("1 policy failed");
+    expect(detectRule(rule, report(3))[0]!.message).toBe("3 policies failed");
+  });
+
   it("fall back to a literal reason and to later time paths (#404, #407)", () => {
     const rule = {
       id: "failed",

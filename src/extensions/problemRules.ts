@@ -8,7 +8,7 @@
 import type { KindRef, KubeObject, ObjectRef, ProblemCondition, ProblemContribution, ProblemScalar } from "../api";
 import { parseFieldPath, pickStep, type PathStep } from "../features/custom-columns/path";
 import type { Detected } from "../features/problems/model";
-import { formatList } from "../i18n/format";
+import { currentLanguage, formatList } from "../i18n/format";
 import { cleanText } from "../resources/uri";
 
 /** A placeholder shows at most this many characters of its value: a controller's whole condition message (#373). */
@@ -410,6 +410,20 @@ function filteredText(value: unknown, filter: string | undefined): string | unde
   return text;
 }
 
+/** The rule's message for the object: by the CLDR plural form of `pluralBy` in the UI language (#404), else `message`. */
+function messageOf(rule: ProblemContribution, obj: KubeObject): string {
+  if (rule.pluralBy === undefined || rule.messageForms === undefined) return rule.message;
+  const n = numberOf(valueAt(obj, rule.pluralBy));
+  if (n === undefined) return rule.message;
+  let form = "other";
+  try {
+    form = new Intl.PluralRules(currentLanguage()).select(n);
+  } catch {
+    // An odd language tag: `other`.
+  }
+  return rule.messageForms[form] ?? rule.message;
+}
+
 /** `template` with each `{{path}}` replaced by the scalar value there (clipped; anything else shows nothing). */
 export function renderMessage(template: string, obj: KubeObject): string {
   const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, inner: string) => {
@@ -446,7 +460,7 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject, ctx: Rule
       reason: reason === "" ? (rule.reasonOr ?? rule.title) : Array.from(reason).slice(0, MAX_REASON_CHARS).join(""),
       // Rules of one group notify once per object (ADR-0161).
       group: rule.group ?? rule.id,
-      message: renderMessage(rule.message, obj),
+      message: renderMessage(messageOf(rule, obj), obj),
       since: typeof since === "string" && timeOf(since) !== undefined ? since : undefined,
       graceMs: rule.graceMinutes > 0 ? rule.graceMinutes * MINUTE_MS : undefined,
       activeFrom: verdict.activeFrom,

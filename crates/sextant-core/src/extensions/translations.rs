@@ -176,6 +176,17 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
             format!("problems.{}.message", rule.id),
             Text::Message(&rule.message),
         );
+        // Every plural form a language may need, each with the English message's placeholders (#404).
+        if rule.plural_by.is_some() {
+            for form in super::section_badges::PLURAL_FORMS {
+                if form != "other" {
+                    out.insert(
+                        format!("problems.{}.messageForms.{form}", rule.id),
+                        Text::Message(&rule.message),
+                    );
+                }
+            }
+        }
     }
     for category in &c.problem_categories {
         out.insert(
