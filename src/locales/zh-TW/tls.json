@@ -1,0 +1,65 @@
+{
+  "section": {
+    "title": "憑證",
+    "loading": "正在讀取憑證…",
+    "failed": "無法讀取憑證",
+    "forbidden": "您無權讀取此 Secret，因此無法顯示其憑證。",
+    "noCertificate": "此 Secret 沒有 tls.crt。",
+    "invalid": "tls.crt 不是 Sextant 可讀取的憑證。",
+    "selfSigned": "自我簽署",
+    "chainLength_other": "{{count}} 個憑證",
+    "chainTitle": "tls.crt 中的憑證鏈",
+    "truncated": "後面還有更多憑證，但未讀取。",
+    "caTitle": "CA（ca.crt）",
+    "caInvalid": "ca.crt 不是 Sextant 可讀取的憑證。",
+    "fields": {
+      "issuedBy": "簽發者",
+      "subject": "主體",
+      "dnsNames": "DNS 名稱",
+      "ipAddresses": "IP 位址",
+      "uris": "URI",
+      "emails": "電子郵件地址",
+      "issuer": "簽發者",
+      "notBefore": "生效時間",
+      "notAfter": "失效時間",
+      "key": "公開金鑰",
+      "signature": "簽章",
+      "serial": "序號",
+      "fingerprint": "SHA-256 指紋",
+      "isCA": "CA 憑證",
+      "chain": "憑證鏈"
+    }
+  },
+  "page": {
+    "sidebar": "TLS 憑證",
+    "title": "TLS 憑證",
+    "hint": "目前檢視之 Namespace 中的 TLS Secret，最早到期的排在最前面。清單會在開啟頁面及按「重新整理」時讀取。",
+    "refresh": "重新整理",
+    "loading": "正在讀取 TLS Secret…",
+    "failed": "無法讀取 TLS Secret",
+    "forbidden": "您無權列出所有 Namespace 中的 Secret；請在篩選器中選擇 Namespace",
+    "forbiddenIn": "您無權列出下列 Namespace 中的 Secret：{{namespaces}}",
+    "truncated_other": "只讀取了前 {{count}} 個 Secret。",
+    "namespacesTruncated_other": "只讀取了（依名稱排序的）前 {{count}} 個 Namespace；請在篩選器中少選一些。",
+    "none": "這裡沒有 TLS Secret。",
+    "unreadable": "無法讀取",
+    "total_other": "{{count}} 個 TLS Secret",
+    "totalWarned_other": "{{count}} 個 TLS Secret；即將到期、已到期或無法讀取：{{warned}}",
+    "columns": {
+      "name": "名稱",
+      "namespace": "Namespace",
+      "names": "名稱",
+      "issuer": "簽發者",
+      "notAfter": "失效時間",
+      "expires": "到期時間"
+    }
+  },
+  "expiry": {
+    "expired": "已到期",
+    "daysLeft_other": "{{count}} 天",
+    "expiredOn": "已於 {{date}} 到期",
+    "notYetValid": "尚未生效（自 {{date}} 起）",
+    "until_other": "{{date}}（剩餘 {{count}} 天）"
+  },
+  "yes": "是"
+}

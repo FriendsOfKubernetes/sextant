@@ -13,11 +13,11 @@ import {
   unregisterResource,
   type ResourceDef,
 } from "../../resources";
-import { DEFAULT_ENTRY_ICON, SECTION_ICONS, SIDEBAR_SECTIONS } from "../../resources/registry";
+import { DEFAULT_ENTRY_ICON, placeSection, SECTION_ICONS, SIDEBAR_SECTIONS } from "../../resources/registry";
 import { CRD_REFRESH_DELAY } from "../../resources/useKinds";
 import { getPages, registerPage, unregisterPage } from "../pages";
 import { registerSectionBadge } from "../sectionBadges";
-import { Sidebar } from "./Sidebar";
+import { sectionOrder, Sidebar } from "./Sidebar";
 
 const served = (group: string, version: string, kind: string): ResourceKind => ({
   kindRef: { group, version, kind },
@@ -252,5 +252,29 @@ describe("long labels", () => {
     expect(sidebarCss + layoutCss).not.toMatch(/overflow-wrap:\s*anywhere/);
     expect(rule(sidebarCss, ".sidebar__icon")["flex"]).toBe("none");
     expect(rule(sidebarCss, ".sidebar__chevron")["flex"]).toBe("none");
+  });
+});
+
+describe("the places of Sextant's own extensions' sections", () => {
+  it("keep the order the sidebar had before those sections moved, cert-manager and the sections behind it included", () => {
+    expect(sectionOrder([])).toEqual([
+      "cluster", "nodes", "workloads", "config", "network", "gatewayApi", "storage", "namespaces", "events", "helm",
+      "accessControl", "certManager", "trivy", "keda", "karpenter", "vpa",
+      "volumeSnapshots", "velero", "flux", "argocd", "argoRollouts", "argoWorkflows",
+      "istio", "linkerd", "traefik", "contour", "knative", "knativeEventing",
+      "crossplane", "kyverno", "externalSecrets", "sealedSecrets", "cnpg", "strimzi", "prometheusOperator", "clusterApi",
+      "k3s", "helmController", "dra", "gpuOperator", "kueue", "jobset", "kuberay", "kserve", "olm", "openshift",
+      "customResources",
+    ]);
+  });
+
+  it("an extension section after cert-manager's place comes behind the kept places there", () => {
+    const undo = placeSection("acme", { owner: "acme.widgets", after: "certManager" });
+    try {
+      const order = sectionOrder(["acme", "trivy"]);
+      expect(order.indexOf("acme")).toBe(order.indexOf("vpa") + 1);
+    } finally {
+      undo();
+    }
   });
 });

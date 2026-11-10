@@ -5,7 +5,7 @@
 // Synced or not Ready (other than being created or deleted) feed the problems screen, the notifications and the
 // section counter (category `crossplane`, `provider.ts`). Read-only (ADR in docs/adr, #213).
 import { registerSectionBadge } from "../../layout/sectionBadges";
-import "../cert-manager/cert-manager.css";
+import "../tls/tls.css";
 import { useCrossplaneProblemCount } from "./badge";
 import "./provider";
 import "./register";

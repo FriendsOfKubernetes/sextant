@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "클러스터 도구의 보기는 이제 확장 프로그램입니다",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager 및 OpenShift가 Sextant에서 확장 프로그램 카탈로그의 자체 확장 프로그램으로 옮겨졌으며, 이 확장 프로그램은 따로 업데이트됩니다. 사용하는 것을 아래에서 설치하세요. 그 전까지는 해당 섹션이 표시되지 않습니다. 이에 대한 알림 설정은 유지되며, 이 도구를 실행하는 클러스터에서는 사이드바에서도 추천됩니다."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager 및 OpenShift가 Sextant에서 확장 프로그램 카탈로그의 자체 확장 프로그램으로 옮겨졌으며, 이 확장 프로그램은 따로 업데이트됩니다. 사용하는 것을 아래에서 설치하세요. 그 전까지는 해당 섹션이 표시되지 않습니다. 이에 대한 알림 설정은 유지되며, 이 도구를 실행하는 클러스터에서는 사이드바에서도 추천됩니다."
     },
     "api4": {
       "title": "확장 기능 API 4",
@@ -42,6 +42,7 @@
       "kueue": "할당량과 사용량이 있는 ClusterQueue, LocalQueue, Workload와 대기 이유",
       "kyverno": "모드와 결과가 있는 정책, 정책 보고서, 각 오브젝트의 결과",
       "sealed-secrets": "SealedSecret의 동기화 상태, 범위, 대상 Secret 및 봉인된 키, 그리고 컨트롤러와 해당 봉인 키",
+      "cert-manager": "Certificate, CertificateRequest, Issuer, ClusterIssuer, Order, Challenge와 그 상태에 대한 쉬운 설명, 발급 체인",
       "trivy": "취약점, 구성 감사, 노출된 시크릿, RBAC, 인프라, 규정 준수, SBOM 보고서와 가장 심각한 발견 사항, 그리고 각 워크로드의 이미지 스캔",
       "keda": "ScaledObject, ScaledJob, TriggerAuthentication의 상태와 트리거, 그리고 KEDA가 관리하는 HPA",
       "karpenter": "NodePool의 한도와 중단, NodeClaim의 시작, 그리고 노드 클래스",

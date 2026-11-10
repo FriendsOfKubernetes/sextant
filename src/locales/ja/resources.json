@@ -11,7 +11,6 @@
     "events": "イベント",
     "helm": "Helm",
     "accessControl": "アクセス制御",
-    "certManager": "cert-manager",
     "volumeSnapshots": "ボリュームスナップショット",
     "istio": "Istio",
     "linkerd": "Linkerd",

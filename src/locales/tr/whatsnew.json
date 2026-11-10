@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Küme araçlarının görünümleri artık uzantı",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager ve OpenShift, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager ve OpenShift, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
     },
     "api4": {
       "title": "Eklenti API 4",
@@ -42,6 +42,7 @@
       "kueue": "Kota ve kullanımıyla ClusterQueue'lar, LocalQueue'lar, Workload'lar ve neden bekledikleri",
       "kyverno": "Modu ve sonuçlarıyla ilkeler, ilke raporları ve her nesnenin sonuçları",
       "sealed-secrets": "Eşitleme durumu, kapsamı, hedef Secret'ı ve mühürlü anahtarlarıyla SealedSecret'lar ve mühürleme anahtarlarıyla denetleyici",
+      "cert-manager": "Certificate, CertificateRequest, Issuer, ClusterIssuer, Order ve Challenge nesneleri; durumlarının anlaşılır açıklaması ve verme zinciri",
       "trivy": "En ciddi bulgularıyla güvenlik açığı, yapılandırma denetimi, açığa çıkmış gizli bilgi, RBAC, altyapı, uyumluluk ve SBOM raporları, ve her iş yükünün imaj taramaları",
       "keda": "Durumları, tetikleyicileri ve KEDA'nın yönettiği HPA ile ScaledObject'ler, ScaledJob'lar ve TriggerAuthentication'lar",
       "karpenter": "Sınırları ve kesintileriyle NodePool'lar, başlatılmalarıyla NodeClaim'ler ve düğüm sınıfları",

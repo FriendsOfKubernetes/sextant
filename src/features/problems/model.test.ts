@@ -3,8 +3,6 @@ import type { KindRef, KubeObject } from "../../api";
 import { KUSTOMIZATION } from "../../resources/gitopsKinds";
 import { HTTP_ROUTE } from "../gateway-api/model";
 import {
-  CERT_EXPIRY_WARNING_MS,
-  CERTIFICATE,
   DAEMONSET,
   DEPLOYMENT,
   detect,
@@ -354,42 +352,6 @@ const CASES: Case[] = [
     reasons: ["NotAllowedByListeners"],
     notify: [true],
   },
-  {
-    name: "a new certificate being issued is not a problem",
-    kind: CERTIFICATE,
-    obj: { metadata: meta("tls"), status: { conditions: [cond("Ready", "False", { reason: "DoesNotExist" })] } },
-    reasons: [],
-  },
-  {
-    name: "a certificate cert-manager could not issue",
-    kind: CERTIFICATE,
-    obj: { metadata: meta("tls"), status: { conditions: [cond("Ready", "False", { reason: "Failed" })] } },
-    reasons: ["Failed"],
-  },
-  {
-    name: "a first issuance that keeps failing (still DoesNotExist, Issuing=False/Failed)",
-    kind: CERTIFICATE,
-    obj: {
-      metadata: meta("tls"),
-      status: {
-        conditions: [
-          cond("Ready", "False", { reason: "DoesNotExist" }),
-          cond("Issuing", "False", { reason: "Failed", message: "order is in \"invalid\" state" }),
-        ],
-      },
-    },
-    reasons: ["IssuanceFailed"],
-    notify: [true],
-  },
-  {
-    name: "a valid certificate whose renewal failed",
-    kind: CERTIFICATE,
-    obj: {
-      metadata: meta("tls"),
-      status: { conditions: [cond("Ready", "True", { reason: "Ready" }), cond("Issuing", "False", { reason: "Failed" })] },
-    },
-    reasons: ["IssuanceFailed"],
-  },
 ];
 
 describe("detection rules", () => {
@@ -442,19 +404,6 @@ describe("when a problem counts", () => {
     expect(same[0]!.activeAt).toBe(T0_MS + ROLLOUT_STALL_MS);
     const progressed = resolve(STATEFULSET, sts(2), T0_MS + 8 * 60_000, same);
     expect(progressed[0]!.activeAt).toBe(T0_MS + 8 * 60_000 + ROLLOUT_STALL_MS);
-  });
-
-  it("a certificate is expiring two weeks before notAfter and expired after it", () => {
-    const notAfter = T0_MS + 30 * 24 * 3600_000;
-    const cert: KubeObject = {
-      metadata: meta("tls"),
-      status: { conditions: [cond("Ready", "True")], notAfter: new Date(notAfter).toISOString() },
-    };
-    const found = resolve(CERTIFICATE, cert, T0_MS);
-    const at = (t: number) => found.filter((p) => isActive(p, t)).map((p) => p.reason);
-    expect(at(T0_MS)).toEqual([]);
-    expect(at(notAfter - CERT_EXPIRY_WARNING_MS + 1)).toEqual(["Expiring"]);
-    expect(at(notAfter + 1)).toEqual(["Expired"]);
   });
 
   it("Jobs of one CronJob and pods of one workload share their notify key", () => {

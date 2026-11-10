@@ -1,0 +1,72 @@
+{
+  "section": {
+    "title": "Sertifika",
+    "loading": "Sertifika okunuyor…",
+    "failed": "Sertifika okunamadı",
+    "forbidden": "Bu Secret'ı okuma izniniz yok, bu yüzden sertifikası gösterilemiyor.",
+    "noCertificate": "Bu Secret'ta tls.crt yok.",
+    "invalid": "tls.crt, Sextant'ın okuyabileceği bir sertifika değil.",
+    "selfSigned": "Kendinden imzalı",
+    "chainLength_one": "{{count}} sertifika",
+    "chainLength_other": "{{count}} sertifika",
+    "chainTitle": "tls.crt içindeki zincir",
+    "truncated": "Ardından başka sertifikalar geliyor; bunlar okunmadı.",
+    "caTitle": "CA (ca.crt)",
+    "caInvalid": "ca.crt, Sextant'ın okuyabileceği bir sertifika değil.",
+    "fields": {
+      "issuedBy": "Veren",
+      "subject": "Konu",
+      "dnsNames": "DNS adları",
+      "ipAddresses": "IP adresleri",
+      "uris": "URI'ler",
+      "emails": "E-posta adresleri",
+      "issuer": "Veren",
+      "notBefore": "Geçerlilik başlangıcı",
+      "notAfter": "Geçerlilik sonu",
+      "key": "Ortak anahtar",
+      "signature": "İmza",
+      "serial": "Seri numarası",
+      "fingerprint": "SHA-256 parmak izi",
+      "isCA": "CA sertifikası",
+      "chain": "Zincir"
+    }
+  },
+  "page": {
+    "sidebar": "TLS sertifikaları",
+    "title": "TLS sertifikaları",
+    "hint": "Görünümdeki namespace'lerin TLS Secret'ları; süresi en yakında dolacak olan önce. Liste, sayfa açıldığında ve Yenile'ye basıldığında okunur.",
+    "refresh": "Yenile",
+    "loading": "TLS Secret'ları okunuyor…",
+    "failed": "TLS Secret'ları okunamadı",
+    "forbidden": "Tüm namespace'lerde Secret listeleme izniniz yok; süzgeçte namespace seçin",
+    "forbiddenIn": "Şu namespace'lerde Secret listeleme izniniz yok: {{namespaces}}",
+    "truncated_one": "Yalnızca ilk {{count}} Secret okundu.",
+    "truncated_other": "Yalnızca ilk {{count}} Secret okundu.",
+    "namespacesTruncated_one": "Yalnızca ilk {{count}} namespace (ada göre) okundu; süzgeçte daha azını seçin.",
+    "namespacesTruncated_other": "Yalnızca ilk {{count}} namespace (ada göre) okundu; süzgeçte daha azını seçin.",
+    "none": "Burada TLS Secret'ı yok.",
+    "unreadable": "Okunamıyor",
+    "total_one": "{{count}} TLS Secret'ı",
+    "total_other": "{{count}} TLS Secret'ı",
+    "totalWarned_one": "{{count}} TLS Secret'ı; süresi dolmak üzere, dolmuş veya okunamayan: {{warned}}",
+    "totalWarned_other": "{{count}} TLS Secret'ı; süresi dolmak üzere, dolmuş veya okunamayan: {{warned}}",
+    "columns": {
+      "name": "Ad",
+      "namespace": "Namespace",
+      "names": "Adlar",
+      "issuer": "Veren",
+      "notAfter": "Geçerlilik sonu",
+      "expires": "Sona erme"
+    }
+  },
+  "expiry": {
+    "expired": "Süresi doldu",
+    "daysLeft_one": "{{count}} gün",
+    "daysLeft_other": "{{count}} gün",
+    "expiredOn": "Süresi doldu: {{date}}",
+    "notYetValid": "Henüz geçerli değil (başlangıç: {{date}})",
+    "until_one": "{{date}} ({{count}} gün kaldı)",
+    "until_other": "{{date}} ({{count}} gün kaldı)"
+  },
+  "yes": "Evet"
+}

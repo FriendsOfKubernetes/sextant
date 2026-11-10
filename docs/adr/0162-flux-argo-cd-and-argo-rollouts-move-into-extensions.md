@@ -322,3 +322,24 @@ objects: the Security page's severity counts and filter per workload (`security/
 "Autoscaling" block (its NodePool and NodeClaim, disruption), a Pending pod's scheduling (Karpenter's nominations and
 launches, a NodePool at its limits), agents' `get_autoscaling_status` and Cleanup's kinds. The icons the extensions
 name stay in Sextant's set. Where the extensions still differ is listed in their READMEs.
+
+## Amendment: cert-manager
+
+`extensions/cert-manager` (`sextant.cert-manager`, 1.0.0) takes the cert-manager views (ADR-0069): Certificates,
+CertificateRequests, Issuers, ClusterIssuers, Orders and Challenges in the section `certManager` with the built-in
+columns, "Only problems" and details (each kind's state in plain words, and the issuance chain Certificate →
+CertificateRequest → Order → Challenge), and the Certificates' problems (not ready, issuance failed, expiring within
+`notifications.certExpiryDays`, expired) as rules. The section was a Sextant section and the anchor Trivy's, KEDA's,
+Karpenter's and VPA's places hung off; it becomes an extension place itself, after `accessControl`, and those four
+keep hanging off `certManager`, so the sidebar is unchanged (a place may name an earlier place; `sectionOrder` in
+`src/layout/sidebar/Sidebar.tsx`, a test pins the whole order). The category `certificates` (on by default) moves to
+the extension's main category `ext:sextant.cert-manager` (`MOVED_PROBLEM_CATEGORIES`), which keeps the title
+"Certificates" through `contributes.problemsTitle`. Agents had it by default; now, by the user's decision, they get it
+only when the user lets them (`mcp.extensionProblems`, ADR-0146) — the migration does not add it — and `get_problems`
+still reads the old name through `moved_category`. The sidebar offers the extension where `cert-manager.io` is served.
+What is TLS, not cert-manager, stays in the core (ADR-0069), moved to `src/features/tls/`: `tls.rs` and the `tls_*`
+commands, the "TLS certificates" page, the "Certificate" section of TLS Secrets (it still links the Certificate
+cert-manager's annotation names), the expiry warning setting and its field, and `setCertExpiryDays`/`clampExpiryDays`/
+`applyCertExpiryDays`/`currentCertExpiryWarningMs`, which the extension's `expiring` rule follows. Cleanup keeps
+cert-manager's kinds it scans for Secret references (`hygiene/kinds.ts`). The icons the extension names stay in
+Sextant's set. Where the extension still differs is listed in its README.

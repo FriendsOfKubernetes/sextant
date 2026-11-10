@@ -1,0 +1,72 @@
+{
+  "section": {
+    "title": "Zertifikat",
+    "loading": "Zertifikat wird gelesen…",
+    "failed": "Das Zertifikat konnte nicht gelesen werden",
+    "forbidden": "Sie dürfen dieses Secret nicht lesen, daher kann sein Zertifikat nicht angezeigt werden.",
+    "noCertificate": "Dieses Secret hat kein tls.crt.",
+    "invalid": "tls.crt ist kein Zertifikat, das Sextant lesen kann.",
+    "selfSigned": "Selbstsigniert",
+    "chainLength_one": "{{count}} Zertifikat",
+    "chainLength_other": "{{count}} Zertifikate",
+    "chainTitle": "Kette in tls.crt",
+    "truncated": "Weitere Zertifikate folgen; sie wurden nicht gelesen.",
+    "caTitle": "CA (ca.crt)",
+    "caInvalid": "ca.crt ist kein Zertifikat, das Sextant lesen kann.",
+    "fields": {
+      "issuedBy": "Ausgestellt von",
+      "subject": "Antragsteller",
+      "dnsNames": "DNS-Namen",
+      "ipAddresses": "IP-Adressen",
+      "uris": "URIs",
+      "emails": "E-Mail-Adressen",
+      "issuer": "Aussteller",
+      "notBefore": "Gültig ab",
+      "notAfter": "Gültig bis",
+      "key": "Öffentlicher Schlüssel",
+      "signature": "Signatur",
+      "serial": "Seriennummer",
+      "fingerprint": "SHA-256-Fingerabdruck",
+      "isCA": "CA-Zertifikat",
+      "chain": "Kette"
+    }
+  },
+  "page": {
+    "sidebar": "TLS-Zertifikate",
+    "title": "TLS-Zertifikate",
+    "hint": "TLS-Secrets der angezeigten Namespaces, die am frühesten ablaufenden zuerst. Die Liste wird beim Öffnen der Seite und bei „Aktualisieren“ gelesen.",
+    "refresh": "Aktualisieren",
+    "loading": "TLS-Secrets werden gelesen…",
+    "failed": "Die TLS-Secrets konnten nicht gelesen werden",
+    "forbidden": "Sie dürfen Secrets nicht in allen Namespaces auflisten; wählen Sie Namespaces im Filter",
+    "forbiddenIn": "Sie dürfen Secrets nicht auflisten in: {{namespaces}}",
+    "truncated_one": "Nur das erste {{count}} Secret wurde gelesen.",
+    "truncated_other": "Nur die ersten {{count}} Secrets wurden gelesen.",
+    "namespacesTruncated_one": "Nur der erste {{count}} Namespace (nach Name) wurde gelesen; wählen Sie im Filter weniger aus.",
+    "namespacesTruncated_other": "Nur die ersten {{count}} Namespaces (nach Name) wurden gelesen; wählen Sie im Filter weniger aus.",
+    "none": "Hier gibt es keine TLS-Secrets.",
+    "unreadable": "Nicht lesbar",
+    "total_one": "{{count}} TLS-Secret",
+    "total_other": "{{count}} TLS-Secrets",
+    "totalWarned_one": "{{count}} TLS-Secret; bald ablaufend, abgelaufen oder nicht lesbar: {{warned}}",
+    "totalWarned_other": "{{count}} TLS-Secrets; bald ablaufend, abgelaufen oder nicht lesbar: {{warned}}",
+    "columns": {
+      "name": "Name",
+      "namespace": "Namespace",
+      "names": "Namen",
+      "issuer": "Aussteller",
+      "notAfter": "Gültig bis",
+      "expires": "Läuft ab"
+    }
+  },
+  "expiry": {
+    "expired": "Abgelaufen",
+    "daysLeft_one": "{{count}} Tag",
+    "daysLeft_other": "{{count}} Tage",
+    "expiredOn": "Abgelaufen am {{date}}",
+    "notYetValid": "Noch nicht gültig (ab {{date}})",
+    "until_one": "{{date}} (noch {{count}} Tag)",
+    "until_other": "{{date}} (noch {{count}} Tage)"
+  },
+  "yes": "Ja"
+}

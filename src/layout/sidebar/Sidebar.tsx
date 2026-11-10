@@ -269,12 +269,17 @@ function sectionIcon(id: string): IconName | undefined {
 }
 
 /** Sextant's sections, then the others: each right after the section of Sextant's it names (`after`), else at the end. */
-function sectionOrder(ids: readonly string[]): string[] {
+export function sectionOrder(ids: readonly string[]): string[] {
   const known = SIDEBAR_SECTIONS as readonly string[];
   const order: string[] = [...known];
-  // The places of Sextant's own extensions' sections, in their order (sections without entries are left out later).
-  for (const [section, after] of [...EXTENSION_SECTION_PLACES].reverse()) order.splice(order.indexOf(after) + 1, 0, section);
+  // The places of Sextant's own extensions' sections, in their order (sections without entries are left out later):
+  // each after the section it names and the places already put after that one, so a place may name an earlier place.
   const reserved = EXTENSION_SECTION_PLACES.map(([section]) => section);
+  for (const [section, after] of EXTENSION_SECTION_PLACES) {
+    let index = order.indexOf(after) + 1;
+    while (index < order.length && reserved.includes(order[index]!) && placedAfter(order[index]!, after)) index++;
+    order.splice(index, 0, section);
+  }
   ids = ids.filter((s) => !reserved.includes(s));
   const rest = ids.filter((s) => !known.includes(s));
   const tail: string[] = [];
@@ -291,6 +296,15 @@ function sectionOrder(ids: readonly string[]): string[] {
     order.splice(index, 0, id);
   }
   return [...order, ...tail];
+}
+
+/** Whether the extension place `section` hangs off `after`, directly or through other places. */
+function placedAfter(section: string, after: string): boolean {
+  for (let at: string | undefined = section; at !== undefined; ) {
+    at = EXTENSION_SECTION_PLACES.find(([s]) => s === at)?.[1];
+    if (at === after) return true;
+  }
+  return false;
 }
 
 function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _registryVersion: number): Section[] {

@@ -5,7 +5,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { defaultAppSettings, loadSettings, type KubeObject, type ObjectRef } from "../../api";
 import { resetSettingsCache } from "../../api/settings";
 import { HpaSection } from "../../features/autoscaling/HpaSection";
-import { CertManagerSection } from "../../features/cert-manager/details";
 import { Block } from "../../features/details/ui";
 import { PolicySection } from "../../features/netpol/details";
 import { CILIUM_POLICY, NETWORK_POLICY } from "../../features/netpol/hooks";
@@ -112,18 +111,3 @@ it("keeps HPA verdicts, causes and fields in one leading flow before the metrics
   expect(leading?.nextElementSibling).toHaveAttribute("data-disclosure", "review/autoscaling:hpa.title/autoscaling:hpa.metrics");
 });
 
-it("keeps a Certificate explanation and fields in one leading flow before Last failure", () => {
-  const obj: KubeObject = {
-    apiVersion: "cert-manager.io/v1", kind: "Certificate", metadata: { name: "web", namespace: "shop" },
-    spec: { secretName: "web-tls", issuerRef: { name: "issuer" }, dnsNames: ["web.example.test"] },
-    status: { lastFailureTime: "2026-10-10T00:00:00Z", conditions: [{ type: "Ready", status: "False", reason: "Failed" }] },
-  };
-  const objectRef = { kind: { group: "cert-manager.io", version: "v1", kind: "Certificate" }, namespace: "shop", name: "web" };
-  const { container } = card(objectRef, <CertManagerSection clusterId="c1" objectRef={objectRef} obj={obj} />);
-  const body = container.querySelector('[data-disclosure="review/details:sections.fields"] > .dt-block__body');
-  const leading = body?.firstElementChild;
-  expect(leading).toHaveClass("dt-disclosure-lead");
-  expect(leading?.querySelector(".cm-explain")).not.toBeNull();
-  expect(leading?.querySelector(".dt-fields")).not.toBeNull();
-  expect(leading?.nextElementSibling).toHaveAttribute("data-disclosure", "review/details:sections.fields/certmanager:lastFailure.title");
-});

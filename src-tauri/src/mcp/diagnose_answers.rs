@@ -189,7 +189,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "workloads",
     "jobs",
     "volumes",
-    "certificates",
     "gateway",
     "mesh",
     "crossplane",

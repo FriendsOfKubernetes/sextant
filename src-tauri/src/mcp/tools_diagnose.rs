@@ -43,7 +43,7 @@ pub fn register_diagnostic_tools(tools: &mut ToolSet) {
         .add(
             "get_problems",
             "What is broken in a cluster, as Sextant's problems screen sees it: nodes not ready, crash-looping or \
-             pending pods, workloads without their replicas, failed Jobs, volume claims, certificates, \
+             pending pods, workloads without their replicas, failed Jobs, volume claims, \
              Gateway API and Istio objects, and Warning events; opt-in categories (security, best practices, disk) \
              only while the user has turned them on, and an extension's problems (category `ext:<extension id>`) \
              only for extensions the user lets agents see. For a namespace, or every namespace the agent may read. Needs \
@@ -211,8 +211,8 @@ pub struct ProblemsArgs {
     /// Only this namespace; every namespace the agent may read when left out (cluster-wide objects such as nodes
     /// only then).
     pub namespace: Option<String>,
-    /// Only these categories: nodes, pods, workloads, jobs, volumes, certificates, flux, argocd, gateway, mesh,
-    /// security, practices, disk, events, or an extension's `ext:<extension id>`. All that are on when left out.
+    /// Only these categories: nodes, pods, workloads, jobs, volumes, flux, argocd, gateway, mesh, security,
+    /// practices, disk, events, or an extension's `ext:<extension id>`. All that are on when left out.
     pub categories: Option<Vec<String>>,
     /// How many problems at most (default 100, at most 500).
     pub limit: Option<u32>,
@@ -255,7 +255,7 @@ async fn get_problems(call: ToolCall, args: ProblemsArgs) -> ToolResult {
             if !unknown.is_empty() {
                 return Err(invalid(format!(
                     "unknown problem categories {unknown:?}; known: nodes, pods, workloads, jobs, volumes, \
-                     certificates, gateway, mesh, security, practices, disk, events, ext:<extension id>"
+                     gateway, mesh, security, practices, disk, events, ext:<extension id>"
                 )));
             }
             list

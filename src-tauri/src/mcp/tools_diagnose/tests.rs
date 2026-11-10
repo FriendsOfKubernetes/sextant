@@ -1147,3 +1147,26 @@ fn contour_and_openshift_problems_are_never_given_to_agents() {
         assert!(!answers::category_for_agents(extension, &[]));
     }
 }
+
+/// cert-manager's Certificates (#138) moved into Sextant's own extension (ADR-0162 amendment): the old name asks for
+/// the extension's main category, which agents get only when the user lets them (ADR-0146), no longer by default.
+#[test]
+fn certificate_problems_come_from_the_cert_manager_extension_by_consent() {
+    assert!(!answers::PROBLEM_CATEGORIES.contains(&"certificates"));
+    assert!(!answers::category_for_agents(
+        "certificates",
+        &["certificates".to_owned()]
+    ));
+    assert_eq!(
+        answers::moved_category("certificates"),
+        "ext:sextant.cert-manager"
+    );
+    assert!(!answers::category_for_agents(
+        "ext:sextant.cert-manager",
+        &[]
+    ));
+    assert!(answers::category_for_agents(
+        "ext:sextant.cert-manager",
+        &["ext:sextant.cert-manager".to_owned()]
+    ));
+}

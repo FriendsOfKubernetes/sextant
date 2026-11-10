@@ -1,0 +1,72 @@
+{
+  "section": {
+    "title": "Certificate",
+    "loading": "Reading the certificate…",
+    "failed": "The certificate could not be read",
+    "forbidden": "You may not read this Secret, so its certificate cannot be shown.",
+    "noCertificate": "This Secret has no tls.crt.",
+    "invalid": "tls.crt is not a certificate Sextant can read.",
+    "selfSigned": "Self-signed",
+    "chainLength_one": "{{count}} certificate",
+    "chainLength_other": "{{count}} certificates",
+    "chainTitle": "Chain in tls.crt",
+    "truncated": "More certificates follow; they were not read.",
+    "caTitle": "CA (ca.crt)",
+    "caInvalid": "ca.crt is not a certificate Sextant can read.",
+    "fields": {
+      "issuedBy": "Issued by",
+      "subject": "Subject",
+      "dnsNames": "DNS names",
+      "ipAddresses": "IP addresses",
+      "uris": "URIs",
+      "emails": "Email addresses",
+      "issuer": "Issuer",
+      "notBefore": "Not before",
+      "notAfter": "Not after",
+      "key": "Public key",
+      "signature": "Signature",
+      "serial": "Serial number",
+      "fingerprint": "SHA-256 fingerprint",
+      "isCA": "CA certificate",
+      "chain": "Chain"
+    }
+  },
+  "page": {
+    "sidebar": "TLS Certificates",
+    "title": "TLS certificates",
+    "hint": "TLS Secrets of the namespaces in view, the soonest to expire first. The list is read when the page opens and on Refresh.",
+    "refresh": "Refresh",
+    "loading": "Reading TLS Secrets…",
+    "failed": "The TLS Secrets could not be read",
+    "forbidden": "You may not list Secrets in all namespaces; choose namespaces in the filter",
+    "forbiddenIn": "You may not list Secrets in: {{namespaces}}",
+    "truncated_one": "Only the first {{count}} Secret was read.",
+    "truncated_other": "Only the first {{count}} Secrets were read.",
+    "namespacesTruncated_one": "Only the first {{count}} namespace (by name) was read; choose fewer in the filter.",
+    "namespacesTruncated_other": "Only the first {{count}} namespaces (by name) were read; choose fewer in the filter.",
+    "none": "No TLS Secrets here.",
+    "unreadable": "Unreadable",
+    "total_one": "{{count}} TLS Secret",
+    "total_other": "{{count}} TLS Secrets",
+    "totalWarned_one": "{{count}} TLS Secret; expiring, expired or unreadable: {{warned}}",
+    "totalWarned_other": "{{count}} TLS Secrets; expiring, expired or unreadable: {{warned}}",
+    "columns": {
+      "name": "Name",
+      "namespace": "Namespace",
+      "names": "Names",
+      "issuer": "Issuer",
+      "notAfter": "Not after",
+      "expires": "Expires"
+    }
+  },
+  "expiry": {
+    "expired": "Expired",
+    "daysLeft_one": "{{count}} day",
+    "daysLeft_other": "{{count}} days",
+    "expiredOn": "Expired {{date}}",
+    "notYetValid": "Not valid yet (from {{date}})",
+    "until_one": "{{date}} ({{count}} day left)",
+    "until_other": "{{date}} ({{count}} days left)"
+  },
+  "yes": "Yes"
+}

@@ -1,0 +1,65 @@
+{
+  "section": {
+    "title": "인증서",
+    "loading": "인증서를 읽는 중…",
+    "failed": "인증서를 읽을 수 없습니다",
+    "forbidden": "이 Secret을 읽을 권한이 없으므로 인증서를 표시할 수 없습니다.",
+    "noCertificate": "이 Secret에는 tls.crt가 없습니다.",
+    "invalid": "tls.crt는 Sextant가 읽을 수 있는 인증서가 아닙니다.",
+    "selfSigned": "자체 서명",
+    "chainLength_other": "인증서 {{count}}개",
+    "chainTitle": "tls.crt의 체인",
+    "truncated": "인증서가 더 있지만 읽지 않았습니다.",
+    "caTitle": "CA(ca.crt)",
+    "caInvalid": "ca.crt는 Sextant가 읽을 수 있는 인증서가 아닙니다.",
+    "fields": {
+      "issuedBy": "발급자",
+      "subject": "주체",
+      "dnsNames": "DNS 이름",
+      "ipAddresses": "IP 주소",
+      "uris": "URI",
+      "emails": "전자 메일 주소",
+      "issuer": "발급자",
+      "notBefore": "유효 기간 시작",
+      "notAfter": "유효 기간 끝",
+      "key": "공개 키",
+      "signature": "서명",
+      "serial": "일련 번호",
+      "fingerprint": "SHA-256 지문",
+      "isCA": "CA 인증서",
+      "chain": "체인"
+    }
+  },
+  "page": {
+    "sidebar": "TLS 인증서",
+    "title": "TLS 인증서",
+    "hint": "보기에 포함된 namespace의 TLS Secret을 만료가 가까운 순서로 표시합니다. 목록은 페이지를 열 때와 새로 고침할 때 읽습니다.",
+    "refresh": "새로 고침",
+    "loading": "TLS Secret을 읽는 중…",
+    "failed": "TLS Secret을 읽을 수 없습니다",
+    "forbidden": "모든 namespace에서 Secret 목록을 조회할 권한이 없습니다. 필터에서 namespace를 선택하세요",
+    "forbiddenIn": "다음 namespace에서 Secret 목록을 조회할 권한이 없습니다: {{namespaces}}",
+    "truncated_other": "처음 {{count}}개의 Secret만 읽었습니다.",
+    "namespacesTruncated_other": "처음 {{count}}개의 namespace(이름순)만 읽었습니다. 필터에서 더 적게 선택하세요.",
+    "none": "여기에는 TLS Secret이 없습니다.",
+    "unreadable": "읽을 수 없음",
+    "total_other": "TLS Secret {{count}}개",
+    "totalWarned_other": "TLS Secret {{count}}개, 만료 예정·만료됨·읽을 수 없음: {{warned}}",
+    "columns": {
+      "name": "이름",
+      "namespace": "Namespace",
+      "names": "이름",
+      "issuer": "발급자",
+      "notAfter": "유효 기간 끝",
+      "expires": "만료"
+    }
+  },
+  "expiry": {
+    "expired": "만료됨",
+    "daysLeft_other": "{{count}}일",
+    "expiredOn": "{{date}}에 만료됨",
+    "notYetValid": "아직 유효하지 않음({{date}}부터)",
+    "until_other": "{{date}}({{count}}일 남음)"
+  },
+  "yes": "예"
+}

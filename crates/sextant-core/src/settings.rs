@@ -785,7 +785,7 @@ pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 5] = [
 /// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
 /// the extension (or `<extension id>:<category id>` for a category of the extension's own, #410; only with `false`,
 /// as agents never get those), and whether agents got the category by default.
-pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 20] = [
+pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 21] = [
     ("flux", "sextant.flux", true),
     ("argocd", "sextant.argo-cd", true),
     ("rollouts", "sextant.argo-rollouts", false),
@@ -819,6 +819,9 @@ pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 20] = [
     ("contour", "sextant.contour", false),
     // OpenShift (on by default): a window view, never for agents.
     ("openshift", "sextant.openshift", false),
+    // cert-manager's Certificates (on by default) became the extension's main category, titled "Certificates" as
+    // before: agents had them by default, and now get them only when the user lets them (ADR-0146).
+    ("certificates", "sextant.cert-manager", false),
 ];
 
 /// Reads the settings file and decides whether it may be written.
@@ -1370,7 +1373,7 @@ mod tests {
         std::fs::write(
             &path,
             r#"{ "settingsVersion": 2,
-                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm", "kueue", "dra", "vpa", "clusterApi", "k3s", "contour", "openshift"],
+                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm", "kueue", "dra", "vpa", "clusterApi", "k3s", "contour", "openshift", "certificates"],
                                     "enabledCategories": ["security", "kueueWorkloads", "policies", "sealedSecrets", "prometheusOperator", "traefik"] },
                  "mcp": { "extensionProblems": ["sextant.argo-cd", "acme.widgets"] } }"#,
         )
@@ -1393,7 +1396,8 @@ mod tests {
                 "ext:sextant.cluster-api",
                 "ext:sextant.k3s",
                 "ext:sextant.contour",
-                "ext:sextant.openshift"
+                "ext:sextant.openshift",
+                "ext:sextant.cert-manager"
             ]
         );
         // An opt-in category turned on stays on as the extension's own (#410).

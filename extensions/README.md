@@ -36,6 +36,7 @@ for other authors. The guide to writing one is the wiki page
 | Trivy (`sextant.trivy`) | [`trivy/`](trivy/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Trivy Operator's vulnerability, configuration audit, exposed secret, RBAC, infrastructure, compliance and SBOM reports with their severity counts and most severe findings, and every workload's image scans, read-only |
 | KEDA (`sextant.keda`) | [`keda/`](keda/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | ScaledObjects, ScaledJobs and (Cluster)TriggerAuthentications with their state in plain words, target, replica range, triggers and the HPA KEDA manages, read-only |
 | Karpenter (`sextant.karpenter`) | [`karpenter/`](karpenter/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | NodePools with their usage against their limits, disruption settings and recent disruptions, NodeClaims with their launch and disruption, and node classes, read-only |
+| cert-manager (`sextant.cert-manager`) | [`cert-manager/`](cert-manager/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders and Challenges with their state and reasons in plain words and the issuance chain, read-only, with the problems of Certificates that are not ready, fail to renew, expire soon or have expired |
 
 ## The documents of an extension
 

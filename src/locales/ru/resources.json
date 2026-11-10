@@ -11,7 +11,6 @@
     "events": "События",
     "helm": "Helm",
     "accessControl": "Управление доступом",
-    "certManager": "cert-manager",
     "volumeSnapshots": "Снимки томов",
     "istio": "Istio",
     "linkerd": "Linkerd",

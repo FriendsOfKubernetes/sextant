@@ -1,0 +1,1793 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.cert-manager",
+  "name": "cert-manager",
+  "version": "1.0.0",
+  "description": "cert-manager's Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders and Challenges with their state and reasons, the issuance chain Certificate → CertificateRequest → Order → Challenge, and plain-language explanations of the common failures; problems of Certificates that are not ready, fail to renew, expire soon or have expired. Read-only.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "certManager",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "cert-manager.io",
+              "kind": "Certificate"
+            },
+            {
+              "group": "cert-manager.io",
+              "kind": "CertificateRequest"
+            },
+            {
+              "group": "cert-manager.io",
+              "kind": "Issuer"
+            },
+            {
+              "group": "cert-manager.io",
+              "kind": "ClusterIssuer"
+            },
+            {
+              "group": "acme.cert-manager.io",
+              "kind": "Order"
+            },
+            {
+              "group": "acme.cert-manager.io",
+              "kind": "Challenge"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "cert-manager.io",
+        "kind": "Certificate",
+        "section": "certManager",
+        "title": "Certificates",
+        "icon": "certificate",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Ready",
+                  "status": "False"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "in",
+                    "path": ".status.conditions[type=\"Ready\"].reason",
+                    "values": [
+                      "DoesNotExist",
+                      "Issuing",
+                      "InProgress",
+                      "Pending",
+                      "MissingData"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "type": "condition",
+              "conditionType": "Issuing",
+              "status": "False",
+              "reason": "Failed"
+            }
+          ]
+        }
+      },
+      {
+        "group": "cert-manager.io",
+        "kind": "CertificateRequest",
+        "section": "certManager",
+        "title": "Certificate Requests",
+        "icon": "certificateRequest",
+        "order": 20,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "Denied",
+              "status": "True"
+            },
+            {
+              "type": "condition",
+              "conditionType": "InvalidRequest",
+              "status": "True"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Ready\"].reason",
+              "value": "Failed"
+            }
+          ]
+        }
+      },
+      {
+        "group": "cert-manager.io",
+        "kind": "Issuer",
+        "section": "certManager",
+        "title": "Issuers",
+        "icon": "issuer",
+        "order": 30,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+        }
+      },
+      {
+        "group": "cert-manager.io",
+        "kind": "ClusterIssuer",
+        "section": "certManager",
+        "title": "Cluster Issuers",
+        "icon": "clusterIssuer",
+        "order": 31,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+        }
+      },
+      {
+        "group": "acme.cert-manager.io",
+        "kind": "Order",
+        "section": "certManager",
+        "title": "Orders",
+        "icon": "acmeOrder",
+        "order": 40,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "in",
+          "path": ".status.state",
+          "values": [
+            "invalid",
+            "errored",
+            "expired"
+          ]
+        }
+      },
+      {
+        "group": "acme.cert-manager.io",
+        "kind": "Challenge",
+        "section": "certManager",
+        "title": "Challenges",
+        "icon": "acmeChallenge",
+        "order": 41,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "in",
+          "path": ".status.state",
+          "values": [
+            "invalid",
+            "errored",
+            "expired"
+          ]
+        }
+      }
+    ],
+    "sections": [
+      {
+        "section": "certManager",
+        "title": "cert-manager",
+        "icon": "certManager",
+        "after": "accessControl"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "certManager",
+        "label": {
+          "one": "{{count}} certificate needs attention",
+          "other": "{{count}} certificates need attention"
+        }
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "certmanager",
+        "title": "cert-manager",
+        "kinds": [
+          {
+            "group": "cert-manager.io",
+            "kind": "Certificate"
+          },
+          {
+            "group": "cert-manager.io",
+            "kind": "CertificateRequest"
+          },
+          {
+            "group": "cert-manager.io",
+            "kind": "Issuer"
+          },
+          {
+            "group": "cert-manager.io",
+            "kind": "ClusterIssuer"
+          },
+          {
+            "group": "acme.cert-manager.io",
+            "kind": "Order"
+          },
+          {
+            "group": "acme.cert-manager.io",
+            "kind": "Challenge"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      },
+      {
+        "id": "chain",
+        "title": "Issuance chain",
+        "kinds": [
+          {
+            "group": "cert-manager.io",
+            "kind": "Certificate"
+          },
+          {
+            "group": "cert-manager.io",
+            "kind": "CertificateRequest"
+          },
+          {
+            "group": "acme.cert-manager.io",
+            "kind": "Order"
+          },
+          {
+            "group": "acme.cert-manager.io",
+            "kind": "Challenge"
+          }
+        ],
+        "placement": "section",
+        "order": 24,
+        "heading": false
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Certificate"
+        },
+        "id": "cert-ready",
+        "title": "Ready",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "*": "warning"
+        },
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].status"
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "warning"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Certificate"
+        },
+        "id": "cert-secret",
+        "title": "Secret",
+        "paths": [
+          ".spec.secretName"
+        ],
+        "width": "minmax(120px, 1fr)",
+        "afterColumn": "cert-ready"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Certificate"
+        },
+        "id": "cert-issuer",
+        "title": "Issuer",
+        "paths": [
+          ".spec.issuerRef.name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.issuerRef.name",
+              "nonEmpty": true
+            },
+            "text": "{{.spec.issuerRef.kind ?? \"Issuer\"}}/{{.spec.issuerRef.name}}"
+          }
+        ],
+        "width": "minmax(120px, 1fr)",
+        "afterColumn": "cert-secret"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Certificate"
+        },
+        "id": "cert-expires",
+        "title": "Expires",
+        "paths": [
+          ".status.notAfter|daysLeft"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "olderThan",
+              "path": ".status.notAfter",
+              "minutes": 0
+            },
+            "text": "Expired",
+            "tone": "error",
+            "value": "{{.status.notAfter}}",
+            "tooltip": "{{.status.notAfter}}"
+          },
+          {
+            "when": {
+              "type": "expiring",
+              "path": ".status.notAfter"
+            },
+            "text": "{{.status.notAfter|daysLeft}} days",
+            "tone": "warning",
+            "value": "{{.status.notAfter}}",
+            "tooltip": "{{.status.notAfter}}",
+            "pluralBy": ".status.notAfter|daysLeft",
+            "textForms": {
+              "one": "{{.status.notAfter|daysLeft}} day"
+            }
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.notAfter"
+            },
+            "text": "{{.status.notAfter|daysLeft}} days",
+            "tone": "ok",
+            "value": "{{.status.notAfter}}",
+            "tooltip": "{{.status.notAfter}}",
+            "pluralBy": ".status.notAfter|daysLeft",
+            "textForms": {
+              "one": "{{.status.notAfter|daysLeft}} day"
+            }
+          }
+        ],
+        "filterBy": "value",
+        "width": "110px",
+        "afterColumn": "cert-issuer"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Certificate"
+        },
+        "id": "cert-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "width": "minmax(180px, 3fr)",
+        "afterColumn": "cert-expires"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "CertificateRequest"
+        },
+        "id": "cr-approved",
+        "title": "Approval",
+        "paths": [
+          ".status.conditions"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Denied",
+              "status": "True"
+            },
+            "text": "Denied",
+            "tone": "error",
+            "value": "denied"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Approved",
+              "status": "True"
+            },
+            "text": "Approved",
+            "tone": "ok",
+            "value": "approved"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Waiting",
+            "tone": "warning",
+            "value": "pending"
+          }
+        ],
+        "filterBy": "value",
+        "width": "100px",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "CertificateRequest"
+        },
+        "id": "cr-ready",
+        "title": "Ready",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "*": "warning"
+        },
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].status"
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "warning"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "cr-approved"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "CertificateRequest"
+        },
+        "id": "cr-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].reason"
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "cr-ready"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "CertificateRequest"
+        },
+        "id": "cr-certificate",
+        "title": "Certificate",
+        "paths": [
+          ".metadata.ownerReferences[kind=\"Certificate\"].name",
+          ".metadata.annotations[\"cert-manager.io/certificate-name\"]"
+        ],
+        "width": "minmax(120px, 1fr)",
+        "afterColumn": "cr-reason"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "CertificateRequest"
+        },
+        "id": "cr-issuer",
+        "title": "Issuer",
+        "paths": [
+          ".spec.issuerRef.name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.issuerRef.name",
+              "nonEmpty": true
+            },
+            "text": "{{.spec.issuerRef.kind ?? \"Issuer\"}}/{{.spec.issuerRef.name}}"
+          }
+        ],
+        "width": "minmax(120px, 1fr)",
+        "afterColumn": "cr-certificate"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "CertificateRequest"
+        },
+        "id": "cr-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "width": "minmax(180px, 3fr)",
+        "afterColumn": "cr-issuer"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Issuer"
+        },
+        "id": "issuer-ready",
+        "title": "Ready",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "*": "warning"
+        },
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].status"
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "warning"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Issuer"
+        },
+        "id": "issuer-type",
+        "title": "Type",
+        "paths": [
+          ".spec"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.acme"
+            },
+            "text": "acme"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.ca"
+            },
+            "text": "ca"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.selfSigned"
+            },
+            "text": "selfSigned"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.vault"
+            },
+            "text": "vault"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.venafi"
+            },
+            "text": "venafi"
+          }
+        ],
+        "width": "100px",
+        "afterColumn": "issuer-ready"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Issuer"
+        },
+        "id": "issuer-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].reason"
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "issuer-type"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Issuer"
+        },
+        "id": "issuer-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "width": "minmax(180px, 3fr)",
+        "afterColumn": "issuer-reason"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "ClusterIssuer"
+        },
+        "id": "ci-ready",
+        "title": "Ready",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "*": "warning"
+        },
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].status"
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "warning"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "ClusterIssuer"
+        },
+        "id": "ci-type",
+        "title": "Type",
+        "paths": [
+          ".spec"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.acme"
+            },
+            "text": "acme"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.ca"
+            },
+            "text": "ca"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.selfSigned"
+            },
+            "text": "selfSigned"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.vault"
+            },
+            "text": "vault"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.venafi"
+            },
+            "text": "venafi"
+          }
+        ],
+        "width": "100px",
+        "afterColumn": "ci-ready"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "ClusterIssuer"
+        },
+        "id": "ci-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].reason"
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "ci-type"
+      },
+      {
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "ClusterIssuer"
+        },
+        "id": "ci-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "tooltipPaths": [
+          ".status.conditions[type=\"Ready\"].message"
+        ],
+        "width": "minmax(180px, 3fr)",
+        "afterColumn": "ci-reason"
+      },
+      {
+        "kind": {
+          "group": "acme.cert-manager.io",
+          "kind": "Order"
+        },
+        "id": "order-state",
+        "title": "State",
+        "paths": [
+          ".status.state"
+        ],
+        "tones": {
+          "valid": "ok",
+          "invalid": "error",
+          "errored": "error",
+          "expired": "error",
+          "*": "warning"
+        },
+        "width": "100px",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "acme.cert-manager.io",
+          "kind": "Order"
+        },
+        "id": "order-request",
+        "title": "Request",
+        "paths": [
+          ".metadata.ownerReferences[kind=\"CertificateRequest\"].name"
+        ],
+        "width": "minmax(120px, 1fr)",
+        "afterColumn": "order-state"
+      },
+      {
+        "kind": {
+          "group": "acme.cert-manager.io",
+          "kind": "Order"
+        },
+        "id": "order-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.reason"
+        ],
+        "tooltipPaths": [
+          ".status.reason"
+        ],
+        "width": "minmax(200px, 3fr)",
+        "afterColumn": "order-request"
+      },
+      {
+        "kind": {
+          "group": "acme.cert-manager.io",
+          "kind": "Challenge"
+        },
+        "id": "ch-state",
+        "title": "State",
+        "paths": [
+          ".status.state"
+        ],
+        "tones": {
+          "valid": "ok",
+          "invalid": "error",
+          "errored": "error",
+          "expired": "error",
+          "*": "warning"
+        },
+        "width": "100px",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "acme.cert-manager.io",
+          "kind": "Challenge"
+        },
+        "id": "ch-domain",
+        "title": "Domain",
+        "paths": [
+          ".spec.dnsName"
+        ],
+        "width": "minmax(140px, 2fr)",
+        "afterColumn": "ch-state"
+      },
+      {
+        "kind": {
+          "group": "acme.cert-manager.io",
+          "kind": "Challenge"
+        },
+        "id": "ch-type",
+        "title": "Type",
+        "paths": [
+          ".spec.type"
+        ],
+        "width": "90px",
+        "afterColumn": "ch-domain"
+      },
+      {
+        "kind": {
+          "group": "acme.cert-manager.io",
+          "kind": "Challenge"
+        },
+        "id": "ch-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.reason"
+        ],
+        "tooltipPaths": [
+          ".status.reason"
+        ],
+        "width": "minmax(200px, 3fr)",
+        "afterColumn": "ch-type"
+      }
+    ],
+    "problems": [
+      {
+        "id": "certificate-not-ready",
+        "title": "Certificate not ready",
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Certificate"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "in",
+                "path": ".status.conditions[type=\"Ready\"].reason",
+                "values": [
+                  "DoesNotExist",
+                  "Issuing",
+                  "InProgress",
+                  "Pending",
+                  "MissingData"
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
+        "reasonOr": "NotReady",
+        "message": "{{.status.conditions[type=\"Ready\"].message}}",
+        "group": "not-ready",
+        "source": {
+          "maxObjects": 20000
+        }
+      },
+      {
+        "id": "certificate-issuance-failed",
+        "title": "Certificate issuance failed",
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Certificate"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "Issuing",
+              "status": "False",
+              "reason": "Failed"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "False"
+                  },
+                  {
+                    "type": "not",
+                    "of": {
+                      "type": "in",
+                      "path": ".status.conditions[type=\"Ready\"].reason",
+                      "values": [
+                        "DoesNotExist",
+                        "Issuing",
+                        "InProgress",
+                        "Pending",
+                        "MissingData"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Issuing\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "IssuanceFailed",
+        "message": "{{.status.conditions[type=\"Issuing\"].message}}",
+        "group": "not-ready",
+        "source": {
+          "maxObjects": 20000
+        }
+      },
+      {
+        "id": "certificate-expiring",
+        "title": "Certificate expiring",
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Certificate"
+        },
+        "when": {
+          "type": "expiring",
+          "path": ".status.notAfter"
+        },
+        "reason": "Expiring",
+        "message": "Expires at {{.status.notAfter}}",
+        "group": "expiring",
+        "source": {
+          "maxObjects": 20000
+        }
+      },
+      {
+        "id": "certificate-expired",
+        "title": "Certificate expired",
+        "kind": {
+          "group": "cert-manager.io",
+          "kind": "Certificate"
+        },
+        "when": {
+          "type": "olderThan",
+          "path": ".status.notAfter",
+          "minutes": 0
+        },
+        "reason": "Expired",
+        "message": "Expired at {{.status.notAfter}}",
+        "group": "expired",
+        "source": {
+          "maxObjects": 20000
+        }
+      }
+    ],
+    "problemsTitle": "Certificates"
+  },
+  "translations": {
+    "de": {
+      "name": "cert-manager",
+      "description": "Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders und Challenges von cert-manager mit ihrem Zustand und ihren Gründen, die Ausstellungskette Certificate → CertificateRequest → Order → Challenge und verständliche Erklärungen häufiger Fehler; Probleme von Certificates, die nicht bereit sind, sich nicht erneuern lassen, bald ablaufen oder abgelaufen sind. Nur lesend.",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "Ausstellungskette",
+      "columns.cert-ready.title": "Bereit",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "Aussteller",
+      "columns.cert-expires.title": "Läuft ab",
+      "columns.cert-expires.cases.0.text": "Abgelaufen",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} Tage",
+      "columns.cert-expires.cases.1.textForms.one": "{{.status.notAfter|daysLeft}} Tag",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} Tage",
+      "columns.cert-expires.cases.2.textForms.one": "{{.status.notAfter|daysLeft}} Tag",
+      "columns.cert-status.title": "Status",
+      "columns.cr-approved.title": "Genehmigung",
+      "columns.cr-approved.cases.0.text": "Abgelehnt",
+      "columns.cr-approved.cases.1.text": "Genehmigt",
+      "columns.cr-approved.cases.2.text": "Ausstehend",
+      "columns.cr-ready.title": "Bereit",
+      "columns.cr-reason.title": "Grund",
+      "columns.cr-certificate.title": "Zertifikat",
+      "columns.cr-issuer.title": "Aussteller",
+      "columns.cr-status.title": "Status",
+      "columns.issuer-ready.title": "Bereit",
+      "columns.issuer-type.title": "Typ",
+      "columns.issuer-reason.title": "Grund",
+      "columns.issuer-status.title": "Status",
+      "columns.ci-ready.title": "Bereit",
+      "columns.ci-type.title": "Typ",
+      "columns.ci-reason.title": "Grund",
+      "columns.ci-status.title": "Status",
+      "columns.order-state.title": "Zustand",
+      "columns.order-request.title": "Anforderung",
+      "columns.order-reason.title": "Grund",
+      "columns.ch-state.title": "Zustand",
+      "columns.ch-domain.title": "Domain",
+      "columns.ch-type.title": "Typ",
+      "columns.ch-reason.title": "Grund",
+      "problems.certificate-not-ready.title": "Certificate nicht bereit",
+      "problems.certificate-issuance-failed.title": "Ausstellung eines Certificate fehlgeschlagen",
+      "problems.certificate-expiring.title": "Certificate läuft bald ab",
+      "problems.certificate-expiring.message": "Läuft ab am {{.status.notAfter}}",
+      "problems.certificate-expired.title": "Certificate abgelaufen",
+      "problems.certificate-expired.message": "Abgelaufen am {{.status.notAfter}}",
+      "problemsTitle": "Zertifikate",
+      "sectionBadges.certManager.label.one": "{{count}} Zertifikat erfordert Aufmerksamkeit",
+      "sectionBadges.certManager.label.other": "{{count}} Zertifikate erfordern Aufmerksamkeit"
+    },
+    "es": {
+      "name": "cert-manager",
+      "description": "Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders y Challenges de cert-manager con su estado y motivos, la cadena de emisión Certificate → CertificateRequest → Order → Challenge y explicaciones claras de los fallos habituales; problemas de Certificates que no están listos, no se renuevan, caducan pronto o han caducado. Solo lectura.",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "Cadena de emisión",
+      "columns.cert-ready.title": "Listo",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "Emisor",
+      "columns.cert-expires.title": "Caduca",
+      "columns.cert-expires.cases.0.text": "Caducado",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} días",
+      "columns.cert-expires.cases.1.textForms.one": "{{.status.notAfter|daysLeft}} día",
+      "columns.cert-expires.cases.1.textForms.many": "{{.status.notAfter|daysLeft}} de días",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} días",
+      "columns.cert-expires.cases.2.textForms.one": "{{.status.notAfter|daysLeft}} día",
+      "columns.cert-expires.cases.2.textForms.many": "{{.status.notAfter|daysLeft}} de días",
+      "columns.cert-status.title": "Estado",
+      "columns.cr-approved.title": "Aprobación",
+      "columns.cr-approved.cases.0.text": "Denegada",
+      "columns.cr-approved.cases.1.text": "Aprobada",
+      "columns.cr-approved.cases.2.text": "En espera",
+      "columns.cr-ready.title": "Listo",
+      "columns.cr-reason.title": "Motivo",
+      "columns.cr-certificate.title": "Certificado",
+      "columns.cr-issuer.title": "Emisor",
+      "columns.cr-status.title": "Estado",
+      "columns.issuer-ready.title": "Listo",
+      "columns.issuer-type.title": "Tipo",
+      "columns.issuer-reason.title": "Motivo",
+      "columns.issuer-status.title": "Estado",
+      "columns.ci-ready.title": "Listo",
+      "columns.ci-type.title": "Tipo",
+      "columns.ci-reason.title": "Motivo",
+      "columns.ci-status.title": "Estado",
+      "columns.order-state.title": "Estado",
+      "columns.order-request.title": "Solicitud",
+      "columns.order-reason.title": "Motivo",
+      "columns.ch-state.title": "Estado",
+      "columns.ch-domain.title": "Dominio",
+      "columns.ch-type.title": "Tipo",
+      "columns.ch-reason.title": "Motivo",
+      "problems.certificate-not-ready.title": "Certificate no listo",
+      "problems.certificate-issuance-failed.title": "Falló la emisión del Certificate",
+      "problems.certificate-expiring.title": "Certificate a punto de caducar",
+      "problems.certificate-expiring.message": "Caduca el {{.status.notAfter}}",
+      "problems.certificate-expired.title": "Certificate caducado",
+      "problems.certificate-expired.message": "Caducó el {{.status.notAfter}}",
+      "problemsTitle": "Certificados",
+      "sectionBadges.certManager.label.one": "{{count}} certificado requiere atención",
+      "sectionBadges.certManager.label.many": "{{count}} de certificados requieren atención",
+      "sectionBadges.certManager.label.other": "{{count}} certificados requieren atención"
+    },
+    "fr": {
+      "name": "cert-manager",
+      "description": "Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders et Challenges de cert-manager avec leur état et leurs raisons, la chaîne d'émission Certificate → CertificateRequest → Order → Challenge et des explications claires des échecs courants ; problèmes des Certificates qui ne sont pas prêts, ne se renouvellent pas, expirent bientôt ou ont expiré. Lecture seule.",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "Chaîne d'émission",
+      "columns.cert-ready.title": "Prêt",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "Émetteur",
+      "columns.cert-expires.title": "Expiration",
+      "columns.cert-expires.cases.0.text": "Expiré",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} jours",
+      "columns.cert-expires.cases.1.textForms.one": "{{.status.notAfter|daysLeft}} jour",
+      "columns.cert-expires.cases.1.textForms.many": "{{.status.notAfter|daysLeft}} de jours",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} jours",
+      "columns.cert-expires.cases.2.textForms.one": "{{.status.notAfter|daysLeft}} jour",
+      "columns.cert-expires.cases.2.textForms.many": "{{.status.notAfter|daysLeft}} de jours",
+      "columns.cert-status.title": "État",
+      "columns.cr-approved.title": "Approbation",
+      "columns.cr-approved.cases.0.text": "Refusée",
+      "columns.cr-approved.cases.1.text": "Approuvée",
+      "columns.cr-approved.cases.2.text": "En attente",
+      "columns.cr-ready.title": "Prêt",
+      "columns.cr-reason.title": "Raison",
+      "columns.cr-certificate.title": "Certificat",
+      "columns.cr-issuer.title": "Émetteur",
+      "columns.cr-status.title": "État",
+      "columns.issuer-ready.title": "Prêt",
+      "columns.issuer-type.title": "Type",
+      "columns.issuer-reason.title": "Raison",
+      "columns.issuer-status.title": "État",
+      "columns.ci-ready.title": "Prêt",
+      "columns.ci-type.title": "Type",
+      "columns.ci-reason.title": "Raison",
+      "columns.ci-status.title": "État",
+      "columns.order-state.title": "État",
+      "columns.order-request.title": "Demande",
+      "columns.order-reason.title": "Raison",
+      "columns.ch-state.title": "État",
+      "columns.ch-domain.title": "Domaine",
+      "columns.ch-type.title": "Type",
+      "columns.ch-reason.title": "Raison",
+      "problems.certificate-not-ready.title": "Certificate non prêt",
+      "problems.certificate-issuance-failed.title": "Échec de l'émission du Certificate",
+      "problems.certificate-expiring.title": "Certificate sur le point d'expirer",
+      "problems.certificate-expiring.message": "Expire le {{.status.notAfter}}",
+      "problems.certificate-expired.title": "Certificate expiré",
+      "problems.certificate-expired.message": "Expiré le {{.status.notAfter}}",
+      "problemsTitle": "Certificats",
+      "sectionBadges.certManager.label.one": "{{count}} certificat requiert votre attention",
+      "sectionBadges.certManager.label.many": "{{count}} de certificats requièrent votre attention",
+      "sectionBadges.certManager.label.other": "{{count}} certificats requièrent votre attention"
+    },
+    "it": {
+      "name": "cert-manager",
+      "description": "Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders e Challenges di cert-manager con stato e motivi, la catena di emissione Certificate → CertificateRequest → Order → Challenge e spiegazioni chiare degli errori comuni; problemi dei Certificates non pronti, che non si rinnovano, in scadenza o scaduti. Sola lettura.",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "Catena di emissione",
+      "columns.cert-ready.title": "Pronto",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "Emittente",
+      "columns.cert-expires.title": "Scadenza",
+      "columns.cert-expires.cases.0.text": "Scaduto",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} giorni",
+      "columns.cert-expires.cases.1.textForms.one": "{{.status.notAfter|daysLeft}} giorno",
+      "columns.cert-expires.cases.1.textForms.many": "{{.status.notAfter|daysLeft}} di giorni",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} giorni",
+      "columns.cert-expires.cases.2.textForms.one": "{{.status.notAfter|daysLeft}} giorno",
+      "columns.cert-expires.cases.2.textForms.many": "{{.status.notAfter|daysLeft}} di giorni",
+      "columns.cert-status.title": "Stato",
+      "columns.cr-approved.title": "Approvazione",
+      "columns.cr-approved.cases.0.text": "Negata",
+      "columns.cr-approved.cases.1.text": "Approvata",
+      "columns.cr-approved.cases.2.text": "In attesa",
+      "columns.cr-ready.title": "Pronto",
+      "columns.cr-reason.title": "Motivo",
+      "columns.cr-certificate.title": "Certificato",
+      "columns.cr-issuer.title": "Emittente",
+      "columns.cr-status.title": "Stato",
+      "columns.issuer-ready.title": "Pronto",
+      "columns.issuer-type.title": "Tipo",
+      "columns.issuer-reason.title": "Motivo",
+      "columns.issuer-status.title": "Stato",
+      "columns.ci-ready.title": "Pronto",
+      "columns.ci-type.title": "Tipo",
+      "columns.ci-reason.title": "Motivo",
+      "columns.ci-status.title": "Stato",
+      "columns.order-state.title": "Stato",
+      "columns.order-request.title": "Richiesta",
+      "columns.order-reason.title": "Motivo",
+      "columns.ch-state.title": "Stato",
+      "columns.ch-domain.title": "Dominio",
+      "columns.ch-type.title": "Tipo",
+      "columns.ch-reason.title": "Motivo",
+      "problems.certificate-not-ready.title": "Certificate non pronto",
+      "problems.certificate-issuance-failed.title": "Emissione del Certificate non riuscita",
+      "problems.certificate-expiring.title": "Certificate in scadenza",
+      "problems.certificate-expiring.message": "Scade il {{.status.notAfter}}",
+      "problems.certificate-expired.title": "Certificate scaduto",
+      "problems.certificate-expired.message": "Scaduto il {{.status.notAfter}}",
+      "problemsTitle": "Certificati",
+      "sectionBadges.certManager.label.one": "{{count}} certificato richiede attenzione",
+      "sectionBadges.certManager.label.many": "{{count}} di certificati richiedono attenzione",
+      "sectionBadges.certManager.label.other": "{{count}} certificati richiedono attenzione"
+    },
+    "ja": {
+      "name": "cert-manager",
+      "description": "cert-manager の Certificate、CertificateRequest、Issuer、ClusterIssuer、Order、Challenge とその状態と理由、発行チェーン Certificate → CertificateRequest → Order → Challenge、よくある失敗のわかりやすい説明。準備ができていない、更新に失敗している、期限切れが近い、期限切れの Certificate を問題として表示します。読み取り専用。",
+      "kinds.0.title": "Certificate",
+      "kinds.1.title": "CertificateRequest",
+      "kinds.2.title": "Issuer",
+      "kinds.3.title": "ClusterIssuer",
+      "kinds.4.title": "Order",
+      "kinds.5.title": "Challenge",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "発行チェーン",
+      "columns.cert-ready.title": "準備完了",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "発行者",
+      "columns.cert-expires.title": "有効期限",
+      "columns.cert-expires.cases.0.text": "期限切れ",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} 日",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} 日",
+      "columns.cert-status.title": "状態",
+      "columns.cr-approved.title": "承認",
+      "columns.cr-approved.cases.0.text": "拒否",
+      "columns.cr-approved.cases.1.text": "承認済み",
+      "columns.cr-approved.cases.2.text": "待機中",
+      "columns.cr-ready.title": "準備完了",
+      "columns.cr-reason.title": "理由",
+      "columns.cr-certificate.title": "証明書",
+      "columns.cr-issuer.title": "発行者",
+      "columns.cr-status.title": "状態",
+      "columns.issuer-ready.title": "準備完了",
+      "columns.issuer-type.title": "タイプ",
+      "columns.issuer-reason.title": "理由",
+      "columns.issuer-status.title": "状態",
+      "columns.ci-ready.title": "準備完了",
+      "columns.ci-type.title": "タイプ",
+      "columns.ci-reason.title": "理由",
+      "columns.ci-status.title": "状態",
+      "columns.order-state.title": "状態",
+      "columns.order-request.title": "要求",
+      "columns.order-reason.title": "理由",
+      "columns.ch-state.title": "状態",
+      "columns.ch-domain.title": "ドメイン",
+      "columns.ch-type.title": "タイプ",
+      "columns.ch-reason.title": "理由",
+      "problems.certificate-not-ready.title": "Certificate が準備できていません",
+      "problems.certificate-issuance-failed.title": "Certificate の発行に失敗しました",
+      "problems.certificate-expiring.title": "Certificate の期限切れが近づいています",
+      "problems.certificate-expiring.message": "有効期限: {{.status.notAfter}}",
+      "problems.certificate-expired.title": "Certificate の期限切れ",
+      "problems.certificate-expired.message": "{{.status.notAfter}} に期限切れ",
+      "problemsTitle": "証明書",
+      "sectionBadges.certManager.label.other": "対応が必要な証明書が {{count}} 件あります"
+    },
+    "ko": {
+      "name": "cert-manager",
+      "description": "cert-manager의 Certificate, CertificateRequest, Issuer, ClusterIssuer, Order, Challenge와 그 상태 및 이유, 발급 체인 Certificate → CertificateRequest → Order → Challenge, 흔한 실패에 대한 쉬운 설명; 준비되지 않았거나 갱신에 실패했거나 곧 만료되거나 만료된 Certificate의 문제. 읽기 전용.",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "발급 체인",
+      "columns.cert-ready.title": "준비",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "발급자",
+      "columns.cert-expires.title": "만료",
+      "columns.cert-expires.cases.0.text": "만료됨",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}}일",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}}일",
+      "columns.cert-status.title": "상태",
+      "columns.cr-approved.title": "승인",
+      "columns.cr-approved.cases.0.text": "거부됨",
+      "columns.cr-approved.cases.1.text": "승인됨",
+      "columns.cr-approved.cases.2.text": "대기 중",
+      "columns.cr-ready.title": "준비",
+      "columns.cr-reason.title": "이유",
+      "columns.cr-certificate.title": "인증서",
+      "columns.cr-issuer.title": "발급자",
+      "columns.cr-status.title": "상태",
+      "columns.issuer-ready.title": "준비",
+      "columns.issuer-type.title": "유형",
+      "columns.issuer-reason.title": "이유",
+      "columns.issuer-status.title": "상태",
+      "columns.ci-ready.title": "준비",
+      "columns.ci-type.title": "유형",
+      "columns.ci-reason.title": "이유",
+      "columns.ci-status.title": "상태",
+      "columns.order-state.title": "상태",
+      "columns.order-request.title": "요청",
+      "columns.order-reason.title": "이유",
+      "columns.ch-state.title": "상태",
+      "columns.ch-domain.title": "도메인",
+      "columns.ch-type.title": "유형",
+      "columns.ch-reason.title": "이유",
+      "problems.certificate-not-ready.title": "Certificate 준비 안 됨",
+      "problems.certificate-issuance-failed.title": "Certificate 발급 실패",
+      "problems.certificate-expiring.title": "Certificate 곧 만료",
+      "problems.certificate-expiring.message": "{{.status.notAfter}}에 만료",
+      "problems.certificate-expired.title": "Certificate 만료됨",
+      "problems.certificate-expired.message": "{{.status.notAfter}}에 만료됨",
+      "problemsTitle": "인증서",
+      "sectionBadges.certManager.label.other": "확인이 필요한 인증서 {{count}}개"
+    },
+    "pl": {
+      "name": "cert-manager",
+      "description": "Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders i Challenges z cert-manager wraz ze stanem i przyczynami, łańcuch wystawiania Certificate → CertificateRequest → Order → Challenge oraz proste wyjaśnienia typowych błędów; problemy Certificates, które nie są gotowe, nie odnawiają się, wkrótce wygasną lub wygasły. Tylko do odczytu.",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "Łańcuch wystawiania",
+      "columns.cert-ready.title": "Gotowe",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "Wystawca",
+      "columns.cert-expires.title": "Wygasa",
+      "columns.cert-expires.cases.0.text": "Wygasł",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} dnia",
+      "columns.cert-expires.cases.1.textForms.one": "{{.status.notAfter|daysLeft}} dzień",
+      "columns.cert-expires.cases.1.textForms.few": "{{.status.notAfter|daysLeft}} dni",
+      "columns.cert-expires.cases.1.textForms.many": "{{.status.notAfter|daysLeft}} dni",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} dnia",
+      "columns.cert-expires.cases.2.textForms.one": "{{.status.notAfter|daysLeft}} dzień",
+      "columns.cert-expires.cases.2.textForms.few": "{{.status.notAfter|daysLeft}} dni",
+      "columns.cert-expires.cases.2.textForms.many": "{{.status.notAfter|daysLeft}} dni",
+      "columns.cert-status.title": "Stan",
+      "columns.cr-approved.title": "Zatwierdzenie",
+      "columns.cr-approved.cases.0.text": "Odrzucone",
+      "columns.cr-approved.cases.1.text": "Zatwierdzone",
+      "columns.cr-approved.cases.2.text": "Oczekuje",
+      "columns.cr-ready.title": "Gotowe",
+      "columns.cr-reason.title": "Przyczyna",
+      "columns.cr-certificate.title": "Certyfikat",
+      "columns.cr-issuer.title": "Wystawca",
+      "columns.cr-status.title": "Stan",
+      "columns.issuer-ready.title": "Gotowe",
+      "columns.issuer-type.title": "Typ",
+      "columns.issuer-reason.title": "Przyczyna",
+      "columns.issuer-status.title": "Stan",
+      "columns.ci-ready.title": "Gotowe",
+      "columns.ci-type.title": "Typ",
+      "columns.ci-reason.title": "Przyczyna",
+      "columns.ci-status.title": "Stan",
+      "columns.order-state.title": "Stan",
+      "columns.order-request.title": "Żądanie",
+      "columns.order-reason.title": "Przyczyna",
+      "columns.ch-state.title": "Stan",
+      "columns.ch-domain.title": "Domena",
+      "columns.ch-type.title": "Typ",
+      "columns.ch-reason.title": "Przyczyna",
+      "problems.certificate-not-ready.title": "Certificate nie jest gotowy",
+      "problems.certificate-issuance-failed.title": "Wystawienie Certificate nie powiodło się",
+      "problems.certificate-expiring.title": "Certificate wkrótce wygaśnie",
+      "problems.certificate-expiring.message": "Wygasa {{.status.notAfter}}",
+      "problems.certificate-expired.title": "Certificate wygasł",
+      "problems.certificate-expired.message": "Wygasł {{.status.notAfter}}",
+      "problemsTitle": "Certyfikaty",
+      "sectionBadges.certManager.label.one": "{{count}} certyfikat wymaga uwagi",
+      "sectionBadges.certManager.label.few": "{{count}} certyfikaty wymagają uwagi",
+      "sectionBadges.certManager.label.many": "{{count}} certyfikatów wymaga uwagi",
+      "sectionBadges.certManager.label.other": "{{count}} certyfikatu wymaga uwagi"
+    },
+    "pt-BR": {
+      "name": "cert-manager",
+      "description": "Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders e Challenges do cert-manager com seu estado e motivos, a cadeia de emissão Certificate → CertificateRequest → Order → Challenge e explicações claras das falhas comuns; problemas de Certificates que não estão prontos, não renovam, expiram em breve ou expiraram. Somente leitura.",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "Cadeia de emissão",
+      "columns.cert-ready.title": "Pronto",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "Emissor",
+      "columns.cert-expires.title": "Expira",
+      "columns.cert-expires.cases.0.text": "Expirado",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} dias",
+      "columns.cert-expires.cases.1.textForms.one": "{{.status.notAfter|daysLeft}} dia",
+      "columns.cert-expires.cases.1.textForms.many": "{{.status.notAfter|daysLeft}} dias",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} dias",
+      "columns.cert-expires.cases.2.textForms.one": "{{.status.notAfter|daysLeft}} dia",
+      "columns.cert-expires.cases.2.textForms.many": "{{.status.notAfter|daysLeft}} dias",
+      "columns.cert-status.title": "Status",
+      "columns.cr-approved.title": "Aprovação",
+      "columns.cr-approved.cases.0.text": "Negado",
+      "columns.cr-approved.cases.1.text": "Aprovado",
+      "columns.cr-approved.cases.2.text": "Aguardando",
+      "columns.cr-ready.title": "Pronto",
+      "columns.cr-reason.title": "Motivo",
+      "columns.cr-certificate.title": "Certificado",
+      "columns.cr-issuer.title": "Emissor",
+      "columns.cr-status.title": "Status",
+      "columns.issuer-ready.title": "Pronto",
+      "columns.issuer-type.title": "Tipo",
+      "columns.issuer-reason.title": "Motivo",
+      "columns.issuer-status.title": "Status",
+      "columns.ci-ready.title": "Pronto",
+      "columns.ci-type.title": "Tipo",
+      "columns.ci-reason.title": "Motivo",
+      "columns.ci-status.title": "Status",
+      "columns.order-state.title": "Estado",
+      "columns.order-request.title": "Solicitação",
+      "columns.order-reason.title": "Motivo",
+      "columns.ch-state.title": "Estado",
+      "columns.ch-domain.title": "Domínio",
+      "columns.ch-type.title": "Tipo",
+      "columns.ch-reason.title": "Motivo",
+      "problems.certificate-not-ready.title": "Certificate não pronto",
+      "problems.certificate-issuance-failed.title": "Falha na emissão do Certificate",
+      "problems.certificate-expiring.title": "Certificate prestes a expirar",
+      "problems.certificate-expiring.message": "Expira em {{.status.notAfter}}",
+      "problems.certificate-expired.title": "Certificate expirado",
+      "problems.certificate-expired.message": "Expirou em {{.status.notAfter}}",
+      "problemsTitle": "Certificados",
+      "sectionBadges.certManager.label.one": "{{count}} certificado requer atenção",
+      "sectionBadges.certManager.label.many": "{{count}} certificados requerem atenção",
+      "sectionBadges.certManager.label.other": "{{count}} certificados requerem atenção"
+    },
+    "ru": {
+      "name": "cert-manager",
+      "description": "Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders и Challenges из cert-manager с их состоянием и причинами, цепочка выпуска Certificate → CertificateRequest → Order → Challenge и понятные объяснения частых сбоев; проблемы Certificates, которые не готовы, не обновляются, скоро истекают или истекли. Только чтение.",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "Цепочка выпуска",
+      "columns.cert-ready.title": "Готов",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "Издатель",
+      "columns.cert-expires.title": "Истекает",
+      "columns.cert-expires.cases.0.text": "Истек",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} дня",
+      "columns.cert-expires.cases.1.textForms.one": "{{.status.notAfter|daysLeft}} день",
+      "columns.cert-expires.cases.1.textForms.few": "{{.status.notAfter|daysLeft}} дня",
+      "columns.cert-expires.cases.1.textForms.many": "{{.status.notAfter|daysLeft}} дней",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} дня",
+      "columns.cert-expires.cases.2.textForms.one": "{{.status.notAfter|daysLeft}} день",
+      "columns.cert-expires.cases.2.textForms.few": "{{.status.notAfter|daysLeft}} дня",
+      "columns.cert-expires.cases.2.textForms.many": "{{.status.notAfter|daysLeft}} дней",
+      "columns.cert-status.title": "Состояние",
+      "columns.cr-approved.title": "Одобрение",
+      "columns.cr-approved.cases.0.text": "Отклонен",
+      "columns.cr-approved.cases.1.text": "Одобрен",
+      "columns.cr-approved.cases.2.text": "Ожидает",
+      "columns.cr-ready.title": "Готов",
+      "columns.cr-reason.title": "Причина",
+      "columns.cr-certificate.title": "Сертификат",
+      "columns.cr-issuer.title": "Издатель",
+      "columns.cr-status.title": "Состояние",
+      "columns.issuer-ready.title": "Готов",
+      "columns.issuer-type.title": "Тип",
+      "columns.issuer-reason.title": "Причина",
+      "columns.issuer-status.title": "Состояние",
+      "columns.ci-ready.title": "Готов",
+      "columns.ci-type.title": "Тип",
+      "columns.ci-reason.title": "Причина",
+      "columns.ci-status.title": "Состояние",
+      "columns.order-state.title": "Состояние",
+      "columns.order-request.title": "Запрос",
+      "columns.order-reason.title": "Причина",
+      "columns.ch-state.title": "Состояние",
+      "columns.ch-domain.title": "Домен",
+      "columns.ch-type.title": "Тип",
+      "columns.ch-reason.title": "Причина",
+      "problems.certificate-not-ready.title": "Certificate не готов",
+      "problems.certificate-issuance-failed.title": "Не удалось выпустить Certificate",
+      "problems.certificate-expiring.title": "Certificate скоро истечет",
+      "problems.certificate-expiring.message": "Истекает {{.status.notAfter}}",
+      "problems.certificate-expired.title": "Certificate истек",
+      "problems.certificate-expired.message": "Истек {{.status.notAfter}}",
+      "problemsTitle": "Сертификаты",
+      "sectionBadges.certManager.label.one": "{{count}} сертификат требует внимания",
+      "sectionBadges.certManager.label.few": "{{count}} сертификата требуют внимания",
+      "sectionBadges.certManager.label.many": "{{count}} сертификатов требуют внимания",
+      "sectionBadges.certManager.label.other": "{{count}} сертификата требуют внимания"
+    },
+    "tr": {
+      "name": "cert-manager",
+      "description": "cert-manager'ın Certificate, CertificateRequest, Issuer, ClusterIssuer, Order ve Challenge nesneleri; durumları ve nedenleri, Certificate → CertificateRequest → Order → Challenge verme zinciri ve sık görülen hataların anlaşılır açıklamaları; hazır olmayan, yenilenemeyen, süresi dolmak üzere olan veya dolmuş Certificate'ların sorunları. Salt okunur.",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "Sertifika verme zinciri",
+      "columns.cert-ready.title": "Hazır",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "Veren",
+      "columns.cert-expires.title": "Sona erme",
+      "columns.cert-expires.cases.0.text": "Süresi doldu",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} gün",
+      "columns.cert-expires.cases.1.textForms.one": "{{.status.notAfter|daysLeft}} gün",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} gün",
+      "columns.cert-expires.cases.2.textForms.one": "{{.status.notAfter|daysLeft}} gün",
+      "columns.cert-status.title": "Durum",
+      "columns.cr-approved.title": "Onay",
+      "columns.cr-approved.cases.0.text": "Reddedildi",
+      "columns.cr-approved.cases.1.text": "Onaylandı",
+      "columns.cr-approved.cases.2.text": "Bekliyor",
+      "columns.cr-ready.title": "Hazır",
+      "columns.cr-reason.title": "Neden",
+      "columns.cr-certificate.title": "Sertifika",
+      "columns.cr-issuer.title": "Veren",
+      "columns.cr-status.title": "Durum",
+      "columns.issuer-ready.title": "Hazır",
+      "columns.issuer-type.title": "Tür",
+      "columns.issuer-reason.title": "Neden",
+      "columns.issuer-status.title": "Durum",
+      "columns.ci-ready.title": "Hazır",
+      "columns.ci-type.title": "Tür",
+      "columns.ci-reason.title": "Neden",
+      "columns.ci-status.title": "Durum",
+      "columns.order-state.title": "Durum",
+      "columns.order-request.title": "İstek",
+      "columns.order-reason.title": "Neden",
+      "columns.ch-state.title": "Durum",
+      "columns.ch-domain.title": "Alan adı",
+      "columns.ch-type.title": "Tür",
+      "columns.ch-reason.title": "Neden",
+      "problems.certificate-not-ready.title": "Certificate hazır değil",
+      "problems.certificate-issuance-failed.title": "Certificate verilemedi",
+      "problems.certificate-expiring.title": "Certificate süresi dolmak üzere",
+      "problems.certificate-expiring.message": "Sona erme: {{.status.notAfter}}",
+      "problems.certificate-expired.title": "Certificate süresi doldu",
+      "problems.certificate-expired.message": "Sona erdi: {{.status.notAfter}}",
+      "problemsTitle": "Sertifikalar",
+      "sectionBadges.certManager.label.one": "{{count}} sertifika ilgi bekliyor",
+      "sectionBadges.certManager.label.other": "{{count}} sertifika ilgi bekliyor"
+    },
+    "uk": {
+      "name": "cert-manager",
+      "description": "Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders і Challenges з cert-manager з їхнім станом і причинами, ланцюжок випуску Certificate → CertificateRequest → Order → Challenge і зрозумілі пояснення типових збоїв; проблеми Certificates, які не готові, не оновлюються, скоро спливають або прострочені. Лише читання.",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "Ланцюжок випуску",
+      "columns.cert-ready.title": "Готовий",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "Видавець",
+      "columns.cert-expires.title": "Спливає",
+      "columns.cert-expires.cases.0.text": "Сплив",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} дня",
+      "columns.cert-expires.cases.1.textForms.one": "{{.status.notAfter|daysLeft}} день",
+      "columns.cert-expires.cases.1.textForms.few": "{{.status.notAfter|daysLeft}} дні",
+      "columns.cert-expires.cases.1.textForms.many": "{{.status.notAfter|daysLeft}} днів",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} дня",
+      "columns.cert-expires.cases.2.textForms.one": "{{.status.notAfter|daysLeft}} день",
+      "columns.cert-expires.cases.2.textForms.few": "{{.status.notAfter|daysLeft}} дні",
+      "columns.cert-expires.cases.2.textForms.many": "{{.status.notAfter|daysLeft}} днів",
+      "columns.cert-status.title": "Стан",
+      "columns.cr-approved.title": "Схвалення",
+      "columns.cr-approved.cases.0.text": "Відхилено",
+      "columns.cr-approved.cases.1.text": "Схвалено",
+      "columns.cr-approved.cases.2.text": "Очікує",
+      "columns.cr-ready.title": "Готовий",
+      "columns.cr-reason.title": "Причина",
+      "columns.cr-certificate.title": "Сертифікат",
+      "columns.cr-issuer.title": "Видавець",
+      "columns.cr-status.title": "Стан",
+      "columns.issuer-ready.title": "Готовий",
+      "columns.issuer-type.title": "Тип",
+      "columns.issuer-reason.title": "Причина",
+      "columns.issuer-status.title": "Стан",
+      "columns.ci-ready.title": "Готовий",
+      "columns.ci-type.title": "Тип",
+      "columns.ci-reason.title": "Причина",
+      "columns.ci-status.title": "Стан",
+      "columns.order-state.title": "Стан",
+      "columns.order-request.title": "Запит",
+      "columns.order-reason.title": "Причина",
+      "columns.ch-state.title": "Стан",
+      "columns.ch-domain.title": "Домен",
+      "columns.ch-type.title": "Тип",
+      "columns.ch-reason.title": "Причина",
+      "problems.certificate-not-ready.title": "Certificate не готовий",
+      "problems.certificate-issuance-failed.title": "Не вдалося випустити Certificate",
+      "problems.certificate-expiring.title": "Термін дії Certificate скоро мине",
+      "problems.certificate-expiring.message": "Спливає {{.status.notAfter}}",
+      "problems.certificate-expired.title": "Термін дії Certificate минув",
+      "problems.certificate-expired.message": "Сплив {{.status.notAfter}}",
+      "problemsTitle": "Сертифікати",
+      "sectionBadges.certManager.label.one": "{{count}} сертифікат потребує уваги",
+      "sectionBadges.certManager.label.few": "{{count}} сертифікати потребують уваги",
+      "sectionBadges.certManager.label.many": "{{count}} сертифікатів потребують уваги",
+      "sectionBadges.certManager.label.other": "{{count}} сертифіката потребують уваги"
+    },
+    "zh-CN": {
+      "name": "cert-manager",
+      "description": "cert-manager 的 Certificate、CertificateRequest、Issuer、ClusterIssuer、Order 和 Challenge 及其状态和原因，签发链 Certificate → CertificateRequest → Order → Challenge，以及常见故障的通俗解释；未就绪、续期失败、即将过期或已过期的 Certificate 的问题。只读。",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "签发链",
+      "columns.cert-ready.title": "就绪",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "签发者",
+      "columns.cert-expires.title": "过期时间",
+      "columns.cert-expires.cases.0.text": "已过期",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} 天",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} 天",
+      "columns.cert-status.title": "状态",
+      "columns.cr-approved.title": "审批",
+      "columns.cr-approved.cases.0.text": "已拒绝",
+      "columns.cr-approved.cases.1.text": "已批准",
+      "columns.cr-approved.cases.2.text": "等待中",
+      "columns.cr-ready.title": "就绪",
+      "columns.cr-reason.title": "原因",
+      "columns.cr-certificate.title": "证书",
+      "columns.cr-issuer.title": "签发者",
+      "columns.cr-status.title": "状态",
+      "columns.issuer-ready.title": "就绪",
+      "columns.issuer-type.title": "类型",
+      "columns.issuer-reason.title": "原因",
+      "columns.issuer-status.title": "状态",
+      "columns.ci-ready.title": "就绪",
+      "columns.ci-type.title": "类型",
+      "columns.ci-reason.title": "原因",
+      "columns.ci-status.title": "状态",
+      "columns.order-state.title": "状态",
+      "columns.order-request.title": "请求",
+      "columns.order-reason.title": "原因",
+      "columns.ch-state.title": "状态",
+      "columns.ch-domain.title": "域名",
+      "columns.ch-type.title": "类型",
+      "columns.ch-reason.title": "原因",
+      "problems.certificate-not-ready.title": "Certificate 未就绪",
+      "problems.certificate-issuance-failed.title": "Certificate 签发失败",
+      "problems.certificate-expiring.title": "Certificate 即将过期",
+      "problems.certificate-expiring.message": "将于 {{.status.notAfter}} 过期",
+      "problems.certificate-expired.title": "Certificate 已过期",
+      "problems.certificate-expired.message": "已于 {{.status.notAfter}} 过期",
+      "problemsTitle": "证书",
+      "sectionBadges.certManager.label.other": "{{count}} 个证书需要关注"
+    },
+    "zh-TW": {
+      "name": "cert-manager",
+      "description": "cert-manager 的 Certificate、CertificateRequest、Issuer、ClusterIssuer、Order 和 Challenge 及其狀態與原因，簽發鏈 Certificate → CertificateRequest → Order → Challenge，以及常見失敗的淺白說明；未就緒、續期失敗、即將過期或已過期的 Certificate 問題。唯讀。",
+      "kinds.0.title": "Certificates",
+      "kinds.1.title": "Certificate Requests",
+      "kinds.2.title": "Issuers",
+      "kinds.3.title": "Cluster Issuers",
+      "kinds.4.title": "Orders",
+      "kinds.5.title": "Challenges",
+      "sections.certManager.title": "cert-manager",
+      "detailsSections.certmanager.title": "cert-manager",
+      "detailsSections.chain.title": "簽發鏈",
+      "columns.cert-ready.title": "就緒",
+      "columns.cert-secret.title": "Secret",
+      "columns.cert-issuer.title": "簽發者",
+      "columns.cert-expires.title": "到期時間",
+      "columns.cert-expires.cases.0.text": "已到期",
+      "columns.cert-expires.cases.1.text": "{{.status.notAfter|daysLeft}} 天",
+      "columns.cert-expires.cases.2.text": "{{.status.notAfter|daysLeft}} 天",
+      "columns.cert-status.title": "狀態",
+      "columns.cr-approved.title": "核准",
+      "columns.cr-approved.cases.0.text": "已拒絕",
+      "columns.cr-approved.cases.1.text": "已核准",
+      "columns.cr-approved.cases.2.text": "等候中",
+      "columns.cr-ready.title": "就緒",
+      "columns.cr-reason.title": "原因",
+      "columns.cr-certificate.title": "憑證",
+      "columns.cr-issuer.title": "簽發者",
+      "columns.cr-status.title": "狀態",
+      "columns.issuer-ready.title": "就緒",
+      "columns.issuer-type.title": "類型",
+      "columns.issuer-reason.title": "原因",
+      "columns.issuer-status.title": "狀態",
+      "columns.ci-ready.title": "就緒",
+      "columns.ci-type.title": "類型",
+      "columns.ci-reason.title": "原因",
+      "columns.ci-status.title": "狀態",
+      "columns.order-state.title": "狀態",
+      "columns.order-request.title": "要求",
+      "columns.order-reason.title": "原因",
+      "columns.ch-state.title": "狀態",
+      "columns.ch-domain.title": "網域",
+      "columns.ch-type.title": "類型",
+      "columns.ch-reason.title": "原因",
+      "problems.certificate-not-ready.title": "Certificate 未就緒",
+      "problems.certificate-issuance-failed.title": "Certificate 簽發失敗",
+      "problems.certificate-expiring.title": "Certificate 即將過期",
+      "problems.certificate-expiring.message": "將於 {{.status.notAfter}} 到期",
+      "problems.certificate-expired.title": "Certificate 已過期",
+      "problems.certificate-expired.message": "已於 {{.status.notAfter}} 到期",
+      "problemsTitle": "憑證",
+      "sectionBadges.certManager.label.other": "{{count}} 個憑證需要注意"
+    }
+  }
+}

@@ -33,7 +33,6 @@ export const PROBLEM_CATEGORIES = [
   "workloads",
   "jobs",
   "volumes",
-  "certificates",
   "gateway",
   "mesh",
   "crossplane",
@@ -218,8 +217,6 @@ export const DAEMONSET = k("apps", "v1", "DaemonSet");
 export const JOB = k("batch", "v1", "Job");
 export const CRONJOB = k("batch", "v1", "CronJob");
 export const REPLICASET = k("apps", "v1", "ReplicaSet");
-/** cert-manager's Certificate. */
-export const CERTIFICATE = k("cert-manager.io", "v1", "Certificate");
 
 function time(value: string | undefined): number | undefined {
   if (!value) return undefined;
@@ -241,7 +238,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (same(kind, JOB)) return "jobs";
   if (same(kind, PVC)) return "volumes";
   if (same(kind, EVENT)) return "events";
-  if (same(kind, CERTIFICATE)) return "certificates";
   if (kind.group === "gateway.networking.k8s.io") return "gateway";
   return undefined;
 }
@@ -509,60 +505,7 @@ function eventProblems(event: KubeObject): Detected[] {
   ];
 }
 
-// ---------- Certificates, Flux, Argo CD, Gateway API ----------
-
-/** Ready=False reasons of a certificate being issued (a new or renewed one), not of a failure. */
-const CERT_IN_PROGRESS = new Set(["DoesNotExist", "Issuing", "InProgress", "Pending", "MissingData"]);
-
-/** cert-manager gave up the current issuance attempt (it retries later with a growing delay). */
-export function issuanceFailed(cert: KubeObject): boolean {
-  const issuing = condition(cert, "Issuing");
-  return str(get(issuing, "status")) === "False" && str(get(issuing, "reason")) === "Failed";
-}
-
-function certificateProblems(cert: KubeObject): Detected[] {
-  const found: Detected[] = [];
-  const ready = condition(cert, "Ready");
-  const readyReasonText = str(get(ready, "reason"));
-  if (str(get(ready, "status")) === "False" && !CERT_IN_PROGRESS.has(readyReasonText ?? "")) {
-    found.push({
-      reason: readyReasonText ?? "NotReady",
-      group: "notReady",
-      message: str(get(ready, "message")),
-      since: transition(ready),
-      graceMs: SHORT_GRACE_MS,
-      notify: true,
-    });
-  } else if (issuanceFailed(cert)) {
-    // A first issuance that keeps failing stays Ready=False/DoesNotExist, a failing renewal Ready=True: the Issuing
-    // condition (False, reason Failed) is what says so.
-    const issuing = condition(cert, "Issuing");
-    found.push({
-      reason: "IssuanceFailed",
-      group: "notReady",
-      message: str(get(issuing, "message")),
-      since: transition(issuing),
-      graceMs: SHORT_GRACE_MS,
-      notify: true,
-    });
-  }
-  const notAfterText = str(get(cert, "status", "notAfter"));
-  const notAfter = time(notAfterText);
-  if (notAfter !== undefined && notAfterText) {
-    const params = { date: notAfterText };
-    found.push({
-      reason: "Expiring",
-      messageKey: "messages.expires",
-      messageParams: params,
-      activeFrom: notAfter - certExpiryWarningMs,
-      expiresAt: notAfter,
-      until: notAfter,
-      notify: true,
-    });
-    found.push({ reason: "Expired", messageKey: "messages.expired", messageParams: params, activeFrom: notAfter, notify: true });
-  }
-  return found;
-}
+// ---------- Gateway API ----------
 
 function gatewayProblems(obj: KubeObject, kind: KindRef): Detected[] {
   if (!isGatewayProblem(obj, kind)) return [];
@@ -636,8 +579,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return claimProblems(obj);
     case "events":
       return eventProblems(obj);
-    case "certificates":
-      return certificateProblems(obj);
     case "gateway":
       return gatewayProblems(obj, kind);
     case "security":

@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Les vues des outils du cluster sont désormais des extensions",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager et OpenShift ont quitté Sextant pour ses propres extensions du catalogue d'extensions, mises à jour séparément. Installez ci-dessous celles que vous utilisez : d'ici là, leurs sections ne sont pas affichées. Vos réglages de notification pour elles sont conservés, et la barre latérale les propose aussi dans les clusters qui exécutent ces outils."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager et OpenShift ont quitté Sextant pour ses propres extensions du catalogue d'extensions, mises à jour séparément. Installez ci-dessous celles que vous utilisez : d'ici là, leurs sections ne sont pas affichées. Vos réglages de notification pour elles sont conservés, et la barre latérale les propose aussi dans les clusters qui exécutent ces outils."
     },
     "api4": {
       "title": "API d’extensions 4",
@@ -42,6 +42,7 @@
       "kueue": "ClusterQueues avec quota et utilisation, LocalQueues, Workloads et pourquoi ils attendent",
       "kyverno": "Politiques avec leur mode et leurs résultats, rapports de politiques et résultats de chaque objet",
       "sealed-secrets": "SealedSecrets avec leur état de synchronisation, leur portée, leur Secret cible et leurs clés scellées, et le contrôleur avec ses clés de scellement",
+      "cert-manager": "Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders et Challenges avec leur état expliqué clairement et la chaîne d'émission",
       "trivy": "Rapports de vulnérabilités, d'audit de configuration, de secrets exposés, RBAC, d'infrastructure, de conformité et SBOM avec leurs constats les plus graves, et les analyses d'images de chaque charge de travail",
       "keda": "ScaledObjects, ScaledJobs et TriggerAuthentications avec leur état, leurs déclencheurs et le HPA que KEDA gère",
       "karpenter": "NodePools avec leurs limites et perturbations, NodeClaims avec leur lancement, et classes de nœuds",

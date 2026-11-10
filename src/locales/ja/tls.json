@@ -1,0 +1,65 @@
+{
+  "section": {
+    "title": "証明書",
+    "loading": "証明書を読み取り中…",
+    "failed": "証明書を読み取れませんでした",
+    "forbidden": "この Secret を読み取る権限がないため、証明書を表示できません。",
+    "noCertificate": "この Secret には tls.crt がありません。",
+    "invalid": "tls.crt は Sextant が読み取れる証明書ではありません。",
+    "selfSigned": "自己署名",
+    "chainLength_other": "{{count}} 個の証明書",
+    "chainTitle": "tls.crt のチェーン",
+    "truncated": "後続の証明書がありますが、読み取っていません。",
+    "caTitle": "CA (ca.crt)",
+    "caInvalid": "ca.crt は Sextant が読み取れる証明書ではありません。",
+    "fields": {
+      "issuedBy": "発行元",
+      "subject": "サブジェクト",
+      "dnsNames": "DNS 名",
+      "ipAddresses": "IP アドレス",
+      "uris": "URI",
+      "emails": "メールアドレス",
+      "issuer": "発行者",
+      "notBefore": "有効期間の開始",
+      "notAfter": "有効期間の終了",
+      "key": "公開鍵",
+      "signature": "署名",
+      "serial": "シリアル番号",
+      "fingerprint": "SHA-256 フィンガープリント",
+      "isCA": "CA 証明書",
+      "chain": "チェーン"
+    }
+  },
+  "page": {
+    "sidebar": "TLS 証明書",
+    "title": "TLS 証明書",
+    "hint": "表示中の namespace の TLS Secret を、有効期限が近い順に表示します。一覧はページを開いたときと「更新」を押したときに読み取ります。",
+    "refresh": "更新",
+    "loading": "TLS Secret を読み取り中…",
+    "failed": "TLS Secret を読み取れませんでした",
+    "forbidden": "すべての namespace の Secret を一覧表示する権限がありません。フィルターで namespace を選択してください",
+    "forbiddenIn": "Secret を一覧表示する権限がない namespace: {{namespaces}}",
+    "truncated_other": "最初の {{count}} 個の Secret のみを読み取りました。",
+    "namespacesTruncated_other": "最初の {{count}} 個の namespace (名前順) のみを読み取りました。フィルターで選択する数を減らしてください。",
+    "none": "TLS Secret はありません。",
+    "unreadable": "読み取り不可",
+    "total_other": "{{count}} 個の TLS Secret",
+    "totalWarned_other": "{{count}} 個の TLS Secret。期限切れ間近、期限切れ、または読み取り不可: {{warned}}",
+    "columns": {
+      "name": "名前",
+      "namespace": "Namespace",
+      "names": "名前",
+      "issuer": "発行者",
+      "notAfter": "有効期間の終了",
+      "expires": "有効期限"
+    }
+  },
+  "expiry": {
+    "expired": "期限切れ",
+    "daysLeft_other": "{{count}} 日",
+    "expiredOn": "{{date}} に期限切れ",
+    "notYetValid": "まだ有効ではありません ({{date}} から有効)",
+    "until_other": "{{date}} (残り {{count}} 日)"
+  },
+  "yes": "はい"
+}

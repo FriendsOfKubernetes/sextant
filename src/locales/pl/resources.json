@@ -11,7 +11,6 @@
     "events": "Zdarzenia",
     "helm": "Helm",
     "accessControl": "Kontrola dostępu",
-    "certManager": "cert-manager",
     "volumeSnapshots": "Migawki woluminów",
     "istio": "Istio",
     "linkerd": "Linkerd",

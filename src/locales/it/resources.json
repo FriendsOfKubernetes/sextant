@@ -11,7 +11,6 @@
     "events": "Eventi",
     "helm": "Helm",
     "accessControl": "Controllo degli accessi",
-    "certManager": "cert-manager",
     "volumeSnapshots": "Snapshot dei volumi",
     "istio": "Istio",
     "linkerd": "Linkerd",

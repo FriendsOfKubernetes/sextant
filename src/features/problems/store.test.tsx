@@ -1,12 +1,13 @@
 import { act, render, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { defaultAppSettings, type AppSettings, type KubeObject } from "../../api";
+import { defaultAppSettings, type AppSettings, type KubeObject, type ProblemContribution } from "../../api";
 import { resetSettingsCache, updateSettings } from "../../api/settings";
 import { resetClusterKinds } from "../../resources";
 import { resetClustersStore, useClustersStore } from "../clusters/clustersStore";
 import { emitDelta, emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { useClusterProblems, useProblemSources } from "./hooks";
-import { CERTIFICATE, isActive, resolve, setCertExpiryDays, type ProblemCategory } from "./model";
+import { registerExtensionProblems } from "./extensionCategories";
+import { isActive, resolve, setCertExpiryDays, type ProblemCategory } from "./model";
 import { CATEGORY_SOURCES, sourceKey } from "./sources";
 import { acquireSource, applyCertExpiryDays, getSource, LINGER_MS, MAX_PROBLEM_OBJECTS, resetProblemSources } from "./store";
 
@@ -132,7 +133,21 @@ describe("problem sources", () => {
 });
 
 describe("the certificate expiry warning setting", () => {
-  const CERTS = CATEGORY_SOURCES.certificates[0]!;
+  // An extension's `expiring` rule (Sextant's own cert-manager extension has one, ADR-0167): it follows the setting.
+  const CERTIFICATE = { group: "cert-manager.io", version: "v1", kind: "Certificate" };
+  const CATEGORY = "ext:sextant.cert-manager" as const;
+  const RULE = {
+    id: "certificate-expiring",
+    title: "Certificate expiring",
+    kind: { group: CERTIFICATE.group, kind: CERTIFICATE.kind },
+    when: { type: "expiring", path: ".status.notAfter" },
+    reason: "Expiring",
+    message: "Expires at {{.status.notAfter}}",
+    graceMinutes: 0,
+    notify: true,
+    toldThroughOwner: false,
+  } as unknown as ProblemContribution;
+  const CERTS = { category: CATEGORY, kind: CERTIFICATE, fieldSelector: null, discovered: true };
   const DAY = 24 * 3600_000;
   const cert = (daysLeft: number): KubeObject => ({
     apiVersion: "cert-manager.io/v1",
@@ -145,18 +160,26 @@ describe("the certificate expiry warning setting", () => {
   });
   const expiring = (key: string) =>
     getSource(key)?.problems.filter((p) => p.reason === "Expiring" && isActive(p, Date.now())) ?? [];
+  let unregister: () => void;
+
+  beforeEach(() => {
+    unregister = registerExtensionProblems("sextant.cert-manager", "Certificates", [RULE]);
+  });
 
   afterEach(() => {
+    unregister();
     resetSettingsCache();
     resetClusterKinds();
   });
 
   it("30 days flags a certificate with 20 days left; 14 does not", () => {
+    const found = (days: number) =>
+      resolve(CERTIFICATE, cert(days), Date.now(), [], CATEGORY).filter((p) => p.reason === "Expiring" && isActive(p, Date.now()));
     setCertExpiryDays(30);
-    expect(resolve(CERTIFICATE, cert(20), Date.now()).filter((p) => p.reason === "Expiring" && isActive(p, Date.now()))).toHaveLength(1);
+    expect(found(20)).toHaveLength(1);
     setCertExpiryDays(14);
-    expect(resolve(CERTIFICATE, cert(20), Date.now()).filter((p) => p.reason === "Expiring" && isActive(p, Date.now()))).toHaveLength(0);
-    expect(resolve(CERTIFICATE, cert(10), Date.now()).filter((p) => p.reason === "Expiring" && isActive(p, Date.now()))).toHaveLength(1);
+    expect(found(20)).toHaveLength(0);
+    expect(found(10)).toHaveLength(1);
   });
 
   it("a change moves the held problems at once, without a new update or a reconnect", async () => {
@@ -183,7 +206,10 @@ describe("the certificate expiry warning setting", () => {
     wb.backend.on("cluster_kinds", () => [
       { kindRef: CERTIFICATE, plural: "certificates", namespaced: true, verbs: ["list", "watch"], printerColumns: [] },
     ]);
-    const { result } = renderHook(() => useClusterProblems("c1", ["certificates"]));
+    wb.backend.on("extension_problem_scopes", () => [
+      { kind: { group: CERTIFICATE.group, kind: CERTIFICATE.kind }, namespaces: { type: "all" } },
+    ]);
+    const { result } = renderHook(() => useClusterProblems("c1", [CATEGORY]));
     emitSnapshot(wb, await watchOf(wb, "Certificate"), [cert(20)]);
     await waitFor(() => expect(result.current.active.map((p) => p.reason)).toEqual(["Expiring"]));
     await act(() => updateSettings((s) => ({ ...s, notifications: { ...s.notifications, certExpiryDays: 10 } })));

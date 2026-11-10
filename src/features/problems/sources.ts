@@ -1,5 +1,5 @@
 // Which kinds are watched for each category of problems. Built-in kinds are watched without discovery; the kinds of
-// installed tools (cert-manager, Gateway API, …) only once discovery says the cluster serves them, at the
+// installed tools (Gateway API, Istio, …) only once discovery says the cluster serves them, at the
 // version it serves.
 import type { KindRef, KubeObject, ResourceKind } from "../../api";
 import { findKind } from "../../resources";
@@ -7,7 +7,6 @@ import { COUNTED_KINDS } from "../gateway-api/problems";
 import { XRD } from "../crossplane/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
 import {
-  CERTIFICATE,
   CRONJOB,
   DAEMONSET,
   REPLICASET,
@@ -105,7 +104,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   workloads: [builtIn("workloads", DEPLOYMENT), builtIn("workloads", STATEFULSET), builtIn("workloads", DAEMONSET)],
   jobs: [builtIn("jobs", JOB)],
   volumes: [builtIn("volumes", PVC)],
-  certificates: [tool("certificates", CERTIFICATE)],
   gateway: COUNTED_KINDS.map((kind) => tool("gateway", kind)),
   // Istio routing and mTLS mistakes (#155): judged across objects by the provider of features/mesh (`external`), held
   // only where the cluster serves VirtualServices.

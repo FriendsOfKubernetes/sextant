@@ -11,7 +11,6 @@
     "events": "Olaylar",
     "helm": "Helm",
     "accessControl": "Erişim denetimi",
-    "certManager": "cert-manager",
     "volumeSnapshots": "Birim anlık görüntüleri",
     "istio": "Istio",
     "linkerd": "Linkerd",

@@ -476,7 +476,8 @@ const ICONS = {
   backendTlsPolicy: FileLock,
   gatewayPolicies: Scale,
   requestCheck: Crosshair,
-  // cert-manager (src/features/cert-manager) and TLS certificates of Secrets.
+  // cert-manager's kinds, named by Sextant's own extension `extensions/cert-manager` (its section's icon is
+  // `certManager`), and the TLS certificates page (src/features/tls).
   certificate: FileBadge,
   certificateRequest: FileKey,
   issuer: Stamp,

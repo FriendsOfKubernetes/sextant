@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import type { KindRef, KubeObject } from "../../api";
-import { CERTIFICATE, CLUSTER_ISSUER } from "../cert-manager/model";
 import { GIT_REPOSITORY, HELM_RELEASE } from "../../resources/gitopsKinds";
 import { GATEWAY, REFERENCE_GRANT } from "../gateway-api/model";
 import {
@@ -20,7 +19,7 @@ import {
   SERVICE_ACCOUNT,
   STATEFUL_SET,
 } from "../resource-map/kinds";
-import { CLEANUP_CLUSTER_KINDS, CLEANUP_NAMESPACE_KINDS, ENDPOINTS, VOLUME_SNAPSHOT } from "./kinds";
+import { CERTIFICATE, CLEANUP_CLUSTER_KINDS, CLEANUP_NAMESPACE_KINDS, CLUSTER_ISSUER, ENDPOINTS, VOLUME_SNAPSHOT } from "./kinds";
 import { managerOf } from "./managed";
 import { findCleanup, SYSTEM_NAMESPACES, type CleanupAges, type CleanupInput, type ClusterState, type KindList, type NamespaceSample } from "./rules";
 import { scanReferences } from "./scan";

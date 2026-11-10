@@ -121,7 +121,7 @@ export type ColumnFilterValue =
   | readonly (string | number | boolean | null | undefined)[];
 
 /**
- * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `gatewayApi`, `certManager` and
+ * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `gatewayApi`, `istio` and
  * others belong to APIs and tools installed in the cluster: see `DISCOVERED_SECTIONS`.
  */
 export const SIDEBAR_SECTIONS = [
@@ -136,7 +136,6 @@ export const SIDEBAR_SECTIONS = [
   "events",
   "helm",
   "accessControl",
-  "certManager",
   "volumeSnapshots",
   "istio",
   "linkerd",
@@ -147,11 +146,15 @@ export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
 
 /**
  * Places kept for the sections of Sextant's own extensions (ADR-0162), which were Sextant's sections before 0.30: the
- * section comes where it always was, after the Sextant section named here, whatever its manifest's `after` says.
+ * section comes where it always was, after the section named here, whatever its manifest's `after` says. That is a
+ * Sextant section or one placed earlier in this list (a place is kept whether that section is shown or not), and the
+ * sections that name the same one follow it in this order.
  */
-export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, after: SidebarSection])[] = [
-  // Trivy, KEDA and Karpenter came after cert-manager, the Vertical Pod Autoscaler after Karpenter: all are extension
-  // sections now, so they hang off `certManager`, in this order.
+export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, after: SidebarSection | string])[] = [
+  // cert-manager came after Access Control; Trivy, KEDA and Karpenter after cert-manager, the Vertical Pod Autoscaler
+  // after Karpenter: all are extension sections now, so cert-manager hangs off `accessControl` and the others off
+  // `certManager`, in this order.
+  ["certManager", "accessControl"],
   ["trivy", "certManager"],
   ["keda", "certManager"],
   ["karpenter", "certManager"],
@@ -196,7 +199,6 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
  */
 export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>([
   "gatewayApi",
-  "certManager",
   "volumeSnapshots",
   "istio",
   "linkerd",
@@ -216,7 +218,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   events: "events",
   helm: "helm",
   accessControl: "accessControl",
-  certManager: "certManager",
   volumeSnapshots: "volumeSnapshots",
   istio: "istio",
   linkerd: "linkerd",

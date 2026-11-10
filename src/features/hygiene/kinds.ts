@@ -5,7 +5,6 @@
 // PersistentVolumes, Namespaces and ClusterIssuers are watched cluster-wide. A kind the cluster does not serve is
 // never watched; it simply cannot refer to anything.
 import type { KindRef } from "../../api";
-import { CERTIFICATE, CLUSTER_ISSUER, ISSUER } from "../cert-manager/model";
 import {
   BUCKET,
   GIT_REPOSITORY,
@@ -35,6 +34,11 @@ import {
   STATEFUL_SET,
   STORAGE_CLASS,
 } from "../resource-map/kinds";
+
+/** cert-manager's kinds that name Secrets (its views are Sextant's own extension `extensions/cert-manager`). */
+export const CERTIFICATE: KindRef = { group: "cert-manager.io", version: "v1", kind: "Certificate" };
+export const ISSUER: KindRef = { group: "cert-manager.io", version: "v1", kind: "Issuer" };
+export const CLUSTER_ISSUER: KindRef = { group: "cert-manager.io", version: "v1", kind: "ClusterIssuer" };
 
 const k = (group: string, version: string, kind: string): KindRef => ({ group, version, kind });
 
