@@ -247,4 +247,4 @@ target, whatever the HPA is called); the rows of that kind keep those texts. A k
 objects from the problems store, judged with the other objects' rows, instead of the object alone.
 Placeholders gain `|product` (paths multiplied with ` * `, a missing one counting as 1: replicas times shards),
 `|countAll` (the items of the lists in a list: a PrometheusRule's rules over its groups) and `|selector` (a label
-selector as the API server writes one, requirements by key: `app=web,tier in (a,b)`).
+selector as the built-in views wrote one, labels first, each part in the object's order: `app=web,tier in (a,b)`).

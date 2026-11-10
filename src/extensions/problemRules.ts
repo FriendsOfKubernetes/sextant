@@ -485,21 +485,19 @@ function filteredText(value: unknown, filter: string | undefined): string | unde
     return String(value.reduce<number>((n, item) => n + (Array.isArray(item) ? item.length : 0), 0));
   }
   if (filter === "selector") {
-    // A label selector as the API server writes one (#404): `app=web,tier in (a,b)`, requirements by key.
+    // A label selector written as the built-in views wrote one (#404): `app=web,tier in (a,b)`, labels first, each part
+    // in the object's own order.
     const selector = labelSelectorOf(value);
     if (!selector) return undefined;
-    const parts: [string, string][] = Object.entries(selector.matchLabels).map(([k, v]) => [k, `${k}=${v}`]);
+    const parts = Object.entries(selector.matchLabels).map(([k, v]) => `${k}=${v}`);
     for (const { key, operator, values } of selector.matchExpressions) {
-      const list = [...values].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join(",");
+      const list = values.join(",");
       const text =
         operator === "In" ? `${key} in (${list})` : operator === "NotIn" ? `${key} notin (${list})` : operator === "Exists" ? key : operator === "DoesNotExist" ? `!${key}` : undefined;
       if (text === undefined) return undefined;
-      parts.push([key, text]);
+      parts.push(text);
     }
-    return parts
-      .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
-      .map(([, text]) => text)
-      .join(",");
+    return parts.join(",");
   }
   if (filter === "unique") {
     // Each text once, sorted by code point (#404): the policies a report names, as the built-in Kyverno message did.
