@@ -20,7 +20,7 @@ import {
   type RuleSource,
 } from "../../api";
 import { compileRules, kindKeyOf, type RuleContext } from "../../extensions/problemRules";
-import { comparedPaths, factsOf, judgeAcross, judgedAcross, lookedUp, rowOf, selectedKinds, type AcrossTarget } from "../../extensions/problemsAcross";
+import { comparedPaths, factsOf, judgeAcross, judgedAcross, lookedUp, referrersOf, rowOf, selectedKinds, type AcrossTarget, type ReferrerRule } from "../../extensions/problemsAcross";
 import { setExtensionDetector, setExtensionOptIn, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
 import { MAX_SOURCE_OBJECTS, type SourceDef } from "./sources";
 
@@ -43,6 +43,8 @@ interface Entry {
   selected: ReadonlySet<string>;
   /** `group/kind` → the paths a `relatedBy` compares on it: its rows keep their texts (#404). */
   compared: ReadonlyMap<string, readonly string[]>;
+  /** `group/kind` → how its rules' objects are named by others of the kind: its rows keep those names (#404). */
+  referrers: ReadonlyMap<string, readonly ReferrerRule[]>;
   /** Off until the user turns it on (a category of the extension's own, #410). */
   optIn: boolean;
 }
@@ -109,6 +111,7 @@ export function registerExtensionProblems(
     facts: factsOf(rules, kindKeyOf),
     selected: selectedKinds(rules, kindKeyOf),
     compared: comparedPaths(rules, kindKeyOf),
+    referrers: referrersOf(rules, kindKeyOf),
     sources,
     optIn: own?.optIn ?? false,
   };
@@ -276,7 +279,7 @@ export function extensionSourcesFor(
     }
     for (const { def, key } of judged) {
       def.judge = {
-        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? [], entry.facts.get(key) ?? [], entry.selected.has(key), entry.compared.get(key) ?? []), max: def.maxObjects ?? MAX_SOURCE_OBJECTS },
+        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? [], entry.facts.get(key) ?? [], entry.selected.has(key), entry.compared.get(key) ?? [], entry.referrers.get(key) ?? []), max: def.maxObjects ?? MAX_SOURCE_OBJECTS },
         judge: (problems, context) => judgeAcross(problems, context, { rules: entry.rules, targets }),
       };
     }

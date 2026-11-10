@@ -253,3 +253,8 @@ up to 12 pairs, enough for "the first False condition but these types" (Cluster 
 A path may hold two lists (`[*]` twice), the second's items of every first's item read as one flat list (a proxy's
 delegations' namespaces); `+` adds counts before `|count` too (a scalar counting 1); a text condition's values may hold
 the object's own texts (`{{.metadata.namespace}}/`), a value whose placeholder has none left out.
+A rule's `toldThroughReferrer` (`path` of a list in objects of the rule's own kind, an item's `namePath` and
+`namespacePath`, the referrer's `when`) leaves a problem untold while an object of its kind that names it there,
+directly or through others naming each other, holds `when` — an orphaned HTTPProxy under an invalid one, which tells
+it; the rows of the kind keep the names they name (at most 200) and the `when` as a fact; rows not read in full cannot
+tell, so the problem is not told on its own either.

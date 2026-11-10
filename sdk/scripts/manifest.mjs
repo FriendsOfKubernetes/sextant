@@ -915,6 +915,17 @@ function checkProblems(manifest) {
       metadataOnly,
       narrowed: rule.source?.labelSelector !== undefined,
     });
+    if (rule.toldThroughReferrer !== undefined) {
+      // Told through a referrer of its own kind (#404).
+      const at = [...here, "toldThroughReferrer"];
+      const ref = rule.toldThroughReferrer;
+      if (manifest.sextantApi < SOURCES_API) fail(at, `needs sextantApi ${SOURCES_API} or later`);
+      checkRulePath(ref.path, rule.kind, [...at, "path"], metadataOnly);
+      checkRulePath(ref.namePath, rule.kind, [...at, "namePath"], false);
+      if (ref.namespacePath !== undefined) checkRulePath(ref.namespacePath, rule.kind, [...at, "namespacePath"], false);
+      checkObjectCondition(ref.when, [rule.kind], [...at, "when"], manifest.sextantApi);
+      if (usesTime(ref.when)) fail([...at, "when"], "reads no time (`olderThan`): it is judged when that object changes");
+    }
     if (rule.toldThroughOwner === true && manifest.sextantApi < ACROSS_API) {
       fail([...here, "toldThroughOwner"], `needs sextantApi ${ACROSS_API} or later`);
     }

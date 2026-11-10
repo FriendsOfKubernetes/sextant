@@ -90,6 +90,12 @@ pub struct ProblemContribution {
     /// problem of this extension's rules: the owner tells it (ADR-0144); `sextantApi` 3.
     #[serde(default)]
     pub told_through_owner: bool,
+    /// Not told while an object of the rule's kind that names this one in its list at `path` — directly or through
+    /// others that name each other there — holds `when` (#404): an orphaned HTTPProxy under an invalid one, which
+    /// tells it. `sextantApi` 4; unknown (not told) while those rows are not read in full.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub told_through_referrer: Option<ReferrerRule>,
     /// A label key: of the objects of the rule's kind in one namespace with the same value of this label, only the
     /// newest (by `metadata.creationTimestamp`) can have the problem (ADR-0144); `sextantApi` 3.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -567,6 +573,37 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             Inside::Top,
             &mut checks,
         )?;
+        if let Some(referrer) = &rule.told_through_referrer {
+            let here = here.key("toldThroughReferrer");
+            if manifest.sextant_api < SOURCES_API {
+                return Err(at(
+                    &here,
+                    format!("needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            check_rule_path(&referrer.path, &rule.kind, &here.key("path"), metadata_only)?;
+            check_rule_path(
+                &referrer.name_path,
+                &rule.kind,
+                &here.key("namePath"),
+                false,
+            )?;
+            if let Some(ns) = &referrer.namespace_path {
+                check_rule_path(ns, &rule.kind, &here.key("namespacePath"), false)?;
+            }
+            check_object_condition(
+                &referrer.when,
+                std::slice::from_ref(&rule.kind),
+                &here.key("when"),
+                manifest.sextant_api,
+            )?;
+            if uses_time(&referrer.when) {
+                return Err(at(
+                    &here.key("when"),
+                    "reads no time (`olderThan`): it is judged when that object changes",
+                ));
+            }
+        }
         if rule.told_through_owner && manifest.sextant_api < ACROSS_API {
             return Err(at(
                 &here.key("toldThroughOwner"),
@@ -1585,6 +1622,23 @@ pub struct FieldPair {
 
 /// The most pairs a `relatedBy` compares (#404).
 pub const MAX_FIELD_PAIRS: usize = 4;
+
+/// How a rule's object is named by others of its kind (`toldThroughReferrer`, #404).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ReferrerRule {
+    /// The list of references in a referrer (`.spec.includes`).
+    pub path: String,
+    /// An item's name (`.name`).
+    pub name_path: String,
+    /// An item's namespace (`.namespace`), else the referrer's own.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub namespace_path: Option<String>,
+    /// What a referrer holds to tell the problem (`Valid` False); reads only the referrer, no time.
+    pub when: Box<ProblemCondition>,
+}
 
 /// The most paths a placeholder adds (#404).
 pub const MAX_ADDED_PATHS: usize = 4;

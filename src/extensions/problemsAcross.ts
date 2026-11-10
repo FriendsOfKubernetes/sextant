@@ -27,9 +27,17 @@ export interface AcrossRow {
   facts?: Record<string, boolean>;
   /** The texts at the paths a `relatedBy` compares on this kind (#404), by path. */
   values?: Record<string, string>;
+  /** `namespace/name` of the objects it names in a `toldThroughReferrer` list (#404), at most `MAX_ROW_REFS`. */
+  refs?: string[];
   /** Every label, for a kind a `selectsNone` selects from (#404); at most `MAX_ROW_LABELS`. */
   allLabels?: Record<string, string>;
 }
+
+/** How a rule names others of its kind (`toldThroughReferrer`, #404). */
+export type ReferrerRule = NonNullable<ProblemContribution["toldThroughReferrer"]>;
+
+/** The most references a row keeps for `toldThroughReferrer` (#404). */
+export const MAX_ROW_REFS = 200;
 
 /** The most labels a row keeps for `selectsNone` (#404). */
 export const MAX_ROW_LABELS = 64;
@@ -40,6 +48,7 @@ export function rowOf(
   facts: readonly ProblemCondition[] = [],
   keepLabels = false,
   valuePaths: readonly string[] = [],
+  referrers: readonly ReferrerRule[] = [],
 ): (obj: KubeObject) => AcrossRow {
   return (obj) => {
     const meta = (obj.metadata ?? {}) as { name?: string; namespace?: string; creationTimestamp?: string; labels?: Record<string, unknown> };
@@ -52,6 +61,20 @@ export function rowOf(
     const created = Date.parse(meta.creationTimestamp ?? "");
     const row: AcrossRow = { namespace: meta.namespace ?? "", name: meta.name ?? "", created: Number.isNaN(created) ? undefined : created, labels };
     if (facts.length > 0) row.facts = Object.fromEntries(facts.map((when) => [factKey(when), evaluate(when, obj).holds]));
+    if (referrers.length > 0) {
+      const refs = new Set<string>();
+      for (const { path, namePath, namespacePath } of referrers) {
+        const items = valueAt(obj, path);
+        for (const item of Array.isArray(items) ? items : []) {
+          const name = valueAt(item, namePath);
+          const ns = namespacePath === undefined ? undefined : valueAt(item, namespacePath);
+          if (typeof name !== "string" || name === "") continue;
+          refs.add(`${typeof ns === "string" && ns !== "" ? ns : (meta.namespace ?? "")}/${name}`);
+          if (refs.size >= MAX_ROW_REFS) break;
+        }
+      }
+      row.refs = [...refs];
+    }
     if (valuePaths.length > 0) {
       row.values = {};
       for (const path of valuePaths) {
@@ -167,10 +190,45 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
     return label === undefined || index.get(`${row.namespace}|${key}|${label}`) === p.uid;
   };
 
+  // Who names whom (`toldThroughReferrer`, #404), built once from the source's own rows: `namespace/name` → referrers.
+  let referrers: Map<string, AcrossRow[]> | null | undefined;
+  const referrersIndex = (): Map<string, AcrossRow[]> | null => {
+    if (referrers !== undefined) return referrers;
+    const rows = context.rows;
+    if (!usable(rows)) return (referrers = null);
+    const out = new Map<string, AcrossRow[]>();
+    for (const value of rows.rows.values()) {
+      const row = value as AcrossRow;
+      for (const ref of row.refs ?? []) out.set(ref, [...(out.get(ref) ?? []), row]);
+    }
+    return (referrers = out);
+  };
+  /** Whether an object of its kind naming `p`'s object, directly or through others, holds the rule's `when`. */
+  const toldByReferrer = (p: Problem, ref: ReferrerRule): boolean => {
+    const index = referrersIndex();
+    // Not read in full: cannot tell, so not told on its own either.
+    if (!index) return true;
+    const fact = factKey(ref.when);
+    const start = `${p.object.namespace ?? ""}/${p.object.name}`;
+    const seen = new Set([start]);
+    const queue = [start];
+    while (queue.length > 0) {
+      for (const parent of index.get(queue.shift()!) ?? []) {
+        const key = `${parent.namespace}/${parent.name}`;
+        if (seen.has(key)) continue;
+        if (parent.facts?.[fact] === true) return true;
+        seen.add(key);
+        queue.push(key);
+      }
+    }
+    return false;
+  };
+
   return problems.filter((p) => {
     // By the rule that found it, never by its group: a group may name no rule, and then its lookups would be skipped.
     const rule = rules.get(p.rule ?? p.group ?? "");
     if (!rule) return true;
+    if (rule.toldThroughReferrer && toldByReferrer(p, rule.toldThroughReferrer)) return false;
     if (p.ownerUid !== undefined && context.problemUids().has(p.ownerUid)) return false;
     if (p.lookups && !missing(p)) return false;
     if (rule.newestPer !== undefined && !isNewest(p, rule.newestPer)) return false;
@@ -187,7 +245,7 @@ function newer(a: AcrossRow, b: AcrossRow): boolean {
 
 /** Whether a rule needs the rows of other objects: `missing`, `toldThroughOwner` or `newestPer`. */
 export function judgedAcross(rule: ProblemContribution): boolean {
-  return rule.toldThroughOwner || rule.newestPer !== undefined || lookedUp(rule.when).length > 0;
+  return rule.toldThroughOwner || rule.toldThroughReferrer !== undefined || rule.newestPer !== undefined || lookedUp(rule.when).length > 0;
 }
 
 /** The kinds a condition looks up (`missing`). */
@@ -232,6 +290,27 @@ export function factsOf(rules: readonly ProblemContribution[], keyOf: (kind: { g
       out.set(key, list);
     } else if (condition.type === "all" || condition.type === "any") condition.of.forEach(visit);
   };
-  for (const rule of rules) visit(rule.when);
+  for (const rule of rules) {
+    visit(rule.when);
+    // A referrer's `when` is a fact of the rule's own kind (#404).
+    const told = rule.toldThroughReferrer;
+    if (told) {
+      const key = keyOf(rule.kind);
+      const list = out.get(key) ?? [];
+      if (!list.some((c) => factKey(c) === factKey(told.when))) list.push(told.when);
+      out.set(key, list);
+    }
+  }
+  return out;
+}
+
+/** The `toldThroughReferrer`s of `rules`, by the `group/kind` key (`keyOf`) of their own kind (#404). */
+export function referrersOf(rules: readonly ProblemContribution[], keyOf: (kind: { group: string; kind: string }) => string): Map<string, ReferrerRule[]> {
+  const out = new Map<string, ReferrerRule[]>();
+  for (const rule of rules) {
+    if (!rule.toldThroughReferrer) continue;
+    const key = keyOf(rule.kind);
+    out.set(key, [...(out.get(key) ?? []), rule.toldThroughReferrer]);
+  }
   return out;
 }

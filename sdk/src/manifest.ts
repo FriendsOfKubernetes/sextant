@@ -250,6 +250,11 @@ export interface ManifestProblem {
   message: string;
   /** Not told while the object's controller has a problem of this extension (sextantApi 3). Default `false`. */
   toldThroughOwner?: boolean;
+  /**
+   * Not told while an object of the rule's kind naming this one in its list at `path` (directly or through others
+   * that name each other there) holds `when` (since Sextant 0.30).
+   */
+  toldThroughReferrer?: { path: string; namePath: string; namespacePath?: string; when: ProblemCondition };
   /** A label key: of one namespace's objects with the same value of it, only the newest has the problem (sextantApi 3). */
   newestPer?: string;
   /**

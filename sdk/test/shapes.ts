@@ -153,6 +153,7 @@ export const MANIFEST_SHAPES = {
     notify: "optional",
     message: "required",
     toldThroughOwner: "optional",
+    toldThroughReferrer: "optional",
     newestPer: "optional",
     source: "optional",
     group: "optional",

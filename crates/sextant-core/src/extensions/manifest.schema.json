@@ -830,6 +830,18 @@
           "description": "Not told while the object's controller has a problem of this extension's rules (sextantApi 3).",
           "type": "boolean"
         },
+        "toldThroughReferrer": {
+          "description": "Not told while an object of the rule's kind naming this one in its list at `path` (directly or through others) holds `when` (sextantApi 4).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "namePath", "when"],
+          "properties": {
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "namePath": { "$ref": "#/$defs/fieldPath" },
+            "namespacePath": { "$ref": "#/$defs/fieldPath" },
+            "when": { "$ref": "#/$defs/problemCondition" }
+          }
+        },
         "newestPer": {
           "description": "A label key: of the objects of one namespace with the same value of this label, only the newest can have the problem (sextantApi 3).",
           "type": "string",

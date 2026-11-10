@@ -88,6 +88,45 @@ const TARGETS: AcrossTarget[] = [
 ];
 const judge = (problems: Problem[], ctx: JudgeContext) => judgeAcross(problems, ctx, { rules: RULES, targets: TARGETS });
 
+describe("toldThroughReferrer (#404)", () => {
+  const PROXY = { group: "projectcontour.io", kind: "HTTPProxy" };
+  const invalid: ProblemCondition = { type: "equals", path: ".status.currentStatus", value: "invalid" };
+  const ORPHAN = rule({
+    id: "orphaned",
+    kind: PROXY,
+    when: { type: "equals", path: ".status.currentStatus", value: "orphaned" },
+    toldThroughReferrer: { path: ".spec.includes", namePath: ".name", namespacePath: ".namespace", when: invalid },
+  });
+  const rules = new Map([[ORPHAN.id, ORPHAN]]);
+  const facts = factsOf([ORPHAN], (k) => `${k.group}/${k.kind}`.toLowerCase()).get("projectcontour.io/httpproxy") ?? [];
+  const proxy = (name: string, status: string, includes: { name: string; namespace?: string }[] = []) =>
+    obj(name, { metadata: { name, namespace: "team-a", uid: `p-${name}` }, spec: { includes }, status: { currentStatus: status } });
+  const own = (objects: Obj[], over: Partial<JudgedRows> = {}): JudgedRows => ({
+    status: "ready",
+    rows: new Map(objects.map((o) => [o.metadata.uid, rowOf([], facts, false, [], [ORPHAN.toldThroughReferrer!])(o)])),
+    truncated: false,
+    namespaces: null,
+    ...over,
+  });
+  const judged = (orphan: Obj, rows: JudgedRows) =>
+    judgeAcross([problemOf(ORPHAN, orphan)], { rows, target: () => undefined, problemUids: () => new Set() }, { rules, targets: [] });
+
+  it("is told by an invalid proxy above it, directly or through others", () => {
+    const leaf = proxy("leaf", "orphaned");
+    expect(judged(leaf, own([proxy("root", "invalid", [{ name: "leaf" }]), leaf]))).toEqual([]);
+    const mid = proxy("mid", "orphaned", [{ name: "leaf" }]);
+    expect(judged(leaf, own([proxy("root", "invalid", [{ name: "mid" }]), mid, leaf]))).toEqual([]);
+    expect(judged(leaf, own([proxy("root", "valid", [{ name: "leaf" }]), leaf]))).toHaveLength(1);
+    expect(judged(leaf, own([proxy("other", "invalid", [{ name: "leaf", namespace: "team-b" }]), leaf]))).toHaveLength(1);
+    expect(judged(leaf, own([leaf]))).toHaveLength(1);
+  });
+
+  it("cannot tell while its own rows are not read in full", () => {
+    const leaf = proxy("leaf", "orphaned");
+    expect(judged(leaf, own([leaf], { truncated: true }))).toEqual([]);
+  });
+});
+
 describe("relatedBy (#404)", () => {
   const HPA = { group: "autoscaling", kind: "HorizontalPodAutoscaler" };
   const HPA_DEF: SourceDef = { ...QUEUE_DEF, kind: { group: "autoscaling", version: "v2", kind: "HorizontalPodAutoscaler" } };
