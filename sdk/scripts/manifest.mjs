@@ -503,7 +503,7 @@ function checkUniqueIds(manifest) {
 
 const PROBLEMS_API = 2;
 /** `rule_limits`: rules and the kinds they judge, more from sextantApi 4. */
-const ruleLimits = (api) => (api >= 4 ? [30, 20] : [20, 10]);
+const ruleLimits = (api) => (api >= 4 ? [40, 20] : [20, 10]);
 const MAX_CONDITIONS = 20;
 const MAX_DEPTH = 3;
 /** From sextantApi 4 (#381): an older Sextant reads only older manifests, so the limits grow with the version. */
@@ -569,7 +569,7 @@ export function parseFieldPath(path) {
           // eslint-disable-next-line no-control-regex
           if (/[\\\u0000-\u001f\u007f-\u009f]/.test(value)) return null;
           pairs.push([field, value]);
-          if (pairs.length > 4) return null;
+          if (pairs.length > 12) return null; // `MAX_MATCH_PAIRS` (#404)
           if (chars[close + 1] === "]") {
             at = close + 2;
             break;

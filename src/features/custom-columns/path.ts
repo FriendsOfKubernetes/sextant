@@ -38,7 +38,7 @@ export type PathStep =
     };
 
 /** Pairs one `[field="value",…]` step takes at most (Rust `MAX_MATCH_PAIRS`). */
-export const MAX_MATCH_PAIRS = 4;
+export const MAX_MATCH_PAIRS = 12;
 
 const NAME = /^[A-Za-z0-9_-]+/;
 /** The field `[<field]` ranks by (#404): a name, or names joined by `.` (`timestamp.seconds`). */

@@ -191,7 +191,10 @@ describe("a step picking by fields (#392)", () => {
     expect(pickItem(nodes, [["type", "Suspend"], ["phase", "Running"]])).toEqual(nodes["wf-a"]);
     expect(pickItem([{ type: "Suspend", phase: "Succeeded" }, nodes["wf-b"]], [["type", "Suspend"], ["phase", "Running"]])).toEqual(nodes["wf-b"]);
     expect(pickItem("x", [["type", "Pod"]])).toBeUndefined();
-    expect(parseFieldPath('a[b="1",c="2",d="3",e="4",f="5"]')).toBeNull();
+    // Up to 12 pairs (#404): "the first False condition but these types" needs many.
+    const pairs = (n: number) => Array.from({ length: n }, (_, i) => `k${i}!="${i}"`).join(",");
+    expect(parseFieldPath(`a[${pairs(12)}]`)).not.toBeNull();
+    expect(parseFieldPath(`a[${pairs(13)}]`)).toBeNull();
     expect(parseFieldPath('a[b="1",]')).toBeNull();
     expect(parseFieldPath('a[b="1" c="2"]')).toBeNull();
   });

@@ -124,7 +124,7 @@ pub enum MatchPick {
 }
 
 /// Pairs one `[field="value",…]` step takes at most.
-pub const MAX_MATCH_PAIRS: usize = 4;
+pub const MAX_MATCH_PAIRS: usize = 12;
 
 impl PathStep {
     /// The items of a list, or the values of a map (in key order), whose fields are all `pairs`.

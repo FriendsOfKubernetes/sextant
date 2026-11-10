@@ -252,10 +252,15 @@ fn a_step_picks_a_list_item_by_a_field() {
             },
         ])
     );
-    assert_eq!(
-        parse_field_path("a[b=\"1\",c=\"2\",d=\"3\",e=\"4\",f=\"5\"]"),
-        None
-    );
+    // Up to 12 pairs (#404).
+    let pairs = |n: usize| {
+        (0..n)
+            .map(|i| format!("k{i}!=\"{i}\""))
+            .collect::<Vec<_>>()
+            .join(",")
+    };
+    assert!(parse_field_path(&format!("a[{}]", pairs(12))).is_some());
+    assert_eq!(parse_field_path(&format!("a[{}]", pairs(13))), None);
     assert_eq!(parse_field_path("a[b=\"1\",]"), None);
     assert_eq!(parse_field_path("a[b=\"1\" c=\"2\"]"), None);
     for bad in [

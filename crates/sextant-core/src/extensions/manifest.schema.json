@@ -572,9 +572,9 @@
           }
         },
         "problems": {
-          "description": "Problem rules Sextant evaluates on its own watches (ADR-0137); needs `sextantApi` 2; at most 20 before `sextantApi` 4. Paths must not read a Secret's values or another kind's inline secret fields.",
+          "description": "Problem rules Sextant evaluates on its own watches (ADR-0137); needs `sextantApi` 2; at most 20 before `sextantApi` 4, 40 from it. Paths must not read a Secret's values or another kind's inline secret fields.",
           "type": "array",
-          "maxItems": 30,
+          "maxItems": 40,
           "items": { "$ref": "#/$defs/problemRule" }
         },
         "metricQueries": {
@@ -785,7 +785,7 @@
               "rules": {
                 "description": "The ids of the problem rules whose problems it counts; left out: every rule.",
                 "type": "array",
-                "maxItems": 30,
+                "maxItems": 40,
                 "items": { "$ref": "#/$defs/contributionId" }
               },
               "label": {
