@@ -11,7 +11,8 @@
 //
 //   judgeAcross(problems, context, { rules, targets })   // the problems that stand
 import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
-import { evaluate, factKey, selectorMatches, valueAt } from "./problemRules";
+import { evaluate, factKey, MISSING_MARK, selectorMatches, valueAt } from "./problemRules";
+import { formatList } from "../i18n/format";
 import type { Problem } from "../features/problems/model";
 import type { JudgeContext, JudgedRows, SourceDef } from "../features/problems/sources";
 
@@ -124,8 +125,9 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
     }
     return names.get(target)!;
   };
-  const missing = (p: Problem): boolean =>
-    (p.lookups ?? []).every((lookup) => {
+  /** Whether one lookup holds: `missing` not there, `related` there with its fact, … (`false`: cannot tell, or not). */
+  const holds = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): boolean => {
+    {
       const target = targets.find((t) => sameKind(t, lookup));
       if (!target) return false;
       const known = namesOf(target);
@@ -143,7 +145,7 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
         }
         return true;
       }
-      const namespace = target.namespaced ? (p.object.namespace ?? "") : "";
+      const namespace = target.namespaced ? (lookup.namespace ?? p.object.namespace ?? "") : "";
       // `relatedBy` (#404): a row of the namespace holding every text, with its fact holding.
       if (lookup.by) {
         if (target.namespaced && watched !== null && !watched?.includes(namespace)) return false;
@@ -160,7 +162,26 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
       // `related` (#409): there, with its fact holding; `missing`: not there.
       if (lookup.fact !== undefined) return row?.facts?.[lookup.fact] === true;
       return row === undefined;
-    });
+    }
+  };
+  /**
+   * The names a problem's lookups found missing, when its lookups hold: each plain one, and of each `missing` of a
+   * list (#404) at least one; `null` when they do not.
+   */
+  const missingNames = (p: Problem): string[] | null => {
+    const lists = new Map<string, string[]>();
+    for (const lookup of p.lookups ?? []) {
+      if (lookup.anyOf === undefined) {
+        if (!holds(p, lookup)) return null;
+        continue;
+      }
+      const found = lists.get(lookup.anyOf) ?? [];
+      if (holds(p, lookup)) found.push(lookup.namespace ? `${lookup.namespace}/${lookup.name}` : lookup.name);
+      lists.set(lookup.anyOf, found);
+    }
+    for (const found of lists.values()) if (found.length === 0) return null;
+    return [...new Set([...lists.values()].flat())];
+  };
 
   let newest: Map<string, string> | null | undefined;
   /** `namespace|label|value` → the uid of the newest object with it; `null` while the rows are not read in full. */
@@ -224,15 +245,17 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
     return false;
   };
 
-  return problems.filter((p) => {
+  return problems.flatMap((p) => {
     // By the rule that found it, never by its group: a group may name no rule, and then its lookups would be skipped.
     const rule = rules.get(p.rule ?? p.group ?? "");
-    if (!rule) return true;
-    if (rule.toldThroughReferrer && toldByReferrer(p, rule.toldThroughReferrer)) return false;
-    if (p.ownerUid !== undefined && context.problemUids().has(p.ownerUid)) return false;
-    if (p.lookups && !missing(p)) return false;
-    if (rule.newestPer !== undefined && !isNewest(p, rule.newestPer)) return false;
-    return true;
+    if (!rule) return [p];
+    if (rule.toldThroughReferrer && toldByReferrer(p, rule.toldThroughReferrer)) return [];
+    if (p.ownerUid !== undefined && context.problemUids().has(p.ownerUid)) return [];
+    const names = p.lookups ? missingNames(p) : [];
+    if (names === null) return [];
+    if (rule.newestPer !== undefined && !isNewest(p, rule.newestPer)) return [];
+    // `{{missing}}` (#404): the names a `missing` of a list did not find, in the UI language's list.
+    return p.message?.includes(MISSING_MARK) ? [{ ...p, message: p.message.split(MISSING_MARK).join(formatList(names)) }] : [p];
   });
 }
 

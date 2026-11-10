@@ -30,4 +30,19 @@ addPaths?: Array<string>, } | { "type": "enteredWithin", minutes: number, } | { 
 /**
  * Holds at once for a value that is there but no time (#405), as the built-in rules counted it.
  */
-orUnreadable?: boolean, } | { "type": "missing", path: string, kind: KindPattern, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, } | { "type": "relatedBy", kind: KindPattern, pairs: Array<FieldPair>, when: ProblemCondition, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, };
+orUnreadable?: boolean, } | { "type": "missing", path: string, kind: KindPattern, 
+/**
+ * With a list at `path` (#404), an item's name (`.name`); the item itself when it is a text. The condition
+ * holds when any item names an object that is not there. `sextantApi` 4.
+ */
+namePath?: string, 
+/**
+ * Where the named object is (#404): an item's namespace with a list, else the object's own field; the
+ * object's own namespace when there is none. `sextantApi` 4.
+ */
+namespacePath?: string, 
+/**
+ * With a list, the items that count (#404): a reference to another provider (`name@provider`) left out.
+ * Reads only the item, no time. `sextantApi` 4.
+ */
+itemWhen?: ProblemCondition, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, } | { "type": "relatedBy", kind: KindPattern, pairs: Array<FieldPair>, when: ProblemCondition, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, };

@@ -258,3 +258,7 @@ A rule's `toldThroughReferrer` (`path` of a list in objects of the rule's own ki
 directly or through others naming each other, holds `when` — an orphaned HTTPProxy under an invalid one, which tells
 it; the rows of the kind keep the names they name (at most 200) and the `when` as a fact; rows not read in full cannot
 tell, so the problem is not told on its own either.
+`missing` may read a list (`path` with `[*]`): each item names an object by `namePath` (the item itself when it is a
+text) and `namespacePath`, the items `itemWhen` holds for count, and the condition holds when any of them names an
+object that is not there; `namespacePath` also places a single name in another namespace; a rule's message may say
+`{{missing}}`, the names not found in the UI language's list (a Traefik route's missing Services and Middlewares).

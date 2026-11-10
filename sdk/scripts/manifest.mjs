@@ -782,6 +782,19 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (counter.api < ACROSS_API) fail([...segments, "type"], `\`missing\` needs sextantApi ${ACROSS_API} or later`);
     if (inside === "any") fail([...segments, "type"], "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown");
     if (inside === "not") fail([...segments, "type"], "`missing` cannot be inside `not`: a list not read would make it unknown");
+    // A list of references, an item's namespace (#404).
+    const listed = condition.path.includes("*");
+    if ((condition.namePath !== undefined || condition.namespacePath !== undefined || condition.itemWhen !== undefined) && counter.api < SOURCES_API) {
+      fail([...segments, "type"], `\`missing\` of a list or another namespace needs sextantApi ${SOURCES_API} or later`);
+    }
+    if ((condition.namePath !== undefined || condition.itemWhen !== undefined) && !listed) fail([...segments, "namePath"], "goes with a `path` that reads a list (`[*]`)");
+    for (const key of ["namePath", "namespacePath"]) {
+      if (condition[key] !== undefined) checkRulePath(condition[key], kind, [...segments, key], counter.metadataOnly);
+    }
+    if (condition.itemWhen !== undefined) {
+      checkObjectCondition(condition.itemWhen, [kind], [...segments, "itemWhen"], counter.api);
+      if (usesTime(condition.itemWhen)) fail([...segments, "itemWhen"], "reads no time (`olderThan`)");
+    }
     // From sextantApi 4 a Secret is looked up by name only (#404): the window lists it metadata-only.
     if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret" && counter.api < SOURCES_API) {
       fail([...segments, "kind"], "Secrets are never listed for rules");
@@ -991,6 +1004,8 @@ function checkMessage(text, kind, segments, metadataOnly) {
   if (found === null) fail(segments, "has a `{{` without its `}}`");
   if (found.length > MAX_PLACEHOLDERS) fail(segments, `has at most ${MAX_PLACEHOLDERS} placeholders`);
   for (const raw of found) {
+    // `{{missing}}` (#404): a rule's message names the objects its `missing` of a list did not find.
+    if (raw.trim() === "missing") continue;
     // `{{path|filter}}` (#404).
     // Up to two filters in a row (`|firstLine|clip:300`, #404); `clip:<n>` keeps 1 to 1000 characters.
     const [field, ...filters] = raw.split("|");

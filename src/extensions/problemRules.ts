@@ -109,6 +109,10 @@ export interface Lookup {
   name: string;
   /** `related` (#409): the named object must exist with this fact (`factKey` of its `when`) holding; else it must not exist. */
   fact?: string;
+  /** Where the named object is (#404), when not in the judged object's own namespace. */
+  namespace?: string;
+  /** A `missing` of a list (#404): of the lookups with the same key, any one not there is enough. */
+  anyOf?: string;
   /** `relatedBy` (#404): an object of the kind in the judged object's namespace with these texts at these paths. */
   by?: [path: string, value: string][];
   /** `selectsNone` (#404): no object of the kind in `namespaces` (`null`: every one) has labels `selector` matches. */
@@ -267,10 +271,30 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       return { holds: true, activeFrom: t + condition.minutes * MINUTE_MS };
     }
     case "missing": {
+      const at = (holder: unknown, path: string | undefined): string | undefined => {
+        if (path === undefined) return undefined;
+        const v = valueAt(holder, path);
+        return typeof v === "string" && v.trim() !== "" ? v : undefined;
+      };
+      if (condition.path.includes("*")) {
+        // A list of references (#404): any item naming an object that is not there; nothing named, nothing missing.
+        const items = valueAt(obj, condition.path);
+        const key = `${condition.kind.group}/${condition.kind.kind}|${condition.path}`;
+        const lookups: Lookup[] = [];
+        for (const item of Array.isArray(items) ? items : []) {
+          if (condition.itemWhen && !(item !== null && typeof item === "object" && evaluate(condition.itemWhen, item as KubeObject).holds)) continue;
+          const name = condition.namePath === undefined ? (typeof item === "string" && item.trim() !== "" ? item : undefined) : at(item, condition.namePath);
+          if (name === undefined) continue;
+          const namespace = at(item, condition.namespacePath);
+          lookups.push({ group: condition.kind.group, kind: condition.kind.kind, name, anyOf: key, ...(namespace !== undefined ? { namespace } : {}) });
+        }
+        return lookups.length === 0 ? NO : { holds: true, lookups };
+      }
       // Nothing named, nothing missing.
       const name = valueAt(obj, condition.path);
       if (typeof name !== "string" || name.trim() === "") return NO;
-      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name }] };
+      const namespace = at(obj, condition.namespacePath);
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name, ...(namespace !== undefined ? { namespace } : {}) }] };
     }
     case "relatedBy": {
       // The judged object's texts the other object must hold; one missing, nothing related (#404).
@@ -545,8 +569,13 @@ function messageOf(rule: ProblemContribution, obj: KubeObject): string {
 }
 
 /** `template` with each `{{path}}` replaced by the scalar value there (clipped; anything else shows nothing). */
+/** Where a message names the objects a `missing` of a list did not find (#404); `judgeAcross` fills it. */
+export const MISSING_MARK = "{{missing}}";
+
 export function renderMessage(template: string, obj: KubeObject): string {
   const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, inner: string) => {
+    // `{{missing}}` (#404) is filled once the rows say which named objects are not there (`judgeAcross`).
+    if (inner.trim() === "missing") return MISSING_MARK;
     const shown = placeholderText(obj, inner);
     if (shown === undefined) return "";
     return Array.from(shown).length > MAX_VALUE_CHARS ? `${Array.from(shown).slice(0, MAX_VALUE_CHARS).join("")}…` : shown;

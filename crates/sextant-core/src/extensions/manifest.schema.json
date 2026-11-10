@@ -1201,7 +1201,10 @@
           "properties": {
             "type": { "const": "missing" },
             "path": { "$ref": "#/$defs/fieldPath" },
-            "kind": { "$ref": "#/$defs/kind" }
+            "kind": { "$ref": "#/$defs/kind" },
+            "namePath": { "description": "With a list at `path`, an item's name; any item naming no object holds (sextantApi 4).", "$ref": "#/$defs/fieldPath" },
+            "namespacePath": { "description": "Where the named object is: an item's namespace with a list, else the object's field (sextantApi 4).", "$ref": "#/$defs/fieldPath" },
+            "itemWhen": { "description": "With a list, the items that count; reads only the item (sextantApi 4).", "$ref": "#/$defs/problemCondition" }
           }
         },
         {

@@ -450,6 +450,25 @@ pub enum ProblemCondition {
     Missing {
         path: String,
         kind: KindPattern,
+        /// With a list at `path` (#404), an item's name (`.name`); the item itself when it is a text. The condition
+        /// holds when any item names an object that is not there. `sextantApi` 4.
+        #[serde(default, rename = "namePath", skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        name_path: Option<String>,
+        /// Where the named object is (#404): an item's namespace with a list, else the object's own field; the
+        /// object's own namespace when there is none. `sextantApi` 4.
+        #[serde(
+            default,
+            rename = "namespacePath",
+            skip_serializing_if = "Option::is_none"
+        )]
+        #[ts(optional)]
+        namespace_path: Option<String>,
+        /// With a list, the items that count (#404): a reference to another provider (`name@provider`) left out.
+        /// Reads only the item, no time. `sextantApi` 4.
+        #[serde(default, rename = "itemWhen", skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        item_when: Option<Box<ProblemCondition>>,
     },
     /// The text at `path` names an object of `kind` there (as `missing` looks it up) for which `when` holds (#409): a
     /// claim that exists but is not allocated, an HPA on the same target. `sextantApi` 4; unknown (not holding) while
@@ -1206,7 +1225,45 @@ fn check_condition<'k>(
         ProblemCondition::Missing {
             path: field,
             kind: target,
+            name_path,
+            namespace_path,
+            item_when,
         } => {
+            let listed = field.contains('*');
+            if (name_path.is_some() || namespace_path.is_some() || item_when.is_some())
+                && checks.api < SOURCES_API
+            {
+                return Err(at(
+                    &path.key("type"),
+                    format!(
+                        "`missing` of a list or another namespace needs sextantApi {SOURCES_API} or later"
+                    ),
+                ));
+            }
+            if (name_path.is_some() || item_when.is_some()) && !listed {
+                return Err(at(
+                    &path.key("namePath"),
+                    "goes with a `path` that reads a list (`[*]`)",
+                ));
+            }
+            // Item paths read the item: checked as paths of the rule's kind (a list path holding no secret holds
+            // none in its items).
+            for (key, item_path) in [("namePath", name_path), ("namespacePath", namespace_path)] {
+                if let Some(item_path) = item_path {
+                    check_rule_path(item_path, kind, &path.key(key), checks.metadata_only)?;
+                }
+            }
+            if let Some(when) = item_when {
+                check_object_condition(
+                    when,
+                    std::slice::from_ref(kind),
+                    &path.key("itemWhen"),
+                    checks.api,
+                )?;
+                if uses_time(when) {
+                    return Err(at(&path.key("itemWhen"), "reads no time (`olderThan`)"));
+                }
+            }
             if checks.single {
                 return Err(at(
                     &path.key("type"),
@@ -1502,6 +1559,10 @@ pub(crate) fn check_message(
         ));
     }
     for field in placeholders {
+        // `{{missing}}` (#404): a rule's message names the objects its `missing` of a list did not find.
+        if field.trim() == "missing" {
+            continue;
+        }
         // `{{path|filter}}` (#404): the value as its first line, last segment, a list joined, or a count.
         // Up to two filters in a row (`|firstLine|clip:300`, #404); `clip:<n>` keeps 1 to 1000 characters.
         let mut parts = field.split('|');

@@ -88,6 +88,48 @@ const TARGETS: AcrossTarget[] = [
 ];
 const judge = (problems: Problem[], ctx: JudgeContext) => judgeAcross(problems, ctx, { rules: RULES, targets: TARGETS });
 
+describe("missing of a list (#404)", () => {
+  const SERVICE = { group: "", kind: "Service" };
+  const SERVICE_DEF: SourceDef = { ...QUEUE_DEF, kind: { group: "", version: "v1", kind: "Service" } };
+  const ROUTES = rule({
+    id: "route-service-missing",
+    kind: { group: "traefik.io", kind: "IngressRoute" },
+    when: {
+      type: "missing",
+      path: ".spec.routes[*].services[*]",
+      kind: SERVICE,
+      namePath: ".name",
+      namespacePath: ".namespace",
+      itemWhen: { type: "not", of: { type: "contains", path: ".name", values: ["@"], ignoreCase: false } },
+    },
+    message: "Missing: {{missing}}",
+  });
+  const rules = new Map([[ROUTES.id, ROUTES]]);
+  const targets: AcrossTarget[] = [{ ...SERVICE, namespaced: true, def: SERVICE_DEF }];
+  const svc = (name: string, ns: string) => obj(name, { metadata: { name, namespace: ns, uid: `s-${ns}-${name}` } });
+  const services = (objects: Obj[], over: Partial<JudgedRows> = {}): JudgedRows => ({
+    status: "ready",
+    rows: new Map(objects.map((o) => [o.metadata.uid, rowOf([])(o)])),
+    truncated: false,
+    namespaces: null,
+    ...over,
+  });
+  const route = obj("r", { spec: { routes: [{ services: [{ name: "web" }, { name: "api", namespace: "team-b" }] }, { services: [{ name: "x@file" }] }] } });
+  const judged = (rows: JudgedRows) =>
+    judgeAcross([problemOf(ROUTES, route)], { rows: undefined, target: (def) => (def === SERVICE_DEF ? rows : undefined), problemUids: () => new Set() }, { rules, targets });
+
+  it("stands when any item names an object that is not there, and names it", () => {
+    expect(judged(services([svc("web", "team-a"), svc("api", "team-b")]))).toEqual([]);
+    const [p] = judged(services([svc("web", "team-a")]));
+    expect(p?.message).toBe("Missing: team-b/api");
+    expect(judged(services([]))[0]?.message).toBe("Missing: web, team-b/api");
+  });
+
+  it("cannot tell while the list is not read in full", () => {
+    expect(judged(services([], { truncated: true }))).toEqual([]);
+  });
+});
+
 describe("toldThroughReferrer (#404)", () => {
   const PROXY = { group: "projectcontour.io", kind: "HTTPProxy" };
   const invalid: ProblemCondition = { type: "equals", path: ".status.currentStatus", value: "invalid" };
