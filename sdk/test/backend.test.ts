@@ -15,7 +15,7 @@ vi.mock("sextant:extension/host@1.0.0", () => ({
   log: (level: string, message: string) => lines.push([level, message]),
 }));
 
-const { defineBackend, host } = await import("../src/backend");
+const { defineBackend, host, isRead } = await import("../src/backend");
 const { SextantError } = await import("../src/errors");
 
 beforeEach(() => {
@@ -77,6 +77,43 @@ describe("problem judges", () => {
     // The frames' methods still answer, and a judge is no frame method.
     expect(await handle("ping", "null")).toBe('"pong"');
     await expect(handle("hosts", "null")).rejects.toBe("unknown method hosts");
+  });
+
+  it("gives a judge where its partial reads were not read, and keeps what a fact rests on", async () => {
+    const service = { group: "", kind: "Service" };
+    const seen: unknown[] = [];
+    const partly = defineBackend(
+      {},
+      {
+        problemJudges: {
+          hosts: (objects, input) => {
+            seen.push(input.partial);
+            return objects
+              .filter(() => !isRead(input, service, "other"))
+              .map((o) => ({ uid: o.metadata.uid, fact: "unknown", needs: [{ kind: service, namespace: o.metadata.namespace }] }));
+          },
+        },
+      },
+    );
+    const partial = [{ kind: service, unreadNamespaces: ["other"] }];
+    const answer = JSON.parse(await partly("problemJudge:hosts", JSON.stringify({ objects: [object("a", {})], partial })));
+    expect(answer).toEqual([{ uid: "a", fact: "unknown", needs: [{ kind: service, namespace: "shop" }] }]);
+    expect(seen).toEqual([partial]);
+    // A judge written before gets an empty `partial`: every kind read everywhere.
+    await partly("problemJudge:hosts", JSON.stringify({ objects: [] }));
+    expect(seen[1]).toEqual([]);
+  });
+
+  it("tells whether a namespace's objects of a kind were read", () => {
+    const kind = { group: "", kind: "Service" };
+    expect(isRead({ partial: [] }, kind, "a")).toBe(true);
+    expect(isRead({ partial: [{ kind: { group: "", kind: "service" }, unreadNamespaces: ["b"] }] }, kind, "a")).toBe(true);
+    expect(isRead({ partial: [{ kind, unreadNamespaces: ["b"] }] }, kind, "b")).toBe(false);
+    expect(isRead({ partial: [{ kind, readNamespaces: ["a"], unreadNamespaces: [] }] }, kind, "c")).toBe(false);
+    expect(isRead({ partial: [{ kind, readNamespaces: ["a"], unreadNamespaces: [] }] }, kind, "a")).toBe(true);
+    // Read in part: not every namespace's.
+    expect(isRead({ partial: [{ kind, unreadNamespaces: ["b"] }] }, kind, null)).toBe(false);
+    expect(isRead({ partial: [{ kind, unreadNamespaces: ["b"] }] }, { group: "", kind: "Pod" }, null)).toBe(true);
   });
 
   it("fails an unknown judge or a judge that throws", async () => {

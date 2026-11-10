@@ -1,7 +1,7 @@
 // The UI kit (#355): Sextant's details blocks as DOM, accessible and styled once.
 import axe from "axe-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { block, blockOpen, button, chips, empty, errorState, fields, loading, namespaceSelect, objectLink, status, table, tabs } from "../src/ui";
+import { block, blockOpen, button, checkbox, chips, empty, errorState, fields, loading, namespaceSelect, objectLink, status, table, tabs } from "../src/ui";
 import { setIconSource } from "../src/icons";
 import { startTestHost } from "../src/testing";
 
@@ -111,6 +111,26 @@ describe("the shared controls", () => {
     document.querySelector<HTMLButtonElement>("button.primary")!.click();
     expect(changes).toEqual(["a", "b", "sync"]);
     expect(await violations()).toEqual([]);
+  });
+});
+
+describe("a checkbox (since Sextant 0.30)", () => {
+  it("is labelled, drawn as Sextant's own, and tells each change", async () => {
+    const seen: boolean[] = [];
+    const node = checkbox("Only problems", (checked) => seen.push(checked), { checked: true });
+    document.body.append(node);
+    const box = node.querySelector("input")!;
+    expect(box.type).toBe("checkbox");
+    expect(box.className).toBe("sx-checkbox__box");
+    expect(box.checked).toBe(true);
+    expect(node.textContent).toBe("Only problems");
+    box.click();
+    box.click();
+    expect(seen).toEqual([false, true]);
+    expect(document.getElementById("sextant-ui-styles")?.textContent).toContain(".sx-checkbox__box:checked");
+    expect(await violations()).toEqual([]);
+    const off = checkbox("Off", () => undefined, { disabled: true });
+    expect(off.querySelector("input")!.disabled).toBe(true);
   });
 });
 

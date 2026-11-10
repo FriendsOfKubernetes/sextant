@@ -74,7 +74,7 @@ export const OPT_IN_CATEGORIES: readonly BuiltInCategory[] = [
 /** How the problems of an extension's category are found: set by its registry (`extensionCategories.ts`), so this
  * module does not import it. */
 let extensionDetector:
-  | ((category: ExtensionCategory, kind: KindRef, obj: KubeObject, ctx?: { enteredAt?: number }) => Detected[])
+  | ((category: ExtensionCategory, kind: KindRef, obj: KubeObject, ctx?: { enteredAt?: number; defined?: boolean }) => Detected[])
   | undefined;
 
 export function setExtensionDetector(detector: typeof extensionDetector): void {
@@ -611,8 +611,11 @@ export function resolve(
   before: readonly Problem[] = [],
   /** The category of the source (`security` sources watch the same kinds as others); defaults to the kind's own. */
   category: ProblemCategory | undefined = categoryOf(kind),
-  /** What the store knows of the object beyond it: when it entered a label-selected source (#393). */
-  ctx?: { enteredAt?: number },
+  /**
+   * What the store knows of the object beyond it: when it entered a label-selected source (#393), and that its source
+   * is of a kind an extension's definitions define (`kindsFrom`: those rules judge it).
+   */
+  ctx?: { enteredAt?: number; defined?: boolean },
 ): Problem[] {
   if (!category) return [];
   // The practices sources only carry the rows of features/practices (`external` or tapped): nothing is judged here.

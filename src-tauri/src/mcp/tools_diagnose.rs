@@ -226,8 +226,8 @@ judged against, such as Nodes for disk usage and best practices) are not readabl
 them (often: in all namespaces). Ask for one namespace, or ask the user for wider Read access.";
 
 const NOT_JUDGED_NOTE: &str = "In the categories in `notJudged` the extension's backend decided some problems from \
-objects of kinds the agent may not read everywhere the backend read them; those problems were left out. Ask the \
-user for wider Read access to see them.";
+objects the agent may not read (what the backend said a problem rests on, or, where it said nothing, every kind it \
+read where it read them); those problems were left out. Ask the user for wider Read access to see them.";
 
 const FAILED_NOTE: &str = "Lists in `failed` could not be read (`code`: forbidden — the Kubernetes API refused the \
 user's credentials; other codes — the request failed): problems there are unknown, not absent. With `namespaces`, \

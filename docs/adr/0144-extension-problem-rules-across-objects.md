@@ -67,3 +67,9 @@ read. A `missing` is no problem when the looked-up list:
   reconnect from an error, but not while they only reconnect.
 - The looked-up kinds are watched in full (capped at `MAX_SOURCE_OBJECTS`), within the extension's read scope, and only
   while the problems store holds the category's sources.
+
+## Amendment: rules of kinds read from definitions
+
+A rule may take its kinds from definitions (`kindsFrom`, ADR-0137 amendment); such a rule judges each object by its own
+fields, so none of this ADR's conditions or rule fields goes with it, and the definitions' source is judged across
+objects only to follow what they define.

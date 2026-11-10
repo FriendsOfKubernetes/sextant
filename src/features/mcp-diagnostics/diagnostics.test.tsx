@@ -123,6 +123,44 @@ describe("problems judged across objects for an agent", () => {
       { group: "", kind: "Service", namespace: "shop" },
       { group: "", kind: "Service", namespace: "team-a" },
     ]);
+    // A fact that says what it rests on (`needs`, ADR-0168 amendment): only that, a cluster-scoped kind without a namespace.
+    const resting = {
+      ...judged,
+      judged: {
+        ...judged.judged,
+        needs: [
+          { group: "networking.istio.io", kind: "VirtualService", namespace: "shop", name: "web" },
+          { group: "", kind: "Service", namespace: "shop" },
+          { group: "kueue.x-k8s.io", kind: "ClusterQueue", namespace: "shop", name: "gpu" },
+        ],
+      },
+    };
+    expect(lookupRefs({ object, lookups: [resting] }, kinds)).toEqual([
+      { group: "networking.istio.io", kind: "VirtualService", namespace: "shop", name: "web" },
+      { group: "", kind: "Service", namespace: "shop" },
+      { group: "kueue.x-k8s.io", kind: "ClusterQueue", namespace: null, name: "gpu" },
+    ]);
+    // On the object alone: nothing more to read.
+    expect(lookupRefs({ object, lookups: [{ ...judged, judged: { ...judged.judged, needs: [] } }] }, kinds)).toEqual([]);
+  });
+
+  it("holds the kinds a judge reads that the agent may read nowhere, so the judge can tell (ADR-0168 amendment)", () => {
+    const vs = { group: "networking.istio.io", version: "v1", kind: "VirtualService" };
+    const svc = { group: "", version: "v1", kind: "Service" };
+    const kinds = [
+      { kindRef: vs, plural: "virtualservices", namespaced: true, verbs: ["list", "watch"], printerColumns: [] },
+      { kindRef: svc, plural: "services", namespaced: true, verbs: ["list", "watch"], printerColumns: [] },
+    ];
+    const defs = [
+      { category: "ext:sextant.mesh" as const, kind: vs, fieldSelector: null, discovered: true },
+      { category: "ext:sextant.mesh" as const, kind: svc, fieldSelector: null, discovered: true },
+    ];
+    const routesOnly: ReadRule[] = [{ namespaces: { type: "all" }, kinds: { type: "only", kinds: [{ group: "networking.istio.io", kind: "VirtualService" }] } }];
+    const judged = () => [{ group: "", kind: "Service" }];
+    const plan = planProblems([], kinds, routesOnly, null, { categories: ["ext:sextant.mesh"], defs, judged });
+    expect(plan.shared).toEqual(defs);
+    // Which problems are left out is told per problem, by what each rests on.
+    expect(plan.notJudged).toEqual([]);
   });
 });
 

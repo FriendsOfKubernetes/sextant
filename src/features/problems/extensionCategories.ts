@@ -8,11 +8,18 @@
 //
 // An extension may also have categories of its own besides the main one (`problemCategories`, #410),
 // `ext:<extension id>:<category id>`, each opt-in or not; agents never get these (Rust refuses any but `ext:<id>`).
+//
+// Rules whose kinds come from definitions (`kindsFrom`, ADR-0137/ADR-0144 amendment) run on the kinds Rust says the
+// definitions define in the cluster (scopes with `definedBy`): one source per such kind the cluster serves, judged by
+// those rules only (`SourceDef.defined`). The definition kind gets a source of its own whose rows keep the group and
+// kinds each definition names; when they change, Rust is asked again (`refreshScopes`, `REFRESH_DELAY_MS` after),
+// while the earlier answer stands.
 import { useSyncExternalStore } from "react";
 import {
   api,
   type ClusterId,
   type KindRef,
+  type KindsFrom,
   type KubeObject,
   type ProblemContribution,
   type ProblemJudgeContribution,
@@ -24,7 +31,7 @@ import { compileRules, kindKeyOf, type RuleContext } from "../../extensions/prob
 import { comparedPaths, factsOf, judgeAcross, judgedAcross, judgesOf, lookedUp, referrersOf, rowOf, selectedKinds, type AcrossTarget, type ReferrerRule } from "../../extensions/problemsAcross";
 import { judgedFact, judgedFacts, judgeReads, NOT_SERVED_ROWS, observeJudge, type JudgeInput } from "../../extensions/problemJudges";
 import { setExtensionDetector, setExtensionOptIn, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
-import { MAX_SOURCE_OBJECTS, type SourceDef } from "./sources";
+import { MAX_SOURCE_OBJECTS, type JudgedRows, type SourceDef } from "./sources";
 
 interface Entry {
   category: ExtensionCategory;
@@ -55,7 +62,15 @@ interface Entry {
   judges: readonly ProblemJudgeContribution[];
   /** `group/kind` → the paths the judges read of it: its rows keep their values. */
   judgedPaths: ReadonlyMap<string, readonly string[]>;
+  /** Where its `kindsFrom` rules' kinds come from (one per extension); their detector is under `FROM_KEY`. */
+  kindsFrom?: KindsFrom;
 }
+
+/** The kind `kindsFrom` rules are compiled under: no kind's key (a kind has no `#`). */
+const FROM_KIND = { group: "", kind: "#defined" };
+const FROM_KEY = kindKeyOf(FROM_KIND);
+/** After the definitions' rows change, Rust is asked again this much later (changes in a burst ask once). */
+export const REFRESH_DELAY_MS = 1000;
 
 /** Whether a field path reads only under `.metadata` (`.metadata.labels`, `metadata.name`). */
 const underMetadata = (path: string): boolean => /^\.?metadata(\.|\[|$)/.test(path.trim());
@@ -101,6 +116,11 @@ export function registerExtensionProblems(
   manifestJudges: readonly ProblemJudgeContribution[] = [],
 ): () => void {
   const category = categoryOfExtension(extensionId, own?.id);
+  // Rules of kinds from definitions are one detector, applied to the sources of the kinds Rust says are defined.
+  const kindsFrom = rules.find((rule) => rule.kindsFrom !== undefined)?.kindsFrom;
+  const detectors = compileRules(rules.filter((rule) => rule.kindsFrom === undefined));
+  const fromDetector = compileRules(rules.filter((rule) => rule.kindsFrom !== undefined).map((rule) => ({ ...rule, kind: FROM_KIND }))).get(FROM_KEY);
+  if (fromDetector) detectors.set(FROM_KEY, fromDetector);
   // The judges of these rules (ADR-0168): every kind they read gets a source, its rows the declared paths.
   const named = new Set(rules.flatMap((rule) => judgesOf(rule.when)));
   const judges = manifestJudges.filter((judge) => named.has(judge.id));
@@ -119,13 +139,15 @@ export function registerExtensionProblems(
     if (judgesOf(rule.when).length > 0) for (const key of judgedPaths.keys()) across.add(key);
     if (rule.newestPer !== undefined) newestLabels.set(key, [...new Set([...(newestLabels.get(key) ?? []), rule.newestPer])]);
   }
+  // The definitions get a source, their rows the names they define.
+  if (kindsFrom) across.add(kindKeyOf(kindsFrom.kind));
   const sources = new Map<string, RuleSource>();
-  for (const rule of rules) if (rule.source) sources.set(kindKeyOf(rule.kind), rule.source);
+  for (const rule of rules) if (rule.source) sources.set(rule.kindsFrom ? FROM_KEY : kindKeyOf(rule.kind), rule.source);
   const entry: Entry = {
     category,
     extensionId,
     title,
-    detectors: compileRules(rules),
+    detectors,
     rules: new Map(rules.map((r) => [r.id, r])),
     across,
     newestLabels,
@@ -138,6 +160,7 @@ export function registerExtensionProblems(
     optIn: own?.optIn ?? false,
     judges,
     judgedPaths,
+    ...(kindsFrom ? { kindsFrom } : {}),
   };
   entries.set(category, entry);
   forgetScopes(extensionId);
@@ -153,7 +176,68 @@ export function registerExtensionProblems(
 function forgetScopes(extensionId: string): void {
   // Another category of the extension still registered keeps the answer: it is per extension.
   if ([...entries.values()].some((e) => e.extensionId === extensionId)) return;
-  for (const key of [...scopes.keys()]) if (key.endsWith(`|${extensionId}`)) scopes.delete(key);
+  for (const key of [...scopes.keys()]) if (key.endsWith(`|${extensionId}`)) forgetScope(key);
+}
+
+/** Forgets one `cluster|extension` answer and what follows the definitions there. */
+function forgetScope(key: string): void {
+  scopes.delete(key);
+  definitionsSeen.delete(key);
+  const timer = refreshTimers.get(key);
+  if (timer !== undefined) clearTimeout(timer);
+  refreshTimers.delete(key);
+}
+
+/** `cluster|extension` → the names its definitions defined when last looked at. */
+const definitionsSeen = new Map<string, string>();
+const refreshTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+/**
+ * The rows of an extension's definitions in a cluster were looked at: when the names they define changed, Rust is
+ * asked again where the rules run (`REFRESH_DELAY_MS` later); the answer it gave stands meanwhile.
+ */
+function noteDefinitions(clusterId: ClusterId, extensionId: string, rows: JudgedRows | undefined): void {
+  if (!rows || (rows.status !== "ready" && rows.status !== "reconnecting")) return;
+  const key = `${clusterId}|${extensionId}`;
+  const names = [...new Set([...rows.rows.values()].flatMap((row) => (row as { defines?: string[] }).defines ?? []))].sort().join("\n");
+  if (definitionsSeen.get(key) === names) return;
+  definitionsSeen.set(key, names);
+  if (refreshTimers.has(key)) return;
+  refreshTimers.set(
+    key,
+    setTimeout(() => {
+      refreshTimers.delete(key);
+      refreshScopes(clusterId, extensionId);
+    }, REFRESH_DELAY_MS),
+  );
+}
+
+/** Asks Rust again where an extension's rules run in a cluster, keeping its answer until the new one comes. */
+function refreshScopes(clusterId: ClusterId, extensionId: string): void {
+  const key = `${clusterId}|${extensionId}`;
+  const before = scopes.get(key);
+  // Not asked yet, or being asked (that answer lists the definitions then): asked again a little later.
+  if (before === "loading") {
+    refreshTimers.set(
+      key,
+      setTimeout(() => {
+        refreshTimers.delete(key);
+        refreshScopes(clusterId, extensionId);
+      }, REFRESH_DELAY_MS),
+    );
+    return;
+  }
+  if (before === undefined) return;
+  api.extensions.problemScopes(extensionId, clusterId).then(
+    (found) => {
+      // Forgotten or answered anew meanwhile: this answer belongs to grants or a connection that are gone.
+      if (scopes.get(key) !== before) return;
+      if (JSON.stringify(found) === JSON.stringify(before)) return;
+      scopes.set(key, found);
+      changed();
+    },
+    () => undefined,
+  );
 }
 
 /** The registered categories, by title. */
@@ -177,9 +261,14 @@ export function detectExtension(
   category: ExtensionCategory,
   kind: Pick<KindRef, "group" | "kind">,
   obj: KubeObject,
-  ctx?: RuleContext,
+  ctx?: RuleContext & { defined?: boolean },
 ): Detected[] {
-  return entries.get(category)?.detectors.get(kindKeyOf(kind))?.(obj, ctx) ?? [];
+  const entry = entries.get(category);
+  if (!entry) return [];
+  const own = entry.detectors.get(kindKeyOf(kind))?.(obj, ctx) ?? [];
+  // A kind its definitions define (`kindsFrom`): those rules too.
+  const defined = ctx?.defined === true ? (entry.detectors.get(FROM_KEY)?.(obj, ctx) ?? []) : [];
+  return defined.length > 0 ? [...own, ...defined] : own;
 }
 
 setExtensionDetector(detectExtension);
@@ -252,7 +341,7 @@ export function forgetClusterScopes(clusterId: ClusterId): void {
   let any = false;
   for (const key of [...scopes.keys()]) {
     if (key.startsWith(`${clusterId}|`)) {
-      scopes.delete(key);
+      forgetScope(key);
       any = true;
     }
   }
@@ -276,15 +365,32 @@ export function extensionSourcesFor(
     if (!entry || !scope || scope === "loading" || !kinds) continue;
     const judged: { def: SourceDef; key: string }[] = [];
     const targets: AcrossTarget[] = [];
-    for (const { kind, namespaces } of scope) {
+    for (const { kind, namespaces, definedBy } of scope) {
       const key = kindKeyOf(kind);
+      // A kind its definitions define (`kindsFrom`): its rules only, where Rust found it defined.
+      const defined = definedBy !== undefined;
+      if (defined && !entry.kindsFrom) continue;
       // A kind only looked up (`missing`) gets a source too: its rows hold the names.
-      if (!entry.detectors.has(key) && !entry.across.has(key)) continue;
+      if (!defined && !entry.detectors.has(key) && !entry.across.has(key)) continue;
       const served = kinds.find((k) => kindKeyOf(k.kindRef) === key);
       if (!served) continue;
       const everywhere = namespaces.type === "all";
       if (!served.namespaced && !everywhere) continue;
-      const source = entry.sources.get(key);
+      const source = entry.sources.get(defined ? FROM_KEY : key);
+      if (defined) {
+        out.push({
+          category,
+          kind: served.kindRef,
+          fieldSelector: null,
+          discovered: true,
+          maxObjects: source?.maxObjects ?? MAX_SOURCE_OBJECTS,
+          ...(everywhere || !served.namespaced ? {} : { namespaces: namespaces.namespaces }),
+          ...(source?.labelSelector ? { labelSelector: source.labelSelector } : {}),
+          ...(source?.metadataOnly ? { metadataOnly: true } : {}),
+          defined: true,
+        });
+        continue;
+      }
       const def: SourceDef = {
         category,
         kind: served.kindRef,
@@ -297,9 +403,13 @@ export function extensionSourcesFor(
         ...(source?.labelSelector ? { labelSelector: source.labelSelector } : {}),
         // A kind only looked up by name or labels (`missing`, `selectsNone`, #404) is listed metadata-only: a Secret never
         // with a value, Services and Pods without their specs. `related`/`relatedBy` read fields, so theirs stay whole,
-        // and so do a judge's when it reads a path outside `.metadata` (ADR-0168).
+        // and so do a judge's when it reads a path outside `.metadata` (ADR-0168) and the definitions of a `kindsFrom`.
         ...(source?.metadataOnly ||
-        (!entry.detectors.has(key) && !entry.facts.has(key) && !entry.compared.has(key) && !(entry.judgedPaths.get(key) ?? []).some((p) => !underMetadata(p)))
+        (!entry.detectors.has(key) &&
+          !entry.facts.has(key) &&
+          !entry.compared.has(key) &&
+          !(entry.judgedPaths.get(key) ?? []).some((p) => !underMetadata(p)) &&
+          !(entry.kindsFrom && kindKeyOf(entry.kindsFrom.kind) === key && ![entry.kindsFrom.groupPath, ...entry.kindsFrom.kindPaths].every(underMetadata)))
           ? { metadataOnly: true }
           : {}),
       };
@@ -337,10 +447,13 @@ export function extensionSourcesFor(
             entry.referrers.get(key) ?? [],
             entry.newestBy.get(key),
             entry.judgedPaths.get(key) ?? [],
+            entry.kindsFrom && kindKeyOf(entry.kindsFrom.kind) === key ? entry.kindsFrom : undefined,
           ),
           max: def.maxObjects ?? MAX_SOURCE_OBJECTS,
         },
         judge: (problems, context) => {
+          // The definitions' rows: what they define may have changed (`kindsFrom`).
+          if (entry.kindsFrom && kindKeyOf(entry.kindsFrom.kind) === key) noteDefinitions(clusterId, entry.extensionId, context.rows);
           for (const { judge, inputs } of judgeInputs) {
             observeJudge(
               clusterId,
@@ -349,7 +462,7 @@ export function extensionSourcesFor(
               inputs.map(({ read, target, notServed }): JudgeInput =>
                 notServed
                   ? { read, kind: read.kind.kind, rows: NOT_SERVED_ROWS, notServed: true }
-                  : { read, kind: target?.kind ?? read.kind.kind, rows: target && context.target(target.def) },
+                  : { read, kind: target?.kind ?? read.kind.kind, rows: target && context.target(target.def), namespaced: target?.namespaced ?? true },
               ),
             );
           }

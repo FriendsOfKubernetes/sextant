@@ -53,6 +53,13 @@ const UI_STYLES = `
 .sx-icon { display: inline-flex; flex: none; }
 .sx-icon:empty { display: none; }
 .sx-icon svg { width: var(--icon-size, 16px); height: var(--icon-size, 16px); }
+.sx-checkbox { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.sx-checkbox__box { appearance: none; -webkit-appearance: none; flex: none; width: 14px; height: 14px; margin: 0; border: 1px solid var(--color-text-muted); border-radius: 3px; background-color: var(--color-main); background-position: center; background-repeat: no-repeat; background-size: 10px 10px; cursor: pointer; vertical-align: middle; }
+.sx-checkbox__box:hover { border-color: var(--color-accent); }
+.sx-checkbox__box:checked { border-color: var(--color-accent); background-color: var(--color-accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5.2 4 7.6 8.5 2.6' fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+:root[data-theme="dark"] .sx-checkbox__box:checked { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5.2 4 7.6 8.5 2.6' fill='none' stroke='%2315181b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.sx-checkbox__box:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.sx-checkbox__box:disabled { cursor: default; opacity: 0.5; }
 `;
 
 /** Puts the kit's styles into the document once (first in `<head>`, so the extension's own come later and win). */
@@ -242,6 +249,26 @@ export function button(
       else slot.innerHTML = svg;
     });
   }
+  return node;
+}
+
+/**
+ * A checkbox with its label, drawn as Sextant's own (`src/components/checkbox.css`: the theme's colors, the accent when
+ * checked) instead of the browser's, which follows the toolkit's theme: "Only problems" on an extension's page.
+ * `onChange` gets whether it is checked (since Sextant 0.30).
+ */
+export function checkbox(
+  label: string,
+  onChange: (checked: boolean) => void,
+  options: { checked?: boolean; disabled?: boolean; title?: string } = {},
+): HTMLLabelElement {
+  const box = el("input", "sx-checkbox__box");
+  box.type = "checkbox";
+  box.checked = options.checked === true;
+  box.disabled = options.disabled === true;
+  box.addEventListener("change", () => onChange(box.checked));
+  const node = el("label", "sx-checkbox", [box, label]);
+  if (options.title) node.title = options.title;
   return node;
 }
 

@@ -47,6 +47,22 @@ describe("problem rules on the consent screen", () => {
     expect(screen.queryByText(/also lists objects of these kinds/)).not.toBeInTheDocument();
   });
 
+  it("name the kinds a rule's definitions define, not an empty kind (kindsFrom)", async () => {
+    const definition = { group: "apiextensions.crossplane.io", kind: "CompositeResourceDefinition" };
+    const fromDefinitions = rule({
+      kind: { group: "", kind: "" },
+      kindsFrom: { kind: definition, groupPath: ".spec.group", kindPaths: [".spec.names.kind", ".spec.claimNames.kind"], max: 20 },
+    });
+    expect(judgedKinds([fromDefinitions])).toEqual([]);
+    const { container } = render(<ProblemsConsent rules={[fromDefinitions]} />);
+    expect(
+      screen.getByText(
+        "The kinds that objects of CompositeResourceDefinition (apiextensions.crossplane.io) define (the API group at .spec.group, the kinds at .spec.names.kind, .spec.claimNames.kind), read from the first 20 of them by name",
+      ),
+    ).toBeInTheDocument();
+    expect(await axeViolations(container)).toEqual([]);
+  });
+
   it("say which kinds and fields a problem judge's backend gets, and that its code runs for them (ADR-0168)", async () => {
     const VS = { group: "networking.istio.io", kind: "VirtualService" };
     const judges: ProblemJudgeContribution[] = [

@@ -17,6 +17,11 @@ use crate::access::{self, AccessAction, AccessPreset, ClusterAccess, KindPattern
 use crate::resources::inline_secrets::INLINE_SECRETS;
 use crate::settings::custom_columns::{PathStep, parse_field_path};
 
+/// The `kind` of a rule that names none (its kinds come from definitions, `kindsFrom`).
+fn no_kind() -> KindPattern {
+    KindPattern::new("", "")
+}
+
 /// The extension API version that brought `contributes.problems`.
 pub const PROBLEMS_API: u32 = 2;
 /// The extension API version that brought rules across objects: `missing`, `toldThroughOwner`, `newestPer` (ADR-0144).
@@ -73,7 +78,14 @@ pub struct ProblemContribution {
     pub id: String,
     /// Shown as the problem's reason; unique among the extension's rules.
     pub title: String,
+    /// The kind judged; empty (`""`/`""`) for a rule whose kinds come from definitions (`kinds_from`).
+    #[serde(default = "no_kind")]
     pub kind: KindPattern,
+    /// The kinds judged, read at run time from the objects of a definition kind (`sextantApi` 4,
+    /// [`super::kinds_from`]), instead of `kind`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub kinds_from: Option<super::kinds_from::KindsFrom>,
     pub when: ProblemCondition,
     /// A field holding an RFC 3339 time: when the state began.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -598,8 +610,14 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 format!("duplicate title (also {})", list.index(first)),
             ));
         }
-        if !kinds.iter().any(|k| same_kind(k, &rule.kind)) {
-            kinds.push(&rule.kind);
+        super::kinds_from::check_rule_kinds(manifest, rule, &here)?;
+        // A rule of kinds from definitions counts its definition kind (agreed to with the rules').
+        let own = rule
+            .kinds_from
+            .as_ref()
+            .map_or(&rule.kind, |from| &from.kind);
+        if !kinds.iter().any(|k| same_kind(k, own)) {
+            kinds.push(own);
             if kinds.len() > max_kinds {
                 return Err(at(
                     &here.key("kind"),
@@ -969,7 +987,10 @@ fn check_source(
             &here.key("source"),
             format!(
                 "every rule of {} has the same source (as {})",
-                kind_name(&rule.kind),
+                rule.kinds_from.as_ref().map_or_else(
+                    || kind_name(&rule.kind),
+                    |from| format!("the kinds {} define", kind_name(&from.kind))
+                ),
                 list.index(first)
             ),
         ));
@@ -1579,6 +1600,14 @@ fn uses_time(condition: &ProblemCondition) -> bool {
     }
 }
 
+/// Whether a condition reads other objects than the judged one: a looked-up kind (`missing`, `related`,
+/// `relatedBy`, `selectsNone`) or a judge's answer (`judged`).
+pub(crate) fn looks_across(condition: &ProblemCondition) -> bool {
+    let mut kinds = Vec::new();
+    looked_up(condition, &mut kinds);
+    !kinds.is_empty() || !super::problem_judges::judged_in(condition).is_empty()
+}
+
 /// The kinds a condition looks up (`missing`), each once, added to `out`.
 fn looked_up<'c>(condition: &'c ProblemCondition, out: &mut Vec<&'c KindPattern>) {
     match condition {
@@ -2065,8 +2094,14 @@ pub fn problem_kinds(manifest: &ExtensionManifest) -> Vec<KindPattern> {
     // The kinds the judges read go to the extension's backend (ADR-0168): agreed to with the rules' kinds.
     let judged = super::problem_judges::judge_kinds(manifest);
     for rule in &manifest.contributes.problems {
-        if !out.iter().any(|k| same_kind(k, &rule.kind)) {
-            out.push(rule.kind.clone());
+        // A rule of kinds from definitions (`kindsFrom`): its definition kind; the kinds it defines are decided in a
+        // cluster by `kinds_from::defined_scopes`.
+        let own = rule
+            .kinds_from
+            .as_ref()
+            .map_or(&rule.kind, |from| &from.kind);
+        if !out.iter().any(|k| same_kind(k, own)) {
+            out.push(own.clone());
         }
         let mut targets = Vec::new();
         looked_up(&rule.when, &mut targets);
@@ -2103,6 +2138,10 @@ pub struct ProblemScope {
     pub kind: KindPattern,
     /// The namespaces where the extension may read the kind; for a kind without namespaces only `All` runs it.
     pub namespaces: NamespaceScope,
+    /// A kind the objects of this definition kind define (`kindsFrom`): only the rules with `kindsFrom` run on it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub defined_by: Option<KindPattern>,
 }
 
 /// For each kind of `kinds` (agreed to by the user), where its rules run in the cluster with context `cluster_name`:
@@ -2131,6 +2170,7 @@ pub fn problem_scopes(
             (!nowhere).then(|| ProblemScope {
                 kind: kind.clone(),
                 namespaces,
+                defined_by: None,
             })
         })
         .collect()
@@ -2272,10 +2312,12 @@ mod tests {
                     namespaces: NamespaceScope::Only {
                         namespaces: vec!["rook-ceph".into()]
                     },
+                    defined_by: None,
                 },
                 ProblemScope {
                     kind: kind("", "Node"),
                     namespaces: NamespaceScope::All,
+                    defined_by: None,
                 },
             ],
             "a kind the extension may not read is left out"

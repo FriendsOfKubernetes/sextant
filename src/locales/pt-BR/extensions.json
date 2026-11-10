@@ -332,6 +332,7 @@
   "problems": {
     "heading": "Problemas e notificações",
     "kinds": "O Sextant verifica objetos desses tipos pelas regras da extensão, mostra o que elas encontram na página Problemas e pode notificar você sobre isso:",
+    "kindsFrom": "Os tipos que os objetos de {{kind}} definem (o grupo de API em {{groupPath}}, os tipos em {{kindPaths}}), lidos dos primeiros {{max}} por nome",
     "lookups": "Para saber se um objeto que uma regra cita existe, o Sextant também lista objetos destes tipos:",
     "judges": "O backend da extensão decide alguns desses problemas. Ele recebe os objetos desses tipos apenas com estes campos e, enquanto decide, não acessa nem os clusters nem a rede:",
     "scope": "Somente em clusters e namespaces em que a extensão pode ler esses tipos. Nenhum código da extensão é executado para isso.",

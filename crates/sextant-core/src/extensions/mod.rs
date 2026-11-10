@@ -17,6 +17,7 @@ pub mod commands;
 mod compat_tests;
 pub mod contributions;
 pub mod installed;
+pub mod kinds_from;
 pub mod manifest;
 pub mod metric_queries;
 pub mod package;

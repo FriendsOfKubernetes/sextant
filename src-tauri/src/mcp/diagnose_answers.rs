@@ -315,7 +315,8 @@ pub struct ProblemsAnswer {
     #[serde(default)]
     pub not_checked: Vec<String>,
     /// Categories whose problems an extension's backend decided were left out (ADR-0168): the agent may not read
-    /// every kind the judge read where it read them.
+    /// what such a problem rests on — its fact's `needs` (objects, or a kind in a namespace or everywhere), else every
+    /// kind the judge read where it read them, all in the problem's `refs`, re-checked here as every ref.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub not_judged: Vec<String>,
     /// Lists the window could not read (the API server refused them or they failed): their category's problems

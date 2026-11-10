@@ -33,7 +33,7 @@ const rows = (entries: [string, ReturnType<typeof row>][], over: Partial<JudgedR
   status: "ready",
   rows: new Map(entries),
   truncated: false,
-  namespaces: ["shop"],
+  namespaces: null,
   ...over,
 });
 
@@ -84,7 +84,7 @@ describe("problem judges", () => {
       [{ apiVersion: "networking.istio.io/v1", kind: "VirtualService", metadata: { name: "web", namespace: "shop", uid: "u1" }, values: { ".spec.hosts": ["reviews"] } }],
     ]);
     expect(judgedFact("c1", "mesh", "routing", "unknown-host", "u1")).toEqual({ host: "reviews" });
-    expect(judgeReads("c1", "mesh", "routing")).toEqual([{ group: "networking.istio.io", kind: "VirtualService", namespaces: ["shop"] }]);
+    expect(judgeReads("c1", "mesh", "routing")).toEqual([{ group: "networking.istio.io", kind: "VirtualService", namespaces: null }]);
     expect(told).toBe(1);
     // The same objects in a new map: nothing is sent again.
     observeJudge("c1", "mesh", JUDGE, input(rows([["u1", row("web", ["reviews"])]])));
@@ -189,7 +189,66 @@ describe("problem judges", () => {
     expect(sent).toHaveLength(1);
     expect(sent[0]!.map((o) => o.kind)).toEqual(["VirtualService"]);
     expect(judgedFact("c1", "mesh", "routing", "unknown-host", "u1")).toEqual({ host: "reviews" });
+    expect(judgeReads("c1", "mesh", "routing")).toEqual([{ group: "networking.istio.io", kind: "VirtualService", namespaces: null }]);
+  });
+
+  it("cannot tell from a kind read in some namespaces only, unless its read is partial, then say where it was not read", async () => {
+    let partials: unknown[] = [];
+    backend.on("extension_problem_judge", (args) => {
+      const { objects, partial } = args as { objects: JudgedObject[]; partial?: unknown };
+      sent.push(objects);
+      partials.push(partial);
+      return objects.map((o) => ({ uid: o.metadata.uid, fact: "unknown-host" }));
+    });
+    // Narrowed to the extension's or the user's namespaces, or refused by the API server in some: not read in full.
+    observeJudge("c1", "mesh", JUDGE, input(rows([["u1", row("web", ["reviews"])]], { namespaces: ["shop"] })));
+    await settle();
+    observeJudge("c1", "mesh", JUDGE, input(rows([["u1", row("web", ["reviews"])]], { forbidden: ["team-b"] })));
+    await settle(JUDGE_INTERVAL_MS);
+    expect(sent).toEqual([]);
+    expect(judgedFact("c1", "mesh", "routing", "unknown-host", "u1")).toBeNull();
+
+    // A partial read: sent with where it was not read, the refused namespaces taken out of those read.
+    const partly: ProblemJudgeContribution = { ...JUDGE, reads: [{ ...JUDGE.reads[0]!, partial: true }] };
+    const inputOf = (r: JudgedRows): JudgeInput[] => [{ read: partly.reads[0]!, kind: "VirtualService", rows: r }];
+    observeJudge("c1", "mesh", partly, inputOf(rows([["u1", row("web", ["reviews"])]], { namespaces: ["shop", "team-b"], forbidden: ["team-b"] })));
+    await settle(JUDGE_INTERVAL_MS);
+    expect(partials).toEqual([
+      [{ kind: { group: "networking.istio.io", kind: "VirtualService" }, readNamespaces: ["shop"], unreadNamespaces: ["team-b"] }],
+    ]);
+    expect(judgedFact("c1", "mesh", "routing", "unknown-host", "u1")).toEqual({});
+    // An agent must be able to read it where it was read.
     expect(judgeReads("c1", "mesh", "routing")).toEqual([{ group: "networking.istio.io", kind: "VirtualService", namespaces: ["shop"] }]);
+    // Refused in some of every namespace: no `readNamespaces`.
+    partials = [];
+    observeJudge("c1", "mesh", partly, inputOf(rows([["u1", row("web", ["reviews"])]], { forbidden: ["team-b"] })));
+    await settle(JUDGE_INTERVAL_MS);
+    expect(partials).toEqual([[{ kind: { group: "networking.istio.io", kind: "VirtualService" }, unreadNamespaces: ["team-b"] }]]);
+    // Read everywhere: nothing said, as a judge written before expects.
+    partials = [];
+    observeJudge("c1", "mesh", partly, inputOf(rows([["u1", row("web", ["other"])]])));
+    await settle(JUDGE_INTERVAL_MS);
+    expect(partials).toEqual([undefined]);
+    // A kind without namespaces is never read in part.
+    partials = [];
+    observeJudge("c1", "mesh", JUDGE, [{ read: JUDGE.reads[0]!, kind: "VirtualService", rows: rows([["u2", row("web", ["x"])]], { namespaces: ["shop"] }), namespaced: false }]);
+    await settle(JUDGE_INTERVAL_MS);
+    expect(partials).toEqual([undefined]);
+  });
+
+  it("keep what each fact says it rests on", async () => {
+    const needs = [{ kind: { group: "", kind: "Service" }, namespace: "shop" }];
+    backend.on("extension_problem_judge", (args) => {
+      const objects = (args as { objects: JudgedObject[] }).objects;
+      return objects.flatMap((o) => [
+        { uid: o.metadata.uid, fact: "unknown-host", values: { host: "a" }, needs },
+        { uid: o.metadata.uid, fact: "unknown-host", values: { host: "b" } },
+      ]);
+    });
+    observeJudge("c1", "mesh", JUDGE, input(rows([["u1", row("web", ["reviews"])]])));
+    await settle();
+    const entries = judgedFacts("c1", "mesh", "routing", "unknown-host", "u1");
+    expect(entries?.map((e) => e.needs)).toEqual([needs, undefined]);
   });
 
   it("forget a cluster's answers when its connection goes", async () => {

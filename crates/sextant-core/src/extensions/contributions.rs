@@ -60,6 +60,26 @@ pub fn is_every_kind(kind: &KindPattern) -> bool {
     kind.group == "*" && kind.kind == "*"
 }
 
+/// The domain of a details section's "every kind of the groups under a domain" (`{"group": "*.upbound.io", "kind":
+/// "*"}`, `sextantApi` 4): a kind matches when its group ends with `.<domain>` — Crossplane's managed resources of
+/// one vendor's providers, never a core object.
+pub fn group_suffix(kind: &KindPattern) -> Option<&str> {
+    kind.group.strip_prefix("*.").filter(|_| kind.kind == "*")
+}
+
+/// A pattern's domain is a custom resource's group: a DNS name with a dot, not Kubernetes' own.
+fn is_group_domain(domain: &str) -> bool {
+    is_custom_group(domain)
+        && domain.len() <= 240
+        && domain.split('.').all(|label| {
+            !label.is_empty()
+                && label.len() <= 63
+                && label
+                    .chars()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        })
+}
+
 /// A details section's `when` (#408): a condition on the object, as an action's; and its kinds, where
 /// `{"group": "*", "kind": "*"}` alone means every kind (#411), without a `when`.
 pub(crate) fn check_details_sections(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
@@ -102,6 +122,37 @@ pub(crate) fn check_details_sections(manifest: &ExtensionManifest) -> Result<(),
                 return Err(at(
                     &list.index(i).key("when"),
                     "is not for a section of every kind",
+                ));
+            }
+        }
+        // Every kind of the groups under a domain: `*.<domain>`/`*`, a domain of custom groups; nothing else wild.
+        for (k, kind) in section.kinds.iter().enumerate() {
+            if is_every_kind(kind) || (!kind.group.contains('*') && kind.kind != "*") {
+                continue;
+            }
+            let here = list.index(i).key("kinds").index(k);
+            match group_suffix(kind) {
+                Some(domain) if is_group_domain(domain) => {}
+                Some(_) => {
+                    return Err(at(
+                        &here.key("group"),
+                        "is `*.` and a domain of custom resource groups, such as `*.upbound.io` (not Kubernetes' own)",
+                    ));
+                }
+                None => {
+                    return Err(at(
+                        &here,
+                        "is every kind (`*`/`*`), the kinds of the groups under a domain (`*.upbound.io`/`*`), or one kind",
+                    ));
+                }
+            }
+            if manifest.sextant_api < WINDOW_API {
+                return Err(at(&here, format!("needs sextantApi {WINDOW_API} or later")));
+            }
+            if section.when.is_some() {
+                return Err(at(
+                    &list.index(i).key("when"),
+                    "is not for a section of the kinds of a domain's groups",
                 ));
             }
         }
@@ -856,7 +907,7 @@ pub(crate) fn check_permissions(manifest: &ExtensionManifest) -> Result<(), Mani
 }
 
 /// A custom resource's API group: a DNS name with a dot, not one of Kubernetes' own (`*.k8s.io`, `*.kubernetes.io`).
-fn is_custom_group(group: &str) -> bool {
+pub(crate) fn is_custom_group(group: &str) -> bool {
     let group = group.to_ascii_lowercase();
     group.contains('.')
         && !group.contains('*')

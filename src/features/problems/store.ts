@@ -106,6 +106,8 @@ interface Entry {
   capped?: boolean;
   /** The namespaces the watch reads (`null`: every namespace); set when it opens. */
   watched?: readonly string[] | null;
+  /** The namespaces the API server refuses to list there, as the last `forbidden` update named them. */
+  forbidden?: readonly string[];
   /**
    * A label-selected source (an extension rule's `source`): the objects in it, whether its first list was read, and
    * when each object that came later entered it (#393, `enteredWithin`). Kept while the source lives.
@@ -243,7 +245,15 @@ onJudgeAnswer((clusterId, extensionId) => {
 
 function judgedRows(entry: Entry, tapId: string): JudgedRows | undefined {
   const state = entry.taps.get(tapId)?.state;
-  return state && { status: state.status, rows: state.rows, truncated: state.truncated || entry.capped === true, namespaces: entry.watched };
+  return (
+    state && {
+      status: state.status,
+      rows: state.rows,
+      truncated: state.truncated || entry.capped === true,
+      namespaces: entry.watched,
+      ...(entry.forbidden && entry.forbidden.length > 0 ? { forbidden: entry.forbidden } : {}),
+    }
+  );
 }
 
 function judgeContext(entry: Entry, tapId: string): JudgeContext {
@@ -306,10 +316,16 @@ function arrive(entry: Entry, uid: string, now: number): { enteredAt?: number } 
   return enteredAt === undefined ? {} : { enteredAt };
 }
 
+/** What a rule may know of an object beyond it: when it entered (`arrive`), and a kind from definitions (`kindsFrom`). */
+function contextOf(entry: Entry, uid: string, now: number): { enteredAt?: number; defined?: boolean } {
+  const ctx = arrive(entry, uid, now);
+  return entry.state.def.defined ? { ...ctx, defined: true } : ctx;
+}
+
 function put(entry: Entry, obj: KubeObject, now: number): { changed: boolean; dropped: boolean } {
   const uid = uidOfObject(obj);
   const before = entry.byUid.get(uid);
-  const found = resolve(entry.state.def.kind, obj, now, before, entry.state.def.category, arrive(entry, uid, now));
+  const found = resolve(entry.state.def.kind, obj, now, before, entry.state.def.category, contextOf(entry, uid, now));
   if (found.length === 0) return { changed: entry.byUid.delete(uid), dropped: false };
   entry.byUid.set(uid, found);
   if (!before && entry.byUid.size > MAX_PROBLEM_OBJECTS) {
@@ -342,7 +358,7 @@ function applyUpdate(entry: Entry, update: WatchUpdate, now: number): Partial<So
       for (const obj of [...(update.items as KubeObject[])].sort(byCreation)) {
         const uid = uidOfObject(obj);
         // The problems before keep their first-seen times across a reconnect.
-        const found = resolve(entry.state.def.kind, obj, now, previous.get(uid), entry.state.def.category, arrive(entry, uid, now));
+        const found = resolve(entry.state.def.kind, obj, now, previous.get(uid), entry.state.def.category, contextOf(entry, uid, now));
         if (found.length === 0) continue;
         entry.byUid.set(uid, found);
         if (entry.byUid.size > MAX_PROBLEM_OBJECTS) {
@@ -375,7 +391,8 @@ function applyUpdate(entry: Entry, update: WatchUpdate, now: number): Partial<So
     case "error":
       return { status: "error", error: toApiError(update) };
     case "forbidden":
-      // Some namespaces cannot be listed; the others are watched.
+      // Some namespaces cannot be listed; the others are watched. A judge reading the kind is told which (ADR-0168).
+      entry.forbidden = [...update.namespaces].sort();
       return null;
     case "capped":
       // A capped source (`SourceDef.maxObjects`): objects past the cap are not judged. Sent when the total changes.

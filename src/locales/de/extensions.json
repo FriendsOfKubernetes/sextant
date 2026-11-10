@@ -325,6 +325,7 @@
   "problems": {
     "heading": "Probleme und Benachrichtigungen",
     "kinds": "Sextant prüft Objekte dieser Arten nach den Regeln der Erweiterung, zeigt die Funde auf der Seite „Probleme“ und kann Sie darüber benachrichtigen:",
+    "kindsFrom": "Die Arten, die Objekte von {{kind}} definieren (die API-Gruppe in {{groupPath}}, die Arten in {{kindPaths}}), gelesen aus den ersten {{max}} nach Namen",
     "lookups": "Um festzustellen, ob ein von einer Regel genanntes Objekt existiert, listet Sextant zusätzlich Objekte dieser Arten auf:",
     "judges": "Einige dieser Probleme entscheidet das Backend der Erweiterung. Es erhält die Objekte dieser Arten nur mit diesen Feldern und kann, während es entscheidet, weder die Cluster noch das Netzwerk erreichen:",
     "scope": "Nur in Clustern und Namespaces, in denen die Erweiterung diese Arten lesen darf. Dafür läuft kein Code der Erweiterung.",

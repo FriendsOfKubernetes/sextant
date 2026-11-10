@@ -489,6 +489,30 @@ describe("contributions of an extension", () => {
     }
   });
 
+  it("put a details section of a domain's groups only on kinds of those groups, never a core one", () => {
+    const managed: ExtensionManifest = {
+      ...manifest,
+      sextantApi: 4,
+      contributes: {
+        ...manifest.contributes,
+        detailsSections: [{ id: "managed", title: "Crossplane", kinds: [{ group: "*.upbound.io", kind: "*" }], placement: "section" }],
+      },
+    };
+    registerExtension(info({ manifest: managed }));
+    try {
+      const has = (group: string, kind: string) =>
+        getDetailsSections({ group, version: "v1", kind }).some((s) => s.id === "ext:demo.widgets:managed");
+      expect(has("s3.aws.upbound.io", "Bucket")).toBe(true);
+      expect(has("RDS.AWS.Upbound.IO", "Instance")).toBe(true);
+      expect(has("upbound.io", "Thing")).toBe(false);
+      expect(has("notupbound.io", "Thing")).toBe(false);
+      expect(has("", "Pod")).toBe(false);
+      expect(has("apps", "Deployment")).toBe(false);
+    } finally {
+      unregisterExtension("demo.widgets");
+    }
+  });
+
   it("draw a details section without a heading, and one hidden until its frame shows it (#406)", () => {
     const quiet: ExtensionManifest = {
       ...manifest,

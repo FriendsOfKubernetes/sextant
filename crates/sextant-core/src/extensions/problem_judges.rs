@@ -11,6 +11,12 @@
 //! gets `handle("problemJudge:<id>", {"objects": [...]})`, every host call and network request refused meanwhile;
 //! the answer is read back by [`read_answer`].
 //!
+//! A read marked `partial` (ADR-0168 amendment) may be read in some namespaces only — where the extension's scope
+//! or the API server allows: the judge then also gets `"partial": [{kind, readNamespaces?, unreadNamespaces}]`
+//! ([`project_partial`]), and must take that kind's objects in the other namespaces as unknown, not absent. A fact
+//! may say what it rests on (`needs`, [`JudgedNeed`]): an agent is then told the problem when it may read those,
+//! instead of every kind the judge read.
+//!
 //! An object the backend gets: `{apiVersion, kind, metadata: {name, namespace?, uid, creationTimestamp?}, values}`,
 //! where `values` maps each declared path of its kind to the value there (a path that leads nowhere is left out).
 //! Labels and annotations go only as the values of paths that name them (`.metadata.labels`).
@@ -51,6 +57,10 @@ pub const MAX_JUDGE_PAYLOAD_BYTES: usize = 8 * 1024 * 1024;
 pub const MAX_JUDGED_FACTS: usize = 10_000;
 /// A fact's text is clipped to this many characters (as a rule's placeholder value).
 pub const MAX_FACT_VALUE_CHARS: usize = 1000;
+/// What one fact may say it rests on (`needs`); a fact with more keeps none, and with it the stricter rule.
+pub const MAX_FACT_NEEDS: usize = 20;
+/// Namespaces one `partial` entry names in either list.
+pub const MAX_PARTIAL_NAMESPACES: usize = 1000;
 
 /// A judge: the backend decides its facts from the declared fields of the objects of the kinds it reads.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -77,6 +87,12 @@ pub struct JudgeRead {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub optional: Option<bool>,
+    /// A kind that may be read in some namespaces only (the extension's scope there, or the API server refusing the
+    /// others): the judge then gets the objects read and, in the input's `partial`, where the kind was not read
+    /// ([`JudgedPartial`]), instead of not telling at all. A read without it cannot tell unless read everywhere.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub partial: Option<bool>,
 }
 
 /// A fact a judge may answer about an object, and the texts it may give with it.
@@ -128,6 +144,42 @@ pub struct JudgedFact {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub values: Option<BTreeMap<String, String>>,
+    /// What the finding rests on (at most [`MAX_FACT_NEEDS`], each of a kind the judge reads): an agent is told the
+    /// problem when it may read every one of them. Without it, every kind the judge read where it read them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub needs: Option<Vec<JudgedNeed>>,
+}
+
+/// An object or a list a judged fact rests on: one object of `kind` (`name`), or the kind's objects in `namespace`,
+/// or (neither) in every namespace. For a kind without namespaces, `namespace` is left out.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct JudgedNeed {
+    pub kind: KindPattern,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub namespace: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub name: Option<String>,
+}
+
+/// A kind of a `partial` read that was not read everywhere: its objects outside the read namespaces are unknown.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct JudgedPartial {
+    pub kind: KindPattern,
+    /// Read in full only in these namespaces (every other is unread); left out: in every namespace but
+    /// `unreadNamespaces`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub read_namespaces: Option<Vec<String>>,
+    /// Namespaces where the list was refused: its objects there are unknown, not absent.
+    #[serde(default)]
+    pub unread_namespaces: Vec<String>,
 }
 
 /// A fact's value name: a letter, then letters, digits and `-`, at most 40.
@@ -470,6 +522,179 @@ pub fn project_objects(
     Ok(out)
 }
 
+/// A namespace list of a `partial` entry: DNS labels, at most [`MAX_PARTIAL_NAMESPACES`], sorted, each once.
+fn namespace_list(value: Option<&Value>, what: &str) -> CoreResult<Option<Vec<String>>> {
+    let Some(value) = value.filter(|v| !v.is_null()) else {
+        return Ok(None);
+    };
+    let Some(items) = value.as_array() else {
+        return Err(invalid(format!("a partial read's {what} is not a list")));
+    };
+    if items.len() > MAX_PARTIAL_NAMESPACES {
+        return Err(invalid(format!(
+            "a partial read names at most {MAX_PARTIAL_NAMESPACES} namespaces"
+        )));
+    }
+    let mut out = Vec::with_capacity(items.len());
+    for item in items {
+        match item.as_str() {
+            Some(ns) if super::services::is_dns_label(ns) => out.push(ns.to_owned()),
+            _ => {
+                return Err(invalid(format!(
+                    "a partial read's {what} holds a name that is no namespace"
+                )));
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    Ok(Some(out))
+}
+
+/// Where the window says the kinds of `judge`'s `partial` reads were not read (`given`), as the backend gets it:
+/// each a `partial` read of the judge, once; its read namespaces cut to the kind's scope, and a `partial` read whose
+/// scope is a list of namespaces said to be read only there even when the window left it out — so the backend is
+/// never told a kind was read where the extension may not read it. Every object of `sent` of such a kind is in a
+/// namespace it was read in (one without a namespace only where it was read everywhere).
+pub fn project_partial(
+    judge: &ProblemJudgeContribution,
+    given: Vec<Value>,
+    scopes: &[ProblemScope],
+    sent: &[JudgedObject],
+) -> CoreResult<Vec<JudgedPartial>> {
+    let mut out: Vec<JudgedPartial> = Vec::new();
+    for entry in given {
+        let kind = entry
+            .get("kind")
+            .and_then(|k| serde_json::from_value::<KindPattern>(k.clone()).ok())
+            .ok_or_else(|| invalid("a partial read names no kind"))?;
+        let Some(read) = judge.reads.iter().find(|r| same_kind(&r.kind, &kind)) else {
+            return Err(invalid(format!(
+                "the judge `{}` does not read {}",
+                judge.id,
+                kind_name(&kind)
+            )));
+        };
+        if read.partial != Some(true) {
+            return Err(invalid(format!(
+                "the judge `{}` does not read {} in part",
+                judge.id,
+                kind_name(&kind)
+            )));
+        }
+        if out.iter().any(|p| same_kind(&p.kind, &read.kind)) {
+            return Err(invalid(format!(
+                "{} is said twice to be read in part",
+                kind_name(&kind)
+            )));
+        }
+        out.push(JudgedPartial {
+            kind: read.kind.clone(),
+            read_namespaces: namespace_list(entry.get("readNamespaces"), "read namespaces")?,
+            unread_namespaces: namespace_list(entry.get("unreadNamespaces"), "unread namespaces")?
+                .unwrap_or_default(),
+        });
+    }
+    for read in judge.reads.iter().filter(|r| r.partial == Some(true)) {
+        let scope = scopes
+            .iter()
+            .find(|s| same_kind(&s.kind, &read.kind))
+            .map(|s| &s.namespaces);
+        let Some(NamespaceScope::Only { namespaces }) = scope else {
+            continue;
+        };
+        match out.iter_mut().find(|p| same_kind(&p.kind, &read.kind)) {
+            Some(entry) => {
+                let read_in = entry
+                    .read_namespaces
+                    .take()
+                    .unwrap_or_else(|| namespaces.clone());
+                let mut kept: Vec<String> = read_in
+                    .into_iter()
+                    .filter(|ns| namespaces.contains(ns))
+                    .collect();
+                kept.sort();
+                entry.read_namespaces = Some(kept);
+            }
+            None => {
+                let mut kept = namespaces.clone();
+                kept.sort();
+                kept.dedup();
+                out.push(JudgedPartial {
+                    kind: read.kind.clone(),
+                    read_namespaces: Some(kept),
+                    unread_namespaces: Vec::new(),
+                });
+            }
+        }
+    }
+    for object in sent {
+        let group = object
+            .api_version
+            .rsplit_once('/')
+            .map_or("", |(group, _)| group);
+        let kind = KindPattern::new(group, object.kind.as_str());
+        let Some(entry) = out.iter().find(|p| same_kind(&p.kind, &kind)) else {
+            continue;
+        };
+        let read_there = match object.metadata.namespace.as_deref() {
+            Some(ns) => {
+                !entry.unread_namespaces.iter().any(|n| n == ns)
+                    && entry
+                        .read_namespaces
+                        .as_ref()
+                        .is_none_or(|read| read.iter().any(|n| n == ns))
+            }
+            None => entry.read_namespaces.is_none() && entry.unread_namespaces.is_empty(),
+        };
+        if !read_there {
+            return Err(invalid(format!(
+                "a judged {} is in a namespace said not to be read",
+                kind_name(&kind)
+            )));
+        }
+    }
+    out.sort_by_key(|a| kind_name(&a.kind));
+    Ok(out)
+}
+
+/// What a fact says it rests on, as Sextant keeps it: only needs of kinds the judge reads; `None` (the stricter rule:
+/// every kind the judge read) when the answer gives none, more than [`MAX_FACT_NEEDS`], or one that is not a need.
+fn needs_of(judge: &ProblemJudgeContribution, value: Option<&Value>) -> Option<Vec<JudgedNeed>> {
+    let items = value?.as_array()?;
+    if items.len() > MAX_FACT_NEEDS {
+        return None;
+    }
+    let mut out = Vec::new();
+    for item in items {
+        let need: JudgedNeed = serde_json::from_value(item.clone()).ok()?;
+        let named = |text: &Option<String>, max: usize| {
+            text.as_deref()
+                .is_none_or(|t| !t.is_empty() && t.len() <= max && !t.chars().any(char::is_control))
+        };
+        if !named(&need.name, 253)
+            || need
+                .namespace
+                .as_deref()
+                .is_some_and(|ns| !super::services::is_dns_label(ns))
+        {
+            return None;
+        }
+        // The judge never saw another kind: what it says of one rests on nothing it read.
+        let Some(read) = judge.reads.iter().find(|r| same_kind(&r.kind, &need.kind)) else {
+            continue;
+        };
+        let need = JudgedNeed {
+            kind: read.kind.clone(),
+            ..need
+        };
+        if !out.contains(&need) {
+            out.push(need);
+        }
+    }
+    Some(out)
+}
+
 /// A fact's text as a message may show it: control characters as spaces, a URI cleaned, clipped.
 fn shown(text: &str) -> String {
     let flat: String = text
@@ -486,9 +711,10 @@ fn shown(text: &str) -> String {
 }
 
 /// What a judge answered, as Sextant keeps it: a list of at most [`MAX_JUDGED_FACTS`] facts, each about an object it
-/// was given, of a fact it declares, with only the texts that fact names (cleaned and clipped); one fact per object,
-/// fact id and texts — the same fact of an object again with other texts is kept (a rule judged `each` tells each),
-/// the very same again is not. Facts outside that are left out and counted (the second item).
+/// was given, of a fact it declares, with only the texts that fact names (cleaned and clipped) and what it rests on
+/// ([`needs_of`]); one fact per object, fact id and texts — the same fact of an object again with other texts is kept
+/// (a rule judged `each` tells each), the very same again is not (the first one's needs stand). Facts outside that are
+/// left out and counted (the second item).
 pub fn read_answer(
     judge: &ProblemJudgeContribution,
     sent: &[JudgedObject],
@@ -538,6 +764,7 @@ pub fn read_answer(
             uid: uid.to_owned(),
             fact: fact.id.clone(),
             values: (!values.is_empty()).then_some(values),
+            needs: needs_of(judge, item.get("needs")),
         });
     }
     Ok((out, left_out))

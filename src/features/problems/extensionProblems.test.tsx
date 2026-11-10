@@ -349,16 +349,19 @@ describe("problems of extensions", () => {
       id: "routing",
       reads: [
         { kind: { group: "networking.istio.io", kind: "VirtualService" }, paths: [".spec.hosts"] },
-        { kind: { group: "", kind: "Service" }, paths: [".metadata.labels"] },
+        // Read only where the extension may read Services: in part (ADR-0168 amendment).
+        { kind: { group: "", kind: "Service" }, paths: [".metadata.labels"], partial: true },
       ],
       facts: [{ id: "unknown-host", values: ["host"] }],
     };
     let answer: () => JudgedFact[] = () => [{ uid: "u-vs", fact: "unknown-host", values: { host: "reviews" } }];
     const sent: JudgedObject[][] = [];
+    const partials: unknown[] = [];
     wb.backend.on("extension_problem_judge", (args) => {
-      const { id, judge: judgeId, clusterId, objects } = args as { id: string; judge: string; clusterId: string; objects: JudgedObject[] };
+      const { id, judge: judgeId, clusterId, objects, partial } = args as { id: string; judge: string; clusterId: string; objects: JudgedObject[]; partial?: unknown };
       expect([id, judgeId, clusterId]).toEqual(["mesh-ext", "routing", "c1"]);
       sent.push(objects);
+      partials.push(partial);
       return answer();
     });
     unregister = registerExtensionProblems(
@@ -406,6 +409,7 @@ describe("problems of extensions", () => {
         values: { ".spec.hosts": ["reviews"] },
       },
     ]);
+    expect(partials[0]).toEqual([{ kind: { group: "", kind: "Service" }, readNamespaces: ["shop"], unreadNamespaces: [] }]);
     const source = () =>
       getSource(sourceKey("c1", { category: "ext:mesh-ext", kind: VS.kindRef, fieldSelector: null }))?.problems ?? [];
     expect(source()[0]?.message).toBe("reviews is no host web can reach");
@@ -424,6 +428,67 @@ describe("problems of extensions", () => {
     emitDelta(wb, services, [{ ...svc, metadata: { ...svc.metadata, labels: { app: "api2" } } }]);
     await waitFor(() => expect(sent).toHaveLength(2));
     await waitFor(() => expect(result.current).toBe(0));
+  });
+
+  it("judge rules of kinds from definitions on the kinds Rust says are defined, and ask again when the definitions change", async () => {
+    const XRD: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "apiextensions.crossplane.io", version: "v1", kind: "CompositeResourceDefinition" }, plural: "compositeresourcedefinitions", namespaced: false };
+    const XDB: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "example.org", version: "v1", kind: "XDatabase" }, plural: "xdatabases", namespaced: false };
+    const DB: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "example.org", version: "v1", kind: "Database" }, plural: "databases" };
+    wb.backend.on("cluster_kinds", () => [XRD, XDB, DB]);
+    const definedBy = { group: "apiextensions.crossplane.io", kind: "CompositeResourceDefinition" };
+    let found: ProblemScope[] = [
+      { kind: definedBy, namespaces: { type: "all" } },
+      { kind: { group: "example.org", kind: "XDatabase" }, namespaces: { type: "all" }, definedBy },
+    ];
+    let scopeCalls = 0;
+    wb.backend.on("extension_problem_scopes", () => {
+      scopeCalls += 1;
+      return found;
+    });
+    const kindsFrom = { kind: definedBy, groupPath: ".spec.group", kindPaths: [".spec.names.kind", ".spec.claimNames.kind"], max: 20 };
+    unregister = registerExtensionProblems("crossplane-ext", "Crossplane", [
+      {
+        id: "not-synced",
+        title: "Not synced",
+        kind: { group: "", kind: "" },
+        kindsFrom,
+        when: { type: "condition", conditionType: "Synced", status: "False" },
+        graceMinutes: 0,
+        notify: true,
+        toldThroughOwner: false,
+        message: "{{.metadata.name}} is not synced",
+      },
+    ]);
+    const { result } = renderHook(() => useProblemCount("c1"));
+    const failing = (kind: string, name: string, namespace?: string) => ({
+      apiVersion: "example.org/v1",
+      kind,
+      metadata: { name, uid: `u-${name}`, ...(namespace ? { namespace } : {}) },
+      status: { conditions: [{ type: "Synced", status: "False", lastTransitionTime: "2026-01-01T00:00:00Z" }] },
+    });
+    const xrd = (claim?: string) => ({
+      apiVersion: "apiextensions.crossplane.io/v1",
+      kind: "CompositeResourceDefinition",
+      metadata: { name: "xdatabases.example.org", uid: "u-xrd" },
+      spec: { group: "example.org", names: { kind: "XDatabase" }, ...(claim ? { claimNames: { kind: claim } } : {}) },
+    });
+    // The definitions are watched whole (their `spec` names the kinds), and only the defined kind gets the rule.
+    const definitions = await watchOf(wb, "CompositeResourceDefinition");
+    expect(wb.specs.get(definitions)!.metadataOnly).toBeFalsy();
+    emitSnapshot(wb, definitions, [xrd()]);
+    emitSnapshot(wb, await watchOf(wb, "XDatabase"), [failing("XDatabase", "db-1")]);
+    await waitFor(() => expect(result.current).toBe(1));
+    expect([...wb.specs.values()].some((spec) => spec.kind.kind === "Database")).toBe(false);
+    const asked = scopeCalls;
+
+    // A definition now names a claim kind too: Rust is asked again, and the kind it now finds defined is judged.
+    found = [...found, { kind: { group: "example.org", kind: "Database" }, namespaces: { type: "only", namespaces: ["team"] }, definedBy }];
+    emitDelta(wb, definitions, [xrd("Database")]);
+    await waitFor(() => expect(scopeCalls).toBeGreaterThan(asked), { timeout: 3000 });
+    const claims = await watchOf(wb, "Database");
+    expect(wb.specs.get(claims)!.namespaces).toEqual(["team"]);
+    emitSnapshot(wb, claims, [failing("Database", "db", "team")]);
+    await waitFor(() => expect(result.current).toBe(2));
   });
 
   it("tell a problem for each entry a judge gives, with an optional read not served sent as none (ADR-0168 amendment)", async () => {

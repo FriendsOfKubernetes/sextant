@@ -57,7 +57,10 @@ export interface ProblemPlan {
   ruled: string[];
   /** Categories nothing could be looked at for. */
   notChecked: ProblemCategory[];
-  /** Extension categories whose judges read a kind the agent may not read where they read it (ADR-0168). */
+  /**
+   * Extension categories some of whose judged problems were left out (ADR-0168): filled when the problems are told,
+   * by what each rests on.
+   */
   notJudged: ProblemCategory[];
   /** The rules name more namespaces than are watched. */
   truncated: boolean;
@@ -70,11 +73,18 @@ function clusterScoped(def: SourceDef, kinds: ResourceKind[] | null | undefined)
 
 /**
  * The lists an extension's problem says a name is absent from (`lookups`), as refs the agent must be able to read;
- * for a problem a judge decided (ADR-0168), every kind the judge read in every namespace its source watched (one
- * ref of no namespace when it watched every namespace).
+ * for a problem a judge decided (ADR-0168), what its fact says it rests on (`needs`: objects, or a kind's objects in a
+ * namespace or in all of them), else every kind the judge read in every namespace its source watched (one ref of no
+ * namespace when it watched every namespace).
  */
 export function lookupRefs(p: Pick<Problem, "lookups" | "object">, kinds: ResourceKind[] | null | undefined): ListRef[] {
   return (p.lookups ?? []).flatMap((lookup): ListRef[] => {
+    if (lookup.judged?.needs) {
+      return lookup.judged.needs.map(({ group, kind, namespace, name }): ListRef => {
+        const namespaced = kinds ? findKind(kinds, { group, kind })?.namespaced !== false : true;
+        return { group, kind, namespace: namespaced ? (namespace ?? null) : null, ...(name !== undefined ? { name } : {}) };
+      });
+    }
     if (lookup.judged) {
       return (lookup.judged.reads ?? []).flatMap(({ group, kind, namespaces }): ListRef[] =>
         namespaces === null ? [{ group, kind, namespace: null }] : namespaces.map((namespace) => ({ group, kind, namespace })),
@@ -160,12 +170,14 @@ export function planProblems(
       if (defs.length > 0) plan.notChecked.push(category);
       continue;
     }
-    // A kind a judge reads that the agent may not read: the problems it decides are not told (ADR-0168).
+    // A kind a judge reads that the agent may not read anywhere is still held: the judge needs every kind it reads to
+    // tell anything, and the problems it decides are told only when the agent may read what each rests on (its
+    // `needs`, else every kind the judge read) — nothing of that kind reaches the agent otherwise (ADR-0168).
     const judged = extensions.judged?.(category) ?? [];
     const same = (a: { group: string; kind: string }, b: { group: string; kind: string }) =>
       a.group.toLowerCase() === b.group.toLowerCase() && a.kind.toLowerCase() === b.kind.toLowerCase();
-    if (defs.some((def) => !readable.includes(def) && judged.some((k) => same(k, def.kind)))) plan.notJudged.push(category);
-    plan.shared.push(...readable);
+    const judgeInputs = defs.filter((def) => !readable.includes(def) && judged.some((k) => same(k, def.kind)));
+    plan.shared.push(...readable, ...judgeInputs);
   }
   return plan;
 }

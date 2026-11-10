@@ -65,3 +65,40 @@ code the user installed to act while nobody looks (#317).
 `sextantApi` 4) is the extension's backend deciding facts from the declared fields of the objects of declared kinds,
 with no host call and no network; a rule's `judged` condition turns a fact into a problem, with Sextant's texts,
 consent, notifications and agents' rules. No frame code runs for problems.
+
+## Amendment: rule kinds read from definitions (`kindsFrom`)
+
+Crossplane's claim and composite kinds are known only from its CompositeResourceDefinitions at run time, so a rule
+cannot name them. From `sextantApi` 4 a rule may give, instead of `kind`,
+`"kindsFrom": {"kind": <definition kind>, "groupPath": ".spec.group", "kindPaths": [".spec.names.kind", ".spec.claimNames.kind"], "max": 20}`
+(`kinds_from.rs` = `checkRuleKinds`):
+- the paths are keys and indexes only (each names one text), checked as rule paths on the definition kind; 1 to 4
+  kind paths; `max` 1 to 20 definitions, the first by namespace and name (the built-in view's "first 20 XRDs");
+- every `kindsFrom` of a manifest is the same one; a rule with it judges each object by its own fields: no `missing`,
+  `related`, `relatedBy`, `selectsNone`, `judged`, `toldThroughOwner`, `toldThroughReferrer`, `newestPer` or
+  `source.fieldSelector` (fields an API server selects by are each kind's own);
+- **what the user agrees to**: the definition kind joins the rules' kinds (`problem_kinds`, `grantedProblems`), and the
+  `kindsFrom` itself word for word (`InstalledExtension.grantedKindsFrom`, in `asks_within`): the consent says "The
+  kinds that objects of <definition kind> define (the API group at …, the kinds at …), read from the first N of them by
+  name", in every language. So the rule's kinds stay agreed by the user, as this ADR says, by what decides them;
+- **Rust decides the kinds** (`kinds_from::defined_scopes`, from `extension_problem_scopes`): only for an active
+  extension whose `kindsFrom` was agreed to, where its granted rules allow Read on the definition kind, Sextant lists
+  the definitions itself with the user's connection (the core's `resources::list`, ≤ 500, per namespace when the
+  extension may read them only in some, ≤ 100 namespaces), reads the group and kinds at the declared paths of the first
+  `max`, and keeps a kind only when its group is a custom resource's (a DNS name with a dot, not `*.k8s.io` or
+  `*.kubernetes.io`), its name is a kind's, it has no inline secret field (ADR-0120), the manifest does not name it
+  itself and the extension may read it somewhere (`problem_scopes`). A failed list defines nothing. Each such kind
+  comes back as a scope with `definedBy` the definition kind; the window never names a kind it judges;
+- **the window** compiles the `kindsFrom` rules once, applies them only on sources of `definedBy` scopes the cluster
+  serves (`SourceDef.defined`, passed to the detector as `ctx.defined`), one watch per kind through the problems store
+  (capped at the rules' `source.maxObjects` or `MAX_SOURCE_OBJECTS`), and gives the definition kind a source of its
+  own whose rows keep the `group/kind` texts each definition names; when those change it asks Rust again
+  (`REFRESH_DELAY_MS` = 1 s later), the earlier answer standing meanwhile. Section counters (`sectionBadges` by rule
+  id) and the problems page count them as any rule's.
+
+Left out: "Only problems" on Sextant's own tables of such kinds (the built-in view had none; the extension's page
+filters its own rows), and a permission rule by the same `kindsFrom` — Read in a rule is decided per call by
+`decide_extension` against the grant alone, and making it depend on cluster content (a cached, invalidated list of
+definitions per cluster and connection on every call, watch and journal line) or adding a kind scope to the access
+rules agents share (ADR-0041, strict parsing) is not small; an extension that must read such kinds still asks for Read
+on every kind.

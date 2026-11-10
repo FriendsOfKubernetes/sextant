@@ -9,4 +9,8 @@ export type ProblemScope = { kind: KindPattern,
 /**
  * The namespaces where the extension may read the kind; for a kind without namespaces only `All` runs it.
  */
-namespaces: NamespaceScope, };
+namespaces: NamespaceScope, 
+/**
+ * A kind the objects of this definition kind define (`kindsFrom`): only the rules with `kindsFrom` run on it.
+ */
+definedBy?: KindPattern, };

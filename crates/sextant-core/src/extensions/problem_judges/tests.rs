@@ -224,10 +224,12 @@ fn scope_all() -> Vec<ProblemScope> {
             namespaces: NamespaceScope::Only {
                 namespaces: vec!["shop".into()],
             },
+            defined_by: None,
         },
         ProblemScope {
             kind: KindPattern::new("", "Service"),
             namespaces: NamespaceScope::All,
+            defined_by: None,
         },
     ]
 }
@@ -329,18 +331,21 @@ fn an_answer_keeps_only_declared_facts_about_sent_objects() {
             JudgedFact {
                 uid: "u1".into(),
                 fact: "unknown-host".into(),
-                values: Some(BTreeMap::from([("host".into(), "reviews .shop".into())]))
+                values: Some(BTreeMap::from([("host".into(), "reviews .shop".into())])),
+                needs: None
             },
             // The same fact again with other texts is kept (a rule judged `each` tells it); the very same is not.
             JudgedFact {
                 uid: "u1".into(),
                 fact: "unknown-host".into(),
-                values: Some(BTreeMap::from([("host".into(), "second".into())]))
+                values: Some(BTreeMap::from([("host".into(), "second".into())])),
+                needs: None
             },
             JudgedFact {
                 uid: "u1".into(),
                 fact: "conflict".into(),
-                values: None
+                values: None,
+                needs: None
             },
         ]
     );
@@ -361,4 +366,167 @@ fn a_fact_text_is_cleaned_and_clipped() {
         shown(&"é".repeat(MAX_FACT_VALUE_CHARS + 1)).chars().count(),
         MAX_FACT_VALUE_CHARS + 1
     );
+}
+
+fn partial_judge() -> ProblemJudgeContribution {
+    let mut judge = the_judge();
+    judge.reads[1].partial = Some(true);
+    judge
+}
+
+fn service(ns: &str, uid: &str) -> Value {
+    json!({ "apiVersion": "v1", "kind": "Service", "metadata": { "name": "s", "namespace": ns, "uid": uid } })
+}
+
+#[test]
+fn a_partial_read_says_where_it_was_not_read() {
+    let judge = partial_judge();
+    // Read everywhere but where the API server refused it.
+    let sent = project_objects(&judge, vec![service("a", "s1")], &scope_all()).unwrap();
+    let partial = project_partial(
+        &judge,
+        vec![json!({ "kind": { "group": "", "kind": "service" }, "unreadNamespaces": ["c", "b", "c"] })],
+        &scope_all(),
+        &sent,
+    )
+    .unwrap();
+    assert_eq!(
+        serde_json::to_value(&partial).unwrap(),
+        json!([{ "kind": { "group": "", "kind": "Service" }, "unreadNamespaces": ["b", "c"] }])
+    );
+    // Nothing read in part, nothing said: an old judge gets what it always got.
+    assert!(
+        project_partial(&judge, vec![], &scope_all(), &sent)
+            .unwrap()
+            .is_empty()
+    );
+
+    // A scope of some namespaces: read only there, even when the window says more or nothing.
+    let only = vec![ProblemScope {
+        kind: KindPattern::new("", "Service"),
+        namespaces: NamespaceScope::Only {
+            namespaces: vec!["b".into(), "a".into()],
+        },
+        defined_by: None,
+    }];
+    let said = project_partial(
+        &judge,
+        vec![json!({ "kind": { "group": "", "kind": "Service" }, "readNamespaces": ["a", "z"] })],
+        &only,
+        &sent,
+    )
+    .unwrap();
+    assert_eq!(said[0].read_namespaces, Some(vec!["a".to_owned()]));
+    let unsaid = project_partial(&judge, vec![], &only, &sent).unwrap();
+    assert_eq!(
+        unsaid[0].read_namespaces,
+        Some(vec!["a".to_owned(), "b".to_owned()])
+    );
+}
+
+#[test]
+fn what_a_partial_read_may_not_say() {
+    let judge = partial_judge();
+    let sent = project_objects(&judge, vec![service("b", "s1")], &scope_all()).unwrap();
+    let refused = |given: Value| {
+        project_partial(&judge, vec![given], &scope_all(), &sent)
+            .unwrap_err()
+            .message
+    };
+    // A read not marked `partial`, a kind not read, twice, a name that is no namespace.
+    assert!(
+        refused(json!({ "kind": { "group": VS.0, "kind": VS.1 }, "unreadNamespaces": [] }))
+            .contains("in part")
+    );
+    assert!(refused(json!({ "kind": { "group": "", "kind": "Pod" } })).contains("does not read"));
+    assert!(refused(json!({ "kind": { "group": "", "kind": "Service" }, "unreadNamespaces": ["Not A Name"] }))
+        .contains("no namespace"));
+    assert!(
+        project_partial(
+            &judge,
+            vec![
+                json!({ "kind": { "group": "", "kind": "Service" } }),
+                json!({ "kind": { "group": "", "kind": "Service" } })
+            ],
+            &scope_all(),
+            &[]
+        )
+        .is_err()
+    );
+    // An object in a namespace said not to be read.
+    assert!(
+        refused(json!({ "kind": { "group": "", "kind": "Service" }, "unreadNamespaces": ["b"] }))
+            .contains("not to be read")
+    );
+    assert!(
+        refused(json!({ "kind": { "group": "", "kind": "Service" }, "readNamespaces": ["a"] }))
+            .contains("not to be read")
+    );
+    let many: Vec<String> = (0..=MAX_PARTIAL_NAMESPACES)
+        .map(|i| format!("n{i}"))
+        .collect();
+    assert!(
+        refused(json!({ "kind": { "group": "", "kind": "Service" }, "unreadNamespaces": many }))
+            .contains("at most")
+    );
+}
+
+#[test]
+fn a_fact_keeps_what_it_rests_on_only_of_kinds_the_judge_read() {
+    let judge = the_judge();
+    let sent = project_objects(
+        &judge,
+        vec![
+            json!({ "apiVersion": "networking.istio.io/v1", "kind": "VirtualService",
+                     "metadata": { "name": "web", "namespace": "shop", "uid": "u1" } }),
+        ],
+        &scope_all(),
+    )
+    .unwrap();
+    let needs_of_answer = |needs: Value| {
+        let (facts, _) = read_answer(
+            &judge,
+            &sent,
+            json!([{ "uid": "u1", "fact": "conflict", "needs": needs }]),
+        )
+        .unwrap();
+        facts[0].needs.clone()
+    };
+    assert_eq!(
+        needs_of_answer(json!([
+            { "kind": { "group": VS.0, "kind": "virtualservice" }, "namespace": "shop", "name": "web" },
+            { "kind": { "group": "", "kind": "Service" }, "namespace": "shop" },
+            { "kind": { "group": "", "kind": "Service" }, "namespace": "shop" },
+            // A kind the judge does not read: it rests on nothing the judge saw.
+            { "kind": { "group": "", "kind": "Pod" } }
+        ])),
+        Some(vec![
+            JudgedNeed {
+                kind: KindPattern::new(VS.0, VS.1),
+                namespace: Some("shop".into()),
+                name: Some("web".into())
+            },
+            JudgedNeed {
+                kind: KindPattern::new("", "Service"),
+                namespace: Some("shop".into()),
+                name: None
+            },
+        ])
+    );
+    // On the object alone.
+    assert_eq!(needs_of_answer(json!([])), Some(vec![]));
+    // Not said, too many, or one that is no need: the stricter rule (every kind the judge read).
+    assert_eq!(needs_of_answer(Value::Null), None);
+    let many: Vec<Value> = (0..=MAX_FACT_NEEDS)
+        .map(|_| json!({ "kind": { "group": "", "kind": "Service" } }))
+        .collect();
+    assert_eq!(needs_of_answer(Value::Array(many)), None);
+    assert_eq!(
+        needs_of_answer(
+            json!([{ "kind": { "group": "", "kind": "Service" }, "namespace": "Bad Name" }])
+        ),
+        None
+    );
+    assert_eq!(needs_of_answer(json!([{ "kind": "Service" }])), None);
+    assert_eq!(needs_of_answer(json!("all")), None);
 }

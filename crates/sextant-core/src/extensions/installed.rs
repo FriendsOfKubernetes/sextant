@@ -8,6 +8,7 @@ use ts_rs::TS;
 
 use super::agent_tools::{AgentToolContribution, agent_tools_within};
 use super::commands::{CommandContribution, commands_within};
+use super::kinds_from::{KindsFrom, kinds_from_within};
 use super::manifest::{BackendManifest, ExtensionManifest};
 use super::metric_queries::{MetricQuery, metric_queries_within};
 use super::permissions::ExtensionPermissions;
@@ -85,6 +86,11 @@ pub struct InstalledExtension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub granted_agent_tools: Option<Vec<AgentToolContribution>>,
+    /// Where the rules' kinds come from that the user agreed to (`kindsFrom`, ADR-0137/ADR-0144 amendment), word for
+    /// word: "the kinds <definition kind>s define". `None`: none were agreed to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub granted_kinds_from: Option<Vec<KindsFrom>>,
 }
 
 /// The part of a backend the user agrees to: hosts and credential ids.
@@ -115,6 +121,7 @@ pub struct Granted<'a> {
     pub commands: Option<&'a [CommandContribution]>,
     pub services: Option<&'a [ServiceContribution]>,
     pub agent_tools: Option<&'a [AgentToolContribution]>,
+    pub kinds_from: Option<&'a [KindsFrom]>,
 }
 
 impl<'a> Granted<'a> {
@@ -127,14 +134,15 @@ impl<'a> Granted<'a> {
             commands: installed.granted_commands.as_deref(),
             services: installed.granted_services.as_deref(),
             agent_tools: installed.granted_agent_tools.as_deref(),
+            kinds_from: installed.granted_kinds_from.as_deref(),
         }
     }
 }
 
 /// Whether `manifest` asks for nothing beyond what was granted: its permissions within `granted`, its backend (if
 /// any) agreed to with every host and credential it names, every kind its problem rules judge, every metric query and
-/// every command agreed to. A new backend, host, credential, judged kind or a new or changed metric query or command
-/// needs consent again.
+/// every command and every `kindsFrom` agreed to. A new backend, host, credential, judged kind or a new or changed
+/// metric query, command or `kindsFrom` needs consent again.
 pub fn asks_within(
     manifest: &ExtensionManifest,
     granted: &ExtensionPermissions,
@@ -147,6 +155,7 @@ pub fn asks_within(
         commands: granted_commands,
         services: granted_services,
         agent_tools: granted_agent_tools,
+        kinds_from: granted_kinds_from,
     } = also;
     let backend_within = match (&manifest.backend, granted_backend) {
         (None, _) => true,
@@ -169,6 +178,7 @@ pub fn asks_within(
         && commands_within(manifest, granted_commands)
         && services_within(manifest, granted_services)
         && agent_tools_within(manifest, granted_agent_tools)
+        && kinds_from_within(manifest, granted_kinds_from)
         && manifest.permissions.is_within(granted)
 }
 

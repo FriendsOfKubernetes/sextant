@@ -381,6 +381,7 @@ async fn a_problem_judge_decides_only_from_what_it_is_given() {
             "all",
             "ctx-a",
             vec![config_map("team", "u1")],
+            vec![],
         )
         .await
         .unwrap();
@@ -418,20 +419,35 @@ async fn a_problem_judge_decides_only_from_what_it_is_given() {
             "all",
             "ctx-a",
             vec![config_map("other", "u2")],
+            vec![],
         )
         .await
         .unwrap_err();
     assert_eq!(err.code, ErrorCode::Forbidden);
+    // A read not marked `partial` is never said to be read in part.
     let err = env
         .api
-        .problem_judge(&env.host, ID, "nope", "ctx-a", vec![])
+        .problem_judge(
+            &env.host,
+            ID,
+            "all",
+            "ctx-a",
+            vec![config_map("team", "u3")],
+            vec![json!({ "kind": { "group": "", "kind": "ConfigMap" }, "unreadNamespaces": ["other"] })],
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Invalid);
+    let err = env
+        .api
+        .problem_judge(&env.host, ID, "nope", "ctx-a", vec![], vec![])
         .await
         .unwrap_err();
     assert_eq!(err.code, ErrorCode::NotFound);
     env.host.set_enabled(ID, false).unwrap();
     let err = env
         .api
-        .problem_judge(&env.host, ID, "all", "ctx-a", vec![])
+        .problem_judge(&env.host, ID, "all", "ctx-a", vec![], vec![])
         .await
         .unwrap_err();
     assert_eq!(err.code, ErrorCode::Forbidden);

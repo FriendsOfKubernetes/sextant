@@ -312,3 +312,13 @@ client hands the kit its `ui.icon` (`sdk/src/icons.ts`).
 A frame's context carries `kindsVersion`, a number that moves on whenever the kinds its cluster serves change (a CRD
 installed or removed while it shows; `clusterKindsVersion`, compared by the served kinds, not by each discovery), so a
 frame reads `kinds` again then, as the built-in views followed discovery; left out before discovery came.
+
+## Amendment: a details section on the kinds of a domain's groups, and the UI kit's checkbox
+
+A details section's kind may be `{"group": "*.<domain>", "kind": "*"}` (`sextantApi` 4; `group_suffix` in
+`contributions.rs`, checked alike by `checkDetailsSections`): every kind of a group ending in `.<domain>`, a domain of
+custom resource groups (a DNS name with a dot, not `k8s.io` or `kubernetes.io`'s own), never with a `when` (its paths
+could not be checked against kinds unknown until shown); any other `*` in a section's kinds is refused. Crossplane's
+managed resources of a vendor's providers (`*.upbound.io`) get their block without a frame on every core object. The
+UI kit's `ui.checkbox(label, onChange, {checked, disabled, title})` draws Sextant's own checkbox
+(`src/components/checkbox.css`, both themes' marks) instead of the browser's: "Only problems" on an extension's page.

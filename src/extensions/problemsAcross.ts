@@ -10,7 +10,7 @@
 //   same value of that label; one without the label is judged alone. Until the rows are read, no problem.
 //
 //   judgeAcross(problems, context, { rules, targets })   // the problems that stand
-import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
+import type { JudgedNeed, KubeObject, ProblemCondition, ProblemContribution } from "../api";
 import { evaluate, FACT_MARK, factKey, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, MISSING_MARK, numberOf, selectorMatches, valueAt, type Lookup } from "./problemRules";
 import type { JudgedEntry, JudgedRowPart } from "./problemJudges";
 import { cleanText } from "../resources/uri";
@@ -38,6 +38,11 @@ export interface AcrossRow {
   allLabels?: Record<string, string>;
   /** For a kind a problem judge reads (ADR-0168): its apiVersion, creation time and the judges' declared paths. */
   judged?: JudgedRowPart;
+  /**
+   * For a definition kind of a `kindsFrom` (ADR-0137 amendment): the group and kinds it names, as `group/kind`
+   * texts, so a change of them makes the window ask Rust again which kinds are defined.
+   */
+  defines?: string[];
 }
 
 /** How a rule names others of its kind (`toldThroughReferrer`, #404). */
@@ -58,6 +63,7 @@ export function rowOf(
   referrers: readonly ReferrerRule[] = [],
   rankPath?: string,
   judgedPaths: readonly string[] = [],
+  defines?: { groupPath: string; kindPaths: readonly string[] },
 ): (obj: KubeObject) => AcrossRow {
   return (obj) => {
     const meta = (obj.metadata ?? {}) as { name?: string; namespace?: string; creationTimestamp?: string; labels?: Record<string, unknown> };
@@ -111,6 +117,13 @@ export function rowOf(
         ...(meta.creationTimestamp ? { creationTimestamp: meta.creationTimestamp } : {}),
         values,
       };
+    }
+    if (defines) {
+      const group = valueAt(obj, defines.groupPath);
+      row.defines = defines.kindPaths.map((path) => {
+        const kind = valueAt(obj, path);
+        return `${typeof group === "string" ? group : ""}/${typeof kind === "string" ? kind : ""}`;
+      });
     }
     if (keepLabels) {
       row.allLabels = Object.fromEntries(
@@ -329,7 +342,9 @@ function judgedFacts(
     const given = judges.fact(lookup.judged.judge, lookup.judged.fact, p.uid);
     if (given === null) return null;
     for (const [name, text] of Object.entries(given)) values[name] ??= text;
-    marked.push({ ...lookup, judged: { ...lookup.judged, reads: judges.reads(lookup.judged.judge) } });
+    // What the first entry rests on, when its fact says (`needs`): what an agent must be able to read.
+    const needs = judges.entries?.(lookup.judged.judge, lookup.judged.fact, p.uid)?.[0]?.needs;
+    marked.push({ ...lookup, judged: { ...lookup.judged, reads: judges.reads(lookup.judged.judge), ...needsOf(needs) } });
   }
   return { judged: true, values, lookups: marked };
 }
@@ -347,18 +362,33 @@ function eachJudged(p: Problem, when: { judge: string; fact: string }, judges: A
   );
   return entries.map((entry) => {
     const id = entryId(entry.key);
+    // Each finding rests on what its own entry says (`needs`).
+    const own = entry.needs === undefined ? lookups : lookups.map((l) => (l.judged ? { ...l, judged: { ...l.judged, ...needsOf(entry.needs) } } : l));
     // Later than the object: it began when the judge first gave it.
     const shift = p.since === undefined ? Math.max(0, entry.since - p.firstSeen) : 0;
     return {
       ...p,
       key: `${p.key}|${id}`,
       notifyKey: `${p.notifyKey}|${id}`,
-      lookups,
+      lookups: own,
       firstSeen: p.firstSeen + shift,
       activeAt: p.activeAt + shift,
       ...(p.message !== undefined ? { message: withFacts(p.message, entry.values) } : {}),
     };
   });
+}
+
+/** A judged lookup's `needs` from a fact entry's (`group`, `kind`, `namespace`, `name`), none when it said none. */
+function needsOf(needs: readonly JudgedNeed[] | undefined): { needs?: NonNullable<Lookup["judged"]>["needs"] } {
+  if (needs === undefined) return {};
+  return {
+    needs: needs.map((n) => ({
+      group: n.kind.group,
+      kind: n.kind.kind,
+      ...(n.namespace !== undefined ? { namespace: n.namespace } : {}),
+      ...(n.name !== undefined ? { name: n.name } : {}),
+    })),
+  };
 }
 
 /** A short stable id of an entry's key (53-bit FNV/cyrb-style hash in base 36). */

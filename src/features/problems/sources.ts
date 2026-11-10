@@ -55,6 +55,8 @@ export interface SourceDef {
    * (`targets`) and which of them have problems. It runs while rows still load: what it cannot tell yet is no problem.
    */
   judge?: JudgeDef;
+  /** A kind an extension's definitions define (`kindsFrom`): its `kindsFrom` rules judge it. */
+  defined?: boolean;
 }
 
 /** A source's problems judged with its rows and its category's other sources (`SourceDef.judge`). */
@@ -79,6 +81,8 @@ export interface JudgedRows {
   truncated: boolean;
   /** The namespaces the source watches (`null`: every namespace); `undefined` before it opened. */
   namespaces: readonly string[] | null | undefined;
+  /** Namespaces among them the API server refuses to list (sorted): their objects are unknown, not absent. */
+  forbidden?: readonly string[];
 }
 
 /** The cap of a source whose kind a cluster can hold by the thousand. */
@@ -185,13 +189,13 @@ function builtInSources(category: ProblemCategory): readonly SourceDef[] {
 /** The store's key of a source in a cluster. */
 export function sourceKey(
   clusterId: string,
-  def: Pick<SourceDef, "kind" | "fieldSelector" | "namespaces" | "labelSelector" | "metadataOnly"> & { category?: ProblemCategory },
+  def: Pick<SourceDef, "kind" | "fieldSelector" | "namespaces" | "labelSelector" | "metadataOnly" | "defined"> & { category?: ProblemCategory },
 ): string {
   const { group, version, kind } = def.kind;
   const key = `${clusterId}|${group}/${version}/${kind}|${def.fieldSelector ?? ""}`;
   // An extension's rules judge their own sources, over the namespaces the extension may read, with their rules' source.
   if (def.category?.startsWith("ext:")) {
-    return `${key}|${def.category}|${def.namespaces?.join(",") ?? "*"}|${def.labelSelector ?? ""}|${def.metadataOnly ? "meta" : ""}`;
+    return `${key}|${def.category}|${def.namespaces?.join(",") ?? "*"}|${def.labelSelector ?? ""}|${def.metadataOnly ? "meta" : ""}${def.defined ? "|defined" : ""}`;
   }
   // A security source judges the same kinds as pods and workloads by other rules: a source of its own; so is the
   // provider's source of full claims, which watches nothing.

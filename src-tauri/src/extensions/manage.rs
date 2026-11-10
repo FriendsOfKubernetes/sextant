@@ -14,6 +14,7 @@ use std::time::{Duration, Instant};
 
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use sextant_core::extensions::kinds_from::kinds_from_of;
 use sextant_core::extensions::problems::problem_kinds;
 use sextant_core::extensions::{
     BackendGrant, ExtensionManifest, ExtensionSource, Granted, InstalledExtension,
@@ -441,6 +442,10 @@ impl ExtensionHost {
             granted_agent_tools: {
                 let tools = manifest.contributes.agent_tools.clone();
                 (!tools.is_empty()).then_some(tools)
+            },
+            granted_kinds_from: {
+                let from = kinds_from_of(&manifest);
+                (!from.is_empty()).then_some(from)
             },
         };
         let saved = self.inner.settings.update(|settings| {

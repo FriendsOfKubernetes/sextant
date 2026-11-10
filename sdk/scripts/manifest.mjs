@@ -905,13 +905,19 @@ function checkSource(rule, rules, api, list, here) {
   }
   const first = rules.findIndex((other) => sameKind(other.kind, rule.kind));
   if (first >= 0 && !sameSource(rules[first].source, rule.source)) {
-    fail([...here, "source"], `every rule of ${kindName(rule.kind)} has the same source (as ${pathText([...list, first])})`);
+    const of = rule.kindsFrom ? `the kinds ${kindName(rule.kindsFrom.kind)} define` : kindName(rule.kind);
+    fail([...here, "source"], `every rule of ${of} has the same source (as ${pathText([...list, first])})`);
   }
   return rule.source?.metadataOnly === true;
 }
 
+/** Rust compares the whole `Option<RuleSource>`: present on both or neither, and every field alike. */
 const sameSource = (a, b) =>
-  (a?.labelSelector ?? null) === (b?.labelSelector ?? null) && (a?.metadataOnly === true) === (b?.metadataOnly === true);
+  (a === undefined) === (b === undefined) &&
+  (a?.labelSelector ?? null) === (b?.labelSelector ?? null) &&
+  (a?.metadataOnly === true) === (b?.metadataOnly === true) &&
+  (a?.fieldSelector ?? null) === (b?.fieldSelector ?? null) &&
+  (a?.maxObjects ?? null) === (b?.maxObjects ?? null);
 
 /** A label key: an optional DNS subdomain prefix and `/`, then a name of 1–63 characters (`is_label_key` in Rust). */
 function isLabelKey(text) {
@@ -926,8 +932,73 @@ function isLabelKey(text) {
 }
 
 /** What Sextant checks of problem rules beyond the schema, in its order. */
-function checkProblems(manifest) {
+// --- Rule kinds from definitions (`kindsFrom`): `kinds_from.rs` ---------------------------------------------------------
+
+const KINDS_FROM_API = 4;
+
+/** A path of keys and indexes only, naming one value (`plain_steps`). */
+const plainPath = (path) => parseFieldPath(path)?.every((step) => "key" in step || "index" in step) === true;
+
+/** Whether a condition reads other objects than the judged one (`looks_across`). */
+const looksAcross = (condition) => lookedUpKinds(condition).length > 0 || judgedIn(condition).length > 0;
+
+function lookedUpKinds(condition) {
+  if (["missing", "related", "relatedBy", "selectsNone"].includes(condition.type)) return [condition.kind];
+  if (condition.type === "all" || condition.type === "any") return condition.of.flatMap(lookedUpKinds);
+  if (condition.type === "not") return lookedUpKinds(condition.of);
+  return [];
+}
+
+const sameKindsFrom = (a, b) =>
+  sameKindExact(a.kind, b.kind) &&
+  a.groupPath === b.groupPath &&
+  a.max === b.max &&
+  a.kindPaths.length === b.kindPaths.length &&
+  a.kindPaths.every((p, i) => p === b.kindPaths[i]);
+const sameKindExact = (a, b) => a.group === b.group && a.kind === b.kind;
+
+/** A rule's `kindsFrom` (and, without one, its `kind`): `check_rule_kinds`. */
+function checkRuleKinds(manifest, rule, here) {
+  const from = rule.kindsFrom;
+  if (from === undefined) {
+    if (rule.kind === undefined || rule.kind.kind.trim() === "") fail(here, "names its `kind`, or its kinds with `kindsFrom`");
+    return;
+  }
+  const path = [...here, "kindsFrom"];
+  if (manifest.sextantApi < KINDS_FROM_API) fail(path, `needs sextantApi ${KINDS_FROM_API} or later`);
+  if (rule.kind !== undefined && (rule.kind.kind !== "" || rule.kind.group !== "")) {
+    fail([...here, "kind"], "goes without `kindsFrom`: the definitions name the kinds");
+  }
+  if (from.kind.kind.includes("*") || from.kind.group.includes("*")) fail([...path, "kind"], "is one kind, not a pattern");
+  if (from.kind.group === "" && from.kind.kind.toLowerCase() === "secret") fail([...path, "kind"], "is never a Secret");
+  const fields = [[[...path, "groupPath"], from.groupPath], ...from.kindPaths.map((p, i) => [[...path, "kindPaths", i], p])];
+  for (const [at, field] of fields) {
+    if (!plainPath(field)) fail(at, "is a field path of keys and indexes only, naming one text");
+    checkRulePath(field, from.kind, at, false);
+  }
+  if (from.kindPaths.length === 0 || from.kindPaths.length > 4) fail([...path, "kindPaths"], "has 1 to 4 paths");
+  from.kindPaths.forEach((p, i) => {
+    if (from.kindPaths.slice(0, i).includes(p)) fail([...path, "kindPaths", i], "is named twice");
+  });
+  if (from.max < 1 || from.max > 20) fail([...path, "max"], "is 1 to 20");
   const rules = manifest.contributes?.problems ?? [];
+  const first = rules.findIndex((other) => other.kindsFrom !== undefined && !sameKindsFrom(other.kindsFrom, from));
+  if (first >= 0) fail(path, `is the same in every rule with \`kindsFrom\` (as ${pathText(["contributes", "problems", first])})`);
+  const ownFields = "judges each object by its own fields";
+  if (rule.toldThroughOwner === true) fail([...here, "toldThroughOwner"], `goes without \`kindsFrom\`: a rule with it ${ownFields}`);
+  if (rule.toldThroughReferrer !== undefined) fail([...here, "toldThroughReferrer"], `goes without \`kindsFrom\`: a rule with it ${ownFields}`);
+  if (rule.newestPer !== undefined) fail([...here, "newestPer"], `goes without \`kindsFrom\`: a rule with it ${ownFields}`);
+  if (rule.source?.fieldSelector !== undefined) {
+    fail([...here, "source", "fieldSelector"], "goes without `kindsFrom`: the fields an API server selects by are each kind's own");
+  }
+  if (looksAcross(rule.when)) {
+    fail([...here, "when"], `has no \`missing\`, \`related\`, \`relatedBy\`, \`selectsNone\` or \`judged\`: a rule with \`kindsFrom\` ${ownFields}`);
+  }
+}
+
+function checkProblems(manifest) {
+  // A rule of kinds from definitions names no `kind`: as Rust reads it, an empty one.
+  const rules = (manifest.contributes?.problems ?? []).map((rule) => (rule.kind === undefined ? { ...rule, kind: { group: "", kind: "" } } : rule));
   const list = ["contributes", "problems"];
   if (rules.length === 0) return;
   if (manifest.sextantApi < PROBLEMS_API) fail(list, `needs sextantApi ${PROBLEMS_API} or later`);
@@ -938,8 +1009,11 @@ function checkProblems(manifest) {
     const here = [...list, i];
     const first = rules.slice(0, i).findIndex((other) => other.title.trim() === rule.title.trim());
     if (first >= 0) fail([...here, "title"], `duplicate title (also ${pathText([...list, first])})`);
-    if (!kinds.some((k) => sameKind(k, rule.kind))) {
-      kinds.push(rule.kind);
+    checkRuleKinds(manifest, manifest.contributes.problems[i], here);
+    // A rule of kinds from definitions counts its definition kind (agreed to with the rules').
+    const own = rule.kindsFrom?.kind ?? rule.kind;
+    if (!kinds.some((k) => sameKind(k, own))) {
+      kinds.push(own);
       if (kinds.length > maxKinds) fail([...here, "kind"], `the rules judge at most ${maxKinds} kinds`);
     }
     const metadataOnly = checkSource(rule, rules, manifest.sextantApi, list, here);
@@ -1833,6 +1907,21 @@ function checkDetailsSections(manifest) {
       if (section.kinds.length !== 1) fail([...list, i, "kinds"], "with every kind (`*`/`*`) lists no other kind");
       if (section.when !== undefined) fail([...list, i, "when"], "is not for a section of every kind");
     }
+    // Every kind of the groups under a domain (`*.upbound.io`/`*`): `group_suffix` in Rust.
+    (section.kinds ?? []).forEach((kind, k) => {
+      if ((kind.group === "*" && kind.kind === "*") || (!kind.group.includes("*") && kind.kind !== "*")) return;
+      const at = [...list, i, "kinds", k];
+      const domain = kind.group.startsWith("*.") && kind.kind === "*" ? kind.group.slice(2) : undefined;
+      if (domain === undefined) {
+        fail(at, "is every kind (`*`/`*`), the kinds of the groups under a domain (`*.upbound.io`/`*`), or one kind");
+      }
+      const labels = domain.split(".");
+      if (!isCustomGroup(domain) || domain.length > 240 || !labels.every((l) => l !== "" && l.length <= 63 && /^[a-z0-9-]+$/.test(l))) {
+        fail([...at, "group"], "is `*.` and a domain of custom resource groups, such as `*.upbound.io` (not Kubernetes' own)");
+      }
+      if (manifest.sextantApi < WINDOW_API) fail(at, `needs sextantApi ${WINDOW_API} or later`);
+      if (section.when !== undefined) fail([...list, i, "when"], "is not for a section of the kinds of a domain's groups");
+    });
     if (section.when === undefined) return;
     const here = [...list, i, "when"];
     if (manifest.sextantApi < WINDOW_API) fail(here, `needs sextantApi ${WINDOW_API} or later`);

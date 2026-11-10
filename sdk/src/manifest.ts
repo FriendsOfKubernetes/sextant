@@ -75,6 +75,11 @@ export interface ManifestPage {
 export interface ManifestDetailsSection {
   id: string;
   title: string;
+  /**
+   * The kinds it shows on: kinds, or `{group: "*", kind: "*"}` alone (every kind), or `{group: "*.<domain>", kind:
+   * "*"}` (every kind of a group ending in `.<domain>`, a domain of custom resource groups such as `upbound.io`, without
+   * a `when`; since Sextant 0.30).
+   */
   kinds: KindPattern[];
   order?: number;
   placement: DetailsPlacement;
@@ -251,7 +256,17 @@ export interface ManifestProblem {
   id: string;
   /** Shown as the problem's reason; unique among the rules. */
   title: string;
-  kind: KindPattern;
+  /** The kind judged; or, instead, `kindsFrom`. */
+  kind?: KindPattern;
+  /**
+   * The kinds judged, read at run time from the objects of a definition kind (since Sextant 0.30), instead of `kind`:
+   * of the first `max` (1 to 20) definitions by namespace and name, the API group at `groupPath` and the kinds at
+   * `kindPaths` (1 to 4 paths of keys and indexes). Sextant lists the definitions itself and judges only custom kinds
+   * the extension may read; the consent names "the kinds <definition kind> objects define". A rule with it judges each
+   * object by its own fields (no `missing`, `related`, `relatedBy`, `selectsNone`, `judged`, `toldThroughOwner`,
+   * `toldThroughReferrer`, `newestPer` or `source.fieldSelector`), and every rule's `kindsFrom` is the same.
+   */
+  kindsFrom?: { kind: KindPattern; groupPath: string; kindPaths: string[]; max: number };
   when: ProblemCondition;
   /** A field holding an RFC 3339 time: when the state began. */
   since?: string;
@@ -426,6 +441,12 @@ export interface ManifestProblemJudge {
     paths: string[];
     /** The cluster may not serve the kind: the judge then gets none of its objects instead of not telling. */
     optional?: boolean;
+    /**
+     * The kind may be read in some namespaces only (the extension's scope, or the API server refusing others): the
+     * judge then gets the objects read and, in its input's `partial`, where the kind was not read, instead of not
+     * telling (since Sextant 0.30).
+     */
+    partial?: boolean;
   }>;
   /** The facts it may answer (1 to 20), each with up to 5 names of texts a message shows as `{{fact:<name>}}`. */
   facts: Array<{ id: string; values?: string[] }>;
@@ -585,6 +606,8 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
         const { source, about, ...rule } = p;
         return {
           ...rule,
+          // A rule whose kinds come from definitions names none: Sextant writes it empty (`kindsFrom`).
+          kind: rule.kind ?? { group: "", kind: "" },
           ...(about !== undefined ? { about: { ...about, clusterScoped: about.clusterScoped ?? false } } : {}),
           graceMinutes: p.graceMinutes ?? 0,
           notify: p.notify ?? true,

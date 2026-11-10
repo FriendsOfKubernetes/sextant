@@ -15,6 +15,10 @@
 //
 // - a kind a read marks `optional` that the cluster does not serve is sent as no objects (the input's `notServed`);
 //   one that is served but not read in full still cannot tell;
+// - a namespaced kind read only in some namespaces (the extension's scope or the user's accessible ones narrowed its
+//   source, or the API server refused some, `JudgedRows.forbidden`) cannot tell either, unless its read is `partial`:
+//   then its objects go with `partial: [{kind, readNamespaces?, unreadNamespaces}]` for it (ADR-0168 amendment);
+// - an entry keeps what its fact says it rests on (`needs`), which an agent must be able to read to be told it;
 // - an answer may give a fact of an object several times, each with its own texts (a rule judged `each` tells one
 //   problem per entry, ADR-0168 amendment); each entry is remembered with the time it first came, kept across a
 //   failed call, so a problem it tells keeps its age.
@@ -23,7 +27,7 @@
 //   judgedFact(clusterId, extensionId, judgeId, fact, uid)  // the fact's first texts, or null
 //   judgedFacts(clusterId, extensionId, judgeId, fact, uid) // every entry of the fact with its key and first time
 //   onJudgeAnswer(listener)                                 // the store looks again at the extension's sources
-import { api, type JudgedFact, type JudgedObject, type ProblemJudgeContribution } from "../api";
+import { api, type JudgedFact, type JudgedNeed, type JudgedObject, type JudgedPartial, type ProblemJudgeContribution } from "../api";
 import type { JudgedRows } from "../features/problems/sources";
 
 /** At most one call per runner in this time. */
@@ -51,6 +55,8 @@ export interface JudgeInput {
   rows: JudgedRows | undefined;
   /** An `optional` read the cluster does not serve: no objects, nothing read (so nothing an agent must be able to read). */
   notServed?: boolean;
+  /** The kind has namespaces (the served kind's): only then can it be read in some namespaces only. Default `true`. */
+  namespaced?: boolean;
 }
 
 /** The rows of an `optional` read the cluster does not serve: read in full, and empty. */
@@ -59,6 +65,8 @@ export const NOT_SERVED_ROWS: JudgedRows = Object.freeze({ status: "ready", rows
 /** One entry of a fact the judge gave an object: its texts, the key they make, and when it first came (ms). */
 export interface JudgedEntry {
   values: Record<string, string>;
+  /** What the fact says it rests on (`needs`); `undefined`: not said, so every kind the judge read where it read them. */
+  needs?: readonly JudgedNeed[];
   /** Stable while the texts are the same: what tells the problems of an `each` rule apart. */
   key: string;
   since: number;
@@ -73,7 +81,7 @@ interface Runner {
   seenStatus: string;
   /** The objects last sent or waiting, as JSON. */
   key?: string;
-  waiting?: { objects: JudgedObject[]; key: string };
+  waiting?: { objects: JudgedObject[]; partial: JudgedPartial[]; key: string };
   inFlight: boolean;
   lastCallAt: number;
   timer?: ReturnType<typeof setTimeout>;
@@ -104,11 +112,36 @@ function told(runner: Runner): void {
 const usable = (rows: JudgedRows | undefined): rows is JudgedRows =>
   rows !== undefined && (rows.status === "ready" || rows.status === "reconnecting") && !rows.truncated;
 
-/** The objects of the inputs as the judge gets them; `null` when it cannot tell. */
-function objectsOf(inputs: readonly JudgeInput[]): JudgedObject[] | null {
+/**
+ * Where a read input was not read: `null` when read everywhere it could be (a kind without namespaces, a source of
+ * every namespace with none refused), else the namespaces read (`readNamespaces`, when its source watched only some)
+ * and those refused (`unreadNamespaces`).
+ */
+function unreadOf({ read, rows, namespaced }: JudgeInput): JudgedPartial | null {
+  if (!rows || namespaced === false) return null;
+  const forbidden = rows.forbidden ?? [];
+  const watched = rows.namespaces;
+  if ((watched === null || watched === undefined) && forbidden.length === 0) return null;
+  return {
+    kind: { group: read.kind.group, kind: read.kind.kind },
+    ...(watched ? { readNamespaces: [...new Set(watched)].filter((ns) => !forbidden.includes(ns)).sort() } : {}),
+    unreadNamespaces: [...forbidden],
+  };
+}
+
+/** The objects of the inputs as the judge gets them, and where `partial` reads were not read; `null` when it cannot tell. */
+function objectsOf(inputs: readonly JudgeInput[]): { objects: JudgedObject[]; partial: JudgedPartial[] } | null {
   const out: JudgedObject[] = [];
-  for (const { read, kind, rows } of inputs) {
+  const partial: JudgedPartial[] = [];
+  for (const input of inputs) {
+    const { read, kind, rows } = input;
     if (!usable(rows) || rows.rows.size > MAX_JUDGED_OBJECTS_PER_KIND) return null;
+    // Read in some namespaces only: unknown elsewhere — told to a `partial` read, else nothing can be told.
+    const unread = input.notServed ? null : unreadOf(input);
+    if (unread) {
+      if (read.partial !== true) return null;
+      partial.push(unread);
+    }
     for (const [uid, value] of rows.rows) {
       const row = value as { name?: string; namespace?: string; judged?: JudgedRowPart };
       if (!row.judged || !row.name) return null;
@@ -127,7 +160,7 @@ function objectsOf(inputs: readonly JudgeInput[]): JudgedObject[] | null {
       });
     }
   }
-  return out.sort((a, b) => (a.metadata.uid < b.metadata.uid ? -1 : a.metadata.uid > b.metadata.uid ? 1 : 0));
+  return { objects: out.sort((a, b) => (a.metadata.uid < b.metadata.uid ? -1 : a.metadata.uid > b.metadata.uid ? 1 : 0)), partial };
 }
 
 function cannotTell(runner: Runner): void {
@@ -154,7 +187,7 @@ function send(runner: Runner): void {
   runner.inFlight = true;
   runner.lastCallAt = clock();
   const current = () => runners.get(runnerKey(runner.clusterId, runner.extensionId, runner.judgeId)) === runner;
-  api.extensions.problemJudge(runner.extensionId, runner.judgeId, runner.clusterId, sending.objects).then(
+  api.extensions.problemJudge(runner.extensionId, runner.judgeId, runner.clusterId, sending.objects, sending.partial).then(
     (facts) => {
       runner.inFlight = false;
       if (!current()) return;
@@ -189,7 +222,7 @@ export function entryKey(values: Readonly<Record<string, string>>): string {
 function indexFacts(facts: readonly JudgedFact[], firstSeen: Map<string, number>, now: number): Map<string, Map<string, JudgedEntry[]>> {
   const out = new Map<string, Map<string, JudgedEntry[]>>();
   const seen = new Map<string, number>();
-  for (const { uid, fact, values } of facts) {
+  for (const { uid, fact, values, needs } of facts) {
     const of = out.get(uid) ?? new Map<string, JudgedEntry[]>();
     const entries = of.get(fact) ?? [];
     const texts = values ?? {};
@@ -199,7 +232,7 @@ function indexFacts(facts: readonly JudgedFact[], firstSeen: Map<string, number>
       const slot = `${uid}|${fact}|${key}`;
       const since = firstSeen.get(slot) ?? now;
       seen.set(slot, since);
-      entries.push({ values: texts, key, since });
+      entries.push({ values: texts, key, since, ...(needs !== undefined ? { needs } : {}) });
     }
     of.set(fact, entries);
     out.set(uid, of);
@@ -227,26 +260,31 @@ export function observeJudge(clusterId: string, extensionId: string, judge: Prob
   if (status === runner.seenStatus && seen.length === runner.seen.length && seen.every((rows, i) => rows === runner.seen[i])) return;
   runner.seen = seen;
   runner.seenStatus = status;
-  // A kind not served was not read: an agent need not be able to read it to be told what the judge decided.
+  // A kind not served was not read: an agent need not be able to read it to be told what the judge decided. Of one
+  // read in part, the namespaces it was read in (one refused everywhere else stays "every namespace").
   runner.reads = inputs
     .filter((i) => !i.notServed)
-    .map(({ read, rows }) => ({ group: read.kind.group, kind: read.kind.kind, namespaces: rows?.namespaces ?? null }));
-  const objects = objectsOf(inputs);
-  const text = objects && JSON.stringify(objects);
-  if (!objects || !text || text.length > MAX_JUDGE_PAYLOAD_CHARS) {
+    .map(({ read, rows }) => {
+      const watched = rows?.namespaces ?? null;
+      const forbidden = rows?.forbidden ?? [];
+      return { group: read.kind.group, kind: read.kind.kind, namespaces: watched && watched.filter((ns) => !forbidden.includes(ns)) };
+    });
+  const found = objectsOf(inputs);
+  const text = found && JSON.stringify(found);
+  if (!found || !text || text.length > MAX_JUDGE_PAYLOAD_CHARS) {
     cannotTell(runner);
     return;
   }
   if (text === runner.key) return;
   runner.key = text;
   // Nothing to judge: no fact, without asking.
-  if (objects.length === 0) {
+  if (found.objects.length === 0) {
     runner.waiting = undefined;
     runner.answer = new Map();
     runner.firstSeen.clear();
     return;
   }
-  runner.waiting = { objects, key: text };
+  runner.waiting = { objects: found.objects, partial: found.partial, key: text };
   schedule(runner);
 }
 

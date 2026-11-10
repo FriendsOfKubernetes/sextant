@@ -70,7 +70,7 @@ try {
         try {
           runBackend(wasm, "ping", null);
         } catch (err) {
-          if (!/unknown method ping/.test(err.message)) throw new Error(`${project}: ${err.message}`);
+          if (!/unknown method ping/.test(err.message)) throw new Error(`${project}: ${err.message}`, { cause: err });
         }
       } else {
         for (const [method, params, expected] of [...BACKEND_CALLS, ...(JUDGE_CALLS[project] ?? [])]) {

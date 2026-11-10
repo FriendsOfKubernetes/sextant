@@ -41,3 +41,11 @@ The user decided (2026-11-04): only when turned on per extension, off by default
 - The point "AI agents never receive extension problems" of ADR-0137 now holds only by default.
 - `toldThroughOwner` (ADR-0144) can hide a problem because of an owner the agent may not read. An agent may then miss
   a problem, but never learns more than it may read.
+
+## Amendment (ADR-0168): what a judged problem rests on
+
+A problem an extension's judge decided is told when the agent may read what its fact says it rests on (`needs`:
+objects, or a kind in a namespace or everywhere; at most 20, only of kinds the judge reads), carried as the problem's
+refs and re-checked in Rust as every ref; a fact without `needs` still needs Read on every kind the judge read where
+it read them. The agent's worker holds the category's sources of a judge's kinds even where the agent may read them
+nowhere, so the judge can tell; nothing of them reaches the agent but problems whose refs it may read.

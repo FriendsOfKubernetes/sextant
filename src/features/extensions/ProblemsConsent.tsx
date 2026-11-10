@@ -2,13 +2,25 @@
 // which kinds it reads only to tell whether an object a rule names exists (`missing`, ADR-0144), and that only where
 // it may read them. Agreeing grants exactly these kinds; an update that judges or looks up another asks again.
 // Problem judges (ADR-0168): which kinds the extension's backend gets, with which fields, to decide some problems.
+// Rules of kinds from definitions (`kindsFrom`): "the kinds that objects of <definition kind> define", with the fields
+// read and how many definitions; agreeing grants exactly those, as Rust finds them in each cluster.
 import { useTranslation } from "react-i18next";
-import type { ProblemContribution, ProblemJudgeContribution } from "../../api";
+import type { KindsFrom, ProblemContribution, ProblemJudgeContribution } from "../../api";
+import { formatList } from "../../i18n/format";
 import { lookedUp } from "../../extensions/problemsAcross";
 
-/** Each kind the rules judge once (kinds compare ignoring case), as `Kind` or `Kind (group)`. */
+/** Each kind the rules judge once (kinds compare ignoring case), as `Kind` or `Kind (group)`; not those from definitions. */
 export function judgedKinds(rules: readonly ProblemContribution[]): string[] {
-  return named(rules.map((r) => r.kind));
+  return named(rules.filter((r) => r.kindsFrom === undefined).map((r) => r.kind));
+}
+
+/** The `kindsFrom` of the rules, each once (a manifest has at most one). */
+export function kindsFromOf(rules: readonly ProblemContribution[]): KindsFrom[] {
+  const out: KindsFrom[] = [];
+  for (const from of rules.flatMap((r) => (r.kindsFrom ? [r.kindsFrom] : []))) {
+    if (!out.some((o) => JSON.stringify(o) === JSON.stringify(from))) out.push(from);
+  }
+  return out;
 }
 
 /** Each kind the rules look up (`missing`) once, as `judgedKinds` writes them. */
@@ -57,6 +69,16 @@ export function ProblemsConsent({
         {judgedKinds(rules).map((kind) => (
           <li key={kind}>
             <code>{kind}</code>
+          </li>
+        ))}
+        {kindsFromOf(rules).map((from) => (
+          <li key={`${from.kind.group}/${from.kind.kind}`}>
+            {t("extensions:problems.kindsFrom", {
+              kind: named([from.kind])[0],
+              groupPath: from.groupPath,
+              kindPaths: formatList(from.kindPaths),
+              max: from.max,
+            })}
           </li>
         ))}
       </ul>

@@ -100,3 +100,31 @@ rules cannot say the same way.
   dated from when that entry first came (`JudgedEntry.since`, kept across a failed call, forgotten when an answer no
   longer gives it) where the object says no time, so notifications and "Only new since" follow each finding; so one
   rule per reason suffices and nothing past a fifth finding is lost (`eachJudged` in `problemsAcross.ts`).
+
+## Amendment: reads in part, and what a finding rests on
+
+- **A read may be `partial: true`.** A judge cannot tell from a namespaced kind read only in some namespaces — its
+  source narrowed to the namespaces the extension may read (`extension_problem_scopes`) or the user's accessible ones
+  (ADR-0124), or some refused by the API server (the watch's `forbidden` update, kept by the problems store as
+  `JudgedRows.forbidden`): an object it would look for there is unknown, not absent. Before, such a list counted as
+  read in full; now a read without `partial` makes the judge unable to tell there. A `partial` read is sent with the
+  objects read, and the input gains a top-level `partial: [{kind, readNamespaces?, unreadNamespaces}]` for each such
+  kind (`JudgedPartial`; `readNamespaces` left out when its source watched every namespace, `unreadNamespaces` the
+  refused ones). The input keeps `objects` as before and carries `partial` only when a kind was read in part, so a
+  judge written before gets what it always got. Rust checks it (`problem_judges::project_partial`): each entry a
+  `partial` read of the judge, once, namespaces DNS labels (at most 1000 each); a read whose scope is a list of
+  namespaces is said to be read only within it — cut to it, or added when the window left it out — and every object
+  of such a kind is in a namespace it was read in. Capped, loading, failed or not readable still cannot tell. The SDK
+  passes the input as a judge's second argument (`JudgeInput`) and `isRead(input, kind, namespace)` answers whether a
+  namespace's objects of a kind are known — as the built-in Istio checks took only the unreadable namespaces'
+  Services as unknown. What an agent must read of a kind read in part is the namespaces it was read in.
+- **A fact may say what it rests on**: `needs: [{kind, namespace?, name?}]` (`JudgedNeed`), at most 20 — an object
+  (`name`), a kind's objects in a namespace, or (neither) in every namespace. `read_answer` keeps only needs of kinds
+  the judge reads (it never saw another; what it says of one rests on nothing it read) and keeps none at all — the
+  stricter rule below — when the answer gives more than 20 or one that is not a need (a namespace that is no DNS label,
+  a name that is no name). The window keeps them per entry (`JudgedEntry.needs`), and an agent's problem then carries
+  them as its refs (`lookupRefs`), re-checked in Rust as every ref (`ReadFilter`); a fact without `needs` keeps the
+  rule above (every kind the judge read where it read them). The agent's worker now holds the category's sources of
+  kinds a judge reads even where the agent may read them nowhere — the judge needs them all to tell anything — and
+  `notJudged` names a category only when a problem was left out. The extension declares what a finding rests on, as it
+  declares its facts: the user lets agents have its problems at all (ADR-0146).

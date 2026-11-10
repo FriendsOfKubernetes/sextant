@@ -310,6 +310,41 @@ async fn categories_whose_judged_problems_were_left_out_are_told_only_when_the_a
 }
 
 #[tokio::test]
+async fn a_judged_problem_is_told_when_the_agent_may_read_what_it_rests_on() {
+    // ADR-0168 amendment: a fact's `needs` reach Rust as the problem's refs (objects or a kind in a namespace) and are
+    // re-checked as every ref; an agent that may read them is told the problem, without Read on every judged kind.
+    let answer: answers::ProblemsAnswer = serde_json::from_value(json!({
+        "problems": [
+            { "category": "ext:sextant.mesh", "reason": "Unknown host", "message": "reviews is not a known host",
+              "object": obj("networking.istio.io", "VirtualService", Some("shop"), "web"),
+              "source": { "group": "networking.istio.io", "kind": "VirtualService" },
+              "refs": [
+                  { "group": "networking.istio.io", "kind": "VirtualService", "namespace": "shop", "name": "web" },
+                  { "group": "", "kind": "Service", "namespace": "shop" }
+              ] },
+        ],
+        "categories": ["ext:sextant.mesh"],
+    }))
+    .unwrap();
+    let on = vec!["ext:sextant.mesh".to_owned()];
+    let mut shop = filter(custom(vec![rule(
+        &["shop"],
+        &[("networking.istio.io", "VirtualService"), ("", "Service")],
+        &[AccessAction::Read],
+    )]));
+    let kept = answers::problems(answer.clone(), &mut shop, &on, None, 100).await;
+    assert_eq!(kept.problems.len(), 1);
+    // Without Read on the Services it rests on: left out.
+    let mut routes_only = filter(custom(vec![rule(
+        &["shop"],
+        &[("networking.istio.io", "VirtualService")],
+        &[AccessAction::Read],
+    )]));
+    let kept = answers::problems(answer, &mut routes_only, &on, None, 100).await;
+    assert!(kept.problems.is_empty());
+}
+
+#[tokio::test]
 async fn failed_lists_are_told_only_where_the_agent_may_read() {
     let answer: answers::ProblemsAnswer = serde_json::from_value(json!({
         "problems": [],

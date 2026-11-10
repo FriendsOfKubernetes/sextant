@@ -325,6 +325,7 @@
   "problems": {
     "heading": "Problems and notifications",
     "kinds": "Sextant checks objects of these kinds by the extension's rules, lists what they find on the Problems page and may notify you about it:",
+    "kindsFrom": "The kinds that objects of {{kind}} define (the API group at {{groupPath}}, the kinds at {{kindPaths}}), read from the first {{max}} of them by name",
     "lookups": "To tell whether an object a rule names exists, Sextant also lists objects of these kinds:",
     "judges": "The extension's backend decides some of these problems. It gets the objects of these kinds with only these fields, and while it decides it can reach neither the clusters nor the network:",
     "scope": "Only in clusters and namespaces where the extension may read these kinds. No code of the extension runs for this.",

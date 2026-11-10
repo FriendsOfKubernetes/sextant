@@ -24,6 +24,10 @@
 //       routing: (objects) => objects.filter((o) => !o.values[".spec.hosts"]).map((o) => ({ uid: o.metadata.uid, fact: "no-hosts" })),
 //     },
 //   });
+//
+// A read marked `partial` may come read in some namespaces only: the second argument's `partial` says where it was
+// not (`isRead` answers whether a namespace's objects of a kind are known), and a fact may say what it rests on
+// (`needs`), so an agent that may read those is told it (since Sextant 0.30).
 // The host module exists only inside the component (componentize-js links it); its types are ambient.
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="./backend-host.d.ts" />
@@ -31,9 +35,34 @@ import { call as hostCall, log as hostLog, type CallError } from "sextant:extens
 import type { JsonValue, Methods } from "./api";
 import { SextantError, toSextantError } from "./errors";
 import type { JudgedFact } from "./generated/JudgedFact";
+import type { JudgedNeed } from "./generated/JudgedNeed";
 import type { JudgedObject } from "./generated/JudgedObject";
+import type { JudgedPartial } from "./generated/JudgedPartial";
 
-export type { JudgedFact, JudgedObject };
+export type { JudgedFact, JudgedNeed, JudgedObject, JudgedPartial };
+
+/**
+ * What a judge is given (since Sextant 0.30): its objects, and where the kinds of its `partial` reads were not read —
+ * each `{kind, readNamespaces?, unreadNamespaces}`, a kind there only when it was read in part (empty for a judge
+ * written before, which gets only the objects).
+ */
+export interface JudgeInput {
+  objects: JudgedObject[];
+  partial: JudgedPartial[];
+}
+
+/**
+ * Whether the objects of `kind` in `namespace` were read (`null`: a kind without namespaces, read everywhere or not):
+ * `false` where its `partial` read was not read there, so an object not found there is unknown, not absent.
+ */
+export function isRead(input: Pick<JudgeInput, "partial">, kind: { group: string; kind: string }, namespace: string | null): boolean {
+  const entry = input.partial.find(
+    (p) => p.kind.group.toLowerCase() === kind.group.toLowerCase() && p.kind.kind.toLowerCase() === kind.kind.toLowerCase(),
+  );
+  if (!entry) return true;
+  if (namespace === null) return entry.readNamespaces === undefined && entry.unreadNamespaces.length === 0;
+  return !entry.unreadNamespaces.includes(namespace) && (entry.readNamespaces === undefined || entry.readNamespaces.includes(namespace));
+}
 
 /** One method of the backend: its parameters as the frame sent them, and its answer (anything `JSON.stringify` writes). */
 export type BackendHandler = (params: JsonValue) => unknown;
@@ -42,9 +71,12 @@ export type BackendHandler = (params: JsonValue) => unknown;
  * A problem judge (ADR-0168): given the objects of the kinds it reads — `{apiVersion, kind, metadata: {name,
  * namespace?, uid, creationTimestamp?}, values: {<declared path>: value}}` — the facts of the ones that have them. A
  * fact names one the manifest declares; its `values` only the names that fact declares (texts, at most 1000
- * characters shown). Sextant leaves out anything else. No `host` call or `fetch` works while it runs.
+ * characters shown); its `needs` (at most 20, of kinds the judge reads) what the finding rests on — an agent is told it
+ * when it may read those, and without `needs` only when it may read every kind the judge read. Sextant leaves out
+ * anything else. No `host` call or `fetch` works while it runs. The second argument also says where `partial` reads
+ * were not read (`isRead`).
  */
-export type ProblemJudge = (objects: JudgedObject[]) => JudgedFact[] | Promise<JudgedFact[]>;
+export type ProblemJudge = (objects: JudgedObject[], input: JudgeInput) => JudgedFact[] | Promise<JudgedFact[]>;
 
 /** What `defineBackend` answers besides the frames' methods. */
 export interface BackendOptions {
@@ -76,8 +108,9 @@ export function defineBackend(
       const judge = own(judges, id) ? judges[id] : undefined;
       if (!judge) throw `unknown problem judge ${id}`;
       try {
-        const given = (params === "" ? {} : JSON.parse(params)) as { objects?: JudgedObject[] };
-        return JSON.stringify((await judge(given.objects ?? [])) ?? []);
+        const given = (params === "" ? {} : JSON.parse(params)) as { objects?: JudgedObject[]; partial?: JudgedPartial[] };
+        const input: JudgeInput = { objects: given.objects ?? [], partial: given.partial ?? [] };
+        return JSON.stringify((await judge(input.objects, input)) ?? []);
       } catch (err) {
         throw message(err);
       }

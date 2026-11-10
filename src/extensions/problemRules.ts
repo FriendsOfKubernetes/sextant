@@ -147,7 +147,16 @@ export interface Lookup {
    * empty). `judgeAcross` adds what the judge read (`reads`: each kind and the namespaces its source watched,
    * `null` every one), which an agent must be able to read to be told the problem.
    */
-  judged?: { judge: string; fact: string; reads?: { group: string; kind: string; namespaces: readonly string[] | null }[] };
+  judged?: {
+    judge: string;
+    fact: string;
+    reads?: { group: string; kind: string; namespaces: readonly string[] | null }[];
+    /**
+     * What the finding rests on, when the judge's fact says (`needs`, ADR-0168 amendment): an agent must be able to
+     * read these, instead of every kind in `reads`.
+     */
+    needs?: { group: string; kind: string; namespace?: string; name?: string }[];
+  };
 }
 
 /** A Kubernetes label selector, as `selectsNone` reads it (#404). */

@@ -147,6 +147,12 @@ function matches(kinds: readonly KindPattern[], kind: Pick<KindRef, "group" | "k
   );
 }
 
+/** `{"group": "*.<domain>", "kind": "*"}`: a kind of a group ending in `.<domain>` (a details section's, Rust's `group_suffix`). */
+export function underDomain(pattern: KindPattern, kind: Pick<KindRef, "group" | "kind">): boolean {
+  if (pattern.kind !== "*" || !pattern.group.startsWith("*.")) return false;
+  return kind.group.toLowerCase().endsWith(pattern.group.slice(1).toLowerCase());
+}
+
 function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] {
   const extensionId = info.id;
   const contributes = info.manifest!.contributes;
@@ -208,8 +214,9 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
       order: section.order ?? DETAILS_ORDER,
       placement: section.placement,
       label: section.title,
-      // `*`/`*`: every kind (#411).
-      appliesTo: (kind) => section.kinds.some((k) => k.group === "*" && k.kind === "*") || matches(section.kinds, kind),
+      // `*`/`*`: every kind (#411); `*.<domain>`/`*`: every kind of the groups under that domain.
+      appliesTo: (kind) =>
+        section.kinds.some((k) => (k.group === "*" && k.kind === "*") || underDomain(k, kind)) || matches(section.kinds, kind),
       ...(section.when !== undefined ? { appliesToObject: ((when) => (obj: KubeObject) => holdsNow(when, obj))(section.when) } : {}),
       Component: detailsComponent(extensionId, section.id, section.title, section.placement === "tab", {
         heading: section.heading !== false,

@@ -155,7 +155,8 @@ export const MANIFEST_SHAPES = {
   ManifestProblem: described<ManifestProblem>(`${CONTRIBUTION}/problems/items`, {
     id: "required",
     title: "required",
-    kind: "required",
+    kind: "optional",
+    kindsFrom: "optional",
     when: "required",
     since: "optional",
     graceMinutes: "optional",

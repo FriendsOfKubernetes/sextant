@@ -1918,6 +1918,7 @@ mod tests {
             granted_commands: None,
             granted_services: None,
             granted_agent_tools: None,
+            granted_kinds_from: None,
         };
         store
             .update(|s| s.extensions.push(installed.clone()))

@@ -325,6 +325,7 @@
   "problems": {
     "heading": "Sorunlar ve bildirimler",
     "kinds": "Sextant bu türlerdeki nesneleri uzantının kurallarına göre denetler, bulduklarını Sorunlar sayfasında gösterir ve bunlar hakkında size bildirim gönderebilir:",
+    "kindsFrom": "{{kind}} nesnelerinin tanımladığı türler (API grubu {{groupPath}} alanında, türler {{kindPaths}} alanlarında), ada göre ilk {{max}} tanesinden okunur",
     "lookups": "Bir kuralın adlandırdığı nesnenin var olup olmadığını anlamak için Sextant bu türlerin nesnelerini de listeler:",
     "judges": "Bu sorunların bazılarına uzantının arka ucu karar verir. Bu türlerin nesnelerini yalnızca bu alanlarla alır ve karar verirken ne kümelere ne de ağa erişebilir:",
     "scope": "Yalnızca uzantının bu türleri okuyabildiği kümelerde ve namespace'lerde. Bunun için uzantının hiçbir kodu çalışmaz.",

@@ -104,6 +104,7 @@ import type { BackendLogLine } from "./generated/BackendLogLine";
 import type { ProblemScope } from "./generated/ProblemScope";
 import type { JudgedFact } from "./generated/JudgedFact";
 import type { JudgedObject } from "./generated/JudgedObject";
+import type { JudgedPartial } from "./generated/JudgedPartial";
 import type { CredentialStatus } from "./generated/CredentialStatus";
 import type { PodUsage } from "./generated/PodUsage";
 import type { RemoteEntry } from "./generated/RemoteEntry";
@@ -836,12 +837,16 @@ export const extensions = {
   backendLog: (id: string) => call<BackendLogLine[]>("extension_backend_log", { id }),
   /**
    * Where the problem rules of extension `id` run in a cluster (ADR-0137): each agreed kind with the namespaces the
-   * extension may read; empty when it is not active or its rules were not agreed to.
+   * extension may read, then the kinds its definitions define (`definedBy`, `kindsFrom`), decided by Rust listing
+   * them; empty when it is not active or its rules were not agreed to.
    */
   problemScopes: (id: string, clusterId: string) => call<ProblemScope[]>("extension_problem_scopes", { id, clusterId }),
-  /** The facts one of an extension's problem judges gives about `objects` (ADR-0168): window only. */
-  problemJudge: (id: string, judge: string, clusterId: string, objects: readonly JudgedObject[]) =>
-    call<JudgedFact[]>("extension_problem_judge", { id, judge, clusterId, objects }),
+  /**
+   * The facts one of an extension's problem judges gives about `objects` (ADR-0168), `partial` saying where its
+   * `partial` reads were not read: window only.
+   */
+  problemJudge: (id: string, judge: string, clusterId: string, objects: readonly JudgedObject[], partial: readonly JudgedPartial[] = []) =>
+    call<JudgedFact[]>("extension_problem_judge", { id, judge, clusterId, objects, ...(partial.length > 0 ? { partial } : {}) }),
   /** Checks an unpacked folder (development mode: it runs from there and reloads when its files change). */
   inspectFolder: (path: string) => call<PendingInstall>("extension_inspect_folder", { path }),
   /**

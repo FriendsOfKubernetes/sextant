@@ -13,4 +13,10 @@ paths: Array<string>,
  * A kind the cluster may not serve: then the judge gets none of its objects, instead of not telling at all (a
  * served kind not read in full still cannot tell). A ServiceEntry where Istio's CRDs leave it out.
  */
-optional?: boolean, };
+optional?: boolean, 
+/**
+ * A kind that may be read in some namespaces only (the extension's scope there, or the API server refusing the
+ * others): the judge then gets the objects read and, in the input's `partial`, where the kind was not read
+ * ([`JudgedPartial`]), instead of not telling at all. A read without it cannot tell unless read everywhere.
+ */
+partial?: boolean, };

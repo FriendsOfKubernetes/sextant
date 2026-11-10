@@ -550,7 +550,7 @@ impl ExtensionApi {
     /// Runs the judge `judge_id` of `extension_id` (ADR-0168) on `objects` the window collected in the cluster with
     /// context `context`: only for an active extension whose judge's kinds the user agreed to (`grantedProblems`),
     /// on the objects re-projected here ([`problem_judges::project_objects`]: declared kinds, paths and namespaces
-    /// only), with every host call and network request refused and [`JUDGE_TIME`]; the answer read back by
+    /// only) and where `partial` reads were not read ([`problem_judges::project_partial`]), with every host call and network request refused and [`JUDGE_TIME`]; the answer read back by
     /// [`problem_judges::read_answer`]. Not journaled, as rules are not; a failure goes to the backend's log by its
     /// kind only, never with what the objects hold.
     pub async fn problem_judge(
@@ -560,6 +560,7 @@ impl ExtensionApi {
         judge_id: &str,
         context: &str,
         objects: Vec<Value>,
+        partial: Vec<Value>,
     ) -> CoreResult<Vec<problem_judges::JudgedFact>> {
         let (blocking_host, id) = (host.clone(), extension_id.to_owned());
         let (entry, manifest) = tauri::async_runtime::spawn_blocking(move || {
@@ -602,9 +603,16 @@ impl ExtensionApi {
         }
         let scopes = problem_scopes(&entry.granted, context, &kinds);
         let sent = problem_judges::project_objects(&judge, objects, &scopes)?;
+        let partial = problem_judges::project_partial(&judge, partial, &scopes, &sent)?;
+        // `partial` only when a kind was read in part: a judge written before it gets what it always got.
+        let params = if partial.is_empty() {
+            json!({ "objects": sent })
+        } else {
+            json!({ "objects": sent, "partial": partial })
+        };
         let call = BackendCallParams {
             method: format!("{}{judge_id}", problem_judges::METHOD_PREFIX),
-            params: json!({ "objects": sent }),
+            params,
         };
         let backends = host.backends();
         let answer = match self

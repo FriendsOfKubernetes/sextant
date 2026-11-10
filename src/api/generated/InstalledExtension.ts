@@ -5,6 +5,7 @@ import type { CommandContribution } from "./CommandContribution";
 import type { ExtensionPermissions } from "./ExtensionPermissions";
 import type { ExtensionSource } from "./ExtensionSource";
 import type { KindPattern } from "./KindPattern";
+import type { KindsFrom } from "./KindsFrom";
 import type { MetricQuery } from "./MetricQuery";
 import type { ServiceContribution } from "./ServiceContribution";
 
@@ -62,4 +63,9 @@ grantedServices?: Array<ServiceContribution>,
  * The agent tools the user agreed to (ADR-0159), word for word; only these are offered. `None`: none were agreed
  * to.
  */
-grantedAgentTools?: Array<AgentToolContribution>, };
+grantedAgentTools?: Array<AgentToolContribution>, 
+/**
+ * Where the rules' kinds come from that the user agreed to (`kindsFrom`, ADR-0137/ADR-0144 amendment), word for
+ * word: "the kinds <definition kind>s define". `None`: none were agreed to.
+ */
+grantedKindsFrom?: Array<KindsFrom>, };
