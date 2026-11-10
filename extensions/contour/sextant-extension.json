@@ -838,6 +838,10 @@
         "message": "{{.status.conditions[type=\"Valid\"].errors[0].message ?? .status.description}}",
         "toldThroughReferrer": {
           "path": ".spec.includes",
+          "alsoPaths": [
+            ".spec.tcpproxy.include",
+            ".spec.tcpproxy.includes"
+          ],
           "namePath": ".name",
           "namespacePath": ".namespace",
           "when": {

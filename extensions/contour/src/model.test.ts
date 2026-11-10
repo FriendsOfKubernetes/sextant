@@ -303,10 +303,20 @@ describe("the problem rules, judged by the window, against the built-in detector
       expect(kept, JSON.stringify(builtIn)).toEqual(builtIn);
     }
     expect(told(scenarios[0]!).kept).toEqual(["roots/root"]);
-    // The difference (README): through a TCP proxy's include the built-in told the orphan too, the rule does not.
-    const { builtIn, kept } = told([proxy("a", "root", "invalid", [], { name: "db" }), proxy("a", "db", "orphaned")]);
-    expect(builtIn).toEqual(["a/root"]);
-    expect(kept).toEqual(["a/db", "a/root"]);
+    // Through a TCP proxy's include (`tcpproxy.include`, else the older `tcpproxy.includes`), in its own namespace or another.
+    const tcp = [
+      [proxy("a", "root", "invalid", [], { name: "db" }), proxy("a", "db", "orphaned")],
+      [proxy("a", "root", "invalid", [{ name: "web" }], { name: "db", namespace: "b" }), proxy("a", "web", "orphaned"), proxy("b", "db", "orphaned")],
+      [proxy("a", "root", "valid", [], { name: "db" }), proxy("a", "db", "orphaned")],
+    ];
+    const older = proxy("a", "root", "invalid");
+    (older.spec as Record<string, unknown>).tcpproxy = { includes: { name: "db" } };
+    tcp.push([older, proxy("a", "db", "orphaned")]);
+    for (const objects of tcp) {
+      const { builtIn, kept } = told(objects);
+      expect(kept, JSON.stringify(builtIn)).toEqual(builtIn);
+    }
+    expect(told(tcp[0]!).kept).toEqual(["a/root"]);
   });
 
   it("are counted on the section, as the built-in counter counted the category", () => {

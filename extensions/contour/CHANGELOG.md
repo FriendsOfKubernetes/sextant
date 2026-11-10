@@ -16,6 +16,7 @@ extension.
   them; an ExtensionService's state, settings and Services.
 - **Problems** in the category "Contour", on by default and given to agents only where Settings → AI agents (MCP)
   lets them: invalid and orphaned HTTPProxies, after 2 minutes, notified and counted on the section; an orphan
-  under an invalid proxy is told through that proxy, as the built-in told it.
+  under an invalid proxy (through its includes or its TCP proxy's) is told through that proxy, as the built-in
+  told it.
 - Installing asks for consent to read HTTPProxies, TLSCertificateDelegations and ExtensionServices, and to judge
   HTTPProxies in problem rules.

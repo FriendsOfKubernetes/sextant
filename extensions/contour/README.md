@@ -110,7 +110,7 @@ notified and counted on the section.
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
 | `proxy-invalid` | HTTPProxy | Contour marks it invalid (`currentStatus: invalid`, or the Valid condition False without an `Orphaned` error); reason the first error's reason (else `Invalid`), message its message (else Contour's description), since the Valid condition changed | 2 minutes (a proxy and the include that names it are often applied a moment apart) | No |
-| `proxy-orphaned` | HTTPProxy | Contour marks it orphaned: no root includes it (`currentStatus: orphaned`, or the Valid condition False with an `Orphaned` error); reason `Orphaned`, message as above | 2 minutes | Yes: not told while a proxy that includes it (`spec.includes`), directly or through other proxies including each other, is invalid — that proxy's problem tells it, so one broken root with 20 includes is one problem (`toldThroughReferrer`). Judged only while every HTTPProxy of the cluster is read: while they load, or beyond 5000, it cannot tell and is not told |
+| `proxy-orphaned` | HTTPProxy | Contour marks it orphaned: no root includes it (`currentStatus: orphaned`, or the Valid condition False with an `Orphaned` error); reason `Orphaned`, message as above | 2 minutes | Yes: not told while a proxy that includes it (`spec.includes`, or a TCP proxy's `spec.tcpproxy.include`, else `spec.tcpproxy.includes`), directly or through other proxies including each other, is invalid — that proxy's problem tells it, so one broken root with 20 includes is one problem (`toldThroughReferrer`). Judged only while every HTTPProxy of the cluster is read: while they load, or beyond 5000, it cannot tell and is not told |
 
 A proxy Contour has not processed yet (`NotReconciled`) is no problem: no Contour may be meant to serve it.
 
@@ -140,9 +140,9 @@ None: the extension is read-only and has no action of its own (ADR-0107).
 - Contour's CRDs (`projectcontour.io/v1` HTTPProxy and TLSCertificateDelegation, `projectcontour.io/v1alpha1`
   ExtensionService); the section shows only where the cluster serves them.
 - Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - An orphan included only through an invalid proxy's TCP proxy (`spec.tcpproxy.include`) is a problem of its own;
-    the built-in told it through that proxy too. `toldThroughReferrer` follows one list (`spec.includes`); it needs
-    more than one path (or a single object as a list of one).
+  - A proxy that sets both `spec.tcpproxy.include` and the older `spec.tcpproxy.includes` (Contour reads only the
+    first) tells the orphans both name; the built-in followed only the first. `toldThroughReferrer` reads every path it
+    names; it would need a path tried only when the one before it is absent.
   - Where the cluster has more than 5000 HTTPProxies, orphans are not told at all (the rows are not read in full, so
     the rule cannot tell); the built-in judged them on the 5000 it kept.
   - The table's search finds Status by the words shown (Waiting for Contour); the built-in matched the state's names
