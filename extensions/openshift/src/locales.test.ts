@@ -72,7 +72,10 @@ describe("the manifest's translations", () => {
     ...c.actions.map((a) => [`actions.${a.id}.title`, a.title] as [string, string]),
     ...c.columns.flatMap((col) => [
       [`columns.${col.id}.title`, col.title] as [string, string],
-      ...((col as { cases?: Case[] }).cases ?? []).map((cs, i) => [`columns.${col.id}.cases.${i}.text`, cs.text] as [string, string]),
+      ...((col as { cases?: Case[] }).cases ?? []).flatMap((cs, i) => [
+        [`columns.${col.id}.cases.${i}.text`, cs.text] as [string, string],
+        ...["zero", "one", "two", "few", "many"].map((f) => [`columns.${col.id}.cases.${i}.textForms.${f}`, cs.text] as [string, string]),
+      ]),
     ]),
     ...c.problems.flatMap((r) => [
       [`problems.${r.id}.title`, r.title] as [string, string],
@@ -84,12 +87,14 @@ describe("the manifest's translations", () => {
     expect(Object.keys(translations).sort()).toEqual(SEXTANT_LANGUAGES.filter((l) => l !== "en"));
     // Wordless texts reading as in English are left to English, which the window shows for a missing key; one that
     // reads otherwise (a list joined with the language's own comma) is translated.
-    const needed = [...english].filter(([, text]) => !wordless(text)).map(([key]) => key);
+    // A plural form is asked for by the language's own forms (the next test), not by English's.
+    const form = (key: string) => key.includes(".textForms.");
+    const needed = [...english].filter(([key, text]) => !form(key) && !wordless(text)).map(([key]) => key);
     const badge = (key: string) => key.startsWith("sectionBadges.");
     for (const [language, texts] of Object.entries(translations)) {
       const keys = Object.keys(texts).filter((k) => !badge(k));
       expect(keys.filter((k) => !english.has(k)), language).toEqual([]);
-      const extra = keys.filter((k) => !needed.includes(k));
+      const extra = keys.filter((k) => !needed.includes(k) && !form(k));
       for (const k of extra) expect(texts[k], `${language} ${k}`).not.toBe(english.get(k));
       expect(needed.filter((k) => !keys.includes(k)), language).toEqual([]);
       // The counter's label in exactly the language's plural forms (ADR-0167).
@@ -126,12 +131,20 @@ describe("the manifest's translations", () => {
     }
   });
 
-  it("write the failing imports in each language's plural form, counted to 18 one by one", () => {
-    const cases = (c.columns.find((col) => col.id === "is-imports") as { cases: (Case & { value: unknown })[] }).cases;
-    expect(cases.map((cs) => cs.value).slice(0, 19)).toEqual(Array.from({ length: 19 }, (_, n) => n));
-    expect(cases[1]!.text).toBe("1 import fails");
-    expect(cases[2]!.text).toBe("2 imports fail");
-    expect(translations.ru!["columns.is-imports.cases.2.text"]).toBe("2 импорта не удаются");
-    expect(translations.ru!["columns.is-imports.cases.5.text"]).toBe("5 импортов не удаются");
+  it("write the failing imports in each language's plural forms, as the built-in texts did", () => {
+    const failing = (c.columns.find((col) => col.id === "is-imports") as { cases: (Case & { pluralBy?: string; textForms?: Record<string, string> })[] }).cases[1]!;
+    expect(failing.text).toBe("{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} imports fail");
+    expect(failing.pluralBy).toBe('.status.tags[conditions.type="ImportSuccess",conditions.status="False",*]|count');
+    expect(Object.keys(failing.textForms!)).toEqual(["one"]);
+    for (const [language, texts] of Object.entries(translations)) {
+      const forms = Object.keys(texts)
+        .filter((k) => k.startsWith("columns.is-imports.cases.1.textForms."))
+        .map((k) => k.slice("columns.is-imports.cases.1.textForms.".length))
+        .sort();
+      const needed = [...new Intl.PluralRules(language).resolvedOptions().pluralCategories].filter((f) => f !== "other").sort();
+      expect(forms, language).toEqual(needed);
+    }
+    expect(translations.ru!["columns.is-imports.cases.1.textForms.few"]).toMatch(/^\{\{.*\}\} импорта не удаются$/);
+    expect(translations.ru!["columns.is-imports.cases.1.textForms.many"]).toMatch(/импортов не удаются$/);
   });
 });

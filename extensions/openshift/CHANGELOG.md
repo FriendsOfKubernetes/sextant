@@ -15,8 +15,8 @@ extension.
 - **Rollout latest** and **Start build**, each in a window that shows the one request it sends, through Sextant's
   `resources.instantiate`; "Rollout latest" waits while the latest rollout runs and refuses a paused DeploymentConfig,
   as `oc` does.
-- **Problems:** Routes no router admitted, failed rollouts, failed Builds for a day (the newest of each BuildConfig) and
-  failing imports, in the category "OpenShift", on by default, counted on the section; never given to agents, as the
+- **Problems:** Routes no router admitted, failed rollouts, failed Builds for a day (the highest-numbered of each BuildConfig) and
+  failing imports (from the earliest failure), in the category "OpenShift", on by default, counted on the section; never given to agents, as the
   built-in category was not.
 - Installing asks for consent to read the OpenShift kinds, ReplicationControllers, Services and Pods, to start rollouts
   and builds (Modify on DeploymentConfigs and BuildConfigs, asked in the action's own window), to open a build pod's

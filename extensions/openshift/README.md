@@ -15,7 +15,7 @@ objects: `newestPer`), ADR-0152 (kinds in a section of its own, `not` in rules, 
 picking an item, notification groups), ADR-0163 (field values in texts, a problem's reason from the object), ADR-0164
 (case tooltips) and ADR-0167 (the counter's own label, column widths and sort values, tooltip fallbacks, a rule's
 literal reason and since fallbacks, lists of a field and counts, details sections without a heading, capped watches,
-blocks in Sextant's memory).
+blocks in Sextant's memory, `newestBy`, `|min`, sorted list columns and plural case texts).
 
 ## At a glance
 
@@ -55,8 +55,9 @@ Builds, ImageStreams with a failing import.
 - Build: **Status** (`build-status`: the phase, New when unset, coloured, why it failed on hover), **Build config**
   (`build-config`), **Strategy** (`build-strategy`), **Duration** (`build-duration`: from the start to the completion,
   or to now), **Started** (`build-started`).
-- ImageStream: **Tags** (`is-tags`: of the spec and the status, each once), **Imports** (`is-imports`: "N imports
-  fail" in red, sorted and filtered by the count), **Repository** (`is-repository`).
+- ImageStream: **Tags** (`is-tags`: of the spec and the status, each once, sorted), **Imports** (`is-imports`: "N
+  imports fail" in red, in the language's plural form, sorted and filtered by the count), **Repository**
+  (`is-repository`).
 - Project: **Display name** (`project-display-name`), **Status** (`project-status`: the phase, coloured),
   **Requester** (`project-requester`).
 
@@ -124,9 +125,9 @@ was. Agents never get it, as they did not get the built-in one.
 | `dc-replica-other` | DeploymentConfig | The same, without its words: those of `Available=False`, else the details | — | — |
 | `dc-deadline` | DeploymentConfig | A rollout failed with neither of the above: `Progressing`'s reason and time; its words | — | — |
 | `dc-deadline-other` | DeploymentConfig | The same, without them: those of `Available=False`, else the details | — | — |
-| `build-failed` | Build | Phase `Failed`, for a day after it ended (completion, else start, else creation); its reason (else `BuildFailed`) and message | — | Only the newest Build of its BuildConfig (`newestPer` on `openshift.io/build-config.name`) |
+| `build-failed` | Build | Phase `Failed`, for a day after it ended (completion, else start, else creation); its reason (else `BuildFailed`) and message | — | Only the Build of its BuildConfig with the highest build number (`newestPer` on `openshift.io/build-config.name`, `newestBy` its `openshift.io/build.number`) |
 | `build-error` | Build | Phase `Error`, the same; reason else `BuildError` | — | The same |
-| `import-failed` | ImageStream | A tag's `ImportSuccess=False`; the first such tag by name speaks: its message (else reason) and time; reason `ImportFailed` | 5 min | — |
+| `import-failed` | ImageStream | A tag's `ImportSuccess=False`; the first such tag by name speaks (its message, else reason), since the earliest failure; reason `ImportFailed` | 5 min | — |
 
 Each kind's rules notify once per object (groups `not-admitted`, `rollout-failed`, `build-failed`, `import-failed`).
 
@@ -163,19 +164,14 @@ What the extension API cannot say yet, compared with the built-in view (issue #4
   requests ("frontend (80%), frontend-canary (20%)"): the manifest has no division. (A `list` item placeholder giving
   an item's number as a percent of the list's sum, a missing one counting as a default, would close it.) The details'
   Backends block shows the shares.
-- **ImageStream problem's time**: with several failing imports the first tag by name gives the time the 5-minute grace
-  starts from, where the built-in took the earliest failure: no earliest of a list's times. (`since` reading
-  `…[*].lastTransitionTime|min`, or `[<field]` ranking by a field inside a list, would close it.) The first tag by name
-  is picked by code point, where the built-in sorted by `localeCompare`.
-- **Failed Builds told by a later one**: `newestPer` keeps the newest Build by creation among those with the same
-  `openshift.io/build-config.name` label, where the built-in kept the highest build number
-  (`openshift.io/build.number`) of the BuildConfig named by `status.config`, the annotation or the label: the same
-  wherever builds are numbered as they are created. (A `newestBy` path of the number would close it.)
-- **ImageStream Tags column**: the spec's tags then the status-only ones, each once, where the built-in sorted them by
-  name. (A `list` column's `sort` would close it.)
-- **ImageStream Imports column**: each count up to 18 has a case of its own, so every language writes its plural form;
-  above 18 the language's `other` form, where Russian, Ukrainian and Polish write 21, 22… with another. (A case's
-  plural forms, as a rule's `messageForms`, would close it.)
+- **The ImageStream problem's message** comes from the first failing tag by name in code-point order, where the
+  built-in sorted the tags with `localeCompare` (the two differ only for tags in mixed case or with punctuation).
+- **Failed Builds told by a later one**: `newestPer` + `newestBy` keep the Build with the highest build number
+  (`openshift.io/build.number`) among those with the same `openshift.io/build-config.name` label, as the built-in did;
+  the built-in grouped by the BuildConfig `status.config` names first (the label is the controller's copy of it, cut to
+  63 characters), and left a Build without a number always standing, where the window then compares it by creation.
+- **ImageStream Tags column** sorts in the UI language's collation, where the built-in used `localeCompare`'s
+  default locale.
 - **Build Duration column**: from `status.startTimestamp` to `status.completionTimestamp`, else to now; the built-in
   took `status.duration` first and counted to now only while the build ran (a finished build without a completion
   time showed nothing).
@@ -195,7 +191,7 @@ What the extension API cannot say yet, compared with the built-in view (issue #4
 ## Development
 
 - Test: `npx vitest run --config sdk/vitest.config.ts ../extensions/openshift` (the rules, kinds' "Only problems" and
-  columns judged by Sextant's own window engine against the built-in model on `fixtures/objects.json`; the details and
+  columns judged by Sextant's own window engine against the built-in model ported to `src/model.ts`, on `fixtures/objects.json`; the details and
   action windows through the SDK's test host; the catalogs).
 - Type check: `npx tsc -p sdk/tsconfig.test.json`; lint: `npx eslint extensions/openshift/src`.
 - Build: `npm run sdk:build -- extensions/openshift`; pack: `npm run sdk:pack -- extensions/openshift/dist`.

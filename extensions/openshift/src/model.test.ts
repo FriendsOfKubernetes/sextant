@@ -430,38 +430,53 @@ describe("the problem rules, against the built-in ones", () => {
   it.each(routeVariants())("a Route %s", (label, o) => expectSame("Route", o, label));
   it.each(dcVariants())("a DeploymentConfig %s", (label, o) => expectSame("DeploymentConfig", o, label));
   it.each(buildVariants())("a Build %s", (label, o) => expectSame("Build", o, label));
-  it.each(imageStreamVariants().filter(([label]) => !label.startsWith("two")))("an ImageStream: %s", (label, o) => expectSame("ImageStream", o, label));
+  it.each(imageStreamVariants())("an ImageStream: %s", (label, o) => expectSame("ImageStream", o, label));
 
-  it("an ImageStream with two failing imports: the first tag by name speaks, and its time starts the grace", () => {
-    // The built-in took the earliest failure's time; the manifest has no earliest-of-a-list (README).
+  it("an ImageStream with two failing imports: the first tag by name speaks, the earliest failure starts the grace", () => {
     const [, o] = imageStreamVariants().find(([label]) => label.startsWith("two"))!;
-    const [found] = windowFound("ImageStream", o, at("2030-01-01T00:00:00Z"));
-    const [builtIn] = builtInFound("ImageStream", o, at("2030-01-01T00:00:00Z"));
-    expect(found).toEqual({ ...builtIn, since: "2026-10-21T07:00:00Z", start: at("2026-10-21T07:00:00Z") + IMPORT_GRACE_MS });
-    const later = copy(o);
-    const tags = st(later).tags as { conditions: Cond[] }[];
+    const tags = st(o).tags as { conditions: Cond[] }[];
     tags[0]!.conditions[0]!.lastTransitionTime = "2026-10-21T07:04:00Z";
-    expect(windowFound("ImageStream", later, at("2030-01-01T00:00:00Z"))[0]!.since).toBe("2026-10-21T07:04:00Z");
-    expect(builtInFound("ImageStream", later, at("2030-01-01T00:00:00Z"))[0]!.since).toBe("2026-10-21T07:02:00Z");
+    expectSame("ImageStream", o, "the later first tag");
+    expect(windowFound("ImageStream", o, at("2030-01-01T00:00:00Z"))[0]!.since).toBe("2026-10-21T07:02:00Z");
   });
 
-  it("of a BuildConfig's failed builds only the newest counts", () => {
-    // The rule's `newestPer` keeps the newest by creation of the builds with the same BuildConfig label, where the
-    // built-in kept the highest build number: the same wherever builds are numbered as they are created.
-    const key = RULES.find((r) => r.id === "build-failed")!.newestPer!;
+  it("of a BuildConfig's failed builds only the one with the highest build number counts", () => {
+    // The rule's `newestPer` + `newestBy`, as the problems store judges them (problemsAcross.ts): of the builds with the
+    // same BuildConfig label, the highest `openshift.io/build.number`, the later creation where one has none.
+    const rule = RULES.find((r) => r.id === "build-failed")!;
+    const key = rule.newestPer!;
     expect(key).toBe("openshift.io/build-config.name");
-    expect(RULES.find((r) => r.id === "build-error")!.newestPer).toBe("openshift.io/build-config.name");
+    expect(rule.newestBy).toBe('.metadata.annotations["openshift.io/build.number"]');
+    for (const id of ["build-failed", "build-error"]) {
+      const r = RULES.find((x) => x.id === id)!;
+      expect([r.newestPer, r.newestBy], id).toEqual([key, rule.newestBy]);
+    }
+    const rank = (b: KubeObject) => {
+      const n = Number(b.metadata.annotations?.["openshift.io/build.number"]);
+      return b.metadata.annotations?.["openshift.io/build.number"] === undefined || !Number.isFinite(n) ? undefined : n;
+    };
+    const newer = (a: KubeObject, b: KubeObject) => {
+      const [x, y] = [rank(a), rank(b)];
+      if (x !== undefined && y !== undefined && x !== y) return x > y;
+      const [ta, tb] = [at(a.metadata.creationTimestamp ?? ""), at(b.metadata.creationTimestamp ?? "")];
+      return ta !== tb ? ta > tb : a.metadata.name > b.metadata.name;
+    };
+    const judged = (failed: KubeObject[], builds: KubeObject[]) =>
+      failed.filter((b) => {
+        const label = b.metadata.labels?.[key];
+        if (label === undefined) return true;
+        return builds.filter((o) => o !== b && o.metadata.namespace === b.metadata.namespace && o.metadata.labels?.[key] === label).every((o) => newer(b, o));
+      });
     const builds = all("Build");
     const failed = builds.filter((b) => openshiftProblems(BUILD, b, at("2026-10-21T13:00:00Z")).length > 0);
-    const newest = (b: KubeObject) => {
-      const label = b.metadata.labels?.[key];
-      if (label === undefined) return true;
-      const same = builds.filter((o) => o.metadata.namespace === b.metadata.namespace && o.metadata.labels?.[key] === label);
-      return same.every((o) => o === b || (o.metadata.creationTimestamp ?? "") < (b.metadata.creationTimestamp ?? ""));
-    };
     expect(failed.map((b) => b.metadata.name)).toEqual(["ruby-ex-2", "nodejs-ex-1"]);
-    expect(failed.filter(newest).map((b) => b.metadata.name)).toEqual(latestFailuresOnly(failed, builds).map((b) => b.metadata.name));
-    expect(failed.filter(newest).map((b) => b.metadata.name)).toEqual(["nodejs-ex-1"]);
+    expect(judged(failed, builds).map((b) => b.metadata.name)).toEqual(latestFailuresOnly(failed, builds).map((b) => b.metadata.name));
+    expect(judged(failed, builds).map((b) => b.metadata.name)).toEqual(["nodejs-ex-1"]);
+    // A build created later with a lower number (one started again by hand) tells nothing about a higher one.
+    const late = builds.find((b) => b.metadata.name === "ruby-ex-3")!;
+    late.metadata.annotations = { ...late.metadata.annotations, "openshift.io/build.number": "1" };
+    expect(judged(failed, builds).map((b) => b.metadata.name)).toEqual(latestFailuresOnly(failed, builds).map((b) => b.metadata.name));
+    expect(judged(failed, builds).map((b) => b.metadata.name)).toEqual(["ruby-ex-2", "nodejs-ex-1"]);
   });
 
   it("notify once per object and kind of failure, as the built-in groups did", () => {
@@ -637,15 +652,16 @@ describe("the columns, against the built-in ones", () => {
 
   it("ImageStream: its tags, the imports that fail in their words and tone, sorted by their count; the repository", () => {
     for (const [label, o] of imageStreamVariants()) {
+      // Sorted as the built-in sorted them.
       const tags = streamTags(o).map((t) => t.name);
-      expect(cell("is-tags", o)?.split(", ").sort(), label).toEqual(tags.length ? tags : undefined);
+      expect(cell("is-tags", o), label).toBe(tags.length ? tags.join(", ") : undefined);
       const failing = failedImports(o).length;
       expect(blank(cell("is-imports", o)), label).toBe(failing > 0 ? (failing === 1 ? "1 import fails" : `${failing} imports fail`) : undefined);
       expect(windowColumn("is-imports").value(o), label).toBe(failing);
       if (failing > 0) expect(drawn("is-imports", o).tone, label).toBe("danger");
       expect(cell("is-repository", o), label).toBe(streamRepositories(o).internal);
     }
-    // Every count to 18 in its own case, so each language writes the right plural form; more in the `other` one.
+    // Any count in the language's plural form.
     const many = find("ImageStream", "legacy-db");
     st(many).tags = Array.from({ length: 25 }, (_, i) => ({ tag: `t${i}`, conditions: [{ type: "ImportSuccess", status: "False", reason: "NotFound" }] }));
     expect([cell("is-imports", many), windowColumn("is-imports").value(many)]).toEqual(["25 imports fail", 25]);
