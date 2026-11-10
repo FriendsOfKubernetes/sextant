@@ -1,0 +1,2157 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.prometheus-operator",
+  "name": "Prometheus Operator",
+  "version": "1.0.0",
+  "description": "Prometheus Operator's ServiceMonitors, PodMonitors, Probes, PrometheusRules, Prometheuses and Alertmanagers: what a monitor selects right now and whether its ports exist, which Prometheus picks an object up, a rule's groups, and Prometheus and Alertmanager readiness; opt-in problems of monitors that select nothing and of Prometheuses and Alertmanagers not available. Read-only.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "prometheusOperator",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "monitoring.coreos.com",
+              "kind": "ServiceMonitor"
+            },
+            {
+              "group": "monitoring.coreos.com",
+              "kind": "PodMonitor"
+            },
+            {
+              "group": "monitoring.coreos.com",
+              "kind": "Probe"
+            },
+            {
+              "group": "monitoring.coreos.com",
+              "kind": "PrometheusRule"
+            },
+            {
+              "group": "monitoring.coreos.com",
+              "kind": "Prometheus"
+            },
+            {
+              "group": "monitoring.coreos.com",
+              "kind": "Alertmanager"
+            },
+            {
+              "group": "monitoring.coreos.com",
+              "kind": "PrometheusAgent"
+            },
+            {
+              "group": "",
+              "kind": "Service"
+            },
+            {
+              "group": "",
+              "kind": "Pod"
+            },
+            {
+              "group": "",
+              "kind": "Namespace"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "monitoring.coreos.com",
+        "kind": "ServiceMonitor",
+        "section": "prometheusOperator",
+        "title": "Service Monitors",
+        "icon": "serviceMonitor",
+        "order": 10,
+        "printerColumns": false
+      },
+      {
+        "group": "monitoring.coreos.com",
+        "kind": "PodMonitor",
+        "section": "prometheusOperator",
+        "title": "Pod Monitors",
+        "icon": "podMonitor",
+        "order": 11,
+        "printerColumns": false
+      },
+      {
+        "group": "monitoring.coreos.com",
+        "kind": "Probe",
+        "section": "prometheusOperator",
+        "title": "Probes",
+        "icon": "probe",
+        "order": 12,
+        "printerColumns": false
+      },
+      {
+        "group": "monitoring.coreos.com",
+        "kind": "PrometheusRule",
+        "section": "prometheusOperator",
+        "title": "Prometheus Rules",
+        "icon": "prometheusRule",
+        "order": 20,
+        "printerColumns": false
+      },
+      {
+        "group": "monitoring.coreos.com",
+        "kind": "Prometheus",
+        "section": "prometheusOperator",
+        "title": "Prometheuses",
+        "icon": "prometheus",
+        "order": 30,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "False"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Reconciled\"].status",
+              "value": "False"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "Degraded"
+            }
+          ]
+        }
+      },
+      {
+        "group": "monitoring.coreos.com",
+        "kind": "Alertmanager",
+        "section": "prometheusOperator",
+        "title": "Alertmanagers",
+        "icon": "alertmanager",
+        "order": 31,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "False"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Reconciled\"].status",
+              "value": "False"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "Degraded"
+            }
+          ]
+        }
+      }
+    ],
+    "sections": [
+      {
+        "section": "prometheusOperator",
+        "title": "Prometheus Operator",
+        "icon": "prometheusOperator",
+        "after": "sealedSecrets"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "prometheusOperator",
+        "label": {
+          "one": "{{count}} object needs attention",
+          "other": "{{count}} objects need attention"
+        }
+      }
+    ],
+    "problemCategories": [
+      {
+        "id": "prometheus-operator",
+        "title": "Prometheus Operator",
+        "optIn": true
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "prometheus-operator",
+        "title": "Prometheus Operator",
+        "kinds": [
+          {
+            "group": "monitoring.coreos.com",
+            "kind": "ServiceMonitor"
+          },
+          {
+            "group": "monitoring.coreos.com",
+            "kind": "PodMonitor"
+          },
+          {
+            "group": "monitoring.coreos.com",
+            "kind": "Probe"
+          },
+          {
+            "group": "monitoring.coreos.com",
+            "kind": "PrometheusRule"
+          },
+          {
+            "group": "monitoring.coreos.com",
+            "kind": "Prometheus"
+          },
+          {
+            "group": "monitoring.coreos.com",
+            "kind": "Alertmanager"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "ServiceMonitor"
+        },
+        "id": "sm-namespaces",
+        "title": "Namespaces",
+        "afterColumn": "namespace",
+        "width": "minmax(120px, 1fr)",
+        "paths": [
+          ".metadata.namespace"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.namespaceSelector.any",
+              "value": true
+            },
+            "text": "Every namespace",
+            "value": "*"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "ServiceMonitor"
+        },
+        "id": "sm-selector",
+        "title": "Selector",
+        "afterColumn": "sm-namespaces",
+        "width": "minmax(160px, 2fr)",
+        "paths": [
+          ".spec.selector"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.selector.matchExpressions[operator!=\"In\",operator!=\"NotIn\",operator!=\"Exists\",operator!=\"DoesNotExist\"]"
+            },
+            "text": "Nothing",
+            "value": "{{.spec.selector|selector}}"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.selector"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "above",
+                        "path": ".spec.selector.matchLabels|count",
+                        "value": 0
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "above",
+                        "path": ".spec.selector.matchExpressions|count",
+                        "value": 0
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Everything",
+            "value": "{{.spec.selector ?? \"\"|selector}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.spec.selector|selector}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "ServiceMonitor"
+        },
+        "id": "sm-ports",
+        "title": "Ports",
+        "afterColumn": "sm-selector",
+        "width": "minmax(100px, 1fr)",
+        "paths": [
+          ".spec.endpoints"
+        ],
+        "format": "list",
+        "items": {
+          "cases": [
+            {
+              "when": {
+                "type": "exists",
+                "path": ".port"
+              },
+              "text": "{{.port}}"
+            },
+            {
+              "when": {
+                "type": "exists",
+                "path": ".targetPort"
+              },
+              "text": "{{.targetPort}}"
+            },
+            {
+              "when": {
+                "type": "exists",
+                "path": ".portNumber"
+              },
+              "text": "{{.portNumber}}"
+            }
+          ]
+        }
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "PodMonitor"
+        },
+        "id": "pm-namespaces",
+        "title": "Namespaces",
+        "afterColumn": "namespace",
+        "width": "minmax(120px, 1fr)",
+        "paths": [
+          ".metadata.namespace"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.namespaceSelector.any",
+              "value": true
+            },
+            "text": "Every namespace",
+            "value": "*"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "PodMonitor"
+        },
+        "id": "pm-selector",
+        "title": "Selector",
+        "afterColumn": "pm-namespaces",
+        "width": "minmax(160px, 2fr)",
+        "paths": [
+          ".spec.selector"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.selector.matchExpressions[operator!=\"In\",operator!=\"NotIn\",operator!=\"Exists\",operator!=\"DoesNotExist\"]"
+            },
+            "text": "Nothing",
+            "value": "{{.spec.selector|selector}}"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.selector"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "above",
+                        "path": ".spec.selector.matchLabels|count",
+                        "value": 0
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "above",
+                        "path": ".spec.selector.matchExpressions|count",
+                        "value": 0
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Everything",
+            "value": "{{.spec.selector ?? \"\"|selector}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.spec.selector|selector}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "PodMonitor"
+        },
+        "id": "pm-ports",
+        "title": "Ports",
+        "afterColumn": "pm-selector",
+        "width": "minmax(100px, 1fr)",
+        "paths": [
+          ".spec.podMetricsEndpoints"
+        ],
+        "format": "list",
+        "items": {
+          "cases": [
+            {
+              "when": {
+                "type": "exists",
+                "path": ".port"
+              },
+              "text": "{{.port}}"
+            },
+            {
+              "when": {
+                "type": "exists",
+                "path": ".targetPort"
+              },
+              "text": "{{.targetPort}}"
+            },
+            {
+              "when": {
+                "type": "exists",
+                "path": ".portNumber"
+              },
+              "text": "{{.portNumber}}"
+            }
+          ]
+        }
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Probe"
+        },
+        "id": "probe-prober",
+        "title": "Prober",
+        "afterColumn": "namespace",
+        "width": "minmax(160px, 2fr)",
+        "paths": [
+          ".spec.prober.url"
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Probe"
+        },
+        "id": "probe-module",
+        "title": "Module",
+        "afterColumn": "probe-prober",
+        "width": "110px",
+        "paths": [
+          ".spec.module"
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Probe"
+        },
+        "id": "probe-interval",
+        "title": "Interval",
+        "afterColumn": "probe-module",
+        "width": "80px",
+        "paths": [
+          ".spec.interval"
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "PrometheusRule"
+        },
+        "id": "rule-groups",
+        "title": "Groups",
+        "afterColumn": "namespace",
+        "width": "80px",
+        "paths": [
+          ".spec.groups"
+        ],
+        "format": "count",
+        "cases": [
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "above",
+                "path": ".spec.groups|count",
+                "value": 0
+              }
+            },
+            "text": "0",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "PrometheusRule"
+        },
+        "id": "rule-rules",
+        "title": "Rules",
+        "afterColumn": "rule-groups",
+        "width": "80px",
+        "paths": [
+          ".spec.groups"
+        ],
+        "format": "number",
+        "cases": [
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "above",
+                "path": ".spec.groups|count",
+                "value": 0
+              }
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.spec.groups[*].rules|countAll}}",
+            "value": "{{.spec.groups[*].rules|countAll}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Prometheus"
+        },
+        "id": "prom-status",
+        "title": "Status",
+        "afterColumn": "namespace",
+        "width": "110px",
+        "paths": [
+          ".status.conditions[type=\"Available\"].status"
+        ],
+        "filterBy": "value",
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "False"
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed",
+            "tooltip": "{{.status.conditions[type=\"Available\"].reason}}: {{.status.conditions[type=\"Available\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Available\"].reason}}",
+              "{{.status.conditions[type=\"Available\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Reconciled\"].status",
+              "value": "False"
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed",
+            "tooltip": "{{.status.conditions[type=\"Reconciled\"].reason}}: {{.status.conditions[type=\"Reconciled\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Reconciled\"].reason}}",
+              "{{.status.conditions[type=\"Reconciled\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "Degraded"
+            },
+            "text": "Degraded",
+            "tone": "warning",
+            "value": "degraded",
+            "tooltip": "{{.status.conditions[type=\"Available\"].reason}}: {{.status.conditions[type=\"Available\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Available\"].reason}}",
+              "{{.status.conditions[type=\"Available\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "True"
+            },
+            "text": "Available",
+            "tone": "ok",
+            "value": "ready",
+            "tooltip": "{{.status.conditions[type=\"Available\"].reason}}: {{.status.conditions[type=\"Available\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Available\"].reason}}",
+              "{{.status.conditions[type=\"Available\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Pending",
+            "tone": "warning",
+            "value": "pending"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Prometheus"
+        },
+        "id": "prom-replicas",
+        "title": "Replicas",
+        "afterColumn": "prom-status",
+        "width": "90px",
+        "paths": [
+          ".status.availableReplicas"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.replicas"
+                },
+                {
+                  "type": "absent",
+                  "path": ".spec.shards"
+                }
+              ]
+            },
+            "text": "{{.status.availableReplicas ?? 0}}/1"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.status.availableReplicas ?? 0}}/{{.spec.replicas * .spec.shards|product}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Prometheus"
+        },
+        "id": "prom-version",
+        "title": "Version",
+        "afterColumn": "prom-replicas",
+        "width": "90px",
+        "paths": [
+          ".spec.version",
+          ".status.version"
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Prometheus"
+        },
+        "id": "prom-reason",
+        "title": "Reason",
+        "afterColumn": "prom-version",
+        "width": "minmax(120px, 1fr)",
+        "paths": [
+          ".status.conditions[type=\"Available\",status=\"False\"].reason"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "False"
+            },
+            "text": "{{.status.conditions[type=\"Available\"].reason ?? \"\"}}",
+            "value": "{{.status.conditions[type=\"Available\"].reason}}"
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Reconciled\"].status",
+              "value": "False"
+            },
+            "text": "{{.status.conditions[type=\"Reconciled\"].reason ?? \"\"}}",
+            "value": "{{.status.conditions[type=\"Reconciled\"].reason}}"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Available\"].status",
+                  "value": "Degraded"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Available\"].status",
+                  "value": "True"
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Available\"].reason ?? \"\"}}",
+            "value": "{{.status.conditions[type=\"Available\"].reason}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Alertmanager"
+        },
+        "id": "am-status",
+        "title": "Status",
+        "afterColumn": "namespace",
+        "width": "110px",
+        "paths": [
+          ".status.conditions[type=\"Available\"].status"
+        ],
+        "filterBy": "value",
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "False"
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed",
+            "tooltip": "{{.status.conditions[type=\"Available\"].reason}}: {{.status.conditions[type=\"Available\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Available\"].reason}}",
+              "{{.status.conditions[type=\"Available\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Reconciled\"].status",
+              "value": "False"
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed",
+            "tooltip": "{{.status.conditions[type=\"Reconciled\"].reason}}: {{.status.conditions[type=\"Reconciled\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Reconciled\"].reason}}",
+              "{{.status.conditions[type=\"Reconciled\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "Degraded"
+            },
+            "text": "Degraded",
+            "tone": "warning",
+            "value": "degraded",
+            "tooltip": "{{.status.conditions[type=\"Available\"].reason}}: {{.status.conditions[type=\"Available\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Available\"].reason}}",
+              "{{.status.conditions[type=\"Available\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "True"
+            },
+            "text": "Available",
+            "tone": "ok",
+            "value": "ready",
+            "tooltip": "{{.status.conditions[type=\"Available\"].reason}}: {{.status.conditions[type=\"Available\"].message}}",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Available\"].reason}}",
+              "{{.status.conditions[type=\"Available\"].message}}"
+            ]
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Pending",
+            "tone": "warning",
+            "value": "pending"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Alertmanager"
+        },
+        "id": "am-replicas",
+        "title": "Replicas",
+        "afterColumn": "am-status",
+        "width": "90px",
+        "paths": [
+          ".status.availableReplicas"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.replicas"
+                },
+                {
+                  "type": "absent",
+                  "path": ".spec.shards"
+                }
+              ]
+            },
+            "text": "{{.status.availableReplicas ?? 0}}/1"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.status.availableReplicas ?? 0}}/{{.spec.replicas * .spec.shards|product}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Alertmanager"
+        },
+        "id": "am-version",
+        "title": "Version",
+        "afterColumn": "am-replicas",
+        "width": "90px",
+        "paths": [
+          ".spec.version",
+          ".status.version"
+        ]
+      },
+      {
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Alertmanager"
+        },
+        "id": "am-reason",
+        "title": "Reason",
+        "afterColumn": "am-version",
+        "width": "minmax(120px, 1fr)",
+        "paths": [
+          ".status.conditions[type=\"Available\",status=\"False\"].reason"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "False"
+            },
+            "text": "{{.status.conditions[type=\"Available\"].reason ?? \"\"}}",
+            "value": "{{.status.conditions[type=\"Available\"].reason}}"
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Reconciled\"].status",
+              "value": "False"
+            },
+            "text": "{{.status.conditions[type=\"Reconciled\"].reason ?? \"\"}}",
+            "value": "{{.status.conditions[type=\"Reconciled\"].reason}}"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Available\"].status",
+                  "value": "Degraded"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Available\"].status",
+                  "value": "True"
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Available\"].reason ?? \"\"}}",
+            "value": "{{.status.conditions[type=\"Available\"].reason}}"
+          }
+        ]
+      }
+    ],
+    "problems": [
+      {
+        "id": "prometheus-not-available",
+        "title": "Prometheus not available",
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Prometheus"
+        },
+        "category": "prometheus-operator",
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "False"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Available\"].lastTransitionTime"
+                },
+                {
+                  "type": "olderThan",
+                  "path": ".status.conditions[type=\"Available\"].lastTransitionTime",
+                  "minutes": 5,
+                  "orUnreadable": true
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Available\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Available\"].reason}}",
+        "reasonOr": "NotAvailable",
+        "message": "{{.status.conditions[type=\"Available\"].message}}",
+        "group": "not-ready",
+        "notify": true
+      },
+      {
+        "id": "prometheus-not-reconciled",
+        "title": "Prometheus not reconciled",
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Prometheus"
+        },
+        "category": "prometheus-operator",
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Available\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Reconciled\"].status",
+              "value": "False"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Reconciled\"].lastTransitionTime"
+                },
+                {
+                  "type": "olderThan",
+                  "path": ".status.conditions[type=\"Reconciled\"].lastTransitionTime",
+                  "minutes": 5,
+                  "orUnreadable": true
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Reconciled\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Reconciled\"].reason}}",
+        "reasonOr": "NotAvailable",
+        "message": "{{.status.conditions[type=\"Reconciled\"].message}}",
+        "group": "not-ready",
+        "notify": true
+      },
+      {
+        "id": "prometheus-degraded",
+        "title": "Prometheus degraded",
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Prometheus"
+        },
+        "category": "prometheus-operator",
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Available\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Reconciled\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "Degraded"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Available\"].lastTransitionTime"
+                },
+                {
+                  "type": "olderThan",
+                  "path": ".status.conditions[type=\"Available\"].lastTransitionTime",
+                  "minutes": 5,
+                  "orUnreadable": true
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Available\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Available\"].reason}}",
+        "reasonOr": "Degraded",
+        "message": "{{.status.conditions[type=\"Available\"].message}}",
+        "group": "not-ready",
+        "notify": true
+      },
+      {
+        "id": "alertmanager-not-available",
+        "title": "Alertmanager not available",
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Alertmanager"
+        },
+        "category": "prometheus-operator",
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "False"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Available\"].lastTransitionTime"
+                },
+                {
+                  "type": "olderThan",
+                  "path": ".status.conditions[type=\"Available\"].lastTransitionTime",
+                  "minutes": 5,
+                  "orUnreadable": true
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Available\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Available\"].reason}}",
+        "reasonOr": "NotAvailable",
+        "message": "{{.status.conditions[type=\"Available\"].message}}",
+        "group": "not-ready",
+        "notify": true
+      },
+      {
+        "id": "alertmanager-not-reconciled",
+        "title": "Alertmanager not reconciled",
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Alertmanager"
+        },
+        "category": "prometheus-operator",
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Available\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Reconciled\"].status",
+              "value": "False"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Reconciled\"].lastTransitionTime"
+                },
+                {
+                  "type": "olderThan",
+                  "path": ".status.conditions[type=\"Reconciled\"].lastTransitionTime",
+                  "minutes": 5,
+                  "orUnreadable": true
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Reconciled\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Reconciled\"].reason}}",
+        "reasonOr": "NotAvailable",
+        "message": "{{.status.conditions[type=\"Reconciled\"].message}}",
+        "group": "not-ready",
+        "notify": true
+      },
+      {
+        "id": "alertmanager-degraded",
+        "title": "Alertmanager degraded",
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "Alertmanager"
+        },
+        "category": "prometheus-operator",
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Available\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Reconciled\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Available\"].status",
+              "value": "Degraded"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Available\"].lastTransitionTime"
+                },
+                {
+                  "type": "olderThan",
+                  "path": ".status.conditions[type=\"Available\"].lastTransitionTime",
+                  "minutes": 5,
+                  "orUnreadable": true
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Available\"].lastTransitionTime",
+        "graceMinutes": 5,
+        "reason": "{{.status.conditions[type=\"Available\"].reason}}",
+        "reasonOr": "Degraded",
+        "message": "{{.status.conditions[type=\"Available\"].message}}",
+        "group": "not-ready",
+        "notify": true
+      },
+      {
+        "id": "service-monitor-selects-nothing",
+        "title": "ServiceMonitor selects nothing",
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "ServiceMonitor"
+        },
+        "category": "prometheus-operator",
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.namespaceSelector.any",
+                "value": true
+              }
+            },
+            {
+              "type": "selectsNone",
+              "kind": {
+                "group": "",
+                "kind": "Service"
+              },
+              "selector": ".spec.selector",
+              "anyNamespacesPath": ".spec.namespaceSelector.any",
+              "namespacesPath": ".spec.namespaceSelector.matchNames"
+            }
+          ]
+        },
+        "reason": "SelectsNothing",
+        "message": "Selects no Service in the namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+        "notify": true
+      },
+      {
+        "id": "pod-monitor-selects-nothing",
+        "title": "PodMonitor selects nothing",
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "PodMonitor"
+        },
+        "category": "prometheus-operator",
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.namespaceSelector.any",
+                "value": true
+              }
+            },
+            {
+              "type": "selectsNone",
+              "kind": {
+                "group": "",
+                "kind": "Pod"
+              },
+              "selector": ".spec.selector",
+              "anyNamespacesPath": ".spec.namespaceSelector.any",
+              "namespacesPath": ".spec.namespaceSelector.matchNames"
+            }
+          ]
+        },
+        "reason": "SelectsNothing",
+        "message": "Selects no Pod in the namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+        "notify": true
+      }
+    ]
+  },
+  "translations": {
+    "de": {
+      "name": "Prometheus Operator",
+      "description": "ServiceMonitors, PodMonitors, Probes, PrometheusRules, Prometheuses und Alertmanagers des Prometheus Operators: was ein Monitor gerade auswählt und ob seine Ports existieren, welcher Prometheus ein Objekt aufnimmt, die Gruppen einer Regel und die Bereitschaft von Prometheus und Alertmanager; optionale Probleme von Monitoren, die nichts auswählen, und nicht verfügbarer Prometheuses und Alertmanagers. Nur lesend.",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.one": "{{count}} Objekt erfordert Aufmerksamkeit",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} Objekte erfordern Aufmerksamkeit",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespaces",
+      "columns.sm-namespaces.cases.0.text": "Alle Namespaces",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "Nichts",
+      "columns.sm-selector.cases.1.text": "Alles",
+      "columns.sm-ports.title": "Ports",
+      "columns.pm-namespaces.title": "Namespaces",
+      "columns.pm-namespaces.cases.0.text": "Alle Namespaces",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "Nichts",
+      "columns.pm-selector.cases.1.text": "Alles",
+      "columns.pm-ports.title": "Ports",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "Modul",
+      "columns.probe-interval.title": "Intervall",
+      "columns.rule-groups.title": "Gruppen",
+      "columns.rule-rules.title": "Regeln",
+      "columns.prom-status.title": "Status",
+      "columns.prom-status.cases.0.text": "Fehlgeschlagen",
+      "columns.prom-status.cases.1.text": "Fehlgeschlagen",
+      "columns.prom-status.cases.2.text": "Eingeschränkt",
+      "columns.prom-status.cases.3.text": "Verfügbar",
+      "columns.prom-status.cases.4.text": "Ausstehend",
+      "columns.prom-replicas.title": "Replikate",
+      "columns.prom-version.title": "Version",
+      "columns.prom-reason.title": "Grund",
+      "columns.am-status.title": "Status",
+      "columns.am-status.cases.0.text": "Fehlgeschlagen",
+      "columns.am-status.cases.1.text": "Fehlgeschlagen",
+      "columns.am-status.cases.2.text": "Eingeschränkt",
+      "columns.am-status.cases.3.text": "Verfügbar",
+      "columns.am-status.cases.4.text": "Ausstehend",
+      "columns.am-replicas.title": "Replikate",
+      "columns.am-version.title": "Version",
+      "columns.am-reason.title": "Grund",
+      "problems.prometheus-not-available.title": "Prometheus nicht verfügbar",
+      "problems.prometheus-not-reconciled.title": "Prometheus nicht abgeglichen",
+      "problems.prometheus-degraded.title": "Prometheus beeinträchtigt",
+      "problems.alertmanager-not-available.title": "Alertmanager nicht verfügbar",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager nicht abgeglichen",
+      "problems.alertmanager-degraded.title": "Alertmanager beeinträchtigt",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor wählt nichts aus",
+      "problems.service-monitor-selects-nothing.message": "Wählt keinen Service in den Namespaces aus: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor wählt nichts aus",
+      "problems.pod-monitor-selects-nothing.message": "Wählt keinen Pod in den Namespaces aus: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "es": {
+      "name": "Prometheus Operator",
+      "description": "ServiceMonitors, PodMonitors, Probes, PrometheusRules, Prometheuses y Alertmanagers de Prometheus Operator: qué selecciona ahora un monitor y si existen sus puertos, qué Prometheus recoge un objeto, los grupos de una regla y la disponibilidad de Prometheus y Alertmanager; problemas opcionales de monitores que no seleccionan nada y de Prometheuses y Alertmanagers no disponibles. Solo lectura.",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.one": "{{count}} objeto requiere atención",
+      "sectionBadges.prometheusOperator.label.many": "{{count}} de objetos requieren atención",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} objetos requieren atención",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespaces",
+      "columns.sm-namespaces.cases.0.text": "Todos los namespaces",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "Nada",
+      "columns.sm-selector.cases.1.text": "Todo",
+      "columns.sm-ports.title": "Puertos",
+      "columns.pm-namespaces.title": "Namespaces",
+      "columns.pm-namespaces.cases.0.text": "Todos los namespaces",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "Nada",
+      "columns.pm-selector.cases.1.text": "Todo",
+      "columns.pm-ports.title": "Puertos",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "Módulo",
+      "columns.probe-interval.title": "Intervalo",
+      "columns.rule-groups.title": "Grupos",
+      "columns.rule-rules.title": "Reglas",
+      "columns.prom-status.title": "Estado",
+      "columns.prom-status.cases.0.text": "Fallido",
+      "columns.prom-status.cases.1.text": "Fallido",
+      "columns.prom-status.cases.2.text": "Degradado",
+      "columns.prom-status.cases.3.text": "Disponible",
+      "columns.prom-status.cases.4.text": "Pendiente",
+      "columns.prom-replicas.title": "Réplicas",
+      "columns.prom-version.title": "Versión",
+      "columns.prom-reason.title": "Motivo",
+      "columns.am-status.title": "Estado",
+      "columns.am-status.cases.0.text": "Fallido",
+      "columns.am-status.cases.1.text": "Fallido",
+      "columns.am-status.cases.2.text": "Degradado",
+      "columns.am-status.cases.3.text": "Disponible",
+      "columns.am-status.cases.4.text": "Pendiente",
+      "columns.am-replicas.title": "Réplicas",
+      "columns.am-version.title": "Versión",
+      "columns.am-reason.title": "Motivo",
+      "problems.prometheus-not-available.title": "Prometheus no disponible",
+      "problems.prometheus-not-reconciled.title": "Prometheus sin reconciliar",
+      "problems.prometheus-degraded.title": "Prometheus degradado",
+      "problems.alertmanager-not-available.title": "Alertmanager no disponible",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager sin reconciliar",
+      "problems.alertmanager-degraded.title": "Alertmanager degradado",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor no selecciona nada",
+      "problems.service-monitor-selects-nothing.message": "No selecciona ningún Service en los namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor no selecciona nada",
+      "problems.pod-monitor-selects-nothing.message": "No selecciona ningún Pod en los namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "fr": {
+      "name": "Prometheus Operator",
+      "description": "Les ServiceMonitors, PodMonitors, Probes, PrometheusRules, Prometheuses et Alertmanagers de Prometheus Operator : ce qu'un moniteur sélectionne en ce moment et si ses ports existent, quel Prometheus prend en charge un objet, les groupes d'une règle et la disponibilité de Prometheus et d'Alertmanager ; problèmes facultatifs des moniteurs qui ne sélectionnent rien et des Prometheuses et Alertmanagers indisponibles. Lecture seule.",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.one": "{{count}} objet requiert votre attention",
+      "sectionBadges.prometheusOperator.label.many": "{{count}} d'objets requièrent votre attention",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} objets requièrent votre attention",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespaces",
+      "columns.sm-namespaces.cases.0.text": "Tous les namespaces",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "Rien",
+      "columns.sm-selector.cases.1.text": "Tout",
+      "columns.sm-ports.title": "Ports",
+      "columns.pm-namespaces.title": "Namespaces",
+      "columns.pm-namespaces.cases.0.text": "Tous les namespaces",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "Rien",
+      "columns.pm-selector.cases.1.text": "Tout",
+      "columns.pm-ports.title": "Ports",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "Module",
+      "columns.probe-interval.title": "Intervalle",
+      "columns.rule-groups.title": "Groupes",
+      "columns.rule-rules.title": "Règles",
+      "columns.prom-status.title": "Statut",
+      "columns.prom-status.cases.0.text": "Échec",
+      "columns.prom-status.cases.1.text": "Échec",
+      "columns.prom-status.cases.2.text": "Dégradé",
+      "columns.prom-status.cases.3.text": "Disponible",
+      "columns.prom-status.cases.4.text": "En attente",
+      "columns.prom-replicas.title": "Réplicas",
+      "columns.prom-version.title": "Version",
+      "columns.prom-reason.title": "Raison",
+      "columns.am-status.title": "Statut",
+      "columns.am-status.cases.0.text": "Échec",
+      "columns.am-status.cases.1.text": "Échec",
+      "columns.am-status.cases.2.text": "Dégradé",
+      "columns.am-status.cases.3.text": "Disponible",
+      "columns.am-status.cases.4.text": "En attente",
+      "columns.am-replicas.title": "Réplicas",
+      "columns.am-version.title": "Version",
+      "columns.am-reason.title": "Raison",
+      "problems.prometheus-not-available.title": "Prometheus indisponible",
+      "problems.prometheus-not-reconciled.title": "Prometheus non réconcilié",
+      "problems.prometheus-degraded.title": "Prometheus dégradé",
+      "problems.alertmanager-not-available.title": "Alertmanager indisponible",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager non réconcilié",
+      "problems.alertmanager-degraded.title": "Alertmanager dégradé",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor ne sélectionne rien",
+      "problems.service-monitor-selects-nothing.message": "Ne sélectionne aucun Service dans les namespaces : {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor ne sélectionne rien",
+      "problems.pod-monitor-selects-nothing.message": "Ne sélectionne aucun Pod dans les namespaces : {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "it": {
+      "name": "Prometheus Operator",
+      "description": "ServiceMonitor, PodMonitor, Probe, PrometheusRule, Prometheus e Alertmanager di Prometheus Operator: cosa seleziona ora un monitor e se le sue porte esistono, quale Prometheus raccoglie un oggetto, i gruppi di una regola e la disponibilità di Prometheus e Alertmanager; problemi facoltativi di monitor che non selezionano nulla e di Prometheus e Alertmanager non disponibili. Sola lettura.",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.one": "{{count}} oggetto richiede attenzione",
+      "sectionBadges.prometheusOperator.label.many": "{{count}} di oggetti richiedono attenzione",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} oggetti richiedono attenzione",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespace",
+      "columns.sm-namespaces.cases.0.text": "Tutti i namespace",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "Niente",
+      "columns.sm-selector.cases.1.text": "Tutto",
+      "columns.sm-ports.title": "Porte",
+      "columns.pm-namespaces.title": "Namespace",
+      "columns.pm-namespaces.cases.0.text": "Tutti i namespace",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "Niente",
+      "columns.pm-selector.cases.1.text": "Tutto",
+      "columns.pm-ports.title": "Porte",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "Modulo",
+      "columns.probe-interval.title": "Intervallo",
+      "columns.rule-groups.title": "Gruppi",
+      "columns.rule-rules.title": "Regole",
+      "columns.prom-status.title": "Stato",
+      "columns.prom-status.cases.0.text": "Non riuscito",
+      "columns.prom-status.cases.1.text": "Non riuscito",
+      "columns.prom-status.cases.2.text": "Degradato",
+      "columns.prom-status.cases.3.text": "Disponibile",
+      "columns.prom-status.cases.4.text": "In attesa",
+      "columns.prom-replicas.title": "Repliche",
+      "columns.prom-version.title": "Versione",
+      "columns.prom-reason.title": "Motivo",
+      "columns.am-status.title": "Stato",
+      "columns.am-status.cases.0.text": "Non riuscito",
+      "columns.am-status.cases.1.text": "Non riuscito",
+      "columns.am-status.cases.2.text": "Degradato",
+      "columns.am-status.cases.3.text": "Disponibile",
+      "columns.am-status.cases.4.text": "In attesa",
+      "columns.am-replicas.title": "Repliche",
+      "columns.am-version.title": "Versione",
+      "columns.am-reason.title": "Motivo",
+      "problems.prometheus-not-available.title": "Prometheus non disponibile",
+      "problems.prometheus-not-reconciled.title": "Prometheus non riconciliato",
+      "problems.prometheus-degraded.title": "Prometheus degradato",
+      "problems.alertmanager-not-available.title": "Alertmanager non disponibile",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager non riconciliato",
+      "problems.alertmanager-degraded.title": "Alertmanager degradato",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor non seleziona nulla",
+      "problems.service-monitor-selects-nothing.message": "Non seleziona alcun Service nei namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor non seleziona nulla",
+      "problems.pod-monitor-selects-nothing.message": "Non seleziona alcun Pod nei namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "ja": {
+      "name": "Prometheus Operator",
+      "description": "Prometheus Operator の ServiceMonitor、PodMonitor、Probe、PrometheusRule、Prometheus、Alertmanager: モニターが今選択しているものとそのポートの有無、どの Prometheus がオブジェクトを取り込むか、ルールのグループ、Prometheus と Alertmanager の準備状況。何も選択しないモニターと利用できない Prometheus と Alertmanager の問題は任意。読み取り専用。",
+      "kinds.0.title": "ServiceMonitor",
+      "kinds.1.title": "PodMonitor",
+      "kinds.2.title": "Probe",
+      "kinds.3.title": "PrometheusRule",
+      "kinds.4.title": "Prometheus",
+      "kinds.5.title": "Alertmanager",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.other": "対応が必要なオブジェクトが {{count}} 件あります",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespace",
+      "columns.sm-namespaces.cases.0.text": "すべての namespace",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "なし",
+      "columns.sm-selector.cases.1.text": "すべて",
+      "columns.sm-ports.title": "ポート",
+      "columns.pm-namespaces.title": "Namespace",
+      "columns.pm-namespaces.cases.0.text": "すべての namespace",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "なし",
+      "columns.pm-selector.cases.1.text": "すべて",
+      "columns.pm-ports.title": "ポート",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "モジュール",
+      "columns.probe-interval.title": "間隔",
+      "columns.rule-groups.title": "グループ",
+      "columns.rule-rules.title": "ルール",
+      "columns.prom-status.title": "状態",
+      "columns.prom-status.cases.0.text": "失敗",
+      "columns.prom-status.cases.1.text": "失敗",
+      "columns.prom-status.cases.2.text": "低下",
+      "columns.prom-status.cases.3.text": "利用可能",
+      "columns.prom-status.cases.4.text": "保留中",
+      "columns.prom-replicas.title": "レプリカ",
+      "columns.prom-version.title": "バージョン",
+      "columns.prom-reason.title": "理由",
+      "columns.am-status.title": "状態",
+      "columns.am-status.cases.0.text": "失敗",
+      "columns.am-status.cases.1.text": "失敗",
+      "columns.am-status.cases.2.text": "低下",
+      "columns.am-status.cases.3.text": "利用可能",
+      "columns.am-status.cases.4.text": "保留中",
+      "columns.am-replicas.title": "レプリカ",
+      "columns.am-version.title": "バージョン",
+      "columns.am-reason.title": "理由",
+      "problems.prometheus-not-available.title": "Prometheus が利用できません",
+      "problems.prometheus-not-reconciled.title": "Prometheus が調整されていません",
+      "problems.prometheus-degraded.title": "Prometheus が縮退しています",
+      "problems.alertmanager-not-available.title": "Alertmanager が利用できません",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager が調整されていません",
+      "problems.alertmanager-degraded.title": "Alertmanager が縮退しています",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor が何も選択していません",
+      "problems.service-monitor-selects-nothing.message": "次の namespace で Service を 1 つも選択していません: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor が何も選択していません",
+      "problems.pod-monitor-selects-nothing.message": "次の namespace で Pod を 1 つも選択していません: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "ko": {
+      "name": "Prometheus Operator",
+      "description": "Prometheus Operator의 ServiceMonitor, PodMonitor, Probe, PrometheusRule, Prometheus, Alertmanager: 모니터가 지금 선택하는 대상과 포트 존재 여부, 어떤 Prometheus가 오브젝트를 가져가는지, 규칙의 그룹, Prometheus와 Alertmanager의 준비 상태. 아무것도 선택하지 않는 모니터와 사용할 수 없는 Prometheus와 Alertmanager 문제는 선택 사항. 읽기 전용.",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.other": "주의가 필요한 개체 {{count}}개",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespaces",
+      "columns.sm-namespaces.cases.0.text": "모든 namespace",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "없음",
+      "columns.sm-selector.cases.1.text": "모두",
+      "columns.sm-ports.title": "포트",
+      "columns.pm-namespaces.title": "Namespaces",
+      "columns.pm-namespaces.cases.0.text": "모든 namespace",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "없음",
+      "columns.pm-selector.cases.1.text": "모두",
+      "columns.pm-ports.title": "포트",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "모듈",
+      "columns.probe-interval.title": "간격",
+      "columns.rule-groups.title": "그룹",
+      "columns.rule-rules.title": "규칙",
+      "columns.prom-status.title": "상태",
+      "columns.prom-status.cases.0.text": "실패",
+      "columns.prom-status.cases.1.text": "실패",
+      "columns.prom-status.cases.2.text": "성능 저하",
+      "columns.prom-status.cases.3.text": "사용 가능",
+      "columns.prom-status.cases.4.text": "대기 중",
+      "columns.prom-replicas.title": "복제본",
+      "columns.prom-version.title": "버전",
+      "columns.prom-reason.title": "이유",
+      "columns.am-status.title": "상태",
+      "columns.am-status.cases.0.text": "실패",
+      "columns.am-status.cases.1.text": "실패",
+      "columns.am-status.cases.2.text": "성능 저하",
+      "columns.am-status.cases.3.text": "사용 가능",
+      "columns.am-status.cases.4.text": "대기 중",
+      "columns.am-replicas.title": "복제본",
+      "columns.am-version.title": "버전",
+      "columns.am-reason.title": "이유",
+      "problems.prometheus-not-available.title": "Prometheus 사용 불가",
+      "problems.prometheus-not-reconciled.title": "Prometheus 조정 실패",
+      "problems.prometheus-degraded.title": "Prometheus 성능 저하",
+      "problems.alertmanager-not-available.title": "Alertmanager 사용 불가",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager 조정 실패",
+      "problems.alertmanager-degraded.title": "Alertmanager 성능 저하",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor가 아무것도 선택하지 않음",
+      "problems.service-monitor-selects-nothing.message": "다음 namespace에서 Service를 하나도 선택하지 않습니다: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor가 아무것도 선택하지 않음",
+      "problems.pod-monitor-selects-nothing.message": "다음 namespace에서 Pod를 하나도 선택하지 않습니다: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "pl": {
+      "name": "Prometheus Operator",
+      "description": "ServiceMonitory, PodMonitory, Probe, PrometheusRule, Prometheusy i Alertmanagery z Prometheus Operator: co monitor teraz wybiera i czy istnieją jego porty, który Prometheus pobiera obiekt, grupy reguły oraz gotowość Prometheusa i Alertmanagera; opcjonalne problemy monitorów, które nic nie wybierają, oraz niedostępnych Prometheusów i Alertmanagerów. Tylko do odczytu.",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.one": "{{count}} obiekt wymaga uwagi",
+      "sectionBadges.prometheusOperator.label.few": "{{count}} obiekty wymagają uwagi",
+      "sectionBadges.prometheusOperator.label.many": "{{count}} obiektów wymaga uwagi",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} obiektu wymaga uwagi",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespaces",
+      "columns.sm-namespaces.cases.0.text": "Wszystkie namespace",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "Nic",
+      "columns.sm-selector.cases.1.text": "Wszystko",
+      "columns.sm-ports.title": "Porty",
+      "columns.pm-namespaces.title": "Namespaces",
+      "columns.pm-namespaces.cases.0.text": "Wszystkie namespace",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "Nic",
+      "columns.pm-selector.cases.1.text": "Wszystko",
+      "columns.pm-ports.title": "Porty",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "Moduł",
+      "columns.probe-interval.title": "Interwał",
+      "columns.rule-groups.title": "Grupy",
+      "columns.rule-rules.title": "Reguły",
+      "columns.prom-status.title": "Stan",
+      "columns.prom-status.cases.0.text": "Błąd",
+      "columns.prom-status.cases.1.text": "Błąd",
+      "columns.prom-status.cases.2.text": "Zdegradowany",
+      "columns.prom-status.cases.3.text": "Dostępny",
+      "columns.prom-status.cases.4.text": "Oczekuje",
+      "columns.prom-replicas.title": "Repliki",
+      "columns.prom-version.title": "Wersja",
+      "columns.prom-reason.title": "Przyczyna",
+      "columns.am-status.title": "Stan",
+      "columns.am-status.cases.0.text": "Błąd",
+      "columns.am-status.cases.1.text": "Błąd",
+      "columns.am-status.cases.2.text": "Zdegradowany",
+      "columns.am-status.cases.3.text": "Dostępny",
+      "columns.am-status.cases.4.text": "Oczekuje",
+      "columns.am-replicas.title": "Repliki",
+      "columns.am-version.title": "Wersja",
+      "columns.am-reason.title": "Przyczyna",
+      "problems.prometheus-not-available.title": "Prometheus niedostępny",
+      "problems.prometheus-not-reconciled.title": "Prometheus nieuzgodniony",
+      "problems.prometheus-degraded.title": "Prometheus zdegradowany",
+      "problems.alertmanager-not-available.title": "Alertmanager niedostępny",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager nieuzgodniony",
+      "problems.alertmanager-degraded.title": "Alertmanager zdegradowany",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor nic nie wybiera",
+      "problems.service-monitor-selects-nothing.message": "Nie wybiera żadnego Service w namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor nic nie wybiera",
+      "problems.pod-monitor-selects-nothing.message": "Nie wybiera żadnego Poda w namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "pt-BR": {
+      "name": "Prometheus Operator",
+      "description": "ServiceMonitors, PodMonitors, Probes, PrometheusRules, Prometheuses e Alertmanagers do Prometheus Operator: o que um monitor seleciona agora e se suas portas existem, qual Prometheus coleta um objeto, os grupos de uma regra e a prontidão de Prometheus e Alertmanager; problemas opcionais de monitores que não selecionam nada e de Prometheuses e Alertmanagers indisponíveis. Somente leitura.",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.one": "{{count}} objeto precisa de atenção",
+      "sectionBadges.prometheusOperator.label.many": "{{count}} de objetos precisam de atenção",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} objetos precisam de atenção",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespaces",
+      "columns.sm-namespaces.cases.0.text": "Todos os namespaces",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "Nada",
+      "columns.sm-selector.cases.1.text": "Tudo",
+      "columns.sm-ports.title": "Portas",
+      "columns.pm-namespaces.title": "Namespaces",
+      "columns.pm-namespaces.cases.0.text": "Todos os namespaces",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "Nada",
+      "columns.pm-selector.cases.1.text": "Tudo",
+      "columns.pm-ports.title": "Portas",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "Módulo",
+      "columns.probe-interval.title": "Intervalo",
+      "columns.rule-groups.title": "Grupos",
+      "columns.rule-rules.title": "Regras",
+      "columns.prom-status.title": "Status",
+      "columns.prom-status.cases.0.text": "Falhou",
+      "columns.prom-status.cases.1.text": "Falhou",
+      "columns.prom-status.cases.2.text": "Degradado",
+      "columns.prom-status.cases.3.text": "Disponível",
+      "columns.prom-status.cases.4.text": "Pendente",
+      "columns.prom-replicas.title": "Réplicas",
+      "columns.prom-version.title": "Versão",
+      "columns.prom-reason.title": "Motivo",
+      "columns.am-status.title": "Status",
+      "columns.am-status.cases.0.text": "Falhou",
+      "columns.am-status.cases.1.text": "Falhou",
+      "columns.am-status.cases.2.text": "Degradado",
+      "columns.am-status.cases.3.text": "Disponível",
+      "columns.am-status.cases.4.text": "Pendente",
+      "columns.am-replicas.title": "Réplicas",
+      "columns.am-version.title": "Versão",
+      "columns.am-reason.title": "Motivo",
+      "problems.prometheus-not-available.title": "Prometheus indisponível",
+      "problems.prometheus-not-reconciled.title": "Prometheus não reconciliado",
+      "problems.prometheus-degraded.title": "Prometheus degradado",
+      "problems.alertmanager-not-available.title": "Alertmanager indisponível",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager não reconciliado",
+      "problems.alertmanager-degraded.title": "Alertmanager degradado",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor não seleciona nada",
+      "problems.service-monitor-selects-nothing.message": "Não seleciona nenhum Service nos namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor não seleciona nada",
+      "problems.pod-monitor-selects-nothing.message": "Não seleciona nenhum Pod nos namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "ru": {
+      "name": "Prometheus Operator",
+      "description": "ServiceMonitor, PodMonitor, Probe, PrometheusRule, Prometheus и Alertmanager из Prometheus Operator: что монитор выбирает сейчас и есть ли его порты, какой Prometheus подхватывает объект, группы правила и готовность Prometheus и Alertmanager; необязательные проблемы мониторов, которые ничего не выбирают, и недоступных Prometheus и Alertmanager. Только чтение.",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.one": "{{count}} объект требует внимания",
+      "sectionBadges.prometheusOperator.label.few": "{{count}} объекта требуют внимания",
+      "sectionBadges.prometheusOperator.label.many": "{{count}} объектов требуют внимания",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} объекта требуют внимания",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespaces",
+      "columns.sm-namespaces.cases.0.text": "Все namespace",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "Ничего",
+      "columns.sm-selector.cases.1.text": "Всё",
+      "columns.sm-ports.title": "Порты",
+      "columns.pm-namespaces.title": "Namespaces",
+      "columns.pm-namespaces.cases.0.text": "Все namespace",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "Ничего",
+      "columns.pm-selector.cases.1.text": "Всё",
+      "columns.pm-ports.title": "Порты",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "Модуль",
+      "columns.probe-interval.title": "Интервал",
+      "columns.rule-groups.title": "Группы",
+      "columns.rule-rules.title": "Правила",
+      "columns.prom-status.title": "Статус",
+      "columns.prom-status.cases.0.text": "Ошибка",
+      "columns.prom-status.cases.1.text": "Ошибка",
+      "columns.prom-status.cases.2.text": "Деградирован",
+      "columns.prom-status.cases.3.text": "Доступен",
+      "columns.prom-status.cases.4.text": "Ожидает",
+      "columns.prom-replicas.title": "Реплики",
+      "columns.prom-version.title": "Версия",
+      "columns.prom-reason.title": "Причина",
+      "columns.am-status.title": "Статус",
+      "columns.am-status.cases.0.text": "Ошибка",
+      "columns.am-status.cases.1.text": "Ошибка",
+      "columns.am-status.cases.2.text": "Деградирован",
+      "columns.am-status.cases.3.text": "Доступен",
+      "columns.am-status.cases.4.text": "Ожидает",
+      "columns.am-replicas.title": "Реплики",
+      "columns.am-version.title": "Версия",
+      "columns.am-reason.title": "Причина",
+      "problems.prometheus-not-available.title": "Prometheus недоступен",
+      "problems.prometheus-not-reconciled.title": "Prometheus не согласован",
+      "problems.prometheus-degraded.title": "Prometheus деградирован",
+      "problems.alertmanager-not-available.title": "Alertmanager недоступен",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager не согласован",
+      "problems.alertmanager-degraded.title": "Alertmanager деградирован",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor ничего не выбирает",
+      "problems.service-monitor-selects-nothing.message": "Не выбирает ни одного Service в namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor ничего не выбирает",
+      "problems.pod-monitor-selects-nothing.message": "Не выбирает ни одного Pod в namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "tr": {
+      "name": "Prometheus Operator",
+      "description": "Prometheus Operator'ın ServiceMonitor, PodMonitor, Probe, PrometheusRule, Prometheus ve Alertmanager nesneleri: bir monitörün şu an neyi seçtiği ve portlarının var olup olmadığı, bir nesneyi hangi Prometheus'un aldığı, bir kuralın grupları ve Prometheus ile Alertmanager hazırlığı; hiçbir şey seçmeyen monitörler ile kullanılamayan Prometheus ve Alertmanager için isteğe bağlı sorunlar. Salt okunur.",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.one": "{{count}} nesne ilgi gerektiriyor",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} nesne ilgi gerektiriyor",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespace'ler",
+      "columns.sm-namespaces.cases.0.text": "Tüm namespace'ler",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "Hiçbiri",
+      "columns.sm-selector.cases.1.text": "Tümü",
+      "columns.sm-ports.title": "Bağlantı noktaları",
+      "columns.pm-namespaces.title": "Namespace'ler",
+      "columns.pm-namespaces.cases.0.text": "Tüm namespace'ler",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "Hiçbiri",
+      "columns.pm-selector.cases.1.text": "Tümü",
+      "columns.pm-ports.title": "Bağlantı noktaları",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "Modül",
+      "columns.probe-interval.title": "Aralık",
+      "columns.rule-groups.title": "Gruplar",
+      "columns.rule-rules.title": "Kurallar",
+      "columns.prom-status.title": "Durum",
+      "columns.prom-status.cases.0.text": "Başarısız",
+      "columns.prom-status.cases.1.text": "Başarısız",
+      "columns.prom-status.cases.2.text": "Düşük performanslı",
+      "columns.prom-status.cases.3.text": "Kullanılabilir",
+      "columns.prom-status.cases.4.text": "Bekliyor",
+      "columns.prom-replicas.title": "Kopyalar",
+      "columns.prom-version.title": "Sürüm",
+      "columns.prom-reason.title": "Neden",
+      "columns.am-status.title": "Durum",
+      "columns.am-status.cases.0.text": "Başarısız",
+      "columns.am-status.cases.1.text": "Başarısız",
+      "columns.am-status.cases.2.text": "Düşük performanslı",
+      "columns.am-status.cases.3.text": "Kullanılabilir",
+      "columns.am-status.cases.4.text": "Bekliyor",
+      "columns.am-replicas.title": "Kopyalar",
+      "columns.am-version.title": "Sürüm",
+      "columns.am-reason.title": "Neden",
+      "problems.prometheus-not-available.title": "Prometheus kullanılamıyor",
+      "problems.prometheus-not-reconciled.title": "Prometheus uzlaştırılmadı",
+      "problems.prometheus-degraded.title": "Prometheus bozulmuş",
+      "problems.alertmanager-not-available.title": "Alertmanager kullanılamıyor",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager uzlaştırılmadı",
+      "problems.alertmanager-degraded.title": "Alertmanager bozulmuş",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor hiçbir şey seçmiyor",
+      "problems.service-monitor-selects-nothing.message": "Şu namespace'lerde hiçbir Service seçmiyor: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor hiçbir şey seçmiyor",
+      "problems.pod-monitor-selects-nothing.message": "Şu namespace'lerde hiçbir Pod seçmiyor: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "uk": {
+      "name": "Prometheus Operator",
+      "description": "ServiceMonitor, PodMonitor, Probe, PrometheusRule, Prometheus і Alertmanager з Prometheus Operator: що монітор вибирає зараз і чи існують його порти, який Prometheus підхоплює об'єкт, групи правила та готовність Prometheus і Alertmanager; необов'язкові проблеми моніторів, які нічого не вибирають, і недоступних Prometheus і Alertmanager. Лише читання.",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.one": "{{count}} об'єкт потребує уваги",
+      "sectionBadges.prometheusOperator.label.few": "{{count}} об'єкти потребують уваги",
+      "sectionBadges.prometheusOperator.label.many": "{{count}} об'єктів потребують уваги",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} об'єкта потребують уваги",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespaces",
+      "columns.sm-namespaces.cases.0.text": "Усі namespace",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "Нічого",
+      "columns.sm-selector.cases.1.text": "Усе",
+      "columns.sm-ports.title": "Порти",
+      "columns.pm-namespaces.title": "Namespaces",
+      "columns.pm-namespaces.cases.0.text": "Усі namespace",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "Нічого",
+      "columns.pm-selector.cases.1.text": "Усе",
+      "columns.pm-ports.title": "Порти",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "Модуль",
+      "columns.probe-interval.title": "Інтервал",
+      "columns.rule-groups.title": "Групи",
+      "columns.rule-rules.title": "Правила",
+      "columns.prom-status.title": "Статус",
+      "columns.prom-status.cases.0.text": "Помилка",
+      "columns.prom-status.cases.1.text": "Помилка",
+      "columns.prom-status.cases.2.text": "Деградований",
+      "columns.prom-status.cases.3.text": "Доступний",
+      "columns.prom-status.cases.4.text": "Очікує",
+      "columns.prom-replicas.title": "Репліки",
+      "columns.prom-version.title": "Версія",
+      "columns.prom-reason.title": "Причина",
+      "columns.am-status.title": "Статус",
+      "columns.am-status.cases.0.text": "Помилка",
+      "columns.am-status.cases.1.text": "Помилка",
+      "columns.am-status.cases.2.text": "Деградований",
+      "columns.am-status.cases.3.text": "Доступний",
+      "columns.am-status.cases.4.text": "Очікує",
+      "columns.am-replicas.title": "Репліки",
+      "columns.am-version.title": "Версія",
+      "columns.am-reason.title": "Причина",
+      "problems.prometheus-not-available.title": "Prometheus недоступний",
+      "problems.prometheus-not-reconciled.title": "Prometheus не узгоджений",
+      "problems.prometheus-degraded.title": "Prometheus деградований",
+      "problems.alertmanager-not-available.title": "Alertmanager недоступний",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager не узгоджений",
+      "problems.alertmanager-degraded.title": "Alertmanager деградований",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor нічого не вибирає",
+      "problems.service-monitor-selects-nothing.message": "Не вибирає жодного Service у namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor нічого не вибирає",
+      "problems.pod-monitor-selects-nothing.message": "Не вибирає жодного Pod у namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "zh-CN": {
+      "name": "Prometheus Operator",
+      "description": "Prometheus Operator 的 ServiceMonitor、PodMonitor、Probe、PrometheusRule、Prometheus 和 Alertmanager：监控当前选择了什么及其端口是否存在、哪个 Prometheus 采纳对象、规则的分组，以及 Prometheus 和 Alertmanager 的就绪状态；不选择任何对象的监控以及不可用的 Prometheus 和 Alertmanager 为可选问题。只读。",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} 个对象需要关注",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespaces",
+      "columns.sm-namespaces.cases.0.text": "所有 namespace",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "无",
+      "columns.sm-selector.cases.1.text": "全部",
+      "columns.sm-ports.title": "端口",
+      "columns.pm-namespaces.title": "Namespaces",
+      "columns.pm-namespaces.cases.0.text": "所有 namespace",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "无",
+      "columns.pm-selector.cases.1.text": "全部",
+      "columns.pm-ports.title": "端口",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "模块",
+      "columns.probe-interval.title": "间隔",
+      "columns.rule-groups.title": "组",
+      "columns.rule-rules.title": "规则",
+      "columns.prom-status.title": "状态",
+      "columns.prom-status.cases.0.text": "失败",
+      "columns.prom-status.cases.1.text": "失败",
+      "columns.prom-status.cases.2.text": "降级",
+      "columns.prom-status.cases.3.text": "可用",
+      "columns.prom-status.cases.4.text": "等待中",
+      "columns.prom-replicas.title": "副本",
+      "columns.prom-version.title": "版本",
+      "columns.prom-reason.title": "原因",
+      "columns.am-status.title": "状态",
+      "columns.am-status.cases.0.text": "失败",
+      "columns.am-status.cases.1.text": "失败",
+      "columns.am-status.cases.2.text": "降级",
+      "columns.am-status.cases.3.text": "可用",
+      "columns.am-status.cases.4.text": "等待中",
+      "columns.am-replicas.title": "副本",
+      "columns.am-version.title": "版本",
+      "columns.am-reason.title": "原因",
+      "problems.prometheus-not-available.title": "Prometheus 不可用",
+      "problems.prometheus-not-reconciled.title": "Prometheus 未协调",
+      "problems.prometheus-degraded.title": "Prometheus 已降级",
+      "problems.alertmanager-not-available.title": "Alertmanager 不可用",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager 未协调",
+      "problems.alertmanager-degraded.title": "Alertmanager 已降级",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor 未选择任何对象",
+      "problems.service-monitor-selects-nothing.message": "在以下 namespace 中未选中任何 Service：{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor 未选择任何对象",
+      "problems.pod-monitor-selects-nothing.message": "在以下 namespace 中未选中任何 Pod：{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    },
+    "zh-TW": {
+      "name": "Prometheus Operator",
+      "description": "Prometheus Operator 的 ServiceMonitor、PodMonitor、Probe、PrometheusRule、Prometheus 與 Alertmanager：監控目前選擇了什麼及其連接埠是否存在、哪個 Prometheus 採用物件、規則的群組，以及 Prometheus 與 Alertmanager 的就緒狀態；不選擇任何物件的監控以及無法使用的 Prometheus 與 Alertmanager 為選用問題。唯讀。",
+      "kinds.0.title": "Service Monitors",
+      "kinds.1.title": "Pod Monitors",
+      "kinds.2.title": "Probes",
+      "kinds.3.title": "Prometheus Rules",
+      "kinds.4.title": "Prometheuses",
+      "kinds.5.title": "Alertmanagers",
+      "sections.prometheusOperator.title": "Prometheus Operator",
+      "sectionBadges.prometheusOperator.label.other": "{{count}} 個物件需要注意",
+      "problemCategories.prometheus-operator.title": "Prometheus Operator",
+      "detailsSections.prometheus-operator.title": "Prometheus Operator",
+      "columns.sm-namespaces.title": "Namespaces",
+      "columns.sm-namespaces.cases.0.text": "所有 namespace",
+      "columns.sm-selector.title": "Selector",
+      "columns.sm-selector.cases.0.text": "無",
+      "columns.sm-selector.cases.1.text": "全部",
+      "columns.sm-ports.title": "連接埠",
+      "columns.pm-namespaces.title": "Namespaces",
+      "columns.pm-namespaces.cases.0.text": "所有 namespace",
+      "columns.pm-selector.title": "Selector",
+      "columns.pm-selector.cases.0.text": "無",
+      "columns.pm-selector.cases.1.text": "全部",
+      "columns.pm-ports.title": "連接埠",
+      "columns.probe-prober.title": "Prober",
+      "columns.probe-module.title": "模組",
+      "columns.probe-interval.title": "間隔",
+      "columns.rule-groups.title": "群組",
+      "columns.rule-rules.title": "規則",
+      "columns.prom-status.title": "狀態",
+      "columns.prom-status.cases.0.text": "失敗",
+      "columns.prom-status.cases.1.text": "失敗",
+      "columns.prom-status.cases.2.text": "降級",
+      "columns.prom-status.cases.3.text": "可用",
+      "columns.prom-status.cases.4.text": "等待中",
+      "columns.prom-replicas.title": "複本",
+      "columns.prom-version.title": "版本",
+      "columns.prom-reason.title": "原因",
+      "columns.am-status.title": "狀態",
+      "columns.am-status.cases.0.text": "失敗",
+      "columns.am-status.cases.1.text": "失敗",
+      "columns.am-status.cases.2.text": "降級",
+      "columns.am-status.cases.3.text": "可用",
+      "columns.am-status.cases.4.text": "等待中",
+      "columns.am-replicas.title": "複本",
+      "columns.am-version.title": "版本",
+      "columns.am-reason.title": "原因",
+      "problems.prometheus-not-available.title": "Prometheus 無法使用",
+      "problems.prometheus-not-reconciled.title": "Prometheus 未協調",
+      "problems.prometheus-degraded.title": "Prometheus 已降級",
+      "problems.alertmanager-not-available.title": "Alertmanager 無法使用",
+      "problems.alertmanager-not-reconciled.title": "Alertmanager 未協調",
+      "problems.alertmanager-degraded.title": "Alertmanager 已降級",
+      "problems.service-monitor-selects-nothing.title": "ServiceMonitor 未選擇任何物件",
+      "problems.service-monitor-selects-nothing.message": "在下列 namespace 中未選取任何 Service：{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.pod-monitor-selects-nothing.title": "PodMonitor 未選擇任何物件",
+      "problems.pod-monitor-selects-nothing.message": "在下列 namespace 中未選取任何 Pod：{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+    }
+  }
+}

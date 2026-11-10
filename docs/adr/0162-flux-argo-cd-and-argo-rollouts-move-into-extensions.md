@@ -161,3 +161,32 @@ Secret list. The version-3 migration turns the opt-in `sealedSecrets` into `ext:
 Problems page's own toggle for it is gone (the extension's category has the toggle every opt-in extension category
 gets). Where the extension still differs — the Secrets it lists to tell a missing one, the table's search by the shown
 words, the SDK's details tables and the blocks' memory (#417) — is listed in its README.
+
+## Amendment: Vertical Pod Autoscaler and Prometheus Operator
+
+`extensions/vpa` (`sextant.vpa`, 1.0.0) takes the Vertical Pod Autoscaler view (ADR-0111): VerticalPodAutoscalers and
+their Checkpoints in the section `vpa` with the built-in columns, "Only problems" and details (the state from the
+recommender's conditions, the update mode, the recommendation per container against the target template with what the
+admission controller would set on a pod created now, an HPA that fights it, the recommender, updater and admission
+controller), and the workloads' "Vertical Pod Autoscaler" block (its details section `workload`, the built-in
+`vpaWorkload`). The section keeps its place right after `karpenter`, and the sidebar offers it where
+`autoscaling.k8s.io` VerticalPodAutoscalers are served. Its problems (`ConfigUnsupported`, `NoPodsMatched`,
+`HpaConflict`, the HPA found by `relatedBy`) are rules of the extension's own category; the version-3 migration moves
+the category `vpa` (on by default) to `ext:sextant.vpa` (`MOVED_PROBLEM_CATEGORIES`, never for agents by default, as
+before).
+
+`extensions/prometheus-operator` (`sextant.prometheus-operator`, 1.0.0) takes the Prometheus Operator view (ADR-0100):
+ServiceMonitors, PodMonitors, Probes, PrometheusRules, Prometheuses and Alertmanagers in the section
+`prometheusOperator` with the built-in columns, "Only problems" and details (what a monitor selects now and whether its
+ports exist, which Prometheus picks an object up, a rule's groups, readiness). The section keeps its place after
+`crossplane`, behind `strimzi`, and the sidebar offers it where `monitoring.coreos.com` is served. Its problems are
+rules of the extension's own opt-in category (`problemCategories`, #410): Prometheuses and Alertmanagers not available,
+not reconciled or degraded, and monitors that select nothing, told by `selectsNone` against metadata-only Service and Pod
+lists. The version-3 migration turns the opt-in `prometheusOperator` into
+`ext:sextant.prometheus-operator:prometheus-operator` (`MOVED_OPT_IN_CATEGORIES`); it is never given to agents, as
+before, `get_problems` still refuses the old name, and the Problems page's own toggle for it is gone. The built-in
+provider and store that judged monitors across objects go with it; the problems store's `SourceDef.external` and
+`across` and the map's `judgedByRules` stay, still used by other categories (k3s, mesh, Traefik, Crossplane, Contour and
+OpenShift). Cleanup keeps its knowledge of the monitoring kinds (`hygiene/kinds.ts`). Where the extensions
+still differ — for the VPA, a problem's HPA by name, no pods matched never notifying and the HPAs it looks up; for
+Prometheus Operator, the "not picked up" warning and the Services and Pods it lists — is listed in their READMEs.

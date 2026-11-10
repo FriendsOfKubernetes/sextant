@@ -26,6 +26,8 @@ for other authors. The guide to writing one is the wiki page
 | Kyverno (`sextant.kyverno`) | [`kyverno/`](kyverno/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | ClusterPolicies and Policies with their mode, policy reports, and the policy results of every object, read-only, with opt-in problems |
 | Dynamic Resource Allocation (`sextant.dra`) | [`dra/`](dra/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | ResourceClaims with their state, requests and devices, claim templates, device classes, ResourceSlices, the Devices page and the devices of Pods and Nodes, read-only, with their problems |
 | Sealed Secrets (`sextant.sealed-secrets`) | [`sealed-secrets/`](sealed-secrets/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | SealedSecrets with their unseal state, scope, target Secret and sealed keys by name, and the controller with its sealing keys, read-only, with opt-in problems |
+| Vertical Pod Autoscaler (`sextant.vpa`) | [`vpa/`](vpa/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | VerticalPodAutoscalers with their state, update mode and recommendation against the target's template with what a new pod would get, their checkpoints and components, and the VPAs of every workload, read-only, with their problems |
+| Prometheus Operator (`sextant.prometheus-operator`) | [`prometheus-operator/`](prometheus-operator/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | ServiceMonitors, PodMonitors and Probes with what they select and which Prometheus picks them up, PrometheusRules, Prometheuses and Alertmanagers, read-only, with opt-in problems |
 
 ## The documents of an extension
 

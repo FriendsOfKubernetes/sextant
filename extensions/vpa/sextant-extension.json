@@ -1,0 +1,2228 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.vpa",
+  "name": "Vertical Pod Autoscaler",
+  "version": "1.0.0",
+  "description": "VerticalPodAutoscalers with their state, update mode and recommendation against the target's template with what a new pod would get, their checkpoints and components, and the VPAs of every workload; problems of VPAs the recommender cannot use, that match no pod or that fight an HPA. Read-only.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "vpa",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "autoscaling.k8s.io",
+              "kind": "VerticalPodAutoscaler"
+            },
+            {
+              "group": "autoscaling.k8s.io",
+              "kind": "VerticalPodAutoscalerCheckpoint"
+            },
+            {
+              "group": "autoscaling",
+              "kind": "HorizontalPodAutoscaler"
+            },
+            {
+              "group": "apps",
+              "kind": "Deployment"
+            },
+            {
+              "group": "apps",
+              "kind": "StatefulSet"
+            },
+            {
+              "group": "apps",
+              "kind": "DaemonSet"
+            },
+            {
+              "group": "apps",
+              "kind": "ReplicaSet"
+            },
+            {
+              "group": "batch",
+              "kind": "Job"
+            },
+            {
+              "group": "batch",
+              "kind": "CronJob"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "autoscaling.k8s.io",
+        "kind": "VerticalPodAutoscaler",
+        "section": "vpa",
+        "title": "VerticalPodAutoscalers",
+        "icon": "verticalPodAutoscaler",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "ConfigUnsupported",
+              "status": "True"
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "ConfigUnsupported",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "RecommendationProvided",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".status.conditions[type=\"RecommendationProvided\"]"
+                      },
+                      {
+                        "type": "exists",
+                        "path": ".status.recommendation.containerRecommendations[0]"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "NoPodsMatched",
+                  "status": "True"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "equals",
+                    "path": ".spec.updatePolicy.updateMode",
+                    "value": "Off"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "in",
+                        "path": ".spec.targetRef.kind",
+                        "values": [
+                          "Job",
+                          "CronJob"
+                        ]
+                      },
+                      {
+                        "type": "startsWith",
+                        "path": ".spec.targetRef.apiVersion",
+                        "values": [
+                          "batch/"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "group": "autoscaling.k8s.io",
+        "kind": "VerticalPodAutoscalerCheckpoint",
+        "section": "vpa",
+        "title": "Checkpoints",
+        "icon": "vpaCheckpoint",
+        "order": 20,
+        "printerColumns": false
+      }
+    ],
+    "sections": [
+      {
+        "section": "vpa",
+        "title": "Vertical Pod Autoscaler",
+        "icon": "vpa",
+        "after": "karpenter"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "vpa",
+        "rules": [],
+        "label": {
+          "one": "{{count}} object needs attention",
+          "other": "{{count}} objects need attention"
+        }
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "vpa",
+        "title": "Vertical Pod Autoscaler",
+        "kinds": [
+          {
+            "group": "autoscaling.k8s.io",
+            "kind": "VerticalPodAutoscaler"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      },
+      {
+        "id": "workload",
+        "title": "Vertical Pod Autoscaler",
+        "kinds": [
+          {
+            "group": "apps",
+            "kind": "Deployment"
+          },
+          {
+            "group": "apps",
+            "kind": "StatefulSet"
+          },
+          {
+            "group": "apps",
+            "kind": "DaemonSet"
+          },
+          {
+            "group": "apps",
+            "kind": "ReplicaSet"
+          },
+          {
+            "group": "batch",
+            "kind": "Job"
+          },
+          {
+            "group": "batch",
+            "kind": "CronJob"
+          }
+        ],
+        "placement": "section",
+        "order": 56,
+        "heading": false,
+        "startHidden": true
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "id": "vpa-target",
+        "title": "Target",
+        "paths": [
+          ".spec.targetRef.name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.targetRef.kind",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.targetRef.name",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.spec.targetRef.kind}}/{{.spec.targetRef.name}}",
+            "value": "{{.spec.targetRef.kind}}/{{.spec.targetRef.name}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "",
+            "value": "{{.spec.targetRef.kind}}/{{.spec.targetRef.name}}"
+          }
+        ],
+        "width": "minmax(140px, 1fr)",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "id": "vpa-mode",
+        "title": "Mode",
+        "paths": [
+          ".spec.updatePolicy.updateMode"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.updatePolicy.updateMode"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "value": ""
+                }
+              ]
+            },
+            "text": "Recreate",
+            "value": "Recreate"
+          }
+        ],
+        "width": "140px",
+        "afterColumn": "vpa-target"
+      },
+      {
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "id": "vpa-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"RecommendationProvided\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "ConfigUnsupported",
+              "status": "True"
+            },
+            "text": "Unsupported",
+            "tone": "error",
+            "value": "configUnsupported",
+            "tooltip": "{{.status.conditions[type=\"ConfigUnsupported\"].message}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "RecommendationProvided",
+                  "status": "True"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "LowConfidence",
+                  "status": "True"
+                }
+              ]
+            },
+            "text": "Low confidence",
+            "tone": "ok",
+            "value": "lowConfidence"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "RecommendationProvided",
+                  "status": "True"
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "FetchingHistory",
+                  "status": "True"
+                }
+              ]
+            },
+            "text": "Loading history",
+            "tone": "ok",
+            "value": "fetchingHistory"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "RecommendationProvided",
+              "status": "True"
+            },
+            "text": "Recommending",
+            "tone": "ok",
+            "value": "provided"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"RecommendationProvided\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.recommendation.containerRecommendations[0]"
+                }
+              ]
+            },
+            "text": "Recommending",
+            "tone": "ok",
+            "value": "provided"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "NoPodsMatched",
+              "status": "True"
+            },
+            "text": "No pods matched",
+            "tone": "error",
+            "value": "noPodsMatched",
+            "tooltip": "{{.status.conditions[type=\"NoPodsMatched\"].message}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.conditions[type=\"RecommendationProvided\"]"
+            },
+            "text": "No recommendation",
+            "tone": "warning",
+            "value": "notProvided",
+            "tooltip": "{{.status.conditions[type=\"RecommendationProvided\"].message}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Waiting",
+            "tone": "warning",
+            "value": "noStatus"
+          }
+        ],
+        "filterBy": "value",
+        "width": "160px",
+        "afterColumn": "vpa-mode"
+      },
+      {
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "id": "vpa-cpu",
+        "title": "CPU",
+        "paths": [
+          ".status.recommendation.containerRecommendations[0].target.cpu"
+        ],
+        "format": "cpu",
+        "width": "80px",
+        "afterColumn": "vpa-status"
+      },
+      {
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "id": "vpa-memory",
+        "title": "Memory",
+        "paths": [
+          ".status.recommendation.containerRecommendations[0].target.memory"
+        ],
+        "format": "bytes",
+        "width": "90px",
+        "afterColumn": "vpa-cpu"
+      },
+      {
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscalerCheckpoint"
+        },
+        "id": "cp-vpa",
+        "title": "VPA",
+        "paths": [
+          ".spec.vpaObjectName"
+        ],
+        "width": "minmax(120px, 1fr)",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscalerCheckpoint"
+        },
+        "id": "cp-container",
+        "title": "Container",
+        "paths": [
+          ".spec.containerName"
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "cp-vpa"
+      },
+      {
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscalerCheckpoint"
+        },
+        "id": "cp-samples",
+        "title": "Samples",
+        "paths": [
+          ".status.totalSamplesCount"
+        ],
+        "format": "number",
+        "width": "90px",
+        "afterColumn": "cp-container"
+      },
+      {
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscalerCheckpoint"
+        },
+        "id": "cp-last-update",
+        "title": "Last saved",
+        "paths": [
+          ".status.lastUpdateTime"
+        ],
+        "format": "dateTime",
+        "width": "170px",
+        "afterColumn": "cp-samples"
+      }
+    ],
+    "problems": [
+      {
+        "id": "config-unsupported",
+        "title": "VPA the recommender cannot use",
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "condition",
+              "conditionType": "ConfigUnsupported",
+              "status": "True"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"ConfigUnsupported\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "ConfigUnsupported",
+        "message": "{{.status.conditions[type=\"ConfigUnsupported\"].message}}",
+        "group": "config-unsupported"
+      },
+      {
+        "id": "no-pods-matched",
+        "title": "VPA that matches no pod",
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "ConfigUnsupported",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "RecommendationProvided",
+                "status": "True"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".status.conditions[type=\"RecommendationProvided\"]"
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".status.recommendation.containerRecommendations[0]"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "condition",
+              "conditionType": "NoPodsMatched",
+              "status": "True"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".spec.updatePolicy.updateMode",
+                "value": "Off"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "in",
+                    "path": ".spec.targetRef.kind",
+                    "values": [
+                      "Job",
+                      "CronJob"
+                    ]
+                  },
+                  {
+                    "type": "startsWith",
+                    "path": ".spec.targetRef.apiVersion",
+                    "values": [
+                      "batch/"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"NoPodsMatched\"].lastTransitionTime",
+        "graceMinutes": 10,
+        "notify": false,
+        "reason": "NoPodsMatched",
+        "message": "No pod matches it, so the recommender gives no recommendation.",
+        "group": "no-pods-matched"
+      },
+      {
+        "id": "hpa-conflict-every-cpu-memory",
+        "title": "VPA without policies and HPA fight over cpu, memory",
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.updatePolicy.updateMode"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "value": ""
+                },
+                {
+                  "type": "in",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "values": [
+                    "Recreate",
+                    "Auto",
+                    "InPlaceOrRecreate",
+                    "InPlace"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".spec.resourcePolicy.containerPolicies[0]"
+            },
+            {
+              "type": "relatedBy",
+              "kind": {
+                "group": "autoscaling",
+                "kind": "HorizontalPodAutoscaler"
+              },
+              "pairs": [
+                {
+                  "theirs": ".spec.scaleTargetRef.name",
+                  "ours": ".spec.targetRef.name"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.kind",
+                  "ours": ".spec.targetRef.kind"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.apiVersion",
+                  "ours": ".spec.targetRef.apiVersion"
+                }
+              ],
+              "when": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".metadata.deletionTimestamp"
+                  },
+                  {
+                    "type": "any",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.metrics[0]"
+                      },
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"Resource\",resource.name=\"cpu\",resource.target.type=\"Utilization\"]"
+                      },
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"ContainerResource\",containerResource.name=\"cpu\",containerResource.target.type=\"Utilization\"]"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "any",
+                    "of": [
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"Resource\",resource.name=\"memory\",resource.target.type=\"Utilization\"]"
+                      },
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"ContainerResource\",containerResource.name=\"memory\",containerResource.target.type=\"Utilization\"]"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "reason": "HpaConflict",
+        "message": "An HPA scales the same workload on cpu, memory, which this VPA changes in mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: the two fight.",
+        "group": "hpa-conflict"
+      },
+      {
+        "id": "hpa-conflict-every-cpu",
+        "title": "VPA without policies and HPA fight over cpu",
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.updatePolicy.updateMode"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "value": ""
+                },
+                {
+                  "type": "in",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "values": [
+                    "Recreate",
+                    "Auto",
+                    "InPlaceOrRecreate",
+                    "InPlace"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".spec.resourcePolicy.containerPolicies[0]"
+            },
+            {
+              "type": "relatedBy",
+              "kind": {
+                "group": "autoscaling",
+                "kind": "HorizontalPodAutoscaler"
+              },
+              "pairs": [
+                {
+                  "theirs": ".spec.scaleTargetRef.name",
+                  "ours": ".spec.targetRef.name"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.kind",
+                  "ours": ".spec.targetRef.kind"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.apiVersion",
+                  "ours": ".spec.targetRef.apiVersion"
+                }
+              ],
+              "when": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".metadata.deletionTimestamp"
+                  },
+                  {
+                    "type": "any",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.metrics[0]"
+                      },
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"Resource\",resource.name=\"cpu\",resource.target.type=\"Utilization\"]"
+                      },
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"ContainerResource\",containerResource.name=\"cpu\",containerResource.target.type=\"Utilization\"]"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "not",
+                    "of": {
+                      "type": "any",
+                      "of": [
+                        {
+                          "type": "exists",
+                          "path": ".spec.metrics[type=\"Resource\",resource.name=\"memory\",resource.target.type=\"Utilization\"]"
+                        },
+                        {
+                          "type": "exists",
+                          "path": ".spec.metrics[type=\"ContainerResource\",containerResource.name=\"memory\",containerResource.target.type=\"Utilization\"]"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "reason": "HpaConflict",
+        "message": "An HPA scales the same workload on cpu, which this VPA changes in mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: the two fight.",
+        "group": "hpa-conflict"
+      },
+      {
+        "id": "hpa-conflict-every-memory",
+        "title": "VPA without policies and HPA fight over memory",
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.updatePolicy.updateMode"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "value": ""
+                },
+                {
+                  "type": "in",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "values": [
+                    "Recreate",
+                    "Auto",
+                    "InPlaceOrRecreate",
+                    "InPlace"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".spec.resourcePolicy.containerPolicies[0]"
+            },
+            {
+              "type": "relatedBy",
+              "kind": {
+                "group": "autoscaling",
+                "kind": "HorizontalPodAutoscaler"
+              },
+              "pairs": [
+                {
+                  "theirs": ".spec.scaleTargetRef.name",
+                  "ours": ".spec.targetRef.name"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.kind",
+                  "ours": ".spec.targetRef.kind"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.apiVersion",
+                  "ours": ".spec.targetRef.apiVersion"
+                }
+              ],
+              "when": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".metadata.deletionTimestamp"
+                  },
+                  {
+                    "type": "not",
+                    "of": {
+                      "type": "any",
+                      "of": [
+                        {
+                          "type": "absent",
+                          "path": ".spec.metrics[0]"
+                        },
+                        {
+                          "type": "exists",
+                          "path": ".spec.metrics[type=\"Resource\",resource.name=\"cpu\",resource.target.type=\"Utilization\"]"
+                        },
+                        {
+                          "type": "exists",
+                          "path": ".spec.metrics[type=\"ContainerResource\",containerResource.name=\"cpu\",containerResource.target.type=\"Utilization\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "any",
+                    "of": [
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"Resource\",resource.name=\"memory\",resource.target.type=\"Utilization\"]"
+                      },
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"ContainerResource\",containerResource.name=\"memory\",containerResource.target.type=\"Utilization\"]"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "reason": "HpaConflict",
+        "message": "An HPA scales the same workload on memory, which this VPA changes in mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: the two fight.",
+        "group": "hpa-conflict"
+      },
+      {
+        "id": "hpa-conflict-cpu-memory",
+        "title": "VPA and HPA fight over cpu, memory",
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.updatePolicy.updateMode"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "value": ""
+                },
+                {
+                  "type": "in",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "values": [
+                    "Recreate",
+                    "Auto",
+                    "InPlaceOrRecreate",
+                    "InPlace"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "absent",
+                "path": ".spec.resourcePolicy.containerPolicies[0]"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources=\"cpu\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources!=\"cpu\",controlledResources!=\"memory\"]"
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources=\"memory\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources!=\"cpu\",controlledResources!=\"memory\"]"
+                }
+              ]
+            },
+            {
+              "type": "relatedBy",
+              "kind": {
+                "group": "autoscaling",
+                "kind": "HorizontalPodAutoscaler"
+              },
+              "pairs": [
+                {
+                  "theirs": ".spec.scaleTargetRef.name",
+                  "ours": ".spec.targetRef.name"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.kind",
+                  "ours": ".spec.targetRef.kind"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.apiVersion",
+                  "ours": ".spec.targetRef.apiVersion"
+                }
+              ],
+              "when": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".metadata.deletionTimestamp"
+                  },
+                  {
+                    "type": "any",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.metrics[0]"
+                      },
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"Resource\",resource.name=\"cpu\",resource.target.type=\"Utilization\"]"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".spec.metrics[type=\"Resource\",resource.name=\"memory\",resource.target.type=\"Utilization\"]"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "reason": "HpaConflict",
+        "message": "An HPA scales the same workload on cpu, memory, which this VPA changes in mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: the two fight.",
+        "group": "hpa-conflict"
+      },
+      {
+        "id": "hpa-conflict-cpu",
+        "title": "VPA and HPA fight over cpu",
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.updatePolicy.updateMode"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "value": ""
+                },
+                {
+                  "type": "in",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "values": [
+                    "Recreate",
+                    "Auto",
+                    "InPlaceOrRecreate",
+                    "InPlace"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "absent",
+                "path": ".spec.resourcePolicy.containerPolicies[0]"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources=\"cpu\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources!=\"cpu\",controlledResources!=\"memory\"]"
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources=\"memory\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources!=\"cpu\",controlledResources!=\"memory\"]"
+                }
+              ]
+            },
+            {
+              "type": "relatedBy",
+              "kind": {
+                "group": "autoscaling",
+                "kind": "HorizontalPodAutoscaler"
+              },
+              "pairs": [
+                {
+                  "theirs": ".spec.scaleTargetRef.name",
+                  "ours": ".spec.targetRef.name"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.kind",
+                  "ours": ".spec.targetRef.kind"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.apiVersion",
+                  "ours": ".spec.targetRef.apiVersion"
+                }
+              ],
+              "when": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".metadata.deletionTimestamp"
+                  },
+                  {
+                    "type": "any",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.metrics[0]"
+                      },
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"Resource\",resource.name=\"cpu\",resource.target.type=\"Utilization\"]"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "not",
+                    "of": {
+                      "type": "exists",
+                      "path": ".spec.metrics[type=\"Resource\",resource.name=\"memory\",resource.target.type=\"Utilization\"]"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "reason": "HpaConflict",
+        "message": "An HPA scales the same workload on cpu, which this VPA changes in mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: the two fight.",
+        "group": "hpa-conflict"
+      },
+      {
+        "id": "hpa-conflict-memory",
+        "title": "VPA and HPA fight over memory",
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.updatePolicy.updateMode"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "value": ""
+                },
+                {
+                  "type": "in",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "values": [
+                    "Recreate",
+                    "Auto",
+                    "InPlaceOrRecreate",
+                    "InPlace"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "absent",
+                "path": ".spec.resourcePolicy.containerPolicies[0]"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources=\"cpu\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources!=\"cpu\",controlledResources!=\"memory\"]"
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources=\"memory\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources!=\"cpu\",controlledResources!=\"memory\"]"
+                }
+              ]
+            },
+            {
+              "type": "relatedBy",
+              "kind": {
+                "group": "autoscaling",
+                "kind": "HorizontalPodAutoscaler"
+              },
+              "pairs": [
+                {
+                  "theirs": ".spec.scaleTargetRef.name",
+                  "ours": ".spec.targetRef.name"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.kind",
+                  "ours": ".spec.targetRef.kind"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.apiVersion",
+                  "ours": ".spec.targetRef.apiVersion"
+                }
+              ],
+              "when": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".metadata.deletionTimestamp"
+                  },
+                  {
+                    "type": "not",
+                    "of": {
+                      "type": "any",
+                      "of": [
+                        {
+                          "type": "absent",
+                          "path": ".spec.metrics[0]"
+                        },
+                        {
+                          "type": "exists",
+                          "path": ".spec.metrics[type=\"Resource\",resource.name=\"cpu\",resource.target.type=\"Utilization\"]"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".spec.metrics[type=\"Resource\",resource.name=\"memory\",resource.target.type=\"Utilization\"]"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "reason": "HpaConflict",
+        "message": "An HPA scales the same workload on memory, which this VPA changes in mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: the two fight.",
+        "group": "hpa-conflict"
+      },
+      {
+        "id": "hpa-conflict-cpu-only",
+        "title": "VPA of cpu only and HPA fight over cpu",
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.updatePolicy.updateMode"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "value": ""
+                },
+                {
+                  "type": "in",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "values": [
+                    "Recreate",
+                    "Auto",
+                    "InPlaceOrRecreate",
+                    "InPlace"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "absent",
+                "path": ".spec.resourcePolicy.containerPolicies[0]"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources=\"cpu\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources!=\"cpu\",controlledResources!=\"memory\"]"
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources=\"memory\"]"
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources!=\"cpu\",controlledResources!=\"memory\"]"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "relatedBy",
+              "kind": {
+                "group": "autoscaling",
+                "kind": "HorizontalPodAutoscaler"
+              },
+              "pairs": [
+                {
+                  "theirs": ".spec.scaleTargetRef.name",
+                  "ours": ".spec.targetRef.name"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.kind",
+                  "ours": ".spec.targetRef.kind"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.apiVersion",
+                  "ours": ".spec.targetRef.apiVersion"
+                }
+              ],
+              "when": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".metadata.deletionTimestamp"
+                  },
+                  {
+                    "type": "any",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.metrics[0]"
+                      },
+                      {
+                        "type": "exists",
+                        "path": ".spec.metrics[type=\"Resource\",resource.name=\"cpu\",resource.target.type=\"Utilization\"]"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "reason": "HpaConflict",
+        "message": "An HPA scales the same workload on cpu, which this VPA changes in mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: the two fight.",
+        "group": "hpa-conflict"
+      },
+      {
+        "id": "hpa-conflict-memory-only",
+        "title": "VPA of memory only and HPA fight over memory",
+        "kind": {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "absent",
+              "path": ".metadata.deletionTimestamp"
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.updatePolicy.updateMode"
+                },
+                {
+                  "type": "equals",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "value": ""
+                },
+                {
+                  "type": "in",
+                  "path": ".spec.updatePolicy.updateMode",
+                  "values": [
+                    "Recreate",
+                    "Auto",
+                    "InPlaceOrRecreate",
+                    "InPlace"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "absent",
+                "path": ".spec.resourcePolicy.containerPolicies[0]"
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources=\"cpu\"]"
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources!=\"cpu\",controlledResources!=\"memory\"]"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources=\"memory\"]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.resourcePolicy.containerPolicies[mode!=\"Off\",controlledResources!=\"cpu\",controlledResources!=\"memory\"]"
+                }
+              ]
+            },
+            {
+              "type": "relatedBy",
+              "kind": {
+                "group": "autoscaling",
+                "kind": "HorizontalPodAutoscaler"
+              },
+              "pairs": [
+                {
+                  "theirs": ".spec.scaleTargetRef.name",
+                  "ours": ".spec.targetRef.name"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.kind",
+                  "ours": ".spec.targetRef.kind"
+                },
+                {
+                  "theirs": ".spec.scaleTargetRef.apiVersion",
+                  "ours": ".spec.targetRef.apiVersion"
+                }
+              ],
+              "when": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "absent",
+                    "path": ".metadata.deletionTimestamp"
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".spec.metrics[type=\"Resource\",resource.name=\"memory\",resource.target.type=\"Utilization\"]"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "reason": "HpaConflict",
+        "message": "An HPA scales the same workload on memory, which this VPA changes in mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: the two fight.",
+        "group": "hpa-conflict"
+      }
+    ]
+  },
+  "translations": {
+    "de": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "VerticalPodAutoscaler mit Zustand, Update-Modus und Empfehlung gegenüber der Vorlage des Ziels samt dem, was ein neuer Pod bekäme, ihre Checkpoints und Komponenten sowie die VPAs jeder Workload; Probleme von VPAs, die der Recommender nicht verwenden kann, denen kein Pod entspricht oder die gegen einen HPA arbeiten. Nur lesend.",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Checkpoints",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.one": "{{count}} Objekt braucht Aufmerksamkeit",
+      "sectionBadges.vpa.label.other": "{{count}} Objekte brauchen Aufmerksamkeit",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "Ziel",
+      "columns.vpa-mode.title": "Modus",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "Status",
+      "columns.vpa-status.cases.0.text": "Nicht unterstützt",
+      "columns.vpa-status.cases.1.text": "Geringe Sicherheit",
+      "columns.vpa-status.cases.2.text": "Lädt Verlauf",
+      "columns.vpa-status.cases.3.text": "Empfiehlt",
+      "columns.vpa-status.cases.4.text": "Empfiehlt",
+      "columns.vpa-status.cases.5.text": "Keine Pods gefunden",
+      "columns.vpa-status.cases.6.text": "Keine Empfehlung",
+      "columns.vpa-status.cases.7.text": "Wartet",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "Speicher",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "Container",
+      "columns.cp-samples.title": "Stichproben",
+      "columns.cp-last-update.title": "Zuletzt gespeichert",
+      "problems.config-unsupported.title": "VPA, den der Recommender nicht verwenden kann",
+      "problems.no-pods-matched.title": "VPA, dem kein Pod entspricht",
+      "problems.no-pods-matched.message": "Kein Pod passt zu ihm, daher gibt es keine Empfehlung.",
+      "problems.hpa-conflict-every-cpu-memory.title": "VPA ohne Richtlinien und HPA arbeiten bei cpu, memory gegeneinander",
+      "problems.hpa-conflict-every-cpu-memory.message": "Ein HPA skaliert dieselbe Workload nach cpu, memory, die dieser VPA im Modus {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} ändert: Die beiden arbeiten gegeneinander.",
+      "problems.hpa-conflict-every-cpu.title": "VPA ohne Richtlinien und HPA arbeiten bei cpu gegeneinander",
+      "problems.hpa-conflict-every-cpu.message": "Ein HPA skaliert dieselbe Workload nach cpu, die dieser VPA im Modus {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} ändert: Die beiden arbeiten gegeneinander.",
+      "problems.hpa-conflict-every-memory.title": "VPA ohne Richtlinien und HPA arbeiten bei memory gegeneinander",
+      "problems.hpa-conflict-every-memory.message": "Ein HPA skaliert dieselbe Workload nach memory, die dieser VPA im Modus {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} ändert: Die beiden arbeiten gegeneinander.",
+      "problems.hpa-conflict-cpu-memory.title": "VPA und HPA arbeiten bei cpu, memory gegeneinander",
+      "problems.hpa-conflict-cpu-memory.message": "Ein HPA skaliert dieselbe Workload nach cpu, memory, die dieser VPA im Modus {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} ändert: Die beiden arbeiten gegeneinander.",
+      "problems.hpa-conflict-cpu.title": "VPA und HPA arbeiten bei cpu gegeneinander",
+      "problems.hpa-conflict-cpu.message": "Ein HPA skaliert dieselbe Workload nach cpu, die dieser VPA im Modus {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} ändert: Die beiden arbeiten gegeneinander.",
+      "problems.hpa-conflict-memory.title": "VPA und HPA arbeiten bei memory gegeneinander",
+      "problems.hpa-conflict-memory.message": "Ein HPA skaliert dieselbe Workload nach memory, die dieser VPA im Modus {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} ändert: Die beiden arbeiten gegeneinander.",
+      "problems.hpa-conflict-cpu-only.title": "VPA nur für cpu und HPA arbeiten bei cpu gegeneinander",
+      "problems.hpa-conflict-cpu-only.message": "Ein HPA skaliert dieselbe Workload nach cpu, die dieser VPA im Modus {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} ändert: Die beiden arbeiten gegeneinander.",
+      "problems.hpa-conflict-memory-only.title": "VPA nur für memory und HPA arbeiten bei memory gegeneinander",
+      "problems.hpa-conflict-memory-only.message": "Ein HPA skaliert dieselbe Workload nach memory, die dieser VPA im Modus {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} ändert: Die beiden arbeiten gegeneinander."
+    },
+    "es": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "VerticalPodAutoscalers con su estado, modo de actualización y recomendación frente a la plantilla del objetivo con lo que obtendría un Pod nuevo, sus checkpoints y componentes, y los VPA de cada carga de trabajo; problemas de VPA que el recommender no puede usar, sin ningún Pod que coincida o que chocan con un HPA. Solo lectura.",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Checkpoints",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.one": "{{count}} objeto requiere atención",
+      "sectionBadges.vpa.label.many": "{{count}} de objetos requieren atención",
+      "sectionBadges.vpa.label.other": "{{count}} objetos requieren atención",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "Destino",
+      "columns.vpa-mode.title": "Modo",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "Estado",
+      "columns.vpa-status.cases.0.text": "No compatible",
+      "columns.vpa-status.cases.1.text": "Confianza baja",
+      "columns.vpa-status.cases.2.text": "Cargando historial",
+      "columns.vpa-status.cases.3.text": "Recomendando",
+      "columns.vpa-status.cases.4.text": "Recomendando",
+      "columns.vpa-status.cases.5.text": "Ningún pod coincide",
+      "columns.vpa-status.cases.6.text": "Sin recomendación",
+      "columns.vpa-status.cases.7.text": "En espera",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "Memoria",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "Contenedor",
+      "columns.cp-samples.title": "Muestras",
+      "columns.cp-last-update.title": "Último guardado",
+      "problems.config-unsupported.title": "VPA que el recommender no puede usar",
+      "problems.no-pods-matched.title": "VPA sin ningún Pod que coincida",
+      "problems.no-pods-matched.message": "Ningún Pod coincide con él, así que no hay recomendación.",
+      "problems.hpa-conflict-every-cpu-memory.title": "VPA sin políticas y HPA chocan por cpu, memory",
+      "problems.hpa-conflict-every-cpu-memory.message": "Un HPA escala la misma carga de trabajo según cpu, memory, que este VPA cambia en modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: ambos se contradicen.",
+      "problems.hpa-conflict-every-cpu.title": "VPA sin políticas y HPA chocan por cpu",
+      "problems.hpa-conflict-every-cpu.message": "Un HPA escala la misma carga de trabajo según cpu, que este VPA cambia en modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: ambos se contradicen.",
+      "problems.hpa-conflict-every-memory.title": "VPA sin políticas y HPA chocan por memory",
+      "problems.hpa-conflict-every-memory.message": "Un HPA escala la misma carga de trabajo según memory, que este VPA cambia en modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: ambos se contradicen.",
+      "problems.hpa-conflict-cpu-memory.title": "VPA y HPA chocan por cpu, memory",
+      "problems.hpa-conflict-cpu-memory.message": "Un HPA escala la misma carga de trabajo según cpu, memory, que este VPA cambia en modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: ambos se contradicen.",
+      "problems.hpa-conflict-cpu.title": "VPA y HPA chocan por cpu",
+      "problems.hpa-conflict-cpu.message": "Un HPA escala la misma carga de trabajo según cpu, que este VPA cambia en modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: ambos se contradicen.",
+      "problems.hpa-conflict-memory.title": "VPA y HPA chocan por memory",
+      "problems.hpa-conflict-memory.message": "Un HPA escala la misma carga de trabajo según memory, que este VPA cambia en modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: ambos se contradicen.",
+      "problems.hpa-conflict-cpu-only.title": "VPA solo de cpu y HPA chocan por cpu",
+      "problems.hpa-conflict-cpu-only.message": "Un HPA escala la misma carga de trabajo según cpu, que este VPA cambia en modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: ambos se contradicen.",
+      "problems.hpa-conflict-memory-only.title": "VPA solo de memory y HPA chocan por memory",
+      "problems.hpa-conflict-memory-only.message": "Un HPA escala la misma carga de trabajo según memory, que este VPA cambia en modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: ambos se contradicen."
+    },
+    "fr": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "Les VerticalPodAutoscalers avec leur état, leur mode de mise à jour et leur recommandation face au modèle de la cible, avec ce qu'obtiendrait un nouveau Pod, leurs checkpoints et composants, et les VPA de chaque charge de travail ; problèmes des VPA que le recommender ne peut pas utiliser, auxquels aucun Pod ne correspond ou qui contrarient un HPA. Lecture seule.",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Checkpoints",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.one": "{{count}} objet demande votre attention",
+      "sectionBadges.vpa.label.many": "{{count}} d'objets demandent votre attention",
+      "sectionBadges.vpa.label.other": "{{count}} objets demandent votre attention",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "Cible",
+      "columns.vpa-mode.title": "Mode",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "Statut",
+      "columns.vpa-status.cases.0.text": "Non pris en charge",
+      "columns.vpa-status.cases.1.text": "Confiance faible",
+      "columns.vpa-status.cases.2.text": "Chargement de l'historique",
+      "columns.vpa-status.cases.3.text": "Recommande",
+      "columns.vpa-status.cases.4.text": "Recommande",
+      "columns.vpa-status.cases.5.text": "Aucun pod trouvé",
+      "columns.vpa-status.cases.6.text": "Aucune recommandation",
+      "columns.vpa-status.cases.7.text": "En attente",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "Mémoire",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "Conteneur",
+      "columns.cp-samples.title": "Échantillons",
+      "columns.cp-last-update.title": "Dernier enregistrement",
+      "problems.config-unsupported.title": "VPA que le recommender ne peut pas utiliser",
+      "problems.no-pods-matched.title": "VPA auquel aucun Pod ne correspond",
+      "problems.no-pods-matched.message": "Aucun Pod ne lui correspond : il n'y a donc pas de recommandation.",
+      "problems.hpa-conflict-every-cpu-memory.title": "VPA sans politiques et HPA se contrarient sur cpu, memory",
+      "problems.hpa-conflict-every-cpu-memory.message": "Un HPA met à l'échelle la même charge de travail selon cpu, memory, que ce VPA modifie en mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} : les deux se contrarient.",
+      "problems.hpa-conflict-every-cpu.title": "VPA sans politiques et HPA se contrarient sur cpu",
+      "problems.hpa-conflict-every-cpu.message": "Un HPA met à l'échelle la même charge de travail selon cpu, que ce VPA modifie en mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} : les deux se contrarient.",
+      "problems.hpa-conflict-every-memory.title": "VPA sans politiques et HPA se contrarient sur memory",
+      "problems.hpa-conflict-every-memory.message": "Un HPA met à l'échelle la même charge de travail selon memory, que ce VPA modifie en mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} : les deux se contrarient.",
+      "problems.hpa-conflict-cpu-memory.title": "VPA et HPA se contrarient sur cpu, memory",
+      "problems.hpa-conflict-cpu-memory.message": "Un HPA met à l'échelle la même charge de travail selon cpu, memory, que ce VPA modifie en mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} : les deux se contrarient.",
+      "problems.hpa-conflict-cpu.title": "VPA et HPA se contrarient sur cpu",
+      "problems.hpa-conflict-cpu.message": "Un HPA met à l'échelle la même charge de travail selon cpu, que ce VPA modifie en mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} : les deux se contrarient.",
+      "problems.hpa-conflict-memory.title": "VPA et HPA se contrarient sur memory",
+      "problems.hpa-conflict-memory.message": "Un HPA met à l'échelle la même charge de travail selon memory, que ce VPA modifie en mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} : les deux se contrarient.",
+      "problems.hpa-conflict-cpu-only.title": "VPA de cpu seul et HPA se contrarient sur cpu",
+      "problems.hpa-conflict-cpu-only.message": "Un HPA met à l'échelle la même charge de travail selon cpu, que ce VPA modifie en mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} : les deux se contrarient.",
+      "problems.hpa-conflict-memory-only.title": "VPA de memory seul et HPA se contrarient sur memory",
+      "problems.hpa-conflict-memory-only.message": "Un HPA met à l'échelle la même charge de travail selon memory, que ce VPA modifie en mode {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} : les deux se contrarient."
+    },
+    "it": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "I VerticalPodAutoscaler con stato, modalità di aggiornamento e raccomandazione rispetto al modello del target con ciò che otterrebbe un nuovo Pod, i loro checkpoint e componenti, e i VPA di ogni carico di lavoro; problemi dei VPA che il recommender non può usare, a cui non corrisponde alcun Pod o in conflitto con un HPA. Sola lettura.",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Checkpoints",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.one": "{{count}} oggetto richiede attenzione",
+      "sectionBadges.vpa.label.many": "{{count}} di oggetti richiedono attenzione",
+      "sectionBadges.vpa.label.other": "{{count}} oggetti richiedono attenzione",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "Destinazione",
+      "columns.vpa-mode.title": "Modalità",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "Stato",
+      "columns.vpa-status.cases.0.text": "Non supportato",
+      "columns.vpa-status.cases.1.text": "Affidabilità bassa",
+      "columns.vpa-status.cases.2.text": "Caricamento cronologia",
+      "columns.vpa-status.cases.3.text": "Raccomanda",
+      "columns.vpa-status.cases.4.text": "Raccomanda",
+      "columns.vpa-status.cases.5.text": "Nessun pod corrisponde",
+      "columns.vpa-status.cases.6.text": "Nessuna raccomandazione",
+      "columns.vpa-status.cases.7.text": "In attesa",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "Memoria",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "Container",
+      "columns.cp-samples.title": "Campioni",
+      "columns.cp-last-update.title": "Ultimo salvataggio",
+      "problems.config-unsupported.title": "VPA che il recommender non può usare",
+      "problems.no-pods-matched.title": "VPA a cui non corrisponde alcun Pod",
+      "problems.no-pods-matched.message": "Nessun Pod corrisponde, quindi non c'è alcuna raccomandazione.",
+      "problems.hpa-conflict-every-cpu-memory.title": "VPA senza policy e HPA in conflitto su cpu, memory",
+      "problems.hpa-conflict-every-cpu-memory.message": "Un HPA scala lo stesso carico di lavoro in base a cpu, memory, che questo VPA modifica in modalità {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: i due entrano in conflitto.",
+      "problems.hpa-conflict-every-cpu.title": "VPA senza policy e HPA in conflitto su cpu",
+      "problems.hpa-conflict-every-cpu.message": "Un HPA scala lo stesso carico di lavoro in base a cpu, che questo VPA modifica in modalità {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: i due entrano in conflitto.",
+      "problems.hpa-conflict-every-memory.title": "VPA senza policy e HPA in conflitto su memory",
+      "problems.hpa-conflict-every-memory.message": "Un HPA scala lo stesso carico di lavoro in base a memory, che questo VPA modifica in modalità {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: i due entrano in conflitto.",
+      "problems.hpa-conflict-cpu-memory.title": "VPA e HPA in conflitto su cpu, memory",
+      "problems.hpa-conflict-cpu-memory.message": "Un HPA scala lo stesso carico di lavoro in base a cpu, memory, che questo VPA modifica in modalità {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: i due entrano in conflitto.",
+      "problems.hpa-conflict-cpu.title": "VPA e HPA in conflitto su cpu",
+      "problems.hpa-conflict-cpu.message": "Un HPA scala lo stesso carico di lavoro in base a cpu, che questo VPA modifica in modalità {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: i due entrano in conflitto.",
+      "problems.hpa-conflict-memory.title": "VPA e HPA in conflitto su memory",
+      "problems.hpa-conflict-memory.message": "Un HPA scala lo stesso carico di lavoro in base a memory, che questo VPA modifica in modalità {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: i due entrano in conflitto.",
+      "problems.hpa-conflict-cpu-only.title": "VPA solo su cpu e HPA in conflitto su cpu",
+      "problems.hpa-conflict-cpu-only.message": "Un HPA scala lo stesso carico di lavoro in base a cpu, che questo VPA modifica in modalità {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: i due entrano in conflitto.",
+      "problems.hpa-conflict-memory-only.title": "VPA solo su memory e HPA in conflitto su memory",
+      "problems.hpa-conflict-memory-only.message": "Un HPA scala lo stesso carico di lavoro in base a memory, che questo VPA modifica in modalità {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: i due entrano in conflitto."
+    },
+    "ja": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "VerticalPodAutoscaler の状態、更新モード、ターゲットのテンプレートに対する推奨値と新しい Pod が受け取る値、チェックポイントとコンポーネント、各ワークロードの VPA。recommender が使えない VPA、どの Pod にも一致しない VPA、HPA と競合する VPA の問題。読み取り専用。",
+      "kinds.0.title": "VerticalPodAutoscaler",
+      "kinds.1.title": "Checkpoint",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.other": "対応が必要なオブジェクトが {{count}} 件あります",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "対象",
+      "columns.vpa-mode.title": "モード",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "ステータス",
+      "columns.vpa-status.cases.0.text": "非対応",
+      "columns.vpa-status.cases.1.text": "信頼度が低い",
+      "columns.vpa-status.cases.2.text": "履歴を読み込み中",
+      "columns.vpa-status.cases.3.text": "推奨中",
+      "columns.vpa-status.cases.4.text": "推奨中",
+      "columns.vpa-status.cases.5.text": "一致する Pod なし",
+      "columns.vpa-status.cases.6.text": "推奨なし",
+      "columns.vpa-status.cases.7.text": "待機中",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "メモリ",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "コンテナー",
+      "columns.cp-samples.title": "サンプル",
+      "columns.cp-last-update.title": "最終保存",
+      "problems.config-unsupported.title": "recommender が使えない VPA",
+      "problems.no-pods-matched.title": "どの Pod にも一致しない VPA",
+      "problems.no-pods-matched.message": "一致する Pod がないため、推奨値がありません。",
+      "problems.hpa-conflict-every-cpu-memory.title": "ポリシーのない VPA と HPA が cpu、memory で競合",
+      "problems.hpa-conflict-every-cpu-memory.message": "HPA が同じワークロードを cpu、memory でスケールしていますが、この VPA は {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} モードでそれを変更します。両者が競合します。",
+      "problems.hpa-conflict-every-cpu.title": "ポリシーのない VPA と HPA が cpu で競合",
+      "problems.hpa-conflict-every-cpu.message": "HPA が同じワークロードを cpu でスケールしていますが、この VPA は {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} モードでそれを変更します。両者が競合します。",
+      "problems.hpa-conflict-every-memory.title": "ポリシーのない VPA と HPA が memory で競合",
+      "problems.hpa-conflict-every-memory.message": "HPA が同じワークロードを memory でスケールしていますが、この VPA は {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} モードでそれを変更します。両者が競合します。",
+      "problems.hpa-conflict-cpu-memory.title": "VPA と HPA が cpu、memory で競合",
+      "problems.hpa-conflict-cpu-memory.message": "HPA が同じワークロードを cpu、memory でスケールしていますが、この VPA は {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} モードでそれを変更します。両者が競合します。",
+      "problems.hpa-conflict-cpu.title": "VPA と HPA が cpu で競合",
+      "problems.hpa-conflict-cpu.message": "HPA が同じワークロードを cpu でスケールしていますが、この VPA は {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} モードでそれを変更します。両者が競合します。",
+      "problems.hpa-conflict-memory.title": "VPA と HPA が memory で競合",
+      "problems.hpa-conflict-memory.message": "HPA が同じワークロードを memory でスケールしていますが、この VPA は {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} モードでそれを変更します。両者が競合します。",
+      "problems.hpa-conflict-cpu-only.title": "cpu のみの VPA と HPA が cpu で競合",
+      "problems.hpa-conflict-cpu-only.message": "HPA が同じワークロードを cpu でスケールしていますが、この VPA は {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} モードでそれを変更します。両者が競合します。",
+      "problems.hpa-conflict-memory-only.title": "memory のみの VPA と HPA が memory で競合",
+      "problems.hpa-conflict-memory-only.message": "HPA が同じワークロードを memory でスケールしていますが、この VPA は {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} モードでそれを変更します。両者が競合します。"
+    },
+    "ko": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "VerticalPodAutoscaler의 상태, 업데이트 모드, 대상 템플릿 대비 권장 값과 새 Pod가 받을 값, 체크포인트와 구성 요소, 각 워크로드의 VPA. recommender가 사용할 수 없거나, 어떤 Pod와도 일치하지 않거나, HPA와 충돌하는 VPA의 문제. 읽기 전용.",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Checkpoints",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.other": "주의가 필요한 개체 {{count}}개",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "대상",
+      "columns.vpa-mode.title": "모드",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "상태",
+      "columns.vpa-status.cases.0.text": "지원되지 않음",
+      "columns.vpa-status.cases.1.text": "신뢰도 낮음",
+      "columns.vpa-status.cases.2.text": "기록 불러오는 중",
+      "columns.vpa-status.cases.3.text": "권장 중",
+      "columns.vpa-status.cases.4.text": "권장 중",
+      "columns.vpa-status.cases.5.text": "일치하는 Pod 없음",
+      "columns.vpa-status.cases.6.text": "권장 없음",
+      "columns.vpa-status.cases.7.text": "대기 중",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "메모리",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "컨테이너",
+      "columns.cp-samples.title": "샘플",
+      "columns.cp-last-update.title": "마지막 저장",
+      "problems.config-unsupported.title": "recommender가 사용할 수 없는 VPA",
+      "problems.no-pods-matched.title": "어떤 Pod와도 일치하지 않는 VPA",
+      "problems.no-pods-matched.message": "일치하는 Pod가 없어 권장 값이 없습니다.",
+      "problems.hpa-conflict-every-cpu-memory.title": "정책이 없는 VPA와 HPA가 cpu, memory에서 충돌",
+      "problems.hpa-conflict-every-cpu-memory.message": "HPA가 같은 워크로드를 cpu, memory 기준으로 스케일 조정하는데, 이 VPA가 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 모드에서 이를 변경합니다. 둘이 서로 충돌합니다.",
+      "problems.hpa-conflict-every-cpu.title": "정책이 없는 VPA와 HPA가 cpu에서 충돌",
+      "problems.hpa-conflict-every-cpu.message": "HPA가 같은 워크로드를 cpu 기준으로 스케일 조정하는데, 이 VPA가 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 모드에서 이를 변경합니다. 둘이 서로 충돌합니다.",
+      "problems.hpa-conflict-every-memory.title": "정책이 없는 VPA와 HPA가 memory에서 충돌",
+      "problems.hpa-conflict-every-memory.message": "HPA가 같은 워크로드를 memory 기준으로 스케일 조정하는데, 이 VPA가 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 모드에서 이를 변경합니다. 둘이 서로 충돌합니다.",
+      "problems.hpa-conflict-cpu-memory.title": "VPA와 HPA가 cpu, memory에서 충돌",
+      "problems.hpa-conflict-cpu-memory.message": "HPA가 같은 워크로드를 cpu, memory 기준으로 스케일 조정하는데, 이 VPA가 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 모드에서 이를 변경합니다. 둘이 서로 충돌합니다.",
+      "problems.hpa-conflict-cpu.title": "VPA와 HPA가 cpu에서 충돌",
+      "problems.hpa-conflict-cpu.message": "HPA가 같은 워크로드를 cpu 기준으로 스케일 조정하는데, 이 VPA가 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 모드에서 이를 변경합니다. 둘이 서로 충돌합니다.",
+      "problems.hpa-conflict-memory.title": "VPA와 HPA가 memory에서 충돌",
+      "problems.hpa-conflict-memory.message": "HPA가 같은 워크로드를 memory 기준으로 스케일 조정하는데, 이 VPA가 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 모드에서 이를 변경합니다. 둘이 서로 충돌합니다.",
+      "problems.hpa-conflict-cpu-only.title": "cpu 전용 VPA와 HPA가 cpu에서 충돌",
+      "problems.hpa-conflict-cpu-only.message": "HPA가 같은 워크로드를 cpu 기준으로 스케일 조정하는데, 이 VPA가 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 모드에서 이를 변경합니다. 둘이 서로 충돌합니다.",
+      "problems.hpa-conflict-memory-only.title": "memory 전용 VPA와 HPA가 memory에서 충돌",
+      "problems.hpa-conflict-memory-only.message": "HPA가 같은 워크로드를 memory 기준으로 스케일 조정하는데, 이 VPA가 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 모드에서 이를 변경합니다. 둘이 서로 충돌합니다."
+    },
+    "pl": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "VerticalPodAutoscalery z ich stanem, trybem aktualizacji i rekomendacją wobec szablonu celu wraz z tym, co dostałby nowy Pod, ich checkpointy i komponenty oraz VPA każdego obciążenia; problemy VPA, których recommender nie może użyć, do których nie pasuje żaden Pod lub które działają przeciwko HPA. Tylko odczyt.",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Punkty kontrolne",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.one": "{{count}} obiekt wymaga uwagi",
+      "sectionBadges.vpa.label.few": "{{count}} obiekty wymagają uwagi",
+      "sectionBadges.vpa.label.many": "{{count}} obiektów wymaga uwagi",
+      "sectionBadges.vpa.label.other": "{{count}} obiektu wymaga uwagi",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "Cel",
+      "columns.vpa-mode.title": "Tryb",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "Status",
+      "columns.vpa-status.cases.0.text": "Nieobsługiwane",
+      "columns.vpa-status.cases.1.text": "Niska pewność",
+      "columns.vpa-status.cases.2.text": "Wczytywanie historii",
+      "columns.vpa-status.cases.3.text": "Rekomenduje",
+      "columns.vpa-status.cases.4.text": "Rekomenduje",
+      "columns.vpa-status.cases.5.text": "Brak pasujących podów",
+      "columns.vpa-status.cases.6.text": "Brak rekomendacji",
+      "columns.vpa-status.cases.7.text": "Oczekiwanie",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "Pamięć",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "Kontener",
+      "columns.cp-samples.title": "Próbki",
+      "columns.cp-last-update.title": "Zapisano",
+      "problems.config-unsupported.title": "VPA, którego recommender nie może użyć",
+      "problems.no-pods-matched.title": "VPA, do którego nie pasuje żaden Pod",
+      "problems.no-pods-matched.message": "Żaden Pod do niego nie pasuje, więc nie ma rekomendacji.",
+      "problems.hpa-conflict-every-cpu-memory.title": "VPA bez zasad i HPA działają przeciwko sobie przy cpu, memory",
+      "problems.hpa-conflict-every-cpu-memory.message": "HPA skaluje to samo obciążenie według cpu, memory, które ten VPA zmienia w trybie {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: oba działają przeciwko sobie.",
+      "problems.hpa-conflict-every-cpu.title": "VPA bez zasad i HPA działają przeciwko sobie przy cpu",
+      "problems.hpa-conflict-every-cpu.message": "HPA skaluje to samo obciążenie według cpu, które ten VPA zmienia w trybie {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: oba działają przeciwko sobie.",
+      "problems.hpa-conflict-every-memory.title": "VPA bez zasad i HPA działają przeciwko sobie przy memory",
+      "problems.hpa-conflict-every-memory.message": "HPA skaluje to samo obciążenie według memory, które ten VPA zmienia w trybie {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: oba działają przeciwko sobie.",
+      "problems.hpa-conflict-cpu-memory.title": "VPA i HPA działają przeciwko sobie przy cpu, memory",
+      "problems.hpa-conflict-cpu-memory.message": "HPA skaluje to samo obciążenie według cpu, memory, które ten VPA zmienia w trybie {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: oba działają przeciwko sobie.",
+      "problems.hpa-conflict-cpu.title": "VPA i HPA działają przeciwko sobie przy cpu",
+      "problems.hpa-conflict-cpu.message": "HPA skaluje to samo obciążenie według cpu, które ten VPA zmienia w trybie {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: oba działają przeciwko sobie.",
+      "problems.hpa-conflict-memory.title": "VPA i HPA działają przeciwko sobie przy memory",
+      "problems.hpa-conflict-memory.message": "HPA skaluje to samo obciążenie według memory, które ten VPA zmienia w trybie {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: oba działają przeciwko sobie.",
+      "problems.hpa-conflict-cpu-only.title": "VPA tylko dla cpu i HPA działają przeciwko sobie przy cpu",
+      "problems.hpa-conflict-cpu-only.message": "HPA skaluje to samo obciążenie według cpu, które ten VPA zmienia w trybie {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: oba działają przeciwko sobie.",
+      "problems.hpa-conflict-memory-only.title": "VPA tylko dla memory i HPA działają przeciwko sobie przy memory",
+      "problems.hpa-conflict-memory-only.message": "HPA skaluje to samo obciążenie według memory, które ten VPA zmienia w trybie {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: oba działają przeciwko sobie."
+    },
+    "pt-BR": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "VerticalPodAutoscalers com seu estado, modo de atualização e recomendação em relação ao modelo do alvo, com o que um novo Pod receberia, seus checkpoints e componentes, e os VPAs de cada carga de trabalho; problemas de VPAs que o recommender não consegue usar, sem nenhum Pod correspondente ou em conflito com um HPA. Somente leitura.",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Checkpoints",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.one": "{{count}} objeto precisa de atenção",
+      "sectionBadges.vpa.label.many": "{{count}} de objetos precisam de atenção",
+      "sectionBadges.vpa.label.other": "{{count}} objetos precisam de atenção",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "Alvo",
+      "columns.vpa-mode.title": "Modo",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "Status",
+      "columns.vpa-status.cases.0.text": "Sem suporte",
+      "columns.vpa-status.cases.1.text": "Baixa confiança",
+      "columns.vpa-status.cases.2.text": "Carregando histórico",
+      "columns.vpa-status.cases.3.text": "Recomendando",
+      "columns.vpa-status.cases.4.text": "Recomendando",
+      "columns.vpa-status.cases.5.text": "Nenhum pod corresponde",
+      "columns.vpa-status.cases.6.text": "Sem recomendação",
+      "columns.vpa-status.cases.7.text": "Aguardando",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "Memória",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "Contêiner",
+      "columns.cp-samples.title": "Amostras",
+      "columns.cp-last-update.title": "Último salvamento",
+      "problems.config-unsupported.title": "VPA que o recommender não consegue usar",
+      "problems.no-pods-matched.title": "VPA sem nenhum Pod correspondente",
+      "problems.no-pods-matched.message": "Nenhum Pod corresponde a ele, então não há recomendação.",
+      "problems.hpa-conflict-every-cpu-memory.title": "VPA sem políticas e HPA em conflito por cpu, memory",
+      "problems.hpa-conflict-every-cpu-memory.message": "Um HPA escala a mesma carga de trabalho por cpu, memory, que este VPA altera no modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: os dois entram em conflito.",
+      "problems.hpa-conflict-every-cpu.title": "VPA sem políticas e HPA em conflito por cpu",
+      "problems.hpa-conflict-every-cpu.message": "Um HPA escala a mesma carga de trabalho por cpu, que este VPA altera no modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: os dois entram em conflito.",
+      "problems.hpa-conflict-every-memory.title": "VPA sem políticas e HPA em conflito por memory",
+      "problems.hpa-conflict-every-memory.message": "Um HPA escala a mesma carga de trabalho por memory, que este VPA altera no modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: os dois entram em conflito.",
+      "problems.hpa-conflict-cpu-memory.title": "VPA e HPA em conflito por cpu, memory",
+      "problems.hpa-conflict-cpu-memory.message": "Um HPA escala a mesma carga de trabalho por cpu, memory, que este VPA altera no modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: os dois entram em conflito.",
+      "problems.hpa-conflict-cpu.title": "VPA e HPA em conflito por cpu",
+      "problems.hpa-conflict-cpu.message": "Um HPA escala a mesma carga de trabalho por cpu, que este VPA altera no modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: os dois entram em conflito.",
+      "problems.hpa-conflict-memory.title": "VPA e HPA em conflito por memory",
+      "problems.hpa-conflict-memory.message": "Um HPA escala a mesma carga de trabalho por memory, que este VPA altera no modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: os dois entram em conflito.",
+      "problems.hpa-conflict-cpu-only.title": "VPA só de cpu e HPA em conflito por cpu",
+      "problems.hpa-conflict-cpu-only.message": "Um HPA escala a mesma carga de trabalho por cpu, que este VPA altera no modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: os dois entram em conflito.",
+      "problems.hpa-conflict-memory-only.title": "VPA só de memory e HPA em conflito por memory",
+      "problems.hpa-conflict-memory-only.message": "Um HPA escala a mesma carga de trabalho por memory, que este VPA altera no modo {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: os dois entram em conflito."
+    },
+    "ru": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "VerticalPodAutoscaler с состоянием, режимом обновления и рекомендацией в сравнении с шаблоном цели и тем, что получит новый Pod, их контрольные точки и компоненты, а также VPA каждой рабочей нагрузки; проблемы VPA, которые recommender не может использовать, которым не соответствует ни один Pod или которые мешают HPA. Только чтение.",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Контрольные точки",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.one": "{{count}} объект требует внимания",
+      "sectionBadges.vpa.label.few": "{{count}} объекта требуют внимания",
+      "sectionBadges.vpa.label.many": "{{count}} объектов требуют внимания",
+      "sectionBadges.vpa.label.other": "{{count}} объекта требуют внимания",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "Цель",
+      "columns.vpa-mode.title": "Режим",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "Статус",
+      "columns.vpa-status.cases.0.text": "Не поддерживается",
+      "columns.vpa-status.cases.1.text": "Низкая уверенность",
+      "columns.vpa-status.cases.2.text": "Загрузка истории",
+      "columns.vpa-status.cases.3.text": "Рекомендует",
+      "columns.vpa-status.cases.4.text": "Рекомендует",
+      "columns.vpa-status.cases.5.text": "Нет подходящих Pod",
+      "columns.vpa-status.cases.6.text": "Нет рекомендации",
+      "columns.vpa-status.cases.7.text": "Ожидание",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "Память",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "Контейнер",
+      "columns.cp-samples.title": "Замеры",
+      "columns.cp-last-update.title": "Сохранено",
+      "problems.config-unsupported.title": "VPA, который recommender не может использовать",
+      "problems.no-pods-matched.title": "VPA без соответствующих Pod",
+      "problems.no-pods-matched.message": "Ни один Pod ему не соответствует, поэтому рекомендации нет.",
+      "problems.hpa-conflict-every-cpu-memory.title": "VPA без политик и HPA мешают друг другу по cpu, memory",
+      "problems.hpa-conflict-every-cpu-memory.message": "HPA масштабирует ту же рабочую нагрузку по cpu, memory, которые этот VPA меняет в режиме {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: они мешают друг другу.",
+      "problems.hpa-conflict-every-cpu.title": "VPA без политик и HPA мешают друг другу по cpu",
+      "problems.hpa-conflict-every-cpu.message": "HPA масштабирует ту же рабочую нагрузку по cpu, которые этот VPA меняет в режиме {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: они мешают друг другу.",
+      "problems.hpa-conflict-every-memory.title": "VPA без политик и HPA мешают друг другу по memory",
+      "problems.hpa-conflict-every-memory.message": "HPA масштабирует ту же рабочую нагрузку по memory, которые этот VPA меняет в режиме {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: они мешают друг другу.",
+      "problems.hpa-conflict-cpu-memory.title": "VPA и HPA мешают друг другу по cpu, memory",
+      "problems.hpa-conflict-cpu-memory.message": "HPA масштабирует ту же рабочую нагрузку по cpu, memory, которые этот VPA меняет в режиме {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: они мешают друг другу.",
+      "problems.hpa-conflict-cpu.title": "VPA и HPA мешают друг другу по cpu",
+      "problems.hpa-conflict-cpu.message": "HPA масштабирует ту же рабочую нагрузку по cpu, которые этот VPA меняет в режиме {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: они мешают друг другу.",
+      "problems.hpa-conflict-memory.title": "VPA и HPA мешают друг другу по memory",
+      "problems.hpa-conflict-memory.message": "HPA масштабирует ту же рабочую нагрузку по memory, которые этот VPA меняет в режиме {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: они мешают друг другу.",
+      "problems.hpa-conflict-cpu-only.title": "VPA только по cpu и HPA мешают друг другу по cpu",
+      "problems.hpa-conflict-cpu-only.message": "HPA масштабирует ту же рабочую нагрузку по cpu, которые этот VPA меняет в режиме {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: они мешают друг другу.",
+      "problems.hpa-conflict-memory-only.title": "VPA только по memory и HPA мешают друг другу по memory",
+      "problems.hpa-conflict-memory-only.message": "HPA масштабирует ту же рабочую нагрузку по memory, которые этот VPA меняет в режиме {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: они мешают друг другу."
+    },
+    "tr": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "Durumları, güncelleme modları ve hedefin şablonuna göre önerileri ile yeni bir Pod'un alacağı değerlerle VerticalPodAutoscaler'lar, kontrol noktaları ve bileşenleri ile her iş yükünün VPA'ları; recommender'ın kullanamadığı, hiçbir Pod ile eşleşmeyen veya bir HPA ile çatışan VPA'ların sorunları. Salt okunur.",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Denetim noktaları",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.one": "{{count}} nesne ilgi gerektiriyor",
+      "sectionBadges.vpa.label.other": "{{count}} nesne ilgi gerektiriyor",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "Hedef",
+      "columns.vpa-mode.title": "Mod",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "Durum",
+      "columns.vpa-status.cases.0.text": "Desteklenmiyor",
+      "columns.vpa-status.cases.1.text": "Düşük güven",
+      "columns.vpa-status.cases.2.text": "Geçmiş yükleniyor",
+      "columns.vpa-status.cases.3.text": "Öneriyor",
+      "columns.vpa-status.cases.4.text": "Öneriyor",
+      "columns.vpa-status.cases.5.text": "Eşleşen pod yok",
+      "columns.vpa-status.cases.6.text": "Öneri yok",
+      "columns.vpa-status.cases.7.text": "Bekleniyor",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "Bellek",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "Kapsayıcı",
+      "columns.cp-samples.title": "Örnekler",
+      "columns.cp-last-update.title": "Son kayıt",
+      "problems.config-unsupported.title": "Recommender'ın kullanamadığı VPA",
+      "problems.no-pods-matched.title": "Hiçbir Pod ile eşleşmeyen VPA",
+      "problems.no-pods-matched.message": "Hiçbir Pod onunla eşleşmiyor, bu yüzden öneri yok.",
+      "problems.hpa-conflict-every-cpu-memory.title": "Politikasız VPA ve HPA cpu, memory üzerinde çatışıyor",
+      "problems.hpa-conflict-every-cpu-memory.message": "Bir HPA, aynı iş yükünü bu VPA'nın {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} modunda değiştirdiği cpu, memory üzerinden ölçeklendiriyor: ikisi birbiriyle çatışıyor.",
+      "problems.hpa-conflict-every-cpu.title": "Politikasız VPA ve HPA cpu üzerinde çatışıyor",
+      "problems.hpa-conflict-every-cpu.message": "Bir HPA, aynı iş yükünü bu VPA'nın {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} modunda değiştirdiği cpu üzerinden ölçeklendiriyor: ikisi birbiriyle çatışıyor.",
+      "problems.hpa-conflict-every-memory.title": "Politikasız VPA ve HPA memory üzerinde çatışıyor",
+      "problems.hpa-conflict-every-memory.message": "Bir HPA, aynı iş yükünü bu VPA'nın {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} modunda değiştirdiği memory üzerinden ölçeklendiriyor: ikisi birbiriyle çatışıyor.",
+      "problems.hpa-conflict-cpu-memory.title": "VPA ve HPA cpu, memory üzerinde çatışıyor",
+      "problems.hpa-conflict-cpu-memory.message": "Bir HPA, aynı iş yükünü bu VPA'nın {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} modunda değiştirdiği cpu, memory üzerinden ölçeklendiriyor: ikisi birbiriyle çatışıyor.",
+      "problems.hpa-conflict-cpu.title": "VPA ve HPA cpu üzerinde çatışıyor",
+      "problems.hpa-conflict-cpu.message": "Bir HPA, aynı iş yükünü bu VPA'nın {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} modunda değiştirdiği cpu üzerinden ölçeklendiriyor: ikisi birbiriyle çatışıyor.",
+      "problems.hpa-conflict-memory.title": "VPA ve HPA memory üzerinde çatışıyor",
+      "problems.hpa-conflict-memory.message": "Bir HPA, aynı iş yükünü bu VPA'nın {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} modunda değiştirdiği memory üzerinden ölçeklendiriyor: ikisi birbiriyle çatışıyor.",
+      "problems.hpa-conflict-cpu-only.title": "Yalnızca cpu için VPA ve HPA cpu üzerinde çatışıyor",
+      "problems.hpa-conflict-cpu-only.message": "Bir HPA, aynı iş yükünü bu VPA'nın {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} modunda değiştirdiği cpu üzerinden ölçeklendiriyor: ikisi birbiriyle çatışıyor.",
+      "problems.hpa-conflict-memory-only.title": "Yalnızca memory için VPA ve HPA memory üzerinde çatışıyor",
+      "problems.hpa-conflict-memory-only.message": "Bir HPA, aynı iş yükünü bu VPA'nın {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} modunda değiştirdiği memory üzerinden ölçeklendiriyor: ikisi birbiriyle çatışıyor."
+    },
+    "uk": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "VerticalPodAutoscaler зі станом, режимом оновлення та рекомендацією порівняно з шаблоном цілі й тим, що отримає новий Pod, їхні контрольні точки та компоненти, а також VPA кожного робочого навантаження; проблеми VPA, які recommender не може використати, яким не відповідає жоден Pod або які заважають HPA. Лише читання.",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Контрольні точки",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.one": "{{count}} об'єкт потребує уваги",
+      "sectionBadges.vpa.label.few": "{{count}} об'єкти потребують уваги",
+      "sectionBadges.vpa.label.many": "{{count}} об'єктів потребують уваги",
+      "sectionBadges.vpa.label.other": "{{count}} об'єкта потребують уваги",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "Ціль",
+      "columns.vpa-mode.title": "Режим",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "Статус",
+      "columns.vpa-status.cases.0.text": "Не підтримується",
+      "columns.vpa-status.cases.1.text": "Низька впевненість",
+      "columns.vpa-status.cases.2.text": "Завантаження історії",
+      "columns.vpa-status.cases.3.text": "Рекомендує",
+      "columns.vpa-status.cases.4.text": "Рекомендує",
+      "columns.vpa-status.cases.5.text": "Немає відповідних Pod",
+      "columns.vpa-status.cases.6.text": "Немає рекомендації",
+      "columns.vpa-status.cases.7.text": "Очікування",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "Пам'ять",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "Контейнер",
+      "columns.cp-samples.title": "Заміри",
+      "columns.cp-last-update.title": "Збережено",
+      "problems.config-unsupported.title": "VPA, який recommender не може використати",
+      "problems.no-pods-matched.title": "VPA без відповідних Pod",
+      "problems.no-pods-matched.message": "Жоден Pod йому не відповідає, тому рекомендації немає.",
+      "problems.hpa-conflict-every-cpu-memory.title": "VPA без політик і HPA заважають одне одному за cpu, memory",
+      "problems.hpa-conflict-every-cpu-memory.message": "HPA масштабує те саме робоче навантаження за cpu, memory, які цей VPA змінює в режимі {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: вони заважають одне одному.",
+      "problems.hpa-conflict-every-cpu.title": "VPA без політик і HPA заважають одне одному за cpu",
+      "problems.hpa-conflict-every-cpu.message": "HPA масштабує те саме робоче навантаження за cpu, які цей VPA змінює в режимі {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: вони заважають одне одному.",
+      "problems.hpa-conflict-every-memory.title": "VPA без політик і HPA заважають одне одному за memory",
+      "problems.hpa-conflict-every-memory.message": "HPA масштабує те саме робоче навантаження за memory, які цей VPA змінює в режимі {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: вони заважають одне одному.",
+      "problems.hpa-conflict-cpu-memory.title": "VPA і HPA заважають одне одному за cpu, memory",
+      "problems.hpa-conflict-cpu-memory.message": "HPA масштабує те саме робоче навантаження за cpu, memory, які цей VPA змінює в режимі {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: вони заважають одне одному.",
+      "problems.hpa-conflict-cpu.title": "VPA і HPA заважають одне одному за cpu",
+      "problems.hpa-conflict-cpu.message": "HPA масштабує те саме робоче навантаження за cpu, які цей VPA змінює в режимі {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: вони заважають одне одному.",
+      "problems.hpa-conflict-memory.title": "VPA і HPA заважають одне одному за memory",
+      "problems.hpa-conflict-memory.message": "HPA масштабує те саме робоче навантаження за memory, які цей VPA змінює в режимі {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: вони заважають одне одному.",
+      "problems.hpa-conflict-cpu-only.title": "VPA лише за cpu і HPA заважають одне одному за cpu",
+      "problems.hpa-conflict-cpu-only.message": "HPA масштабує те саме робоче навантаження за cpu, які цей VPA змінює в режимі {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: вони заважають одне одному.",
+      "problems.hpa-conflict-memory-only.title": "VPA лише за memory і HPA заважають одне одному за memory",
+      "problems.hpa-conflict-memory-only.message": "HPA масштабує те саме робоче навантаження за memory, які цей VPA змінює в режимі {{.spec.updatePolicy.updateMode ?? \"Recreate\"}}: вони заважають одне одному."
+    },
+    "zh-CN": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "VerticalPodAutoscaler 的状态、更新模式、相对目标模板的建议以及新 Pod 将获得的值，其检查点和组件，以及每个工作负载的 VPA；recommender 无法使用、不匹配任何 Pod 或与 HPA 冲突的 VPA 的问题。只读。",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Checkpoints",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.other": "{{count}} 个对象需要关注",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "目标",
+      "columns.vpa-mode.title": "模式",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "状态",
+      "columns.vpa-status.cases.0.text": "不受支持",
+      "columns.vpa-status.cases.1.text": "置信度低",
+      "columns.vpa-status.cases.2.text": "正在加载历史",
+      "columns.vpa-status.cases.3.text": "正在推荐",
+      "columns.vpa-status.cases.4.text": "正在推荐",
+      "columns.vpa-status.cases.5.text": "没有匹配的 Pod",
+      "columns.vpa-status.cases.6.text": "没有推荐",
+      "columns.vpa-status.cases.7.text": "等待中",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "内存",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "容器",
+      "columns.cp-samples.title": "样本",
+      "columns.cp-last-update.title": "上次保存",
+      "problems.config-unsupported.title": "recommender 无法使用的 VPA",
+      "problems.no-pods-matched.title": "没有匹配 Pod 的 VPA",
+      "problems.no-pods-matched.message": "没有任何 Pod 与之匹配，因此没有建议。",
+      "problems.hpa-conflict-every-cpu-memory.title": "无策略的 VPA 与 HPA 在 cpu、memory 上冲突",
+      "problems.hpa-conflict-every-cpu-memory.message": "有 HPA 按 cpu、memory 伸缩同一工作负载，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下会修改这些资源：二者相互冲突。",
+      "problems.hpa-conflict-every-cpu.title": "无策略的 VPA 与 HPA 在 cpu 上冲突",
+      "problems.hpa-conflict-every-cpu.message": "有 HPA 按 cpu 伸缩同一工作负载，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下会修改这些资源：二者相互冲突。",
+      "problems.hpa-conflict-every-memory.title": "无策略的 VPA 与 HPA 在 memory 上冲突",
+      "problems.hpa-conflict-every-memory.message": "有 HPA 按 memory 伸缩同一工作负载，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下会修改这些资源：二者相互冲突。",
+      "problems.hpa-conflict-cpu-memory.title": "VPA 与 HPA 在 cpu、memory 上冲突",
+      "problems.hpa-conflict-cpu-memory.message": "有 HPA 按 cpu、memory 伸缩同一工作负载，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下会修改这些资源：二者相互冲突。",
+      "problems.hpa-conflict-cpu.title": "VPA 与 HPA 在 cpu 上冲突",
+      "problems.hpa-conflict-cpu.message": "有 HPA 按 cpu 伸缩同一工作负载，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下会修改这些资源：二者相互冲突。",
+      "problems.hpa-conflict-memory.title": "VPA 与 HPA 在 memory 上冲突",
+      "problems.hpa-conflict-memory.message": "有 HPA 按 memory 伸缩同一工作负载，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下会修改这些资源：二者相互冲突。",
+      "problems.hpa-conflict-cpu-only.title": "仅控制 cpu 的 VPA 与 HPA 在 cpu 上冲突",
+      "problems.hpa-conflict-cpu-only.message": "有 HPA 按 cpu 伸缩同一工作负载，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下会修改这些资源：二者相互冲突。",
+      "problems.hpa-conflict-memory-only.title": "仅控制 memory 的 VPA 与 HPA 在 memory 上冲突",
+      "problems.hpa-conflict-memory-only.message": "有 HPA 按 memory 伸缩同一工作负载，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下会修改这些资源：二者相互冲突。"
+    },
+    "zh-TW": {
+      "name": "Vertical Pod Autoscaler",
+      "description": "VerticalPodAutoscaler 的狀態、更新模式、相對目標範本的建議以及新 Pod 將取得的值，其檢查點和元件，以及每個工作負載的 VPA；recommender 無法使用、不符合任何 Pod 或與 HPA 衝突的 VPA 的問題。唯讀。",
+      "kinds.0.title": "VerticalPodAutoscalers",
+      "kinds.1.title": "Checkpoints",
+      "sections.vpa.title": "Vertical Pod Autoscaler",
+      "sectionBadges.vpa.label.other": "{{count}} 個物件需要注意",
+      "detailsSections.vpa.title": "Vertical Pod Autoscaler",
+      "detailsSections.workload.title": "Vertical Pod Autoscaler",
+      "columns.vpa-target.title": "目標",
+      "columns.vpa-mode.title": "模式",
+      "columns.vpa-mode.cases.0.text": "Recreate",
+      "columns.vpa-status.title": "狀態",
+      "columns.vpa-status.cases.0.text": "不支援",
+      "columns.vpa-status.cases.1.text": "信賴度低",
+      "columns.vpa-status.cases.2.text": "正在載入歷史",
+      "columns.vpa-status.cases.3.text": "正在建議",
+      "columns.vpa-status.cases.4.text": "正在建議",
+      "columns.vpa-status.cases.5.text": "沒有相符的 Pod",
+      "columns.vpa-status.cases.6.text": "沒有建議",
+      "columns.vpa-status.cases.7.text": "等待中",
+      "columns.vpa-cpu.title": "CPU",
+      "columns.vpa-memory.title": "記憶體",
+      "columns.cp-vpa.title": "VPA",
+      "columns.cp-container.title": "容器",
+      "columns.cp-samples.title": "樣本",
+      "columns.cp-last-update.title": "上次儲存",
+      "problems.config-unsupported.title": "recommender 無法使用的 VPA",
+      "problems.no-pods-matched.title": "沒有相符 Pod 的 VPA",
+      "problems.no-pods-matched.message": "沒有任何 Pod 與之相符，因此沒有建議。",
+      "problems.hpa-conflict-every-cpu-memory.title": "無策略的 VPA 與 HPA 在 cpu、memory 上衝突",
+      "problems.hpa-conflict-every-cpu-memory.message": "有 HPA 依 cpu、memory 調整同一工作負載的規模，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下會修改這些資源：兩者互相衝突。",
+      "problems.hpa-conflict-every-cpu.title": "無策略的 VPA 與 HPA 在 cpu 上衝突",
+      "problems.hpa-conflict-every-cpu.message": "有 HPA 依 cpu 調整同一工作負載的規模，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下會修改這些資源：兩者互相衝突。",
+      "problems.hpa-conflict-every-memory.title": "無策略的 VPA 與 HPA 在 memory 上衝突",
+      "problems.hpa-conflict-every-memory.message": "有 HPA 依 memory 調整同一工作負載的規模，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下會修改這些資源：兩者互相衝突。",
+      "problems.hpa-conflict-cpu-memory.title": "VPA 與 HPA 在 cpu、memory 上衝突",
+      "problems.hpa-conflict-cpu-memory.message": "有 HPA 依 cpu、memory 調整同一工作負載的規模，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下會修改這些資源：兩者互相衝突。",
+      "problems.hpa-conflict-cpu.title": "VPA 與 HPA 在 cpu 上衝突",
+      "problems.hpa-conflict-cpu.message": "有 HPA 依 cpu 調整同一工作負載的規模，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下會修改這些資源：兩者互相衝突。",
+      "problems.hpa-conflict-memory.title": "VPA 與 HPA 在 memory 上衝突",
+      "problems.hpa-conflict-memory.message": "有 HPA 依 memory 調整同一工作負載的規模，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下會修改這些資源：兩者互相衝突。",
+      "problems.hpa-conflict-cpu-only.title": "僅控制 cpu 的 VPA 與 HPA 在 cpu 上衝突",
+      "problems.hpa-conflict-cpu-only.message": "有 HPA 依 cpu 調整同一工作負載的規模，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下會修改這些資源：兩者互相衝突。",
+      "problems.hpa-conflict-memory-only.title": "僅控制 memory 的 VPA 與 HPA 在 memory 上衝突",
+      "problems.hpa-conflict-memory-only.message": "有 HPA 依 memory 調整同一工作負載的規模，而此 VPA 在 {{.spec.updatePolicy.updateMode ?? \"Recreate\"}} 模式下會修改這些資源：兩者互相衝突。"
+    }
+  }
+}

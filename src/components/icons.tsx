@@ -637,6 +637,8 @@ const ICONS = {
   kafkaConnect: KafkaCable,
   kafkaMirror: KafkaRepeat,
   kafkaConnector: Plug,
+  // Prometheus Operator (#213): the section and its kinds, named by Sextant's own extension
+  // `extensions/prometheus-operator`.
   prometheusOperator: PromFlame,
   serviceMonitor: PromRadar,
   podMonitor: PromScanEye,
@@ -644,7 +646,7 @@ const ICONS = {
   prometheusRule: PromScrollText,
   prometheus: PromChartLine,
   alertmanager: PromBellRing,
-  // Vertical Pod Autoscaler (#242): the section and its kinds.
+  // Vertical Pod Autoscaler (#242): the section and its kinds, named by Sextant's own extension `extensions/vpa`.
   vpa: VpaUnfoldVertical,
   verticalPodAutoscaler: VpaChevronsUpDown,
   vpaCheckpoint: VpaCheckpoint,

@@ -54,8 +54,8 @@ lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
   Sextant's own extension), Knative Serving,
   Crossplane (claim → composite → managed resources, paused state), Kyverno (policy results on every object;
   Sextant's own extension), External Secrets (never the secret data), CloudNativePG (primary, replicas, backups,
-  hibernation), Strimzi and Prometheus Operator (what a monitor selects and which Prometheus picks it up), each from
-  the operator's own status.
+  hibernation), Strimzi and Prometheus Operator (what a monitor selects and which Prometheus picks it up; Sextant's
+  own extension), each from the operator's own status.
 - **In your language** — English, Russian, Ukrainian, German, French, Spanish, Portuguese (Brazil), Italian, Polish,
   Turkish, Chinese (Simplified and Traditional), Japanese and Korean.
 - **Metrics** from metrics-server and Prometheus or VictoriaMetrics (both found automatically); **Helm** releases and charts; **Flux** and **Argo CD** (sync, diff) as Sextant's own extensions from the catalog, offered where a cluster runs them.

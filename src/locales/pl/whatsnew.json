@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Widoki narzędzi klastra są teraz rozszerzeniami",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe i Operator Lifecycle Manager przeniesiono z Sextant do jego własnych rozszerzeń z katalogu rozszerzeń, aktualizowanych osobno. Zainstaluj poniżej te, których używasz: do tego czasu ich sekcje nie są pokazywane. Twoje ustawienia powiadomień dla nich zostały zachowane, a pasek boczny proponuje je też w klastrach, w których działają te narzędzia."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe i Operator Lifecycle Manager przeniesiono z Sextant do jego własnych rozszerzeń z katalogu rozszerzeń, aktualizowanych osobno. Zainstaluj poniżej te, których używasz: do tego czasu ich sekcje nie są pokazywane. Twoje ustawienia powiadomień dla nich zostały zachowane, a pasek boczny proponuje je też w klastrach, w których działają te narzędzia."
     },
     "api4": {
       "title": "API rozszerzeń 4",
@@ -41,7 +41,9 @@
       "velero": "Kopie zapasowe, harmonogramy, przywracania i lokalizacje przechowywania; kopia zapasowa namespace lub przywracanie z kopii",
       "kueue": "ClusterQueue z limitem i użyciem, LocalQueue, Workloady i powód ich oczekiwania",
       "kyverno": "Zasady z trybem i wynikami, raporty zasad i wyniki każdego obiektu",
-      "sealed-secrets": "SealedSecrets ze stanem synchronizacji, zakresem, docelowym Secretem i zapieczętowanymi kluczami oraz kontroler z jego kluczami pieczętowania"
+      "sealed-secrets": "SealedSecrets ze stanem synchronizacji, zakresem, docelowym Secretem i zapieczętowanymi kluczami oraz kontroler z jego kluczami pieczętowania",
+      "vpa": "VerticalPodAutoscalery ze stanem i rekomendacją oraz tym, co dostałby nowy pod, ich checkpointy i komponenty oraz VPA każdego obciążenia",
+      "prometheus-operator": "ServiceMonitory, PodMonitory i Probe z tym, co wybierają, PrometheusRule, Prometheusy i Alertmanagery"
     }
   }
 }

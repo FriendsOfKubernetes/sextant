@@ -1,28 +1,26 @@
 import { describe, expect, it } from "vitest";
 import type { KindRef, KubeObject } from "../../api";
-import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operator/model";
+import { HELM_CHART } from "../k3s/model";
 import { judgedByRules } from "../problems/sources";
 import { nodeHealth } from "./health";
 import type { GraphNode } from "./relations";
 
 const node = (kind: KindRef, obj: KubeObject) => ({ kind, obj }) as unknown as GraphNode;
-const ready: KubeObject = {
-  metadata: { name: "main", namespace: "monitoring", uid: "p1" },
-  spec: { replicas: 1 },
-  status: { conditions: [{ type: "Available", status: "True" }, { type: "Reconciled", status: "True" }] },
-};
+const DEPLOYMENT: KindRef = { group: "apps", version: "v1", kind: "Deployment" };
 
 describe("map health", () => {
   it("never shows green for a kind whose problems a provider finds across objects", () => {
-    // A ServiceMonitor that selects nothing is a problem only the provider sees: no rule finding is not "fine".
-    const monitor: KubeObject = { metadata: { name: "orphan", namespace: "default", uid: "m1" }, spec: { selector: { matchLabels: { app: "gone" } } } };
-    expect(judgedByRules(SERVICE_MONITOR)).toBe(false);
-    expect(nodeHealth(node(SERVICE_MONITOR, monitor), Date.now())).toBe("neutral");
-    // Prometheus and Alertmanager are watched and judged by the rules themselves.
-    expect(judgedByRules(PROMETHEUS)).toBe(true);
-    expect(judgedByRules(ALERTMANAGER)).toBe(true);
-    expect(nodeHealth(node(PROMETHEUS, ready), Date.now())).toBe("ok");
-    // Kinds of categories without a provider are as before.
-    expect(judgedByRules({ group: "apps", kind: "Deployment" })).toBe(true);
+    // A HelmChart's outcome is its Job, a problem only the provider of features/k3s sees: no rule finding is not "fine".
+    const chart: KubeObject = { metadata: { name: "traefik", namespace: "kube-system", uid: "h1" }, spec: { chart: "traefik" } };
+    expect(judgedByRules(HELM_CHART)).toBe(false);
+    expect(nodeHealth(node(HELM_CHART, chart), Date.now())).toBe("neutral");
+    // Kinds the rules judge themselves are "ok" without a finding.
+    const ready: KubeObject = {
+      metadata: { name: "web", namespace: "demo", uid: "d1", generation: 1 },
+      spec: { replicas: 1 },
+      status: { observedGeneration: 1, replicas: 1, readyReplicas: 1, availableReplicas: 1, updatedReplicas: 1 },
+    };
+    expect(judgedByRules(DEPLOYMENT)).toBe(true);
+    expect(nodeHealth(node(DEPLOYMENT, ready), Date.now())).toBe("ok");
   });
 });

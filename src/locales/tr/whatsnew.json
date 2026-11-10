@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Küme araçlarının görünümleri artık uzantı",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe ve Operator Lifecycle Manager, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe ve Operator Lifecycle Manager, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
     },
     "api4": {
       "title": "Eklenti API 4",
@@ -41,7 +41,9 @@
       "velero": "Yedekler, zamanlamalar, geri yüklemeler ve depolama konumları; bir namespace'i yedekleme veya bir yedekten geri yükleme",
       "kueue": "Kota ve kullanımıyla ClusterQueue'lar, LocalQueue'lar, Workload'lar ve neden bekledikleri",
       "kyverno": "Modu ve sonuçlarıyla ilkeler, ilke raporları ve her nesnenin sonuçları",
-      "sealed-secrets": "Eşitleme durumu, kapsamı, hedef Secret'ı ve mühürlü anahtarlarıyla SealedSecret'lar ve mühürleme anahtarlarıyla denetleyici"
+      "sealed-secrets": "Eşitleme durumu, kapsamı, hedef Secret'ı ve mühürlü anahtarlarıyla SealedSecret'lar ve mühürleme anahtarlarıyla denetleyici",
+      "vpa": "Durumu, önerisi ve yeni bir pod'un alacağı değerlerle VerticalPodAutoscaler'lar, kontrol noktaları ve bileşenleri, ve her iş yükünün VPA'ları",
+      "prometheus-operator": "Seçtikleriyle ServiceMonitor'lar, PodMonitor'lar ve Probe'lar, PrometheusRule'lar, Prometheus'lar ve Alertmanager'lar"
     }
   }
 }

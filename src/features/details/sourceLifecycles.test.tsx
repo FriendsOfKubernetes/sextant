@@ -15,8 +15,6 @@ import { resetSharedWatches, setWatchLinger } from "../resource-map/watches";
 import { ClaimUsageSection } from "../storage/UsageViews";
 import { LINGER_MS, USAGE_POLL_MS, resetVolumeUsage, useVolumeUsage } from "../storage/usageStore";
 import { VclusterSection } from "../vcluster/details";
-import { PrometheusOperatorSection } from "../prometheus-operator/details";
-import { SERVICE_MONITOR, PROMETHEUS, PROMETHEUS_AGENT } from "../prometheus-operator/model";
 const KSERVICE = { group: "serving.knative.dev", version: "v1", kind: "Service" };
 import { MeshMembershipSection } from "../mesh/MembershipSection";
 import { CrossplaneResourceSection } from "../crossplane/details";
@@ -35,7 +33,7 @@ beforeEach(async () => {
   wb = watchBackend(); settings = defaultAppSettings();
   wb.backend.on("settings_get", () => settings);
   wb.backend.on("settings_update", args => settings = args.settings as AppSettings);
-  const kinds = [POD, PVC, SERVICE, DEPLOYMENT, CAPI_CLUSTER, MACHINE_DEPLOYMENT, MACHINE_SET, MACHINE, NODE_POOL, NODE_CLAIM, HPA, SCALED_OBJECT, SERVICE_MONITOR, PROMETHEUS, PROMETHEUS_AGENT, KSERVICE, XRD];
+  const kinds = [POD, PVC, SERVICE, DEPLOYMENT, CAPI_CLUSTER, MACHINE_DEPLOYMENT, MACHINE_SET, MACHINE, NODE_POOL, NODE_CLAIM, HPA, SCALED_OBJECT, KSERVICE, XRD];
   wb.backend.on("cluster_kinds", () => kinds.map((kindRef): ResourceKind => ({ kindRef, plural: kindRef.kind.toLowerCase() + "s", namespaced: !["NodePool", "NodeClaim", "ResourceSlice"].includes(kindRef.kind), verbs: ["list", "watch"], printerColumns: [] })));
   await loadSettings();
 });
@@ -168,19 +166,6 @@ it("keeps a retry header when the missing NodeClaim could be in a forbidden list
   fireEvent.click(button);
   expect(button).toHaveAttribute("aria-expanded", "true");
   expect(await screen.findByRole("alert")).toBeInTheDocument();
-});
-
-it("unmounts the monitor-target body while preserving the namespace resolver, then renders fresh targets", async () => {
-  const ref = refOf(SERVICE_MONITOR);
-  const obj: KubeObject = { apiVersion: "monitoring.coreos.com/v1", kind: "ServiceMonitor", metadata: { name: ref.name, namespace: "demo" }, spec: { selector: { matchLabels: { app: "web" } }, endpoints: [{ port: "http" }] } };
-  render(card(ref, <PrometheusOperatorSection clusterId="c1" objectRef={ref} obj={obj} />));
-  const target = await watchOf(wb, "Service", spec => spec.labelSelector === "app=web");
-  const server = await watchOf(wb, "Prometheus");
-  toggle("targets"); await waitFor(() => expect(wb.backend.listenerCount(`watch:${target}`)).toBe(0));
-  expect(wb.backend.listenerCount(`watch:${server}`)).toBe(1);
-  toggle("targets"); const next = await watchOf(wb, "Service", spec => spec.labelSelector === "app=web"); expect(next).not.toBe(target);
-  emitSnapshot(wb, next, [{ apiVersion: "v1", kind: "Service", metadata: { name: "fresh-target", namespace: "demo" }, spec: { ports: [{ name: "http", port: 80 }] } }]);
-  expect(await screen.findByText("demo/fresh-target")).toBeInTheDocument();
 });
 
 it("ignores inapplicable mesh headings when the only visible Linkerd block closes", async () => {

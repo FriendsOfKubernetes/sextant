@@ -771,16 +771,20 @@ pub fn migrate(settings: &mut AppSettings) {
 
 /// The opt-in problem categories of Sextant's own that moved into categories of its first-party extensions' own
 /// (`problemCategories`, #410): the old category and the new one, `ext:<extension id>:<category id>`. Never for agents.
-pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 3] = [
+pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 4] = [
     ("kueueWorkloads", "ext:sextant.kueue:workloads"),
     ("policies", "ext:sextant.kyverno:policies"),
     ("sealedSecrets", "ext:sextant.sealed-secrets:sealed-secrets"),
+    (
+        "prometheusOperator",
+        "ext:sextant.prometheus-operator:prometheus-operator",
+    ),
 ];
 
 /// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
 /// the extension (or `<extension id>:<category id>` for a category of the extension's own, #410; only with `false`,
 /// as agents never get those), and whether agents got the category by default.
-pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 15] = [
+pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 16] = [
     ("flux", "sextant.flux", true),
     ("argocd", "sextant.argo-cd", true),
     ("rollouts", "sextant.argo-rollouts", false),
@@ -804,6 +808,8 @@ pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 15] = [
     // Kueue's queues (on by default) became the extension's own category `queues` (#410): a window view, never for
     // agents.
     ("kueue", "sextant.kueue:queues", false),
+    // Vertical Pod Autoscaler (on by default): a window view, never for agents.
+    ("vpa", "sextant.vpa", false),
 ];
 
 /// Reads the settings file and decides whether it may be written.
@@ -1355,8 +1361,8 @@ mod tests {
         std::fs::write(
             &path,
             r#"{ "settingsVersion": 2,
-                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm", "kueue", "dra"],
-                                    "enabledCategories": ["security", "kueueWorkloads", "policies", "sealedSecrets"] },
+                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm", "kueue", "dra", "vpa"],
+                                    "enabledCategories": ["security", "kueueWorkloads", "policies", "sealedSecrets", "prometheusOperator"] },
                  "mcp": { "extensionProblems": ["sextant.argo-cd", "acme.widgets"] } }"#,
         )
         .unwrap();
@@ -1373,7 +1379,8 @@ mod tests {
                 "ext:sextant.olm",
                 // Kueue's queues, on by default, became a category of the extension's own (#410).
                 "ext:sextant.kueue:queues",
-                "ext:sextant.dra"
+                "ext:sextant.dra",
+                "ext:sextant.vpa"
             ]
         );
         // An opt-in category turned on stays on as the extension's own (#410).
@@ -1383,7 +1390,8 @@ mod tests {
                 "security",
                 "ext:sextant.kueue:workloads",
                 "ext:sextant.kyverno:policies",
-                "ext:sextant.sealed-secrets:sealed-secrets"
+                "ext:sextant.sealed-secrets:sealed-secrets",
+                "ext:sextant.prometheus-operator:prometheus-operator"
             ]
         );
         assert_eq!(

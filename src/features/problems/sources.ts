@@ -16,8 +16,6 @@ import {
   MACHINE as CAPI_MACHINE,
   PROBLEM_KINDS as CAPI_PROBLEM_KINDS,
 } from "../cluster-api/model";
-import { ALERTMANAGER, PROMETHEUS, SERVICE_MONITOR } from "../prometheus-operator/model";
-import { VPA } from "../vpa/model";
 import { HELM_CHART as K3S_HELM_CHART } from "../k3s/model";
 import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
 import { BUILD as OPENSHIFT_BUILD, DEPLOYMENT_CONFIG as OPENSHIFT_DC, IMAGE_STREAM as OPENSHIFT_IMAGE_STREAM, ROUTE as OPENSHIFT_ROUTE } from "../openshift/model";
@@ -138,10 +136,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   pods: [builtIn("pods", POD)],
   workloads: [builtIn("workloads", DEPLOYMENT), builtIn("workloads", STATEFULSET), builtIn("workloads", DAEMONSET)],
   jobs: [builtIn("jobs", JOB)],
-  // Vertical Pod Autoscaler (#242): configurations the recommender cannot use, VPAs that match no pod, and VPAs that
-  // fight an HPA over the same resource, judged by the provider of features/vpa (`external`: the HPA is another
-  // object), held only where VPAs are served.
-  vpa: [{ category: "vpa", kind: VPA, fieldSelector: null, discovered: true, external: true }],
   volumes: [builtIn("volumes", PVC)],
   certificates: [tool("certificates", CERTIFICATE)],
   gateway: COUNTED_KINDS.map((kind) => tool("gateway", kind)),
@@ -181,14 +175,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
     tool("openshift", OPENSHIFT_DC, MAX_SOURCE_OBJECTS),
     { ...tool("openshift", OPENSHIFT_BUILD, MAX_SOURCE_OBJECTS), across: OPENSHIFT_BUILD_ACROSS },
     tool("openshift", OPENSHIFT_IMAGE_STREAM, MAX_SOURCE_OBJECTS),
-  ],
-  // Prometheus Operator (#213): Prometheus and Alertmanager not available; monitors that select nothing are judged
-  // across objects by the provider of features/prometheus-operator (`external`), held only where ServiceMonitors are
-  // served.
-  prometheusOperator: [
-    tool("prometheusOperator", PROMETHEUS),
-    tool("prometheusOperator", ALERTMANAGER),
-    { category: "prometheusOperator", kind: SERVICE_MONITOR, fieldSelector: null, discovered: true, external: true },
   ],
   // Watches of their own (`sourceKey`): judged only while the opt-in category is on, kept apart from the problems of
   // pods and workloads (the map's colours, the cap of `MAX_PROBLEM_OBJECTS`).

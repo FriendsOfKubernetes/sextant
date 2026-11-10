@@ -1029,13 +1029,33 @@ fn reflector_problems_are_never_given_to_agents() {
     ));
 }
 
-/// Vertical Pod Autoscaler problems (#242) are a window view: agents get none of them, though the category is on by
-/// default (ADR-0111).
+/// Vertical Pod Autoscaler (#242) moved into Sextant's own extension (ADR-0162 amendment): agents get none of its
+/// problems under the old name, nor the extension's unless the user lets them (ADR-0146) — never by default.
 #[test]
 fn vpa_problems_are_never_given_to_agents() {
-    assert!(answers::PROBLEM_CATEGORIES.contains(&"vpa"));
-    assert!(!answers::OPT_IN_CATEGORIES.contains(&"vpa"));
-    assert!(!answers::category_for_agents("vpa", &["vpa".to_owned()]));
+    let category = "vpa";
+    assert!(!answers::PROBLEM_CATEGORIES.contains(&category));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&category));
+    assert!(!answers::category_for_agents(
+        category,
+        &[category.to_owned()]
+    ));
+    assert_eq!(answers::moved_category(category), "ext:sextant.vpa");
+    assert!(!answers::category_for_agents("ext:sextant.vpa", &[]));
+}
+
+/// Prometheus Operator problems (#213) moved into the opt-in category of the Prometheus Operator extension's own
+/// (ADR-0162 amendment, #410): agents get none of them, under the old name or the new one, even when turned on.
+#[test]
+fn prometheus_operator_problems_are_never_given_to_agents() {
+    assert!(!answers::PROBLEM_CATEGORIES.contains(&"prometheusOperator"));
+    assert!(!answers::OPT_IN_CATEGORIES.contains(&"prometheusOperator"));
+    assert!(!answers::category_for_agents(
+        "prometheusOperator",
+        &["prometheusOperator".to_owned()]
+    ));
+    let moved = "ext:sextant.prometheus-operator:prometheus-operator";
+    assert!(!answers::category_for_agents(moved, &[moved.to_owned()]));
 }
 
 /// Cluster API problems (#243) are a window view: agents get none of them, though the category is on by default

@@ -13,10 +13,8 @@ import { kindFromApiVersion } from "../../resources/refs";
 import { eventTimestamp, involvedObject } from "../events/model";
 import { contourProblems } from "../contour/problemRules";
 import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../cluster-api/model";
-import { isVpa } from "../vpa/model";
 import { isHelmControllerKind, isK3sKind } from "../k3s/model";
 import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
-import { MONITORING_GROUP, prometheusOperatorProblems } from "../prometheus-operator/model";
 import {
   BACKEND_TLS_POLICY,
   GATEWAY,
@@ -38,7 +36,6 @@ export const PROBLEM_CATEGORIES = [
   "pods",
   "workloads",
   "jobs",
-  "vpa",
   "volumes",
   "certificates",
   "gateway",
@@ -49,7 +46,6 @@ export const PROBLEM_CATEGORIES = [
   "clusterApi",
   "k3s",
   "openshift",
-  "prometheusOperator",
   "reflector",
   "security",
   "practices",
@@ -73,9 +69,8 @@ export const NOTIFY_CATEGORIES: readonly BuiltInCategory[] = PROBLEM_CATEGORIES.
  * workload's spec, not incidents, and a cluster usually has privileged system pods, so they would only add noise unless
  * asked for. Their sources are their own (`sourceKey`), so nothing of them is computed or kept while they are off.
  * Best-practice findings (#207) are lasting states too, and most clusters have many.
- * Prometheus Operator findings (`prometheusOperator`) judge every ServiceMonitor and PodMonitor against metadata
- * lists of the Services and Pods they look at: a cost a cluster pays only when asked for. So do Traefik findings
- * (`traefik`, #232): every Traefik object of the cluster and metadata of the Services they name.
+ * Traefik findings (`traefik`, #232) judge every Traefik object of the cluster against metadata of the Services they
+ * name: a cost a cluster pays only when asked for.
  * And Reflector mirrors (`reflector`, #241): metadata of every Secret and ConfigMap of the cluster.
  * And firing alerts (`alerts`, #264, ADR-0119): Prometheus' and Alertmanager's alerts polled once a minute.
  */
@@ -84,7 +79,6 @@ export const OPT_IN_CATEGORIES: readonly BuiltInCategory[] = [
   "credentials",
   "disk",
   "practices",
-  "prometheusOperator",
   "traefik",
   "reflector",
   "alerts",
@@ -267,9 +261,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (kind.group === "gateway.networking.k8s.io") return "gateway";
   // Contour HTTPProxies (#233): invalid and orphaned ones.
   if (kind.group === "projectcontour.io" && kind.kind === "HTTPProxy") return "contour";
-  // External Secrets, CloudNativePG, Strimzi and Prometheus Operator (#213): judged by their sections' own helpers.
-  // Vertical Pod Autoscaler (#242): judged by the provider of features/vpa (HPA conflicts span two objects).
-  if (isVpa(kind)) return "vpa";
   // Cluster API (#243): Clusters, KubeadmControlPlanes, Machines and MachineHealthChecks, judged by features/cluster-api.
   if (isClusterApiProblemKind(kind)) return "clusterApi";
   // k3s and RKE2 (#270): HelmCharts and the bundled components, judged by the provider of features/k3s.
@@ -279,7 +270,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   // failed or whose plan is stuck, catalogs not READY.
   // OpenShift (#267): Routes no router admitted, failed DeploymentConfig rollouts, failed Builds, failing imports.
   if (isOpenShiftProblemKind(kind)) return "openshift";
-  if (kind.group === MONITORING_GROUP) return "prometheusOperator";
   return undefined;
 }
 
@@ -683,8 +673,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return capiProblems(kind, obj);
     case "openshift":
       return openshiftProblems(kind, obj);
-    case "prometheusOperator": // Monitors that select nothing come from the provider of features/prometheus-operator.
-      return prometheusOperatorProblems(kind, obj);
     case "security":
       return securityProblems(kind, obj);
     // Kubeconfig credentials are no kind of the cluster (features/clusters/kubeconfig); volume fill levels come from
@@ -696,7 +684,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
     case "traefik": // Broken references span several objects: the provider of features/traefik finds them.
     case "reflector": // Mirrors are judged against their sources: the provider of features/reflector finds them.
-    case "vpa": // A conflict with an HPA spans two objects: the provider of features/vpa finds every VPA problem.
     case "k3s": // A chart's outcome is its Job, components are Deployments: the provider of features/k3s finds them.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:
