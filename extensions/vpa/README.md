@@ -105,8 +105,8 @@ as the built-in problems named them, and each reason notifies once per VPA. A gr
 Whether the VPA controls a resource is read from its policies alone, as the built-in problems read it: no policies, or a
 policy not Off that controls it (its `controlledResources`, cpu and memory when unset). An HPA's resource is a `Resource`
 metric with a `Utilization` target (an HPA without metrics is the API's default CPU); an AverageValue or Value target
-does not fight. A fight is judged only while the HPAs of the VPA's namespace are read in full. The message says "An HPA": the
-rules cannot name the HPA they found.
+does not fight. A fight is judged only while the HPAs of the VPA's namespace are read in full. The message names the HPAs
+the rule found (`{{found}}`), as the built-in problem named its HPA.
 
 ## Metrics
 
@@ -136,9 +136,10 @@ None: it only reads.
     zero and notified when it wanted pods. (A `related` lookup of the kind the object names — `apiVersionPath` and
     `kindPath`, as `about` reads it — read by name rather than through a watch of every workload, and a rule's
     notification decided by a condition, would close it.)
-  - **A fight with an HPA** is told as "An HPA scales the same workload on …", once per VPA and outcome; the built-in
-    problem named the HPA, and told each fighting HPA apart (two HPAs on one target, which the HPA controller itself
-    refuses as ambiguous). (The found object's name in a message, and a problem per found object, would close it.)
+  - **A fight with an HPA** is told once per VPA and outcome, naming the HPA as the built-in problem did ("HPA … scales
+    the same workload on …"); several HPAs on one target (which the HPA controller itself refuses as ambiguous) are
+    named together in one problem, where the built-in told each fighting HPA apart. (A problem per found object would
+    close it.)
   - The rules compare the target's whole `apiVersion` (an HPA on `apps/v1beta2` of an `apps/v1` VPA target is not
     found) and need both to name one; the built-in problem compared the group. (A placeholder filter for an
     apiVersion's group in `relatedBy` pairs would close it.)

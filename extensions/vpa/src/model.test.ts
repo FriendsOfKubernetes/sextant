@@ -247,13 +247,17 @@ interface Columns {
 let engine: Engine;
 let columns: Columns;
 let formatDateTime: (value: number) => string;
+let formatList: (items: readonly string[]) => string;
 const here = dirname(fileURLToPath(import.meta.url));
 beforeAll(async () => {
   engine = (await import(/* @vite-ignore */ join(here, "../../../src/extensions/problemRules.ts"))) as Engine;
   columns = (await import(/* @vite-ignore */ join(here, "../../../src/extensions/columns.tsx"))) as Columns;
   const { startI18n } = (await import(/* @vite-ignore */ join(here, "../../../src/i18n/index.ts"))) as { startI18n(language: string): Promise<unknown> };
   await startI18n("en");
-  ({ formatDateTime } = (await import(/* @vite-ignore */ join(here, "../../../src/i18n/format.ts"))) as { formatDateTime(value: number): string });
+  ({ formatDateTime, formatList } = (await import(/* @vite-ignore */ join(here, "../../../src/i18n/format.ts"))) as {
+    formatDateTime(value: number): string;
+    formatList(items: readonly string[]): string;
+  });
 });
 
 type Rule = (typeof manifest.contributes.problems)[number];
@@ -275,8 +279,10 @@ function relatedByOf(rule: Rule): { when: unknown } | undefined {
 function windowProblems(vpa: KubeObject, hpas: KubeObject[] | undefined, seen: number) {
   return RULES.flatMap((rule) =>
     engine.detectRule(rule, vpa).flatMap((d) => {
+      // The HPAs found, each once, for `{{found}}` (`foundNames`): all of the VPA's namespace, so plain names.
+      const names: string[] = [];
       for (const lookup of d.lookups ?? []) {
-        const found = hpas?.some(
+        const found = (hpas ?? []).filter(
           (h) =>
             h.metadata.namespace === vpa.metadata.namespace &&
             (lookup.by ?? []).every(([path, value]) => {
@@ -285,10 +291,12 @@ function windowProblems(vpa: KubeObject, hpas: KubeObject[] | undefined, seen: n
             }) &&
             engine.evaluate(relatedByOf(rule)!.when, h).holds,
         );
-        if (!found) return [];
+        if (found.length === 0) return [];
+        names.push(...found.map((h) => h.metadata.name!));
       }
+      const message = d.message?.split("{{found}}").join(formatList([...new Set(names)]));
       const since = d.since ? at(d.since) : seen;
-      return [{ reason: d.reason, group: d.group, message: d.message, notify: d.notify ?? true, start: d.activeFrom ?? (d.graceMs ? since + d.graceMs : Math.min(since, seen)) }];
+      return [{ reason: d.reason, group: d.group, message, notify: d.notify ?? true, start: d.activeFrom ?? (d.graceMs ? since + d.graceMs : Math.min(since, seen)) }];
     }),
   );
 }
@@ -309,8 +317,8 @@ function builtInProblems(vpa: KubeObject, hpas: KubeObject[] | undefined, seen: 
     out.push({
       reason: "HpaConflict",
       group: "hpa-conflict",
-      // The built-in message named the HPA (`HPA ${c.hpa} scales …`); the rules cannot name the object they found.
-      message: `An HPA scales the same workload on ${c.resources.join(", ")}, which this VPA changes in mode ${mode}: the two fight.`,
+      // The built-in message (`messages.vpaHpaConflict`), the rules naming the HPA they found with `{{found}}`.
+      message: `HPA ${c.hpa} scales the same workload on ${c.resources.join(", ")}, which this VPA changes in mode ${mode}: the two fight.`,
       notify: true,
       start: start(undefined, SHORT_GRACE_MS),
     });
@@ -520,10 +528,12 @@ describe("the problem rules, against the built-in provider", () => {
     const bareHpa = hpaWith([metric("cpu")], (h) => (spec(h).scaleTargetRef = { kind: "Deployment", name: "hamster" }));
     expect(builtInProblems(bare, [bareHpa], SEEN)).toHaveLength(1);
     expect(windowProblems(bare, [bareHpa], SEEN)).toEqual([]);
-    // Two HPAs on one target: one problem per HPA built in; the rules find the outcome once.
+    // Two HPAs on one target: one problem per HPA built in; the rules find the outcome once, naming both.
     const second = hpaWith([metric("cpu")], (h) => (h.metadata.name = "second"));
     expect(builtInProblems(recreate(), [hpa(), second], SEEN)).toHaveLength(2);
-    expect(windowProblems(recreate(), [hpa(), second], SEEN)).toHaveLength(1);
+    const both = windowProblems(recreate(), [hpa(), second], SEEN);
+    expect(both).toHaveLength(1);
+    expect(both[0]!.message).toBe(`HPA ${formatList([hpa().metadata.name!, "second"])} scales the same workload on cpu, which this VPA changes in mode Recreate: the two fight.`);
   });
 
   it("notify once per VPA and reason, and say the reasons the built-in problems said", () => {
