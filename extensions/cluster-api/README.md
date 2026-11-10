@@ -93,15 +93,10 @@ Sextant's panel. A workload cluster is opened only on a click, connected then if
 - **Read** Cluster API's kinds (each section reads the object it shows and the objects it names; a Cluster's details
   list its MachineDeployments, MachineSets and Machines, an owner's details its Machines), in every namespace of every
   cluster.
-- **Read** the provider objects a Cluster or Machine names, of the providers most installations use: the control planes
-  of `controlplane.cluster.x-k8s.io` (KubeadmControlPlane, AWSManagedControlPlane, ROSAControlPlane,
-  KThreesControlPlane, RKE2ControlPlane, TalosControlPlane, K0sControlPlane, K0smotronControlPlane,
-  MicroK8sControlPlane, NestedControlPlane), the infrastructure clusters and machines of
-  `infrastructure.cluster.x-k8s.io` (Docker, AWS, Azure, GCP, vSphere, VCD, OpenStack, Metal3, Hetzner, Proxmox,
-  Nutanix, IBM Cloud, KubeVirt, OCI, Equinix Metal, Tinkerbell, CloudStack, MAAS, Linode, BYOH, Scaleway, Outscale) and
-  the bootstrap configs of `bootstrap.cluster.x-k8s.io` (KubeadmConfig, EKSConfig, KThreesConfig, RKE2Config,
-  TalosConfig, K0sWorkerConfig, K0sControllerConfig, MicroK8sConfig): the details read each by name to tell whether it
-  is ready.
+- **Read** every kind of the API groups under `cluster.x-k8s.io` (`readGroups`: `controlplane.`, `infrastructure.`,
+  `bootstrap.`, `addons.`… of any provider), in every namespace of every cluster: the provider objects a Cluster or
+  Machine names, read by name to tell whether each is ready, as the built-in view read any provider kind. Only Read,
+  and an AI agent through the extension still gets no more than its own access.
 - It lists Sextant's clusters (names and API server addresses) to offer the workload cluster's button; opening one is
   Sextant's own dialog, every time.
 - Nothing is changed or deleted by the extension; Edit and Delete are Sextant's own actions, under your own rules.
@@ -179,9 +174,6 @@ None: the extension is read-only and has no action of its own (ADR-0113).
     condition shows its first old one of severity Error (the built-in view showed none), as does a v1beta2
     MachineSet, KubeadmControlPlane or MachineHealthCheck with no failing new condition and a failing deprecated one;
     and a v1beta2 Cluster, Machine or MachineDeployment with only deprecated conditions shows its phase alone.
-  - **Provider objects of kinds not listed under Permissions** are shown as "Could not be read": a permission names
-    kinds one by one (a kind `*` matches none; a group-wide read was deferred, as it touches the extension security
-    model), where the built-in view read any kind with your own access.
   - **A paused Cluster's objects with only old conditions** (Cluster API before 1.9) are judged by that Cluster, which
     Sextant must have read in full: while it cannot (a Cluster list the extension or you may not read), their problems
     stay out, where the built-in view kept them. Their "Only problems" leaves them out while their Cluster is paused,

@@ -89,6 +89,11 @@ export function PermissionsView({ permissions }: { permissions: ExtensionPermiss
         </ul>
       )}
       {rules.length > 0 && <p className="settings__hint">{t("extensions:permissions.clusterWide")}</p>}
+      {(permissions.readGroups ?? []).length > 0 && (
+        <p className="ext-perms__line">
+          {t("extensions:permissions.readGroups", { groups: formatList((permissions.readGroups ?? []).map((g) => g.replace(/^\*\./, ""))) })}
+        </p>
+      )}
       {(permissions.statusPatches ?? []).length > 0 && (
         <p className="ext-perms__line">
           {t("extensions:permissions.statusPatches", {

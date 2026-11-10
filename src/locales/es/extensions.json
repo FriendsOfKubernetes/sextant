@@ -145,6 +145,7 @@
       "exec": "ejecución de comandos",
       "portForward": "reenvío de puertos"
     },
+    "readGroups": "Puede leer todos los kinds de los grupos de API bajo {{groups}}, en todos los namespaces.",
     "statusPatches": "Puede cambiar el status de: {{kinds}} (donde puede modificarlos)."
   },
   "state": {

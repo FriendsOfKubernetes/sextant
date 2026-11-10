@@ -67,6 +67,12 @@ pub struct ExtensionPermissions {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[ts(as = "Option<Vec<KindPattern>>", optional)]
     pub status_patches: Vec<KindPattern>,
+    /// Read on every kind of the API groups under these domains (`*.cluster.x-k8s.io`), in every namespace of the
+    /// covered clusters (`sextantApi` 4): the kinds providers define, unknown in advance. Custom resource groups only;
+    /// never more than Read, and never wider for an agent, whose own access decides apart.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[ts(as = "Option<Vec<String>>", optional)]
+    pub read_groups: Vec<String>,
 }
 
 impl ExtensionPermissions {
@@ -76,7 +82,34 @@ impl ExtensionPermissions {
             clusters: ClusterScope::Only { names: Vec::new() },
             rules: Vec::new(),
             status_patches: Vec::new(),
+            read_groups: Vec::new(),
         }
+    }
+
+    /// Whether `readGroups` gives Read on `kind`: its group ends in `.<domain>` of one of them.
+    pub fn reads_group(&self, kind: &KindPattern) -> bool {
+        let group = kind.group.to_ascii_lowercase();
+        self.read_groups.iter().any(|pattern| {
+            group_domain(pattern).is_some_and(|domain| {
+                group.len() > domain.len() + 1
+                    && group.ends_with(&domain)
+                    && group.as_bytes()[group.len() - domain.len() - 1] == b'.'
+            })
+        })
+    }
+
+    /// The namespaces where `action` on `kind` is granted (the rules', or every one for a group `readGroups` reads);
+    /// the clusters are checked apart.
+    pub fn allowed_namespaces(&self, kind: &KindPattern, action: AccessAction) -> NamespaceScope {
+        if action == AccessAction::Read && self.reads_group(kind) {
+            return NamespaceScope::All;
+        }
+        access::allowed_namespaces(&custom(&self.rules), kind, action)
+    }
+
+    /// Whether anything at all is granted on `kind` (it is listed among the kinds the extension sees).
+    pub fn has_any_permission(&self, kind: &KindPattern) -> bool {
+        self.reads_group(kind) || access::has_any_permission(&custom(&self.rules), kind)
     }
 
     /// Whether the extension may patch the status of `kind` (it still needs Modify on the object).
@@ -95,7 +128,17 @@ impl ExtensionPermissions {
         let status_within = self
             .status_patches
             .iter()
-            .all(|k| granted.may_patch_status(k));
+            .all(|k| granted.may_patch_status(k))
+            && self.read_groups.iter().all(|asked| {
+                group_domain(asked).is_some_and(|domain| {
+                    granted.read_groups.iter().any(|given| {
+                        group_domain(given).is_some_and(|given| {
+                            domain == given || domain.ends_with(&format!(".{given}"))
+                        })
+                    })
+                })
+            })
+            && (self.read_groups.is_empty() || clusters_within(&self.clusters, &granted.clusters));
         if !self.grants_anything() {
             return status_within;
         }
@@ -111,20 +154,29 @@ impl ExtensionPermissions {
             ClusterScope::Only { names } => names.iter().any(|n| !n.trim().is_empty()),
         };
         some_cluster
-            && self.rules.iter().any(|rule| {
-                rule.actions.iter().any(|a| EXTENSION_ACTIONS.contains(a))
-                    && match &rule.namespaces {
-                        NamespaceScope::All => true,
-                        NamespaceScope::Only { namespaces } => {
-                            namespaces.iter().any(|n| !n.trim().is_empty())
+            && (!self.read_groups.is_empty()
+                || self.rules.iter().any(|rule| {
+                    rule.actions.iter().any(|a| EXTENSION_ACTIONS.contains(a))
+                        && match &rule.namespaces {
+                            NamespaceScope::All => true,
+                            NamespaceScope::Only { namespaces } => {
+                                namespaces.iter().any(|n| !n.trim().is_empty())
+                            }
                         }
-                    }
-                    && match &rule.kinds {
-                        KindScope::All => true,
-                        KindScope::Only { kinds } => !kinds.is_empty(),
-                    }
-            })
+                        && match &rule.kinds {
+                            KindScope::All => true,
+                            KindScope::Only { kinds } => !kinds.is_empty(),
+                        }
+                }))
     }
+}
+
+/// The domain of a `readGroups` entry (`*.<domain>`, lower case), if it is one.
+pub fn group_domain(pattern: &str) -> Option<String> {
+    pattern
+        .strip_prefix("*.")
+        .filter(|d| super::contributions::is_group_domain(d))
+        .map(str::to_ascii_lowercase)
 }
 
 /// [`ExtensionPermissions::is_within`] gives up (answers "wider") above this many compared points.
@@ -244,6 +296,8 @@ struct PermissionsRepr {
     rules: Vec<AccessRule>,
     #[serde(default)]
     status_patches: Vec<KindPattern>,
+    #[serde(default)]
+    read_groups: Vec<String>,
 }
 
 impl<'de> Deserialize<'de> for ExtensionPermissions {
@@ -261,6 +315,7 @@ impl ExtensionPermissions {
             clusters,
             rules,
             status_patches,
+            read_groups,
         }) = serde_json::from_value::<PermissionsRepr>(value.clone())
         else {
             return None;
@@ -269,6 +324,7 @@ impl ExtensionPermissions {
             clusters,
             rules,
             status_patches,
+            read_groups,
         };
         let only_extension_actions = permissions
             .rules
@@ -322,7 +378,12 @@ pub fn decide_extension(
         return Decision::Denied;
     }
     let access = custom(&permissions.rules);
-    access::decide(&access, namespace, kind, action)
+    match access::decide(&access, namespace, kind, action) {
+        Decision::Denied if action == AccessAction::Read && permissions.reads_group(kind) => {
+            Decision::Allowed { confirm: false }
+        }
+        decision => decision,
+    }
 }
 
 #[cfg(test)]
@@ -370,7 +431,65 @@ mod tests {
             clusters,
             rules,
             status_patches: Vec::new(),
+            read_groups: Vec::new(),
         }
+    }
+
+    #[test]
+    fn read_groups_give_read_on_the_groups_under_their_domains_and_nothing_else() {
+        let mut p = perms(only_clusters(&["prod"]), Vec::new());
+        p.read_groups = vec!["*.cluster.x-k8s.io".into()];
+        let aws = KindPattern::new("infrastructure.cluster.x-k8s.io", "AWSCluster");
+        let docker = KindPattern::new("Infrastructure.Cluster.X-K8S.io", "DockerMachine");
+        for kind in [&aws, &docker] {
+            assert_eq!(
+                decide_extension(&p, "prod", Some("team"), kind, AccessAction::Read),
+                Decision::Allowed { confirm: false }
+            );
+            assert_eq!(
+                p.allowed_namespaces(kind, AccessAction::Read),
+                NamespaceScope::All
+            );
+            assert!(p.has_any_permission(kind));
+        }
+        // Read only, the domain's own group not, another cluster not, a look-alike group not.
+        for action in [
+            AccessAction::Modify,
+            AccessAction::Delete,
+            AccessAction::SecretValues,
+            AccessAction::Logs,
+        ] {
+            assert_eq!(
+                decide_extension(&p, "prod", Some("team"), &aws, action),
+                Decision::Denied
+            );
+        }
+        for kind in [
+            KindPattern::new("cluster.x-k8s.io", "Cluster"),
+            KindPattern::new("evilcluster.x-k8s.io", "X"),
+            KindPattern::new("", "Secret"),
+        ] {
+            assert_eq!(
+                decide_extension(&p, "prod", None, &kind, AccessAction::Read),
+                Decision::Denied
+            );
+        }
+        assert_eq!(
+            decide_extension(&p, "dev", None, &aws, AccessAction::Read),
+            Decision::Denied
+        );
+        // Asked again when an update reads a wider domain, not for a narrower one.
+        let mut wider = p.clone();
+        wider.read_groups = vec!["*.x-k8s.io".into()];
+        assert!(!wider.is_within(&p));
+        let mut narrower = p.clone();
+        narrower.read_groups = vec!["*.infrastructure.cluster.x-k8s.io".into()];
+        assert!(narrower.is_within(&p));
+        assert!(!p.is_within(&perms(only_clusters(&["prod"]), Vec::new())));
+        // Kept through settings, and strict: an unreadable entry is read as written, then refused by the manifest check.
+        let back: ExtensionPermissions =
+            serde_json::from_value(serde_json::to_value(&p).unwrap()).unwrap();
+        assert_eq!(back, p);
     }
 
     fn only_clusters(names: &[&str]) -> ClusterScope {

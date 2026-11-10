@@ -199,6 +199,12 @@
             }
           ]
         },
+        "readGroups": {
+          "description": "Read on every kind of the API groups under these domains (`*.cluster.x-k8s.io`), in every namespace (sextantApi 4).",
+          "type": "array",
+          "maxItems": 10,
+          "items": { "type": "string", "minLength": 3, "maxLength": 242 }
+        },
         "statusPatches": {
           "description": "Kinds whose status subresource the extension may patch where the rules allow Modify (sextantApi 4): custom resources only.",
           "type": "array",

@@ -19,4 +19,10 @@ rules: Array<AccessRule>,
  * Kinds whose status subresource the extension may patch, where the rules allow Modify on them (ADR-0155);
  * `sextantApi` 4. Custom resources only.
  */
-statusPatches?: Array<KindPattern>, };
+statusPatches?: Array<KindPattern>, 
+/**
+ * Read on every kind of the API groups under these domains (`*.cluster.x-k8s.io`), in every namespace of the
+ * covered clusters (`sextantApi` 4): the kinds providers define, unknown in advance. Custom resource groups only;
+ * never more than Read, and never wider for an agent, whose own access decides apart.
+ */
+readGroups?: Array<string>, };

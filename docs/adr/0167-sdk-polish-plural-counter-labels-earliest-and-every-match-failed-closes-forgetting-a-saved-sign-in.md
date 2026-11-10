@@ -364,3 +364,15 @@ A text column with `cases` may say `searchBy: "value"` (`sextantApi` 4): the tab
 text of its own (it hovers its whole text by default), as a built-in cell without a hover (KEDA's Triggers). Both are
 checked alike by `check_columns` and `checkColumns`. The UI kit's `block` makes a block inside its content a heading
 level deeper (h3, h4, h5), as Sextant's nested details blocks are.
+
+## Amendment: Read on the groups under a domain
+
+`permissions.readGroups` (`sextantApi` 4): entries `*.<domain>` of custom resource groups (`group_domain` in
+`permissions.rs` = `isGroupDomainPattern`, at most 10), Read only, in every namespace of the covered clusters, on
+every kind whose group ends in `.<domain>`. Cluster API's providers define kinds under `controlplane.`,
+`infrastructure.`, `bootstrap.` and `addons.cluster.x-k8s.io` that no list can name in advance, and the built-in view
+read any of them with the user's own access; the user chose this over Read on every kind and over the listed kinds.
+`decide_extension` allows Read there when the rules do not, `ExtensionPermissions::allowed_namespaces` and
+`has_any_permission` (used for list scopes, the kinds an extension sees and its problem scopes) count it, and
+`is_within` asks again for a wider domain. The agents' access model (`access.rs`) is unchanged: an agent working
+through an extension still gets no more than its own access. The consent screen says it in its own sentence.

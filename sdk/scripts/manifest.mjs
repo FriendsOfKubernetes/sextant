@@ -1658,7 +1658,14 @@ function isCustomGroup(group) {
   return g.includes(".") && !g.includes("*") && g.trim() !== "" && g !== "k8s.io" && !g.endsWith(".k8s.io") && !g.endsWith(".kubernetes.io");
 }
 
-/** `portForward` and `statusPatches` (`check_permissions`). */
+/** `*.<domain>`, a domain of custom resource groups (`is_group_domain` in contributions.rs). */
+function isGroupDomainPattern(pattern) {
+  if (typeof pattern !== "string" || !pattern.startsWith("*.")) return false;
+  const domain = pattern.slice(2);
+  return isCustomGroup(domain) && domain.length <= 240 && domain.split(".").every((l) => l !== "" && l.length <= 63 && /^[a-z0-9-]+$/.test(l));
+}
+
+/** `portForward`, `readGroups` and `statusPatches` (`check_permissions`). */
 function checkPermissions(manifest) {
   const permissions = manifest.permissions ?? {};
   if (manifest.sextantApi < WINDOW_API) {
@@ -1667,6 +1674,14 @@ function checkPermissions(manifest) {
       if (j >= 0) fail(["permissions", "rules", i, "actions", j], `\`portForward\` needs sextantApi ${WINDOW_API} or later`);
     });
   }
+  // `readGroups` (`group_domain` in permissions.rs).
+  (permissions.readGroups ?? []).forEach((pattern, i) => {
+    if (manifest.sextantApi < WINDOW_API) fail(["permissions", "readGroups"], `needs sextantApi ${WINDOW_API} or later`);
+    if (!isGroupDomainPattern(pattern)) {
+      fail(["permissions", "readGroups", i], "is `*.` and a domain of custom resource groups, such as `*.cluster.x-k8s.io` (not Kubernetes' own)");
+    }
+    if (permissions.readGroups.slice(0, i).includes(pattern)) fail(["permissions", "readGroups", i], "is named twice");
+  });
   const kinds = permissions.statusPatches ?? [];
   const list = ["permissions", "statusPatches"];
   if (kinds.length === 0) return;

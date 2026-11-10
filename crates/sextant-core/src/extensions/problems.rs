@@ -13,7 +13,7 @@ use ts_rs::TS;
 use super::manifest::{ExtensionManifest, ManifestError};
 use super::permissions::ExtensionPermissions;
 use super::schema::JsonPath;
-use crate::access::{self, AccessAction, AccessPreset, ClusterAccess, KindPattern, NamespaceScope};
+use crate::access::{AccessAction, KindPattern, NamespaceScope};
 use crate::resources::inline_secrets::INLINE_SECRETS;
 use crate::settings::custom_columns::{PathStep, parse_field_path};
 
@@ -2159,17 +2159,11 @@ pub fn problem_scopes(
     if !granted.clusters.covers(cluster_name) {
         return Vec::new();
     }
-    // `..default()` keeps this building when the agent's access gains fields; the rules are all an extension has.
-    #[allow(clippy::needless_update)]
-    let access = ClusterAccess {
-        preset: AccessPreset::Custom,
-        rules: granted.rules.clone(),
-        ..ClusterAccess::default()
-    };
     kinds
         .iter()
         .filter_map(|kind| {
-            let namespaces = access::allowed_namespaces(&access, kind, AccessAction::Read);
+            // The rules', or every namespace of a group `readGroups` reads.
+            let namespaces = granted.allowed_namespaces(kind, AccessAction::Read);
             let nowhere =
                 matches!(&namespaces, NamespaceScope::Only { namespaces } if namespaces.is_empty());
             (!nowhere).then(|| ProblemScope {

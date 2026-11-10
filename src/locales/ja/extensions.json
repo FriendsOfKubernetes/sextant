@@ -135,6 +135,7 @@
       "exec": "コマンドの実行",
       "portForward": "ポートフォワード"
     },
+    "readGroups": "{{groups}} 配下の API グループのすべての kind を、すべての namespace で読み取れます。",
     "statusPatches": "次の status を変更できます: {{kinds}}（変更が許可されている場所で）。"
   },
   "state": {

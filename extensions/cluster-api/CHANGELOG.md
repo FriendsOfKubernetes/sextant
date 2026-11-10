@@ -21,5 +21,6 @@ extension.
   paused Cluster's Machines and control planes have none, by their own Paused condition or, with only old
   conditions, by the Cluster.
 - **The state columns' hover** names the phase and the first failing condition, as the built-in one did.
-- Installing asks for consent to read Cluster API's kinds and the provider objects they name, and to judge Clusters,
+- Installing asks for consent to read Cluster API's kinds and every kind of the groups under `cluster.x-k8s.io` (the
+  provider objects of any provider, `readGroups`), and to judge Clusters,
   KubeadmControlPlanes, Machines and MachineHealthChecks in problem rules.

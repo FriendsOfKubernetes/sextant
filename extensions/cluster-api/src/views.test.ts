@@ -216,13 +216,21 @@ describe("the details of a Machine", () => {
     await expect.poll(() => opened).toEqual([{ host: "172.18.0.3", port: 6443, node: "capi-quickstart-n5w87-hz4sv" }]);
   });
 
-  it("shows a provider kind the extension may not read as not readable, without asking for it", async () => {
+  it("shows a provider kind outside Cluster API's groups as not readable, without asking for it", async () => {
     const m = stuckWorker();
-    (m.spec as { infrastructureRef: Record<string, unknown> }).infrastructureRef = { apiGroup: "infrastructure.cluster.x-k8s.io", kind: "FancyMachine", name: "fm-1" };
+    (m.spec as { infrastructureRef: Record<string, unknown> }).infrastructureRef = { apiGroup: "infra.example.com", kind: "FancyMachine", name: "fm-1" };
     // Sextant lists only the kinds the extension may use: a provider kind it may not read is never among them.
     await open(m);
     await expect.poll(text).toContain("Could not be read");
     expect(reads.sort()).toEqual(["Cluster", "KubeadmConfig"]);
+  });
+
+  it("reads any provider kind of the groups under cluster.x-k8s.io, and says one the cluster does not serve is not served", async () => {
+    const m = stuckWorker();
+    (m.spec as { infrastructureRef: Record<string, unknown> }).infrastructureRef = { apiGroup: "infrastructure.cluster.x-k8s.io", kind: "FancyMachine", name: "fm-1" };
+    await open(m);
+    await expect.poll(text).toContain("Kind not served by this cluster");
+    expect(text()).not.toContain("Could not be read");
   });
 
   it("says a kind the cluster does not serve is not served", async () => {

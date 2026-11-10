@@ -65,6 +65,7 @@ export const MANIFEST_SHAPES = {
   ManifestPermissions: described<ManifestPermissions>("/$defs/permissions", {
     clusters: "required",
     statusPatches: "optional",
+    readGroups: "optional",
     rules: "required",
   }),
   ManifestRule: described<ManifestRule>("/$defs/rule", {

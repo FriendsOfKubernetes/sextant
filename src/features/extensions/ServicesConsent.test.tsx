@@ -24,9 +24,11 @@ describe("services and status patches on the consent screen", () => {
           clusters: { type: "all" },
           rules: [],
           statusPatches: [{ group: "argoproj.io", kind: "Rollout" }],
+          readGroups: ["*.cluster.x-k8s.io"],
         }}
       />,
     );
     expect(screen.getByText("May change the status of: Rollout (argoproj.io) (where it may modify them).")).toBeInTheDocument();
+    expect(screen.getByText("May read every kind of the API groups under cluster.x-k8s.io, in every namespace.")).toBeInTheDocument();
   });
 });

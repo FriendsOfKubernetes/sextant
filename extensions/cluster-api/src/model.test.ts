@@ -37,7 +37,7 @@ import {
   str,
   type Detected,
 } from "./model";
-import { READABLE_KINDS } from "./permitted";
+import { isReadable, READABLE_KINDS, READ_GROUPS } from "./permitted";
 
 const objects = objectsJson as unknown as KubeObject[];
 const copy = <T>(value: T): T => structuredClone(value);
@@ -523,6 +523,10 @@ describe("the manifest", () => {
     const listed: Record<string, string[]> = {};
     for (const k of (rules[0]!.kinds as { kinds: { group: string; kind: string }[] }).kinds) (listed[k.group] ??= []).push(k.kind);
     expect(listed).toEqual(READABLE_KINDS);
+    // Every provider's objects through the groups under the domain, as the built-in view read any provider kind.
+    expect(manifest.permissions.readGroups).toEqual([...READ_GROUPS]);
+    expect(isReadable({ group: "infrastructure.cluster.x-k8s.io", kind: "SomeNewProviderMachine" })).toBe(true);
+    expect(isReadable({ group: "evilcluster.x-k8s.io", kind: "X" })).toBe(false);
     expect(manifest.contributes).not.toHaveProperty("actions");
   });
 

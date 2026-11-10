@@ -140,6 +140,7 @@
       "exec": "run commands",
       "portForward": "forward ports"
     },
+    "readGroups": "May read every kind of the API groups under {{groups}}, in every namespace.",
     "statusPatches": "May change the status of: {{kinds}} (where it may modify them)."
   },
   "state": {

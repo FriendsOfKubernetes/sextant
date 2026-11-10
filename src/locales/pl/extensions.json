@@ -150,6 +150,7 @@
       "exec": "uruchamianie poleceń",
       "portForward": "przekierowanie portów"
     },
+    "readGroups": "Może odczytywać wszystkie kindy grup API pod {{groups}}, we wszystkich namespace'ach.",
     "statusPatches": "Może zmieniać status: {{kinds}} (tam, gdzie może je modyfikować)."
   },
   "state": {

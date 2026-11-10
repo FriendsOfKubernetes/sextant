@@ -140,6 +140,7 @@
       "exec": "Befehle ausführen",
       "portForward": "Ports weiterleiten"
     },
+    "readGroups": "Darf jede Art (kind) der API-Gruppen unter {{groups}} lesen, in jedem Namespace.",
     "statusPatches": "Darf den Status ändern von: {{kinds}} (wo sie diese ändern darf)."
   },
   "state": {

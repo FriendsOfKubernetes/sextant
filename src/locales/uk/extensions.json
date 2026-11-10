@@ -150,6 +150,7 @@
       "exec": "виконання команд",
       "portForward": "переадресація портів"
     },
+    "readGroups": "Може читати всі види (kinds) API-груп під {{groups}} в усіх namespace.",
     "statusPatches": "Може змінювати status у: {{kinds}} (там, де йому дозволено їх змінювати)."
   },
   "state": {

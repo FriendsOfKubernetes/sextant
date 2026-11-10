@@ -59,6 +59,11 @@ export interface ManifestPermissions {
    * where the rules allow Modify; sextantApi 4.
    */
   statusPatches?: KindPattern[];
+  /**
+   * Read on every kind of the API groups under these domains (`*.cluster.x-k8s.io`: the kinds providers define), in
+   * every namespace; custom resource groups only (sextantApi 4).
+   */
+  readGroups?: string[];
   rules: ManifestRule[];
 }
 
@@ -591,6 +596,9 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       rules: file.permissions.rules.map((rule) => ({ ...rule, confirm: rule.confirm ?? true })),
       ...(file.permissions.statusPatches !== undefined && file.permissions.statusPatches.length > 0
         ? { statusPatches: file.permissions.statusPatches }
+        : {}),
+      ...(file.permissions.readGroups !== undefined && file.permissions.readGroups.length > 0
+        ? { readGroups: file.permissions.readGroups }
         : {}),
     },
     contributes: {

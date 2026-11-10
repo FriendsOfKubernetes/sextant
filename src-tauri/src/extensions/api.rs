@@ -34,7 +34,7 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value, json};
 use sextant_core::access::{
-    self, AccessAction, AccessPreset, ClusterAccess, Decision, KindPattern, NamespaceScope,
+    self, AccessAction, ClusterAccess, Decision, KindPattern, NamespaceScope,
 };
 use sextant_core::error::{ErrorReason, with_timeout};
 use sextant_core::extensions::commands::{self, MAX_OUTPUT_BYTES};
@@ -1194,7 +1194,7 @@ impl<'a> ExtCall<'a> {
         lock(&self.record).target = clip(&summary.target);
         let granted = self.granted().await?;
         let mut scope = if granted.clusters.covers(&cluster.context) {
-            access::allowed_namespaces(&rules_of(&granted), kind, action)
+            granted.allowed_namespaces(kind, action)
         } else {
             NamespaceScope::Only {
                 namespaces: Vec::new(),
@@ -1257,10 +1257,9 @@ impl<'a> ExtCall<'a> {
         let granted = self.granted().await?;
         // Only the kinds the rules cover are given: that is the whole decision.
         self.decide(AuditDecision::Allowed);
-        let rules = rules_of(&granted);
         let visible: Vec<&ResourceKind> = kinds
             .iter()
-            .filter(|k| access::has_any_permission(&rules, &pattern_of(&k.kind_ref)))
+            .filter(|k| granted.has_any_permission(&pattern_of(&k.kind_ref)))
             .collect();
         to_value(&visible)
     }
@@ -3014,17 +3013,6 @@ fn intersect(a: NamespaceScope, b: NamespaceScope) -> NamespaceScope {
                     .collect(),
             }
         }
-    }
-}
-
-/// The rules an extension was granted, as the agent's access model reads them.
-fn rules_of(granted: &ExtensionPermissions) -> ClusterAccess {
-    // `..default()` keeps this building when the agent's access gains fields; the rules are all an extension has.
-    #[allow(clippy::needless_update)]
-    ClusterAccess {
-        preset: AccessPreset::Custom,
-        rules: granted.rules.clone(),
-        ..ClusterAccess::default()
     }
 }
 

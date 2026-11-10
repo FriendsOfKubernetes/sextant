@@ -135,6 +135,7 @@
       "exec": "執行命令",
       "portForward": "轉送連接埠"
     },
+    "readGroups": "可以讀取 {{groups}} 下所有 API 群組的全部 kind，在所有 namespace 中。",
     "statusPatches": "可以變更下列資源的 status：{{kinds}}（在允許修改的位置）。"
   },
   "state": {

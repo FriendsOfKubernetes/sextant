@@ -1,104 +1,20 @@
-// The kinds the extension may read (its manifest's `permissions`): Cluster API's own and the provider objects of the
-// providers most installations use. A reference to a kind not listed here is shown as not readable, never asked for;
-// `locales.test.ts` keeps this list equal to the manifest's.
+// The kinds the extension may read (its manifest's `permissions`): Cluster API's own kinds by name, and every kind of
+// the groups under `cluster.x-k8s.io` (`readGroups`: the control planes, infrastructure, bootstrap configs and addons
+// of any provider), as the built-in view read any provider object. `model.test.ts` keeps these equal to the manifest's.
 import type { KindRef } from "./model";
 
+/** Cluster API's own kinds, read by name. */
 export const READABLE_KINDS: Readonly<Record<string, readonly string[]>> = {
-  "cluster.x-k8s.io": [
-    "Cluster",
-    "ClusterClass",
-    "MachineDeployment",
-    "MachineSet",
-    "Machine",
-    "MachineHealthCheck",
-  ],
-  "controlplane.cluster.x-k8s.io": [
-    "KubeadmControlPlane",
-    "AWSManagedControlPlane",
-    "ROSAControlPlane",
-    "KThreesControlPlane",
-    "RKE2ControlPlane",
-    "TalosControlPlane",
-    "K0sControlPlane",
-    "K0smotronControlPlane",
-    "MicroK8sControlPlane",
-    "NestedControlPlane",
-  ],
-  "addons.cluster.x-k8s.io": [
-    "ClusterResourceSet",
-  ],
-  "infrastructure.cluster.x-k8s.io": [
-    "DockerCluster",
-    "DockerMachine",
-    "DevCluster",
-    "DevMachine",
-    "AWSCluster",
-    "AWSMachine",
-    "AWSManagedCluster",
-    "ROSACluster",
-    "AzureCluster",
-    "AzureMachine",
-    "AzureManagedCluster",
-    "AzureManagedControlPlane",
-    "AzureASOManagedCluster",
-    "AzureASOManagedControlPlane",
-    "GCPCluster",
-    "GCPMachine",
-    "GCPManagedCluster",
-    "GCPManagedControlPlane",
-    "VSphereCluster",
-    "VSphereMachine",
-    "VCDCluster",
-    "VCDMachine",
-    "OpenStackCluster",
-    "OpenStackMachine",
-    "Metal3Cluster",
-    "Metal3Machine",
-    "HetznerCluster",
-    "HCloudMachine",
-    "HetznerBareMetalMachine",
-    "ProxmoxCluster",
-    "ProxmoxMachine",
-    "NutanixCluster",
-    "NutanixMachine",
-    "IBMVPCCluster",
-    "IBMVPCMachine",
-    "IBMPowerVSCluster",
-    "IBMPowerVSMachine",
-    "KubevirtCluster",
-    "KubevirtMachine",
-    "OCICluster",
-    "OCIMachine",
-    "OCIManagedCluster",
-    "OCIManagedControlPlane",
-    "PacketCluster",
-    "PacketMachine",
-    "TinkerbellCluster",
-    "TinkerbellMachine",
-    "CloudStackCluster",
-    "CloudStackMachine",
-    "MaasCluster",
-    "MaasMachine",
-    "LinodeCluster",
-    "LinodeMachine",
-    "ByoCluster",
-    "ByoMachine",
-    "ScalewayCluster",
-    "ScalewayMachine",
-    "OutscaleCluster",
-    "OutscaleMachine",
-  ],
-  "bootstrap.cluster.x-k8s.io": [
-    "KubeadmConfig",
-    "EKSConfig",
-    "KThreesConfig",
-    "RKE2Config",
-    "TalosConfig",
-    "K0sWorkerConfig",
-    "K0sControllerConfig",
-    "MicroK8sConfig",
-  ],
+  "cluster.x-k8s.io": ["Cluster", "ClusterClass", "MachineDeployment", "MachineSet", "Machine", "MachineHealthCheck"],
 };
 
+/** The groups every kind of which the extension may read: those under this domain. */
+export const READ_GROUPS = ["*.cluster.x-k8s.io"] as const;
+
+const DOMAIN = "cluster.x-k8s.io";
+
 /** Whether the extension may read objects of `kind`. */
-export const isReadable = (kind: Pick<KindRef, "group" | "kind">): boolean => READABLE_KINDS[kind.group]?.includes(kind.kind) ?? false;
+export const isReadable = (kind: Pick<KindRef, "group" | "kind">): boolean => {
+  const group = kind.group.toLowerCase();
+  return (READABLE_KINDS[kind.group]?.includes(kind.kind) ?? false) || (group.endsWith(`.${DOMAIN}`) && group.length > DOMAIN.length + 1);
+};

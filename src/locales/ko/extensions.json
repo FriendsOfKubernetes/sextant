@@ -135,6 +135,7 @@
       "exec": "명령 실행",
       "portForward": "포트 포워딩"
     },
+    "readGroups": "{{groups}} 아래 API 그룹의 모든 kind를 모든 namespace에서 읽을 수 있습니다.",
     "statusPatches": "다음의 status를 변경할 수 있습니다: {{kinds}} (수정이 허용된 곳에서)."
   },
   "state": {

@@ -140,6 +140,7 @@
       "exec": "komut çalıştırma",
       "portForward": "bağlantı noktası yönlendirme"
     },
+    "readGroups": "{{groups}} altındaki API gruplarının tüm kind'larını her namespace'te okuyabilir.",
     "statusPatches": "Şunların status'unu değiştirebilir: {{kinds}} (değiştirebildiği yerlerde)."
   },
   "state": {

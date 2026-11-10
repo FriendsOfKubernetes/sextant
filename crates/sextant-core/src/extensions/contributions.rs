@@ -75,7 +75,7 @@ pub fn is_every_custom_group(kind: &KindPattern) -> bool {
 }
 
 /// A pattern's domain is a custom resource's group: a DNS name with a dot, not Kubernetes' own.
-fn is_group_domain(domain: &str) -> bool {
+pub(crate) fn is_group_domain(domain: &str) -> bool {
     is_custom_group(domain)
         && domain.len() <= 240
         && domain.split('.').all(|label| {
@@ -908,6 +908,24 @@ pub(crate) fn check_permissions(manifest: &ExtensionManifest) -> Result<(), Mani
                     format!("`portForward` needs sextantApi {WINDOW_API} or later"),
                 ));
             }
+        }
+    }
+    let groups = permissions.key("readGroups");
+    for (i, pattern) in manifest.permissions.read_groups.iter().enumerate() {
+        if manifest.sextant_api < WINDOW_API {
+            return Err(at(
+                &groups,
+                format!("needs sextantApi {WINDOW_API} or later"),
+            ));
+        }
+        if super::permissions::group_domain(pattern).is_none() {
+            return Err(at(
+                &groups.index(i),
+                "is `*.` and a domain of custom resource groups, such as `*.cluster.x-k8s.io` (not Kubernetes' own)",
+            ));
+        }
+        if manifest.permissions.read_groups[..i].contains(pattern) {
+            return Err(at(&groups.index(i), "is named twice"));
         }
     }
     let list = permissions.key("statusPatches");

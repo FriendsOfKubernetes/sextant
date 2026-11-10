@@ -2660,7 +2660,7 @@ async fn a_call_for_an_ai_agent_needs_the_agents_own_access_too() {
         .update(|s| {
             let cluster = s.clusters.entry(id.0.clone()).or_default();
             cluster.agent_access = ClusterAccess {
-                preset: AccessPreset::Custom,
+                preset: sextant_core::access::AccessPreset::Custom,
                 rules: vec![AccessRule {
                     namespaces: NamespaceScope::Only {
                         namespaces: vec!["team-a".into()],
