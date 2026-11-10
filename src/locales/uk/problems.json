@@ -37,8 +37,7 @@
     "credentials": "Облікові дані",
     "disk": "Диск майже заповнений",
     "alerts": "Активні алерти",
-    "events": "Події Warning",
-    "k3s": "k3s / RKE2"
+    "events": "Події Warning"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -68,10 +67,7 @@
     "traefikSkippedRoute": "Traefik пропускає його маршрути {{routes}}: порожнє правило match або kind, відмінний від Rule.",
     "reflectorStale": "Reflector не скопіював у це дзеркало поточну версію джерела {{source}}.",
     "reflectorNotAllowed": "Джерело {{source}} більше не дозволяє цей namespace, а дзеркало застаріло.",
-    "reflectorSourceMissing": "Джерело {{source}} не існує.",
-    "k3sHelmChartFailed": "Job встановлення {{job}} цього HelmChart завершився з помилкою.",
-    "k3sHelmChartRetrying": "Job {{job}}: Pod з помилкою наразі: {{failed}}; helm-controller далі повторює.",
-    "k3sComponentUnavailable": "Вбудований компонент {{deployment}}: доступно {{available}} з {{desired}} реплік."
+    "reflectorSourceMissing": "Джерело {{source}} не існує."
   },
   "showDisk": "Диск майже заповнений",
   "showPractices": "Зауваження щодо найкращих практик",

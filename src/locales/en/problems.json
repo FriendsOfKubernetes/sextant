@@ -33,8 +33,7 @@
     "credentials": "Credentials",
     "disk": "Disk almost full",
     "alerts": "Firing alerts",
-    "events": "Warning events",
-    "k3s": "k3s / RKE2"
+    "events": "Warning events"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -60,10 +59,7 @@
     "traefikSkippedRoute": "Traefik skips its routes {{routes}}: an empty match rule or a kind other than Rule.",
     "reflectorStale": "Reflector has not copied the current version of its source {{source}} into this mirror.",
     "reflectorNotAllowed": "Its source {{source}} no longer allows this namespace, and the mirror is out of date.",
-    "reflectorSourceMissing": "Its source {{source}} does not exist.",
-    "k3sHelmChartFailed": "The install Job {{job}} of this HelmChart failed.",
-    "k3sHelmChartRetrying": "Job {{job}}: failed Pods so far: {{failed}}; helm-controller keeps retrying.",
-    "k3sComponentUnavailable": "Bundled component {{deployment}}: {{available}} of {{desired}} replicas available."
+    "reflectorSourceMissing": "Its source {{source}} does not exist."
   },
   "showDisk": "Disk almost full",
   "showPractices": "Best-practice findings",

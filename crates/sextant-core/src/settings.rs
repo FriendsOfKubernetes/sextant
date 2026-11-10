@@ -784,7 +784,7 @@ pub const MOVED_OPT_IN_CATEGORIES: [(&str, &str); 4] = [
 /// The problem categories of Sextant's own that moved into its first-party extensions (ADR-0162): the old category,
 /// the extension (or `<extension id>:<category id>` for a category of the extension's own, #410; only with `false`,
 /// as agents never get those), and whether agents got the category by default.
-pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 17] = [
+pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 18] = [
     ("flux", "sextant.flux", true),
     ("argocd", "sextant.argo-cd", true),
     ("rollouts", "sextant.argo-rollouts", false),
@@ -812,6 +812,8 @@ pub const MOVED_PROBLEM_CATEGORIES: [(&str, &str, bool); 17] = [
     ("vpa", "sextant.vpa", false),
     // Cluster API (on by default): a window view, never for agents.
     ("clusterApi", "sextant.cluster-api", false),
+    // k3s / RKE2 (on by default): a window view, never for agents.
+    ("k3s", "sextant.k3s", false),
 ];
 
 /// Reads the settings file and decides whether it may be written.
@@ -1363,7 +1365,7 @@ mod tests {
         std::fs::write(
             &path,
             r#"{ "settingsVersion": 2,
-                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm", "kueue", "dra", "vpa", "clusterApi"],
+                 "notifications": { "disabledCategories": ["flux", "pods", "rollouts", "workflows", "olm", "kueue", "dra", "vpa", "clusterApi", "k3s"],
                                     "enabledCategories": ["security", "kueueWorkloads", "policies", "sealedSecrets", "prometheusOperator"] },
                  "mcp": { "extensionProblems": ["sextant.argo-cd", "acme.widgets"] } }"#,
         )
@@ -1383,7 +1385,8 @@ mod tests {
                 "ext:sextant.kueue:queues",
                 "ext:sextant.dra",
                 "ext:sextant.vpa",
-                "ext:sextant.cluster-api"
+                "ext:sextant.cluster-api",
+                "ext:sextant.k3s"
             ]
         );
         // An opt-in category turned on stays on as the extension's own (#410).

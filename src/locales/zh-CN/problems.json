@@ -31,8 +31,7 @@
     "credentials": "凭据",
     "disk": "磁盘即将用满",
     "alerts": "触发中的告警",
-    "events": "警告事件",
-    "k3s": "k3s / RKE2"
+    "events": "警告事件"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -56,10 +55,7 @@
     "traefikSkippedRoute": "Traefik 跳过其路由 {{routes}}：match 规则为空，或 kind 不是 Rule。",
     "reflectorStale": "Reflector 尚未将源 {{source}} 的当前版本复制到此镜像。",
     "reflectorNotAllowed": "源 {{source}} 已不再允许此 namespace，且镜像已过时。",
-    "reflectorSourceMissing": "源 {{source}} 不存在。",
-    "k3sHelmChartFailed": "此 HelmChart 的安装 Job {{job}} 失败。",
-    "k3sHelmChartRetrying": "Job {{job}}：目前失败的 Pod：{{failed}}；helm-controller 仍在重试。",
-    "k3sComponentUnavailable": "内置组件 {{deployment}}：{{desired}} 个副本中 {{available}} 个可用。"
+    "reflectorSourceMissing": "源 {{source}} 不存在。"
   },
   "showDisk": "磁盘即将用满",
   "showPractices": "最佳实践发现",

@@ -31,8 +31,7 @@
     "credentials": "認証情報",
     "disk": "ディスク残りわずか",
     "alerts": "発火中のアラート",
-    "events": "警告イベント",
-    "k3s": "k3s / RKE2"
+    "events": "警告イベント"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -56,10 +55,7 @@
     "traefikSkippedRoute": "Traefik はルート {{routes}} をスキップします: match ルールが空か、kind が Rule ではありません。",
     "reflectorStale": "Reflector はソース {{source}} の現在のバージョンをこのミラーにコピーしていません。",
     "reflectorNotAllowed": "ソース {{source}} はこの namespace を許可しなくなり、ミラーは古くなっています。",
-    "reflectorSourceMissing": "ソース {{source}} は存在しません。",
-    "k3sHelmChartFailed": "この HelmChart のインストール Job {{job}} が失敗しました。",
-    "k3sHelmChartRetrying": "Job {{job}}: これまでに失敗した Pod: {{failed}}。helm-controller は再試行を続けています。",
-    "k3sComponentUnavailable": "同梱コンポーネント {{deployment}}: {{desired}} レプリカ中 {{available}} が利用可能です。"
+    "reflectorSourceMissing": "ソース {{source}} は存在しません。"
   },
   "showDisk": "ディスク残りわずか",
   "showPractices": "ベストプラクティスの指摘",

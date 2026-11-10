@@ -149,8 +149,6 @@ export const SIDEBAR_SECTIONS = [
   "traefik",
   "contour",
   "crossplane",
-  "k3s",
-  "helmController",
   "openshift",
   "customResources",
 ] as const;
@@ -176,13 +174,17 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
   ["strimzi", "crossplane"],
   ["prometheusOperator", "crossplane"],
   ["clusterApi", "crossplane"],
-  ["dra", "helmController"],
-  ["gpuOperator", "helmController"],
-  ["kueue", "helmController"],
-  ["jobset", "helmController"],
-  ["kuberay", "helmController"],
-  ["kserve", "helmController"],
-  ["olm", "helmController"],
+  // k3s / RKE2 and helm-controller came after Cluster API, the sections behind them after helm-controller: all are
+  // extension sections now, so they hang off `crossplane` too, in this order.
+  ["k3s", "crossplane"],
+  ["helmController", "crossplane"],
+  ["dra", "crossplane"],
+  ["gpuOperator", "crossplane"],
+  ["kueue", "crossplane"],
+  ["jobset", "crossplane"],
+  ["kuberay", "crossplane"],
+  ["kserve", "crossplane"],
+  ["olm", "crossplane"],
 ];
 
 /**
@@ -202,8 +204,6 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "traefik",
   "contour",
   "crossplane",
-  "k3s",
-  "helmController",
   "openshift",
 ]);
 
@@ -230,8 +230,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   traefik: "traefik",
   contour: "contour",
   crossplane: "crossplane",
-  k3s: "k3s",
-  helmController: "helmController",
   openshift: "openshift",
   customResources: "customResources",
   settings: "settings",

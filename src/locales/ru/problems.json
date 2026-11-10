@@ -37,8 +37,7 @@
     "credentials": "Учётные данные",
     "disk": "Диск почти заполнен",
     "alerts": "Сработавшие оповещения",
-    "events": "События Warning",
-    "k3s": "k3s / RKE2"
+    "events": "События Warning"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -68,10 +67,7 @@
     "traefikSkippedRoute": "Traefik пропускает его маршруты {{routes}}: пустое правило match или kind, отличный от Rule.",
     "reflectorStale": "Reflector не скопировал в это зеркало текущую версию источника {{source}}.",
     "reflectorNotAllowed": "Источник {{source}} больше не разрешает этот namespace, а зеркало устарело.",
-    "reflectorSourceMissing": "Источник {{source}} не существует.",
-    "k3sHelmChartFailed": "Job установки {{job}} этого HelmChart завершился с ошибкой.",
-    "k3sHelmChartRetrying": "Job {{job}}: Pod с ошибкой пока: {{failed}}; helm-controller продолжает повторять.",
-    "k3sComponentUnavailable": "Встроенный компонент {{deployment}}: доступно {{available}} из {{desired}} реплик."
+    "reflectorSourceMissing": "Источник {{source}} не существует."
   },
   "showDisk": "Диск почти заполнен",
   "showPractices": "Замечания по лучшим практикам",

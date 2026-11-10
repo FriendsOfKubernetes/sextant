@@ -1,5 +1,6 @@
 // Whether a key, flag or variable name looks like it holds a secret, and what is shown instead of its value: the one
-// rule of the details' Secret-like fields and k3s/RKE2's node arguments and chart values (ADR-0115, ADR-0123). Pure.
+// rule of the details' Secret-like fields and the metadata list's masking of k3s/RKE2 node arguments and environment
+// (`nodeArgs.ts`, ADR-0115, ADR-0123). Pure.
 
 export const HIDDEN = "<hidden>";
 

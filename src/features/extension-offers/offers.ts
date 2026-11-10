@@ -29,6 +29,8 @@ export const OFFERS: readonly ExtensionOffer[] = [
   { id: "sextant.sealed-secrets", tool: "Sealed Secrets", matches: (k) => k.group === "bitnami.com" && k.kind === "SealedSecret" },
   { id: "sextant.prometheus-operator", tool: "Prometheus Operator", matches: (k) => k.group === "monitoring.coreos.com" },
   { id: "sextant.cluster-api", tool: "Cluster API", matches: (k) => k.group === "cluster.x-k8s.io" },
+  // k3s / RKE2: its own kinds (`k3s.cattle.io`) or helm-controller's (`helm.cattle.io`).
+  { id: "sextant.k3s", tool: "k3s / RKE2", matches: (k) => k.group === "k3s.cattle.io" || k.group === "helm.cattle.io" },
   { id: "sextant.cnpg", tool: "CloudNativePG", matches: (k) => k.group === "postgresql.cnpg.io" },
   { id: "sextant.strimzi", tool: "Strimzi", matches: (k) => k.group === "kafka.strimzi.io" },
   { id: "sextant.dra", tool: "Dynamic Resource Allocation", matches: (k) => k.group === "resource.k8s.io" },

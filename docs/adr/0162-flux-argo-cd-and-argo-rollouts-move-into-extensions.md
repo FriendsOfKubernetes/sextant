@@ -209,3 +209,28 @@ view, as does `Detected.belongsTo`; `across` on a source's own rows stays (Conto
 reader the built-in view shared with k3s's ServiceLB table moves to `src/resources/refObjects.ts`. Where the extension
 still differs — the state columns' hover in two status shapes, provider objects of kinds not named in its permissions,
 a paused Cluster it cannot read, the workload cluster opened through Sextant's dialog — is listed in its README.
+
+## Amendment: k3s and RKE2
+
+`extensions/k3s` (`sextant.k3s`, 1.0.0) takes the k3s / RKE2 view (ADR-0123): the section `k3s` ("k3s / RKE2": the
+page "Distribution" with the cluster's distribution, its nodes, the bundled components and the Services ServiceLB
+serves, Addons and etcd snapshots) and the section `helmController` (HelmCharts with their install Job and its logs,
+HelmChartConfigs), with the built-in columns, "Only problems" and details, and the "k3s" / "RKE2" block of Nodes
+(`k3s-node`, was `k3sNode`). Both sections keep their places after Cluster API; since `clusterApi` is an extension
+section too, they hang off `crossplane` in `EXTENSION_SECTION_PLACES`, as do the sections that followed
+`helmController` (`dra`, `gpuOperator`, `kueue`, `jobset`, `kuberay`, `kserve`, `olm`), so the order is unchanged. The
+sidebar offers the extension where `k3s.cattle.io` or `helm.cattle.io` is served. Its problems (a failed or retrying
+HelmChart install, told about the chart, and a bundled component not available) are rules of the extension's own
+category; the version-3 migration moves the category `k3s` (on by default) to `ext:sextant.k3s`
+(`MOVED_PROBLEM_CATEGORIES`, never for agents by default, as before). The built-in provider, the last of Sextant's
+categories judged across objects that `categoryOf` names, goes with the view; the problems store's `SourceDef.external`
+stays (mesh, Traefik, Crossplane, Reflector, best practices, disk, alerts), and so does the map's `judgedByRules`,
+though no kind `categoryOf` names is judged only by a provider any more. ADR-0123's masking
+stays where the window still shows the material: a node's `<program>.io/node-args` and `node-env` annotations in the
+details' metadata list, masked by `src/resources/nodeArgs.ts` (the node-argument half of the former `mask.ts`). The
+inline-secret rows of HelmCharts, HelmChartConfigs and the node annotations stay too, so the host blanks those fields
+for every extension and agent: the extension carries the masking for what it does get (a chart's `values`, a
+HelmChartConfig's `set`) but cannot show the masked node arguments or `valuesContent`/`set`, which the built-in view
+showed, and points at the YAML section instead; showing them would need a masked projection computed in Rust by
+ADR-0123's rules. The objects-by-name reader `src/resources/refObjects.ts`, whose last user was the built-in
+Distribution page, is removed. Where the extension still differs is listed in its README.

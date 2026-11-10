@@ -675,7 +675,7 @@ const ICONS = {
   clusterPolicy: GpuFileCog,
   nvidiaDriver: GpuPcCase,
   gpuNodes: GpuMemoryStick,
-  // k3s and RKE2 (#270): the two sections, the Distribution page and the kinds.
+  // k3s and RKE2 (#270): the two sections, the Distribution page and the kinds, named by Sextant's own extension `extensions/k3s`.
   k3s: K3sTractor,
   k3sDistribution: K3sBadgeInfo,
   k3sAddon: K3sFileInput,

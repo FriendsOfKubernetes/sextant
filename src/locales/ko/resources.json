@@ -22,9 +22,7 @@
     "contour": "Contour",
     "crossplane": "Crossplane",
     "openshift": "OpenShift",
-    "customResources": "사용자 지정 리소스",
-    "k3s": "k3s / RKE2",
-    "helmController": "helm-controller"
+    "customResources": "사용자 지정 리소스"
   },
   "kinds": {
     "pods": "Pods",

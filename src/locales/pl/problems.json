@@ -37,8 +37,7 @@
     "credentials": "Poświadczenia",
     "disk": "Dysk prawie pełny",
     "alerts": "Aktywne alerty",
-    "events": "Zdarzenia ostrzegawcze",
-    "k3s": "k3s / RKE2"
+    "events": "Zdarzenia ostrzegawcze"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -68,10 +67,7 @@
     "traefikSkippedRoute": "Traefik pomija jego trasy {{routes}}: pusta reguła match lub kind inny niż Rule.",
     "reflectorStale": "Reflector nie skopiował do tej kopii aktualnej wersji źródła {{source}}.",
     "reflectorNotAllowed": "Źródło {{source}} nie zezwala już na ten namespace, a kopia jest nieaktualna.",
-    "reflectorSourceMissing": "Źródło {{source}} nie istnieje.",
-    "k3sHelmChartFailed": "Job instalacji {{job}} tego HelmChart zakończył się niepowodzeniem.",
-    "k3sHelmChartRetrying": "Job {{job}}: dotąd nieudane Pody: {{failed}}; helm-controller ponawia dalej.",
-    "k3sComponentUnavailable": "Wbudowany komponent {{deployment}}: dostępne {{available}} z {{desired}} replik."
+    "reflectorSourceMissing": "Źródło {{source}} nie istnieje."
   },
   "showDisk": "Dysk prawie pełny",
   "showPractices": "Ustalenia dotyczące dobrych praktyk",

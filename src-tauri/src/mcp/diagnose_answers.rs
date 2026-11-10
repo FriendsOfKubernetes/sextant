@@ -195,7 +195,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "traefik",
     "contour",
     "crossplane",
-    "k3s",
     "openshift",
     "reflector",
     "security",
@@ -226,8 +225,6 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "crossplane",
     // Reflector mirrors (#241): a window view of 0.21.0.
     "reflector",
-    // k3s and RKE2 HelmCharts and bundled components (#270): a window view of 0.25.0.
-    "k3s",
     // OpenShift Routes, DeploymentConfigs, Builds and ImageStreams (#267): a window view of 0.25.0.
     "openshift",
     // Firing alerts of Prometheus and Alertmanager (#264): a window view of 0.24.0.

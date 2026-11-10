@@ -8,7 +8,6 @@ import { CONTOUR_ACROSS } from "../contour/across";
 import { HTTP_PROXY } from "../contour/model";
 import { INGRESS_ROUTE as TRAEFIK_INGRESS_ROUTE } from "../traefik/model";
 import { XRD } from "../crossplane/model";
-import { HELM_CHART as K3S_HELM_CHART } from "../k3s/model";
 import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
 import { BUILD as OPENSHIFT_BUILD, DEPLOYMENT_CONFIG as OPENSHIFT_DC, IMAGE_STREAM as OPENSHIFT_IMAGE_STREAM, ROUTE as OPENSHIFT_ROUTE } from "../openshift/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
@@ -138,10 +137,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
   // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
   crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],
-  // k3s and RKE2 (#270): HelmCharts whose install Job failed or keeps failing, bundled components' Deployments not
-  // available, judged by the provider of features/k3s (`external`: the Job and the Deployments are other objects), held
-  // only where HelmCharts are served (its watches are bounded there).
-  k3s: [{ category: "k3s", kind: K3S_HELM_CHART, fieldSelector: null, discovered: true, external: true }],
   // KubeRay (#248): failed RayClusters or ones whose head is not ready, failed RayJobs (batch jobs can be thousands:
   // capped), RayServices not ready. KServe (#249): InferenceServices not ready or whose model failed to load.
   // OpenShift (#267): Routes no router admitted, DeploymentConfigs whose rollout failed, failed Builds (only the latest

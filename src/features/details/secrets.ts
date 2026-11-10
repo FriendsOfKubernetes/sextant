@@ -5,13 +5,14 @@
 //
 // Secret material other kinds hold inline (`src/resources/inline-secrets.json`) arrives whole: the YAML view and the
 // editor show and save the object as it is (ADR-0120, ADR-0121, ADR-0123). The metadata list masks the two annotations
-// of that table it shows as plain text, a k3s/RKE2 node's arguments and environment, by the rules of the k3s view
-// (`src/features/k3s/mask.ts`): a secret flag's or variable's value is `<hidden>`, every other value is cleaned of URI
+// of that table it shows as plain text, a k3s/RKE2 node's arguments and environment, by the rules of the former k3s
+// view (`src/resources/nodeArgs.ts`; the view is Sextant's own extension `extensions/k3s` since 0.30, which never gets
+// these annotations): a secret flag's or variable's value is `<hidden>`, every other value is cleaned of URI
 // credentials, and text that does not read is hidden whole.
 import type { KubeObject } from "../../api";
 import { cleanText } from "../../resources/uri";
 import { HIDDEN, looksSecret } from "../../resources/secretNames";
-import { K3S_OMITTED, nodeArgs } from "../k3s/mask";
+import { K3S_OMITTED, nodeArgs } from "../../resources/nodeArgs";
 
 export const LAST_APPLIED = "kubectl.kubernetes.io/last-applied-configuration";
 /** Set by the backend on a Secret sent without its values. */

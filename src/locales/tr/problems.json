@@ -33,8 +33,7 @@
     "credentials": "Kimlik bilgileri",
     "disk": "Disk neredeyse dolu",
     "alerts": "Tetiklenen uyarılar",
-    "events": "Uyarı olayları",
-    "k3s": "k3s / RKE2"
+    "events": "Uyarı olayları"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -60,10 +59,7 @@
     "traefikSkippedRoute": "Traefik {{routes}} rotalarını atlar: boş bir match kuralı ya da Rule dışında bir kind.",
     "reflectorStale": "Reflector, kaynak {{source}} nesnesinin güncel sürümünü bu yansıya kopyalamadı.",
     "reflectorNotAllowed": "Kaynak {{source}} artık bu namespace'e izin vermiyor ve yansı güncel değil.",
-    "reflectorSourceMissing": "Kaynak {{source}} mevcut değil.",
-    "k3sHelmChartFailed": "Bu HelmChart'ın {{job}} kurulum Job'ı başarısız oldu.",
-    "k3sHelmChartRetrying": "Job {{job}}: şimdiye kadar başarısız Pod'lar: {{failed}}; helm-controller yeniden denemeye devam ediyor.",
-    "k3sComponentUnavailable": "Birlikte gelen bileşen {{deployment}}: {{desired}} replikadan {{available}} kullanılabilir."
+    "reflectorSourceMissing": "Kaynak {{source}} mevcut değil."
   },
   "showDisk": "Disk neredeyse dolu",
   "showPractices": "En iyi uygulama bulguları",

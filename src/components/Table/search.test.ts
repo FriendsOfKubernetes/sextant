@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { KubeObject } from "../../api";
 import { i18n } from "../../i18n";
 import { loadLanguage } from "../../i18n/index";
-import "../../features/k3s/index";
 import "../../features/openshift/index";
 import "../../resources";
 import { findResourceDef } from "../../resources";
@@ -97,14 +96,9 @@ describe("search over the shown columns", () => {
     await loadLanguage("de");
     await i18n.changeLanguage("de");
     try {
-      const HELM_CHART = { group: "helm.cattle.io", version: "v1", kind: "HelmChart" };
       const ROUTE = { group: "route.openshift.io", version: "v1", kind: "Route" };
       const columnsOf = (kind: typeof POD) => findResourceDef(kind)!.columns;
       const named = (name: string, rest: Partial<KubeObject> = {}): KubeObject => ({ metadata: { name, namespace: "ops" }, ...rest });
-
-      const chart = named("traefik", { status: { conditions: [{ type: "Failed", status: "True", message: "boom" }] } });
-      expect(search("Fehlgeschlagen", [chart], columnsOf(HELM_CHART))).toEqual(["traefik"]);
-      expect(search("failed", [chart], columnsOf(HELM_CHART))).toEqual([]);
 
       const route = named("web", {
         spec: { host: "web.apps.example", to: { kind: "Service", name: "web" } },

@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Представления инструментов кластера теперь расширения",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe и Operator Lifecycle Manager вынесены из Sextant в его собственные расширения из каталога расширений, которые обновляются отдельно. Установите нужные ниже: до этого их разделы не показываются. Ваши настройки уведомлений для них сохранены, а боковая панель тоже предлагает их в кластерах, где работают эти инструменты."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe и Operator Lifecycle Manager вынесены из Sextant в его собственные расширения из каталога расширений, которые обновляются отдельно. Установите нужные ниже: до этого их разделы не показываются. Ваши настройки уведомлений для них сохранены, а боковая панель тоже предлагает их в кластерах, где работают эти инструменты."
     },
     "api4": {
       "title": "API расширений 4",
@@ -44,7 +44,8 @@
       "sealed-secrets": "SealedSecret с состоянием синхронизации, областью, целевым Secret и запечатанными ключами, и контроллер с его ключами запечатывания",
       "vpa": "VerticalPodAutoscaler с состоянием и рекомендацией и тем, что получит новый под, их контрольные точки и компоненты, и VPA каждой рабочей нагрузки",
       "prometheus-operator": "ServiceMonitor, PodMonitor и Probe с тем, что они выбирают, PrometheusRule, Prometheus и Alertmanager",
-      "cluster-api": "Cluster с состоянием, control plane, MachineDeployment, MachineSet и Machine вплоть до Node рабочего кластера, MachineHealthCheck и ClusterResourceSet"
+      "cluster-api": "Cluster с состоянием, control plane, MachineDeployment, MachineSet и Machine вплоть до Node рабочего кластера, MachineHealthCheck и ClusterResourceSet",
+      "k3s": "Дистрибутив с его узлами, встроенными компонентами и ServiceLB, HelmChart с их Job установки, HelmChartConfig, Addon и снимки etcd"
     }
   }
 }

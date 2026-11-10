@@ -33,8 +33,7 @@
     "credentials": "Zugangsdaten",
     "disk": "Datenträger fast voll",
     "alerts": "Ausgelöste Alerts",
-    "events": "Warnereignisse",
-    "k3s": "k3s / RKE2"
+    "events": "Warnereignisse"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -60,10 +59,7 @@
     "traefikSkippedRoute": "Traefik überspringt seine Routen {{routes}}: eine leere Match-Regel oder ein anderer Kind als Rule.",
     "reflectorStale": "Reflector hat die aktuelle Version der Quelle {{source}} nicht in diesen Spiegel kopiert.",
     "reflectorNotAllowed": "Die Quelle {{source}} erlaubt diesen Namespace nicht mehr, und der Spiegel ist veraltet.",
-    "reflectorSourceMissing": "Die Quelle {{source}} existiert nicht.",
-    "k3sHelmChartFailed": "Der Installations-Job {{job}} dieses HelmCharts ist fehlgeschlagen.",
-    "k3sHelmChartRetrying": "Job {{job}}: bisher fehlgeschlagene Pods: {{failed}}; helm-controller versucht es weiter.",
-    "k3sComponentUnavailable": "Mitgelieferte Komponente {{deployment}}: {{available}} von {{desired}} Replikaten verfügbar."
+    "reflectorSourceMissing": "Die Quelle {{source}} existiert nicht."
   },
   "showDisk": "Datenträger fast voll",
   "showPractices": "Best-Practice-Befunde",

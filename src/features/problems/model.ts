@@ -12,7 +12,6 @@ import { status } from "../../resources";
 import { kindFromApiVersion } from "../../resources/refs";
 import { eventTimestamp, involvedObject } from "../events/model";
 import { contourProblems } from "../contour/problemRules";
-import { isHelmControllerKind, isK3sKind } from "../k3s/model";
 import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
 import {
   BACKEND_TLS_POLICY,
@@ -42,7 +41,6 @@ export const PROBLEM_CATEGORIES = [
   "traefik",
   "contour",
   "crossplane",
-  "k3s",
   "openshift",
   "reflector",
   "security",
@@ -254,8 +252,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (kind.group === "gateway.networking.k8s.io") return "gateway";
   // Contour HTTPProxies (#233): invalid and orphaned ones.
   if (kind.group === "projectcontour.io" && kind.kind === "HTTPProxy") return "contour";
-  // k3s and RKE2 (#270): HelmCharts and the bundled components, judged by the provider of features/k3s.
-  if (isHelmControllerKind(kind) || isK3sKind(kind)) return "k3s";
   // KubeRay (#248): RayClusters, RayJobs and RayServices; KServe (#249): InferenceServices.
   // Operator Lifecycle Manager (#268): failed CSVs (originals only), Subscriptions whose resolution or InstallPlan
   // failed or whose plan is stuck, catalogs not READY.
@@ -673,7 +669,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
     case "traefik": // Broken references span several objects: the provider of features/traefik finds them.
     case "reflector": // Mirrors are judged against their sources: the provider of features/reflector finds them.
-    case "k3s": // A chart's outcome is its Job, components are Deployments: the provider of features/k3s finds them.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:
       return [];

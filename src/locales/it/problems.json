@@ -35,8 +35,7 @@
     "credentials": "Credenziali",
     "disk": "Disco quasi pieno",
     "alerts": "Alert attivi",
-    "events": "Eventi di avviso",
-    "k3s": "k3s / RKE2"
+    "events": "Eventi di avviso"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -64,10 +63,7 @@
     "traefikSkippedRoute": "Traefik salta le sue route {{routes}}: una regola match vuota o un kind diverso da Rule.",
     "reflectorStale": "Reflector non ha copiato in questo mirror la versione attuale della sorgente {{source}}.",
     "reflectorNotAllowed": "La sorgente {{source}} non consente più questo namespace e il mirror non è aggiornato.",
-    "reflectorSourceMissing": "La sorgente {{source}} non esiste.",
-    "k3sHelmChartFailed": "Il Job di installazione {{job}} di questo HelmChart non è riuscito.",
-    "k3sHelmChartRetrying": "Job {{job}}: Pod non riusciti finora: {{failed}}; helm-controller continua a ritentare.",
-    "k3sComponentUnavailable": "Componente incluso {{deployment}}: {{available}} repliche disponibili su {{desired}}."
+    "reflectorSourceMissing": "La sorgente {{source}} non esiste."
   },
   "showDisk": "Disco quasi pieno",
   "showPractices": "Rilievi sulle buone pratiche",

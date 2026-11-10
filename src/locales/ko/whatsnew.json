@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "클러스터 도구의 보기는 이제 확장 프로그램입니다",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe 및 Operator Lifecycle Manager가 Sextant에서 확장 프로그램 카탈로그의 자체 확장 프로그램으로 옮겨졌으며, 이 확장 프로그램은 따로 업데이트됩니다. 사용하는 것을 아래에서 설치하세요. 그 전까지는 해당 섹션이 표시되지 않습니다. 이에 대한 알림 설정은 유지되며, 이 도구를 실행하는 클러스터에서는 사이드바에서도 추천됩니다."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe 및 Operator Lifecycle Manager가 Sextant에서 확장 프로그램 카탈로그의 자체 확장 프로그램으로 옮겨졌으며, 이 확장 프로그램은 따로 업데이트됩니다. 사용하는 것을 아래에서 설치하세요. 그 전까지는 해당 섹션이 표시되지 않습니다. 이에 대한 알림 설정은 유지되며, 이 도구를 실행하는 클러스터에서는 사이드바에서도 추천됩니다."
     },
     "api4": {
       "title": "확장 기능 API 4",
@@ -44,7 +44,8 @@
       "sealed-secrets": "SealedSecret의 동기화 상태, 범위, 대상 Secret 및 봉인된 키, 그리고 컨트롤러와 해당 봉인 키",
       "vpa": "VerticalPodAutoscaler의 상태와 권장값, 새 Pod가 받게 될 값, 체크포인트와 구성 요소, 그리고 각 워크로드의 VPA",
       "prometheus-operator": "ServiceMonitor, PodMonitor, Probe와 그 선택 대상, PrometheusRule, Prometheus 및 Alertmanager",
-      "cluster-api": "Cluster와 그 상태, 컨트롤 플레인, 워크로드 클러스터의 Node까지 이어지는 MachineDeployment, MachineSet, Machine, MachineHealthCheck와 ClusterResourceSet"
+      "cluster-api": "Cluster와 그 상태, 컨트롤 플레인, 워크로드 클러스터의 Node까지 이어지는 MachineDeployment, MachineSet, Machine, MachineHealthCheck와 ClusterResourceSet",
+      "k3s": "노드, 번들 구성 요소, ServiceLB가 있는 배포판, 설치 Job이 있는 HelmChart, HelmChartConfig, Addon, etcd 스냅샷"
     }
   }
 }

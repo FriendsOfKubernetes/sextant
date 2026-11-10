@@ -22,9 +22,7 @@
     "contour": "Contour",
     "crossplane": "Crossplane",
     "openshift": "OpenShift",
-    "customResources": "カスタムリソース",
-    "k3s": "k3s / RKE2",
-    "helmController": "helm-controller"
+    "customResources": "カスタムリソース"
   },
   "kinds": {
     "pods": "Pod",

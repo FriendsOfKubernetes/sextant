@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "集群工具的视图现在是扩展",
-      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Kyverno、CloudNativePG、Strimzi、External Secrets、Sealed Secrets、Prometheus Operator、Vertical Pod Autoscaler、Cluster API、Dynamic Resource Allocation、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe 和 Operator Lifecycle Manager 已从 Sextant 移到扩展目录中它自己的扩展里，这些扩展单独更新。请在下方安装你使用的扩展：在此之前不会显示它们的分区。你为它们设置的通知已保留，侧边栏也会在运行这些工具的集群中推荐它们。"
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Kyverno、CloudNativePG、Strimzi、External Secrets、Sealed Secrets、Prometheus Operator、Vertical Pod Autoscaler、Cluster API、k3s / RKE2、Dynamic Resource Allocation、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe 和 Operator Lifecycle Manager 已从 Sextant 移到扩展目录中它自己的扩展里，这些扩展单独更新。请在下方安装你使用的扩展：在此之前不会显示它们的分区。你为它们设置的通知已保留，侧边栏也会在运行这些工具的集群中推荐它们。"
     },
     "api4": {
       "title": "扩展 API 4",
@@ -44,7 +44,8 @@
       "sealed-secrets": "SealedSecret 及其同步状态、范围、目标 Secret 和密封的键，以及控制器及其密封密钥",
       "vpa": "VerticalPodAutoscaler 及其状态和推荐值、新 Pod 将获得的值、检查点和组件，以及每个工作负载的 VPA",
       "prometheus-operator": "ServiceMonitor、PodMonitor 和 Probe 及其选择的对象、PrometheusRule、Prometheus 和 Alertmanager",
-      "cluster-api": "Cluster 及其状态、控制平面、直到工作负载集群 Node 的 MachineDeployment、MachineSet 和 Machine、MachineHealthCheck 与 ClusterResourceSet"
+      "cluster-api": "Cluster 及其状态、控制平面、直到工作负载集群 Node 的 MachineDeployment、MachineSet 和 Machine、MachineHealthCheck 与 ClusterResourceSet",
+      "k3s": "发行版及其节点、内置组件和 ServiceLB，带安装 Job 的 HelmChart、HelmChartConfig、Addon 和 etcd 快照"
     }
   }
 }

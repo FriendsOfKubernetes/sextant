@@ -35,8 +35,7 @@
     "credentials": "Identifiants",
     "disk": "Disque presque plein",
     "alerts": "Alertes déclenchées",
-    "events": "Événements d'avertissement",
-    "k3s": "k3s / RKE2"
+    "events": "Événements d'avertissement"
   },
   "messages": {
     "analysisRun": "AnalysisRun {{name}}",
@@ -64,10 +63,7 @@
     "traefikSkippedRoute": "Traefik ignore ses routes {{routes}} : une règle match vide ou un kind autre que Rule.",
     "reflectorStale": "Reflector n’a pas copié la version actuelle de la source {{source}} dans ce miroir.",
     "reflectorNotAllowed": "La source {{source}} n’autorise plus ce namespace, et le miroir n’est plus à jour.",
-    "reflectorSourceMissing": "La source {{source}} n’existe pas.",
-    "k3sHelmChartFailed": "Le Job d'installation {{job}} de ce HelmChart a échoué.",
-    "k3sHelmChartRetrying": "Job {{job}} : Pods en échec jusqu'ici : {{failed}} ; helm-controller continue de réessayer.",
-    "k3sComponentUnavailable": "Composant fourni {{deployment}} : {{available}} réplicas disponibles sur {{desired}}."
+    "reflectorSourceMissing": "La source {{source}} n’existe pas."
   },
   "showDisk": "Disque presque plein",
   "showPractices": "Constats de bonnes pratiques",
