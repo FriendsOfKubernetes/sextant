@@ -5,6 +5,8 @@
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-in Dynamic Resource Allocation view
 (ADR-0116) as an extension.
 
+- The ResourceClaims are listed only in the namespaces the waiting Pods name (`narrowLookups`), as the built-in
+  detector looked at them.
 - **A sidebar section "Dynamic Resource Allocation"** with Resource Claims, Claim Templates, Device Classes and
   Resource Slices in Sextant's tables, the built-in columns and the claims' "Only problems", and the page **Devices**:
   every device the ResourceSlices publish, by node, with the claim that holds it.

@@ -159,11 +159,11 @@ None: the extension is read-only. It has no action of its own.
     made yet it names every claim of the Pod; the built-in one named those without devices: the entries not made yet
     (no path picks an entry without a status entry of its name) and the claims looked up (that problem stands whatever
     the lookups find, and a lookup cannot be put under `not`).
-  - **What the rules watch.** The built-in detector looked at the ResourceClaims of only the namespaces where a Pending
-    Pod waits (at most 40) and nothing on a cluster without a DeviceClass; here every ResourceClaim of the cluster is
-    looked up (at most 5000: beyond it, claims cannot be told), and the Pending Pods are watched on any cluster (a Pod
-    using claims on a cluster without DeviceClasses can be told "not made yet"). A looked-up list narrowed to the
-    namespaces of the judged objects, and a rule gate "where an object of a kind exists", would close it.
+  - **What the rules watch.** The ResourceClaims are listed only in the namespaces the waiting Pods' claims name
+    (`narrowLookups`; past 40 namespaces in every one, at most 5000 claims), as the built-in detector looked at the
+    namespaces where a Pending Pod waits; but the Pending Pods are watched on any cluster, where the built-in looked at
+    nothing on a cluster without a DeviceClass (a Pod using claims there can be told "not made yet"). A rule gate
+    "where an object of a kind exists" would close that.
   - The scheduler's DRA reasons are lists of texts (`contains`, case-blind) for the built-in regular expressions; for
     `resourceclaim "…" not found`, `… is being deleted` and `device class … does not exist` the two parts are looked for
     anywhere in the message, not next to each other (no pattern language, by design: #405).

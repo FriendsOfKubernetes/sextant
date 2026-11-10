@@ -1096,6 +1096,7 @@
     "afterColumn": "slice-pool"
    }
   ],
+  "narrowLookups": [{"group":"resource.k8s.io","kind":"ResourceClaim"}],
   "problems": [
    {
     "id": "claims-not-created",
