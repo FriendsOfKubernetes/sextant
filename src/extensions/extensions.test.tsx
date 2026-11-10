@@ -1045,7 +1045,7 @@ describe("contributions of an extension", () => {
             ...manifest.contributes,
             pages: [...manifest.contributes.pages, { id: "apps", title: "Apps", section: "argocd" }],
             sections: [
-              { section: "widgets", title: "Widget tools", after: "velero" },
+              { section: "widgets", title: "Widget tools", after: "volumeSnapshots" },
               { section: "argocd", title: "Argo CD", icon: "argocd", after: "workloads" },
             ],
           },
@@ -1057,8 +1057,8 @@ describe("contributions of an extension", () => {
     const names = within(sidebar)
       .getAllByRole("button")
       .map((b) => b.textContent);
-    // Not right after Workloads, as its manifest asks, but where Argo CD always was: after Velero, before the other
-    // sections placed after Velero.
+    // Not right after Workloads, as its manifest asks, but where Argo CD always was: after Volume Snapshots (and
+    // Velero), before the other sections placed after Volume Snapshots.
     expect(names.indexOf("Argo CD")).toBeGreaterThan(names.indexOf("Workloads") + 1);
     expect(names.indexOf("Argo CD")).toBeLessThan(names.indexOf("Widget tools"));
     await changeList([]);

@@ -221,3 +221,5 @@ column without hover paths of its own hovers its whole text.
 The text condition `endsWith` joins `contains` and `startsWith` (a phase `…PartiallyFailed`); a case's text `value` on a
 `number`, `count` or `sum` column is filled and read as a number, so an error count coloured by its case sorts and
 filters as the count.
+The last path a placeholder tries may be a literal, a number or a short text in double quotes (`{{.status.updated ?? 0}}`,
+`{{.value ?? "*"}}`); an extension's section counter counts a problem about another object (`about`) as that object, once.

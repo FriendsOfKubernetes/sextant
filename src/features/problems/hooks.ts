@@ -134,7 +134,10 @@ export function useExtensionSectionCount(clusterId: ClusterId, all: readonly Pro
   // An opt-in category of the extension's own counts only while it is on (#410).
   const categories = useCategoriesOn(all);
   const active = useClusterProblems(clusterId, categories).active;
-  return new Set(active.filter((p) => rules.length === 0 || rules.includes(p.group ?? "")).map((p) => p.uid)).size;
+  // A problem about another object (a rule's `about`, #404) counts that object once: a ClusterPolicy, not each of its
+  // DaemonSets.
+  const counted = ({ object }: (typeof active)[number]) => `${object.kind.group}/${object.kind.kind}/${object.namespace ?? ""}/${object.name}`;
+  return new Set(active.filter((p) => rules.length === 0 || rules.includes(p.group ?? "")).map(counted)).size;
 }
 
 const EMPTY: readonly string[] = [];

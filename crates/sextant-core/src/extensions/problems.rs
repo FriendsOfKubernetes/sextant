@@ -1268,7 +1268,12 @@ pub(crate) fn check_message(
             ));
         }
         if tried.len() > 1 {
-            for one in tried {
+            let last = tried.len() - 1;
+            for (i, one) in tried.into_iter().enumerate() {
+                // The last may be a literal (#404): `{{.status.updated ?? 0}}`, `{{.value ?? "*"}}`.
+                if i == last && placeholder_literal(one.trim()).is_some() {
+                    continue;
+                }
                 check_rule_path(one.trim(), kind, path, metadata_only)?;
             }
             continue;
@@ -1301,6 +1306,24 @@ pub(crate) fn check_message(
         }
     }
     Ok(())
+}
+
+/// A placeholder's literal fallback (#404): a number, or a text in double quotes of at most 40 characters without
+/// quotes or braces inside.
+pub fn placeholder_literal(text: &str) -> Option<&str> {
+    if let Some(inner) = text.strip_prefix('"').and_then(|t| t.strip_suffix('"')) {
+        let fits = inner.chars().count() <= 40
+            && !inner.contains(['"', '{', '}'])
+            && !inner.chars().any(char::is_control);
+        return fits.then_some(inner);
+    }
+    let number = !text.is_empty()
+        && text.len() <= 20
+        && text.parse::<f64>().is_ok_and(f64::is_finite)
+        && text
+            .bytes()
+            .all(|b| b.is_ascii_digit() || matches!(b, b'-' | b'.'));
+    number.then_some(text)
 }
 
 /// The most paths a placeholder adds (#404).

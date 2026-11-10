@@ -931,7 +931,11 @@ function checkMessage(text, kind, segments, metadataOnly) {
     if (tried.length > MAX_ADDED_PATHS) fail(segments, `tries at most ${MAX_ADDED_PATHS} paths`);
     if (tried.length > 1 && addedPaths(field).length > 1) fail(segments, "adds paths with `+` or tries them with `??`, not both");
     if (tried.length > 1) {
-      for (const one of tried) checkRulePath(one.trim(), kind, segments, metadataOnly);
+      // The last may be a literal (#404): `{{.status.updated ?? 0}}`, `{{.value ?? "*"}}`.
+      tried.forEach((one, i) => {
+        if (i === tried.length - 1 && placeholderLiteral(one.trim()) !== undefined) return;
+        checkRulePath(one.trim(), kind, segments, metadataOnly);
+      });
     }
     // Paths added with `+` before `|sum` (#404): `{{.status.restarts + .status.jobs[*].restarts|sum}}`.
     const added = tried.length > 1 ? [] : addedPaths(field);
@@ -944,6 +948,15 @@ function checkMessage(text, kind, segments, metadataOnly) {
     }
     for (const one of added) checkRulePath(one.trim(), kind, segments, metadataOnly);
   }
+}
+
+/** `placeholder_literal` (#404): a number, or a text in double quotes of at most 40 characters without quotes or braces. */
+export function placeholderLiteral(text) {
+  if (text.length >= 2 && text.startsWith('"') && text.endsWith('"')) {
+    const inner = text.slice(1, -1);
+    return Array.from(inner).length <= 40 && !/["{}]/.test(inner) && !/\p{Cc}/u.test(inner) ? inner : undefined;
+  }
+  return text.length > 0 && text.length <= 20 && /^[0-9.-]+$/.test(text) && Number.isFinite(Number(text)) ? text : undefined;
 }
 
 /** `MAX_ADDED_PATHS` (#404). */

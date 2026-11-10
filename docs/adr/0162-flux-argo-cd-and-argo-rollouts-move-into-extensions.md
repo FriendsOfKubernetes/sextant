@@ -109,3 +109,13 @@ only (`detailsSections[].when`, #408); the section keeps its place after `dra`, 
 the extension's (never for agents). A component not rolled out is now a problem of its DaemonSet, not of the
 ClusterPolicy (a rule cannot name another object, #405). Dynamic Resource Allocation stays built in: its rules cannot yet
 see a claim that exists but is not allocated nor watch only Pending pods (#409).
+
+## Amendment: Velero
+
+`extensions/velero` (`sextant.velero`, 1.0.0) takes the Velero part of the storage insights (ADR-0086): its five kinds
+in the section `velero`, which keeps its place right after `volumeSnapshots` (the sections that were placed after
+`velero` — `flux`, `argocd`, `argoRollouts`, `argoWorkflows` — are now anchored to `volumeSnapshots` behind it, so the
+order is unchanged), "Back up namespace…" and "Restore from this backup…" through `resources.create` (#412, ADR-0086
+amendment), and an offer where `velero.io` is served. Velero had no problem category, so the migration has nothing to
+move. Volume usage, VolumeSnapshots and their actions stay in the core's `src/features/storage/`, and so does the window's
+`resource_create`, which they still use.

@@ -318,7 +318,10 @@ export function placeholderText(obj: KubeObject, inner: string): string | undefi
   // Paths tried in turn with `??` (#404): the first whose value is there and not an empty text.
   const tried = splitOutsideQuotes(path, "??");
   if (tried.length > 1) {
-    for (const one of tried) {
+    for (const [i, one] of tried.entries()) {
+      // The last may be a literal (#404): `{{.status.updated ?? 0}}`, `{{.value ?? "*"}}`.
+      const literal = i === tried.length - 1 ? placeholderLiteral(one.trim()) : undefined;
+      if (literal !== undefined) return literal;
       const text = filteredText(valueAt(obj, one.trim()), filter);
       if (text !== undefined && text !== "") return clipped(text, filters);
     }
@@ -343,6 +346,15 @@ function clipped(text: string, filters: readonly string[]): string {
   const keep = Math.min(...clips.map((c) => Number(c.slice(5))));
   const chars = [...text];
   return chars.length <= keep ? text : `${chars.slice(0, keep).join("")}…`;
+}
+
+/** A placeholder's literal fallback (`placeholder_literal`, #404): a number, or a short text in double quotes. */
+export function placeholderLiteral(text: string): string | undefined {
+  if (text.length >= 2 && text.startsWith('"') && text.endsWith('"')) {
+    const inner = text.slice(1, -1);
+    return Array.from(inner).length <= 40 && !/["{}]/.test(inner) && !/\p{Cc}/u.test(inner) ? inner : undefined;
+  }
+  return text.length > 0 && text.length <= 20 && /^[0-9.-]+$/.test(text) && Number.isFinite(Number(text)) ? text : undefined;
 }
 
 /** A placeholder's path split at each `+` outside a quoted match value (`added_paths`, #404). */

@@ -32,4 +32,6 @@ Moving Velero into an extension needs to create a Backup or Restore that must be
 already taken answered `conflict` with the object left as it was. It needs Modify on the object, is decided (and
 confirmed when the rules ask) on the same parsed document that is posted (`create_planned`, ADR-0057), refuses
 node-shell names, and is journaled like an apply. Agents still get no create; the window's `resource_create` is
-unchanged.
+unchanged. Since 0.30 Velero is Sextant's own extension `extensions/velero` (ADR-0162 amendment), which creates
+its Backups and Restores this way; the window's `resource_create` is used only by the VolumeSnapshot actions (a
+snapshot of a claim, a claim restored from a snapshot).

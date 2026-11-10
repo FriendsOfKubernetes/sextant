@@ -216,6 +216,10 @@ describe("problem rules of extensions", () => {
     expect(placeholderText(c, ".status.message ?? .status.reason")).toBe("Boom");
     expect(placeholderText(c, ".status.gone ?? .status.note ?? .status.reason")).toBe("x");
     expect(placeholderText(c, ".status.gone ?? .status.message")).toBeUndefined();
+    // A literal last (#404).
+    expect(placeholderText(c, ".status.gone ?? 0")).toBe("0");
+    expect(placeholderText(c, '.status.message ?? "*"')).toBe("*");
+    expect(placeholderText(c, '.status.reason ?? "*"')).toBe("Boom");
     expect(placeholderText(o, ".status.missing ?? .status.trace|firstLine|clip:10")).toBe("java.lang.…");
     expect(placeholderText(o, '.status.connectors[tasks.state!="FAILED",*].name|join')).toBe("b");
   });

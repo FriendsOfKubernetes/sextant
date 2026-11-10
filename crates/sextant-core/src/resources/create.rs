@@ -1,8 +1,8 @@
 //! Creating one new object (#152): a POST, so an object of the same name that already exists — also one that appears
 //! between a check and the request — is never touched: the API server answers `AlreadyExists` (409, `conflict`)
-//! atomically. Used by the storage actions (a VolumeSnapshot, a restored claim, a Velero Backup or Restore) after the
-//! window's confirmation, and by extensions' `resources.create` (#412) after their decision on the same parsed
-//! document (`create_planned`); never by agents. Sent once (the client repeats only reads).
+//! atomically. Used by the storage actions (a VolumeSnapshot, a restored claim) after the window's confirmation, and
+//! by extensions' `resources.create` (#412; the Velero extension's Backup or Restore) after their decision on the same
+//! parsed document (`create_planned`); never by agents. Sent once (the client repeats only reads).
 
 use kube::api::DynamicObject;
 use serde_json::Value;
