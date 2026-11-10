@@ -48,8 +48,8 @@ failed Backup, recent or not, as the built-in tables did.
 - Poolers: **Cluster** (`pooler-cluster`), **Type** (`pooler-type`: `rw` when none is set), **Instances**
   (`pooler-instances`) and **Pool mode** (`pooler-pool-mode`: PgBouncer's).
 
-The columns have the built-in widths; the status columns sort by the state's name and Instances by its text, as the
-built-in tables did.
+The columns have the built-in widths; the status columns sort and filter by the state's name (`failover`, `healthy`,
+…, the same in every language) and Instances by its text, as the built-in tables did.
 
 **Details** (`cnpg`, one section on the four kinds where the built-in section was, without a heading as it had none;
 "CloudNativePG" is its accessible name):
@@ -134,8 +134,9 @@ None: it only reads. Edit and Delete are Sextant's own actions, asked and confir
   every time field) and match it. What remains:
   - A Backup's time that is there but not a time is skipped for its start (`sinceOr`) but not for its day; the API
     server accepts only RFC 3339 times in these fields, so it does not happen.
-  - The status columns filter by their words in the UI language; the built-in filtered by the state's name. They sort
-    as the built-in did (by the state's name).
+  - A primary's name or a phase's reason of blanks only counts as none (`exists` with `nonEmpty` takes a blank text for
+    nothing); the built-in took any text but an empty one. Pod names cannot be blank and the operator writes no blank
+    reason; telling them apart would take more than a rule's 40 conditions.
 - Sextant watches at most 20 000 Clusters and 20 000 Backups per cluster for the problems (the most a rule's source
   may ask); the built-in watched them without a cap.
 - Problems are kept as Sextant keeps every extension's (at most 2000 objects with problems per kind and cluster).

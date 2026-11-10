@@ -59,16 +59,20 @@ interface WindowColumn {
   value(obj: KubeObject): unknown;
   render(obj: KubeObject, ctx: { now: number }): unknown;
   searchText(obj: KubeObject, ctx: { now: number; t: (key: string, values?: { count?: number }) => string }): string | null | undefined;
+  filter?: { type: string; value(obj: KubeObject, ctx: { now: number }): unknown };
 }
 interface Columns {
   computedColumn(id: string, column: unknown): WindowColumn;
 }
 let engine: Engine;
 let columns: Columns;
+/** The window's `formatList`, which the built-in Stores column joined the names with. */
+let formatList: (items: readonly string[]) => string;
 const here = dirname(fileURLToPath(import.meta.url));
 beforeAll(async () => {
   engine = (await import(/* @vite-ignore */ join(here, "../../../src/extensions/problemRules.ts"))) as Engine;
   columns = (await import(/* @vite-ignore */ join(here, "../../../src/extensions/columns.tsx"))) as Columns;
+  ({ formatList } = (await import(/* @vite-ignore */ join(here, "../../../src/i18n/format.ts"))) as { formatList: typeof formatList });
 });
 
 const holdsNow = (condition: unknown, obj: KubeObject, now = Date.now()) => {
@@ -174,10 +178,10 @@ describe("the manifest's problem rules", () => {
     expect(found).toBe(ESO_KINDS.length * 5 * OTHER_CONDITIONS.length);
   });
 
-  it("are one group per object, notify, and have no grace", () => {
+  it("are one rule per kind, as the built-in was one rule: the reason, else NotReady; they notify and have no grace", () => {
     for (const kind of ESO_KINDS) for (const o of variants(kind)) expect(detected(kind, o).length).toBeLessThanOrEqual(1);
-    expect(rules.every((r) => r.group === "not-ready" && !("graceMinutes" in r) && !("notify" in r))).toBe(true);
-    expect(new Set(rules.map((r) => r.kind.kind))).toEqual(new Set(ESO_KINDS));
+    expect(rules.every((r) => r.group === "not-ready" && r.reasonOr === "NotReady" && !("graceMinutes" in r) && !("notify" in r))).toBe(true);
+    expect(rules.map((r) => r.kind.kind)).toEqual([...ESO_KINDS]);
   });
 
   it("tell the fixtures' failures with the condition's reason, message and time", () => {
@@ -250,10 +254,12 @@ describe("the manifest's columns", () => {
         const r = readinessOf(o);
         const id = PREFIX[kind];
         expect(cell(`${id}-status`, o), JSON.stringify(o.status)).toBe(EN[`state.${r.state}`]);
-        // The empty reason is the one place the tooltip differs: the built-in left it out, the window keeps ": ".
-        const tip = r.reason === "" && r.message ? `: ${r.message}` : readyTip(o);
-        expect(drawn(`${id}-status`, o), JSON.stringify(o.status)).toEqual({ title: tip, tone: READY_TONE[r.state] });
-        expect(cell(`${id}-reason`, o)).toBe(r.reason || undefined);
+        // Sorted by the state's name, as the built-in column's value was.
+        expect(windowColumn(`${id}-status`).value(o), JSON.stringify(o.status)).toBe(r.state);
+        // Filtered by it too, in every language, as the built-in column's value was.
+        expect(windowColumn(`${id}-status`).filter?.value(o, { now: Date.now() }), JSON.stringify(o.status)).toBe(r.state);
+        expect(drawn(`${id}-status`, o), JSON.stringify(o.status)).toEqual({ title: readyTip(o), tone: READY_TONE[r.state] });
+        expect(windowColumn(`${id}-reason`).value(o)).toBe(r.reason);
       }
     }
   });
@@ -302,36 +308,62 @@ describe("the manifest's columns", () => {
     expect(cell("ces-refresh", o)).toBe("5m");
   });
 
-  it("show a store's provider and capabilities: the provider by name for the common ones, else Other", () => {
-    const named = columnOf("ss-provider").cases!.slice(0, -1).map((c) => c.text);
+  it("are as wide as the built-in columns", () => {
+    const widths = Object.fromEntries(manifest.contributes.columns.map((c) => [c.id, (c as { width?: string }).width]));
+    const builtIn: Record<string, string> = {
+      status: "100px",
+      reason: "minmax(120px, 1fr)",
+      store: "minmax(140px, 1.5fr)",
+      target: "minmax(120px, 1fr)",
+      refresh: "90px",
+      "last-sync": "100px",
+      provider: "110px",
+      capabilities: "110px",
+      source: "minmax(120px, 1fr)",
+      stores: "minmax(140px, 1.5fr)",
+    };
+    for (const [id, width] of Object.entries(widths)) expect(width, id).toBe(builtIn[id.replace(/^[a-z]+-/, "")]);
+  });
+
+  it("show a store's provider by name, whichever it is, and its capabilities, as the built-in did", () => {
+    const providers = ["aws", "vault", "gcpsm", "onepasswordSDK", "akeyless", "fake", "webhook", "senhasegura", "cloudrusm", "someday-new"];
     for (const kind of ["SecretStore", "ClusterSecretStore"] as const) {
-      for (const provider of [...named, "akeyless", "fake", "webhook", undefined]) {
+      // `spec.provider` is an object by the CRD's schema: the API server refuses anything else.
+      for (const provider of [...providers.map((name): unknown => ({ [name]: { server: "x" } })), {}, undefined]) {
         for (const capabilities of [undefined, "ReadWrite", "ReadOnly"]) {
           const o = copy(BASE[kind]);
-          (o.spec as Record<string, unknown>).provider = provider === undefined ? undefined : { [provider]: { server: "x" } };
+          (o.spec as Record<string, unknown>).provider = provider;
           (o.status as Record<string, unknown>).capabilities = capabilities;
           const id = PREFIX[kind];
-          const builtIn = providerOf(o);
-          expect(cell(`${id}-provider`, o), provider).toBe(builtIn === undefined ? undefined : named.includes(builtIn) ? builtIn : "Other");
+          expect(cell(`${id}-provider`, o), JSON.stringify(provider)).toBe(providerOf(o));
+          expect(windowColumn(`${id}-provider`).value(o), JSON.stringify(provider)).toBe(providerOf(o));
           expect(cell(`${id}-capabilities`, o)).toBe(capabilitiesOf(o));
         }
       }
     }
-    expect(named).toEqual(["aws", "vault", "gcpsm", "azurekv", "kubernetes", "onepassword", "bitwardensecretsmanager", "doppler", "infisical"]);
   });
 
-  it("show a PushSecret's source Secret and stores as the built-in did, up to five, then the first five and an ellipsis", () => {
-    for (let n = 0; n <= 7; n++) {
+  it("show a PushSecret's source Secret and every named store as the built-in did, joined in the UI language", () => {
+    const selector = { labelSelector: { matchLabels: { a: "b" } } };
+    const lists: unknown[][] = [
+      ...Array.from({ length: 9 }, (_, n) => Array.from({ length: n }, (_, i) => ({ name: `store-${i}`, kind: "SecretStore" }))),
+      // A ref by label selector (or with an empty name) names no store: the built-in left it out, wherever it is.
+      [{ name: "first" }, selector],
+      [selector, { name: "second" }, { name: "third", kind: "ClusterSecretStore" }],
+      [selector],
+      [{ name: "" }, { name: "named" }],
+    ];
+    for (const refs of lists) {
       const o = copy(pushSecret);
-      (o.spec as Record<string, unknown>).secretStoreRefs = Array.from({ length: n }, (_, i) => ({ name: `store-${i}`, kind: "SecretStore" }));
+      (o.spec as Record<string, unknown>).secretStoreRefs = refs;
       const names = pushStoreRefs(o).map((r) => r.name);
-      expect(cell("ps-stores", o), String(n)).toBe(n === 0 ? undefined : n <= 5 ? names.join(", ") : `${names.slice(0, 5).join(", ")}, …`);
+      const builtIn = formatList(names);
+      expect(cell("ps-stores", o), JSON.stringify(refs)).toBe(builtIn || undefined);
+      // With no named store a blank cell that sorts and filters as the built-in's empty text.
+      expect(windowColumn("ps-stores").value(o), JSON.stringify(refs)).toBe(builtIn);
+      expect(windowColumn("ps-stores").filter?.value(o, { now: Date.now() }), JSON.stringify(refs)).toBe(builtIn);
       expect(cell("ps-source", o)).toBe(pushSourceSecret(o));
     }
-    // A ref by label selector has no name: the built-in left it out.
-    const bySelector = copy(pushSecret);
-    (bySelector.spec as Record<string, unknown>).secretStoreRefs = [{ name: "first" }, { labelSelector: { matchLabels: { a: "b" } } }];
-    expect(cell("ps-stores", bySelector)).toBe("first");
     expect(cell("ps-refresh", pushSecret)).toBe("10s");
     expect(windowColumn("ps-last-sync").value(pushSecret)).toBe(-Date.parse("2026-10-10T09:30:00Z"));
   });

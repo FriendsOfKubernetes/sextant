@@ -6,10 +6,10 @@ Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-i
 extension.
 
 - **A sidebar section "CloudNativePG"** after Sealed Secrets', with Clusters, Backups, Scheduled Backups and Poolers in
-  Sextant's tables, and the built-in columns with their widths: a Cluster's state in words (sorted by the state's
-  name, hibernation greyed), ready instances (of `spec.instances`, else `status.instances`), primary and phase; a
-  Backup's state (Pending greyed), Cluster, method and start; a ScheduledBackup's Cluster, schedule, suspension and
-  last run; a Pooler's Cluster, type, instances and pool mode.
+  Sextant's tables, and the built-in columns with their widths: a Cluster's state in words (sorted and filtered by
+  the state's name, hibernation greyed), ready instances (of `spec.instances`, else `status.instances`), primary and
+  phase; a Backup's state (sorted and filtered by the state's name, Pending greyed), Cluster, method and start; a
+  ScheduledBackup's Cluster, schedule, suspension and last run; a Pooler's Cluster, type, instances and pool mode.
 - **Details** (without a heading, as the built-in section): a Cluster's state, a switchover or failover in progress,
   hibernation, its instances with their roles and health, its backups and continuous archiving; a Backup's fields and
   error; a ScheduledBackup's schedule and runs; a Pooler's fields. The blocks open and close in Sextant's own memory

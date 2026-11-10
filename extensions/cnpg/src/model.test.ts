@@ -393,10 +393,11 @@ describe("the manifest's kinds and section", () => {
 });
 
 const TONES: Record<string, string> = { success: "success", danger: "danger", warning: "warning", muted: "muted" };
-/** The built-in tables sorted the status columns by the state's name. */
-const order = (states: string[]) => (state: string) => [...states].sort().indexOf(state);
-const CLUSTER_ORDER = order(Object.keys(CLUSTER_TONE));
-const BACKUP_ORDER = order(Object.keys(BACKUP_TONE));
+/** What a column filters by (Sextant's table filters read `filter.value`, else `value`). */
+const filtered = (id: string, obj: KubeObject, now = Date.now()) => {
+  const column = windowColumn(id) as WindowColumn & { filter?: { value(obj: KubeObject, ctx: { now: number }): unknown } };
+  return column.filter ? column.filter.value(obj, { now }) : column.value(obj);
+};
 /** The built-in columns' widths (src/features/cnpg/columns.tsx). */
 const WIDTHS: Record<string, string> = {
   "cluster-status": "120px",
@@ -450,13 +451,15 @@ describe("the manifest's columns", () => {
     expect(titles).toMatchObject({ "cluster-status": "Status", "cluster-instances": "Instances", "backup-started": "Started", "scheduled-last-backup": "Last backup", "pooler-pool-mode": "Pool mode" });
   });
 
-  it("of Clusters: the state in words and tone sorted by its name, the phase and its reason on hover, ready of desired, the primary and phase", { timeout: HEAVY_MS }, () => {
+  it("of Clusters: the state in words and tone sorted and filtered by its name, the phase and its reason on hover, ready of desired, the primary and phase", { timeout: HEAVY_MS }, () => {
     let states = new Set<string>();
     for (const c of clusters()) {
       const info = clusterInfo(c);
       states = states.add(info.state);
       expect(cell("cluster-status", c), JSON.stringify(c.status)).toBe(EN[`state.${info.state}`]);
-      expect(windowColumn("cluster-status").value(c)).toBe(CLUSTER_ORDER(info.state));
+      // Sorted and filtered by the state's name, as the built-in column's value.
+      expect(windowColumn("cluster-status").value(c)).toBe(info.state);
+      expect(filtered("cluster-status", c)).toBe(info.state);
       const { title, tone } = drawn("cluster-status", c);
       expect(title).toBe([info.phase, info.phaseReason].filter(Boolean).join(": ") || undefined);
       expect(tone).toBe(TONES[CLUSTER_TONE[info.state]]);
@@ -523,7 +526,8 @@ describe("the manifest's columns", () => {
       st(b).phase = phase;
       const state = backupState(b);
       expect(cell("backup-status", b), String(phase)).toBe(EN[`backupState.${state}`]);
-      expect(windowColumn("backup-status").value(b)).toBe(BACKUP_ORDER(state));
+      expect(windowColumn("backup-status").value(b)).toBe(state);
+      expect(filtered("backup-status", b)).toBe(state);
       expect(drawn("backup-status", b)).toEqual({ title: "can't execute backup: exit status 1", tone: TONES[BACKUP_TONE[state]] });
     }
     expect(cell("backup-cluster", backup)).toBe("cluster-example");

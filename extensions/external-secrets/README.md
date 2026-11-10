@@ -12,7 +12,9 @@ way: ADR-0100 (the readings, the problems, never a Secret), ADR-0139 (Sextant's 
 (translations), ADR-0152 (kinds in a section of its own), ADR-0153 (computed columns), ADR-0160 (the section's icon
 and place, the UI kit), ADR-0161 (printer columns left out, paths picking a list item, notification groups),
 ADR-0163 (a problem's reason from the object), ADR-0164 (case tooltips), ADR-0165 (a kind's own "Only problems") and
-ADR-0167 (the counter's label by plural form).
+ADR-0167 (the counter's label by plural form; columns' widths, sort keys, filters by case values, blank cells and
+tooltip fallbacks, lists of a field, a map's keys, a rule's literal reason, untitled details sections, blocks in
+Sextant's own memory).
 
 ## At a glance
 
@@ -34,8 +36,10 @@ section's counter shows how many objects need attention (the problems below). "O
 Ready condition is False, as the built-in tables did.
 
 **Columns**, after Name (and Namespace), in place of the CRDs' own printer columns (left out, as the built-in view
-did); every kind's **Status** is Ready, Failed or Pending from the Ready condition, coloured, with the condition's
-reason and message on hover, and its **Reason** is the condition's reason:
+did), as wide as the built-in ones; every kind's **Status** is Ready, Failed or Pending from the Ready condition,
+coloured, with the condition's reason and message on hover (either alone when the other is empty), sorted and
+filtered by the state's name in every language as the built-in column was, and its **Reason** is the condition's
+reason:
 - External Secrets: **Status** (`es-status`), **Store** (`es-store`: `<kind>/<name>` of `spec.secretStoreRef`,
   `SecretStore` when no kind is set), **Secret** (`es-target`: `spec.target.name`, else the ExternalSecret's own
   name), **Refresh** (`es-refresh`: `spec.refreshInterval`), **Last sync** (`es-last-sync`: the age of
@@ -47,11 +51,12 @@ reason and message on hover, and its **Reason** is the condition's reason:
   `css-provider`: the key of `spec.provider`), **Capabilities** (`ss-capabilities`, `css-capabilities`:
   `status.capabilities`) and **Reason** (`ss-reason`, `css-reason`).
 - Push Secrets: **Status** (`ps-status`), **Source Secret** (`ps-source`: `spec.selector.secret.name`), **Stores**
-  (`ps-stores`: the names of `spec.secretStoreRefs`), **Refresh** (`ps-refresh`), **Last sync** (`ps-last-sync`) and
-  **Reason** (`ps-reason`).
+  (`ps-stores`: the names of `spec.secretStoreRefs`, every one, joined in the UI language; a store picked by a label
+  selector names none, and with no named store the cell is blank and sorts first, as the built-in's empty text), **Refresh** (`ps-refresh`), **Last sync** (`ps-last-sync`) and **Reason** (`ps-reason`).
 
-**Details** (`external-secrets`, one section titled "External Secrets" on the five kinds, where the built-in section
-was):
+**Details** (`external-secrets`, one section on the five kinds without a heading of its own, where the built-in
+section was; its blocks open and close with their titles and are remembered in Sextant's own memory of details
+sections, with the panel's "Expand all" and "Collapse all", as the built-in blocks were):
 - **ExternalSecret**: its state, its store (a link) and the store's own state ("Loading…", Ready, Failed, Pending or
   "Store not found"; the store is watched by name while the details are open), the target Secret (a link; its data is
   never read), creation policy, refresh interval ("Fetched once" for 0) and last sync; the **Last error** (the Ready
@@ -78,19 +83,19 @@ Sextant's own actions on every kind of the section; the extension adds no action
 
 ## Problems
 
-On the five kinds, from Sextant's own watches of the whole objects. Each holds while the object is not being deleted
-and its Ready condition is False (a failed sync, a store that does not validate), from the condition's last change,
-with the condition's message; its reason is the condition's reason, or `NotReady` without one. There is no grace and
-every problem may notify. The built-in rule is two rules per kind here (with and without a reason, as a rule's reason
-has no fallback of its own); they never hold together, are one problem group (`not-ready`) and notify once per object.
+On the five kinds, from Sextant's own watches of the whole objects: the built-in rule, one rule per kind. Each holds
+while the object is not being deleted and its Ready condition is False (a failed sync, a store that does not
+validate), from the condition's last change, with the condition's message; its reason is the condition's reason, or
+`NotReady` without one (`reasonOr`). There is no grace and every problem may notify; the rules are one problem group
+(`not-ready`), as the built-in's were.
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
-| `external-secret-failed`, `external-secret-failed-no-reason` | ExternalSecret | Ready is False (the sync failed) | None | No |
-| `cluster-external-secret-failed`, `cluster-external-secret-failed-no-reason` | ClusterExternalSecret | Ready is False | None | No |
-| `secret-store-failed`, `secret-store-failed-no-reason` | SecretStore | Ready is False (the store does not validate) | None | No |
-| `cluster-secret-store-failed`, `cluster-secret-store-failed-no-reason` | ClusterSecretStore | Ready is False | None | No |
-| `push-secret-failed`, `push-secret-failed-no-reason` | PushSecret | Ready is False (the push failed) | None | No |
+| `external-secret-failed` | ExternalSecret | Ready is False (the sync failed) | None | No |
+| `cluster-external-secret-failed` | ClusterExternalSecret | Ready is False | None | No |
+| `secret-store-failed` | SecretStore | Ready is False (the store does not validate) | None | No |
+| `cluster-secret-store-failed` | ClusterSecretStore | Ready is False | None | No |
+| `push-secret-failed` | PushSecret | Ready is False (the push failed) | None | No |
 
 Agents get these problems only when the user lets them (Settings → AI agents (MCP), ADR-0146); the built-in category
 was never given to agents.
@@ -120,19 +125,14 @@ None: it only reads. Edit and Delete are Sextant's own actions, asked and confir
 - The External Secrets Operator CRDs, and the operator for the status to say anything.
 - The columns and problems are computed by Sextant from field paths (ADR-0153, ADR-0137), so where the built-in view
   computed a value they read it as closely as fields allow; the details always show the full reading. Tests compare
-  them with the built-in reading over every Ready condition, store and target reference, provider and store list:
-  - **Provider** names the nine common providers (`aws`, `vault`, `gcpsm`, `azurekv`, `kubernetes`, `onepassword`,
-    `bitwardensecretsmanager`, `doppler`, `infisical`) and says "Other" for the rest: a column cannot read a map's key,
-    and takes ten cases at most. The details name every provider.
-  - **Stores** of a PushSecret lists up to five stores, then the first five and "…"; a store picked by a label
-    selector (no name) before a named one leaves only the first name. The details list every named store.
-  - The status tooltip of a condition with an empty reason reads ": <message>" where the built-in left the colon out.
-  - The tables sort the Status columns by their words in the UI language, where the built-in sorted by the state's
-    name; the columns' widths are Sextant's defaults.
-  - A problem's message is empty where the built-in had none; a Ready condition's time that is not a time is not the
-    problem's start; the reason is cleaned and cut at 100 characters as every extension's.
-  - The details have a section title ("External Secrets"), which the built-in section did not, and their tables are
-    the UI kit's (not resizable).
+  them with the built-in reading over every Ready condition, store and target reference, provider and store list.
+  What still differs, and why:
+  - **Last sync** sorts as Sextant's Age column does (the newest first, ascending), where the built-in column sorted
+    by the time's text (the oldest first): a computed age sorts by its age only.
+  - Cells are cut at 200 characters and cleaned of URI credentials, as every extension's.
+  - A Ready condition's time that is not a time is not the problem's start; the reason is trimmed, cleaned and cut at
+    100 characters, as every extension's.
+  - The details' tables are the UI kit's: their columns cannot be resized and the first does not keep to one line.
 - Problems are kept as Sextant keeps every extension's (at most 2000 objects with problems per kind and cluster).
 - Checked by tests on fixtures of the operator's objects (a failed ExternalSecret, an invalid ClusterSecretStore, a
   synced PushSecret); not yet tried on a live cluster.

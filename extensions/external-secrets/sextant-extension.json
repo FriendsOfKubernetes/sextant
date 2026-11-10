@@ -165,7 +165,8 @@
           }
         ],
         "placement": "section",
-        "order": 20
+        "order": 20,
+        "heading": false
       }
     ],
     "columns": [
@@ -179,10 +180,6 @@
         "paths": [
           ".status.conditions[type=\"Ready\"].status"
         ],
-        "tooltipPaths": [
-          ".status.conditions[type=\"Ready\"].reason",
-          ".status.conditions[type=\"Ready\"].message"
-        ],
         "cases": [
           {
             "when": {
@@ -192,7 +189,12 @@
             },
             "text": "Ready",
             "tone": "ok",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "ready",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           },
           {
             "when": {
@@ -202,7 +204,12 @@
             },
             "text": "Failed",
             "tone": "error",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "failed",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           },
           {
             "when": {
@@ -211,9 +218,16 @@
             },
             "text": "Pending",
             "tone": "warning",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "pending",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           }
         ],
+        "filterBy": "value",
+        "width": "100px",
         "afterColumn": "namespace"
       },
       {
@@ -263,6 +277,7 @@
             "text": "SecretStore/{{.spec.secretStoreRef.name}}"
           }
         ],
+        "width": "minmax(140px, 1.5fr)",
         "afterColumn": "es-status"
       },
       {
@@ -286,6 +301,7 @@
             "text": "{{.metadata.name}}"
           }
         ],
+        "width": "minmax(120px, 1fr)",
         "afterColumn": "es-store"
       },
       {
@@ -298,6 +314,7 @@
         "paths": [
           ".spec.refreshInterval"
         ],
+        "width": "90px",
         "afterColumn": "es-target"
       },
       {
@@ -311,6 +328,7 @@
           ".status.refreshTime"
         ],
         "format": "age",
+        "width": "100px",
         "afterColumn": "es-refresh"
       },
       {
@@ -323,6 +341,7 @@
         "paths": [
           ".status.conditions[type=\"Ready\"].reason"
         ],
+        "width": "minmax(120px, 1fr)",
         "afterColumn": "es-last-sync"
       },
       {
@@ -335,10 +354,6 @@
         "paths": [
           ".status.conditions[type=\"Ready\"].status"
         ],
-        "tooltipPaths": [
-          ".status.conditions[type=\"Ready\"].reason",
-          ".status.conditions[type=\"Ready\"].message"
-        ],
         "cases": [
           {
             "when": {
@@ -348,7 +363,12 @@
             },
             "text": "Ready",
             "tone": "ok",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "ready",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           },
           {
             "when": {
@@ -358,7 +378,12 @@
             },
             "text": "Failed",
             "tone": "error",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "failed",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           },
           {
             "when": {
@@ -367,9 +392,16 @@
             },
             "text": "Pending",
             "tone": "warning",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "pending",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           }
         ],
+        "filterBy": "value",
+        "width": "100px",
         "afterColumn": "name"
       },
       {
@@ -382,6 +414,7 @@
         "paths": [
           ".spec.refreshTime"
         ],
+        "width": "90px",
         "afterColumn": "ces-status"
       },
       {
@@ -394,6 +427,7 @@
         "paths": [
           ".status.conditions[type=\"Ready\"].reason"
         ],
+        "width": "minmax(120px, 1fr)",
         "afterColumn": "ces-refresh"
       },
       {
@@ -406,10 +440,6 @@
         "paths": [
           ".status.conditions[type=\"Ready\"].status"
         ],
-        "tooltipPaths": [
-          ".status.conditions[type=\"Ready\"].reason",
-          ".status.conditions[type=\"Ready\"].message"
-        ],
         "cases": [
           {
             "when": {
@@ -419,7 +449,12 @@
             },
             "text": "Ready",
             "tone": "ok",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "ready",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           },
           {
             "when": {
@@ -429,7 +464,12 @@
             },
             "text": "Failed",
             "tone": "error",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "failed",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           },
           {
             "when": {
@@ -438,9 +478,16 @@
             },
             "text": "Pending",
             "tone": "warning",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "pending",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           }
         ],
+        "filterBy": "value",
+        "width": "100px",
         "afterColumn": "namespace"
       },
       {
@@ -457,74 +504,12 @@
           {
             "when": {
               "type": "exists",
-              "path": ".spec.provider.aws"
+              "path": ".metadata.name"
             },
-            "text": "aws"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.vault"
-            },
-            "text": "vault"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.gcpsm"
-            },
-            "text": "gcpsm"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.azurekv"
-            },
-            "text": "azurekv"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.kubernetes"
-            },
-            "text": "kubernetes"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.onepassword"
-            },
-            "text": "onepassword"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.bitwardensecretsmanager"
-            },
-            "text": "bitwardensecretsmanager"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.doppler"
-            },
-            "text": "doppler"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.infisical"
-            },
-            "text": "infisical"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider"
-            },
-            "text": "Other"
+            "text": "{{.spec.provider|keys}}"
           }
         ],
+        "width": "110px",
         "afterColumn": "ss-status"
       },
       {
@@ -537,6 +522,7 @@
         "paths": [
           ".status.capabilities"
         ],
+        "width": "110px",
         "afterColumn": "ss-provider"
       },
       {
@@ -549,6 +535,7 @@
         "paths": [
           ".status.conditions[type=\"Ready\"].reason"
         ],
+        "width": "minmax(120px, 1fr)",
         "afterColumn": "ss-capabilities"
       },
       {
@@ -561,10 +548,6 @@
         "paths": [
           ".status.conditions[type=\"Ready\"].status"
         ],
-        "tooltipPaths": [
-          ".status.conditions[type=\"Ready\"].reason",
-          ".status.conditions[type=\"Ready\"].message"
-        ],
         "cases": [
           {
             "when": {
@@ -574,7 +557,12 @@
             },
             "text": "Ready",
             "tone": "ok",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "ready",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           },
           {
             "when": {
@@ -584,7 +572,12 @@
             },
             "text": "Failed",
             "tone": "error",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "failed",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           },
           {
             "when": {
@@ -593,9 +586,16 @@
             },
             "text": "Pending",
             "tone": "warning",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "pending",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           }
         ],
+        "filterBy": "value",
+        "width": "100px",
         "afterColumn": "name"
       },
       {
@@ -612,74 +612,12 @@
           {
             "when": {
               "type": "exists",
-              "path": ".spec.provider.aws"
+              "path": ".metadata.name"
             },
-            "text": "aws"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.vault"
-            },
-            "text": "vault"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.gcpsm"
-            },
-            "text": "gcpsm"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.azurekv"
-            },
-            "text": "azurekv"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.kubernetes"
-            },
-            "text": "kubernetes"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.onepassword"
-            },
-            "text": "onepassword"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.bitwardensecretsmanager"
-            },
-            "text": "bitwardensecretsmanager"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.doppler"
-            },
-            "text": "doppler"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider.infisical"
-            },
-            "text": "infisical"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.provider"
-            },
-            "text": "Other"
+            "text": "{{.spec.provider|keys}}"
           }
         ],
+        "width": "110px",
         "afterColumn": "css-status"
       },
       {
@@ -692,6 +630,7 @@
         "paths": [
           ".status.capabilities"
         ],
+        "width": "110px",
         "afterColumn": "css-provider"
       },
       {
@@ -704,6 +643,7 @@
         "paths": [
           ".status.conditions[type=\"Ready\"].reason"
         ],
+        "width": "minmax(120px, 1fr)",
         "afterColumn": "css-capabilities"
       },
       {
@@ -716,10 +656,6 @@
         "paths": [
           ".status.conditions[type=\"Ready\"].status"
         ],
-        "tooltipPaths": [
-          ".status.conditions[type=\"Ready\"].reason",
-          ".status.conditions[type=\"Ready\"].message"
-        ],
         "cases": [
           {
             "when": {
@@ -729,7 +665,12 @@
             },
             "text": "Ready",
             "tone": "ok",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "ready",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           },
           {
             "when": {
@@ -739,7 +680,12 @@
             },
             "text": "Failed",
             "tone": "error",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "failed",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           },
           {
             "when": {
@@ -748,9 +694,16 @@
             },
             "text": "Pending",
             "tone": "warning",
-            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}"
+            "tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+            "value": "pending",
+            "tooltipOr": [
+              "{{.status.conditions[type=\"Ready\"].message}}",
+              "{{.status.conditions[type=\"Ready\"].reason}}"
+            ]
           }
         ],
+        "filterBy": "value",
+        "width": "100px",
         "afterColumn": "namespace"
       },
       {
@@ -763,6 +716,7 @@
         "paths": [
           ".spec.selector.secret.name"
         ],
+        "width": "minmax(120px, 1fr)",
         "afterColumn": "ps-status"
       },
       {
@@ -773,52 +727,25 @@
         "id": "ps-stores",
         "title": "Stores",
         "paths": [
-          ".spec.secretStoreRefs[0].name"
+          ".spec.secretStoreRefs[name!=\"\"].name"
         ],
         "cases": [
           {
             "when": {
-              "type": "absent",
-              "path": ".spec.secretStoreRefs[1]"
+              "type": "exists",
+              "path": ".metadata.name"
             },
-            "text": "{{.spec.secretStoreRefs[0].name}}"
-          },
-          {
-            "when": {
-              "type": "absent",
-              "path": ".spec.secretStoreRefs[2]"
-            },
-            "text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}"
-          },
-          {
-            "when": {
-              "type": "absent",
-              "path": ".spec.secretStoreRefs[3]"
-            },
-            "text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}"
-          },
-          {
-            "when": {
-              "type": "absent",
-              "path": ".spec.secretStoreRefs[4]"
-            },
-            "text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}"
-          },
-          {
-            "when": {
-              "type": "absent",
-              "path": ".spec.secretStoreRefs[5]"
-            },
-            "text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}"
+            "text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}"
           },
           {
             "when": {
               "type": "exists",
-              "path": ".spec.secretStoreRefs[5]"
+              "path": ".metadata.name"
             },
-            "text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …"
+            "text": ""
           }
         ],
+        "width": "minmax(140px, 1.5fr)",
         "afterColumn": "ps-source"
       },
       {
@@ -831,6 +758,7 @@
         "paths": [
           ".spec.refreshInterval"
         ],
+        "width": "90px",
         "afterColumn": "ps-stores"
       },
       {
@@ -844,6 +772,7 @@
           ".status.refreshTime"
         ],
         "format": "age",
+        "width": "100px",
         "afterColumn": "ps-refresh"
       },
       {
@@ -856,6 +785,7 @@
         "paths": [
           ".status.conditions[type=\"Ready\"].reason"
         ],
+        "width": "minmax(120px, 1fr)",
         "afterColumn": "ps-last-sync"
       }
     ],
@@ -878,63 +808,12 @@
               "type": "condition",
               "conditionType": "Ready",
               "status": "False"
-            },
-            {
-              "type": "exists",
-              "path": ".status.conditions[type=\"Ready\"].reason"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.conditions[type=\"Ready\"].reason",
-                "value": ""
-              }
             }
           ]
         },
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
-        "message": "{{.status.conditions[type=\"Ready\"].message}}",
-        "group": "not-ready"
-      },
-      {
-        "id": "external-secret-failed-no-reason",
-        "title": "ExternalSecret not ready, without a reason",
-        "kind": {
-          "group": "external-secrets.io",
-          "kind": "ExternalSecret"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.conditions[type=\"Ready\"].reason"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.conditions[type=\"Ready\"].reason",
-                  "value": ""
-                }
-              ]
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
-        "reason": "NotReady",
+        "reasonOr": "NotReady",
         "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "group": "not-ready"
       },
@@ -956,63 +835,12 @@
               "type": "condition",
               "conditionType": "Ready",
               "status": "False"
-            },
-            {
-              "type": "exists",
-              "path": ".status.conditions[type=\"Ready\"].reason"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.conditions[type=\"Ready\"].reason",
-                "value": ""
-              }
             }
           ]
         },
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
-        "message": "{{.status.conditions[type=\"Ready\"].message}}",
-        "group": "not-ready"
-      },
-      {
-        "id": "cluster-external-secret-failed-no-reason",
-        "title": "ClusterExternalSecret not ready, without a reason",
-        "kind": {
-          "group": "external-secrets.io",
-          "kind": "ClusterExternalSecret"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.conditions[type=\"Ready\"].reason"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.conditions[type=\"Ready\"].reason",
-                  "value": ""
-                }
-              ]
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
-        "reason": "NotReady",
+        "reasonOr": "NotReady",
         "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "group": "not-ready"
       },
@@ -1034,63 +862,12 @@
               "type": "condition",
               "conditionType": "Ready",
               "status": "False"
-            },
-            {
-              "type": "exists",
-              "path": ".status.conditions[type=\"Ready\"].reason"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.conditions[type=\"Ready\"].reason",
-                "value": ""
-              }
             }
           ]
         },
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
-        "message": "{{.status.conditions[type=\"Ready\"].message}}",
-        "group": "not-ready"
-      },
-      {
-        "id": "secret-store-failed-no-reason",
-        "title": "SecretStore not ready, without a reason",
-        "kind": {
-          "group": "external-secrets.io",
-          "kind": "SecretStore"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.conditions[type=\"Ready\"].reason"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.conditions[type=\"Ready\"].reason",
-                  "value": ""
-                }
-              ]
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
-        "reason": "NotReady",
+        "reasonOr": "NotReady",
         "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "group": "not-ready"
       },
@@ -1112,63 +889,12 @@
               "type": "condition",
               "conditionType": "Ready",
               "status": "False"
-            },
-            {
-              "type": "exists",
-              "path": ".status.conditions[type=\"Ready\"].reason"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.conditions[type=\"Ready\"].reason",
-                "value": ""
-              }
             }
           ]
         },
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
-        "message": "{{.status.conditions[type=\"Ready\"].message}}",
-        "group": "not-ready"
-      },
-      {
-        "id": "cluster-secret-store-failed-no-reason",
-        "title": "ClusterSecretStore not ready, without a reason",
-        "kind": {
-          "group": "external-secrets.io",
-          "kind": "ClusterSecretStore"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.conditions[type=\"Ready\"].reason"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.conditions[type=\"Ready\"].reason",
-                  "value": ""
-                }
-              ]
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
-        "reason": "NotReady",
+        "reasonOr": "NotReady",
         "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "group": "not-ready"
       },
@@ -1190,63 +916,12 @@
               "type": "condition",
               "conditionType": "Ready",
               "status": "False"
-            },
-            {
-              "type": "exists",
-              "path": ".status.conditions[type=\"Ready\"].reason"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.conditions[type=\"Ready\"].reason",
-                "value": ""
-              }
             }
           ]
         },
         "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
         "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
-        "message": "{{.status.conditions[type=\"Ready\"].message}}",
-        "group": "not-ready"
-      },
-      {
-        "id": "push-secret-failed-no-reason",
-        "title": "PushSecret not ready, without a reason",
-        "kind": {
-          "group": "external-secrets.io",
-          "kind": "PushSecret"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "condition",
-              "conditionType": "Ready",
-              "status": "False"
-            },
-            {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.conditions[type=\"Ready\"].reason"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.conditions[type=\"Ready\"].reason",
-                  "value": ""
-                }
-              ]
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
-        "reason": "NotReady",
+        "reasonOr": "NotReady",
         "message": "{{.status.conditions[type=\"Ready\"].message}}",
         "group": "not-ready"
       }
@@ -1270,10 +945,16 @@
       "columns.es-status.title": "Статус",
       "columns.es-status.cases.0.text": "Готов",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "Ошибка",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "Ожидает",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "Хранилище",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -1285,90 +966,81 @@
       "columns.ces-status.title": "Статус",
       "columns.ces-status.cases.0.text": "Готов",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "Ошибка",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "Ожидает",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "Обновление",
       "columns.ces-reason.title": "Причина",
       "columns.ss-status.title": "Статус",
       "columns.ss-status.cases.0.text": "Готов",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "Ошибка",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "Ожидает",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "Провайдер",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "Другой",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "Возможности",
       "columns.ss-reason.title": "Причина",
       "columns.css-status.title": "Статус",
       "columns.css-status.cases.0.text": "Готов",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "Ошибка",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "Ожидает",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "Провайдер",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "Другой",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "Возможности",
       "columns.css-reason.title": "Причина",
       "columns.ps-status.title": "Статус",
       "columns.ps-status.cases.0.text": "Готов",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "Ошибка",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "Ожидает",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "Исходный Secret",
       "columns.ps-stores.title": "Хранилища",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "Обновление",
       "columns.ps-last-sync.title": "Синхронизация",
       "columns.ps-reason.title": "Причина",
       "problems.external-secret-failed.title": "ExternalSecret не готов",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret не готов, без причины",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret не готов",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret не готов, без причины",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore не готов",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore не готов, без причины",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore не готов",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore не готов, без причины",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret не готов",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret не готов, без причины",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "uk": {
       "name": "External Secrets",
@@ -1387,10 +1059,16 @@
       "columns.es-status.title": "Статус",
       "columns.es-status.cases.0.text": "Готовий",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "Помилка",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "Очікує",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "Сховище",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -1402,90 +1080,81 @@
       "columns.ces-status.title": "Статус",
       "columns.ces-status.cases.0.text": "Готовий",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "Помилка",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "Очікує",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "Оновлення",
       "columns.ces-reason.title": "Причина",
       "columns.ss-status.title": "Статус",
       "columns.ss-status.cases.0.text": "Готовий",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "Помилка",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "Очікує",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "Провайдер",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "Інший",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "Можливості",
       "columns.ss-reason.title": "Причина",
       "columns.css-status.title": "Статус",
       "columns.css-status.cases.0.text": "Готовий",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "Помилка",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "Очікує",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "Провайдер",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "Інший",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "Можливості",
       "columns.css-reason.title": "Причина",
       "columns.ps-status.title": "Статус",
       "columns.ps-status.cases.0.text": "Готовий",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "Помилка",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "Очікує",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "Вихідний Secret",
       "columns.ps-stores.title": "Сховища",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "Оновлення",
       "columns.ps-last-sync.title": "Синхронізація",
       "columns.ps-reason.title": "Причина",
       "problems.external-secret-failed.title": "ExternalSecret не готовий",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret не готовий, без причини",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret не готовий",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret не готовий, без причини",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore не готовий",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore не готовий, без причини",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore не готовий",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore не готовий, без причини",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret не готовий",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret не готовий, без причини",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "de": {
       "name": "External Secrets",
@@ -1502,10 +1171,16 @@
       "columns.es-status.title": "Status",
       "columns.es-status.cases.0.text": "Bereit",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "Fehlgeschlagen",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "Ausstehend",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "Store",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -1517,90 +1192,81 @@
       "columns.ces-status.title": "Status",
       "columns.ces-status.cases.0.text": "Bereit",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "Fehlgeschlagen",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "Ausstehend",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "Aktualisierung",
       "columns.ces-reason.title": "Grund",
       "columns.ss-status.title": "Status",
       "columns.ss-status.cases.0.text": "Bereit",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "Fehlgeschlagen",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "Ausstehend",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "Anbieter",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "Andere",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "Fähigkeiten",
       "columns.ss-reason.title": "Grund",
       "columns.css-status.title": "Status",
       "columns.css-status.cases.0.text": "Bereit",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "Fehlgeschlagen",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "Ausstehend",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "Anbieter",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "Andere",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "Fähigkeiten",
       "columns.css-reason.title": "Grund",
       "columns.ps-status.title": "Status",
       "columns.ps-status.cases.0.text": "Bereit",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "Fehlgeschlagen",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "Ausstehend",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "Quell-Secret",
       "columns.ps-stores.title": "Stores",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "Aktualisierung",
       "columns.ps-last-sync.title": "Letzte Sync.",
       "columns.ps-reason.title": "Grund",
       "problems.external-secret-failed.title": "ExternalSecret nicht bereit",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret nicht bereit, ohne Grund",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret nicht bereit",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret nicht bereit, ohne Grund",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore nicht bereit",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore nicht bereit, ohne Grund",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore nicht bereit",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore nicht bereit, ohne Grund",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret nicht bereit",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret nicht bereit, ohne Grund",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "fr": {
       "name": "External Secrets",
@@ -1618,10 +1284,16 @@
       "columns.es-status.title": "Statut",
       "columns.es-status.cases.0.text": "Prêt",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "Échec",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "En attente",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "Store",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -1633,90 +1305,81 @@
       "columns.ces-status.title": "Statut",
       "columns.ces-status.cases.0.text": "Prêt",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "Échec",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "En attente",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "Actualisation",
       "columns.ces-reason.title": "Raison",
       "columns.ss-status.title": "Statut",
       "columns.ss-status.cases.0.text": "Prêt",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "Échec",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "En attente",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "Fournisseur",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "Autre",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "Capacités",
       "columns.ss-reason.title": "Raison",
       "columns.css-status.title": "Statut",
       "columns.css-status.cases.0.text": "Prêt",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "Échec",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "En attente",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "Fournisseur",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "Autre",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "Capacités",
       "columns.css-reason.title": "Raison",
       "columns.ps-status.title": "Statut",
       "columns.ps-status.cases.0.text": "Prêt",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "Échec",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "En attente",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "Secret source",
       "columns.ps-stores.title": "Stores",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "Actualisation",
       "columns.ps-last-sync.title": "Dernière synchro",
       "columns.ps-reason.title": "Raison",
       "problems.external-secret-failed.title": "ExternalSecret pas prêt",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret pas prêt, sans raison",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret pas prêt",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret pas prêt, sans raison",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore pas prêt",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore pas prêt, sans raison",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore pas prêt",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore pas prêt, sans raison",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret pas prêt",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret pas prêt, sans raison",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "es": {
       "name": "External Secrets",
@@ -1734,10 +1397,16 @@
       "columns.es-status.title": "Estado",
       "columns.es-status.cases.0.text": "Listo",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "Fallido",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "Pendiente",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "Store",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -1749,90 +1418,81 @@
       "columns.ces-status.title": "Estado",
       "columns.ces-status.cases.0.text": "Listo",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "Fallido",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "Pendiente",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "Actualización",
       "columns.ces-reason.title": "Motivo",
       "columns.ss-status.title": "Estado",
       "columns.ss-status.cases.0.text": "Listo",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "Fallido",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "Pendiente",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "Proveedor",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "Otro",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "Capacidades",
       "columns.ss-reason.title": "Motivo",
       "columns.css-status.title": "Estado",
       "columns.css-status.cases.0.text": "Listo",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "Fallido",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "Pendiente",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "Proveedor",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "Otro",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "Capacidades",
       "columns.css-reason.title": "Motivo",
       "columns.ps-status.title": "Estado",
       "columns.ps-status.cases.0.text": "Listo",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "Fallido",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "Pendiente",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "Secret de origen",
       "columns.ps-stores.title": "Stores",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "Actualización",
       "columns.ps-last-sync.title": "Última sincr.",
       "columns.ps-reason.title": "Motivo",
       "problems.external-secret-failed.title": "ExternalSecret no está listo",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret no está listo, sin motivo",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret no está listo",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret no está listo, sin motivo",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore no está listo",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore no está listo, sin motivo",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore no está listo",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore no está listo, sin motivo",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret no está listo",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret no está listo, sin motivo",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "pt-BR": {
       "name": "External Secrets",
@@ -1850,10 +1510,16 @@
       "columns.es-status.title": "Status",
       "columns.es-status.cases.0.text": "Pronto",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "Falhou",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "Pendente",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "Store",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -1865,90 +1531,81 @@
       "columns.ces-status.title": "Status",
       "columns.ces-status.cases.0.text": "Pronto",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "Falhou",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "Pendente",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "Atualização",
       "columns.ces-reason.title": "Motivo",
       "columns.ss-status.title": "Status",
       "columns.ss-status.cases.0.text": "Pronto",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "Falhou",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "Pendente",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "Provedor",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "Outro",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "Recursos",
       "columns.ss-reason.title": "Motivo",
       "columns.css-status.title": "Status",
       "columns.css-status.cases.0.text": "Pronto",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "Falhou",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "Pendente",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "Provedor",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "Outro",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "Recursos",
       "columns.css-reason.title": "Motivo",
       "columns.ps-status.title": "Status",
       "columns.ps-status.cases.0.text": "Pronto",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "Falhou",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "Pendente",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "Secret de origem",
       "columns.ps-stores.title": "Stores",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "Atualização",
       "columns.ps-last-sync.title": "Última sincr.",
       "columns.ps-reason.title": "Motivo",
       "problems.external-secret-failed.title": "ExternalSecret não está pronto",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret não está pronto, sem motivo",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret não está pronto",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret não está pronto, sem motivo",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore não está pronto",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore não está pronto, sem motivo",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore não está pronto",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore não está pronto, sem motivo",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret não está pronto",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret não está pronto, sem motivo",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "it": {
       "name": "External Secrets",
@@ -1966,10 +1623,16 @@
       "columns.es-status.title": "Stato",
       "columns.es-status.cases.0.text": "Pronto",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "Non riuscito",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "In attesa",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "Store",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -1981,90 +1644,81 @@
       "columns.ces-status.title": "Stato",
       "columns.ces-status.cases.0.text": "Pronto",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "Non riuscito",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "In attesa",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "Aggiornamento",
       "columns.ces-reason.title": "Motivo",
       "columns.ss-status.title": "Stato",
       "columns.ss-status.cases.0.text": "Pronto",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "Non riuscito",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "In attesa",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "Provider",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "Altro",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "Capacità",
       "columns.ss-reason.title": "Motivo",
       "columns.css-status.title": "Stato",
       "columns.css-status.cases.0.text": "Pronto",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "Non riuscito",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "In attesa",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "Provider",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "Altro",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "Capacità",
       "columns.css-reason.title": "Motivo",
       "columns.ps-status.title": "Stato",
       "columns.ps-status.cases.0.text": "Pronto",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "Non riuscito",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "In attesa",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "Secret di origine",
       "columns.ps-stores.title": "Store",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "Aggiornamento",
       "columns.ps-last-sync.title": "Ultima sincr.",
       "columns.ps-reason.title": "Motivo",
       "problems.external-secret-failed.title": "ExternalSecret non pronto",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret non pronto, senza motivo",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret non pronto",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret non pronto, senza motivo",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore non pronto",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore non pronto, senza motivo",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore non pronto",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore non pronto, senza motivo",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret non pronto",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret non pronto, senza motivo",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "pl": {
       "name": "External Secrets",
@@ -2083,10 +1737,16 @@
       "columns.es-status.title": "Stan",
       "columns.es-status.cases.0.text": "Gotowe",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "Błąd",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "Oczekuje",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "Magazyn",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -2098,90 +1758,81 @@
       "columns.ces-status.title": "Stan",
       "columns.ces-status.cases.0.text": "Gotowe",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "Błąd",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "Oczekuje",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "Odświeżanie",
       "columns.ces-reason.title": "Przyczyna",
       "columns.ss-status.title": "Stan",
       "columns.ss-status.cases.0.text": "Gotowe",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "Błąd",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "Oczekuje",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "Dostawca",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "Inny",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "Możliwości",
       "columns.ss-reason.title": "Przyczyna",
       "columns.css-status.title": "Stan",
       "columns.css-status.cases.0.text": "Gotowe",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "Błąd",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "Oczekuje",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "Dostawca",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "Inny",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "Możliwości",
       "columns.css-reason.title": "Przyczyna",
       "columns.ps-status.title": "Stan",
       "columns.ps-status.cases.0.text": "Gotowe",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "Błąd",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "Oczekuje",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "Źródłowy Secret",
       "columns.ps-stores.title": "Magazyny",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "Odświeżanie",
       "columns.ps-last-sync.title": "Ostatnia synchr.",
       "columns.ps-reason.title": "Przyczyna",
       "problems.external-secret-failed.title": "ExternalSecret niegotowy",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret niegotowy, bez przyczyny",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret niegotowy",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret niegotowy, bez przyczyny",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore niegotowy",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore niegotowy, bez przyczyny",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore niegotowy",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore niegotowy, bez przyczyny",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret niegotowy",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret niegotowy, bez przyczyny",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "tr": {
       "name": "External Secrets",
@@ -2198,10 +1849,16 @@
       "columns.es-status.title": "Durum",
       "columns.es-status.cases.0.text": "Hazır",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "Başarısız",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "Bekliyor",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "Depo",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -2213,90 +1870,81 @@
       "columns.ces-status.title": "Durum",
       "columns.ces-status.cases.0.text": "Hazır",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "Başarısız",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "Bekliyor",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "Yenileme",
       "columns.ces-reason.title": "Neden",
       "columns.ss-status.title": "Durum",
       "columns.ss-status.cases.0.text": "Hazır",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "Başarısız",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "Bekliyor",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "Sağlayıcı",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "Diğer",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "Yetenekler",
       "columns.ss-reason.title": "Neden",
       "columns.css-status.title": "Durum",
       "columns.css-status.cases.0.text": "Hazır",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "Başarısız",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "Bekliyor",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "Sağlayıcı",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "Diğer",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "Yetenekler",
       "columns.css-reason.title": "Neden",
       "columns.ps-status.title": "Durum",
       "columns.ps-status.cases.0.text": "Hazır",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "Başarısız",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "Bekliyor",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "Kaynak Secret",
       "columns.ps-stores.title": "Depolar",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "Yenileme",
       "columns.ps-last-sync.title": "Son eşitleme",
       "columns.ps-reason.title": "Neden",
       "problems.external-secret-failed.title": "ExternalSecret hazır değil",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret hazır değil, neden yok",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret hazır değil",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret hazır değil, neden yok",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore hazır değil",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore hazır değil, neden yok",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore hazır değil",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore hazır değil, neden yok",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret hazır değil",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret hazır değil, neden yok",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "zh-CN": {
       "name": "External Secrets",
@@ -2312,10 +1960,16 @@
       "columns.es-status.title": "状态",
       "columns.es-status.cases.0.text": "就绪",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "失败",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "等待中",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "存储",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -2327,90 +1981,81 @@
       "columns.ces-status.title": "状态",
       "columns.ces-status.cases.0.text": "就绪",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "失败",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "等待中",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "刷新",
       "columns.ces-reason.title": "原因",
       "columns.ss-status.title": "状态",
       "columns.ss-status.cases.0.text": "就绪",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "失败",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "等待中",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "提供方",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "其他",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "能力",
       "columns.ss-reason.title": "原因",
       "columns.css-status.title": "状态",
       "columns.css-status.cases.0.text": "就绪",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "失败",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "等待中",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "提供方",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "其他",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "能力",
       "columns.css-reason.title": "原因",
       "columns.ps-status.title": "状态",
       "columns.ps-status.cases.0.text": "就绪",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "失败",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "等待中",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "源 Secret",
       "columns.ps-stores.title": "存储",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}、{{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}、{{.spec.secretStoreRefs[3].name}}、{{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}、{{.spec.secretStoreRefs[3].name}}、{{.spec.secretStoreRefs[4].name}}、…",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "刷新",
       "columns.ps-last-sync.title": "上次同步",
       "columns.ps-reason.title": "原因",
       "problems.external-secret-failed.title": "ExternalSecret 未就绪",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret 未就绪（无原因）",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret 未就绪",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret 未就绪（无原因）",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore 未就绪",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore 未就绪（无原因）",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore 未就绪",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore 未就绪（无原因）",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret 未就绪",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret 未就绪（无原因）",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "zh-TW": {
       "name": "External Secrets",
@@ -2426,10 +2071,16 @@
       "columns.es-status.title": "狀態",
       "columns.es-status.cases.0.text": "就緒",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "失敗",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "等待中",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "儲存區",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -2441,90 +2092,81 @@
       "columns.ces-status.title": "狀態",
       "columns.ces-status.cases.0.text": "就緒",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "失敗",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "等待中",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "重新整理",
       "columns.ces-reason.title": "原因",
       "columns.ss-status.title": "狀態",
       "columns.ss-status.cases.0.text": "就緒",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "失敗",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "等待中",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "提供者",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "其他",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "功能",
       "columns.ss-reason.title": "原因",
       "columns.css-status.title": "狀態",
       "columns.css-status.cases.0.text": "就緒",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "失敗",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "等待中",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "提供者",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "其他",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "功能",
       "columns.css-reason.title": "原因",
       "columns.ps-status.title": "狀態",
       "columns.ps-status.cases.0.text": "就緒",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "失敗",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "等待中",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "來源 Secret",
       "columns.ps-stores.title": "儲存區",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}、{{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}、{{.spec.secretStoreRefs[3].name}}、{{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}、{{.spec.secretStoreRefs[3].name}}、{{.spec.secretStoreRefs[4].name}}、…",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "重新整理",
       "columns.ps-last-sync.title": "上次同步",
       "columns.ps-reason.title": "原因",
       "problems.external-secret-failed.title": "ExternalSecret 未就緒",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret 未就緒（無原因）",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret 未就緒",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret 未就緒（無原因）",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore 未就緒",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore 未就緒（無原因）",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore 未就緒",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore 未就緒（無原因）",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret 未就緒",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret 未就緒（無原因）",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "ja": {
       "name": "External Secrets",
@@ -2540,10 +2182,16 @@
       "columns.es-status.title": "状態",
       "columns.es-status.cases.0.text": "準備完了",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "失敗",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "保留中",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "ストア",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -2555,90 +2203,81 @@
       "columns.ces-status.title": "状態",
       "columns.ces-status.cases.0.text": "準備完了",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "失敗",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "保留中",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "更新間隔",
       "columns.ces-reason.title": "理由",
       "columns.ss-status.title": "状態",
       "columns.ss-status.cases.0.text": "準備完了",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "失敗",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "保留中",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "プロバイダー",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "その他",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "機能",
       "columns.ss-reason.title": "理由",
       "columns.css-status.title": "状態",
       "columns.css-status.cases.0.text": "準備完了",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "失敗",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "保留中",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "プロバイダー",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "その他",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "機能",
       "columns.css-reason.title": "理由",
       "columns.ps-status.title": "状態",
       "columns.ps-status.cases.0.text": "準備完了",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "失敗",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "保留中",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "元の Secret",
       "columns.ps-stores.title": "ストア",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}、{{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}、{{.spec.secretStoreRefs[3].name}}、{{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}、{{.spec.secretStoreRefs[1].name}}、{{.spec.secretStoreRefs[2].name}}、{{.spec.secretStoreRefs[3].name}}、{{.spec.secretStoreRefs[4].name}}、…",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "更新間隔",
       "columns.ps-last-sync.title": "最終同期",
       "columns.ps-reason.title": "理由",
       "problems.external-secret-failed.title": "ExternalSecret が準備完了ではありません",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret が準備完了ではありません (理由なし)",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret が準備完了ではありません",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret が準備完了ではありません (理由なし)",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore が準備完了ではありません",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore が準備完了ではありません (理由なし)",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore が準備完了ではありません",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore が準備完了ではありません (理由なし)",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret が準備完了ではありません",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret が準備完了ではありません (理由なし)",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     },
     "ko": {
       "name": "External Secrets",
@@ -2654,10 +2293,16 @@
       "columns.es-status.title": "상태",
       "columns.es-status.cases.0.text": "준비",
       "columns.es-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.1.text": "실패",
       "columns.es-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-status.cases.2.text": "대기 중",
       "columns.es-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.es-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.es-store.title": "저장소",
       "columns.es-store.cases.0.text": "{{.spec.secretStoreRef.kind}}/{{.spec.secretStoreRef.name}}",
       "columns.es-store.cases.1.text": "SecretStore/{{.spec.secretStoreRef.name}}",
@@ -2669,90 +2314,81 @@
       "columns.ces-status.title": "상태",
       "columns.ces-status.cases.0.text": "준비",
       "columns.ces-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.1.text": "실패",
       "columns.ces-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-status.cases.2.text": "대기 중",
       "columns.ces-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ces-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ces-refresh.title": "새로 고침",
       "columns.ces-reason.title": "이유",
       "columns.ss-status.title": "상태",
       "columns.ss-status.cases.0.text": "준비",
       "columns.ss-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.1.text": "실패",
       "columns.ss-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-status.cases.2.text": "대기 중",
       "columns.ss-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ss-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ss-provider.title": "공급자",
-      "columns.ss-provider.cases.0.text": "aws",
-      "columns.ss-provider.cases.1.text": "vault",
-      "columns.ss-provider.cases.2.text": "gcpsm",
-      "columns.ss-provider.cases.3.text": "azurekv",
-      "columns.ss-provider.cases.4.text": "kubernetes",
-      "columns.ss-provider.cases.5.text": "onepassword",
-      "columns.ss-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.ss-provider.cases.7.text": "doppler",
-      "columns.ss-provider.cases.8.text": "infisical",
-      "columns.ss-provider.cases.9.text": "기타",
+      "columns.ss-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.ss-capabilities.title": "기능",
       "columns.ss-reason.title": "이유",
       "columns.css-status.title": "상태",
       "columns.css-status.cases.0.text": "준비",
       "columns.css-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.1.text": "실패",
       "columns.css-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-status.cases.2.text": "대기 중",
       "columns.css-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.css-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.css-provider.title": "공급자",
-      "columns.css-provider.cases.0.text": "aws",
-      "columns.css-provider.cases.1.text": "vault",
-      "columns.css-provider.cases.2.text": "gcpsm",
-      "columns.css-provider.cases.3.text": "azurekv",
-      "columns.css-provider.cases.4.text": "kubernetes",
-      "columns.css-provider.cases.5.text": "onepassword",
-      "columns.css-provider.cases.6.text": "bitwardensecretsmanager",
-      "columns.css-provider.cases.7.text": "doppler",
-      "columns.css-provider.cases.8.text": "infisical",
-      "columns.css-provider.cases.9.text": "기타",
+      "columns.css-provider.cases.0.text": "{{.spec.provider|keys}}",
       "columns.css-capabilities.title": "기능",
       "columns.css-reason.title": "이유",
       "columns.ps-status.title": "상태",
       "columns.ps-status.cases.0.text": "준비",
       "columns.ps-status.cases.0.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.1.text": "실패",
       "columns.ps-status.cases.1.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-status.cases.2.text": "대기 중",
       "columns.ps-status.cases.2.tooltip": "{{.status.conditions[type=\"Ready\"].reason}}: {{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.0": "{{.status.conditions[type=\"Ready\"].message}}",
+      "columns.ps-status.cases.2.tooltipOr.1": "{{.status.conditions[type=\"Ready\"].reason}}",
       "columns.ps-source.title": "원본 Secret",
       "columns.ps-stores.title": "저장소",
-      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[0].name}}",
-      "columns.ps-stores.cases.1.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}",
-      "columns.ps-stores.cases.2.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}",
-      "columns.ps-stores.cases.3.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}",
-      "columns.ps-stores.cases.4.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}",
-      "columns.ps-stores.cases.5.text": "{{.spec.secretStoreRefs[0].name}}, {{.spec.secretStoreRefs[1].name}}, {{.spec.secretStoreRefs[2].name}}, {{.spec.secretStoreRefs[3].name}}, {{.spec.secretStoreRefs[4].name}}, …",
+      "columns.ps-stores.cases.0.text": "{{.spec.secretStoreRefs[name!=\"\",*].name|list}}",
       "columns.ps-refresh.title": "새로 고침",
       "columns.ps-last-sync.title": "마지막 동기화",
       "columns.ps-reason.title": "이유",
       "problems.external-secret-failed.title": "ExternalSecret 준비 안 됨",
       "problems.external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.external-secret-failed-no-reason.title": "ExternalSecret 준비 안 됨, 이유 없음",
-      "problems.external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-external-secret-failed.title": "ClusterExternalSecret 준비 안 됨",
       "problems.cluster-external-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-external-secret-failed-no-reason.title": "ClusterExternalSecret 준비 안 됨, 이유 없음",
-      "problems.cluster-external-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.secret-store-failed.title": "SecretStore 준비 안 됨",
       "problems.secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.secret-store-failed-no-reason.title": "SecretStore 준비 안 됨, 이유 없음",
-      "problems.secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.cluster-secret-store-failed.title": "ClusterSecretStore 준비 안 됨",
       "problems.cluster-secret-store-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.cluster-secret-store-failed-no-reason.title": "ClusterSecretStore 준비 안 됨, 이유 없음",
-      "problems.cluster-secret-store-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}",
       "problems.push-secret-failed.title": "PushSecret 준비 안 됨",
-      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}",
-      "problems.push-secret-failed-no-reason.title": "PushSecret 준비 안 됨, 이유 없음",
-      "problems.push-secret-failed-no-reason.message": "{{.status.conditions[type=\"Ready\"].message}}"
+      "problems.push-secret-failed.message": "{{.status.conditions[type=\"Ready\"].message}}"
     }
   }
 }

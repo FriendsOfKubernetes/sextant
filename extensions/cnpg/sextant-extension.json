@@ -327,7 +327,7 @@
             },
             "text": "Hibernated",
             "tone": "muted",
-            "value": 2,
+            "value": "hibernated",
             "tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
             "tooltipOr": [
               "{{.status.phase}}",
@@ -355,7 +355,7 @@
             },
             "text": "Hibernating",
             "tone": "muted",
-            "value": 3,
+            "value": "hibernating",
             "tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
             "tooltipOr": [
               "{{.status.phase}}",
@@ -398,7 +398,7 @@
             },
             "text": "Failing over",
             "tone": "error",
-            "value": 0,
+            "value": "failover",
             "tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
             "tooltipOr": [
               "{{.status.phase}}",
@@ -444,7 +444,7 @@
             },
             "text": "Switchover",
             "tone": "warning",
-            "value": 5,
+            "value": "switchover",
             "tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
             "tooltipOr": [
               "{{.status.phase}}",
@@ -472,7 +472,7 @@
             },
             "text": "Healthy",
             "tone": "ok",
-            "value": 1,
+            "value": "healthy",
             "tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
             "tooltipOr": [
               "{{.status.phase}}",
@@ -494,7 +494,7 @@
             },
             "text": "Unhealthy",
             "tone": "error",
-            "value": 6,
+            "value": "unhealthy",
             "tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
             "tooltipOr": [
               "{{.status.phase}}",
@@ -508,7 +508,7 @@
             },
             "text": "Progressing",
             "tone": "warning",
-            "value": 4,
+            "value": "progressing",
             "tooltip": "{{.status.phase}}: {{.status.phaseReason}}",
             "tooltipOr": [
               "{{.status.phase}}",
@@ -516,6 +516,7 @@
             ]
           }
         ],
+        "filterBy": "value",
         "width": "120px",
         "afterColumn": "namespace"
       },
@@ -645,7 +646,7 @@
             },
             "text": "Completed",
             "tone": "ok",
-            "value": 0
+            "value": "completed"
           },
           {
             "when": {
@@ -659,7 +660,7 @@
             },
             "text": "Failed",
             "tone": "error",
-            "value": 1
+            "value": "failed"
           },
           {
             "when": {
@@ -674,7 +675,7 @@
             },
             "text": "Running",
             "tone": "warning",
-            "value": 3
+            "value": "running"
           },
           {
             "when": {
@@ -683,9 +684,10 @@
             },
             "text": "Pending",
             "tone": "muted",
-            "value": 2
+            "value": "pending"
           }
         ],
+        "filterBy": "value",
         "width": "110px",
         "afterColumn": "namespace"
       },

@@ -5,9 +5,11 @@
 //   ClusterExternalSecret — Ready, the ExternalSecret name it makes, the namespaces it reached and failed in;
 //   SecretStore/ClusterSecretStore — Ready (validation) with its reason, provider, capabilities;
 //   PushSecret            — Ready, the source Secret, the stores and the remote keys it writes.
-// Conditions and YAML are Sextant's own sections. Read-only, and never a Secret value: Secrets are only linked
-// (`ui.openDetails`), never read (ADR-0100). The frame reads the shown object again whenever its resourceVersion
-// changes.
+// Conditions and YAML are Sextant's own sections; the section has no heading of its own, as the built-in had none.
+// Read-only, and never a Secret value: Secrets are only linked (`ui.openDetails`), never read (ADR-0100). The frame
+// reads the shown object again whenever its resourceVersion changes. Its blocks open and close as the built-in
+// section's did, kept in Sextant's own memory of details sections (`context.blocks`, `ui.setBlockOpen`) with the
+// panel's "Expand all" and "Collapse all".
 import { trackObjects, ui, type KubeObject, type ObjectRef, type Sextant, type UiContent, type Watch, type WatchParams } from "@sextant/extension-sdk";
 import { dateTime, element, errorText } from "./dom";
 import { t } from "./i18n";
@@ -51,8 +53,33 @@ export interface StoreLive {
 
 const present = (nodes: (Node | null | false | undefined)[]): Node[] => nodes.filter((n): n is Node => Boolean(n));
 
-/** A titled block as the built-in view's: open, and closable with its title. */
-const block = (title: string, content: UiContent): HTMLElement => ui.block(title, content, { collapsible: true });
+/**
+ * Which blocks are open, and where a toggle goes: Sextant's own memory of details sections (`context.blocks`, written
+ * by `ui.setBlockOpen`), kept as Settings → Appearance says, with the panel's "Expand all" and "Collapse all" — where
+ * the built-in section's blocks were kept.
+ */
+export interface BlockMemory {
+  isOpen(block: string): boolean;
+  setOpen(block: string, open: boolean): void;
+}
+
+/** Blocks that are all open and remember nothing. */
+export const OPEN_BLOCKS: BlockMemory = { isOpen: () => true, setOpen: () => undefined };
+
+/** The blocks' memory of the frame's context; every block open by default, as the built-in's were. */
+export function sextantBlocks(sextant: Sextant): BlockMemory {
+  return {
+    isOpen: (id) => ui.blockOpen(sextant.context.blocks, id, true),
+    setOpen: (id, open) => void sextant.ui.setBlockOpen(id, open).catch(() => undefined),
+  };
+}
+
+/**
+ * A titled block as the built-in view's: open unless Sextant remembers it closed, and closable with its title. The ids
+ * are the built-in blocks' (`externalsecrets:lastError` → `lastError`, …).
+ */
+const block = (memory: BlockMemory, id: string, title: string, content: UiContent): HTMLElement =>
+  ui.block(title, content, { collapsible: true, collapsed: !memory.isOpen(id), onToggle: (open) => memory.setOpen(id, open) });
 
 const muted = (text: string) => element("p", { className: "eso-muted", textContent: text });
 
@@ -83,10 +110,10 @@ export function readyText(obj: KubeObject): HTMLElement {
 }
 
 /** The failing condition's message, from the cluster, under the fields. */
-function lastError(obj: KubeObject): HTMLElement | null {
+function lastError(obj: KubeObject, memory: BlockMemory): HTMLElement | null {
   const r = readinessOf(obj);
   if (r.state !== "failed" || !r.message) return null;
-  return block(t("lastError"), element("p", { className: "eso-message", textContent: r.message }));
+  return block(memory, "lastError", t("lastError"), element("p", { className: "eso-message", textContent: r.message }));
 }
 
 /** The keys by name: the Secret's key, the remote key and its property; nothing for none. */
@@ -122,7 +149,7 @@ export function storeSpec(obj: KubeObject): Omit<WatchParams, "clusterId"> | nul
   };
 }
 
-export function externalSecretView(sextant: Sextant, obj: KubeObject, store: StoreLive | undefined): Node[] {
+export function externalSecretView(sextant: Sextant, obj: KubeObject, store: StoreLive | undefined, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const ns = obj.metadata.namespace ?? null;
   const ref = storeRefOf(obj);
   const interval = refreshIntervalOf(obj);
@@ -143,13 +170,13 @@ export function externalSecretView(sextant: Sextant, obj: KubeObject, store: Sto
       ["refreshInterval", interval === "0" || interval === "0s" ? t("refreshOnce") : interval],
       ["lastSync", dateTime(lastSyncOf(obj))],
     ]),
-    lastError(obj),
+    lastError(obj, memory),
     (keys.length > 0 || bulk.length > 0) &&
-      block(t("keys.title"), [muted(t("keys.namesOnly")), keysTable(keys, t("keys.title")), fieldsOf([["dataFrom", ui.chips(bulk)]])]),
+      block(memory, "keys.title", t("keys.title"), [muted(t("keys.namesOnly")), keysTable(keys, t("keys.title")), fieldsOf([["dataFrom", ui.chips(bulk)]])]),
   ]);
 }
 
-export function clusterExternalSecretView(obj: KubeObject): Node[] {
+export function clusterExternalSecretView(obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const failed = failedNamespaces(obj);
   const failedTable =
     failed.length > 0
@@ -166,12 +193,12 @@ export function clusterExternalSecretView(obj: KubeObject): Node[] {
       ["refreshInterval", str(get(obj, "spec", "refreshTime"))],
       ["provisioned", ui.chips(provisionedNamespaces(obj))],
     ]),
-    lastError(obj),
-    failedTable && block(t("failedNamespaces.title"), failedTable),
+    lastError(obj, memory),
+    failedTable && block(memory, "failedNamespaces.title", t("failedNamespaces.title"), failedTable),
   ]);
 }
 
-export function storeView(obj: KubeObject): Node[] {
+export function storeView(obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const r = readinessOf(obj);
   return present([
     fieldsOf([
@@ -181,11 +208,11 @@ export function storeView(obj: KubeObject): Node[] {
       ["capabilities", capabilitiesOf(obj)],
       ["refreshInterval", str(get(obj, "spec", "refreshInterval"))],
     ]),
-    lastError(obj),
+    lastError(obj, memory),
   ]);
 }
 
-export function pushSecretView(sextant: Sextant, obj: KubeObject): Node[] {
+export function pushSecretView(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const ns = obj.metadata.namespace ?? null;
   const keys = pushKeysOf(obj);
   const stores = pushStoreRefs(obj);
@@ -197,24 +224,24 @@ export function pushSecretView(sextant: Sextant, obj: KubeObject): Node[] {
       ["refreshInterval", refreshIntervalOf(obj)],
       ["lastSync", dateTime(lastSyncOf(obj))],
     ]),
-    lastError(obj),
-    keys.length > 0 && block(t("keys.pushTitle"), keysTable(keys, t("keys.pushTitle"))),
+    lastError(obj, memory),
+    keys.length > 0 && block(memory, "keys.pushTitle", t("keys.pushTitle"), keysTable(keys, t("keys.pushTitle"))),
   ]);
 }
 
 /** The view of one External Secrets object, by its kind; nothing for another kind. */
-export function viewOf(sextant: Sextant, kind: string, obj: KubeObject, store?: StoreLive): Node[] {
+export function viewOf(sextant: Sextant, kind: string, obj: KubeObject, store?: StoreLive, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   if (!isEsoKind(kind)) return [];
   switch (kind) {
     case "ExternalSecret":
-      return externalSecretView(sextant, obj, store);
+      return externalSecretView(sextant, obj, store, memory);
     case "ClusterExternalSecret":
-      return clusterExternalSecretView(obj);
+      return clusterExternalSecretView(obj, memory);
     case "SecretStore":
     case "ClusterSecretStore":
-      return storeView(obj);
+      return storeView(obj, memory);
     case "PushSecret":
-      return pushSecretView(sextant, obj);
+      return pushSecretView(sextant, obj, memory);
   }
 }
 
@@ -273,9 +300,25 @@ class StoreWatch {
 
 /**
  * Starts the details section on the object in the context: read again whenever its resourceVersion changes; an
- * ExternalSecret's store watched by name while it shows, and drawn again as it changes.
+ * ExternalSecret's store watched by name while it shows, and drawn again as it changes. The view is drawn again when
+ * Sextant's memory of its blocks changes ("Expand all", another panel of the kind), unless the blocks already show it
+ * (the user's own toggle).
  */
 export function startDetails(sextant: Sextant, root: HTMLElement, contribution: string): () => void {
+  const blocks = sextantBlocks(sextant);
+  /** How the shown blocks are open now (each toggle included). */
+  const shownBlocks = new Map<string, boolean>();
+  const memory: BlockMemory = {
+    isOpen: (id) => {
+      const open = blocks.isOpen(id);
+      shownBlocks.set(id, open);
+      return open;
+    },
+    setOpen: (id, open) => {
+      shownBlocks.set(id, open);
+      blocks.setOpen(id, open);
+    },
+  };
   let shownVersion: string | null | undefined;
   let shownRef: string | null = null;
   let reading = 0;
@@ -290,7 +333,8 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
       return;
     }
     const store = storeWatch.want(object.kind === "ExternalSecret" ? storeSpec(object.obj) : null);
-    root.replaceChildren(...viewOf(sextant, object.kind, object.obj, store));
+    shownBlocks.clear();
+    root.replaceChildren(...viewOf(sextant, object.kind, object.obj, store, memory));
   };
   const schedule = () => {
     if (scheduled || stopped) return;
@@ -329,7 +373,10 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
       root.replaceChildren(ui.loading(t("loading")));
     }
     const version = sextant.context.resourceVersion;
-    if (version === shownVersion) return;
+    if (version === shownVersion) {
+      if (object && [...shownBlocks].some(([id, open]) => blocks.isOpen(id) !== open)) render();
+      return;
+    }
     shownVersion = version;
     void read(ref);
   };
