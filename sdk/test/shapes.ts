@@ -154,6 +154,7 @@ export const MANIFEST_SHAPES = {
     message: "required",
     toldThroughOwner: "optional",
     toldThroughReferrer: "optional",
+    newestBy: "optional",
     newestPer: "optional",
     source: "optional",
     group: "optional",

@@ -33,6 +33,8 @@ interface Entry {
   rules: ReadonlyMap<string, ProblemContribution>;
   /** `group/kind` (lower case) of the kinds judged across objects (ADR-0144): their rules' or looked up. */
   across: ReadonlySet<string>;
+  /** `group/kind` → the number its rules' `newestBy` ranks newest by (#404). */
+  newestBy: ReadonlyMap<string, string>;
   /** `group/kind` → the labels `newestPer` of its rules names. */
   newestLabels: ReadonlyMap<string, readonly string[]>;
   /** `group/kind` → the `related` conditions' own `when`s its rows answer (#409). */
@@ -111,6 +113,7 @@ export function registerExtensionProblems(
     facts: factsOf(rules, kindKeyOf),
     selected: selectedKinds(rules, kindKeyOf),
     compared: comparedPaths(rules, kindKeyOf),
+    newestBy: new Map(rules.flatMap((r) => (r.newestBy !== undefined ? [[kindKeyOf(r.kind), r.newestBy] as const] : []))),
     referrers: referrersOf(rules, kindKeyOf),
     sources,
     optIn: own?.optIn ?? false,
@@ -279,7 +282,7 @@ export function extensionSourcesFor(
     }
     for (const { def, key } of judged) {
       def.judge = {
-        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? [], entry.facts.get(key) ?? [], entry.selected.has(key), entry.compared.get(key) ?? [], entry.referrers.get(key) ?? []), max: def.maxObjects ?? MAX_SOURCE_OBJECTS },
+        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? [], entry.facts.get(key) ?? [], entry.selected.has(key), entry.compared.get(key) ?? [], entry.referrers.get(key) ?? [], entry.newestBy.get(key)), max: def.maxObjects ?? MAX_SOURCE_OBJECTS },
         judge: (problems, context) => judgeAcross(problems, context, { rules: entry.rules, targets }),
       };
     }

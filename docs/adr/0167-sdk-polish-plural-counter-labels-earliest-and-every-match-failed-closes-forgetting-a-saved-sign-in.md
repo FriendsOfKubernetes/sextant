@@ -265,3 +265,6 @@ object that is not there; `namespacePath` also places a single name in another n
 Paths may end in `|min`/`|max` (the smallest or largest number, or the earliest or latest time of a list), also in
 `since`/`sinceOr` (an ImageStream's first failing import); a column case's text may go by plural form (`pluralBy` +
 `textForms`, translated form by form as a rule's message); a `list` column may be `sorted` in the UI language's order.
+`newestBy` ranks `newestPer`'s newest by a number instead of the creation time (a Build's `openshift.io/build.number`);
+`toldThroughReferrer.alsoPaths` (at most 3) name more places a referrer names others, a single object read as a list of
+one (an HTTPProxy's `spec.tcpproxy.include`).

@@ -838,6 +838,7 @@
           "description": "Not told while the object's controller has a problem of this extension's rules (sextantApi 3).",
           "type": "boolean"
         },
+        "newestBy": { "description": "With `newestPer`, the number that ranks newest instead of the creation time (sextantApi 4).", "type": "string", "minLength": 1, "maxLength": 1000 },
         "toldThroughReferrer": {
           "description": "Not told while an object of the rule's kind naming this one in its list at `path` (directly or through others) holds `when` (sextantApi 4).",
           "type": "object",
@@ -845,6 +846,7 @@
           "required": ["path", "namePath", "when"],
           "properties": {
             "path": { "$ref": "#/$defs/fieldPath" },
+            "alsoPaths": { "type": "array", "maxItems": 3, "items": { "$ref": "#/$defs/fieldPath" } },
             "namePath": { "$ref": "#/$defs/fieldPath" },
             "namespacePath": { "$ref": "#/$defs/fieldPath" },
             "when": { "$ref": "#/$defs/problemCondition" }

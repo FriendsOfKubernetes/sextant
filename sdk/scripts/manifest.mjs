@@ -928,12 +928,20 @@ function checkProblems(manifest) {
       metadataOnly,
       narrowed: rule.source?.labelSelector !== undefined,
     });
+    if (rule.newestBy !== undefined) {
+      // What ranks newest (#404).
+      if (manifest.sextantApi < SOURCES_API) fail([...here, "newestBy"], `needs sextantApi ${SOURCES_API} or later`);
+      if (rule.newestPer === undefined) fail([...here, "newestBy"], "goes with `newestPer`");
+      checkRulePath(numericPath(rule.newestBy, manifest.sextantApi, [...here, "newestBy"]), rule.kind, [...here, "newestBy"], metadataOnly);
+    }
     if (rule.toldThroughReferrer !== undefined) {
       // Told through a referrer of its own kind (#404).
       const at = [...here, "toldThroughReferrer"];
       const ref = rule.toldThroughReferrer;
       if (manifest.sextantApi < SOURCES_API) fail(at, `needs sextantApi ${SOURCES_API} or later`);
       checkRulePath(ref.path, rule.kind, [...at, "path"], metadataOnly);
+      if ((ref.alsoPaths ?? []).length > 3) fail([...at, "alsoPaths"], "has at most 3 paths");
+      (ref.alsoPaths ?? []).forEach((p, i) => checkRulePath(p, rule.kind, [...at, "alsoPaths", i], metadataOnly));
       checkRulePath(ref.namePath, rule.kind, [...at, "namePath"], false);
       if (ref.namespacePath !== undefined) checkRulePath(ref.namespacePath, rule.kind, [...at, "namespacePath"], false);
       checkObjectCondition(ref.when, [rule.kind], [...at, "when"], manifest.sextantApi);

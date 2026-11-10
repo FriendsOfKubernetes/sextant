@@ -101,6 +101,11 @@ pub struct ProblemContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub newest_per: Option<String>,
+    /// With `newestPer`, what "newest" is ranked by instead of the creation time (#404): a number, the largest
+    /// newest (a Build's `openshift.io/build.number`). `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub newest_by: Option<String>,
     /// Which objects of the kind the rule sees: those a label selector picks, and only their metadata (ADR-0152);
     /// `sextantApi` 4. Every rule of a kind has the same source.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -601,6 +606,18 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 ));
             }
             check_rule_path(&referrer.path, &rule.kind, &here.key("path"), metadata_only)?;
+            let also = referrer.also_paths.as_deref().unwrap_or_default();
+            if also.len() > 3 {
+                return Err(at(&here.key("alsoPaths"), "has at most 3 paths"));
+            }
+            for (i, extra) in also.iter().enumerate() {
+                check_rule_path(
+                    extra,
+                    &rule.kind,
+                    &here.key("alsoPaths").index(i),
+                    metadata_only,
+                )?;
+            }
             check_rule_path(
                 &referrer.name_path,
                 &rule.kind,
@@ -622,6 +639,20 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                     "reads no time (`olderThan`): it is judged when that object changes",
                 ));
             }
+        }
+        if let Some(by) = &rule.newest_by {
+            let by_at = here.key("newestBy");
+            if manifest.sextant_api < SOURCES_API {
+                return Err(at(
+                    &by_at,
+                    format!("needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            if rule.newest_per.is_none() {
+                return Err(at(&by_at, "goes with `newestPer`"));
+            }
+            let by = numeric_path(by, manifest.sextant_api, &by_at)?;
+            check_rule_path(by, &rule.kind, &by_at, metadata_only)?;
         }
         if rule.told_through_owner && manifest.sextant_api < ACROSS_API {
             return Err(at(
@@ -1695,6 +1726,10 @@ pub const MAX_FIELD_PAIRS: usize = 4;
 pub struct ReferrerRule {
     /// The list of references in a referrer (`.spec.includes`).
     pub path: String,
+    /// More places a referrer names others, each a list or one object (`.spec.tcpproxy.include`), at most 3.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub also_paths: Option<Vec<String>>,
     /// An item's name (`.name`).
     pub name_path: String,
     /// An item's namespace (`.namespace`), else the referrer's own.

@@ -260,7 +260,9 @@ export interface ManifestProblem {
    * Not told while an object of the rule's kind naming this one in its list at `path` (directly or through others
    * that name each other there) holds `when` (since Sextant 0.30).
    */
-  toldThroughReferrer?: { path: string; namePath: string; namespacePath?: string; when: ProblemCondition };
+  toldThroughReferrer?: { path: string; alsoPaths?: string[]; namePath: string; namespacePath?: string; when: ProblemCondition };
+  /** With `newestPer`, the number that ranks newest instead of the creation time (since Sextant 0.30). */
+  newestBy?: string;
   /** A label key: of one namespace's objects with the same value of it, only the newest has the problem (sextantApi 3). */
   newestPer?: string;
   /**

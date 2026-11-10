@@ -11,7 +11,7 @@
 //
 //   judgeAcross(problems, context, { rules, targets })   // the problems that stand
 import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
-import { evaluate, factKey, MISSING_MARK, selectorMatches, valueAt } from "./problemRules";
+import { evaluate, factKey, MISSING_MARK, numberOf, selectorMatches, valueAt } from "./problemRules";
 import { formatList } from "../i18n/format";
 import type { Problem } from "../features/problems/model";
 import type { JudgeContext, JudgedRows, SourceDef } from "../features/problems/sources";
@@ -22,6 +22,8 @@ export interface AcrossRow {
   name: string;
   /** `metadata.creationTimestamp` in ms; `undefined` when it does not parse. */
   created: number | undefined;
+  /** What a `newestBy` path reads, the number ranking newest (#404). */
+  rank?: number;
   /** The values of the labels `newestPer` names. */
   labels: Record<string, string>;
   /** Whether each `related` condition's own `when` on this kind holds for it (#409), by `factKey`. */
@@ -50,6 +52,7 @@ export function rowOf(
   keepLabels = false,
   valuePaths: readonly string[] = [],
   referrers: readonly ReferrerRule[] = [],
+  rankPath?: string,
 ): (obj: KubeObject) => AcrossRow {
   return (obj) => {
     const meta = (obj.metadata ?? {}) as { name?: string; namespace?: string; creationTimestamp?: string; labels?: Record<string, unknown> };
@@ -62,11 +65,19 @@ export function rowOf(
     const created = Date.parse(meta.creationTimestamp ?? "");
     const row: AcrossRow = { namespace: meta.namespace ?? "", name: meta.name ?? "", created: Number.isNaN(created) ? undefined : created, labels };
     if (facts.length > 0) row.facts = Object.fromEntries(facts.map((when) => [factKey(when), evaluate(when, obj).holds]));
+    if (rankPath !== undefined) {
+      const rank = numberOf(valueAt(obj, rankPath));
+      if (rank !== undefined) row.rank = rank;
+    }
     if (referrers.length > 0) {
       const refs = new Set<string>();
-      for (const { path, namePath, namespacePath } of referrers) {
-        const items = valueAt(obj, path);
-        for (const item of Array.isArray(items) ? items : []) {
+      for (const { path, alsoPaths, namePath, namespacePath } of referrers) {
+        // Each path a list, or one object read as a list of one (`.spec.tcpproxy.include`, #404).
+        const items = [path, ...(alsoPaths ?? [])].flatMap((p) => {
+          const v = valueAt(obj, p);
+          return Array.isArray(v) ? v : v !== null && typeof v === "object" ? [v] : [];
+        });
+        for (const item of items) {
           const name = valueAt(item, namePath);
           const ns = namespacePath === undefined ? undefined : valueAt(item, namespacePath);
           if (typeof name !== "string" || name === "") continue;
@@ -261,6 +272,8 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
 
 /** `a` is newer than `b`: created later, or at the same time (or both unknown) with a later name. */
 function newer(a: AcrossRow, b: AcrossRow): boolean {
+  // `newestBy` (#404): the larger number, where both have one.
+  if (a.rank !== undefined && b.rank !== undefined && a.rank !== b.rank) return a.rank > b.rank;
   const at = a.created ?? -Infinity;
   const bt = b.created ?? -Infinity;
   return at !== bt ? at > bt : a.name > b.name;

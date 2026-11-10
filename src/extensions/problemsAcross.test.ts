@@ -163,6 +163,15 @@ describe("toldThroughReferrer (#404)", () => {
     expect(judged(leaf, own([leaf]))).toHaveLength(1);
   });
 
+  it("reads one object as a list of one in its other paths (#404)", () => {
+    const tcp = rule({ ...ORPHAN, id: "orphaned-tcp", toldThroughReferrer: { ...ORPHAN.toldThroughReferrer!, alsoPaths: [".spec.tcpproxy.include"] } });
+    const leaf = proxy("leaf", "orphaned");
+    const root = obj("root", { metadata: { name: "root", namespace: "team-a", uid: "p-root" }, spec: { tcpproxy: { include: { name: "leaf" } } }, status: { currentStatus: "invalid" } });
+    const tcpFacts = factsOf([tcp], (k) => `${k.group}/${k.kind}`.toLowerCase()).get("projectcontour.io/httpproxy") ?? [];
+    const rows: JudgedRows = { status: "ready", rows: new Map([root, leaf].map((o) => [o.metadata.uid, rowOf([], tcpFacts, false, [], [tcp.toldThroughReferrer!])(o)])), truncated: false, namespaces: null };
+    expect(judgeAcross([problemOf(tcp, leaf)], { rows, target: () => undefined, problemUids: () => new Set() }, { rules: new Map([[tcp.id, tcp]]), targets: [] })).toEqual([]);
+  });
+
   it("cannot tell while its own rows are not read in full", () => {
     const leaf = proxy("leaf", "orphaned");
     expect(judged(leaf, own([leaf], { truncated: true }))).toEqual([]);
@@ -322,6 +331,25 @@ describe("toldThroughOwner", () => {
   it("stands for an object without a controller", () => {
     const loose = obj("pod", { metadata: { name: "pod", namespace: "team-a", uid: "u-pod", ownerReferences: [{ uid: "u-rs" }] } as never });
     expect(problemOf(OWNED, loose).ownerUid).toBeUndefined();
+  });
+});
+
+describe("newestBy (#404)", () => {
+  const BY = rule({ id: "by", kind: { group: "build.openshift.io", kind: "Build" }, newestPer: "openshift.io/build-config.name", newestBy: '.metadata.annotations["openshift.io/build.number"]' });
+  const build = (name: string, created: string, number: string) =>
+    obj(name, { metadata: { name, namespace: "team-a", uid: `u-${name}`, creationTimestamp: created, labels: { "openshift.io/build-config.name": "app" }, annotations: { "openshift.io/build.number": number } } });
+  // Created later but with a smaller number: the number ranks newest.
+  const nine = build("app-9", "2026-11-03T10:00:00Z", "9");
+  const ten = build("app-10", "2026-11-02T10:00:00Z", "10");
+  const rows: JudgedRows = {
+    status: "ready",
+    rows: new Map([nine, ten].map((o) => [o.metadata.uid, rowOf(["openshift.io/build-config.name"], [], false, [], [], BY.newestBy)(o)])),
+    truncated: false,
+    namespaces: null,
+  };
+  it("ranks newest by the number", () => {
+    const judged = judgeAcross([problemOf(BY, nine), problemOf(BY, ten)], { rows, target: () => undefined, problemUids: () => new Set() }, { rules: new Map([[BY.id, BY]]), targets: [] });
+    expect(judged.map((p) => p.uid)).toEqual(["u-app-10"]);
   });
 });
 

@@ -47,6 +47,11 @@ toldThroughReferrer?: ReferrerRule,
  */
 newestPer?: string, 
 /**
+ * With `newestPer`, what "newest" is ranked by instead of the creation time (#404): a number, the largest
+ * newest (a Build's `openshift.io/build.number`). `sextantApi` 4.
+ */
+newestBy?: string, 
+/**
  * Which objects of the kind the rule sees: those a label selector picks, and only their metadata (ADR-0152);
  * `sextantApi` 4. Every rule of a kind has the same source.
  */

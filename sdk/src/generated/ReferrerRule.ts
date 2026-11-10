@@ -10,6 +10,10 @@ export type ReferrerRule = {
  */
 path: string, 
 /**
+ * More places a referrer names others, each a list or one object (`.spec.tcpproxy.include`), at most 3.
+ */
+alsoPaths?: Array<string>, 
+/**
  * An item's name (`.name`).
  */
 namePath: string, 
