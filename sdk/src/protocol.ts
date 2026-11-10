@@ -38,6 +38,11 @@ export interface HostContext {
   resourceVersion: string | null;
   /** Details: the shown object's `metadata.uid` once it is read (since Sextant 0.30, #415); otherwise left out. */
   uid?: string | null;
+  /**
+   * Details: the frame's blocks open (`true`) or closed (`false`) by their ids, `*` for every block, in Sextant's own
+   * memory of details sections (since Sextant 0.30, #416); a block it does not name keeps its default.
+   */
+  blocks?: Record<string, boolean>;
 }
 
 export interface ProtocolError {
@@ -102,6 +107,7 @@ export const LOCAL_METHODS = [
   "ui.openLogs",
   "ui.openUrl",
   "ui.openCluster",
+  "ui.setBlockOpen",
   "ui.signIn",
   "ui.setHidden",
 ] as const;

@@ -28,6 +28,8 @@ export interface HostUiOptions {
   services?: () => readonly ServiceContribution[];
   /** `ui.setHidden`: hides or shows the frame's details section. */
   setHidden?: (hidden: boolean) => void;
+  /** `ui.setBlockOpen`: keeps a block's choice in Sextant's memory of details sections (#416); details frames only. */
+  setBlockOpen?: (block: string, open: boolean) => void;
 }
 
 /** Longest label selector `ui.openLogs` takes (as a problem rule's source). */
@@ -132,6 +134,12 @@ export function hostUi(options: HostUiOptions): BridgeUi {
     },
     openCluster(params) {
       return askOpenCluster(options.extensionId, options.extensionName(), params);
+    },
+    setBlockOpen(params) {
+      const bad = () => new ApiError("invalid", "ui.setBlockOpen needs {id, open}: a block id of letters, digits, `-`, `_` and `.`");
+      if (!isRecord(params) || typeof params.open !== "boolean" || typeof params.id !== "string" || !/^[A-Za-z0-9._-]{1,80}$/.test(params.id)) throw bad();
+      if (!options.setBlockOpen) throw new ApiError("invalid", "ui.setBlockOpen is for a details section's frame");
+      options.setBlockOpen(params.id, params.open);
     },
   };
 }

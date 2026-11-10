@@ -1,7 +1,7 @@
 // The UI kit (#355): Sextant's details blocks as DOM, accessible and styled once.
 import axe from "axe-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { block, button, chips, empty, errorState, fields, loading, namespaceSelect, objectLink, status, table, tabs } from "../src/ui";
+import { block, blockOpen, button, chips, empty, errorState, fields, loading, namespaceSelect, objectLink, status, table, tabs } from "../src/ui";
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -44,6 +44,13 @@ describe("the UI kit", () => {
     toggle.click();
     expect(heard).toEqual([true, false]);
     expect(await violations()).toEqual([]);
+  });
+
+  it("reads a block's choice from Sextant's memory, then Expand all, then its default (#416)", () => {
+    expect(blockOpen({ pods: false }, "pods")).toBe(false);
+    expect(blockOpen({ "*": false }, "pods")).toBe(false);
+    expect(blockOpen({ "*": false, pods: true }, "pods")).toBe(true);
+    expect(blockOpen(undefined, "pods", false)).toBe(false);
   });
 
   it("draws tables, chips, links, empty lines and errors", async () => {

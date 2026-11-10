@@ -546,6 +546,26 @@ describe("contributions of an extension", () => {
     await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { view: "details", uid: "u-w1" } }));
   });
 
+  it("keep a details frame's blocks in Sextant's memory, with Expand all and Collapse all (#416)", async () => {
+    await renderShell();
+    act(() => useAppStore.getState().openDetails(widgetRef));
+    const panel = screen.getByRole("complementary", { name: "Details" });
+    await waitFor(() => expect(frameOf(panel)).not.toBeNull());
+    const frame = frameOf(panel);
+    const posted: unknown[] = [];
+    vi.spyOn(frame.contentWindow!, "postMessage").mockImplementation((m: unknown) => void posted.push(m));
+    const send = (data: Record<string, unknown>) =>
+      act(() => {
+        window.dispatchEvent(new MessageEvent("message", { data: { sextant: 1, doc: DOC, ...data }, source: frame.contentWindow }));
+      });
+    send({ type: "ready" });
+    await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { blocks: {} } }));
+    send({ type: "request", id: 7, method: "ui.setBlockOpen", params: { id: "pods", open: false } });
+    await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { blocks: { pods: false } } }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Expand all" }));
+    await waitFor(() => expect(posted.at(-1)).toMatchObject({ type: "context", context: { blocks: { "*": true } } }));
+  });
+
   it("give a details section the height the frame asks for", async () => {
     await renderShell();
     act(() => useAppStore.getState().openDetails(widgetRef));

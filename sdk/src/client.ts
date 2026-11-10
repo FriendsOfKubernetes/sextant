@@ -219,6 +219,12 @@ export interface Sextant {
      */
     openCluster(target: { host: string; port: number; node?: string }, options?: CallOptions): Promise<{ opened: boolean; found?: number }>;
     /**
+     * Keeps a block of a details section open or closed in Sextant's own memory of details sections (since Sextant
+     * 0.30): what `context.blocks` tells next time, per kind and as the user's setting says, with "Expand all" and
+     * "Collapse all" of the panel. `id`: letters, digits, `-`, `_`, `.`.
+     */
+    setBlockOpen(id: string, open: boolean, options?: CallOptions): Promise<void>;
+    /**
      * Asks the user to sign in to a service of the manifest that declares `signIn`, in Sextant's own dialog (since
      * Sextant 0.30); `true` once they did. What they type goes to Sextant, never to the extension: use it in a request
      * body as `{{signIn:<field id>}}`. "Remember" keeps it for that cluster in the keyring.
@@ -654,6 +660,7 @@ function open(win: Window, host: Window, options: ConnectOptions): Promise<Sexta
       openCluster: (target, o) =>
         send<{ opened: boolean; found?: number }>("ui.openCluster", target, { timeoutMs: CONFIRM_TIMEOUT, ...o }),
       setHidden: (hidden, o) => send<unknown>("ui.setHidden", { hidden }, o).then(() => undefined),
+      setBlockOpen: (id, open, o) => send<unknown>("ui.setBlockOpen", { id, open }, o).then(() => undefined),
       signIn: (params, o) =>
         onCluster<{ signedIn: boolean }>("ui.signIn", params, { timeoutMs: CONFIRM_TIMEOUT, ...o }).then((r) => r.signedIn),
       close: (o) =>

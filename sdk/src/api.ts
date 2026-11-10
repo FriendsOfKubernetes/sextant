@@ -278,6 +278,7 @@ export interface Methods {
   "ui.openLogs": { params: OpenLogsParams; result: null };
   "ui.openUrl": { params: { url: string }; result: { opened: boolean } };
   "ui.openCluster": { params: { host: string; port: number; node?: string }; result: { opened: boolean; found?: number } };
+  "ui.setBlockOpen": { params: { id: string; open: boolean }; result: null };
   "ui.setHidden": { params: { hidden: boolean }; result: null };
   "ui.signIn": { params: { clusterId?: ClusterId; namespace: string; service: string }; result: { signedIn: boolean } };
   "resources.unwatch": { params: { stream: string | number }; result: null };

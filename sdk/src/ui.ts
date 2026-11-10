@@ -79,6 +79,15 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, co
   return node;
 }
 
+/**
+ * Whether a details frame's block is open by Sextant's memory (`context.blocks`, since Sextant 0.30): its own choice,
+ * else the panel's "Expand all"/"Collapse all", else `defaultOpen`. Pair it with `block`'s `onToggle` calling
+ * `sextant.ui.setBlockOpen(id, open)`.
+ */
+export function blockOpen(blocks: Readonly<Record<string, boolean>> | undefined, id: string, defaultOpen = true): boolean {
+  return blocks?.[id] ?? blocks?.["*"] ?? defaultOpen;
+}
+
 let blockCounter = 0;
 
 /**

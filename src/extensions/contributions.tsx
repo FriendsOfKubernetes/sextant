@@ -17,6 +17,7 @@ import { registerClusterMenuItem } from "../features/clusters/menuItems";
 import { categoryOfExtension, detectExtension, registerExtensionProblems } from "../features/problems/extensionCategories";
 import { NamespaceFilter } from "../features/namespaces";
 import { useExtensionSectionCount } from "../features/problems/hooks";
+import { useDetailsDisclosureBank } from "../layout/details/disclosure";
 import { registerDetailsSection, unregisterDetailsSection, type DetailsSectionProps } from "../layout/details/registry";
 import {
   getDockTabComponent,
@@ -439,6 +440,8 @@ function detailsComponent(
     // `ui.setHidden` (ADR-0161): a section with nothing to show hides, title included; the frame keeps running. With
     // `startHidden` (#406) it waits hidden until the frame shows it.
     const [hidden, setHidden] = useState(look.startHidden);
+    // The frame's blocks in Sextant's memory of details sections (#416): Expand all and Collapse all reach them too.
+    const bank = useDetailsDisclosureBank(contribution);
     const frame = (
       <ExtensionFrame
         extensionId={extensionId}
@@ -449,6 +452,7 @@ function detailsComponent(
         selection={[objectRef]}
         resourceVersion={typeof obj?.metadata?.resourceVersion === "string" ? obj.metadata.resourceVersion : null}
         uid={typeof obj?.metadata?.uid === "string" ? obj.metadata.uid : null}
+        blocks={!tab && bank?.ready ? { choices: bank.blocks, setOpen: bank.setOpen } : null}
         autoHeight={!tab}
         className={tab ? "ext-frame--tab" : "ext-frame--section"}
         onHidden={tab ? undefined : setHidden}

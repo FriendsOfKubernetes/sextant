@@ -41,6 +41,8 @@ export interface ExtensionFrameProps {
   resourceVersion?: string | null;
   /** Details: the shown object's uid (#415), so a frame finds what is named by it (a policy report) without reading it. */
   uid?: string | null;
+  /** Details: the open or closed choices of the frame's blocks in Sextant's memory (#416), and how a frame changes one. */
+  blocks?: { choices: Record<string, boolean>; setOpen: (block: string, open: boolean) => void } | null;
   /** Height follows the frame's `resize` messages (details sections). */
   autoHeight?: boolean;
   /** `ui.close`; `failed` when the frame said its action failed (#400). */
@@ -174,6 +176,7 @@ function FrameView({
   selection = NO_SELECTION,
   resourceVersion = null,
   uid = null,
+  blocks = null,
   autoHeight = false,
   onClose,
   onHidden,
@@ -186,6 +189,9 @@ function FrameView({
   const [height, setHeight] = useState<number | null>(null);
   const { theme, tokens } = useFrameTheme();
   const selectionKey = JSON.stringify(selection);
+  const blocksKey = JSON.stringify(blocks?.choices ?? {});
+  const setBlockOpen = useRef(blocks?.setOpen);
+  setBlockOpen.current = blocks?.setOpen;
   // The cluster view's namespace filter, as a key: a new array with the same names is no change.
   const namespacesKey = useAppStore((s) =>
     JSON.stringify(clusterId ? (s.clusterViews[clusterId]?.namespaces ?? null) : null),
@@ -205,8 +211,9 @@ function FrameView({
       selection: JSON.parse(selectionKey) as ObjectRef[],
       resourceVersion,
       ...(uid !== null ? { uid } : {}),
+      ...(blocks ? { blocks: JSON.parse(blocksKey) as Record<string, boolean> } : {}),
     }),
-    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion, uid],
+    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion, uid, blocksKey, blocks !== null],
   );
   const services = info.manifest?.contributes.services ?? [];
   const latest = useRef({ context, name: info.name, autoHeight, onClose, onFailed, services, onHidden });
@@ -226,6 +233,7 @@ function FrameView({
         clusterId: () => latest.current.context.clusterId,
         services: () => latest.current.services,
         setHidden: (hidden) => latest.current.onHidden?.(hidden),
+        setBlockOpen: (block, open) => setBlockOpen.current?.(block, open),
         close: (failed) => latest.current.onClose?.(failed),
       }),
       onResize: (next) => {

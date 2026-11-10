@@ -196,6 +196,11 @@ export interface HostContext {
   resourceVersion: string | null;
   /** Details: the shown object's `metadata.uid` once it is read (since Sextant 0.30, #415); otherwise left out. */
   uid?: string | null;
+  /**
+   * Details: the frame's blocks open (`true`) or closed (`false`) by their ids, `*` for every block, in Sextant's own
+   * memory of details sections (since Sextant 0.30, #416); a block it does not name keeps its default.
+   */
+  blocks?: Record<string, boolean>;
 }
 
 /** Methods the backend serves (`METHODS` in `src-tauri/src/extensions/api.rs`). */
@@ -239,6 +244,7 @@ export const LOCAL_METHODS: readonly string[] = [
   "ui.openLogs",
   "ui.openUrl",
   "ui.openCluster",
+  "ui.setBlockOpen",
   "ui.signIn",
   "ui.setHidden",
 ];

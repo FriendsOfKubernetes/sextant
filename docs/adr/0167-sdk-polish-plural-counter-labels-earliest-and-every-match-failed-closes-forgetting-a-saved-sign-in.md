@@ -182,3 +182,11 @@ its limit, `atLeast` with `offset: -1` for one before it.
 `|sum` adds the numbers of lists inside a list too (`[*].jobRestartsCountTowardsMax|sum`), as a placeholder filter
 (`{{path|sum}}`) and at the end of a column's `paths` or `totalPaths` (a ratio of succeeded over wanted jobs); `atLeast`'s
 `addPaths` (≤ 3) adds more paths' numbers to `path`'s before the comparison.
+
+## Amendment: a details frame's blocks in Sextant's own memory (#416)
+
+A details frame's context carries `blocks` — its blocks' open (`true`) or closed (`false`) choices by id, `*` for the
+panel's "Expand all"/"Collapse all" — read from Sextant's memory of details sections as Settings → Appearance says
+(globally, per cluster, or this object only; `useDetailsDisclosureBank` under the section's scope), and
+`ui.setBlockOpen({id, open})` (details frames only, ids of `[A-Za-z0-9._-]`) writes a choice there. The SDK's
+`ui.blockOpen(context.blocks, id, defaultOpen)` reads it for `ui.block`'s `collapsed`, `onToggle` writes it back.

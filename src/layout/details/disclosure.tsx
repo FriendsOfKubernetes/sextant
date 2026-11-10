@@ -76,6 +76,26 @@ export function useDetailsDisclosure(id: string, defaultOpen = true) {
   return { path, depth: parent.depth, ready: state.ready, open: state.ready && (state.choices[path] ?? state.choices[ALL_DETAILS_SECTIONS] ?? defaultOpen), setOpen: (open: boolean) => state.setOpen(path, open) };
 }
 
+/**
+ * The open or closed choices of the blocks inside one details section an extension's frame draws (#416): by block id,
+ * `*` for the panel's "Expand all"/"Collapse all", in Sextant's own memory (global, per cluster or this object only).
+ */
+export function useDetailsDisclosureBank(id: string) {
+  const state = useContext(Disclosure);
+  const parent = useContext(SectionPath);
+  const choices = state?.choices;
+  const base = parent ? `${parent.path}/${id}` : null;
+  const blocks = useMemo(() => {
+    const out: Record<string, boolean> = {};
+    if (!choices || base === null) return out;
+    for (const [path, open] of Object.entries(choices)) if (path.startsWith(`${base}/`)) out[path.slice(base.length + 1)] = open;
+    if (choices[ALL_DETAILS_SECTIONS] !== undefined) out[ALL_DETAILS_SECTIONS] = choices[ALL_DETAILS_SECTIONS];
+    return out;
+  }, [choices, base]);
+  if (!state || base === null) return null;
+  return { ready: state.ready, blocks, setOpen: (block: string, open: boolean) => state.setOpen(`${base}/${block}`, open) };
+}
+
 export interface DetailsBlockProps {
   /** Stable semantic ID, never an object name, translated title or position in the rendered list. */
   id?: string;

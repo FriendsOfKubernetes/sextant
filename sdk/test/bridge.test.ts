@@ -34,6 +34,7 @@ const ui = {
   openLogs: vi.fn(() => Promise.resolve()),
   openUrl: vi.fn(() => Promise.resolve({ opened: false })),
   openCluster: vi.fn(() => Promise.resolve({ opened: false })),
+      setBlockOpen: vi.fn(),
   signIn: vi.fn(() => Promise.resolve({ signedIn: false })),
   setHidden: vi.fn(),
 };

@@ -67,6 +67,7 @@ beforeEach(() => {
     notify: vi.fn<Fn>(),
     close: vi.fn<Fn>(),
     setHidden: vi.fn<Fn>(),
+    setBlockOpen: vi.fn<Fn>(),
     openLogs: vi.fn<(params: unknown) => Promise<void>>(() => Promise.resolve()),
     openUrl: vi.fn<(params: unknown) => Promise<{ opened: boolean }>>(() => Promise.resolve({ opened: true })),
     openCluster: vi.fn<(params: unknown) => Promise<{ opened: boolean; found?: number }>>(() => Promise.resolve({ opened: true })),
