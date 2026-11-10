@@ -16,4 +16,8 @@ metadataOnly: boolean,
  * A field selector the watch passes to the API server (#409): `status.phase=Pending` on pods. Only fields the API
  * server selects the kind by (`src/components/Table/field-selectors.json`).
  */
-fieldSelector?: string, };
+fieldSelector?: string, 
+/**
+ * The most objects watched for the rules (#404): 1 to 20 000, 5000 without it.
+ */
+maxObjects?: number, };

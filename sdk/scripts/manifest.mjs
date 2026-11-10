@@ -815,7 +815,8 @@ function checkSource(rule, rules, api, list, here) {
   if (rule.source !== undefined) {
     const path = [...here, "source"];
     if (api < SOURCES_API) fail(path, `needs sextantApi ${SOURCES_API} or later`);
-    if (rule.source.labelSelector === undefined && rule.source.fieldSelector === undefined && rule.source.metadataOnly !== true) {
+    if (rule.source.maxObjects !== undefined && (rule.source.maxObjects < 1 || rule.source.maxObjects > 20000)) fail([...path, "maxObjects"], "is 1 to 20 000");
+    if (rule.source.labelSelector === undefined && rule.source.fieldSelector === undefined && rule.source.maxObjects === undefined && rule.source.metadataOnly !== true) {
       fail(path, "names a `labelSelector`, a `fieldSelector`, `metadataOnly: true` or more");
     }
     if (rule.source.fieldSelector !== undefined && !isFieldSelector(rule.source.fieldSelector, rule.kind)) {
@@ -933,7 +934,7 @@ function checkMessage(text, kind, segments, metadataOnly) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "count", "sum"];
+const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "join", "count", "sum"];
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
 
@@ -1654,7 +1655,15 @@ function checkColumns(manifest) {
       checkObjectCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi);
       // Field values in the text, as a problem message has them (#368).
       checkMessage(c.text, column.kind, [...here, "cases", j, "text"], false);
-      if (c.value !== undefined && !["number", "text", "count", "sum"].includes(format)) fail([...here, "cases", j, "value"], 'goes with `format: "number"` or `"text"`');
+      if (c.value !== undefined) {
+        // A text column's value may be a text with placeholders, the reason a row sorts by (#404).
+        const bad = 'goes with `format: "number"` or `"text"` (a text only with `"text"`)';
+        if (typeof c.value === "string") {
+          if (format !== "text") fail([...here, "cases", j, "value"], bad);
+          if (c.value.trim() === "" || Array.from(c.value).length > 200) fail([...here, "cases", j, "value"], "is a text of 1 to 200 characters");
+          checkMessage(c.value, column.kind, [...here, "cases", j, "value"], false);
+        } else if (!["number", "text", "count", "sum"].includes(format)) fail([...here, "cases", j, "value"], bad);
+      }
       if (c.tooltip !== undefined) checkMessage(c.tooltip, column.kind, [...here, "cases", j, "tooltip"], false);
       if (c.tooltipOr !== undefined) {
         if (c.tooltip === undefined || c.tooltipOr.length === 0 || c.tooltipOr.length > 3) fail([...here, "cases", j, "tooltipOr"], "follows a `tooltip` with 1 to 3 more");

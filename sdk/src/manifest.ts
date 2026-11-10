@@ -161,8 +161,11 @@ export interface ManifestColumn {
     tooltip?: string;
     /** Tooltips tried in order when `tooltip` has an empty or missing value, 1 to 3 (since Sextant 0.30). */
     tooltipOr?: string[];
-    /** With `format: "number"`: the number it sorts and filters by while it holds; the text is still shown (since Sextant 0.30). */
-    value?: number;
+    /**
+     * With `format: "number"`: the number it sorts and filters by while it holds; with `"text"` a number or a text with
+     * placeholders it sorts by (since Sextant 0.30). The text is still shown.
+     */
+    value?: number | string;
   }[];
   /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
   afterColumn?: string;

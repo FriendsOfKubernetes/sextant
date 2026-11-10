@@ -74,4 +74,12 @@ describe("an extension's computed column", () => {
     expect(titleOf({ phase: "Pending", reason: "Quota", message: "waiting" })).toBe("Quota: waiting");
     expect(titleOf({ phase: "Pending", reason: "", message: "waiting" })).toBe("waiting");
   });
+
+  it("sorts a text column by a case's text value (#404)", () => {
+    const col = computedColumn(
+      "x",
+      column({ paths: [".status.phase"], cases: [{ when: { type: "exists", path: ".status.reason" }, text: "{{.status.phase}}", value: "{{.status.reason}}" }] }),
+    );
+    expect(col.value!({ metadata: { name: "a" }, status: { phase: "Progressing", reason: "AllCatalogSourcesHealthy" } } as unknown as KubeObject)).toBe("AllCatalogSourcesHealthy");
+  });
 });

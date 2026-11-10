@@ -402,20 +402,38 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 &here.key("cases").index(j).key("text"),
                 false,
             )?;
-            // A number column sorts and filters by it; a text column sorts by it (#403), its text still shown.
-            if case.value.is_some()
-                && !matches!(
-                    format,
-                    ColumnFormat::Number
-                        | ColumnFormat::Text
-                        | ColumnFormat::Count
-                        | ColumnFormat::Sum
-                )
-            {
-                return Err(at(
-                    &here.key("cases").index(j).key("value"),
-                    "goes with `format: \"number\"` or `\"text\"`",
-                ));
+            // A number column sorts and filters by it; a text column sorts by it (#403), its text still shown; a text
+            // column's may be a text with the text's placeholders (#404).
+            match &case.value {
+                None => {}
+                Some(serde_json::Value::Number(_))
+                    if matches!(
+                        format,
+                        ColumnFormat::Number
+                            | ColumnFormat::Text
+                            | ColumnFormat::Count
+                            | ColumnFormat::Sum
+                    ) => {}
+                Some(serde_json::Value::String(text)) if format == ColumnFormat::Text => {
+                    if text.trim().is_empty() || text.chars().count() > 200 {
+                        return Err(at(
+                            &here.key("cases").index(j).key("value"),
+                            "is a text of 1 to 200 characters",
+                        ));
+                    }
+                    check_message(
+                        text,
+                        &column.kind,
+                        &here.key("cases").index(j).key("value"),
+                        false,
+                    )?;
+                }
+                Some(_) => {
+                    return Err(at(
+                        &here.key("cases").index(j).key("value"),
+                        "goes with `format: \"number\"` or `\"text\"` (a text only with `\"text\"`)",
+                    ));
+                }
             }
             if let Some(tooltip) = &case.tooltip {
                 check_message(

@@ -503,8 +503,8 @@
                     },
                     "tone": { "type": "string", "enum": ["ok", "warning", "error", "neutral", "muted"] },
                     "value": {
-                      "description": "With `format: \"number\"`: the number the column sorts and filters by while the case holds; the text is still shown (sextantApi 4).",
-                      "type": "number"
+                      "description": "With `format: \"number\"`: the number the column sorts and filters by while the case holds; with `\"text\"` a number or a text with placeholders it sorts by; the text is still shown (sextantApi 4).",
+                      "type": ["number", "string"]
                     },
                     "tooltipOr": {
                       "description": "Tooltips tried in order when `tooltip` has an empty or missing value, 1 to 3 (sextantApi 4).",
@@ -905,6 +905,7 @@
               "description": "Only `apiVersion`, `kind` and `metadata` are watched; every path of the rule is then under `.metadata`.",
               "type": "boolean"
             },
+            "maxObjects": { "description": "The most objects watched for the rules, 1 to 20 000; 5000 without it.", "type": "integer", "minimum": 1, "maximum": 20000 },
             "fieldSelector": {
               "description": "A field selector the API server applies: terms of fields it selects the kind by, such as `status.phase=Pending` on pods.",
               "type": "string",
@@ -1023,7 +1024,8 @@
           "properties": {
             "type": { "const": "equals" },
             "path": { "$ref": "#/$defs/fieldPath" },
-            "value": { "$ref": "#/$defs/problemValue" }
+            "value": { "$ref": "#/$defs/problemValue" },
+            "ignoreCase": { "description": "Texts compared in lower case (sextantApi 4).", "type": "boolean" }
           }
         },
         {
@@ -1033,7 +1035,8 @@
           "properties": {
             "type": { "const": "in" },
             "path": { "$ref": "#/$defs/fieldPath" },
-            "values": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "$ref": "#/$defs/problemValue" } }
+            "values": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "$ref": "#/$defs/problemValue" } },
+            "ignoreCase": { "description": "Texts compared in lower case (sextantApi 4).", "type": "boolean" }
           }
         },
         {
@@ -1066,7 +1069,8 @@
           "required": ["type", "path"],
           "properties": {
             "type": { "const": "exists" },
-            "path": { "$ref": "#/$defs/fieldPath" }
+            "path": { "$ref": "#/$defs/fieldPath" },
+            "nonEmpty": { "description": "An empty text counts as nothing too (sextantApi 4).", "type": "boolean" }
           }
         },
         {

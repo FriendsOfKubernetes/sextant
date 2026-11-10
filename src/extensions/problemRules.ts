@@ -20,6 +20,9 @@ export const MAX_REASON_CHARS = 100;
 
 const MINUTE_MS = 60_000;
 
+/** A text in lower case when `ignoreCase` asks (#405); anything else as it is. */
+const folded = <T>(value: T, ignoreCase: boolean | undefined): T => (ignoreCase && typeof value === "string" ? (value.toLowerCase() as T) : value);
+
 /** The sum of the numbers in a list, lists inside it included (#407); `undefined` without one. */
 export function sumOf(value: unknown): number | undefined {
   if (!Array.isArray(value)) return undefined;
@@ -134,10 +137,10 @@ export interface RuleContext {
 export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: RuleContext = {}): Verdict {
   switch (condition.type) {
     case "equals":
-      return { holds: sameScalar(valueAt(obj, condition.path), condition.value) };
+      return { holds: sameScalar(folded(valueAt(obj, condition.path), condition.ignoreCase), folded(condition.value, condition.ignoreCase)) };
     case "in": {
-      const value = valueAt(obj, condition.path);
-      return { holds: condition.values.some((v) => sameScalar(value, v)) };
+      const value = folded(valueAt(obj, condition.path), condition.ignoreCase);
+      return { holds: condition.values.some((v) => sameScalar(value, folded(v, condition.ignoreCase))) };
     }
     // Text conditions (#405): a string value only; no pattern language, so no backtracking.
     case "contains":
@@ -151,7 +154,8 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
     }
     case "exists": {
       const value = valueAt(obj, condition.path);
-      return { holds: value !== undefined && value !== null };
+      // `nonEmpty` (#405): an empty text is nothing too.
+      return { holds: value !== undefined && value !== null && !(condition.nonEmpty && value === "") };
     }
     case "absent": {
       const value = valueAt(obj, condition.path);
@@ -314,13 +318,16 @@ export function placeholderText(obj: KubeObject, inner: string): string | undefi
     if (Array.isArray(value)) return String(value.length);
     return value !== null && typeof value === "object" ? String(Object.keys(value).length) : undefined;
   }
-  if (filter === "list") {
+  if (filter === "list" || filter === "join") {
     const items = Array.isArray(value) ? value.filter(isScalar).map(String) : isScalar(value) ? [String(value)] : [];
-    return items.length === 0 ? undefined : formatList(items);
+    if (items.length === 0) return undefined;
+    // `|join` (#404): with ", " in every language, as a built-in view joined names; `|list` in the UI language's way.
+    return filter === "join" ? items.join(", ") : formatList(items);
   }
   if (!isScalar(value)) return undefined;
   const text = String(value);
-  if (filter === "firstLine") return text.split(/\r?\n/)[0];
+  // The first line that is not blank, trimmed (#404), as the built-in views read a trace.
+  if (filter === "firstLine") return text.split(/\r?\n/).map((l) => l.trim()).find((l) => l !== "") ?? "";
   if (filter === "lastSegment") return text.slice(Math.max(text.lastIndexOf("."), text.lastIndexOf("/")) + 1);
   return text;
 }

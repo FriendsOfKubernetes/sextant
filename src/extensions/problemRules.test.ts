@@ -181,6 +181,17 @@ describe("problem rules of extensions", () => {
     expect(evaluate(near, js).holds).toBe(true);
   });
 
+  it("compare in any case, take an empty text as nothing, join with commas, read a first non-blank line (#404, #405)", () => {
+    const o = { metadata: { name: "b" }, status: { phase: "FAILED", primary: "", names: ["a", "b"], trace: "\n  java.lang.Error: boom  \n\tat X" } } as unknown as KubeObject;
+    expect(evaluate({ type: "equals", path: ".status.phase", value: "failed", ignoreCase: true }, o).holds).toBe(true);
+    expect(evaluate({ type: "equals", path: ".status.phase", value: "failed" }, o).holds).toBe(false);
+    expect(evaluate({ type: "in", path: ".status.phase", values: ["completed", "failed"], ignoreCase: true }, o).holds).toBe(true);
+    expect(evaluate({ type: "exists", path: ".status.primary" }, o).holds).toBe(true);
+    expect(evaluate({ type: "exists", path: ".status.primary", nonEmpty: true }, o).holds).toBe(false);
+    expect(placeholderText(o, ".status.names|join")).toBe("a, b");
+    expect(placeholderText(o, ".status.trace|firstLine")).toBe("java.lang.Error: boom");
+  });
+
   it("read field paths of the custom columns' grammar, nothing else", () => {
     expect(valueAt(cluster, ".status.ceph.health")).toBe("HEALTH_ERR");
     expect(valueAt(cluster, "status.items[1].name")).toBe("b");

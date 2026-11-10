@@ -252,7 +252,8 @@ export function extensionSourcesFor(
         // A rule's `source.fieldSelector` (#409), checked against the fields the API server selects the kind by.
         fieldSelector: source?.fieldSelector ?? null,
         discovered: true,
-        maxObjects: MAX_SOURCE_OBJECTS,
+        // The rules' own cap (#404), else Sextant's.
+        maxObjects: source?.maxObjects ?? MAX_SOURCE_OBJECTS,
         ...(everywhere || !served.namespaced ? {} : { namespaces: namespaces.namespaces }),
         ...(source?.labelSelector ? { labelSelector: source.labelSelector } : {}),
         ...(source?.metadataOnly ? { metadataOnly: true } : {}),

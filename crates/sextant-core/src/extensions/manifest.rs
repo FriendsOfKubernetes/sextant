@@ -481,9 +481,10 @@ pub struct ColumnCase {
     pub tooltip_or: Option<Vec<String>>,
     /// The number a `number` column sorts and filters by while the case holds (#390), or a `text` column sorts by
     /// (#403: a state's order, not its translated word); its text is still shown.
+    /// A number, or on a `text` column a text with the text's placeholders (#404): the reason a row sorts by.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[ts(optional, type = "number")]
-    pub value: Option<serde_json::Number>,
+    #[ts(optional, type = "number | string")]
+    pub value: Option<serde_json::Value>,
 }
 
 fn yes() -> bool {

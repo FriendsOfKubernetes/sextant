@@ -254,6 +254,10 @@ pub struct RuleSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub field_selector: Option<String>,
+    /// The most objects watched for the rules (#404): 1 to 20 000, 5000 without it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub max_objects: Option<u32>,
 }
 
 /// The fields the API server selects objects by, per kind: the window's table (`selectors.ts`) and this check share it.
@@ -307,11 +311,25 @@ pub enum ProblemCondition {
     Equals {
         path: String,
         value: ProblemScalar,
+        /// Texts compared in lower case (#405): a phase written `Failed` or `failed`.
+        #[serde(
+            default,
+            rename = "ignoreCase",
+            skip_serializing_if = "std::ops::Not::not"
+        )]
+        ignore_case: bool,
     },
     /// The value at `path` is one of `values`.
     In {
         path: String,
         values: Vec<ProblemScalar>,
+        /// Texts compared in lower case (#405): a phase written `Failed` or `failed`.
+        #[serde(
+            default,
+            rename = "ignoreCase",
+            skip_serializing_if = "std::ops::Not::not"
+        )]
+        ignore_case: bool,
     },
     /// The text at `path` holds one of `values` (#405); with `ignoreCase`, in any case (ASCII and Unicode lower case).
     /// `sextantApi` 4.
@@ -331,6 +349,13 @@ pub enum ProblemCondition {
     /// `path` holds a value (not `null`).
     Exists {
         path: String,
+        /// An empty text counts as nothing too (#405): a primary named `""`.
+        #[serde(
+            default,
+            rename = "nonEmpty",
+            skip_serializing_if = "std::ops::Not::not"
+        )]
+        non_empty: bool,
     },
     /// `path` holds nothing or `null`.
     Absent {
@@ -657,8 +682,12 @@ fn check_source(
                 format!("needs sextantApi {SOURCES_API} or later"),
             ));
         }
+        if source.max_objects.is_some_and(|n| n == 0 || n > 20_000) {
+            return Err(at(&path.key("maxObjects"), "is 1 to 20 000"));
+        }
         if source.label_selector.is_none()
             && source.field_selector.is_none()
+            && source.max_objects.is_none()
             && !source.metadata_only
         {
             return Err(at(
@@ -784,7 +813,7 @@ fn check_condition<'k>(
             &path.key("path"),
             checks.metadata_only,
         ),
-        ProblemCondition::Exists { path: field }
+        ProblemCondition::Exists { path: field, .. }
         | ProblemCondition::Absent { path: field }
         | ProblemCondition::OlderThan { path: field, .. } => {
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
@@ -1233,7 +1262,8 @@ pub(crate) fn check_message(
 }
 
 /// What may follow a placeholder's path after `|` (#404).
-pub const PLACEHOLDER_FILTERS: [&str; 5] = ["firstLine", "lastSegment", "list", "count", "sum"];
+pub const PLACEHOLDER_FILTERS: [&str; 6] =
+    ["firstLine", "lastSegment", "list", "join", "count", "sum"];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.
 pub fn placeholders(text: &str) -> Option<Vec<&str>> {
@@ -1413,7 +1443,8 @@ mod tests {
         assert_eq!(
             rule.when,
             ProblemCondition::Exists {
-                path: ".status".into()
+                path: ".status".into(),
+                non_empty: false
             }
         );
         // The wire form the window reads: tagged, camelCase fields.

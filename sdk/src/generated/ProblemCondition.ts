@@ -5,7 +5,19 @@ import type { ProblemScalar } from "./ProblemScalar";
 /**
  * A condition of a rule, tagged by `type`.
  */
-export type ProblemCondition = { "type": "equals", path: string, value: ProblemScalar, } | { "type": "in", path: string, values: Array<ProblemScalar>, } | { "type": "contains", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "startsWith", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "exists", path: string, } | { "type": "absent", path: string, } | { "type": "condition", conditionType: string, status: string, reason?: string, } | { "type": "above", path: string, value: number, } | { "type": "below", path: string, value: number, } | { "type": "same", path: string, otherPath: string, } | { "type": "atLeast", path: string, otherPath: string, 
+export type ProblemCondition = { "type": "equals", path: string, value: ProblemScalar, 
+/**
+ * Texts compared in lower case (#405): a phase written `Failed` or `failed`.
+ */
+ignoreCase?: boolean, } | { "type": "in", path: string, values: Array<ProblemScalar>, 
+/**
+ * Texts compared in lower case (#405): a phase written `Failed` or `failed`.
+ */
+ignoreCase?: boolean, } | { "type": "contains", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "startsWith", path: string, values: Array<string>, ignoreCase: boolean, } | { "type": "exists", path: string, 
+/**
+ * An empty text counts as nothing too (#405): a primary named `""`.
+ */
+nonEmpty?: boolean, } | { "type": "absent", path: string, } | { "type": "condition", conditionType: string, status: string, reason?: string, } | { "type": "above", path: string, value: number, } | { "type": "below", path: string, value: number, } | { "type": "same", path: string, otherPath: string, } | { "type": "atLeast", path: string, otherPath: string, 
 /**
  * Added to the other value first (#407): `-1` for "one before the limit".
  */

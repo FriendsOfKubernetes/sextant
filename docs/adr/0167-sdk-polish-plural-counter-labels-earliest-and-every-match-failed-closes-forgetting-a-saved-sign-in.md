@@ -190,3 +190,10 @@ panel's "Expand all"/"Collapse all" — read from Sextant's memory of details se
 (globally, per cluster, or this object only; `useDetailsDisclosureBank` under the section's scope), and
 `ui.setBlockOpen({id, open})` (details frames only, ids of `[A-Za-z0-9._-]`) writes a choice there. The SDK's
 `ui.blockOpen(context.blocks, id, defaultOpen)` reads it for `ui.block`'s `collapsed`, `onToggle` writes it back.
+
+## Amendment: case-blind comparisons, non-empty texts, commas, text sort keys, source caps (#404, #405)
+
+`equals` and `in` take `ignoreCase`; `exists` takes `nonEmpty` (an empty text is nothing too); the placeholder filter
+`|join` joins a list with ", " in every language (`|list` follows the UI language); `|firstLine` is the first line that
+is not blank, trimmed; a text column case's `value` may be a text with the text's placeholders, the reason a row sorts
+by; a rule's `source.maxObjects` (1 to 20 000) replaces the 5000 Sextant watches for its rules.
