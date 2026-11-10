@@ -143,7 +143,3 @@ export function shownRunStart(pod: KubeObject, container: string, previous: bool
   return Number.isFinite(ms) ? ms : null;
 }
 
-/** How many times `container` restarted (0 when the pod does not say). */
-export function restartsOf(pod: KubeObject, container: string): number {
-  return statusOf(pod, container)?.restartCount ?? 0;
-}

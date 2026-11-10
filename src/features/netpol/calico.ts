@@ -41,8 +41,6 @@ import {
 
 const { arr, get, num, str } = status;
 
-export const CALICO_GROUPS = ["projectcalico.org", "crd.projectcalico.org"] as const;
-
 function keysOf(expr: Expr): string[] {
   switch (expr.type) {
     case "all":

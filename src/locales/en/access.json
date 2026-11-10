@@ -21,7 +21,6 @@
     "notice": "These rules were written by a newer Sextant or edited by hand; they are kept but not applied. The agent has no access until you reset to Off or choose a set, which replaces them.",
     "reset": "Reset to Off"
   },
-  "saveFailed": "Could not save the access rules.",
   "rules": {
     "title": "Rules",
     "none": "There are no rules, so the agent has no access to this cluster.",

@@ -73,10 +73,6 @@ export function conditionOf(obj: unknown, type: string): Condition | undefined {
   return conditionsOf(obj).find((c) => c.type === type);
 }
 
-export function isTrue(obj: unknown, type: string): boolean {
-  return conditionOf(obj, type)?.status === "True";
-}
-
 // ---------- Events ----------
 
 /** What the views need of an Event. */

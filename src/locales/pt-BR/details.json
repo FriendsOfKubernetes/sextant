@@ -14,8 +14,6 @@
     "collapseAll": "Recolher tudo"
   },
   "yaml": {
-    "show": "Mostrar YAML",
-    "hide": "Ocultar YAML",
     "label": "YAML de {{kind}} {{name}}",
     "secretMasked": "Os valores de Secrets ficam ocultos aqui; use Mostrar ao lado de uma chave acima."
   },

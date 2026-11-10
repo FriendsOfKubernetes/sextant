@@ -35,7 +35,6 @@ export const MANAGED_BY_LABEL = "vcluster.loft.sh/managed-by";
 export const NAMESPACE_LABEL = "vcluster.loft.sh/namespace";
 export const OBJECT_NAME_ANNOTATION = "vcluster.loft.sh/object-name";
 export const OBJECT_NAMESPACE_ANNOTATION = "vcluster.loft.sh/object-namespace";
-export const OBJECT_KIND_ANNOTATION = "vcluster.loft.sh/object-kind";
 
 const labelsOf = (obj: KubeObject | undefined): Record<string, string> =>
   record(get(obj, "metadata", "labels")) as Record<string, string>;

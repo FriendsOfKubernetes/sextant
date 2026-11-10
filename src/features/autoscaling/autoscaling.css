@@ -29,15 +29,6 @@
   overflow-wrap: anywhere;
 }
 
-.as-subtitle {
-  margin: 12px 0 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
 .as-lines {
   display: flex;
   flex-direction: column;

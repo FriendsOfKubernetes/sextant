@@ -101,13 +101,6 @@ export function conditionOf(conditions: readonly Condition[], type: string): Con
  */
 export type Health = "ok" | "pending" | "problem";
 
-/** The worst of several healths. */
-export function worst(healths: readonly Health[]): Health {
-  if (healths.includes("problem")) return "problem";
-  if (healths.includes("pending")) return "pending";
-  return "ok";
-}
-
 /** A condition whose status `bad` ("False" for Accepted, "True" for Conflicted) makes the hop a problem. */
 type Check = readonly [type: string, bad: "True" | "False"];
 

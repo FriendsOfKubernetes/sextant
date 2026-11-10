@@ -978,16 +978,6 @@ pub(crate) fn check_sections(manifest: &ExtensionManifest) -> Result<(), Manifes
     Ok(())
 }
 
-/// The kinds the extension lists in its own sections: where its actions may be `primary` (ADR-0154).
-pub fn listed_kinds(manifest: &ExtensionManifest) -> Vec<KindPattern> {
-    manifest
-        .contributes
-        .kinds
-        .iter()
-        .map(|k| KindPattern::new(&k.group, &k.kind))
-        .collect()
-}
-
 fn same_kind(a: &KindPattern, b: &KindPattern) -> bool {
     a.group.eq_ignore_ascii_case(&b.group) && a.kind.eq_ignore_ascii_case(&b.kind)
 }

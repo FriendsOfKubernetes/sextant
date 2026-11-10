@@ -78,8 +78,7 @@
     "conflict": "你打开 {{kind}} {{name}} 后，它已在集群中被更改。你的更改未保存。请重新加载以获取当前版本。",
     "reloadTitle": "放弃你的更改？",
     "reloadText": "重新加载会将文本替换为集群中的当前版本。你未保存的更改将会丢失。",
-    "reloadConfirm": "放弃并重新加载",
-    "saveFailed": "未保存"
+    "reloadConfirm": "放弃并重新加载"
   },
   "create": {
     "open": "创建资源",

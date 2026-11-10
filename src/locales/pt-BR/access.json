@@ -21,7 +21,6 @@
     "notice": "Estas regras foram escritas por uma versão mais recente do Sextant ou editadas manualmente; elas são mantidas, mas não aplicadas. O agente fica sem acesso até que você redefina para Desativado ou escolha um conjunto, o que as substitui.",
     "reset": "Redefinir para Desativado"
   },
-  "saveFailed": "Não foi possível salvar as regras de acesso.",
   "rules": {
     "title": "Regras",
     "none": "Não há regras, então o agente não tem acesso a este cluster.",

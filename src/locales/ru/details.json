@@ -14,8 +14,6 @@
     "collapseAll": "Свернуть всё"
   },
   "yaml": {
-    "show": "Показать YAML",
-    "hide": "Скрыть YAML",
     "label": "YAML {{kind}} {{name}}",
     "secretMasked": "Значения Secret здесь скрыты; используйте «Показать» рядом с ключом выше."
   },

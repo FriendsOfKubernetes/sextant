@@ -90,8 +90,7 @@
     "conflict": "{{kind}} {{name}} a été modifié dans le cluster après son ouverture. Vos modifications n'ont pas été enregistrées. Rechargez pour obtenir la version actuelle.",
     "reloadTitle": "Abandonner vos modifications ?",
     "reloadText": "Le rechargement remplace le texte par la version actuelle du cluster. Vos modifications non enregistrées seront perdues.",
-    "reloadConfirm": "Abandonner et recharger",
-    "saveFailed": "Non enregistré"
+    "reloadConfirm": "Abandonner et recharger"
   },
   "create": {
     "open": "Créer une ressource",

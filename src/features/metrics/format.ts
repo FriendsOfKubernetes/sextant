@@ -40,15 +40,6 @@ export function formatCpu(millicores: number): string {
   return `${Math.round(millicores)}m`;
 }
 
-/** CPU in cores for chart axes: "0.25", "1.5", "12". */
-export function formatCores(millicores: number): string {
-  const cores = millicores / 1000;
-  if (cores === 0) return "0";
-  if (cores < 0.1) return formatNumber(cores, 3);
-  if (cores < 10) return formatNumber(cores, 2);
-  return formatNumber(cores, 0);
-}
-
 const BYTE_UNITS = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"];
 
 /** Bytes in binary units: "512B", "34.0MiB", "1.50GiB", "120GiB". */

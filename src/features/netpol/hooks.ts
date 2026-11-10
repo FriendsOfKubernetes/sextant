@@ -306,7 +306,3 @@ function useStable<T>(values: readonly T[]): readonly T[] {
   return ref.current;
 }
 
-/** Whether the world holds every policy list a pod of `namespace` needs. */
-export function coversNamespace(world: World, namespace: string): boolean {
-  return !world.unreadable.some((u) => u.namespace === null || u.namespace === namespace);
-}

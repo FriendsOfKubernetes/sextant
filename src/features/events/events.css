@@ -22,12 +22,6 @@
   margin: 12px 0;
 }
 
-.events-section__title {
-  margin: 0 0 6px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
 .events-empty {
   color: var(--color-text-muted);
 }

@@ -21,19 +21,6 @@ export interface Problem {
 /** The document's schema: a schema, `null` (none, nothing to check) or `undefined` (not known yet). */
 export type SchemaLookup = (apiVersion: string, kind: string) => KindSchema | null | undefined;
 
-/** The apiVersion/kind pairs of the documents in `text` (for loading their schemas first). */
-export function kindsOf(text: string): Array<{ apiVersion: string; kind: string }> {
-  const out: Array<{ apiVersion: string; kind: string }> = [];
-  for (const doc of parseAllDocuments(text, { prettyErrors: false })) {
-    const contents = doc.contents;
-    if (!isMap(contents)) continue;
-    const apiVersion = contents.get("apiVersion");
-    const kind = contents.get("kind");
-    if (typeof apiVersion === "string" && typeof kind === "string") out.push({ apiVersion, kind });
-  }
-  return out;
-}
-
 type Range = readonly [number, number];
 
 function rangeOf(node: Node | null | undefined, fallback: Range): Range {

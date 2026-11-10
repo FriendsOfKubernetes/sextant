@@ -8,10 +8,6 @@
   font: inherit;
 }
 
-.action-failure__label {
-  font-weight: 600;
-}
-
 .main__filter {
   display: inline-flex;
   align-items: center;

@@ -15,7 +15,6 @@ export type Direction = "ingress" | "egress";
 export type Verdict = "allowed" | "denied" | "unknown";
 export type Protocol = "TCP" | "UDP" | "SCTP";
 export const PROTOCOLS: readonly Protocol[] = ["TCP", "UDP", "SCTP"];
-export const DIRECTIONS: readonly Direction[] = ["egress", "ingress"];
 /** The order views list the directions in. */
 export const SHOWN_DIRECTIONS: readonly Direction[] = ["ingress", "egress"];
 

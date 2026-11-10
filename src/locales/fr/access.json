@@ -21,7 +21,6 @@
     "notice": "Ces règles ont été écrites par une version plus récente de Sextant ou modifiées à la main ; elles sont conservées mais pas appliquées. L'agent n'a aucun accès tant que vous ne revenez pas à Désactivé ou ne choisissez pas un ensemble, qui les remplace.",
     "reset": "Revenir à Désactivé"
   },
-  "saveFailed": "Impossible d'enregistrer les règles d'accès.",
   "rules": {
     "title": "Règles",
     "none": "Il n'y a aucune règle : l'agent n'a donc aucun accès à ce cluster.",

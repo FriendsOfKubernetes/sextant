@@ -106,7 +106,3 @@ export function forgetRestartRun(id: string): void {
   if (run && run.snapshot().phase !== "running") runs.delete(id);
 }
 
-/** Forgets every run (tests). */
-export function resetRestartRuns(): void {
-  runs.clear();
-}

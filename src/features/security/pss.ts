@@ -752,12 +752,6 @@ export function fieldName(finding: Pick<Finding, "path">): string {
   return parts[parts.length - 1] ?? path;
 }
 
-/** Severity of a finding (the page's filter): Baseline high, Restricted medium, hints low. */
-export type Severity = "high" | "medium" | "low";
-export function severityOf(level: FindingLevel): Severity {
-  return level === "baseline" ? "high" : level === "restricted" ? "medium" : "low";
-}
-
 // ---------- Who is judged, and what a running Pod adds ----------
 
 /** Controllers whose pods (or ReplicaSets, Jobs) are judged through the controller's template. */

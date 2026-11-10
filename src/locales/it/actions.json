@@ -90,8 +90,7 @@
     "conflict": "{{kind}} {{name}} è stato modificato nel cluster dopo l'apertura. Le modifiche non sono state salvate. Ricarica per ottenere la versione attuale.",
     "reloadTitle": "Annullare le modifiche?",
     "reloadText": "Il ricaricamento sostituisce il testo con la versione attuale presente nel cluster. Le modifiche non salvate andranno perse.",
-    "reloadConfirm": "Annulla modifiche e ricarica",
-    "saveFailed": "Non salvato"
+    "reloadConfirm": "Annulla modifiche e ricarica"
   },
   "create": {
     "open": "Crea risorsa",

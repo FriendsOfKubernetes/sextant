@@ -216,17 +216,3 @@ export function evalCalico(expr: Expr, labels: Labels): Tri {
   }
 }
 
-/** Whether the expression uses `global()` (it then selects non-namespaced endpoints, which pods are not). */
-export function usesGlobal(expr: Expr): boolean {
-  switch (expr.type) {
-    case "global":
-      return true;
-    case "not":
-      return usesGlobal(expr.expr);
-    case "and":
-    case "or":
-      return usesGlobal(expr.left) || usesGlobal(expr.right);
-    default:
-      return false;
-  }
-}

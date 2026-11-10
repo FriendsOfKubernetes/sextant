@@ -84,8 +84,7 @@
     "conflict": "{{kind}} {{name}} wurde im Cluster geändert, nachdem Sie es geöffnet haben. Ihre Änderungen wurden nicht gespeichert. Laden Sie neu, um die aktuelle Version zu erhalten.",
     "reloadTitle": "Ihre Änderungen verwerfen?",
     "reloadText": "Beim Neuladen wird der Text durch die aktuelle Version aus dem Cluster ersetzt. Ihre ungespeicherten Änderungen gehen verloren.",
-    "reloadConfirm": "Verwerfen und neu laden",
-    "saveFailed": "Nicht gespeichert"
+    "reloadConfirm": "Verwerfen und neu laden"
   },
   "create": {
     "open": "Ressource erstellen",

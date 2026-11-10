@@ -14,8 +14,6 @@
     "collapseAll": "全部收合"
   },
   "yaml": {
-    "show": "顯示 YAML",
-    "hide": "隱藏 YAML",
     "label": "{{kind}} {{name}} 的 YAML",
     "secretMasked": "此處隱藏了 Secret 值；請使用上方索引鍵旁的「顯示」。"
   },

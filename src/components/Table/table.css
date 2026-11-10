@@ -20,8 +20,7 @@
   font-weight: 600;
 }
 
-.rt__count,
-.rt__selected {
+.rt__count {
   color: var(--color-text-muted);
 }
 

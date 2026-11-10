@@ -21,7 +21,6 @@
     "notice": "Te reguły zostały zapisane przez nowszą wersję programu Sextant lub zmienione ręcznie; są zachowane, ale nie są stosowane. Agent nie ma dostępu, dopóki nie zostanie przywrócony stan „Wyłączony” lub wybrany zestaw, który je zastąpi.",
     "reset": "Przywróć „Wyłączony”"
   },
-  "saveFailed": "Nie można zapisać reguł dostępu.",
   "rules": {
     "title": "Reguły",
     "none": "Brak reguł, więc agent nie ma dostępu do tego klastra.",

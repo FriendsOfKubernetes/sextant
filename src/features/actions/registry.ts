@@ -105,10 +105,6 @@ export function registerAction(id: ActionId, def: ActionDef): () => void {
   };
 }
 
-export function unregisterAction(id: ActionId): void {
-  if (actions.delete(id)) changed();
-}
-
 export function getAction(id: ActionId): RegisteredAction | undefined {
   return actions.get(id);
 }

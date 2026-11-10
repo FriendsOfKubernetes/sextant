@@ -21,7 +21,6 @@
     "notice": "Estas reglas las escribió una versión más reciente de Sextant o se editaron a mano; se conservan, pero no se aplican. El agente no tiene acceso hasta que se restablezca a Desactivado o se elija un conjunto, que las sustituye.",
     "reset": "Restablecer a Desactivado"
   },
-  "saveFailed": "No se pudieron guardar las reglas de acceso.",
   "rules": {
     "title": "Reglas",
     "none": "No hay reglas, así que el agente no tiene acceso a este clúster.",

@@ -84,8 +84,7 @@
     "conflict": "{{kind}} {{name}} was changed in the cluster after you opened it. Your changes were not saved. Reload to get the current version.",
     "reloadTitle": "Discard your changes?",
     "reloadText": "Reloading replaces the text with the current version from the cluster. Your unsaved changes will be lost.",
-    "reloadConfirm": "Discard and reload",
-    "saveFailed": "Not saved"
+    "reloadConfirm": "Discard and reload"
   },
   "create": {
     "open": "Create resource",

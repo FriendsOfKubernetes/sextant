@@ -90,8 +90,7 @@
     "conflict": "{{kind}} {{name}} foi alterado no cluster depois que você o abriu. Suas alterações não foram salvas. Recarregue para obter a versão atual.",
     "reloadTitle": "Descartar suas alterações?",
     "reloadText": "Recarregar substitui o texto pela versão atual do cluster. Suas alterações não salvas serão perdidas.",
-    "reloadConfirm": "Descartar e recarregar",
-    "saveFailed": "Não salvo"
+    "reloadConfirm": "Descartar e recarregar"
   },
   "create": {
     "open": "Criar recurso",

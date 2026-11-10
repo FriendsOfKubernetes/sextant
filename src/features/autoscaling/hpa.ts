@@ -23,9 +23,6 @@ export const DEFAULT_TOLERANCE = 0.1;
 /** The controller's default scale-down stabilization (`--horizontal-pod-autoscaler-downscale-stabilization`). */
 export const DEFAULT_DOWN_WINDOW_S = 300;
 
-export type MetricSource = "Resource" | "ContainerResource" | "Pods" | "Object" | "External";
-export type TargetType = "Utilization" | "AverageValue" | "Value";
-
 export interface MetricRow {
   source: string;
   /** Resource or metric name. */

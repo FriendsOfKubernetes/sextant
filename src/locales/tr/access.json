@@ -21,7 +21,6 @@
     "notice": "Bu kurallar daha yeni bir Sextant tarafından yazılmış veya elle düzenlenmiş; saklanırlar ancak uygulanmazlar. Kapalı'ya sıfırlayana veya onların yerini alacak bir set seçene kadar ajanın erişimi olmaz.",
     "reset": "Kapalı'ya sıfırla"
   },
-  "saveFailed": "Erişim kuralları kaydedilemedi.",
   "rules": {
     "title": "Kurallar",
     "none": "Hiç kural yok, bu yüzden ajanın bu kümeye erişimi yok.",

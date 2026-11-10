@@ -17,18 +17,6 @@ import { isRemovableSource, removeConfirmKey, sourceKindLabelKey } from "./sourc
 import { checkKubeconfig, hasProblems, ValidationDialog } from "./kubeconfig/ValidationDialog";
 import type { KubeconfigInput, KubeconfigValidation } from "../../api";
 
-/** Opens the system file dialog and adds the chosen kubeconfig. Resolves to an error to show, if any. */
-export async function pickKubeconfigFile(title: string): Promise<ApiError | null> {
-  const path = await api.dialog.openFile({ title });
-  if (!path) return null;
-  try {
-    await addKubeconfigFile(path);
-    return null;
-  } catch (err) {
-    return toApiError(err);
-  }
-}
-
 /** A failed kubeconfig change or a source that cannot be read, shown compactly inside a form, list or dialog. */
 export function SourceError({ error }: { error: ApiError | CoreError }) {
   return <ErrorState error={error} className="clusters-error" />;

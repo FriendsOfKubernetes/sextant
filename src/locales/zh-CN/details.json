@@ -14,8 +14,6 @@
     "collapseAll": "全部折叠"
   },
   "yaml": {
-    "show": "显示 YAML",
-    "hide": "隐藏 YAML",
     "label": "{{kind}} {{name}} 的 YAML",
     "secretMasked": "此处隐藏了 Secret 值；请使用上方键旁边的“显示”。"
   },

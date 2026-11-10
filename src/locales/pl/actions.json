@@ -96,8 +96,7 @@
     "conflict": "Obiekt {{kind}} {{name}} został zmieniony w klastrze po jego otwarciu. Zmiany nie zostały zapisane. Wczytaj ponownie, aby pobrać bieżącą wersję.",
     "reloadTitle": "Odrzucić zmiany?",
     "reloadText": "Ponowne wczytanie zastąpi tekst bieżącą wersją z klastra. Niezapisane zmiany zostaną utracone.",
-    "reloadConfirm": "Odrzuć i wczytaj ponownie",
-    "saveFailed": "Nie zapisano"
+    "reloadConfirm": "Odrzuć i wczytaj ponownie"
   },
   "create": {
     "open": "Utwórz zasób",

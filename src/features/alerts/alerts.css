@@ -77,8 +77,7 @@
 }
 
 .al-group__title,
-.al-name__title,
-.al-section__title {
+.al-name__title {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -93,10 +92,6 @@
   font-size: 0.875rem;
   font-family: var(--font-mono);
   overflow-wrap: anywhere;
-}
-
-.al-section__title {
-  font-size: 0.875rem;
 }
 
 .al-list {
@@ -167,8 +162,4 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   overflow-wrap: anywhere;
-}
-
-.al-section {
-  margin: 0 0 12px;
 }

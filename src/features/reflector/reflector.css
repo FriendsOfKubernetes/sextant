@@ -9,12 +9,6 @@
   color: var(--color-text-muted);
 }
 
-.reflector__heading {
-  margin: 12px 0 4px;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
 .reflector__more {
   margin-left: 6px;
   color: var(--color-text-muted);

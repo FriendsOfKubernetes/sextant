@@ -14,11 +14,6 @@ import {
 } from "../../api";
 import { Button, Checkbox, Dialog, ErrorState } from "../../components";
 
-/** "demo/web" for a namespaced object, "node-1" otherwise. */
-export function displayName(r: ObjectRef): string {
-  return r.namespace ? `${r.namespace}/${r.name}` : r.name;
-}
-
 export interface ConfirmActionProps {
   /** Translated texts. */
   title: string;

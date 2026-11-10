@@ -154,15 +154,6 @@
   font-style: italic;
 }
 
-.cost-section {
-  margin: 12px 0;
-}
-
-.cost-section__title {
-  margin: 0 0 8px;
-  font-size: 0.875rem;
-}
-
 .cost-facts {
   display: grid;
   grid-template-columns: max-content 1fr;

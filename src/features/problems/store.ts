@@ -732,7 +732,3 @@ export function resetProblemSources(): void {
   changed();
 }
 
-/** The clock first-seen times are taken from (tests). */
-export function setProblemsClock(now: (() => number) | null): void {
-  clock = now ?? (() => Date.now());
-}

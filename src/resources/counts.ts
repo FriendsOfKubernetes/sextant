@@ -82,11 +82,6 @@ export function refreshCount(
   );
 }
 
-/** The cached count (`loading` when none is known yet). */
-export function countOf(clusterId: ClusterId, kind: KindRef, namespaces: readonly string[] | null): CountState {
-  return entries.get(keyOf(clusterId, kind, namespaces))?.state ?? LOADING;
-}
-
 /** The count of `kind` in `namespaces` (`null` = all), asked for while mounted; `clusterId: null` asks nothing. */
 export function useObjectCount(
   clusterId: ClusterId | null,

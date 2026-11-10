@@ -235,11 +235,6 @@ impl ExtensionStreams {
         self.stop_where(|s| &s.cluster == cluster);
     }
 
-    /// Every stream of one extension.
-    pub fn stop_extension(&self, extension: &str) {
-        self.stop_where(|s| s.extension == extension);
-    }
-
     /// Streams whose extension is no longer active (disabled, removed, waiting for consent) or was granted anything
     /// else since the stream was opened (reinstalled with other permissions). What the installed list says — removed,
     /// disabled, granted anything else — stops them at once, so a disable stops them even when the extension is

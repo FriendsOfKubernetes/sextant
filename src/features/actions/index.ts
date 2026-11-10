@@ -3,4 +3,4 @@
 import "./actions.css";
 import "./register";
 
-export { ConfirmAction, DeleteDialog, ScaleDialog, displayName, type ConfirmActionProps } from "./dialogs";
+export { ConfirmAction, DeleteDialog, ScaleDialog, type ConfirmActionProps } from "./dialogs";

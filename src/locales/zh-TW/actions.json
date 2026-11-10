@@ -78,8 +78,7 @@
     "conflict": "您開啟 {{kind}} {{name}} 之後，它已在叢集中被變更。您的變更並未儲存。請重新載入以取得目前的版本。",
     "reloadTitle": "要捨棄您的變更嗎？",
     "reloadText": "重新載入會以叢集中目前的版本取代文字內容。您未儲存的變更將會遺失。",
-    "reloadConfirm": "捨棄並重新載入",
-    "saveFailed": "未儲存"
+    "reloadConfirm": "捨棄並重新載入"
   },
   "create": {
     "open": "建立資源",

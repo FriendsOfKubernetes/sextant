@@ -365,7 +365,3 @@ export function contributionKey(extensionId: string, id: string): `ext:${string}
   return `ext:${extensionId}:${id}`;
 }
 
-/** The prefix of every registry id of an extension's contributions. */
-export function contributionPrefix(extensionId: string): string {
-  return `ext:${extensionId}:`;
-}

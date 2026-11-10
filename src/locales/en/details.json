@@ -14,8 +14,6 @@
     "collapseAll": "Collapse all"
   },
   "yaml": {
-    "show": "Show YAML",
-    "hide": "Hide YAML",
     "label": "YAML of {{kind}} {{name}}",
     "secretMasked": "Secret values are hidden here; use Show next to a key above."
   },

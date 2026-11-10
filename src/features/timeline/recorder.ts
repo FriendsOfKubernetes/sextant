@@ -536,11 +536,6 @@ export function timelineSaveError(): ApiError | null {
   return saveError;
 }
 
-/** Whether recorded changes are kept between runs. */
-export function persistEnabled(): boolean {
-  return persist;
-}
-
 /**
  * Turns keeping the timeline between runs on or off (`settings.timeline.persist`). Turning it on saves what is
  * recorded now; turning it off removes every saved timeline of the known clusters.
@@ -677,7 +672,3 @@ export function baselineCount(clusterId: ClusterId): number {
   return logs.get(clusterId)?.baselines.size ?? 0;
 }
 
-/** Characters of object texts kept now (tests). */
-export function baselineSize(): number {
-  return baselineChars;
-}

@@ -105,11 +105,6 @@ export function syncExtensions(list: readonly ExtensionInfo[]): void {
   closeOrphans();
 }
 
-/** Ids of the extensions whose contributions are registered. */
-export function registeredExtensions(): string[] {
-  return [...registrations.keys()];
-}
-
 function isActive(info: ExtensionInfo): info is ExtensionInfo & { entryUrl: string } {
   return info.state === "active" && info.manifest !== null && !!info.entryUrl;
 }

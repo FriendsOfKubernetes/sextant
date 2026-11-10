@@ -90,8 +90,7 @@
     "conflict": "{{kind}} {{name}} cambió en el clúster después de abrirlo. Sus cambios no se guardaron. Vuelva a cargarlo para obtener la versión actual.",
     "reloadTitle": "¿Descartar los cambios?",
     "reloadText": "Al volver a cargar, el texto se sustituye por la versión actual del clúster. Los cambios sin guardar se perderán.",
-    "reloadConfirm": "Descartar y volver a cargar",
-    "saveFailed": "No guardado"
+    "reloadConfirm": "Descartar y volver a cargar"
   },
   "create": {
     "open": "Crear recurso",

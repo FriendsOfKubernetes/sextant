@@ -14,8 +14,6 @@
     "collapseAll": "Tümünü daralt"
   },
   "yaml": {
-    "show": "YAML'ı göster",
-    "hide": "YAML'ı gizle",
     "label": "{{kind}} {{name}} YAML'ı",
     "secretMasked": "Secret değerleri burada gizlenir; yukarıda bir anahtarın yanındaki Göster düğmesini kullanın."
   },

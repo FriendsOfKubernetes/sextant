@@ -21,7 +21,6 @@
     "notice": "Diese Regeln wurden von einer neueren Sextant-Version geschrieben oder von Hand bearbeitet; sie bleiben erhalten, werden aber nicht angewendet. Der Agent hat keinen Zugriff, bis Sie auf „Aus“ zurücksetzen oder eine Stufe wählen, die sie ersetzt.",
     "reset": "Auf „Aus“ zurücksetzen"
   },
-  "saveFailed": "Die Zugriffsregeln konnten nicht gespeichert werden.",
   "rules": {
     "title": "Regeln",
     "none": "Es gibt keine Regeln, daher hat der Agent keinen Zugriff auf diesen Cluster.",

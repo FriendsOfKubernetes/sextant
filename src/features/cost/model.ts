@@ -11,7 +11,6 @@ export const GIB = 2 ** 30;
 export const WINDOW_HOURS: Record<CostWindow, number> = { day: 24, week: 168, month: 720 };
 
 /** The API's names of the special groups. */
-export const IDLE = "__idle__";
 export const UNALLOCATED = "__unallocated__";
 export const UNMOUNTED = "__unmounted__";
 

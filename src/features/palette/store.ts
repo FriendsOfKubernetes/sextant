@@ -28,10 +28,6 @@ interface PaletteState {
 
 export const usePalette = create<PaletteState>(() => ({ open: false, recent: [] }));
 
-export function openPalette(): void {
-  usePalette.setState({ open: true });
-}
-
 export function closePalette(): void {
   usePalette.setState({ open: false });
 }

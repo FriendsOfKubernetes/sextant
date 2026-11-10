@@ -3,7 +3,7 @@
 // case, a namespace only from a rule's list, an object without a namespace (or a list over all namespaces) only under
 // a rule for all namespaces. The window feeds its engines only what this allows; the backend checks every object of
 // the answer again.
-import type { KindRef, KubeObject, ReadRule, WatchState } from "../../api";
+import type { KindRef, ReadRule, WatchState } from "../../api";
 
 type Kind = Pick<KindRef, "group" | "kind">;
 
@@ -22,11 +22,6 @@ function coversNamespace(rule: ReadRule, namespace: string | null): boolean {
 /** Whether the agent may read an object of `kind` in `namespace` (`null`: without one, or in every namespace). */
 export function canRead(reads: readonly ReadRule[], kind: Kind, namespace: string | null): boolean {
   return reads.some((rule) => coversKind(rule, kind) && coversNamespace(rule, namespace));
-}
-
-/** The objects of a list of `kind` the agent may read. */
-export function readable<T extends KubeObject>(reads: readonly ReadRule[], kind: Kind, items: readonly T[]): T[] {
-  return items.filter((o) => canRead(reads, kind, o.metadata?.namespace ?? null));
 }
 
 /** An object as the answers name it. */

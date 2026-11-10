@@ -14,8 +14,6 @@
     "collapseAll": "모두 접기"
   },
   "yaml": {
-    "show": "YAML 표시",
-    "hide": "YAML 숨기기",
     "label": "{{kind}} {{name}}의 YAML",
     "secretMasked": "여기에서는 Secret 값이 숨겨집니다. 위의 키 옆에 있는 표시를 사용하세요."
   },

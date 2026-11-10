@@ -14,8 +14,6 @@
     "collapseAll": "すべて折りたたむ"
   },
   "yaml": {
-    "show": "YAML を表示",
-    "hide": "YAML を隠す",
     "label": "{{kind}} {{name}} の YAML",
     "secretMasked": "ここでは Secret の値は隠されています。上のキーの横にある「表示」を使用してください。"
   },

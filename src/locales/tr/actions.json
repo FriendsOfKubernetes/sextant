@@ -84,8 +84,7 @@
     "conflict": "{{kind}} {{name}}, siz açtıktan sonra kümede değiştirildi. Değişiklikleriniz kaydedilmedi. Geçerli sürümü almak için yeniden yükleyin.",
     "reloadTitle": "Değişiklikleriniz atılsın mı?",
     "reloadText": "Yeniden yükleme, metni kümedeki geçerli sürümle değiştirir. Kaydedilmemiş değişiklikleriniz kaybolur.",
-    "reloadConfirm": "At ve yeniden yükle",
-    "saveFailed": "Kaydedilmedi"
+    "reloadConfirm": "At ve yeniden yükle"
   },
   "create": {
     "open": "Kaynak oluştur",
