@@ -11,7 +11,9 @@ extensions), ADR-0140 (translations), ADR-0143 (the section's counter), ADR-0152
 ADR-0153 (computed columns), ADR-0160 (the section's icon and place, the UI kit), ADR-0161 (printer columns left out,
 paths picking an item, notification groups), ADR-0163 (field values in texts, a problem's reason from the object),
 ADR-0164 (case tooltips, deeper conditions), ADR-0165 (a kind's own "Only problems") and ADR-0167 (every match of a
-path, the counter's own label).
+path, nested match fields reaching through lists, placeholder filters and clipping, case values, widths and the `muted` tone, `reasonOr`/`sinceOr`, 30
+rules and 40 conditions, sections without a heading, blocks in Sextant's own memory, text sort keys, non-empty texts,
+rule sources' caps, the counter's own label).
 
 ## At a glance
 
@@ -32,11 +34,13 @@ Connectors, each with Sextant's own table, filters, selection bar and details. T
 objects need attention (the problems below). "Only problems" on each table shows every object that is not ready, and
 on Kafka Connectors and MirrorMaker 2 every one with a failed connector or task, at once, as the built-in tables did.
 
-**Columns**, after Name and Namespace, in place of the CRDs' own printer columns (left out, as the built-in view did).
-Readiness (**Status**) is "Ready" (a `Ready` condition True), "Not ready" (`NotReady` True, or `Ready` False) or
-"Pending" (neither yet), coloured, with Strimzi's message on hover; **Reason** is that condition's reason.
+**Columns**, after Name and Namespace, in place of the CRDs' own printer columns (left out, as the built-in view did),
+in the built-in columns' widths. Readiness (**Status**) is "Ready" (a `Ready` condition True), "Not ready" (`NotReady`
+True, or `Ready` False) or "Pending" (neither yet), coloured, with Strimzi's message on hover, sorted by the state in
+every language; **Reason** is that condition's reason.
 - Kafkas: **Status** (`kafka-status`), **Version** (`kafka-version`: the running Kafka version, else the one asked
-  for), **Listeners** (`kafka-listeners`: the declared listeners' names) and **Reason** (`kafka-reason`).
+  for), **Listeners** (`kafka-listeners`: every declared listener's name, else the reported ones) and **Reason**
+  (`kafka-reason`).
 - Kafka Node Pools: **Kafka** (`node-pool-cluster`: the `strimzi.io/cluster` label), **Roles** (`node-pool-roles`)
   and **Replicas** (`node-pool-replicas`). Strimzi sets no readiness on a node pool.
 - Kafka Topics: **Kafka** (`topic-cluster`), **Status** (`topic-status`), **Partitions** (`topic-partitions`),
@@ -47,13 +51,18 @@ Readiness (**Status**) is "Ready" (a `Ready` condition True), "Not ready" (`NotR
   (`connect-reason`); Kafka MirrorMaker 2 the same (`mirror-maker-status`, `mirror-maker-replicas`,
   `mirror-maker-reason`).
 - Kafka Connectors: **Connect cluster** (`connector-cluster`), **Status** (`connector-status`), **Connector**
-  (`connector-state`: the connector's state as Kafka Connect reports it, coloured), **Running tasks**
-  (`connector-tasks`: running of all), **Class** (`connector-class`), **Auto-restarts** (`connector-restarts`:
-  Strimzi's automatic restarts) and **Reason** (`connector-reason`).
+  (`connector-state`: the connector's state as Kafka Connect reports it: RUNNING green, FAILED red, PAUSED and STOPPED
+  muted, any other yellow), **Running tasks** (`connector-tasks`: running of all, red with a failed task, green with
+  every task running, else yellow; blank without tasks; sorted by the running tasks), **Class** (`connector-class`: the class's last part, the whole
+  on hover), **Auto-restarts** (`connector-restarts`: Strimzi's automatic restarts) and **Reason**
+  (`connector-reason`).
 
-**Details** (`strimzi`, a section titled "Strimzi" on every kind of the section), drawn with the SDK's UI kit in the
-classes of Sextant's own details panel. Every kind but a node pool shows its readiness and reason, why it is not ready
-in Strimzi's words, and Strimzi's warnings (deprecated fields, unused settings: shown, never a problem):
+**Details** (`strimzi`, on every kind of the section, without a heading of its own as the built-in section; "Strimzi"
+stays its accessible name), drawn with the SDK's UI kit in the classes of Sextant's own details panel. Its blocks
+(warnings, listeners, mirrors, connectors, failures, tasks) open and close by their titles in Sextant's own memory of
+details sections, as the built-in blocks did: kept as Settings → Appearance says, and opened or closed by the panel's
+"Expand all" and "Collapse all". Every kind but a node pool shows its readiness and reason, why it is
+not ready in Strimzi's words, and Strimzi's warnings (deprecated fields, unused settings: shown, never a problem):
 - **Kafka:** its version, metadata state (KRaft), cluster id and node pools (links), and its listeners with type,
   TLS, port, bootstrap servers and the addresses Strimzi reports ("No address yet" while there is none).
 - **KafkaNodePool:** its Kafka (a link), roles, replicas, node ids and storage type.
@@ -83,10 +92,14 @@ No actions: Edit and Delete are Sextant's own actions on every kind of the secti
 
 ## Problems
 
-On all seven kinds, from Sextant's watches of them (at most 5000 objects of a kind). A problem may notify. Rules of
+On all seven kinds, from Sextant's watches of them: at most 5000 topics and 5000 users, as the built-in view capped
+them, and at most 20 000 objects of each other kind. A problem may notify. Rules of
 one group (`not-ready`, `connector-failed`, `task-failed`) notify once per object. An object being deleted has none.
-A failure's reason is `ConnectorFailed` or `TaskFailed`, its message the stack trace, and it counts from when the
-object became not ready; a not-ready object's reason and message are Strimzi's.
+A not-ready object's reason is Strimzi's (`NotReady` when it gives none) and its message Strimzi's. A failure's reason
+is `ConnectorFailed` or `TaskFailed`, its message the stack trace's first line that is not blank, cut at 300
+characters (in a MirrorMaker 2 with several connectors after the connector's name), and it counts from when the object became not ready (`NotReady`, else `Ready`
+False); a connector's or task's failure is told instead of the object's NotReady, which only says "see
+connectorStatus".
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
@@ -95,22 +108,16 @@ object became not ready; a not-ready object's reason and message are Strimzi's.
 | `topic-not-ready` | KafkaTopic | The same | 5 minutes | No |
 | `user-not-ready` | KafkaUser | The same | 5 minutes | No |
 | `connect-not-ready` | KafkaConnect | The same | 5 minutes | No |
-| `mirror-maker-not-ready` | KafkaMirrorMaker2 | The same, and none of its first six connectors or their tasks failed | 5 minutes | No |
+| `mirror-maker-not-ready` | KafkaMirrorMaker2 | The same, and none of its connectors or their tasks failed | 5 minutes | No |
 | `connector-not-ready` | KafkaConnector | The same, and neither its connector nor a task failed | 5 minutes | No |
 | `connector-failed` | KafkaConnector | Its connector is FAILED and no automatic restart is coming: auto-restart is off, or the restarts reached `maxRestarts` (7 without one) | None | No |
 | `connector-failed-first-restart` | KafkaConnector | Its connector is FAILED and Strimzi has not restarted it yet | 2 minutes (one reconciliation) | No |
-| `connector-failed-restarting` | KafkaConnector | Its connector is FAILED after 0–4 automatic restarts, more to come | Until the next restart window: n² + n minutes after the last restart, plus 2 | No |
-| `connector-failed-restarting-later` | KafkaConnector | The same after 5 or more restarts | The same, at most 62 minutes | No |
-| `task-failed`, `task-failed-first-restart`, `task-failed-restarting`, `task-failed-restarting-later` | KafkaConnector | The same four for a FAILED task (the first one's trace) | As above | No |
-| `mirror-connector-failed` | KafkaMirrorMaker2 | Its only connector is FAILED | None | No |
-| `mirror-connector-1-failed` … `mirror-connector-6-failed` | KafkaMirrorMaker2 | The first FAILED connector is the 1st … 6th; the message names it | None | No |
-| `mirror-task-failed` | KafkaMirrorMaker2 | A task of its only connector is FAILED | None | No |
-| `mirror-task-1-failed` … `mirror-task-6-failed` | KafkaMirrorMaker2 | The first connector with a FAILED task is the 1st … 6th; the message names it | None | No |
-
-The ids in full: `mirror-connector-1-failed`, `mirror-connector-2-failed`, `mirror-connector-3-failed`,
-`mirror-connector-4-failed`, `mirror-connector-5-failed`, `mirror-connector-6-failed`, `mirror-task-1-failed`,
-`mirror-task-2-failed`, `mirror-task-3-failed`, `mirror-task-4-failed`, `mirror-task-5-failed`,
-`mirror-task-6-failed`.
+| `connector-failed-restarting` | KafkaConnector | Its connector is FAILED after automatic restarts, more to come | Until the next restart window: n² + n minutes after the n-th restart (at most 60), plus 2 | No |
+| `task-failed`, `task-failed-first-restart`, `task-failed-restarting` | KafkaConnector | The same three for a FAILED task (the first one's trace) | As above | No |
+| `mirror-connector-failed` | KafkaMirrorMaker2 | Its first FAILED connector, when it runs one (or that connector reports no name or trace) | None | No |
+| `mirror-connector-failed-named` | KafkaMirrorMaker2 | Its first FAILED connector of several; the message names it | None | No |
+| `mirror-task-failed` | KafkaMirrorMaker2 | A task of its first connector with a FAILED task, when it runs one connector (or that connector reports no name or the task no trace) | None | No |
+| `mirror-task-failed-named` | KafkaMirrorMaker2 | A task of its first connector with a FAILED task, of several; the message names the connector | None | No |
 
 ## Metrics
 
@@ -135,28 +142,26 @@ None: it only reads.
 ## Requirements and limits
 
 - The Strimzi CRDs, and the cluster operator for the status to be there.
-- The table's columns and the problem rules are computed by Sextant from field paths (ADR-0153, ADR-0137), so where
-  the former built-in view computed a value they read it as closely as fields allow; the details always show the full
-  reading:
-  - **Listeners** names at most five declared listeners, then "…"; the built-in column named every one, also those
-    only in the status.
-  - **Class** shows the whole class name (also on hover); the built-in column showed its last part.
-  - **Running tasks** is not coloured, and shows "0/0" for a connector without tasks; the built-in column was red
-    with a failed task, green with all running and blank without tasks.
-  - **Connector** colours PAUSED and STOPPED neutral rather than muted, and an unknown state neutral rather than
-    yellow.
-  - A failure's problem message is the whole stack trace (up to Sextant's 1000 characters); the built-in message was
-    its first line. The details show the first line.
-  - A MirrorMaker 2's failures are told for its first six connectors (two mirrors with all three connectors); a later
-    connector's failure is told by Strimzi's own NotReady after its 5 minutes, and a failed task of a later connector
-    (which leaves a MirrorMaker 2 Ready) not at all, nor in "Only problems".
-  - A not-ready condition without a reason is told by the rule's title ("KafkaTopic not ready") rather than
-    `NotReady`.
-  - Every kind's watch is capped at 5000 objects, as topics and users were.
-  - The columns take Sextant's default widths.
+- The table's columns and the problem rules are computed by Sextant from field paths (ADR-0153, ADR-0137); where that
+  cannot say exactly what the former built-in view computed, they differ as follows (the details always show the full
+  reading):
+  - **Listeners** names the declared listeners, else the reported ones; a listener only in the status while others
+    are declared (one being removed) is not named, where the built-in column named it after them. A column reads the
+    first of its paths that gives a value; joining two lists would need a column that joins its paths' lists.
+  - A MirrorMaker 2 failure whose trace holds only blank lines has the message "<connector>: " where the built-in
+    message was none: a condition can tell an empty trace, not one of blank lines only. Kafka Connect writes the
+    exception on a trace's first line.
+  - A KafkaConnector's auto-restart status without a count (Strimzi always writes one) counts as before the first
+    restart, with its 2-minute grace, where the built-in view read 0 restarts and waited 2 minutes from
+    the last restart's time; with a count and a restart time that is no time, the failure is told at once, where the
+    built-in view waited 2 minutes. A path has no default value, and a rule's grace cannot depend on a value.
+  - **Running tasks** of a connector without tasks is blank and sorts last, where the built-in column sorted it with
+    the connectors running none. A case's text cannot be blank, so the blank cell is one no case holds for.
+  - The problem watches of Kafkas, node pools, Connect clusters, MirrorMaker 2s and connectors hold at most 20 000
+    objects of a kind (a rule source's most); the built-in view watched them uncapped.
 - Checked by tests on fixtures of Strimzi's objects (a Kafka with warnings and listeners, a topic, a user, a
-  connector with a failed task, a MirrorMaker 2) and against the built-in view's readings, ported unchanged; not yet
-  tried on a live cluster.
+  connector with a failed task, a MirrorMaker 2) and variants of them, against the built-in view's readings, ported
+  unchanged; not yet tried on a live cluster.
 
 ## Troubleshooting
 
@@ -180,13 +185,13 @@ npx vitest run --config sdk/vitest.config.ts ../extensions/strimzi
   built-in view found them. It is the former built-in view's, ported.
 - `model.test.ts` judges the manifest's problem rules, "Only problems" and columns with Sextant's own window engine
   (`src/extensions/problemRules.ts`, `src/extensions/columns.tsx`) and compares them with the model, on the fixtures
-  in `fixtures/` and variants of them (every restart count with and without `maxRestarts`); `views.test.ts` drives
-  the details through the SDK's test host.
+  in `fixtures/` and variants of them (every restart count with and without `maxRestarts`, MirrorMaker 2s of up to 30
+  connectors), and the columns' texts, tones, sorting and widths; `views.test.ts` drives the details through the
+  SDK's test host, the remembered blocks included.
 - The texts are in `src/locales/<lang>.json` (English is the source; they are the built-in view's `strimzi` texts
   word for word) and in the manifest's `translations`. `src/locales.test.ts` keeps both complete in every language of
   Sextant's `src/locales/`. A text without words (a tooltip or message that is only field values) is left to English.
-- The manifest is near two of Sextant's limits: 29 of 30 problem rules, and 30 of 30 conditions in the
-  `*-restarting` rules.
+- The manifest is at one of Sextant's limits: 40 of 40 conditions in the `*-restarting` rules (17 of 30 problem rules).
 - **A release:**
   1. Raise `version` in `sextant-extension.json`, add its section to `CHANGELOG.md`, and merge to `main`.
   2. Run the workflow "Release a Sextant extension" of FriendsOfKubernetes/sextant-extensions with `strimzi` and the

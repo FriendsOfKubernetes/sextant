@@ -200,68 +200,12 @@
               "status": "False"
             },
             {
-              "type": "any",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".status.connectors[0].connector.state",
-                  "value": "FAILED"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.connectors[1].connector.state",
-                  "value": "FAILED"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.connectors[2].connector.state",
-                  "value": "FAILED"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.connectors[3].connector.state",
-                  "value": "FAILED"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.connectors[4].connector.state",
-                  "value": "FAILED"
-                },
-                {
-                  "type": "equals",
-                  "path": ".status.connectors[5].connector.state",
-                  "value": "FAILED"
-                }
-              ]
+              "type": "exists",
+              "path": ".status.connectors[connector.state=\"FAILED\"]"
             },
             {
-              "type": "any",
-              "of": [
-                {
-                  "type": "exists",
-                  "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
-                },
-                {
-                  "type": "exists",
-                  "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
-                },
-                {
-                  "type": "exists",
-                  "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
-                },
-                {
-                  "type": "exists",
-                  "path": ".status.connectors[3].tasks[state=\"FAILED\"]"
-                },
-                {
-                  "type": "exists",
-                  "path": ".status.connectors[4].tasks[state=\"FAILED\"]"
-                },
-                {
-                  "type": "exists",
-                  "path": ".status.connectors[5].tasks[state=\"FAILED\"]"
-                }
-              ]
+              "type": "exists",
+              "path": ".status.connectors[tasks.state=\"FAILED\"]"
             }
           ]
         }
@@ -352,6 +296,7 @@
           }
         ],
         "placement": "section",
+        "heading": false,
         "order": 20
       }
     ],
@@ -375,6 +320,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
           },
           {
@@ -385,6 +331,7 @@
             },
             "text": "Ready",
             "tone": "ok",
+            "value": 2,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
           },
           {
@@ -395,6 +342,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
           },
           {
@@ -407,10 +355,12 @@
               }
             },
             "text": "Pending",
-            "tone": "warning"
+            "tone": "warning",
+            "value": 1
           }
         ],
-        "afterColumn": "namespace"
+        "afterColumn": "namespace",
+        "width": "100px"
       },
       {
         "kind": {
@@ -423,7 +373,8 @@
           ".status.kafkaVersion",
           ".spec.kafka.version"
         ],
-        "afterColumn": "kafka-status"
+        "afterColumn": "kafka-status",
+        "width": "80px"
       },
       {
         "kind": {
@@ -433,53 +384,12 @@
         "id": "kafka-listeners",
         "title": "Listeners",
         "paths": [
-          ".spec.kafka.listeners[0].name"
+          ".spec.kafka.listeners[*].name",
+          ".status.listeners[*].name"
         ],
-        "cases": [
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.kafka.listeners[5]"
-            },
-            "text": "{{.spec.kafka.listeners[0].name}}, {{.spec.kafka.listeners[1].name}}, {{.spec.kafka.listeners[2].name}}, {{.spec.kafka.listeners[3].name}}, {{.spec.kafka.listeners[4].name}}, …"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.kafka.listeners[4]"
-            },
-            "text": "{{.spec.kafka.listeners[0].name}}, {{.spec.kafka.listeners[1].name}}, {{.spec.kafka.listeners[2].name}}, {{.spec.kafka.listeners[3].name}}, {{.spec.kafka.listeners[4].name}}"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.kafka.listeners[3]"
-            },
-            "text": "{{.spec.kafka.listeners[0].name}}, {{.spec.kafka.listeners[1].name}}, {{.spec.kafka.listeners[2].name}}, {{.spec.kafka.listeners[3].name}}"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.kafka.listeners[2]"
-            },
-            "text": "{{.spec.kafka.listeners[0].name}}, {{.spec.kafka.listeners[1].name}}, {{.spec.kafka.listeners[2].name}}"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.kafka.listeners[1]"
-            },
-            "text": "{{.spec.kafka.listeners[0].name}}, {{.spec.kafka.listeners[1].name}}"
-          },
-          {
-            "when": {
-              "type": "exists",
-              "path": ".spec.kafka.listeners[0]"
-            },
-            "text": "{{.spec.kafka.listeners[0].name}}"
-          }
-        ],
-        "afterColumn": "kafka-version"
+        "format": "list",
+        "afterColumn": "kafka-version",
+        "width": "minmax(120px, 1.5fr)"
       },
       {
         "kind": {
@@ -493,7 +403,8 @@
           ".status.conditions[type=\"Ready\",status=\"True\"].reason",
           ".status.conditions[type=\"Ready\",status=\"False\"].reason"
         ],
-        "afterColumn": "kafka-listeners"
+        "afterColumn": "kafka-listeners",
+        "width": "minmax(120px, 1fr)"
       },
       {
         "kind": {
@@ -505,7 +416,8 @@
         "paths": [
           ".metadata.labels[\"strimzi.io/cluster\"]"
         ],
-        "afterColumn": "namespace"
+        "afterColumn": "namespace",
+        "width": "minmax(110px, 1fr)"
       },
       {
         "kind": {
@@ -518,7 +430,8 @@
           ".spec.roles"
         ],
         "format": "list",
-        "afterColumn": "node-pool-cluster"
+        "afterColumn": "node-pool-cluster",
+        "width": "minmax(110px, 1fr)"
       },
       {
         "kind": {
@@ -532,7 +445,8 @@
           ".spec.replicas"
         ],
         "format": "number",
-        "afterColumn": "node-pool-roles"
+        "afterColumn": "node-pool-roles",
+        "width": "80px"
       },
       {
         "kind": {
@@ -544,7 +458,8 @@
         "paths": [
           ".metadata.labels[\"strimzi.io/cluster\"]"
         ],
-        "afterColumn": "namespace"
+        "afterColumn": "namespace",
+        "width": "minmax(110px, 1fr)"
       },
       {
         "kind": {
@@ -565,6 +480,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
           },
           {
@@ -575,6 +491,7 @@
             },
             "text": "Ready",
             "tone": "ok",
+            "value": 2,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
           },
           {
@@ -585,6 +502,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
           },
           {
@@ -597,10 +515,12 @@
               }
             },
             "text": "Pending",
-            "tone": "warning"
+            "tone": "warning",
+            "value": 1
           }
         ],
-        "afterColumn": "topic-cluster"
+        "afterColumn": "topic-cluster",
+        "width": "100px"
       },
       {
         "kind": {
@@ -613,7 +533,8 @@
           ".spec.partitions"
         ],
         "format": "number",
-        "afterColumn": "topic-status"
+        "afterColumn": "topic-status",
+        "width": "90px"
       },
       {
         "kind": {
@@ -626,7 +547,8 @@
           ".spec.replicas"
         ],
         "format": "number",
-        "afterColumn": "topic-partitions"
+        "afterColumn": "topic-partitions",
+        "width": "80px"
       },
       {
         "kind": {
@@ -640,7 +562,8 @@
           ".status.conditions[type=\"Ready\",status=\"True\"].reason",
           ".status.conditions[type=\"Ready\",status=\"False\"].reason"
         ],
-        "afterColumn": "topic-replicas"
+        "afterColumn": "topic-replicas",
+        "width": "minmax(120px, 1fr)"
       },
       {
         "kind": {
@@ -652,7 +575,8 @@
         "paths": [
           ".metadata.labels[\"strimzi.io/cluster\"]"
         ],
-        "afterColumn": "namespace"
+        "afterColumn": "namespace",
+        "width": "minmax(110px, 1fr)"
       },
       {
         "kind": {
@@ -673,6 +597,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
           },
           {
@@ -683,6 +608,7 @@
             },
             "text": "Ready",
             "tone": "ok",
+            "value": 2,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
           },
           {
@@ -693,6 +619,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
           },
           {
@@ -705,10 +632,12 @@
               }
             },
             "text": "Pending",
-            "tone": "warning"
+            "tone": "warning",
+            "value": 1
           }
         ],
-        "afterColumn": "user-cluster"
+        "afterColumn": "user-cluster",
+        "width": "100px"
       },
       {
         "kind": {
@@ -720,7 +649,8 @@
         "paths": [
           ".spec.authentication.type"
         ],
-        "afterColumn": "user-status"
+        "afterColumn": "user-status",
+        "width": "130px"
       },
       {
         "kind": {
@@ -732,7 +662,8 @@
         "paths": [
           ".spec.authorization.type"
         ],
-        "afterColumn": "user-authentication"
+        "afterColumn": "user-authentication",
+        "width": "110px"
       },
       {
         "kind": {
@@ -753,6 +684,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
           },
           {
@@ -763,6 +695,7 @@
             },
             "text": "Ready",
             "tone": "ok",
+            "value": 2,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
           },
           {
@@ -773,6 +706,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
           },
           {
@@ -785,10 +719,12 @@
               }
             },
             "text": "Pending",
-            "tone": "warning"
+            "tone": "warning",
+            "value": 1
           }
         ],
-        "afterColumn": "namespace"
+        "afterColumn": "namespace",
+        "width": "100px"
       },
       {
         "kind": {
@@ -802,7 +738,8 @@
           ".spec.replicas"
         ],
         "format": "number",
-        "afterColumn": "connect-status"
+        "afterColumn": "connect-status",
+        "width": "80px"
       },
       {
         "kind": {
@@ -816,7 +753,8 @@
           ".status.conditions[type=\"Ready\",status=\"True\"].reason",
           ".status.conditions[type=\"Ready\",status=\"False\"].reason"
         ],
-        "afterColumn": "connect-replicas"
+        "afterColumn": "connect-replicas",
+        "width": "minmax(120px, 1fr)"
       },
       {
         "kind": {
@@ -837,6 +775,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
           },
           {
@@ -847,6 +786,7 @@
             },
             "text": "Ready",
             "tone": "ok",
+            "value": 2,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
           },
           {
@@ -857,6 +797,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
           },
           {
@@ -869,10 +810,12 @@
               }
             },
             "text": "Pending",
-            "tone": "warning"
+            "tone": "warning",
+            "value": 1
           }
         ],
-        "afterColumn": "namespace"
+        "afterColumn": "namespace",
+        "width": "100px"
       },
       {
         "kind": {
@@ -886,7 +829,8 @@
           ".spec.replicas"
         ],
         "format": "number",
-        "afterColumn": "mirror-maker-status"
+        "afterColumn": "mirror-maker-status",
+        "width": "80px"
       },
       {
         "kind": {
@@ -900,7 +844,8 @@
           ".status.conditions[type=\"Ready\",status=\"True\"].reason",
           ".status.conditions[type=\"Ready\",status=\"False\"].reason"
         ],
-        "afterColumn": "mirror-maker-replicas"
+        "afterColumn": "mirror-maker-replicas",
+        "width": "minmax(120px, 1fr)"
       },
       {
         "kind": {
@@ -912,7 +857,8 @@
         "paths": [
           ".metadata.labels[\"strimzi.io/cluster\"]"
         ],
-        "afterColumn": "namespace"
+        "afterColumn": "namespace",
+        "width": "minmax(110px, 1fr)"
       },
       {
         "kind": {
@@ -933,6 +879,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}"
           },
           {
@@ -943,6 +890,7 @@
             },
             "text": "Ready",
             "tone": "ok",
+            "value": 2,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"True\"].message}}"
           },
           {
@@ -953,6 +901,7 @@
             },
             "text": "Not ready",
             "tone": "error",
+            "value": 0,
             "tooltip": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}"
           },
           {
@@ -965,10 +914,12 @@
               }
             },
             "text": "Pending",
-            "tone": "warning"
+            "tone": "warning",
+            "value": 1
           }
         ],
-        "afterColumn": "connector-cluster"
+        "afterColumn": "connector-cluster",
+        "width": "100px"
       },
       {
         "kind": {
@@ -983,12 +934,12 @@
         "tones": {
           "RUNNING": "ok",
           "FAILED": "error",
-          "PAUSED": "neutral",
-          "STOPPED": "neutral",
-          "UNASSIGNED": "warning",
-          "RESTARTING": "warning"
+          "PAUSED": "muted",
+          "STOPPED": "muted",
+          "*": "warning"
         },
-        "afterColumn": "connector-status"
+        "afterColumn": "connector-status",
+        "width": "110px"
       },
       {
         "kind": {
@@ -998,13 +949,48 @@
         "id": "connector-tasks",
         "title": "Running tasks",
         "paths": [
-          ".status.connectorStatus.tasks[state=\"RUNNING\",*]"
-        ],
-        "format": "ratio",
-        "totalPaths": [
           ".status.connectorStatus.tasks"
         ],
-        "afterColumn": "connector-state"
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.connectorStatus.tasks[state=\"FAILED\"]"
+            },
+            "text": "{{.status.connectorStatus.tasks[state=\"RUNNING\",*]|count}}/{{.status.connectorStatus.tasks|count}}",
+            "tone": "error",
+            "value": "{{.status.connectorStatus.tasks[state=\"RUNNING\",*]|count}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.connectorStatus.tasks[0]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.connectorStatus.tasks[state!=\"RUNNING\"]"
+                }
+              ]
+            },
+            "text": "{{.status.connectorStatus.tasks[state=\"RUNNING\",*]|count}}/{{.status.connectorStatus.tasks|count}}",
+            "tone": "ok",
+            "value": "{{.status.connectorStatus.tasks[state=\"RUNNING\",*]|count}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.connectorStatus.tasks[0]"
+            },
+            "text": "{{.status.connectorStatus.tasks[state=\"RUNNING\",*]|count}}/{{.status.connectorStatus.tasks|count}}",
+            "tone": "warning",
+            "value": "{{.status.connectorStatus.tasks[state=\"RUNNING\",*]|count}}"
+          }
+        ],
+        "afterColumn": "connector-state",
+        "width": "80px"
       },
       {
         "kind": {
@@ -1019,7 +1005,17 @@
         "tooltipPaths": [
           ".spec.class"
         ],
-        "afterColumn": "connector-tasks"
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.class"
+            },
+            "text": "{{.spec.class|lastSegment}}"
+          }
+        ],
+        "afterColumn": "connector-tasks",
+        "width": "minmax(120px, 1fr)"
       },
       {
         "kind": {
@@ -1051,7 +1047,8 @@
             "value": 0
           }
         ],
-        "afterColumn": "connector-class"
+        "afterColumn": "connector-class",
+        "width": "90px"
       },
       {
         "kind": {
@@ -1065,7 +1062,8 @@
           ".status.conditions[type=\"Ready\",status=\"True\"].reason",
           ".status.conditions[type=\"Ready\",status=\"False\"].reason"
         ],
-        "afterColumn": "connector-restarts"
+        "afterColumn": "connector-restarts",
+        "width": "minmax(120px, 1fr)"
       }
     ],
     "problems": [
@@ -1100,7 +1098,11 @@
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "graceMinutes": 5,
+        "reasonOr": "NotReady",
         "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
         "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
         "group": "not-ready"
@@ -1136,7 +1138,11 @@
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "graceMinutes": 5,
+        "reasonOr": "NotReady",
         "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
         "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
         "group": "not-ready"
@@ -1172,7 +1178,11 @@
             }
           ]
         },
+        "source": {
+          "maxObjects": 5000
+        },
         "graceMinutes": 5,
+        "reasonOr": "NotReady",
         "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
         "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
         "group": "not-ready"
@@ -1208,7 +1218,11 @@
             }
           ]
         },
+        "source": {
+          "maxObjects": 5000
+        },
         "graceMinutes": 5,
+        "reasonOr": "NotReady",
         "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
         "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
         "group": "not-ready"
@@ -1244,7 +1258,11 @@
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "graceMinutes": 5,
+        "reasonOr": "NotReady",
         "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
         "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
         "group": "not-ready"
@@ -1284,73 +1302,23 @@
                 "type": "any",
                 "of": [
                   {
-                    "type": "equals",
-                    "path": ".status.connectors[0].connector.state",
-                    "value": "FAILED"
-                  },
-                  {
-                    "type": "equals",
-                    "path": ".status.connectors[1].connector.state",
-                    "value": "FAILED"
-                  },
-                  {
-                    "type": "equals",
-                    "path": ".status.connectors[2].connector.state",
-                    "value": "FAILED"
-                  },
-                  {
-                    "type": "equals",
-                    "path": ".status.connectors[3].connector.state",
-                    "value": "FAILED"
-                  },
-                  {
-                    "type": "equals",
-                    "path": ".status.connectors[4].connector.state",
-                    "value": "FAILED"
-                  },
-                  {
-                    "type": "equals",
-                    "path": ".status.connectors[5].connector.state",
-                    "value": "FAILED"
-                  }
-                ]
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "any",
-                "of": [
-                  {
                     "type": "exists",
-                    "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+                    "path": ".status.connectors[connector.state=\"FAILED\"]"
                   },
                   {
                     "type": "exists",
-                    "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
-                  },
-                  {
-                    "type": "exists",
-                    "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
-                  },
-                  {
-                    "type": "exists",
-                    "path": ".status.connectors[3].tasks[state=\"FAILED\"]"
-                  },
-                  {
-                    "type": "exists",
-                    "path": ".status.connectors[4].tasks[state=\"FAILED\"]"
-                  },
-                  {
-                    "type": "exists",
-                    "path": ".status.connectors[5].tasks[state=\"FAILED\"]"
+                    "path": ".status.connectors[tasks.state=\"FAILED\"]"
                   }
                 ]
               }
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "graceMinutes": 5,
+        "reasonOr": "NotReady",
         "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
         "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
         "group": "not-ready"
@@ -1403,7 +1371,11 @@
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "graceMinutes": 5,
+        "reasonOr": "NotReady",
         "reason": "{{.status.conditions[type=\"NotReady\",status=\"True\"].reason}}{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
         "message": "{{.status.conditions[type=\"NotReady\",status=\"True\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
         "group": "not-ready"
@@ -1475,9 +1447,15 @@
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "sinceOr": [
+          ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime"
+        ],
         "reason": "ConnectorFailed",
-        "message": "{{.status.connectorStatus.connector.trace}}",
+        "message": "{{.status.connectorStatus.connector.trace|firstLine|clip:300}}",
         "group": "connector-failed"
       },
       {
@@ -1505,62 +1483,76 @@
               "value": true
             },
             {
-              "type": "absent",
-              "path": ".status.autoRestart.lastRestartTimestamp"
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.autoRestart.lastRestartTimestamp"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.autoRestart.count"
+                }
+              ]
             },
             {
               "type": "not",
               "of": {
-                "type": "atLeast",
-                "path": ".status.autoRestart.count",
-                "otherPath": ".spec.autoRestart.maxRestarts"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "all",
+                "type": "any",
                 "of": [
                   {
-                    "type": "absent",
-                    "path": ".status.autoRestart.count"
-                  },
-                  {
-                    "type": "below",
-                    "path": ".spec.autoRestart.maxRestarts",
-                    "value": 1
-                  }
-                ]
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "all",
-                "of": [
-                  {
-                    "type": "absent",
-                    "path": ".spec.autoRestart.maxRestarts"
-                  },
-                  {
-                    "type": "above",
+                    "type": "atLeast",
                     "path": ".status.autoRestart.count",
-                    "value": 6
+                    "otherPath": ".spec.autoRestart.maxRestarts"
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".status.autoRestart.count"
+                      },
+                      {
+                        "type": "below",
+                        "path": ".spec.autoRestart.maxRestarts",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.autoRestart.maxRestarts"
+                      },
+                      {
+                        "type": "above",
+                        "path": ".status.autoRestart.count",
+                        "value": 6
+                      }
+                    ]
                   }
                 ]
               }
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "sinceOr": [
+          ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime"
+        ],
         "graceMinutes": 2,
         "reason": "ConnectorFailed",
-        "message": "{{.status.connectorStatus.connector.trace}}",
+        "message": "{{.status.connectorStatus.connector.trace|firstLine|clip:300}}",
         "group": "connector-failed"
       },
       {
         "id": "connector-failed-restarting",
-        "title": "Connector failed, an early automatic restart pending",
+        "title": "Connector failed, an automatic restart pending",
         "kind": {
           "group": "kafka.strimzi.io",
           "kind": "KafkaConnector"
@@ -1583,52 +1575,61 @@
               "value": true
             },
             {
-              "type": "not",
-              "of": {
-                "type": "atLeast",
-                "path": ".status.autoRestart.count",
-                "otherPath": ".spec.autoRestart.maxRestarts"
-              }
+              "type": "exists",
+              "path": ".status.autoRestart.count"
             },
             {
               "type": "not",
               "of": {
-                "type": "all",
+                "type": "any",
                 "of": [
                   {
-                    "type": "absent",
-                    "path": ".status.autoRestart.count"
-                  },
-                  {
-                    "type": "below",
-                    "path": ".spec.autoRestart.maxRestarts",
-                    "value": 1
-                  }
-                ]
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "all",
-                "of": [
-                  {
-                    "type": "absent",
-                    "path": ".spec.autoRestart.maxRestarts"
-                  },
-                  {
-                    "type": "above",
+                    "type": "atLeast",
                     "path": ".status.autoRestart.count",
-                    "value": 6
+                    "otherPath": ".spec.autoRestart.maxRestarts"
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".status.autoRestart.count"
+                      },
+                      {
+                        "type": "below",
+                        "path": ".spec.autoRestart.maxRestarts",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.autoRestart.maxRestarts"
+                      },
+                      {
+                        "type": "above",
+                        "path": ".status.autoRestart.count",
+                        "value": 6
+                      }
+                    ]
                   }
                 ]
               }
             },
             {
-              "type": "any",
+              "type": "all",
               "of": [
                 {
-                  "type": "all",
+                  "type": "olderThan",
+                  "path": ".status.autoRestart.lastRestartTimestamp",
+                  "minutes": 2,
+                  "orUnreadable": true
+                },
+                {
+                  "type": "any",
                   "of": [
                     {
                       "type": "below",
@@ -1638,205 +1639,120 @@
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 2
+                      "minutes": 4,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
-                      "path": ".status.autoRestart.count",
-                      "value": 1
-                    },
-                    {
-                      "type": "olderThan",
-                      "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 4
-                    }
-                  ]
-                },
-                {
-                  "type": "all",
-                  "of": [
-                    {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 2
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 8
+                      "minutes": 8,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 3
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 14
+                      "minutes": 14,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 4
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 22
+                      "minutes": 22,
+                      "orUnreadable": true
                     }
                   ]
-                }
-              ]
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "ConnectorFailed",
-        "message": "{{.status.connectorStatus.connector.trace}}",
-        "group": "connector-failed"
-      },
-      {
-        "id": "connector-failed-restarting-later",
-        "title": "Connector failed, a later automatic restart pending",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaConnector"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "equals",
-              "path": ".status.connectorStatus.connector.state",
-              "value": "FAILED"
-            },
-            {
-              "type": "equals",
-              "path": ".spec.autoRestart.enabled",
-              "value": true
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "atLeast",
-                "path": ".status.autoRestart.count",
-                "otherPath": ".spec.autoRestart.maxRestarts"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "all",
-                "of": [
-                  {
-                    "type": "absent",
-                    "path": ".status.autoRestart.count"
-                  },
-                  {
-                    "type": "below",
-                    "path": ".spec.autoRestart.maxRestarts",
-                    "value": 1
-                  }
-                ]
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "all",
-                "of": [
-                  {
-                    "type": "absent",
-                    "path": ".spec.autoRestart.maxRestarts"
-                  },
-                  {
-                    "type": "above",
-                    "path": ".status.autoRestart.count",
-                    "value": 6
-                  }
-                ]
-              }
-            },
-            {
-              "type": "any",
-              "of": [
+                },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 5
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 32
+                      "minutes": 32,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 6
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 44
+                      "minutes": 44,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 7
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 58
+                      "minutes": 58,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "above",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
-                      "value": 7
+                      "value": 8
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 62
+                      "minutes": 62,
+                      "orUnreadable": true
                     }
                   ]
                 }
@@ -1844,9 +1760,15 @@
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "sinceOr": [
+          ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime"
+        ],
         "reason": "ConnectorFailed",
-        "message": "{{.status.connectorStatus.connector.trace}}",
+        "message": "{{.status.connectorStatus.connector.trace|firstLine|clip:300}}",
         "group": "connector-failed"
       },
       {
@@ -1915,9 +1837,15 @@
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "sinceOr": [
+          ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime"
+        ],
         "reason": "TaskFailed",
-        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace}}",
+        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace|firstLine|clip:300}}",
         "group": "task-failed"
       },
       {
@@ -1944,62 +1872,76 @@
               "value": true
             },
             {
-              "type": "absent",
-              "path": ".status.autoRestart.lastRestartTimestamp"
+              "type": "any",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".status.autoRestart.lastRestartTimestamp"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.autoRestart.count"
+                }
+              ]
             },
             {
               "type": "not",
               "of": {
-                "type": "atLeast",
-                "path": ".status.autoRestart.count",
-                "otherPath": ".spec.autoRestart.maxRestarts"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "all",
+                "type": "any",
                 "of": [
                   {
-                    "type": "absent",
-                    "path": ".status.autoRestart.count"
-                  },
-                  {
-                    "type": "below",
-                    "path": ".spec.autoRestart.maxRestarts",
-                    "value": 1
-                  }
-                ]
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "all",
-                "of": [
-                  {
-                    "type": "absent",
-                    "path": ".spec.autoRestart.maxRestarts"
-                  },
-                  {
-                    "type": "above",
+                    "type": "atLeast",
                     "path": ".status.autoRestart.count",
-                    "value": 6
+                    "otherPath": ".spec.autoRestart.maxRestarts"
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".status.autoRestart.count"
+                      },
+                      {
+                        "type": "below",
+                        "path": ".spec.autoRestart.maxRestarts",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.autoRestart.maxRestarts"
+                      },
+                      {
+                        "type": "above",
+                        "path": ".status.autoRestart.count",
+                        "value": 6
+                      }
+                    ]
                   }
                 ]
               }
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "sinceOr": [
+          ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime"
+        ],
         "graceMinutes": 2,
         "reason": "TaskFailed",
-        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace}}",
+        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace|firstLine|clip:300}}",
         "group": "task-failed"
       },
       {
         "id": "task-failed-restarting",
-        "title": "Task failed, an early automatic restart pending",
+        "title": "Task failed, an automatic restart pending",
         "kind": {
           "group": "kafka.strimzi.io",
           "kind": "KafkaConnector"
@@ -2021,52 +1963,61 @@
               "value": true
             },
             {
-              "type": "not",
-              "of": {
-                "type": "atLeast",
-                "path": ".status.autoRestart.count",
-                "otherPath": ".spec.autoRestart.maxRestarts"
-              }
+              "type": "exists",
+              "path": ".status.autoRestart.count"
             },
             {
               "type": "not",
               "of": {
-                "type": "all",
+                "type": "any",
                 "of": [
                   {
-                    "type": "absent",
-                    "path": ".status.autoRestart.count"
-                  },
-                  {
-                    "type": "below",
-                    "path": ".spec.autoRestart.maxRestarts",
-                    "value": 1
-                  }
-                ]
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "all",
-                "of": [
-                  {
-                    "type": "absent",
-                    "path": ".spec.autoRestart.maxRestarts"
-                  },
-                  {
-                    "type": "above",
+                    "type": "atLeast",
                     "path": ".status.autoRestart.count",
-                    "value": 6
+                    "otherPath": ".spec.autoRestart.maxRestarts"
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".status.autoRestart.count"
+                      },
+                      {
+                        "type": "below",
+                        "path": ".spec.autoRestart.maxRestarts",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.autoRestart.maxRestarts"
+                      },
+                      {
+                        "type": "above",
+                        "path": ".status.autoRestart.count",
+                        "value": 6
+                      }
+                    ]
                   }
                 ]
               }
             },
             {
-              "type": "any",
+              "type": "all",
               "of": [
                 {
-                  "type": "all",
+                  "type": "olderThan",
+                  "path": ".status.autoRestart.lastRestartTimestamp",
+                  "minutes": 2,
+                  "orUnreadable": true
+                },
+                {
+                  "type": "any",
                   "of": [
                     {
                       "type": "below",
@@ -2076,204 +2027,120 @@
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 2
+                      "minutes": 4,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
-                      "path": ".status.autoRestart.count",
-                      "value": 1
-                    },
-                    {
-                      "type": "olderThan",
-                      "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 4
-                    }
-                  ]
-                },
-                {
-                  "type": "all",
-                  "of": [
-                    {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 2
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 8
+                      "minutes": 8,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 3
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 14
+                      "minutes": 14,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 4
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 22
+                      "minutes": 22,
+                      "orUnreadable": true
                     }
                   ]
-                }
-              ]
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "TaskFailed",
-        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace}}",
-        "group": "task-failed"
-      },
-      {
-        "id": "task-failed-restarting-later",
-        "title": "Task failed, a later automatic restart pending",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaConnector"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "exists",
-              "path": ".status.connectorStatus.tasks[state=\"FAILED\"]"
-            },
-            {
-              "type": "equals",
-              "path": ".spec.autoRestart.enabled",
-              "value": true
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "atLeast",
-                "path": ".status.autoRestart.count",
-                "otherPath": ".spec.autoRestart.maxRestarts"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "all",
-                "of": [
-                  {
-                    "type": "absent",
-                    "path": ".status.autoRestart.count"
-                  },
-                  {
-                    "type": "below",
-                    "path": ".spec.autoRestart.maxRestarts",
-                    "value": 1
-                  }
-                ]
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "all",
-                "of": [
-                  {
-                    "type": "absent",
-                    "path": ".spec.autoRestart.maxRestarts"
-                  },
-                  {
-                    "type": "above",
-                    "path": ".status.autoRestart.count",
-                    "value": 6
-                  }
-                ]
-              }
-            },
-            {
-              "type": "any",
-              "of": [
+                },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 5
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 32
+                      "minutes": 32,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 6
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 44
+                      "minutes": 44,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "equals",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
                       "value": 7
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 58
+                      "minutes": 58,
+                      "orUnreadable": true
                     }
                   ]
                 },
                 {
-                  "type": "all",
+                  "type": "any",
                   "of": [
                     {
-                      "type": "above",
+                      "type": "below",
                       "path": ".status.autoRestart.count",
-                      "value": 7
+                      "value": 8
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 62
+                      "minutes": 62,
+                      "orUnreadable": true
                     }
                   ]
                 }
@@ -2281,9 +2148,15 @@
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "sinceOr": [
+          ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime"
+        ],
         "reason": "TaskFailed",
-        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace}}",
+        "message": "{{.status.connectorStatus.tasks[state=\"FAILED\"].trace|firstLine|clip:300}}",
         "group": "task-failed"
       },
       {
@@ -2301,28 +2174,54 @@
               "path": ".metadata.deletionTimestamp"
             },
             {
-              "type": "equals",
-              "path": ".status.connectors[0].connector.state",
-              "value": "FAILED"
+              "type": "exists",
+              "path": ".status.connectors[connector.state=\"FAILED\"]"
             },
             {
-              "type": "not",
-              "of": {
-                "type": "above",
-                "path": ".status.connectors",
-                "value": 1
-              }
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "above",
+                    "path": ".status.connectors",
+                    "value": 1
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".status.connectors[connector.state=\"FAILED\"].name",
+                    "nonEmpty": true
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".status.connectors[connector.state=\"FAILED\"].connector.trace",
+                    "nonEmpty": true
+                  }
+                }
+              ]
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "sinceOr": [
+          ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime"
+        ],
         "reason": "ConnectorFailed",
-        "message": "{{.status.connectors[0].connector.trace}}",
+        "message": "{{.status.connectors[connector.state=\"FAILED\"].connector.trace|firstLine|clip:300}}",
         "group": "connector-failed"
       },
       {
-        "id": "mirror-connector-1-failed",
-        "title": "MirrorMaker 2 connector 1 failed",
+        "id": "mirror-connector-failed-named",
+        "title": "One of the MirrorMaker 2 connectors failed",
         "kind": {
           "group": "kafka.strimzi.io",
           "kind": "KafkaMirrorMaker2"
@@ -2335,270 +2234,35 @@
               "path": ".metadata.deletionTimestamp"
             },
             {
-              "type": "equals",
-              "path": ".status.connectors[0].connector.state",
-              "value": "FAILED"
+              "type": "exists",
+              "path": ".status.connectors[connector.state=\"FAILED\"]"
             },
             {
               "type": "above",
               "path": ".status.connectors",
               "value": 1
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectors[connector.state=\"FAILED\"].name",
+              "nonEmpty": true
+            },
+            {
+              "type": "exists",
+              "path": ".status.connectors[connector.state=\"FAILED\"].connector.trace",
+              "nonEmpty": true
             }
           ]
         },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "ConnectorFailed",
-        "message": "{{.status.connectors[0].name}}: {{.status.connectors[0].connector.trace}}",
-        "group": "connector-failed"
-      },
-      {
-        "id": "mirror-connector-2-failed",
-        "title": "MirrorMaker 2 connector 2 failed",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaMirrorMaker2"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "equals",
-              "path": ".status.connectors[1].connector.state",
-              "value": "FAILED"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[0].connector.state",
-                "value": "FAILED"
-              }
-            }
-          ]
+        "source": {
+          "maxObjects": 20000
         },
         "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "sinceOr": [
+          ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime"
+        ],
         "reason": "ConnectorFailed",
-        "message": "{{.status.connectors[1].name}}: {{.status.connectors[1].connector.trace}}",
-        "group": "connector-failed"
-      },
-      {
-        "id": "mirror-connector-3-failed",
-        "title": "MirrorMaker 2 connector 3 failed",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaMirrorMaker2"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "equals",
-              "path": ".status.connectors[2].connector.state",
-              "value": "FAILED"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[0].connector.state",
-                "value": "FAILED"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[1].connector.state",
-                "value": "FAILED"
-              }
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "ConnectorFailed",
-        "message": "{{.status.connectors[2].name}}: {{.status.connectors[2].connector.trace}}",
-        "group": "connector-failed"
-      },
-      {
-        "id": "mirror-connector-4-failed",
-        "title": "MirrorMaker 2 connector 4 failed",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaMirrorMaker2"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "equals",
-              "path": ".status.connectors[3].connector.state",
-              "value": "FAILED"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[0].connector.state",
-                "value": "FAILED"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[1].connector.state",
-                "value": "FAILED"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[2].connector.state",
-                "value": "FAILED"
-              }
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "ConnectorFailed",
-        "message": "{{.status.connectors[3].name}}: {{.status.connectors[3].connector.trace}}",
-        "group": "connector-failed"
-      },
-      {
-        "id": "mirror-connector-5-failed",
-        "title": "MirrorMaker 2 connector 5 failed",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaMirrorMaker2"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "equals",
-              "path": ".status.connectors[4].connector.state",
-              "value": "FAILED"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[0].connector.state",
-                "value": "FAILED"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[1].connector.state",
-                "value": "FAILED"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[2].connector.state",
-                "value": "FAILED"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[3].connector.state",
-                "value": "FAILED"
-              }
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "ConnectorFailed",
-        "message": "{{.status.connectors[4].name}}: {{.status.connectors[4].connector.trace}}",
-        "group": "connector-failed"
-      },
-      {
-        "id": "mirror-connector-6-failed",
-        "title": "MirrorMaker 2 connector 6 failed",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaMirrorMaker2"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "equals",
-              "path": ".status.connectors[5].connector.state",
-              "value": "FAILED"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[0].connector.state",
-                "value": "FAILED"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[1].connector.state",
-                "value": "FAILED"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[2].connector.state",
-                "value": "FAILED"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[3].connector.state",
-                "value": "FAILED"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".status.connectors[4].connector.state",
-                "value": "FAILED"
-              }
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "ConnectorFailed",
-        "message": "{{.status.connectors[5].name}}: {{.status.connectors[5].connector.trace}}",
+        "message": "{{.status.connectors[connector.state=\"FAILED\"].name}}: {{.status.connectors[connector.state=\"FAILED\"].connector.trace|firstLine|clip:300}}",
         "group": "connector-failed"
       },
       {
@@ -2617,26 +2281,53 @@
             },
             {
               "type": "exists",
-              "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+              "path": ".status.connectors[tasks.state=\"FAILED\"]"
             },
             {
-              "type": "not",
-              "of": {
-                "type": "above",
-                "path": ".status.connectors",
-                "value": 1
-              }
+              "type": "any",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "above",
+                    "path": ".status.connectors",
+                    "value": 1
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".status.connectors[tasks.state=\"FAILED\"].name",
+                    "nonEmpty": true
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".status.connectors[tasks.state=\"FAILED\"].tasks[state=\"FAILED\"].trace",
+                    "nonEmpty": true
+                  }
+                }
+              ]
             }
           ]
         },
+        "source": {
+          "maxObjects": 20000
+        },
         "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "sinceOr": [
+          ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime"
+        ],
         "reason": "TaskFailed",
-        "message": "{{.status.connectors[0].tasks[state=\"FAILED\"].trace}}",
+        "message": "{{.status.connectors[tasks.state=\"FAILED\"].tasks[state=\"FAILED\"].trace|firstLine|clip:300}}",
         "group": "task-failed"
       },
       {
-        "id": "mirror-task-1-failed",
-        "title": "Task of MirrorMaker 2 connector 1 failed",
+        "id": "mirror-task-failed-named",
+        "title": "A task of one of the MirrorMaker 2 connectors failed",
         "kind": {
           "group": "kafka.strimzi.io",
           "kind": "KafkaMirrorMaker2"
@@ -2650,248 +2341,34 @@
             },
             {
               "type": "exists",
-              "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
+              "path": ".status.connectors[tasks.state=\"FAILED\"]"
             },
             {
               "type": "above",
               "path": ".status.connectors",
               "value": 1
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "TaskFailed",
-        "message": "{{.status.connectors[0].name}}: {{.status.connectors[0].tasks[state=\"FAILED\"].trace}}",
-        "group": "task-failed"
-      },
-      {
-        "id": "mirror-task-2-failed",
-        "title": "Task of MirrorMaker 2 connector 2 failed",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaMirrorMaker2"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
             },
             {
               "type": "exists",
-              "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
-              }
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "TaskFailed",
-        "message": "{{.status.connectors[1].name}}: {{.status.connectors[1].tasks[state=\"FAILED\"].trace}}",
-        "group": "task-failed"
-      },
-      {
-        "id": "mirror-task-3-failed",
-        "title": "Task of MirrorMaker 2 connector 3 failed",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaMirrorMaker2"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
+              "path": ".status.connectors[tasks.state=\"FAILED\"].name",
+              "nonEmpty": true
             },
             {
               "type": "exists",
-              "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
-              }
+              "path": ".status.connectors[tasks.state=\"FAILED\"].tasks[state=\"FAILED\"].trace",
+              "nonEmpty": true
             }
           ]
         },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "TaskFailed",
-        "message": "{{.status.connectors[2].name}}: {{.status.connectors[2].tasks[state=\"FAILED\"].trace}}",
-        "group": "task-failed"
-      },
-      {
-        "id": "mirror-task-4-failed",
-        "title": "Task of MirrorMaker 2 connector 4 failed",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaMirrorMaker2"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "exists",
-              "path": ".status.connectors[3].tasks[state=\"FAILED\"]"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
-              }
-            }
-          ]
+        "source": {
+          "maxObjects": 20000
         },
         "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
+        "sinceOr": [
+          ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime"
+        ],
         "reason": "TaskFailed",
-        "message": "{{.status.connectors[3].name}}: {{.status.connectors[3].tasks[state=\"FAILED\"].trace}}",
-        "group": "task-failed"
-      },
-      {
-        "id": "mirror-task-5-failed",
-        "title": "Task of MirrorMaker 2 connector 5 failed",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaMirrorMaker2"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "exists",
-              "path": ".status.connectors[4].tasks[state=\"FAILED\"]"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[3].tasks[state=\"FAILED\"]"
-              }
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "TaskFailed",
-        "message": "{{.status.connectors[4].name}}: {{.status.connectors[4].tasks[state=\"FAILED\"].trace}}",
-        "group": "task-failed"
-      },
-      {
-        "id": "mirror-task-6-failed",
-        "title": "Task of MirrorMaker 2 connector 6 failed",
-        "kind": {
-          "group": "kafka.strimzi.io",
-          "kind": "KafkaMirrorMaker2"
-        },
-        "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "absent",
-              "path": ".metadata.deletionTimestamp"
-            },
-            {
-              "type": "exists",
-              "path": ".status.connectors[5].tasks[state=\"FAILED\"]"
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[0].tasks[state=\"FAILED\"]"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[1].tasks[state=\"FAILED\"]"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[2].tasks[state=\"FAILED\"]"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[3].tasks[state=\"FAILED\"]"
-              }
-            },
-            {
-              "type": "not",
-              "of": {
-                "type": "exists",
-                "path": ".status.connectors[4].tasks[state=\"FAILED\"]"
-              }
-            }
-          ]
-        },
-        "since": ".status.conditions[type=\"NotReady\",status=\"True\"].lastTransitionTime",
-        "reason": "TaskFailed",
-        "message": "{{.status.connectors[5].name}}: {{.status.connectors[5].tasks[state=\"FAILED\"].trace}}",
+        "message": "{{.status.connectors[tasks.state=\"FAILED\"].name}}: {{.status.connectors[tasks.state=\"FAILED\"].tasks[state=\"FAILED\"].trace|firstLine|clip:300}}",
         "group": "task-failed"
       }
     ]
@@ -2971,26 +2448,14 @@
       "problems.connector-not-ready.title": "KafkaConnector nicht bereit",
       "problems.connector-failed.title": "Connector ausgefallen",
       "problems.connector-failed-first-restart.title": "Connector ausgefallen, erster automatischer Neustart steht aus",
-      "problems.connector-failed-restarting.title": "Connector ausgefallen, ein früher automatischer Neustart steht aus",
-      "problems.connector-failed-restarting-later.title": "Connector ausgefallen, ein späterer automatischer Neustart steht aus",
+      "problems.connector-failed-restarting.title": "Connector ausgefallen, ein automatischer Neustart steht aus",
       "problems.task-failed.title": "Task ausgefallen",
       "problems.task-failed-first-restart.title": "Task ausgefallen, erster automatischer Neustart steht aus",
-      "problems.task-failed-restarting.title": "Task ausgefallen, ein früher automatischer Neustart steht aus",
-      "problems.task-failed-restarting-later.title": "Task ausgefallen, ein späterer automatischer Neustart steht aus",
+      "problems.task-failed-restarting.title": "Task ausgefallen, ein automatischer Neustart steht aus",
       "problems.mirror-connector-failed.title": "MirrorMaker-2-Connector ausgefallen",
-      "problems.mirror-connector-1-failed.title": "MirrorMaker-2-Connector 1 ausgefallen",
-      "problems.mirror-connector-2-failed.title": "MirrorMaker-2-Connector 2 ausgefallen",
-      "problems.mirror-connector-3-failed.title": "MirrorMaker-2-Connector 3 ausgefallen",
-      "problems.mirror-connector-4-failed.title": "MirrorMaker-2-Connector 4 ausgefallen",
-      "problems.mirror-connector-5-failed.title": "MirrorMaker-2-Connector 5 ausgefallen",
-      "problems.mirror-connector-6-failed.title": "MirrorMaker-2-Connector 6 ausgefallen",
+      "problems.mirror-connector-failed-named.title": "Einer der MirrorMaker-2-Connectors ist ausgefallen",
       "problems.mirror-task-failed.title": "MirrorMaker-2-Task ausgefallen",
-      "problems.mirror-task-1-failed.title": "Task von MirrorMaker-2-Connector 1 ausgefallen",
-      "problems.mirror-task-2-failed.title": "Task von MirrorMaker-2-Connector 2 ausgefallen",
-      "problems.mirror-task-3-failed.title": "Task von MirrorMaker-2-Connector 3 ausgefallen",
-      "problems.mirror-task-4-failed.title": "Task von MirrorMaker-2-Connector 4 ausgefallen",
-      "problems.mirror-task-5-failed.title": "Task von MirrorMaker-2-Connector 5 ausgefallen",
-      "problems.mirror-task-6-failed.title": "Task von MirrorMaker-2-Connector 6 ausgefallen",
+      "problems.mirror-task-failed-named.title": "Ein Task eines der MirrorMaker-2-Connectors ist ausgefallen",
       "sectionBadges.strimzi.label.one": "{{count}} Objekt erfordert Aufmerksamkeit",
       "sectionBadges.strimzi.label.other": "{{count}} Objekte erfordern Aufmerksamkeit"
     },
@@ -3068,26 +2533,14 @@
       "problems.connector-not-ready.title": "KafkaConnector no está listo",
       "problems.connector-failed.title": "El conector falló",
       "problems.connector-failed-first-restart.title": "El conector falló, pendiente del primer reinicio automático",
-      "problems.connector-failed-restarting.title": "El conector falló, pendiente de un reinicio automático temprano",
-      "problems.connector-failed-restarting-later.title": "El conector falló, pendiente de un reinicio automático posterior",
+      "problems.connector-failed-restarting.title": "El conector falló, pendiente de un reinicio automático",
       "problems.task-failed.title": "La tarea falló",
       "problems.task-failed-first-restart.title": "La tarea falló, pendiente del primer reinicio automático",
-      "problems.task-failed-restarting.title": "La tarea falló, pendiente de un reinicio automático temprano",
-      "problems.task-failed-restarting-later.title": "La tarea falló, pendiente de un reinicio automático posterior",
+      "problems.task-failed-restarting.title": "La tarea falló, pendiente de un reinicio automático",
       "problems.mirror-connector-failed.title": "El conector de MirrorMaker 2 falló",
-      "problems.mirror-connector-1-failed.title": "El conector 1 de MirrorMaker 2 falló",
-      "problems.mirror-connector-2-failed.title": "El conector 2 de MirrorMaker 2 falló",
-      "problems.mirror-connector-3-failed.title": "El conector 3 de MirrorMaker 2 falló",
-      "problems.mirror-connector-4-failed.title": "El conector 4 de MirrorMaker 2 falló",
-      "problems.mirror-connector-5-failed.title": "El conector 5 de MirrorMaker 2 falló",
-      "problems.mirror-connector-6-failed.title": "El conector 6 de MirrorMaker 2 falló",
+      "problems.mirror-connector-failed-named.title": "Falló uno de los conectores de MirrorMaker 2",
       "problems.mirror-task-failed.title": "La tarea de MirrorMaker 2 falló",
-      "problems.mirror-task-1-failed.title": "Una tarea del conector 1 de MirrorMaker 2 falló",
-      "problems.mirror-task-2-failed.title": "Una tarea del conector 2 de MirrorMaker 2 falló",
-      "problems.mirror-task-3-failed.title": "Una tarea del conector 3 de MirrorMaker 2 falló",
-      "problems.mirror-task-4-failed.title": "Una tarea del conector 4 de MirrorMaker 2 falló",
-      "problems.mirror-task-5-failed.title": "Una tarea del conector 5 de MirrorMaker 2 falló",
-      "problems.mirror-task-6-failed.title": "Una tarea del conector 6 de MirrorMaker 2 falló",
+      "problems.mirror-task-failed-named.title": "Falló una tarea de uno de los conectores de MirrorMaker 2",
       "sectionBadges.strimzi.label.one": "{{count}} objeto requiere atención",
       "sectionBadges.strimzi.label.many": "{{count}} de objetos requieren atención",
       "sectionBadges.strimzi.label.other": "{{count}} objetos requieren atención"
@@ -3166,38 +2619,16 @@
       "problems.connector-not-ready.title": "KafkaConnector pas prêt",
       "problems.connector-failed.title": "Le connecteur a échoué",
       "problems.connector-failed-first-restart.title": "Le connecteur a échoué, premier redémarrage automatique en attente",
-      "problems.connector-failed-restarting.title": "Le connecteur a échoué, un redémarrage automatique précoce en attente",
-      "problems.connector-failed-restarting-later.title": "Le connecteur a échoué, un redémarrage automatique ultérieur en attente",
+      "problems.connector-failed-restarting.title": "Le connecteur a échoué, un redémarrage automatique en attente",
       "problems.task-failed.title": "La tâche a échoué",
       "problems.task-failed-first-restart.title": "La tâche a échoué, premier redémarrage automatique en attente",
-      "problems.task-failed-restarting.title": "La tâche a échoué, un redémarrage automatique précoce en attente",
-      "problems.task-failed-restarting-later.title": "La tâche a échoué, un redémarrage automatique ultérieur en attente",
+      "problems.task-failed-restarting.title": "La tâche a échoué, un redémarrage automatique en attente",
       "problems.mirror-connector-failed.title": "Le connecteur MirrorMaker 2 a échoué",
-      "problems.mirror-connector-1-failed.title": "Le connecteur 1 de MirrorMaker 2 a échoué",
-      "problems.mirror-connector-1-failed.message": "{{.status.connectors[0].name}} : {{.status.connectors[0].connector.trace}}",
-      "problems.mirror-connector-2-failed.title": "Le connecteur 2 de MirrorMaker 2 a échoué",
-      "problems.mirror-connector-2-failed.message": "{{.status.connectors[1].name}} : {{.status.connectors[1].connector.trace}}",
-      "problems.mirror-connector-3-failed.title": "Le connecteur 3 de MirrorMaker 2 a échoué",
-      "problems.mirror-connector-3-failed.message": "{{.status.connectors[2].name}} : {{.status.connectors[2].connector.trace}}",
-      "problems.mirror-connector-4-failed.title": "Le connecteur 4 de MirrorMaker 2 a échoué",
-      "problems.mirror-connector-4-failed.message": "{{.status.connectors[3].name}} : {{.status.connectors[3].connector.trace}}",
-      "problems.mirror-connector-5-failed.title": "Le connecteur 5 de MirrorMaker 2 a échoué",
-      "problems.mirror-connector-5-failed.message": "{{.status.connectors[4].name}} : {{.status.connectors[4].connector.trace}}",
-      "problems.mirror-connector-6-failed.title": "Le connecteur 6 de MirrorMaker 2 a échoué",
-      "problems.mirror-connector-6-failed.message": "{{.status.connectors[5].name}} : {{.status.connectors[5].connector.trace}}",
+      "problems.mirror-connector-failed-named.title": "L'un des connecteurs MirrorMaker 2 a échoué",
+      "problems.mirror-connector-failed-named.message": "{{.status.connectors[connector.state=\"FAILED\"].name}} : {{.status.connectors[connector.state=\"FAILED\"].connector.trace|firstLine|clip:300}}",
       "problems.mirror-task-failed.title": "La tâche MirrorMaker 2 a échoué",
-      "problems.mirror-task-1-failed.title": "Une tâche du connecteur 1 de MirrorMaker 2 a échoué",
-      "problems.mirror-task-1-failed.message": "{{.status.connectors[0].name}} : {{.status.connectors[0].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-2-failed.title": "Une tâche du connecteur 2 de MirrorMaker 2 a échoué",
-      "problems.mirror-task-2-failed.message": "{{.status.connectors[1].name}} : {{.status.connectors[1].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-3-failed.title": "Une tâche du connecteur 3 de MirrorMaker 2 a échoué",
-      "problems.mirror-task-3-failed.message": "{{.status.connectors[2].name}} : {{.status.connectors[2].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-4-failed.title": "Une tâche du connecteur 4 de MirrorMaker 2 a échoué",
-      "problems.mirror-task-4-failed.message": "{{.status.connectors[3].name}} : {{.status.connectors[3].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-5-failed.title": "Une tâche du connecteur 5 de MirrorMaker 2 a échoué",
-      "problems.mirror-task-5-failed.message": "{{.status.connectors[4].name}} : {{.status.connectors[4].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-6-failed.title": "Une tâche du connecteur 6 de MirrorMaker 2 a échoué",
-      "problems.mirror-task-6-failed.message": "{{.status.connectors[5].name}} : {{.status.connectors[5].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-failed-named.title": "Une tâche de l'un des connecteurs MirrorMaker 2 a échoué",
+      "problems.mirror-task-failed-named.message": "{{.status.connectors[tasks.state=\"FAILED\"].name}} : {{.status.connectors[tasks.state=\"FAILED\"].tasks[state=\"FAILED\"].trace|firstLine|clip:300}}",
       "sectionBadges.strimzi.label.one": "{{count}} objet requiert votre attention",
       "sectionBadges.strimzi.label.many": "{{count}} d'objets requièrent votre attention",
       "sectionBadges.strimzi.label.other": "{{count}} objets requièrent votre attention"
@@ -3276,26 +2707,14 @@
       "problems.connector-not-ready.title": "KafkaConnector non pronto",
       "problems.connector-failed.title": "Il connettore è fallito",
       "problems.connector-failed-first-restart.title": "Il connettore è fallito, in attesa del primo riavvio automatico",
-      "problems.connector-failed-restarting.title": "Il connettore è fallito, in attesa di un riavvio automatico iniziale",
-      "problems.connector-failed-restarting-later.title": "Il connettore è fallito, in attesa di un riavvio automatico successivo",
+      "problems.connector-failed-restarting.title": "Il connettore è fallito, in attesa di un riavvio automatico",
       "problems.task-failed.title": "Il task è fallito",
       "problems.task-failed-first-restart.title": "Il task è fallito, in attesa del primo riavvio automatico",
-      "problems.task-failed-restarting.title": "Il task è fallito, in attesa di un riavvio automatico iniziale",
-      "problems.task-failed-restarting-later.title": "Il task è fallito, in attesa di un riavvio automatico successivo",
+      "problems.task-failed-restarting.title": "Il task è fallito, in attesa di un riavvio automatico",
       "problems.mirror-connector-failed.title": "Il connettore di MirrorMaker 2 è fallito",
-      "problems.mirror-connector-1-failed.title": "Il connettore 1 di MirrorMaker 2 è fallito",
-      "problems.mirror-connector-2-failed.title": "Il connettore 2 di MirrorMaker 2 è fallito",
-      "problems.mirror-connector-3-failed.title": "Il connettore 3 di MirrorMaker 2 è fallito",
-      "problems.mirror-connector-4-failed.title": "Il connettore 4 di MirrorMaker 2 è fallito",
-      "problems.mirror-connector-5-failed.title": "Il connettore 5 di MirrorMaker 2 è fallito",
-      "problems.mirror-connector-6-failed.title": "Il connettore 6 di MirrorMaker 2 è fallito",
+      "problems.mirror-connector-failed-named.title": "Uno dei connettori di MirrorMaker 2 è fallito",
       "problems.mirror-task-failed.title": "Il task di MirrorMaker 2 è fallito",
-      "problems.mirror-task-1-failed.title": "Un task del connettore 1 di MirrorMaker 2 è fallito",
-      "problems.mirror-task-2-failed.title": "Un task del connettore 2 di MirrorMaker 2 è fallito",
-      "problems.mirror-task-3-failed.title": "Un task del connettore 3 di MirrorMaker 2 è fallito",
-      "problems.mirror-task-4-failed.title": "Un task del connettore 4 di MirrorMaker 2 è fallito",
-      "problems.mirror-task-5-failed.title": "Un task del connettore 5 di MirrorMaker 2 è fallito",
-      "problems.mirror-task-6-failed.title": "Un task del connettore 6 di MirrorMaker 2 è fallito",
+      "problems.mirror-task-failed-named.title": "Un task di uno dei connettori di MirrorMaker 2 è fallito",
       "sectionBadges.strimzi.label.one": "{{count}} oggetto richiede attenzione",
       "sectionBadges.strimzi.label.many": "{{count}} di oggetti richiedono attenzione",
       "sectionBadges.strimzi.label.other": "{{count}} oggetti richiedono attenzione"
@@ -3319,11 +2738,6 @@
       "columns.kafka-status.cases.3.text": "保留中",
       "columns.kafka-version.title": "バージョン",
       "columns.kafka-listeners.title": "Listener",
-      "columns.kafka-listeners.cases.0.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}、…",
-      "columns.kafka-listeners.cases.1.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}",
-      "columns.kafka-listeners.cases.2.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}",
-      "columns.kafka-listeners.cases.3.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}",
-      "columns.kafka-listeners.cases.4.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}",
       "columns.kafka-reason.title": "理由",
       "columns.node-pool-cluster.title": "Kafka",
       "columns.node-pool-roles.title": "ロール",
@@ -3379,26 +2793,14 @@
       "problems.connector-not-ready.title": "KafkaConnector が未準備",
       "problems.connector-failed.title": "コネクターが失敗しました",
       "problems.connector-failed-first-restart.title": "コネクターが失敗しました（最初の自動再起動を待機中）",
-      "problems.connector-failed-restarting.title": "コネクターが失敗しました（初期の自動再起動を待機中）",
-      "problems.connector-failed-restarting-later.title": "コネクターが失敗しました（後続の自動再起動を待機中）",
+      "problems.connector-failed-restarting.title": "コネクターが失敗しました（自動再起動を待機中）",
       "problems.task-failed.title": "タスクが失敗しました",
       "problems.task-failed-first-restart.title": "タスクが失敗しました（最初の自動再起動を待機中）",
-      "problems.task-failed-restarting.title": "タスクが失敗しました（初期の自動再起動を待機中）",
-      "problems.task-failed-restarting-later.title": "タスクが失敗しました（後続の自動再起動を待機中）",
+      "problems.task-failed-restarting.title": "タスクが失敗しました（自動再起動を待機中）",
       "problems.mirror-connector-failed.title": "MirrorMaker 2 のコネクターが失敗しました",
-      "problems.mirror-connector-1-failed.title": "MirrorMaker 2 のコネクター 1 が失敗しました",
-      "problems.mirror-connector-2-failed.title": "MirrorMaker 2 のコネクター 2 が失敗しました",
-      "problems.mirror-connector-3-failed.title": "MirrorMaker 2 のコネクター 3 が失敗しました",
-      "problems.mirror-connector-4-failed.title": "MirrorMaker 2 のコネクター 4 が失敗しました",
-      "problems.mirror-connector-5-failed.title": "MirrorMaker 2 のコネクター 5 が失敗しました",
-      "problems.mirror-connector-6-failed.title": "MirrorMaker 2 のコネクター 6 が失敗しました",
+      "problems.mirror-connector-failed-named.title": "MirrorMaker 2 のコネクターの 1 つが失敗しました",
       "problems.mirror-task-failed.title": "MirrorMaker 2 のタスクが失敗しました",
-      "problems.mirror-task-1-failed.title": "MirrorMaker 2 のコネクター 1 のタスクが失敗しました",
-      "problems.mirror-task-2-failed.title": "MirrorMaker 2 のコネクター 2 のタスクが失敗しました",
-      "problems.mirror-task-3-failed.title": "MirrorMaker 2 のコネクター 3 のタスクが失敗しました",
-      "problems.mirror-task-4-failed.title": "MirrorMaker 2 のコネクター 4 のタスクが失敗しました",
-      "problems.mirror-task-5-failed.title": "MirrorMaker 2 のコネクター 5 のタスクが失敗しました",
-      "problems.mirror-task-6-failed.title": "MirrorMaker 2 のコネクター 6 のタスクが失敗しました",
+      "problems.mirror-task-failed-named.title": "MirrorMaker 2 のコネクターの 1 つでタスクが失敗しました",
       "sectionBadges.strimzi.label.other": "対応が必要なオブジェクトが {{count}} 件あります"
     },
     "ko": {
@@ -3475,26 +2877,14 @@
       "problems.connector-not-ready.title": "KafkaConnector 준비 안 됨",
       "problems.connector-failed.title": "커넥터가 실패했습니다",
       "problems.connector-failed-first-restart.title": "커넥터가 실패했습니다 (첫 자동 재시작 대기 중)",
-      "problems.connector-failed-restarting.title": "커넥터가 실패했습니다 (초기 자동 재시작 대기 중)",
-      "problems.connector-failed-restarting-later.title": "커넥터가 실패했습니다 (이후 자동 재시작 대기 중)",
+      "problems.connector-failed-restarting.title": "커넥터가 실패했습니다 (자동 재시작 대기 중)",
       "problems.task-failed.title": "작업이 실패했습니다",
       "problems.task-failed-first-restart.title": "작업이 실패했습니다 (첫 자동 재시작 대기 중)",
-      "problems.task-failed-restarting.title": "작업이 실패했습니다 (초기 자동 재시작 대기 중)",
-      "problems.task-failed-restarting-later.title": "작업이 실패했습니다 (이후 자동 재시작 대기 중)",
+      "problems.task-failed-restarting.title": "작업이 실패했습니다 (자동 재시작 대기 중)",
       "problems.mirror-connector-failed.title": "MirrorMaker 2 커넥터가 실패했습니다",
-      "problems.mirror-connector-1-failed.title": "MirrorMaker 2 커넥터 1이(가) 실패했습니다",
-      "problems.mirror-connector-2-failed.title": "MirrorMaker 2 커넥터 2이(가) 실패했습니다",
-      "problems.mirror-connector-3-failed.title": "MirrorMaker 2 커넥터 3이(가) 실패했습니다",
-      "problems.mirror-connector-4-failed.title": "MirrorMaker 2 커넥터 4이(가) 실패했습니다",
-      "problems.mirror-connector-5-failed.title": "MirrorMaker 2 커넥터 5이(가) 실패했습니다",
-      "problems.mirror-connector-6-failed.title": "MirrorMaker 2 커넥터 6이(가) 실패했습니다",
+      "problems.mirror-connector-failed-named.title": "MirrorMaker 2 커넥터 중 하나가 실패했습니다",
       "problems.mirror-task-failed.title": "MirrorMaker 2 작업이 실패했습니다",
-      "problems.mirror-task-1-failed.title": "MirrorMaker 2 커넥터 1의 작업이 실패했습니다",
-      "problems.mirror-task-2-failed.title": "MirrorMaker 2 커넥터 2의 작업이 실패했습니다",
-      "problems.mirror-task-3-failed.title": "MirrorMaker 2 커넥터 3의 작업이 실패했습니다",
-      "problems.mirror-task-4-failed.title": "MirrorMaker 2 커넥터 4의 작업이 실패했습니다",
-      "problems.mirror-task-5-failed.title": "MirrorMaker 2 커넥터 5의 작업이 실패했습니다",
-      "problems.mirror-task-6-failed.title": "MirrorMaker 2 커넥터 6의 작업이 실패했습니다",
+      "problems.mirror-task-failed-named.title": "MirrorMaker 2 커넥터 중 하나의 작업이 실패했습니다",
       "sectionBadges.strimzi.label.other": "주의가 필요한 개체 {{count}}개"
     },
     "pl": {
@@ -3571,26 +2961,14 @@
       "problems.connector-not-ready.title": "KafkaConnector nie jest gotowy",
       "problems.connector-failed.title": "Konektor uległ awarii",
       "problems.connector-failed-first-restart.title": "Konektor uległ awarii, czeka na pierwszy automatyczny restart",
-      "problems.connector-failed-restarting.title": "Konektor uległ awarii, czeka na wczesny automatyczny restart",
-      "problems.connector-failed-restarting-later.title": "Konektor uległ awarii, czeka na późniejszy automatyczny restart",
+      "problems.connector-failed-restarting.title": "Konektor uległ awarii, czeka na automatyczny restart",
       "problems.task-failed.title": "Zadanie uległo awarii",
       "problems.task-failed-first-restart.title": "Zadanie uległo awarii, czeka na pierwszy automatyczny restart",
-      "problems.task-failed-restarting.title": "Zadanie uległo awarii, czeka na wczesny automatyczny restart",
-      "problems.task-failed-restarting-later.title": "Zadanie uległo awarii, czeka na późniejszy automatyczny restart",
+      "problems.task-failed-restarting.title": "Zadanie uległo awarii, czeka na automatyczny restart",
       "problems.mirror-connector-failed.title": "Konektor MirrorMaker 2 uległ awarii",
-      "problems.mirror-connector-1-failed.title": "Konektor 1 MirrorMaker 2 uległ awarii",
-      "problems.mirror-connector-2-failed.title": "Konektor 2 MirrorMaker 2 uległ awarii",
-      "problems.mirror-connector-3-failed.title": "Konektor 3 MirrorMaker 2 uległ awarii",
-      "problems.mirror-connector-4-failed.title": "Konektor 4 MirrorMaker 2 uległ awarii",
-      "problems.mirror-connector-5-failed.title": "Konektor 5 MirrorMaker 2 uległ awarii",
-      "problems.mirror-connector-6-failed.title": "Konektor 6 MirrorMaker 2 uległ awarii",
+      "problems.mirror-connector-failed-named.title": "Jeden z konektorów MirrorMaker 2 uległ awarii",
       "problems.mirror-task-failed.title": "Zadanie MirrorMaker 2 uległo awarii",
-      "problems.mirror-task-1-failed.title": "Zadanie konektora 1 MirrorMaker 2 uległo awarii",
-      "problems.mirror-task-2-failed.title": "Zadanie konektora 2 MirrorMaker 2 uległo awarii",
-      "problems.mirror-task-3-failed.title": "Zadanie konektora 3 MirrorMaker 2 uległo awarii",
-      "problems.mirror-task-4-failed.title": "Zadanie konektora 4 MirrorMaker 2 uległo awarii",
-      "problems.mirror-task-5-failed.title": "Zadanie konektora 5 MirrorMaker 2 uległo awarii",
-      "problems.mirror-task-6-failed.title": "Zadanie konektora 6 MirrorMaker 2 uległo awarii",
+      "problems.mirror-task-failed-named.title": "Zadanie jednego z konektorów MirrorMaker 2 uległo awarii",
       "sectionBadges.strimzi.label.one": "{{count}} obiekt wymaga uwagi",
       "sectionBadges.strimzi.label.few": "{{count}} obiekty wymagają uwagi",
       "sectionBadges.strimzi.label.many": "{{count}} obiektów wymaga uwagi",
@@ -3670,26 +3048,14 @@
       "problems.connector-not-ready.title": "KafkaConnector não está pronto",
       "problems.connector-failed.title": "O conector falhou",
       "problems.connector-failed-first-restart.title": "O conector falhou, aguardando o primeiro reinício automático",
-      "problems.connector-failed-restarting.title": "O conector falhou, aguardando um reinício automático inicial",
-      "problems.connector-failed-restarting-later.title": "O conector falhou, aguardando um reinício automático posterior",
+      "problems.connector-failed-restarting.title": "O conector falhou, aguardando um reinício automático",
       "problems.task-failed.title": "A tarefa falhou",
       "problems.task-failed-first-restart.title": "A tarefa falhou, aguardando o primeiro reinício automático",
-      "problems.task-failed-restarting.title": "A tarefa falhou, aguardando um reinício automático inicial",
-      "problems.task-failed-restarting-later.title": "A tarefa falhou, aguardando um reinício automático posterior",
+      "problems.task-failed-restarting.title": "A tarefa falhou, aguardando um reinício automático",
       "problems.mirror-connector-failed.title": "O conector do MirrorMaker 2 falhou",
-      "problems.mirror-connector-1-failed.title": "O conector 1 do MirrorMaker 2 falhou",
-      "problems.mirror-connector-2-failed.title": "O conector 2 do MirrorMaker 2 falhou",
-      "problems.mirror-connector-3-failed.title": "O conector 3 do MirrorMaker 2 falhou",
-      "problems.mirror-connector-4-failed.title": "O conector 4 do MirrorMaker 2 falhou",
-      "problems.mirror-connector-5-failed.title": "O conector 5 do MirrorMaker 2 falhou",
-      "problems.mirror-connector-6-failed.title": "O conector 6 do MirrorMaker 2 falhou",
+      "problems.mirror-connector-failed-named.title": "Um dos conectores do MirrorMaker 2 falhou",
       "problems.mirror-task-failed.title": "A tarefa do MirrorMaker 2 falhou",
-      "problems.mirror-task-1-failed.title": "Uma tarefa do conector 1 do MirrorMaker 2 falhou",
-      "problems.mirror-task-2-failed.title": "Uma tarefa do conector 2 do MirrorMaker 2 falhou",
-      "problems.mirror-task-3-failed.title": "Uma tarefa do conector 3 do MirrorMaker 2 falhou",
-      "problems.mirror-task-4-failed.title": "Uma tarefa do conector 4 do MirrorMaker 2 falhou",
-      "problems.mirror-task-5-failed.title": "Uma tarefa do conector 5 do MirrorMaker 2 falhou",
-      "problems.mirror-task-6-failed.title": "Uma tarefa do conector 6 do MirrorMaker 2 falhou",
+      "problems.mirror-task-failed-named.title": "Uma tarefa de um dos conectores do MirrorMaker 2 falhou",
       "sectionBadges.strimzi.label.one": "{{count}} objeto precisa de atenção",
       "sectionBadges.strimzi.label.many": "{{count}} de objetos precisam de atenção",
       "sectionBadges.strimzi.label.other": "{{count}} objetos precisam de atenção"
@@ -3768,26 +3134,14 @@
       "problems.connector-not-ready.title": "KafkaConnector не готов",
       "problems.connector-failed.title": "Коннектор упал",
       "problems.connector-failed-first-restart.title": "Коннектор упал, ждёт первого автоматического перезапуска",
-      "problems.connector-failed-restarting.title": "Коннектор упал, ждёт раннего автоматического перезапуска",
-      "problems.connector-failed-restarting-later.title": "Коннектор упал, ждёт позднего автоматического перезапуска",
+      "problems.connector-failed-restarting.title": "Коннектор упал, ждёт автоматического перезапуска",
       "problems.task-failed.title": "Задача упала",
       "problems.task-failed-first-restart.title": "Задача упала, ждёт первого автоматического перезапуска",
-      "problems.task-failed-restarting.title": "Задача упала, ждёт раннего автоматического перезапуска",
-      "problems.task-failed-restarting-later.title": "Задача упала, ждёт позднего автоматического перезапуска",
+      "problems.task-failed-restarting.title": "Задача упала, ждёт автоматического перезапуска",
       "problems.mirror-connector-failed.title": "Коннектор MirrorMaker 2 упал",
-      "problems.mirror-connector-1-failed.title": "Коннектор 1 MirrorMaker 2 упал",
-      "problems.mirror-connector-2-failed.title": "Коннектор 2 MirrorMaker 2 упал",
-      "problems.mirror-connector-3-failed.title": "Коннектор 3 MirrorMaker 2 упал",
-      "problems.mirror-connector-4-failed.title": "Коннектор 4 MirrorMaker 2 упал",
-      "problems.mirror-connector-5-failed.title": "Коннектор 5 MirrorMaker 2 упал",
-      "problems.mirror-connector-6-failed.title": "Коннектор 6 MirrorMaker 2 упал",
+      "problems.mirror-connector-failed-named.title": "Упал один из коннекторов MirrorMaker 2",
       "problems.mirror-task-failed.title": "Задача MirrorMaker 2 упала",
-      "problems.mirror-task-1-failed.title": "Задача коннектора 1 MirrorMaker 2 упала",
-      "problems.mirror-task-2-failed.title": "Задача коннектора 2 MirrorMaker 2 упала",
-      "problems.mirror-task-3-failed.title": "Задача коннектора 3 MirrorMaker 2 упала",
-      "problems.mirror-task-4-failed.title": "Задача коннектора 4 MirrorMaker 2 упала",
-      "problems.mirror-task-5-failed.title": "Задача коннектора 5 MirrorMaker 2 упала",
-      "problems.mirror-task-6-failed.title": "Задача коннектора 6 MirrorMaker 2 упала",
+      "problems.mirror-task-failed-named.title": "Упала задача одного из коннекторов MirrorMaker 2",
       "sectionBadges.strimzi.label.one": "{{count}} объект требует внимания",
       "sectionBadges.strimzi.label.few": "{{count}} объекта требуют внимания",
       "sectionBadges.strimzi.label.many": "{{count}} объектов требуют внимания",
@@ -3867,26 +3221,14 @@
       "problems.connector-not-ready.title": "KafkaConnector hazır değil",
       "problems.connector-failed.title": "Connector başarısız oldu",
       "problems.connector-failed-first-restart.title": "Connector başarısız oldu, ilk otomatik yeniden başlatma bekleniyor",
-      "problems.connector-failed-restarting.title": "Connector başarısız oldu, erken bir otomatik yeniden başlatma bekleniyor",
-      "problems.connector-failed-restarting-later.title": "Connector başarısız oldu, sonraki bir otomatik yeniden başlatma bekleniyor",
+      "problems.connector-failed-restarting.title": "Connector başarısız oldu, bir otomatik yeniden başlatma bekleniyor",
       "problems.task-failed.title": "Görev başarısız oldu",
       "problems.task-failed-first-restart.title": "Görev başarısız oldu, ilk otomatik yeniden başlatma bekleniyor",
-      "problems.task-failed-restarting.title": "Görev başarısız oldu, erken bir otomatik yeniden başlatma bekleniyor",
-      "problems.task-failed-restarting-later.title": "Görev başarısız oldu, sonraki bir otomatik yeniden başlatma bekleniyor",
+      "problems.task-failed-restarting.title": "Görev başarısız oldu, bir otomatik yeniden başlatma bekleniyor",
       "problems.mirror-connector-failed.title": "MirrorMaker 2 connector'ı başarısız oldu",
-      "problems.mirror-connector-1-failed.title": "1. MirrorMaker 2 connector'ı başarısız oldu",
-      "problems.mirror-connector-2-failed.title": "2. MirrorMaker 2 connector'ı başarısız oldu",
-      "problems.mirror-connector-3-failed.title": "3. MirrorMaker 2 connector'ı başarısız oldu",
-      "problems.mirror-connector-4-failed.title": "4. MirrorMaker 2 connector'ı başarısız oldu",
-      "problems.mirror-connector-5-failed.title": "5. MirrorMaker 2 connector'ı başarısız oldu",
-      "problems.mirror-connector-6-failed.title": "6. MirrorMaker 2 connector'ı başarısız oldu",
+      "problems.mirror-connector-failed-named.title": "MirrorMaker 2 connector'larından biri başarısız oldu",
       "problems.mirror-task-failed.title": "MirrorMaker 2 görevi başarısız oldu",
-      "problems.mirror-task-1-failed.title": "1. MirrorMaker 2 connector'ının görevi başarısız oldu",
-      "problems.mirror-task-2-failed.title": "2. MirrorMaker 2 connector'ının görevi başarısız oldu",
-      "problems.mirror-task-3-failed.title": "3. MirrorMaker 2 connector'ının görevi başarısız oldu",
-      "problems.mirror-task-4-failed.title": "4. MirrorMaker 2 connector'ının görevi başarısız oldu",
-      "problems.mirror-task-5-failed.title": "5. MirrorMaker 2 connector'ının görevi başarısız oldu",
-      "problems.mirror-task-6-failed.title": "6. MirrorMaker 2 connector'ının görevi başarısız oldu",
+      "problems.mirror-task-failed-named.title": "MirrorMaker 2 connector'larından birinin görevi başarısız oldu",
       "sectionBadges.strimzi.label.one": "{{count}} nesne ilgi gerektiriyor",
       "sectionBadges.strimzi.label.other": "{{count}} nesne ilgi gerektiriyor"
     },
@@ -3964,26 +3306,14 @@
       "problems.connector-not-ready.title": "KafkaConnector не готовий",
       "problems.connector-failed.title": "Конектор впав",
       "problems.connector-failed-first-restart.title": "Конектор впав, чекає першого автоматичного перезапуску",
-      "problems.connector-failed-restarting.title": "Конектор впав, чекає раннього автоматичного перезапуску",
-      "problems.connector-failed-restarting-later.title": "Конектор впав, чекає пізнішого автоматичного перезапуску",
+      "problems.connector-failed-restarting.title": "Конектор впав, чекає автоматичного перезапуску",
       "problems.task-failed.title": "Задача впала",
       "problems.task-failed-first-restart.title": "Задача впала, чекає першого автоматичного перезапуску",
-      "problems.task-failed-restarting.title": "Задача впала, чекає раннього автоматичного перезапуску",
-      "problems.task-failed-restarting-later.title": "Задача впала, чекає пізнішого автоматичного перезапуску",
+      "problems.task-failed-restarting.title": "Задача впала, чекає автоматичного перезапуску",
       "problems.mirror-connector-failed.title": "Конектор MirrorMaker 2 впав",
-      "problems.mirror-connector-1-failed.title": "Конектор 1 MirrorMaker 2 впав",
-      "problems.mirror-connector-2-failed.title": "Конектор 2 MirrorMaker 2 впав",
-      "problems.mirror-connector-3-failed.title": "Конектор 3 MirrorMaker 2 впав",
-      "problems.mirror-connector-4-failed.title": "Конектор 4 MirrorMaker 2 впав",
-      "problems.mirror-connector-5-failed.title": "Конектор 5 MirrorMaker 2 впав",
-      "problems.mirror-connector-6-failed.title": "Конектор 6 MirrorMaker 2 впав",
+      "problems.mirror-connector-failed-named.title": "Впав один із конекторів MirrorMaker 2",
       "problems.mirror-task-failed.title": "Задача MirrorMaker 2 впала",
-      "problems.mirror-task-1-failed.title": "Задача конектора 1 MirrorMaker 2 впала",
-      "problems.mirror-task-2-failed.title": "Задача конектора 2 MirrorMaker 2 впала",
-      "problems.mirror-task-3-failed.title": "Задача конектора 3 MirrorMaker 2 впала",
-      "problems.mirror-task-4-failed.title": "Задача конектора 4 MirrorMaker 2 впала",
-      "problems.mirror-task-5-failed.title": "Задача конектора 5 MirrorMaker 2 впала",
-      "problems.mirror-task-6-failed.title": "Задача конектора 6 MirrorMaker 2 впала",
+      "problems.mirror-task-failed-named.title": "Впала задача одного з конекторів MirrorMaker 2",
       "sectionBadges.strimzi.label.one": "{{count}} об'єкт потребує уваги",
       "sectionBadges.strimzi.label.few": "{{count}} об'єкти потребують уваги",
       "sectionBadges.strimzi.label.many": "{{count}} об'єктів потребують уваги",
@@ -4008,11 +3338,6 @@
       "columns.kafka-status.cases.3.text": "等待中",
       "columns.kafka-version.title": "版本",
       "columns.kafka-listeners.title": "Listener",
-      "columns.kafka-listeners.cases.0.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}、…",
-      "columns.kafka-listeners.cases.1.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}",
-      "columns.kafka-listeners.cases.2.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}",
-      "columns.kafka-listeners.cases.3.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}",
-      "columns.kafka-listeners.cases.4.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}",
       "columns.kafka-reason.title": "原因",
       "columns.node-pool-cluster.title": "Kafka",
       "columns.node-pool-roles.title": "角色",
@@ -4068,38 +3393,16 @@
       "problems.connector-not-ready.title": "KafkaConnector 未就绪",
       "problems.connector-failed.title": "连接器失败",
       "problems.connector-failed-first-restart.title": "连接器失败，等待首次自动重启",
-      "problems.connector-failed-restarting.title": "连接器失败，等待早期自动重启",
-      "problems.connector-failed-restarting-later.title": "连接器失败，等待后续自动重启",
+      "problems.connector-failed-restarting.title": "连接器失败，等待自动重启",
       "problems.task-failed.title": "任务失败",
       "problems.task-failed-first-restart.title": "任务失败，等待首次自动重启",
-      "problems.task-failed-restarting.title": "任务失败，等待早期自动重启",
-      "problems.task-failed-restarting-later.title": "任务失败，等待后续自动重启",
+      "problems.task-failed-restarting.title": "任务失败，等待自动重启",
       "problems.mirror-connector-failed.title": "MirrorMaker 2 连接器失败",
-      "problems.mirror-connector-1-failed.title": "MirrorMaker 2 连接器 1 失败",
-      "problems.mirror-connector-1-failed.message": "{{.status.connectors[0].name}}：{{.status.connectors[0].connector.trace}}",
-      "problems.mirror-connector-2-failed.title": "MirrorMaker 2 连接器 2 失败",
-      "problems.mirror-connector-2-failed.message": "{{.status.connectors[1].name}}：{{.status.connectors[1].connector.trace}}",
-      "problems.mirror-connector-3-failed.title": "MirrorMaker 2 连接器 3 失败",
-      "problems.mirror-connector-3-failed.message": "{{.status.connectors[2].name}}：{{.status.connectors[2].connector.trace}}",
-      "problems.mirror-connector-4-failed.title": "MirrorMaker 2 连接器 4 失败",
-      "problems.mirror-connector-4-failed.message": "{{.status.connectors[3].name}}：{{.status.connectors[3].connector.trace}}",
-      "problems.mirror-connector-5-failed.title": "MirrorMaker 2 连接器 5 失败",
-      "problems.mirror-connector-5-failed.message": "{{.status.connectors[4].name}}：{{.status.connectors[4].connector.trace}}",
-      "problems.mirror-connector-6-failed.title": "MirrorMaker 2 连接器 6 失败",
-      "problems.mirror-connector-6-failed.message": "{{.status.connectors[5].name}}：{{.status.connectors[5].connector.trace}}",
+      "problems.mirror-connector-failed-named.title": "MirrorMaker 2 的一个连接器失败",
+      "problems.mirror-connector-failed-named.message": "{{.status.connectors[connector.state=\"FAILED\"].name}}：{{.status.connectors[connector.state=\"FAILED\"].connector.trace|firstLine|clip:300}}",
       "problems.mirror-task-failed.title": "MirrorMaker 2 任务失败",
-      "problems.mirror-task-1-failed.title": "MirrorMaker 2 连接器 1 的任务失败",
-      "problems.mirror-task-1-failed.message": "{{.status.connectors[0].name}}：{{.status.connectors[0].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-2-failed.title": "MirrorMaker 2 连接器 2 的任务失败",
-      "problems.mirror-task-2-failed.message": "{{.status.connectors[1].name}}：{{.status.connectors[1].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-3-failed.title": "MirrorMaker 2 连接器 3 的任务失败",
-      "problems.mirror-task-3-failed.message": "{{.status.connectors[2].name}}：{{.status.connectors[2].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-4-failed.title": "MirrorMaker 2 连接器 4 的任务失败",
-      "problems.mirror-task-4-failed.message": "{{.status.connectors[3].name}}：{{.status.connectors[3].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-5-failed.title": "MirrorMaker 2 连接器 5 的任务失败",
-      "problems.mirror-task-5-failed.message": "{{.status.connectors[4].name}}：{{.status.connectors[4].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-6-failed.title": "MirrorMaker 2 连接器 6 的任务失败",
-      "problems.mirror-task-6-failed.message": "{{.status.connectors[5].name}}：{{.status.connectors[5].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-failed-named.title": "MirrorMaker 2 的一个连接器的任务失败",
+      "problems.mirror-task-failed-named.message": "{{.status.connectors[tasks.state=\"FAILED\"].name}}：{{.status.connectors[tasks.state=\"FAILED\"].tasks[state=\"FAILED\"].trace|firstLine|clip:300}}",
       "sectionBadges.strimzi.label.other": "{{count}} 个对象需要关注"
     },
     "zh-TW": {
@@ -4121,11 +3424,6 @@
       "columns.kafka-status.cases.3.text": "等待中",
       "columns.kafka-version.title": "版本",
       "columns.kafka-listeners.title": "Listener",
-      "columns.kafka-listeners.cases.0.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}、…",
-      "columns.kafka-listeners.cases.1.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}、{{.spec.kafka.listeners[4].name}}",
-      "columns.kafka-listeners.cases.2.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}、{{.spec.kafka.listeners[3].name}}",
-      "columns.kafka-listeners.cases.3.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}、{{.spec.kafka.listeners[2].name}}",
-      "columns.kafka-listeners.cases.4.text": "{{.spec.kafka.listeners[0].name}}、{{.spec.kafka.listeners[1].name}}",
       "columns.kafka-reason.title": "原因",
       "columns.node-pool-cluster.title": "Kafka",
       "columns.node-pool-roles.title": "角色",
@@ -4181,38 +3479,16 @@
       "problems.connector-not-ready.title": "KafkaConnector 未就緒",
       "problems.connector-failed.title": "連接器失敗",
       "problems.connector-failed-first-restart.title": "連接器失敗，等待首次自動重新啟動",
-      "problems.connector-failed-restarting.title": "連接器失敗，等待早期自動重新啟動",
-      "problems.connector-failed-restarting-later.title": "連接器失敗，等待後續自動重新啟動",
+      "problems.connector-failed-restarting.title": "連接器失敗，等待自動重新啟動",
       "problems.task-failed.title": "任務失敗",
       "problems.task-failed-first-restart.title": "任務失敗，等待首次自動重新啟動",
-      "problems.task-failed-restarting.title": "任務失敗，等待早期自動重新啟動",
-      "problems.task-failed-restarting-later.title": "任務失敗，等待後續自動重新啟動",
+      "problems.task-failed-restarting.title": "任務失敗，等待自動重新啟動",
       "problems.mirror-connector-failed.title": "MirrorMaker 2 連接器失敗",
-      "problems.mirror-connector-1-failed.title": "MirrorMaker 2 連接器 1 失敗",
-      "problems.mirror-connector-1-failed.message": "{{.status.connectors[0].name}}：{{.status.connectors[0].connector.trace}}",
-      "problems.mirror-connector-2-failed.title": "MirrorMaker 2 連接器 2 失敗",
-      "problems.mirror-connector-2-failed.message": "{{.status.connectors[1].name}}：{{.status.connectors[1].connector.trace}}",
-      "problems.mirror-connector-3-failed.title": "MirrorMaker 2 連接器 3 失敗",
-      "problems.mirror-connector-3-failed.message": "{{.status.connectors[2].name}}：{{.status.connectors[2].connector.trace}}",
-      "problems.mirror-connector-4-failed.title": "MirrorMaker 2 連接器 4 失敗",
-      "problems.mirror-connector-4-failed.message": "{{.status.connectors[3].name}}：{{.status.connectors[3].connector.trace}}",
-      "problems.mirror-connector-5-failed.title": "MirrorMaker 2 連接器 5 失敗",
-      "problems.mirror-connector-5-failed.message": "{{.status.connectors[4].name}}：{{.status.connectors[4].connector.trace}}",
-      "problems.mirror-connector-6-failed.title": "MirrorMaker 2 連接器 6 失敗",
-      "problems.mirror-connector-6-failed.message": "{{.status.connectors[5].name}}：{{.status.connectors[5].connector.trace}}",
+      "problems.mirror-connector-failed-named.title": "MirrorMaker 2 的一個連接器失敗",
+      "problems.mirror-connector-failed-named.message": "{{.status.connectors[connector.state=\"FAILED\"].name}}：{{.status.connectors[connector.state=\"FAILED\"].connector.trace|firstLine|clip:300}}",
       "problems.mirror-task-failed.title": "MirrorMaker 2 任務失敗",
-      "problems.mirror-task-1-failed.title": "MirrorMaker 2 連接器 1 的任務失敗",
-      "problems.mirror-task-1-failed.message": "{{.status.connectors[0].name}}：{{.status.connectors[0].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-2-failed.title": "MirrorMaker 2 連接器 2 的任務失敗",
-      "problems.mirror-task-2-failed.message": "{{.status.connectors[1].name}}：{{.status.connectors[1].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-3-failed.title": "MirrorMaker 2 連接器 3 的任務失敗",
-      "problems.mirror-task-3-failed.message": "{{.status.connectors[2].name}}：{{.status.connectors[2].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-4-failed.title": "MirrorMaker 2 連接器 4 的任務失敗",
-      "problems.mirror-task-4-failed.message": "{{.status.connectors[3].name}}：{{.status.connectors[3].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-5-failed.title": "MirrorMaker 2 連接器 5 的任務失敗",
-      "problems.mirror-task-5-failed.message": "{{.status.connectors[4].name}}：{{.status.connectors[4].tasks[state=\"FAILED\"].trace}}",
-      "problems.mirror-task-6-failed.title": "MirrorMaker 2 連接器 6 的任務失敗",
-      "problems.mirror-task-6-failed.message": "{{.status.connectors[5].name}}：{{.status.connectors[5].tasks[state=\"FAILED\"].trace}}",
+      "problems.mirror-task-failed-named.title": "MirrorMaker 2 的一個連接器的任務失敗",
+      "problems.mirror-task-failed-named.message": "{{.status.connectors[tasks.state=\"FAILED\"].name}}：{{.status.connectors[tasks.state=\"FAILED\"].tasks[state=\"FAILED\"].trace|firstLine|clip:300}}",
       "sectionBadges.strimzi.label.other": "{{count}} 個物件需要注意"
     }
   }

@@ -249,6 +249,33 @@ describe("the details", () => {
     expect(root.querySelector(".sx-error")?.textContent).toBe("Sextant refused: no read of Kafka");
   });
 
+  it("open and close its blocks in Sextant's own memory, as the built-in section's blocks", async () => {
+    const toggles = () => [...root.querySelectorAll<HTMLButtonElement>(".sx-block__toggle")];
+    const toggle = (title: string) => toggles().find((b) => b.textContent === title)!;
+    const written: unknown[] = [];
+    await show(kafka, { handlers: { "ui.setBlockOpen": (params) => void written.push(params) } });
+    expect(toggles().map((b) => b.getAttribute("aria-expanded"))).toEqual(["true", "true"]);
+    toggle("Listeners").click();
+    expect(toggle("Listeners").getAttribute("aria-expanded")).toBe("false");
+    await expect.poll(() => written).toEqual([{ id: "listeners", open: false }]);
+    // What Sextant remembers comes back in the context, and a change of it draws the blocks again.
+    host.setContext({ blocks: { listeners: false } });
+    await expect.poll(() => toggle("Listeners").getAttribute("aria-expanded")).toBe("false");
+    expect(toggle("Warnings").getAttribute("aria-expanded")).toBe("true");
+    // "Collapse all" and "Expand all" of the panel; a block's own choice comes first.
+    host.setContext({ blocks: { "*": false } });
+    await expect.poll(() => toggles().map((b) => b.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
+    host.setContext({ blocks: { "*": true, warnings: false } });
+    await expect.poll(() => toggles().map((b) => b.getAttribute("aria-expanded"))).toEqual(["false", "true"]);
+    // A new frame starts as remembered; never in the extension's storage.
+    stop();
+    root.remove();
+    host.close();
+    await show(kafka, { context: { blocks: { listeners: false } } });
+    expect(toggle("Listeners").getAttribute("aria-expanded")).toBe("false");
+    expect(host.storage.size).toBe(0);
+  });
+
   it("read the object again when it changes", async () => {
     const objects = [copy(kafka)];
     await show(kafka, { objects });

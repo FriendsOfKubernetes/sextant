@@ -9,7 +9,8 @@
 //   KafkaConnect / KafkaMirrorMaker2 — replicas, URL, plugins, mirrors, connectors' states, automatic restarts and
 //                       failed connectors and tasks with their traces;
 //   KafkaConnector    — the Connect cluster, class, the connector's and tasks' states, automatic restarts, failures.
-// The frame reads the shown object again whenever its resourceVersion changes. Conditions and YAML are Sextant's own
+// The frame reads the shown object again whenever its resourceVersion changes. Its blocks open and close by their titles,
+// in Sextant's own memory of details sections (`context.blocks`, `ui.setBlockOpen`), as the built-in section's did. Conditions and YAML are Sextant's own
 // sections. Read-only.
 import { ui, type KubeObject, type ObjectRef, type Sextant, type UiContent } from "@sextant/extension-sdk";
 import { dateTimeText, element, errorText, formatList, formatParts } from "./dom";
@@ -64,6 +65,26 @@ function fieldsOf(rows: readonly Row[]): HTMLElement | null {
 
 const present = (nodes: (Node | null | undefined | false)[]): Node[] => nodes.filter((n): n is Node => !!n);
 
+// ---------- Blocks that keep their state ----------
+
+/**
+ * Sextant's memory of the frame's blocks (`context.blocks`: by id, `*` for "Expand all"/"Collapse all"), kept per kind
+ * as Settings → Appearance says, as the built-in section's blocks were; and how a choice is written back.
+ */
+const blocks: { open: Readonly<Record<string, boolean>> | undefined; setOpen: (id: string, open: boolean) => void } = {
+  open: undefined,
+  setOpen: () => undefined,
+};
+
+/** A titled block as the built-in section's: open unless the user closed it, closable by its title. */
+function block(id: string, title: string, content: UiContent): HTMLElement {
+  return ui.block(title, content, {
+    collapsible: true,
+    collapsed: !ui.blockOpen(blocks.open, id, true),
+    onToggle: (open) => blocks.setOpen(id, open),
+  });
+}
+
 /** A link to the details of an object of `kind` in Sextant's panel; nothing without a name. */
 function link(sextant: Sextant, kind: KindName, version: string, name: string | undefined, namespace: string | null): HTMLElement | null {
   if (!name) return null;
@@ -91,7 +112,7 @@ function warningsBlock(obj: KubeObject): HTMLElement | null {
   const warnings = warningsOf(obj);
   if (warnings.length === 0) return null;
   const rows = warnings.map((w) => [w.reason ?? "", w.message ?? ""]);
-  return ui.block(t("warnings"), ui.table([t("warningReason"), t("warningMessage")], rows));
+  return block("warnings", t("warnings"), ui.table([t("warningReason"), t("warningMessage")], rows));
 }
 
 /** Why it is not ready, and the warnings Strimzi reports. */
@@ -124,7 +145,7 @@ export function kafkaView(sextant: Sextant, obj: KubeObject): Node[] {
       l.addresses.length > 0 ? ui.chips(l.addresses) : mutedText(t("listeners.noAddress")),
     ]),
   );
-  return present([...messages(obj), fieldsOf(rows), listeners.length > 0 ? ui.block(t("listeners.title"), listenersTable) : null]);
+  return present([...messages(obj), fieldsOf(rows), listeners.length > 0 ? block("listeners", t("listeners.title"), listenersTable) : null]);
 }
 
 export function nodePoolView(sextant: Sextant, obj: KubeObject): Node[] {
@@ -211,7 +232,7 @@ export function connectorFailures(connectors: readonly ConnectorStatus[]): HTMLE
     );
     return [...own, ...tasks];
   });
-  return items.length > 0 ? ui.block(t("connector.failuresTitle"), items) : null;
+  return items.length > 0 ? block("failures", t("connector.failuresTitle"), items) : null;
 }
 
 export function connectView(obj: KubeObject, mirror: boolean): Node[] {
@@ -241,10 +262,11 @@ export function connectView(obj: KubeObject, mirror: boolean): Node[] {
     ...messages(obj),
     fieldsOf(rows),
     mirror && mirrors.length > 0
-      ? ui.block(t("mirrors.title"), ui.table([t("mirrors.source"), t("mirrors.target"), t("mirrors.topics")], mirrors))
+      ? block("mirrors", t("mirrors.title"), ui.table([t("mirrors.source"), t("mirrors.target"), t("mirrors.topics")], mirrors))
       : null,
     connectors.length > 0
-      ? ui.block(
+      ? block(
+          "connectors",
           t("connectors.title"),
           ui.table([t("connectors.name"), t("connectors.state"), t("connectors.tasks"), t("connectors.restarts")], connectors),
         )
@@ -296,7 +318,7 @@ export function connectorView(sextant: Sextant, obj: KubeObject): Node[] {
     warningsBlock(obj),
     fieldsOf(rows),
     connector ? connectorFailures([connector]) : null,
-    tasks.length > 0 ? ui.block(t("connector.tasksTitle"), tasksTable) : null,
+    tasks.length > 0 ? block("tasks", t("connector.tasksTitle"), tasksTable) : null,
   ]);
 }
 
@@ -318,10 +340,15 @@ export function viewOf(sextant: Sextant, obj: KubeObject): Node[] {
  * section with nothing to show hides itself, title included, until it has something (`ui.setHidden`).
  */
 export function startDetails(sextant: Sextant, root: HTMLElement): () => void {
+  blocks.open = sextant.context.blocks;
+  blocks.setOpen = (id, open) => void sextant.ui.setBlockOpen(id, open).catch(() => undefined);
   let shownVersion: string | null | undefined;
   let shownRef: string | null = null;
   let reading = 0;
   let hidden = false;
+  /** The object last drawn, drawn again when Sextant's memory of the blocks changes ("Expand all", another frame). */
+  let drawn: KubeObject | null = null;
+  let blocksKey = JSON.stringify(blocks.open ?? {});
 
   /** Shows `nodes`, hiding the section while there are none. */
   const show = (nodes: Node[]) => {
@@ -338,29 +365,45 @@ export function startDetails(sextant: Sextant, root: HTMLElement): () => void {
       const fresh = await sextant.resources.get({ ref });
       if (attempt !== reading) return;
       // The kind the context names, whatever the answer says (an object without apiVersion/kind).
-      show(viewOf(sextant, { apiVersion: `${ref.kind.group}/${ref.kind.version}`, kind: ref.kind.kind, ...fresh }));
+      drawn = { apiVersion: `${ref.kind.group}/${ref.kind.version}`, kind: ref.kind.kind, ...fresh };
+      show(viewOf(sextant, drawn));
     } catch (err) {
-      if (attempt === reading) show([ui.errorState(errorText(err))]);
+      if (attempt === reading) {
+        drawn = null;
+        show([ui.errorState(errorText(err))]);
+      }
     }
   };
 
   const follow = () => {
+    blocks.open = sextant.context.blocks;
+    const key = JSON.stringify(blocks.open ?? {});
+    const blocksChanged = key !== blocksKey;
+    blocksKey = key;
     const ref = sextant.context.selection[0];
     if (!ref) {
       show([ui.empty(t("common.nothingSelected"))]);
       return;
     }
-    const key = JSON.stringify([ref.kind.group, ref.kind.kind, ref.namespace, ref.name]);
-    if (key !== shownRef) {
-      shownRef = key;
+    const refKey = JSON.stringify([ref.kind.group, ref.kind.kind, ref.namespace, ref.name]);
+    if (refKey !== shownRef) {
+      shownRef = refKey;
       shownVersion = undefined;
+      drawn = null;
       show([ui.loading(t("loading"))]);
     }
     const version = sextant.context.resourceVersion;
-    if (version === shownVersion) return;
+    if (version === shownVersion) {
+      if (blocksChanged && drawn) show(viewOf(sextant, drawn));
+      return;
+    }
     shownVersion = version;
     void read(ref);
   };
   follow();
-  return sextant.onContextChange(follow);
+  const stop = sextant.onContextChange(follow);
+  return () => {
+    stop();
+    blocks.setOpen = () => undefined;
+  };
 }
