@@ -32,12 +32,25 @@ pub fn parse_fields(group: &str, kind: &str, fields: &[String]) -> Result<Fields
     let mut out = Vec::new();
     for field in fields {
         let field = field.trim();
-        let steps = parse_field_path(field).ok_or_else(|| {
-            invalid(format!(
-                "field {field:?} is not a path such as .status.phase, .spec.containers[0].image or \
-                 .metadata.labels[\"app\"] (no wildcards or filters)"
-            ))
-        })?;
+        // A projection reads one value per field: the grammar's `[*]` (a list of every item, #404) is no field here.
+        let steps = parse_field_path(field)
+            .filter(|steps| {
+                !steps.iter().any(|step| {
+                    matches!(
+                        step,
+                        PathStep::Match {
+                            pick: MatchPick::All,
+                            ..
+                        }
+                    )
+                })
+            })
+            .ok_or_else(|| {
+                invalid(format!(
+                    "field {field:?} is not a path such as .status.phase, .spec.containers[0].image or \
+                     .metadata.labels[\"app\"] (no wildcards or filters)"
+                ))
+            })?;
         if is_secret_data_path(group, kind, &steps) {
             return Err(invalid(format!(
                 "field {field:?} reads a Secret's values; get_secret_value reads one when the user allows it"
