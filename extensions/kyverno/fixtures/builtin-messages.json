@@ -1,0 +1,98 @@
+{
+  "de": {
+    "policyFailures_one": "{{count}} Richtlinienregel schlägt fehl: {{policies}}",
+    "policyFailures_other": "{{count}} Richtlinienregeln schlagen fehl: {{policies}}",
+    "policyErrors_one": "{{count}} Richtlinienregel konnte nicht ausgewertet werden: {{policies}}",
+    "policyErrors_other": "{{count}} Richtlinienregeln konnten nicht ausgewertet werden: {{policies}}"
+  },
+  "en": {
+    "policyFailures_one": "{{count}} policy rule fails: {{policies}}",
+    "policyFailures_other": "{{count}} policy rules fail: {{policies}}",
+    "policyErrors_one": "{{count}} policy rule could not be evaluated: {{policies}}",
+    "policyErrors_other": "{{count}} policy rules could not be evaluated: {{policies}}"
+  },
+  "es": {
+    "policyFailures_one": "{{count}} regla de política falla: {{policies}}",
+    "policyFailures_many": "{{count}} de reglas de política fallan: {{policies}}",
+    "policyFailures_other": "{{count}} reglas de política fallan: {{policies}}",
+    "policyErrors_one": "{{count}} regla de política no se pudo evaluar: {{policies}}",
+    "policyErrors_many": "{{count}} de reglas de política no se pudieron evaluar: {{policies}}",
+    "policyErrors_other": "{{count}} reglas de política no se pudieron evaluar: {{policies}}"
+  },
+  "fr": {
+    "policyFailures_one": "{{count}} règle de politique en échec : {{policies}}",
+    "policyFailures_many": "{{count}} de règles de politique en échec : {{policies}}",
+    "policyFailures_other": "{{count}} règles de politique en échec : {{policies}}",
+    "policyErrors_one": "{{count}} règle de politique n’a pas pu être évaluée : {{policies}}",
+    "policyErrors_many": "{{count}} de règles de politique n’ont pas pu être évaluées : {{policies}}",
+    "policyErrors_other": "{{count}} règles de politique n’ont pas pu être évaluées : {{policies}}"
+  },
+  "it": {
+    "policyFailures_one": "{{count}} regola di policy non rispettata: {{policies}}",
+    "policyFailures_many": "{{count}} di regole di policy non rispettate: {{policies}}",
+    "policyFailures_other": "{{count}} regole di policy non rispettate: {{policies}}",
+    "policyErrors_one": "{{count}} regola di policy non è stata valutata: {{policies}}",
+    "policyErrors_many": "{{count}} di regole di policy non sono state valutate: {{policies}}",
+    "policyErrors_other": "{{count}} regole di policy non sono state valutate: {{policies}}"
+  },
+  "ja": {
+    "policyFailures_other": "{{count}} 件のポリシールールが失敗：{{policies}}",
+    "policyErrors_other": "{{count}} 件のポリシールールを評価できませんでした：{{policies}}"
+  },
+  "ko": {
+    "policyFailures_other": "정책 규칙 {{count}}개 실패: {{policies}}",
+    "policyErrors_other": "정책 규칙 {{count}}개를 평가할 수 없음: {{policies}}"
+  },
+  "pl": {
+    "policyFailures_one": "{{count}} reguła zasad nie jest spełniona: {{policies}}",
+    "policyFailures_few": "{{count}} reguły zasad nie są spełnione: {{policies}}",
+    "policyFailures_many": "{{count}} reguł zasad nie jest spełnionych: {{policies}}",
+    "policyFailures_other": "{{count}} reguły zasad nie jest spełnione: {{policies}}",
+    "policyErrors_one": "{{count}} reguły zasad nie udało się ocenić: {{policies}}",
+    "policyErrors_few": "{{count}} reguł zasad nie udało się ocenić: {{policies}}",
+    "policyErrors_many": "{{count}} reguł zasad nie udało się ocenić: {{policies}}",
+    "policyErrors_other": "{{count}} reguły zasad nie udało się ocenić: {{policies}}"
+  },
+  "pt-BR": {
+    "policyFailures_one": "{{count}} regra de política falha: {{policies}}",
+    "policyFailures_many": "{{count}} de regras de política falham: {{policies}}",
+    "policyFailures_other": "{{count}} regras de política falham: {{policies}}",
+    "policyErrors_one": "{{count}} regra de política não pôde ser avaliada: {{policies}}",
+    "policyErrors_many": "{{count}} de regras de política não puderam ser avaliadas: {{policies}}",
+    "policyErrors_other": "{{count}} regras de política não puderam ser avaliadas: {{policies}}"
+  },
+  "ru": {
+    "policyFailures_one": "{{count}} правило политик не выполнено: {{policies}}",
+    "policyFailures_few": "{{count}} правила политик не выполнены: {{policies}}",
+    "policyFailures_many": "{{count}} правил политик не выполнено: {{policies}}",
+    "policyFailures_other": "{{count}} правила политик не выполнено: {{policies}}",
+    "policyErrors_one": "{{count}} правило политик не удалось проверить: {{policies}}",
+    "policyErrors_few": "{{count}} правила политик не удалось проверить: {{policies}}",
+    "policyErrors_many": "{{count}} правил политик не удалось проверить: {{policies}}",
+    "policyErrors_other": "{{count}} правила политик не удалось проверить: {{policies}}"
+  },
+  "tr": {
+    "policyFailures_one": "{{count}} ilke kuralı başarısız: {{policies}}",
+    "policyFailures_other": "{{count}} ilke kuralı başarısız: {{policies}}",
+    "policyErrors_one": "{{count}} ilke kuralı değerlendirilemedi: {{policies}}",
+    "policyErrors_other": "{{count}} ilke kuralı değerlendirilemedi: {{policies}}"
+  },
+  "uk": {
+    "policyFailures_one": "{{count}} правило політик не виконано: {{policies}}",
+    "policyFailures_few": "{{count}} правила політик не виконано: {{policies}}",
+    "policyFailures_many": "{{count}} правил політик не виконано: {{policies}}",
+    "policyFailures_other": "{{count}} правила політик не виконано: {{policies}}",
+    "policyErrors_one": "{{count}} правило політик не вдалося перевірити: {{policies}}",
+    "policyErrors_few": "{{count}} правила політик не вдалося перевірити: {{policies}}",
+    "policyErrors_many": "{{count}} правил політик не вдалося перевірити: {{policies}}",
+    "policyErrors_other": "{{count}} правила політик не вдалося перевірити: {{policies}}"
+  },
+  "zh-CN": {
+    "policyFailures_other": "{{count}} 条策略规则未通过：{{policies}}",
+    "policyErrors_other": "{{count}} 条策略规则无法评估：{{policies}}"
+  },
+  "zh-TW": {
+    "policyFailures_other": "{{count}} 條原則規則未通過：{{policies}}",
+    "policyErrors_other": "{{count}} 條原則規則無法評估：{{policies}}"
+  }
+}

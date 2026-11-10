@@ -98,6 +98,15 @@ describe("missing", () => {
     expect(judge([problem], context({ queues: rows([obj("gpu", { metadata: { name: "gpu", namespace: undefined, uid: "q2" } })]) }))).toEqual([]);
   });
 
+  it("is judged by the rule that found it, whatever group it notifies in (#409)", () => {
+    const grouped = { ...MISSING, group: "no-such-rule" };
+    const rules = new Map([[grouped.id, grouped]]);
+    const p = problemOf(grouped, local);
+    expect(p.group).toBe("no-such-rule");
+    const ctx = context({ queues: rows([obj("gpu", { metadata: { name: "gpu", namespace: undefined, uid: "q2" } })]) });
+    expect(judgeAcross([p], ctx, { rules, targets: TARGETS })).toEqual([]);
+  });
+
   it("is no problem while the list cannot tell: loading, failed, capped, not watched", () => {
     for (const queues of [
       undefined,

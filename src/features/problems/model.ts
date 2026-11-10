@@ -177,6 +177,8 @@ export interface Detected {
   messageLists?: Record<string, string[]>;
   /** When the state began (RFC 3339), if the object says. */
   since?: string;
+  /** The id of the extension rule that found it: a rule's `group` may name no rule (#409). */
+  rule?: string;
   /** An extension's rule with `missing` (ADR-0144): the objects that must not exist for the problem to stand. */
   lookups?: { group: string; kind: string; name: string; fact?: string }[];
   /** An extension's rule told through the owner (ADR-0144): the uid of the object's controller. */

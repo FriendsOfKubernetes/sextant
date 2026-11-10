@@ -119,7 +119,8 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
   };
 
   return problems.filter((p) => {
-    const rule = rules.get(p.group ?? "");
+    // By the rule that found it, never by its group: a group may name no rule, and then its lookups would be skipped.
+    const rule = rules.get(p.rule ?? p.group ?? "");
     if (!rule) return true;
     if (p.ownerUid !== undefined && context.problemUids().has(p.ownerUid)) return false;
     if (p.lookups && !missing(p)) return false;

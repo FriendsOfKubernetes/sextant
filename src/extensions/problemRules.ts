@@ -346,7 +346,8 @@ function clipped(whole: string, filters: readonly string[]): string | undefined 
   const at = marker === undefined ? -1 : whole.lastIndexOf(marker);
   if (marker !== undefined && at < 0) return undefined;
   const text = marker === undefined ? whole : whole.slice(at + marker.length);
-  if (text === "") return undefined;
+  // Only what follows a marker can come out empty and then be nothing: an empty value stays an empty text.
+  if (marker !== undefined && text === "") return undefined;
   const clips = filters.filter((f) => f.startsWith("clip:"));
   if (clips.length === 0) return text;
   const keep = Math.min(...clips.map((c) => Number(c.slice(5))));
@@ -472,6 +473,7 @@ export function detectRule(rule: ProblemContribution, obj: KubeObject, ctx: Rule
       reason: reason === "" ? (rule.reasonOr ?? rule.title) : Array.from(reason).slice(0, MAX_REASON_CHARS).join(""),
       // Rules of one group notify once per object (ADR-0161).
       group: rule.group ?? rule.id,
+      rule: rule.id,
       message: renderMessage(messageOf(rule, obj), obj),
       since: typeof since === "string" && timeOf(since) !== undefined ? since : undefined,
       graceMs: rule.graceMinutes > 0 ? rule.graceMinutes * MINUTE_MS : undefined,

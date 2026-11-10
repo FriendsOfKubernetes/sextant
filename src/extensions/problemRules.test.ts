@@ -386,6 +386,7 @@ describe("problem rules of extensions", () => {
       {
         reason: "Ceph health error",
         group: "health-error",
+        rule: "health-error",
         message: "HEALTH_ERR",
         since: "2026-10-30T09:00:00Z",
         graceMs: 5 * 60_000,

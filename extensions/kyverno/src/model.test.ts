@@ -290,7 +290,8 @@ describe("the problem rules, against the built-in category `policies`", () => {
 
 /** The built-in message (`messages.policyFailures`/`policyErrors` of Sextant's `problems` texts). */
 function builtInMessage(language: string, p: BuiltInProblem): string {
-  const texts = (JSON.parse(readFileSync(join(here, `../../../src/locales/${language}/problems.json`), "utf8")) as { messages: Record<string, string> }).messages;
+  // The built-in view's messages, as they were before it moved (copied, so the test never reads the core's texts).
+  const texts = (JSON.parse(readFileSync(join(here, "../fixtures/builtin-messages.json"), "utf8")) as Record<string, Record<string, string>>)[language]!;
   const key = p.messageKey.replace("messages.", "");
   const form = new Intl.PluralRules(language).select(p.count);
   const template = texts[`${key}_${form}`] ?? texts[`${key}_other`]!;
