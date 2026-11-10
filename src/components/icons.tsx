@@ -208,7 +208,7 @@ import {
   SquareSplitHorizontal as TraefikSplit,
   TrafficCone as TraefikCone,
 } from "lucide-react";
-// Contour (#233).
+// Contour (#233), named by Sextant's own extension `extensions/contour`.
 import {
   KeySquare as ContourKeySquare,
   Milestone as ContourMilestone,
@@ -330,7 +330,7 @@ import {
   Puzzle as OlmPuzzle,
   UsersRound as OlmUsersRound,
 } from "lucide-react";
-// OpenShift (#267).
+// OpenShift (#267), named by Sextant's own extension `extensions/openshift`.
 import {
   Construction as OsConstruction,
   FolderKanban as OsFolderKanban,
@@ -553,7 +553,7 @@ const ICONS = {
   traefikRoute: TraefikShuffle,
   traefikMiddleware: TraefikCombine,
   traefikService: TraefikSplit,
-  // Contour (#233).
+  // Contour (#233): the section and its kinds, named by Sextant's own extension `extensions/contour`.
   contour: ContourMountainSnow,
   contourProxy: ContourMilestone,
   contourDelegation: ContourKeySquare,
@@ -693,7 +693,7 @@ const ICONS = {
   olmOperator: OlmPuzzle,
   olmClusterExtension: OlmBadgeCheck,
   olmClusterCatalog: OlmLibrary,
-  // OpenShift (#267): the section and its kinds.
+  // OpenShift (#267): the section and its kinds, named by Sextant's own extension `extensions/openshift`.
   openshift: OsHexagon,
   openshiftRoute: OsSignpost,
   openshiftDeploymentConfig: OsRefreshCcwDot,

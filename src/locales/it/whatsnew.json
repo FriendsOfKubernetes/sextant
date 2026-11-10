@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Le viste degli strumenti del cluster ora sono estensioni",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe e Operator Lifecycle Manager sono passati da Sextant alle sue estensioni del catalogo delle estensioni, aggiornate separatamente. Installa qui sotto quelle che usi: fino ad allora le loro sezioni non sono mostrate. Le tue impostazioni di notifica per esse sono state mantenute, e la barra laterale le propone anche nei cluster che eseguono questi strumenti."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager e OpenShift sono passati da Sextant alle sue estensioni del catalogo delle estensioni, aggiornate separatamente. Installa qui sotto quelle che usi: fino ad allora le loro sezioni non sono mostrate. Le tue impostazioni di notifica per esse sono state mantenute, e la barra laterale le propone anche nei cluster che eseguono questi strumenti."
     },
     "api4": {
       "title": "API delle estensioni 4",
@@ -45,7 +45,9 @@
       "vpa": "VerticalPodAutoscaler con stato e raccomandazione e ciò che otterrebbe un nuovo pod, i loro checkpoint e componenti, e i VPA di ogni workload",
       "prometheus-operator": "ServiceMonitor, PodMonitor e Probe con ciò che selezionano, PrometheusRule, Prometheus e Alertmanager",
       "cluster-api": "Cluster con il loro stato, control plane, MachineDeployment, MachineSet e Machine fino ai Node del cluster workload, MachineHealthCheck e ClusterResourceSet",
-      "k3s": "La distribuzione con i suoi nodi, i componenti inclusi e ServiceLB, gli HelmChart con il loro Job di installazione, gli HelmChartConfig, gli Addon e gli snapshot di etcd"
+      "k3s": "La distribuzione con i suoi nodi, i componenti inclusi e ServiceLB, gli HelmChart con il loro Job di installazione, gli HelmChartConfig, gli Addon e gli snapshot di etcd",
+      "contour": "Gli HTTPProxy con il loro stato e il primo errore, host virtuale e TLS, le route con la quota di ogni servizio, gli include e l'albero di delega; TLSCertificateDelegation ed ExtensionService",
+      "openshift": "Le Route con la loro ammissione e i backend, i DeploymentConfig con i loro rollout, BuildConfig e Build con i loro log, ImageStream e Project; Rollout latest e Start build"
     }
   }
 }

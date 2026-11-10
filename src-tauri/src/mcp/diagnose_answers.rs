@@ -193,9 +193,7 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "gateway",
     "mesh",
     "traefik",
-    "contour",
     "crossplane",
-    "openshift",
     "reflector",
     "security",
     "practices",
@@ -220,13 +218,9 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "credentials",
     // Traefik references (#232): a window view of 0.20.0.
     "traefik",
-    // Contour proxies (#233): a window view of 0.20.0.
-    "contour",
     "crossplane",
     // Reflector mirrors (#241): a window view of 0.21.0.
     "reflector",
-    // OpenShift Routes, DeploymentConfigs, Builds and ImageStreams (#267): a window view of 0.25.0.
-    "openshift",
     // Firing alerts of Prometheus and Alertmanager (#264): a window view of 0.24.0.
     "alerts",
 ];

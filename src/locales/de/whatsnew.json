@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Ansichten von Cluster-Werkzeugen sind jetzt Erweiterungen",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe und Operator Lifecycle Manager sind aus Sextant in seine eigenen Erweiterungen aus dem Erweiterungskatalog gewandert, die eigenständig aktualisiert werden. Installieren Sie unten die, die Sie nutzen: bis dahin werden ihre Bereiche nicht angezeigt. Ihre Benachrichtigungseinstellungen dafür bleiben erhalten, und die Seitenleiste bietet sie auch in Clustern an, in denen diese Werkzeuge laufen."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager und OpenShift sind aus Sextant in seine eigenen Erweiterungen aus dem Erweiterungskatalog gewandert, die eigenständig aktualisiert werden. Installieren Sie unten die, die Sie nutzen: bis dahin werden ihre Bereiche nicht angezeigt. Ihre Benachrichtigungseinstellungen dafür bleiben erhalten, und die Seitenleiste bietet sie auch in Clustern an, in denen diese Werkzeuge laufen."
     },
     "api4": {
       "title": "Erweiterungs-API 4",
@@ -45,7 +45,9 @@
       "vpa": "VerticalPodAutoscaler mit Zustand und Empfehlung und dem, was ein neuer Pod bekäme, ihre Checkpoints und Komponenten sowie die VPAs jedes Workloads",
       "prometheus-operator": "ServiceMonitors, PodMonitors und Probes mit dem, was sie auswählen, PrometheusRules, Prometheus-Server und Alertmanager",
       "cluster-api": "Cluster mit ihrem Zustand, Control Planes, MachineDeployments, MachineSets und Machines bis zu den Nodes des Workload-Clusters, MachineHealthChecks und ClusterResourceSets",
-      "k3s": "Die Distribution mit ihren Knoten, mitgelieferten Komponenten und ServiceLB, HelmCharts mit ihrem Installations-Job, HelmChartConfigs, Addons und etcd-Snapshots"
+      "k3s": "Die Distribution mit ihren Knoten, mitgelieferten Komponenten und ServiceLB, HelmCharts mit ihrem Installations-Job, HelmChartConfigs, Addons und etcd-Snapshots",
+      "contour": "HTTPProxies mit ihrem Zustand und ersten Fehler, virtuellem Host und TLS, Routen mit dem Anteil jedes Services, Includes und dem Delegationsbaum; TLSCertificateDelegations und ExtensionServices",
+      "openshift": "Routes mit ihrer Zulassung und ihren Backends, DeploymentConfigs mit ihren Rollouts, BuildConfigs und Builds mit ihren Logs, ImageStreams und Projects; Rollout latest und Start build"
     }
   }
 }

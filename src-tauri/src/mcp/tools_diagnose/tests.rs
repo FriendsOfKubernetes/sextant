@@ -1124,3 +1124,22 @@ fn k3s_problems_are_never_given_to_agents() {
     assert_eq!(answers::moved_category(category), "ext:sextant.k3s");
     assert!(!answers::category_for_agents("ext:sextant.k3s", &[]));
 }
+
+/// Contour (#233) and OpenShift (#267) moved into Sextant's own extensions (ADR-0162 amendment): agents get none of
+/// their problems under the old names, nor the extensions' unless the user lets them (ADR-0146) — never by default.
+#[test]
+fn contour_and_openshift_problems_are_never_given_to_agents() {
+    for (category, extension) in [
+        ("contour", "ext:sextant.contour"),
+        ("openshift", "ext:sextant.openshift"),
+    ] {
+        assert!(!answers::PROBLEM_CATEGORIES.contains(&category));
+        assert!(!answers::OPT_IN_CATEGORIES.contains(&category));
+        assert!(!answers::category_for_agents(
+            category,
+            &[category.to_owned()]
+        ));
+        assert_eq!(answers::moved_category(category), extension);
+        assert!(!answers::category_for_agents(extension, &[]));
+    }
+}

@@ -1,4 +1,4 @@
-//! The two OpenShift actions of the window (#267, ADR-0120), each one POST to an `instantiate` subresource with the
+//! The two OpenShift actions (#267, ADR-0120), each one POST to an `instantiate` subresource with the
 //! body `oc` sends, built here from the object's name only:
 //!
 //! - "Rollout latest" — `oc rollout latest dc/<name>` (pkg/cli/rollout/latest.go in github.com/openshift/oc): refused
@@ -12,9 +12,10 @@
 //!   after the BuildConfig, `triggeredBy: [{message: "Manually triggered"}]` and the empty Docker and Source strategy
 //!   options `oc` always sets, to `buildconfigs/<name>/instantiate`.
 //!
-//! Sent once (a change is never repeated, ADR-0055). Window only: neither the MCP server nor the extension API offers
-//! them. The window shows the same bodies before the user confirms (`src/features/openshift/requests.ts`; a test on
-//! each side pins the text).
+//! Sent once (a change is never repeated, ADR-0055). The MCP server never offers them; the extension API reaches them
+//! only through `resources.instantiate` (ADR-0120 amendment), which Sextant's own extension `extensions/openshift`
+//! sends after a confirmation that shows the same bodies (`extensions/openshift/src/requests.ts`; a test on each side
+//! pins the text).
 
 use k8s_openapi::api::core::v1::ReplicationController;
 use kube::Api;
@@ -272,7 +273,7 @@ mod tests {
 
     #[test]
     fn the_bodies_are_what_oc_sends() {
-        // Kept equal to `src/features/openshift/requests.ts` (its test pins the same text).
+        // Kept equal to `extensions/openshift/src/requests.ts` (its test pins the same text).
         assert_eq!(
             serde_json::to_string(&deployment_request("frontend")).unwrap(),
             r#"{"apiVersion":"apps.openshift.io/v1","force":true,"kind":"DeploymentRequest","latest":true,"name":"frontend"}"#

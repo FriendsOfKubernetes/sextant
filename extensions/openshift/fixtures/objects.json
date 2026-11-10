@@ -1,0 +1,393 @@
+[
+  {
+    "apiVersion": "route.openshift.io/v1",
+    "kind": "Route",
+    "metadata": { "name": "frontend", "namespace": "shop", "uid": "r-frontend", "creationTimestamp": "2026-10-20T10:00:00Z", "labels": { "app": "frontend" } },
+    "spec": {
+      "host": "frontend-shop.apps.ocp.example.com",
+      "path": "/",
+      "to": { "kind": "Service", "name": "frontend", "weight": 100 },
+      "alternateBackends": [{ "kind": "Service", "name": "frontend-canary", "weight": 25 }],
+      "port": { "targetPort": "8080-tcp" },
+      "tls": {
+        "termination": "edge",
+        "insecureEdgeTerminationPolicy": "Redirect",
+        "certificate": "-----BEGIN CERTIFICATE-----\nMIIBszCCAVmgAwIBAgIUFIXTURECERT\n-----END CERTIFICATE-----\n",
+        "key": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAFIXTUREPRIVATEKEYDONOTSHOW\n-----END PRIVATE KEY-----\n",
+        "caCertificate": "-----BEGIN CERTIFICATE-----\nMIIBFIXTURECA\n-----END CERTIFICATE-----\n"
+      },
+      "wildcardPolicy": "None"
+    },
+    "status": {
+      "ingress": [
+        {
+          "host": "frontend-shop.apps.ocp.example.com",
+          "routerName": "default",
+          "routerCanonicalHostname": "router-default.apps.ocp.example.com",
+          "wildcardPolicy": "None",
+          "conditions": [{ "type": "Admitted", "status": "True", "lastTransitionTime": "2026-10-20T10:00:02Z" }]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "route.openshift.io/v1",
+    "kind": "Route",
+    "metadata": { "name": "api", "namespace": "shop", "uid": "r-api", "creationTimestamp": "2026-10-21T08:00:00Z" },
+    "spec": {
+      "host": "api.apps.ocp.example.com",
+      "to": { "kind": "Service", "name": "api", "weight": 100 },
+      "port": { "targetPort": 8443 },
+      "tls": { "termination": "passthrough", "insecureEdgeTerminationPolicy": "None" },
+      "wildcardPolicy": "None"
+    },
+    "status": {
+      "ingress": [
+        {
+          "host": "api.apps.ocp.example.com",
+          "routerName": "default",
+          "wildcardPolicy": "None",
+          "conditions": [
+            {
+              "type": "Admitted",
+              "status": "False",
+              "reason": "HostAlreadyClaimed",
+              "message": "route api-old already exposes api.apps.ocp.example.com and is older",
+              "lastTransitionTime": "2026-10-21T08:00:01Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "route.openshift.io/v1",
+    "kind": "Route",
+    "metadata": { "name": "internal", "namespace": "shop", "uid": "r-internal", "creationTimestamp": "2026-10-20T09:00:00Z" },
+    "spec": { "host": "internal.shard2.example.com", "to": { "kind": "Service", "name": "frontend", "weight": 100 }, "wildcardPolicy": "None" },
+    "status": {}
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": { "name": "frontend", "namespace": "shop", "uid": "s-frontend" },
+    "spec": {
+      "type": "ClusterIP",
+      "clusterIP": "172.30.10.20",
+      "selector": { "deploymentconfig": "frontend" },
+      "ports": [{ "name": "8080-tcp", "port": 8080, "protocol": "TCP", "targetPort": 8080 }]
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": { "name": "frontend-canary", "namespace": "shop", "uid": "s-canary" },
+    "spec": {
+      "type": "ClusterIP",
+      "clusterIP": "172.30.10.21",
+      "selector": { "deploymentconfig": "frontend-canary" },
+      "ports": [{ "name": "web", "port": 80, "protocol": "TCP", "targetPort": 8080 }]
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+      "name": "frontend-2-x7k2p",
+      "namespace": "shop",
+      "uid": "p-frontend",
+      "labels": { "deploymentconfig": "frontend", "deployment": "frontend-2" },
+      "annotations": { "openshift.io/deployment-config.name": "frontend", "openshift.io/deployment.name": "frontend-2" }
+    },
+    "spec": { "containers": [{ "name": "frontend", "image": "image-registry.openshift-image-registry.svc:5000/shop/frontend@sha256:4a1c", "ports": [{ "containerPort": 8080, "protocol": "TCP" }] }] },
+    "status": { "phase": "Running", "podIP": "10.128.2.14", "conditions": [{ "type": "Ready", "status": "True" }] }
+  },
+  {
+    "apiVersion": "discovery.k8s.io/v1",
+    "kind": "EndpointSlice",
+    "metadata": { "name": "frontend-abcde", "namespace": "shop", "labels": { "kubernetes.io/service-name": "frontend" } },
+    "addressType": "IPv4",
+    "endpoints": [{ "addresses": ["10.128.2.14"], "conditions": { "ready": true }, "targetRef": { "kind": "Pod", "name": "frontend-2-x7k2p", "namespace": "shop", "uid": "p-frontend" } }],
+    "ports": [{ "name": "8080-tcp", "port": 8080, "protocol": "TCP" }]
+  },
+  {
+    "apiVersion": "apps.openshift.io/v1",
+    "kind": "DeploymentConfig",
+    "metadata": { "name": "frontend", "namespace": "shop", "uid": "dc-frontend", "generation": 4, "creationTimestamp": "2026-10-19T09:00:00Z" },
+    "spec": {
+      "replicas": 1,
+      "selector": { "deploymentconfig": "frontend" },
+      "strategy": {
+        "type": "Rolling",
+        "rollingParams": { "updatePeriodSeconds": 1, "intervalSeconds": 1, "timeoutSeconds": 600, "maxUnavailable": "25%", "maxSurge": "25%" },
+        "resources": {}
+      },
+      "triggers": [
+        { "type": "ConfigChange" },
+        {
+          "type": "ImageChange",
+          "imageChangeParams": {
+            "automatic": true,
+            "containerNames": ["frontend"],
+            "from": { "kind": "ImageStreamTag", "namespace": "shop", "name": "frontend:latest" },
+            "lastTriggeredImage": "image-registry.openshift-image-registry.svc:5000/shop/frontend@sha256:4a1c"
+          }
+        }
+      ],
+      "template": { "metadata": { "labels": { "deploymentconfig": "frontend" } }, "spec": { "containers": [{ "name": "frontend", "image": " " }] } },
+      "test": false
+    },
+    "status": {
+      "latestVersion": 2,
+      "observedGeneration": 4,
+      "replicas": 1,
+      "updatedReplicas": 1,
+      "availableReplicas": 1,
+      "unavailableReplicas": 0,
+      "readyReplicas": 1,
+      "details": { "message": "image change", "causes": [{ "type": "ImageChange", "imageTrigger": { "from": { "kind": "DockerImage", "name": "image-registry.openshift-image-registry.svc:5000/shop/frontend@sha256:4a1c" } } }] },
+      "conditions": [
+        { "type": "Available", "status": "True", "lastUpdateTime": "2026-10-20T10:01:00Z", "lastTransitionTime": "2026-10-20T10:01:00Z", "message": "Deployment config has minimum availability." },
+        {
+          "type": "Progressing",
+          "status": "True",
+          "lastUpdateTime": "2026-10-20T10:01:30Z",
+          "lastTransitionTime": "2026-10-20T10:01:30Z",
+          "reason": "NewReplicationControllerAvailable",
+          "message": "replication controller \"frontend-2\" successfully rolled out"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "apps.openshift.io/v1",
+    "kind": "DeploymentConfig",
+    "metadata": { "name": "backend", "namespace": "shop", "uid": "dc-backend", "creationTimestamp": "2026-10-19T09:00:00Z" },
+    "spec": { "replicas": 2, "selector": { "deploymentconfig": "backend" }, "strategy": { "type": "Recreate", "recreateParams": { "timeoutSeconds": 600 } }, "triggers": [{ "type": "ConfigChange" }] },
+    "status": {
+      "latestVersion": 3,
+      "replicas": 2,
+      "updatedReplicas": 0,
+      "availableReplicas": 2,
+      "readyReplicas": 2,
+      "conditions": [
+        { "type": "Available", "status": "True", "lastTransitionTime": "2026-10-20T11:00:00Z", "message": "Deployment config has minimum availability." },
+        {
+          "type": "Progressing",
+          "status": "False",
+          "lastUpdateTime": "2026-10-21T12:10:00Z",
+          "lastTransitionTime": "2026-10-21T12:10:00Z",
+          "reason": "ProgressDeadlineExceeded",
+          "message": "replication controller \"backend-3\" has failed progressing"
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "ReplicationController",
+    "metadata": {
+      "name": "frontend-1",
+      "namespace": "shop",
+      "creationTimestamp": "2026-10-19T09:00:05Z",
+      "labels": { "app": "frontend", "openshift.io/deployment-config.name": "frontend" },
+      "annotations": { "openshift.io/deployment-config.latest-version": "1", "openshift.io/deployment-config.name": "frontend", "openshift.io/deployment.phase": "Complete", "openshift.io/deployer-pod.name": "frontend-1-deploy" },
+      "ownerReferences": [{ "apiVersion": "apps.openshift.io/v1", "kind": "DeploymentConfig", "name": "frontend", "uid": "dc-frontend", "controller": true, "blockOwnerDeletion": true }]
+    },
+    "spec": { "replicas": 0 },
+    "status": { "replicas": 0 }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "ReplicationController",
+    "metadata": {
+      "name": "frontend-2",
+      "namespace": "shop",
+      "creationTimestamp": "2026-10-20T10:00:05Z",
+      "labels": { "app": "frontend", "openshift.io/deployment-config.name": "frontend" },
+      "annotations": { "openshift.io/deployment-config.latest-version": "2", "openshift.io/deployment-config.name": "frontend", "openshift.io/deployment.phase": "Complete", "openshift.io/deployer-pod.name": "frontend-2-deploy" },
+      "ownerReferences": [{ "apiVersion": "apps.openshift.io/v1", "kind": "DeploymentConfig", "name": "frontend", "uid": "dc-frontend", "controller": true, "blockOwnerDeletion": true }]
+    },
+    "spec": { "replicas": 1 },
+    "status": { "replicas": 1, "readyReplicas": 1 }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "ReplicationController",
+    "metadata": {
+      "name": "backend-3",
+      "namespace": "shop",
+      "creationTimestamp": "2026-10-21T12:00:00Z",
+      "labels": { "openshift.io/deployment-config.name": "backend" },
+      "annotations": {
+        "openshift.io/deployment-config.latest-version": "3",
+        "openshift.io/deployment-config.name": "backend",
+        "openshift.io/deployment.phase": "Running",
+        "openshift.io/deployer-pod.name": "backend-3-deploy"
+      },
+      "ownerReferences": [{ "apiVersion": "apps.openshift.io/v1", "kind": "DeploymentConfig", "name": "backend", "uid": "dc-backend", "controller": true }]
+    },
+    "spec": { "replicas": 2 },
+    "status": { "replicas": 0 }
+  },
+  {
+    "apiVersion": "build.openshift.io/v1",
+    "kind": "BuildConfig",
+    "metadata": { "name": "ruby-ex", "namespace": "shop", "uid": "bc-ruby", "labels": { "app": "ruby-ex" } },
+    "spec": {
+      "runPolicy": "Serial",
+      "source": { "type": "Git", "git": { "uri": "https://builder:ghp_FIXTURETOKEN@github.com/sclorg/ruby-ex.git?ref=x", "ref": "master" }, "contextDir": "/", "sourceSecret": { "name": "github-clone" } },
+      "strategy": { "type": "Source", "sourceStrategy": { "from": { "kind": "ImageStreamTag", "namespace": "openshift", "name": "ruby:3.3-ubi9" }, "env": [{ "name": "GEM_TOKEN", "value": "envsecret" }] } },
+      "output": { "to": { "kind": "ImageStreamTag", "name": "ruby-ex:latest" } },
+      "triggers": [
+        { "type": "GitHub", "github": { "secret": "webhooksecret123" } },
+        { "type": "Generic", "generic": { "secretReference": { "name": "ruby-ex-generic-webhook" } } },
+        { "type": "ConfigChange" },
+        { "type": "ImageChange", "imageChange": { "lastTriggeredImageID": "image-registry.openshift-image-registry.svc:5000/openshift/ruby@sha256:9f1e" } }
+      ],
+      "successfulBuildsHistoryLimit": 5,
+      "failedBuildsHistoryLimit": 5
+    },
+    "status": { "lastVersion": 3 }
+  },
+  {
+    "apiVersion": "build.openshift.io/v1",
+    "kind": "Build",
+    "metadata": {
+      "name": "ruby-ex-2",
+      "namespace": "shop",
+      "uid": "b-ruby-2",
+      "creationTimestamp": "2026-10-21T10:00:00Z",
+      "labels": { "buildconfig": "ruby-ex", "openshift.io/build-config.name": "ruby-ex", "openshift.io/build.start-policy": "Serial" },
+      "annotations": { "openshift.io/build-config.name": "ruby-ex", "openshift.io/build.number": "2", "openshift.io/build.pod-name": "ruby-ex-2-build" }
+    },
+    "spec": {
+      "source": { "type": "Git", "git": { "uri": "https://builder:ghp_FIXTURETOKEN@github.com/sclorg/ruby-ex.git" } },
+      "strategy": { "type": "Source", "sourceStrategy": { "from": { "kind": "DockerImage", "name": "image-registry.openshift-image-registry.svc:5000/openshift/ruby@sha256:9f1e" } } },
+      "output": { "to": { "kind": "ImageStreamTag", "name": "ruby-ex:latest" } },
+      "triggeredBy": [{ "message": "Manually triggered" }]
+    },
+    "status": {
+      "phase": "Failed",
+      "reason": "FetchSourceFailed",
+      "message": "Failed to fetch the input source.",
+      "startTimestamp": "2026-10-21T10:00:05Z",
+      "completionTimestamp": "2026-10-21T10:00:35Z",
+      "duration": 30000000000,
+      "config": { "kind": "BuildConfig", "namespace": "shop", "name": "ruby-ex" },
+      "logSnippet": "Cloning \"https://github.com/sclorg/ruby-ex.git\" ...\nerror: failed to fetch requested repository",
+      "output": {}
+    }
+  },
+  {
+    "apiVersion": "build.openshift.io/v1",
+    "kind": "Build",
+    "metadata": {
+      "name": "ruby-ex-3",
+      "namespace": "shop",
+      "uid": "b-ruby-3",
+      "creationTimestamp": "2026-10-21T11:00:00Z",
+      "labels": { "buildconfig": "ruby-ex", "openshift.io/build-config.name": "ruby-ex" },
+      "annotations": { "openshift.io/build-config.name": "ruby-ex", "openshift.io/build.number": "3", "openshift.io/build.pod-name": "ruby-ex-3-build" }
+    },
+    "spec": {
+      "source": { "type": "Git", "git": { "uri": "https://github.com/sclorg/ruby-ex.git" } },
+      "revision": { "type": "Git", "git": { "commit": "c00ffee", "message": "Merge pull request #1" } },
+      "strategy": { "type": "Source", "sourceStrategy": { "from": { "kind": "DockerImage", "name": "image-registry.openshift-image-registry.svc:5000/openshift/ruby@sha256:9f1e" } } },
+      "output": { "to": { "kind": "ImageStreamTag", "name": "ruby-ex:latest" } },
+      "triggeredBy": [{ "message": "Image change" }]
+    },
+    "status": {
+      "phase": "Complete",
+      "startTimestamp": "2026-10-21T11:00:05Z",
+      "completionTimestamp": "2026-10-21T11:02:05Z",
+      "duration": 120000000000,
+      "config": { "kind": "BuildConfig", "namespace": "shop", "name": "ruby-ex" },
+      "outputDockerImageReference": "image-registry.openshift-image-registry.svc:5000/shop/ruby-ex:latest",
+      "output": { "to": { "imageDigest": "sha256:77aa" } }
+    }
+  },
+  {
+    "apiVersion": "build.openshift.io/v1",
+    "kind": "Build",
+    "metadata": {
+      "name": "nodejs-ex-1",
+      "namespace": "shop",
+      "uid": "b-node-1",
+      "creationTimestamp": "2026-10-21T12:00:00Z",
+      "labels": { "openshift.io/build-config.name": "nodejs-ex" },
+      "annotations": { "openshift.io/build-config.name": "nodejs-ex", "openshift.io/build.number": "1" }
+    },
+    "spec": { "strategy": { "type": "Docker", "dockerStrategy": {} }, "output": { "to": { "kind": "ImageStreamTag", "name": "nodejs-ex:latest" } } },
+    "status": { "phase": "Error", "reason": "PushImageToRegistryFailed", "message": "Failed to push the image to the registry.", "startTimestamp": "2026-10-21T12:00:03Z", "completionTimestamp": "2026-10-21T12:03:00Z", "config": { "kind": "BuildConfig", "namespace": "shop", "name": "nodejs-ex" } }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": { "name": "ruby-ex-3-build", "namespace": "shop", "uid": "p-build-3", "labels": { "openshift.io/build.name": "ruby-ex-3" }, "annotations": { "openshift.io/build.name": "ruby-ex-3" } },
+    "spec": { "initContainers": [{ "name": "git-clone" }, { "name": "manage-dockerfile" }], "containers": [{ "name": "sti-build" }] },
+    "status": { "phase": "Succeeded" }
+  },
+  {
+    "apiVersion": "image.openshift.io/v1",
+    "kind": "ImageStream",
+    "metadata": { "name": "frontend", "namespace": "shop", "uid": "is-frontend", "generation": 2 },
+    "spec": { "lookupPolicy": { "local": false }, "tags": [{ "name": "latest", "from": { "kind": "DockerImage", "name": "quay.io/acme/frontend:latest" }, "importPolicy": { "scheduled": true, "importMode": "Legacy" }, "referencePolicy": { "type": "Source" }, "generation": 2 }] },
+    "status": {
+      "dockerImageRepository": "image-registry.openshift-image-registry.svc:5000/shop/frontend",
+      "publicDockerImageRepository": "default-route-openshift-image-registry.apps.ocp.example.com/shop/frontend",
+      "tags": [
+        {
+          "tag": "latest",
+          "items": [
+            { "created": "2026-10-20T09:58:00Z", "dockerImageReference": "quay.io/acme/frontend@sha256:4a1c0f0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a", "image": "sha256:4a1c0f0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a", "generation": 2 },
+            { "created": "2026-10-19T08:58:00Z", "dockerImageReference": "quay.io/acme/frontend@sha256:11aa", "image": "sha256:11aa", "generation": 1 }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "apiVersion": "image.openshift.io/v1",
+    "kind": "ImageStream",
+    "metadata": { "name": "legacy-db", "namespace": "shop", "uid": "is-legacy", "generation": 3 },
+    "spec": {
+      "lookupPolicy": { "local": true },
+      "tags": [
+        { "name": "10", "from": { "kind": "DockerImage", "name": "registry.example.com/db/legacy:10" }, "importPolicy": {}, "referencePolicy": { "type": "Source" }, "generation": 3 },
+        { "name": "11", "from": { "kind": "DockerImage", "name": "registry.example.com/db/legacy:11" }, "importPolicy": {}, "referencePolicy": { "type": "Local" }, "generation": 3 }
+      ]
+    },
+    "status": {
+      "dockerImageRepository": "image-registry.openshift-image-registry.svc:5000/shop/legacy-db",
+      "tags": [
+        {
+          "tag": "10",
+          "items": null,
+          "conditions": [
+            {
+              "type": "ImportSuccess",
+              "status": "False",
+              "lastTransitionTime": "2026-10-21T07:00:00Z",
+              "reason": "NotFound",
+              "message": "dockerimage.image.openshift.io \"registry.example.com/db/legacy:10\" not found",
+              "generation": 3
+            }
+          ]
+        },
+        { "tag": "11", "items": [{ "created": "2026-10-01T00:00:00Z", "dockerImageReference": "registry.example.com/db/legacy@sha256:bb22", "image": "sha256:bb22", "generation": 3 }] }
+      ]
+    }
+  },
+  {
+    "apiVersion": "project.openshift.io/v1",
+    "kind": "Project",
+    "metadata": {
+      "name": "shop",
+      "uid": "pr-shop",
+      "annotations": { "openshift.io/display-name": "Web shop", "openshift.io/description": "The shop's frontend and backend", "openshift.io/requester": "alice", "openshift.io/node-selector": "" }
+    },
+    "spec": { "finalizers": ["kubernetes"] },
+    "status": { "phase": "Active" }
+  }
+]

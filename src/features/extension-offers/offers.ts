@@ -23,6 +23,7 @@ export const OFFERS: readonly ExtensionOffer[] = [
   { id: "sextant.argo-workflows", tool: "Argo Workflows", matches: (k) => k.group === "argoproj.io" && k.kind === "Workflow" },
   { id: "sextant.vpa", tool: "Vertical Pod Autoscaler", matches: (k) => k.group === "autoscaling.k8s.io" && k.kind === "VerticalPodAutoscaler" },
   { id: "sextant.velero", tool: "Velero", matches: (k) => k.group === "velero.io" },
+  { id: "sextant.contour", tool: "Contour", matches: (k) => k.group === "projectcontour.io" },
   { id: "sextant.knative", tool: "Knative", matches: (k) => k.group === "serving.knative.dev" || k.group === "eventing.knative.dev" },
   { id: "sextant.kyverno", tool: "Kyverno", matches: (k) => k.group === "kyverno.io" },
   { id: "sextant.external-secrets", tool: "External Secrets", matches: (k) => k.group === "external-secrets.io" },
@@ -45,6 +46,8 @@ export const OFFERS: readonly ExtensionOffer[] = [
     tool: "Operator Lifecycle Manager",
     matches: (k) => (k.group === "operators.coreos.com" && k.kind === "Subscription") || k.group === "olm.operatorframework.io",
   },
+  // OpenShift: by its Routes or DeploymentConfigs (its other groups come with them).
+  { id: "sextant.openshift", tool: "OpenShift", matches: (k) => k.group === "route.openshift.io" || k.group === "apps.openshift.io" },
 ];
 
 /** The offers for a cluster serving `kinds`: its tool is there, the extension is not installed, nor declined. */

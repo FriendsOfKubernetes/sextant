@@ -28,11 +28,3 @@ export function Age({ timestamp, now = Date.now() }: { timestamp: string | null 
     </time>
   );
 }
-
-/** A duration in the largest whole unit, as ages are shown ("45s", "3m", "2h"); nothing without one. */
-export function DurationText({ ms }: { ms: number | undefined }) {
-  const { t } = useTranslation();
-  if (ms === undefined) return null;
-  const { unit, count } = ageParts(ms);
-  return <>{t(`common:age.${unit}`, { count })}</>;
-}

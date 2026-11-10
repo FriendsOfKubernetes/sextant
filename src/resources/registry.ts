@@ -54,10 +54,7 @@ export type BuiltInActionId =
   | "diagnose"
   // Copy namespace/name (src/features/copy-name), offered for every kind through `extendActionsForAll`
   | "copyNamespacedName"
-  | "copyName"
-  // OpenShift (src/features/openshift): `oc rollout latest` of a DeploymentConfig, `oc start-build` of a BuildConfig
-  | "openshiftRolloutLatest"
-  | "openshiftStartBuild";
+  | "copyName";
 
 /** What a cell renderer gets besides the object. */
 export interface CellContext {
@@ -147,9 +144,7 @@ export const SIDEBAR_SECTIONS = [
   "istio",
   "linkerd",
   "traefik",
-  "contour",
   "crossplane",
-  "openshift",
   "customResources",
 ] as const;
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
@@ -165,8 +160,11 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
   ["argocd", "volumeSnapshots"],
   ["argoRollouts", "volumeSnapshots"],
   ["argoWorkflows", "volumeSnapshots"],
-  ["knative", "contour"],
-  ["knativeEventing", "contour"],
+  // Contour came after Traefik, Knative's two sections after Contour: all are extension sections now, so they hang off
+  // `traefik`, in this order.
+  ["contour", "traefik"],
+  ["knative", "traefik"],
+  ["knativeEventing", "traefik"],
   ["kyverno", "crossplane"],
   ["externalSecrets", "crossplane"],
   ["sealedSecrets", "crossplane"],
@@ -185,6 +183,8 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
   ["kuberay", "crossplane"],
   ["kserve", "crossplane"],
   ["olm", "crossplane"],
+  // OpenShift came after the sections above, before "Custom Resources".
+  ["openshift", "crossplane"],
 ];
 
 /**
@@ -202,9 +202,7 @@ export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarS
   "istio",
   "linkerd",
   "traefik",
-  "contour",
   "crossplane",
-  "openshift",
 ]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
@@ -228,9 +226,7 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   istio: "istio",
   linkerd: "linkerd",
   traefik: "traefik",
-  contour: "contour",
   crossplane: "crossplane",
-  openshift: "openshift",
   customResources: "customResources",
   settings: "settings",
 };

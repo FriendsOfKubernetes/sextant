@@ -671,17 +671,6 @@ export const reflector = {
 };
 
 /**
- * OpenShift's actions (#267, ADR-0120), window only: one POST each to an `instantiate` subresource with the body `oc`
- * sends, built by the core from the object's name. `rolloutLatest` (`oc rollout latest`) returns the new
- * ReplicationController and refuses a paused DeploymentConfig or one still rolling out; `startBuild` (`oc start-build`)
- * returns the new Build. Agents and extensions have no such call.
- */
-export const openshift = {
-  rolloutLatest: (clusterId: ClusterId, ref: ObjectRef) => call<ObjectRef>("openshift_rollout_latest", { clusterId, ref }),
-  startBuild: (clusterId: ClusterId, ref: ObjectRef) => call<ObjectRef>("openshift_start_build", { clusterId, ref }),
-};
-
-/**
  * Kubeconfig management (#150), window only: changes to kubeconfig files in two steps (`editPreview`, then
  * `editApply` with the preview's `base`; a file changed meanwhile is a `conflict`), credential expiry, and the checks of
  * a kubeconfig being added. Nothing of a credential comes back. Agents and extensions have no such call.

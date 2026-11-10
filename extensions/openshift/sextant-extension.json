@@ -1,0 +1,3346 @@
+{
+ "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+ "id": "sextant.openshift",
+ "name": "OpenShift",
+ "version": "1.0.0",
+ "description": "OpenShift's Routes with their admission and backends, DeploymentConfigs with their rollouts and triggers, BuildConfigs with their builds, Builds with their failure and pod logs, ImageStreams with their tags and Projects, with Rollout latest and Start build; problems of Routes no router admitted, failed rollouts, recent failed Builds and failing imports.",
+ "author": "Sextant",
+ "sextantApi": 4,
+ "entry": "index.html",
+ "icon": "openshift",
+ "permissions": {
+  "clusters": {
+   "type": "all"
+  },
+  "rules": [
+   {
+    "namespaces": {
+     "type": "all"
+    },
+    "kinds": {
+     "type": "only",
+     "kinds": [
+      {
+       "group": "route.openshift.io",
+       "kind": "Route"
+      },
+      {
+       "group": "apps.openshift.io",
+       "kind": "DeploymentConfig"
+      },
+      {
+       "group": "build.openshift.io",
+       "kind": "BuildConfig"
+      },
+      {
+       "group": "build.openshift.io",
+       "kind": "Build"
+      },
+      {
+       "group": "image.openshift.io",
+       "kind": "ImageStream"
+      },
+      {
+       "group": "project.openshift.io",
+       "kind": "Project"
+      },
+      {
+       "group": "",
+       "kind": "ReplicationController"
+      },
+      {
+       "group": "",
+       "kind": "Service"
+      },
+      {
+       "group": "",
+       "kind": "Pod"
+      }
+     ]
+    },
+    "actions": [
+     "read"
+    ]
+   },
+   {
+    "namespaces": {
+     "type": "all"
+    },
+    "kinds": {
+     "type": "only",
+     "kinds": [
+      {
+       "group": "apps.openshift.io",
+       "kind": "DeploymentConfig"
+      },
+      {
+       "group": "build.openshift.io",
+       "kind": "BuildConfig"
+      }
+     ]
+    },
+    "actions": [
+     "modify"
+    ],
+    "confirm": false
+   },
+   {
+    "namespaces": {
+     "type": "all"
+    },
+    "kinds": {
+     "type": "only",
+     "kinds": [
+      {
+       "group": "",
+       "kind": "Pod"
+      }
+     ]
+    },
+    "actions": [
+     "logs"
+    ]
+   }
+  ]
+ },
+ "contributes": {
+  "kinds": [
+   {
+    "group": "route.openshift.io",
+    "kind": "Route",
+    "section": "openshift",
+    "title": "Routes",
+    "icon": "openshiftRoute",
+    "order": 10,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "all",
+     "of": [
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "above",
+        "path": ".status.ingress[*].conditions[type=\"Admitted\",status=\"True\"]|count",
+        "value": 0
+       }
+      }
+     ]
+    }
+   },
+   {
+    "group": "apps.openshift.io",
+    "kind": "DeploymentConfig",
+    "section": "openshift",
+    "title": "Deployment Configs",
+    "icon": "openshiftDeploymentConfig",
+    "order": 20,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "all",
+     "of": [
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".spec.paused",
+          "value": true
+         }
+        },
+        {
+         "type": "any",
+         "of": [
+          {
+           "type": "in",
+           "path": ".status.conditions[type=\"Progressing\"].reason",
+           "values": [
+            "ProgressDeadlineExceeded",
+            "ReplicationControllerCreateError"
+           ]
+          },
+          {
+           "type": "condition",
+           "conditionType": "ReplicaFailure",
+           "status": "True"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   },
+   {
+    "group": "build.openshift.io",
+    "kind": "BuildConfig",
+    "section": "openshift",
+    "title": "Build Configs",
+    "icon": "openshiftBuildConfig",
+    "order": 30,
+    "printerColumns": false
+   },
+   {
+    "group": "build.openshift.io",
+    "kind": "Build",
+    "section": "openshift",
+    "title": "Builds",
+    "icon": "openshiftBuild",
+    "order": 40,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "in",
+     "path": ".status.phase",
+     "values": [
+      "Failed",
+      "Error"
+     ]
+    }
+   },
+   {
+    "group": "image.openshift.io",
+    "kind": "ImageStream",
+    "section": "openshift",
+    "title": "Image Streams",
+    "icon": "openshiftImageStream",
+    "order": 50,
+    "printerColumns": false,
+    "problemWhen": {
+     "type": "all",
+     "of": [
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "exists",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\"]"
+      }
+     ]
+    }
+   },
+   {
+    "group": "project.openshift.io",
+    "kind": "Project",
+    "section": "openshift",
+    "title": "Projects",
+    "icon": "openshiftProject",
+    "order": 60,
+    "printerColumns": false
+   }
+  ],
+  "sections": [
+   {
+    "section": "openshift",
+    "title": "OpenShift",
+    "icon": "openshift",
+    "after": "olm"
+   }
+  ],
+  "detailsSections": [
+   {
+    "id": "openshift",
+    "title": "OpenShift",
+    "kinds": [
+     {
+      "group": "route.openshift.io",
+      "kind": "Route"
+     },
+     {
+      "group": "apps.openshift.io",
+      "kind": "DeploymentConfig"
+     },
+     {
+      "group": "build.openshift.io",
+      "kind": "BuildConfig"
+     },
+     {
+      "group": "build.openshift.io",
+      "kind": "Build"
+     },
+     {
+      "group": "image.openshift.io",
+      "kind": "ImageStream"
+     },
+     {
+      "group": "project.openshift.io",
+      "kind": "Project"
+     }
+    ],
+    "placement": "section",
+    "order": 20,
+    "heading": false
+   }
+  ],
+  "actions": [
+   {
+    "id": "rollout-latest",
+    "title": "Rollout latest",
+    "icon": "restart",
+    "kinds": [
+     {
+      "group": "apps.openshift.io",
+      "kind": "DeploymentConfig"
+     }
+    ],
+    "placement": "primary"
+   },
+   {
+    "id": "start-build",
+    "title": "Start build",
+    "icon": "trigger",
+    "kinds": [
+     {
+      "group": "build.openshift.io",
+      "kind": "BuildConfig"
+     }
+    ],
+    "placement": "primary"
+   }
+  ],
+  "columns": [
+   {
+    "kind": {
+     "group": "route.openshift.io",
+     "kind": "Route"
+    },
+    "id": "route-status",
+    "title": "Status",
+    "afterColumn": "namespace",
+    "width": "110px",
+    "paths": [
+     ".metadata.name"
+    ],
+    "filterBy": "value",
+    "cases": [
+     {
+      "when": {
+       "type": "above",
+       "path": ".status.ingress[*].conditions[type=\"Admitted\",status=\"True\"]|count",
+       "value": 0
+      },
+      "text": "Admitted",
+      "tone": "ok",
+      "value": "admitted",
+      "tooltip": "{{.status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"].message}}",
+      "tooltipOr": [
+       "{{.status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"].reason}}"
+      ]
+     },
+     {
+      "when": {
+       "type": "exists",
+       "path": ".status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"]"
+      },
+      "text": "Rejected",
+      "tone": "error",
+      "value": "rejected",
+      "tooltip": "{{.status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"].message}}",
+      "tooltipOr": [
+       "{{.status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"].reason}}"
+      ]
+     },
+     {
+      "when": {
+       "type": "exists",
+       "path": ".metadata.name"
+      },
+      "text": "Not admitted",
+      "tone": "warning",
+      "value": "pending",
+      "tooltip": "{{.status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"].message}}",
+      "tooltipOr": [
+       "{{.status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"].reason}}"
+      ]
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "route.openshift.io",
+     "kind": "Route"
+    },
+    "id": "route-host",
+    "title": "Host",
+    "afterColumn": "route-status",
+    "width": "minmax(180px, 2fr)",
+    "paths": [
+     ".spec.host"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".spec.host",
+         "nonEmpty": true
+        },
+        {
+         "type": "exists",
+         "path": ".spec.path"
+        }
+       ]
+      },
+      "text": "{{.spec.host}}{{.spec.path}}",
+      "value": "{{.spec.host}}{{.spec.path}}"
+     },
+     {
+      "when": {
+       "type": "exists",
+       "path": ".spec.host",
+       "nonEmpty": true
+      },
+      "text": "{{.spec.host}}",
+      "value": "{{.spec.host}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".status.ingress[host!=\"\"].host",
+         "nonEmpty": true
+        },
+        {
+         "type": "exists",
+         "path": ".spec.path"
+        }
+       ]
+      },
+      "text": "{{.status.ingress[host!=\"\"].host}}{{.spec.path}}",
+      "value": "{{.status.ingress[host!=\"\"].host}}{{.spec.path}}"
+     },
+     {
+      "when": {
+       "type": "exists",
+       "path": ".status.ingress[host!=\"\"].host",
+       "nonEmpty": true
+      },
+      "text": "{{.status.ingress[host!=\"\"].host}}",
+      "value": "{{.status.ingress[host!=\"\"].host}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "route.openshift.io",
+     "kind": "Route"
+    },
+    "id": "route-services",
+    "title": "Services",
+    "afterColumn": "route-host",
+    "width": "minmax(140px, 1.5fr)",
+    "paths": [
+     ".spec.to.name"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".spec.to.name",
+         "nonEmpty": true
+        },
+        {
+         "type": "above",
+         "path": ".spec.alternateBackends[*].name|count",
+         "value": 0
+        }
+       ]
+      },
+      "text": "{{.spec.to.name}}, {{.spec.alternateBackends[*].name|list}}",
+      "value": "{{.spec.to.name}}, {{.spec.alternateBackends[*].name|join}}"
+     },
+     {
+      "when": {
+       "type": "exists",
+       "path": ".spec.to.name",
+       "nonEmpty": true
+      },
+      "text": "{{.spec.to.name}}",
+      "value": "{{.spec.to.name}}"
+     },
+     {
+      "when": {
+       "type": "above",
+       "path": ".spec.alternateBackends[*].name|count",
+       "value": 0
+      },
+      "text": "{{.spec.alternateBackends[*].name|list}}",
+      "value": "{{.spec.alternateBackends[*].name|join}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "route.openshift.io",
+     "kind": "Route"
+    },
+    "id": "route-tls",
+    "title": "TLS",
+    "afterColumn": "route-services",
+    "width": "100px",
+    "paths": [
+     ".spec.tls.termination"
+    ]
+   },
+   {
+    "kind": {
+     "group": "apps.openshift.io",
+     "kind": "DeploymentConfig"
+    },
+    "id": "dc-status",
+    "title": "Status",
+    "afterColumn": "namespace",
+    "width": "120px",
+    "paths": [
+     ".metadata.name"
+    ],
+    "filterBy": "value",
+    "cases": [
+     {
+      "when": {
+       "type": "equals",
+       "path": ".spec.paused",
+       "value": true
+      },
+      "text": "Paused",
+      "tone": "muted",
+      "value": "paused",
+      "tooltip": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+      "tooltipOr": [
+       "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}"
+      ]
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".spec.paused",
+          "value": true
+         }
+        },
+        {
+         "type": "any",
+         "of": [
+          {
+           "type": "in",
+           "path": ".status.conditions[type=\"Progressing\"].reason",
+           "values": [
+            "ProgressDeadlineExceeded",
+            "ReplicationControllerCreateError"
+           ]
+          },
+          {
+           "type": "condition",
+           "conditionType": "ReplicaFailure",
+           "status": "True"
+          }
+         ]
+        }
+       ]
+      },
+      "text": "Failed",
+      "tone": "error",
+      "value": "failed",
+      "tooltip": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+      "tooltipOr": [
+       "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}"
+      ]
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.conditions[type=\"Progressing\"].reason",
+       "value": "RolloutCancelled"
+      },
+      "text": "Cancelled",
+      "tone": "muted",
+      "value": "cancelled",
+      "tooltip": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+      "tooltipOr": [
+       "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}"
+      ]
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
+        {
+         "type": "condition",
+         "conditionType": "Progressing",
+         "status": "True"
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "equals",
+          "path": ".status.conditions[type=\"Progressing\"].reason",
+          "value": "NewReplicationControllerAvailable"
+         }
+        }
+       ]
+      },
+      "text": "Rolling out",
+      "tone": "warning",
+      "value": "progressing",
+      "tooltip": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+      "tooltipOr": [
+       "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}"
+      ]
+     },
+     {
+      "when": {
+       "type": "condition",
+       "conditionType": "Available",
+       "status": "True"
+      },
+      "text": "Available",
+      "tone": "ok",
+      "value": "available",
+      "tooltip": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+      "tooltipOr": [
+       "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}"
+      ]
+     },
+     {
+      "when": {
+       "type": "condition",
+       "conditionType": "Available",
+       "status": "False"
+      },
+      "text": "Unavailable",
+      "tone": "warning",
+      "value": "unavailable",
+      "tooltip": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+      "tooltipOr": [
+       "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}"
+      ]
+     },
+     {
+      "when": {
+       "type": "any",
+       "of": [
+        {
+         "type": "equals",
+         "path": ".status.latestVersion",
+         "value": 0
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "above",
+          "path": ".status.latestVersion",
+          "value": -1e+308
+         }
+        }
+       ]
+      },
+      "text": "Not deployed",
+      "tone": "muted",
+      "value": "new",
+      "tooltip": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+      "tooltipOr": [
+       "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}"
+      ]
+     },
+     {
+      "when": {
+       "type": "exists",
+       "path": ".metadata.name"
+      },
+      "text": "Rolling out",
+      "tone": "warning",
+      "value": "progressing",
+      "tooltip": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+      "tooltipOr": [
+       "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}"
+      ]
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "apps.openshift.io",
+     "kind": "DeploymentConfig"
+    },
+    "id": "dc-ready",
+    "title": "Ready",
+    "afterColumn": "dc-status",
+    "width": "80px",
+    "paths": [
+     ".spec.replicas"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "exists",
+       "path": ".metadata.name"
+      },
+      "text": "{{.status.readyReplicas ?? 0}}/{{.spec.replicas ?? 0}}",
+      "value": "{{.status.readyReplicas ?? 0}}/{{.spec.replicas ?? 0}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "apps.openshift.io",
+     "kind": "DeploymentConfig"
+    },
+    "id": "dc-latest-version",
+    "title": "Version",
+    "afterColumn": "dc-ready",
+    "width": "80px",
+    "paths": [
+     ".status.latestVersion"
+    ],
+    "format": "number",
+    "cases": [
+     {
+      "when": {
+       "type": "absent",
+       "path": ".status.latestVersion"
+      },
+      "text": "0",
+      "value": 0
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "apps.openshift.io",
+     "kind": "DeploymentConfig"
+    },
+    "id": "dc-triggers",
+    "title": "Triggers",
+    "afterColumn": "dc-latest-version",
+    "width": "minmax(140px, 1fr)",
+    "paths": [
+     ".spec.triggers[*].type"
+    ],
+    "format": "list",
+    "separator": ", "
+   },
+   {
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "BuildConfig"
+    },
+    "id": "bc-strategy",
+    "title": "Strategy",
+    "afterColumn": "namespace",
+    "width": "110px",
+    "paths": [
+     ".spec.strategy.type"
+    ]
+   },
+   {
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "BuildConfig"
+    },
+    "id": "bc-source",
+    "title": "Source",
+    "afterColumn": "bc-strategy",
+    "width": "minmax(180px, 2fr)",
+    "paths": [
+     ".spec.source.git.uri",
+     ".spec.source.type"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "exists",
+       "path": ".spec.source.git.uri",
+       "nonEmpty": true
+      },
+      "text": "{{.spec.source.git.uri}}",
+      "value": "{{.spec.source.git.uri}}"
+     },
+     {
+      "when": {
+       "type": "exists",
+       "path": ".spec.source.type",
+       "nonEmpty": true
+      },
+      "text": "{{.spec.source.type}}",
+      "value": "{{.spec.source.type}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "BuildConfig"
+    },
+    "id": "bc-output",
+    "title": "Output",
+    "afterColumn": "bc-source",
+    "width": "minmax(140px, 1fr)",
+    "paths": [
+     ".spec.output.to.name"
+    ]
+   },
+   {
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "BuildConfig"
+    },
+    "id": "bc-last-version",
+    "title": "Last build",
+    "afterColumn": "bc-output",
+    "width": "80px",
+    "paths": [
+     ".status.lastVersion"
+    ],
+    "format": "number"
+   },
+   {
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "BuildConfig"
+    },
+    "id": "bc-triggers",
+    "title": "Triggers",
+    "afterColumn": "bc-last-version",
+    "width": "minmax(120px, 1fr)",
+    "paths": [
+     ".spec.triggers[*].type"
+    ],
+    "format": "list",
+    "separator": ", "
+   },
+   {
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "Build"
+    },
+    "id": "build-status",
+    "title": "Status",
+    "afterColumn": "namespace",
+    "width": "100px",
+    "paths": [
+     ".status.phase"
+    ],
+    "tones": {
+     "Complete": "ok",
+     "Failed": "error",
+     "Error": "error",
+     "Cancelled": "muted",
+     "*": "warning"
+    },
+    "cases": [
+     {
+      "when": {
+       "type": "exists",
+       "path": ".status.phase",
+       "nonEmpty": true
+      },
+      "text": "{{.status.phase}}",
+      "value": "{{.status.phase}}",
+      "tooltip": "{{.status.message}}",
+      "tooltipOr": [
+       "{{.status.reason}}"
+      ]
+     },
+     {
+      "when": {
+       "type": "exists",
+       "path": ".metadata.name"
+      },
+      "text": "New",
+      "value": "New",
+      "tooltip": "{{.status.message}}",
+      "tooltipOr": [
+       "{{.status.reason}}"
+      ]
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "Build"
+    },
+    "id": "build-config",
+    "title": "Build config",
+    "afterColumn": "build-status",
+    "width": "minmax(140px, 1fr)",
+    "paths": [
+     ".status.config.name"
+    ],
+    "cases": [
+     {
+      "when": {
+       "type": "exists",
+       "path": ".metadata.name"
+      },
+      "text": "{{.status.config.name ?? .metadata.annotations[\"openshift.io/build-config.name\"] ?? .metadata.labels[\"openshift.io/build-config.name\"]}}",
+      "value": "{{.status.config.name ?? .metadata.annotations[\"openshift.io/build-config.name\"] ?? .metadata.labels[\"openshift.io/build-config.name\"]}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "Build"
+    },
+    "id": "build-strategy",
+    "title": "Strategy",
+    "afterColumn": "build-config",
+    "width": "100px",
+    "paths": [
+     ".spec.strategy.type"
+    ]
+   },
+   {
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "Build"
+    },
+    "id": "build-duration",
+    "title": "Duration",
+    "afterColumn": "build-strategy",
+    "width": "90px",
+    "paths": [
+     ".status.startTimestamp"
+    ],
+    "format": "duration",
+    "endPaths": [
+     ".status.completionTimestamp"
+    ]
+   },
+   {
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "Build"
+    },
+    "id": "build-started",
+    "title": "Started",
+    "afterColumn": "build-duration",
+    "width": "100px",
+    "paths": [
+     ".status.startTimestamp"
+    ],
+    "format": "age"
+   },
+   {
+    "kind": {
+     "group": "image.openshift.io",
+     "kind": "ImageStream"
+    },
+    "id": "is-tags",
+    "title": "Tags",
+    "afterColumn": "namespace",
+    "width": "minmax(140px, 1.5fr)",
+    "paths": [
+     ".spec.tags[*].name",
+     ".status.tags[*].tag"
+    ],
+    "format": "list",
+    "joinPaths": true,
+    "separator": ", "
+   },
+   {
+    "kind": {
+     "group": "image.openshift.io",
+     "kind": "ImageStream"
+    },
+    "id": "is-imports",
+    "title": "Imports",
+    "afterColumn": "is-tags",
+    "width": "130px",
+    "paths": [
+     ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]"
+    ],
+    "format": "count",
+    "cases": [
+     {
+      "when": {
+       "type": "not",
+       "of": {
+        "type": "above",
+        "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+        "value": 0
+       }
+      },
+      "text": "",
+      "value": 0
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 1
+      },
+      "text": "1 import fails",
+      "tone": "error",
+      "value": 1
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 2
+      },
+      "text": "2 imports fail",
+      "tone": "error",
+      "value": 2
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 3
+      },
+      "text": "3 imports fail",
+      "tone": "error",
+      "value": 3
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 4
+      },
+      "text": "4 imports fail",
+      "tone": "error",
+      "value": 4
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 5
+      },
+      "text": "5 imports fail",
+      "tone": "error",
+      "value": 5
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 6
+      },
+      "text": "6 imports fail",
+      "tone": "error",
+      "value": 6
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 7
+      },
+      "text": "7 imports fail",
+      "tone": "error",
+      "value": 7
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 8
+      },
+      "text": "8 imports fail",
+      "tone": "error",
+      "value": 8
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 9
+      },
+      "text": "9 imports fail",
+      "tone": "error",
+      "value": 9
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 10
+      },
+      "text": "10 imports fail",
+      "tone": "error",
+      "value": 10
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 11
+      },
+      "text": "11 imports fail",
+      "tone": "error",
+      "value": 11
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 12
+      },
+      "text": "12 imports fail",
+      "tone": "error",
+      "value": 12
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 13
+      },
+      "text": "13 imports fail",
+      "tone": "error",
+      "value": 13
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 14
+      },
+      "text": "14 imports fail",
+      "tone": "error",
+      "value": 14
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 15
+      },
+      "text": "15 imports fail",
+      "tone": "error",
+      "value": 15
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 16
+      },
+      "text": "16 imports fail",
+      "tone": "error",
+      "value": 16
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 17
+      },
+      "text": "17 imports fail",
+      "tone": "error",
+      "value": 17
+     },
+     {
+      "when": {
+       "type": "equals",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 18
+      },
+      "text": "18 imports fail",
+      "tone": "error",
+      "value": 18
+     },
+     {
+      "when": {
+       "type": "above",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count",
+       "value": 18
+      },
+      "text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} imports fail",
+      "tone": "error",
+      "value": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}}"
+     }
+    ]
+   },
+   {
+    "kind": {
+     "group": "image.openshift.io",
+     "kind": "ImageStream"
+    },
+    "id": "is-repository",
+    "title": "Repository",
+    "afterColumn": "is-imports",
+    "width": "minmax(200px, 2fr)",
+    "paths": [
+     ".status.dockerImageRepository"
+    ]
+   },
+   {
+    "kind": {
+     "group": "project.openshift.io",
+     "kind": "Project"
+    },
+    "id": "project-display-name",
+    "title": "Display name",
+    "afterColumn": "name",
+    "width": "minmax(160px, 2fr)",
+    "paths": [
+     ".metadata.annotations[\"openshift.io/display-name\"]"
+    ]
+   },
+   {
+    "kind": {
+     "group": "project.openshift.io",
+     "kind": "Project"
+    },
+    "id": "project-status",
+    "title": "Status",
+    "afterColumn": "project-display-name",
+    "width": "100px",
+    "paths": [
+     ".status.phase"
+    ],
+    "tones": {
+     "Active": "ok",
+     "Failed": "error",
+     "Error": "error",
+     "Unknown": "error",
+     "False": "error",
+     "Lost": "error",
+     "Terminated": "muted",
+     "*": "warning"
+    }
+   },
+   {
+    "kind": {
+     "group": "project.openshift.io",
+     "kind": "Project"
+    },
+    "id": "project-requester",
+    "title": "Requester",
+    "afterColumn": "project-status",
+    "width": "minmax(120px, 1fr)",
+    "paths": [
+     ".metadata.annotations[\"openshift.io/requester\"]"
+    ]
+   }
+  ],
+  "problems": [
+   {
+    "id": "route-not-admitted",
+    "title": "A Route no router admitted",
+    "kind": {
+     "group": "route.openshift.io",
+     "kind": "Route"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "above",
+        "path": ".status.ingress[*].conditions[type=\"Admitted\",status=\"True\"]|count",
+        "value": 0
+       }
+      }
+     ]
+    },
+    "message": "{{.status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"].message ?? .status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"].reason}}",
+    "reason": "{{.status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"].reason}}",
+    "reasonOr": "NotAdmitted",
+    "since": ".status.ingress[conditions.type=\"Admitted\",conditions.status=\"False\"].conditions[type=\"Admitted\",status=\"False\"].lastTransitionTime",
+    "sinceOr": [
+     ".metadata.creationTimestamp"
+    ],
+    "graceMinutes": 2,
+    "group": "not-admitted"
+   },
+   {
+    "id": "dc-progressing",
+    "title": "A DeploymentConfig's rollout failed",
+    "kind": {
+     "group": "apps.openshift.io",
+     "kind": "DeploymentConfig"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".metadata.deletionTimestamp"
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "not",
+           "of": {
+            "type": "equals",
+            "path": ".spec.paused",
+            "value": true
+           }
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "in",
+             "path": ".status.conditions[type=\"Progressing\"].reason",
+             "values": [
+              "ProgressDeadlineExceeded",
+              "ReplicationControllerCreateError"
+             ]
+            },
+            {
+             "type": "condition",
+             "conditionType": "ReplicaFailure",
+             "status": "True"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "condition",
+       "conditionType": "Progressing",
+       "status": "False"
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "condition",
+           "conditionType": "Progressing",
+           "status": "False"
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"Progressing\",status=\"False\"].message",
+             "nonEmpty": true
+            },
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"Progressing\",status=\"False\"].reason",
+             "nonEmpty": true
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "condition",
+           "conditionType": "ReplicaFailure",
+           "status": "True"
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
+             "nonEmpty": true
+            },
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
+             "nonEmpty": true
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "message": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+    "reason": "{{.status.conditions[type=\"Progressing\"].reason}}",
+    "reasonOr": "RolloutFailed",
+    "since": ".status.conditions[type=\"Progressing\"].lastTransitionTime",
+    "group": "rollout-failed"
+   },
+   {
+    "id": "dc-progressing-other",
+    "title": "A DeploymentConfig's rollout failed (other conditions)",
+    "kind": {
+     "group": "apps.openshift.io",
+     "kind": "DeploymentConfig"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".metadata.deletionTimestamp"
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "not",
+           "of": {
+            "type": "equals",
+            "path": ".spec.paused",
+            "value": true
+           }
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "in",
+             "path": ".status.conditions[type=\"Progressing\"].reason",
+             "values": [
+              "ProgressDeadlineExceeded",
+              "ReplicationControllerCreateError"
+             ]
+            },
+            {
+             "type": "condition",
+             "conditionType": "ReplicaFailure",
+             "status": "True"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "condition",
+       "conditionType": "Progressing",
+       "status": "False"
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "any",
+        "of": [
+         {
+          "type": "all",
+          "of": [
+           {
+            "type": "condition",
+            "conditionType": "Progressing",
+            "status": "False"
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Progressing\",status=\"False\"].message",
+              "nonEmpty": true
+             },
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Progressing\",status=\"False\"].reason",
+              "nonEmpty": true
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "type": "all",
+          "of": [
+           {
+            "type": "condition",
+            "conditionType": "ReplicaFailure",
+            "status": "True"
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
+              "nonEmpty": true
+             },
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
+              "nonEmpty": true
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "message": "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}",
+    "reason": "{{.status.conditions[type=\"Progressing\"].reason}}",
+    "reasonOr": "RolloutFailed",
+    "since": ".status.conditions[type=\"Progressing\"].lastTransitionTime",
+    "group": "rollout-failed"
+   },
+   {
+    "id": "dc-replica",
+    "title": "A DeploymentConfig could not create its pods",
+    "kind": {
+     "group": "apps.openshift.io",
+     "kind": "DeploymentConfig"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".metadata.deletionTimestamp"
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "not",
+           "of": {
+            "type": "equals",
+            "path": ".spec.paused",
+            "value": true
+           }
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "in",
+             "path": ".status.conditions[type=\"Progressing\"].reason",
+             "values": [
+              "ProgressDeadlineExceeded",
+              "ReplicationControllerCreateError"
+             ]
+            },
+            {
+             "type": "condition",
+             "conditionType": "ReplicaFailure",
+             "status": "True"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "condition",
+          "conditionType": "Progressing",
+          "status": "False"
+         }
+        },
+        {
+         "type": "condition",
+         "conditionType": "ReplicaFailure",
+         "status": "True"
+        }
+       ]
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "condition",
+           "conditionType": "Progressing",
+           "status": "False"
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"Progressing\",status=\"False\"].message",
+             "nonEmpty": true
+            },
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"Progressing\",status=\"False\"].reason",
+             "nonEmpty": true
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "condition",
+           "conditionType": "ReplicaFailure",
+           "status": "True"
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
+             "nonEmpty": true
+            },
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
+             "nonEmpty": true
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "message": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+    "reason": "{{.status.conditions[type=\"ReplicaFailure\"].reason}}",
+    "reasonOr": "RolloutFailed",
+    "since": ".status.conditions[type=\"ReplicaFailure\"].lastTransitionTime",
+    "group": "rollout-failed"
+   },
+   {
+    "id": "dc-replica-other",
+    "title": "A DeploymentConfig could not create its pods (other conditions)",
+    "kind": {
+     "group": "apps.openshift.io",
+     "kind": "DeploymentConfig"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".metadata.deletionTimestamp"
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "not",
+           "of": {
+            "type": "equals",
+            "path": ".spec.paused",
+            "value": true
+           }
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "in",
+             "path": ".status.conditions[type=\"Progressing\"].reason",
+             "values": [
+              "ProgressDeadlineExceeded",
+              "ReplicationControllerCreateError"
+             ]
+            },
+            {
+             "type": "condition",
+             "conditionType": "ReplicaFailure",
+             "status": "True"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "condition",
+          "conditionType": "Progressing",
+          "status": "False"
+         }
+        },
+        {
+         "type": "condition",
+         "conditionType": "ReplicaFailure",
+         "status": "True"
+        }
+       ]
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "any",
+        "of": [
+         {
+          "type": "all",
+          "of": [
+           {
+            "type": "condition",
+            "conditionType": "Progressing",
+            "status": "False"
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Progressing\",status=\"False\"].message",
+              "nonEmpty": true
+             },
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Progressing\",status=\"False\"].reason",
+              "nonEmpty": true
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "type": "all",
+          "of": [
+           {
+            "type": "condition",
+            "conditionType": "ReplicaFailure",
+            "status": "True"
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
+              "nonEmpty": true
+             },
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
+              "nonEmpty": true
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "message": "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}",
+    "reason": "{{.status.conditions[type=\"ReplicaFailure\"].reason}}",
+    "reasonOr": "RolloutFailed",
+    "since": ".status.conditions[type=\"ReplicaFailure\"].lastTransitionTime",
+    "group": "rollout-failed"
+   },
+   {
+    "id": "dc-deadline",
+    "title": "A DeploymentConfig's rollout failed while progressing",
+    "kind": {
+     "group": "apps.openshift.io",
+     "kind": "DeploymentConfig"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".metadata.deletionTimestamp"
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "not",
+           "of": {
+            "type": "equals",
+            "path": ".spec.paused",
+            "value": true
+           }
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "in",
+             "path": ".status.conditions[type=\"Progressing\"].reason",
+             "values": [
+              "ProgressDeadlineExceeded",
+              "ReplicationControllerCreateError"
+             ]
+            },
+            {
+             "type": "condition",
+             "conditionType": "ReplicaFailure",
+             "status": "True"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "condition",
+          "conditionType": "Progressing",
+          "status": "False"
+         }
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "condition",
+          "conditionType": "ReplicaFailure",
+          "status": "True"
+         }
+        }
+       ]
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "condition",
+           "conditionType": "Progressing",
+           "status": "False"
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"Progressing\",status=\"False\"].message",
+             "nonEmpty": true
+            },
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"Progressing\",status=\"False\"].reason",
+             "nonEmpty": true
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "condition",
+           "conditionType": "ReplicaFailure",
+           "status": "True"
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
+             "nonEmpty": true
+            },
+            {
+             "type": "exists",
+             "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
+             "nonEmpty": true
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "message": "{{.status.conditions[type=\"Progressing\",status=\"False\"].message ?? .status.conditions[type=\"Progressing\",status=\"False\"].reason ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
+    "reason": "{{.status.conditions[type=\"Progressing\"].reason}}",
+    "reasonOr": "RolloutFailed",
+    "since": ".status.conditions[type=\"Progressing\"].lastTransitionTime",
+    "group": "rollout-failed"
+   },
+   {
+    "id": "dc-deadline-other",
+    "title": "A DeploymentConfig's rollout failed while progressing (other conditions)",
+    "kind": {
+     "group": "apps.openshift.io",
+     "kind": "DeploymentConfig"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".metadata.deletionTimestamp"
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "not",
+           "of": {
+            "type": "equals",
+            "path": ".spec.paused",
+            "value": true
+           }
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "in",
+             "path": ".status.conditions[type=\"Progressing\"].reason",
+             "values": [
+              "ProgressDeadlineExceeded",
+              "ReplicationControllerCreateError"
+             ]
+            },
+            {
+             "type": "condition",
+             "conditionType": "ReplicaFailure",
+             "status": "True"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "all",
+       "of": [
+        {
+         "type": "not",
+         "of": {
+          "type": "condition",
+          "conditionType": "Progressing",
+          "status": "False"
+         }
+        },
+        {
+         "type": "not",
+         "of": {
+          "type": "condition",
+          "conditionType": "ReplicaFailure",
+          "status": "True"
+         }
+        }
+       ]
+      },
+      {
+       "type": "not",
+       "of": {
+        "type": "any",
+        "of": [
+         {
+          "type": "all",
+          "of": [
+           {
+            "type": "condition",
+            "conditionType": "Progressing",
+            "status": "False"
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Progressing\",status=\"False\"].message",
+              "nonEmpty": true
+             },
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Progressing\",status=\"False\"].reason",
+              "nonEmpty": true
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "type": "all",
+          "of": [
+           {
+            "type": "condition",
+            "conditionType": "ReplicaFailure",
+            "status": "True"
+           },
+           {
+            "type": "any",
+            "of": [
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
+              "nonEmpty": true
+             },
+             {
+              "type": "exists",
+              "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
+              "nonEmpty": true
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "message": "{{.status.conditions[type=\"Available\",status=\"False\"].message ?? .status.conditions[type=\"Available\",status=\"False\"].reason ?? .status.details.message}}",
+    "reason": "{{.status.conditions[type=\"Progressing\"].reason}}",
+    "reasonOr": "RolloutFailed",
+    "since": ".status.conditions[type=\"Progressing\"].lastTransitionTime",
+    "group": "rollout-failed"
+   },
+   {
+    "id": "build-failed",
+    "title": "A Build failed",
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "Build"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "equals",
+       "path": ".status.phase",
+       "value": "Failed"
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".status.completionTimestamp"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "olderThan",
+            "path": ".status.completionTimestamp",
+            "minutes": 1440
+           }
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".status.completionTimestamp"
+          },
+          {
+           "type": "exists",
+           "path": ".status.startTimestamp"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "olderThan",
+            "path": ".status.startTimestamp",
+            "minutes": 1440
+           }
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".status.completionTimestamp"
+          },
+          {
+           "type": "absent",
+           "path": ".status.startTimestamp"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "olderThan",
+            "path": ".metadata.creationTimestamp",
+            "minutes": 1440
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "message": "{{.status.message}}",
+    "reason": "{{.status.reason}}",
+    "reasonOr": "BuildFailed",
+    "since": ".status.completionTimestamp",
+    "sinceOr": [
+     ".status.startTimestamp",
+     ".metadata.creationTimestamp"
+    ],
+    "newestPer": "openshift.io/build-config.name",
+    "group": "build-failed"
+   },
+   {
+    "id": "build-error",
+    "title": "A Build ended in an error",
+    "kind": {
+     "group": "build.openshift.io",
+     "kind": "Build"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "equals",
+       "path": ".status.phase",
+       "value": "Error"
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".status.completionTimestamp"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "olderThan",
+            "path": ".status.completionTimestamp",
+            "minutes": 1440
+           }
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".status.completionTimestamp"
+          },
+          {
+           "type": "exists",
+           "path": ".status.startTimestamp"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "olderThan",
+            "path": ".status.startTimestamp",
+            "minutes": 1440
+           }
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".status.completionTimestamp"
+          },
+          {
+           "type": "absent",
+           "path": ".status.startTimestamp"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "olderThan",
+            "path": ".metadata.creationTimestamp",
+            "minutes": 1440
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "message": "{{.status.message}}",
+    "reason": "{{.status.reason}}",
+    "reasonOr": "BuildError",
+    "since": ".status.completionTimestamp",
+    "sinceOr": [
+     ".status.startTimestamp",
+     ".metadata.creationTimestamp"
+    ],
+    "newestPer": "openshift.io/build-config.name",
+    "group": "build-failed"
+   },
+   {
+    "id": "import-failed",
+    "title": "An ImageStream tag's import fails",
+    "kind": {
+     "group": "image.openshift.io",
+     "kind": "ImageStream"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "exists",
+       "path": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\"]"
+      }
+     ]
+    },
+    "message": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",<tag].conditions[type=\"ImportSuccess\",status=\"False\"].message ?? .status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",<tag].conditions[type=\"ImportSuccess\",status=\"False\"].reason}}",
+    "reasonOr": "ImportFailed",
+    "since": ".status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",<tag].conditions[type=\"ImportSuccess\",status=\"False\"].lastTransitionTime",
+    "graceMinutes": 5,
+    "group": "import-failed"
+   }
+  ],
+  "sectionBadges": [
+   {
+    "section": "openshift",
+    "label": {
+     "one": "{{count}} object needs attention",
+     "other": "{{count}} objects need attention"
+    }
+   }
+  ]
+ },
+ "translations": {
+  "de": {
+   "name": "OpenShift",
+   "description": "Routes von OpenShift mit Zulassung und Backends, DeploymentConfigs mit Rollouts und Triggern, BuildConfigs mit ihren Builds, Builds mit Fehler und Pod-Logs, ImageStreams mit Tags und Projects, mit „Neueste ausrollen“ und „Build starten“; Probleme von Routes ohne Zulassung, fehlgeschlagenen Rollouts, kürzlich fehlgeschlagenen Builds und fehlschlagenden Importen.",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "Neueste ausrollen",
+   "actions.start-build.title": "Build starten",
+   "columns.route-status.title": "Status",
+   "columns.route-status.cases.0.text": "Zugelassen",
+   "columns.route-status.cases.1.text": "Abgelehnt",
+   "columns.route-status.cases.2.text": "Nicht zugelassen",
+   "columns.route-host.title": "Host",
+   "columns.route-services.title": "Services",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "Status",
+   "columns.dc-status.cases.0.text": "Pausiert",
+   "columns.dc-status.cases.1.text": "Fehlgeschlagen",
+   "columns.dc-status.cases.2.text": "Abgebrochen",
+   "columns.dc-status.cases.3.text": "Wird ausgerollt",
+   "columns.dc-status.cases.4.text": "Verfügbar",
+   "columns.dc-status.cases.5.text": "Nicht verfügbar",
+   "columns.dc-status.cases.6.text": "Nicht ausgerollt",
+   "columns.dc-status.cases.7.text": "Wird ausgerollt",
+   "columns.dc-ready.title": "Bereit",
+   "columns.dc-latest-version.title": "Version",
+   "columns.dc-triggers.title": "Trigger",
+   "columns.bc-strategy.title": "Strategie",
+   "columns.bc-source.title": "Quelle",
+   "columns.bc-output.title": "Ausgabe",
+   "columns.bc-last-version.title": "Letzter Build",
+   "columns.bc-triggers.title": "Trigger",
+   "columns.build-status.title": "Status",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "Build-Config",
+   "columns.build-strategy.title": "Strategie",
+   "columns.build-duration.title": "Dauer",
+   "columns.build-started.title": "Gestartet",
+   "columns.is-tags.title": "Tags",
+   "columns.is-imports.title": "Importe",
+   "columns.is-imports.cases.1.text": "1 Import schlägt fehl",
+   "columns.is-imports.cases.2.text": "2 Importe schlagen fehl",
+   "columns.is-imports.cases.3.text": "3 Importe schlagen fehl",
+   "columns.is-imports.cases.4.text": "4 Importe schlagen fehl",
+   "columns.is-imports.cases.5.text": "5 Importe schlagen fehl",
+   "columns.is-imports.cases.6.text": "6 Importe schlagen fehl",
+   "columns.is-imports.cases.7.text": "7 Importe schlagen fehl",
+   "columns.is-imports.cases.8.text": "8 Importe schlagen fehl",
+   "columns.is-imports.cases.9.text": "9 Importe schlagen fehl",
+   "columns.is-imports.cases.10.text": "10 Importe schlagen fehl",
+   "columns.is-imports.cases.11.text": "11 Importe schlagen fehl",
+   "columns.is-imports.cases.12.text": "12 Importe schlagen fehl",
+   "columns.is-imports.cases.13.text": "13 Importe schlagen fehl",
+   "columns.is-imports.cases.14.text": "14 Importe schlagen fehl",
+   "columns.is-imports.cases.15.text": "15 Importe schlagen fehl",
+   "columns.is-imports.cases.16.text": "16 Importe schlagen fehl",
+   "columns.is-imports.cases.17.text": "17 Importe schlagen fehl",
+   "columns.is-imports.cases.18.text": "18 Importe schlagen fehl",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} Importe schlagen fehl",
+   "columns.is-repository.title": "Repository",
+   "columns.project-display-name.title": "Anzeigename",
+   "columns.project-status.title": "Status",
+   "columns.project-requester.title": "Angefordert von",
+   "problems.route-not-admitted.title": "Eine Route, die kein Router zugelassen hat",
+   "problems.dc-progressing.title": "Rollout einer DeploymentConfig fehlgeschlagen",
+   "problems.dc-progressing-other.title": "Rollout einer DeploymentConfig fehlgeschlagen (andere Conditions)",
+   "problems.dc-replica.title": "DeploymentConfig konnte ihre Pods nicht erstellen",
+   "problems.dc-replica-other.title": "DeploymentConfig konnte ihre Pods nicht erstellen (andere Conditions)",
+   "problems.dc-deadline.title": "Rollout einer DeploymentConfig im Fortschritt fehlgeschlagen",
+   "problems.dc-deadline-other.title": "Rollout einer DeploymentConfig im Fortschritt fehlgeschlagen (andere Conditions)",
+   "problems.build-failed.title": "Ein Build ist fehlgeschlagen",
+   "problems.build-error.title": "Ein Build endete mit einem Fehler",
+   "problems.import-failed.title": "Der Import eines ImageStream-Tags schlägt fehl",
+   "sectionBadges.openshift.label.one": "{{count}} Objekt erfordert Aufmerksamkeit",
+   "sectionBadges.openshift.label.other": "{{count}} Objekte erfordern Aufmerksamkeit"
+  },
+  "es": {
+   "name": "OpenShift",
+   "description": "Las Routes de OpenShift con su admisión y backends, DeploymentConfigs con sus rollouts y triggers, BuildConfigs con sus builds, Builds con su fallo y los logs del pod, ImageStreams con sus etiquetas y Projects, con «Desplegar lo último» e «Iniciar build»; problemas de Routes sin admitir, rollouts fallidos, Builds fallidas recientes e importaciones que fallan.",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "Desplegar lo último",
+   "actions.start-build.title": "Iniciar build",
+   "columns.route-status.title": "Estado",
+   "columns.route-status.cases.0.text": "Admitida",
+   "columns.route-status.cases.1.text": "Rechazada",
+   "columns.route-status.cases.2.text": "No admitida",
+   "columns.route-host.title": "Host",
+   "columns.route-services.title": "Services",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "Estado",
+   "columns.dc-status.cases.0.text": "En pausa",
+   "columns.dc-status.cases.1.text": "Fallido",
+   "columns.dc-status.cases.2.text": "Cancelado",
+   "columns.dc-status.cases.3.text": "Desplegándose",
+   "columns.dc-status.cases.4.text": "Disponible",
+   "columns.dc-status.cases.5.text": "No disponible",
+   "columns.dc-status.cases.6.text": "Sin desplegar",
+   "columns.dc-status.cases.7.text": "Desplegándose",
+   "columns.dc-ready.title": "Listos",
+   "columns.dc-latest-version.title": "Versión",
+   "columns.dc-triggers.title": "Disparadores",
+   "columns.bc-strategy.title": "Estrategia",
+   "columns.bc-source.title": "Origen",
+   "columns.bc-output.title": "Salida",
+   "columns.bc-last-version.title": "Último build",
+   "columns.bc-triggers.title": "Disparadores",
+   "columns.build-status.title": "Estado",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "Build config",
+   "columns.build-strategy.title": "Estrategia",
+   "columns.build-duration.title": "Duración",
+   "columns.build-started.title": "Iniciado",
+   "columns.is-tags.title": "Tags",
+   "columns.is-imports.title": "Importaciones",
+   "columns.is-imports.cases.1.text": "1 importación falla",
+   "columns.is-imports.cases.2.text": "2 importaciones fallan",
+   "columns.is-imports.cases.3.text": "3 importaciones fallan",
+   "columns.is-imports.cases.4.text": "4 importaciones fallan",
+   "columns.is-imports.cases.5.text": "5 importaciones fallan",
+   "columns.is-imports.cases.6.text": "6 importaciones fallan",
+   "columns.is-imports.cases.7.text": "7 importaciones fallan",
+   "columns.is-imports.cases.8.text": "8 importaciones fallan",
+   "columns.is-imports.cases.9.text": "9 importaciones fallan",
+   "columns.is-imports.cases.10.text": "10 importaciones fallan",
+   "columns.is-imports.cases.11.text": "11 importaciones fallan",
+   "columns.is-imports.cases.12.text": "12 importaciones fallan",
+   "columns.is-imports.cases.13.text": "13 importaciones fallan",
+   "columns.is-imports.cases.14.text": "14 importaciones fallan",
+   "columns.is-imports.cases.15.text": "15 importaciones fallan",
+   "columns.is-imports.cases.16.text": "16 importaciones fallan",
+   "columns.is-imports.cases.17.text": "17 importaciones fallan",
+   "columns.is-imports.cases.18.text": "18 importaciones fallan",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} importaciones fallan",
+   "columns.is-repository.title": "Repositorio",
+   "columns.project-display-name.title": "Nombre visible",
+   "columns.project-status.title": "Estado",
+   "columns.project-requester.title": "Solicitante",
+   "problems.route-not-admitted.title": "Una Route que ningún router admitió",
+   "problems.dc-progressing.title": "Falló el rollout de una DeploymentConfig",
+   "problems.dc-progressing-other.title": "Falló el rollout de una DeploymentConfig (otras condiciones)",
+   "problems.dc-replica.title": "Una DeploymentConfig no pudo crear sus pods",
+   "problems.dc-replica-other.title": "Una DeploymentConfig no pudo crear sus pods (otras condiciones)",
+   "problems.dc-deadline.title": "Falló el rollout en curso de una DeploymentConfig",
+   "problems.dc-deadline-other.title": "Falló el rollout en curso de una DeploymentConfig (otras condiciones)",
+   "problems.build-failed.title": "Una Build falló",
+   "problems.build-error.title": "Una Build terminó con un error",
+   "problems.import-failed.title": "La importación de una etiqueta de ImageStream falla",
+   "sectionBadges.openshift.label.one": "{{count}} objeto requiere atención",
+   "sectionBadges.openshift.label.many": "{{count}} objetos requieren atención",
+   "sectionBadges.openshift.label.other": "{{count}} objetos requieren atención"
+  },
+  "fr": {
+   "name": "OpenShift",
+   "description": "Les Routes d'OpenShift avec leur admission et leurs backends, les DeploymentConfigs avec leurs rollouts et déclencheurs, les BuildConfigs avec leurs builds, les Builds avec leur échec et les logs du pod, les ImageStreams avec leurs tags et les Projects, avec « Déployer la dernière version » et « Lancer un build » ; problèmes des Routes non admises, des rollouts échoués, des Builds échoués récents et des imports qui échouent.",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "Déployer la dernière version",
+   "actions.start-build.title": "Lancer un build",
+   "columns.route-status.title": "État",
+   "columns.route-status.cases.0.text": "Admise",
+   "columns.route-status.cases.1.text": "Rejetée",
+   "columns.route-status.cases.2.text": "Non admise",
+   "columns.route-host.title": "Hôte",
+   "columns.route-services.title": "Services",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "État",
+   "columns.dc-status.cases.0.text": "En pause",
+   "columns.dc-status.cases.1.text": "Échec",
+   "columns.dc-status.cases.2.text": "Annulé",
+   "columns.dc-status.cases.3.text": "Déploiement en cours",
+   "columns.dc-status.cases.4.text": "Disponible",
+   "columns.dc-status.cases.5.text": "Indisponible",
+   "columns.dc-status.cases.6.text": "Non déployé",
+   "columns.dc-status.cases.7.text": "Déploiement en cours",
+   "columns.dc-ready.title": "Prêts",
+   "columns.dc-latest-version.title": "Version",
+   "columns.dc-triggers.title": "Déclencheurs",
+   "columns.bc-strategy.title": "Stratégie",
+   "columns.bc-source.title": "Source",
+   "columns.bc-output.title": "Sortie",
+   "columns.bc-last-version.title": "Dernier build",
+   "columns.bc-triggers.title": "Déclencheurs",
+   "columns.build-status.title": "État",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "Build config",
+   "columns.build-strategy.title": "Stratégie",
+   "columns.build-duration.title": "Durée",
+   "columns.build-started.title": "Démarré",
+   "columns.is-tags.title": "Tags",
+   "columns.is-imports.title": "Imports",
+   "columns.is-imports.cases.1.text": "1 import échoue",
+   "columns.is-imports.cases.2.text": "2 imports échouent",
+   "columns.is-imports.cases.3.text": "3 imports échouent",
+   "columns.is-imports.cases.4.text": "4 imports échouent",
+   "columns.is-imports.cases.5.text": "5 imports échouent",
+   "columns.is-imports.cases.6.text": "6 imports échouent",
+   "columns.is-imports.cases.7.text": "7 imports échouent",
+   "columns.is-imports.cases.8.text": "8 imports échouent",
+   "columns.is-imports.cases.9.text": "9 imports échouent",
+   "columns.is-imports.cases.10.text": "10 imports échouent",
+   "columns.is-imports.cases.11.text": "11 imports échouent",
+   "columns.is-imports.cases.12.text": "12 imports échouent",
+   "columns.is-imports.cases.13.text": "13 imports échouent",
+   "columns.is-imports.cases.14.text": "14 imports échouent",
+   "columns.is-imports.cases.15.text": "15 imports échouent",
+   "columns.is-imports.cases.16.text": "16 imports échouent",
+   "columns.is-imports.cases.17.text": "17 imports échouent",
+   "columns.is-imports.cases.18.text": "18 imports échouent",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} imports échouent",
+   "columns.is-repository.title": "Dépôt",
+   "columns.project-display-name.title": "Nom affiché",
+   "columns.project-status.title": "État",
+   "columns.project-requester.title": "Demandeur",
+   "problems.route-not-admitted.title": "Une Route qu'aucun routeur n'a admise",
+   "problems.dc-progressing.title": "Le rollout d'une DeploymentConfig a échoué",
+   "problems.dc-progressing-other.title": "Le rollout d'une DeploymentConfig a échoué (autres conditions)",
+   "problems.dc-replica.title": "Une DeploymentConfig n'a pas pu créer ses pods",
+   "problems.dc-replica-other.title": "Une DeploymentConfig n'a pas pu créer ses pods (autres conditions)",
+   "problems.dc-deadline.title": "Le rollout en cours d'une DeploymentConfig a échoué",
+   "problems.dc-deadline-other.title": "Le rollout en cours d'une DeploymentConfig a échoué (autres conditions)",
+   "problems.build-failed.title": "Un Build a échoué",
+   "problems.build-error.title": "Un Build s'est terminé par une erreur",
+   "problems.import-failed.title": "L'import d'un tag d'ImageStream échoue",
+   "sectionBadges.openshift.label.one": "{{count}} objet nécessite votre attention",
+   "sectionBadges.openshift.label.many": "{{count}} objets nécessitent votre attention",
+   "sectionBadges.openshift.label.other": "{{count}} objets nécessitent votre attention"
+  },
+  "it": {
+   "name": "OpenShift",
+   "description": "Le Route di OpenShift con ammissione e backend, DeploymentConfig con rollout e trigger, BuildConfig con le loro build, Build con il fallimento e i log del pod, ImageStream con i tag e Project, con «Rollout dell'ultima versione» e «Avvia build»; problemi di Route non ammesse, rollout falliti, Build fallite di recente e importazioni che falliscono.",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "Rollout dell'ultima versione",
+   "actions.start-build.title": "Avvia build",
+   "columns.route-status.title": "Stato",
+   "columns.route-status.cases.0.text": "Ammessa",
+   "columns.route-status.cases.1.text": "Rifiutata",
+   "columns.route-status.cases.2.text": "Non ammessa",
+   "columns.route-host.title": "Host",
+   "columns.route-services.title": "Service",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "Stato",
+   "columns.dc-status.cases.0.text": "In pausa",
+   "columns.dc-status.cases.1.text": "Non riuscito",
+   "columns.dc-status.cases.2.text": "Annullato",
+   "columns.dc-status.cases.3.text": "In rollout",
+   "columns.dc-status.cases.4.text": "Disponibile",
+   "columns.dc-status.cases.5.text": "Non disponibile",
+   "columns.dc-status.cases.6.text": "Non distribuito",
+   "columns.dc-status.cases.7.text": "In rollout",
+   "columns.dc-ready.title": "Pronti",
+   "columns.dc-latest-version.title": "Versione",
+   "columns.dc-triggers.title": "Trigger",
+   "columns.bc-strategy.title": "Strategia",
+   "columns.bc-source.title": "Sorgente",
+   "columns.bc-output.title": "Output",
+   "columns.bc-last-version.title": "Ultima build",
+   "columns.bc-triggers.title": "Trigger",
+   "columns.build-status.title": "Stato",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "Build config",
+   "columns.build-strategy.title": "Strategia",
+   "columns.build-duration.title": "Durata",
+   "columns.build-started.title": "Avviato",
+   "columns.is-tags.title": "Tag",
+   "columns.is-imports.title": "Importazioni",
+   "columns.is-imports.cases.1.text": "1 importazione non riesce",
+   "columns.is-imports.cases.2.text": "2 importazioni non riescono",
+   "columns.is-imports.cases.3.text": "3 importazioni non riescono",
+   "columns.is-imports.cases.4.text": "4 importazioni non riescono",
+   "columns.is-imports.cases.5.text": "5 importazioni non riescono",
+   "columns.is-imports.cases.6.text": "6 importazioni non riescono",
+   "columns.is-imports.cases.7.text": "7 importazioni non riescono",
+   "columns.is-imports.cases.8.text": "8 importazioni non riescono",
+   "columns.is-imports.cases.9.text": "9 importazioni non riescono",
+   "columns.is-imports.cases.10.text": "10 importazioni non riescono",
+   "columns.is-imports.cases.11.text": "11 importazioni non riescono",
+   "columns.is-imports.cases.12.text": "12 importazioni non riescono",
+   "columns.is-imports.cases.13.text": "13 importazioni non riescono",
+   "columns.is-imports.cases.14.text": "14 importazioni non riescono",
+   "columns.is-imports.cases.15.text": "15 importazioni non riescono",
+   "columns.is-imports.cases.16.text": "16 importazioni non riescono",
+   "columns.is-imports.cases.17.text": "17 importazioni non riescono",
+   "columns.is-imports.cases.18.text": "18 importazioni non riescono",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} importazioni non riescono",
+   "columns.is-repository.title": "Repository",
+   "columns.project-display-name.title": "Nome visualizzato",
+   "columns.project-status.title": "Stato",
+   "columns.project-requester.title": "Richiedente",
+   "problems.route-not-admitted.title": "Una Route che nessun router ha ammesso",
+   "problems.dc-progressing.title": "Il rollout di una DeploymentConfig è fallito",
+   "problems.dc-progressing-other.title": "Il rollout di una DeploymentConfig è fallito (altre condizioni)",
+   "problems.dc-replica.title": "Una DeploymentConfig non ha potuto creare i suoi pod",
+   "problems.dc-replica-other.title": "Una DeploymentConfig non ha potuto creare i suoi pod (altre condizioni)",
+   "problems.dc-deadline.title": "Il rollout in corso di una DeploymentConfig è fallito",
+   "problems.dc-deadline-other.title": "Il rollout in corso di una DeploymentConfig è fallito (altre condizioni)",
+   "problems.build-failed.title": "Una Build è fallita",
+   "problems.build-error.title": "Una Build è terminata con un errore",
+   "problems.import-failed.title": "L'importazione di un tag di ImageStream fallisce",
+   "sectionBadges.openshift.label.one": "{{count}} oggetto richiede attenzione",
+   "sectionBadges.openshift.label.many": "{{count}} oggetti richiedono attenzione",
+   "sectionBadges.openshift.label.other": "{{count}} oggetti richiedono attenzione"
+  },
+  "ja": {
+   "name": "OpenShift",
+   "description": "OpenShift の Route (受け入れとバックエンド)、DeploymentConfig (ロールアウトとトリガー)、BuildConfig (ビルド)、Build (失敗と Pod のログ)、ImageStream (タグ)、Project。「最新をロールアウト」と「ビルドを開始」付き。受け入れられていない Route、失敗したロールアウト、最近失敗した Build、失敗しているインポートの問題。",
+   "kinds.0.title": "Route",
+   "kinds.1.title": "DeploymentConfig",
+   "kinds.2.title": "BuildConfig",
+   "kinds.3.title": "Build",
+   "kinds.4.title": "ImageStream",
+   "kinds.5.title": "Project",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "最新をロールアウト",
+   "actions.start-build.title": "ビルドを開始",
+   "columns.route-status.title": "状態",
+   "columns.route-status.cases.0.text": "受け入れ済み",
+   "columns.route-status.cases.1.text": "拒否",
+   "columns.route-status.cases.2.text": "未受け入れ",
+   "columns.route-host.title": "ホスト",
+   "columns.route-services.title": "Service",
+   "columns.route-services.cases.0.text": "{{.spec.to.name}}、{{.spec.alternateBackends[*].name|list}}",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "状態",
+   "columns.dc-status.cases.0.text": "一時停止中",
+   "columns.dc-status.cases.1.text": "失敗",
+   "columns.dc-status.cases.2.text": "キャンセル済み",
+   "columns.dc-status.cases.3.text": "ロールアウト中",
+   "columns.dc-status.cases.4.text": "利用可能",
+   "columns.dc-status.cases.5.text": "利用不可",
+   "columns.dc-status.cases.6.text": "未デプロイ",
+   "columns.dc-status.cases.7.text": "ロールアウト中",
+   "columns.dc-ready.title": "準備完了",
+   "columns.dc-latest-version.title": "バージョン",
+   "columns.dc-triggers.title": "トリガー",
+   "columns.bc-strategy.title": "戦略",
+   "columns.bc-source.title": "ソース",
+   "columns.bc-output.title": "出力",
+   "columns.bc-last-version.title": "最新のビルド",
+   "columns.bc-triggers.title": "トリガー",
+   "columns.build-status.title": "状態",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "ビルド構成",
+   "columns.build-strategy.title": "戦略",
+   "columns.build-duration.title": "所要時間",
+   "columns.build-started.title": "開始",
+   "columns.is-tags.title": "タグ",
+   "columns.is-imports.title": "インポート",
+   "columns.is-imports.cases.1.text": "1 件のインポートが失敗",
+   "columns.is-imports.cases.2.text": "2 件のインポートが失敗",
+   "columns.is-imports.cases.3.text": "3 件のインポートが失敗",
+   "columns.is-imports.cases.4.text": "4 件のインポートが失敗",
+   "columns.is-imports.cases.5.text": "5 件のインポートが失敗",
+   "columns.is-imports.cases.6.text": "6 件のインポートが失敗",
+   "columns.is-imports.cases.7.text": "7 件のインポートが失敗",
+   "columns.is-imports.cases.8.text": "8 件のインポートが失敗",
+   "columns.is-imports.cases.9.text": "9 件のインポートが失敗",
+   "columns.is-imports.cases.10.text": "10 件のインポートが失敗",
+   "columns.is-imports.cases.11.text": "11 件のインポートが失敗",
+   "columns.is-imports.cases.12.text": "12 件のインポートが失敗",
+   "columns.is-imports.cases.13.text": "13 件のインポートが失敗",
+   "columns.is-imports.cases.14.text": "14 件のインポートが失敗",
+   "columns.is-imports.cases.15.text": "15 件のインポートが失敗",
+   "columns.is-imports.cases.16.text": "16 件のインポートが失敗",
+   "columns.is-imports.cases.17.text": "17 件のインポートが失敗",
+   "columns.is-imports.cases.18.text": "18 件のインポートが失敗",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} 件のインポートが失敗",
+   "columns.is-repository.title": "リポジトリ",
+   "columns.project-display-name.title": "表示名",
+   "columns.project-status.title": "状態",
+   "columns.project-requester.title": "要求者",
+   "problems.route-not-admitted.title": "どのルーターも受け入れていない Route",
+   "problems.dc-progressing.title": "DeploymentConfig のロールアウトが失敗した",
+   "problems.dc-progressing-other.title": "DeploymentConfig のロールアウトが失敗した (ほかの condition)",
+   "problems.dc-replica.title": "DeploymentConfig が Pod を作成できなかった",
+   "problems.dc-replica-other.title": "DeploymentConfig が Pod を作成できなかった (ほかの condition)",
+   "problems.dc-deadline.title": "DeploymentConfig のロールアウトが進行中に失敗した",
+   "problems.dc-deadline-other.title": "DeploymentConfig のロールアウトが進行中に失敗した (ほかの condition)",
+   "problems.build-failed.title": "Build が失敗した",
+   "problems.build-error.title": "Build がエラーで終了した",
+   "problems.import-failed.title": "ImageStream タグのインポートが失敗している",
+   "sectionBadges.openshift.label.other": "対応が必要なオブジェクトが {{count}} 件あります"
+  },
+  "ko": {
+   "name": "OpenShift",
+   "description": "OpenShift의 Route(수락과 백엔드), DeploymentConfig(롤아웃과 트리거), BuildConfig(빌드), Build(실패와 Pod 로그), ImageStream(태그), Project. 「최신 버전 롤아웃」와 「빌드 시작」 포함. 수락되지 않은 Route, 실패한 롤아웃, 최근 실패한 Build, 실패하는 가져오기의 문제.",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "최신 버전 롤아웃",
+   "actions.start-build.title": "빌드 시작",
+   "columns.route-status.title": "상태",
+   "columns.route-status.cases.0.text": "수락됨",
+   "columns.route-status.cases.1.text": "거부됨",
+   "columns.route-status.cases.2.text": "수락되지 않음",
+   "columns.route-host.title": "호스트",
+   "columns.route-services.title": "Service",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "상태",
+   "columns.dc-status.cases.0.text": "일시 중지됨",
+   "columns.dc-status.cases.1.text": "실패",
+   "columns.dc-status.cases.2.text": "취소됨",
+   "columns.dc-status.cases.3.text": "롤아웃 중",
+   "columns.dc-status.cases.4.text": "사용 가능",
+   "columns.dc-status.cases.5.text": "사용 불가",
+   "columns.dc-status.cases.6.text": "배포되지 않음",
+   "columns.dc-status.cases.7.text": "롤아웃 중",
+   "columns.dc-ready.title": "준비됨",
+   "columns.dc-latest-version.title": "버전",
+   "columns.dc-triggers.title": "트리거",
+   "columns.bc-strategy.title": "전략",
+   "columns.bc-source.title": "소스",
+   "columns.bc-output.title": "출력",
+   "columns.bc-last-version.title": "마지막 빌드",
+   "columns.bc-triggers.title": "트리거",
+   "columns.build-status.title": "상태",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "빌드 구성",
+   "columns.build-strategy.title": "전략",
+   "columns.build-duration.title": "소요 시간",
+   "columns.build-started.title": "시작",
+   "columns.is-tags.title": "태그",
+   "columns.is-imports.title": "가져오기",
+   "columns.is-imports.cases.1.text": "가져오기 1개 실패",
+   "columns.is-imports.cases.2.text": "가져오기 2개 실패",
+   "columns.is-imports.cases.3.text": "가져오기 3개 실패",
+   "columns.is-imports.cases.4.text": "가져오기 4개 실패",
+   "columns.is-imports.cases.5.text": "가져오기 5개 실패",
+   "columns.is-imports.cases.6.text": "가져오기 6개 실패",
+   "columns.is-imports.cases.7.text": "가져오기 7개 실패",
+   "columns.is-imports.cases.8.text": "가져오기 8개 실패",
+   "columns.is-imports.cases.9.text": "가져오기 9개 실패",
+   "columns.is-imports.cases.10.text": "가져오기 10개 실패",
+   "columns.is-imports.cases.11.text": "가져오기 11개 실패",
+   "columns.is-imports.cases.12.text": "가져오기 12개 실패",
+   "columns.is-imports.cases.13.text": "가져오기 13개 실패",
+   "columns.is-imports.cases.14.text": "가져오기 14개 실패",
+   "columns.is-imports.cases.15.text": "가져오기 15개 실패",
+   "columns.is-imports.cases.16.text": "가져오기 16개 실패",
+   "columns.is-imports.cases.17.text": "가져오기 17개 실패",
+   "columns.is-imports.cases.18.text": "가져오기 18개 실패",
+   "columns.is-imports.cases.19.text": "가져오기 {{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}}개 실패",
+   "columns.is-repository.title": "저장소",
+   "columns.project-display-name.title": "표시 이름",
+   "columns.project-status.title": "상태",
+   "columns.project-requester.title": "요청자",
+   "problems.route-not-admitted.title": "어떤 라우터도 수락하지 않은 Route",
+   "problems.dc-progressing.title": "DeploymentConfig의 롤아웃이 실패함",
+   "problems.dc-progressing-other.title": "DeploymentConfig의 롤아웃이 실패함 (다른 condition)",
+   "problems.dc-replica.title": "DeploymentConfig가 Pod를 만들지 못함",
+   "problems.dc-replica-other.title": "DeploymentConfig가 Pod를 만들지 못함 (다른 condition)",
+   "problems.dc-deadline.title": "DeploymentConfig의 롤아웃이 진행 중에 실패함",
+   "problems.dc-deadline-other.title": "DeploymentConfig의 롤아웃이 진행 중에 실패함 (다른 condition)",
+   "problems.build-failed.title": "Build가 실패함",
+   "problems.build-error.title": "Build가 오류로 끝남",
+   "problems.import-failed.title": "ImageStream 태그 가져오기가 실패함",
+   "sectionBadges.openshift.label.other": "확인이 필요한 오브젝트 {{count}}개"
+  },
+  "pl": {
+   "name": "OpenShift",
+   "description": "Routes OpenShift z przyjęciem i backendami, DeploymentConfigs z rolloutami i wyzwalaczami, BuildConfigs z buildami, Builds z niepowodzeniem i logami poda, ImageStreams z tagami oraz Projects, z „Wdróż najnowszą wersję” i „Uruchom kompilację”; problemy nieprzyjętych Routes, nieudanych rolloutów, niedawno nieudanych Builds i nieudanych importów.",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "Wdróż najnowszą wersję",
+   "actions.start-build.title": "Uruchom kompilację",
+   "columns.route-status.title": "Stan",
+   "columns.route-status.cases.0.text": "Przyjęty",
+   "columns.route-status.cases.1.text": "Odrzucony",
+   "columns.route-status.cases.2.text": "Nieprzyjęty",
+   "columns.route-host.title": "Host",
+   "columns.route-services.title": "Services",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "Stan",
+   "columns.dc-status.cases.0.text": "Wstrzymany",
+   "columns.dc-status.cases.1.text": "Błąd",
+   "columns.dc-status.cases.2.text": "Anulowano",
+   "columns.dc-status.cases.3.text": "Wdrażanie",
+   "columns.dc-status.cases.4.text": "Dostępny",
+   "columns.dc-status.cases.5.text": "Niedostępny",
+   "columns.dc-status.cases.6.text": "Niewdrożony",
+   "columns.dc-status.cases.7.text": "Wdrażanie",
+   "columns.dc-ready.title": "Gotowe",
+   "columns.dc-latest-version.title": "Wersja",
+   "columns.dc-triggers.title": "Wyzwalacze",
+   "columns.bc-strategy.title": "Strategia",
+   "columns.bc-source.title": "Źródło",
+   "columns.bc-output.title": "Wynik",
+   "columns.bc-last-version.title": "Ostatnia kompilacja",
+   "columns.bc-triggers.title": "Wyzwalacze",
+   "columns.build-status.title": "Stan",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "Build config",
+   "columns.build-strategy.title": "Strategia",
+   "columns.build-duration.title": "Czas trwania",
+   "columns.build-started.title": "Uruchomiono",
+   "columns.is-tags.title": "Tagi",
+   "columns.is-imports.title": "Importy",
+   "columns.is-imports.cases.1.text": "1 import kończy się błędem",
+   "columns.is-imports.cases.2.text": "2 importy kończą się błędem",
+   "columns.is-imports.cases.3.text": "3 importy kończą się błędem",
+   "columns.is-imports.cases.4.text": "4 importy kończą się błędem",
+   "columns.is-imports.cases.5.text": "5 importów kończy się błędem",
+   "columns.is-imports.cases.6.text": "6 importów kończy się błędem",
+   "columns.is-imports.cases.7.text": "7 importów kończy się błędem",
+   "columns.is-imports.cases.8.text": "8 importów kończy się błędem",
+   "columns.is-imports.cases.9.text": "9 importów kończy się błędem",
+   "columns.is-imports.cases.10.text": "10 importów kończy się błędem",
+   "columns.is-imports.cases.11.text": "11 importów kończy się błędem",
+   "columns.is-imports.cases.12.text": "12 importów kończy się błędem",
+   "columns.is-imports.cases.13.text": "13 importów kończy się błędem",
+   "columns.is-imports.cases.14.text": "14 importów kończy się błędem",
+   "columns.is-imports.cases.15.text": "15 importów kończy się błędem",
+   "columns.is-imports.cases.16.text": "16 importów kończy się błędem",
+   "columns.is-imports.cases.17.text": "17 importów kończy się błędem",
+   "columns.is-imports.cases.18.text": "18 importów kończy się błędem",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} importu kończy się błędem",
+   "columns.is-repository.title": "Repozytorium",
+   "columns.project-display-name.title": "Nazwa wyświetlana",
+   "columns.project-status.title": "Stan",
+   "columns.project-requester.title": "Zlecający",
+   "problems.route-not-admitted.title": "Route, której nie przyjął żaden router",
+   "problems.dc-progressing.title": "Rollout DeploymentConfig się nie powiódł",
+   "problems.dc-progressing-other.title": "Rollout DeploymentConfig się nie powiódł (inne warunki)",
+   "problems.dc-replica.title": "DeploymentConfig nie mogła utworzyć podów",
+   "problems.dc-replica-other.title": "DeploymentConfig nie mogła utworzyć podów (inne warunki)",
+   "problems.dc-deadline.title": "Rollout DeploymentConfig nie powiódł się w trakcie",
+   "problems.dc-deadline-other.title": "Rollout DeploymentConfig nie powiódł się w trakcie (inne warunki)",
+   "problems.build-failed.title": "Build się nie powiódł",
+   "problems.build-error.title": "Build zakończył się błędem",
+   "problems.import-failed.title": "Import tagu ImageStream się nie udaje",
+   "sectionBadges.openshift.label.one": "{{count}} obiekt wymaga uwagi",
+   "sectionBadges.openshift.label.few": "{{count}} obiekty wymagają uwagi",
+   "sectionBadges.openshift.label.many": "{{count}} obiektów wymaga uwagi",
+   "sectionBadges.openshift.label.other": "{{count}} obiektu wymaga uwagi"
+  },
+  "pt-BR": {
+   "name": "OpenShift",
+   "description": "As Routes do OpenShift com sua admissão e backends, DeploymentConfigs com rollouts e gatilhos, BuildConfigs com suas builds, Builds com a falha e os logs do pod, ImageStreams com suas tags e Projects, com “Rollout da última versão” e “Iniciar build”; problemas de Routes não admitidas, rollouts com falha, Builds com falha recentes e importações que falham.",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "Rollout da última versão",
+   "actions.start-build.title": "Iniciar build",
+   "columns.route-status.title": "Status",
+   "columns.route-status.cases.0.text": "Admitida",
+   "columns.route-status.cases.1.text": "Rejeitada",
+   "columns.route-status.cases.2.text": "Não admitida",
+   "columns.route-host.title": "Host",
+   "columns.route-services.title": "Services",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "Status",
+   "columns.dc-status.cases.0.text": "Pausado",
+   "columns.dc-status.cases.1.text": "Falhou",
+   "columns.dc-status.cases.2.text": "Cancelado",
+   "columns.dc-status.cases.3.text": "Em rollout",
+   "columns.dc-status.cases.4.text": "Disponível",
+   "columns.dc-status.cases.5.text": "Indisponível",
+   "columns.dc-status.cases.6.text": "Não implantado",
+   "columns.dc-status.cases.7.text": "Em rollout",
+   "columns.dc-ready.title": "Prontos",
+   "columns.dc-latest-version.title": "Versão",
+   "columns.dc-triggers.title": "Gatilhos",
+   "columns.bc-strategy.title": "Estratégia",
+   "columns.bc-source.title": "Origem",
+   "columns.bc-output.title": "Saída",
+   "columns.bc-last-version.title": "Último build",
+   "columns.bc-triggers.title": "Gatilhos",
+   "columns.build-status.title": "Status",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "Build config",
+   "columns.build-strategy.title": "Estratégia",
+   "columns.build-duration.title": "Duração",
+   "columns.build-started.title": "Iniciado",
+   "columns.is-tags.title": "Tags",
+   "columns.is-imports.title": "Importações",
+   "columns.is-imports.cases.1.text": "1 importação falha",
+   "columns.is-imports.cases.2.text": "2 importações falham",
+   "columns.is-imports.cases.3.text": "3 importações falham",
+   "columns.is-imports.cases.4.text": "4 importações falham",
+   "columns.is-imports.cases.5.text": "5 importações falham",
+   "columns.is-imports.cases.6.text": "6 importações falham",
+   "columns.is-imports.cases.7.text": "7 importações falham",
+   "columns.is-imports.cases.8.text": "8 importações falham",
+   "columns.is-imports.cases.9.text": "9 importações falham",
+   "columns.is-imports.cases.10.text": "10 importações falham",
+   "columns.is-imports.cases.11.text": "11 importações falham",
+   "columns.is-imports.cases.12.text": "12 importações falham",
+   "columns.is-imports.cases.13.text": "13 importações falham",
+   "columns.is-imports.cases.14.text": "14 importações falham",
+   "columns.is-imports.cases.15.text": "15 importações falham",
+   "columns.is-imports.cases.16.text": "16 importações falham",
+   "columns.is-imports.cases.17.text": "17 importações falham",
+   "columns.is-imports.cases.18.text": "18 importações falham",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} importações falham",
+   "columns.is-repository.title": "Repositório",
+   "columns.project-display-name.title": "Nome de exibição",
+   "columns.project-status.title": "Status",
+   "columns.project-requester.title": "Solicitante",
+   "problems.route-not-admitted.title": "Uma Route que nenhum roteador admitiu",
+   "problems.dc-progressing.title": "O rollout de uma DeploymentConfig falhou",
+   "problems.dc-progressing-other.title": "O rollout de uma DeploymentConfig falhou (outras condições)",
+   "problems.dc-replica.title": "Uma DeploymentConfig não conseguiu criar seus pods",
+   "problems.dc-replica-other.title": "Uma DeploymentConfig não conseguiu criar seus pods (outras condições)",
+   "problems.dc-deadline.title": "O rollout em andamento de uma DeploymentConfig falhou",
+   "problems.dc-deadline-other.title": "O rollout em andamento de uma DeploymentConfig falhou (outras condições)",
+   "problems.build-failed.title": "Uma Build falhou",
+   "problems.build-error.title": "Uma Build terminou com um erro",
+   "problems.import-failed.title": "A importação de uma tag de ImageStream falha",
+   "sectionBadges.openshift.label.one": "{{count}} objeto precisa de atenção",
+   "sectionBadges.openshift.label.many": "{{count}} objetos precisam de atenção",
+   "sectionBadges.openshift.label.other": "{{count}} objetos precisam de atenção"
+  },
+  "ru": {
+   "name": "OpenShift",
+   "description": "Routes OpenShift с приёмом роутерами и бэкендами, DeploymentConfigs с rollout'ами и триггерами, BuildConfigs со сборками, Builds со сбоем и логами пода, ImageStreams с тегами и Projects, с «Развернуть последнюю версию» и «Запустить сборку»; проблемы непринятых Routes, неудачных rollout'ов, недавно упавших Builds и неудающихся импортов.",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "Развернуть последнюю версию",
+   "actions.start-build.title": "Запустить сборку",
+   "columns.route-status.title": "Статус",
+   "columns.route-status.cases.0.text": "Принят",
+   "columns.route-status.cases.1.text": "Отклонён",
+   "columns.route-status.cases.2.text": "Не принят",
+   "columns.route-host.title": "Хост",
+   "columns.route-services.title": "Services",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "Статус",
+   "columns.dc-status.cases.0.text": "Приостановлен",
+   "columns.dc-status.cases.1.text": "Сбой",
+   "columns.dc-status.cases.2.text": "Отменено",
+   "columns.dc-status.cases.3.text": "Развёртывается",
+   "columns.dc-status.cases.4.text": "Доступен",
+   "columns.dc-status.cases.5.text": "Недоступен",
+   "columns.dc-status.cases.6.text": "Не развёрнут",
+   "columns.dc-status.cases.7.text": "Развёртывается",
+   "columns.dc-ready.title": "Готово",
+   "columns.dc-latest-version.title": "Версия",
+   "columns.dc-triggers.title": "Триггеры",
+   "columns.bc-strategy.title": "Стратегия",
+   "columns.bc-source.title": "Источник",
+   "columns.bc-output.title": "Результат",
+   "columns.bc-last-version.title": "Последняя сборка",
+   "columns.bc-triggers.title": "Триггеры",
+   "columns.build-status.title": "Статус",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "Build config",
+   "columns.build-strategy.title": "Стратегия",
+   "columns.build-duration.title": "Длительность",
+   "columns.build-started.title": "Запущено",
+   "columns.is-tags.title": "Теги",
+   "columns.is-imports.title": "Импорт",
+   "columns.is-imports.cases.1.text": "1 импорт не удаётся",
+   "columns.is-imports.cases.2.text": "2 импорта не удаются",
+   "columns.is-imports.cases.3.text": "3 импорта не удаются",
+   "columns.is-imports.cases.4.text": "4 импорта не удаются",
+   "columns.is-imports.cases.5.text": "5 импортов не удаются",
+   "columns.is-imports.cases.6.text": "6 импортов не удаются",
+   "columns.is-imports.cases.7.text": "7 импортов не удаются",
+   "columns.is-imports.cases.8.text": "8 импортов не удаются",
+   "columns.is-imports.cases.9.text": "9 импортов не удаются",
+   "columns.is-imports.cases.10.text": "10 импортов не удаются",
+   "columns.is-imports.cases.11.text": "11 импортов не удаются",
+   "columns.is-imports.cases.12.text": "12 импортов не удаются",
+   "columns.is-imports.cases.13.text": "13 импортов не удаются",
+   "columns.is-imports.cases.14.text": "14 импортов не удаются",
+   "columns.is-imports.cases.15.text": "15 импортов не удаются",
+   "columns.is-imports.cases.16.text": "16 импортов не удаются",
+   "columns.is-imports.cases.17.text": "17 импортов не удаются",
+   "columns.is-imports.cases.18.text": "18 импортов не удаются",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} импорта не удаются",
+   "columns.is-repository.title": "Репозиторий",
+   "columns.project-display-name.title": "Отображаемое имя",
+   "columns.project-status.title": "Статус",
+   "columns.project-requester.title": "Запросил",
+   "problems.route-not-admitted.title": "Route, которую не принял ни один роутер",
+   "problems.dc-progressing.title": "Rollout DeploymentConfig не удался",
+   "problems.dc-progressing-other.title": "Rollout DeploymentConfig не удался (другие условия)",
+   "problems.dc-replica.title": "DeploymentConfig не смогла создать поды",
+   "problems.dc-replica-other.title": "DeploymentConfig не смогла создать поды (другие условия)",
+   "problems.dc-deadline.title": "Rollout DeploymentConfig не удался в ходе развёртывания",
+   "problems.dc-deadline-other.title": "Rollout DeploymentConfig не удался в ходе развёртывания (другие условия)",
+   "problems.build-failed.title": "Build завершился сбоем",
+   "problems.build-error.title": "Build завершился ошибкой",
+   "problems.import-failed.title": "Импорт тега ImageStream не удаётся",
+   "sectionBadges.openshift.label.one": "{{count}} объект требует внимания",
+   "sectionBadges.openshift.label.few": "{{count}} объекта требуют внимания",
+   "sectionBadges.openshift.label.many": "{{count}} объектов требуют внимания",
+   "sectionBadges.openshift.label.other": "{{count}} объекта требуют внимания"
+  },
+  "tr": {
+   "name": "OpenShift",
+   "description": "OpenShift'in kabul ve backend'leriyle Route'ları, rollout ve tetikleyicileriyle DeploymentConfig'leri, build'leriyle BuildConfig'leri, hatası ve pod loglarıyla Build'leri, etiketleriyle ImageStream'leri ve Project'leri; \"Son sürümü dağıt\" ve \"Derlemeyi başlat\" ile; kabul edilmeyen Route'ların, başarısız rollout'ların, yakın zamanda başarısız Build'lerin ve başarısız içe aktarmaların sorunları.",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "Son sürümü dağıt",
+   "actions.start-build.title": "Derlemeyi başlat",
+   "columns.route-status.title": "Durum",
+   "columns.route-status.cases.0.text": "Kabul edildi",
+   "columns.route-status.cases.1.text": "Reddedildi",
+   "columns.route-status.cases.2.text": "Kabul edilmedi",
+   "columns.route-host.title": "Host",
+   "columns.route-services.title": "Service'ler",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "Durum",
+   "columns.dc-status.cases.0.text": "Duraklatıldı",
+   "columns.dc-status.cases.1.text": "Başarısız",
+   "columns.dc-status.cases.2.text": "İptal edildi",
+   "columns.dc-status.cases.3.text": "Dağıtılıyor",
+   "columns.dc-status.cases.4.text": "Kullanılabilir",
+   "columns.dc-status.cases.5.text": "Kullanılamıyor",
+   "columns.dc-status.cases.6.text": "Dağıtılmadı",
+   "columns.dc-status.cases.7.text": "Dağıtılıyor",
+   "columns.dc-ready.title": "Hazır",
+   "columns.dc-latest-version.title": "Sürüm",
+   "columns.dc-triggers.title": "Tetikleyiciler",
+   "columns.bc-strategy.title": "Strateji",
+   "columns.bc-source.title": "Kaynak",
+   "columns.bc-output.title": "Çıktı",
+   "columns.bc-last-version.title": "Son derleme",
+   "columns.bc-triggers.title": "Tetikleyiciler",
+   "columns.build-status.title": "Durum",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "Build config",
+   "columns.build-strategy.title": "Strateji",
+   "columns.build-duration.title": "Süre",
+   "columns.build-started.title": "Başladı",
+   "columns.is-tags.title": "Etiketler",
+   "columns.is-imports.title": "İçe aktarmalar",
+   "columns.is-imports.cases.1.text": "1 içe aktarma başarısız",
+   "columns.is-imports.cases.2.text": "2 içe aktarma başarısız",
+   "columns.is-imports.cases.3.text": "3 içe aktarma başarısız",
+   "columns.is-imports.cases.4.text": "4 içe aktarma başarısız",
+   "columns.is-imports.cases.5.text": "5 içe aktarma başarısız",
+   "columns.is-imports.cases.6.text": "6 içe aktarma başarısız",
+   "columns.is-imports.cases.7.text": "7 içe aktarma başarısız",
+   "columns.is-imports.cases.8.text": "8 içe aktarma başarısız",
+   "columns.is-imports.cases.9.text": "9 içe aktarma başarısız",
+   "columns.is-imports.cases.10.text": "10 içe aktarma başarısız",
+   "columns.is-imports.cases.11.text": "11 içe aktarma başarısız",
+   "columns.is-imports.cases.12.text": "12 içe aktarma başarısız",
+   "columns.is-imports.cases.13.text": "13 içe aktarma başarısız",
+   "columns.is-imports.cases.14.text": "14 içe aktarma başarısız",
+   "columns.is-imports.cases.15.text": "15 içe aktarma başarısız",
+   "columns.is-imports.cases.16.text": "16 içe aktarma başarısız",
+   "columns.is-imports.cases.17.text": "17 içe aktarma başarısız",
+   "columns.is-imports.cases.18.text": "18 içe aktarma başarısız",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} içe aktarma başarısız",
+   "columns.is-repository.title": "Depo",
+   "columns.project-display-name.title": "Görünen ad",
+   "columns.project-status.title": "Durum",
+   "columns.project-requester.title": "İsteyen",
+   "problems.route-not-admitted.title": "Hiçbir router'ın kabul etmediği bir Route",
+   "problems.dc-progressing.title": "Bir DeploymentConfig'in rollout'u başarısız oldu",
+   "problems.dc-progressing-other.title": "Bir DeploymentConfig'in rollout'u başarısız oldu (diğer koşullar)",
+   "problems.dc-replica.title": "Bir DeploymentConfig pod'larını oluşturamadı",
+   "problems.dc-replica-other.title": "Bir DeploymentConfig pod'larını oluşturamadı (diğer koşullar)",
+   "problems.dc-deadline.title": "Bir DeploymentConfig'in rollout'u ilerlerken başarısız oldu",
+   "problems.dc-deadline-other.title": "Bir DeploymentConfig'in rollout'u ilerlerken başarısız oldu (diğer koşullar)",
+   "problems.build-failed.title": "Bir Build başarısız oldu",
+   "problems.build-error.title": "Bir Build hatayla sona erdi",
+   "problems.import-failed.title": "Bir ImageStream etiketinin içe aktarması başarısız oluyor",
+   "sectionBadges.openshift.label.one": "{{count}} nesne ilgi gerektiriyor",
+   "sectionBadges.openshift.label.other": "{{count}} nesne ilgi gerektiriyor"
+  },
+  "uk": {
+   "name": "OpenShift",
+   "description": "Routes OpenShift із прийняттям роутерами та бекендами, DeploymentConfigs із rollout'ами й тригерами, BuildConfigs зі збірками, Builds зі збоєм і логами пода, ImageStreams із тегами та Projects, з «Розгорнути останню версію» і «Запустити збірку»; проблеми неприйнятих Routes, невдалих rollout'ів, нещодавно невдалих Builds і невдалих імпортів.",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "Розгорнути останню версію",
+   "actions.start-build.title": "Запустити збірку",
+   "columns.route-status.title": "Статус",
+   "columns.route-status.cases.0.text": "Прийнято",
+   "columns.route-status.cases.1.text": "Відхилено",
+   "columns.route-status.cases.2.text": "Не прийнято",
+   "columns.route-host.title": "Хост",
+   "columns.route-services.title": "Services",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "Статус",
+   "columns.dc-status.cases.0.text": "Призупинено",
+   "columns.dc-status.cases.1.text": "Збій",
+   "columns.dc-status.cases.2.text": "Скасовано",
+   "columns.dc-status.cases.3.text": "Розгортається",
+   "columns.dc-status.cases.4.text": "Доступний",
+   "columns.dc-status.cases.5.text": "Недоступний",
+   "columns.dc-status.cases.6.text": "Не розгорнуто",
+   "columns.dc-status.cases.7.text": "Розгортається",
+   "columns.dc-ready.title": "Готово",
+   "columns.dc-latest-version.title": "Версія",
+   "columns.dc-triggers.title": "Тригери",
+   "columns.bc-strategy.title": "Стратегія",
+   "columns.bc-source.title": "Джерело",
+   "columns.bc-output.title": "Результат",
+   "columns.bc-last-version.title": "Остання збірка",
+   "columns.bc-triggers.title": "Тригери",
+   "columns.build-status.title": "Статус",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "Build config",
+   "columns.build-strategy.title": "Стратегія",
+   "columns.build-duration.title": "Тривалість",
+   "columns.build-started.title": "Запущено",
+   "columns.is-tags.title": "Теги",
+   "columns.is-imports.title": "Імпорт",
+   "columns.is-imports.cases.1.text": "1 імпорт не вдається",
+   "columns.is-imports.cases.2.text": "2 імпорти не вдаються",
+   "columns.is-imports.cases.3.text": "3 імпорти не вдаються",
+   "columns.is-imports.cases.4.text": "4 імпорти не вдаються",
+   "columns.is-imports.cases.5.text": "5 імпортів не вдаються",
+   "columns.is-imports.cases.6.text": "6 імпортів не вдаються",
+   "columns.is-imports.cases.7.text": "7 імпортів не вдаються",
+   "columns.is-imports.cases.8.text": "8 імпортів не вдаються",
+   "columns.is-imports.cases.9.text": "9 імпортів не вдаються",
+   "columns.is-imports.cases.10.text": "10 імпортів не вдаються",
+   "columns.is-imports.cases.11.text": "11 імпортів не вдаються",
+   "columns.is-imports.cases.12.text": "12 імпортів не вдаються",
+   "columns.is-imports.cases.13.text": "13 імпортів не вдаються",
+   "columns.is-imports.cases.14.text": "14 імпортів не вдаються",
+   "columns.is-imports.cases.15.text": "15 імпортів не вдаються",
+   "columns.is-imports.cases.16.text": "16 імпортів не вдаються",
+   "columns.is-imports.cases.17.text": "17 імпортів не вдаються",
+   "columns.is-imports.cases.18.text": "18 імпортів не вдаються",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} імпорту не вдаються",
+   "columns.is-repository.title": "Репозиторій",
+   "columns.project-display-name.title": "Відображуване ім’я",
+   "columns.project-status.title": "Статус",
+   "columns.project-requester.title": "Запитувач",
+   "problems.route-not-admitted.title": "Route, яку не прийняв жоден роутер",
+   "problems.dc-progressing.title": "Rollout DeploymentConfig не вдався",
+   "problems.dc-progressing-other.title": "Rollout DeploymentConfig не вдався (інші умови)",
+   "problems.dc-replica.title": "DeploymentConfig не змогла створити поди",
+   "problems.dc-replica-other.title": "DeploymentConfig не змогла створити поди (інші умови)",
+   "problems.dc-deadline.title": "Rollout DeploymentConfig не вдався під час розгортання",
+   "problems.dc-deadline-other.title": "Rollout DeploymentConfig не вдався під час розгортання (інші умови)",
+   "problems.build-failed.title": "Build завершився збоєм",
+   "problems.build-error.title": "Build завершився помилкою",
+   "problems.import-failed.title": "Імпорт тегу ImageStream не вдається",
+   "sectionBadges.openshift.label.one": "{{count}} об’єкт потребує уваги",
+   "sectionBadges.openshift.label.few": "{{count}} об’єкти потребують уваги",
+   "sectionBadges.openshift.label.many": "{{count}} об’єктів потребують уваги",
+   "sectionBadges.openshift.label.other": "{{count}} об’єкта потребують уваги"
+  },
+  "zh-CN": {
+   "name": "OpenShift",
+   "description": "OpenShift 的 Route（接纳与后端）、DeploymentConfig（发布与触发器）、BuildConfig（构建）、Build（失败与 Pod 日志）、ImageStream（标签）和 Project，提供“发布最新版本”和“启动构建”；未被接纳的 Route、失败的发布、最近失败的 Build 和失败的导入的问题。",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "发布最新版本",
+   "actions.start-build.title": "启动构建",
+   "columns.route-status.title": "状态",
+   "columns.route-status.cases.0.text": "已接受",
+   "columns.route-status.cases.1.text": "已拒绝",
+   "columns.route-status.cases.2.text": "未接受",
+   "columns.route-host.title": "主机",
+   "columns.route-services.title": "Service",
+   "columns.route-services.cases.0.text": "{{.spec.to.name}}、{{.spec.alternateBackends[*].name|list}}",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "状态",
+   "columns.dc-status.cases.0.text": "已暂停",
+   "columns.dc-status.cases.1.text": "失败",
+   "columns.dc-status.cases.2.text": "已取消",
+   "columns.dc-status.cases.3.text": "正在发布",
+   "columns.dc-status.cases.4.text": "可用",
+   "columns.dc-status.cases.5.text": "不可用",
+   "columns.dc-status.cases.6.text": "未部署",
+   "columns.dc-status.cases.7.text": "正在发布",
+   "columns.dc-ready.title": "就绪",
+   "columns.dc-latest-version.title": "版本",
+   "columns.dc-triggers.title": "触发器",
+   "columns.bc-strategy.title": "策略",
+   "columns.bc-source.title": "源",
+   "columns.bc-output.title": "输出",
+   "columns.bc-last-version.title": "最近构建",
+   "columns.bc-triggers.title": "触发器",
+   "columns.build-status.title": "状态",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "构建配置",
+   "columns.build-strategy.title": "策略",
+   "columns.build-duration.title": "耗时",
+   "columns.build-started.title": "开始时间",
+   "columns.is-tags.title": "标签",
+   "columns.is-imports.title": "导入",
+   "columns.is-imports.cases.1.text": "1 个导入失败",
+   "columns.is-imports.cases.2.text": "2 个导入失败",
+   "columns.is-imports.cases.3.text": "3 个导入失败",
+   "columns.is-imports.cases.4.text": "4 个导入失败",
+   "columns.is-imports.cases.5.text": "5 个导入失败",
+   "columns.is-imports.cases.6.text": "6 个导入失败",
+   "columns.is-imports.cases.7.text": "7 个导入失败",
+   "columns.is-imports.cases.8.text": "8 个导入失败",
+   "columns.is-imports.cases.9.text": "9 个导入失败",
+   "columns.is-imports.cases.10.text": "10 个导入失败",
+   "columns.is-imports.cases.11.text": "11 个导入失败",
+   "columns.is-imports.cases.12.text": "12 个导入失败",
+   "columns.is-imports.cases.13.text": "13 个导入失败",
+   "columns.is-imports.cases.14.text": "14 个导入失败",
+   "columns.is-imports.cases.15.text": "15 个导入失败",
+   "columns.is-imports.cases.16.text": "16 个导入失败",
+   "columns.is-imports.cases.17.text": "17 个导入失败",
+   "columns.is-imports.cases.18.text": "18 个导入失败",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} 个导入失败",
+   "columns.is-repository.title": "仓库",
+   "columns.project-display-name.title": "显示名称",
+   "columns.project-status.title": "状态",
+   "columns.project-requester.title": "请求者",
+   "problems.route-not-admitted.title": "没有路由器接纳的 Route",
+   "problems.dc-progressing.title": "DeploymentConfig 的发布失败",
+   "problems.dc-progressing-other.title": "DeploymentConfig 的发布失败（其他 condition）",
+   "problems.dc-replica.title": "DeploymentConfig 无法创建其 Pod",
+   "problems.dc-replica-other.title": "DeploymentConfig 无法创建其 Pod（其他 condition）",
+   "problems.dc-deadline.title": "DeploymentConfig 的发布在进行中失败",
+   "problems.dc-deadline-other.title": "DeploymentConfig 的发布在进行中失败（其他 condition）",
+   "problems.build-failed.title": "Build 失败",
+   "problems.build-error.title": "Build 以错误结束",
+   "problems.import-failed.title": "ImageStream 标签的导入失败",
+   "sectionBadges.openshift.label.other": "{{count}} 个对象需要关注"
+  },
+  "zh-TW": {
+   "name": "OpenShift",
+   "description": "OpenShift 的 Route（接納與後端）、DeploymentConfig（發布與觸發器）、BuildConfig（建置）、Build（失敗與 Pod 日誌）、ImageStream（標籤）和 Project，提供「推出最新版本」和「啟動建置」；未被接納的 Route、失敗的發布、最近失敗的 Build 和失敗的匯入的問題。",
+   "kinds.0.title": "Routes",
+   "kinds.1.title": "Deployment Configs",
+   "kinds.2.title": "Build Configs",
+   "kinds.3.title": "Builds",
+   "kinds.4.title": "Image Streams",
+   "kinds.5.title": "Projects",
+   "sections.openshift.title": "OpenShift",
+   "detailsSections.openshift.title": "OpenShift",
+   "actions.rollout-latest.title": "推出最新版本",
+   "actions.start-build.title": "啟動建置",
+   "columns.route-status.title": "狀態",
+   "columns.route-status.cases.0.text": "已接受",
+   "columns.route-status.cases.1.text": "已拒絕",
+   "columns.route-status.cases.2.text": "未接受",
+   "columns.route-host.title": "主機",
+   "columns.route-services.title": "Service",
+   "columns.route-services.cases.0.text": "{{.spec.to.name}}、{{.spec.alternateBackends[*].name|list}}",
+   "columns.route-tls.title": "TLS",
+   "columns.dc-status.title": "狀態",
+   "columns.dc-status.cases.0.text": "已暫停",
+   "columns.dc-status.cases.1.text": "失敗",
+   "columns.dc-status.cases.2.text": "已取消",
+   "columns.dc-status.cases.3.text": "正在推出",
+   "columns.dc-status.cases.4.text": "可用",
+   "columns.dc-status.cases.5.text": "無法使用",
+   "columns.dc-status.cases.6.text": "未部署",
+   "columns.dc-status.cases.7.text": "正在推出",
+   "columns.dc-ready.title": "就緒",
+   "columns.dc-latest-version.title": "版本",
+   "columns.dc-triggers.title": "觸發器",
+   "columns.bc-strategy.title": "策略",
+   "columns.bc-source.title": "來源",
+   "columns.bc-output.title": "輸出",
+   "columns.bc-last-version.title": "最近建置",
+   "columns.bc-triggers.title": "觸發器",
+   "columns.build-status.title": "狀態",
+   "columns.build-status.cases.1.text": "New",
+   "columns.build-config.title": "建置設定",
+   "columns.build-strategy.title": "策略",
+   "columns.build-duration.title": "耗時",
+   "columns.build-started.title": "開始時間",
+   "columns.is-tags.title": "標籤",
+   "columns.is-imports.title": "匯入",
+   "columns.is-imports.cases.1.text": "1 個匯入失敗",
+   "columns.is-imports.cases.2.text": "2 個匯入失敗",
+   "columns.is-imports.cases.3.text": "3 個匯入失敗",
+   "columns.is-imports.cases.4.text": "4 個匯入失敗",
+   "columns.is-imports.cases.5.text": "5 個匯入失敗",
+   "columns.is-imports.cases.6.text": "6 個匯入失敗",
+   "columns.is-imports.cases.7.text": "7 個匯入失敗",
+   "columns.is-imports.cases.8.text": "8 個匯入失敗",
+   "columns.is-imports.cases.9.text": "9 個匯入失敗",
+   "columns.is-imports.cases.10.text": "10 個匯入失敗",
+   "columns.is-imports.cases.11.text": "11 個匯入失敗",
+   "columns.is-imports.cases.12.text": "12 個匯入失敗",
+   "columns.is-imports.cases.13.text": "13 個匯入失敗",
+   "columns.is-imports.cases.14.text": "14 個匯入失敗",
+   "columns.is-imports.cases.15.text": "15 個匯入失敗",
+   "columns.is-imports.cases.16.text": "16 個匯入失敗",
+   "columns.is-imports.cases.17.text": "17 個匯入失敗",
+   "columns.is-imports.cases.18.text": "18 個匯入失敗",
+   "columns.is-imports.cases.19.text": "{{.status.tags[conditions.type=\"ImportSuccess\",conditions.status=\"False\",*]|count}} 個匯入失敗",
+   "columns.is-repository.title": "存放庫",
+   "columns.project-display-name.title": "顯示名稱",
+   "columns.project-status.title": "狀態",
+   "columns.project-requester.title": "請求者",
+   "problems.route-not-admitted.title": "沒有路由器接納的 Route",
+   "problems.dc-progressing.title": "DeploymentConfig 的發布失敗",
+   "problems.dc-progressing-other.title": "DeploymentConfig 的發布失敗（其他 condition）",
+   "problems.dc-replica.title": "DeploymentConfig 無法建立其 Pod",
+   "problems.dc-replica-other.title": "DeploymentConfig 無法建立其 Pod（其他 condition）",
+   "problems.dc-deadline.title": "DeploymentConfig 的發布在進行中失敗",
+   "problems.dc-deadline-other.title": "DeploymentConfig 的發布在進行中失敗（其他 condition）",
+   "problems.build-failed.title": "Build 失敗",
+   "problems.build-error.title": "Build 以錯誤結束",
+   "problems.import-failed.title": "ImageStream 標籤的匯入失敗",
+   "sectionBadges.openshift.label.other": "{{count}} 個物件需要注意"
+  }
+ }
+}

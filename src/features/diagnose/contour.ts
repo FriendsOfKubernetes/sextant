@@ -29,7 +29,7 @@ import {
   tlsOf,
   validCondition,
   type ProxyService,
-} from "../contour/model";
+} from "./contourModel";
 import { phrase as diagnosePhrase, Walk, type Chain, type ClusterView, type Finding, type LinkRef, type Param, type Phrase } from "./model";
 import { linkOf, nameOf, namespaceOf, SECRET, SERVICE } from "./objects";
 import type { ListRef, RouteDiagnoser, SecretRef } from "./routeKinds";
@@ -41,7 +41,7 @@ export const MAX_DEPTH = 3;
 /** Service chains a diagnosis follows at most (as a route's backends). */
 export const MAX_SERVICES = 30;
 
-const say = (key: string, params?: Record<string, Param>): Phrase => ({ key: `contour:diagnose.${key}`, params });
+const say = (key: string, params?: Record<string, Param>): Phrase => ({ key: `diagnose:contour.${key}`, params });
 const proxyLink = (namespace: string, name: string): LinkRef => ({ kind: HTTP_PROXY, namespace, name });
 
 /** What Contour says of the proxy, as the first link of its chain. */

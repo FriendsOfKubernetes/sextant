@@ -234,3 +234,48 @@ HelmChartConfig's `set`) but cannot show the masked node arguments or `valuesCon
 showed, and points at the YAML section instead; showing them would need a masked projection computed in Rust by
 ADR-0123's rules. The objects-by-name reader `src/resources/refObjects.ts`, whose last user was the built-in
 Distribution page, is removed. Where the extension still differs is listed in its README.
+
+## Amendment: Contour
+
+`extensions/contour` (`sextant.contour`, 1.0.0) takes the Contour view (ADR-0107): HTTPProxies,
+TLSCertificateDelegations and ExtensionServices in the section `contour` with the built-in columns, "Only problems" and
+details (a proxy's state as Contour writes it with its first error, the virtual host and TLS with the delegation that
+allows a Secret of another namespace, routes with each service's share or mirror percent, the policies, includes and
+the delegation tree). The section keeps its place after `traefik`; Knative's two sections, which came after it, hang
+off `traefik` too in `EXTENSION_SECTION_PLACES`, so the order is unchanged. The sidebar offers the extension where
+`projectcontour.io` is served. Invalid and orphaned proxies are rules of the extension's own category; the version-3
+migration moves the category `contour` (on by default) to `ext:sextant.contour` (`MOVED_PROBLEM_CATEGORIES`, never for
+agents by default, as before). An orphan under an invalid proxy is told through that proxy by the extension's rules
+(`toldThroughReferrer`), so the built-in `toldThroughInvalid` goes with the view. The traffic diagnosis of an
+HTTPProxy stays Sextant's own, for the window and agents' `diagnose_service`, whether the extension is installed or
+not: `src/features/diagnose/contour.ts`, registered with the "Diagnose" action and the "Diagnosis" tab by
+`diagnose/register.tsx` (they apply to a kind an extension lists as to any other), reading the proxy through
+`diagnose/contourModel.ts` — the part of the former `model.ts` it needs (states, shares, includes, prefixes joined as
+`mergePathMatchConditions`, delegations) — with its fixtures and its texts as `diagnose:contour.*`. Where the extension
+still differs (an orphan included only through an invalid proxy's TCP proxy, orphans on a cluster with more than 5000
+HTTPProxies, the status search by the shown words) is listed in its README.
+
+## Amendment: OpenShift
+
+`extensions/openshift` (`sextant.openshift`, 1.0.0) takes the OpenShift view (ADR-0120): Routes, DeploymentConfigs,
+BuildConfigs, Builds, ImageStreams and Projects in the section `openshift` with the built-in columns, "Only problems"
+and details, and the two actions "Rollout latest" and "Start build", whose windows show the one request each sends
+before it goes through `resources.instantiate` (ADR-0120 amendment); the window's own commands
+`openshift_rollout_latest` and `openshift_start_build` and `api.openshift` go with the built-in view, while the core
+functions that build and send the requests (`resources::openshift`) stay, and neither action is an MCP tool (the test
+`neither_agents_nor_extensions_get_the_openshift_actions` moves to `src-tauri/src/extensions/api_tests.rs`). The
+section keeps its place after the sections that followed `crossplane`, behind `olm`, and the sidebar offers the
+extension where `route.openshift.io` or `apps.openshift.io` is served. Routes not admitted, failed rollouts, recent
+failed Builds and failing imports are rules of the extension's own category; the version-3 migration moves the
+category `openshift` (on by default) to `ext:sextant.openshift` (`MOVED_PROBLEM_CATEGORIES`, never for agents by
+default, as before). Only the latest failed Build of a BuildConfig counts by the extension's rules (`newestPer`), so the
+built-in `BUILD_ACROSS` goes with the view, and with it, its last user gone after Contour's, the problems store's
+`SourceDef.across` (a source's problems judged across its own rows); `SourceDef.judge` of the extensions' rules stays.
+`fnv32a` and the shared `DurationText`, whose last user was the built-in view, go too. The Route diagnosis stays
+Sextant's own: `src/features/diagnose/openshift.ts`, registered with "Diagnose" and the "Diagnosis" tab by
+`diagnose/register.tsx`, reading the Route through `diagnose/openshiftModel.ts` (backends and shares, the target port,
+TLS flags never as values, the routers' admission), with its fixture and texts as `diagnose:openshift.*`. The
+inline-secret rows of Routes and BuildConfigs stay, so the host blanks those fields for every extension and agent, and
+so does the access store's reading of OpenShift projects (ADR-0124). Where the extension still differs (the Route
+Services column's shares, an ImageStream problem's time, the newest Build by creation rather than by number, the Tags
+column's order, plurals above 18 imports, a finished Build's duration) is listed in its README.

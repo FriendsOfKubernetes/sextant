@@ -12,7 +12,7 @@
 // list of its own and no Secret.
 import type { KindRef, KubeObject } from "../../api";
 import { serviceInfo, type ServicePort } from "../netpol/model";
-import { isKind, ROUTE, routeAdmissions, routeBackends, routeHost, routeState, routeTargetPort, routeTls, routeUrl, type RouteBackend } from "../openshift/model";
+import { isKind, ROUTE, routeAdmissions, routeBackends, routeHost, routeState, routeTargetPort, routeTls, routeUrl, type RouteBackend } from "./openshiftModel";
 import { phrase as diagnosePhrase, Walk, type Chain, type ClusterView, type Finding, type Param, type Phrase } from "./model";
 import { linkOf, minutesSince, nameOf, namespaceOf, portLabel, SERVICE } from "./objects";
 import type { RouteDiagnoser } from "./routeKinds";
@@ -21,7 +21,7 @@ import { diagnoseService } from "./service";
 /** Backends a diagnosis follows at most (`spec.to` and at most 3 alternate backends: route/v1/types.go). */
 export const MAX_BACKENDS = 4;
 
-const say = (key: string, params?: Record<string, Param>): Phrase => ({ key: `openshift:diagnose.${key}`, params });
+const say = (key: string, params?: Record<string, Param>): Phrase => ({ key: `diagnose:openshift.${key}`, params });
 
 /** What the routers say of the Route, as the first link of its chain. */
 export function admissionFinding(route: KubeObject, now: number): Finding {

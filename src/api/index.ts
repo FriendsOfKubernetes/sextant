@@ -23,7 +23,6 @@ export const api = {
   access: commands.access,
   rbac: commands.rbac,
   reflector: commands.reflector,
-  openshift: commands.openshift,
   upgrade: commands.upgrade,
   cleanup: commands.cleanup,
   compare: commands.compare,

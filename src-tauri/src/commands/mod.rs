@@ -21,7 +21,6 @@ pub mod loki;
 pub mod mcp;
 pub mod metrics;
 pub mod openapi;
-pub mod openshift;
 pub mod portforward;
 pub mod rbac;
 pub mod reflector;

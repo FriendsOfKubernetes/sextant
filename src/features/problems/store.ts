@@ -199,14 +199,10 @@ function changed(): void {
   for (const fn of [...listeners]) fn();
 }
 
-/** Recomputes the state's problem list after `byUid` (or, for a source judged across its objects, its rows) changed. */
+/** Recomputes the state's problem list after `byUid` (or, for a source an extension's rules judge, its rows) changed. */
 function publish(entry: Entry, patch: Partial<SourceState> = {}): void {
   let problems: Problem[] = [];
   for (const list of entry.byUid.values()) problems.push(...list);
-  const across = entry.state.def.across;
-  const rows = across ? entry.taps.get(across.tap.id)?.state : undefined;
-  // Only rows read in full may hide a problem: while they load (or after an error) every problem stays.
-  if (across && rows?.status === "ready") problems = across.keep(problems, rows.rows);
   const judge = entry.state.def.judge;
   if (judge) problems = judge.judge(problems, judgeContext(entry, judge.tap.id));
   entry.state = { ...entry.state, ...patch, problems };
@@ -523,8 +519,8 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
           }
           const patch = applyUpdate(created, update, clock());
           if (patch) publish(created, patch);
-          // The rows decide which problems a source judged across its objects shows.
-          else if (tapped && (def.across || def.judge)) publish(created);
+          // The rows decide which problems a source an extension's rules judge across objects shows.
+          else if (tapped && def.judge) publish(created);
           else if (tapped) changed();
         },
         onStartError: (err) => {
@@ -535,12 +531,8 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
     };
     // A provider's source (`registerProblemProvider`): its problems come from outside, nothing is watched.
     if (def.external) created.open = () => (created.stop = openProvided(key, clusterId, created));
-    // A source judged across its objects keeps its own tap for as long as it lives (a view's tap of the same id
-    // shares it).
-    if (def.across) {
-      created.taps.set(def.across.tap.id, { tap: def.across.tap, refs: 1, state: { status: "loading", rows: new Map(), truncated: false } });
-    }
-    // So does a source an extension's rules judge across objects.
+    // A source an extension's rules judge across objects keeps its own tap for as long as it lives (a view's tap of the
+    // same id shares it).
     if (def.judge) {
       created.taps.set(def.judge.tap.id, { tap: def.judge.tap, refs: 1, state: { status: "loading", rows: new Map(), truncated: false } });
     }

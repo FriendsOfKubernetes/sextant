@@ -1,0 +1,6 @@
+{
+  "apiVersion": "projectcontour.io/v1",
+  "kind": "TLSCertificateDelegation",
+  "metadata": { "name": "example-com-wildcard", "namespace": "www-admin", "uid": "c0a1-delegation", "resourceVersion": "201", "creationTimestamp": "2026-10-01T10:00:00Z" },
+  "spec": { "delegations": [{ "secretName": "example-com-wildcard", "targetNamespaces": ["roots"] }, { "secretName": "shared-ca", "targetNamespaces": ["*"] }] }
+}

@@ -18,8 +18,6 @@ const PRIMARY: ActionId[] = [
   "cordon",
   "drain",
   "diagnose",
-  "openshiftRolloutLatest",
-  "openshiftStartBuild",
 ];
 
 const MORE: ActionId[] = [

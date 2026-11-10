@@ -2971,3 +2971,39 @@ async fn several_patches_are_decided_together_under_one_confirmation_and_stop_at
         .unwrap_err();
     assert_eq!(none.code, ErrorCode::Invalid);
 }
+
+/// OpenShift's two actions (#267, ADR-0120 amendment): "Rollout latest" and "Start build" are no MCP tool, and the
+/// extension API reaches them only through `resources.instantiate` (the core builds the request from the name, Modify
+/// on the object, asked as any change). The window's own commands went with the built-in view (ADR-0162 amendment):
+/// Sextant's own extension `extensions/openshift` sends them.
+#[test]
+fn neither_agents_nor_extensions_get_the_openshift_actions() {
+    let tools = crate::mcp::server::all_tools().names();
+    assert!(tools.len() > 10, "{tools:?}");
+    let forbidden = [
+        "openshift",
+        "instantiate",
+        "rollout_latest",
+        "start_build",
+        "build",
+    ];
+    assert!(
+        !tools
+            .iter()
+            .any(|t| forbidden.iter().any(|f| t.contains(f))),
+        "{tools:?}"
+    );
+    assert!(METHODS.contains(&"resources.instantiate"));
+    assert!(
+        !METHODS
+            .iter()
+            .filter(|m| **m != "resources.instantiate")
+            .any(|m| {
+                let m = m.to_lowercase();
+                ["openshift", "instantiate", "rollout", "build"]
+                    .iter()
+                    .any(|f| m.contains(f))
+            }),
+        "{METHODS:?}"
+    );
+}

@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { KubeObject } from "../../api";
 import { i18n } from "../../i18n";
 import { loadLanguage } from "../../i18n/index";
-import "../../features/openshift/index";
 import "../../resources";
 import { findResourceDef } from "../../resources";
 import type { ColumnDef } from "../../resources/registry";
@@ -96,16 +95,9 @@ describe("search over the shown columns", () => {
     await loadLanguage("de");
     await i18n.changeLanguage("de");
     try {
-      const ROUTE = { group: "route.openshift.io", version: "v1", kind: "Route" };
-      const columnsOf = (kind: typeof POD) => findResourceDef(kind)!.columns;
-      const named = (name: string, rest: Partial<KubeObject> = {}): KubeObject => ({ metadata: { name, namespace: "ops" }, ...rest });
-
-      const route = named("web", {
-        spec: { host: "web.apps.example", to: { kind: "Service", name: "web" } },
-        status: { ingress: [{ conditions: [{ type: "Admitted", status: "True" }] }] },
-      });
-      expect(search("Zugelassen", [route], columnsOf(ROUTE))).toEqual(["web"]);
-      expect(search("admitted", [route], columnsOf(ROUTE))).toEqual([]);
+      // The age column reads "5 min" in German, not "5m".
+      expect(search("min", pods)).toHaveLength(3);
+      expect(search("5m", pods)).toEqual([]);
     } finally {
       await i18n.changeLanguage("en");
     }

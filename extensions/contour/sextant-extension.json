@@ -1,0 +1,1242 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.contour",
+  "name": "Contour",
+  "version": "1.0.0",
+  "description": "Contour's HTTPProxies, TLSCertificateDelegations and ExtensionServices: each proxy's state as Contour writes it with its first error, its virtual host and TLS, routes with each service's share, includes and the delegation tree; problems of invalid and orphaned proxies. Read-only.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "contour",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "projectcontour.io",
+              "kind": "HTTPProxy"
+            },
+            {
+              "group": "projectcontour.io",
+              "kind": "TLSCertificateDelegation"
+            },
+            {
+              "group": "projectcontour.io",
+              "kind": "ExtensionService"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "projectcontour.io",
+        "kind": "HTTPProxy",
+        "section": "contour",
+        "title": "HTTP Proxies",
+        "icon": "contourProxy",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.currentStatus",
+                  "value": "invalid"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "in",
+                        "path": ".status.currentStatus",
+                        "values": [
+                          "valid",
+                          "invalid",
+                          "orphaned"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "Valid",
+                      "status": "False"
+                    },
+                    {
+                      "type": "absent",
+                      "path": ".status.conditions[type=\"Valid\"].errors[type=\"Orphaned\"]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.currentStatus",
+                  "value": "orphaned"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "in",
+                        "path": ".status.currentStatus",
+                        "values": [
+                          "valid",
+                          "invalid",
+                          "orphaned"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "Valid",
+                      "status": "False"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".status.conditions[type=\"Valid\"].errors[type=\"Orphaned\"]"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "group": "projectcontour.io",
+        "kind": "TLSCertificateDelegation",
+        "section": "contour",
+        "title": "TLS Certificate Delegations",
+        "icon": "contourDelegation",
+        "order": 20,
+        "printerColumns": false
+      },
+      {
+        "group": "projectcontour.io",
+        "kind": "ExtensionService",
+        "section": "contour",
+        "title": "Extension Services",
+        "icon": "contourExtension",
+        "order": 30,
+        "printerColumns": false
+      }
+    ],
+    "sections": [
+      {
+        "section": "contour",
+        "title": "Contour",
+        "icon": "contour",
+        "after": "traefik"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "contour",
+        "rules": [
+          "proxy-invalid",
+          "proxy-orphaned"
+        ],
+        "label": {
+          "one": "{{count}} HTTPProxy needs attention",
+          "other": "{{count}} HTTPProxies need attention"
+        }
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "http-proxy",
+        "title": "HTTPProxy",
+        "kinds": [
+          {
+            "group": "projectcontour.io",
+            "kind": "HTTPProxy"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      },
+      {
+        "id": "tls-delegation",
+        "title": "TLSCertificateDelegation",
+        "kinds": [
+          {
+            "group": "projectcontour.io",
+            "kind": "TLSCertificateDelegation"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      },
+      {
+        "id": "extension-service",
+        "title": "ExtensionService",
+        "kinds": [
+          {
+            "group": "projectcontour.io",
+            "kind": "ExtensionService"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "HTTPProxy"
+        },
+        "id": "proxy-status",
+        "title": "Status",
+        "paths": [
+          ".status.currentStatus"
+        ],
+        "width": "110px",
+        "cases": [
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.currentStatus",
+                  "value": "valid"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "in",
+                        "path": ".status.currentStatus",
+                        "values": [
+                          "valid",
+                          "invalid",
+                          "orphaned"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "Valid",
+                      "status": "True"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Valid",
+            "tone": "ok",
+            "value": "valid"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.currentStatus",
+                  "value": "invalid"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "in",
+                        "path": ".status.currentStatus",
+                        "values": [
+                          "valid",
+                          "invalid",
+                          "orphaned"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "Valid",
+                      "status": "False"
+                    },
+                    {
+                      "type": "absent",
+                      "path": ".status.conditions[type=\"Valid\"].errors[type=\"Orphaned\"]"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Invalid",
+            "tone": "error",
+            "value": "invalid"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.currentStatus",
+                  "value": "orphaned"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "in",
+                        "path": ".status.currentStatus",
+                        "values": [
+                          "valid",
+                          "invalid",
+                          "orphaned"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "Valid",
+                      "status": "False"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".status.conditions[type=\"Valid\"].errors[type=\"Orphaned\"]"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Orphaned",
+            "tone": "error",
+            "value": "orphaned"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Waiting for Contour",
+            "tone": "warning",
+            "value": "pending"
+          }
+        ],
+        "filterBy": "value",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "HTTPProxy"
+        },
+        "id": "proxy-fqdn",
+        "title": "Host",
+        "paths": [
+          ".spec.virtualhost.fqdn"
+        ],
+        "width": "minmax(140px, 2fr)",
+        "afterColumn": "proxy-status"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "HTTPProxy"
+        },
+        "id": "proxy-tls",
+        "title": "TLS Secret",
+        "paths": [
+          ".spec.virtualhost.tls.secretName"
+        ],
+        "width": "minmax(120px, 1fr)",
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.virtualhost.tls.passthrough",
+              "value": true
+            },
+            "text": "passthrough"
+          },
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.virtualhost.tls.secretName",
+              "value": ""
+            },
+            "text": "",
+            "value": "{{.spec.virtualhost.tls.secretName|after:/}}"
+          },
+          {
+            "when": {
+              "type": "startsWith",
+              "path": ".spec.virtualhost.tls.secretName",
+              "values": [
+                "{{.metadata.namespace}}/"
+              ]
+            },
+            "text": "{{.spec.virtualhost.tls.secretName|after:/}}"
+          },
+          {
+            "when": {
+              "type": "startsWith",
+              "path": ".spec.virtualhost.tls.secretName",
+              "values": [
+                "{{.metadata.namespace}}/"
+              ]
+            },
+            "text": "",
+            "value": "{{.spec.virtualhost.tls.secretName|after:/}}"
+          }
+        ],
+        "afterColumn": "proxy-fqdn"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "HTTPProxy"
+        },
+        "id": "proxy-includes",
+        "title": "Includes",
+        "paths": [
+          ".spec.includes[name!=\"\",*].name|count"
+        ],
+        "format": "number",
+        "width": "90px",
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.tcpproxy.include.name",
+              "nonEmpty": true
+            },
+            "text": "{{.spec.includes[name!=\"\",*].name + .spec.tcpproxy.include.name|count}}",
+            "value": "{{.spec.includes[name!=\"\",*].name + .spec.tcpproxy.include.name|count}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.tcpproxy.include"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.tcpproxy.includes.name",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.spec.includes[name!=\"\",*].name + .spec.tcpproxy.includes.name|count}}",
+            "value": "{{.spec.includes[name!=\"\",*].name + .spec.tcpproxy.includes.name|count}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "above",
+                "path": ".spec.includes[name!=\"\",*].name|count",
+                "value": 0
+              }
+            },
+            "text": "",
+            "value": "{{.spec.includes[0].name}}"
+          }
+        ],
+        "afterColumn": "proxy-tls"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "HTTPProxy"
+        },
+        "id": "proxy-routes",
+        "title": "Routes",
+        "paths": [
+          ".spec.routes"
+        ],
+        "format": "count",
+        "width": "80px",
+        "cases": [
+          {
+            "when": {
+              "type": "equals",
+              "path": ".spec.routes|count",
+              "value": 0
+            },
+            "text": "",
+            "value": "{{.spec.routes[0]}}"
+          }
+        ],
+        "afterColumn": "proxy-includes"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "HTTPProxy"
+        },
+        "id": "proxy-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.conditions[type=\"Valid\"].errors[0].reason"
+        ],
+        "width": "minmax(100px, 1fr)",
+        "cases": [
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.currentStatus",
+                  "value": "orphaned"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "in",
+                        "path": ".status.currentStatus",
+                        "values": [
+                          "valid",
+                          "invalid",
+                          "orphaned"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "condition",
+                      "conditionType": "Valid",
+                      "status": "False"
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".status.conditions[type=\"Valid\"].errors[type=\"Orphaned\"]"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Orphaned"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.conditions[type=\"Valid\"].status",
+                "nonEmpty": true
+              }
+            },
+            "text": "",
+            "value": "{{.status.conditions[type=\"Valid\"].status}}"
+          }
+        ],
+        "afterColumn": "proxy-routes"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "TLSCertificateDelegation"
+        },
+        "id": "delegation-secrets",
+        "title": "Secrets",
+        "paths": [
+          ".spec.delegations[*].secretName"
+        ],
+        "format": "list",
+        "separator": ", ",
+        "width": "minmax(140px, 2fr)",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "TLSCertificateDelegation"
+        },
+        "id": "delegation-targets",
+        "title": "Target namespaces",
+        "paths": [
+          ".spec.delegations[secretName!=\"\",*].targetNamespaces[*]"
+        ],
+        "format": "list",
+        "joinPaths": true,
+        "separator": ", ",
+        "width": "minmax(140px, 2fr)",
+        "afterColumn": "delegation-secrets"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "ExtensionService"
+        },
+        "id": "extension-status",
+        "title": "Status",
+        "paths": [
+          ".status.conditions[type=\"Valid\"].status"
+        ],
+        "width": "110px",
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Valid",
+              "status": "True"
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "value": "ready"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Valid",
+              "status": "False"
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Valid",
+              "status": "Unknown"
+            },
+            "text": "Progressing",
+            "tone": "warning",
+            "value": "progressing"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "Unknown",
+            "tone": "muted",
+            "value": "unknown"
+          }
+        ],
+        "filterBy": "value",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "ExtensionService"
+        },
+        "id": "extension-services",
+        "title": "Services",
+        "paths": [
+          ".spec.services"
+        ],
+        "format": "list",
+        "items": {
+          "cases": [
+            {
+              "when": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".name",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".port"
+                  }
+                ]
+              },
+              "text": "{{.name}}:{{.port}}"
+            },
+            {
+              "when": {
+                "type": "exists",
+                "path": ".name",
+                "nonEmpty": true
+              },
+              "text": "{{.name}}:"
+            }
+          ],
+          "separator": ", "
+        },
+        "width": "minmax(140px, 2fr)",
+        "afterColumn": "extension-status"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "ExtensionService"
+        },
+        "id": "extension-protocol",
+        "title": "Protocol",
+        "paths": [
+          ".spec.protocol"
+        ],
+        "width": "90px",
+        "afterColumn": "extension-services"
+      },
+      {
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "ExtensionService"
+        },
+        "id": "extension-reason",
+        "title": "Reason",
+        "paths": [
+          ".status.conditions[type=\"Valid\"].errors[0].reason"
+        ],
+        "width": "minmax(100px, 1fr)",
+        "cases": [
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "exists",
+                "path": ".status.conditions[type=\"Valid\"].status",
+                "nonEmpty": true
+              }
+            },
+            "text": "",
+            "value": "{{.status.conditions[type=\"Valid\"].status}}"
+          }
+        ],
+        "afterColumn": "extension-protocol"
+      }
+    ],
+    "problems": [
+      {
+        "id": "proxy-invalid",
+        "title": "HTTPProxy invalid",
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "HTTPProxy"
+        },
+        "when": {
+          "type": "any",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".status.currentStatus",
+              "value": "invalid"
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "in",
+                    "path": ".status.currentStatus",
+                    "values": [
+                      "valid",
+                      "invalid",
+                      "orphaned"
+                    ]
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Valid",
+                  "status": "False"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Valid\"].errors[type=\"Orphaned\"]"
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Valid\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "group": "invalid",
+        "reason": "{{.status.conditions[type=\"Valid\"].errors[0].reason}}",
+        "reasonOr": "Invalid",
+        "message": "{{.status.conditions[type=\"Valid\"].errors[0].message ?? .status.description}}"
+      },
+      {
+        "id": "proxy-orphaned",
+        "title": "HTTPProxy orphaned",
+        "kind": {
+          "group": "projectcontour.io",
+          "kind": "HTTPProxy"
+        },
+        "when": {
+          "type": "any",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".status.currentStatus",
+              "value": "orphaned"
+            },
+            {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "in",
+                    "path": ".status.currentStatus",
+                    "values": [
+                      "valid",
+                      "invalid",
+                      "orphaned"
+                    ]
+                  }
+                },
+                {
+                  "type": "condition",
+                  "conditionType": "Valid",
+                  "status": "False"
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Valid\"].errors[type=\"Orphaned\"]"
+                }
+              ]
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Valid\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "group": "orphaned",
+        "reason": "Orphaned",
+        "message": "{{.status.conditions[type=\"Valid\"].errors[0].message ?? .status.description}}",
+        "toldThroughReferrer": {
+          "path": ".spec.includes",
+          "namePath": ".name",
+          "namespacePath": ".namespace",
+          "when": {
+            "type": "any",
+            "of": [
+              {
+                "type": "equals",
+                "path": ".status.currentStatus",
+                "value": "invalid"
+              },
+              {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "not",
+                    "of": {
+                      "type": "in",
+                      "path": ".status.currentStatus",
+                      "values": [
+                        "valid",
+                        "invalid",
+                        "orphaned"
+                      ]
+                    }
+                  },
+                  {
+                    "type": "condition",
+                    "conditionType": "Valid",
+                    "status": "False"
+                  },
+                  {
+                    "type": "absent",
+                    "path": ".status.conditions[type=\"Valid\"].errors[type=\"Orphaned\"]"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "translations": {
+    "de": {
+      "description": "HTTPProxies, TLSCertificateDelegations und ExtensionServices von Contour: der Zustand jedes Proxys, wie Contour ihn schreibt, mit dem ersten Fehler, sein virtueller Host und TLS, Routen mit dem Anteil jedes Service, Includes und der Delegierungsbaum; Probleme ungültiger und verwaister Proxys. Nur lesend.",
+      "columns.proxy-status.title": "Status",
+      "columns.proxy-status.cases.0.text": "Gültig",
+      "columns.proxy-status.cases.1.text": "Ungültig",
+      "columns.proxy-status.cases.2.text": "Verwaist",
+      "columns.proxy-status.cases.3.text": "Wartet auf Contour",
+      "columns.proxy-fqdn.title": "Host",
+      "columns.proxy-tls.title": "TLS-Secret",
+      "columns.proxy-includes.title": "Einbindungen",
+      "columns.proxy-routes.title": "Routen",
+      "columns.proxy-reason.title": "Grund",
+      "columns.delegation-secrets.title": "Secrets",
+      "columns.delegation-targets.title": "Ziel-Namespaces",
+      "columns.extension-status.title": "Status",
+      "columns.extension-status.cases.0.text": "Bereit",
+      "columns.extension-status.cases.1.text": "Fehlgeschlagen",
+      "columns.extension-status.cases.2.text": "In Arbeit",
+      "columns.extension-status.cases.3.text": "Unbekannt",
+      "columns.extension-services.title": "Services",
+      "columns.extension-protocol.title": "Protokoll",
+      "columns.extension-reason.title": "Grund",
+      "problems.proxy-invalid.title": "HTTPProxy: Ungültig",
+      "problems.proxy-orphaned.title": "HTTPProxy: Verwaist",
+      "sectionBadges.contour.label.one": "{{count}} HTTPProxy braucht Aufmerksamkeit",
+      "sectionBadges.contour.label.other": "{{count}} HTTPProxies brauchen Aufmerksamkeit"
+    },
+    "es": {
+      "description": "HTTPProxies, TLSCertificateDelegations y ExtensionServices de Contour: el estado de cada proxy tal como lo escribe Contour con su primer error, su host virtual y TLS, las rutas con la parte de cada servicio, las inclusiones y el árbol de delegación; problemas de proxies no válidos y huérfanos. Solo lectura.",
+      "columns.proxy-status.title": "Estado",
+      "columns.proxy-status.cases.0.text": "Válido",
+      "columns.proxy-status.cases.1.text": "No válido",
+      "columns.proxy-status.cases.2.text": "Huérfano",
+      "columns.proxy-status.cases.3.text": "Esperando a Contour",
+      "columns.proxy-fqdn.title": "Host",
+      "columns.proxy-tls.title": "Secret TLS",
+      "columns.proxy-includes.title": "Inclusiones",
+      "columns.proxy-routes.title": "Rutas",
+      "columns.proxy-reason.title": "Motivo",
+      "columns.delegation-secrets.title": "Secrets",
+      "columns.delegation-targets.title": "Namespaces de destino",
+      "columns.extension-status.title": "Estado",
+      "columns.extension-status.cases.0.text": "Listo",
+      "columns.extension-status.cases.1.text": "Con fallos",
+      "columns.extension-status.cases.2.text": "En curso",
+      "columns.extension-status.cases.3.text": "Desconocido",
+      "columns.extension-services.title": "Services",
+      "columns.extension-protocol.title": "Protocolo",
+      "columns.extension-reason.title": "Motivo",
+      "problems.proxy-invalid.title": "HTTPProxy: No válido",
+      "problems.proxy-orphaned.title": "HTTPProxy: Huérfano",
+      "sectionBadges.contour.label.one": "{{count}} HTTPProxy necesita atención",
+      "sectionBadges.contour.label.many": "{{count}} HTTPProxy necesitan atención",
+      "sectionBadges.contour.label.other": "{{count}} HTTPProxy necesitan atención"
+    },
+    "fr": {
+      "description": "HTTPProxies, TLSCertificateDelegations et ExtensionServices de Contour : l'état de chaque proxy tel que Contour l'écrit avec sa première erreur, son hôte virtuel et TLS, les routes avec la part de chaque service, les inclusions et l'arbre de délégation ; problèmes des proxys invalides et orphelins. Lecture seule.",
+      "columns.proxy-status.title": "État",
+      "columns.proxy-status.cases.0.text": "Valide",
+      "columns.proxy-status.cases.1.text": "Invalide",
+      "columns.proxy-status.cases.2.text": "Orphelin",
+      "columns.proxy-status.cases.3.text": "En attente de Contour",
+      "columns.proxy-fqdn.title": "Hôte",
+      "columns.proxy-tls.title": "Secret TLS",
+      "columns.proxy-includes.title": "Inclusions",
+      "columns.proxy-routes.title": "Routes",
+      "columns.proxy-reason.title": "Raison",
+      "columns.delegation-secrets.title": "Secrets",
+      "columns.delegation-targets.title": "Namespaces cibles",
+      "columns.extension-status.title": "État",
+      "columns.extension-status.cases.0.text": "Prêt",
+      "columns.extension-status.cases.1.text": "En échec",
+      "columns.extension-status.cases.2.text": "En cours",
+      "columns.extension-status.cases.3.text": "Inconnu",
+      "columns.extension-services.title": "Services",
+      "columns.extension-protocol.title": "Protocole",
+      "columns.extension-reason.title": "Raison",
+      "problems.proxy-invalid.title": "HTTPProxy: Invalide",
+      "problems.proxy-orphaned.title": "HTTPProxy: Orphelin",
+      "sectionBadges.contour.label.one": "{{count}} HTTPProxy demande de l'attention",
+      "sectionBadges.contour.label.many": "{{count}} HTTPProxy demandent de l'attention",
+      "sectionBadges.contour.label.other": "{{count}} HTTPProxy demandent de l'attention"
+    },
+    "it": {
+      "description": "HTTPProxy, TLSCertificateDelegation ed ExtensionService di Contour: lo stato di ogni proxy come lo scrive Contour con il primo errore, l'host virtuale e il TLS, le route con la quota di ogni servizio, le inclusioni e l'albero di delega; problemi dei proxy non validi e orfani. Sola lettura.",
+      "columns.proxy-status.title": "Stato",
+      "columns.proxy-status.cases.0.text": "Valido",
+      "columns.proxy-status.cases.1.text": "Non valido",
+      "columns.proxy-status.cases.2.text": "Orfano",
+      "columns.proxy-status.cases.3.text": "In attesa di Contour",
+      "columns.proxy-fqdn.title": "Host",
+      "columns.proxy-tls.title": "Secret TLS",
+      "columns.proxy-includes.title": "Inclusioni",
+      "columns.proxy-routes.title": "Route",
+      "columns.proxy-reason.title": "Motivo",
+      "columns.delegation-secrets.title": "Secret",
+      "columns.delegation-targets.title": "Namespace di destinazione",
+      "columns.extension-status.title": "Stato",
+      "columns.extension-status.cases.0.text": "Pronto",
+      "columns.extension-status.cases.1.text": "Non riuscito",
+      "columns.extension-status.cases.2.text": "In corso",
+      "columns.extension-status.cases.3.text": "Sconosciuto",
+      "columns.extension-services.title": "Service",
+      "columns.extension-protocol.title": "Protocollo",
+      "columns.extension-reason.title": "Motivo",
+      "problems.proxy-invalid.title": "HTTPProxy: Non valido",
+      "problems.proxy-orphaned.title": "HTTPProxy: Orfano",
+      "sectionBadges.contour.label.one": "{{count}} HTTPProxy richiede attenzione",
+      "sectionBadges.contour.label.many": "{{count}} HTTPProxy richiedono attenzione",
+      "sectionBadges.contour.label.other": "{{count}} HTTPProxy richiedono attenzione"
+    },
+    "ja": {
+      "description": "Contour の HTTPProxy、TLSCertificateDelegation、ExtensionService: Contour が書いた各プロキシの状態と最初のエラー、仮想ホストと TLS、各サービスの割合付きのルート、インクルードと委任ツリー。無効なプロキシと孤立したプロキシの問題。読み取り専用。",
+      "columns.proxy-status.title": "状態",
+      "columns.proxy-status.cases.0.text": "有効",
+      "columns.proxy-status.cases.1.text": "無効",
+      "columns.proxy-status.cases.2.text": "孤立",
+      "columns.proxy-status.cases.3.text": "Contour 待ち",
+      "columns.proxy-fqdn.title": "ホスト",
+      "columns.proxy-tls.title": "TLS Secret",
+      "columns.proxy-includes.title": "インクルード",
+      "columns.proxy-routes.title": "ルート",
+      "columns.proxy-reason.title": "理由",
+      "columns.delegation-secrets.title": "Secret",
+      "columns.delegation-targets.title": "対象 namespace",
+      "columns.extension-status.title": "状態",
+      "columns.extension-status.cases.0.text": "準備完了",
+      "columns.extension-status.cases.1.text": "失敗",
+      "columns.extension-status.cases.2.text": "進行中",
+      "columns.extension-status.cases.3.text": "不明",
+      "columns.extension-services.title": "Service",
+      "columns.extension-protocol.title": "プロトコル",
+      "columns.extension-reason.title": "理由",
+      "problems.proxy-invalid.title": "HTTPProxy: 無効",
+      "problems.proxy-orphaned.title": "HTTPProxy: 孤立",
+      "sectionBadges.contour.label.other": "対応が必要な HTTPProxy が {{count}} 件あります"
+    },
+    "ko": {
+      "description": "Contour의 HTTPProxy, TLSCertificateDelegation, ExtensionService: Contour가 기록한 각 프록시의 상태와 첫 번째 오류, 가상 호스트와 TLS, 서비스별 비율이 있는 경로, 포함과 위임 트리, 유효하지 않거나 고립된 프록시의 문제. 읽기 전용.",
+      "columns.proxy-status.title": "상태",
+      "columns.proxy-status.cases.0.text": "유효",
+      "columns.proxy-status.cases.1.text": "유효하지 않음",
+      "columns.proxy-status.cases.2.text": "고립됨",
+      "columns.proxy-status.cases.3.text": "Contour 대기 중",
+      "columns.proxy-fqdn.title": "호스트",
+      "columns.proxy-tls.title": "TLS Secret",
+      "columns.proxy-includes.title": "포함",
+      "columns.proxy-routes.title": "경로",
+      "columns.proxy-reason.title": "이유",
+      "columns.delegation-secrets.title": "Secret",
+      "columns.delegation-targets.title": "대상 namespace",
+      "columns.extension-status.title": "상태",
+      "columns.extension-status.cases.0.text": "준비됨",
+      "columns.extension-status.cases.1.text": "실패",
+      "columns.extension-status.cases.2.text": "진행 중",
+      "columns.extension-status.cases.3.text": "알 수 없음",
+      "columns.extension-services.title": "Service",
+      "columns.extension-protocol.title": "프로토콜",
+      "columns.extension-reason.title": "이유",
+      "problems.proxy-invalid.title": "HTTPProxy: 유효하지 않음",
+      "problems.proxy-orphaned.title": "HTTPProxy: 고립됨",
+      "sectionBadges.contour.label.other": "확인이 필요한 HTTPProxy {{count}}개"
+    },
+    "pl": {
+      "description": "HTTPProxy, TLSCertificateDelegation i ExtensionService Contoura: stan każdego proxy, jak zapisuje go Contour, z pierwszym błędem, host wirtualny i TLS, trasy z udziałem każdej usługi, dołączenia i drzewo delegowania; problemy nieprawidłowych i osieroconych proxy. Tylko do odczytu.",
+      "columns.proxy-status.title": "Stan",
+      "columns.proxy-status.cases.0.text": "Prawidłowy",
+      "columns.proxy-status.cases.1.text": "Nieprawidłowy",
+      "columns.proxy-status.cases.2.text": "Osierocony",
+      "columns.proxy-status.cases.3.text": "Czeka na Contour",
+      "columns.proxy-fqdn.title": "Host",
+      "columns.proxy-tls.title": "Secret TLS",
+      "columns.proxy-includes.title": "Dołączenia",
+      "columns.proxy-routes.title": "Trasy",
+      "columns.proxy-reason.title": "Przyczyna",
+      "columns.delegation-secrets.title": "Secrety",
+      "columns.delegation-targets.title": "Docelowe namespace",
+      "columns.extension-status.title": "Stan",
+      "columns.extension-status.cases.0.text": "Gotowy",
+      "columns.extension-status.cases.1.text": "Błąd",
+      "columns.extension-status.cases.2.text": "W toku",
+      "columns.extension-status.cases.3.text": "Nieznany",
+      "columns.extension-services.title": "Service",
+      "columns.extension-protocol.title": "Protokół",
+      "columns.extension-reason.title": "Przyczyna",
+      "problems.proxy-invalid.title": "HTTPProxy: Nieprawidłowy",
+      "problems.proxy-orphaned.title": "HTTPProxy: Osierocony",
+      "sectionBadges.contour.label.one": "{{count}} HTTPProxy wymaga uwagi",
+      "sectionBadges.contour.label.few": "{{count}} HTTPProxy wymagają uwagi",
+      "sectionBadges.contour.label.many": "{{count}} HTTPProxy wymaga uwagi",
+      "sectionBadges.contour.label.other": "{{count}} HTTPProxy wymaga uwagi"
+    },
+    "pt-BR": {
+      "description": "HTTPProxies, TLSCertificateDelegations e ExtensionServices do Contour: o estado de cada proxy como o Contour o escreve, com o primeiro erro, o host virtual e o TLS, as rotas com a parcela de cada serviço, as inclusões e a árvore de delegação; problemas de proxies inválidos e órfãos. Somente leitura.",
+      "columns.proxy-status.title": "Status",
+      "columns.proxy-status.cases.0.text": "Válido",
+      "columns.proxy-status.cases.1.text": "Inválido",
+      "columns.proxy-status.cases.2.text": "Órfão",
+      "columns.proxy-status.cases.3.text": "Aguardando o Contour",
+      "columns.proxy-fqdn.title": "Host",
+      "columns.proxy-tls.title": "Secret TLS",
+      "columns.proxy-includes.title": "Inclusões",
+      "columns.proxy-routes.title": "Rotas",
+      "columns.proxy-reason.title": "Motivo",
+      "columns.delegation-secrets.title": "Secrets",
+      "columns.delegation-targets.title": "Namespaces de destino",
+      "columns.extension-status.title": "Status",
+      "columns.extension-status.cases.0.text": "Pronto",
+      "columns.extension-status.cases.1.text": "Com falha",
+      "columns.extension-status.cases.2.text": "Em andamento",
+      "columns.extension-status.cases.3.text": "Desconhecido",
+      "columns.extension-services.title": "Services",
+      "columns.extension-protocol.title": "Protocolo",
+      "columns.extension-reason.title": "Motivo",
+      "problems.proxy-invalid.title": "HTTPProxy: Inválido",
+      "problems.proxy-orphaned.title": "HTTPProxy: Órfão",
+      "sectionBadges.contour.label.one": "{{count}} HTTPProxy precisa de atenção",
+      "sectionBadges.contour.label.many": "{{count}} HTTPProxies precisam de atenção",
+      "sectionBadges.contour.label.other": "{{count}} HTTPProxies precisam de atenção"
+    },
+    "ru": {
+      "description": "HTTPProxy, TLSCertificateDelegation и ExtensionService Contour: состояние каждого прокси, как его записывает Contour, с первой ошибкой, виртуальный хост и TLS, маршруты с долей каждого сервиса, включения и дерево делегирования; проблемы недействительных и неподключённых прокси. Только чтение.",
+      "columns.proxy-status.title": "Состояние",
+      "columns.proxy-status.cases.0.text": "Действителен",
+      "columns.proxy-status.cases.1.text": "Недействителен",
+      "columns.proxy-status.cases.2.text": "Не подключён",
+      "columns.proxy-status.cases.3.text": "Ожидает Contour",
+      "columns.proxy-fqdn.title": "Хост",
+      "columns.proxy-tls.title": "TLS Secret",
+      "columns.proxy-includes.title": "Включения",
+      "columns.proxy-routes.title": "Маршруты",
+      "columns.proxy-reason.title": "Причина",
+      "columns.delegation-secrets.title": "Secret",
+      "columns.delegation-targets.title": "Целевые namespace",
+      "columns.extension-status.title": "Состояние",
+      "columns.extension-status.cases.0.text": "Готов",
+      "columns.extension-status.cases.1.text": "Сбой",
+      "columns.extension-status.cases.2.text": "Выполняется",
+      "columns.extension-status.cases.3.text": "Неизвестно",
+      "columns.extension-services.title": "Service",
+      "columns.extension-protocol.title": "Протокол",
+      "columns.extension-reason.title": "Причина",
+      "problems.proxy-invalid.title": "HTTPProxy: Недействителен",
+      "problems.proxy-orphaned.title": "HTTPProxy: Не подключён",
+      "sectionBadges.contour.label.one": "{{count}} HTTPProxy требует внимания",
+      "sectionBadges.contour.label.few": "{{count}} HTTPProxy требуют внимания",
+      "sectionBadges.contour.label.many": "{{count}} HTTPProxy требуют внимания",
+      "sectionBadges.contour.label.other": "{{count}} HTTPProxy требуют внимания"
+    },
+    "tr": {
+      "description": "Contour'un HTTPProxy, TLSCertificateDelegation ve ExtensionService nesneleri: her proxy'nin Contour'un yazdığı durumu ve ilk hatası, sanal ana bilgisayarı ve TLS'i, her hizmetin payıyla rotalar, dahil etmeler ve yetki devri ağacı; geçersiz ve sahipsiz proxy sorunları. Salt okunur.",
+      "columns.proxy-status.title": "Durum",
+      "columns.proxy-status.cases.0.text": "Geçerli",
+      "columns.proxy-status.cases.1.text": "Geçersiz",
+      "columns.proxy-status.cases.2.text": "Sahipsiz",
+      "columns.proxy-status.cases.3.text": "Contour bekleniyor",
+      "columns.proxy-fqdn.title": "Host",
+      "columns.proxy-tls.title": "TLS Secret",
+      "columns.proxy-includes.title": "Dahil etmeler",
+      "columns.proxy-routes.title": "Rotalar",
+      "columns.proxy-reason.title": "Neden",
+      "columns.delegation-secrets.title": "Secret'lar",
+      "columns.delegation-targets.title": "Hedef namespace'ler",
+      "columns.extension-status.title": "Durum",
+      "columns.extension-status.cases.0.text": "Hazır",
+      "columns.extension-status.cases.1.text": "Başarısız",
+      "columns.extension-status.cases.2.text": "Sürüyor",
+      "columns.extension-status.cases.3.text": "Bilinmiyor",
+      "columns.extension-services.title": "Service'ler",
+      "columns.extension-protocol.title": "Protokol",
+      "columns.extension-reason.title": "Neden",
+      "problems.proxy-invalid.title": "HTTPProxy: Geçersiz",
+      "problems.proxy-orphaned.title": "HTTPProxy: Sahipsiz",
+      "sectionBadges.contour.label.one": "{{count}} HTTPProxy ilgi bekliyor",
+      "sectionBadges.contour.label.other": "{{count}} HTTPProxy ilgi bekliyor"
+    },
+    "uk": {
+      "description": "HTTPProxy, TLSCertificateDelegation і ExtensionService Contour: стан кожного проксі, як його записує Contour, з першою помилкою, віртуальний хост і TLS, маршрути з часткою кожного сервісу, включення та дерево делегування; проблеми недійсних і непідключених проксі. Лише читання.",
+      "columns.proxy-status.title": "Стан",
+      "columns.proxy-status.cases.0.text": "Дійсний",
+      "columns.proxy-status.cases.1.text": "Недійсний",
+      "columns.proxy-status.cases.2.text": "Не підключений",
+      "columns.proxy-status.cases.3.text": "Очікує Contour",
+      "columns.proxy-fqdn.title": "Хост",
+      "columns.proxy-tls.title": "TLS Secret",
+      "columns.proxy-includes.title": "Включення",
+      "columns.proxy-routes.title": "Маршрути",
+      "columns.proxy-reason.title": "Причина",
+      "columns.delegation-secrets.title": "Secret",
+      "columns.delegation-targets.title": "Цільові namespace",
+      "columns.extension-status.title": "Стан",
+      "columns.extension-status.cases.0.text": "Готовий",
+      "columns.extension-status.cases.1.text": "Збій",
+      "columns.extension-status.cases.2.text": "Виконується",
+      "columns.extension-status.cases.3.text": "Невідомо",
+      "columns.extension-services.title": "Service",
+      "columns.extension-protocol.title": "Протокол",
+      "columns.extension-reason.title": "Причина",
+      "problems.proxy-invalid.title": "HTTPProxy: Недійсний",
+      "problems.proxy-orphaned.title": "HTTPProxy: Не підключений",
+      "sectionBadges.contour.label.one": "{{count}} HTTPProxy потребує уваги",
+      "sectionBadges.contour.label.few": "{{count}} HTTPProxy потребують уваги",
+      "sectionBadges.contour.label.many": "{{count}} HTTPProxy потребують уваги",
+      "sectionBadges.contour.label.other": "{{count}} HTTPProxy потребують уваги"
+    },
+    "zh-CN": {
+      "description": "Contour 的 HTTPProxy、TLSCertificateDelegation 和 ExtensionService：Contour 写下的每个代理的状态及其第一个错误、虚拟主机和 TLS、带有每个服务份额的路由、包含关系和委派树；无效和孤立代理的问题。只读。",
+      "columns.proxy-status.title": "状态",
+      "columns.proxy-status.cases.0.text": "有效",
+      "columns.proxy-status.cases.1.text": "无效",
+      "columns.proxy-status.cases.2.text": "孤立",
+      "columns.proxy-status.cases.3.text": "等待 Contour",
+      "columns.proxy-fqdn.title": "主机",
+      "columns.proxy-tls.title": "TLS Secret",
+      "columns.proxy-includes.title": "包含",
+      "columns.proxy-routes.title": "路由",
+      "columns.proxy-reason.title": "原因",
+      "columns.delegation-secrets.title": "Secret",
+      "columns.delegation-targets.title": "目标 namespace",
+      "columns.extension-status.title": "状态",
+      "columns.extension-status.cases.0.text": "就绪",
+      "columns.extension-status.cases.1.text": "失败",
+      "columns.extension-status.cases.2.text": "进行中",
+      "columns.extension-status.cases.3.text": "未知",
+      "columns.extension-services.title": "Service",
+      "columns.extension-protocol.title": "协议",
+      "columns.extension-reason.title": "原因",
+      "problems.proxy-invalid.title": "HTTPProxy: 无效",
+      "problems.proxy-orphaned.title": "HTTPProxy: 孤立",
+      "sectionBadges.contour.label.other": "{{count}} 个 HTTPProxy 需要关注"
+    },
+    "zh-TW": {
+      "description": "Contour 的 HTTPProxy、TLSCertificateDelegation 與 ExtensionService：Contour 寫下的每個代理狀態及其第一個錯誤、虛擬主機與 TLS、附每個服務比例的路由、包含關係與委派樹；無效與孤立代理的問題。唯讀。",
+      "columns.proxy-status.title": "狀態",
+      "columns.proxy-status.cases.0.text": "有效",
+      "columns.proxy-status.cases.1.text": "無效",
+      "columns.proxy-status.cases.2.text": "孤立",
+      "columns.proxy-status.cases.3.text": "等待 Contour",
+      "columns.proxy-fqdn.title": "主機",
+      "columns.proxy-tls.title": "TLS Secret",
+      "columns.proxy-includes.title": "包含",
+      "columns.proxy-routes.title": "路由",
+      "columns.proxy-reason.title": "原因",
+      "columns.delegation-secrets.title": "Secret",
+      "columns.delegation-targets.title": "目標 namespace",
+      "columns.extension-status.title": "狀態",
+      "columns.extension-status.cases.0.text": "就緒",
+      "columns.extension-status.cases.1.text": "失敗",
+      "columns.extension-status.cases.2.text": "進行中",
+      "columns.extension-status.cases.3.text": "未知",
+      "columns.extension-services.title": "Service",
+      "columns.extension-protocol.title": "協定",
+      "columns.extension-reason.title": "原因",
+      "problems.proxy-invalid.title": "HTTPProxy: 無效",
+      "problems.proxy-orphaned.title": "HTTPProxy: 孤立",
+      "sectionBadges.contour.label.other": "{{count}} 個 HTTPProxy 需要注意"
+    }
+  }
+}

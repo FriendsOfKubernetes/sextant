@@ -91,8 +91,6 @@ describe("problem sources", () => {
     expect(getSource(sourceKey("c1", capped))!.truncated).toBe(true);
     act(() => wb.backend.emit(`watch:${id}`, { type: "capped", total: 3 }));
     expect(getSource(sourceKey("c1", capped))!.truncated).toBe(false);
-    // OpenShift caps the kinds a cluster holds by the thousand.
-    expect(CATEGORY_SOURCES.openshift.every((d) => d.maxObjects !== undefined)).toBe(true);
   });
 
   it("follow deltas: a recovered object leaves, an update of a healthy one changes nothing", async () => {

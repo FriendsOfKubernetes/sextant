@@ -19,9 +19,7 @@
     "istio": "Istio",
     "linkerd": "Linkerd",
     "traefik": "Traefik",
-    "contour": "Contour",
     "crossplane": "Crossplane",
-    "openshift": "OpenShift",
     "customResources": "自定义资源"
   },
   "kinds": {

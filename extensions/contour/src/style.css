@@ -1,0 +1,92 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields, tables,
+   status words and links are the SDK's UI kit (`ui`, classes `sx-*`). */
+body.compact {
+  padding: 8px 0;
+}
+
+/* Contour: why a proxy is (not) accepted, Contour's own description, a route's services with their shares and the
+   delegation tree, as the built-in view drew them (with cert-manager's classes then). */
+.ct-explain {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.ct-explain--danger {
+  border-left-color: var(--color-danger);
+}
+
+.ct-message {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.ct-muted {
+  margin: 4px 0;
+  color: var(--color-text-muted);
+}
+
+.ct-nowrap {
+  white-space: nowrap;
+}
+
+.ct-services {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ct-service {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+}
+
+.ct-extra {
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.ct-chain,
+.ct-chain ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ct-chain ul {
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+}
+
+.ct-chain__item {
+  margin: 4px 0;
+}
+
+.ct-chain__row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.ct-chain__item[aria-current="true"] > .ct-chain__row {
+  background: var(--color-selected);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.ct-chain__kind {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.ct-chain__extra {
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}

@@ -4,12 +4,8 @@
 import type { KindRef, KubeObject, ResourceKind } from "../../api";
 import { findKind } from "../../resources";
 import { COUNTED_KINDS } from "../gateway-api/problems";
-import { CONTOUR_ACROSS } from "../contour/across";
-import { HTTP_PROXY } from "../contour/model";
 import { INGRESS_ROUTE as TRAEFIK_INGRESS_ROUTE } from "../traefik/model";
 import { XRD } from "../crossplane/model";
-import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
-import { BUILD as OPENSHIFT_BUILD, DEPLOYMENT_CONFIG as OPENSHIFT_DC, IMAGE_STREAM as OPENSHIFT_IMAGE_STREAM, ROUTE as OPENSHIFT_ROUTE } from "../openshift/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
 import {
   CERTIFICATE,
@@ -56,16 +52,9 @@ export interface SourceDef {
   /** Only `apiVersion`, `kind` and `metadata` of each object (an extension rule's `source`, ADR-0152). */
   metadataOnly?: boolean;
   /**
-   * Problems judged across the objects of the source: the store keeps a row tap of the watch while the source is held
-   * and passes every problem list through `keep` with the rows (an HTTPProxy orphaned because the root that includes
-   * it is invalid is told through that root, #233). `keep` runs only while the rows are read in full.
-   */
-  across?: AcrossDef;
-  /**
    * An extension's rules across objects (ADR-0144): the source keeps a row tap of its own objects while it lives, and
    * every problem list goes through `judge`, which may read the rows of the category's other sources of the cluster
-   * (`targets`) and which of them have problems. Unlike `across`, it runs while rows still load: what it cannot tell
-   * yet is no problem.
+   * (`targets`) and which of them have problems. It runs while rows still load: what it cannot tell yet is no problem.
    */
   judge?: JudgeDef;
 }
@@ -92,12 +81,6 @@ export interface JudgedRows {
   truncated: boolean;
   /** The namespaces the source watches (`null`: every namespace); `undefined` before it opened. */
   namespaces: readonly string[] | null | undefined;
-}
-
-/** A source's problems judged across its objects (`SourceDef.across`). */
-export interface AcrossDef {
-  tap: { id: string; toRow(obj: KubeObject): unknown; max: number };
-  keep(problems: readonly Problem[], rows: ReadonlyMap<string, unknown>): Problem[];
 }
 
 /** The cap of a source whose kind a cluster can hold by the thousand. */
@@ -131,23 +114,9 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // Traefik (#232, opt-in): references to objects that do not exist, judged across objects by the provider of
   // features/traefik (`external`), held only where the cluster serves IngressRoutes (traefik.io); no Secret is listed.
   traefik: [{ category: "traefik", kind: TRAEFIK_INGRESS_ROUTE, fieldSelector: null, discovered: true, external: true }],
-  // Contour (#233): invalid and orphaned HTTPProxies; the same watch feeds the delegation tree (a row tap), and those
-  // rows tell an orphan under an invalid root through the root (`across`).
-  contour: [{ ...tool("contour", HTTP_PROXY, MAX_SOURCE_OBJECTS), across: CONTOUR_ACROSS }],
   // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
   // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
   crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],
-  // KubeRay (#248): failed RayClusters or ones whose head is not ready, failed RayJobs (batch jobs can be thousands:
-  // capped), RayServices not ready. KServe (#249): InferenceServices not ready or whose model failed to load.
-  // OpenShift (#267): Routes no router admitted, DeploymentConfigs whose rollout failed, failed Builds (only the latest
-  // of their BuildConfig: judged across the Build rows) and ImageStreams with a failing tag import; every kind a cluster
-  // can hold by the thousand: capped.
-  openshift: [
-    tool("openshift", OPENSHIFT_ROUTE, MAX_SOURCE_OBJECTS),
-    tool("openshift", OPENSHIFT_DC, MAX_SOURCE_OBJECTS),
-    { ...tool("openshift", OPENSHIFT_BUILD, MAX_SOURCE_OBJECTS), across: OPENSHIFT_BUILD_ACROSS },
-    tool("openshift", OPENSHIFT_IMAGE_STREAM, MAX_SOURCE_OBJECTS),
-  ],
   // Watches of their own (`sourceKey`): judged only while the opt-in category is on, kept apart from the problems of
   // pods and workloads (the map's colours, the cap of `MAX_PROBLEM_OBJECTS`).
   security: [POD, DEPLOYMENT, STATEFULSET, DAEMONSET, REPLICASET, JOB, CRONJOB].map((kind) => builtIn("security", kind)),

@@ -1684,8 +1684,8 @@ impl<'a> ExtCall<'a> {
     }
 
     /// `oc rollout latest` of a DeploymentConfig or `oc start-build` of a BuildConfig (ADR-0120 amendment): the core
-    /// builds the one request from the name and checks it as the window's actions do; Modify on the object, asked as
-    /// any change is, the request shown. Nothing else is ever posted to a subresource.
+    /// builds the one request from the name and checks it (`resources::openshift`); Modify on the object, asked as any
+    /// change is, the request shown. Nothing else is ever posted to a subresource.
     async fn instantiate(&self, params: Value) -> CoreResult<Value> {
         let args: ObjectArgs = parse(&self.method, params)?;
         let cluster = self.open(&args.cluster_id).await?;

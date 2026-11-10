@@ -134,8 +134,6 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("rbac_rules_review", Some("clusterId")),
     ("rbac_whoami", Some("clusterId")),
     ("reflector_match_patterns", Some("patterns")),
-    ("openshift_rollout_latest", Some("clusterId")),
-    ("openshift_start_build", Some("clusterId")),
     ("upgrade_scan", Some("clusterId")),
     ("vcluster_links", None),
     ("vcluster_connect", Some("hostClusterId")),
@@ -1389,12 +1387,6 @@ fn later_argument_names_match_the_frontend() {
         ),
         ("node_drain_preview", json!({ "clusterId": "c" }), "name"),
         ("resource_patch", json!({ "clusterId": "c" }), "ref"),
-        (
-            "openshift_rollout_latest",
-            json!({ "clusterId": "c" }),
-            "ref",
-        ),
-        ("openshift_start_build", json!({ "clusterId": "c" }), "ref"),
         (
             "resource_patch",
             json!({ "clusterId": "c", "ref": { "kind": { "group": "", "version": "v1", "kind": "ConfigMap" }, "namespace": "n", "name": "x" } }),

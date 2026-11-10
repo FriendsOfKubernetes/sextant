@@ -11,8 +11,6 @@ import type { KindRef, KubeObject, ObjectRef } from "../../api";
 import { status } from "../../resources";
 import { kindFromApiVersion } from "../../resources/refs";
 import { eventTimestamp, involvedObject } from "../events/model";
-import { contourProblems } from "../contour/problemRules";
-import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
 import {
   BACKEND_TLS_POLICY,
   GATEWAY,
@@ -39,9 +37,7 @@ export const PROBLEM_CATEGORIES = [
   "gateway",
   "mesh",
   "traefik",
-  "contour",
   "crossplane",
-  "openshift",
   "reflector",
   "security",
   "practices",
@@ -250,13 +246,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (same(kind, EVENT)) return "events";
   if (same(kind, CERTIFICATE)) return "certificates";
   if (kind.group === "gateway.networking.k8s.io") return "gateway";
-  // Contour HTTPProxies (#233): invalid and orphaned ones.
-  if (kind.group === "projectcontour.io" && kind.kind === "HTTPProxy") return "contour";
-  // KubeRay (#248): RayClusters, RayJobs and RayServices; KServe (#249): InferenceServices.
-  // Operator Lifecycle Manager (#268): failed CSVs (originals only), Subscriptions whose resolution or InstallPlan
-  // failed or whose plan is stuck, catalogs not READY.
-  // OpenShift (#267): Routes no router admitted, failed DeploymentConfig rollouts, failed Builds, failing imports.
-  if (isOpenShiftProblemKind(kind)) return "openshift";
   return undefined;
 }
 
@@ -654,10 +643,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return certificateProblems(obj);
     case "gateway":
       return gatewayProblems(obj, kind);
-    case "contour":
-      return contourProblems(kind, obj);
-    case "openshift":
-      return openshiftProblems(kind, obj);
     case "security":
       return securityProblems(kind, obj);
     // Kubeconfig credentials are no kind of the cluster (features/clusters/kubeconfig); volume fill levels come from

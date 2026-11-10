@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { KubeObject } from "../../api";
-import { HTTP_PROXY, TLS_DELEGATION } from "../contour/model";
-import proxiesJson from "../contour/fixtures/proxies.json";
-import delegationJson from "../contour/fixtures/delegation.json";
-import "../contour/register";
 import { contourDiagnoser, diagnoseProxy, MAX_DEPTH } from "./contour";
+import { HTTP_PROXY, TLS_DELEGATION } from "./contourModel";
+import delegationJson from "./fixtures/contour-delegation.json";
+import proxiesJson from "./fixtures/contour-proxies.json";
+import "./register";
 import { diagnose, diagnosedKind } from "./engine";
 import { chainStatus, firstBroken, type Chain, type ClusterView } from "./model";
 import { certificate, pod, service, slice, view, type ViewInput } from "./testData";
@@ -62,7 +62,7 @@ describe("the Contour diagnosis", () => {
     // IncludeNotFound leaves the rest served: a warning, then the checks go on.
     expect(steps(chain)).toEqual(["contour.status:warn", "contour.host:ok", "contour.delegation:ok", "contour.certificate:ok"]);
     const titles = chain.chains.map((c) => c.title?.key);
-    expect(titles).toEqual(["contour:diagnose.serviceTitle", "contour:diagnose.includeTitle", "contour:diagnose.includeTitle"]);
+    expect(titles).toEqual(["diagnose:contour.serviceTitle", "diagnose:contour.includeTitle", "diagnose:contour.includeTitle"]);
     const [rootRoute, included, missing] = chain.chains as [Chain, Chain, Chain];
     expect(chainStatus(rootRoute)).toBe("ok");
     expect(included.title?.params).toMatchObject({ name: "marketing/blogsite", prefix: "/blog" });
@@ -70,9 +70,9 @@ describe("the Contour diagnosis", () => {
     // The included proxy's routes go on under the include, with the prefixes joined.
     expect(included.chains.map((c) => c.title?.params?.prefix)).toEqual(["/blog/", "/blog/", "/blog/", "/blog/admin", "/blog/admin"]);
     const mirror = included.chains[2]!;
-    expect(keys(mirror)[0]).toBe("contour:diagnose.mirror");
+    expect(keys(mirror)[0]).toBe("diagnose:contour.mirror");
     expect(steps(missing)).toEqual(["contour.include:broken", "…"]);
-    expect(firstBroken(chain)?.text.key).toBe("contour:diagnose.includeMissing");
+    expect(firstBroken(chain)?.text.key).toBe("diagnose:contour.includeMissing");
   });
 
   it("refuses a delegated Secret without a delegation for the namespace", () => {
@@ -87,7 +87,7 @@ describe("the Contour diagnosis", () => {
     const rejected = diagnoseProxy(duplicate, HTTP_PROXY, v);
     expect(steps(rejected)).toEqual(["contour.status:broken", "…"]);
     expect(rejected.findings[0]!.notes?.[0]?.params).toMatchObject({ reason: "DuplicateVhost" });
-    expect(diagnoseProxy(fresh, HTTP_PROXY, v).findings[0]).toMatchObject({ status: "warn", text: { key: "contour:diagnose.pendingClass" } });
+    expect(diagnoseProxy(fresh, HTTP_PROXY, v).findings[0]).toMatchObject({ status: "warn", text: { key: "diagnose:contour.pendingClass" } });
   });
 
   it("a Service missing in the proxy's namespace breaks its branch; a weightless one among weighted gets nothing", () => {
@@ -98,7 +98,7 @@ describe("the Contour diagnosis", () => {
     expect(steps(chain)).toEqual(["contour.status:ok", "contour.included:ok"]);
     const [, nowhere, , weighted, weightless] = chain.chains as Chain[];
     expect(steps(nowhere!)).toEqual(["contour.share:warn", "contour.service:broken", "…"]);
-    expect(keys(nowhere!)[1]).toBe("contour:diagnose.serviceMissing");
+    expect(keys(nowhere!)[1]).toBe("diagnose:contour.serviceMissing");
     expect(steps(weighted!)[0]).toBe("contour.service:ok");
     expect(steps(weightless!)[0]).toBe("contour.share:warn");
   });

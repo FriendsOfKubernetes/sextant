@@ -171,8 +171,6 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         commands::rbac::rbac_rules_review,
         commands::rbac::rbac_whoami,
         commands::reflector::reflector_match_patterns,
-        commands::openshift::openshift_rollout_latest,
-        commands::openshift::openshift_start_build,
         commands::upgrade::upgrade_scan,
         commands::vcluster::vcluster_links,
         commands::vcluster::vcluster_connect,
