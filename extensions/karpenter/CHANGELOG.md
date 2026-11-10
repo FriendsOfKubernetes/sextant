@@ -13,5 +13,6 @@ view (ADR-0080) as an extension.
 - **Details** without headings of their own, their blocks remembered in Sextant's memory of details sections: a
   NodePool's limits against what it launched, disruption settings and budgets, and the recent disruptions of its
   NodeClaims; a NodeClaim's launch, node, pool, why Karpenter disrupts it and when it expires, and its disruption
-  events when it has some. The tables' columns resize and Sextant remembers their widths, as the built-in tables'.
+  events when it has some — or, when they cannot be read, the error titled by its kind with the cluster's details, as
+  the built-in block said it. The tables' columns resize and Sextant remembers their widths, as the built-in tables'.
 - Installing asks for consent to read Karpenter's kinds and Events.

@@ -187,7 +187,6 @@ None: the extension is read-only and has no action of its own (ADR-0123).
   - The Addon's Checksum column cuts the checksum with "…" (the `clip` filter); the built-in column cut it silently.
   - The Size column sorts by the amount and shows nothing for a size that is no quantity; the built-in column sorted
     by the text shown and showed such a size as it was.
-  - The Install Job block's "Logs" button is a text button without the logs icon (the SDK's buttons have no icon).
   - The ServiceLB Services are read in one `resources.getMany` instead of four at a time, so their addresses come at
     once.
   - Agents get the category only when the user lets them have the extension's problems (Settings → AI agents (MCP));

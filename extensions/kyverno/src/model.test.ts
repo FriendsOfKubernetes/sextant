@@ -201,6 +201,11 @@ describe("the problem rules, against the built-in category `policies`", () => {
     expect(new Set(rules.map((r) => r.kind.kind))).toEqual(new Set(["PolicyReport", "ClusterPolicyReport"]));
   });
 
+  it("are counted on the section by problem, as the built-in counter counted (a failure and an error of one report: two)", () => {
+    // Every rule's problems, so a failure and an error of one report count twice, as there.
+    expect(manifest.contributes.sectionBadges).toEqual([{ section: "kyverno", count: "problems", label: expect.anything() }]);
+  });
+
   for (const kind of [POLICY_REPORT, CLUSTER_POLICY_REPORT]) {
     it(`find a problem where the built-in did on a ${kind.kind}: reason, notification, group, object, time and words`, () => {
       let compared = 0;

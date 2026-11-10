@@ -169,7 +169,7 @@ function jobBlock(sextant: Sextant, chart: KubeObject, jobs: Listed, blocks: Blo
   const selector = `${CHART_LABEL}=${name ?? ""}`;
   const logs =
     ns && name
-      ? [ui.button(t("job.logs"), () => void sextant.ui.openLogs({ namespace: ns, labelSelector: selector, title: jobName }).catch(() => undefined))]
+      ? [ui.button(t("job.logs"), () => void sextant.ui.openLogs({ namespace: ns, labelSelector: selector, title: jobName }).catch(() => undefined), { icon: "logs" })]
       : undefined;
   const content = info
     ? fieldsOf([

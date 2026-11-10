@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { catalogProblems } from "@sextant/extension-sdk";
 import { describe, expect, it } from "vitest";
 import manifest from "../sextant-extension.json";
+import { ERROR_CODES } from "./dom";
 import { CATALOGS } from "./i18n";
 import en from "./locales/en.json";
 import { READY_VALUES, RESULT_VALUES, RULE_TYPES } from "./model";
@@ -49,6 +50,7 @@ describe("catalogs", () => {
       ...RULE_TYPES.map((r) => `ruleType.${r}`),
       ...RESULT_VALUES.flatMap((v) => [`result.${v}`, `summary.${v}`]),
       "results.object",
+      ...ERROR_CODES.map((code) => `error.code.${code}`),
     ];
     expect(keys.length).toBeGreaterThan(25);
     const missing = [...new Set([...keys, ...built])].filter((key) => !has(key));

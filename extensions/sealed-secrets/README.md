@@ -124,7 +124,6 @@ None: the extension is read-only and has no action of its own (ADR-0109).
     would close it (#417).
   - The table's search finds Status and Scope by the words shown (Synced, Cluster-wide); the built-in matched their
     names (`ready`, `clusterWide`). Filters still go by the names.
-  - "Sealing keys" inside "Controller" keeps the outer block's heading level.
   - The extension's permission reads Secrets in every namespace; it only ever watches their metadata, as the built-in
     view did, but the grant itself does not say "metadata only".
 - Checked by tests on fixtures of Sealed Secrets objects (copied from the built-in view) against the built-in readings

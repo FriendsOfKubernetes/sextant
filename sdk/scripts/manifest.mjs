@@ -2048,7 +2048,7 @@ function readsItemItself(c) {
   return texts && conditionPaths(c.when).every((p) => p.trim() === "." || p.trim().startsWith("$"));
 }
 
-const COLUMN_FIELDS = ["sorted", "separator", "items", "filterBy", "joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
+const COLUMN_FIELDS = ["sorted", "separator", "items", "filterBy", "joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases", "listTooltip", "searchBy"];
 
 function checkColumns(manifest) {
   const list = ["contributes", "columns"];
@@ -2060,6 +2060,8 @@ function checkColumns(manifest) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "width"], `needs sextantApi ${WINDOW_API} or later`);
       if (!isColumnWidth(column.width)) fail([...here, "width"], "is `<n>px` or `minmax(<n>px, <m>fr)`, n from 40 to 600 and m from 0.5 to 5");
     }
+    if (column.searchBy !== undefined && (column.searchBy !== "value" || (column.format ?? "text") !== "text" || (column.cases ?? []).length === 0)) fail([...here, "searchBy"], 'is `"value"` on a text column with `cases`');
+    if (column.listTooltip !== undefined && !isList(column.format)) fail([...here, "listTooltip"], 'goes with `format: "list"` or `"firstPlus"`');
     if (column.filterBy !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "filterBy"], `needs sextantApi ${WINDOW_API} or later`);
       if (column.filterBy !== "value" || (column.format ?? "text") !== "text" || (column.cases ?? []).length === 0) fail([...here, "filterBy"], 'is `"value"` on a text column with `cases`');

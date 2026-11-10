@@ -318,11 +318,14 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
       const title =
         caseOf(column, obj, ctx.now)?.tooltip ??
         tooltip(obj) ??
-        (column.tooltipPaths !== undefined ? undefined : format === "list" ? cell.text : format === "firstPlus" && cell.text !== undefined ? firstPlusTooltip(column, obj, ctx.now) : undefined);
+        (column.tooltipPaths !== undefined || column.listTooltip === false ? undefined : format === "list" ? cell.text : format === "firstPlus" && cell.text !== undefined ? firstPlusTooltip(column, obj, ctx.now) : undefined);
       return title === undefined ? cell.draw : <span title={title}>{cell.draw}</span>;
     },
     searchText: (obj, ctx) => {
       const cell = cellOf(column, obj, ctx.now);
+      // A column searched by its cases' values is found by them, not the words shown (a state's name in every
+      // language, as some built-in columns were).
+      if (column.searchBy === "value") return filterValue(cell);
       if (cell.text !== undefined) return cell.text;
       // An age sorts by the negated time (its age is now + sort), a duration by its length.
       const ms = format === "age" ? ageMs(cell.sort, ctx.now) : format === "duration" ? numericSort(cell.sort) : undefined;

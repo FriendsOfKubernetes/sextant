@@ -492,16 +492,26 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
     }
   };
 
+  /**
+   * Asks Sextant which kinds the cluster serves: for each object shown, and again whenever they change
+   * (`context.kindsVersion`), as the built-in sections followed discovery while open. Only the latest question's
+   * answer counts; what was known stays until it comes.
+   */
+  let asking = 0;
+  let kindsVersion = sextant.context.kindsVersion;
   const askKinds = (current: KindsProbe) => {
+    const attempt = ++asking;
     sextant.kinds().then(
       (kinds) => {
+        if (attempt !== asking || current !== probe) return;
         current.served = new Set(kinds.map((k) => kindKey(k.kindRef)));
-        if (current === probe) schedule();
+        schedule();
       },
       () => {
+        if (attempt !== asking || current !== probe) return;
         // Not known: nothing is watched that needs it, as before discovery.
         current.served = new Set();
-        if (current === probe) schedule();
+        schedule();
       },
     );
   };
@@ -525,9 +535,13 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
       object = null;
       watches.stop();
       probe = {};
+      kindsVersion = sextant.context.kindsVersion;
       askKinds(probe);
       if (contribution === "workload") root.replaceChildren();
       else root.replaceChildren(ui.loading(t("loading")));
+    } else if (sextant.context.kindsVersion !== kindsVersion) {
+      kindsVersion = sextant.context.kindsVersion;
+      askKinds(probe);
     }
     const version = sextant.context.resourceVersion;
     if (version === shownVersion) return;

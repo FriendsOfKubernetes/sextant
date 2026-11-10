@@ -177,6 +177,8 @@ describe("details", () => {
     await expect.poll(() => button("Build logs")).toBeDefined();
     button("Build logs")!.click();
     await expect.poll(() => host.calls.find((c) => c.method === "ui.openLogs")?.params).toEqual({ namespace: "shop", pod: "ruby-ex-3-build" });
+    // The built-in button's icon.
+    expect(host.calls.some((c) => c.method === "ui.icon" && (c.params as { name: string }).name === "logs")).toBe(true);
     expect(text()).toContain("2m");
   });
 

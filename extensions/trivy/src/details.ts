@@ -8,7 +8,7 @@
 //   `scans` on Pods and workloads (Deployment, StatefulSet, DaemonSet, ReplicaSet, Job, CronJob), right after Sextant's
 //     "Security" section, whose last block it was — one block "Image scans (Trivy)": the object's VulnerabilityReports
 //     and ConfigAuditReports, each with its counts, its first `DETAILS_TOP` rows and a link to the report. Hidden (the
-//     manifest's `startHidden`) where the cluster serves neither kind. The reports are watched by label in the object's
+//     manifest's `startHidden`) where the cluster serves neither kind, asked again whenever its kinds change. The reports are watched by label in the object's
 //     namespace only while the block is open (a Deployment's through its ReplicaSets, watched by its selector).
 // The blocks open and close as the built-in ones did, in Sextant's own memory of details sections (`context.blocks`,
 // `ui.setBlockOpen`), with the panel's "Expand all" and "Collapse all"; a closed block draws and watches nothing. The
@@ -463,19 +463,27 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
   const schedule = batched(render);
   const watches = new Watches(sextant, schedule);
   const memory = new BlockMemory(sextant, schedule);
-  if (contribution === "scans") {
-    // Asked once: a cluster whose kinds cannot be told shows no scans, as the built-in block did.
+  // Asked when the section starts and again whenever the cluster's kinds change (`context.kindsVersion`), as the
+  // built-in block followed discovery: it comes as soon as Trivy Operator is installed and goes when it is removed. A
+  // cluster whose kinds cannot be told shows no scans, as the built-in block did.
+  let asking = 0;
+  const askKinds = () => {
+    const attempt = ++asking;
     servedKinds(sextant).then(
       (kinds) => {
+        if (stopped || attempt !== asking) return;
         served = kinds;
         schedule();
       },
       () => {
+        if (stopped || attempt !== asking) return;
         served = { vulnerabilities: null, audits: null };
         schedule();
       },
     );
-  }
+  };
+  let kindsVersion = sextant.context.kindsVersion;
+  if (contribution === "scans") askKinds();
   // Nothing until the object is read, as the built-in section drew nothing without it.
   root.replaceChildren();
   const stopFollow = followShown(
@@ -495,6 +503,10 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
     () => root.replaceChildren(ui.empty(t("common.nothingSelected"))),
   );
   const stopBlocks = sextant.onContextChange(() => {
+    if (contribution === "scans" && sextant.context.kindsVersion !== kindsVersion) {
+      kindsVersion = sextant.context.kindsVersion;
+      askKinds();
+    }
     if (memory.follow()) schedule();
   });
   return () => {

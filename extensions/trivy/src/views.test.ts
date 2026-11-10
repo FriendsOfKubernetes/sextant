@@ -36,21 +36,22 @@ interface Options {
   contribution?: string;
   language?: string;
   blocks?: Record<string, boolean>;
-  kinds?: unknown[] | Error;
+  kinds?: unknown[] | Error | (() => unknown[]);
+  kindsVersion?: number;
 }
 
 async function open(obj: KubeObject, options: Options = {}): Promise<void> {
-  const { contribution = "report", language = "en", blocks = {}, kinds = BOTH } = options;
+  const { contribution = "report", language = "en", blocks = {}, kinds = BOTH, kindsVersion } = options;
   remembered = { ...blocks };
   hidden = contribution === "scans";
   opened = [];
   host = await startTestHost({
-    context: { view: "details", contribution, selection: [refOf(obj)], resourceVersion: "1", language, blocks: remembered },
+    context: { view: "details", contribution, selection: [refOf(obj)], resourceVersion: "1", language, blocks: remembered, kindsVersion },
     handlers: {
       "resources.get": () => structuredClone(obj),
       kinds: () => {
         if (kinds instanceof Error) throw kinds;
-        return kinds;
+        return typeof kinds === "function" ? kinds() : kinds;
       },
       "ui.openDetails": (ref: unknown) => void opened.push(ref),
       "ui.setBlockOpen": ({ id, open: isOpen }: { id: string; open: boolean }) => {
@@ -295,6 +296,38 @@ describe("the image scans of a workload", () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(hidden).toBe(true);
     expect(host.watches).toHaveLength(0);
+  });
+
+  it("asks the cluster's kinds again when they change, as the built-in block followed discovery", async () => {
+    let kinds: unknown[] = [];
+    let asked = 0;
+    await open(deployment(), {
+      contribution: "scans",
+      kindsVersion: 1,
+      kinds: () => {
+        asked += 1;
+        return kinds;
+      },
+    });
+    await expect.poll(() => asked).toBe(1);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(hidden).toBe(true);
+    expect(host.watches).toHaveLength(0);
+    // Trivy Operator installed: the block comes without the details being opened again.
+    kinds = BOTH;
+    host.setContext({ kindsVersion: 2 });
+    await expect.poll(() => hidden).toBe(false);
+    expect(asked).toBe(2);
+    await expect.poll(() => watchOf("ReplicaSet") !== undefined).toBe(true);
+    // A context change that leaves the kinds as they were asks nothing.
+    host.setContext({ resourceVersion: "1" });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(asked).toBe(2);
+    // And removed: the block goes, with its watches.
+    kinds = [];
+    host.setContext({ kindsVersion: 3 });
+    await expect.poll(() => hidden).toBe(true);
+    await expect.poll(() => live()).toHaveLength(0);
   });
 
   it("with only configuration audits served, watches those and says there are none until it hears", async () => {

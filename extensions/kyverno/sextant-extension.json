@@ -340,6 +340,7 @@
   "sectionBadges": [
    {
     "section": "kyverno",
+    "count": "problems",
     "label": {
      "one": "{{count}} object fails policy rules",
      "other": "{{count}} objects fail policy rules"

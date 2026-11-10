@@ -6,7 +6,7 @@ import clusterPolicyJson from "../fixtures/clusterpolicy.json";
 import podJson from "../fixtures/pod.json";
 import reportJson from "../fixtures/policyreport.json";
 import { MAX_LISTED, MAX_SUMMARY_REPORTS, startDetails } from "./details";
-import { setLanguage } from "./i18n";
+import { CATALOGS, setLanguage } from "./i18n";
 
 const policy = clusterPolicyJson as unknown as KubeObject;
 const report = reportJson as unknown as KubeObject;
@@ -33,7 +33,7 @@ let stop: () => void = () => undefined;
 async function open(
   obj: KubeObject,
   contribution: string,
-  options: { language?: string; kinds?: ResourceKind[] | "fail"; get?: () => unknown; uid?: string | null; blocks?: Record<string, boolean> } = {},
+  options: { language?: string; kinds?: ResourceKind[] | "fail" | { code: string; message: string }; get?: () => unknown; uid?: string | null; blocks?: Record<string, boolean> } = {},
 ): Promise<void> {
   const language = options.language ?? "en";
   const kinds = options.kinds ?? served("ClusterPolicy", "Policy", "PolicyReport", "ClusterPolicyReport", "Pod");
@@ -45,6 +45,7 @@ async function open(
       "resources.get": options.get ?? (() => copy(obj)),
       kinds: () => {
         if (kinds === "fail") throw Object.assign(new Error("discovery failed"), { code: "other" });
+        if (!Array.isArray(kinds)) throw kinds;
         return kinds;
       },
       "ui.setHidden": () => null,
@@ -160,7 +161,23 @@ describe("Policy results on every other object", () => {
   it("show an error where discovery or the watch failed", async () => {
     await open(pod, "policy-results", { kinds: "fail" });
     await expect.poll(() => root.querySelector(".sx-error")?.textContent).toBe("Something went wrong.");
+    // Discovery's own message, as the built-in error state gave it.
+    expect(root.querySelector(".ky-error")?.textContent).toBe("Something went wrong.Details: discovery failed");
     expect(lastHidden()).toBe(false);
+    stop();
+    root.remove();
+    host.close();
+
+    // Named by its code, as the built-in error state did, in the UI language.
+    await open(pod, "policy-results", { kinds: { code: "unreachable", message: "dial tcp 10.0.0.1:6443: i/o timeout" } });
+    await expect.poll(() => root.querySelector(".ky-error")?.textContent).toBe("The cluster cannot be reached.Details: dial tcp 10.0.0.1:6443: i/o timeout");
+    expect(root.querySelector(".ky-error")?.getAttribute("role")).toBe("alert");
+    stop();
+    root.remove();
+    host.close();
+    await open(pod, "policy-results", { kinds: { code: "forbidden", message: "no discovery" }, language: "de" });
+    await expect.poll(() => root.querySelector(".ky-error .sx-error")?.textContent).toBe(CATALOGS.de["error.code.forbidden"]);
+    expect(text()).toContain("Details: no discovery");
     stop();
     root.remove();
     host.close();
@@ -279,6 +296,13 @@ describe("a policy's details", () => {
     await expect.poll(text).toContain("check-team");
     await settle();
     expect(text()).not.toContain("Results in reports");
+    expect(host.watches).toEqual([]);
+  });
+
+  it("name discovery's error by its code and message in \"Results in reports\"", async () => {
+    await open(policy, "cluster-policy", { kinds: { code: "timeout", message: "discovery took too long" } });
+    await expect.poll(() => root.querySelector(".ky-error")?.textContent).toBe("The operation took too long.Details: discovery took too long");
+    expect(text()).toContain("Results in reports");
     expect(host.watches).toEqual([]);
   });
 });

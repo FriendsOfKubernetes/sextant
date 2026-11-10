@@ -170,6 +170,19 @@ describe("a button's icon (since Sextant 0.30)", () => {
   });
 });
 
+describe("nested blocks", () => {
+  it("are a heading level deeper, as Sextant's nested details blocks, and keep their toggles", () => {
+    const inner = block("Sealing keys", "k", { collapsible: true });
+    const middle = block("Controller", [inner]);
+    const outer = block("Sealed Secrets", [middle]);
+    document.body.append(outer);
+    expect([...outer.querySelectorAll(".sx-block__title")].map((h) => h.tagName)).toEqual(["H3", "H4", "H5"]);
+    const toggle = outer.querySelector<HTMLButtonElement>("h5 button")!;
+    toggle.click();
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  });
+});
+
 describe("a table whose columns resize (#417)", () => {
   const keeper = (widths?: Record<string, number>) => {
     const set = vi.fn<(table: string, column: string, width: number | null) => Promise<void>>(() => Promise.resolve());

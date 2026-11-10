@@ -234,6 +234,8 @@ export const MANIFEST_SHAPES = {
     cases: "optional",
     afterColumn: "optional",
     filterBy: "optional",
+    listTooltip: "optional",
+    searchBy: "optional",
     sorted: "optional",
     items: "optional",
     separator: "optional",

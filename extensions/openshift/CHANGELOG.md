@@ -12,7 +12,8 @@ extension.
   Route's admission, TLS (inline certificate fields only as "set"), backends with their shares and pods, and routers; a
   DeploymentConfig's state, triggers and rollouts; a BuildConfig's source without credentials and its builds; a Build's
   failure, pod and "Build logs"; an ImageStream's tags and import errors; a Project's annotations and Namespace.
-  The tables' columns resize and Sextant remembers their widths, as the built-in tables'.
+  The tables' columns resize and Sextant remembers their widths, as the built-in tables'. The "Build logs" button
+  carries Sextant's logs icon, as the built-in one did.
 - **Rollout latest** and **Start build**, each in a window that shows the one request it sends, through Sextant's
   `resources.instantiate`; "Rollout latest" waits while the latest rollout runs and refuses a paused DeploymentConfig,
   as `oc` does.

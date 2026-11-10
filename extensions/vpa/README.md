@@ -69,7 +69,10 @@ HPA that fights it and its recommendation against this workload's template. It i
 no VPAs or no VPA targets the workload.
 
 The blocks open and close as the built-in panel's did, in Sextant's own memory of details sections, so "Expand all",
-"Collapse all" and Settings → Appearance apply to them. Conditions, events and YAML are Sextant's own sections. The
+"Collapse all" and Settings → Appearance apply to them; the choices remembered for the built-in blocks carry over
+(Sextant moves them once to the sections `vpa` and `workload`, the built-in `vpaWorkload`). The sections follow the
+cluster's kinds while shown, as the built-in ones followed discovery: the VPA installed or removed meanwhile shows at
+once. Conditions, events and YAML are Sextant's own sections. The
 tables' columns resize (drag a header's right edge) and Sextant remembers their widths, as the built-in view's did;
 the same columns keep to one line, the others wrap between words.
 
@@ -151,10 +154,6 @@ None: it only reads.
   - A VPA's target of a kind outside the six above (a custom workload such as an Argo Rollout) is not read, so its
     details say "The target has not been read"; the built-in view read any kind the cluster serves. (Reading every
     kind would need a permission on all kinds.)
-  - The sections ask once per shown object whether the cluster serves the kinds they read; the built-in ones followed
-    discovery while open (VPAs installed meanwhile show on reopening the details).
-  - The details sections' ids are `vpa` and `workload` (the built-in workload section was `vpaWorkload`), so the
-    blocks' open or closed choices remembered for the built-in view start afresh.
 - Checked by tests on fixtures of the VPA's objects (copied from the built-in view) against the built-in readings and
   problem provider; not yet tried on a live cluster.
 

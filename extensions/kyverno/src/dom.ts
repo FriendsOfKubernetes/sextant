@@ -22,6 +22,27 @@ export function errorText(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+/** The error codes Sextant names in their own words (`error.code.<code>`); `other` is "Something went wrong.". */
+export const ERROR_CODES = ["unreachable", "unauthorized", "forbidden", "notFound", "conflict", "invalid", "authPlugin", "helmMissing", "portInUse", "kubeconfig", "timeout"] as const;
+
+/**
+ * An error as the built-in view's error state showed it: what its code means, then "Details: <message>". A refusal of
+ * Sextant's own (`denied`) says so with its message.
+ */
+export function codedError(err: unknown): HTMLElement {
+  if (isSextantError(err, "denied")) return ui.errorState(t("error.denied", { message: err.message }));
+  const code = isSextantError(err) ? err.code : "other";
+  const known = (ERROR_CODES as readonly string[]).includes(code);
+  const message = err instanceof Error ? err.message : err === undefined || err === null ? "" : String(err);
+  const node = document.createElement("div");
+  node.className = "ky-error";
+  node.setAttribute("role", "alert");
+  node.dataset.code = code;
+  node.append(paragraph("sx-error", known ? t(`error.code.${code}`) : t("error.unknown")));
+  if (message) node.append(remark(t("error.details", { message })));
+  return node;
+}
+
 /**
  * Which blocks are open: Sextant's own memory of details sections (`context.blocks`, written by `ui.setBlockOpen`),
  * kept per kind as Settings → Appearance says, with the panel's "Expand all" and "Collapse all" — where the built-in

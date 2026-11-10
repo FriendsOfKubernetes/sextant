@@ -35,18 +35,19 @@ interface Options {
   contribution?: "vpa" | "workload";
   language?: string;
   blocks?: Record<string, boolean>;
-  kinds?: unknown[];
+  kinds?: unknown[] | (() => unknown[]);
+  kindsVersion?: number;
 }
 
 async function open(o: KubeObject, options: Options = {}): Promise<void> {
-  const { contribution = "vpa", language = "en", blocks = {}, kinds = KINDS } = options;
+  const { contribution = "vpa", language = "en", blocks = {}, kinds = KINDS, kindsVersion } = options;
   remembered = { ...blocks };
   hidden = contribution === "workload";
   host = await startTestHost({
-    context: { view: "details", contribution, selection: [refOf(o)], resourceVersion: "1", language, blocks: remembered },
+    context: { view: "details", contribution, selection: [refOf(o)], resourceVersion: "1", language, blocks: remembered, kindsVersion },
     handlers: {
       "resources.get": () => structuredClone(o),
-      kinds: () => kinds,
+      kinds: () => (typeof kinds === "function" ? kinds() : kinds),
       "ui.setBlockOpen": ({ id, open: isOpen }: { id: string; open: boolean }) => {
         remembered = { ...remembered, [id]: isOpen };
         host.setContext({ blocks: remembered });
@@ -261,6 +262,38 @@ describe("a workload's VPA block", () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(hidden).toBe(true);
     expect(live()).toHaveLength(0);
+  });
+
+  it("follows the cluster's kinds while shown, as the built-in block followed discovery", async () => {
+    let kinds: unknown[] = KINDS.filter((k) => k.kindRef.group !== "autoscaling.k8s.io");
+    let asked = 0;
+    await open(obj("hamster"), {
+      contribution: "workload",
+      kindsVersion: 1,
+      kinds: () => {
+        asked += 1;
+        return kinds;
+      },
+    });
+    await expect.poll(() => asked).toBe(1);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(live()).toHaveLength(0);
+    // The VPA installed while the details show: its VPAs are watched without reopening them.
+    kinds = KINDS;
+    host.setContext({ kindsVersion: 2 });
+    await expect.poll(() => watchOf("VerticalPodAutoscaler")).toBeDefined();
+    expect(asked).toBe(2);
+    watchOf("VerticalPodAutoscaler")!.emit(snapshot([obj("recreate")]));
+    await expect.poll(() => hidden).toBe(false);
+    // A context change that leaves the kinds as they were asks nothing.
+    host.setContext({ resourceVersion: "1" });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(asked).toBe(2);
+    // And removed: hidden again, watching nothing.
+    kinds = KINDS.filter((k) => k.kindRef.group !== "autoscaling.k8s.io");
+    host.setContext({ kindsVersion: 3 });
+    await expect.poll(() => hidden).toBe(true);
+    await expect.poll(() => live()).toHaveLength(0);
   });
 
   it("closed, the block stays as a closed block and watches nothing, as the built-in one did", async () => {

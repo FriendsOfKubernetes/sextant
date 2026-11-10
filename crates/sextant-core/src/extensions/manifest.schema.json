@@ -473,6 +473,8 @@
                 "pattern": "\\S"
               },
               "filterBy": { "description": "\"value\": a text column filters by its cases' values, not the translated texts shown (sextantApi 4).", "type": "string", "enum": ["value"] },
+              "searchBy": { "description": "\"value\": a text column is searched by its cases' values, not the texts shown (sextantApi 4).", "type": "string", "enum": ["value"] },
+              "listTooltip": { "description": "false: a list or firstPlus column hovers no text of its own (sextantApi 4).", "type": "boolean", "enum": [false] },
               "separator": { "description": "What joins a list or entries column's texts instead of the UI language's list (sextantApi 4).", "type": "string", "minLength": 1, "maxLength": 5 },
               "items": {
                 "description": "A list column's items each written by the first case that holds on the item, joined by `separator` (sextantApi 4).",

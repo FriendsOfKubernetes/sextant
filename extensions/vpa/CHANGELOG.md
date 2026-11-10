@@ -14,7 +14,8 @@ Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-i
   the target's template with what the admission controller would set on a pod created now, and the VPA components
   found in the cluster; a **"Vertical Pod Autoscaler" block** on every Deployment, StatefulSet, DaemonSet, ReplicaSet,
   Job and CronJob a VPA targets. The tables' columns resize and Sextant remembers their widths, as the built-in
-  tables'.
+  tables'. The blocks keep the open or closed choices remembered for the built-in ones, and follow the cluster's kinds
+  while shown, as the built-in sections followed discovery.
 - **Problems** in the category "Vertical Pod Autoscaler", on by default and never given to agents: a configuration the
   recommender cannot use, a VPA that matches no pod (listed, not notified), and a fight with an HPA
   that scales the same workload on a resource the VPA changes; counted on the section.

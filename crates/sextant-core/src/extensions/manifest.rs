@@ -404,6 +404,16 @@ pub struct ColumnContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub filter_by: Option<ColumnFilterBy>,
+    /// `false`: a `list` or `firstPlus` column hovers no text of its own (it hovers its whole text by default), as a
+    /// built-in cell without a hover; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub list_tooltip: Option<bool>,
+    /// `"value"`: a text column is searched by its cases' `value`s, not the texts shown (a state's name in every
+    /// language), as some built-in columns were; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub search_by: Option<ColumnFilterBy>,
     /// A `list` column's items each written by the first of its cases that holds on the item (#404), joined by
     /// `separator`; `sextantApi` 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1202,6 +1212,8 @@ mod tests {
                 cases: None,
                 after_column: None,
                 filter_by: None,
+                list_tooltip: None,
+                search_by: None,
                 sorted: None,
                 items: None,
                 separator: None,

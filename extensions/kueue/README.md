@@ -153,8 +153,6 @@ None: the extension is read-only and has no action of its own (ADR-0114).
   - Where the Evicted reason names no cause (older Kueue), a deactivation's cause written inside a longer text is found
     in the first 6 eviction counts; further down only the causes Kueue writes (`RequeuingLimitExceeded`,
     `MaximumExecutionTimeExceeded`, `AdmissionCheck`) are, as they are. The built-in view searched every count.
-  - The Queue section asks once per job whether the cluster serves Workloads; the built-in one followed discovery while
-    open (Kueue installed meanwhile shows on reopening the details).
   - Waiting Workloads created in the same second are listed by namespace and name; the built-in list kept the order
     the watch gave.
 - Checked by tests on fixtures of Kueue's objects (copied from the built-in view) against the built-in readings and

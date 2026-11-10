@@ -134,6 +134,8 @@ describe("a HelmChart", () => {
       labelSelector: "helmcharts.helm.cattle.io/chart=my-app",
       title: "helm-install-my-app",
     });
+    // The built-in button's icon.
+    expect(host.calls.some((c) => c.method === "ui.icon" && (c.params as { name: string }).name === "logs")).toBe(true);
     // Sextant keeps valuesContent and set from the extension: it says so instead of the masked values.
     expect(text()).toContain("valuesContent is set, but Sextant does not give it to extensions");
     expect(text()).toContain("The set values are there, but Sextant does not give them to extensions");

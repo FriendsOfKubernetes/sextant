@@ -58,6 +58,16 @@ afterColumn?: string,
  */
 filterBy?: ColumnFilterBy, 
 /**
+ * `false`: a `list` or `firstPlus` column hovers no text of its own (it hovers its whole text by default), as a
+ * built-in cell without a hover; `sextantApi` 4.
+ */
+listTooltip?: boolean, 
+/**
+ * `"value"`: a text column is searched by its cases' `value`s, not the texts shown (a state's name in every
+ * language), as some built-in columns were; `sextantApi` 4.
+ */
+searchBy?: ColumnFilterBy, 
+/**
  * A `list` column's items each written by the first of its cases that holds on the item (#404), joined by
  * `separator`; `sextantApi` 4.
  */

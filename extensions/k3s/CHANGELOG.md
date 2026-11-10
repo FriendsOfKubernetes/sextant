@@ -17,6 +17,7 @@ extension.
   arguments and a chart's `valuesContent` and `set`, which Sextant keeps from extensions, are said to be in the YAML
   section; what the extension does get of a chart's values is masked as before.
 - **Tables** on the page and in the details whose columns resize and are remembered, as the built-in tables'.
+- The install Job block's **Logs** button carries Sextant's logs icon, as the built-in one did.
 - **Problems:** HelmCharts whose install failed (from the Job's failure, for a day) or keeps failing, and bundled
   components not available, in the built-in groups.
 - Installing asks for consent to read HelmCharts, HelmChartConfigs, Addons, etcd snapshots, Jobs, Nodes and Services,

@@ -127,8 +127,6 @@ None: the extension is read-only and has no action of its own (ADR-0076).
   - "Image scans (Trivy)" was the last block inside Sextant's "Security" section, and closing "Security" hid it; it is
     a section of its own now, right after "Security", whose block is a top-level one. A details section that adds a
     block inside another section would close it.
-  - The image scans ask Sextant once whether the cluster serves the reports, when the details open; the built-in block
-    followed discovery, so it came as soon as Trivy Operator was installed. A notice of changed kinds would close it.
   - The image scans read the shown workload themselves, so the extension asks to read Pods and workloads; the built-in
     block used the panel's object.
   - The image column treats a blank registry, tag or digest (only spaces) as missing; the built-in did so only for an

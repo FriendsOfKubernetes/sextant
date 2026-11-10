@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import fixtures from "../fixtures/objects.json";
 import { BLOCKS, startDetails } from "./details";
 import { dateTimeText } from "./dom";
-import { setLanguage } from "./i18n";
+import { CATALOGS, setLanguage } from "./i18n";
 
 const objects = fixtures as unknown as KubeObject[];
 const obj = (kind: string, name: string): KubeObject => structuredClone(objects.find((o) => o.kind === kind && o.metadata.name === name)!);
@@ -202,9 +202,26 @@ describe("details of a NodeClaim", () => {
     await open(obj("NodeClaim", "spot-joining"), { contribution: "node-claim" });
     expect(phrases()[0]).toEqual(["warning", "Launched, but the node has not joined the cluster: AwaitingReconciliation."]);
     await expect.poll(() => watchOf("Event")).toBeDefined();
+    // Refused with no reason given: the built-in block's general words.
     watchOf("Event")!.emit({ type: "forbidden", namespaces: [] });
-    await expect.poll(() => root.querySelector(`[data-block="${BLOCKS.claimDisruptions}"] .sx-error`)?.textContent).toBe("The list could not be read.");
+    await expect.poll(() => root.querySelector(`[data-block="${BLOCKS.claimDisruptions}"] .sx-error`)?.textContent).toBe("Something went wrong.");
+    expect(root.querySelector(`[data-block="${BLOCKS.claimDisruptions}"] [role="alert"]`)?.textContent).toBe("Something went wrong.");
     expect(phrases().map((p) => p[1])).toContain("The node is being terminated.");
+  });
+
+  it("titles its events' error by the error's kind, with the cluster's message, as the built-in block did", async () => {
+    await open(obj("NodeClaim", "spot-joining"), { contribution: "node-claim" });
+    await expect.poll(() => watchOf("Event")).toBeDefined();
+    watchOf("Event")!.emit({ type: "error", code: "unreachable", message: "dial tcp 10.0.0.1:6443: connect: connection refused" } as never);
+    const alert = () => root.querySelector(`[data-block="${BLOCKS.claimDisruptions}"] [role="alert"]`);
+    await expect.poll(() => alert()?.querySelector(".sx-error")?.textContent).toBe("The cluster cannot be reached.");
+    expect(alert()?.textContent).toBe("The cluster cannot be reached.Details: dial tcp 10.0.0.1:6443: connect: connection refused");
+    close();
+    await open(obj("NodeClaim", "spot-joining"), { contribution: "node-claim", language: "de" });
+    await expect.poll(() => watchOf("Event")).toBeDefined();
+    watchOf("Event")!.emit({ type: "error", code: "forbidden", message: "events is forbidden" } as never);
+    await expect.poll(() => alert()?.querySelector(".sx-error")?.textContent).toBe(CATALOGS.de["error.code.forbidden"]);
+    expect(alert()?.textContent).toContain("Details: events is forbidden");
   });
 
   it("reads no NodePools where the cluster does not serve them", async () => {

@@ -14,7 +14,7 @@
 // open — a NodeClaim's own once more while it is closed, to know whether to show it. A node's Karpenter block stays in
 // Sextant. Read-only.
 import { trackObjects, ui, type KubeObject, type ObjectRef, type Sextant, type UiContent, type Watch, type WatchParams } from "@sextant/extension-sdk";
-import { age, block, dateTimeText, element, errorText, fieldsOf, formatList, lines, link, note, OPEN_BLOCKS, phraseLine, phraseLines, tableOf, warning, type BlockMemory } from "./dom";
+import { age, block, codedError, dateTimeText, element, errorText, fieldsOf, formatList, lines, link, note, OPEN_BLOCKS, phraseLine, phraseLines, tableOf, warning, type BlockMemory } from "./dom";
 import { t } from "./i18n";
 import {
   CAPACITY_TYPE_LABEL,
@@ -56,7 +56,8 @@ export interface Live {
   items: KubeObject[];
   ready: boolean;
   failed: boolean;
-  error?: string;
+  /** Why, where the cluster or Sextant said: the error's code and message, as the built-in block named it. */
+  error?: { code?: string; message?: string };
 }
 
 /** "expiresAt" carries an ISO time: shown in the UI language. */
@@ -182,7 +183,7 @@ export function nodeClaimView(sextant: Sextant, claim: KubeObject, lists: ClaimL
       ...phraseLines(withTimes(disruptionOf(claim, pool))),
       visible
         ? block(memory, BLOCKS.claimDisruptions, t("karpenter.disruptions"), (): UiContent =>
-            answer === "unknown" ? ui.errorState(lists.events?.error ?? t("listUnknown")) : eventsTable(sextant, disruptions, { header: t("karpenter.cause"), cell: causeText }),
+            answer === "unknown" ? codedError(lists.events?.error) : eventsTable(sextant, disruptions, { header: t("karpenter.cause"), cell: causeText }),
           )
         : null,
     ];
@@ -247,7 +248,7 @@ class Watches {
 
   private start(key: string, spec: Omit<WatchParams, "clusterId">): { watch: Watch; live: Live } {
     const live: Live = { items: [], ready: false, failed: false };
-    const settle = (error: string | undefined | false) => {
+    const settle = (error: Live["error"] | false) => {
       live.ready = true;
       live.failed = error !== false;
       if (error) live.error = error;
@@ -261,11 +262,12 @@ class Watches {
           settle(false);
         },
         (other) => {
-          if (other.type === "error") settle(other.message || undefined);
+          // The watch's error by its code and message; a namespace refused says no more, as the built-in block.
+          if (other.type === "error") settle({ code: other.code, message: other.message });
           else if (other.type === "forbidden") settle(undefined);
         },
       ),
-      onError: (err) => settle(errorText(err)),
+      onError: (err) => settle(err),
     });
     watch.started.catch(() => undefined);
     const entry = { watch, live };

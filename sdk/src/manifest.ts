@@ -183,6 +183,10 @@ export interface ManifestColumn {
   afterColumn?: string;
   /** `"value"`: a text column filters by its cases' `value`s, not the translated texts shown (since Sextant 0.30). */
   filterBy?: "value";
+  /** `false`: a `list` or `firstPlus` column hovers no text of its own (by default its whole text; since Sextant 0.30). */
+  listTooltip?: boolean;
+  /** `"value"`: a text column is searched by its cases' `value`s, not the texts shown (since Sextant 0.30). */
+  searchBy?: "value";
   /**
    * A `list` column's items each written by the first case that holds on the item (paths read from the item), joined by
    * `separator`, else the UI language's list (since Sextant 0.30). The column's `paths` name the lists, without `*`

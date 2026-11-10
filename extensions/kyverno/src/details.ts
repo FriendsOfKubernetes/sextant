@@ -26,7 +26,7 @@ import {
   type Watch,
   type WatchParams,
 } from "@sextant/extension-sdk";
-import { block, BlockMemory, errorText, explain, message, redraw, remark } from "./dom";
+import { block, BlockMemory, codedError, errorText, explain, message, redraw, remark } from "./dom";
 import { i18n, t } from "./i18n";
 import {
   backgroundScan,
@@ -76,10 +76,12 @@ export interface Live {
   capped?: boolean;
 }
 
-/** What discovery says: the kinds the cluster serves, `null` while it is asked, or that asking failed. */
+/** What discovery says: the kinds the cluster serves, `null` while it is asked, or that asking failed (and how). */
 export interface Discovery {
   kinds: readonly ResourceKind[] | null;
   failed: boolean;
+  /** Why asking failed: Sextant's error, named by its code and message as the built-in view's error did. */
+  error?: unknown;
 }
 
 /** The served version of a kind; `null` when the cluster does not serve it, `undefined` while discovery is asked. */
@@ -214,7 +216,7 @@ export function policySummary(
 /** "Results in reports": shown where the cluster serves the reports (an error when discovery failed); drawn while open. */
 function summaryBlock(sextant: Sextant, discovery: Discovery, memory: BlockMemory, summaryOf: () => PolicySummary): HTMLElement | null {
   const title = t("policySummary.title");
-  if (discovery.failed) return block(memory, SUMMARY_BLOCK, title, () => ui.errorState(t("error.unknown")));
+  if (discovery.failed) return block(memory, SUMMARY_BLOCK, title, () => codedError(discovery.error));
   if (!servesReports(discovery)) return null;
   return block(memory, SUMMARY_BLOCK, title, () => {
     const summary = summaryOf();
@@ -344,8 +346,9 @@ function askDiscovery(sextant: Sextant, changed: () => void): Discovery {
       discovery.kinds = kinds;
       changed();
     },
-    () => {
+    (err: unknown) => {
       discovery.failed = true;
+      discovery.error = err;
       changed();
     },
   );
@@ -552,7 +555,8 @@ function startObjectResults(sextant: Sextant, root: HTMLElement): () => void {
     const titled = (content: () => UiContent) => [block(memory, RESULTS_BLOCK, title, content)];
     if (!open && answer) show(answer === "absent" ? null : titled(() => null));
     else if (loading && answer !== null && answer !== "absent") show(titled(() => remark(t("loading"))));
-    else if (loading || results.length === 0) show(unknown ? titled(() => ui.errorState(t("error.unknown"))) : null);
+    // Discovery's error by its code and message, a list that could not be read in general words, as the built-in.
+    else if (loading || results.length === 0) show(unknown ? titled(() => (discovery?.failed ? codedError(discovery.error) : ui.errorState(t("error.unknown")))) : null);
     else show(titled(() => objectResultsView(sextant, results)));
   };
   const schedule = batched(render);

@@ -705,16 +705,26 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
     }
   };
 
-  /** Asks Sextant once per job whether the cluster serves Workloads (the Queue section only). */
+  /**
+   * Asks Sextant whether the cluster serves Workloads (the Queue section only): for each job shown, and again whenever
+   * the cluster's kinds change (`context.kindsVersion`), as the built-in section followed discovery while open. Only
+   * the latest question's answer counts.
+   */
+  let asking = 0;
+  let kindsVersion = sextant.context.kindsVersion;
   const askKinds = (current: QueueProbe) => {
+    const attempt = ++asking;
     servesWorkloads(sextant).then(
       (served) => {
+        if (attempt !== asking || current !== probe) return;
         current.served = served;
-        if (current === probe) schedule();
+        current.kindsFailed = false;
+        schedule();
       },
       () => {
+        if (attempt !== asking || current !== probe) return;
         current.kindsFailed = true;
-        if (current === probe) schedule();
+        schedule();
       },
     );
   };
@@ -738,8 +748,12 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
       object = null;
       watches.stop();
       probe = newQueueProbe();
+      kindsVersion = sextant.context.kindsVersion;
       if (contribution === "queue") askKinds(probe);
       root.replaceChildren(ui.loading(t("loading")));
+    } else if (contribution === "queue" && sextant.context.kindsVersion !== kindsVersion) {
+      kindsVersion = sextant.context.kindsVersion;
+      askKinds(probe);
     }
     const version = sextant.context.resourceVersion;
     if (version === shownVersion) return;

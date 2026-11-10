@@ -34,8 +34,8 @@ sections hidden until shown, the shown object's uid, capped watches, details blo
 **A sidebar section "Kyverno"** (`kyverno`), shown while the cluster serves any of its kinds, with the built-in
 section's icon and place (after Crossplane): Cluster Policies, Policies, Policy Reports, Cluster Policy Reports,
 Ephemeral Reports and Cluster Ephemeral Reports, with Sextant's own table, filters, selection bar and details, and Edit
-and Delete as on every kind. The section's counter shows how many objects fail policy rules, only while the opt-in
-category below is on.
+and Delete as on every kind. The section's counter counts the problems below, as the built-in one did (a report with
+both a failure and an error counts twice), only while the opt-in category below is on.
 
 **"Only problems"**, as the built-in tables had it: policies whose Ready condition is False (else whose older
 `status.ready` is false), and reports with a failed or errored result (by their summary, else counted from their
@@ -137,16 +137,11 @@ None: the extension is read-only and has no action of its own (ADR-0101).
 - Kyverno's CRDs (`kyverno.io/v1`, `wgpolicyk8s.io/v1alpha2`, `reports.kyverno.io/v1`); the section shows only where
   the cluster serves them. "Policy results" needs Kyverno 1.10 or newer (one report per resource, named by its uid).
 - Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - The counter counts each object with problems once; the built-in counted problems, so an object whose report has
-    both a failure and an error counted twice there.
   - Mode counts every action a verifyImages rule's entries set (Audit on one entry and Enforce on another is Mixed);
     the built-in took the rule's first entry that sets one. A match step cannot pick the first item that has a field.
     Mode also reads a rule as Kyverno admits it — of one type, its actions as the CRDs' enum writes them — where the
     built-in read a rule of two types by the first and an action in any case.
   - Background filters by the shown Yes or No; the built-in filtered by its boolean.
-  - A block inside a block keeps the outer block's heading level.
-  - An error in "Policy results" or "Results in reports" says "Something went wrong."; the built-in named the
-    discovery error's own code and message.
   - "Policy results" is a frame on every object's details, hidden until it has found a report on the object.
 - Checked by tests on fixtures of Kyverno's objects (copied from the built-in view) against the built-in readings and
   rules; not yet tried on a live cluster.
@@ -157,8 +152,9 @@ None: the extension is read-only and has no action of its own (ADR-0101).
 - **The counter shows nothing:** the category "Kyverno policy failures" is off; turn it on on the Problems page.
 - **No "Policy results" on an object:** Kyverno has not reported on it (it reports only on kinds its policies match,
   with background scans or at admission), or Kyverno is older than 1.10.
-- **"Something went wrong." in "Policy results":** the report could not be read (the cluster refused your credentials,
-  or discovery failed).
+- **"Something went wrong." in "Policy results":** the report could not be read (the cluster refused your credentials).
+  Where Sextant could not tell the cluster's kinds, the block says what the error means and gives its details, as in
+  "Results in reports".
 - **"Sextant refused: …" in a section:** the extension's permissions do not cover the object. Check Settings →
   Extensions → Kyverno.
 

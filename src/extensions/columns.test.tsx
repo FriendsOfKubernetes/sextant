@@ -66,10 +66,23 @@ describe("an extension's computed column", () => {
     const state = computedColumn("s", column({ paths: [".status.phase"], filterBy: "value", cases: [{ when: yes, text: "Prêt", value: "ready" }] }));
     const ready = { metadata: { name: "r" }, status: { connectorStatus: {}, phase: "x" } } as unknown as KubeObject;
     expect(state.searchText!(ready, ctx)).toBe("Prêt");
+    // `searchBy: "value"`: found by the case's value (a state's name), as some built-in columns were.
+    const byName = computedColumn("s", column({ paths: [".status.phase"], filterBy: "value", searchBy: "value", cases: [{ when: yes, text: "Prêt", value: "ready" }] }));
+    expect(byName.searchText!(ready, ctx)).toBe("ready");
     expect(state.filter!.value!(ready, ctx)).toBe("ready");
     const store = { metadata: { name: "s" }, spec: { provider: { vault: { server: "x" } } } } as unknown as KubeObject;
     const provider = computedColumn("p", column({ paths: [".spec.provider"], cases: [{ when: { type: "exists", path: ".spec.provider" }, text: "{{.spec.provider|keys}}" }] }));
     expect(provider.searchText!(store, ctx)).toBe("vault");
+  });
+
+  it("hover a list column's whole text, unless it says `listTooltip: false`", () => {
+    const obj = { metadata: { name: "s" }, spec: { triggers: [{ type: "cpu" }, { type: "kafka" }] } } as unknown as KubeObject;
+    const hoverOf = (rest: Partial<ColumnContribution>) =>
+      render(<>{computedColumn("t", column({ paths: [".spec.triggers[*].type"], format: "list", ...rest })).render!(obj, ctx)}</>).container
+        .querySelector("span[title]")
+        ?.getAttribute("title");
+    expect(hoverOf({})).toBe("cpu, kafka");
+    expect(hoverOf({ listTooltip: false })).toBeUndefined();
   });
 
   it("write each list item by its first holding case, joined by the separator (#404)", () => {

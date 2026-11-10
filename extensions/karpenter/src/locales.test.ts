@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { catalogProblems } from "@sextant/extension-sdk";
 import { describe, expect, it } from "vitest";
 import manifest from "../sextant-extension.json";
+import { ERROR_CODES } from "./dom";
 import { CATALOGS } from "./i18n";
 import en from "./locales/en.json";
 
@@ -27,6 +28,7 @@ const BUILT = [
   ),
   ...["drift", "consolidation", "emptiness", "expiration", "other"].map((k) => `karpenter.causes.${k}`),
   ...["seconds", "minutes", "hours", "days", "years"].map((u) => `age.${u}`),
+  ...ERROR_CODES.map((code) => `error.code.${code}`),
 ];
 
 describe("catalogs", () => {

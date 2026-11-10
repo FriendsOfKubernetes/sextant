@@ -405,7 +405,7 @@ function buildView(sextant: Sextant, obj: KubeObject, related: Related, blocks: 
   const phase = buildPhase(obj);
   const openLogs =
     pod && ns
-      ? [ui.button(t("logs.open"), () => void sextant.ui.openLogs({ namespace: ns, pod: pod.metadata.name }).catch((err: unknown) => sextant.reportError(err)))]
+      ? [ui.button(t("logs.open"), () => void sextant.ui.openLogs({ namespace: ns, pod: pod.metadata.name }).catch((err: unknown) => sextant.reportError(err)), { icon: "logs" })]
       : undefined;
   return present([
     isFailedBuild(obj) && reason ? note(reason, "danger") : null,

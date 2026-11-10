@@ -153,7 +153,19 @@ export function block(
   if (options.actions && options.actions.length > 0) head.append(el("div", "sx-block__actions", [...options.actions]));
   section.append(head, body);
   section.setAttribute("aria-label", title);
+  // A block inside this one is a level deeper (since Sextant 0.30), as Sextant's nested details blocks: h3, h4, h5.
+  for (const inner of body.querySelectorAll<HTMLHeadingElement>(".sx-block__title")) deepen(inner);
   return section;
+}
+
+/** The heading one level deeper (at most `h6`), its contents and attributes kept. */
+function deepen(heading: HTMLHeadingElement): void {
+  const level = Number(heading.tagName.slice(1));
+  if (!(level >= 1 && level < 6)) return;
+  const next = document.createElement(`h${level + 1}`);
+  for (const attr of heading.attributes) next.setAttribute(attr.name, attr.value);
+  next.append(...heading.childNodes);
+  heading.replaceWith(next);
 }
 
 /** A row of `fields`: a label and its value; a row whose value is nothing is left out. */

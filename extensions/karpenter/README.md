@@ -124,8 +124,6 @@ None: it only reads.
   - **"Only problems"** compares, as Kubernetes quantities, the limits of cpu, memory, nodes, pods, ephemeral storage,
     `nvidia.com/gpu`, `amd.com/gpu` and `aws.amazon.com/neuron`; the built-in filter compared every limited resource.
     (The same going through a map's keys, in `atLeast`, would close it.)
-  - A NodeClaim's disruption events that could not be read say "The list could not be read." with the cluster's
-    message; the built-in block titled the error by its kind.
 - Checked by tests on fixtures of Karpenter's objects against the built-in readings (ported unchanged); not yet tried on
   a live cluster.
 
@@ -133,8 +131,9 @@ None: it only reads.
 
 - **No "Karpenter" section:** the cluster does not serve Karpenter's kinds, or the extension is disabled.
 - **No disruption events:** Karpenter reports them as Events, which the cluster keeps for an hour by default.
-- **"The list could not be read." in a block:** the extension may not read Events, or the cluster refused your
-  credentials.
+- **An error in a NodeClaim's disruption events** ("You don't have permission to do this (403).", "The cluster cannot be
+  reached.", …, with the cluster's details under it, or "Something went wrong." alone): the extension may not read
+  Events, or the cluster refused your credentials or could not be reached.
 - **"Sextant refused: …" in a section:** the extension's permissions do not cover the object. Check Settings →
   Extensions → Karpenter.
 

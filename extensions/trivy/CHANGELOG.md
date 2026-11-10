@@ -12,5 +12,7 @@ Needs Sextant 0.30 (`sextantApi` 4). The first release: the Trivy part of Sextan
   most severe vulnerabilities, failed checks, exposed secrets (never the matched text) or failing controls, or an
   SBOM's component count. The tables' columns resize, and Sextant remembers their widths, as the built-in view's did.
 - **Image scans of every Pod and workload**, right after Sextant's "Security" section: its VulnerabilityReports and
-  ConfigAuditReport with their 10 most severe rows and a link to each, watched only while the block is open.
+  ConfigAuditReport with their 10 most severe rows and a link to each, watched only while the block is open. The
+  block follows the cluster's kinds while shown, as the built-in one followed discovery: it comes as soon as Trivy
+  Operator is installed and goes when it is removed.
 - Read-only, and never a problem source. Installing asks for consent to read the report kinds, Pods and workloads.

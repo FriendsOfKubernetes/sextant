@@ -352,6 +352,26 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 ));
             }
         }
+        if column.list_tooltip.is_some()
+            && !matches!(
+                column.format,
+                Some(ColumnFormat::List) | Some(ColumnFormat::FirstPlus)
+            )
+        {
+            return Err(at(
+                &here.key("listTooltip"),
+                "goes with `format: \"list\"` or `\"firstPlus\"`",
+            ));
+        }
+        if column.search_by.is_some()
+            && (column.format.unwrap_or(ColumnFormat::Text) != ColumnFormat::Text
+                || column.cases.as_ref().is_none_or(|c| c.is_empty()))
+        {
+            return Err(at(
+                &here.key("searchBy"),
+                "is `\"value\"` on a text column with `cases`",
+            ));
+        }
         if column.filter_by.is_some() {
             if manifest.sextant_api < WINDOW_API {
                 return Err(at(
@@ -781,7 +801,7 @@ fn check_separator(separator: &str, here: &JsonPath) -> Result<(), ManifestError
     Ok(())
 }
 
-fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 14] {
+fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 16] {
     [
         ("sorted", column.sorted.is_some()),
         ("separator", column.separator.is_some()),
@@ -797,6 +817,8 @@ fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 14] {
         ("tones", column.tones.is_some()),
         ("tooltipPaths", column.tooltip_paths.is_some()),
         ("cases", column.cases.is_some()),
+        ("listTooltip", column.list_tooltip.is_some()),
+        ("searchBy", column.search_by.is_some()),
     ]
 }
 

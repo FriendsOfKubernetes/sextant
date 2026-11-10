@@ -178,7 +178,6 @@ What the extension API cannot say yet, compared with the built-in view (issue #4
 - **Build Duration column**: from `status.startTimestamp` to `status.completionTimestamp`, else to now; the built-in
   took `status.duration` first and counted to now only while the build ran (a finished build without a completion
   time showed nothing).
-- **The "Build logs" button** has no icon (`ui.button`).
 - **Action windows** are titled by Sextant with the action's name; the built-in dialogs' title ("Roll out
   DeploymentConfig frontend?") is the window's first line.
 

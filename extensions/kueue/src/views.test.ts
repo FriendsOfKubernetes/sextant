@@ -34,20 +34,21 @@ interface Options {
   language?: string;
   blocks?: Record<string, boolean>;
   /** What `kinds` answers: the served kinds, or an error. */
-  kinds?: unknown[] | Error;
+  kinds?: unknown[] | Error | (() => unknown[]);
+  kindsVersion?: number;
 }
 
 async function open(obj: KubeObject, options: Options = {}): Promise<void> {
-  const { contribution = "kueue", language = "en", blocks = {}, kinds = [WORKLOAD_KIND] } = options;
+  const { contribution = "kueue", language = "en", blocks = {}, kinds = [WORKLOAD_KIND], kindsVersion } = options;
   remembered = { ...blocks };
   hidden = contribution === "queue";
   host = await startTestHost({
-    context: { view: "details", contribution, selection: [refOf(obj)], resourceVersion: "1", language, blocks: remembered },
+    context: { view: "details", contribution, selection: [refOf(obj)], resourceVersion: "1", language, blocks: remembered, kindsVersion },
     handlers: {
       "resources.get": () => structuredClone(obj),
       kinds: () => {
         if (kinds instanceof Error) throw kinds;
-        return kinds;
+        return typeof kinds === "function" ? kinds() : kinds;
       },
       "ui.setBlockOpen": ({ id, open }: { id: string; open: boolean }) => {
         remembered = { ...remembered, [id]: open };
@@ -330,6 +331,38 @@ describe("details", () => {
     watchOf("Workload")!.emit({ type: "error", message: "boom" } as never);
     await expect.poll(() => hidden).toBe(false);
     expect(text()).toContain(en.listUnknown);
+  });
+
+  it("of a job, following the cluster's kinds while shown, as the built-in section followed discovery", async () => {
+    let kinds: unknown[] = [];
+    let asked = 0;
+    await open(job(QUEUED), {
+      contribution: "queue",
+      kindsVersion: 1,
+      kinds: () => {
+        asked += 1;
+        return kinds;
+      },
+    });
+    await expect.poll(() => asked).toBe(1);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(hidden).toBe(true);
+    expect(host.watches).toHaveLength(0);
+    // Kueue installed while the details show: the block comes without reopening them.
+    kinds = [WORKLOAD_KIND];
+    host.setContext({ kindsVersion: 2 });
+    await expect.poll(() => hidden).toBe(false);
+    expect(asked).toBe(2);
+    await expect.poll(() => watchOf("Workload")).toBeDefined();
+    // A context change that leaves the kinds as they were asks nothing.
+    host.setContext({ resourceVersion: "2" });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(asked).toBe(2);
+    // Kueue removed: hidden again, watching nothing.
+    kinds = [];
+    host.setContext({ kindsVersion: 3 });
+    await expect.poll(() => hidden).toBe(true);
+    await expect.poll(() => watchOf("Workload")).toBeUndefined();
   });
 
   it("of a job on a cluster without Kueue: hidden, the queue label notwithstanding; shown when the kinds cannot be told", async () => {

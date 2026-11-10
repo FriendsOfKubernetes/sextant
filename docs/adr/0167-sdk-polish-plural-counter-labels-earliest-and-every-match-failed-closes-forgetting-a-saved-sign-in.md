@@ -355,3 +355,12 @@ to the extension's block (`ext:<extension>:<section>/<section>/<block>`), only u
 extension split one section by kind, in the global bank and each cluster's; and the built-in Crossplane page's widths
 (`crossplane.composites`) to `ext:sextant.crossplane:composites`. A choice already kept under the new key wins. The
 Argo, Argo CD and Flux extensions draw no collapsible blocks, so theirs have nowhere to go.
+
+## Amendment: a column searched by its values, a list column without its whole-text hover, nested kit blocks
+
+A text column with `cases` may say `searchBy: "value"` (`sextantApi` 4): the table's search finds it by its cases'
+`value`s, not the translated words shown, as some built-in columns searched by a state's name (Contour's Status);
+`filterBy: "value"` stays the filter's own choice. A `list` or `firstPlus` column with `listTooltip: false` hovers no
+text of its own (it hovers its whole text by default), as a built-in cell without a hover (KEDA's Triggers). Both are
+checked alike by `check_columns` and `checkColumns`. The UI kit's `block` makes a block inside its content a heading
+level deeper (h3, h4, h5), as Sextant's nested details blocks are.

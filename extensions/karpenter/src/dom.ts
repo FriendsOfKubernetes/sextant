@@ -126,6 +126,29 @@ export function block(memory: BlockMemory, id: string, title: string, content: (
   return node;
 }
 
+/** The error codes Sextant names in their own words (`error.code.<code>`); `other` is "Something went wrong.". */
+export const ERROR_CODES = ["unreachable", "unauthorized", "forbidden", "notFound", "conflict", "invalid", "authPlugin", "helmMissing", "portInUse", "kubeconfig", "timeout"] as const;
+
+/**
+ * Why a list could not be read, as the built-in block's error state showed it: what the error's code means, then
+ * "Details: <message>" — "Something went wrong." alone where nothing says why (a namespace refused, the watch
+ * reconnecting). A refusal of Sextant's own (`denied`) says so with its message.
+ */
+export function codedError(err: { code?: string; message?: string } | undefined): HTMLElement {
+  if (isSextantError(err, "denied")) return ui.errorState(t("error.denied", { message: err.message }));
+  const code = err?.code ?? "other";
+  const known = (ERROR_CODES as readonly string[]).includes(code);
+  const node = element(
+    "div",
+    { className: "as-error" },
+    element("p", { className: "sx-error", textContent: known ? t(`error.code.${code}`) : t("error.unknown") }),
+    err?.message ? note(t("error.details", { message: err.message })) : null,
+  );
+  node.setAttribute("role", "alert");
+  node.dataset.code = code;
+  return node;
+}
+
 export function errorText(err: unknown): string {
   if (isSextantError(err, "denied")) return t("error.denied", { message: err.message });
   if (isSextantError(err, "forbidden")) return t("error.forbidden", { message: err.message });
