@@ -96,26 +96,20 @@ suspended or deleted object is never a problem. Every rule may notify, once per 
 ones: a RayCluster's failure and its head not ready, a RayService's problems as one, and a RayJob's once per reason
 (`notifyAgainOn` its `status.reason`). A rule's reason is the object's own (the condition's or the job's reason), else
 the built-in fallback (`reasonOr`). The message is the one the built-in view gave: where a condition's message is
-empty its reason, and where it has neither the next one's words; the variants of a rule below differ only by where
-that message comes from. The rules watch up to 20 000 RayClusters and RayServices and 5000 RayJobs.
+empty or missing its reason, and where it has neither the next one's words (placeholder paths tried in turn). The rules watch up to 20 000 RayClusters and RayServices and 5000 RayJobs.
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
-| `cluster-replica-failure` | RayCluster | `ReplicaFailure` is True: KubeRay cannot create or delete pods (reason the condition's, else "ReplicaFailure"; its message, else its reason) | 5 min from the condition's change | No |
-| `cluster-replica-failure-head` | RayCluster | The same, the condition without words: a False `HeadPodReady`'s message or reason | 5 min from the condition's change | No |
+| `cluster-replica-failure` | RayCluster | `ReplicaFailure` is True: KubeRay cannot create or delete pods (reason the condition's, else "ReplicaFailure"; its message, else its reason, else a False `HeadPodReady`'s message or reason) | 5 min from the condition's change | No |
 | `cluster-replica-failure-cluster` | RayCluster | The same, no condition with words: `status.reason` | 5 min from the condition's change | No |
-| `cluster-failed` | RayCluster | `status.state: failed` (operators before 1.2; reason "RayClusterFailed", message `status.reason`) | None | No |
-| `cluster-failed-head` | RayCluster | The same with a False `HeadPodReady` with words: its message or reason | None | No |
+| `cluster-failed` | RayCluster | `status.state: failed` (operators before 1.2; reason "RayClusterFailed", message a False `HeadPodReady`'s message or reason, else `status.reason`) | None | No |
 | `cluster-head-not-ready` | RayCluster | `HeadPodReady` is False, not failed (reason the condition's, else "HeadPodNotReady") | 5 min from the condition's change | No |
 | `job-failed` | RayJob | Failed (`jobDeploymentStatus` Failed, or `jobStatus` FAILED; never while Retrying), for a day after its end, else its start, else its creation (reason `status.reason`, else "RayJobFailed") | None | No |
 | `job-validation-failed` | RayJob | The same, `jobDeploymentStatus` ValidationFailed (reason `status.reason`, else "ValidationFailed") | None | No |
-| `service-failed` | RayService | `Ready` is False with reason ValidationFailed or InitializingTimeout (message `Ready`'s, else its reason) | None | No |
-| `service-failed-app` | RayService | The same with a failed application of the active cluster that has a message: that message | None | No |
-| `service-failed-new-app` | RayService | The same with a failed application of the pending cluster (no active one yet) that has a message: that message | None | No |
-| `service-app-failed` | RayService | An application of the active cluster is DEPLOY_FAILED or UNHEALTHY, `Ready` not True (reason a False `Ready`'s, else "ServeApplicationFailed"; message the first failed application's by name) | 10 min from `Ready`'s change | No |
-| `service-app-failed-ready` | RayService | The same, that application without a message: a False `Ready`'s message or reason | 10 min from `Ready`'s change | No |
+| `service-failed` | RayService | `Ready` is False with reason ValidationFailed or InitializingTimeout (message the active cluster's failed application's, else `Ready`'s message or reason) | None | No |
+| `service-failed-new-app` | RayService | The same with a failed application of the pending cluster and no active one yet (message that application's, else `Ready`'s) | None | No |
+| `service-app-failed` | RayService | An application of the active cluster is DEPLOY_FAILED or UNHEALTHY, `Ready` not True (reason a False `Ready`'s, else "ServeApplicationFailed"; message the first failed application's by name, else a False `Ready`'s message or reason) | 10 min from `Ready`'s change | No |
 | `service-new-app-failed` | RayService | No active cluster yet, an application of the pending one is DEPLOY_FAILED or UNHEALTHY, `Ready` not True | 10 min from `Ready`'s change | No |
-| `service-new-app-failed-ready` | RayService | The same, that application without a message: a False `Ready`'s message or reason | 10 min from `Ready`'s change | No |
 | `service-app-failed-while-ready` | RayService | An application of the active cluster is DEPLOY_FAILED or UNHEALTHY, `Ready` True (reason "ServeApplicationFailed") | 5 min from when Sextant first saw it | No |
 | `service-new-app-failed-while-ready` | RayService | The same of the pending cluster, no active one yet, `Ready` True | 5 min from when Sextant first saw it | No |
 | `service-not-ready` | RayService | No application failed, no upgrade or rollback in progress, and `Ready` is not True (or, before KubeRay 1.3, no `Ready` and `serviceStatus` is not Running); reason a False `Ready`'s, else "RayServiceNotReady" | 10 min from `Ready`'s change, else from when Sextant first saw it | No |
@@ -151,9 +145,8 @@ None: the extension is read-only. It has no action of its own.
     differs only for names in mixed case.
   - The Workers column of a RayCluster without `status.desiredWorkerReplicas` (operators before it) is empty when a
     worker group not suspended has `numOfHosts` other than 1 or no `replicas`: a sum cannot multiply an item's values
-    or fall back to its `minReplicas`, as the built-in one did.
-  - A problem's message falls back from a condition's message to its reason only when the message is there and empty:
-    a condition without a `message` field (KubeRay's conditions always have one) gives none. Hovers are not affected.
+    or fall back to its `minReplicas`, as the built-in one did (a list column's `items` writes items, it does not add
+    them up).
   - The rules watch at most 20 000 RayClusters and 20 000 RayServices (the most a rule's source takes); the built-in
     problems had no cap there.
 - Checked by tests on fixtures of KubeRay's objects (copied from the built-in view) against the built-in readings,

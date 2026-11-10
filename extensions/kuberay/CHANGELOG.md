@@ -16,6 +16,6 @@ extension.
 - **Problems:** failed RayClusters or ones whose head pod is not ready, RayJobs failed in the last day (counted from
   their end, else start, else creation; notified again when the reason changes), and RayServices not ready or with a
   failed Serve application (the first by name, an invalid one's too), counted on the section, with the built-in
-  reasons and messages.
+  reasons and messages (a condition's reason where its message is empty or missing).
 - Installing asks for consent to read KubeRay's kinds and Pods, to open Pods' logs, and to judge RayClusters, RayJobs
   and RayServices in problem rules.

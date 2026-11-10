@@ -154,6 +154,9 @@ function clusters(): KubeObject[] {
   const replicaFailure = (o: KubeObject) => conds(o).find((c) => c.type === "ReplicaFailure")!;
   const gpuNoMessage = copy(gpu);
   replicaFailure(gpuNoMessage).message = "";
+  // A condition without a `message` field at all (KubeRay always writes one): the same.
+  const gpuNoMessageField = copy(gpu);
+  delete replicaFailure(gpuNoMessageField).message;
   const gpuNoWords = copy(gpuNoMessage);
   replicaFailure(gpuNoWords).reason = "";
   const gpuNoWordsHeadDown = copy(gpuNoWords);
@@ -195,6 +198,7 @@ function clusters(): KubeObject[] {
     gpuHeadDown,
     bare,
     gpuNoMessage,
+    gpuNoMessageField,
     gpuNoWords,
     gpuNoWordsHeadDown,
     gpuNoWordsHeadMessage,
@@ -344,6 +348,10 @@ function services(): KubeObject[] {
   conds(pendingQuietNoMessage).find((c) => c.type === "Ready")!.message = "";
   const notReadyNoMessage = copy(notReady);
   conds(notReadyNoMessage).find((c) => c.type === "Ready")!.message = "";
+  const notReadyNoMessageField = copy(notReady);
+  delete conds(notReadyNoMessageField).find((c) => c.type === "Ready")!.message;
+  const failedQuietNoMessageField = copy(failedQuiet);
+  delete conds(failedQuietNoMessageField).find((c) => c.type === "Ready")!.message;
   const suspendedWithApp = copy(sample);
   setCond(suspendedWithApp, { type: "Suspended", status: "True" });
   const upgradingQuiet = copy(upgradingDown);
@@ -363,6 +371,8 @@ function services(): KubeObject[] {
     pendingQuiet,
     pendingQuietNoMessage,
     notReadyNoMessage,
+    notReadyNoMessageField,
+    failedQuietNoMessageField,
     suspendedWithApp,
     upgradingQuiet,
     upgrading,
@@ -534,13 +544,18 @@ describe("the problem rules, against the built-in detector", () => {
     expect(windowProblems(RAY_SERVICE, invalid)[0]?.message).toContain("No module named 'fruit'");
   });
 
-  it("give a condition's reason where its message is empty, as the built-in ones", () => {
+  it("give a condition's reason where its message is empty or missing, as the built-in ones", () => {
     const gpu = find("RayCluster", "raycluster-gpu");
     conds(gpu).find((c) => c.type === "ReplicaFailure")!.message = "";
     expect(windowProblems(RAY_CLUSTER, gpu)[0]?.message).toBe("FailedCreateWorkerPod");
     const svc = find("RayService", "rayservice-ready");
     setCond(svc, { type: "Ready", status: "False", reason: "ZeroServeEndpoints", lastTransitionTime: "2026-10-22T10:00:00Z" });
     expect(windowProblems(RAY_SERVICE, svc)[0]?.message).toBe("ZeroServeEndpoints");
+    // Without a `message` field at all, too.
+    delete conds(svc).find((c) => c.type === "Ready")!.message;
+    expect(windowProblems(RAY_SERVICE, svc)[0]?.message).toBe("ZeroServeEndpoints");
+    delete conds(gpu).find((c) => c.type === "ReplicaFailure")!.message;
+    expect(windowProblems(RAY_CLUSTER, gpu)[0]?.message).toBe("FailedCreateWorkerPod");
   });
 
   it("are each met by a variant", () => {

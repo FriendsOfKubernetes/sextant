@@ -402,116 +402,17 @@
     "cases": [
      {
       "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "condition",
-         "conditionType": "RayClusterSuspending",
-         "status": "True"
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].message",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].reason",
-           "nonEmpty": true
-          }
-         ]
-        }
-       ]
-      },
-      "text": "Suspending",
-      "tone": "muted",
-      "tooltip": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message}}",
-      "tooltipOr": [
-       "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
-       "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].message}}",
-       "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}"
-      ],
-      "value": "suspending"
-     },
-     {
-      "when": {
        "type": "condition",
        "conditionType": "RayClusterSuspending",
        "status": "True"
       },
       "text": "Suspending",
       "tone": "muted",
-      "tooltip": "{{.status.reason}}",
-      "value": "suspending"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "condition",
-           "conditionType": "RayClusterSuspended",
-           "status": "True"
-          },
-          {
-           "type": "equals",
-           "path": ".status.state",
-           "value": "suspended"
-          }
-         ]
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].message",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].reason",
-           "nonEmpty": true
-          }
-         ]
-        }
-       ]
-      },
-      "text": "Suspended",
-      "tone": "muted",
-      "tooltip": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message}}",
+      "tooltip": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].message ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}",
       "tooltipOr": [
-       "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
-       "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].message}}",
-       "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}"
+       "{{.status.reason}}"
       ],
-      "value": "suspended"
+      "value": "suspending"
      },
      {
       "when": {
@@ -531,64 +432,11 @@
       },
       "text": "Suspended",
       "tone": "muted",
-      "tooltip": "{{.status.reason}}",
-      "value": "suspended"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "condition",
-           "conditionType": "ReplicaFailure",
-           "status": "True"
-          },
-          {
-           "type": "equals",
-           "path": ".status.state",
-           "value": "failed"
-          }
-         ]
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].message",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].reason",
-           "nonEmpty": true
-          }
-         ]
-        }
-       ]
-      },
-      "text": "Failed",
-      "tone": "error",
-      "tooltip": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message}}",
+      "tooltip": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].message ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}",
       "tooltipOr": [
-       "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
-       "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].message}}",
-       "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}"
+       "{{.status.reason}}"
       ],
-      "value": "failed"
+      "value": "suspended"
      },
      {
       "when": {
@@ -608,64 +456,11 @@
       },
       "text": "Failed",
       "tone": "error",
-      "tooltip": "{{.status.reason}}",
-      "value": "failed"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "condition",
-           "conditionType": "HeadPodReady",
-           "status": "False"
-          },
-          {
-           "type": "condition",
-           "conditionType": "RayClusterProvisioned",
-           "status": "True"
-          }
-         ]
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].message",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].reason",
-           "nonEmpty": true
-          }
-         ]
-        }
-       ]
-      },
-      "text": "Head not ready",
-      "tone": "error",
-      "tooltip": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message}}",
+      "tooltip": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].message ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}",
       "tooltipOr": [
-       "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
-       "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].message}}",
-       "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}"
+       "{{.status.reason}}"
       ],
-      "value": "headNotReady"
+      "value": "failed"
      },
      {
       "when": {
@@ -685,7 +480,10 @@
       },
       "text": "Head not ready",
       "tone": "error",
-      "tooltip": "{{.status.reason}}",
+      "tooltip": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].message ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}",
+      "tooltipOr": [
+       "{{.status.reason}}"
+      ],
       "value": "headNotReady"
      },
      {
@@ -734,57 +532,15 @@
      },
      {
       "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "exists",
-         "path": ".metadata.name"
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].message",
-           "nonEmpty": true
-          },
-          {
-           "type": "exists",
-           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].reason",
-           "nonEmpty": true
-          }
-         ]
-        }
-       ]
-      },
-      "text": "Provisioning",
-      "tone": "warning",
-      "tooltip": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message}}",
-      "tooltipOr": [
-       "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason}}",
-       "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].message}}",
-       "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}"
-      ],
-      "value": "provisioning"
-     },
-     {
-      "when": {
        "type": "exists",
        "path": ".metadata.name"
       },
       "text": "Provisioning",
       "tone": "warning",
-      "tooltip": "{{.status.reason}}",
+      "tooltip": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].message ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}",
+      "tooltipOr": [
+       "{{.status.reason}}"
+      ],
       "value": "provisioning"
      }
     ],
@@ -1567,87 +1323,7 @@
          "type": "exists",
          "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
          "nonEmpty": true
-        }
-       ]
-      }
-     ]
-    },
-    "since": ".status.conditions[type=\"ReplicaFailure\"].lastTransitionTime",
-    "graceMinutes": 5,
-    "reason": "{{.status.conditions[type=\"ReplicaFailure\"].reason}}",
-    "reasonOr": "ReplicaFailure",
-    "message": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\",message!=\"\"].message}}{{.status.conditions[type=\"ReplicaFailure\",status=\"True\",message=\"\"].reason}}",
-    "group": "failed",
-    "source": {
-     "maxObjects": 20000
-    }
-   },
-   {
-    "id": "cluster-replica-failure-head",
-    "title": "RayCluster cannot create its pods (the head pod's message)",
-    "kind": {
-     "group": "ray.io",
-     "kind": "RayCluster"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "condition",
-        "conditionType": "RayClusterSuspending",
-        "status": "True"
-       }
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "condition",
-          "conditionType": "RayClusterSuspended",
-          "status": "True"
-         },
-         {
-          "type": "equals",
-          "path": ".status.state",
-          "value": "suspended"
-         }
-        ]
-       }
-      },
-      {
-       "type": "condition",
-       "conditionType": "ReplicaFailure",
-       "status": "True"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "exists",
-          "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].message",
-          "nonEmpty": true
-         },
-         {
-          "type": "exists",
-          "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
-          "nonEmpty": true
-         }
-        ]
-       }
-      },
-      {
-       "type": "any",
-       "of": [
+        },
         {
          "type": "exists",
          "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].message",
@@ -1666,7 +1342,7 @@
     "graceMinutes": 5,
     "reason": "{{.status.conditions[type=\"ReplicaFailure\"].reason}}",
     "reasonOr": "ReplicaFailure",
-    "message": "{{.status.conditions[type=\"HeadPodReady\",status=\"False\",message!=\"\"].message}}{{.status.conditions[type=\"HeadPodReady\",status=\"False\",message=\"\"].reason}}",
+    "message": "{{.status.conditions[type=\"ReplicaFailure\",status=\"True\"].message ?? .status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].message ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].reason}}",
     "group": "failed",
     "source": {
      "maxObjects": 20000
@@ -1731,15 +1407,7 @@
           "type": "exists",
           "path": ".status.conditions[type=\"ReplicaFailure\",status=\"True\"].reason",
           "nonEmpty": true
-         }
-        ]
-       }
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
+         },
          {
           "type": "exists",
           "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].message",
@@ -1817,106 +1485,11 @@
        "type": "equals",
        "path": ".status.state",
        "value": "failed"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "exists",
-          "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].message",
-          "nonEmpty": true
-         },
-         {
-          "type": "exists",
-          "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].reason",
-          "nonEmpty": true
-         }
-        ]
-       }
       }
      ]
     },
     "reason": "RayClusterFailed",
-    "message": "{{.status.reason}}",
-    "group": "failed",
-    "source": {
-     "maxObjects": 20000
-    }
-   },
-   {
-    "id": "cluster-failed-head",
-    "title": "RayCluster failed (the head pod's message)",
-    "kind": {
-     "group": "ray.io",
-     "kind": "RayCluster"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "condition",
-        "conditionType": "RayClusterSuspending",
-        "status": "True"
-       }
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "condition",
-          "conditionType": "RayClusterSuspended",
-          "status": "True"
-         },
-         {
-          "type": "equals",
-          "path": ".status.state",
-          "value": "suspended"
-         }
-        ]
-       }
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "condition",
-        "conditionType": "ReplicaFailure",
-        "status": "True"
-       }
-      },
-      {
-       "type": "equals",
-       "path": ".status.state",
-       "value": "failed"
-      },
-      {
-       "type": "any",
-       "of": [
-        {
-         "type": "exists",
-         "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].message",
-         "nonEmpty": true
-        },
-        {
-         "type": "exists",
-         "path": ".status.conditions[type=\"HeadPodReady\",status=\"False\"].reason",
-         "nonEmpty": true
-        }
-       ]
-      }
-     ]
-    },
-    "reason": "RayClusterFailed",
-    "message": "{{.status.conditions[type=\"HeadPodReady\",status=\"False\",message!=\"\"].message}}{{.status.conditions[type=\"HeadPodReady\",status=\"False\",message=\"\"].reason}}",
+    "message": "{{.status.conditions[type=\"HeadPodReady\",status=\"False\"].message ?? .status.conditions[type=\"HeadPodReady\",status=\"False\"].reason ?? .status.reason}}",
     "group": "failed",
     "source": {
      "maxObjects": 20000
@@ -2297,32 +1870,6 @@
         "type": "all",
         "of": [
          {
-          "type": "any",
-          "of": [
-           {
-            "type": "exists",
-            "path": ".status.activeServiceStatus.applicationStatuses[status=\"DEPLOY_FAILED\"]"
-           },
-           {
-            "type": "exists",
-            "path": ".status.activeServiceStatus.applicationStatuses[status=\"UNHEALTHY\"]"
-           }
-          ]
-         },
-         {
-          "type": "exists",
-          "path": ".status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message",
-          "nonEmpty": true
-         }
-        ]
-       }
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "all",
-        "of": [
-         {
           "type": "not",
           "of": {
            "type": "any",
@@ -2354,11 +1901,6 @@
             "path": ".status.pendingServiceStatus.applicationStatuses[status=\"UNHEALTHY\"]"
            }
           ]
-         },
-         {
-          "type": "exists",
-          "path": ".status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message",
-          "nonEmpty": true
          }
         ]
        }
@@ -2367,88 +1909,7 @@
     },
     "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
     "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
-    "message": "{{.status.conditions[type=\"Ready\",status=\"False\",message!=\"\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\",message=\"\"].reason}}",
-    "group": "not-ready",
-    "source": {
-     "maxObjects": 20000
-    }
-   },
-   {
-    "id": "service-failed-app",
-    "title": "RayService failed (the application's message)",
-    "kind": {
-     "group": "ray.io",
-     "kind": "RayService"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "all",
-       "of": [
-        {
-         "type": "absent",
-         "path": ".metadata.deletionTimestamp"
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "condition",
-          "conditionType": "Suspended",
-          "status": "True"
-         }
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "condition",
-          "conditionType": "Suspending",
-          "status": "True"
-         }
-        }
-       ]
-      },
-      {
-       "type": "all",
-       "of": [
-        {
-         "type": "condition",
-         "conditionType": "Ready",
-         "status": "False"
-        },
-        {
-         "type": "in",
-         "path": ".status.conditions[type=\"Ready\"].reason",
-         "values": [
-          "ValidationFailed",
-          "InitializingTimeout"
-         ]
-        }
-       ]
-      },
-      {
-       "type": "any",
-       "of": [
-        {
-         "type": "exists",
-         "path": ".status.activeServiceStatus.applicationStatuses[status=\"DEPLOY_FAILED\"]"
-        },
-        {
-         "type": "exists",
-         "path": ".status.activeServiceStatus.applicationStatuses[status=\"UNHEALTHY\"]"
-        }
-       ]
-      },
-      {
-       "type": "exists",
-       "path": ".status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message",
-       "nonEmpty": true
-      }
-     ]
-    },
-    "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
-    "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
-    "message": "{{.status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message}}",
+    "message": "{{.status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000
@@ -2544,17 +2005,12 @@
          ]
         }
        ]
-      },
-      {
-       "type": "exists",
-       "path": ".status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message",
-       "nonEmpty": true
       }
      ]
     },
     "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
     "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
-    "message": "{{.status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message}}",
+    "message": "{{.status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000
@@ -2636,11 +2092,6 @@
          "path": ".status.activeServiceStatus.applicationStatuses[status=\"UNHEALTHY\"]"
         }
        ]
-      },
-      {
-       "type": "exists",
-       "path": ".status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message",
-       "nonEmpty": true
       }
      ]
     },
@@ -2648,104 +2099,7 @@
     "graceMinutes": 10,
     "reason": "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "reasonOr": "ServeApplicationFailed",
-    "message": "{{.status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message}}",
-    "group": "not-ready",
-    "source": {
-     "maxObjects": 20000
-    }
-   },
-   {
-    "id": "service-app-failed-ready",
-    "title": "Serve application failing (Ready's message)",
-    "kind": {
-     "group": "ray.io",
-     "kind": "RayService"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "all",
-       "of": [
-        {
-         "type": "absent",
-         "path": ".metadata.deletionTimestamp"
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "condition",
-          "conditionType": "Suspended",
-          "status": "True"
-         }
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "condition",
-          "conditionType": "Suspending",
-          "status": "True"
-         }
-        }
-       ]
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "all",
-        "of": [
-         {
-          "type": "condition",
-          "conditionType": "Ready",
-          "status": "False"
-         },
-         {
-          "type": "in",
-          "path": ".status.conditions[type=\"Ready\"].reason",
-          "values": [
-           "ValidationFailed",
-           "InitializingTimeout"
-          ]
-         }
-        ]
-       }
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "equals",
-        "path": ".status.conditions[type=\"Ready\"].status",
-        "value": "True"
-       }
-      },
-      {
-       "type": "any",
-       "of": [
-        {
-         "type": "exists",
-         "path": ".status.activeServiceStatus.applicationStatuses[status=\"DEPLOY_FAILED\"]"
-        },
-        {
-         "type": "exists",
-         "path": ".status.activeServiceStatus.applicationStatuses[status=\"UNHEALTHY\"]"
-        }
-       ]
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "exists",
-        "path": ".status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message",
-        "nonEmpty": true
-       }
-      }
-     ]
-    },
-    "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
-    "graceMinutes": 10,
-    "reason": "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
-    "reasonOr": "ServeApplicationFailed",
-    "message": "{{.status.conditions[type=\"Ready\",status=\"False\",message!=\"\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\",message=\"\"].reason}}",
+    "message": "{{.status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000
@@ -2852,11 +2206,6 @@
          ]
         }
        ]
-      },
-      {
-       "type": "exists",
-       "path": ".status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message",
-       "nonEmpty": true
       }
      ]
     },
@@ -2864,129 +2213,7 @@
     "graceMinutes": 10,
     "reason": "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "reasonOr": "ServeApplicationFailed",
-    "message": "{{.status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message}}",
-    "group": "not-ready",
-    "source": {
-     "maxObjects": 20000
-    }
-   },
-   {
-    "id": "service-new-app-failed-ready",
-    "title": "New cluster's Serve application failing (Ready's message)",
-    "kind": {
-     "group": "ray.io",
-     "kind": "RayService"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "all",
-       "of": [
-        {
-         "type": "absent",
-         "path": ".metadata.deletionTimestamp"
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "condition",
-          "conditionType": "Suspended",
-          "status": "True"
-         }
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "condition",
-          "conditionType": "Suspending",
-          "status": "True"
-         }
-        }
-       ]
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "all",
-        "of": [
-         {
-          "type": "condition",
-          "conditionType": "Ready",
-          "status": "False"
-         },
-         {
-          "type": "in",
-          "path": ".status.conditions[type=\"Ready\"].reason",
-          "values": [
-           "ValidationFailed",
-           "InitializingTimeout"
-          ]
-         }
-        ]
-       }
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "equals",
-        "path": ".status.conditions[type=\"Ready\"].status",
-        "value": "True"
-       }
-      },
-      {
-       "type": "all",
-       "of": [
-        {
-         "type": "not",
-         "of": {
-          "type": "any",
-          "of": [
-           {
-            "type": "exists",
-            "path": ".status.activeServiceStatus.applicationStatuses[status=\"DEPLOY_FAILED\"]"
-           },
-           {
-            "type": "exists",
-            "path": ".status.activeServiceStatus.applicationStatuses[status=\"UNHEALTHY\"]"
-           }
-          ]
-         }
-        },
-        {
-         "type": "absent",
-         "path": ".status.activeServiceStatus.rayClusterName"
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "exists",
-           "path": ".status.pendingServiceStatus.applicationStatuses[status=\"DEPLOY_FAILED\"]"
-          },
-          {
-           "type": "exists",
-           "path": ".status.pendingServiceStatus.applicationStatuses[status=\"UNHEALTHY\"]"
-          }
-         ]
-        }
-       ]
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "exists",
-        "path": ".status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message",
-        "nonEmpty": true
-       }
-      }
-     ]
-    },
-    "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
-    "graceMinutes": 10,
-    "reason": "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
-    "reasonOr": "ServeApplicationFailed",
-    "message": "{{.status.conditions[type=\"Ready\",status=\"False\",message!=\"\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\",message=\"\"].reason}}",
+    "message": "{{.status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000
@@ -3307,7 +2534,7 @@
     "graceMinutes": 10,
     "reason": "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "reasonOr": "RayServiceNotReady",
-    "message": "{{.status.conditions[type=\"Ready\",status=\"False\",message!=\"\"].message}}{{.status.conditions[type=\"Ready\",status=\"False\",message=\"\"].reason}}",
+    "message": "{{.status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000
@@ -3332,16 +2559,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "Статус",
    "columns.cluster-status.cases.0.text": "Приостанавливается",
-   "columns.cluster-status.cases.1.text": "Приостанавливается",
-   "columns.cluster-status.cases.2.text": "Приостановлен",
-   "columns.cluster-status.cases.3.text": "Приостановлен",
-   "columns.cluster-status.cases.4.text": "Сбой",
-   "columns.cluster-status.cases.5.text": "Сбой",
-   "columns.cluster-status.cases.6.text": "Head не готов",
-   "columns.cluster-status.cases.7.text": "Head не готов",
-   "columns.cluster-status.cases.8.text": "Готов",
-   "columns.cluster-status.cases.9.text": "Создаётся",
-   "columns.cluster-status.cases.10.text": "Создаётся",
+   "columns.cluster-status.cases.1.text": "Приостановлен",
+   "columns.cluster-status.cases.2.text": "Сбой",
+   "columns.cluster-status.cases.3.text": "Head не готов",
+   "columns.cluster-status.cases.4.text": "Готов",
+   "columns.cluster-status.cases.5.text": "Создаётся",
    "columns.cluster-workers.title": "Workers",
    "columns.cluster-head-ip.title": "IP head",
    "columns.cluster-ray-version.title": "Версия Ray",
@@ -3369,20 +2591,15 @@
    "columns.service-endpoints.title": "Эндпоинты",
    "columns.service-active-cluster.title": "Активный кластер",
    "problems.cluster-replica-failure.title": "RayCluster не может создать свои Pod",
-   "problems.cluster-replica-failure-head.title": "RayCluster не может создать свои Pod (сообщение head Pod)",
    "problems.cluster-replica-failure-cluster.title": "RayCluster не может создать свои Pod (причина кластера)",
    "problems.cluster-failed.title": "Сбой RayCluster",
-   "problems.cluster-failed-head.title": "Сбой RayCluster (сообщение head Pod)",
    "problems.cluster-head-not-ready.title": "Head Pod RayCluster не готов",
    "problems.job-failed.title": "Сбой RayJob",
    "problems.job-validation-failed.title": "RayJob не прошёл проверку",
    "problems.service-failed.title": "Сбой RayService",
-   "problems.service-failed-app.title": "Сбой RayService (сообщение приложения)",
    "problems.service-failed-new-app.title": "Сбой RayService (сообщение приложения нового кластера)",
    "problems.service-app-failed.title": "Сбой приложения Serve",
-   "problems.service-app-failed-ready.title": "Сбой приложения Serve (сообщение Ready)",
    "problems.service-new-app-failed.title": "Сбой приложения Serve нового кластера",
-   "problems.service-new-app-failed-ready.title": "Сбой приложения Serve нового кластера (сообщение Ready)",
    "problems.service-app-failed-while-ready.title": "Сбой приложения Serve (при готовности)",
    "problems.service-new-app-failed-while-ready.title": "Сбой приложения Serve нового кластера (при готовности)",
    "problems.service-not-ready.title": "RayService не готов"
@@ -3403,16 +2620,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "Статус",
    "columns.cluster-status.cases.0.text": "Призупиняється",
-   "columns.cluster-status.cases.1.text": "Призупиняється",
-   "columns.cluster-status.cases.2.text": "Призупинено",
-   "columns.cluster-status.cases.3.text": "Призупинено",
-   "columns.cluster-status.cases.4.text": "Збій",
-   "columns.cluster-status.cases.5.text": "Збій",
-   "columns.cluster-status.cases.6.text": "Head не готовий",
-   "columns.cluster-status.cases.7.text": "Head не готовий",
-   "columns.cluster-status.cases.8.text": "Готовий",
-   "columns.cluster-status.cases.9.text": "Створюється",
-   "columns.cluster-status.cases.10.text": "Створюється",
+   "columns.cluster-status.cases.1.text": "Призупинено",
+   "columns.cluster-status.cases.2.text": "Збій",
+   "columns.cluster-status.cases.3.text": "Head не готовий",
+   "columns.cluster-status.cases.4.text": "Готовий",
+   "columns.cluster-status.cases.5.text": "Створюється",
    "columns.cluster-workers.title": "Workers",
    "columns.cluster-head-ip.title": "IP head",
    "columns.cluster-ray-version.title": "Версія Ray",
@@ -3440,20 +2652,15 @@
    "columns.service-endpoints.title": "Ендпоінти",
    "columns.service-active-cluster.title": "Активний кластер",
    "problems.cluster-replica-failure.title": "RayCluster не може створити свої Pod",
-   "problems.cluster-replica-failure-head.title": "RayCluster не може створити свої Pod (повідомлення head Pod)",
    "problems.cluster-replica-failure-cluster.title": "RayCluster не може створити свої Pod (причина кластера)",
    "problems.cluster-failed.title": "Збій RayCluster",
-   "problems.cluster-failed-head.title": "Збій RayCluster (повідомлення head Pod)",
    "problems.cluster-head-not-ready.title": "Head Pod RayCluster не готовий",
    "problems.job-failed.title": "Збій RayJob",
    "problems.job-validation-failed.title": "RayJob не пройшов перевірку",
    "problems.service-failed.title": "Збій RayService",
-   "problems.service-failed-app.title": "Збій RayService (повідомлення застосунку)",
    "problems.service-failed-new-app.title": "Збій RayService (повідомлення застосунку нового кластера)",
    "problems.service-app-failed.title": "Збій застосунку Serve",
-   "problems.service-app-failed-ready.title": "Збій застосунку Serve (повідомлення Ready)",
    "problems.service-new-app-failed.title": "Збій застосунку Serve нового кластера",
-   "problems.service-new-app-failed-ready.title": "Збій застосунку Serve нового кластера (повідомлення Ready)",
    "problems.service-app-failed-while-ready.title": "Збій застосунку Serve (за готовності)",
    "problems.service-new-app-failed-while-ready.title": "Збій застосунку Serve нового кластера (за готовності)",
    "problems.service-not-ready.title": "RayService не готовий"
@@ -3472,16 +2679,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "Status",
    "columns.cluster-status.cases.0.text": "Wird angehalten",
-   "columns.cluster-status.cases.1.text": "Wird angehalten",
-   "columns.cluster-status.cases.2.text": "Angehalten",
-   "columns.cluster-status.cases.3.text": "Angehalten",
-   "columns.cluster-status.cases.4.text": "Fehlgeschlagen",
-   "columns.cluster-status.cases.5.text": "Fehlgeschlagen",
-   "columns.cluster-status.cases.6.text": "Head nicht bereit",
-   "columns.cluster-status.cases.7.text": "Head nicht bereit",
-   "columns.cluster-status.cases.8.text": "Bereit",
-   "columns.cluster-status.cases.9.text": "Wird erstellt",
-   "columns.cluster-status.cases.10.text": "Wird erstellt",
+   "columns.cluster-status.cases.1.text": "Angehalten",
+   "columns.cluster-status.cases.2.text": "Fehlgeschlagen",
+   "columns.cluster-status.cases.3.text": "Head nicht bereit",
+   "columns.cluster-status.cases.4.text": "Bereit",
+   "columns.cluster-status.cases.5.text": "Wird erstellt",
    "columns.cluster-workers.title": "Worker",
    "columns.cluster-head-ip.title": "Head-IP",
    "columns.cluster-ray-version.title": "Ray-Version",
@@ -3509,20 +2711,15 @@
    "columns.service-endpoints.title": "Endpunkte",
    "columns.service-active-cluster.title": "Aktiver Cluster",
    "problems.cluster-replica-failure.title": "RayCluster kann seine Pods nicht erstellen",
-   "problems.cluster-replica-failure-head.title": "RayCluster kann seine Pods nicht erstellen (Meldung des Head-Pods)",
    "problems.cluster-replica-failure-cluster.title": "RayCluster kann seine Pods nicht erstellen (Grund des Clusters)",
    "problems.cluster-failed.title": "RayCluster fehlgeschlagen",
-   "problems.cluster-failed-head.title": "RayCluster fehlgeschlagen (Meldung des Head-Pods)",
    "problems.cluster-head-not-ready.title": "Head-Pod des RayCluster nicht bereit",
    "problems.job-failed.title": "RayJob fehlgeschlagen",
    "problems.job-validation-failed.title": "RayJob hat die Prüfung nicht bestanden",
    "problems.service-failed.title": "RayService fehlgeschlagen",
-   "problems.service-failed-app.title": "RayService fehlgeschlagen (Meldung der Anwendung)",
    "problems.service-failed-new-app.title": "RayService fehlgeschlagen (Meldung der Anwendung des neuen Clusters)",
    "problems.service-app-failed.title": "Serve-Anwendung gestört",
-   "problems.service-app-failed-ready.title": "Serve-Anwendung gestört (Meldung von Ready)",
    "problems.service-new-app-failed.title": "Serve-Anwendung des neuen Clusters gestört",
-   "problems.service-new-app-failed-ready.title": "Serve-Anwendung des neuen Clusters gestört (Meldung von Ready)",
    "problems.service-app-failed-while-ready.title": "Serve-Anwendung gestört (während bereit)",
    "problems.service-new-app-failed-while-ready.title": "Serve-Anwendung des neuen Clusters gestört (während bereit)",
    "problems.service-not-ready.title": "RayService nicht bereit"
@@ -3542,16 +2739,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "Statut",
    "columns.cluster-status.cases.0.text": "En suspension",
-   "columns.cluster-status.cases.1.text": "En suspension",
-   "columns.cluster-status.cases.2.text": "Suspendu",
-   "columns.cluster-status.cases.3.text": "Suspendu",
-   "columns.cluster-status.cases.4.text": "Échec",
-   "columns.cluster-status.cases.5.text": "Échec",
-   "columns.cluster-status.cases.6.text": "Head non prêt",
-   "columns.cluster-status.cases.7.text": "Head non prêt",
-   "columns.cluster-status.cases.8.text": "Prêt",
-   "columns.cluster-status.cases.9.text": "En création",
-   "columns.cluster-status.cases.10.text": "En création",
+   "columns.cluster-status.cases.1.text": "Suspendu",
+   "columns.cluster-status.cases.2.text": "Échec",
+   "columns.cluster-status.cases.3.text": "Head non prêt",
+   "columns.cluster-status.cases.4.text": "Prêt",
+   "columns.cluster-status.cases.5.text": "En création",
    "columns.cluster-workers.title": "Workers",
    "columns.cluster-head-ip.title": "IP du head",
    "columns.cluster-ray-version.title": "Version de Ray",
@@ -3579,20 +2771,15 @@
    "columns.service-endpoints.title": "Points de terminaison",
    "columns.service-active-cluster.title": "Cluster actif",
    "problems.cluster-replica-failure.title": "Le RayCluster ne peut pas créer ses pods",
-   "problems.cluster-replica-failure-head.title": "Le RayCluster ne peut pas créer ses pods (message du pod head)",
    "problems.cluster-replica-failure-cluster.title": "Le RayCluster ne peut pas créer ses pods (raison du cluster)",
    "problems.cluster-failed.title": "RayCluster en échec",
-   "problems.cluster-failed-head.title": "RayCluster en échec (message du pod head)",
    "problems.cluster-head-not-ready.title": "Pod head du RayCluster non prêt",
    "problems.job-failed.title": "RayJob en échec",
    "problems.job-validation-failed.title": "RayJob refusé à la validation",
    "problems.service-failed.title": "RayService en échec",
-   "problems.service-failed-app.title": "RayService en échec (message de l'application)",
    "problems.service-failed-new-app.title": "RayService en échec (message de l'application du nouveau cluster)",
    "problems.service-app-failed.title": "Application Serve défaillante",
-   "problems.service-app-failed-ready.title": "Application Serve défaillante (message de Ready)",
    "problems.service-new-app-failed.title": "Application Serve du nouveau cluster défaillante",
-   "problems.service-new-app-failed-ready.title": "Application Serve du nouveau cluster défaillante (message de Ready)",
    "problems.service-app-failed-while-ready.title": "Application Serve défaillante (alors que prêt)",
    "problems.service-new-app-failed-while-ready.title": "Application Serve du nouveau cluster défaillante (alors que prêt)",
    "problems.service-not-ready.title": "RayService non prêt"
@@ -3612,16 +2799,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "Estado",
    "columns.cluster-status.cases.0.text": "Suspendiéndose",
-   "columns.cluster-status.cases.1.text": "Suspendiéndose",
-   "columns.cluster-status.cases.2.text": "Suspendido",
-   "columns.cluster-status.cases.3.text": "Suspendido",
-   "columns.cluster-status.cases.4.text": "Fallido",
-   "columns.cluster-status.cases.5.text": "Fallido",
-   "columns.cluster-status.cases.6.text": "Head no listo",
-   "columns.cluster-status.cases.7.text": "Head no listo",
-   "columns.cluster-status.cases.8.text": "Listo",
-   "columns.cluster-status.cases.9.text": "Creándose",
-   "columns.cluster-status.cases.10.text": "Creándose",
+   "columns.cluster-status.cases.1.text": "Suspendido",
+   "columns.cluster-status.cases.2.text": "Fallido",
+   "columns.cluster-status.cases.3.text": "Head no listo",
+   "columns.cluster-status.cases.4.text": "Listo",
+   "columns.cluster-status.cases.5.text": "Creándose",
    "columns.cluster-workers.title": "Workers",
    "columns.cluster-head-ip.title": "IP del head",
    "columns.cluster-ray-version.title": "Versión de Ray",
@@ -3649,20 +2831,15 @@
    "columns.service-endpoints.title": "Endpoints",
    "columns.service-active-cluster.title": "Clúster activo",
    "problems.cluster-replica-failure.title": "RayCluster no puede crear sus pods",
-   "problems.cluster-replica-failure-head.title": "RayCluster no puede crear sus pods (mensaje del pod head)",
    "problems.cluster-replica-failure-cluster.title": "RayCluster no puede crear sus pods (motivo del clúster)",
    "problems.cluster-failed.title": "RayCluster con error",
-   "problems.cluster-failed-head.title": "RayCluster con error (mensaje del pod head)",
    "problems.cluster-head-not-ready.title": "Pod head de RayCluster no preparado",
    "problems.job-failed.title": "RayJob con error",
    "problems.job-validation-failed.title": "RayJob no superó la validación",
    "problems.service-failed.title": "RayService con error",
-   "problems.service-failed-app.title": "RayService con error (mensaje de la aplicación)",
    "problems.service-failed-new-app.title": "RayService con error (mensaje de la aplicación del nuevo clúster)",
    "problems.service-app-failed.title": "Aplicación de Serve con fallos",
-   "problems.service-app-failed-ready.title": "Aplicación de Serve con fallos (mensaje de Ready)",
    "problems.service-new-app-failed.title": "Aplicación de Serve del nuevo clúster con fallos",
-   "problems.service-new-app-failed-ready.title": "Aplicación de Serve del nuevo clúster con fallos (mensaje de Ready)",
    "problems.service-app-failed-while-ready.title": "Aplicación de Serve con fallos (estando preparado)",
    "problems.service-new-app-failed-while-ready.title": "Aplicación de Serve del nuevo clúster con fallos (estando preparado)",
    "problems.service-not-ready.title": "RayService no preparado"
@@ -3682,16 +2859,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "Status",
    "columns.cluster-status.cases.0.text": "Suspendendo",
-   "columns.cluster-status.cases.1.text": "Suspendendo",
-   "columns.cluster-status.cases.2.text": "Suspenso",
-   "columns.cluster-status.cases.3.text": "Suspenso",
-   "columns.cluster-status.cases.4.text": "Falhou",
-   "columns.cluster-status.cases.5.text": "Falhou",
-   "columns.cluster-status.cases.6.text": "Head não pronto",
-   "columns.cluster-status.cases.7.text": "Head não pronto",
-   "columns.cluster-status.cases.8.text": "Pronto",
-   "columns.cluster-status.cases.9.text": "Criando",
-   "columns.cluster-status.cases.10.text": "Criando",
+   "columns.cluster-status.cases.1.text": "Suspenso",
+   "columns.cluster-status.cases.2.text": "Falhou",
+   "columns.cluster-status.cases.3.text": "Head não pronto",
+   "columns.cluster-status.cases.4.text": "Pronto",
+   "columns.cluster-status.cases.5.text": "Criando",
    "columns.cluster-workers.title": "Workers",
    "columns.cluster-head-ip.title": "IP do head",
    "columns.cluster-ray-version.title": "Versão do Ray",
@@ -3719,20 +2891,15 @@
    "columns.service-endpoints.title": "Endpoints",
    "columns.service-active-cluster.title": "Cluster ativo",
    "problems.cluster-replica-failure.title": "O RayCluster não consegue criar seus pods",
-   "problems.cluster-replica-failure-head.title": "O RayCluster não consegue criar seus pods (mensagem do pod head)",
    "problems.cluster-replica-failure-cluster.title": "O RayCluster não consegue criar seus pods (motivo do cluster)",
    "problems.cluster-failed.title": "RayCluster com falha",
-   "problems.cluster-failed-head.title": "RayCluster com falha (mensagem do pod head)",
    "problems.cluster-head-not-ready.title": "Pod head do RayCluster não está pronto",
    "problems.job-failed.title": "RayJob com falha",
    "problems.job-validation-failed.title": "RayJob reprovado na validação",
    "problems.service-failed.title": "RayService com falha",
-   "problems.service-failed-app.title": "RayService com falha (mensagem da aplicação)",
    "problems.service-failed-new-app.title": "RayService com falha (mensagem da aplicação do novo cluster)",
    "problems.service-app-failed.title": "Aplicação do Serve com falha",
-   "problems.service-app-failed-ready.title": "Aplicação do Serve com falha (mensagem de Ready)",
    "problems.service-new-app-failed.title": "Aplicação do Serve do novo cluster com falha",
-   "problems.service-new-app-failed-ready.title": "Aplicação do Serve do novo cluster com falha (mensagem de Ready)",
    "problems.service-app-failed-while-ready.title": "Aplicação do Serve com falha (estando pronto)",
    "problems.service-new-app-failed-while-ready.title": "Aplicação do Serve do novo cluster com falha (estando pronto)",
    "problems.service-not-ready.title": "RayService não está pronto"
@@ -3752,16 +2919,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "Stato",
    "columns.cluster-status.cases.0.text": "In sospensione",
-   "columns.cluster-status.cases.1.text": "In sospensione",
-   "columns.cluster-status.cases.2.text": "Sospeso",
-   "columns.cluster-status.cases.3.text": "Sospeso",
-   "columns.cluster-status.cases.4.text": "Non riuscito",
-   "columns.cluster-status.cases.5.text": "Non riuscito",
-   "columns.cluster-status.cases.6.text": "Head non pronto",
-   "columns.cluster-status.cases.7.text": "Head non pronto",
-   "columns.cluster-status.cases.8.text": "Pronto",
-   "columns.cluster-status.cases.9.text": "In creazione",
-   "columns.cluster-status.cases.10.text": "In creazione",
+   "columns.cluster-status.cases.1.text": "Sospeso",
+   "columns.cluster-status.cases.2.text": "Non riuscito",
+   "columns.cluster-status.cases.3.text": "Head non pronto",
+   "columns.cluster-status.cases.4.text": "Pronto",
+   "columns.cluster-status.cases.5.text": "In creazione",
    "columns.cluster-workers.title": "Worker",
    "columns.cluster-head-ip.title": "IP dell’head",
    "columns.cluster-ray-version.title": "Versione di Ray",
@@ -3789,20 +2951,15 @@
    "columns.service-endpoints.title": "Endpoint",
    "columns.service-active-cluster.title": "Cluster attivo",
    "problems.cluster-replica-failure.title": "Il RayCluster non riesce a creare i suoi pod",
-   "problems.cluster-replica-failure-head.title": "Il RayCluster non riesce a creare i suoi pod (messaggio del pod head)",
    "problems.cluster-replica-failure-cluster.title": "Il RayCluster non riesce a creare i suoi pod (motivo del cluster)",
    "problems.cluster-failed.title": "RayCluster non riuscito",
-   "problems.cluster-failed-head.title": "RayCluster non riuscito (messaggio del pod head)",
    "problems.cluster-head-not-ready.title": "Pod head del RayCluster non pronto",
    "problems.job-failed.title": "RayJob non riuscito",
    "problems.job-validation-failed.title": "RayJob non ha superato la convalida",
    "problems.service-failed.title": "RayService non riuscito",
-   "problems.service-failed-app.title": "RayService non riuscito (messaggio dell'applicazione)",
    "problems.service-failed-new-app.title": "RayService non riuscito (messaggio dell'applicazione del nuovo cluster)",
    "problems.service-app-failed.title": "Applicazione Serve in errore",
-   "problems.service-app-failed-ready.title": "Applicazione Serve in errore (messaggio di Ready)",
    "problems.service-new-app-failed.title": "Applicazione Serve del nuovo cluster in errore",
-   "problems.service-new-app-failed-ready.title": "Applicazione Serve del nuovo cluster in errore (messaggio di Ready)",
    "problems.service-app-failed-while-ready.title": "Applicazione Serve in errore (mentre è pronto)",
    "problems.service-new-app-failed-while-ready.title": "Applicazione Serve del nuovo cluster in errore (mentre è pronto)",
    "problems.service-not-ready.title": "RayService non pronto"
@@ -3823,16 +2980,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "Stan",
    "columns.cluster-status.cases.0.text": "Wstrzymywanie",
-   "columns.cluster-status.cases.1.text": "Wstrzymywanie",
-   "columns.cluster-status.cases.2.text": "Wstrzymany",
-   "columns.cluster-status.cases.3.text": "Wstrzymany",
-   "columns.cluster-status.cases.4.text": "Błąd",
-   "columns.cluster-status.cases.5.text": "Błąd",
-   "columns.cluster-status.cases.6.text": "Head niegotowy",
-   "columns.cluster-status.cases.7.text": "Head niegotowy",
-   "columns.cluster-status.cases.8.text": "Gotowy",
-   "columns.cluster-status.cases.9.text": "Tworzenie",
-   "columns.cluster-status.cases.10.text": "Tworzenie",
+   "columns.cluster-status.cases.1.text": "Wstrzymany",
+   "columns.cluster-status.cases.2.text": "Błąd",
+   "columns.cluster-status.cases.3.text": "Head niegotowy",
+   "columns.cluster-status.cases.4.text": "Gotowy",
+   "columns.cluster-status.cases.5.text": "Tworzenie",
    "columns.cluster-workers.title": "Workery",
    "columns.cluster-head-ip.title": "IP head",
    "columns.cluster-ray-version.title": "Wersja Ray",
@@ -3860,20 +3012,15 @@
    "columns.service-endpoints.title": "Punkty końcowe",
    "columns.service-active-cluster.title": "Aktywny klaster",
    "problems.cluster-replica-failure.title": "RayCluster nie może utworzyć swoich podów",
-   "problems.cluster-replica-failure-head.title": "RayCluster nie może utworzyć swoich podów (komunikat poda head)",
    "problems.cluster-replica-failure-cluster.title": "RayCluster nie może utworzyć swoich podów (powód klastra)",
    "problems.cluster-failed.title": "RayCluster zakończył się błędem",
-   "problems.cluster-failed-head.title": "RayCluster zakończył się błędem (komunikat poda head)",
    "problems.cluster-head-not-ready.title": "Pod head RayCluster nie jest gotowy",
    "problems.job-failed.title": "RayJob zakończył się błędem",
    "problems.job-validation-failed.title": "RayJob nie przeszedł walidacji",
    "problems.service-failed.title": "RayService zakończył się błędem",
-   "problems.service-failed-app.title": "RayService zakończył się błędem (komunikat aplikacji)",
    "problems.service-failed-new-app.title": "RayService zakończył się błędem (komunikat aplikacji nowego klastra)",
    "problems.service-app-failed.title": "Aplikacja Serve z błędem",
-   "problems.service-app-failed-ready.title": "Aplikacja Serve z błędem (komunikat Ready)",
    "problems.service-new-app-failed.title": "Aplikacja Serve nowego klastra z błędem",
-   "problems.service-new-app-failed-ready.title": "Aplikacja Serve nowego klastra z błędem (komunikat Ready)",
    "problems.service-app-failed-while-ready.title": "Aplikacja Serve z błędem (przy gotowości)",
    "problems.service-new-app-failed-while-ready.title": "Aplikacja Serve nowego klastra z błędem (przy gotowości)",
    "problems.service-not-ready.title": "RayService nie jest gotowy"
@@ -3892,16 +3039,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "Durum",
    "columns.cluster-status.cases.0.text": "Askıya alınıyor",
-   "columns.cluster-status.cases.1.text": "Askıya alınıyor",
-   "columns.cluster-status.cases.2.text": "Askıda",
-   "columns.cluster-status.cases.3.text": "Askıda",
-   "columns.cluster-status.cases.4.text": "Başarısız",
-   "columns.cluster-status.cases.5.text": "Başarısız",
-   "columns.cluster-status.cases.6.text": "Head hazır değil",
-   "columns.cluster-status.cases.7.text": "Head hazır değil",
-   "columns.cluster-status.cases.8.text": "Hazır",
-   "columns.cluster-status.cases.9.text": "Oluşturuluyor",
-   "columns.cluster-status.cases.10.text": "Oluşturuluyor",
+   "columns.cluster-status.cases.1.text": "Askıda",
+   "columns.cluster-status.cases.2.text": "Başarısız",
+   "columns.cluster-status.cases.3.text": "Head hazır değil",
+   "columns.cluster-status.cases.4.text": "Hazır",
+   "columns.cluster-status.cases.5.text": "Oluşturuluyor",
    "columns.cluster-workers.title": "Worker’lar",
    "columns.cluster-head-ip.title": "Head IP",
    "columns.cluster-ray-version.title": "Ray sürümü",
@@ -3929,20 +3071,15 @@
    "columns.service-endpoints.title": "Uç noktalar",
    "columns.service-active-cluster.title": "Etkin küme",
    "problems.cluster-replica-failure.title": "RayCluster pod'larını oluşturamıyor",
-   "problems.cluster-replica-failure-head.title": "RayCluster pod'larını oluşturamıyor (head pod'unun iletisi)",
    "problems.cluster-replica-failure-cluster.title": "RayCluster pod'larını oluşturamıyor (kümenin nedeni)",
    "problems.cluster-failed.title": "RayCluster başarısız",
-   "problems.cluster-failed-head.title": "RayCluster başarısız (head pod'unun iletisi)",
    "problems.cluster-head-not-ready.title": "RayCluster head pod'u hazır değil",
    "problems.job-failed.title": "RayJob başarısız",
    "problems.job-validation-failed.title": "RayJob doğrulamayı geçemedi",
    "problems.service-failed.title": "RayService başarısız",
-   "problems.service-failed-app.title": "RayService başarısız (uygulamanın iletisi)",
    "problems.service-failed-new-app.title": "RayService başarısız (yeni kümenin uygulamasının iletisi)",
    "problems.service-app-failed.title": "Serve uygulaması arızalı",
-   "problems.service-app-failed-ready.title": "Serve uygulaması arızalı (Ready iletisi)",
    "problems.service-new-app-failed.title": "Yeni kümenin Serve uygulaması arızalı",
-   "problems.service-new-app-failed-ready.title": "Yeni kümenin Serve uygulaması arızalı (Ready iletisi)",
    "problems.service-app-failed-while-ready.title": "Serve uygulaması arızalı (hazırken)",
    "problems.service-new-app-failed-while-ready.title": "Yeni kümenin Serve uygulaması arızalı (hazırken)",
    "problems.service-not-ready.title": "RayService hazır değil"
@@ -3960,16 +3097,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "状态",
    "columns.cluster-status.cases.0.text": "正在暂停",
-   "columns.cluster-status.cases.1.text": "正在暂停",
-   "columns.cluster-status.cases.2.text": "已暂停",
-   "columns.cluster-status.cases.3.text": "已暂停",
-   "columns.cluster-status.cases.4.text": "失败",
-   "columns.cluster-status.cases.5.text": "失败",
-   "columns.cluster-status.cases.6.text": "Head 未就绪",
-   "columns.cluster-status.cases.7.text": "Head 未就绪",
-   "columns.cluster-status.cases.8.text": "就绪",
-   "columns.cluster-status.cases.9.text": "创建中",
-   "columns.cluster-status.cases.10.text": "创建中",
+   "columns.cluster-status.cases.1.text": "已暂停",
+   "columns.cluster-status.cases.2.text": "失败",
+   "columns.cluster-status.cases.3.text": "Head 未就绪",
+   "columns.cluster-status.cases.4.text": "就绪",
+   "columns.cluster-status.cases.5.text": "创建中",
    "columns.cluster-workers.title": "Worker",
    "columns.cluster-head-ip.title": "Head IP",
    "columns.cluster-ray-version.title": "Ray 版本",
@@ -3997,20 +3129,15 @@
    "columns.service-endpoints.title": "端点",
    "columns.service-active-cluster.title": "活动集群",
    "problems.cluster-replica-failure.title": "RayCluster 无法创建其 Pod",
-   "problems.cluster-replica-failure-head.title": "RayCluster 无法创建其 Pod（head Pod 的消息）",
    "problems.cluster-replica-failure-cluster.title": "RayCluster 无法创建其 Pod（集群的原因）",
    "problems.cluster-failed.title": "RayCluster 失败",
-   "problems.cluster-failed-head.title": "RayCluster 失败（head Pod 的消息）",
    "problems.cluster-head-not-ready.title": "RayCluster 的 head Pod 未就绪",
    "problems.job-failed.title": "RayJob 失败",
    "problems.job-validation-failed.title": "RayJob 未通过校验",
    "problems.service-failed.title": "RayService 失败",
-   "problems.service-failed-app.title": "RayService 失败（应用的消息）",
    "problems.service-failed-new-app.title": "RayService 失败（新集群应用的消息）",
    "problems.service-app-failed.title": "Serve 应用故障",
-   "problems.service-app-failed-ready.title": "Serve 应用故障（Ready 的消息）",
    "problems.service-new-app-failed.title": "新集群的 Serve 应用故障",
-   "problems.service-new-app-failed-ready.title": "新集群的 Serve 应用故障（Ready 的消息）",
    "problems.service-app-failed-while-ready.title": "Serve 应用故障（仍就绪）",
    "problems.service-new-app-failed-while-ready.title": "新集群的 Serve 应用故障（仍就绪）",
    "problems.service-not-ready.title": "RayService 未就绪"
@@ -4028,16 +3155,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "狀態",
    "columns.cluster-status.cases.0.text": "正在暫停",
-   "columns.cluster-status.cases.1.text": "正在暫停",
-   "columns.cluster-status.cases.2.text": "已暫停",
-   "columns.cluster-status.cases.3.text": "已暫停",
-   "columns.cluster-status.cases.4.text": "失敗",
-   "columns.cluster-status.cases.5.text": "失敗",
-   "columns.cluster-status.cases.6.text": "Head 未就緒",
-   "columns.cluster-status.cases.7.text": "Head 未就緒",
-   "columns.cluster-status.cases.8.text": "就緒",
-   "columns.cluster-status.cases.9.text": "建立中",
-   "columns.cluster-status.cases.10.text": "建立中",
+   "columns.cluster-status.cases.1.text": "已暫停",
+   "columns.cluster-status.cases.2.text": "失敗",
+   "columns.cluster-status.cases.3.text": "Head 未就緒",
+   "columns.cluster-status.cases.4.text": "就緒",
+   "columns.cluster-status.cases.5.text": "建立中",
    "columns.cluster-workers.title": "Worker",
    "columns.cluster-head-ip.title": "Head IP",
    "columns.cluster-ray-version.title": "Ray 版本",
@@ -4065,20 +3187,15 @@
    "columns.service-endpoints.title": "端點",
    "columns.service-active-cluster.title": "作用中叢集",
    "problems.cluster-replica-failure.title": "RayCluster 無法建立其 Pod",
-   "problems.cluster-replica-failure-head.title": "RayCluster 無法建立其 Pod（head Pod 的訊息）",
    "problems.cluster-replica-failure-cluster.title": "RayCluster 無法建立其 Pod（叢集的原因）",
    "problems.cluster-failed.title": "RayCluster 失敗",
-   "problems.cluster-failed-head.title": "RayCluster 失敗（head Pod 的訊息）",
    "problems.cluster-head-not-ready.title": "RayCluster 的 head Pod 尚未就緒",
    "problems.job-failed.title": "RayJob 失敗",
    "problems.job-validation-failed.title": "RayJob 未通過驗證",
    "problems.service-failed.title": "RayService 失敗",
-   "problems.service-failed-app.title": "RayService 失敗（應用程式的訊息）",
    "problems.service-failed-new-app.title": "RayService 失敗（新叢集應用程式的訊息）",
    "problems.service-app-failed.title": "Serve 應用程式故障",
-   "problems.service-app-failed-ready.title": "Serve 應用程式故障（Ready 的訊息）",
    "problems.service-new-app-failed.title": "新叢集的 Serve 應用程式故障",
-   "problems.service-new-app-failed-ready.title": "新叢集的 Serve 應用程式故障（Ready 的訊息）",
    "problems.service-app-failed-while-ready.title": "Serve 應用程式故障（仍就緒）",
    "problems.service-new-app-failed-while-ready.title": "新叢集的 Serve 應用程式故障（仍就緒）",
    "problems.service-not-ready.title": "RayService 尚未就緒"
@@ -4096,16 +3213,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "状態",
    "columns.cluster-status.cases.0.text": "一時停止中",
-   "columns.cluster-status.cases.1.text": "一時停止中",
-   "columns.cluster-status.cases.2.text": "一時停止",
-   "columns.cluster-status.cases.3.text": "一時停止",
-   "columns.cluster-status.cases.4.text": "失敗",
-   "columns.cluster-status.cases.5.text": "失敗",
-   "columns.cluster-status.cases.6.text": "Head 未準備",
-   "columns.cluster-status.cases.7.text": "Head 未準備",
-   "columns.cluster-status.cases.8.text": "準備完了",
-   "columns.cluster-status.cases.9.text": "作成中",
-   "columns.cluster-status.cases.10.text": "作成中",
+   "columns.cluster-status.cases.1.text": "一時停止",
+   "columns.cluster-status.cases.2.text": "失敗",
+   "columns.cluster-status.cases.3.text": "Head 未準備",
+   "columns.cluster-status.cases.4.text": "準備完了",
+   "columns.cluster-status.cases.5.text": "作成中",
    "columns.cluster-workers.title": "Worker",
    "columns.cluster-head-ip.title": "Head IP",
    "columns.cluster-ray-version.title": "Ray バージョン",
@@ -4133,20 +3245,15 @@
    "columns.service-endpoints.title": "エンドポイント",
    "columns.service-active-cluster.title": "アクティブなクラスター",
    "problems.cluster-replica-failure.title": "RayCluster が Pod を作成できない",
-   "problems.cluster-replica-failure-head.title": "RayCluster が Pod を作成できない（head Pod のメッセージ）",
    "problems.cluster-replica-failure-cluster.title": "RayCluster が Pod を作成できない（クラスターの理由）",
    "problems.cluster-failed.title": "RayCluster が失敗",
-   "problems.cluster-failed-head.title": "RayCluster が失敗（head Pod のメッセージ）",
    "problems.cluster-head-not-ready.title": "RayCluster の head Pod が準備できていない",
    "problems.job-failed.title": "RayJob が失敗",
    "problems.job-validation-failed.title": "RayJob が検証で失敗",
    "problems.service-failed.title": "RayService が失敗",
-   "problems.service-failed-app.title": "RayService が失敗（アプリケーションのメッセージ）",
    "problems.service-failed-new-app.title": "RayService が失敗（新しいクラスターのアプリケーションのメッセージ）",
    "problems.service-app-failed.title": "Serve アプリケーションの障害",
-   "problems.service-app-failed-ready.title": "Serve アプリケーションの障害（Ready のメッセージ）",
    "problems.service-new-app-failed.title": "新しいクラスターの Serve アプリケーションの障害",
-   "problems.service-new-app-failed-ready.title": "新しいクラスターの Serve アプリケーションの障害（Ready のメッセージ）",
    "problems.service-app-failed-while-ready.title": "Serve アプリケーションの障害（準備完了のまま）",
    "problems.service-new-app-failed-while-ready.title": "新しいクラスターの Serve アプリケーションの障害（準備完了のまま）",
    "problems.service-not-ready.title": "RayService が準備できていない"
@@ -4164,16 +3271,11 @@
    "detailsSections.ray-service.title": "RayService",
    "columns.cluster-status.title": "상태",
    "columns.cluster-status.cases.0.text": "일시 중단 중",
-   "columns.cluster-status.cases.1.text": "일시 중단 중",
-   "columns.cluster-status.cases.2.text": "일시 중단됨",
-   "columns.cluster-status.cases.3.text": "일시 중단됨",
-   "columns.cluster-status.cases.4.text": "실패",
-   "columns.cluster-status.cases.5.text": "실패",
-   "columns.cluster-status.cases.6.text": "Head 준비 안 됨",
-   "columns.cluster-status.cases.7.text": "Head 준비 안 됨",
-   "columns.cluster-status.cases.8.text": "준비됨",
-   "columns.cluster-status.cases.9.text": "생성 중",
-   "columns.cluster-status.cases.10.text": "생성 중",
+   "columns.cluster-status.cases.1.text": "일시 중단됨",
+   "columns.cluster-status.cases.2.text": "실패",
+   "columns.cluster-status.cases.3.text": "Head 준비 안 됨",
+   "columns.cluster-status.cases.4.text": "준비됨",
+   "columns.cluster-status.cases.5.text": "생성 중",
    "columns.cluster-workers.title": "Worker",
    "columns.cluster-head-ip.title": "Head IP",
    "columns.cluster-ray-version.title": "Ray 버전",
@@ -4201,20 +3303,15 @@
    "columns.service-endpoints.title": "엔드포인트",
    "columns.service-active-cluster.title": "활성 클러스터",
    "problems.cluster-replica-failure.title": "RayCluster가 Pod를 만들 수 없음",
-   "problems.cluster-replica-failure-head.title": "RayCluster가 Pod를 만들 수 없음 (head Pod의 메시지)",
    "problems.cluster-replica-failure-cluster.title": "RayCluster가 Pod를 만들 수 없음 (클러스터의 이유)",
    "problems.cluster-failed.title": "RayCluster 실패",
-   "problems.cluster-failed-head.title": "RayCluster 실패 (head Pod의 메시지)",
    "problems.cluster-head-not-ready.title": "RayCluster의 head Pod가 준비되지 않음",
    "problems.job-failed.title": "RayJob 실패",
    "problems.job-validation-failed.title": "RayJob 검증 실패",
    "problems.service-failed.title": "RayService 실패",
-   "problems.service-failed-app.title": "RayService 실패 (애플리케이션의 메시지)",
    "problems.service-failed-new-app.title": "RayService 실패 (새 클러스터 애플리케이션의 메시지)",
    "problems.service-app-failed.title": "Serve 애플리케이션 장애",
-   "problems.service-app-failed-ready.title": "Serve 애플리케이션 장애 (Ready의 메시지)",
    "problems.service-new-app-failed.title": "새 클러스터의 Serve 애플리케이션 장애",
-   "problems.service-new-app-failed-ready.title": "새 클러스터의 Serve 애플리케이션 장애 (Ready의 메시지)",
    "problems.service-app-failed-while-ready.title": "Serve 애플리케이션 장애 (준비된 상태)",
    "problems.service-new-app-failed-while-ready.title": "새 클러스터의 Serve 애플리케이션 장애 (준비된 상태)",
    "problems.service-not-ready.title": "RayService가 준비되지 않음"
