@@ -549,7 +549,7 @@ export function parseFieldPath(path) {
         // `[<field]`: the item with the smallest value there (#404).
         const end = chars.indexOf("]", i + 2);
         const name = end < 0 ? "" : chars.slice(i + 2, end).join("");
-        if (!/^[A-Za-z0-9_-]+$/.test(name)) return null;
+        if (!/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/.test(name)) return null; // dotted too (#404)
         steps.push({ match: [], pick: { earliest: name } });
         i = end + 1;
       } else if (chars.slice(i + 1, chars.indexOf("]", i + 1) < 0 ? chars.length : chars.indexOf("]", i + 1)).includes("=")) {
@@ -587,7 +587,7 @@ export function parseFieldPath(path) {
             const end = chars.indexOf("]", at + 1);
             if (end < 0) return null;
             const name = chars.slice(at + 1, end).join("");
-            if (!/^[A-Za-z0-9_-]+$/.test(name)) return null;
+            if (!/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/.test(name)) return null; // dotted too (#404)
             pick = { earliest: name };
             at = end + 1;
             break;
@@ -921,7 +921,8 @@ function checkProblems(manifest) {
     for (const field of ["stamp", "notifyAgainOn"]) {
       if (rule[field] === undefined) continue;
       if (rule[field].length === 0 || rule[field].length > 4) fail([...here, field], "has 1 to 4 paths");
-      rule[field].forEach((path, j) => checkRulePath(path, rule.kind, [...here, field, j], metadataOnly));
+      // A list's sum or count marks progress too (#404).
+      rule[field].forEach((path, j) => checkRulePath(numericPath(path, manifest.sextantApi, [...here, field, j]), rule.kind, [...here, field, j], metadataOnly));
     }
     if (rule.notifyAs !== undefined) {
       if (manifest.sextantApi < SOURCES_API) fail([...here, "notifyAs"], `needs sextantApi ${SOURCES_API} or later`);
@@ -1002,7 +1003,7 @@ export function splitOutsideQuotes(field, sep) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "join", "count", "sum", "keys"];
+const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique"];
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
 
@@ -1679,10 +1680,15 @@ function checkActionPatch(patch, segments) {
   walk(patch, segments);
 }
 
+/** `check_separator` (#404). */
+function checkSeparator(sep, segments) {
+  if (Array.from(sep).length < 1 || Array.from(sep).length > 5 || /\p{Cc}/u.test(sep) || sep.includes("{{")) fail(segments, "is 1 to 5 characters, no control characters or `{{`");
+}
+
 /** `MAX_ITEM_CASES` (#404). */
 const MAX_ITEM_CASES = 10;
 
-const COLUMN_FIELDS = ["items", "filterBy", "joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
+const COLUMN_FIELDS = ["separator", "items", "filterBy", "joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
 
 function checkColumns(manifest) {
   const list = ["contributes", "columns"];
@@ -1698,6 +1704,10 @@ function checkColumns(manifest) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "filterBy"], `needs sextantApi ${WINDOW_API} or later`);
       if (column.filterBy !== "value" || (column.format ?? "text") !== "text" || (column.cases ?? []).length === 0) fail([...here, "filterBy"], 'is `"value"` on a text column with `cases`');
     }
+    if (column.separator !== undefined) {
+      if (!["list", "entries"].includes(column.format) || column.items?.separator !== undefined) fail([...here, "separator"], 'goes with `format: "list"` or `"entries"` (with `items`, theirs)');
+      checkSeparator(column.separator, [...here, "separator"]);
+    }
     if (column.items !== undefined) {
       const at = [...here, "items"];
       if (manifest.sextantApi < WINDOW_API) fail(at, `needs sextantApi ${WINDOW_API} or later`);
@@ -1709,8 +1719,7 @@ function checkColumns(manifest) {
         if (c.text.trim() === "" || Array.from(c.text).length > 200) fail([...at, "cases", j, "text"], "is a text of 1 to 200 characters");
         checkMessage(c.text, column.kind, [...at, "cases", j, "text"], false);
       });
-      const sep = column.items.separator;
-      if (sep !== undefined && (Array.from(sep).length < 1 || Array.from(sep).length > 5 || /\p{Cc}/u.test(sep) || sep.includes("{{"))) fail([...at, "separator"], "is 1 to 5 characters, no control characters or `{{`");
+      if (column.items.separator !== undefined) checkSeparator(column.items.separator, [...at, "separator"]);
     }
     if (column.joinPaths !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "joinPaths"], `needs sextantApi ${WINDOW_API} or later`);

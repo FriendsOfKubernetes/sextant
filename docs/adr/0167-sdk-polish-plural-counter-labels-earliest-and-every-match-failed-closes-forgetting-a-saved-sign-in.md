@@ -227,3 +227,6 @@ A rule's message may go by plural form: `pluralBy` names the number (a numeric p
 `messageForms` the forms besides `other`, which stays `message`; the window picks the form the UI language's CLDR rules
 give, and a translation gives every form its language needs (`problems.<id>.messageForms.<form>`) with the English
 message's placeholders. A list column's item texts are translated as the other texts are.
+`stamp` and `notifyAgainOn` paths may end in `|sum`/`|count`; `|unique` names each text of a list once, sorted by code
+point; `[<field]` ranks by a nested field too (`[<timestamp.seconds]`); a `list` or `entries` column's `separator`
+joins its texts in every language alike (", " where a built-in view did).

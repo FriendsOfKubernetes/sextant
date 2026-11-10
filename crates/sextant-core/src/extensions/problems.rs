@@ -693,7 +693,10 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 ));
             }
             for (j, path) in paths.iter().enumerate() {
-                check_rule_path(path, &rule.kind, &here.key(field).index(j), metadata_only)?;
+                // A list's sum or count marks progress too (#404): Kueue's eviction counts.
+                let place = here.key(field).index(j);
+                let path = numeric_path(path, manifest.sextant_api, &place)?;
+                check_rule_path(path, &rule.kind, &place, metadata_only)?;
             }
         }
         if let Some(path) = &rule.notify_as {
@@ -1398,7 +1401,7 @@ fn split_outside_quotes<'a>(field: &'a str, sep: &str) -> Vec<&'a str> {
 }
 
 /// What may follow a placeholder's path after `|` (#404).
-pub const PLACEHOLDER_FILTERS: [&str; 7] = [
+pub const PLACEHOLDER_FILTERS: [&str; 8] = [
     "firstLine",
     "lastSegment",
     "list",
@@ -1406,6 +1409,7 @@ pub const PLACEHOLDER_FILTERS: [&str; 7] = [
     "count",
     "sum",
     "keys",
+    "unique",
 ];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.

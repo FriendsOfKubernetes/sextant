@@ -177,7 +177,7 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
       const cleaned = texts.map((v) => (v === undefined ? "" : (cleanText(v) ?? ""))).filter((v) => v !== "");
       // Joined lists name each item once (a listener declared and in the status); one list keeps its repeats (#404).
       const shown = column.joinPaths ? [...new Set(cleaned)] : cleaned;
-      const separator = column.items?.separator;
+      const separator = column.items?.separator ?? column.separator;
       if (shown.length === 0) return { sort: undefined, text: undefined, draw: null };
       const text = textOf(separator === undefined ? formatList(shown) : shown.join(separator)) ?? "";
       return { sort: text, text, draw: text };
@@ -202,7 +202,7 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
         .filter((k) => typeof map[k] === "string" || typeof map[k] === "number" || typeof map[k] === "boolean")
         .map((k) => cleanText(`${k}=${String(map[k])}`) ?? "");
       if (items.length === 0) return { sort: undefined, text: undefined, draw: null };
-      const text = textOf(formatList(items)) ?? "";
+      const text = textOf(column.separator === undefined ? formatList(items) : items.join(column.separator)) ?? "";
       return { sort: text, text, draw: text };
     }
     case "text": {

@@ -49,6 +49,8 @@ describe("an extension's computed column", () => {
     expect(computedColumn("x", column({ paths: [".spec.jobs[*].restarts"], format: "sum" })).filter).toMatchObject({ type: "number" });
     expect(computedColumn("x", column({ paths: [".spec.listeners"], format: "count" })).filter!.value!(o, ctx)).toBe(2);
     expect(computedColumn("x", column({ paths: [".metadata.labels"], format: "entries" })).searchText!(o, ctx)).toBe("app=shop, tier=web");
+    expect(computedColumn("x", column({ paths: [".metadata.labels"], format: "entries", separator: " | " })).searchText!(o, ctx)).toBe("app=shop | tier=web");
+    expect(computedColumn("x", column({ paths: [".spec.listeners[*].name"], format: "list", separator: "; " })).searchText!(o, ctx)).toBe("plain; tls");
   });
 
   it("leave a cell blank with an empty case text, filter by case values, show a map's keys (#404)", () => {

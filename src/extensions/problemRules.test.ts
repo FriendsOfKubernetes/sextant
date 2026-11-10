@@ -239,6 +239,17 @@ describe("problem rules of extensions", () => {
     expect(placeholderText(c, '.status.message ?? "*"')).toBe("*");
     expect(placeholderText(c, '.status.reason ?? "*"')).toBe("Boom");
     expect(placeholderText(o, ".status.missing ?? .status.trace|firstLine|clip:10")).toBe("java.lang.…");
+    // Each text once, sorted; the earliest by a nested field (#404).
+    const report = {
+      metadata: { name: "r" },
+      results: [
+        { policy: "b", timestamp: { seconds: 30 } },
+        { policy: "a", timestamp: { seconds: 10 } },
+        { policy: "b", timestamp: { seconds: 20 } },
+      ],
+    } as unknown as KubeObject;
+    expect(placeholderText(report, ".results[*].policy|unique")).toBe("a, b");
+    expect(placeholderText(report, ".results[<timestamp.seconds].policy")).toBe("a");
     expect(placeholderText(o, '.status.connectors[tasks.state!="FAILED",*].name|join')).toBe("b");
   });
 

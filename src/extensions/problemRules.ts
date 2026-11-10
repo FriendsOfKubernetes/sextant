@@ -396,6 +396,12 @@ function filteredText(value: unknown, filter: string | undefined): string | unde
     const keys = Object.keys(value);
     return keys.length === 0 ? undefined : formatList(keys);
   }
+  if (filter === "unique") {
+    // Each text once, sorted by code point (#404): the policies a report names, as the built-in Kyverno message did.
+    const items = Array.isArray(value) ? value.filter(isScalar).map(String) : isScalar(value) ? [String(value)] : [];
+    const unique = [...new Set(items)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    return unique.length === 0 ? undefined : formatList(unique);
+  }
   if (filter === "list" || filter === "join") {
     const items = Array.isArray(value) ? value.filter(isScalar).map(String) : isScalar(value) ? [String(value)] : [];
     if (items.length === 0) return undefined;

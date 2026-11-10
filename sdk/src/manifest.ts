@@ -175,6 +175,8 @@ export interface ManifestColumn {
    * A `list` column's items each written by the first case that holds on the item (paths read from the item), joined by
    * `separator`, else the UI language's list (since Sextant 0.30). The column's `paths` name the lists, without `*`.
    */
+  /** What joins a `list` or `entries` column's texts instead of the UI language's list (since Sextant 0.30). */
+  separator?: string;
   items?: { cases: { when: ProblemCondition; text: string }[]; separator?: string };
   /** A `list` column of every path's items in order, each once, not the first path's (since Sextant 0.30). */
   joinPaths?: boolean;

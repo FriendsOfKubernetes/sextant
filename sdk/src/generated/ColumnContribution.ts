@@ -62,6 +62,11 @@ filterBy?: ColumnFilterBy,
  */
 items?: ColumnItems, 
 /**
+ * What joins a `list` or `entries` column's texts (1 to 5 characters) instead of the UI language's list (#404):
+ * `", "` in every language, as a built-in view joined them; `sextantApi` 4.
+ */
+separator?: string, 
+/**
  * A `list` column of every path's items in order, each once (#404), not the first path's; `sextantApi` 4.
  */
 joinPaths?: boolean, 

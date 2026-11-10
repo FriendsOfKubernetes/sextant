@@ -309,6 +309,19 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 ));
             }
         }
+        if let Some(separator) = &column.separator {
+            if !matches!(
+                column.format,
+                Some(ColumnFormat::List | ColumnFormat::Entries)
+            ) || column.items.as_ref().is_some_and(|i| i.separator.is_some())
+            {
+                return Err(at(
+                    &here.key("separator"),
+                    "goes with `format: \"list\"` or `\"entries\"` (with `items`, theirs)",
+                ));
+            }
+            check_separator(separator, &here.key("separator"))?;
+        }
         if let Some(items) = &column.items {
             check_items(manifest, column, items, &here.key("items"))?;
         }
@@ -606,22 +619,29 @@ fn check_items(
         check_message(&case.text, &column.kind, &at_case.key("text"), false)?;
     }
     if let Some(separator) = &items.separator {
-        let count = separator.chars().count();
-        if !(1..=5).contains(&count)
-            || separator.chars().any(char::is_control)
-            || separator.contains("{{")
-        {
-            return Err(at(
-                &here.key("separator"),
-                "is 1 to 5 characters, no control characters or `{{`",
-            ));
-        }
+        check_separator(separator, &here.key("separator"))?;
     }
     Ok(())
 }
 
-fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 12] {
+/// What joins a list's texts: 1 to 5 characters, no control characters or `{{`.
+fn check_separator(separator: &str, here: &JsonPath) -> Result<(), ManifestError> {
+    let count = separator.chars().count();
+    if !(1..=5).contains(&count)
+        || separator.chars().any(char::is_control)
+        || separator.contains("{{")
+    {
+        return Err(at(
+            here,
+            "is 1 to 5 characters, no control characters or `{{`",
+        ));
+    }
+    Ok(())
+}
+
+fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 13] {
     [
+        ("separator", column.separator.is_some()),
         ("items", column.items.is_some()),
         ("filterBy", column.filter_by.is_some()),
         ("joinPaths", column.join_paths.is_some()),

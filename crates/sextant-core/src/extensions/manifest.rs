@@ -403,6 +403,11 @@ pub struct ColumnContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub items: Option<ColumnItems>,
+    /// What joins a `list` or `entries` column's texts (1 to 5 characters) instead of the UI language's list (#404):
+    /// `", "` in every language, as a built-in view joined them; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub separator: Option<String>,
     /// A `list` column of every path's items in order, each once (#404), not the first path's; `sextantApi` 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -1149,6 +1154,7 @@ mod tests {
                 after_column: None,
                 filter_by: None,
                 items: None,
+                separator: None,
                 join_paths: None,
                 width: None,
                 lookup: None,

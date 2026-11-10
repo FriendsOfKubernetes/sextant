@@ -41,6 +41,8 @@ export type PathStep =
 export const MAX_MATCH_PAIRS = 4;
 
 const NAME = /^[A-Za-z0-9_-]+/;
+/** The field `[<field]` ranks by (#404): a name, or names joined by `.` (`timestamp.seconds`). */
+const EARLIEST_FIELD = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/;
 /** A match step's field: names joined by single dots, optionally ending in `!` (#404). */
 const MATCH_FIELD = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*!?$/;
 
@@ -104,7 +106,7 @@ export function parseFieldPath(path: string): PathStep[] | null {
         // `[<field]`: the item with the smallest value there (#404).
         const end = path.indexOf("]", i + 2);
         const name = end < 0 ? "" : path.slice(i + 2, end);
-        if (NAME.exec(name)?.[0] !== name || name === "") return null;
+        if (!EARLIEST_FIELD.test(name)) return null;
         steps.push({ match: [], earliest: name });
         i = end + 1;
       } else {
@@ -144,7 +146,7 @@ export function parseFieldPath(path: string): PathStep[] | null {
             if (path[at] === "<") {
               const end = path.indexOf("]", at + 1);
               const name = end < 0 ? "" : path.slice(at + 1, end);
-              if (NAME.exec(name)?.[0] !== name || name === "") return null;
+              if (!EARLIEST_FIELD.test(name)) return null;
               earliest = name;
               at = end + 1;
               break;
@@ -327,7 +329,8 @@ export function pickStep(holder: unknown, step: Extract<PathStep, { match: unkno
   if (step.earliest === undefined) return items[0];
   const field = step.earliest;
   const rank = (item: unknown): [number, number, string] => {
-    const v = (item as Record<string, unknown>)[field];
+    let v: unknown = item;
+    for (const part of field.split(".")) v = v !== null && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>)[part] : undefined;
     if (typeof v === "number") return [0, v, ""];
     if (typeof v === "string") return [1, 0, v];
     return [2, 0, ""];

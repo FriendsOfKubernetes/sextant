@@ -154,7 +154,7 @@ impl PathStep {
         value: &'a Value,
     ) -> Option<&'a Value> {
         let rank = |v: &Value| -> (u8, f64, String) {
-            match v.get(field) {
+            match field.split('.').try_fold(v, |at, part| at.get(part)) {
                 Some(Value::Number(n)) => (0, n.as_f64().unwrap_or(f64::MAX), String::new()),
                 Some(Value::String(s)) => (1, 0.0, s.clone()),
                 _ => (2, 0.0, String::new()),
@@ -228,6 +228,13 @@ fn is_match_field(field: &str) -> bool {
             .all(|part| !part.is_empty() && part.chars().all(is_name_char))
 }
 
+/// The field `[<field]` ranks by (#404): a name, or names joined by `.` (`timestamp.seconds`).
+fn is_earliest_field(field: &str) -> bool {
+    field
+        .split('.')
+        .all(|part| !part.is_empty() && part.chars().all(is_name_char))
+}
+
 fn is_name_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || c == '_' || c == '-'
 }
@@ -267,7 +274,7 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
                 // `[<field]`: the item with the smallest value there (#404).
                 let end = (i + 2..chars.len()).find(|&j| chars[j] == ']')?;
                 let field: String = chars[i + 2..end].iter().collect();
-                if field.is_empty() || !field.chars().all(is_name_char) {
+                if !is_earliest_field(&field) {
                     return None;
                 }
                 steps.push(PathStep::Match {
@@ -318,7 +325,7 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
                     if chars.get(at) == Some(&'<') {
                         let end = (at + 1..chars.len()).find(|&j| chars[j] == ']')?;
                         let field: String = chars[at + 1..end].iter().collect();
-                        if field.is_empty() || !field.chars().all(is_name_char) {
+                        if !is_earliest_field(&field) {
                             return None;
                         }
                         pick = MatchPick::Earliest(field);
