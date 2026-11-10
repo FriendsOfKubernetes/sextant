@@ -26,6 +26,8 @@ import {
 } from "./model";
 
 const EN = en as Record<string, string>;
+/** The tests over every Cluster the fields make take seconds; a loaded machine may take longer. */
+const HEAVY_MS = 60_000;
 const cluster = clusterJson as unknown as KubeObject;
 const backup = backupJson as unknown as KubeObject;
 const copy = <T>(value: T): T => structuredClone(value);
@@ -101,10 +103,17 @@ const ann = (value: string | undefined): Vary => (c) => {
   c.metadata.annotations = value === undefined ? {} : { "cnpg.io/hibernation": value };
 };
 const conditions = (c: KubeObject) => (st(c).conditions ??= []) as Record<string, unknown>[];
-const setCondition = (type: string, status?: string, reason?: string, since?: string): Vary => (c) => {
+const setCondition = (type: string, status?: string | null, reason?: string, since?: string): Vary => (c) => {
   const list = conditions(c).filter((x) => x.type !== type);
-  if (status !== undefined) list.push({ type, status, ...(reason ? { reason } : {}), ...(since ? { lastTransitionTime: since, message: `${type} says ${status}` } : {}) });
+  // `null`: the entry without a status.
+  if (status !== undefined)
+    list.push({ type, ...(status === null ? {} : { status }), ...(reason ? { reason } : {}), ...(since ? { lastTransitionTime: since, message: `${type} says ${status}` } : {}) });
   st(c).conditions = list;
+};
+const spec = (field: string, value: unknown): Vary => (c) => {
+  const s = (c.spec ??= {}) as Record<string, unknown>;
+  if (value === undefined) delete s[field];
+  else s[field] = value;
 };
 const set = (field: string, value: unknown): Vary => (c) => {
   if (value === undefined) delete st(c)[field];
@@ -119,6 +128,8 @@ const AXES: Record<string, Vary[]> = {
     (c) => (ann("on")(c), setCondition("cnpg.io/hibernation", "False", "WaitingForHealthy")(c)),
     (c) => (ann("on")(c), setCondition("cnpg.io/hibernation", "Unknown", "WaitingForHealthy")(c)),
     (c) => (ann("off")(c), setCondition("cnpg.io/hibernation", "True", "Hibernated")(c)),
+    (c) => (ann("on")(c), setCondition("cnpg.io/hibernation", null, "WaitingForHealthy")(c)),
+    (c) => (ann("on")(c), setCondition("cnpg.io/hibernation", "True", "WaitingForHealthy")(c)),
   ],
   phase: [
     set("phase", HEALTHY_PHASE),
@@ -126,10 +137,15 @@ const AXES: Record<string, Vary[]> = {
     set("phase", "Failing over"),
     set("phase", "Setting up primary"),
     set("phase", "Cluster is unrecoverable and needs manual intervention"),
+    // A phase the operator may add: the built-in words matched it in any case.
+    set("phase", "Instance manager ERROR while applying configuration"),
+    set("phase", ""),
     set("phase", undefined),
   ],
   ready: [
     setCondition("Ready", "False", "ClusterIsNotReady", "2026-10-10T08:00:00Z"),
+    // Without a reason: the built-in's ClusterNotReady.
+    setCondition("Ready", "False", undefined, "2026-10-10T08:00:00Z"),
     setCondition("Ready", "True", "ClusterIsReady", "2026-10-10T07:00:00Z"),
     setCondition("Ready", undefined),
   ],
@@ -140,8 +156,19 @@ const AXES: Record<string, Vary[]> = {
     (c) => (set("currentPrimary", "cluster-example-1")(c), set("targetPrimary", "pending")(c)),
     (c) => (set("currentPrimary", undefined)(c), set("targetPrimary", "pending")(c)),
     (c) => (set("currentPrimary", undefined)(c), set("targetPrimary", "cluster-example-1")(c)),
+    // Empty names, which the built-in read as none.
+    (c) => (set("currentPrimary", "")(c), set("targetPrimary", "pending")(c)),
+    (c) => (set("currentPrimary", "cluster-example-1")(c), set("targetPrimary", "")(c)),
   ],
-  phaseReason: [set("phaseReason", "Switching over to cluster-example-2"), set("phaseReason", undefined)],
+  phaseReason: [set("phaseReason", "Switching over to cluster-example-2"), set("phaseReason", ""), set("phaseReason", undefined)],
+  // Wanted instances: spec.instances, else status.instances, else 0.
+  wanted: [
+    (c) => (spec("instances", 3)(c), set("instances", undefined)(c)),
+    (c) => (spec("instances", 3)(c), set("instances", 2)(c)),
+    (c) => (spec("instances", undefined)(c), set("instances", 3)(c)),
+    (c) => (spec("instances", undefined)(c), set("instances", 0)(c)),
+    (c) => (spec("instances", undefined)(c), set("instances", undefined)(c)),
+  ],
 };
 
 function* combinations(axes: Vary[][], at = 0, chosen: Vary[] = []): Generator<Vary[]> {
@@ -152,14 +179,24 @@ function* combinations(axes: Vary[][], at = 0, chosen: Vary[] = []): Generator<V
   for (const vary of axes[at]!) yield* combinations(axes, at + 1, [...chosen, vary]);
 }
 
-/** The fixture with archiving and backups working, varied along every axis: 4320 Clusters. */
+/**
+ * The fixture with archiving and backups working, varied along every axis but the wanted instances (spec.instances
+ * set), and along every axis but hibernation and the phase's reason (none, set): 25 984 Clusters.
+ */
 function clusters(extra: Vary[] = []): KubeObject[] {
   const out: KubeObject[] = [];
-  for (const varies of combinations(Object.values(AXES))) {
-    const c = copy(cluster);
-    st(c).conditions = [];
-    for (const vary of [...varies, ...extra]) vary(c);
-    out.push(c);
+  const { wanted, hibernation, phaseReason, ...rest } = AXES;
+  const families = [
+    [hibernation!, phaseReason!, ...Object.values(rest), [wanted![0]!]],
+    [[hibernation![0]!], [phaseReason![0]!], ...Object.values(rest), wanted!],
+  ];
+  for (const axes of families) {
+    for (const varies of combinations(axes)) {
+      const c = copy(cluster);
+      st(c).conditions = [];
+      for (const vary of [...varies, ...extra]) vary(c);
+      out.push(c);
+    }
   }
   return out;
 }
@@ -175,7 +212,7 @@ const said = (p: { reason: string; group?: string; message?: string; since?: str
 });
 
 describe("the manifest's problem rules on Clusters", () => {
-  it("find what the built-in rules found, for every Cluster the fields make", () => {
+  it("find what the built-in rules found, for every Cluster the fields make", { timeout: HEAVY_MS }, () => {
     let found = 0;
     for (const c of clusters()) {
       const builtIn = cnpgProblems("Cluster", c).map((p) => said(p));
@@ -184,20 +221,34 @@ describe("the manifest's problem rules on Clusters", () => {
       found += builtIn.length;
     }
     // Most combinations are not ready, a hibernated or healthy one is not.
-    expect(found).toBeGreaterThan(2000);
+    expect(found).toBeGreaterThan(5000);
   });
 
-  it("never hold together: one problem of readiness at most", () => {
+  it("never hold together: one problem of readiness at most", { timeout: HEAVY_MS }, () => {
     for (const c of clusters()) expect(detected("Cluster", c).filter((d) => d.group === "not-ready").length).toBeLessThanOrEqual(1);
   });
 
   it("count a Cluster not ready after five minutes from its Ready condition's change", () => {
     const [d] = detected("Cluster", cluster);
     expect(d).toMatchObject({ reason: "ClusterIsNotReady", graceMs: CLUSTER_GRACE_MS, since: "2026-10-10T08:00:00Z", group: "not-ready", message: "Switchover in progress" });
-    expect(rules.filter((r) => r.id.startsWith("cluster-not-ready")).every((r) => r.graceMinutes === 5)).toBe(true);
+    const readiness = rules.filter((r) => r.group === "not-ready");
+    expect(readiness.map((r) => r.id)).toEqual(["cluster-failing-over", "cluster-failing-over-phase", "cluster-not-ready", "cluster-not-ready-phase"]);
+    expect(readiness.every((r) => r.graceMinutes === 5)).toBe(true);
   });
 
-  it("tell failing archiving and backups at once, with the conditions' reasons and messages", () => {
+  it("are seven, one per reading the built-in told apart by its reason and message", () => {
+    expect(rules.map((r) => [r.id, r.kind.kind])).toEqual([
+      ["cluster-failing-over", "Cluster"],
+      ["cluster-failing-over-phase", "Cluster"],
+      ["cluster-not-ready", "Cluster"],
+      ["cluster-not-ready-phase", "Cluster"],
+      ["archiving-failing", "Cluster"],
+      ["last-backup-failed", "Cluster"],
+      ["backup-failed", "Backup"],
+    ]);
+  });
+
+  it("tell failing archiving and backups at once, with the conditions' reasons and messages", { timeout: HEAVY_MS }, () => {
     const failing = (status: string, deleted: boolean): Vary[] => [
       setCondition("ContinuousArchiving", status, status === "False" ? "ContinuousArchivingFailing" : "ContinuousArchivingSuccess", "2026-10-10T08:00:00Z"),
       setCondition("LastBackupSucceeded", status, status === "False" ? "LastBackupFailed" : "LastBackupSucceeded", "2026-10-10T00:00:09Z"),
@@ -214,6 +265,11 @@ describe("the manifest's problem rules on Clusters", () => {
       }
     }
     expect(detected("Cluster", cluster).map((d) => d.reason)).toEqual(["ClusterIsNotReady", "ContinuousArchivingFailing", "LastBackupFailed"]);
+    // A False condition without a reason: the built-in's own words.
+    const bare = copy(cluster);
+    for (const vary of [setCondition("ContinuousArchiving", "False"), setCondition("LastBackupSucceeded", "False"), setCondition("Ready", "False")]) vary(bare);
+    expect(detected("Cluster", bare).map((d) => d.reason)).toEqual(cnpgProblems("Cluster", bare).map((p) => p.reason));
+    expect(detected("Cluster", bare).map((d) => d.reason)).toEqual(["ClusterNotReady", "ContinuousArchivingFailing", "LastBackupFailed"]);
   });
 
   it("let a hibernated Cluster be: a steady state, never a problem", () => {
@@ -237,16 +293,19 @@ describe("the manifest's problem rules on Clusters", () => {
 });
 
 describe("the manifest's problem rules on Backups", () => {
-  const PHASES = ["failed", "Failed", "walArchivingFailing", "completed", "running", "pending", undefined];
+  // Any case, as the built-in compared the phase in lower case.
+  const PHASES = ["failed", "Failed", "fAiLeD", "walArchivingFailing", "WALARCHIVINGfailing", "completed", "running", "pending", undefined];
   const TIMES = ["stoppedAt", "reconciliationTerminatedAt", "startedAt", "reconciliationStartedAt"] as const;
 
   it("find a failed Backup for a day from when it stopped, timed as the built-in timed it", () => {
     const now0 = Date.parse("2026-10-10T00:00:00Z");
     let counted = 0;
     for (const phase of PHASES) {
-      for (let mask = 0; mask < 1 << TIMES.length; mask++) {
+      for (let mask = 0; mask < 1 << (TIMES.length + 1); mask++) {
         const b = copy(backup);
         const s = st(b);
+        // The last bit: the Backup without its creation time, so failed for good.
+        if (mask & (1 << TIMES.length)) delete b.metadata.creationTimestamp;
         s.phase = phase;
         TIMES.forEach((field, i) => {
           if (mask & (1 << i)) s[field] = new Date(now0 + (i + 1) * 3600_000).toISOString();
@@ -293,7 +352,7 @@ describe("the manifest's kinds and section", () => {
     expect(manifest.contributes.kinds.every((k) => k.section === "cnpg" && k.group === "postgresql.cnpg.io" && k.printerColumns === false)).toBe(true);
   });
 
-  it("show in Only problems what the built-in tables did: Clusters with a problem (no grace), every failed Backup", () => {
+  it("show in Only problems what the built-in tables did: Clusters with a problem (no grace), every failed Backup", { timeout: HEAVY_MS }, () => {
     const extra: Vary[][] = [
       [],
       [setCondition("ContinuousArchiving", "False", "ContinuousArchivingFailing")],
@@ -302,9 +361,6 @@ describe("the manifest's kinds and section", () => {
     ];
     for (const more of extra) {
       for (const c of clusters(more)) {
-        // Where the README says: the healthy phase with only one of the primaries named.
-        const halfNamed = st(c).phase === HEALTHY_PHASE && (st(c).currentPrimary === undefined) !== (st(c).targetPrimary === undefined);
-        if (halfNamed) continue;
         expect(holdsNow(kindEntry("Cluster").problemWhen, c), JSON.stringify(c.status)).toBe(isProblem(c, "Cluster"));
       }
     }
@@ -312,7 +368,7 @@ describe("the manifest's kinds and section", () => {
     expect(holdsNow(kindEntry("Backup").problemWhen, backup)).toBe(true);
   });
 
-  it("have one details section for the four kinds, where the built-in one was", () => {
+  it("have one details section for the four kinds, where the built-in one was, without a heading as it had none", () => {
     expect(manifest.contributes.detailsSections).toEqual([
       {
         id: "cnpg",
@@ -320,6 +376,7 @@ describe("the manifest's kinds and section", () => {
         kinds: ["Cluster", "Backup", "ScheduledBackup", "Pooler"].map((kind) => ({ group: "postgresql.cnpg.io", kind })),
         placement: "section",
         order: 20,
+        heading: false,
       },
     ]);
   });
@@ -335,7 +392,30 @@ describe("the manifest's kinds and section", () => {
   });
 });
 
-const TONES: Record<string, string> = { success: "success", danger: "danger", warning: "warning", muted: "neutral" };
+const TONES: Record<string, string> = { success: "success", danger: "danger", warning: "warning", muted: "muted" };
+/** The built-in tables sorted the status columns by the state's name. */
+const order = (states: string[]) => (state: string) => [...states].sort().indexOf(state);
+const CLUSTER_ORDER = order(Object.keys(CLUSTER_TONE));
+const BACKUP_ORDER = order(Object.keys(BACKUP_TONE));
+/** The built-in columns' widths (src/features/cnpg/columns.tsx). */
+const WIDTHS: Record<string, string> = {
+  "cluster-status": "120px",
+  "cluster-instances": "90px",
+  "cluster-primary": "minmax(140px, 1.5fr)",
+  "cluster-phase": "minmax(160px, 2fr)",
+  "backup-status": "110px",
+  "backup-cluster": "minmax(120px, 1fr)",
+  "backup-method": "140px",
+  "backup-started": "100px",
+  "scheduled-cluster": "minmax(120px, 1fr)",
+  "scheduled-schedule": "130px",
+  "scheduled-suspended": "100px",
+  "scheduled-last-backup": "110px",
+  "pooler-cluster": "minmax(120px, 1fr)",
+  "pooler-type": "70px",
+  "pooler-instances": "90px",
+  "pooler-pool-mode": "110px",
+};
 
 describe("the manifest's columns", () => {
   const ids = (kind: string) => manifest.contributes.columns.filter((c) => c.kind.kind === kind).map((c) => [c.id, c.afterColumn]);
@@ -365,20 +445,24 @@ describe("the manifest's columns", () => {
       ["pooler-instances", "pooler-type"],
       ["pooler-pool-mode", "pooler-instances"],
     ]);
+    expect(Object.fromEntries(manifest.contributes.columns.map((c) => [c.id, c.width]))).toEqual(WIDTHS);
     const titles = Object.fromEntries(manifest.contributes.columns.map((c) => [c.id, c.title]));
     expect(titles).toMatchObject({ "cluster-status": "Status", "cluster-instances": "Instances", "backup-started": "Started", "scheduled-last-backup": "Last backup", "pooler-pool-mode": "Pool mode" });
   });
 
-  it("of Clusters: the state in words and tone, the phase and its reason on hover, ready of desired, the primary and phase", () => {
+  it("of Clusters: the state in words and tone sorted by its name, the phase and its reason on hover, ready of desired, the primary and phase", { timeout: HEAVY_MS }, () => {
     let states = new Set<string>();
     for (const c of clusters()) {
       const info = clusterInfo(c);
       states = states.add(info.state);
       expect(cell("cluster-status", c), JSON.stringify(c.status)).toBe(EN[`state.${info.state}`]);
+      expect(windowColumn("cluster-status").value(c)).toBe(CLUSTER_ORDER(info.state));
       const { title, tone } = drawn("cluster-status", c);
       expect(title).toBe([info.phase, info.phaseReason].filter(Boolean).join(": ") || undefined);
       expect(tone).toBe(TONES[CLUSTER_TONE[info.state]]);
-      if (st(c).readyInstances !== undefined) expect(cell("cluster-instances", c)).toBe(`${info.ready}/${info.instances}`);
+      // The built-in's text, which it sorted by.
+      expect(cell("cluster-instances", c), JSON.stringify([c.spec, c.status])).toBe(`${info.ready}/${info.instances}`);
+      expect(windowColumn("cluster-instances").value(c)).toBe(`${info.ready}/${info.instances}`);
       expect(cell("cluster-primary", c)).toBe(info.currentPrimary);
       expect(cell("cluster-phase", c)).toBe(info.phase);
     }
@@ -389,11 +473,32 @@ describe("the manifest's columns", () => {
     expect(cell("cluster-instances", none)).toBe("0/3");
   });
 
-  it("call unhealthy exactly the phases the built-in's words named", () => {
-    const status = columnOf("cluster-status") as { cases: { when: { type: string; path?: string; values?: string[] } }[] };
-    const stuck = status.cases.find((c) => c.when.type === "in" && c.when.path === ".status.phase" && c.when.values!.includes("Waiting for user action"))!.when.values!;
-    for (const phase of stuck) expect(STUCK_PHASE.test(phase), phase).toBe(true);
-    // CloudNativePG's other phases (api/v1/cluster_types.go): none of them is unhealthy.
+  it("call unhealthy what the built-in's words matched, in any case", () => {
+    const status = columnOf("cluster-status") as { cases: { when: { type: string; path?: string; values?: string[]; ignoreCase?: boolean } }[] };
+    expect(status.cases[5]!.when).toEqual({ type: "contains", path: ".status.phase", values: ["unrecoverable", "cannot", "unable", "waiting for user", "error"], ignoreCase: true });
+    const unhealthy = (phase: string) => {
+      const c = copy(cluster);
+      Object.assign(st(c), { phase, currentPrimary: "a", targetPrimary: "a" });
+      st(c).conditions = [];
+      return cell("cluster-status", c) === EN["state.unhealthy"];
+    };
+    // CloudNativePG's phases (api/v1/cluster_types.go, now and before) and made-up ones, against the built-in words.
+    for (const phase of [
+      "Waiting for user action",
+      "Cluster cannot proceed to reconciliation due to an unknown plugin being required",
+      "Cluster cannot proceed to reconciliation due to an error while interacting with plugins",
+      "Cluster cannot proceed to reconciliation due to an unknown image catalog",
+      "Cluster is unrecoverable and needs manual intervention",
+      "Cluster is in an unrecoverable state, needs manual intervention",
+      "Cluster cannot execute instance online upgrade due to missing architecture binary",
+      "Unable to create required cluster objects",
+      "UNRECOVERABLE",
+      "Some Error",
+      "Waiting For User",
+    ]) {
+      expect(STUCK_PHASE.test(phase), phase).toBe(true);
+      expect(unhealthy(phase), phase).toBe(true);
+    }
     for (const phase of [
       "Setting up primary",
       "Creating a new replica",
@@ -407,16 +512,18 @@ describe("the manifest's columns", () => {
       "Applying configuration",
     ]) {
       expect(STUCK_PHASE.test(phase), phase).toBe(false);
+      expect(unhealthy(phase), phase).toBe(false);
     }
   });
 
   it("of Backups: the state in words and tone with the error on hover, the Cluster, the method and when it started", () => {
     const now = Date.parse("2026-10-10T07:00:01Z");
-    for (const phase of ["failed", "Failed", "walArchivingFailing", "completed", "started", "running", "finalizing", "pending", "", undefined]) {
+    for (const phase of ["failed", "Failed", "fAILED", "walArchivingFailing", "WalArchivingFAILING", "completed", "COMPLETED", "started", "Running", "finaLizing", "pending", "", "failedx", undefined]) {
       const b = copy(backup);
       st(b).phase = phase;
       const state = backupState(b);
       expect(cell("backup-status", b), String(phase)).toBe(EN[`backupState.${state}`]);
+      expect(windowColumn("backup-status").value(b)).toBe(BACKUP_ORDER(state));
       expect(drawn("backup-status", b)).toEqual({ title: "can't execute backup: exit status 1", tone: TONES[BACKUP_TONE[state]] });
     }
     expect(cell("backup-cluster", backup)).toBe("cluster-example");

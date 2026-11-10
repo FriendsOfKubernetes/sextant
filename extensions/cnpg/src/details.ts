@@ -6,7 +6,8 @@
 //   ScheduledBackup — schedule, Cluster, whether suspended, last and next run;
 //   Pooler          — Cluster, type, instances and pool mode.
 // Conditions and YAML are Sextant's own sections. Read-only. The frame reads the shown object again whenever its
-// resourceVersion changes.
+// resourceVersion changes. Its blocks open and close as the built-in section's did, kept in Sextant's own memory of
+// details sections (`context.blocks`, `ui.setBlockOpen`) with the panel's "Expand all" and "Collapse all".
 import { ui, type KubeObject, type ObjectRef, type Sextant, type UiContent } from "@sextant/extension-sdk";
 import { dateTime, element, errorText } from "./dom";
 import { t } from "./i18n";
@@ -49,6 +50,36 @@ function fieldsOf(rows: readonly (readonly [string, UiContent])[]): HTMLElement 
 
 const present = (nodes: (Node | null | false | undefined)[]): Node[] => nodes.filter((n): n is Node => !!n);
 
+/**
+ * Which blocks are open, and where a toggle goes: Sextant's own memory of details sections (`context.blocks`, written
+ * by `ui.setBlockOpen`), kept per kind as Settings → Appearance says, with the panel's "Expand all" and "Collapse
+ * all" — where the built-in section's blocks were kept.
+ */
+export interface BlockMemory {
+  isOpen(block: string): boolean;
+  setOpen(block: string, open: boolean): void;
+}
+
+/** Blocks that are all open and remember nothing. */
+export const OPEN_BLOCKS: BlockMemory = { isOpen: () => true, setOpen: () => undefined };
+
+/** The blocks' memory of the frame's context; every block open by default, as the built-in's were. */
+export function sextantBlocks(sextant: Sextant): BlockMemory {
+  return {
+    isOpen: (block) => ui.blockOpen(sextant.context.blocks, block, true),
+    setOpen: (block, open) => void sextant.ui.setBlockOpen(block, open).catch(() => undefined),
+  };
+}
+
+/** A block that opens and closes with its title, as Sextant's memory says. */
+function block(memory: BlockMemory, id: string, title: string, content: UiContent): HTMLElement {
+  return ui.block(title, content, {
+    collapsible: true,
+    collapsed: !memory.isOpen(id),
+    onToggle: (open) => memory.setOpen(id, open),
+  });
+}
+
 /** A condition as working (True), failing (False) or unknown, in the given words. */
 function conditionText(c: Condition | undefined, ok: string, bad: string, unknown: string): HTMLElement | null {
   if (!c) return null;
@@ -75,7 +106,7 @@ export function backupStateText(obj: KubeObject): HTMLElement {
   return word;
 }
 
-export function clusterView(sextant: Sextant, obj: KubeObject): Node[] {
+export function clusterView(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const ns = obj.metadata.namespace ?? null;
   const info = clusterInfo(obj);
   const archiving = archivingOf(obj);
@@ -118,12 +149,13 @@ export function clusterView(sextant: Sextant, obj: KubeObject): Node[] {
       [t("fields.image"), info.image],
       [t("fields.storage"), info.storageSize],
     ]),
-    members.length > 0 && ui.block(t("members.title"), ui.table([t("members.instance"), t("members.role"), t("members.health"), t("members.timeline")], members, { label: t("members.title") })),
-    ui.block(t("backups"), backups),
+    members.length > 0 &&
+      block(memory, "members", t("members.title"), ui.table([t("members.instance"), t("members.role"), t("members.health"), t("members.timeline")], members, { label: t("members.title") })),
+    block(memory, "backups", t("backups"), backups),
   ]);
 }
 
-export function backupView(sextant: Sextant, obj: KubeObject): Node[] {
+export function backupView(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const ns = obj.metadata.namespace ?? null;
   const error = str(get(obj, "status", "error"));
   return present([
@@ -137,7 +169,7 @@ export function backupView(sextant: Sextant, obj: KubeObject): Node[] {
       [t("fields.backupId"), str(get(obj, "status", "backupId"))],
       [t("fields.destination"), str(get(obj, "status", "destinationPath"))],
     ]),
-    error && backupState(obj) === "failed" ? ui.block(t("errorBlock"), note(error, "danger")) : null,
+    error && backupState(obj) === "failed" ? block(memory, "error", t("errorBlock"), note(error, "danger")) : null,
   ]);
 }
 
@@ -168,12 +200,12 @@ export function poolerView(sextant: Sextant, obj: KubeObject): Node[] {
 }
 
 /** The view of one CloudNativePG object, by its kind; nothing for another kind. */
-export function viewOf(sextant: Sextant, kind: string, obj: KubeObject): Node[] {
+export function viewOf(sextant: Sextant, kind: string, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   switch (CNPG_KINDS.find((k) => k === kind) as CnpgKind | undefined) {
     case "Cluster":
-      return clusterView(sextant, obj);
+      return clusterView(sextant, obj, memory);
     case "Backup":
-      return backupView(sextant, obj);
+      return backupView(sextant, obj, memory);
     case "ScheduledBackup":
       return scheduledBackupView(sextant, obj);
     case "Pooler":
@@ -185,9 +217,31 @@ export function viewOf(sextant: Sextant, kind: string, obj: KubeObject): Node[] 
 
 /**
  * Starts the details section on the object in the context: read again whenever its resourceVersion changes. A
- * section with nothing to show hides itself, title included, until it has something (`ui.setHidden`).
+ * section with nothing to show hides itself, title included, until it has something (`ui.setHidden`). The view is
+ * drawn again when Sextant's memory of its blocks changes ("Expand all", another panel of the kind), unless the blocks
+ * already show it (the user's own toggle).
  */
 export function startDetails(sextant: Sextant, root: HTMLElement, contribution: string): () => void {
+  const blocks = sextantBlocks(sextant);
+  /** The shown object and how its blocks show now (each toggle included). */
+  let shownObject: { kind: string; obj: KubeObject } | null = null;
+  const shownBlocks = new Map<string, boolean>();
+  const memory: BlockMemory = {
+    isOpen: (id) => {
+      const open = blocks.isOpen(id);
+      shownBlocks.set(id, open);
+      return open;
+    },
+    setOpen: (id, open) => {
+      shownBlocks.set(id, open);
+      blocks.setOpen(id, open);
+    },
+  };
+  const draw = (kind: string, obj: KubeObject) => {
+    shownObject = { kind, obj };
+    shownBlocks.clear();
+    show(viewOf(sextant, kind, obj, memory));
+  };
   let shownVersion: string | null | undefined;
   let shownRef: string | null = null;
   let reading = 0;
@@ -207,7 +261,8 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
     try {
       const fresh = await sextant.resources.get({ ref });
       if (attempt !== reading) return;
-      show(contribution === "cnpg" ? viewOf(sextant, ref.kind.kind, fresh) : [ui.empty(t("common.nothingToShow", { view: contribution }))]);
+      if (contribution === "cnpg") draw(ref.kind.kind, fresh);
+      else show([ui.empty(t("common.nothingToShow", { view: contribution }))]);
     } catch (err) {
       if (attempt === reading) show([ui.errorState(errorText(err))]);
     }
@@ -223,10 +278,15 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
     if (key !== shownRef) {
       shownRef = key;
       shownVersion = undefined;
+      shownObject = null;
       show([ui.loading(t("loading"))]);
     }
     const version = sextant.context.resourceVersion;
-    if (version === shownVersion) return;
+    if (version === shownVersion) {
+      const now = shownObject;
+      if (now && [...shownBlocks].some(([id, open]) => blocks.isOpen(id) !== open)) draw(now.kind, now.obj);
+      return;
+    }
     shownVersion = version;
     void read(ref);
   };

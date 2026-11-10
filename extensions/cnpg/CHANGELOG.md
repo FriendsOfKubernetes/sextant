@@ -6,12 +6,15 @@ Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-i
 extension.
 
 - **A sidebar section "CloudNativePG"** after Sealed Secrets', with Clusters, Backups, Scheduled Backups and Poolers in
-  Sextant's tables, and the built-in columns: a Cluster's state in words, ready instances, primary and phase; a
-  Backup's state, Cluster, method and start; a ScheduledBackup's Cluster, schedule, suspension and last run; a
-  Pooler's Cluster, type, instances and pool mode.
-- **Details:** a Cluster's state, a switchover or failover in progress, hibernation, its instances with their roles
-  and health, its backups and continuous archiving; a Backup's fields and error; a ScheduledBackup's schedule and
-  runs; a Pooler's fields.
+  Sextant's tables, and the built-in columns with their widths: a Cluster's state in words (sorted by the state's
+  name, hibernation greyed), ready instances (of `spec.instances`, else `status.instances`), primary and phase; a
+  Backup's state (Pending greyed), Cluster, method and start; a ScheduledBackup's Cluster, schedule, suspension and
+  last run; a Pooler's Cluster, type, instances and pool mode.
+- **Details** (without a heading, as the built-in section): a Cluster's state, a switchover or failover in progress,
+  hibernation, its instances with their roles and health, its backups and continuous archiving; a Backup's fields and
+  error; a ScheduledBackup's schedule and runs; a Pooler's fields. The blocks open and close in Sextant's own memory
+  of details sections, with "Expand all" and "Collapse all".
 - **Problems:** Clusters not ready (after five minutes; a hibernated one never), failing continuous archiving or
-  backups, Backups failed within a day, counted on the section.
+  backups, Backups failed within a day (a phase in any case), counted on the section, with the built-in reasons, over
+  up to 20 000 Clusters and Backups; "Only problems" as the built-in tables.
 - Installing asks for consent to read the four kinds and to judge Clusters and Backups in problem rules.

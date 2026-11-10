@@ -73,7 +73,7 @@ describe("catalogs", () => {
 
 describe("the manifest's translations", () => {
   const c = manifest.contributes;
-  type Case = { text: string; tooltip?: string };
+  type Case = { text: string; tooltip?: string; tooltipOr?: string[] };
   const translations = manifest.translations as Record<string, Record<string, string>>;
 
   it("translate every text of the manifest into every language Sextant has", () => {
@@ -88,6 +88,7 @@ describe("the manifest's translations", () => {
         ...(((col as { cases?: Case[] }).cases ?? []).flatMap((cs, i) => [
           `columns.${col.id}.cases.${i}.text`,
           ...(cs.tooltip === undefined ? [] : [`columns.${col.id}.cases.${i}.tooltip`]),
+          ...(cs.tooltipOr ?? []).map((_, k) => `columns.${col.id}.cases.${i}.tooltipOr.${k}`),
         ])),
       ]),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
@@ -119,6 +120,7 @@ describe("the manifest's translations", () => {
       for (const [i, cs] of ((col as { cases?: Case[] }).cases ?? []).entries()) {
         english.set(`columns.${col.id}.cases.${i}.text`, cs.text);
         if (cs.tooltip !== undefined) english.set(`columns.${col.id}.cases.${i}.tooltip`, cs.tooltip);
+        for (const [k, alt] of (cs.tooltipOr ?? []).entries()) english.set(`columns.${col.id}.cases.${i}.tooltipOr.${k}`, alt);
       }
     }
     for (const rule of c.problems) english.set(`problems.${rule.id}.message`, rule.message);

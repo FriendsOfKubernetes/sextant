@@ -142,6 +142,75 @@ describe("a Cluster's details", () => {
   });
 });
 
+describe("the blocks", () => {
+  const toggles = () => [...root.querySelectorAll<HTMLButtonElement>(".sx-block__toggle")];
+  const expanded = () => toggles().map((b) => [b.textContent, b.getAttribute("aria-expanded")]);
+  /** Sextant's memory: `ui.setBlockOpen` writes it, the context tells it back, as the window does. */
+  const remembering = (blocks: Record<string, boolean> = {}): TestHostOptions => ({
+    context: { blocks },
+    handlers: {
+      "ui.setBlockOpen": ({ id, open }: { id: string; open: boolean }) => {
+        blocks = { ...blocks, [id]: open };
+        setTimeout(() => host.setContext({ blocks }));
+        return null;
+      },
+    },
+  });
+  const setBlockOpen = () => host.calls.filter((c) => c.method === "ui.setBlockOpen").map((c) => c.params);
+
+  it("open and close with their titles in Sextant's own memory of details sections, as the built-in blocks", async () => {
+    await open(cluster, remembering());
+    expect(expanded()).toEqual([
+      ["Instances", "true"],
+      ["Backups", "true"],
+    ]);
+    const before = toggles()[1]!;
+    before.click();
+    expect(expanded()[1]).toEqual(["Backups", "false"]);
+    expect((root.querySelectorAll(".sx-block__body")[1] as HTMLElement).hidden).toBe(true);
+    await expect.poll(setBlockOpen).toEqual([{ id: "backups", open: false }]);
+    // The memory telling back the user's own toggle draws nothing again (the focus stays on the button).
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(toggles()[1]).toBe(before);
+    // Read again on a change: still closed.
+    host.setContext({ resourceVersion: "2" });
+    await expect.poll(() => toggles()[1] !== before).toBe(true);
+    expect(expanded()[1]).toEqual(["Backups", "false"]);
+  });
+
+  it("start as Sextant remembers them, and follow the panel's Expand all and Collapse all", async () => {
+    await open(cluster, remembering({ members: false }));
+    expect(expanded()).toEqual([
+      ["Instances", "false"],
+      ["Backups", "true"],
+    ]);
+    host.setContext({ blocks: { "*": true } });
+    await expect.poll(expanded).toEqual([
+      ["Instances", "true"],
+      ["Backups", "true"],
+    ]);
+    host.setContext({ blocks: { "*": false } });
+    await expect.poll(expanded).toEqual([
+      ["Instances", "false"],
+      ["Backups", "false"],
+    ]);
+    // Its own choice before "*".
+    host.setContext({ blocks: { "*": false, backups: true } });
+    await expect.poll(expanded).toEqual([
+      ["Instances", "false"],
+      ["Backups", "true"],
+    ]);
+    expect(setBlockOpen()).toEqual([]);
+    stop();
+    host.close();
+    root.remove();
+    await open(backup, remembering({ error: false }));
+    expect(expanded()).toEqual([["Error", "false"]]);
+    toggles()[0]!.click();
+    await expect.poll(setBlockOpen).toEqual([{ id: "error", open: true }]);
+  });
+});
+
 describe("other details", () => {
   it("a Backup: its Cluster, phase and error", async () => {
     await open(backup);
