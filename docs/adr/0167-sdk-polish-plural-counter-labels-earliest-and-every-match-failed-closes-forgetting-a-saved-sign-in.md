@@ -216,3 +216,5 @@ numbers; a hover keeps up to 1000 characters where a cell keeps 200.
 A placeholder may try up to 4 paths in turn, `{{.message ?? .reason}}`, the first whose value is there and not an empty
 text (its filters apply to that one; `??` and `+` do not mix); a `filterBy: "value"` column whose sort key has no value
 leaves nothing to filter by.
+One list keeps its repeated items (two traffic targets of one revision); only `joinPaths` names each item once; a list
+column without hover paths of its own hovers its whole text.

@@ -171,7 +171,9 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
       const texts = column.items
         ? all.map((item) => itemText(column.items!.cases, item, now))
         : all.filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean").map((v) => String(v));
-      const shown = [...new Set(texts.map((v) => (v === undefined ? "" : (cleanText(v) ?? ""))).filter((v) => v !== ""))];
+      const cleaned = texts.map((v) => (v === undefined ? "" : (cleanText(v) ?? ""))).filter((v) => v !== "");
+      // Joined lists name each item once (a listener declared and in the status); one list keeps its repeats (#404).
+      const shown = column.joinPaths ? [...new Set(cleaned)] : cleaned;
       const separator = column.items?.separator;
       if (shown.length === 0) return { sort: undefined, text: undefined, draw: null };
       const text = textOf(separator === undefined ? formatList(shown) : shown.join(separator)) ?? "";
@@ -242,7 +244,8 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
     value: (obj) => cellOf(column, obj, Date.now()).sort,
     render: (obj, ctx) => {
       const cell = cellOf(column, obj, ctx.now);
-      const title = caseOf(column, obj, ctx.now)?.tooltip ?? tooltip(obj);
+      // A list's hover is its whole text when it has none of its own (#404): a cell may cut it.
+      const title = caseOf(column, obj, ctx.now)?.tooltip ?? tooltip(obj) ?? (format === "list" && column.tooltipPaths === undefined ? cell.text : undefined);
       return title === undefined ? cell.draw : <span title={title}>{cell.draw}</span>;
     },
     searchText: (obj, ctx) => {

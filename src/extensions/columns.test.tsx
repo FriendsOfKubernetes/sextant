@@ -98,6 +98,10 @@ describe("an extension's computed column", () => {
       }),
     );
     expect(traffic.searchText!(route, ctx)).toBe("a-1 80% · latest 20% · c 5%");
+    const twice = { metadata: { name: "r" }, status: { traffic: [{ revisionName: "a", percent: 50 }, { revisionName: "a", percent: 50 }] } } as unknown as KubeObject;
+    expect(traffic.searchText!(twice, ctx)).toBe("a 50% · a 50%");
+    const { container } = render(<>{traffic.render!(route, ctx)}</>);
+    expect(container.querySelector("span")?.getAttribute("title")).toBe("a-1 80% · latest 20% · c 5%");
   });
 
   it("join every path's list with joinPaths, each item once (#404)", () => {
