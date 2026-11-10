@@ -169,7 +169,7 @@ export interface ManifestColumn {
     /** The number whose CLDR plural form picks the text, with `textForms` (since Sextant 0.30). */
     pluralBy?: string;
     /** The text by CLDR plural form besides `other`, which is `text` (since Sextant 0.30). */
-    textForms?: Partial<Record<"zero" | "one" | "two" | "few" | "many", string>>;
+    textForms?: { [form: string]: string };
   }[];
   /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
   afterColumn?: string;
