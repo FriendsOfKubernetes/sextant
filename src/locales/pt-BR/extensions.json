@@ -333,7 +333,9 @@
     "heading": "Problemas e notificações",
     "kinds": "O Sextant verifica objetos desses tipos pelas regras da extensão, mostra o que elas encontram na página Problemas e pode notificar você sobre isso:",
     "lookups": "Para saber se um objeto que uma regra cita existe, o Sextant também lista objetos destes tipos:",
-    "scope": "Somente em clusters e namespaces em que a extensão pode ler esses tipos. Nenhum código da extensão é executado para isso."
+    "judges": "O backend da extensão decide alguns desses problemas. Ele recebe os objetos desses tipos apenas com estes campos e, enquanto decide, não acessa nem os clusters nem a rede:",
+    "scope": "Somente em clusters e namespaces em que a extensão pode ler esses tipos. Nenhum código da extensão é executado para isso.",
+    "judgesScope": "Somente em clusters e namespaces em que a extensão pode ler esses tipos. O Sextant lista os problemas e envia as notificações; além das decisões do backend dela, nenhum código da extensão é executado para isso."
   },
   "metrics": {
     "heading": "Métricas",

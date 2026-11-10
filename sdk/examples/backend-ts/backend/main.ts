@@ -1,7 +1,11 @@
 // The backend: a WebAssembly component Sextant runs outside the window (ADR-0131). It reaches the clusters through
 // `host` with the extension's grant, the network only at the hosts the manifest declares (here api.github.com), and
 // the credentials the user entered in Sextant.
-import { defineBackend, host } from "@sextant/extension-sdk/backend";
+//
+// It also answers the problem judge `same-selector` (ADR-0168): given the Services Sextant watches (only their
+// `.spec.selector`), it says which select the same pods as another of their namespace. Sextant turns that into the
+// rule's problem; while the judge runs, `host` and `fetch` are refused.
+import { defineBackend, host, type JudgedFact, type JudgedObject } from "@sextant/extension-sdk/backend";
 
 interface Release {
   tag_name: string;
@@ -9,6 +13,27 @@ interface Release {
 }
 
 const LATEST = "https://api.github.com/repos/FriendsOfKubernetes/sextant/releases/latest";
+
+/** Services of one namespace with the same non-empty selector: each has the fact `shared`, naming the first other. */
+function sameSelector(services: JudgedObject[]): JudgedFact[] {
+  const groups = new Map<string, JudgedObject[]>();
+  for (const service of services) {
+    const selector = service.values[".spec.selector"];
+    if (selector === null || typeof selector !== "object" || Object.keys(selector).length === 0) continue;
+    const sorted = Object.entries(selector as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    const key = `${service.metadata.namespace ?? ""}|${JSON.stringify(sorted)}`;
+    groups.set(key, [...(groups.get(key) ?? []), service]);
+  }
+  const facts: JudgedFact[] = [];
+  for (const group of groups.values()) {
+    if (group.length < 2) continue;
+    for (const service of group) {
+      const other = group.find((s) => s !== service)!;
+      facts.push({ uid: service.metadata.uid, fact: "shared", values: { other: other.metadata.name } });
+    }
+  }
+  return facts;
+}
 
 export const handle = defineBackend({
   ping: () => "pong",
@@ -28,4 +53,6 @@ export const handle = defineBackend({
       return { clusters, latest: null, error: err instanceof Error ? err.message : String(err) };
     }
   },
+}, {
+  problemJudges: { "same-selector": sameSelector },
 });

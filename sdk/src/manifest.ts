@@ -19,7 +19,8 @@ export const MANIFEST_FILE = "sextant-extension.json";
  * The newest extension API major version this SDK speaks (`sextantApi`); 2 brought `contributes.problems`, 3
  * `contributes.sectionBadges` and `contributes.commands`, 4 sources and `not` in problem rules, computed columns,
  * action conditions, `contributes.kinds`, status patches, port-forwards, `contributes.menuItems`,
- * `contributes.services` and `contributes.agentTools`. Every older one stays readable (ADR-0142).
+ * `contributes.services`, `contributes.agentTools` and `contributes.problemJudges`. Every older one stays readable
+ * (ADR-0142).
  */
 export const SEXTANT_API = 4;
 
@@ -364,6 +365,8 @@ export interface ManifestContributions {
   services?: ManifestService[];
   /** Tools for AI agents in Sextant's MCP server, answered by the backend; needs `sextantApi` 4 and a `backend`. */
   agentTools?: ManifestAgentTool[];
+  /** Problems the backend decides for rules' `judged` conditions; needs `sextantApi` 4 and a `backend` (since Sextant 0.30). */
+  problemJudges?: ManifestProblemJudge[];
   /** The extension's own sidebar sections: title, header icon, place; needs `sextantApi` 4. */
   sections?: ManifestSection[];
   /** A tab in a cluster's settings (`view=settings` with the contribution `clusterSettings`, that cluster in the context); needs `sextantApi` 4. */
@@ -399,6 +402,22 @@ export interface ManifestAgentTool {
   inputSchema: Record<string, unknown>;
   /** It only reads. Default `false`. */
   readOnly?: boolean;
+}
+
+/**
+ * A problem judge (sextantApi 4, ADR-0168): the backend's `handle("problemJudge:<id>", {objects})` decides which
+ * objects have which facts, from the declared fields of the objects of the kinds it reads — given as
+ * `{apiVersion, kind, metadata: {name, namespace?, uid, creationTimestamp?}, values: {<path>: value}}` — with every
+ * `host` call and network request refused meanwhile. A rule's `{"type": "judged", "judge", "fact"}` turns a fact into
+ * a problem with Sextant's texts; its message shows a fact's texts as `{{fact:<name>}}`. `defineBackend`'s
+ * `problemJudges` answers it.
+ */
+export interface ManifestProblemJudge {
+  id: string;
+  /** The kinds it reads (1 to 10, never Secrets) and, of each, 1 to 40 field paths that read no secret. */
+  reads: Array<{ kind: KindPattern; paths: string[] }>;
+  /** The facts it may answer (1 to 20), each with up to 5 names of texts a message shows as `{{fact:<name>}}`. */
+  facts: Array<{ id: string; values?: string[] }>;
 }
 
 /**
@@ -572,6 +591,10 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
         signIn ? { ...service, signIn: { fields: signIn.fields.map((f) => ({ ...f, secret: f.secret ?? false })) } } : service,
       ),
       agentTools: (c.agentTools ?? []).map((tool) => ({ ...tool, readOnly: tool.readOnly ?? false })),
+      problemJudges: (c.problemJudges ?? []).map((judge) => ({
+        ...judge,
+        facts: judge.facts.map((fact) => ({ id: fact.id, values: fact.values ?? [] })),
+      })),
     },
   };
   if (file.icon !== undefined) manifest.icon = file.icon;

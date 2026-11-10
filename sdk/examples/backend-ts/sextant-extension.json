@@ -3,14 +3,36 @@
   "id": "sextant.example.backend-ts",
   "name": "Sextant releases (TypeScript backend)",
   "version": "1.0.0",
-  "description": "Example: a page whose backend, written in TypeScript, counts the clusters it may see and asks GitHub for Sextant's latest release, with an optional GitHub token entered in Sextant.",
+  "description": "Example: a page whose backend, written in TypeScript, counts the clusters it may see and asks GitHub for Sextant's latest release, with an optional GitHub token entered in Sextant; and a problem judge in the same backend that finds Services selecting the same pods as another one of their namespace.",
   "author": "Sextant",
-  "sextantApi": 1,
+  "sextantApi": 4,
   "entry": "index.html",
   "icon": "download",
-  "permissions": { "clusters": { "type": "all" }, "rules": [] },
+  "permissions": {
+    "clusters": { "type": "all" },
+    "rules": [
+      { "namespaces": { "type": "all" }, "kinds": { "type": "only", "kinds": [{ "group": "", "kind": "Service" }] }, "actions": ["read"], "confirm": false }
+    ]
+  },
   "contributes": {
-    "pages": [{ "id": "releases", "title": "Sextant releases", "section": "backendDemo", "sectionTitle": "Backend demo", "icon": "download" }]
+    "pages": [{ "id": "releases", "title": "Sextant releases", "section": "backendDemo", "sectionTitle": "Backend demo", "icon": "download" }],
+    "problemJudges": [
+      {
+        "id": "same-selector",
+        "reads": [{ "kind": { "group": "", "kind": "Service" }, "paths": [".spec.selector"] }],
+        "facts": [{ "id": "shared", "values": ["other"] }]
+      }
+    ],
+    "problems": [
+      {
+        "id": "shared-selector",
+        "title": "Same selector",
+        "kind": { "group": "", "kind": "Service" },
+        "when": { "type": "judged", "judge": "same-selector", "fact": "shared" },
+        "message": "Selects the same pods as the Service {{fact:other}}.",
+        "notify": false
+      }
+    ]
   },
   "backend": {
     "module": "backend.wasm",

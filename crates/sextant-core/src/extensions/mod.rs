@@ -21,6 +21,7 @@ pub mod manifest;
 pub mod metric_queries;
 pub mod package;
 pub mod permissions;
+pub mod problem_judges;
 pub mod problems;
 mod schema;
 pub mod section_badges;

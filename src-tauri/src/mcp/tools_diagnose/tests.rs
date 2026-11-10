@@ -292,6 +292,24 @@ async fn an_extensions_problems_reach_agents_only_when_the_user_lets_them_and_cl
 }
 
 #[tokio::test]
+async fn categories_whose_judged_problems_were_left_out_are_told_only_when_the_agent_may_have_them()
+{
+    // ADR-0168: the window leaves out a problem a judge decided when the agent may not read what the judge read.
+    let answer: answers::ProblemsAnswer = serde_json::from_value(json!({
+        "problems": [],
+        "categories": ["ext:sextant.mesh", "ext:other.ext"],
+        "notJudged": ["ext:sextant.mesh", "ext:other.ext", "pods"],
+    }))
+    .unwrap();
+    let mut everything = filter(custom(vec![rule(&[], &[], &[AccessAction::Read])]));
+    let on = vec!["ext:sextant.mesh".to_owned()];
+    let kept = answers::problems(answer, &mut everything, &on, None, 100).await;
+    assert_eq!(kept.not_judged, ["ext:sextant.mesh", "pods"]);
+    let written = serde_json::to_value(&kept).unwrap();
+    assert_eq!(written["notJudged"], json!(["ext:sextant.mesh", "pods"]));
+}
+
+#[tokio::test]
 async fn failed_lists_are_told_only_where_the_agent_may_read() {
     let answer: answers::ProblemsAnswer = serde_json::from_value(json!({
         "problems": [],

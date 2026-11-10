@@ -108,6 +108,35 @@ impl Guest for Backend {
             "panic" => panic!("on purpose"),
             "fetch" => http_get(&text(&params)).map(|answer| json(&answer)),
             "big" => Ok(json(&"x".repeat(text(&params).parse::<usize>().map_err(|e| e.to_string())?))),
+            // A problem judge (ADR-0168): every object it was given has the fact `seen` with its name, and the texts say
+            // whether a host call and a request got through; then a fact about an object it was not given, and one it
+            // does not declare, which Sextant leaves out.
+            judge if judge.starts_with("problemJudge:") => {
+                let given: serde_json::Value = serde_json::from_str(&params).map_err(|e| e.to_string())?;
+                let host = match host::call("clusters.list", "{}") {
+                    Ok(_) => "allowed",
+                    Err(_) => "refused",
+                };
+                let net = match http_get("https://api.example.com/") {
+                    Ok(_) => "allowed",
+                    Err(_) => "refused",
+                };
+                let mut facts: Vec<serde_json::Value> = given["objects"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .map(|o| {
+                        serde_json::json!({
+                            "uid": o["metadata"]["uid"],
+                            "fact": "seen",
+                            "values": { "name": o["metadata"]["name"], "host": host, "net": net, "values": o["values"].to_string() },
+                        })
+                    })
+                    .collect();
+                facts.push(serde_json::json!({ "uid": "not-given", "fact": "seen" }));
+                facts.push(serde_json::json!({ "uid": given["objects"][0]["metadata"]["uid"], "fact": "undeclared" }));
+                Ok(serde_json::Value::Array(facts).to_string())
+            }
             other => Err(format!("unknown method {other}")),
         }
     }

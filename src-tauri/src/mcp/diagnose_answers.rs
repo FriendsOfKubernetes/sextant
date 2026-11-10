@@ -315,6 +315,10 @@ pub struct ProblemsAnswer {
     /// in all namespaces, …).
     #[serde(default)]
     pub not_checked: Vec<String>,
+    /// Categories whose problems an extension's backend decided were left out (ADR-0168): the agent may not read
+    /// every kind the judge read where it read them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub not_judged: Vec<String>,
     /// Lists the window could not read (the API server refused them or they failed): their category's problems
     /// there are unknown, not absent.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -444,6 +448,7 @@ pub async fn problems(
         truncated,
         incomplete: answer.incomplete,
         not_checked: known(answer.not_checked),
+        not_judged: known(answer.not_judged),
         failed: failed_lists(answer.failed, filter, enabled, namespace).await,
     }
 }

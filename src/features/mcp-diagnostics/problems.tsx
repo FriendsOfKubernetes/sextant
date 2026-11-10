@@ -18,6 +18,7 @@ import { needsDiscovery, sourceKey, sourcesFor, type SourceDef } from "../proble
 import { acquireSource, epochOf, getSource, sourcesVersion, subscribeSources, type SourceState } from "../problems/store";
 import { VIRTUAL_SERVICE } from "../mesh/kinds";
 import {
+  extensionJudgedKinds,
   extensionSourcesFor,
   isExtensionCategory,
   requestScopes,
@@ -60,6 +61,8 @@ export interface ProblemPlan {
   ruled: string[];
   /** Categories nothing could be looked at for. */
   notChecked: ProblemCategory[];
+  /** Extension categories whose judges read a kind the agent may not read where they read it (ADR-0168). */
+  notJudged: ProblemCategory[];
   /** The rules name more namespaces than are watched. */
   truncated: boolean;
 }
@@ -69,13 +72,25 @@ function clusterScoped(def: SourceDef, kinds: ResourceKind[] | null | undefined)
   return def.discovered && !!kinds && findKind(kinds, def.kind)?.namespaced === false;
 }
 
-/** The lists an extension's problem says a name is absent from (`lookups`), as refs the agent must be able to read. */
+/**
+ * The lists an extension's problem says a name is absent from (`lookups`), as refs the agent must be able to read;
+ * for a problem a judge decided (ADR-0168), every kind the judge read in every namespace its source watched (one
+ * ref of no namespace when it watched every namespace).
+ */
 export function lookupRefs(p: Pick<Problem, "lookups" | "object">, kinds: ResourceKind[] | null | undefined): ListRef[] {
-  return (p.lookups ?? []).map((lookup) => {
+  return (p.lookups ?? []).flatMap((lookup): ListRef[] => {
+    if (lookup.judged) {
+      return (lookup.judged.reads ?? []).flatMap(({ group, kind, namespaces }): ListRef[] =>
+        namespaces === null ? [{ group, kind, namespace: null }] : namespaces.map((namespace) => ({ group, kind, namespace })),
+      );
+    }
     const namespaced = kinds ? findKind(kinds, { group: lookup.group, kind: lookup.kind })?.namespaced !== false : true;
-    return { group: lookup.group, kind: lookup.kind, namespace: namespaced ? (p.object.namespace ?? null) : null };
+    return [{ group: lookup.group, kind: lookup.kind, namespace: namespaced ? (p.object.namespace ?? null) : null }];
   });
 }
+
+/** Whether an extension's problem was decided by one of its judges (ADR-0168). */
+const judgedProblem = (p: Pick<Problem, "lookups">): boolean => (p.lookups ?? []).some((lookup) => lookup.judged !== undefined);
 
 /**
  * The plan of `categories` (served ones, as `sourcesFor` gives them) for an agent that may read `reads`; `extensions`:
@@ -88,11 +103,16 @@ export function planProblems(
   kinds: ResourceKind[] | null | undefined,
   reads: readonly ReadRule[],
   asked: string | null,
-  extensions: { categories: readonly ProblemCategory[]; defs: readonly SourceDef[] } = { categories: [], defs: [] },
+  extensions: {
+    categories: readonly ProblemCategory[];
+    defs: readonly SourceDef[];
+    /** The kinds a category's problem judges read (ADR-0168). */
+    judged?: (category: ProblemCategory) => readonly { group: string; kind: string }[];
+  } = { categories: [], defs: [] },
 ): ProblemPlan {
   const { namespaces: ruled, truncated } = ruleNamespaces(reads);
   const may = (kind: Pick<KindRef, "group" | "kind">, ns: string | null) => canRead(reads, kind, ns);
-  const plan: ProblemPlan = { shared: [], watched: [], mesh: false, practices: null, ruled, notChecked: [], truncated };
+  const plan: ProblemPlan = { shared: [], watched: [], mesh: false, practices: null, ruled, notChecked: [], notJudged: [], truncated };
   const scope = asked ? [asked] : ruled;
   for (const category of categories) {
     const defs = sourcesFor([category], kinds);
@@ -147,6 +167,11 @@ export function planProblems(
       if (defs.length > 0) plan.notChecked.push(category);
       continue;
     }
+    // A kind a judge reads that the agent may not read: the problems it decides are not told (ADR-0168).
+    const judged = extensions.judged?.(category) ?? [];
+    const same = (a: { group: string; kind: string }, b: { group: string; kind: string }) =>
+      a.group.toLowerCase() === b.group.toLowerCase() && a.kind.toLowerCase() === b.kind.toLowerCase();
+    if (defs.some((def) => !readable.includes(def) && judged.some((k) => same(k, def.kind)))) plan.notJudged.push(category);
     plan.shared.push(...readable);
   }
   return plan;
@@ -205,7 +230,7 @@ export function ProblemsWorker(props: WorkerProps) {
     void scopesVersion;
     if (!settled) return null;
     const extensionDefs = extensionSourcesFor(extensions, request.clusterId, kinds);
-    return planProblems(builtIn, kinds, request.reads, args.namespace, { categories: extensions, defs: extensionDefs });
+    return planProblems(builtIn, kinds, request.reads, args.namespace, { categories: extensions, defs: extensionDefs, judged: extensionJudgedKinds });
   }, [settled, builtIn, extensions, kinds, request.reads, args.namespace, request.clusterId, scopesVersion]);
   const shared = useStoreSources(request.clusterId, plan?.shared ?? EMPTY);
   const watched = plan?.watched ?? EMPTY;
@@ -230,11 +255,18 @@ export function ProblemsWorker(props: WorkerProps) {
     if (!plan) return { problems: [], categories, loading: categories, truncated: false, notChecked: [], failed: [] };
     const now = Date.now();
     const out: Record<string, unknown>[] = [];
+    // Categories whose problems decided by an extension's backend were left out (ADR-0168): the agent may not read
+    // every kind the judge read where it read them.
+    const notJudged = new Set<string>(plan.notJudged);
     const push = (p: Problem, source: Pick<KindRef, "group" | "kind">, refs: ListRef[]) => {
       const ns = p.object.namespace ?? null;
       if (!isActive(p, now)) return;
       if (args.namespace && ns !== args.namespace) return;
       if (!canRead(request.reads, source, ns) || !canRead(request.reads, p.object.kind, ns)) return;
+      if (judgedProblem(p) && !refs.every((r) => canRead(request.reads, r, r.namespace))) {
+        notJudged.add(p.category);
+        return;
+      }
       out.push({
         category: p.category,
         reason: p.reason,
@@ -297,6 +329,7 @@ export function ProblemsWorker(props: WorkerProps) {
       loading: [...loading],
       truncated: plan.truncated || practicesTruncated || shared.some((s) => s.truncated),
       notChecked: plan.notChecked,
+      ...(notJudged.size > 0 ? { notJudged: [...notJudged] } : {}),
       failed,
     };
   });

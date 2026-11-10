@@ -224,6 +224,10 @@ const NOT_CHECKED_NOTE: &str = "Categories in `notChecked` were not looked at: t
 judged against, such as Nodes for disk usage and best practices) are not readable for the agent where it would need \
 them (often: in all namespaces). Ask for one namespace, or ask the user for wider Read access.";
 
+const NOT_JUDGED_NOTE: &str = "In the categories in `notJudged` the extension's backend decided some problems from \
+objects of kinds the agent may not read everywhere the backend read them; those problems were left out. Ask the \
+user for wider Read access to see them.";
+
 const FAILED_NOTE: &str = "Lists in `failed` could not be read (`code`: forbidden — the Kubernetes API refused the \
 user's credentials; other codes — the request failed): problems there are unknown, not absent. With `namespaces`, \
 only those namespaces failed.";
@@ -306,6 +310,9 @@ async fn get_problems(call: ToolCall, args: ProblemsArgs) -> ToolResult {
         }
         if !answer.not_checked.is_empty() {
             result["notCheckedNote"] = json!(NOT_CHECKED_NOTE);
+        }
+        if !answer.not_judged.is_empty() {
+            result["notJudgedNote"] = json!(NOT_JUDGED_NOTE);
         }
         if !answer.failed.is_empty() {
             result["failedNote"] = json!(FAILED_NOTE);

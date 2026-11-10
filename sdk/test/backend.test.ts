@@ -47,6 +47,45 @@ describe("defineBackend", () => {
   });
 });
 
+describe("problem judges", () => {
+  const handle = defineBackend(
+    { ping: () => "pong" },
+    {
+      problemJudges: {
+        hosts: (objects) =>
+          objects
+            .filter((o) => !Array.isArray(o.values[".spec.hosts"]))
+            .map((o) => ({ uid: o.metadata.uid, fact: "no-hosts", values: { name: o.metadata.name } })),
+        slow: async () => [],
+        fails: () => {
+          throw new Error("cannot judge");
+        },
+      },
+    },
+  );
+  const object = (uid: string, values: Record<string, unknown>) => ({
+    apiVersion: "networking.istio.io/v1",
+    kind: "VirtualService",
+    metadata: { name: `vs-${uid}`, namespace: "shop", uid },
+    values,
+  });
+
+  it("answers `problemJudge:<id>` with the judge's facts", async () => {
+    const params = JSON.stringify({ objects: [object("a", { ".spec.hosts": ["web"] }), object("b", {})] });
+    expect(JSON.parse(await handle("problemJudge:hosts", params))).toEqual([{ uid: "b", fact: "no-hosts", values: { name: "vs-b" } }]);
+    expect(await handle("problemJudge:slow", "{}")).toBe("[]");
+    // The frames' methods still answer, and a judge is no frame method.
+    expect(await handle("ping", "null")).toBe('"pong"');
+    await expect(handle("hosts", "null")).rejects.toBe("unknown method hosts");
+  });
+
+  it("fails an unknown judge or a judge that throws", async () => {
+    await expect(handle("problemJudge:nope", "{}")).rejects.toBe("unknown problem judge nope");
+    await expect(handle("problemJudge:fails", "{}")).rejects.toBe("cannot judge");
+    await expect(handle("problemJudge:toString", "{}")).rejects.toBe("unknown problem judge toString");
+  });
+});
+
 describe("host", () => {
   it("throws a SextantError with the API's code", () => {
     try {

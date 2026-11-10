@@ -735,6 +735,53 @@
             }
           }
         },
+        "problemJudges": {
+          "description": "Problems the extension's backend decides (sextantApi 4, needs a `backend`): the kinds and fields it reads, and the facts a rule's `judged` condition turns into problems. While it decides it can reach neither the cluster nor the network.",
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "reads", "facts"],
+            "properties": {
+              "id": { "$ref": "#/$defs/contributionId" },
+              "reads": {
+                "description": "The kinds it reads and, of each, the field paths its objects carry to the backend (besides name, namespace, uid and creation time).",
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 10,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "paths"],
+                  "properties": {
+                    "kind": { "$ref": "#/$defs/kind" },
+                    "paths": { "type": "array", "minItems": 1, "maxItems": 40, "items": { "$ref": "#/$defs/fieldPath" } }
+                  }
+                }
+              },
+              "facts": {
+                "description": "The facts it may answer about an object, each with the names of the texts a rule's message shows as `{{fact:<name>}}`.",
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 20,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id"],
+                  "properties": {
+                    "id": { "$ref": "#/$defs/contributionId" },
+                    "values": {
+                      "type": "array",
+                      "maxItems": 5,
+                      "items": { "type": "string", "minLength": 1, "maxLength": 40, "format": "identifier", "pattern": "^[A-Za-z][A-Za-z0-9-]{0,39}$" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         "sections": {
           "description": "The extension's own sidebar sections: a title, an icon on the header and a place after one of Sextant's sections (sextantApi 4).",
           "type": "array",
@@ -1318,6 +1365,17 @@
             "otherPath": { "$ref": "#/$defs/fieldPath" },
             "offset": { "description": "Added to the other value first: -1 for one before the limit.", "type": "integer", "minimum": -1000000, "maximum": 1000000 },
             "addPaths": { "description": "More paths whose numbers are added to `path`'s first (sextantApi 4).", "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/fieldPath" } }
+          }
+        },
+        {
+          "description": "The latest answer of the extension's backend for the judge `judge` (`contributes.problemJudges`) gives `fact` for the object (sextantApi 4); unknown while the judge cannot tell. Not inside `any` or `not`; the rule's kind is one the judge reads.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "judge", "fact"],
+          "properties": {
+            "type": { "const": "judged" },
+            "judge": { "$ref": "#/$defs/contributionId" },
+            "fact": { "$ref": "#/$defs/contributionId" }
           }
         },
         {

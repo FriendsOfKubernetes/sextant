@@ -19,6 +19,8 @@ use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use sextant_core::extensions::problem_judges;
+use sextant_core::extensions::problems::problem_scopes;
 use sextant_core::extensions::{
     ExtensionManifest, ExtensionSource, InstalledExtension, MANIFEST_FILE, Package,
     resolve_package_file,
@@ -34,6 +36,20 @@ use super::api::ExtensionApi;
 use super::{ExtensionHost, lock};
 use crate::access_guard::audit::{AuditDecision, AuditEntry, clip};
 use crate::access_guard::confirm::ConfirmSource;
+
+/// The time a problem judge has (ADR-0168), instantiation included.
+pub const JUDGE_TIME: Duration = Duration::from_secs(10);
+
+/// The limits of a problem judge: [`JUDGE_TIME`], and room for the objects it is given (up to
+/// [`problem_judges::MAX_JUDGE_PAYLOAD_BYTES`] of JSON) and for parsing them.
+fn judge_limits() -> Limits {
+    Limits {
+        time: JUDGE_TIME,
+        memory_bytes: 128 * 1024 * 1024,
+        payload_bytes: problem_judges::MAX_JUDGE_PAYLOAD_BYTES + 64 * 1024,
+        ..Limits::default()
+    }
+}
 
 /// Calls of one extension's backend running at once; the next ones are refused.
 pub const MAX_CONCURRENT_CALLS: usize = 4;
@@ -430,7 +446,9 @@ impl ExtensionApi {
             .as_ref()
             .map(|p| p.method.clone())
             .unwrap_or_default();
-        let result = self.run_backend(host, extension_id, parsed, None).await;
+        let result = self
+            .run_backend(host, extension_id, parsed, None, false)
+            .await;
         self.journal(AuditEntry {
             at,
             source: ConfirmSource::Extension,
@@ -493,7 +511,7 @@ impl ExtensionApi {
             let agent = super::api::AgentLimit {
                 client: client.to_owned(),
             };
-            self.run_backend(host, extension_id, Ok(call), Some(agent))
+            self.run_backend(host, extension_id, Ok(call), Some(agent), false)
                 .await
         } else {
             Err(CoreError::new(
@@ -529,12 +547,114 @@ impl ExtensionApi {
         result
     }
 
+    /// Runs the judge `judge_id` of `extension_id` (ADR-0168) on `objects` the window collected in the cluster with
+    /// context `context`: only for an active extension whose judge's kinds the user agreed to (`grantedProblems`),
+    /// on the objects re-projected here ([`problem_judges::project_objects`]: declared kinds, paths and namespaces
+    /// only), with every host call and network request refused and [`JUDGE_TIME`]; the answer read back by
+    /// [`problem_judges::read_answer`]. Not journaled, as rules are not; a failure goes to the backend's log by its
+    /// kind only, never with what the objects hold.
+    pub async fn problem_judge(
+        self: &Arc<Self>,
+        host: &ExtensionHost,
+        extension_id: &str,
+        judge_id: &str,
+        context: &str,
+        objects: Vec<Value>,
+    ) -> CoreResult<Vec<problem_judges::JudgedFact>> {
+        let (blocking_host, id) = (host.clone(), extension_id.to_owned());
+        let (entry, manifest) = tauri::async_runtime::spawn_blocking(move || {
+            let entry = blocking_host.active(&id);
+            let manifest = blocking_host.info(&id).and_then(|i| i.manifest);
+            (entry, manifest)
+        })
+        .await
+        .map_err(|e| CoreError::other(e.to_string()))?;
+        let (Some(entry), Some(manifest)) = (entry, manifest) else {
+            return Err(CoreError::new(
+                ErrorCode::Forbidden,
+                format!("`{extension_id}` is not installed and active"),
+            ));
+        };
+        let Some(judge) = manifest
+            .contributes
+            .problem_judges
+            .iter()
+            .find(|j| j.id == judge_id)
+            .cloned()
+        else {
+            return Err(CoreError::new(
+                ErrorCode::NotFound,
+                format!("`{extension_id}` has no problem judge `{judge_id}`"),
+            ));
+        };
+        let granted = entry.granted_problems.clone().unwrap_or_default();
+        let kinds: Vec<_> = judge.reads.iter().map(|r| r.kind.clone()).collect();
+        let agreed = kinds.iter().all(|k| {
+            granted.iter().any(|g| {
+                g.group.eq_ignore_ascii_case(&k.group) && g.kind.eq_ignore_ascii_case(&k.kind)
+            })
+        });
+        if !agreed {
+            return Err(CoreError::new(
+                ErrorCode::Forbidden,
+                format!("the user did not agree to the kinds the judge `{judge_id}` reads"),
+            ));
+        }
+        let scopes = problem_scopes(&entry.granted, context, &kinds);
+        let sent = problem_judges::project_objects(&judge, objects, &scopes)?;
+        let call = BackendCallParams {
+            method: format!("{}{judge_id}", problem_judges::METHOD_PREFIX),
+            params: json!({ "objects": sent }),
+        };
+        let backends = host.backends();
+        let answer = match self
+            .run_backend(host, extension_id, Ok(call), None, true)
+            .await
+        {
+            Ok(answer) => answer,
+            Err(err) => {
+                backends.log(
+                    extension_id,
+                    BackendLogLevel::Warn,
+                    &format!(
+                        "The problem judge `{judge_id}` failed ({}); its problems are not told until it answers",
+                        super::api::code_name(err.code)
+                    ),
+                );
+                return Err(err.without_plugin_output());
+            }
+        };
+        let (facts, left_out) =
+            problem_judges::read_answer(&judge, &sent, answer).inspect_err(|err| {
+                backends.log(
+                    extension_id,
+                    BackendLogLevel::Warn,
+                    &format!(
+                        "The problem judge `{judge_id}` answered what Sextant cannot read: {}",
+                        err.message
+                    ),
+                );
+            })?;
+        if left_out > 0 {
+            backends.log(
+                extension_id,
+                BackendLogLevel::Warn,
+                &format!(
+                    "The problem judge `{judge_id}` answered {left_out} facts about objects it was not given or that \
+                     its manifest does not declare; they were left out"
+                ),
+            );
+        }
+        Ok(facts)
+    }
+
     async fn run_backend(
         self: &Arc<Self>,
         host: &ExtensionHost,
         extension_id: &str,
         parsed: Result<BackendCallParams, serde_json::Error>,
         agent: Option<super::api::AgentLimit>,
+        judging: bool,
     ) -> CoreResult<Value> {
         let call = parsed.map_err(|e| invalid(format!("backend.call: {e}")))?;
         if !is_method_name(&call.method) {
@@ -620,16 +740,16 @@ impl ExtensionApi {
                 .filter(|c| granted.credentials.contains(c))
                 .collect(),
             agent,
+            judging,
         });
         let params = serde_json::to_string(&call.params).map_err(|e| invalid(e.to_string()))?;
+        let limits = if judging {
+            judge_limits()
+        } else {
+            Limits::default()
+        };
         let answer = runtime
-            .invoke(
-                &backend,
-                backend_host,
-                &call.method,
-                &params,
-                &Limits::default(),
-            )
+            .invoke(&backend, backend_host, &call.method, &params, &limits)
             .await;
         let failed = matches!(
             answer,
@@ -674,6 +794,9 @@ struct BackendHost {
     credentials: Vec<String>,
     /// The AI agent the backend answers, when it does: its calls are decided for the agent too.
     agent: Option<super::api::AgentLimit>,
+    /// It decides a problem judge (ADR-0168): only from the objects it was given, so every host call and every
+    /// network request is refused.
+    judging: bool,
 }
 
 fn call_error(err: CoreError) -> CallError {
@@ -731,6 +854,14 @@ impl Host for BackendHost {
         params: &'a str,
     ) -> HostFuture<'a, Result<String, CallError>> {
         Box::pin(async move {
+            if self.judging {
+                return Err(CallError {
+                    code: "forbidden".to_owned(),
+                    message: format!(
+                        "{method} is not available to a problem judge: it decides only from the objects it is given"
+                    ),
+                });
+            }
             let params: Value = serde_json::from_str(params).map_err(|e| CallError {
                 code: "invalid".to_owned(),
                 message: format!("{method}: the parameters are not JSON: {e}"),
@@ -800,8 +931,13 @@ impl Host for BackendHost {
             hosts: self.hosts.clone(),
             credentials: Vec::new(),
             agent: self.agent.clone(),
+            judging: self.judging,
         };
         Box::pin(async move {
+            // A problem judge decides only from what it was given (ADR-0168): no request, no journal line.
+            if this.judging {
+                return Err(HttpError::Denied);
+            }
             let started = Instant::now();
             let method = request.method.as_str().to_owned();
             let Ok(url) = reqwest::Url::parse(&request.uri.to_string()) else {

@@ -543,6 +543,13 @@ pub enum ProblemCondition {
     Not {
         of: Box<ProblemCondition>,
     },
+    /// The latest answer of the extension's backend for the judge `judge` (`contributes.problemJudges`, ADR-0168)
+    /// gives `fact` for the object; `sextantApi` 4. Unknown (not holding) while the judge cannot tell — a read list
+    /// not read in full, a failed or timed-out call; not inside `any` or `not`; the rule's kind is one the judge reads.
+    Judged {
+        judge: String,
+        fact: String,
+    },
 }
 
 /// A value a condition compares with.
@@ -606,6 +613,7 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 .source
                 .as_ref()
                 .is_some_and(|s| s.label_selector.is_some()),
+            judges: &manifest.contributes.problem_judges,
         };
         check_condition(
             &rule.when,
@@ -760,7 +768,7 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                     if text.trim().is_empty() || text.chars().count() > 300 {
                         return Err(at(&form_at, "is a text of 1 to 300 characters"));
                     }
-                    check_message(text, &rule.kind, &form_at, metadata_only)?;
+                    check_rule_message(text, rule, manifest, &form_at, metadata_only)?;
                 }
             }
             (Some(_), None) => {
@@ -843,14 +851,60 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             }
             check_rule_path(path, &rule.kind, &here.key("notifyAs"), metadata_only)?;
         }
-        check_message(
+        check_rule_message(
             &rule.message,
-            &rule.kind,
+            rule,
+            manifest,
             &here.key("message"),
             metadata_only,
         )?;
     }
     Ok(())
+}
+
+/// A rule's message: [`check_message`], where a `{{fact:<name>}}` placeholder names a value of a fact the rule's
+/// `judged` conditions name (ADR-0168), counted with the others.
+fn check_rule_message(
+    text: &str,
+    rule: &ProblemContribution,
+    manifest: &ExtensionManifest,
+    path: &JsonPath,
+    metadata_only: bool,
+) -> Result<(), ManifestError> {
+    let Some(found) = placeholders(text) else {
+        return Err(at(path, "has a `{{` without its `}}`"));
+    };
+    if found.len() > MAX_PLACEHOLDERS {
+        return Err(at(
+            path,
+            format!("has at most {MAX_PLACEHOLDERS} placeholders"),
+        ));
+    }
+    let allowed =
+        super::problem_judges::fact_values(&manifest.contributes.problem_judges, &rule.when);
+    let mut rest = String::with_capacity(text.len());
+    let mut tail = text;
+    while let Some(start) = tail.find("{{") {
+        let after = &tail[start + 2..];
+        let Some(end) = after.find("}}") else { break };
+        let inner = &after[..end];
+        if let Some(name) = super::problem_judges::fact_placeholder(inner) {
+            if !allowed.contains(&name) {
+                return Err(at(
+                    path,
+                    format!(
+                        "has `{{{{fact:{name}}}}}`, which no fact of the rule's `judged` conditions gives"
+                    ),
+                ));
+            }
+            rest.push_str(&tail[..start]);
+        } else {
+            rest.push_str(&tail[..start + 2 + end + 2]);
+        }
+        tail = &after[end + 2..];
+    }
+    rest.push_str(tail);
+    check_message(&rest, &rule.kind, path, metadata_only)
 }
 
 /// A rule's `source`: written only from `sextantApi` 4, with at least one field, a label selector Kubernetes reads,
@@ -929,6 +983,8 @@ struct ConditionChecks<'a, 'k> {
     single: bool,
     /// The rule's source has a label selector: `enteredWithin` can be told.
     narrowed: bool,
+    /// The manifest's judges (`judged`, ADR-0168).
+    judges: &'k [super::problem_judges::ProblemJudgeContribution],
 }
 
 /// A condition of an action or a column (ADR-0153, ADR-0154): the grammar of problem rules without `missing`, its
@@ -949,6 +1005,7 @@ pub(crate) fn check_object_condition(
             metadata_only: false,
             single: true,
             narrowed: false,
+            judges: &[],
         };
         check_condition(condition, kind, path, 1, Inside::Top, &mut checks)?;
     }
@@ -1370,6 +1427,27 @@ fn check_condition<'k>(
             }
             Ok(())
         }
+        ProblemCondition::Judged { judge, fact } => {
+            if checks.single {
+                return Err(at(
+                    &path.key("type"),
+                    "`judged` is decided by the extension's backend: only problem rules may use it",
+                ));
+            }
+            if checks.api < SOURCES_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`judged` needs sextantApi {SOURCES_API} or later"),
+                ));
+            }
+            if !matches!(inside, Inside::Top) {
+                return Err(at(
+                    &path.key("type"),
+                    "`judged` cannot be inside `any` or `not`: a judge that cannot tell would make it unknown",
+                ));
+            }
+            super::problem_judges::check_judged(checks.judges, judge, fact, kind, path)
+        }
         ProblemCondition::All { of } | ProblemCondition::Any { of } => {
             if depth >= max_depth {
                 return Err(at(
@@ -1534,7 +1612,7 @@ pub(crate) fn check_path(
 }
 
 /// A path of a rule: [`check_path`], and under `.metadata` when the rule's source watches metadata only.
-fn check_rule_path(
+pub(crate) fn check_rule_path(
     text: &str,
     kind: &KindPattern,
     path: &JsonPath,
@@ -1857,10 +1935,12 @@ pub fn reads_secret(kind: &KindPattern, steps: &[PathStep]) -> bool {
             })
 }
 
-/// The kinds the rules of `manifest` judge or look up (`missing`), each once, in order: what the user agrees to have
-/// them read (`grantedProblems`).
+/// The kinds the rules of `manifest` judge or look up (`missing`), and then those its judges read (ADR-0168), each
+/// once, in order: what the user agrees to have them read (`grantedProblems`).
 pub fn problem_kinds(manifest: &ExtensionManifest) -> Vec<KindPattern> {
     let mut out: Vec<KindPattern> = Vec::new();
+    // The kinds the judges read go to the extension's backend (ADR-0168): agreed to with the rules' kinds.
+    let judged = super::problem_judges::judge_kinds(manifest);
     for rule in &manifest.contributes.problems {
         if !out.iter().any(|k| same_kind(k, &rule.kind)) {
             out.push(rule.kind.clone());
@@ -1871,6 +1951,11 @@ pub fn problem_kinds(manifest: &ExtensionManifest) -> Vec<KindPattern> {
             if !out.iter().any(|k| same_kind(k, target)) {
                 out.push(target.clone());
             }
+        }
+    }
+    for kind in judged {
+        if !out.iter().any(|k| same_kind(k, &kind)) {
+            out.push(kind);
         }
     }
     out

@@ -327,3 +327,112 @@ async fn a_new_host_or_credential_brings_consent_back() {
     ));
     assert!(!asks_within(&parsed, &parsed.permissions, with(None)));
 }
+
+/// A package whose rule of ConfigMaps is decided by the judge `all` (ADR-0168), read in the namespace `team` only.
+fn judging_package(version: &str) -> Vec<u8> {
+    let manifest = json!({
+        "id": ID, "name": "Backend demo", "version": version, "description": "", "author": "Me",
+        "sextantApi": 4, "entry": "index.html",
+        "permissions": { "clusters": { "type": "all" }, "rules": [
+            { "namespaces": { "type": "only", "namespaces": ["team"] }, "kinds": { "type": "all" }, "actions": ["read"], "confirm": false }
+        ] },
+        "backend": declared(),
+        "contributes": {
+            "problemJudges": [{
+                "id": "all",
+                "reads": [{ "kind": { "group": "", "kind": "ConfigMap" }, "paths": [".data"] }],
+                "facts": [{ "id": "seen", "values": ["name", "host", "net", "values"] }]
+            }],
+            "problems": [{ "id": "seen", "title": "Seen", "kind": { "group": "", "kind": "ConfigMap" },
+                           "when": { "type": "judged", "judge": "all", "fact": "seen" }, "message": "{{fact:name}}" }]
+        }
+    })
+    .to_string();
+    stored_zip(&[
+        (MANIFEST_FILE, manifest.as_bytes()),
+        ("index.html", b"<p>hello</p>"),
+        ("backend.wasm", GUEST),
+    ])
+}
+
+fn config_map(namespace: &str, uid: &str) -> Value {
+    json!({
+        "apiVersion": "v1", "kind": "ConfigMap",
+        "metadata": { "name": format!("cm-{uid}"), "namespace": namespace, "uid": uid, "labels": { "a": "b" } },
+        "values": { ".data": { "k": "v" }, ".metadata.labels": { "a": "b" } }
+    })
+}
+
+#[tokio::test]
+async fn a_problem_judge_decides_only_from_what_it_is_given() {
+    let env = Env::new();
+    let file = env.dir.path().join("judge.sextant-ext");
+    std::fs::write(&file, judging_package("1.0.0")).unwrap();
+    let pending = env.host.inspect_file(&file).unwrap();
+    let info = env.host.install(&pending.token).unwrap();
+    assert_eq!(info.state, ExtensionState::Active);
+    let journal_before = env.api.audit_list(Some(ID)).len();
+
+    let facts = env
+        .api
+        .problem_judge(
+            &env.host,
+            ID,
+            "all",
+            "ctx-a",
+            vec![config_map("team", "u1")],
+        )
+        .await
+        .unwrap();
+    // Only the declared fact about the object it was given; the texts say the host call and the request were refused,
+    // and the object carried the declared path only.
+    let [fact] = facts.as_slice() else {
+        panic!("{facts:?}")
+    };
+    assert_eq!((fact.uid.as_str(), fact.fact.as_str()), ("u1", "seen"));
+    let values = fact.values.as_ref().unwrap();
+    assert_eq!(values["name"], "cm-u1");
+    assert_eq!(values["host"], "refused");
+    assert_eq!(values["net"], "refused");
+    assert_eq!(values["values"], r#"{".data":{"k":"v"}}"#);
+    // Neither the call nor the refused ones are journaled; the left-out facts are told in the backend's log.
+    assert_eq!(env.api.audit_list(Some(ID)).len(), journal_before);
+    let log: Vec<String> = env
+        .host
+        .backend_log(ID)
+        .into_iter()
+        .map(|l| l.message)
+        .collect();
+    assert!(
+        log.iter()
+            .any(|l| l.contains("answered 2 facts about objects it was not given")),
+        "{log:?}"
+    );
+
+    // Outside the extension's Read, an undeclared judge, an extension that is not active: refused before the backend.
+    let err = env
+        .api
+        .problem_judge(
+            &env.host,
+            ID,
+            "all",
+            "ctx-a",
+            vec![config_map("other", "u2")],
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Forbidden);
+    let err = env
+        .api
+        .problem_judge(&env.host, ID, "nope", "ctx-a", vec![])
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::NotFound);
+    env.host.set_enabled(ID, false).unwrap();
+    let err = env
+        .api
+        .problem_judge(&env.host, ID, "all", "ctx-a", vec![])
+        .await
+        .unwrap_err();
+    assert_eq!(err.code, ErrorCode::Forbidden);
+}

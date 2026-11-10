@@ -340,7 +340,9 @@
     "heading": "Problemy i powiadomienia",
     "kinds": "Sextant sprawdza obiekty tych rodzajów według reguł rozszerzenia, pokazuje znaleziska na stronie Problemy i może o nich powiadamiać:",
     "lookups": "Aby sprawdzić, czy obiekt wskazany przez regułę istnieje, Sextant wyświetla też listę obiektów tych rodzajów:",
-    "scope": "Tylko w klastrach i przestrzeniach nazw, w których rozszerzenie może odczytywać te rodzaje. Nie uruchamia się przy tym żaden kod rozszerzenia."
+    "judges": "Niektóre z tych problemów rozstrzyga backend rozszerzenia. Otrzymuje obiekty tych rodzajów tylko z tymi polami, a podczas rozstrzygania nie ma dostępu ani do klastrów, ani do sieci:",
+    "scope": "Tylko w klastrach i przestrzeniach nazw, w których rozszerzenie może odczytywać te rodzaje. Nie uruchamia się przy tym żaden kod rozszerzenia.",
+    "judgesScope": "Tylko w klastrach i przestrzeniach nazw, w których rozszerzenie może odczytywać te rodzaje. Sextant wyświetla problemy i wysyła powiadomienia; poza decyzjami jego backendu nie uruchamia się przy tym żaden kod rozszerzenia."
   },
   "metrics": {
     "heading": "Metryki",

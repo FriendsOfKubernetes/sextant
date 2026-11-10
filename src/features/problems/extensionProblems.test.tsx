@@ -2,7 +2,8 @@
 // and namespaces Rust allows, under a category titled with the extension's name; they go with the extension.
 import { act, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { KubeObject, ProblemContribution, ProblemScope, ResourceKind } from "../../api";
+import type { JudgedFact, JudgedObject, KubeObject, ProblemContribution, ProblemJudgeContribution, ProblemScope, ResourceKind } from "../../api";
+import { setJudgesClock } from "../../extensions/problemJudges";
 import { resetAppStore } from "../../app/store";
 import "../../resources";
 import { resetClusterKinds } from "../../resources/useKinds";
@@ -92,6 +93,7 @@ beforeEach(() => {
 afterEach(() => {
   unregister?.();
   unregister = undefined;
+  setJudgesClock(null);
   resetProblemSources();
   wb.backend.restore();
 });
@@ -333,5 +335,94 @@ describe("problems of extensions", () => {
     await waitFor(() => expect(getSource(sourceKey("c1", def))?.status).toBe("ready"));
     expect(wb.specs.size).toBe(0);
     release();
+  });
+
+  it("tell what an extension's backend judged, from the declared fields only, and nothing it cannot tell (ADR-0168)", async () => {
+    const VS: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "networking.istio.io", version: "v1", kind: "VirtualService" }, plural: "virtualservices" };
+    const SERVICE: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "", version: "v1", kind: "Service" }, plural: "services" };
+    wb.backend.on("cluster_kinds", () => [VS, SERVICE]);
+    wb.backend.on("extension_problem_scopes", () => [
+      { kind: { group: "networking.istio.io", kind: "VirtualService" }, namespaces: { type: "all" } },
+      { kind: { group: "", kind: "Service" }, namespaces: { type: "only", namespaces: ["shop"] } },
+    ]);
+    const judge: ProblemJudgeContribution = {
+      id: "routing",
+      reads: [
+        { kind: { group: "networking.istio.io", kind: "VirtualService" }, paths: [".spec.hosts"] },
+        { kind: { group: "", kind: "Service" }, paths: [".metadata.labels"] },
+      ],
+      facts: [{ id: "unknown-host", values: ["host"] }],
+    };
+    let answer: () => JudgedFact[] = () => [{ uid: "u-vs", fact: "unknown-host", values: { host: "reviews" } }];
+    const sent: JudgedObject[][] = [];
+    wb.backend.on("extension_problem_judge", (args) => {
+      const { id, judge: judgeId, clusterId, objects } = args as { id: string; judge: string; clusterId: string; objects: JudgedObject[] };
+      expect([id, judgeId, clusterId]).toEqual(["mesh-ext", "routing", "c1"]);
+      sent.push(objects);
+      return answer();
+    });
+    unregister = registerExtensionProblems(
+      "mesh-ext",
+      "Mesh",
+      [
+        {
+          id: "unknown-host",
+          title: "Unknown host",
+          kind: { group: "networking.istio.io", kind: "VirtualService" },
+          when: { type: "all", of: [{ type: "exists", path: ".spec.hosts" }, { type: "judged", judge: "routing", fact: "unknown-host" }] },
+          graceMinutes: 0,
+          notify: true,
+          toldThroughOwner: false,
+          message: "{{fact:host}} is no host {{.metadata.name}} can reach",
+        },
+      ],
+      undefined,
+      [judge],
+    );
+    const { result } = renderHook(() => useProblemCount("c1"));
+    const vs = (gen: number) => ({
+      apiVersion: "networking.istio.io/v1",
+      kind: "VirtualService",
+      metadata: { name: "web", namespace: "shop", uid: "u-vs", creationTimestamp: "2026-01-01T00:00:00Z", generation: gen },
+      spec: { hosts: ["reviews"], http: [{ route: [] }] },
+    });
+    const svc = { apiVersion: "v1", kind: "Service", metadata: { name: "api", namespace: "shop", uid: "u-svc", labels: { app: "api" } }, spec: { selector: { app: "api" } } };
+    const services = await watchOf(wb, "Service");
+    expect(wb.specs.get(services)!.namespaces).toEqual(["shop"]);
+    emitSnapshot(wb, await watchOf(wb, "VirtualService"), [vs(1)]);
+    // The Services are not read yet: the judge is not asked and nothing is told.
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    expect(sent).toEqual([]);
+    expect(result.current).toBe(0);
+    emitSnapshot(wb, services, [svc]);
+    await waitFor(() => expect(result.current).toBe(1));
+    // By uid; only the declared paths, and of the metadata only name, namespace, uid and creation time.
+    expect(sent[0]).toEqual([
+      { apiVersion: "v1", kind: "Service", metadata: { name: "api", namespace: "shop", uid: "u-svc" }, values: { ".metadata.labels": { app: "api" } } },
+      {
+        apiVersion: "networking.istio.io/v1",
+        kind: "VirtualService",
+        metadata: { name: "web", namespace: "shop", uid: "u-vs", creationTimestamp: "2026-01-01T00:00:00Z" },
+        values: { ".spec.hosts": ["reviews"] },
+      },
+    ]);
+    const source = () =>
+      getSource(sourceKey("c1", { category: "ext:mesh-ext", kind: VS.kindRef, fieldSelector: null }))?.problems ?? [];
+    expect(source()[0]?.message).toBe("reviews is no host web can reach");
+
+    // A change of a field the judge does not read sends nothing again.
+    const vsWatch = await watchOf(wb, "VirtualService");
+    emitDelta(wb, vsWatch, [vs(2)]);
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    expect(sent).toHaveLength(1);
+
+    // A failed call: the problem goes at once, never kept from the answer before.
+    setJudgesClock(() => Date.now() + 60_000);
+    answer = () => {
+      throw { code: "timeout", message: "the backend ran out of time" };
+    };
+    emitDelta(wb, services, [{ ...svc, metadata: { ...svc.metadata, labels: { app: "api2" } } }]);
+    await waitFor(() => expect(sent).toHaveLength(2));
+    await waitFor(() => expect(result.current).toBe(0));
   });
 });

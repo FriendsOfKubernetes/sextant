@@ -15,12 +15,14 @@ import {
   type KindRef,
   type KubeObject,
   type ProblemContribution,
+  type ProblemJudgeContribution,
   type ProblemScope,
   type ResourceKind,
   type RuleSource,
 } from "../../api";
 import { compileRules, kindKeyOf, type RuleContext } from "../../extensions/problemRules";
-import { comparedPaths, factsOf, judgeAcross, judgedAcross, lookedUp, referrersOf, rowOf, selectedKinds, type AcrossTarget, type ReferrerRule } from "../../extensions/problemsAcross";
+import { comparedPaths, factsOf, judgeAcross, judgedAcross, judgesOf, lookedUp, referrersOf, rowOf, selectedKinds, type AcrossTarget, type ReferrerRule } from "../../extensions/problemsAcross";
+import { judgedFact, judgeReads, observeJudge, type JudgeInput } from "../../extensions/problemJudges";
 import { setExtensionDetector, setExtensionOptIn, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
 import { MAX_SOURCE_OBJECTS, type SourceDef } from "./sources";
 
@@ -49,7 +51,14 @@ interface Entry {
   referrers: ReadonlyMap<string, readonly ReferrerRule[]>;
   /** Off until the user turns it on (a category of the extension's own, #410). */
   optIn: boolean;
+  /** The judges its rules' `judged` conditions name (ADR-0168): the backend decides their facts. */
+  judges: readonly ProblemJudgeContribution[];
+  /** `group/kind` → the paths the judges read of it: its rows keep their values. */
+  judgedPaths: ReadonlyMap<string, readonly string[]>;
 }
+
+/** Whether a field path reads only under `.metadata` (`.metadata.labels`, `metadata.name`). */
+const underMetadata = (path: string): boolean => /^\.?metadata(\.|\[|$)/.test(path.trim());
 
 /** The tap id of a source judged across objects (`SourceDef.judge`): the same on every source of a category. */
 const ACROSS_TAP = "ext-across";
@@ -89,8 +98,17 @@ export function registerExtensionProblems(
   title: string,
   rules: readonly ProblemContribution[],
   own?: { id: string; optIn: boolean },
+  manifestJudges: readonly ProblemJudgeContribution[] = [],
 ): () => void {
   const category = categoryOfExtension(extensionId, own?.id);
+  // The judges of these rules (ADR-0168): every kind they read gets a source, its rows the declared paths.
+  const named = new Set(rules.flatMap((rule) => judgesOf(rule.when)));
+  const judges = manifestJudges.filter((judge) => named.has(judge.id));
+  const judgedPaths = new Map<string, string[]>();
+  for (const read of judges.flatMap((judge) => judge.reads)) {
+    const key = kindKeyOf(read.kind);
+    judgedPaths.set(key, [...new Set([...(judgedPaths.get(key) ?? []), ...read.paths])]);
+  }
   const across = new Set<string>();
   const newestLabels = new Map<string, string[]>();
   for (const rule of rules) {
@@ -98,6 +116,7 @@ export function registerExtensionProblems(
     const key = kindKeyOf(rule.kind);
     across.add(key);
     for (const target of lookedUp(rule.when)) across.add(kindKeyOf(target));
+    if (judgesOf(rule.when).length > 0) for (const key of judgedPaths.keys()) across.add(key);
     if (rule.newestPer !== undefined) newestLabels.set(key, [...new Set([...(newestLabels.get(key) ?? []), rule.newestPer])]);
   }
   const sources = new Map<string, RuleSource>();
@@ -117,6 +136,8 @@ export function registerExtensionProblems(
     referrers: referrersOf(rules, kindKeyOf),
     sources,
     optIn: own?.optIn ?? false,
+    judges,
+    judgedPaths,
   };
   entries.set(category, entry);
   forgetScopes(extensionId);
@@ -138,6 +159,12 @@ function forgetScopes(extensionId: string): void {
 /** The registered categories, by title. */
 export function extensionCategories(): ExtensionCategory[] {
   return [...entries.values()].sort((a, b) => a.title.localeCompare(b.title) || a.category.localeCompare(b.category)).map((e) => e.category);
+}
+
+/** The kinds the problem judges of a registered category read (ADR-0168), as `{group, kind}`. */
+export function extensionJudgedKinds(category: ProblemCategory): { group: string; kind: string }[] {
+  const entry = isExtensionCategory(category) ? entries.get(category) : undefined;
+  return entry ? entry.judges.flatMap((judge) => judge.reads.map((read) => read.kind)) : [];
 }
 
 /** The extension's name for its category; `undefined` once it is gone. */
@@ -269,8 +296,10 @@ export function extensionSourcesFor(
         ...(everywhere || !served.namespaced ? {} : { namespaces: namespaces.namespaces }),
         ...(source?.labelSelector ? { labelSelector: source.labelSelector } : {}),
         // A kind only looked up by name or labels (`missing`, `selectsNone`, #404) is listed metadata-only: a Secret never
-        // with a value, Services and Pods without their specs. `related`/`relatedBy` read fields, so theirs stay whole.
-        ...(source?.metadataOnly || (!entry.detectors.has(key) && !entry.facts.has(key) && !entry.compared.has(key))
+        // with a value, Services and Pods without their specs. `related`/`relatedBy` read fields, so theirs stay whole,
+        // and so do a judge's when it reads a path outside `.metadata` (ADR-0168).
+        ...(source?.metadataOnly ||
+        (!entry.detectors.has(key) && !entry.facts.has(key) && !entry.compared.has(key) && !(entry.judgedPaths.get(key) ?? []).some((p) => !underMetadata(p)))
           ? { metadataOnly: true }
           : {}),
       };
@@ -280,10 +309,45 @@ export function extensionSourcesFor(
         targets.push({ group: served.kindRef.group, kind: served.kindRef.kind, namespaced: served.namespaced, def });
       }
     }
+    // The judges' inputs (ADR-0168): each kind they read, with its source; a kind with no source here (not served,
+    // not readable) leaves the judge unable to tell.
+    const judgeInputs = entry.judges.map((judge) => ({
+      judge,
+      inputs: judge.reads.map((read) => {
+        const target = targets.find((t) => kindKeyOf(t) === kindKeyOf(read.kind));
+        return { read, target };
+      }),
+    }));
+    const judges = {
+      fact: (judge: string, fact: string, uid: string) => judgedFact(clusterId, entry.extensionId, judge, fact, uid),
+      reads: (judge: string) => judgeReads(clusterId, entry.extensionId, judge),
+    };
     for (const { def, key } of judged) {
       def.judge = {
-        tap: { id: ACROSS_TAP, toRow: rowOf(entry.newestLabels.get(key) ?? [], entry.facts.get(key) ?? [], entry.selected.has(key), entry.compared.get(key) ?? [], entry.referrers.get(key) ?? [], entry.newestBy.get(key)), max: def.maxObjects ?? MAX_SOURCE_OBJECTS },
-        judge: (problems, context) => judgeAcross(problems, context, { rules: entry.rules, targets }),
+        tap: {
+          id: ACROSS_TAP,
+          toRow: rowOf(
+            entry.newestLabels.get(key) ?? [],
+            entry.facts.get(key) ?? [],
+            entry.selected.has(key),
+            entry.compared.get(key) ?? [],
+            entry.referrers.get(key) ?? [],
+            entry.newestBy.get(key),
+            entry.judgedPaths.get(key) ?? [],
+          ),
+          max: def.maxObjects ?? MAX_SOURCE_OBJECTS,
+        },
+        judge: (problems, context) => {
+          for (const { judge, inputs } of judgeInputs) {
+            observeJudge(
+              clusterId,
+              entry.extensionId,
+              judge,
+              inputs.map(({ read, target }): JudgeInput => ({ read, kind: target?.kind ?? read.kind.kind, rows: target && context.target(target.def) })),
+            );
+          }
+          return judgeAcross(problems, context, { rules: entry.rules, targets, judges });
+        },
       };
     }
   }

@@ -133,7 +133,9 @@ export function ConsentDialog({ pending, review = false, onClose }: ConsentDialo
         )}
         <PermissionsView permissions={manifest.permissions} />
         {manifest.backend && <BackendConsent backend={manifest.backend} />}
-        {manifest.contributes.problems.length > 0 && <ProblemsConsent rules={manifest.contributes.problems} />}
+        {manifest.contributes.problems.length > 0 && (
+          <ProblemsConsent rules={manifest.contributes.problems} judges={manifest.contributes.problemJudges ?? []} />
+        )}
         {manifest.contributes.metricQueries.length > 0 && <MetricsConsent queries={manifest.contributes.metricQueries} />}
         {manifest.contributes.commands.length > 0 && <CommandsConsent commands={manifest.contributes.commands} />}
         {manifest.contributes.services.length > 0 && <ServicesConsent services={manifest.contributes.services} />}

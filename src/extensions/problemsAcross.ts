@@ -11,7 +11,9 @@
 //
 //   judgeAcross(problems, context, { rules, targets })   // the problems that stand
 import type { KubeObject, ProblemCondition, ProblemContribution } from "../api";
-import { evaluate, factKey, MISSING_MARK, numberOf, selectorMatches, valueAt } from "./problemRules";
+import { evaluate, FACT_MARK, factKey, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, MISSING_MARK, numberOf, selectorMatches, valueAt, type Lookup } from "./problemRules";
+import type { JudgedRowPart } from "./problemJudges";
+import { cleanText } from "../resources/uri";
 import { formatList } from "../i18n/format";
 import type { Problem } from "../features/problems/model";
 import type { JudgeContext, JudgedRows, SourceDef } from "../features/problems/sources";
@@ -34,6 +36,8 @@ export interface AcrossRow {
   refs?: string[];
   /** Every label, for a kind a `selectsNone` selects from (#404); at most `MAX_ROW_LABELS`. */
   allLabels?: Record<string, string>;
+  /** For a kind a problem judge reads (ADR-0168): its apiVersion, creation time and the judges' declared paths. */
+  judged?: JudgedRowPart;
 }
 
 /** How a rule names others of its kind (`toldThroughReferrer`, #404). */
@@ -53,6 +57,7 @@ export function rowOf(
   valuePaths: readonly string[] = [],
   referrers: readonly ReferrerRule[] = [],
   rankPath?: string,
+  judgedPaths: readonly string[] = [],
 ): (obj: KubeObject) => AcrossRow {
   return (obj) => {
     const meta = (obj.metadata ?? {}) as { name?: string; namespace?: string; creationTimestamp?: string; labels?: Record<string, unknown> };
@@ -94,6 +99,19 @@ export function rowOf(
         if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") row.values[path] = String(value);
       }
     }
+    if (judgedPaths.length > 0) {
+      // Only the values of the paths the judges declare (ADR-0168), read as rules read them.
+      const values: Record<string, unknown> = {};
+      for (const path of judgedPaths) {
+        const value = valueAt(obj, path);
+        if (value !== undefined) values[path] = value;
+      }
+      row.judged = {
+        apiVersion: typeof obj.apiVersion === "string" ? obj.apiVersion : "",
+        ...(meta.creationTimestamp ? { creationTimestamp: meta.creationTimestamp } : {}),
+        values,
+      };
+    }
     if (keepLabels) {
       row.allLabels = Object.fromEntries(
         Object.entries(all)
@@ -117,6 +135,14 @@ export interface AcrossRules {
   /** The extension's rules by id (a problem's `group`). */
   rules: ReadonlyMap<string, ProblemContribution>;
   targets: readonly AcrossTarget[];
+  /**
+   * The texts of a judge's fact for an object by the judge's latest answer (ADR-0168), `null` when it gives none or
+   * cannot tell; and what the judge read (each kind and the namespaces its source watched).
+   */
+  judges?: {
+    fact(judge: string, fact: string, uid: string): Record<string, string> | null;
+    reads(judge: string): NonNullable<NonNullable<Lookup["judged"]>["reads"]>;
+  };
 }
 
 const usable = (rows: JudgedRows | undefined): rows is JudgedRows =>
@@ -126,7 +152,7 @@ const sameKind = (a: { group: string; kind: string }, b: { group: string; kind: 
   a.group.toLowerCase() === b.group.toLowerCase() && a.kind.toLowerCase() === b.kind.toLowerCase();
 
 /** The problems of `problems` that stand once the rows of the cluster say what their rules look up. */
-export function judgeAcross(problems: readonly Problem[], context: JudgeContext, { rules, targets }: AcrossRules): Problem[] {
+export function judgeAcross(problems: readonly Problem[], context: JudgeContext, { rules, targets, judges }: AcrossRules): Problem[] {
   // Rows per target by `namespace/name`, built once per look.
   const names = new Map<AcrossTarget, Map<string, AcrossRow> | null>();
   const namesOf = (target: AcrossTarget): Map<string, AcrossRow> | null => {
@@ -138,6 +164,8 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
   };
   /** Whether one lookup holds: `missing` not there, `related` there with its fact, … (`false`: cannot tell, or not). */
   const holds = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): boolean => {
+    // `judged` (ADR-0168) is told apart, by `factsOf`.
+    if (lookup.judged) return true;
     {
       const target = targets.find((t) => sameKind(t, lookup));
       if (!target) return false;
@@ -266,9 +294,51 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
     const names = p.lookups ? missingNames(p) : [];
     if (names === null) return [];
     if (rule.newestPer !== undefined && !isNewest(p, rule.newestPer)) return [];
+    const facts = judgedFacts(p, judges);
+    if (facts === null) return [];
+    let out = p;
     // `{{missing}}` (#404): the names a `missing` of a list did not find, in the UI language's list.
-    return p.message?.includes(MISSING_MARK) ? [{ ...p, message: p.message.split(MISSING_MARK).join(formatList(names)) }] : [p];
+    if (out.message?.includes(MISSING_MARK)) out = { ...out, message: out.message.split(MISSING_MARK).join(formatList(names)) };
+    if (facts.judged) out = { ...out, lookups: facts.lookups, ...(out.message !== undefined ? { message: withFacts(out.message, facts.values) } : {}) };
+    return [out];
   });
+}
+
+/**
+ * Whether the `judged` lookups of a problem hold by the judges' latest answers (ADR-0168): the texts of their facts
+ * and the lookups marked with what each judge read; `null` when one does not hold or cannot tell.
+ */
+function judgedFacts(
+  p: Problem,
+  judges: AcrossRules["judges"],
+): { judged: boolean; values: Record<string, string>; lookups: Lookup[] | undefined } | null {
+  const lookups = p.lookups as Lookup[] | undefined;
+  if (!lookups?.some((l) => l.judged)) return { judged: false, values: {}, lookups };
+  if (!judges) return null;
+  const values: Record<string, string> = {};
+  const marked: Lookup[] = [];
+  for (const lookup of lookups) {
+    if (!lookup.judged) {
+      marked.push(lookup);
+      continue;
+    }
+    const given = judges.fact(lookup.judged.judge, lookup.judged.fact, p.uid);
+    if (given === null) return null;
+    for (const [name, text] of Object.entries(given)) values[name] ??= text;
+    marked.push({ ...lookup, judged: { ...lookup.judged, reads: judges.reads(lookup.judged.judge) } });
+  }
+  return { judged: true, values, lookups: marked };
+}
+
+/** A message with each `{{fact:<name>}}` filled from `values` (cleaned and clipped; nothing for a missing one). */
+function withFacts(message: string, values: Readonly<Record<string, string>>): string {
+  const filled = message.replace(FACT_MARK, (_, name: string) => {
+    const text = cleanText(values[name] ?? "") ?? "";
+    const chars = Array.from(text);
+    return chars.length > MAX_VALUE_CHARS ? `${chars.slice(0, MAX_VALUE_CHARS).join("")}…` : text;
+  });
+  const chars = Array.from(filled);
+  return chars.length > MAX_MESSAGE_CHARS ? `${chars.slice(0, MAX_MESSAGE_CHARS).join("")}…` : filled;
 }
 
 /** `a` is newer than `b`: created later, or at the same time (or both unknown) with a later name. */
@@ -280,9 +350,23 @@ function newer(a: AcrossRow, b: AcrossRow): boolean {
   return at !== bt ? at > bt : a.name > b.name;
 }
 
-/** Whether a rule needs the rows of other objects: `missing`, `toldThroughOwner` or `newestPer`. */
+/** Whether a rule needs the rows of other objects: `missing`, `toldThroughOwner`, `newestPer`, or a judge's answer. */
 export function judgedAcross(rule: ProblemContribution): boolean {
-  return rule.toldThroughOwner || rule.toldThroughReferrer !== undefined || rule.newestPer !== undefined || lookedUp(rule.when).length > 0;
+  return (
+    rule.toldThroughOwner ||
+    rule.toldThroughReferrer !== undefined ||
+    rule.newestPer !== undefined ||
+    lookedUp(rule.when).length > 0 ||
+    judgesOf(rule.when).length > 0
+  );
+}
+
+/** The judges a condition's `judged` conditions name (ADR-0168), each once. */
+export function judgesOf(condition: ProblemCondition): string[] {
+  if (condition.type === "judged") return [condition.judge];
+  if (condition.type === "all" || condition.type === "any") return [...new Set(condition.of.flatMap(judgesOf))];
+  if (condition.type === "not") return judgesOf(condition.of);
+  return [];
 }
 
 /** The kinds a condition looks up (`missing`). */

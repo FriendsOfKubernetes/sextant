@@ -136,6 +136,12 @@ export interface Lookup {
   by?: [path: string, value: string][];
   /** `selectsNone` (#404): no object of the kind in `namespaces` (`null`: every one) has labels `selector` matches. */
   selects?: { selector: LabelSelector; namespaces: string[] | null };
+  /**
+   * `judged` (ADR-0168): the judge's latest answer must give this fact for the object (`group`, `kind` and `name` are
+   * empty). `judgeAcross` adds what the judge read (`reads`: each kind and the namespaces its source watched,
+   * `null` every one), which an agent must be able to read to be told the problem.
+   */
+  judged?: { judge: string; fact: string; reads?: { group: string; kind: string; namespaces: readonly string[] | null }[] };
 }
 
 /** A Kubernetes label selector, as `selectsNone` reads it (#404). */
@@ -346,6 +352,9 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       const namespaces = every ? null : listed.length > 0 ? listed : [own];
       return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name: "", selects: { selector, namespaces } }] };
     }
+    case "judged":
+      // The judge's latest answer tells (ADR-0168): `judgeAcross` keeps the problem only where it gives the fact.
+      return { holds: true, lookups: [{ group: "", kind: "", name: "", judged: { judge: condition.judge, fact: condition.fact } }] };
     case "related": {
       // Nothing named, nothing related; the named object's own condition is judged on its row (#409).
       const name = valueAt(obj, condition.path);
@@ -620,10 +629,16 @@ function messageOf(rule: ProblemContribution, obj: KubeObject): string {
 /** Where a message names the objects a `missing` of a list did not find (#404); `judgeAcross` fills it. */
 export const MISSING_MARK = "{{missing}}";
 
+/** Where a message shows a text of a judge's fact (`{{fact:<name>}}`, ADR-0168); `judgeAcross` fills it. */
+export const FACT_MARK = /\{\{\s*fact:\s*([A-Za-z][A-Za-z0-9-]*)\s*\}\}/g;
+
 export function renderMessage(template: string, obj: KubeObject): string {
   const text = template.replace(/\{\{([\s\S]*?)\}\}/g, (_, inner: string) => {
     // `{{missing}}` (#404) is filled once the rows say which named objects are not there (`judgeAcross`).
     if (inner.trim() === "missing") return MISSING_MARK;
+    // `{{fact:<name>}}` (ADR-0168) once the judge's answer gives it.
+    const fact = /^\s*fact:\s*([A-Za-z][A-Za-z0-9-]*)\s*$/.exec(inner);
+    if (fact) return `{{fact:${fact[1]}}}`;
     const shown = placeholderText(obj, inner);
     if (shown === undefined) return "";
     return Array.from(shown).length > MAX_VALUE_CHARS ? `${Array.from(shown).slice(0, MAX_VALUE_CHARS).join("")}…` : shown;

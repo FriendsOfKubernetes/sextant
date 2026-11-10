@@ -102,6 +102,8 @@ import type { ToolsView } from "./generated/ToolsView";
 import type { CatalogView } from "./generated/CatalogView";
 import type { BackendLogLine } from "./generated/BackendLogLine";
 import type { ProblemScope } from "./generated/ProblemScope";
+import type { JudgedFact } from "./generated/JudgedFact";
+import type { JudgedObject } from "./generated/JudgedObject";
 import type { CredentialStatus } from "./generated/CredentialStatus";
 import type { PodUsage } from "./generated/PodUsage";
 import type { RemoteEntry } from "./generated/RemoteEntry";
@@ -837,6 +839,9 @@ export const extensions = {
    * extension may read; empty when it is not active or its rules were not agreed to.
    */
   problemScopes: (id: string, clusterId: string) => call<ProblemScope[]>("extension_problem_scopes", { id, clusterId }),
+  /** The facts one of an extension's problem judges gives about `objects` (ADR-0168): window only. */
+  problemJudge: (id: string, judge: string, clusterId: string, objects: readonly JudgedObject[]) =>
+    call<JudgedFact[]>("extension_problem_judge", { id, judge, clusterId, objects }),
   /** Checks an unpacked folder (development mode: it runs from there and reloads when its files change). */
   inspectFolder: (path: string) => call<PendingInstall>("extension_inspect_folder", { path }),
   /**

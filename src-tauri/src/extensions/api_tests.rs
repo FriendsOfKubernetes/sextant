@@ -3007,3 +3007,15 @@ fn neither_agents_nor_extensions_get_the_openshift_actions() {
         "{METHODS:?}"
     );
 }
+
+#[test]
+fn problem_judges_are_neither_an_agent_tool_nor_an_extension_method() {
+    // ADR-0168: only the window runs a judge (`extension_problem_judge`); a frame, a backend or an agent cannot.
+    let tools = crate::mcp::server::all_tools().names();
+    assert!(tools.len() > 10, "{tools:?}");
+    assert!(!tools.iter().any(|t| t.contains("judge")), "{tools:?}");
+    assert!(
+        !METHODS.iter().any(|m| m.to_lowercase().contains("judge")),
+        "{METHODS:?}"
+    );
+}

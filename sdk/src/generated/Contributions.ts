@@ -11,6 +11,7 @@ import type { MetricQuery } from "./MetricQuery";
 import type { PageContribution } from "./PageContribution";
 import type { ProblemCategoryContribution } from "./ProblemCategoryContribution";
 import type { ProblemContribution } from "./ProblemContribution";
+import type { ProblemJudgeContribution } from "./ProblemJudgeContribution";
 import type { SectionBadgeContribution } from "./SectionBadgeContribution";
 import type { SectionContribution } from "./SectionContribution";
 import type { ServiceContribution } from "./ServiceContribution";
@@ -60,6 +61,10 @@ services: Array<ServiceContribution>,
  * Tools for AI agents in Sextant's MCP server, answered by the backend (ADR-0159); `sextantApi` 4.
  */
 agentTools: Array<AgentToolContribution>, 
+/**
+ * Problems the backend decides for the rules' `judged` conditions (ADR-0168); `sextantApi` 4.
+ */
+problemJudges: Array<ProblemJudgeContribution>, 
 /**
  * The extension's own sidebar sections: title, icon and place (ADR-0160); `sextantApi` 4.
  */

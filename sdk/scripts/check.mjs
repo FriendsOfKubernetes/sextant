@@ -3,7 +3,7 @@
 // (`extensions/`) into a temporary folder and packs each in a dry run, so a manifest Sextant would refuse or a build
 // that breaks fails the check. The backend examples (ADR-0131: TypeScript through componentize-js, Rust through
 // cargo for wasm32-wasip2) are then run by Sextant's own runtime (`cargo run -p sextant-ext-runtime --example run`,
-// a stand-in host) to prove they load and answer.
+// a stand-in host) to prove they load and answer — a problem judge (ADR-0168) with objects as Sextant sends them.
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -24,6 +24,27 @@ const BACKEND_CALLS = [
   ["ping", null, (answer) => answer === "pong"],
   ["summary", null, (answer) => answer?.clusters === 1 && answer.latest === null && typeof answer.error === "string"],
 ];
+const service = (uid, namespace, selector) => ({
+  apiVersion: "v1",
+  kind: "Service",
+  metadata: { name: `svc-${uid}`, namespace, uid },
+  values: { ".spec.selector": selector },
+});
+/** What a backend with a problem judge (ADR-0168) must answer besides, by project. */
+const JUDGE_CALLS = {
+  "examples/backend-ts": [
+    [
+      "problemJudge:same-selector",
+      { objects: [service("a", "shop", { app: "web" }), service("b", "shop", { app: "web" }), service("c", "other", { app: "web" })] },
+      (answer) =>
+        JSON.stringify(answer) ===
+        JSON.stringify([
+          { uid: "a", fact: "shared", values: { other: "svc-b" } },
+          { uid: "b", fact: "shared", values: { other: "svc-a" } },
+        ]),
+    ],
+  ],
+};
 
 function runBackend(wasm, method, params) {
   const run = spawnSync(
@@ -44,9 +65,18 @@ try {
     process.stdout.write(`sdk: ${project} builds and packs (${manifest.id} ${manifest.version}, ${files.length} files)\n`);
     if (manifest.backend) {
       const wasm = join(built, ...manifest.backend.module.split("/"));
-      for (const [method, params, expected] of BACKEND_CALLS) {
-        const answer = runBackend(wasm, method, params);
-        if (!expected(answer)) throw new Error(`${project}: ${method} answered ${JSON.stringify(answer)}`);
+      if (EXTENSIONS.includes(project)) {
+        // Sextant's own extensions answer methods of their own: the backend loads and answers an unknown one so.
+        try {
+          runBackend(wasm, "ping", null);
+        } catch (err) {
+          if (!/unknown method ping/.test(err.message)) throw new Error(`${project}: ${err.message}`);
+        }
+      } else {
+        for (const [method, params, expected] of [...BACKEND_CALLS, ...(JUDGE_CALLS[project] ?? [])]) {
+          const answer = runBackend(wasm, method, params);
+          if (!expected(answer)) throw new Error(`${project}: ${method} answered ${JSON.stringify(answer)}`);
+        }
       }
       process.stdout.write(`sdk: ${project}'s backend runs in Sextant's runtime\n`);
     }

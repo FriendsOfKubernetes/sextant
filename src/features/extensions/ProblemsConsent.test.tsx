@@ -2,10 +2,10 @@
 // user agrees to have read.
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { ProblemContribution } from "../../api";
+import type { ProblemContribution, ProblemJudgeContribution } from "../../api";
 import "../../i18n";
 import { axeViolations } from "../../test/axe";
-import { judgedKinds, lookedUpKinds, ProblemsConsent } from "./ProblemsConsent";
+import { judgeReads, judgedKinds, lookedUpKinds, ProblemsConsent } from "./ProblemsConsent";
 
 const rule = (over: Partial<ProblemContribution>): ProblemContribution => ({
   id: "r",
@@ -45,5 +45,21 @@ describe("problem rules on the consent screen", () => {
   it("say nothing of lookups when no rule has one", () => {
     render(<ProblemsConsent rules={[rule({})]} />);
     expect(screen.queryByText(/also lists objects of these kinds/)).not.toBeInTheDocument();
+  });
+
+  it("say which kinds and fields a problem judge's backend gets, and that its code runs for them (ADR-0168)", async () => {
+    const VS = { group: "networking.istio.io", kind: "VirtualService" };
+    const judges: ProblemJudgeContribution[] = [
+      { id: "routing", reads: [{ kind: VS, paths: [".spec.hosts", ".spec.exportTo"] }], facts: [{ id: "unknown-host", values: ["host"] }] },
+      { id: "tls", reads: [{ kind: { group: "networking.istio.io", kind: "virtualservice" }, paths: [".spec.hosts", ".spec.tls"] }], facts: [{ id: "c", values: [] }] },
+    ];
+    expect(judgeReads(judges)).toEqual([{ kind: "VirtualService (networking.istio.io)", paths: [".spec.hosts", ".spec.exportTo", ".spec.tls"] }]);
+    const judgedRule = rule({ kind: VS, when: { type: "judged", judge: "routing", fact: "unknown-host" } });
+    const { container } = render(<ProblemsConsent rules={[judgedRule]} judges={judges} />);
+    expect(screen.getByText(/backend decides some of these problems/)).toBeInTheDocument();
+    expect(screen.getByText(".spec.exportTo")).toBeInTheDocument();
+    expect(screen.getByText(/besides its backend's decisions/)).toBeInTheDocument();
+    expect(screen.queryByText(/No code of the extension runs for this/)).not.toBeInTheDocument();
+    expect(await axeViolations(container)).toEqual([]);
   });
 });

@@ -26,6 +26,8 @@ export const ROOTS = [
   "MetricAnswer",
   "MetricQueryRange",
   "ForwardInfo",
+  "JudgedObject",
+  "JudgedFact",
 ];
 
 /** Updates only the window's own watches get (`WatchOptions`, #157): an extension never receives them. */

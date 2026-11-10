@@ -140,6 +140,25 @@ describe("problems judged across objects for an agent", () => {
     expect(lookupRefs({ object, lookups: [{ group: "kueue.x-k8s.io", kind: "LocalQueue", name: "x" }] }, kinds)).toEqual([
       { group: "kueue.x-k8s.io", kind: "LocalQueue", namespace: "team-a" },
     ]);
+    // A problem a judge decided (ADR-0168): every kind it read wherever its source watched.
+    const judged = {
+      group: "",
+      kind: "",
+      name: "",
+      judged: {
+        judge: "routing",
+        fact: "unknown-host",
+        reads: [
+          { group: "networking.istio.io", kind: "VirtualService", namespaces: null },
+          { group: "", kind: "Service", namespaces: ["shop", "team-a"] },
+        ],
+      },
+    };
+    expect(lookupRefs({ object, lookups: [judged] }, kinds)).toEqual([
+      { group: "networking.istio.io", kind: "VirtualService", namespace: null },
+      { group: "", kind: "Service", namespace: "shop" },
+      { group: "", kind: "Service", namespace: "team-a" },
+    ]);
   });
 });
 

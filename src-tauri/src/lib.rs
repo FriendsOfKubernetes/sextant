@@ -207,6 +207,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         extensions::backend::extension_credential_set,
         extensions::backend::extension_backend_log,
         extensions::problems::extension_problem_scopes,
+        extensions::problems::extension_problem_judge,
         tools::tools_list,
         tools::tools_latest,
         tools::tools_install,

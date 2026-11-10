@@ -63,6 +63,7 @@ const manifest: ExtensionManifest = {
     menuItems: [],
     services: [],
     agentTools: [],
+    problemJudges: [],
     sections: [],
     settings: { title: "Widget settings" },
   },

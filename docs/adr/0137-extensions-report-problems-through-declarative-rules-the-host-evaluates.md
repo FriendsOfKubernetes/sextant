@@ -58,3 +58,10 @@ code the user installed to act while nobody looks (#317).
   schema change (the SDK and Rust read the one schema; `sdk/test/fixtures/manifest-cases.json` holds the shared cases).
 - A rule's paths are checked against the inline secret table of the Sextant that reads the manifest: a kind added to
   that table later refuses a manifest that reads its new secret path.
+
+## Amendment (ADR-0168)
+
+"Rules computed by extension code" is decided for backends: a problem judge (`contributes.problemJudges`,
+`sextantApi` 4) is the extension's backend deciding facts from the declared fields of the objects of declared kinds,
+with no host call and no network; a rule's `judged` condition turns a fact into a problem, with Sextant's texts,
+consent, notifications and agents' rules. No frame code runs for problems.

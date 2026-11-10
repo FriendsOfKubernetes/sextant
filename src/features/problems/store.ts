@@ -42,6 +42,7 @@ import {
   type ProblemCategory,
 } from "./model";
 import { forgetClusterScopes } from "./extensionCategories";
+import { forgetJudges, onJudgeAnswer } from "../../extensions/problemJudges";
 import { sourceKey, type JudgeContext, type JudgedRows, type SourceDef } from "./sources";
 
 /** At most this many objects with problems are kept per source; beyond it the oldest go (`truncated`). */
@@ -156,6 +157,8 @@ function dropCluster(clusterId: ClusterId): void {
   epochs.set(clusterId, epochOf(clusterId) + 1);
   // Where extensions' rules run is asked again: a new connection may be another context.
   forgetClusterScopes(clusterId);
+  // Their judges' answers were of the objects of a connection that is gone (ADR-0168).
+  forgetJudges(clusterId);
   changed();
 }
 
@@ -224,6 +227,19 @@ function publish(entry: Entry, patch: Partial<SourceState> = {}): void {
 
 /** A source of an extension's category is publishing the others judged with it (once, not in turn). */
 let republishing = false;
+
+// A judge of an extension answered (ADR-0168): the extension's judged sources in that cluster look again — one per
+// category, which publishes the others of its category.
+onJudgeAnswer((clusterId, extensionId) => {
+  const looked = new Set<string>();
+  for (const entry of [...entries.values()]) {
+    const { category } = entry.state;
+    if (entry.state.clusterId !== clusterId || !entry.state.def.judge || looked.has(category)) continue;
+    if (category !== `ext:${extensionId}` && !category.startsWith(`ext:${extensionId}:`)) continue;
+    looked.add(category);
+    publish(entry);
+  }
+});
 
 function judgedRows(entry: Entry, tapId: string): JudgedRows | undefined {
   const state = entry.taps.get(tapId)?.state;
@@ -691,6 +707,7 @@ export function resetProblemSources(): void {
   unfollow = undefined;
   epochs.clear();
   connected.clear();
+  forgetJudges();
   clock = () => Date.now();
   setCertExpiryDays(DEFAULT_CERT_EXPIRY_DAYS);
   changed();

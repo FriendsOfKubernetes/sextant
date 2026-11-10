@@ -1,0 +1,231 @@
+// Problem judges of extensions (ADR-0168): the extension's backend decides which objects have which facts, and the
+// rules' `judged` conditions turn those facts into problems with Sextant's texts. The window collects the objects of
+// the kinds a judge reads from the problems store's own sources (the rows of `judgeAcross`, which keep only the
+// judge's declared paths), and asks Rust (`api.extensions.problemJudge`), which checks and projects them again and
+// runs the backend with no way out to the cluster or the network.
+//
+// One runner per cluster × extension × judge:
+// - it calls the judge when the objects it would send changed, at most once per `JUDGE_INTERVAL_MS` and never twice at
+//   once (a change during a call is sent when the interval allows; a failed call is tried again after
+//   `JUDGE_RETRY_MS`);
+// - it cannot tell — so its rules give no problem — while any read list is not read in full (loading, failed, capped,
+//   not served or not readable there), holds more than `MAX_JUDGED_OBJECTS_PER_KIND` objects or more than
+//   `MAX_JUDGE_PAYLOAD_CHARS`, and after a failed or timed-out call: an earlier answer is never kept past a failure;
+// - an answer replaces the one before; while a newer call waits, the last answer stands.
+//
+//   observeJudge(clusterId, extensionId, judge, reads)   // from the judged sources' `judge`, on every look
+//   judgedFact(clusterId, extensionId, judgeId, fact, uid) // the fact's texts, or null
+//   onJudgeAnswer(listener)                                // the store looks again at the extension's sources
+import { api, type JudgedFact, type JudgedObject, type ProblemJudgeContribution } from "../api";
+import type { JudgedRows } from "../features/problems/sources";
+
+/** At most one call per runner in this time. */
+export const JUDGE_INTERVAL_MS = 5000;
+/** A failed call is tried again with the same objects after this long. */
+export const JUDGE_RETRY_MS = 60_000;
+/** A judge gets at most this many objects of a kind (Rust's `MAX_JUDGED_OBJECTS_PER_KIND`). */
+export const MAX_JUDGED_OBJECTS_PER_KIND = 5000;
+/** The objects of one call as JSON, in characters, at most (Rust refuses more than 8 MiB). */
+export const MAX_JUDGE_PAYLOAD_CHARS = 8 * 1024 * 1024;
+
+/** What a row of a read kind keeps for the judges (`rowOf`): only what they may be sent. */
+export interface JudgedRowPart {
+  apiVersion: string;
+  creationTimestamp?: string;
+  /** Declared path → the value there (the paths of every judge that reads the kind). */
+  values: Record<string, unknown>;
+}
+
+/** A kind a judge reads, with the rows of its source in the cluster. */
+export interface JudgeInput {
+  read: ProblemJudgeContribution["reads"][number];
+  /** `kind` as served (the source's). */
+  kind: string;
+  rows: JudgedRows | undefined;
+}
+
+interface Runner {
+  clusterId: string;
+  extensionId: string;
+  judgeId: string;
+  /** The rows maps last looked at: unchanged maps need no new look. */
+  seen: readonly (ReadonlyMap<string, unknown> | undefined)[];
+  seenStatus: string;
+  /** The objects last sent or waiting, as JSON. */
+  key?: string;
+  waiting?: { objects: JudgedObject[]; key: string };
+  inFlight: boolean;
+  lastCallAt: number;
+  timer?: ReturnType<typeof setTimeout>;
+  /** uid → fact → texts; `null`: cannot tell. */
+  answer: Map<string, Map<string, Record<string, string>>> | null;
+  /** What the judge read: each kind and the namespaces its source watched. */
+  reads: { group: string; kind: string; namespaces: readonly string[] | null }[];
+}
+
+const runners = new Map<string, Runner>();
+const listeners = new Set<(clusterId: string, extensionId: string) => void>();
+let clock: () => number = () => Date.now();
+
+const runnerKey = (clusterId: string, extensionId: string, judgeId: string) => `${clusterId}|${extensionId}|${judgeId}`;
+
+/** Tells the problems store to look again at the extension's sources in the cluster. */
+export function onJudgeAnswer(listener: (clusterId: string, extensionId: string) => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function told(runner: Runner): void {
+  for (const listener of [...listeners]) listener(runner.clusterId, runner.extensionId);
+}
+
+const usable = (rows: JudgedRows | undefined): rows is JudgedRows =>
+  rows !== undefined && (rows.status === "ready" || rows.status === "reconnecting") && !rows.truncated;
+
+/** The objects of the inputs as the judge gets them; `null` when it cannot tell. */
+function objectsOf(inputs: readonly JudgeInput[]): JudgedObject[] | null {
+  const out: JudgedObject[] = [];
+  for (const { read, kind, rows } of inputs) {
+    if (!usable(rows) || rows.rows.size > MAX_JUDGED_OBJECTS_PER_KIND) return null;
+    for (const [uid, value] of rows.rows) {
+      const row = value as { name?: string; namespace?: string; judged?: JudgedRowPart };
+      if (!row.judged || !row.name) return null;
+      const values: Record<string, unknown> = {};
+      for (const path of read.paths) if (row.judged.values[path] !== undefined) values[path] = row.judged.values[path];
+      out.push({
+        apiVersion: row.judged.apiVersion,
+        kind,
+        metadata: {
+          name: row.name,
+          ...(row.namespace ? { namespace: row.namespace } : {}),
+          uid,
+          ...(row.judged.creationTimestamp ? { creationTimestamp: row.judged.creationTimestamp } : {}),
+        },
+        values,
+      });
+    }
+  }
+  return out.sort((a, b) => (a.metadata.uid < b.metadata.uid ? -1 : a.metadata.uid > b.metadata.uid ? 1 : 0));
+}
+
+function cannotTell(runner: Runner): void {
+  runner.answer = null;
+  runner.waiting = undefined;
+  runner.key = undefined;
+  if (runner.timer !== undefined) clearTimeout(runner.timer);
+  runner.timer = undefined;
+}
+
+function schedule(runner: Runner): void {
+  if (runner.inFlight || runner.timer !== undefined || !runner.waiting) return;
+  const wait = Math.max(0, runner.lastCallAt + JUDGE_INTERVAL_MS - clock());
+  runner.timer = setTimeout(() => {
+    runner.timer = undefined;
+    send(runner);
+  }, wait);
+}
+
+function send(runner: Runner): void {
+  const sending = runner.waiting;
+  if (!sending || runner.inFlight || runners.get(runnerKey(runner.clusterId, runner.extensionId, runner.judgeId)) !== runner) return;
+  runner.waiting = undefined;
+  runner.inFlight = true;
+  runner.lastCallAt = clock();
+  const current = () => runners.get(runnerKey(runner.clusterId, runner.extensionId, runner.judgeId)) === runner;
+  api.extensions.problemJudge(runner.extensionId, runner.judgeId, runner.clusterId, sending.objects).then(
+    (facts) => {
+      runner.inFlight = false;
+      if (!current()) return;
+      // The lists changed so that it cannot tell meanwhile: this answer is of objects no longer in hand.
+      if (runner.key === undefined) return;
+      runner.answer = indexFacts(facts);
+      told(runner);
+      schedule(runner);
+    },
+    () => {
+      runner.inFlight = false;
+      if (!current()) return;
+      // A failed or timed-out call: no earlier answer stands; the same objects are tried again after
+      // `JUDGE_RETRY_MS`, or sooner when they change.
+      const had = runner.answer !== null;
+      runner.answer = null;
+      if (runner.key !== undefined && !runner.waiting) {
+        runner.waiting = sending;
+        runner.lastCallAt = clock() + JUDGE_RETRY_MS - JUDGE_INTERVAL_MS;
+      }
+      if (had) told(runner);
+      schedule(runner);
+    },
+  );
+}
+
+function indexFacts(facts: readonly JudgedFact[]): Map<string, Map<string, Record<string, string>>> {
+  const out = new Map<string, Map<string, Record<string, string>>>();
+  for (const { uid, fact, values } of facts) {
+    const of = out.get(uid) ?? new Map<string, Record<string, string>>();
+    if (!of.has(fact)) of.set(fact, values ?? {});
+    out.set(uid, of);
+  }
+  return out;
+}
+
+/**
+ * Looks at the inputs of a judge in a cluster: what cannot tell makes its rules give nothing at once; objects that
+ * changed are sent when the interval allows. Called on every look of the judged sources; cheap while their rows
+ * maps are the same.
+ */
+export function observeJudge(clusterId: string, extensionId: string, judge: ProblemJudgeContribution, inputs: readonly JudgeInput[]): void {
+  const key = runnerKey(clusterId, extensionId, judge.id);
+  let runner = runners.get(key);
+  if (!runner) {
+    runner = { clusterId, extensionId, judgeId: judge.id, seen: [], seenStatus: "", inFlight: false, lastCallAt: -Infinity, answer: null, reads: [] };
+    runners.set(key, runner);
+  }
+  const seen = inputs.map((i) => i.rows?.rows);
+  const status = inputs.map((i) => `${i.rows?.status ?? "-"}${i.rows?.truncated ? "!" : ""}`).join(",");
+  if (status === runner.seenStatus && seen.length === runner.seen.length && seen.every((rows, i) => rows === runner.seen[i])) return;
+  runner.seen = seen;
+  runner.seenStatus = status;
+  runner.reads = inputs.map(({ read, rows }) => ({ group: read.kind.group, kind: read.kind.kind, namespaces: rows?.namespaces ?? null }));
+  const objects = objectsOf(inputs);
+  const text = objects && JSON.stringify(objects);
+  if (!objects || !text || text.length > MAX_JUDGE_PAYLOAD_CHARS) {
+    cannotTell(runner);
+    return;
+  }
+  if (text === runner.key) return;
+  runner.key = text;
+  // Nothing to judge: no fact, without asking.
+  if (objects.length === 0) {
+    runner.waiting = undefined;
+    runner.answer = new Map();
+    return;
+  }
+  runner.waiting = { objects, key: text };
+  schedule(runner);
+}
+
+/** The texts of `fact` the judge's latest answer gives for the object `uid`; `null` when it gives none or cannot tell. */
+export function judgedFact(clusterId: string, extensionId: string, judgeId: string, fact: string, uid: string): Record<string, string> | null {
+  const runner = runners.get(runnerKey(clusterId, extensionId, judgeId));
+  return runner?.answer?.get(uid)?.get(fact) ?? null;
+}
+
+/** What the judge read in the cluster: each kind and the namespaces its source watched (`null`: every one). */
+export function judgeReads(clusterId: string, extensionId: string, judgeId: string): Runner["reads"] {
+  return runners.get(runnerKey(clusterId, extensionId, judgeId))?.reads ?? [];
+}
+
+/** Forgets the runners of a cluster (its connection came or went), or of every cluster. */
+export function forgetJudges(clusterId?: string): void {
+  for (const [key, runner] of [...runners]) {
+    if (clusterId !== undefined && runner.clusterId !== clusterId) continue;
+    cannotTell(runner);
+    runners.delete(key);
+  }
+}
+
+/** Tests: a clock of their own (`null`: the real one). */
+export function setJudgesClock(now: (() => number) | null): void {
+  clock = now ?? (() => Date.now());
+}

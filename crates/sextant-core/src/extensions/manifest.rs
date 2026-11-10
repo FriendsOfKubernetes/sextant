@@ -168,6 +168,8 @@ pub struct Contributions {
     pub services: Vec<ServiceContribution>,
     /// Tools for AI agents in Sextant's MCP server, answered by the backend (ADR-0159); `sextantApi` 4.
     pub agent_tools: Vec<AgentToolContribution>,
+    /// Problems the backend decides for the rules' `judged` conditions (ADR-0168); `sextantApi` 4.
+    pub problem_judges: Vec<super::problem_judges::ProblemJudgeContribution>,
     /// The extension's own sidebar sections: title, icon and place (ADR-0160); `sextantApi` 4.
     pub sections: Vec<SectionContribution>,
     /// A tab of the extension's in a cluster's settings (ADR-0160); `sextantApi` 4.
@@ -658,6 +660,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     let manifest: ExtensionManifest =
         serde_json::from_value(value).map_err(|err| whole(format!("cannot be read: {err}")))?;
     problems::check_problems(&manifest)?;
+    super::problem_judges::check_problem_judges(&manifest)?;
     metric_queries::check_metric_queries(&manifest)?;
     translations::check_translations(&manifest)?;
     section_badges::check_section_badges(&manifest)?;
@@ -708,6 +711,7 @@ fn check_unique_ids(manifest: &Value) -> Result<(), ManifestError> {
         "menuItems",
         "services",
         "agentTools",
+        "problemJudges",
     ] {
         let Some(items) = manifest
             .get("contributes")

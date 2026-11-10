@@ -378,3 +378,26 @@ describe("newestPer", () => {
     expect(judge([problemOf(NEWEST, latest)], context({ own: rows([], { status: "loading" }) }))).toEqual([]);
   });
 });
+
+describe("judged (ADR-0168)", () => {
+  const JUDGED = rule({
+    id: "unknown-host",
+    when: { type: "judged", judge: "routing", fact: "unknown-host" },
+    message: "{{fact:host}} unknown in {{.metadata.name}}{{fact:missing}}",
+  });
+  const rules = new Map([[JUDGED.id, JUDGED]]);
+  const reads = [{ group: "networking.istio.io", kind: "VirtualService", namespaces: null }];
+  const ctx = context();
+
+  it("stands only where the judge's answer gives the fact, with its texts cleaned and the rest empty", () => {
+    const p = problemOf(JUDGED, obj("web"));
+    expect(p.message).toBe("{{fact:host}} unknown in web{{fact:missing}}");
+    const given = (texts: Record<string, string> | null) => ({ fact: () => texts, reads: () => reads });
+    const [kept] = judgeAcross([p], ctx, { rules, targets: [], judges: given({ host: "https://u:p@h.example/x?t=1" }) });
+    expect(kept?.message).toBe("https://h.example/x unknown in web");
+    expect(kept?.lookups?.[0]?.judged?.reads).toEqual(reads);
+    expect(judgeAcross([p], ctx, { rules, targets: [], judges: given(null) })).toEqual([]);
+    // Without a judge in hand it cannot tell.
+    expect(judgeAcross([p], ctx, { rules, targets: [] })).toEqual([]);
+  });
+});

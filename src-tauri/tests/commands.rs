@@ -178,6 +178,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("extension_credential_set", Some("id")),
     ("extension_backend_log", Some("id")),
     ("extension_problem_scopes", Some("id")),
+    ("extension_problem_judge", Some("id")),
     ("tools_list", None),
     ("tools_latest", Some("tool")),
     ("tools_install", Some("tool")),
@@ -1201,6 +1202,17 @@ fn later_argument_names_match_the_frontend() {
             "onEvent",
         ),
         ("resource_count", json!({ "clusterId": "c" }), "kind"),
+        ("extension_problem_judge", json!({ "id": "x" }), "judge"),
+        (
+            "extension_problem_judge",
+            json!({ "id": "x", "judge": "j" }),
+            "clusterId",
+        ),
+        (
+            "extension_problem_judge",
+            json!({ "id": "x", "judge": "j", "clusterId": "c" }),
+            "objects",
+        ),
         (
             "vcluster_connect",
             json!({ "hostClusterId": "c" }),

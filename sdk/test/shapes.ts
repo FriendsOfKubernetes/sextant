@@ -16,6 +16,7 @@ import type {
   ManifestService,
   ManifestSection,
   ManifestAgentTool,
+  ManifestProblemJudge,
   ManifestFile,
   ManifestMetricQuery,
   ManifestPage,
@@ -90,6 +91,7 @@ export const MANIFEST_SHAPES = {
     menuItems: "optional",
     services: "optional",
     agentTools: "optional",
+    problemJudges: "optional",
     sections: "optional",
     clusterSettings: "optional",
   }),
@@ -99,6 +101,11 @@ export const MANIFEST_SHAPES = {
     description: "required",
     inputSchema: "required",
     readOnly: "optional",
+  }),
+  ManifestProblemJudge: described<ManifestProblemJudge>(`${CONTRIBUTION}/problemJudges/items`, {
+    id: "required",
+    reads: "required",
+    facts: "required",
   }),
   ManifestService: described<ManifestService>(`${CONTRIBUTION}/services/items`, {
     id: "required",

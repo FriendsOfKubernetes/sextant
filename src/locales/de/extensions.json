@@ -326,7 +326,9 @@
     "heading": "Probleme und Benachrichtigungen",
     "kinds": "Sextant prüft Objekte dieser Arten nach den Regeln der Erweiterung, zeigt die Funde auf der Seite „Probleme“ und kann Sie darüber benachrichtigen:",
     "lookups": "Um festzustellen, ob ein von einer Regel genanntes Objekt existiert, listet Sextant zusätzlich Objekte dieser Arten auf:",
-    "scope": "Nur in Clustern und Namespaces, in denen die Erweiterung diese Arten lesen darf. Dafür läuft kein Code der Erweiterung."
+    "judges": "Einige dieser Probleme entscheidet das Backend der Erweiterung. Es erhält die Objekte dieser Arten nur mit diesen Feldern und kann, während es entscheidet, weder die Cluster noch das Netzwerk erreichen:",
+    "scope": "Nur in Clustern und Namespaces, in denen die Erweiterung diese Arten lesen darf. Dafür läuft kein Code der Erweiterung.",
+    "judgesScope": "Nur in Clustern und Namespaces, in denen die Erweiterung diese Arten lesen darf. Sextant listet die Probleme auf und sendet die Benachrichtigungen; außer den Entscheidungen ihres Backends läuft dafür kein Code der Erweiterung."
   },
   "metrics": {
     "heading": "Metriken",

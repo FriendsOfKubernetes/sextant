@@ -486,7 +486,7 @@ function checkUniqueIds(manifest) {
       }
     });
   }
-  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries", "commands", "menuItems", "services", "agentTools"]) {
+  for (const kind of ["pages", "detailsSections", "actions", "columns", "dockActions", "problems", "metricQueries", "commands", "menuItems", "services", "agentTools", "problemJudges"]) {
     const items = manifest.contributes?.[kind];
     if (!Array.isArray(items)) continue;
     items.forEach((item, i) => {
@@ -731,6 +731,17 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     checkRulePath(numericPath(condition.path, counter.api, [...segments, "path"]), kind, [...segments, "path"], counter.metadataOnly);
     return;
   }
+  if (condition.type === "judged") {
+    // The extension's backend decides it (ADR-0168): `check_judged`.
+    if (counter.single) fail([...segments, "type"], "`judged` is decided by the extension's backend: only problem rules may use it");
+    if (counter.api < SOURCES_API) fail([...segments, "type"], `\`judged\` needs sextantApi ${SOURCES_API} or later`);
+    if (inside !== "top") fail([...segments, "type"], "`judged` cannot be inside `any` or `not`: a judge that cannot tell would make it unknown");
+    const judge = (counter.judges ?? []).find((j) => j.id === condition.judge);
+    if (!judge) fail([...segments, "judge"], "is not the id of one of `contributes.problemJudges`");
+    if (!judge.facts.some((f) => f.id === condition.fact)) fail([...segments, "fact"], `is not a fact of the judge \`${condition.judge}\``);
+    if (!judge.reads.some((r) => sameKind(r.kind, kind))) fail([...segments, "judge"], `does not read the rule's kind ${kindName(kind)}`);
+    return;
+  }
   if (condition.type === "relatedBy") {
     // An object of a kind in the namespace with the same field texts (#404), judged across objects like `related`.
     if (counter.single) fail([...segments, "type"], "`relatedBy` judges across objects: only problem rules may use it");
@@ -933,6 +944,7 @@ function checkProblems(manifest) {
       kinds,
       metadataOnly,
       narrowed: rule.source?.labelSelector !== undefined,
+      judges: manifest.contributes?.problemJudges ?? [],
     });
     if (rule.newestBy !== undefined) {
       // What ranks newest (#404).
@@ -982,7 +994,7 @@ function checkProblems(manifest) {
         if (form === "other" || !PLURAL_FORMS.includes(form)) fail(at, "is a CLDR plural form besides `other` (the `message`): zero, one, two, few or many");
         const text = rule.messageForms[form];
         if (text.trim() === "" || Array.from(text).length > 300) fail(at, "is a text of 1 to 300 characters");
-        checkMessage(text, rule.kind, at, metadataOnly);
+        checkRuleMessage(text, rule, manifest, at, metadataOnly);
       }
     }
     if (rule.sinceOr !== undefined && rule.since === undefined) fail([...here, "sinceOr"], "falls back from `since`: the rule needs a `since`");
@@ -1008,7 +1020,98 @@ function checkProblems(manifest) {
       if (manifest.sextantApi < SOURCES_API) fail([...here, "notifyAs"], `needs sextantApi ${SOURCES_API} or later`);
       checkRulePath(rule.notifyAs, rule.kind, [...here, "notifyAs"], metadataOnly);
     }
-    checkMessage(rule.message, rule.kind, [...here, "message"], metadataOnly);
+    checkRuleMessage(rule.message, rule, manifest, [...here, "message"], metadataOnly);
+  });
+}
+
+// --- Problem judges (ADR-0168): `problem_judges.rs` -------------------------------------------------------------------
+
+const JUDGES_API = 4;
+const VALUE_NAME = /^[A-Za-z][A-Za-z0-9-]{0,39}$/;
+
+/** The `(judge, fact)` pairs of a condition's `judged` conditions (`judged_in`). */
+function judgedIn(condition) {
+  if (condition.type === "judged") return [[condition.judge, condition.fact]];
+  if (condition.type === "all" || condition.type === "any") return condition.of.flatMap(judgedIn);
+  if (condition.type === "not") return judgedIn(condition.of);
+  return [];
+}
+
+/** A `{{fact:<name>}}` placeholder's name, when it is one (`fact_placeholder`). */
+const factPlaceholder = (inner) => (inner.trim().startsWith("fact:") ? inner.trim().slice(5).trim() : undefined);
+
+/** A rule's message (`check_rule_message`): `{{fact:<name>}}` names a value of a fact its `judged` conditions name. */
+function checkRuleMessage(text, rule, manifest, segments, metadataOnly) {
+  const found = placeholders(text);
+  if (found === null) fail(segments, "has a `{{` without its `}}`");
+  if (found.length > MAX_PLACEHOLDERS) fail(segments, `has at most ${MAX_PLACEHOLDERS} placeholders`);
+  const judges = manifest.contributes?.problemJudges ?? [];
+  const allowed = new Set(
+    judgedIn(rule.when).flatMap(([judge, fact]) => judges.find((j) => j.id === judge)?.facts.find((f) => f.id === fact)?.values ?? []),
+  );
+  let rest = "";
+  let tail = text;
+  for (;;) {
+    const start = tail.indexOf("{{");
+    if (start < 0) break;
+    const after = tail.slice(start + 2);
+    const end = after.indexOf("}}");
+    if (end < 0) break;
+    const name = factPlaceholder(after.slice(0, end));
+    if (name !== undefined) {
+      if (!allowed.has(name)) fail(segments, `has \`{{fact:${name}}}\`, which no fact of the rule's \`judged\` conditions gives`);
+      rest += tail.slice(0, start);
+    } else {
+      rest += tail.slice(0, start + 2 + end + 2);
+    }
+    tail = after.slice(end + 2);
+  }
+  checkMessage(rest + tail, rule.kind, segments, metadataOnly);
+}
+
+/** `check_problem_judges`: the API version, a backend, the limits, facts and values, paths, and the rules using it. */
+function checkProblemJudges(manifest) {
+  const judges = manifest.contributes?.problemJudges ?? [];
+  const list = ["contributes", "problemJudges"];
+  if (judges.length === 0) return;
+  if (manifest.sextantApi < JUDGES_API) fail(list, `needs sextantApi ${JUDGES_API} or later`);
+  if (manifest.backend === undefined) fail(list, "needs a `backend`: the extension's backend decides the judges' facts");
+  if (judges.length > 5) fail(list, "has at most 5 judges");
+  const rules = manifest.contributes?.problems ?? [];
+  judges.forEach((judge, i) => {
+    const here = [...list, i];
+    if (judge.reads.length === 0 || judge.reads.length > 10) fail([...here, "reads"], "reads 1 to 10 kinds");
+    judge.reads.forEach((read, j) => {
+      const at = [...here, "reads", j];
+      if (judge.reads.slice(0, j).some((r) => sameKind(r.kind, read.kind))) fail([...at, "kind"], "is read twice by the judge");
+      if (read.kind.group === "" && read.kind.kind.toLowerCase() === "secret") fail([...at, "kind"], "Secrets are never given to a judge");
+      if (read.paths.length === 0 || read.paths.length > 40) fail([...at, "paths"], "has 1 to 40 paths");
+      read.paths.forEach((path, k) => checkRulePath(path, read.kind, [...at, "paths", k], false));
+    });
+    if (judge.facts.length === 0 || judge.facts.length > 20) fail([...here, "facts"], "has 1 to 20 facts");
+    judge.facts.forEach((fact, j) => {
+      const at = [...here, "facts", j];
+      if (judge.facts.slice(0, j).some((f) => f.id === fact.id)) fail([...at, "id"], "is the id of another fact of the judge");
+      const values = fact.values ?? [];
+      if (values.length > 5) fail([...at, "values"], "names at most 5 values");
+      values.forEach((value, k) => {
+        if (!VALUE_NAME.test(value)) fail([...at, "values", k], "is a name of a letter, then letters, digits and `-`, at most 40");
+        if (values.slice(0, k).includes(value)) fail([...at, "values", k], "is named twice");
+      });
+    });
+    // A judge runs once per cluster, for one category's sources.
+    let first;
+    rules.forEach((rule, r) => {
+      if (!judgedIn(rule.when).some(([j]) => j === judge.id)) return;
+      if (first === undefined) first = r;
+      else if ((rules[first].category ?? null) !== (rule.category ?? null)) {
+        fail(
+          ["contributes", "problems", r, "category"],
+          `the rules of the judge \`${judge.id}\` belong to one problem category (as ${pathText(["contributes", "problems", first])})`,
+        );
+      }
+    });
+    if (first === undefined) fail([...here, "id"], "no rule judges with it (a `judged` condition naming it)");
   });
 }
 
@@ -1958,6 +2061,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     check(schema, schema, value, []);
     checkUniqueIds(value);
     checkProblems(value);
+    checkProblemJudges(value);
     checkMetricQueries(value);
     checkTranslations(value);
     checkSectionBadges(value);
