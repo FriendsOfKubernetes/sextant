@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Views of cluster tools are now extensions",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager and OpenShift moved out of Sextant into its own extensions from the extension catalog, which are updated on their own. Install the ones you use below: until then their sections are not shown. Your notification settings for them were kept, and the sidebar also offers them in clusters that run these tools."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager and OpenShift moved out of Sextant into its own extensions from the extension catalog, which are updated on their own. Install the ones you use below: until then their sections are not shown. Your notification settings for them were kept, and the sidebar also offers them in clusters that run these tools."
     },
     "api4": {
       "title": "Extension API 4",
@@ -39,6 +39,7 @@
       "gpu-operator": "ClusterPolicies, NVIDIA drivers, their components and GPU nodes",
       "dra": "ResourceClaims with their devices, claim templates, device classes, ResourceSlices and the Devices page",
       "velero": "Backups, schedules, restores and storage locations; back up a namespace or restore a backup",
+      "mesh": "Istio's VirtualServices, DestinationRules, Gateways and policies and Linkerd's Servers and authorizations in plain words, the Request routing page, and every workload's mesh membership, mTLS mode and who may call it",
       "kueue": "ClusterQueues with quota and usage, LocalQueues, Workloads and why they wait",
       "kyverno": "Policies with their mode and results, policy reports and every object's results",
       "sealed-secrets": "SealedSecrets with their sync state, scope, target Secret and sealed keys, and the controller with its sealing keys",

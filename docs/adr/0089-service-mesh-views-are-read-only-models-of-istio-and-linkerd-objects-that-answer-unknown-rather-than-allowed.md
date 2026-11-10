@@ -28,3 +28,17 @@
 - A cluster with a custom domain or root namespace gets answers computed for the defaults; the assumptions are stated in the views.
 - The answer is what the objects say, not what the proxies currently enforce (a rejected or not yet pushed object still counts).
 - Istio objects are watched without a cap; they are few and small on the clusters this was built for.
+
+## Amendment (0.30.0): the views and engines are an extension
+
+The views moved into Sextant's own extension `extensions/mesh` (`sextant.mesh`, one extension for Istio and Linkerd,
+ADR-0162 amendment), on the public extension API: the sections `istio` and `linkerd` in their places, the details, the
+"Service mesh" block of Pods and workloads, the "Request routing" page and the Istio section counter; the engines
+(`istio.ts`, `routing.ts`, `authz.ts`, `mtls.ts`, `membership.ts`, `problems.ts`) are ported into its frame code
+unchanged, and the problem checks run in its backend as problem judges (ADR-0168), the category `mesh` becoming the
+extension's main category `ext:sextant.mesh`. Every rule above holds there: read-only, from objects only, "unknown" over
+"allowed", the same fixed assumptions. The core keeps no view, engine, text or category of the mesh. Agents'
+`get_problems` takes the mesh problems from the extension's rules and judges, only where the user lets agents have them
+(ADR-0146), and an agent whose Read is restricted to some namespaces gets a judged problem only when it may read every
+kind the judge read (ADR-0168) — where ADR-0094's `useAgentMesh` judged each finding on what the agent could read, which
+left the core with the category. `diagnose_service` and `check_connectivity` never used the mesh engines.

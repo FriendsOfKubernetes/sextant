@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Ansichten von Cluster-Werkzeugen sind jetzt Erweiterungen",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager und OpenShift sind aus Sextant in seine eigenen Erweiterungen aus dem Erweiterungskatalog gewandert, die eigenständig aktualisiert werden. Installieren Sie unten die, die Sie nutzen: bis dahin werden ihre Bereiche nicht angezeigt. Ihre Benachrichtigungseinstellungen dafür bleiben erhalten, und die Seitenleiste bietet sie auch in Clustern an, in denen diese Werkzeuge laufen."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager und OpenShift sind aus Sextant in seine eigenen Erweiterungen aus dem Erweiterungskatalog gewandert, die eigenständig aktualisiert werden. Installieren Sie unten die, die Sie nutzen: bis dahin werden ihre Bereiche nicht angezeigt. Ihre Benachrichtigungseinstellungen dafür bleiben erhalten, und die Seitenleiste bietet sie auch in Clustern an, in denen diese Werkzeuge laufen."
     },
     "api4": {
       "title": "Erweiterungs-API 4",
@@ -39,6 +39,7 @@
       "gpu-operator": "ClusterPolicies, NVIDIA-Treiber, ihre Komponenten und GPU-Knoten",
       "dra": "ResourceClaims mit ihren Geräten, Claim-Vorlagen, Geräteklassen, ResourceSlices und die Seite „Geräte“",
       "velero": "Backups, Zeitpläne, Wiederherstellungen und Speicherorte; einen Namespace sichern oder ein Backup wiederherstellen",
+      "mesh": "VirtualServices, DestinationRules, Gateways und Richtlinien von Istio sowie Servers und Autorisierungen von Linkerd in einfachen Worten, die Seite „Anfrage-Routing“ und für jeden Workload die Mesh-Mitgliedschaft, den mTLS-Modus und wer ihn aufrufen darf",
       "kueue": "ClusterQueues mit Kontingent und Nutzung, LocalQueues, Workloads und warum sie warten",
       "kyverno": "Richtlinien mit Modus und Ergebnissen, Policy-Reports und die Ergebnisse jedes Objekts",
       "sealed-secrets": "SealedSecrets mit Synchronisierungsstatus, Geltungsbereich, Ziel-Secret und versiegelten Schlüsseln sowie der Controller mit seinen Sealing-Schlüsseln",

@@ -121,7 +121,7 @@ export type ColumnFilterValue =
   | readonly (string | number | boolean | null | undefined)[];
 
 /**
- * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `gatewayApi`, `istio` and
+ * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `gatewayApi`, `crossplane` and
  * others belong to APIs and tools installed in the cluster: see `DISCOVERED_SECTIONS`.
  */
 export const SIDEBAR_SECTIONS = [
@@ -137,8 +137,6 @@ export const SIDEBAR_SECTIONS = [
   "helm",
   "accessControl",
   "volumeSnapshots",
-  "istio",
-  "linkerd",
   "crossplane",
   "customResources",
 ] as const;
@@ -164,6 +162,10 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
   ["argocd", "volumeSnapshots"],
   ["argoRollouts", "volumeSnapshots"],
   ["argoWorkflows", "volumeSnapshots"],
+  // Istio and Linkerd came after Argo Workflows' place: one extension's two sections now, hanging off `volumeSnapshots`
+  // behind the sections above, in this order.
+  ["istio", "volumeSnapshots"],
+  ["linkerd", "volumeSnapshots"],
   // Traefik came after Linkerd, Contour after Traefik, Knative's two sections after Contour: all are extension sections
   // now, so they hang off `linkerd`, in this order.
   ["traefik", "linkerd"],
@@ -200,8 +202,6 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
 export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>([
   "gatewayApi",
   "volumeSnapshots",
-  "istio",
-  "linkerd",
   "crossplane",
 ]);
 
@@ -219,8 +219,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   helm: "helm",
   accessControl: "accessControl",
   volumeSnapshots: "volumeSnapshots",
-  istio: "istio",
-  linkerd: "linkerd",
   crossplane: "crossplane",
   customResources: "customResources",
   settings: "settings",

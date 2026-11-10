@@ -12,8 +12,6 @@
     "helm": "Helm",
     "accessControl": "Controle de acesso",
     "volumeSnapshots": "Snapshots de volume",
-    "istio": "Istio",
-    "linkerd": "Linkerd",
     "crossplane": "Crossplane",
     "customResources": "Recursos personalizados"
   },

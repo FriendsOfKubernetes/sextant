@@ -14,7 +14,6 @@ import { ClaimUsageSection } from "../storage/UsageViews";
 import { LINGER_MS, USAGE_POLL_MS, resetVolumeUsage, useVolumeUsage } from "../storage/usageStore";
 import { VclusterSection } from "../vcluster/details";
 const KSERVICE = { group: "serving.knative.dev", version: "v1", kind: "Service" };
-import { MeshMembershipSection } from "../mesh/MembershipSection";
 import { CrossplaneResourceSection } from "../crossplane/details";
 import { XRD } from "../crossplane/model";
 import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "./testing";
@@ -151,20 +150,6 @@ it("keeps a retry header when the missing NodeClaim could be in a forbidden list
   fireEvent.click(button);
   expect(button).toHaveAttribute("aria-expanded", "true");
   expect(await screen.findByRole("alert")).toBeInTheDocument();
-});
-
-it("ignores inapplicable mesh headings when the only visible Linkerd block closes", async () => {
-  const ref = refOf(POD);
-  const obj: KubeObject = { apiVersion: "v1", kind: "Pod", metadata: { name: ref.name, namespace: "demo" }, spec: { containers: [{ name: "linkerd-proxy", image: "proxy" }] } };
-  render(card(ref, <MeshMembershipSection clusterId="c1" objectRef={ref} obj={obj} />));
-  const match = (spec: import("../../api").WatchSpec) => spec.fieldSelector === "metadata.name=demo";
-  const namespace = await watchOf(wb, "Namespace", match);
-  emitSnapshot(wb, namespace, [{ apiVersion: "v1", kind: "Namespace", metadata: { name: "demo" } }]);
-  await waitFor(() => expect(document.querySelector('[data-disclosure="probe/mesh:blocks.linkerdMembership"]')).not.toBeNull());
-  toggle("mesh:blocks.linkerdMembership");
-  await waitFor(() => expect(wb.backend.listenerCount(`watch:${namespace}`)).toBe(0));
-  toggle("mesh:blocks.linkerdMembership");
-  expect(await watchOf(wb, "Namespace", match)).not.toBe(namespace);
 });
 
 it("ignores a nonexistent Crossplane chain consumer when managed fields close", async () => {

@@ -3,8 +3,8 @@
 // - a kind the agent may read in every namespace comes from the problems store's shared, cluster-wide source (the
 //   screen's own watch); a kind it may read only in some namespaces is watched there only (the asked namespace, else
 //   the namespaces its rules name) and judged here; a cluster-scoped kind (Nodes) only with Read on it;
-// - the categories judged across objects are computed on what the agent may read: Service mesh by `useAgentMesh`,
-//   best practices by the shared category only with Read on every input everywhere, else by `useAgentPractices`;
+// - the categories judged across objects are computed on what the agent may read: best practices by the shared
+//   category only with Read on every input everywhere, else by `useAgentPractices`;
 //   disk usage (the kubelets' stats of every node) only with Read on claims and Nodes in all namespaces;
 // - what is still loading or was cut is told of the agent's own sources only, a category it cannot have looked at
 //   is named in `notChecked`, and a list the API server refused (or that failed) in `failed` — its problems there
@@ -16,7 +16,6 @@ import { findKind, useClusterKinds } from "../../resources";
 import { useCategoriesOn } from "../problems/hooks";
 import { needsDiscovery, sourceKey, sourcesFor, type SourceDef } from "../problems/sources";
 import { acquireSource, epochOf, getSource, sourcesVersion, subscribeSources, type SourceState } from "../problems/store";
-import { VIRTUAL_SERVICE } from "../mesh/kinds";
 import {
   extensionJudgedKinds,
   extensionSourcesFor,
@@ -29,7 +28,6 @@ import {
 import { isActive, NODE, PROBLEM_CATEGORIES, PVC, resolve, startedAt, type Problem, type ProblemCategory } from "../problems/model";
 import { useSharedWatches } from "../resource-map/watches";
 import { en, iso, list } from "./english";
-import { meshRefs, useAgentMesh } from "./mesh";
 import { practiceRefs, readsAllPracticeInputs, useAgentPractices, WORKLOAD_INPUTS } from "./practices";
 import { canRead, failuresOf, objectName, ruleNamespaces, watchedNamespaces, type FailedList, type ListRef } from "./scope";
 import { useAnswer, type WorkerProps } from "./worker";
@@ -53,8 +51,6 @@ export interface ProblemPlan {
   shared: SourceDef[];
   /** Sources judged here, watched only in the namespaces the agent may read. */
   watched: { def: SourceDef; spec: WatchSpec }[];
-  /** Service mesh findings on what the agent may read (`useAgentMesh`). */
-  mesh: boolean;
   /** Best practices per namespace (`useAgentPractices`) in these namespaces; `null`: not that way. */
   practices: string[] | null;
   /** The namespaces the rules name (where a kind is watched that the agent may not read everywhere). */
@@ -112,7 +108,7 @@ export function planProblems(
 ): ProblemPlan {
   const { namespaces: ruled, truncated } = ruleNamespaces(reads);
   const may = (kind: Pick<KindRef, "group" | "kind">, ns: string | null) => canRead(reads, kind, ns);
-  const plan: ProblemPlan = { shared: [], watched: [], mesh: false, practices: null, ruled, notChecked: [], notJudged: [], truncated };
+  const plan: ProblemPlan = { shared: [], watched: [], practices: null, ruled, notChecked: [], notJudged: [], truncated };
   const scope = asked ? [asked] : ruled;
   for (const category of categories) {
     const defs = sourcesFor([category], kinds);
@@ -124,9 +120,6 @@ export function planProblems(
         plan.shared.push(...defs);
         planned = true;
       }
-    } else if (category === "mesh") {
-      plan.mesh = may(VIRTUAL_SERVICE, null) || ruled.some((ns) => may(VIRTUAL_SERVICE, ns));
-      planned = plan.mesh;
     } else if (category === "practices") {
       if (readsAllPracticeInputs(reads)) {
         plan.shared.push(...defs);
@@ -222,7 +215,7 @@ export function ProblemsWorker(props: WorkerProps) {
     void scopesVersion;
     return scopesKnown(request.clusterId, extensions);
   }, [scopesVersion, request.clusterId, extensions]);
-  // The plan waits for discovery when a tool's kinds (or the mesh) are asked for.
+  // The plan waits for discovery when a tool's kinds are asked for.
   const discovery = useClusterKinds(needsDiscovery(categories) ? request.clusterId : null);
   const kinds = discovery.kinds ?? (discovery.error ? null : undefined);
   const settled = (!needsDiscovery(categories) || kinds !== undefined) && (extensions.length === 0 || (kinds !== undefined && extensionScopes));
@@ -238,7 +231,6 @@ export function ProblemsWorker(props: WorkerProps) {
     request.clusterId,
     watched.map((w) => w.spec),
   );
-  const mesh = useAgentMesh(request.clusterId, request.reads, kinds, plan?.ruled ?? EMPTY, !!plan?.mesh);
   const practices = useAgentPractices(request.clusterId, request.reads, plan?.practices ?? EMPTY, !!plan?.practices);
 
   const sharedLoading = shared.filter((s) => s.status === "loading");
@@ -248,7 +240,6 @@ export function ProblemsWorker(props: WorkerProps) {
     shared.length >= plan.shared.length &&
     sharedLoading.length === 0 &&
     watchedLoading.length === 0 &&
-    !mesh.loading &&
     !practices.loading;
 
   useAnswer(props, ready, () => {
@@ -290,22 +281,6 @@ export function ProblemsWorker(props: WorkerProps) {
       if (!state || state.status !== "ready") return;
       for (const obj of state.items.values()) for (const p of resolve(def.kind, obj, now, undefined, def.category)) push(p, def.kind, []);
     });
-    for (const m of mesh.problems()) {
-      const p: Problem = {
-        key: `${m.uid}|${m.reason}`,
-        notifyKey: `${m.uid}|${m.reason}`,
-        category: "mesh",
-        uid: m.uid,
-        object: { kind: m.ref.kind, namespace: m.ref.namespace || null, name: m.ref.name },
-        reason: m.reason,
-        messageKey: `messages.mesh${m.reason}`,
-        messageParams: m.params,
-        notify: true,
-        firstSeen: now,
-        activeAt: now,
-      };
-      push(p, m.ref.kind, meshRefs(m));
-    }
     let practicesTruncated = false;
     if (plan.practices) {
       const found = practices.problems();
@@ -317,11 +292,9 @@ export function ProblemsWorker(props: WorkerProps) {
         .filter((s) => s.status === "error")
         .map((s) => ({ category: s.category, group: s.def.kind.group, kind: s.def.kind.kind, code: s.error?.code ?? "other" })),
       ...watched.flatMap(({ def }, i) => failuresOf(def.category, def.kind, watchedStates[i])),
-      ...(plan.mesh ? mesh.failed() : []),
       ...(plan.practices ? practices.failed() : []),
     ];
     const loading = new Set<string>([...sharedLoading.map((s) => s.category), ...watchedLoading]);
-    if (mesh.loading) loading.add("mesh");
     if (practices.loading) loading.add("practices");
     return {
       problems: out,

@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "クラスターツールのビューは拡張機能になりました",
-      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Traefik、Contour、Kyverno、CloudNativePG、Strimzi、External Secrets、Sealed Secrets、Prometheus Operator、cert-manager、Trivy、KEDA、Karpenter、Vertical Pod Autoscaler、Cluster API、k3s / RKE2、Dynamic Resource Allocation、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe、Operator Lifecycle Manager、OpenShift は Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Istio、Linkerd、Knative、Traefik、Contour、Kyverno、CloudNativePG、Strimzi、External Secrets、Sealed Secrets、Prometheus Operator、cert-manager、Trivy、KEDA、Karpenter、Vertical Pod Autoscaler、Cluster API、k3s / RKE2、Dynamic Resource Allocation、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe、Operator Lifecycle Manager、OpenShift は Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
     },
     "api4": {
       "title": "拡張機能 API 4",
@@ -39,6 +39,7 @@
       "gpu-operator": "ClusterPolicy、NVIDIA ドライバー、そのコンポーネントと GPU ノード",
       "dra": "ResourceClaim とそのデバイス、claim テンプレート、デバイスクラス、ResourceSlice、デバイスのページ",
       "velero": "バックアップ、スケジュール、リストア、ストレージの場所。namespace のバックアップとバックアップからのリストア",
+      "mesh": "Istio の VirtualService、DestinationRule、Gateway、ポリシーと Linkerd の Server、認可をわかりやすい言葉で、「リクエストのルーティング」ページ、各ワークロードのメッシュへの参加、mTLS モード、呼び出せる相手",
       "kueue": "クォータと使用量付きの ClusterQueue、LocalQueue、Workload とその待機理由",
       "kyverno": "モードと結果付きのポリシー、ポリシーレポート、各オブジェクトの結果",
       "sealed-secrets": "SealedSecret の同期状態、スコープ、対象の Secret、封印されたキー、およびコントローラーとその封印キー",

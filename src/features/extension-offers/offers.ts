@@ -29,6 +29,13 @@ export const OFFERS: readonly ExtensionOffer[] = [
   { id: "sextant.karpenter", tool: "Karpenter", matches: (k) => k.group === "karpenter.sh" },
   { id: "sextant.vpa", tool: "Vertical Pod Autoscaler", matches: (k) => k.group === "autoscaling.k8s.io" && k.kind === "VerticalPodAutoscaler" },
   { id: "sextant.velero", tool: "Velero", matches: (k) => k.group === "velero.io" },
+  // Istio and Linkerd, one extension: by Istio's kinds (`networking.istio.io`, `security.istio.io`,
+  // `telemetry.istio.io`) or Linkerd's (`linkerd.io`, `policy.linkerd.io`).
+  {
+    id: "sextant.mesh",
+    tool: "Istio / Linkerd",
+    matches: (k) => /^(networking|security|telemetry)\.istio\.io$/.test(k.group) || k.group === "linkerd.io" || k.group === "policy.linkerd.io",
+  },
   // Traefik: by its kinds of `traefik.io` or, on an older Traefik, `traefik.containo.us`.
   { id: "sextant.traefik", tool: "Traefik", matches: (k) => k.group === "traefik.io" || k.group === "traefik.containo.us" },
   { id: "sextant.contour", tool: "Contour", matches: (k) => k.group === "projectcontour.io" },

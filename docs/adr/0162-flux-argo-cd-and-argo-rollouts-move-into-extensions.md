@@ -343,3 +343,26 @@ cert-manager's annotation names), the expiry warning setting and its field, and 
 `applyCertExpiryDays`/`currentCertExpiryWarningMs`, which the extension's `expiring` rule follows. Cleanup keeps
 cert-manager's kinds it scans for Secret references (`hygiene/kinds.ts`). The icons the extension names stay in
 Sextant's set. Where the extension still differs is listed in its README.
+
+## Amendment: service mesh (Istio and Linkerd)
+
+`extensions/mesh` (`sextant.mesh`, 1.0.0) takes the service mesh views (ADR-0089), both meshes in one extension as the
+built-in views were: Istio's VirtualServices, DestinationRules, Gateways, ServiceEntries, Sidecars, WorkloadEntries,
+PeerAuthentications, RequestAuthentications, AuthorizationPolicies and Telemetry in the section `istio`, Linkerd's
+ServiceProfiles, Servers, HTTPRoutes, authorization policies and authentications in `linkerd`, with the built-in
+columns, "Only problems" and details, the "Service mesh" block of Pods and workloads, the "Request routing" page and
+the Istio section counter. Both sections were Sextant sections; they become extension places after `volumeSnapshots`
+(behind Argo Workflows' place, `istio` then `linkerd`), and Traefik's, Contour's and Knative's places keep hanging off
+`linkerd`, so the sidebar is unchanged (a test pins the whole order). The Istio configuration mistakes are judged by
+the extension's backend (problem judges, ADR-0168) in its main category `ext:sextant.mesh`, titled by its name
+"Service mesh" as the built-in category was; the category `mesh` (on by default) moves to it
+(`MOVED_PROBLEM_CATEGORIES`). Agents had it by default; now, by the user's decision, they get it only when the user
+lets them (`mcp.extensionProblems`, ADR-0146) — the migration does not add it — and `get_problems` still reads the old
+name through `moved_category`. The sidebar offers the extension where Istio's or Linkerd's kinds are served (one offer,
+"Istio / Linkerd"). The core keeps no mesh engine: agents' `get_problems` takes the mesh problems from the
+extension's rules and judges by consent (ADR-0146), an agent with Read restricted to some namespaces gets a judged
+problem only when it may read every kind the judge read (ADR-0168), and ADR-0094's `useAgentMesh` went with the
+category; `diagnose_service` and `check_connectivity` never used the mesh engines. Cleanup keeps the Istio
+kinds it scans (`hygiene/kinds.ts`), and request metrics and the traffic graph keep their Istio and Linkerd sources
+(ADR-0095, ADR-0096). The icons the extension names stay in Sextant's set. Where the extension still differs is listed
+in its README.

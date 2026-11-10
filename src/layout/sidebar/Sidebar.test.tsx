@@ -29,13 +29,13 @@ const served = (group: string, version: string, kind: string): ResourceKind => (
 
 // Stand-in kinds registered under two discovered sections (labels without translations render as their key).
 const GITOPS: ResourceDef[] = [
-  ["istio", "source.toolkit.fluxcd.io", "GitRepository", "GitRepositories"],
-  ["istio", "source.toolkit.fluxcd.io", "Bucket", "Buckets"],
-  ["istio", "kustomize.toolkit.fluxcd.io", "Kustomization", "Kustomizations"],
+  ["crossplane", "source.toolkit.fluxcd.io", "GitRepository", "GitRepositories"],
+  ["crossplane", "source.toolkit.fluxcd.io", "Bucket", "Buckets"],
+  ["crossplane", "kustomize.toolkit.fluxcd.io", "Kustomization", "Kustomizations"],
   ["volumeSnapshots", "argoproj.io", "Application", "Applications"],
 ].map(([section, group, kind, label], order) => ({
   kind: { group: group!, version: "v1", kind: kind! },
-  sidebar: { section: section as "istio" | "volumeSnapshots", order, labelKey: label! },
+  sidebar: { section: section as "crossplane" | "volumeSnapshots", order, labelKey: label! },
   columns: [],
   actions: [],
 }));
@@ -82,12 +82,12 @@ const crd = (uid: string): KubeObject => ({ metadata: { name: uid, uid, generati
 describe("discovered sections", () => {
   it("show only the kinds the cluster serves, before Custom Resources; a section without kinds is not drawn", async () => {
     render(<Sidebar clusterId="c1" />);
-    await waitFor(() => expect(sections()).toContain("Istio"));
+    await waitFor(() => expect(sections()).toContain("Crossplane"));
     expect(sections()).not.toContain("Volume Snapshots");
-    expect(sections().indexOf("Istio")).toBe(sections().indexOf("Custom Resources") - 1);
+    expect(sections().indexOf("Crossplane")).toBe(sections().indexOf("Custom Resources") - 1);
 
-    fireEvent.click(screen.getByRole("button", { name: /Istio/ }));
-    const flux = screen.getByRole("button", { name: /Istio/ }).closest("li")!;
+    fireEvent.click(screen.getByRole("button", { name: /Crossplane/ }));
+    const flux = screen.getByRole("button", { name: /Crossplane/ }).closest("li")!;
     expect(within(flux).getByRole("button", { name: "GitRepositories" })).toBeInTheDocument();
     expect(within(flux).getByRole("button", { name: "Kustomizations" })).toBeInTheDocument();
     expect(within(flux).queryByRole("button", { name: "Buckets" })).toBeNull();
@@ -107,7 +107,7 @@ describe("discovered sections", () => {
   it("a section appears when its CRD is created while connected", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     render(<Sidebar clusterId="c1" />);
-    await waitFor(() => expect(sections()).toContain("Istio"));
+    await waitFor(() => expect(sections()).toContain("Crossplane"));
     await waitFor(() => expect(backend.listenerCount("watch:crds")).toBe(1));
     act(() => backend.emit("watch:crds", { type: "snapshot", items: [crd("gitrepositories")] }));
 
@@ -116,20 +116,20 @@ describe("discovered sections", () => {
     await act(async () => void vi.advanceTimersByTime(CRD_REFRESH_DELAY));
 
     await waitFor(() => expect(sections()).toContain("Volume Snapshots"));
-    expect(sections().indexOf("Volume Snapshots")).toBe(sections().indexOf("Istio") - 1);
+    expect(sections().indexOf("Volume Snapshots")).toBe(sections().indexOf("Crossplane") - 1);
     expect(backend.calls.filter((c) => c.cmd === "cluster_kinds_refresh")).toHaveLength(1);
   });
 
   it("show their pages only while the section has served kinds", async () => {
     const Page = () => null;
-    registerPage({ id: "t-flux-page", section: "istio", order: 99, labelKey: "FluxPage", Component: Page });
+    registerPage({ id: "t-flux-page", section: "crossplane", order: 99, labelKey: "FluxPage", Component: Page });
     registerPage({ id: "t-argo-page", section: "volumeSnapshots", order: 99, labelKey: "ArgoPage", Component: Page });
     try {
       render(<Sidebar clusterId="c1" />);
-      await waitFor(() => expect(sections()).toContain("Istio"));
+      await waitFor(() => expect(sections()).toContain("Crossplane"));
       // Volume Snapshots is not served: its page alone does not draw the section.
       expect(sections()).not.toContain("Volume Snapshots");
-      fireEvent.click(screen.getByRole("button", { name: /Istio/ }));
+      fireEvent.click(screen.getByRole("button", { name: /Crossplane/ }));
       expect(screen.getByRole("button", { name: "FluxPage" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "ArgoPage" })).toBeNull();
     } finally {
@@ -142,19 +142,19 @@ describe("discovered sections", () => {
 describe("section badges", () => {
   it("a feature's counter shows on its section header while above zero", async () => {
     let count = 3;
-    const remove = registerSectionBadge("istio", () => count, { tone: "danger", labelKey: "gateway:problems.count" });
+    const remove = registerSectionBadge("crossplane", () => count, { tone: "danger", labelKey: "gateway:problems.count" });
     try {
       const { rerender } = render(<Sidebar clusterId="c1" />);
       await waitFor(() => expect(screen.getByTitle("3 problems")).toHaveTextContent("3"));
       expect(screen.getByTitle("3 problems").querySelector(".badge--danger")).not.toBeNull();
       // The number does not change the header's name; its label describes the header.
-      const header = screen.getByRole("button", { name: "Istio" });
+      const header = screen.getByRole("button", { name: "Crossplane" });
       expect(header).toContainElement(screen.getByTitle("3 problems"));
       expect(header).toHaveAccessibleDescription("3 problems");
       count = 0;
       rerender(<Sidebar clusterId="c1" />);
       expect(screen.queryByTitle(/problems/)).toBeNull();
-      expect(sections()).toContain("Istio");
+      expect(sections()).toContain("Crossplane");
     } finally {
       remove();
     }
@@ -167,7 +167,7 @@ describe("icons", () => {
   it("every section header, entry, custom resource group and custom resource has a hidden icon, and the names are unchanged", async () => {
     render(<Sidebar clusterId="c1" />);
     await waitFor(() => expect(sections()).toContain("Custom Resources"));
-    for (const name of [/Workloads/, /Istio/, /Custom Resources/]) fireEvent.click(screen.getByRole("button", { name }));
+    for (const name of [/Workloads/, /Crossplane/, /Custom Resources/]) fireEvent.click(screen.getByRole("button", { name }));
     fireEvent.click(await screen.findByRole("button", { name: /demo\.sextant\.dev/ }));
 
     const buttons = screen.getAllByRole("button");
@@ -184,7 +184,7 @@ describe("icons", () => {
     expect(screen.getByRole("button", { name: "Pods" })).toHaveTextContent(/^Pods$/);
     // A section and a group of custom resources keep a chevron next to the icon: an SVG of the set that adds no
     // text either, so their whole text is the label (e2e clicks `button[aria-expanded]=<label>`).
-    for (const name of ["Istio", "demo.sextant.dev"]) {
+    for (const name of ["Crossplane", "demo.sextant.dev"]) {
       const group = screen.getByRole("button", { name });
       expect(group, name).toHaveTextContent(new RegExp(`^${name.replace(/\./g, "\\.")}$`));
       const chevron = group.querySelector(".sidebar__chevron");
@@ -236,9 +236,9 @@ describe("long labels", () => {
   it("a custom resource group, a section and an entry keep the full name in a tooltip", async () => {
     render(<Sidebar clusterId="c1" />);
     await waitFor(() => expect(sections()).toContain("Custom Resources"));
-    for (const name of [/Istio/, /Custom Resources/]) fireEvent.click(screen.getByRole("button", { name }));
+    for (const name of [/Crossplane/, /Custom Resources/]) fireEvent.click(screen.getByRole("button", { name }));
     expect(await screen.findByRole("button", { name: "demo.sextant.dev" })).toHaveAttribute("title", "demo.sextant.dev");
-    expect(screen.getByRole("button", { name: "Istio" })).toHaveAttribute("title", "Istio");
+    expect(screen.getByRole("button", { name: "Crossplane" })).toHaveAttribute("title", "Crossplane");
     expect(screen.getByRole("button", { name: "GitRepositories" })).toHaveAttribute("title", "GitRepositories");
   });
 
@@ -256,7 +256,7 @@ describe("long labels", () => {
 });
 
 describe("the places of Sextant's own extensions' sections", () => {
-  it("keep the order the sidebar had before those sections moved, cert-manager and the sections behind it included", () => {
+  it("keep the order the sidebar had before those sections moved, cert-manager, Istio, Linkerd and the sections behind them included", () => {
     expect(sectionOrder([])).toEqual([
       "cluster", "nodes", "workloads", "config", "network", "gatewayApi", "storage", "namespaces", "events", "helm",
       "accessControl", "certManager", "trivy", "keda", "karpenter", "vpa",
@@ -273,6 +273,21 @@ describe("the places of Sextant's own extensions' sections", () => {
     try {
       const order = sectionOrder(["acme", "trivy"]);
       expect(order.indexOf("acme")).toBe(order.indexOf("vpa") + 1);
+    } finally {
+      undo();
+    }
+  });
+
+  it("Istio and Linkerd, one extension's sections, keep their places with Traefik, Contour and Knative behind Linkerd", () => {
+    const order = sectionOrder(["linkerd", "istio", "traefik", "knative"]);
+    expect(order.slice(order.indexOf("argoWorkflows"), order.indexOf("crossplane") + 1)).toEqual([
+      "argoWorkflows", "istio", "linkerd", "traefik", "contour", "knative", "knativeEventing", "crossplane",
+    ]);
+    // An extension section after Volume Snapshots comes behind every kept place there, the ones off Linkerd included.
+    const undo = placeSection("acme", { owner: "acme.widgets", after: "volumeSnapshots" });
+    try {
+      const placed = sectionOrder(["acme", "istio"]);
+      expect(placed.indexOf("acme")).toBe(placed.indexOf("knativeEventing") + 1);
     } finally {
       undo();
     }

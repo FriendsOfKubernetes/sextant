@@ -34,7 +34,6 @@ export const PROBLEM_CATEGORIES = [
   "jobs",
   "volumes",
   "gateway",
-  "mesh",
   "crossplane",
   "reflector",
   "security",
@@ -589,7 +588,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
     case "practices": // Best-practice findings (#207) span several objects: the provider of features/practices finds them.
     case "disk":
     case "alerts": // Firing alerts come from Prometheus and Alertmanager: the provider of features/alerts.
-    case "mesh": // Istio mistakes span several objects: the provider of features/mesh finds them.
     case "reflector": // Mirrors are judged against their sources: the provider of features/reflector finds them.
     case "crossplane": // Claims and composites are kinds the XRDs define: the provider of features/crossplane finds them.
     case undefined:

@@ -388,10 +388,11 @@ async fn a_diagnosis_names_only_what_the_agent_may_read() {
 async fn a_problem_resting_on_another_namespace_says_nothing_about_it() {
     // Mesh findings are judged across objects: a team-a VirtualService whose subset lives in a team-b
     // DestinationRule, a host judged unknown against every namespace's ServiceEntries, a conflict with a team-b
-    // VirtualService. The window sends what each rests on (`refs`); a team-a agent gets none of them.
+    // VirtualService (the mesh extension's judges, ADR-0168). The window sends what each rests on (`refs`); a team-a
+    // agent gets none of them.
     let mesh = |reason: &str, refs: Value| {
         json!({
-            "category": "mesh", "reason": reason, "message": "a subset is missing",
+            "category": "ext:sextant.mesh", "reason": reason, "message": "a subset is missing",
             "object": obj("networking.istio.io", "VirtualService", Some("team-a"), "reviews"),
             "source": { "group": "networking.istio.io", "kind": "VirtualService" },
             "refs": refs,
@@ -409,11 +410,15 @@ async fn a_problem_resting_on_another_namespace_says_nothing_about_it() {
               "source": { "group": "apps", "kind": "Deployment" },
               "refs": [{ "group": "", "kind": "Pod", "namespace": "team-a" }, { "group": "", "kind": "Node" }] },
         ],
-        "categories": ["mesh", "practices"],
+        "categories": ["ext:sextant.mesh", "practices"],
         "notChecked": ["disk", "made-up"],
     }))
     .unwrap();
-    let on = vec!["practices".to_owned(), "disk".to_owned()];
+    let on = vec![
+        "practices".to_owned(),
+        "disk".to_owned(),
+        "ext:sextant.mesh".to_owned(),
+    ];
     let kept = answers::problems(answer.clone(), &mut filter(team_a()), &on, None, 100).await;
     let reasons: Vec<&str> = kept.problems.iter().map(|p| p.reason.as_str()).collect();
     assert_eq!(reasons, ["MissingDestinationRule"]);
@@ -1186,5 +1191,20 @@ fn certificate_problems_come_from_the_cert_manager_extension_by_consent() {
     assert!(answers::category_for_agents(
         "ext:sextant.cert-manager",
         &["ext:sextant.cert-manager".to_owned()]
+    ));
+}
+
+/// Istio's configuration mistakes ("Service mesh", #155) moved into Sextant's own extension for Istio and Linkerd
+/// (ADR-0162 amendment): the old name asks for the extension's main category, which agents get only when the user lets
+/// them (ADR-0146), no longer by default.
+#[test]
+fn mesh_problems_come_from_the_mesh_extension_by_consent() {
+    assert!(!answers::PROBLEM_CATEGORIES.contains(&"mesh"));
+    assert!(!answers::category_for_agents("mesh", &["mesh".to_owned()]));
+    assert_eq!(answers::moved_category("mesh"), "ext:sextant.mesh");
+    assert!(!answers::category_for_agents("ext:sextant.mesh", &[]));
+    assert!(answers::category_for_agents(
+        "ext:sextant.mesh",
+        &["ext:sextant.mesh".to_owned()]
     ));
 }

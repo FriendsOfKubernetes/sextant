@@ -56,3 +56,11 @@ Tests: Rust — refs dropping a team-b-resting mesh finding and a Node-resting p
 ## Amended (v0.25.5, ADR-0129)
 
 `get_problems` names the lists it could not read (`failed`: category, kind, code, the refused namespaces), re-checked by `ReadFilter`. `get_permissions` has a third mode, `mine: true`: the user's rules review, computed in Rust (`mcp/effective.rs`), only behind the per-cluster opt-in and cut to the agent's rules.
+
+## Amended (v0.30.0, ADR-0162 amendment, ADR-0168)
+
+The service mesh views moved into Sextant's own extension `extensions/mesh`: `get_problems` takes the mesh category from
+the extension's rules and problem judges, as `ext:sextant.mesh`, only while the user lets agents have it (ADR-0146), and
+the old name `mesh` reads as it (`moved_category`). `useAgentMesh` and the core's mesh engines went with the views; an
+agent whose Read covers only some namespaces gets a judged mesh problem only when it may read every kind the judge read
+(ADR-0168). `diagnose_service` and `check_connectivity` never used them.

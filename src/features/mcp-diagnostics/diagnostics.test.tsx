@@ -15,12 +15,9 @@ import { hpaOut, pendingOut } from "./autoscaling";
 import { recentChanges } from "./changes";
 import { restrictView } from "./diagnose";
 import { DiagnosticsHost } from "./DiagnosticsHost";
-import { parseDestinationRule } from "../mesh/istio";
-import { DESTINATION_RULE, VIRTUAL_SERVICE } from "../mesh/kinds";
 import { resetSharedWatches, setWatchLinger } from "../resource-map/watches";
 import { acquireSource } from "../problems/store";
 import { CATEGORY_SOURCES } from "../problems/sources";
-import { agentMeshProblems, meshRefs, MESH_KINDS, type MeshList } from "./mesh";
 import { restrictWorld } from "./netpol";
 import { rbacNeeds } from "./permissions";
 import { lookupRefs, planProblems } from "./problems";
@@ -65,43 +62,11 @@ describe("what an agent may read", () => {
 });
 
 describe("problems judged across objects for an agent", () => {
-  const meta = (kind: string, namespace: string, name: string) => ({
-    apiVersion: "networking.istio.io/v1",
-    kind,
-    metadata: { name, namespace, uid: `${namespace}-${name}`, creationTimestamp: "2026-01-01T00:00:00Z" },
-  });
-  // A team-a VirtualService routes to subset v2 of a team-b host whose DestinationRule (in team-b) has only v1.
-  const vs: KubeObject = {
-    ...meta("VirtualService", "team-a", "reviews"),
-    spec: { hosts: ["reviews"], http: [{ route: [{ destination: { host: "reviews.team-b.svc.cluster.local", subset: "v2" } }] }] },
-  };
-  const dr: KubeObject = { ...meta("DestinationRule", "team-b", "reviews-rule"), spec: { host: "reviews.team-b.svc.cluster.local", subsets: [{ name: "v1", labels: { v: "1" } }] } };
-  const service: KubeObject = { apiVersion: "v1", kind: "Service", metadata: { name: "reviews", namespace: "team-b", uid: "svc" } };
-  const lists = (known: (ns: string | null) => boolean): MeshList[] =>
-    MESH_KINDS.map((kind) => {
-      const items = kind === VIRTUAL_SERVICE ? [vs] : kind === DESTINATION_RULE ? [dr] : [];
-      // What the agent could not read is not in the lists either.
-      return { kind, served: true, items: items.filter((o) => known(o.metadata?.namespace ?? null)), known };
-    });
-  const services = (known: (ns: string | null) => boolean): MeshList => ({ kind: { group: "", kind: "Service" }, served: true, items: known("team-b") ? [service] : [], known });
-
-  it("finds nothing — and no sign of team-b — from what a team-a agent may read", () => {
-    const teamA = (ns: string | null) => ns === "team-a";
-    const found = agentMeshProblems(lists(teamA), services(teamA));
-    expect(found).toEqual([]);
-    // With everything read, the same objects give the finding that names team-b's DestinationRule.
-    const everything = () => true;
-    const all = agentMeshProblems(lists(everything), services(everything));
-    expect(all.map((p) => [p.reason, p.params.rule])).toEqual([["MissingSubset", "reviews-rule"]]);
-    expect(meshRefs(all[0]!)).toContainEqual({ group: "networking.istio.io", kind: "DestinationRule", namespace: "team-b", name: "reviews-rule" });
-    expect(parseDestinationRule(dr).namespace).toBe("team-b");
-  });
-
   it("plans watches only where the agent may read, and names what it cannot look at", () => {
     const kinds = [
-      { kindRef: { ...VIRTUAL_SERVICE }, plural: "virtualservices", namespaced: true, verbs: ["list", "watch"], printerColumns: [] },
+      { kindRef: { group: "networking.istio.io", version: "v1", kind: "VirtualService" }, plural: "virtualservices", namespaced: true, verbs: ["list", "watch"], printerColumns: [] },
     ];
-    const plan = planProblems(["nodes", "pods", "events", "disk", "practices", "mesh"], kinds, TEAM_A, null);
+    const plan = planProblems(["nodes", "pods", "events", "disk", "practices"], kinds, TEAM_A, null);
     expect(plan.shared).toEqual([]);
     expect(plan.watched.map((w) => [w.spec.kind.kind, w.spec.namespaces, w.spec.fieldSelector])).toEqual([
       ["Pod", ["team-a"], null],
@@ -109,7 +74,6 @@ describe("problems judged across objects for an agent", () => {
     ]);
     expect(plan.notChecked).toEqual(["nodes", "disk"]);
     expect(plan.practices).toEqual(["team-a"]);
-    expect(plan.mesh).toBe(true);
     // Read on everything: the problems store's shared, cluster-wide sources (the screen's own).
     const all = planProblems(["nodes", "pods", "disk", "practices"], kinds, EVERYTHING, null);
     expect(all.watched).toEqual([]);
@@ -503,7 +467,7 @@ describe("what the window reads for an agent", () => {
     await waitFor(() => expect(wb.backend.calls.filter((c) => c.cmd === "tls_certificate_info")).toHaveLength(1));
   });
 
-  it("answers the mesh for an agent that may read everything, and names a list the API server refused", async () => {
+  it("answers an agent that may read everything, and names a list the API server refused", async () => {
     const answers: { id: string; answer: DiagnosticAnswer }[] = [];
     wb.backend.on("mcp_diagnostic_answer", (args) => {
       answers.push(args as unknown as { id: string; answer: DiagnosticAnswer });
@@ -512,14 +476,8 @@ describe("what the window reads for an agent", () => {
     render(<DiagnosticsHost />);
     await waitFor(() => expect(wb.backend.listenerCount("mcp-diagnostic")).toBe(1));
     act(() =>
-      wb.backend.emit("mcp-diagnostic", { id: "all", tool: "problems", clusterId: "c1", reads: EVERYTHING, args: { namespace: null, categories: ["mesh", "pods"] } }),
+      wb.backend.emit("mcp-diagnostic", { id: "all", tool: "problems", clusterId: "c1", reads: EVERYTHING, args: { namespace: null, categories: ["pods"] } }),
     );
-    // Read everywhere: the Istio kinds are watched cluster-wide (`null`), which once threw on `null.length`.
-    for (const k of ["VirtualService", "DestinationRule", "ServiceEntry"]) {
-      const id = await watchOf(wb, k);
-      expect(wb.specs.get(id)!.namespaces).toBeNull();
-      emitSnapshot(wb, id, []);
-    }
     const pods = await watchOf(wb, "Pod");
     act(() => wb.backend.emit(`watch:${pods}`, { type: "error", code: "forbidden", message: "pods is forbidden" }));
     await waitFor(() => expect(answers).toHaveLength(1));
@@ -528,18 +486,6 @@ describe("what the window reads for an agent", () => {
     const result = (answer as { result: { failed: unknown[]; problems: unknown[] } }).result;
     expect(result.problems).toEqual([]);
     expect(result.failed).toEqual([{ category: "pods", group: "", kind: "Pod", code: "forbidden" }]);
-  });
-
-  it("watches the Istio configuration only in the namespaces a team-a agent may read", async () => {
-    render(<DiagnosticsHost />);
-    await waitFor(() => expect(wb.backend.listenerCount("mcp-diagnostic")).toBe(1));
-    act(() =>
-      wb.backend.emit("mcp-diagnostic", { id: "m1", tool: "problems", clusterId: "c1", reads: TEAM_A, args: { namespace: null, categories: ["mesh"] } }),
-    );
-    for (const k of ["VirtualService", "DestinationRule", "ServiceEntry"]) {
-      const id = await watchOf(wb, k);
-      expect(wb.specs.get(id)!.namespaces).toEqual(["team-a"]);
-    }
   });
 });
 

@@ -109,7 +109,7 @@ function subscribe(listener: () => void): () => void {
 
 /**
  * Calls `listener` after the states of the shared watches change (flushed as for the views) or a cluster's watches
- * are dropped: for a store outside React (the service mesh analysis, #155). Returns the unsubscribe function.
+ * are dropped: for a store outside React (Crossplane's, Reflector's). Returns the unsubscribe function.
  */
 export function subscribeSharedWatches(listener: () => void): () => void {
   return subscribe(listener);

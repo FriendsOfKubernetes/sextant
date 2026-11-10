@@ -1,5 +1,5 @@
 // Which kinds are watched for each category of problems. Built-in kinds are watched without discovery; the kinds of
-// installed tools (Gateway API, Istio, …) only once discovery says the cluster serves them, at the
+// installed tools (Gateway API, Crossplane, …) only once discovery says the cluster serves them, at the
 // version it serves.
 import type { KindRef, KubeObject, ResourceKind } from "../../api";
 import { findKind } from "../../resources";
@@ -105,9 +105,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   jobs: [builtIn("jobs", JOB)],
   volumes: [builtIn("volumes", PVC)],
   gateway: COUNTED_KINDS.map((kind) => tool("gateway", kind)),
-  // Istio routing and mTLS mistakes (#155): judged across objects by the provider of features/mesh (`external`), held
-  // only where the cluster serves VirtualServices.
-  mesh: [{ category: "mesh", kind: { group: "networking.istio.io", version: "v1", kind: "VirtualService" }, fieldSelector: null, discovered: true, external: true }],
   // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
   // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
   crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],

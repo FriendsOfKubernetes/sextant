@@ -32,6 +32,17 @@ describe("offersFor", () => {
     expect(offersFor(refs(FLUX, APP), new Set(["sextant.flux"]), ["sextant.argo-cd"], new Set())).toEqual([]);
     expect(offersFor(refs(FLUX), new Set(), [], new Set(["sextant.flux"]))).toEqual([]);
   });
+
+  it("offers the one service mesh extension once, where Istio's or Linkerd's kinds are served", () => {
+    const vs = kind("networking.istio.io", "VirtualService");
+    const pa = kind("security.istio.io", "PeerAuthentication");
+    const server = kind("policy.linkerd.io", "Server", "v1beta3");
+    const profile = kind("linkerd.io", "ServiceProfile", "v1alpha2");
+    for (const served of [[vs], [pa], [server], [profile], [vs, server, profile]]) {
+      expect(offersFor(refs(...served), new Set(), [], new Set()).map((o) => o.id)).toEqual(["sextant.mesh"]);
+    }
+    expect(offersFor(refs(kind("istio.io", "Other"), OTHER), new Set(), [], new Set())).toEqual([]);
+  });
 });
 
 describe("the offers above the sidebar", () => {

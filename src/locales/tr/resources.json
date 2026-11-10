@@ -12,8 +12,6 @@
     "helm": "Helm",
     "accessControl": "Erişim denetimi",
     "volumeSnapshots": "Birim anlık görüntüleri",
-    "istio": "Istio",
-    "linkerd": "Linkerd",
     "crossplane": "Crossplane",
     "customResources": "Özel kaynaklar"
   },
