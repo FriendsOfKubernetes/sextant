@@ -84,6 +84,7 @@ export const MANIFEST_SHAPES = {
     metricQueries: "optional",
     sectionBadges: "optional",
     problemCategories: "optional",
+    problemsTitle: "optional",
     commands: "optional",
     kinds: "optional",
     menuItems: "optional",

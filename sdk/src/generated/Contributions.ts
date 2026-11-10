@@ -37,6 +37,10 @@ sectionBadges: Array<SectionBadgeContribution>,
  */
 problemCategories: Array<ProblemCategoryContribution>, 
 /**
+ * The title of the extension's main problem category, its name when unset (#404): "Certificates"; `sextantApi` 4.
+ */
+problemsTitle?: string, 
+/**
  * Programs the extension runs by id in a container it names by labels (ADR-0147); `sextantApi` 3.
  */
 commands: Array<CommandContribution>, 

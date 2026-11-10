@@ -154,6 +154,10 @@ pub struct Contributions {
     pub section_badges: Vec<SectionBadgeContribution>,
     /// Problem categories of the extension's own besides its main one, opt-in or not (#410); `sextantApi` 4.
     pub problem_categories: Vec<super::problems::ProblemCategoryContribution>,
+    /// The title of the extension's main problem category, its name when unset (#404): "Certificates"; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub problems_title: Option<String>,
     /// Programs the extension runs by id in a container it names by labels (ADR-0147); `sextantApi` 3.
     pub commands: Vec<CommandContribution>,
     /// Kinds listed in a sidebar section of the extension's own with Sextant's tables (ADR-0152); `sextantApi` 4.

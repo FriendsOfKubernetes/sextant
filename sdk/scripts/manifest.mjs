@@ -1219,6 +1219,11 @@ function checkProblemCategories(manifest) {
   const list = ["contributes", "problemCategories"];
   const categories = manifest.contributes?.problemCategories ?? [];
   const rules = manifest.contributes?.problems ?? [];
+  if (manifest.contributes?.problemsTitle !== undefined) {
+    const title = ["contributes", "problemsTitle"];
+    if (manifest.sextantApi < WINDOW_API) fail(title, `needs sextantApi ${WINDOW_API} or later`);
+    if (rules.length === 0) fail(title, "needs `contributes.problems`");
+  }
   if (categories.length > 0 && manifest.sextantApi < WINDOW_API) fail(list, `needs sextantApi ${WINDOW_API} or later`);
   if (categories.length > 0 && rules.length === 0) fail(list, "needs `contributes.problems`");
   categories.forEach((category, i) => {
@@ -1399,6 +1404,7 @@ export function translatableTexts(manifest) {
       for (const form of PLURAL_FORMS) if (form !== "other") out.set(`problems.${rule.id}.messageForms.${form}`, { max: 300, message: rule.message });
     }
   }
+  if (c.problemsTitle !== undefined) out.set("problemsTitle", title);
   for (const category of c.problemCategories ?? []) out.set(`problemCategories.${category.id}.title`, title);
   for (const command of c.commands ?? []) out.set(`commands.${command.id}.title`, title);
   for (const query of c.metricQueries ?? []) out.set(`metricQueries.${query.id}.title`, title);

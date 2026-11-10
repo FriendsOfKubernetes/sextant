@@ -280,3 +280,5 @@ cert-manager Certificate's `status.notAfter`.
 `|daysLeft` (a compared path, a column's `paths`, a placeholder) is the whole days until a time, 0 once it has passed,
 and a frame's context carries `certExpiryDays` (the user's warning days, sent again when they change): the
 cert-manager extension's "Expires in" column and details warn as Sextant's own did.
+`contributes.problemsTitle` (`sextantApi` 4, translated) titles an extension's main problem category, its name when
+unset: the cert-manager extension's "Certificates", still the one category agents may be given (ADR-0146).

@@ -227,6 +227,18 @@ pub(crate) fn check_problem_categories(manifest: &ExtensionManifest) -> Result<(
         .key("contributes")
         .key("problemCategories");
     let categories = &manifest.contributes.problem_categories;
+    if manifest.contributes.problems_title.is_some() {
+        let title = JsonPath::default().key("contributes").key("problemsTitle");
+        if manifest.sextant_api < SOURCES_API {
+            return Err(at(
+                &title,
+                format!("needs sextantApi {SOURCES_API} or later"),
+            ));
+        }
+        if manifest.contributes.problems.is_empty() {
+            return Err(at(&title, "needs `contributes.problems`"));
+        }
+    }
     if !categories.is_empty() && manifest.sextant_api < SOURCES_API {
         return Err(at(
             &list,

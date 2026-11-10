@@ -352,6 +352,8 @@ export interface ManifestContributions {
   /** Problem counters on the extension's own sidebar sections; needs `sextantApi` 3. */
   sectionBadges?: ManifestSectionBadge[];
   problemCategories?: ManifestProblemCategory[];
+  /** The title of the main problem category, the extension's name when unset (since Sextant 0.30): "Certificates". */
+  problemsTitle?: string;
   /** Programs run by id in a container named by labels (`sextant.exec.run`); needs `sextantApi` 3. */
   commands?: ManifestCommand[];
   /** Kinds in a sidebar section of the extension's own; needs `sextantApi` 4. */
@@ -560,6 +562,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       }),
       metricQueries: (c.metricQueries ?? []).map((q) => ({ ...q, params: q.params ?? [] })),
       problemCategories: (c.problemCategories ?? []).map((pc) => ({ id: pc.id, title: pc.title, optIn: pc.optIn ?? false })),
+      ...(c.problemsTitle !== undefined ? { problemsTitle: c.problemsTitle } : {}),
       sectionBadges: (c.sectionBadges ?? []).map((b) => ({ section: b.section, rules: b.rules ?? [], ...(b.label ? { label: b.label } : {}) })),
       commands: (c.commands ?? []).map((command) => ({ ...command, params: command.params ?? [], changes: command.changes ?? false })),
       kinds: (c.kinds ?? []).map((k) => ({ ...k, searchByDefault: k.searchByDefault ?? false, printerColumns: k.printerColumns ?? true })),

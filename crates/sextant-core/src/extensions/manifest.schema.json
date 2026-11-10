@@ -758,6 +758,10 @@
           "required": ["title"],
           "properties": { "title": { "$ref": "#/$defs/title" } }
         },
+        "problemsTitle": {
+          "description": "The title of the extension's main problem category, its name when unset (sextantApi 4).",
+          "$ref": "#/$defs/title"
+        },
         "problemCategories": {
           "description": "Problem categories of the extension's own besides its main one, each opt-in or not (sextantApi 4). Never given to agents.",
           "type": "array",

@@ -199,6 +199,9 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
             }
         }
     }
+    if c.problems_title.is_some() {
+        out.insert("problemsTitle".to_owned(), Text::Title);
+    }
     for category in &c.problem_categories {
         out.insert(
             format!("problemCategories.{}.title", category.id),

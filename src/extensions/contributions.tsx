@@ -157,7 +157,7 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
   // Rust for the kinds the user agreed to.
   // Rules of a category of the extension's own (#410) go to that category, the others to the main one.
   const mainRules = contributes.problems.filter((rule) => rule.category === undefined);
-  if (mainRules.length > 0) removers.push(registerExtensionProblems(extensionId, info.name, mainRules));
+  if (mainRules.length > 0) removers.push(registerExtensionProblems(extensionId, contributes.problemsTitle ?? info.name, mainRules));
   for (const own of contributes.problemCategories ?? []) {
     const rules = contributes.problems.filter((rule) => rule.category === own.id);
     if (rules.length > 0) removers.push(registerExtensionProblems(extensionId, own.title, rules, { id: own.id, optIn: own.optIn }));
