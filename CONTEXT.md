@@ -758,7 +758,7 @@ The management cluster holds the Cluster API objects (Cluster, Machine, …) tha
 _Avoid_: child cluster, target cluster, managed cluster (that is a Crossplane/Argo CD word)
 
 **Stuck machine (Cluster API)**:
-A Machine still Pending, Provisioning or Provisioned 30 minutes after its phase last changed (`status.lastUpdated`): a problem of the `clusterApi` category, explained by its first unmet condition (BootstrapConfigReady, InfrastructureReady, NodeReady). Not the same as a MachineHealthCheck's verdict, which follows its own timeouts.
+A Machine still Pending, Provisioning or Provisioned 30 minutes after its phase last changed (`status.lastUpdated`): a problem of the Cluster API extension's category (`ext:sextant.cluster-api`, the built-in `clusterApi` until 0.30), explained by its first unmet condition (BootstrapConfigReady, InfrastructureReady, NodeReady). Not the same as a MachineHealthCheck's verdict, which follows its own timeouts.
 _Avoid_: hung machine, failed machine (Failed is a terminal failure the controllers report)
 
 **Head / worker (KubeRay)**:

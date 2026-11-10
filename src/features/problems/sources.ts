@@ -8,14 +8,6 @@ import { CONTOUR_ACROSS } from "../contour/across";
 import { HTTP_PROXY } from "../contour/model";
 import { INGRESS_ROUTE as TRAEFIK_INGRESS_ROUTE } from "../traefik/model";
 import { XRD } from "../crossplane/model";
-import { CAPI_PAUSED_ACROSS } from "../cluster-api/across";
-import {
-  CAPI_CLUSTER,
-  isKind as isCapiKind,
-  KUBEADM_CONTROL_PLANE as CAPI_KCP,
-  MACHINE as CAPI_MACHINE,
-  PROBLEM_KINDS as CAPI_PROBLEM_KINDS,
-} from "../cluster-api/model";
 import { HELM_CHART as K3S_HELM_CHART } from "../k3s/model";
 import { BUILD_ACROSS as OPENSHIFT_BUILD_ACROSS } from "../openshift/across";
 import { BUILD as OPENSHIFT_BUILD, DEPLOYMENT_CONFIG as OPENSHIFT_DC, IMAGE_STREAM as OPENSHIFT_IMAGE_STREAM, ROUTE as OPENSHIFT_ROUTE } from "../openshift/model";
@@ -107,11 +99,6 @@ export interface JudgedRows {
 export interface AcrossDef {
   tap: { id: string; toRow(obj: KubeObject): unknown; max: number };
   keep(problems: readonly Problem[], rows: ReadonlyMap<string, unknown>): Problem[];
-  /**
-   * The rows are of this other source of the same cluster (held with a tap while this source lives), not of this
-   * source's own objects: a Machine's problems are kept only while its Cluster is not paused (#243).
-   */
-  from?: SourceDef;
 }
 
 /** The cap of a source whose kind a cluster can hold by the thousand. */
@@ -151,16 +138,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
   // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
   crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],
-  // CloudNativePG (#213): unhealthy Clusters, failing archiving or backups, failed Backups.
-  // Cluster API (#243): failed or unavailable Clusters and KubeadmControlPlanes, Machines failed or stuck
-  // provisioning, MachineHealthChecks that stopped remediating; a management cluster can hold thousands of Machines:
-  // capped.
-  // Machines and control planes of a paused Cluster are left alone by its controllers: their problems are judged
-  // across the Cluster source's rows (`CAPI_PAUSED_ACROSS`), and kept while those rows cannot be read in full.
-  clusterApi: CAPI_PROBLEM_KINDS.map((kind) => {
-    const def = tool("clusterApi", kind, kind === CAPI_MACHINE ? MAX_SOURCE_OBJECTS : undefined);
-    return isCapiKind(kind, CAPI_MACHINE, CAPI_KCP) ? { ...def, across: { ...CAPI_PAUSED_ACROSS, from: tool("clusterApi", CAPI_CLUSTER) } } : def;
-  }),
   // k3s and RKE2 (#270): HelmCharts whose install Job failed or keeps failing, bundled components' Deployments not
   // available, judged by the provider of features/k3s (`external`: the Job and the Deployments are other objects), held
   // only where HelmCharts are served (its watches are bounded there).
@@ -220,22 +197,10 @@ export function sourcesFor(categories: readonly ProblemCategory[], kinds: Resour
         continue;
       }
       const served = kinds ? findKind(kinds, def.kind)?.kindRef : undefined;
-      if (served) add({ ...def, kind: served, ...servedAcross(def, kinds) });
+      if (served) add({ ...def, kind: served });
     }
   }
   return out;
-}
-
-/**
- * A source's `across.from` with the version the cluster serves; without it served (or without discovery) the source
- * is judged on its own (`across` dropped: every problem stays).
- */
-function servedAcross(def: SourceDef, kinds: ResourceKind[] | null | undefined): Pick<SourceDef, "across"> {
-  const from = def.across?.from;
-  if (!def.across || !from) return {};
-  const served = from.discovered ? (kinds ? findKind(kinds, from.kind)?.kindRef : undefined) : from.kind;
-  if (!served) return { across: undefined };
-  return { across: { ...def.across, from: { ...from, kind: served } } };
 }
 
 /** Whether `categories` need discovery to be watched. */

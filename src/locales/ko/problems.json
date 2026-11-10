@@ -24,7 +24,6 @@
     "traefik": "Traefik",
     "contour": "Contour",
     "crossplane": "Crossplane",
-    "clusterApi": "Cluster API",
     "openshift": "OpenShift",
     "reflector": "Reflector",
     "security": "보안",

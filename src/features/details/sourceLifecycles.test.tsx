@@ -9,8 +9,6 @@ import { resetClusterKinds } from "../../resources";
 import { NodeAutoscalingSection } from "../autoscaling/NodeSection";
 import { WorkloadAutoscalingSection } from "../autoscaling/WorkloadSection";
 import { NODE_CLAIM, NODE_POOL, HPA, SCALED_OBJECT } from "../autoscaling/model";
-import { ClusterApiSection } from "../cluster-api/details";
-import { CAPI_CLUSTER, MACHINE_DEPLOYMENT, MACHINE_SET, MACHINE } from "../cluster-api/model";
 import { resetSharedWatches, setWatchLinger } from "../resource-map/watches";
 import { ClaimUsageSection } from "../storage/UsageViews";
 import { LINGER_MS, USAGE_POLL_MS, resetVolumeUsage, useVolumeUsage } from "../storage/usageStore";
@@ -33,7 +31,7 @@ beforeEach(async () => {
   wb = watchBackend(); settings = defaultAppSettings();
   wb.backend.on("settings_get", () => settings);
   wb.backend.on("settings_update", args => settings = args.settings as AppSettings);
-  const kinds = [POD, PVC, SERVICE, DEPLOYMENT, CAPI_CLUSTER, MACHINE_DEPLOYMENT, MACHINE_SET, MACHINE, NODE_POOL, NODE_CLAIM, HPA, SCALED_OBJECT, KSERVICE, XRD];
+  const kinds = [POD, PVC, SERVICE, DEPLOYMENT, NODE_POOL, NODE_CLAIM, HPA, SCALED_OBJECT, KSERVICE, XRD];
   wb.backend.on("cluster_kinds", () => kinds.map((kindRef): ResourceKind => ({ kindRef, plural: kindRef.kind.toLowerCase() + "s", namespaced: !["NodePool", "NodeClaim", "ResourceSlice"].includes(kindRef.kind), verbs: ["list", "watch"], printerColumns: [] })));
   await loadSettings();
 });
@@ -66,19 +64,6 @@ it("stops the last volume poll after its linger, preserves another consumer, and
   expect(count()).toBe(2);
   bytes = 7; toggle("storage:usage.title"); await act(async () => {});
   expect(count()).toBe(3); expect(screen.getByText(/7B/)).toBeInTheDocument();
-});
-
-it("releases every Machine chain list and renders a fresh snapshot after reopening", async () => {
-  const ref = refOf(CAPI_CLUSTER, "management");
-  const obj: KubeObject = { apiVersion: "cluster.x-k8s.io/v1beta2", kind: "Cluster", metadata: { name: ref.name, namespace: ref.namespace! } };
-  render(card(ref, <ClusterApiSection clusterId="c1" objectRef={ref} obj={obj} />));
-  const ids = await Promise.all(["MachineDeployment", "MachineSet", "Machine"].map(k => watchOf(wb, k)));
-  toggle("clusterapi:chain.title");
-  await waitFor(() => { for (const id of ids) expect(wb.backend.listenerCount(`watch:${id}`)).toBe(0); });
-  toggle("clusterapi:chain.title");
-  const next = await watchOf(wb, "Machine"); expect(ids).not.toContain(next);
-  emitSnapshot(wb, next, [{ apiVersion: "cluster.x-k8s.io/v1beta2", kind: "Machine", metadata: { name: "fresh-machine", namespace: "demo" } }]);
-  expect(await screen.findByText("fresh-machine")).toBeInTheDocument();
 });
 
 it("releases only NodeClaim event ownership when the Node Disruptions child closes", async () => {

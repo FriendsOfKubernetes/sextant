@@ -28,6 +28,7 @@ export const OFFERS: readonly ExtensionOffer[] = [
   { id: "sextant.external-secrets", tool: "External Secrets", matches: (k) => k.group === "external-secrets.io" },
   { id: "sextant.sealed-secrets", tool: "Sealed Secrets", matches: (k) => k.group === "bitnami.com" && k.kind === "SealedSecret" },
   { id: "sextant.prometheus-operator", tool: "Prometheus Operator", matches: (k) => k.group === "monitoring.coreos.com" },
+  { id: "sextant.cluster-api", tool: "Cluster API", matches: (k) => k.group === "cluster.x-k8s.io" },
   { id: "sextant.cnpg", tool: "CloudNativePG", matches: (k) => k.group === "postgresql.cnpg.io" },
   { id: "sextant.strimzi", tool: "Strimzi", matches: (k) => k.group === "kafka.strimzi.io" },
   { id: "sextant.dra", tool: "Dynamic Resource Allocation", matches: (k) => k.group === "resource.k8s.io" },

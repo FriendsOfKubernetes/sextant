@@ -608,7 +608,7 @@ const ICONS = {
   postgresBackup: CnpgDatabaseBackup,
   postgresScheduledBackup: CnpgCalendarClock,
   postgresPooler: CnpgCombine,
-  // Cluster API (#243): the section and its kinds.
+  // Cluster API (#243): the section and its kinds, named by Sextant's own extension `extensions/cluster-api`.
   clusterApi: CapiCloudCog,
   capiCluster: CapiBoxes,
   capiClusterClass: CapiLayoutTemplate,

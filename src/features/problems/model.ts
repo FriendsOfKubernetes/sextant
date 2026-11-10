@@ -12,7 +12,6 @@ import { status } from "../../resources";
 import { kindFromApiVersion } from "../../resources/refs";
 import { eventTimestamp, involvedObject } from "../events/model";
 import { contourProblems } from "../contour/problemRules";
-import { capiProblems, isProblemKind as isClusterApiProblemKind } from "../cluster-api/model";
 import { isHelmControllerKind, isK3sKind } from "../k3s/model";
 import { isProblemKind as isOpenShiftProblemKind, openshiftProblems } from "../openshift/model";
 import {
@@ -43,7 +42,6 @@ export const PROBLEM_CATEGORIES = [
   "traefik",
   "contour",
   "crossplane",
-  "clusterApi",
   "k3s",
   "openshift",
   "reflector",
@@ -194,11 +192,6 @@ export interface Detected {
    * so its grace measures the time without progress.
    */
   stamp?: string;
-  /**
-   * The name of the object in the same namespace this one belongs to, for a source judged across another source's
-   * rows (`AcrossDef.from`): a Cluster API Machine's or control plane's Cluster.
-   */
-  belongsTo?: string;
 }
 
 /** A problem as the screen and the notifications see it. */
@@ -261,8 +254,6 @@ export function categoryOf(kind: Pick<KindRef, "group" | "kind">): BuiltInCatego
   if (kind.group === "gateway.networking.k8s.io") return "gateway";
   // Contour HTTPProxies (#233): invalid and orphaned ones.
   if (kind.group === "projectcontour.io" && kind.kind === "HTTPProxy") return "contour";
-  // Cluster API (#243): Clusters, KubeadmControlPlanes, Machines and MachineHealthChecks, judged by features/cluster-api.
-  if (isClusterApiProblemKind(kind)) return "clusterApi";
   // k3s and RKE2 (#270): HelmCharts and the bundled components, judged by the provider of features/k3s.
   if (isHelmControllerKind(kind) || isK3sKind(kind)) return "k3s";
   // KubeRay (#248): RayClusters, RayJobs and RayServices; KServe (#249): InferenceServices.
@@ -669,8 +660,6 @@ export function detect(kind: KindRef, obj: KubeObject): Detected[] {
       return gatewayProblems(obj, kind);
     case "contour":
       return contourProblems(kind, obj);
-    case "clusterApi":
-      return capiProblems(kind, obj);
     case "openshift":
       return openshiftProblems(kind, obj);
     case "security":

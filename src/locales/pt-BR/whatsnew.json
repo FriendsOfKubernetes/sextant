@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "As visualizações das ferramentas do cluster agora são extensões",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe e Operator Lifecycle Manager saíram do Sextant para suas próprias extensões do catálogo de extensões, atualizadas separadamente. Instale abaixo as que você usa: até lá, suas seções não são exibidas. Suas configurações de notificação para elas foram mantidas, e a barra lateral também as oferece nos clusters que executam essas ferramentas."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe e Operator Lifecycle Manager saíram do Sextant para suas próprias extensões do catálogo de extensões, atualizadas separadamente. Instale abaixo as que você usa: até lá, suas seções não são exibidas. Suas configurações de notificação para elas foram mantidas, e a barra lateral também as oferece nos clusters que executam essas ferramentas."
     },
     "api4": {
       "title": "API de extensões 4",
@@ -43,7 +43,8 @@
       "kyverno": "Políticas com seu modo e resultados, relatórios de políticas e os resultados de cada objeto",
       "sealed-secrets": "SealedSecrets com seu estado de sincronização, escopo, Secret de destino e chaves seladas, e o controlador com suas chaves de selagem",
       "vpa": "VerticalPodAutoscalers com seu estado e recomendação e o que um pod novo receberia, seus checkpoints e componentes, e os VPAs de cada workload",
-      "prometheus-operator": "ServiceMonitors, PodMonitors e Probes com o que selecionam, PrometheusRules, Prometheus e Alertmanagers"
+      "prometheus-operator": "ServiceMonitors, PodMonitors e Probes com o que selecionam, PrometheusRules, Prometheus e Alertmanagers",
+      "cluster-api": "Clusters com seu estado, control planes, MachineDeployments, MachineSets e Machines até os Nodes do cluster de workload, MachineHealthChecks e ClusterResourceSets"
     }
   }
 }

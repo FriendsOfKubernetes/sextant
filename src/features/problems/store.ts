@@ -103,8 +103,6 @@ interface Entry {
   attempts: number;
   /** A capped source (`SourceDef.maxObjects`) holds fewer objects than match: the last `capped` total said so. */
   capped?: boolean;
-  /** `SourceDef.across.from`: the key of the other source whose rows judge this one's problems, and its release. */
-  acrossFrom?: { key: string; release: () => void };
   /** The namespaces the watch reads (`null`: every namespace); set when it opens. */
   watched?: readonly string[] | null;
   /**
@@ -154,7 +152,6 @@ function dropCluster(clusterId: ClusterId): void {
     if (entry.retry) clearTimeout(entry.retry);
     entries.delete(key);
     entry.stop();
-    entry.acrossFrom?.release();
   }
   epochs.set(clusterId, epochOf(clusterId) + 1);
   // Where extensions' rules run is asked again: a new connection may be another context.
@@ -207,8 +204,7 @@ function publish(entry: Entry, patch: Partial<SourceState> = {}): void {
   let problems: Problem[] = [];
   for (const list of entry.byUid.values()) problems.push(...list);
   const across = entry.state.def.across;
-  const tapsOf = entry.acrossFrom ? entries.get(entry.acrossFrom.key)?.taps : entry.taps;
-  const rows = across ? tapsOf?.get(across.tap.id)?.state : undefined;
+  const rows = across ? entry.taps.get(across.tap.id)?.state : undefined;
   // Only rows read in full may hide a problem: while they load (or after an error) every problem stays.
   if (across && rows?.status === "ready") problems = across.keep(problems, rows.rows);
   const judge = entry.state.def.judge;
@@ -258,11 +254,6 @@ function judgeContext(entry: Entry, tapId: string): JudgeContext {
       return uids;
     },
   };
-}
-
-/** Publishes again the sources judged across the rows of the source `key` (`AcrossDef.from`) after they changed. */
-function publishDependents(key: string): void {
-  for (const entry of entries.values()) if (entry.acrossFrom?.key === key) publish(entry);
 }
 
 /**
@@ -458,7 +449,6 @@ function scheduleRetry(key: string, entry: Entry, error: ApiError): void {
 function failed(key: string, entry: Entry, error: ApiError): void {
   for (const tap of entry.taps.values()) tap.state = { ...tap.state, status: "error", error };
   publish(entry, { status: "error", error });
-  publishDependents(key);
   scheduleRetry(key, entry, error);
 }
 
@@ -534,9 +524,8 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
           const patch = applyUpdate(created, update, clock());
           if (patch) publish(created, patch);
           // The rows decide which problems a source judged across its objects shows.
-          else if (tapped && ((def.across && !def.across.from) || def.judge)) publish(created);
+          else if (tapped && (def.across || def.judge)) publish(created);
           else if (tapped) changed();
-          if (tapped) publishDependents(key);
         },
         onStartError: (err) => {
           if (entries.get(key) !== created) return;
@@ -548,7 +537,7 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
     if (def.external) created.open = () => (created.stop = openProvided(key, clusterId, created));
     // A source judged across its objects keeps its own tap for as long as it lives (a view's tap of the same id
     // shares it).
-    if (def.across && !def.across.from) {
+    if (def.across) {
       created.taps.set(def.across.tap.id, { tap: def.across.tap, refs: 1, state: { status: "loading", rows: new Map(), truncated: false } });
     }
     // So does a source an extension's rules judge across objects.
@@ -557,10 +546,6 @@ export function acquireSource(clusterId: ClusterId, def: SourceDef): () => void 
     }
     if (accessPending(clusterId)) deferred.add(created);
     else created.open();
-    // A source judged across another source's rows holds that source with a tap for as long as it lives.
-    if (def.across?.from) {
-      created.acrossFrom = { key: sourceKey(clusterId, def.across.from), release: acquireRows(clusterId, def.across.from, def.across.tap) };
-    }
     entry = created;
     changed();
   }
@@ -632,7 +617,6 @@ function close(key: string, entry: Entry): void {
   entries.delete(key);
   if (entry.retry) clearTimeout(entry.retry);
   entry.stop();
-  entry.acrossFrom?.release();
   changed();
 }
 

@@ -195,7 +195,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "traefik",
     "contour",
     "crossplane",
-    "clusterApi",
     "k3s",
     "openshift",
     "reflector",
@@ -227,8 +226,6 @@ pub const NEVER_FOR_AGENTS: &[&str] = &[
     "crossplane",
     // Reflector mirrors (#241): a window view of 0.21.0.
     "reflector",
-    // Cluster API (#243): a window view of 0.22.0.
-    "clusterApi",
     // k3s and RKE2 HelmCharts and bundled components (#270): a window view of 0.25.0.
     "k3s",
     // OpenShift Routes, DeploymentConfigs, Builds and ImageStreams (#267): a window view of 0.25.0.

@@ -28,6 +28,7 @@ for other authors. The guide to writing one is the wiki page
 | Sealed Secrets (`sextant.sealed-secrets`) | [`sealed-secrets/`](sealed-secrets/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | SealedSecrets with their unseal state, scope, target Secret and sealed keys by name, and the controller with its sealing keys, read-only, with opt-in problems |
 | Vertical Pod Autoscaler (`sextant.vpa`) | [`vpa/`](vpa/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | VerticalPodAutoscalers with their state, update mode and recommendation against the target's template with what a new pod would get, their checkpoints and components, and the VPAs of every workload, read-only, with their problems |
 | Prometheus Operator (`sextant.prometheus-operator`) | [`prometheus-operator/`](prometheus-operator/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | ServiceMonitors, PodMonitors and Probes with what they select and which Prometheus picks them up, PrometheusRules, Prometheuses and Alertmanagers, read-only, with opt-in problems |
+| Cluster API (`sextant.cluster-api`) | [`cluster-api/`](cluster-api/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Clusters, ClusterClasses, KubeadmControlPlanes, MachineDeployments, MachineSets, Machines, MachineHealthChecks and ClusterResourceSets with their state, the chain from a Cluster down to its Machines and their Nodes, and the workload cluster opened on a click, read-only, with their problems |
 
 ## The documents of an extension
 

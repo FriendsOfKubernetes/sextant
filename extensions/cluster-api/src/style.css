@@ -1,0 +1,74 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields, tables,
+   status words and links are the SDK's UI kit (`ui`, classes `sx-*`). The rest is the built-in view's look: its
+   plain-language notes, messages and the chain tree were cert-manager's `cm-*` classes. */
+body.compact {
+  padding: 8px 0;
+}
+
+/* A plain-language note on the object's state; danger for failures. */
+.capi-explain {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.capi-explain--danger {
+  border-left-color: var(--color-danger);
+}
+
+/* The cluster's message under the note: Cluster API's condition messages are lists, one item per line. */
+.capi-message {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.capi-muted {
+  margin: 4px 0;
+  color: var(--color-text-muted);
+}
+
+/* The chain of a Cluster's Machines. */
+.capi-chain,
+.capi-chain ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.capi-chain ul {
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+}
+
+.capi-chain__item {
+  margin: 4px 0;
+}
+
+.capi-chain__row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.capi-chain__kind {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.capi-chain__extra {
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* The workload cluster's buttons. */
+.capi-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}

@@ -190,3 +190,22 @@ provider and store that judged monitors across objects go with it; the problems 
 OpenShift). Cleanup keeps its knowledge of the monitoring kinds (`hygiene/kinds.ts`). Where the extensions
 still differ — for the VPA, a problem's HPA by name, no pods matched never notifying and the HPAs it looks up; for
 Prometheus Operator, the "not picked up" warning and the Services and Pods it lists — is listed in their READMEs.
+
+## Amendment: Cluster API
+
+`extensions/cluster-api` (`sextant.cluster-api`, 1.0.0) takes the Cluster API view (ADR-0113): Clusters, ClusterClasses,
+KubeadmControlPlanes, MachineDeployments, MachineSets, Machines, MachineHealthChecks and ClusterResourceSets in the
+section `clusterApi` with the built-in columns, "Only problems" and details (each object's state in both status shapes,
+the chain Cluster → control plane and infrastructure → MachineDeployments → MachineSets → Machines → bootstrap and
+infrastructure objects → the Node, a MachineHealthCheck's checks and why remediation is blocked). The section keeps its
+place after `crossplane`, behind `prometheusOperator`, and the sidebar offers it where `cluster.x-k8s.io` is served. A
+workload cluster Sextant has opens through `ui.openCluster` (#413), which the core keeps. Its problems (`Failed`,
+`NotAvailable`, `ProvisioningStuck`, `RemediationBlocked`) are rules of the extension's own category; the version-3
+migration moves the category `clusterApi` (on by default) to `ext:sextant.cluster-api` (`MOVED_PROBLEM_CATEGORIES`,
+never for agents by default, as before). A paused Cluster's Machines and control planes are told by the extension's
+rules (their own Paused condition, or their Cluster with only old conditions), so the problems store's
+`AcrossDef.from` — a source judged across another source's rows, which only Cluster API used — goes with the built-in
+view, as does `Detected.belongsTo`; `across` on a source's own rows stays (Contour, OpenShift). The objects-by-name
+reader the built-in view shared with k3s's ServiceLB table moves to `src/resources/refObjects.ts`. Where the extension
+still differs — the state columns' hover in two status shapes, provider objects of kinds not named in its permissions,
+a paused Cluster it cannot read, the workload cluster opened through Sextant's dialog — is listed in its README.

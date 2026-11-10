@@ -10,7 +10,7 @@ import type { KubeObject } from "../../api";
 import { LoadingIndicator } from "../../components";
 import type { PageProps } from "../../layout/pages";
 import { StatusText } from "../../resources";
-import { useRefObjects } from "../cluster-api/hooks";
+import { useRefObjects } from "../../resources/refObjects";
 import { chips, Fields, KINDS, link, table, type ColumnWrap, type FieldRow } from "../details";
 import { Muted } from "./details";
 import { MAX_NODES, useAddons, useChartJobs, useHelmCharts, useKubeSystemDaemonSets, useKubeSystemDeployments, useNodes } from "./hooks";
