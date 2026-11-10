@@ -225,6 +225,51 @@ describe("relatedBy (#404)", () => {
   });
 });
 
+describe("an any of missing and related, and related of a list (ADR-0167 amendment)", () => {
+  const CLAIM = { group: "resource.k8s.io", kind: "ResourceClaim" };
+  const CLAIM_DEF: SourceDef = { ...QUEUE_DEF, kind: { group: "resource.k8s.io", version: "v1", kind: "ResourceClaim" } };
+  const noDevices: ProblemCondition = { type: "absent", path: ".status.allocation" };
+  // A Pod waits when any claim it names is missing, or there without devices.
+  const WAITING = rule({
+    id: "waiting",
+    kind: { group: "", kind: "Pod" },
+    when: {
+      type: "any",
+      of: [
+        { type: "missing", path: ".status.resourceClaimStatuses[*].resourceClaimName", kind: CLAIM },
+        { type: "related", path: ".status.resourceClaimStatuses[*].resourceClaimName", kind: CLAIM, when: noDevices },
+      ],
+    },
+    message: "Waiting for {{missing}}",
+  });
+  const rules = new Map([[WAITING.id, WAITING]]);
+  const targets: AcrossTarget[] = [{ ...CLAIM, namespaced: true, def: CLAIM_DEF }];
+  const facts = factsOf([WAITING], (k) => `${k.group}/${k.kind}`.toLowerCase()).get("resource.k8s.io/resourceclaim") ?? [];
+  const claims = (objects: Obj[], over: Partial<JudgedRows> = {}): JudgedRows => ({
+    status: "ready",
+    rows: new Map(objects.map((o) => [o.metadata.uid, rowOf([], facts)(o)])),
+    truncated: false,
+    namespaces: null,
+    ...over,
+  });
+  const claim = (name: string, allocated: boolean) => obj(name, { metadata: { name, namespace: "team-a", uid: `c-${name}` }, status: allocated ? { allocation: {} } : {} });
+  const pod = obj("p", { status: { resourceClaimStatuses: [{ resourceClaimName: "a" }, { resourceClaimName: "b" }, { resourceClaimName: "c" }] } });
+  const judged = (rows: JudgedRows) =>
+    judgeAcross([problemOf(WAITING, pod)], { rows: undefined, target: (def) => (def === CLAIM_DEF ? rows : undefined), problemUids: () => new Set() }, { rules, targets });
+
+  it("stands when any claim of any length is missing or without devices, and names them", () => {
+    expect(judged(claims([claim("a", true), claim("b", true), claim("c", true)]))).toEqual([]);
+    expect(judged(claims([claim("a", true), claim("b", true)]))[0]?.message).toBe("Waiting for c");
+    expect(judged(claims([claim("a", true), claim("b", true), claim("c", false)]))[0]?.message).toBe("Waiting for c");
+    // In the Pod's order, whichever branch found them.
+    expect(judged(claims([claim("a", false), claim("c", true)]))[0]?.message).toMatch(/^Waiting for a\W+b$/);
+  });
+
+  it("cannot tell while the claims are not read in full", () => {
+    expect(judged(claims([claim("a", true)], { truncated: true }))).toEqual([]);
+  });
+});
+
 describe("selectsNone (#404)", () => {
   const SERVICE = { group: "", kind: "Service" };
   const SERVICE_DEF: SourceDef = { ...QUEUE_DEF, kind: { group: "", version: "v1", kind: "Service" } };

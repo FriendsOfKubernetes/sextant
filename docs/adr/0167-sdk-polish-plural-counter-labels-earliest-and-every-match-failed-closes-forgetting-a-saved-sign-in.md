@@ -393,3 +393,14 @@ The placeholder filter `|ruleHosts` (`PLACEHOLDER_FILTERS` in Rust and the SDK):
 the quoted arguments of `Host(…)` and `HostSNI(…)` calls, lower case, not `*`, each once, joined with ", " — the window's
 `hostsOf` of `src/features/diagnose/traefikModel.ts`, which the core's own IngressRoute diagnosis reads. The built-in
 Traefik tables had a Hosts column so; no regular expression or pattern reaches the manifest (#405).
+
+## Amendment: an `any` of lookups, and `related` of a list
+
+An `any` whose every branch is a `missing` or a `related` (`sextantApi` 4; `Inside::AnyOfLookups` in Rust,
+`lookupsOnly` in the SDK) is one group of lookups: it holds when any of their objects is missing, or there with its
+fact; while a list is not read in full it cannot tell, and — as no other branch could hold — that is never wrong (the
+reason `missing` stayed out of `any`). Mixed with any other condition, or under `not`, they stay refused. A
+`related` whose `path` reads a list (`[*]`) looks each name up: any one there with its fact is enough. The window
+(`evaluate`) gives every lookup of such an `any` the same `anyOf` key, branch by branch and item by item, so
+`{{missing}}` names what was found in the object's own order. DRA's waiting Pods — any number of claims, any of them
+missing or without devices — needed it.

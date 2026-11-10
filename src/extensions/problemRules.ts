@@ -372,10 +372,20 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       // The judge's latest answer tells (ADR-0168): `judgeAcross` keeps the problem only where it gives the fact.
       return { holds: true, lookups: [{ group: "", kind: "", name: "", judged: { judge: condition.judge, fact: condition.fact } }] };
     case "related": {
+      const fact = factKey(condition.when);
+      if (condition.path.includes("*")) {
+        // A list of names (ADR-0167 amendment): any one of them there with the fact holding; nothing named, nothing.
+        const items = valueAt(obj, condition.path);
+        const key = `${condition.kind.group}/${condition.kind.kind}|${condition.path}|${fact}`;
+        const lookups: Lookup[] = (Array.isArray(items) ? items : [])
+          .filter((item): item is string => typeof item === "string" && item.trim() !== "")
+          .map((name) => ({ group: condition.kind.group, kind: condition.kind.kind, name, fact, anyOf: key }));
+        return lookups.length === 0 ? NO : { holds: true, lookups };
+      }
       // Nothing named, nothing related; the named object's own condition is judged on its row (#409).
       const name = valueAt(obj, condition.path);
       if (typeof name !== "string" || name.trim() === "") return NO;
-      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name, fact: factKey(condition.when) }] };
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name, fact }] };
     }
     case "all": {
       let activeFrom: number | undefined;
@@ -401,6 +411,19 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       return verdict;
     }
     case "any": {
+      // An `any` of `missing` and `related` only (ADR-0167 amendment): one group of lookups, any of whose objects is
+      // missing or related is enough; a list not read makes it unknown, never wrong.
+      if (condition.of.length > 0 && condition.of.every((c) => c.type === "missing" || c.type === "related")) {
+        const key = `any|${JSON.stringify(condition.of)}`;
+        // Branch by branch, item by item (the first item of each branch, then the second…): `{{missing}}` names them in
+        // the object's own order.
+        const branches = condition.of.map((inner) => evaluate(inner, obj, ctx).lookups ?? []);
+        const lookups: Lookup[] = [];
+        for (let i = 0; i < Math.max(0, ...branches.map((b) => b.length)); i++) {
+          for (const branch of branches) if (branch[i]) lookups.push({ ...branch[i]!, anyOf: key });
+        }
+        return lookups.length === 0 ? NO : { holds: true, lookups };
+      }
       // The branch that counts longest: one that holds now and for good, else now until the latest end, else the one
       // that holds earliest.
       let best: Verdict | undefined;

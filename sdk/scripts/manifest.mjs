@@ -685,7 +685,9 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
   }
   if (condition.type === "all" || condition.type === "any") {
     if (depth >= maxDepth) fail(segments, `\`all\` and \`any\` nest at most ${maxDepth} deep`);
-    const innerInside = inside === "top" && condition.type === "any" ? "any" : inside;
+    // An `any` of lookups only (`missing`, `related`; sextantApi 4): one group, any of its objects (`Inside::AnyOfLookups`).
+    const lookupsOnly = condition.type === "any" && counter.api >= SOURCES_API && condition.of.length > 0 && condition.of.every((c) => c.type === "missing" || c.type === "related");
+    const innerInside = inside === "top" && condition.type === "any" ? (lookupsOnly ? "lookups" : "any") : inside;
     condition.of.forEach((inner, i) => checkCondition(inner, kind, [...segments, "of", i], depth + 1, counter, innerInside));
     return;
   }
@@ -787,7 +789,7 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
   if (condition.type === "related") {
     if (counter.single) fail([...segments, "type"], "`related` judges across objects: only problem rules may use it");
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`related\` needs sextantApi ${SOURCES_API} or later`);
-    if (inside !== "top") fail([...segments, "type"], "`related` cannot be inside `any` or `not`: a list not read would make it unknown");
+    if (inside !== "top" && inside !== "lookups") fail([...segments, "type"], "`related` cannot be inside `any` or `not`: a list not read would make it unknown (but in an `any` of `missing` and `related` only)");
     if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret") fail([...segments, "kind"], "Secrets are never listed for rules");
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
     checkObjectCondition(condition.when, [condition.kind], [...segments, "when"], counter.api);
@@ -802,7 +804,7 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
   if (condition.type === "missing") {
     if (counter.single) fail([...segments, "type"], "`missing` judges across objects: only problem rules may use it");
     if (counter.api < ACROSS_API) fail([...segments, "type"], `\`missing\` needs sextantApi ${ACROSS_API} or later`);
-    if (inside === "any") fail([...segments, "type"], "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown");
+    if (inside === "any") fail([...segments, "type"], "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown (but in an `any` of `missing` and `related` only)");
     if (inside === "not") fail([...segments, "type"], "`missing` cannot be inside `not`: a list not read would make it unknown");
     // A list of references, an item's namespace (#404).
     const listed = condition.path.includes("*");

@@ -1039,12 +1039,23 @@ pub(crate) fn check_object_condition(
     Ok(())
 }
 
-/// What a condition is inside of: `missing` is refused inside `any` and `not`.
+/// What a condition is inside of: `missing` is refused inside `any` and `not`, but for an `any` of lookups only.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Inside {
     Top,
     Any,
     Not,
+    /// An `any` whose every branch is a `missing` or `related` (`sextantApi` 4): it holds when any of their objects
+    /// is missing or related (one group of lookups), and cannot tell otherwise when a list is not read — never wrong.
+    AnyOfLookups,
+}
+
+/// Whether a condition is one lookup of another kind's objects (`missing`, `related`).
+fn is_lookup(condition: &ProblemCondition) -> bool {
+    matches!(
+        condition,
+        ProblemCondition::Missing { .. } | ProblemCondition::Related { .. }
+    )
 }
 
 fn check_condition<'k>(
@@ -1328,10 +1339,10 @@ fn check_condition<'k>(
                     format!("`related` needs sextantApi {SOURCES_API} or later"),
                 ));
             }
-            if !matches!(inside, Inside::Top) {
+            if !matches!(inside, Inside::Top | Inside::AnyOfLookups) {
                 return Err(at(
                     &path.key("type"),
-                    "`related` cannot be inside `any` or `not`: a list not read would make it unknown",
+                    "`related` cannot be inside `any` or `not`: a list not read would make it unknown (but in an `any` of `missing` and `related` only)",
                 ));
             }
             if target.group.is_empty() && target.kind.eq_ignore_ascii_case("Secret") {
@@ -1422,7 +1433,7 @@ fn check_condition<'k>(
                 Inside::Any => {
                     return Err(at(
                         &path.key("type"),
-                        "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown",
+                        "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown (but in an `any` of `missing` and `related` only)",
                     ));
                 }
                 Inside::Not => {
@@ -1431,7 +1442,7 @@ fn check_condition<'k>(
                         "`missing` cannot be inside `not`: a list not read would make it unknown",
                     ));
                 }
-                Inside::Top => {}
+                Inside::Top | Inside::AnyOfLookups => {}
             }
             // From sextantApi 4 a Secret is looked up by name only (#404): the window lists Secrets for rules
             // metadata-only, never a value (a SealedSecret's target Secret, ADR-0109).
@@ -1490,6 +1501,11 @@ fn check_condition<'k>(
                 ));
             }
             let inner_inside = match (inside, condition) {
+                (Inside::Top, ProblemCondition::Any { of })
+                    if checks.api >= SOURCES_API && !of.is_empty() && of.iter().all(is_lookup) =>
+                {
+                    Inside::AnyOfLookups
+                }
                 (Inside::Top, ProblemCondition::Any { .. }) => Inside::Any,
                 _ => inside,
             };
