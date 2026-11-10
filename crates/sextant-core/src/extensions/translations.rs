@@ -120,6 +120,17 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
                     Text::Template(tooltip, 300),
                 );
             }
+            // Every plural form a language may need (#404).
+            if case.plural_by.is_some() {
+                for form in super::section_badges::PLURAL_FORMS {
+                    if form != "other" {
+                        out.insert(
+                            format!("columns.{}.cases.{i}.textForms.{form}", column.id),
+                            Text::Template(&case.text, 200),
+                        );
+                    }
+                }
+            }
         }
     }
     for section in &c.sections {

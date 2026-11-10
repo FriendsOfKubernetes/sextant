@@ -223,6 +223,7 @@ export const MANIFEST_SHAPES = {
     cases: "optional",
     afterColumn: "optional",
     filterBy: "optional",
+    sorted: "optional",
     items: "optional",
     separator: "optional",
     joinPaths: "optional",

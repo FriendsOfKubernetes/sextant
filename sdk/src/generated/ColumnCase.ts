@@ -24,4 +24,13 @@ tooltipOr?: Array<string>,
  * (#403: a state's order, not its translated word); its text is still shown.
  * A number, or on a `text` column a text with the text's placeholders (#404): the reason a row sorts by.
  */
-value?: number | string, };
+value?: number | string, 
+/**
+ * The number whose CLDR plural form picks the text (#404): a numeric path (`|count`/`|sum` allowed); with
+ * `textForms`. `sextantApi` 4.
+ */
+pluralBy?: string, 
+/**
+ * The text by plural form besides `other`, which is `text` (#404): `{"one": "{{…}} import fails"}`.
+ */
+textForms?: { [key in string]: string }, };

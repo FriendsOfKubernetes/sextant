@@ -131,6 +131,21 @@ describe("an extension's computed column", () => {
     expect(saved.value!(vpa)).toBe(Date.parse("2026-11-01T10:00:00Z"));
   });
 
+  it("sort a list in the UI language's order, and pick a case's text by its count's plural form (#404)", () => {
+    const stream = { metadata: { name: "s" }, spec: { tags: ["v2", "latest", "v10"] }, status: { failing: [1, 2] } } as unknown as KubeObject;
+    expect(computedColumn("t", column({ paths: [".spec.tags"], format: "list", sorted: true })).searchText!(stream, ctx)).toBe("latest, v10, v2");
+    const imports = computedColumn(
+      "i",
+      column({
+        paths: [".status.failing"],
+        cases: [{ when: { type: "exists", path: ".status.failing" }, text: "{{.status.failing|count}} imports fail", pluralBy: ".status.failing|count", textForms: { one: "{{.status.failing|count}} import fails" } }],
+      }),
+    );
+    expect(imports.searchText!(stream, ctx)).toBe("2 imports fail");
+    const one = { metadata: { name: "o" }, status: { failing: [1] } } as unknown as KubeObject;
+    expect(imports.searchText!(one, ctx)).toBe("1 import fails");
+  });
+
   it("join every path's list with joinPaths, each item once (#404)", () => {
     const o = {
       metadata: { name: "k" },

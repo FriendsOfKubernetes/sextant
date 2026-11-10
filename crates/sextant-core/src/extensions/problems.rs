@@ -659,7 +659,10 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             check_message(reason, &rule.kind, &here.key("reason"), metadata_only)?;
         }
         if let Some(since) = &rule.since {
-            check_rule_path(since, &rule.kind, &here.key("since"), metadata_only)?;
+            // The earliest of a list's times may start it (`|min`, #404).
+            let since_at = here.key("since");
+            let since = numeric_path(since, manifest.sextant_api, &since_at)?;
+            check_rule_path(since, &rule.kind, &since_at, metadata_only)?;
         }
         for (field, set) in [
             ("reasonOr", rule.reason_or.is_some()),
@@ -732,12 +735,9 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             ));
         }
         for (j, path) in since_or.iter().enumerate() {
-            check_rule_path(
-                path,
-                &rule.kind,
-                &here.key("sinceOr").index(j),
-                metadata_only,
-            )?;
+            let place = here.key("sinceOr").index(j);
+            let path = numeric_path(path, manifest.sextant_api, &place)?;
+            check_rule_path(path, &rule.kind, &place, metadata_only)?;
         }
         if let Some(about) = &rule.about {
             let here = here.key("about");
@@ -1394,8 +1394,12 @@ pub(crate) fn numeric_path<'t>(
     let Some((field, filter)) = text.rsplit_once('|') else {
         return Ok(text);
     };
-    if !matches!(filter.trim(), "sum" | "count") {
-        return Err(at(path, "ends in `|sum` or `|count`, or in no filter"));
+    // `|min`/`|max` (#404): a list's smallest or largest number, or earliest or latest time.
+    if !matches!(filter.trim(), "sum" | "count" | "min" | "max") {
+        return Err(at(
+            path,
+            "ends in `|sum`, `|count`, `|min` or `|max`, or in no filter",
+        ));
     }
     if api < SOURCES_API {
         return Err(at(

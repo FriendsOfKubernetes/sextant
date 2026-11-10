@@ -951,7 +951,7 @@ function checkProblems(manifest) {
       if (manifest.sextantApi < SOURCES_API) fail([...here, "reason"], `needs sextantApi ${SOURCES_API} or later`);
       checkMessage(rule.reason, rule.kind, [...here, "reason"], metadataOnly);
     }
-    if (rule.since !== undefined) checkRulePath(rule.since, rule.kind, [...here, "since"], metadataOnly);
+    if (rule.since !== undefined) checkRulePath(numericPath(rule.since, manifest.sextantApi, [...here, "since"]), rule.kind, [...here, "since"], metadataOnly);
     for (const field of ["reasonOr", "sinceOr", "about", "stamp", "notifyAgainOn", "sinceUnit", "pluralBy", "messageForms"]) {
       if (rule[field] !== undefined && manifest.sextantApi < SOURCES_API) fail([...here, field], `needs sextantApi ${SOURCES_API} or later`);
     }
@@ -973,7 +973,7 @@ function checkProblems(manifest) {
     }
     if (rule.sinceOr !== undefined && rule.since === undefined) fail([...here, "sinceOr"], "falls back from `since`: the rule needs a `since`");
     if (rule.sinceUnit !== undefined && rule.since === undefined) fail([...here, "sinceUnit"], "says how `since` is written: the rule needs a `since`");
-    (rule.sinceOr ?? []).forEach((path, j) => checkRulePath(path, rule.kind, [...here, "sinceOr", j], metadataOnly));
+    (rule.sinceOr ?? []).forEach((path, j) => checkRulePath(numericPath(path, manifest.sextantApi, [...here, "sinceOr", j]), rule.kind, [...here, "sinceOr", j], metadataOnly));
     if (rule.about !== undefined) {
       const about = rule.about;
       const named = about.kind !== undefined && about.apiVersionPath === undefined && about.kindPath === undefined;
@@ -1353,6 +1353,10 @@ export function translatableTexts(manifest) {
       if (c.text !== "") out.set(`columns.${column.id}.cases.${i}.text`, { max: 200, message: c.text });
       if (c.tooltip !== undefined) out.set(`columns.${column.id}.cases.${i}.tooltip`, { max: 300, message: c.tooltip });
       (c.tooltipOr ?? []).forEach((t, k) => out.set(`columns.${column.id}.cases.${i}.tooltipOr.${k}`, { max: 300, message: t }));
+      // Every plural form a language may need (#404).
+      if (c.pluralBy !== undefined) {
+        for (const form of PLURAL_FORMS) if (form !== "other") out.set(`columns.${column.id}.cases.${i}.textForms.${form}`, { max: 200, message: c.text });
+      }
     });
   }
   for (const section of c.sections ?? []) if (section.title !== undefined) out.set(`sections.${section.section}.title`, title);
@@ -1651,7 +1655,8 @@ function numericPath(text, api, segments) {
   const bar = text.lastIndexOf("|");
   if (bar < 0) return text;
   const filter = text.slice(bar + 1).trim();
-  if (filter !== "sum" && filter !== "count") fail(segments, "ends in `|sum` or `|count`, or in no filter");
+  // `|min`/`|max` (#404): a list's smallest or largest number, or earliest or latest time.
+  if (!["sum", "count", "min", "max"].includes(filter)) fail(segments, "ends in `|sum`, `|count`, `|min` or `|max`, or in no filter");
   if (api < SOURCES_API) fail(segments, `\`|${filter}\` needs sextantApi ${SOURCES_API} or later`);
   return text.slice(0, bar).trim();
 }
@@ -1766,7 +1771,7 @@ function checkSeparator(sep, segments) {
 /** `MAX_ITEM_CASES` (#404). */
 const MAX_ITEM_CASES = 10;
 
-const COLUMN_FIELDS = ["separator", "items", "filterBy", "joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
+const COLUMN_FIELDS = ["sorted", "separator", "items", "filterBy", "joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
 
 function checkColumns(manifest) {
   const list = ["contributes", "columns"];
@@ -1782,6 +1787,7 @@ function checkColumns(manifest) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "filterBy"], `needs sextantApi ${WINDOW_API} or later`);
       if (column.filterBy !== "value" || (column.format ?? "text") !== "text" || (column.cases ?? []).length === 0) fail([...here, "filterBy"], 'is `"value"` on a text column with `cases`');
     }
+    if (column.sorted !== undefined && column.format !== "list") fail([...here, "sorted"], 'goes with `format: "list"`');
     if (column.separator !== undefined) {
       if (!["list", "entries"].includes(column.format) || column.items?.separator !== undefined) fail([...here, "separator"], 'goes with `format: "list"` or `"entries"` (with `items`, theirs)');
       checkSeparator(column.separator, [...here, "separator"]);
@@ -1853,6 +1859,21 @@ function checkColumns(manifest) {
         } else if (!["number", "text", "count", "sum"].includes(format)) fail([...here, "cases", j, "value"], bad);
       }
       if (c.tooltip !== undefined) checkMessage(c.tooltip, column.kind, [...here, "cases", j, "tooltip"], false);
+      // The text by plural form (#404).
+      if (c.pluralBy !== undefined && c.textForms === undefined) fail([...here, "cases", j, "pluralBy"], "goes with `textForms`");
+      if (c.textForms !== undefined && c.pluralBy === undefined) fail([...here, "cases", j, "textForms"], "goes with `pluralBy`");
+      if (c.pluralBy !== undefined && c.textForms !== undefined) {
+        checkPath(numericPath(c.pluralBy, manifest.sextantApi, [...here, "cases", j, "pluralBy"]), column.kind, [...here, "cases", j, "pluralBy"]);
+        const forms = sortedKeys(c.textForms);
+        if (forms.length === 0) fail([...here, "cases", j, "textForms"], "gives at least one form");
+        for (const form of forms) {
+          const at = [...here, "cases", j, "textForms", form];
+          if (form === "other" || !PLURAL_FORMS.includes(form)) fail(at, "is a CLDR plural form besides `other` (the `text`): zero, one, two, few or many");
+          const t = c.textForms[form];
+          if (t.trim() === "" || Array.from(t).length > 200) fail(at, "is a text of 1 to 200 characters");
+          checkMessage(t, column.kind, at, false);
+        }
+      }
       if (c.tooltipOr !== undefined) {
         if (c.tooltip === undefined || c.tooltipOr.length === 0 || c.tooltipOr.length > 3) fail([...here, "cases", j, "tooltipOr"], "follows a `tooltip` with 1 to 3 more");
         c.tooltipOr.forEach((t, k) => checkMessage(t, column.kind, [...here, "cases", j, "tooltipOr", k], false));

@@ -431,6 +431,9 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 ));
             }
         }
+        if column.sorted.is_some() && column.format != Some(ColumnFormat::List) {
+            return Err(at(&here.key("sorted"), "goes with `format: \"list\"`"));
+        }
         for (j, case) in column.cases.iter().flatten().enumerate() {
             check_object_condition(
                 &case.when,
@@ -438,6 +441,40 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 &here.key("cases").index(j).key("when"),
                 manifest.sextant_api,
             )?;
+            // The text by plural form (#404), as a rule's message.
+            let case_at = here.key("cases").index(j);
+            match (&case.plural_by, &case.text_forms) {
+                (None, None) => {}
+                (Some(by), Some(forms)) => {
+                    let by_at = case_at.key("pluralBy");
+                    let by = super::problems::numeric_path(by, manifest.sextant_api, &by_at)?;
+                    check_path(by, &column.kind, &by_at)?;
+                    if forms.is_empty() {
+                        return Err(at(&case_at.key("textForms"), "gives at least one form"));
+                    }
+                    for (form, text) in forms {
+                        let form_at = case_at.key("textForms").key(form);
+                        if form == "other"
+                            || !super::section_badges::PLURAL_FORMS.contains(&form.as_str())
+                        {
+                            return Err(at(
+                                &form_at,
+                                "is a CLDR plural form besides `other` (the `text`): zero, one, two, few or many",
+                            ));
+                        }
+                        if text.trim().is_empty() || text.chars().count() > 200 {
+                            return Err(at(&form_at, "is a text of 1 to 200 characters"));
+                        }
+                        check_message(text, &column.kind, &form_at, false)?;
+                    }
+                }
+                (Some(_), None) => {
+                    return Err(at(&case_at.key("pluralBy"), "goes with `textForms`"));
+                }
+                (None, Some(_)) => {
+                    return Err(at(&case_at.key("textForms"), "goes with `pluralBy`"));
+                }
+            }
             // An empty text leaves the cell blank (#404); never a blank one.
             let text_at = here.key("cases").index(j).key("text");
             if case.text.is_empty() && manifest.sextant_api < WINDOW_API {
@@ -639,8 +676,9 @@ fn check_separator(separator: &str, here: &JsonPath) -> Result<(), ManifestError
     Ok(())
 }
 
-fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 13] {
+fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 14] {
     [
+        ("sorted", column.sorted.is_some()),
         ("separator", column.separator.is_some()),
         ("items", column.items.is_some()),
         ("filterBy", column.filter_by.is_some()),

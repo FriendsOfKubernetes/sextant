@@ -64,6 +64,8 @@ export function localizeManifest(manifest: ExtensionManifest, language: string):
                 ...(cs.tooltipOr !== undefined
                   ? { tooltipOr: cs.tooltipOr.map((t, k) => text(`columns.${col.id}.cases.${i}.tooltipOr.${k}`, t)) }
                   : {}),
+                // The language's own plural forms when it translates any, else the English ones (#404).
+                ...(cs.textForms !== undefined ? { textForms: formsOf(`columns.${col.id}.cases.${i}.textForms.`) ?? cs.textForms } : {}),
               })),
             }
           : {}),

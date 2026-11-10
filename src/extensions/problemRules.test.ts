@@ -249,6 +249,11 @@ describe("problem rules of extensions", () => {
       ],
     } as unknown as KubeObject;
     expect(placeholderText(report, ".results[*].policy|unique")).toBe("a, b");
+    // The earliest or latest of a list's times, the smallest or largest number (#404).
+    const stream = { metadata: { name: "s" }, status: { tags: [{ conditions: [{ t: "2026-11-02T00:00:00Z" }] }, { conditions: [{ t: "2026-11-01T00:00:00Z" }] }], n: [3, 1, 2] } } as unknown as KubeObject;
+    expect(valueAt(stream, ".status.tags[*].conditions[*].t|min")).toBe("2026-11-01T00:00:00Z");
+    expect(valueAt(stream, ".status.tags[*].conditions[*].t|max")).toBe("2026-11-02T00:00:00Z");
+    expect(valueAt(stream, ".status.n|max")).toBe(3);
     // `+` before `|count`, a scalar counting 1; two lists flattened; a text condition's value from the object (#404).
     const proxy = { metadata: { name: "p", namespace: "own" }, spec: { includes: [{ name: "a" }, { name: "b" }], tcpproxy: { include: { name: "t" } }, delegations: [{ targetNamespaces: ["x", "y"] }, { targetNamespaces: ["z"] }], tls: "own/cert" } } as unknown as KubeObject;
     expect(placeholderText(proxy, ".spec.includes + .spec.tcpproxy.include|count")).toBe("3");

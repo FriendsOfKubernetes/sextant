@@ -262,3 +262,6 @@ tell, so the problem is not told on its own either.
 text) and `namespacePath`, the items `itemWhen` holds for count, and the condition holds when any of them names an
 object that is not there; `namespacePath` also places a single name in another namespace; a rule's message may say
 `{{missing}}`, the names not found in the UI language's list (a Traefik route's missing Services and Middlewares).
+Paths may end in `|min`/`|max` (the smallest or largest number, or the earliest or latest time of a list), also in
+`since`/`sinceOr` (an ImageStream's first failing import); a column case's text may go by plural form (`pluralBy` +
+`textForms`, translated form by form as a rule's message); a `list` column may be `sorted` in the UI language's order.

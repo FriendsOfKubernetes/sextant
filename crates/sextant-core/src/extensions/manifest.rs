@@ -408,6 +408,10 @@ pub struct ColumnContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub separator: Option<String>,
+    /// A `list` column's items in the UI language's order (#404), not as the object lists them; `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub sorted: Option<bool>,
     /// A `list` column of every path's items in order, each once (#404), not the first path's; `sextantApi` 4.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -540,6 +544,15 @@ pub struct ColumnCase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional, type = "number | string")]
     pub value: Option<serde_json::Value>,
+    /// The number whose CLDR plural form picks the text (#404): a numeric path (`|count`/`|sum` allowed); with
+    /// `textForms`. `sextantApi` 4.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub plural_by: Option<String>,
+    /// The text by plural form besides `other`, which is `text` (#404): `{"one": "{{…}} import fails"}`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub text_forms: Option<std::collections::BTreeMap<String, String>>,
 }
 
 fn yes() -> bool {
@@ -1159,6 +1172,7 @@ mod tests {
                 cases: None,
                 after_column: None,
                 filter_by: None,
+                sorted: None,
                 items: None,
                 separator: None,
                 join_paths: None,

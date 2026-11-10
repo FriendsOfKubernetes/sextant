@@ -497,6 +497,7 @@
                   "separator": { "type": "string", "minLength": 1, "maxLength": 5 }
                 }
               },
+              "sorted": { "description": "A list column's items in the UI language's order (sextantApi 4).", "type": "boolean" },
               "joinPaths": { "description": "A list column of every path's items in order, each once, not the first path's (sextantApi 4).", "type": "boolean" },
               "width": {
                 "description": "Its width: `<n>px`, or `minmax(<n>px, <m>fr)` (sextantApi 4).",
@@ -528,6 +529,13 @@
                     "value": {
                       "description": "With `format: \"number\"`: the number the column sorts and filters by while the case holds; with `\"text\"` a number or a text with placeholders it sorts by; the text is still shown (sextantApi 4).",
                       "type": ["number", "string"]
+                    },
+                    "pluralBy": { "description": "The number whose CLDR plural form picks the text, with `textForms` (sextantApi 4).", "type": "string", "minLength": 1, "maxLength": 1000 },
+                    "textForms": {
+                      "description": "The text by CLDR plural form besides `other`, which is `text` (sextantApi 4).",
+                      "type": "object",
+                      "maxProperties": 5,
+                      "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 200 }
                     },
                     "tooltipOr": {
                       "description": "Tooltips tried in order when `tooltip` has an empty or missing value, 1 to 3 (sextantApi 4).",

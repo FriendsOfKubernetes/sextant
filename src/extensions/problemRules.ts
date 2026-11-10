@@ -54,6 +54,7 @@ export function valueAt(obj: unknown, path: string): unknown {
     const value = valueAt(obj, path.slice(0, bar));
     if (filter === "count") return Array.isArray(value) ? value.length : value !== null && typeof value === "object" ? Object.keys(value).length : undefined;
     if (filter === "sum") return sumOf(value);
+    if (filter === "min" || filter === "max") return extremeOf(value, filter);
     return undefined;
   }
   const steps = parseFieldPath(path.trim());
@@ -86,6 +87,20 @@ function walk(obj: unknown, steps: readonly PathStep[]): unknown {
 
 const isScalar = (v: unknown): v is string | number | boolean =>
   typeof v === "string" || typeof v === "number" || typeof v === "boolean";
+
+/**
+ * A list's smallest or largest number, or — when its items are times — its earliest or latest time as written (#404):
+ * the first of a stream's failing tags. Nothing for an empty list or one with neither.
+ */
+export function extremeOf(value: unknown, which: "min" | "max"): unknown {
+  if (!Array.isArray(value)) return undefined;
+  const items = value.flat(2).filter((v) => typeof v === "number" || typeof v === "string");
+  const times = items.filter((v): v is string => typeof v === "string" && Number.isNaN(Number(v)) && !Number.isNaN(Date.parse(v)));
+  const better = (a: number, b: number) => (which === "min" ? a < b : a > b);
+  if (times.length > 0) return times.reduce((best, t) => (better(Date.parse(t), Date.parse(best)) ? t : best));
+  const numbers = items.map((v) => numberOf(v)).filter((n): n is number => n !== undefined);
+  return numbers.length === 0 ? undefined : numbers.reduce((best, n) => (better(n, best) ? n : best));
+}
 
 /** A number, a string that is nothing but one (`"85.5"`), or a list's length (ADR-0161); `undefined` otherwise. */
 export function numberOf(value: unknown): number | undefined {

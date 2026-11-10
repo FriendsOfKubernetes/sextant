@@ -67,6 +67,10 @@ items?: ColumnItems,
  */
 separator?: string, 
 /**
+ * A `list` column's items in the UI language's order (#404), not as the object lists them; `sextantApi` 4.
+ */
+sorted?: boolean, 
+/**
  * A `list` column of every path's items in order, each once (#404), not the first path's; `sextantApi` 4.
  */
 joinPaths?: boolean, 

@@ -10,7 +10,7 @@ import { StatusText } from "../resources/columns";
 import type { Tone } from "../resources/status";
 import { evaluate, fillTemplate, numberOf, sumOf, valueAt } from "./problemRules";
 import { cleanText } from "../resources/uri";
-import { formatDateTime, formatList } from "../i18n/format";
+import { currentLanguage, formatDateTime, formatList } from "../i18n/format";
 import { formatBytes, formatCpu, parseQuantity } from "../features/metrics/format";
 
 /** Cores as Kubernetes writes whole ones ("4"), anything else in millicores ("250m"), as Sextant's own columns do. */
@@ -80,6 +80,20 @@ function itemText(cases: readonly { when: ColumnCase["when"]; text: string }[], 
   return undefined;
 }
 
+/** A case's text by the CLDR plural form of its `pluralBy` in the UI language (#404), else its `text`. */
+function caseText(c: ColumnCase, obj: KubeObject): string {
+  if (c.pluralBy === undefined || c.textForms === undefined) return c.text;
+  const n = numberOf(valueAt(obj, c.pluralBy));
+  if (n === undefined) return c.text;
+  let form = "other";
+  try {
+    form = new Intl.PluralRules(currentLanguage()).select(n);
+  } catch {
+    // An odd language tag: `other`.
+  }
+  return (c.textForms as Record<string, string | undefined>)[form] ?? c.text;
+}
+
 /** Whether a case's condition holds at `now` (a condition holding only from or until a time counts within it). */
 function holdsNow(c: Pick<ColumnCase, "when">, obj: KubeObject, now: number): boolean {
   const verdict = evaluate(c.when, obj);
@@ -95,7 +109,8 @@ function holdsNow(c: Pick<ColumnCase, "when">, obj: KubeObject, now: number): bo
 function caseOf(column: ColumnContribution, obj: KubeObject, now: number): ColumnCase | undefined {
   for (const c of column.cases ?? []) {
     if (!holdsNow(c, obj, now)) continue;
-    const filled = c.text.includes("{{") ? fillTemplate(c.text, obj) : c.text;
+    const template = caseText(c, obj);
+    const filled = template.includes("{{") ? fillTemplate(template, obj) : template;
     if (filled === null) continue;
     // A tooltip whose placeholder has no value leaves the column's own tooltip (#380); with `tooltipOr` (#403) an empty
     // value skips to the next one.
@@ -107,7 +122,7 @@ function caseOf(column: ColumnContribution, obj: KubeObject, now: number): Colum
           : ([c.tooltip, ...c.tooltipOr].map((t) => fillTemplate(t, obj, { emptyIsMissing: true })).find((t) => t !== null) ?? null);
     return {
       ...c,
-      text: filled === c.text ? c.text : (textOf(cleanText(filled) ?? "") ?? ""),
+      text: filled === template ? template : (textOf(cleanText(filled) ?? "") ?? ""),
       tooltip: tooltip === null || tooltip === undefined ? undefined : (textOf(cleanText(tooltip) ?? "", MAX_TOOLTIP_CHARS) ?? undefined),
     };
   }
@@ -183,7 +198,9 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell 
         : all.filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean").map((v) => String(v));
       const cleaned = texts.map((v) => (v === undefined ? "" : (cleanText(v) ?? ""))).filter((v) => v !== "");
       // Joined lists name each item once (a listener declared and in the status); one list keeps its repeats (#404).
-      const shown = column.joinPaths ? [...new Set(cleaned)] : cleaned;
+      const once = column.joinPaths ? [...new Set(cleaned)] : cleaned;
+      // `sorted` (#404): in the UI language's order, as a built-in view sorted a stream's tags.
+      const shown = column.sorted ? [...once].sort(new Intl.Collator(currentLanguage()).compare) : once;
       const separator = column.items?.separator ?? column.separator;
       if (shown.length === 0) return { sort: undefined, text: undefined, draw: null };
       const text = textOf(separator === undefined ? formatList(shown) : shown.join(separator)) ?? "";

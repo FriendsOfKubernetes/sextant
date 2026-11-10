@@ -166,6 +166,10 @@ export interface ManifestColumn {
      * placeholders it sorts by (since Sextant 0.30). The text is still shown.
      */
     value?: number | string;
+    /** The number whose CLDR plural form picks the text, with `textForms` (since Sextant 0.30). */
+    pluralBy?: string;
+    /** The text by CLDR plural form besides `other`, which is `text` (since Sextant 0.30). */
+    textForms?: Partial<Record<"zero" | "one" | "two" | "few" | "many", string>>;
   }[];
   /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
   afterColumn?: string;
@@ -178,6 +182,8 @@ export interface ManifestColumn {
   /** What joins a `list` or `entries` column's texts instead of the UI language's list (since Sextant 0.30). */
   separator?: string;
   items?: { cases: { when: ProblemCondition; text: string }[]; separator?: string };
+  /** A `list` column's items in the UI language's order (since Sextant 0.30). */
+  sorted?: boolean;
   /** A `list` column of every path's items in order, each once, not the first path's (since Sextant 0.30). */
   joinPaths?: boolean;
   /** Its width as Sextant's own columns give it: `<n>px` or `minmax(<n>px, <m>fr)` (since Sextant 0.30). */
