@@ -1034,7 +1034,12 @@ fn check_condition<'k>(
                 }
                 Inside::Top => {}
             }
-            if target.group.is_empty() && target.kind.eq_ignore_ascii_case("Secret") {
+            // From sextantApi 4 a Secret is looked up by name only (#404): the window lists Secrets for rules
+            // metadata-only, never a value (a SealedSecret's target Secret, ADR-0109).
+            if target.group.is_empty()
+                && target.kind.eq_ignore_ascii_case("Secret")
+                && checks.api < SOURCES_API
+            {
                 return Err(at(&path.key("kind"), "Secrets are never listed for rules"));
             }
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)?;

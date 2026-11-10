@@ -741,7 +741,8 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (counter.api < ACROSS_API) fail([...segments, "type"], `\`missing\` needs sextantApi ${ACROSS_API} or later`);
     if (inside === "any") fail([...segments, "type"], "`missing` cannot be inside `any`: a list not read would make the whole `any` unknown");
     if (inside === "not") fail([...segments, "type"], "`missing` cannot be inside `not`: a list not read would make it unknown");
-    if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret") {
+    // From sextantApi 4 a Secret is looked up by name only (#404): the window lists it metadata-only.
+    if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret" && counter.api < SOURCES_API) {
       fail([...segments, "kind"], "Secrets are never listed for rules");
     }
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);

@@ -256,7 +256,10 @@ export function extensionSourcesFor(
         maxObjects: source?.maxObjects ?? MAX_SOURCE_OBJECTS,
         ...(everywhere || !served.namespaced ? {} : { namespaces: namespaces.namespaces }),
         ...(source?.labelSelector ? { labelSelector: source.labelSelector } : {}),
-        ...(source?.metadataOnly ? { metadataOnly: true } : {}),
+        // A Secret only looked up (`missing`, #404) is listed by name: metadata only, never a value.
+        ...(source?.metadataOnly || (!entry.detectors.has(key) && served.kindRef.group === "" && served.kindRef.kind === "Secret")
+          ? { metadataOnly: true }
+          : {}),
       };
       out.push(def);
       if (entry.across.has(key)) {

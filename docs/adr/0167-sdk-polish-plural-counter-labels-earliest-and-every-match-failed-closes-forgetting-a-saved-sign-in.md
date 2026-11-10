@@ -232,3 +232,5 @@ point; `[<field]` ranks by a nested field too (`[<timestamp.seconds]`); a `list`
 joins its texts in every language alike (", " where a built-in view did).
 The placeholder filter `after:<marker>` (1 to 20 characters) keeps the text after the marker's last place and nothing
 when the marker is not there (`Kind=` of a composed job's group, version and kind).
+From `sextantApi` 4 a rule's `missing` may look up a core Secret by name: the window lists Secrets for rules
+metadata-only, never a value, as the built-in Sealed Secrets view did (ADR-0109); `related` still never names a Secret.
