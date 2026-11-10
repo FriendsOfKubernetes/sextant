@@ -69,5 +69,6 @@
   "listUnknown": "Liste okunamadı.",
   "noJobs": "Hiç Job yok.",
   "noPods": "Hiç Pod yok.",
-  "morePods": "{{total}} içinden ilk {{shown}} tanesi gösteriliyor, önce çalışmayanlar."
+  "morePods": "{{total}} içinden ilk {{shown}} tanesi gösteriliyor, önce çalışmayanlar.",
+  "truncated": "Yalnızca ilk {{max}} tanesi okunuyor: liste eksik."
 }

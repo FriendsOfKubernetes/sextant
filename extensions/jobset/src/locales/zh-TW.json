@@ -69,5 +69,6 @@
   "listUnknown": "無法讀取清單。",
   "noJobs": "沒有 Job。",
   "noPods": "沒有 Pod。",
-  "morePods": "顯示了 {{total}} 個中的前 {{shown}} 個，未執行的排在前面。"
+  "morePods": "顯示了 {{total}} 個中的前 {{shown}} 個，未執行的排在前面。",
+  "truncated": "只讀取了前 {{max}} 個：清單不完整。"
 }

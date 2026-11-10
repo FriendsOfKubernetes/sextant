@@ -80,7 +80,8 @@
      }
     ],
     "placement": "section",
-    "order": 20
+    "order": 20,
+    "heading": false
    }
   ],
   "columns": [
@@ -94,50 +95,8 @@
     "paths": [
      ".status.terminalState"
     ],
-    "tooltipPaths": [
-     ".status.conditions[type=\"Completed\",status=\"True\"].message",
-     ".status.conditions[type=\"Completed\",status=\"True\"].reason",
-     ".status.conditions[type=\"Failed\",status=\"True\"].message",
-     ".status.conditions[type=\"Failed\",status=\"True\"].reason"
-    ],
+    "width": "120px",
     "cases": [
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".status.terminalState",
-           "value": "Completed"
-          },
-          {
-           "type": "condition",
-           "conditionType": "Completed",
-           "status": "True"
-          }
-         ]
-        },
-        {
-         "type": "exists",
-         "path": ".status.conditions[type=\"Completed\"].reason"
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "equals",
-          "path": ".status.conditions[type=\"Completed\"].reason",
-          "value": ""
-         }
-        }
-       ]
-      },
-      "text": "Completed",
-      "tone": "ok",
-      "tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}"
-     },
      {
       "when": {
        "type": "any",
@@ -156,44 +115,12 @@
       },
       "text": "Completed",
       "tone": "ok",
-      "tooltip": "{{.status.conditions[type=\"Completed\"].message}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".status.terminalState",
-           "value": "Failed"
-          },
-          {
-           "type": "condition",
-           "conditionType": "Failed",
-           "status": "True"
-          }
-         ]
-        },
-        {
-         "type": "exists",
-         "path": ".status.conditions[type=\"Failed\"].reason"
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "equals",
-          "path": ".status.conditions[type=\"Failed\"].reason",
-          "value": ""
-         }
-        }
-       ]
-      },
-      "text": "Failed",
-      "tone": "error",
-      "tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}"
+      "value": 0,
+      "tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
+      "tooltipOr": [
+       "{{.status.conditions[type=\"Completed\"].message}}",
+       "{{.status.conditions[type=\"Completed\"].reason}}"
+      ]
      },
      {
       "when": {
@@ -213,7 +140,12 @@
       },
       "text": "Failed",
       "tone": "error",
-      "tooltip": "{{.status.conditions[type=\"Failed\"].message}}"
+      "value": 1,
+      "tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+      "tooltipOr": [
+       "{{.status.conditions[type=\"Failed\"].message}}",
+       "{{.status.conditions[type=\"Failed\"].reason}}"
+      ]
      },
      {
       "when": {
@@ -232,7 +164,8 @@
        ]
       },
       "text": "Suspended",
-      "tone": "neutral"
+      "tone": "muted",
+      "value": 6
      },
      {
       "when": {
@@ -241,7 +174,8 @@
        "status": "True"
       },
       "text": "Restarting",
-      "tone": "warning"
+      "tone": "warning",
+      "value": 3
      },
      {
       "when": {
@@ -250,161 +184,28 @@
        "status": "True"
       },
       "text": "Starting",
-      "tone": "warning"
+      "tone": "warning",
+      "value": 5
      },
      {
       "when": {
        "type": "any",
        "of": [
         {
-         "type": "any",
-         "of": [
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[0].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[0].ready",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[1].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[1].ready",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[2].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[2].ready",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[3].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[3].ready",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[4].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[4].ready",
-           "value": 0
-          }
-         ]
+         "type": "above",
+         "path": ".status.replicatedJobsStatus[*].active|sum",
+         "value": 0
         },
         {
-         "type": "any",
-         "of": [
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[5].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[5].ready",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[6].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[6].ready",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[7].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[7].ready",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[8].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[8].ready",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[9].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[9].ready",
-           "value": 0
-          }
-         ]
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[10].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[10].ready",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[11].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[11].ready",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[12].active",
-           "value": 0
-          },
-          {
-           "type": "above",
-           "path": ".status.replicatedJobsStatus[12].ready",
-           "value": 0
-          }
-         ]
+         "type": "above",
+         "path": ".status.replicatedJobsStatus[*].ready|sum",
+         "value": 0
         }
        ]
       },
       "text": "Running",
-      "tone": "ok"
+      "tone": "ok",
+      "value": 4
      },
      {
       "when": {
@@ -412,7 +213,8 @@
        "path": ".metadata.name"
       },
       "text": "Pending",
-      "tone": "neutral"
+      "tone": "neutral",
+      "value": 2
      }
     ],
     "afterColumn": "namespace"
@@ -425,64 +227,23 @@
     "id": "jobset-succeeded",
     "title": "Succeeded",
     "paths": [
-     ".status.replicatedJobsStatus[0].succeeded"
+     ".status.replicatedJobsStatus[*].succeeded|sum"
     ],
-    "format": "ratio",
-    "totalPaths": [
-     ".spec.replicatedJobs[0].replicas"
-    ],
+    "width": "100px",
     "cases": [
      {
       "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "above",
-         "path": ".spec.replicatedJobs",
-         "value": 1
-        },
-        {
-         "type": "below",
-         "path": ".spec.replicatedJobs",
-         "value": 3
-        }
-       ]
+       "type": "exists",
+       "path": ".metadata.name"
       },
-      "text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}"
+      "text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}"
      },
      {
       "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "above",
-         "path": ".spec.replicatedJobs",
-         "value": 1
-        },
-        {
-         "type": "below",
-         "path": ".spec.replicatedJobs",
-         "value": 3
-        }
-       ]
+       "type": "exists",
+       "path": ".metadata.name"
       },
-      "text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}"
-     },
-     {
-      "when": {
-       "type": "above",
-       "path": ".spec.replicatedJobs",
-       "value": 2
-      },
-      "text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …"
-     },
-     {
-      "when": {
-       "type": "above",
-       "path": ".spec.replicatedJobs",
-       "value": 2
-      },
-      "text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …"
+      "text": "0/{{.spec.replicatedJobs[*].replicas|sum}}"
      }
     ],
     "afterColumn": "jobset-status"
@@ -495,79 +256,22 @@
     "id": "jobset-active",
     "title": "Active",
     "paths": [
-     ".status.replicatedJobsStatus[0].active"
+     ".status.replicatedJobsStatus[*].active"
     ],
-    "format": "number",
+    "format": "sum",
+    "width": "80px",
     "cases": [
      {
       "when": {
-       "type": "absent",
-       "path": ".status.replicatedJobsStatus[0]"
+       "type": "not",
+       "of": {
+        "type": "above",
+        "path": ".status.replicatedJobsStatus[*].active|count",
+        "value": 0
+       }
       },
       "text": "0",
       "value": 0
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "above",
-         "path": ".spec.replicatedJobs",
-         "value": 1
-        },
-        {
-         "type": "below",
-         "path": ".spec.replicatedJobs",
-         "value": 3
-        }
-       ]
-      },
-      "text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "above",
-         "path": ".spec.replicatedJobs",
-         "value": 2
-        },
-        {
-         "type": "below",
-         "path": ".spec.replicatedJobs",
-         "value": 4
-        }
-       ]
-      },
-      "text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "above",
-         "path": ".spec.replicatedJobs",
-         "value": 3
-        },
-        {
-         "type": "below",
-         "path": ".spec.replicatedJobs",
-         "value": 5
-        }
-       ]
-      },
-      "text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}"
-     },
-     {
-      "when": {
-       "type": "above",
-       "path": ".spec.replicatedJobs",
-       "value": 4
-      },
-      "text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …"
      }
     ],
     "afterColumn": "jobset-succeeded"
@@ -580,79 +284,22 @@
     "id": "jobset-failed",
     "title": "Failed",
     "paths": [
-     ".status.replicatedJobsStatus[0].failed"
+     ".status.replicatedJobsStatus[*].failed"
     ],
-    "format": "number",
+    "format": "sum",
+    "width": "80px",
     "cases": [
      {
       "when": {
-       "type": "absent",
-       "path": ".status.replicatedJobsStatus[0]"
+       "type": "not",
+       "of": {
+        "type": "above",
+        "path": ".status.replicatedJobsStatus[*].failed|count",
+        "value": 0
+       }
       },
       "text": "0",
       "value": 0
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "above",
-         "path": ".spec.replicatedJobs",
-         "value": 1
-        },
-        {
-         "type": "below",
-         "path": ".spec.replicatedJobs",
-         "value": 3
-        }
-       ]
-      },
-      "text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "above",
-         "path": ".spec.replicatedJobs",
-         "value": 2
-        },
-        {
-         "type": "below",
-         "path": ".spec.replicatedJobs",
-         "value": 4
-        }
-       ]
-      },
-      "text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "above",
-         "path": ".spec.replicatedJobs",
-         "value": 3
-        },
-        {
-         "type": "below",
-         "path": ".spec.replicatedJobs",
-         "value": 5
-        }
-       ]
-      },
-      "text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}"
-     },
-     {
-      "when": {
-       "type": "above",
-       "path": ".spec.replicatedJobs",
-       "value": 4
-      },
-      "text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …"
      }
     ],
     "afterColumn": "jobset-active"
@@ -665,13 +312,9 @@
     "id": "jobset-restarts",
     "title": "Restarts",
     "paths": [
-     ".status.restartsCountTowardsMax",
      ".status.restarts"
     ],
-    "format": "ratio",
-    "totalPaths": [
-     ".spec.failurePolicy.maxRestarts"
-    ],
+    "width": "90px",
     "cases": [
      {
       "when": {
@@ -705,12 +348,28 @@
          "path": ".spec.failurePolicy.maxRestarts"
         },
         {
-         "type": "exists",
-         "path": ".status.restartsCountTowardsMax"
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".status.restartsCountTowardsMax"
+          },
+          {
+           "type": "exists",
+           "path": ".status.restarts"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.failurePolicy.rules[action=\"RestartJobSetAndIgnoreMaxRestarts\"]"
+           }
+          }
+         ]
         }
        ]
       },
-      "text": "{{.status.restartsCountTowardsMax}}/0"
+      "text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0"
      },
      {
       "when": {
@@ -722,23 +381,25 @@
         },
         {
          "type": "exists",
-         "path": ".status.restarts"
-        },
-        {
-         "type": "not",
-         "of": {
-          "type": "exists",
-          "path": ".spec.failurePolicy.rules[action=\"RestartJobSetAndIgnoreMaxRestarts\"]"
-         }
+         "path": ".metadata.name"
         }
        ]
       },
-      "text": "{{.status.restarts}}/0"
+      "text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0"
      },
      {
       "when": {
-       "type": "absent",
-       "path": ".spec.failurePolicy.maxRestarts"
+       "type": "all",
+       "of": [
+        {
+         "type": "absent",
+         "path": ".spec.failurePolicy.maxRestarts"
+        },
+        {
+         "type": "exists",
+         "path": ".metadata.name"
+        }
+       ]
       },
       "text": "0/0"
      },
@@ -747,16 +408,48 @@
        "type": "all",
        "of": [
         {
-         "type": "absent",
-         "path": ".status.restartsCountTowardsMax"
-        },
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".status.restartsCountTowardsMax"
+          },
+          {
+           "type": "exists",
+           "path": ".status.restarts"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "exists",
+            "path": ".spec.failurePolicy.rules[action=\"RestartJobSetAndIgnoreMaxRestarts\"]"
+           }
+          }
+         ]
+        }
+       ]
+      },
+      "text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
         {
          "type": "exists",
-         "path": ".status.restarts"
-        },
+         "path": ".metadata.name"
+        }
+       ]
+      },
+      "text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}"
+     },
+     {
+      "when": {
+       "type": "all",
+       "of": [
         {
          "type": "exists",
-         "path": ".spec.failurePolicy.rules[action=\"RestartJobSetAndIgnoreMaxRestarts\"]"
+         "path": ".metadata.name"
         }
        ]
       },
@@ -815,271 +508,52 @@
        ]
       },
       {
-       "type": "exists",
-       "path": ".status.conditions[type=\"Failed\"].reason"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "equals",
-        "path": ".status.conditions[type=\"Failed\"].reason",
-        "value": ""
-       }
-      },
-      {
-       "type": "exists",
-       "path": ".status.conditions[type=\"Failed\"].lastTransitionTime"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "olderThan",
-        "path": ".status.conditions[type=\"Failed\"].lastTransitionTime",
-        "minutes": 1440
-       }
+       "type": "any",
+       "of": [
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "exists",
+           "path": ".status.conditions[type=\"Failed\"].lastTransitionTime"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "olderThan",
+            "path": ".status.conditions[type=\"Failed\"].lastTransitionTime",
+            "minutes": 1440
+           }
+          }
+         ]
+        },
+        {
+         "type": "all",
+         "of": [
+          {
+           "type": "absent",
+           "path": ".status.conditions[type=\"Failed\"].lastTransitionTime"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "olderThan",
+            "path": ".metadata.creationTimestamp",
+            "minutes": 1440
+           }
+          }
+         ]
+        }
+       ]
       }
      ]
     },
     "since": ".status.conditions[type=\"Failed\"].lastTransitionTime",
+    "sinceOr": [
+     ".metadata.creationTimestamp"
+    ],
     "reason": "{{.status.conditions[type=\"Failed\"].reason}}",
-    "message": "{{.status.conditions[type=\"Failed\"].message}}",
-    "group": "failed"
-   },
-   {
-    "id": "failed-unnamed",
-    "title": "JobSet failed (no reason given)",
-    "kind": {
-     "group": "jobset.x-k8s.io",
-     "kind": "JobSet"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "equals",
-          "path": ".status.terminalState",
-          "value": "Completed"
-         },
-         {
-          "type": "condition",
-          "conditionType": "Completed",
-          "status": "True"
-         }
-        ]
-       }
-      },
-      {
-       "type": "any",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".status.terminalState",
-         "value": "Failed"
-        },
-        {
-         "type": "condition",
-         "conditionType": "Failed",
-         "status": "True"
-        }
-       ]
-      },
-      {
-       "type": "any",
-       "of": [
-        {
-         "type": "absent",
-         "path": ".status.conditions[type=\"Failed\"].reason"
-        },
-        {
-         "type": "equals",
-         "path": ".status.conditions[type=\"Failed\"].reason",
-         "value": ""
-        }
-       ]
-      },
-      {
-       "type": "exists",
-       "path": ".status.conditions[type=\"Failed\"].lastTransitionTime"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "olderThan",
-        "path": ".status.conditions[type=\"Failed\"].lastTransitionTime",
-        "minutes": 1440
-       }
-      }
-     ]
-    },
-    "since": ".status.conditions[type=\"Failed\"].lastTransitionTime",
-    "reason": "Failed",
-    "message": "{{.status.conditions[type=\"Failed\"].message}}",
-    "group": "failed"
-   },
-   {
-    "id": "failed-untimed",
-    "title": "JobSet failed (no time given)",
-    "kind": {
-     "group": "jobset.x-k8s.io",
-     "kind": "JobSet"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "equals",
-          "path": ".status.terminalState",
-          "value": "Completed"
-         },
-         {
-          "type": "condition",
-          "conditionType": "Completed",
-          "status": "True"
-         }
-        ]
-       }
-      },
-      {
-       "type": "any",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".status.terminalState",
-         "value": "Failed"
-        },
-        {
-         "type": "condition",
-         "conditionType": "Failed",
-         "status": "True"
-        }
-       ]
-      },
-      {
-       "type": "exists",
-       "path": ".status.conditions[type=\"Failed\"].reason"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "equals",
-        "path": ".status.conditions[type=\"Failed\"].reason",
-        "value": ""
-       }
-      },
-      {
-       "type": "absent",
-       "path": ".status.conditions[type=\"Failed\"].lastTransitionTime"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "olderThan",
-        "path": ".metadata.creationTimestamp",
-        "minutes": 1440
-       }
-      }
-     ]
-    },
-    "since": ".metadata.creationTimestamp",
-    "reason": "{{.status.conditions[type=\"Failed\"].reason}}",
-    "message": "{{.status.conditions[type=\"Failed\"].message}}",
-    "group": "failed"
-   },
-   {
-    "id": "failed-unnamed-untimed",
-    "title": "JobSet failed (no reason or time given)",
-    "kind": {
-     "group": "jobset.x-k8s.io",
-     "kind": "JobSet"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "equals",
-          "path": ".status.terminalState",
-          "value": "Completed"
-         },
-         {
-          "type": "condition",
-          "conditionType": "Completed",
-          "status": "True"
-         }
-        ]
-       }
-      },
-      {
-       "type": "any",
-       "of": [
-        {
-         "type": "equals",
-         "path": ".status.terminalState",
-         "value": "Failed"
-        },
-        {
-         "type": "condition",
-         "conditionType": "Failed",
-         "status": "True"
-        }
-       ]
-      },
-      {
-       "type": "any",
-       "of": [
-        {
-         "type": "absent",
-         "path": ".status.conditions[type=\"Failed\"].reason"
-        },
-        {
-         "type": "equals",
-         "path": ".status.conditions[type=\"Failed\"].reason",
-         "value": ""
-        }
-       ]
-      },
-      {
-       "type": "absent",
-       "path": ".status.conditions[type=\"Failed\"].lastTransitionTime"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "olderThan",
-        "path": ".metadata.creationTimestamp",
-        "minutes": 1440
-       }
-      }
-     ]
-    },
-    "since": ".metadata.creationTimestamp",
-    "reason": "Failed",
+    "reasonOr": "Failed",
     "message": "{{.status.conditions[type=\"Failed\"].message}}",
     "group": "failed"
    },
@@ -1139,184 +613,56 @@
        "value": 0
       },
       {
-       "type": "above",
-       "path": ".status.restartsCountTowardsMax",
-       "value": 0
-      },
-      {
-       "type": "any",
-       "of": [
-        {
-         "type": "atLeast",
-         "path": ".status.restartsCountTowardsMax",
-         "otherPath": ".spec.failurePolicy.maxRestarts"
-        },
-        {
-         "type": "in",
-         "path": ".spec.failurePolicy.maxRestarts",
-         "values": [
-          1,
-          2
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 3
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 1
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 4
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 2
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 5
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 3
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 6
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 4
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 7
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 5
-          }
-         ]
-        }
-       ]
-      }
-     ]
-    },
-    "reason": "RestartsNearLimit",
-    "message": "{{.status.restartsCountTowardsMax}} of {{.spec.failurePolicy.maxRestarts}} allowed restarts used: a failure past the limit fails the JobSet.",
-    "group": "restarts-near-limit"
-   },
-   {
-    "id": "restarts-near-limit-8",
-    "title": "JobSet restarts near a limit of 8 to 13",
-    "kind": {
-     "group": "jobset.x-k8s.io",
-     "kind": "JobSet"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
        "type": "not",
        "of": {
-        "type": "any",
+        "type": "all",
         "of": [
          {
-          "type": "in",
-          "path": ".status.terminalState",
-          "values": [
-           "Completed",
-           "Failed"
-          ]
+          "type": "absent",
+          "path": ".status.restartsCountTowardsMax"
          },
          {
-          "type": "condition",
-          "conditionType": "Completed",
-          "status": "True"
+          "type": "exists",
+          "path": ".status.restarts"
          },
          {
-          "type": "condition",
-          "conditionType": "Failed",
-          "status": "True"
-         },
-         {
-          "type": "condition",
-          "conditionType": "Suspended",
-          "status": "True"
-         },
-         {
-          "type": "equals",
-          "path": ".spec.suspend",
-          "value": true
+          "type": "not",
+          "of": {
+           "type": "exists",
+           "path": ".spec.failurePolicy.rules[action=\"RestartJobSetAndIgnoreMaxRestarts\"]"
+          }
          }
         ]
        }
       },
       {
-       "type": "above",
-       "path": ".spec.failurePolicy.maxRestarts",
-       "value": 0
-      },
-      {
-       "type": "above",
-       "path": ".status.restartsCountTowardsMax",
-       "value": 0
-      },
-      {
        "type": "any",
        "of": [
         {
          "type": "all",
          "of": [
           {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 8
+           "type": "exists",
+           "path": ".status.restartsCountTowardsMax"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "above",
+            "path": ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum",
+            "value": -1
+           }
           },
           {
            "type": "above",
            "path": ".status.restartsCountTowardsMax",
-           "value": 6
+           "value": 0
+          },
+          {
+           "type": "atLeast",
+           "path": ".status.restartsCountTowardsMax",
+           "otherPath": ".spec.failurePolicy.maxRestarts",
+           "offset": -1
           }
          ]
         },
@@ -1324,14 +670,37 @@
          "type": "all",
          "of": [
           {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 9
+           "type": "exists",
+           "path": ".status.restartsCountTowardsMax"
           },
           {
            "type": "above",
+           "path": ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum",
+           "value": -1
+          },
+          {
+           "type": "any",
+           "of": [
+            {
+             "type": "above",
+             "path": ".status.restartsCountTowardsMax",
+             "value": 0
+            },
+            {
+             "type": "above",
+             "path": ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum",
+             "value": 0
+            }
+           ]
+          },
+          {
+           "type": "atLeast",
            "path": ".status.restartsCountTowardsMax",
-           "value": 7
+           "otherPath": ".spec.failurePolicy.maxRestarts",
+           "offset": -1,
+           "addPaths": [
+            ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum"
+           ]
           }
          ]
         },
@@ -1339,59 +708,24 @@
          "type": "all",
          "of": [
           {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 10
+           "type": "absent",
+           "path": ".status.restartsCountTowardsMax"
           },
           {
            "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 8
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 11
+           "path": ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum",
+           "value": -1
           },
           {
            "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 9
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 12
+           "path": ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum",
+           "value": 0
           },
           {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 10
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 13
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 11
+           "type": "atLeast",
+           "path": ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum",
+           "otherPath": ".spec.failurePolicy.maxRestarts",
+           "offset": -1
           }
          ]
         }
@@ -1400,169 +734,12 @@
      ]
     },
     "reason": "RestartsNearLimit",
-    "message": "{{.status.restartsCountTowardsMax}} of {{.spec.failurePolicy.maxRestarts}} allowed restarts used: a failure past the limit fails the JobSet.",
-    "group": "restarts-near-limit"
-   },
-   {
-    "id": "restarts-near-limit-14",
-    "title": "JobSet restarts near a limit of 14 to 19",
-    "kind": {
-     "group": "jobset.x-k8s.io",
-     "kind": "JobSet"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "in",
-          "path": ".status.terminalState",
-          "values": [
-           "Completed",
-           "Failed"
-          ]
-         },
-         {
-          "type": "condition",
-          "conditionType": "Completed",
-          "status": "True"
-         },
-         {
-          "type": "condition",
-          "conditionType": "Failed",
-          "status": "True"
-         },
-         {
-          "type": "condition",
-          "conditionType": "Suspended",
-          "status": "True"
-         },
-         {
-          "type": "equals",
-          "path": ".spec.suspend",
-          "value": true
-         }
-        ]
-       }
-      },
-      {
-       "type": "above",
-       "path": ".spec.failurePolicy.maxRestarts",
-       "value": 0
-      },
-      {
-       "type": "above",
-       "path": ".status.restartsCountTowardsMax",
-       "value": 0
-      },
-      {
-       "type": "any",
-       "of": [
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 14
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 12
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 15
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 13
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 16
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 14
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 17
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 15
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 18
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 16
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 19
-          },
-          {
-           "type": "above",
-           "path": ".status.restartsCountTowardsMax",
-           "value": 17
-          }
-         ]
-        }
-       ]
-      }
-     ]
-    },
-    "reason": "RestartsNearLimit",
-    "message": "{{.status.restartsCountTowardsMax}} of {{.spec.failurePolicy.maxRestarts}} allowed restarts used: a failure past the limit fails the JobSet.",
-    "group": "restarts-near-limit"
+    "message": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} of {{.spec.failurePolicy.maxRestarts}} allowed restarts used: a failure past the limit fails the JobSet.",
+    "group": "restarts-near-limit",
+    "stamp": [
+     ".status.restartsCountTowardsMax",
+     ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax"
+    ]
    },
    {
     "id": "restarts-near-limit-all",
@@ -1620,175 +797,24 @@
        "value": 0
       },
       {
-       "type": "absent",
-       "path": ".status.restartsCountTowardsMax"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "exists",
-        "path": ".spec.failurePolicy.rules[action=\"RestartJobSetAndIgnoreMaxRestarts\"]"
-       }
-      },
-      {
-       "type": "above",
-       "path": ".status.restarts",
-       "value": 0
-      },
-      {
-       "type": "any",
+       "type": "all",
        "of": [
         {
-         "type": "atLeast",
-         "path": ".status.restarts",
-         "otherPath": ".spec.failurePolicy.maxRestarts"
+         "type": "absent",
+         "path": ".status.restartsCountTowardsMax"
         },
         {
-         "type": "in",
-         "path": ".spec.failurePolicy.maxRestarts",
-         "values": [
-          1,
-          2
-         ]
+         "type": "exists",
+         "path": ".status.restarts"
         },
         {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 3
-          },
-          {
-           "type": "above",
-           "path": ".status.restarts",
-           "value": 1
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 4
-          },
-          {
-           "type": "above",
-           "path": ".status.restarts",
-           "value": 2
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 5
-          },
-          {
-           "type": "above",
-           "path": ".status.restarts",
-           "value": 3
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 6
-          },
-          {
-           "type": "above",
-           "path": ".status.restarts",
-           "value": 4
-          }
-         ]
-        }
-       ]
-      }
-     ]
-    },
-    "reason": "RestartsNearLimit",
-    "message": "{{.status.restarts}} of {{.spec.failurePolicy.maxRestarts}} allowed restarts used: a failure past the limit fails the JobSet.",
-    "group": "restarts-near-limit"
-   },
-   {
-    "id": "restarts-near-limit-all-7",
-    "title": "JobSet restarts near a limit of 7 to 11 (by all restarts)",
-    "kind": {
-     "group": "jobset.x-k8s.io",
-     "kind": "JobSet"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "in",
-          "path": ".status.terminalState",
-          "values": [
-           "Completed",
-           "Failed"
-          ]
-         },
-         {
-          "type": "condition",
-          "conditionType": "Completed",
-          "status": "True"
-         },
-         {
-          "type": "condition",
-          "conditionType": "Failed",
-          "status": "True"
-         },
-         {
-          "type": "condition",
-          "conditionType": "Suspended",
-          "status": "True"
-         },
-         {
-          "type": "equals",
-          "path": ".spec.suspend",
-          "value": true
+         "type": "not",
+         "of": {
+          "type": "exists",
+          "path": ".spec.failurePolicy.rules[action=\"RestartJobSetAndIgnoreMaxRestarts\"]"
          }
-        ]
-       }
-      },
-      {
-       "type": "above",
-       "path": ".spec.failurePolicy.maxRestarts",
-       "value": 0
-      },
-      {
-       "type": "absent",
-       "path": ".status.restartsCountTowardsMax"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "exists",
-        "path": ".spec.failurePolicy.rules[action=\"RestartJobSetAndIgnoreMaxRestarts\"]"
-       }
-      },
-      {
-       "type": "above",
-       "path": ".status.restarts",
-       "value": 0
+        }
+       ]
       },
       {
        "type": "any",
@@ -1797,14 +823,27 @@
          "type": "all",
          "of": [
           {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 7
+           "type": "exists",
+           "path": ".status.restarts"
+          },
+          {
+           "type": "not",
+           "of": {
+            "type": "above",
+            "path": ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum",
+            "value": -1
+           }
           },
           {
            "type": "above",
            "path": ".status.restarts",
-           "value": 5
+           "value": 0
+          },
+          {
+           "type": "atLeast",
+           "path": ".status.restarts",
+           "otherPath": ".spec.failurePolicy.maxRestarts",
+           "offset": -1
           }
          ]
         },
@@ -1812,59 +851,37 @@
          "type": "all",
          "of": [
           {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 8
+           "type": "exists",
+           "path": ".status.restarts"
           },
           {
            "type": "above",
-           "path": ".status.restarts",
-           "value": 6
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 9
+           "path": ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum",
+           "value": -1
           },
           {
-           "type": "above",
-           "path": ".status.restarts",
-           "value": 7
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 10
+           "type": "any",
+           "of": [
+            {
+             "type": "above",
+             "path": ".status.restarts",
+             "value": 0
+            },
+            {
+             "type": "above",
+             "path": ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum",
+             "value": 0
+            }
+           ]
           },
           {
-           "type": "above",
+           "type": "atLeast",
            "path": ".status.restarts",
-           "value": 8
-          }
-         ]
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "equals",
-           "path": ".spec.failurePolicy.maxRestarts",
-           "value": 11
-          },
-          {
-           "type": "above",
-           "path": ".status.restarts",
-           "value": 9
+           "otherPath": ".spec.failurePolicy.maxRestarts",
+           "offset": -1,
+           "addPaths": [
+            ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum"
+           ]
           }
          ]
         }
@@ -1873,8 +890,12 @@
      ]
     },
     "reason": "RestartsNearLimit",
-    "message": "{{.status.restarts}} of {{.spec.failurePolicy.maxRestarts}} allowed restarts used: a failure past the limit fails the JobSet.",
-    "group": "restarts-near-limit"
+    "message": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} of {{.spec.failurePolicy.maxRestarts}} allowed restarts used: a failure past the limit fails the JobSet.",
+    "group": "restarts-near-limit",
+    "stamp": [
+     ".status.restarts",
+     ".status.replicatedJobsStatus[*].jobRestartsCountTowardsMax"
+    ]
    }
   ]
  },
@@ -1888,59 +909,39 @@
    "columns.jobset-status.title": "Status",
    "columns.jobset-status.cases.0.text": "Abgeschlossen",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "Abgeschlossen",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "Fehlgeschlagen",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "Fehlgeschlagen",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "Angehalten",
-   "columns.jobset-status.cases.5.text": "Startet neu",
-   "columns.jobset-status.cases.6.text": "Startet",
-   "columns.jobset-status.cases.7.text": "Läuft",
-   "columns.jobset-status.cases.8.text": "Wartend",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "Fehlgeschlagen",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "Angehalten",
+   "columns.jobset-status.cases.3.text": "Startet neu",
+   "columns.jobset-status.cases.4.text": "Startet",
+   "columns.jobset-status.cases.5.text": "Läuft",
+   "columns.jobset-status.cases.6.text": "Wartend",
    "columns.jobset-succeeded.title": "Erfolgreich",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "Aktiv",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "Fehlgeschlagen",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "Neustarts",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet fehlgeschlagen",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet fehlgeschlagen (ohne Grund)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet fehlgeschlagen (ohne Zeitpunkt)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet fehlgeschlagen (ohne Grund und Zeitpunkt)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "JobSet-Neustarts nahe am Limit",
-   "problems.restarts-near-limit.message": "{{.status.restartsCountTowardsMax}} von {{.spec.failurePolicy.maxRestarts}} erlaubten Neustarts verbraucht: ein Fehler über dem Limit lässt das JobSet fehlschlagen.",
-   "problems.restarts-near-limit-8.title": "JobSet-Neustarts nahe an einem Limit von 8 bis 13",
-   "problems.restarts-near-limit-8.message": "{{.status.restartsCountTowardsMax}} von {{.spec.failurePolicy.maxRestarts}} erlaubten Neustarts verbraucht: ein Fehler über dem Limit lässt das JobSet fehlschlagen.",
-   "problems.restarts-near-limit-14.title": "JobSet-Neustarts nahe an einem Limit von 14 bis 19",
-   "problems.restarts-near-limit-14.message": "{{.status.restartsCountTowardsMax}} von {{.spec.failurePolicy.maxRestarts}} erlaubten Neustarts verbraucht: ein Fehler über dem Limit lässt das JobSet fehlschlagen.",
+   "problems.restarts-near-limit.message": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} von {{.spec.failurePolicy.maxRestarts}} erlaubten Neustarts verbraucht: ein Fehler über dem Limit lässt das JobSet fehlschlagen.",
    "problems.restarts-near-limit-all.title": "JobSet-Neustarts nahe am Limit (nach allen Neustarts)",
-   "problems.restarts-near-limit-all.message": "{{.status.restarts}} von {{.spec.failurePolicy.maxRestarts}} erlaubten Neustarts verbraucht: ein Fehler über dem Limit lässt das JobSet fehlschlagen.",
-   "problems.restarts-near-limit-all-7.title": "JobSet-Neustarts nahe an einem Limit von 7 bis 11 (nach allen Neustarts)",
-   "problems.restarts-near-limit-all-7.message": "{{.status.restarts}} von {{.spec.failurePolicy.maxRestarts}} erlaubten Neustarts verbraucht: ein Fehler über dem Limit lässt das JobSet fehlschlagen.",
+   "problems.restarts-near-limit-all.message": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} von {{.spec.failurePolicy.maxRestarts}} erlaubten Neustarts verbraucht: ein Fehler über dem Limit lässt das JobSet fehlschlagen.",
    "sectionBadges.jobset.label.one": "{{count}} JobSet erfordert Aufmerksamkeit",
    "sectionBadges.jobset.label.other": "{{count}} JobSets erfordern Aufmerksamkeit"
   },
@@ -1953,59 +954,39 @@
    "columns.jobset-status.title": "Estado",
    "columns.jobset-status.cases.0.text": "Completado",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "Completado",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "Fallido",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "Fallido",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "Suspendido",
-   "columns.jobset-status.cases.5.text": "Reiniciando",
-   "columns.jobset-status.cases.6.text": "Iniciando",
-   "columns.jobset-status.cases.7.text": "En ejecución",
-   "columns.jobset-status.cases.8.text": "Pendiente",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "Fallido",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "Suspendido",
+   "columns.jobset-status.cases.3.text": "Reiniciando",
+   "columns.jobset-status.cases.4.text": "Iniciando",
+   "columns.jobset-status.cases.5.text": "En ejecución",
+   "columns.jobset-status.cases.6.text": "Pendiente",
    "columns.jobset-succeeded.title": "Correctos",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "Activos",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "Fallidos",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "Reinicios",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet fallido",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet fallido (sin motivo)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet fallido (sin hora)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet fallido (sin motivo ni hora)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "Reinicios de JobSet cerca del límite",
-   "problems.restarts-near-limit.message": "Usados {{.status.restartsCountTowardsMax}} de {{.spec.failurePolicy.maxRestarts}} reinicios permitidos: un fallo por encima del límite hace fallar el JobSet.",
-   "problems.restarts-near-limit-8.title": "Reinicios de JobSet cerca de un límite de 8 a 13",
-   "problems.restarts-near-limit-8.message": "Usados {{.status.restartsCountTowardsMax}} de {{.spec.failurePolicy.maxRestarts}} reinicios permitidos: un fallo por encima del límite hace fallar el JobSet.",
-   "problems.restarts-near-limit-14.title": "Reinicios de JobSet cerca de un límite de 14 a 19",
-   "problems.restarts-near-limit-14.message": "Usados {{.status.restartsCountTowardsMax}} de {{.spec.failurePolicy.maxRestarts}} reinicios permitidos: un fallo por encima del límite hace fallar el JobSet.",
+   "problems.restarts-near-limit.message": "Usados {{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} de {{.spec.failurePolicy.maxRestarts}} reinicios permitidos: un fallo por encima del límite hace fallar el JobSet.",
    "problems.restarts-near-limit-all.title": "Reinicios de JobSet cerca del límite (por todos los reinicios)",
-   "problems.restarts-near-limit-all.message": "Usados {{.status.restarts}} de {{.spec.failurePolicy.maxRestarts}} reinicios permitidos: un fallo por encima del límite hace fallar el JobSet.",
-   "problems.restarts-near-limit-all-7.title": "Reinicios de JobSet cerca de un límite de 7 a 11 (por todos los reinicios)",
-   "problems.restarts-near-limit-all-7.message": "Usados {{.status.restarts}} de {{.spec.failurePolicy.maxRestarts}} reinicios permitidos: un fallo por encima del límite hace fallar el JobSet.",
+   "problems.restarts-near-limit-all.message": "Usados {{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} de {{.spec.failurePolicy.maxRestarts}} reinicios permitidos: un fallo por encima del límite hace fallar el JobSet.",
    "sectionBadges.jobset.label.one": "{{count}} JobSet requiere atención",
    "sectionBadges.jobset.label.many": "{{count}} de JobSets requieren atención",
    "sectionBadges.jobset.label.other": "{{count}} JobSets requieren atención"
@@ -2019,59 +1000,39 @@
    "columns.jobset-status.title": "Statut",
    "columns.jobset-status.cases.0.text": "Terminé",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "Terminé",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "Échec",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "Échec",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "Suspendu",
-   "columns.jobset-status.cases.5.text": "Redémarrage",
-   "columns.jobset-status.cases.6.text": "Démarrage",
-   "columns.jobset-status.cases.7.text": "En cours",
-   "columns.jobset-status.cases.8.text": "En attente",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "Échec",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "Suspendu",
+   "columns.jobset-status.cases.3.text": "Redémarrage",
+   "columns.jobset-status.cases.4.text": "Démarrage",
+   "columns.jobset-status.cases.5.text": "En cours",
+   "columns.jobset-status.cases.6.text": "En attente",
    "columns.jobset-succeeded.title": "Réussis",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "Actifs",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "Échecs",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "Redémarrages",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet en échec",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet en échec (sans raison)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet en échec (sans heure)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet en échec (sans raison ni heure)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "Redémarrages du JobSet proches de la limite",
-   "problems.restarts-near-limit.message": "{{.status.restartsCountTowardsMax}} redémarrages autorisés sur {{.spec.failurePolicy.maxRestarts}} utilisés : un échec au-delà de la limite fait échouer le JobSet.",
-   "problems.restarts-near-limit-8.title": "Redémarrages du JobSet proches d'une limite de 8 à 13",
-   "problems.restarts-near-limit-8.message": "{{.status.restartsCountTowardsMax}} redémarrages autorisés sur {{.spec.failurePolicy.maxRestarts}} utilisés : un échec au-delà de la limite fait échouer le JobSet.",
-   "problems.restarts-near-limit-14.title": "Redémarrages du JobSet proches d'une limite de 14 à 19",
-   "problems.restarts-near-limit-14.message": "{{.status.restartsCountTowardsMax}} redémarrages autorisés sur {{.spec.failurePolicy.maxRestarts}} utilisés : un échec au-delà de la limite fait échouer le JobSet.",
+   "problems.restarts-near-limit.message": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} redémarrages autorisés sur {{.spec.failurePolicy.maxRestarts}} utilisés : un échec au-delà de la limite fait échouer le JobSet.",
    "problems.restarts-near-limit-all.title": "Redémarrages du JobSet proches de la limite (tous comptés)",
-   "problems.restarts-near-limit-all.message": "{{.status.restarts}} redémarrages autorisés sur {{.spec.failurePolicy.maxRestarts}} utilisés : un échec au-delà de la limite fait échouer le JobSet.",
-   "problems.restarts-near-limit-all-7.title": "Redémarrages du JobSet proches d'une limite de 7 à 11 (tous comptés)",
-   "problems.restarts-near-limit-all-7.message": "{{.status.restarts}} redémarrages autorisés sur {{.spec.failurePolicy.maxRestarts}} utilisés : un échec au-delà de la limite fait échouer le JobSet.",
+   "problems.restarts-near-limit-all.message": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} redémarrages autorisés sur {{.spec.failurePolicy.maxRestarts}} utilisés : un échec au-delà de la limite fait échouer le JobSet.",
    "sectionBadges.jobset.label.one": "{{count}} JobSet requiert votre attention",
    "sectionBadges.jobset.label.many": "{{count}} de JobSets requièrent votre attention",
    "sectionBadges.jobset.label.other": "{{count}} JobSets requièrent votre attention"
@@ -2085,59 +1046,39 @@
    "columns.jobset-status.title": "Stato",
    "columns.jobset-status.cases.0.text": "Completato",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "Completato",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "Fallito",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "Fallito",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "Sospeso",
-   "columns.jobset-status.cases.5.text": "In riavvio",
-   "columns.jobset-status.cases.6.text": "In avvio",
-   "columns.jobset-status.cases.7.text": "In esecuzione",
-   "columns.jobset-status.cases.8.text": "In attesa",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "Fallito",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "Sospeso",
+   "columns.jobset-status.cases.3.text": "In riavvio",
+   "columns.jobset-status.cases.4.text": "In avvio",
+   "columns.jobset-status.cases.5.text": "In esecuzione",
+   "columns.jobset-status.cases.6.text": "In attesa",
    "columns.jobset-succeeded.title": "Riusciti",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "Attivi",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "Falliti",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "Riavvii",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet non riuscito",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet non riuscito (senza motivo)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet non riuscito (senza orario)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet non riuscito (senza motivo né orario)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "Riavvii del JobSet vicini al limite",
-   "problems.restarts-near-limit.message": "Usati {{.status.restartsCountTowardsMax}} riavvii consentiti su {{.spec.failurePolicy.maxRestarts}}: un errore oltre il limite fa fallire il JobSet.",
-   "problems.restarts-near-limit-8.title": "Riavvii del JobSet vicini a un limite da 8 a 13",
-   "problems.restarts-near-limit-8.message": "Usati {{.status.restartsCountTowardsMax}} riavvii consentiti su {{.spec.failurePolicy.maxRestarts}}: un errore oltre il limite fa fallire il JobSet.",
-   "problems.restarts-near-limit-14.title": "Riavvii del JobSet vicini a un limite da 14 a 19",
-   "problems.restarts-near-limit-14.message": "Usati {{.status.restartsCountTowardsMax}} riavvii consentiti su {{.spec.failurePolicy.maxRestarts}}: un errore oltre il limite fa fallire il JobSet.",
+   "problems.restarts-near-limit.message": "Usati {{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} riavvii consentiti su {{.spec.failurePolicy.maxRestarts}}: un errore oltre il limite fa fallire il JobSet.",
    "problems.restarts-near-limit-all.title": "Riavvii del JobSet vicini al limite (in base a tutti i riavvii)",
-   "problems.restarts-near-limit-all.message": "Usati {{.status.restarts}} riavvii consentiti su {{.spec.failurePolicy.maxRestarts}}: un errore oltre il limite fa fallire il JobSet.",
-   "problems.restarts-near-limit-all-7.title": "Riavvii del JobSet vicini a un limite da 7 a 11 (in base a tutti i riavvii)",
-   "problems.restarts-near-limit-all-7.message": "Usati {{.status.restarts}} riavvii consentiti su {{.spec.failurePolicy.maxRestarts}}: un errore oltre il limite fa fallire il JobSet.",
+   "problems.restarts-near-limit-all.message": "Usati {{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} riavvii consentiti su {{.spec.failurePolicy.maxRestarts}}: un errore oltre il limite fa fallire il JobSet.",
    "sectionBadges.jobset.label.one": "{{count}} JobSet richiede attenzione",
    "sectionBadges.jobset.label.many": "{{count}} di JobSet richiedono attenzione",
    "sectionBadges.jobset.label.other": "{{count}} JobSet richiedono attenzione"
@@ -2151,59 +1092,39 @@
    "columns.jobset-status.title": "状態",
    "columns.jobset-status.cases.0.text": "完了",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "完了",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "失敗",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "失敗",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "一時停止",
-   "columns.jobset-status.cases.5.text": "再起動中",
-   "columns.jobset-status.cases.6.text": "起動中",
-   "columns.jobset-status.cases.7.text": "実行中",
-   "columns.jobset-status.cases.8.text": "待機中",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "失敗",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "一時停止",
+   "columns.jobset-status.cases.3.text": "再起動中",
+   "columns.jobset-status.cases.4.text": "起動中",
+   "columns.jobset-status.cases.5.text": "実行中",
+   "columns.jobset-status.cases.6.text": "待機中",
    "columns.jobset-succeeded.title": "成功",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "アクティブ",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "失敗",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "再起動",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet が失敗",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet が失敗 (理由なし)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet が失敗 (時刻なし)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet が失敗 (理由・時刻なし)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "JobSet の再起動が上限に近い",
-   "problems.restarts-near-limit.message": "許可された再起動 {{.spec.failurePolicy.maxRestarts}} 回のうち {{.status.restartsCountTowardsMax}} 回を使用済み: 上限を超えた失敗で JobSet は失敗します。",
-   "problems.restarts-near-limit-8.title": "JobSet の再起動が上限 8〜13 回に近い",
-   "problems.restarts-near-limit-8.message": "許可された再起動 {{.spec.failurePolicy.maxRestarts}} 回のうち {{.status.restartsCountTowardsMax}} 回を使用済み: 上限を超えた失敗で JobSet は失敗します。",
-   "problems.restarts-near-limit-14.title": "JobSet の再起動が上限 14〜19 回に近い",
-   "problems.restarts-near-limit-14.message": "許可された再起動 {{.spec.failurePolicy.maxRestarts}} 回のうち {{.status.restartsCountTowardsMax}} 回を使用済み: 上限を超えた失敗で JobSet は失敗します。",
+   "problems.restarts-near-limit.message": "許可された再起動 {{.spec.failurePolicy.maxRestarts}} 回のうち {{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} 回を使用済み: 上限を超えた失敗で JobSet は失敗します。",
    "problems.restarts-near-limit-all.title": "JobSet の再起動が上限に近い (すべての再起動で判定)",
-   "problems.restarts-near-limit-all.message": "許可された再起動 {{.spec.failurePolicy.maxRestarts}} 回のうち {{.status.restarts}} 回を使用済み: 上限を超えた失敗で JobSet は失敗します。",
-   "problems.restarts-near-limit-all-7.title": "JobSet の再起動が上限 7〜11 回に近い (すべての再起動で判定)",
-   "problems.restarts-near-limit-all-7.message": "許可された再起動 {{.spec.failurePolicy.maxRestarts}} 回のうち {{.status.restarts}} 回を使用済み: 上限を超えた失敗で JobSet は失敗します。",
+   "problems.restarts-near-limit-all.message": "許可された再起動 {{.spec.failurePolicy.maxRestarts}} 回のうち {{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} 回を使用済み: 上限を超えた失敗で JobSet は失敗します。",
    "sectionBadges.jobset.label.other": "対応が必要な JobSet が {{count}} 件あります"
   },
   "ko": {
@@ -2215,59 +1136,39 @@
    "columns.jobset-status.title": "상태",
    "columns.jobset-status.cases.0.text": "완료",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "완료",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "실패",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "실패",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "일시 중지됨",
-   "columns.jobset-status.cases.5.text": "다시 시작 중",
-   "columns.jobset-status.cases.6.text": "시작 중",
-   "columns.jobset-status.cases.7.text": "실행 중",
-   "columns.jobset-status.cases.8.text": "대기 중",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "실패",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "일시 중지됨",
+   "columns.jobset-status.cases.3.text": "다시 시작 중",
+   "columns.jobset-status.cases.4.text": "시작 중",
+   "columns.jobset-status.cases.5.text": "실행 중",
+   "columns.jobset-status.cases.6.text": "대기 중",
    "columns.jobset-succeeded.title": "성공",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "활성",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "실패",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "재시작",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet 실패",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet 실패 (이유 없음)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet 실패 (시간 없음)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet 실패 (이유·시간 없음)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "JobSet 재시작이 한도에 근접",
-   "problems.restarts-near-limit.message": "허용된 재시작 {{.spec.failurePolicy.maxRestarts}}회 중 {{.status.restartsCountTowardsMax}}회 사용: 한도를 넘은 실패는 JobSet을 실패시킵니다.",
-   "problems.restarts-near-limit-8.title": "JobSet 재시작이 8~13회 한도에 근접",
-   "problems.restarts-near-limit-8.message": "허용된 재시작 {{.spec.failurePolicy.maxRestarts}}회 중 {{.status.restartsCountTowardsMax}}회 사용: 한도를 넘은 실패는 JobSet을 실패시킵니다.",
-   "problems.restarts-near-limit-14.title": "JobSet 재시작이 14~19회 한도에 근접",
-   "problems.restarts-near-limit-14.message": "허용된 재시작 {{.spec.failurePolicy.maxRestarts}}회 중 {{.status.restartsCountTowardsMax}}회 사용: 한도를 넘은 실패는 JobSet을 실패시킵니다.",
+   "problems.restarts-near-limit.message": "허용된 재시작 {{.spec.failurePolicy.maxRestarts}}회 중 {{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}회 사용: 한도를 넘은 실패는 JobSet을 실패시킵니다.",
    "problems.restarts-near-limit-all.title": "JobSet 재시작이 한도에 근접 (모든 재시작 기준)",
-   "problems.restarts-near-limit-all.message": "허용된 재시작 {{.spec.failurePolicy.maxRestarts}}회 중 {{.status.restarts}}회 사용: 한도를 넘은 실패는 JobSet을 실패시킵니다.",
-   "problems.restarts-near-limit-all-7.title": "JobSet 재시작이 7~11회 한도에 근접 (모든 재시작 기준)",
-   "problems.restarts-near-limit-all-7.message": "허용된 재시작 {{.spec.failurePolicy.maxRestarts}}회 중 {{.status.restarts}}회 사용: 한도를 넘은 실패는 JobSet을 실패시킵니다.",
+   "problems.restarts-near-limit-all.message": "허용된 재시작 {{.spec.failurePolicy.maxRestarts}}회 중 {{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}회 사용: 한도를 넘은 실패는 JobSet을 실패시킵니다.",
    "sectionBadges.jobset.label.other": "주의가 필요한 JobSet {{count}}개"
   },
   "pl": {
@@ -2279,59 +1180,39 @@
    "columns.jobset-status.title": "Status",
    "columns.jobset-status.cases.0.text": "Zakończony",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "Zakończony",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "Niepowodzenie",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "Niepowodzenie",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "Wstrzymany",
-   "columns.jobset-status.cases.5.text": "Restartuje",
-   "columns.jobset-status.cases.6.text": "Uruchamia się",
-   "columns.jobset-status.cases.7.text": "Działa",
-   "columns.jobset-status.cases.8.text": "Oczekuje",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "Niepowodzenie",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "Wstrzymany",
+   "columns.jobset-status.cases.3.text": "Restartuje",
+   "columns.jobset-status.cases.4.text": "Uruchamia się",
+   "columns.jobset-status.cases.5.text": "Działa",
+   "columns.jobset-status.cases.6.text": "Oczekuje",
    "columns.jobset-succeeded.title": "Udane",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "Aktywne",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "Nieudane",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "Restarty",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet zakończony niepowodzeniem",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet zakończony niepowodzeniem (bez przyczyny)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet zakończony niepowodzeniem (bez czasu)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet zakończony niepowodzeniem (bez przyczyny i czasu)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "Restarty JobSet blisko limitu",
-   "problems.restarts-near-limit.message": "Wykorzystano {{.status.restartsCountTowardsMax}} z {{.spec.failurePolicy.maxRestarts}} dozwolonych restartów: awaria ponad limit kończy JobSet niepowodzeniem.",
-   "problems.restarts-near-limit-8.title": "Restarty JobSet blisko limitu od 8 do 13",
-   "problems.restarts-near-limit-8.message": "Wykorzystano {{.status.restartsCountTowardsMax}} z {{.spec.failurePolicy.maxRestarts}} dozwolonych restartów: awaria ponad limit kończy JobSet niepowodzeniem.",
-   "problems.restarts-near-limit-14.title": "Restarty JobSet blisko limitu od 14 do 19",
-   "problems.restarts-near-limit-14.message": "Wykorzystano {{.status.restartsCountTowardsMax}} z {{.spec.failurePolicy.maxRestarts}} dozwolonych restartów: awaria ponad limit kończy JobSet niepowodzeniem.",
+   "problems.restarts-near-limit.message": "Wykorzystano {{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} z {{.spec.failurePolicy.maxRestarts}} dozwolonych restartów: awaria ponad limit kończy JobSet niepowodzeniem.",
    "problems.restarts-near-limit-all.title": "Restarty JobSet blisko limitu (według wszystkich restartów)",
-   "problems.restarts-near-limit-all.message": "Wykorzystano {{.status.restarts}} z {{.spec.failurePolicy.maxRestarts}} dozwolonych restartów: awaria ponad limit kończy JobSet niepowodzeniem.",
-   "problems.restarts-near-limit-all-7.title": "Restarty JobSet blisko limitu od 7 do 11 (według wszystkich restartów)",
-   "problems.restarts-near-limit-all-7.message": "Wykorzystano {{.status.restarts}} z {{.spec.failurePolicy.maxRestarts}} dozwolonych restartów: awaria ponad limit kończy JobSet niepowodzeniem.",
+   "problems.restarts-near-limit-all.message": "Wykorzystano {{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} z {{.spec.failurePolicy.maxRestarts}} dozwolonych restartów: awaria ponad limit kończy JobSet niepowodzeniem.",
    "sectionBadges.jobset.label.one": "{{count}} JobSet wymaga uwagi",
    "sectionBadges.jobset.label.few": "{{count}} JobSety wymagają uwagi",
    "sectionBadges.jobset.label.many": "{{count}} JobSetów wymaga uwagi",
@@ -2346,59 +1227,39 @@
    "columns.jobset-status.title": "Status",
    "columns.jobset-status.cases.0.text": "Concluído",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "Concluído",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "Falhou",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "Falhou",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "Suspenso",
-   "columns.jobset-status.cases.5.text": "Reiniciando",
-   "columns.jobset-status.cases.6.text": "Iniciando",
-   "columns.jobset-status.cases.7.text": "Em execução",
-   "columns.jobset-status.cases.8.text": "Pendente",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "Falhou",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "Suspenso",
+   "columns.jobset-status.cases.3.text": "Reiniciando",
+   "columns.jobset-status.cases.4.text": "Iniciando",
+   "columns.jobset-status.cases.5.text": "Em execução",
+   "columns.jobset-status.cases.6.text": "Pendente",
    "columns.jobset-succeeded.title": "Concluídos",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "Ativos",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "Falhos",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "Reinícios",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet com falha",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet com falha (sem motivo)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet com falha (sem horário)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet com falha (sem motivo nem horário)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "Reinícios do JobSet perto do limite",
-   "problems.restarts-near-limit.message": "{{.status.restartsCountTowardsMax}} de {{.spec.failurePolicy.maxRestarts}} reinícios permitidos usados: uma falha além do limite faz o JobSet falhar.",
-   "problems.restarts-near-limit-8.title": "Reinícios do JobSet perto de um limite de 8 a 13",
-   "problems.restarts-near-limit-8.message": "{{.status.restartsCountTowardsMax}} de {{.spec.failurePolicy.maxRestarts}} reinícios permitidos usados: uma falha além do limite faz o JobSet falhar.",
-   "problems.restarts-near-limit-14.title": "Reinícios do JobSet perto de um limite de 14 a 19",
-   "problems.restarts-near-limit-14.message": "{{.status.restartsCountTowardsMax}} de {{.spec.failurePolicy.maxRestarts}} reinícios permitidos usados: uma falha além do limite faz o JobSet falhar.",
+   "problems.restarts-near-limit.message": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} de {{.spec.failurePolicy.maxRestarts}} reinícios permitidos usados: uma falha além do limite faz o JobSet falhar.",
    "problems.restarts-near-limit-all.title": "Reinícios do JobSet perto do limite (por todos os reinícios)",
-   "problems.restarts-near-limit-all.message": "{{.status.restarts}} de {{.spec.failurePolicy.maxRestarts}} reinícios permitidos usados: uma falha além do limite faz o JobSet falhar.",
-   "problems.restarts-near-limit-all-7.title": "Reinícios do JobSet perto de um limite de 7 a 11 (por todos os reinícios)",
-   "problems.restarts-near-limit-all-7.message": "{{.status.restarts}} de {{.spec.failurePolicy.maxRestarts}} reinícios permitidos usados: uma falha além do limite faz o JobSet falhar.",
+   "problems.restarts-near-limit-all.message": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} de {{.spec.failurePolicy.maxRestarts}} reinícios permitidos usados: uma falha além do limite faz o JobSet falhar.",
    "sectionBadges.jobset.label.one": "{{count}} JobSet precisa de atenção",
    "sectionBadges.jobset.label.many": "{{count}} de JobSets precisam de atenção",
    "sectionBadges.jobset.label.other": "{{count}} JobSets precisam de atenção"
@@ -2412,59 +1273,39 @@
    "columns.jobset-status.title": "Статус",
    "columns.jobset-status.cases.0.text": "Завершён",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "Завершён",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "Сбой",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "Сбой",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "Приостановлен",
-   "columns.jobset-status.cases.5.text": "Перезапускается",
-   "columns.jobset-status.cases.6.text": "Запускается",
-   "columns.jobset-status.cases.7.text": "Работает",
-   "columns.jobset-status.cases.8.text": "Ожидает",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "Сбой",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "Приостановлен",
+   "columns.jobset-status.cases.3.text": "Перезапускается",
+   "columns.jobset-status.cases.4.text": "Запускается",
+   "columns.jobset-status.cases.5.text": "Работает",
+   "columns.jobset-status.cases.6.text": "Ожидает",
    "columns.jobset-succeeded.title": "Успешно",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "Активны",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "Сбой",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "Перезапуски",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "Сбой JobSet",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "Сбой JobSet (без причины)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "Сбой JobSet (без времени)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "Сбой JobSet (без причины и времени)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "Перезапуски JobSet близки к лимиту",
-   "problems.restarts-near-limit.message": "Использовано {{.status.restartsCountTowardsMax}} из {{.spec.failurePolicy.maxRestarts}} разрешённых перезапусков: сбой сверх лимита завершит JobSet ошибкой.",
-   "problems.restarts-near-limit-8.title": "Перезапуски JobSet близки к лимиту от 8 до 13",
-   "problems.restarts-near-limit-8.message": "Использовано {{.status.restartsCountTowardsMax}} из {{.spec.failurePolicy.maxRestarts}} разрешённых перезапусков: сбой сверх лимита завершит JobSet ошибкой.",
-   "problems.restarts-near-limit-14.title": "Перезапуски JobSet близки к лимиту от 14 до 19",
-   "problems.restarts-near-limit-14.message": "Использовано {{.status.restartsCountTowardsMax}} из {{.spec.failurePolicy.maxRestarts}} разрешённых перезапусков: сбой сверх лимита завершит JobSet ошибкой.",
+   "problems.restarts-near-limit.message": "Использовано {{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} из {{.spec.failurePolicy.maxRestarts}} разрешённых перезапусков: сбой сверх лимита завершит JobSet ошибкой.",
    "problems.restarts-near-limit-all.title": "Перезапуски JobSet близки к лимиту (по всем перезапускам)",
-   "problems.restarts-near-limit-all.message": "Использовано {{.status.restarts}} из {{.spec.failurePolicy.maxRestarts}} разрешённых перезапусков: сбой сверх лимита завершит JobSet ошибкой.",
-   "problems.restarts-near-limit-all-7.title": "Перезапуски JobSet близки к лимиту от 7 до 11 (по всем перезапускам)",
-   "problems.restarts-near-limit-all-7.message": "Использовано {{.status.restarts}} из {{.spec.failurePolicy.maxRestarts}} разрешённых перезапусков: сбой сверх лимита завершит JobSet ошибкой.",
+   "problems.restarts-near-limit-all.message": "Использовано {{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} из {{.spec.failurePolicy.maxRestarts}} разрешённых перезапусков: сбой сверх лимита завершит JobSet ошибкой.",
    "sectionBadges.jobset.label.one": "{{count}} JobSet требует внимания",
    "sectionBadges.jobset.label.few": "{{count}} JobSet требуют внимания",
    "sectionBadges.jobset.label.many": "{{count}} JobSet требуют внимания",
@@ -2479,59 +1320,39 @@
    "columns.jobset-status.title": "Durum",
    "columns.jobset-status.cases.0.text": "Tamamlandı",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "Tamamlandı",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "Başarısız",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "Başarısız",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "Askıda",
-   "columns.jobset-status.cases.5.text": "Yeniden başlıyor",
-   "columns.jobset-status.cases.6.text": "Başlıyor",
-   "columns.jobset-status.cases.7.text": "Çalışıyor",
-   "columns.jobset-status.cases.8.text": "Bekliyor",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "Başarısız",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "Askıda",
+   "columns.jobset-status.cases.3.text": "Yeniden başlıyor",
+   "columns.jobset-status.cases.4.text": "Başlıyor",
+   "columns.jobset-status.cases.5.text": "Çalışıyor",
+   "columns.jobset-status.cases.6.text": "Bekliyor",
    "columns.jobset-succeeded.title": "Başarılı",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "Etkin",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "Başarısız",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "Yeniden başlatmalar",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet başarısız oldu",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet başarısız oldu (neden belirtilmemiş)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet başarısız oldu (zaman belirtilmemiş)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet başarısız oldu (neden ve zaman belirtilmemiş)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "JobSet yeniden başlatmaları sınıra yakın",
-   "problems.restarts-near-limit.message": "İzin verilen {{.spec.failurePolicy.maxRestarts}} yeniden başlatmadan {{.status.restartsCountTowardsMax}} tanesi kullanıldı: sınırın ötesindeki bir hata JobSet'i başarısız kılar.",
-   "problems.restarts-near-limit-8.title": "JobSet yeniden başlatmaları 8-13 sınırına yakın",
-   "problems.restarts-near-limit-8.message": "İzin verilen {{.spec.failurePolicy.maxRestarts}} yeniden başlatmadan {{.status.restartsCountTowardsMax}} tanesi kullanıldı: sınırın ötesindeki bir hata JobSet'i başarısız kılar.",
-   "problems.restarts-near-limit-14.title": "JobSet yeniden başlatmaları 14-19 sınırına yakın",
-   "problems.restarts-near-limit-14.message": "İzin verilen {{.spec.failurePolicy.maxRestarts}} yeniden başlatmadan {{.status.restartsCountTowardsMax}} tanesi kullanıldı: sınırın ötesindeki bir hata JobSet'i başarısız kılar.",
+   "problems.restarts-near-limit.message": "İzin verilen {{.spec.failurePolicy.maxRestarts}} yeniden başlatmadan {{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} tanesi kullanıldı: sınırın ötesindeki bir hata JobSet'i başarısız kılar.",
    "problems.restarts-near-limit-all.title": "JobSet yeniden başlatmaları sınıra yakın (tümü sayılarak)",
-   "problems.restarts-near-limit-all.message": "İzin verilen {{.spec.failurePolicy.maxRestarts}} yeniden başlatmadan {{.status.restarts}} tanesi kullanıldı: sınırın ötesindeki bir hata JobSet'i başarısız kılar.",
-   "problems.restarts-near-limit-all-7.title": "JobSet yeniden başlatmaları 7-11 sınırına yakın (tümü sayılarak)",
-   "problems.restarts-near-limit-all-7.message": "İzin verilen {{.spec.failurePolicy.maxRestarts}} yeniden başlatmadan {{.status.restarts}} tanesi kullanıldı: sınırın ötesindeki bir hata JobSet'i başarısız kılar.",
+   "problems.restarts-near-limit-all.message": "İzin verilen {{.spec.failurePolicy.maxRestarts}} yeniden başlatmadan {{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} tanesi kullanıldı: sınırın ötesindeki bir hata JobSet'i başarısız kılar.",
    "sectionBadges.jobset.label.one": "{{count}} JobSet ilgi gerektiriyor",
    "sectionBadges.jobset.label.other": "{{count}} JobSet ilgi gerektiriyor"
   },
@@ -2544,59 +1365,39 @@
    "columns.jobset-status.title": "Статус",
    "columns.jobset-status.cases.0.text": "Завершено",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "Завершено",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "Збій",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "Збій",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "Призупинено",
-   "columns.jobset-status.cases.5.text": "Перезапускається",
-   "columns.jobset-status.cases.6.text": "Запускається",
-   "columns.jobset-status.cases.7.text": "Працює",
-   "columns.jobset-status.cases.8.text": "Очікує",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "Збій",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "Призупинено",
+   "columns.jobset-status.cases.3.text": "Перезапускається",
+   "columns.jobset-status.cases.4.text": "Запускається",
+   "columns.jobset-status.cases.5.text": "Працює",
+   "columns.jobset-status.cases.6.text": "Очікує",
    "columns.jobset-succeeded.title": "Успішно",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "Активні",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "Збій",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "Перезапуски",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "Збій JobSet",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "Збій JobSet (без причини)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "Збій JobSet (без часу)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "Збій JobSet (без причини й часу)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "Перезапуски JobSet близькі до ліміту",
-   "problems.restarts-near-limit.message": "Використано {{.status.restartsCountTowardsMax}} з {{.spec.failurePolicy.maxRestarts}} дозволених перезапусків: збій понад ліміт завершить JobSet помилкою.",
-   "problems.restarts-near-limit-8.title": "Перезапуски JobSet близькі до ліміту від 8 до 13",
-   "problems.restarts-near-limit-8.message": "Використано {{.status.restartsCountTowardsMax}} з {{.spec.failurePolicy.maxRestarts}} дозволених перезапусків: збій понад ліміт завершить JobSet помилкою.",
-   "problems.restarts-near-limit-14.title": "Перезапуски JobSet близькі до ліміту від 14 до 19",
-   "problems.restarts-near-limit-14.message": "Використано {{.status.restartsCountTowardsMax}} з {{.spec.failurePolicy.maxRestarts}} дозволених перезапусків: збій понад ліміт завершить JobSet помилкою.",
+   "problems.restarts-near-limit.message": "Використано {{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} з {{.spec.failurePolicy.maxRestarts}} дозволених перезапусків: збій понад ліміт завершить JobSet помилкою.",
    "problems.restarts-near-limit-all.title": "Перезапуски JobSet близькі до ліміту (за всіма перезапусками)",
-   "problems.restarts-near-limit-all.message": "Використано {{.status.restarts}} з {{.spec.failurePolicy.maxRestarts}} дозволених перезапусків: збій понад ліміт завершить JobSet помилкою.",
-   "problems.restarts-near-limit-all-7.title": "Перезапуски JobSet близькі до ліміту від 7 до 11 (за всіма перезапусками)",
-   "problems.restarts-near-limit-all-7.message": "Використано {{.status.restarts}} з {{.spec.failurePolicy.maxRestarts}} дозволених перезапусків: збій понад ліміт завершить JobSet помилкою.",
+   "problems.restarts-near-limit-all.message": "Використано {{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}} з {{.spec.failurePolicy.maxRestarts}} дозволених перезапусків: збій понад ліміт завершить JobSet помилкою.",
    "sectionBadges.jobset.label.one": "{{count}} JobSet потребує уваги",
    "sectionBadges.jobset.label.few": "{{count}} JobSet потребують уваги",
    "sectionBadges.jobset.label.many": "{{count}} JobSet потребують уваги",
@@ -2611,59 +1412,39 @@
    "columns.jobset-status.title": "状态",
    "columns.jobset-status.cases.0.text": "已完成",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "已完成",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "失败",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "失败",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "已暂停",
-   "columns.jobset-status.cases.5.text": "重启中",
-   "columns.jobset-status.cases.6.text": "启动中",
-   "columns.jobset-status.cases.7.text": "运行中",
-   "columns.jobset-status.cases.8.text": "等待中",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "失败",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "已暂停",
+   "columns.jobset-status.cases.3.text": "重启中",
+   "columns.jobset-status.cases.4.text": "启动中",
+   "columns.jobset-status.cases.5.text": "运行中",
+   "columns.jobset-status.cases.6.text": "等待中",
    "columns.jobset-succeeded.title": "成功",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "活跃",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "失败",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "重启",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet 失败",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet 失败 (未给出原因)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet 失败 (未给出时间)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet 失败 (未给出原因和时间)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "JobSet 重启接近上限",
-   "problems.restarts-near-limit.message": "已用 {{.status.restartsCountTowardsMax}}/{{.spec.failurePolicy.maxRestarts}} 次允许的重启：超出上限后的失败会使 JobSet 失败。",
-   "problems.restarts-near-limit-8.title": "JobSet 重启接近 8 到 13 次的上限",
-   "problems.restarts-near-limit-8.message": "已用 {{.status.restartsCountTowardsMax}}/{{.spec.failurePolicy.maxRestarts}} 次允许的重启：超出上限后的失败会使 JobSet 失败。",
-   "problems.restarts-near-limit-14.title": "JobSet 重启接近 14 到 19 次的上限",
-   "problems.restarts-near-limit-14.message": "已用 {{.status.restartsCountTowardsMax}}/{{.spec.failurePolicy.maxRestarts}} 次允许的重启：超出上限后的失败会使 JobSet 失败。",
+   "problems.restarts-near-limit.message": "已用 {{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}} 次允许的重启：超出上限后的失败会使 JobSet 失败。",
    "problems.restarts-near-limit-all.title": "JobSet 重启接近上限 (按全部重启计)",
-   "problems.restarts-near-limit-all.message": "已用 {{.status.restarts}}/{{.spec.failurePolicy.maxRestarts}} 次允许的重启：超出上限后的失败会使 JobSet 失败。",
-   "problems.restarts-near-limit-all-7.title": "JobSet 重启接近 7 到 11 次的上限 (按全部重启计)",
-   "problems.restarts-near-limit-all-7.message": "已用 {{.status.restarts}}/{{.spec.failurePolicy.maxRestarts}} 次允许的重启：超出上限后的失败会使 JobSet 失败。",
+   "problems.restarts-near-limit-all.message": "已用 {{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}} 次允许的重启：超出上限后的失败会使 JobSet 失败。",
    "sectionBadges.jobset.label.other": "{{count}} 个 JobSet 需要关注"
   },
   "zh-TW": {
@@ -2675,59 +1456,39 @@
    "columns.jobset-status.title": "狀態",
    "columns.jobset-status.cases.0.text": "已完成",
    "columns.jobset-status.cases.0.tooltip": "{{.status.conditions[type=\"Completed\"].reason}}: {{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.1.text": "已完成",
-   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Completed\"].message}}",
-   "columns.jobset-status.cases.2.text": "失敗",
-   "columns.jobset-status.cases.2.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.3.text": "失敗",
-   "columns.jobset-status.cases.3.tooltip": "{{.status.conditions[type=\"Failed\"].message}}",
-   "columns.jobset-status.cases.4.text": "已暫停",
-   "columns.jobset-status.cases.5.text": "重新啟動中",
-   "columns.jobset-status.cases.6.text": "啟動中",
-   "columns.jobset-status.cases.7.text": "執行中",
-   "columns.jobset-status.cases.8.text": "等待中",
+   "columns.jobset-status.cases.0.tooltipOr.0": "{{.status.conditions[type=\"Completed\"].message}}",
+   "columns.jobset-status.cases.0.tooltipOr.1": "{{.status.conditions[type=\"Completed\"].reason}}",
+   "columns.jobset-status.cases.1.text": "失敗",
+   "columns.jobset-status.cases.1.tooltip": "{{.status.conditions[type=\"Failed\"].reason}}: {{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.0": "{{.status.conditions[type=\"Failed\"].message}}",
+   "columns.jobset-status.cases.1.tooltipOr.1": "{{.status.conditions[type=\"Failed\"].reason}}",
+   "columns.jobset-status.cases.2.text": "已暫停",
+   "columns.jobset-status.cases.3.text": "重新啟動中",
+   "columns.jobset-status.cases.4.text": "啟動中",
+   "columns.jobset-status.cases.5.text": "執行中",
+   "columns.jobset-status.cases.6.text": "等待中",
    "columns.jobset-succeeded.title": "成功",
-   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}}",
-   "columns.jobset-succeeded.cases.2.text": "{{.status.replicatedJobsStatus[0].succeeded}}/{{.spec.replicatedJobs[0].replicas}} + {{.status.replicatedJobsStatus[1].succeeded}}/{{.spec.replicatedJobs[1].replicas}} + …",
-   "columns.jobset-succeeded.cases.3.text": "0/{{.spec.replicatedJobs[0].replicas}} + 0/{{.spec.replicatedJobs[1].replicas}} + …",
+   "columns.jobset-succeeded.cases.0.text": "{{.status.replicatedJobsStatus[*].succeeded|sum}}/{{.spec.replicatedJobs[*].replicas|sum}}",
+   "columns.jobset-succeeded.cases.1.text": "0/{{.spec.replicatedJobs[*].replicas|sum}}",
    "columns.jobset-active.title": "作用中",
    "columns.jobset-active.cases.0.text": "0",
-   "columns.jobset-active.cases.1.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}}",
-   "columns.jobset-active.cases.2.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}}",
-   "columns.jobset-active.cases.3.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}}",
-   "columns.jobset-active.cases.4.text": "{{.status.replicatedJobsStatus[0].active}} + {{.status.replicatedJobsStatus[1].active}} + {{.status.replicatedJobsStatus[2].active}} + {{.status.replicatedJobsStatus[3].active}} + …",
    "columns.jobset-failed.title": "失敗",
    "columns.jobset-failed.cases.0.text": "0",
-   "columns.jobset-failed.cases.1.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}}",
-   "columns.jobset-failed.cases.2.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}}",
-   "columns.jobset-failed.cases.3.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}}",
-   "columns.jobset-failed.cases.4.text": "{{.status.replicatedJobsStatus[0].failed}} + {{.status.replicatedJobsStatus[1].failed}} + {{.status.replicatedJobsStatus[2].failed}} + {{.status.replicatedJobsStatus[3].failed}} + …",
    "columns.jobset-restarts.title": "重新啟動",
    "columns.jobset-restarts.cases.0.text": "{{.status.restarts}}",
    "columns.jobset-restarts.cases.1.text": "0",
-   "columns.jobset-restarts.cases.2.text": "{{.status.restartsCountTowardsMax}}/0",
-   "columns.jobset-restarts.cases.3.text": "{{.status.restarts}}/0",
+   "columns.jobset-restarts.cases.2.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
+   "columns.jobset-restarts.cases.3.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/0",
    "columns.jobset-restarts.cases.4.text": "0/0",
-   "columns.jobset-restarts.cases.5.text": "0/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.5.text": "{{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.6.text": "{{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}}",
+   "columns.jobset-restarts.cases.7.text": "0/{{.spec.failurePolicy.maxRestarts}}",
    "problems.failed.title": "JobSet 失敗",
    "problems.failed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed.title": "JobSet 失敗 (未提供原因)",
-   "problems.failed-unnamed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-untimed.title": "JobSet 失敗 (未提供時間)",
-   "problems.failed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
-   "problems.failed-unnamed-untimed.title": "JobSet 失敗 (未提供原因與時間)",
-   "problems.failed-unnamed-untimed.message": "{{.status.conditions[type=\"Failed\"].message}}",
    "problems.restarts-near-limit.title": "JobSet 重新啟動接近上限",
-   "problems.restarts-near-limit.message": "已用 {{.status.restartsCountTowardsMax}}/{{.spec.failurePolicy.maxRestarts}} 次允許的重新啟動：超出上限後的失敗會使 JobSet 失敗。",
-   "problems.restarts-near-limit-8.title": "JobSet 重新啟動接近 8 到 13 次的上限",
-   "problems.restarts-near-limit-8.message": "已用 {{.status.restartsCountTowardsMax}}/{{.spec.failurePolicy.maxRestarts}} 次允許的重新啟動：超出上限後的失敗會使 JobSet 失敗。",
-   "problems.restarts-near-limit-14.title": "JobSet 重新啟動接近 14 到 19 次的上限",
-   "problems.restarts-near-limit-14.message": "已用 {{.status.restartsCountTowardsMax}}/{{.spec.failurePolicy.maxRestarts}} 次允許的重新啟動：超出上限後的失敗會使 JobSet 失敗。",
+   "problems.restarts-near-limit.message": "已用 {{.status.restartsCountTowardsMax + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}} 次允許的重新啟動：超出上限後的失敗會使 JobSet 失敗。",
    "problems.restarts-near-limit-all.title": "JobSet 重新啟動接近上限 (依全部重新啟動計)",
-   "problems.restarts-near-limit-all.message": "已用 {{.status.restarts}}/{{.spec.failurePolicy.maxRestarts}} 次允許的重新啟動：超出上限後的失敗會使 JobSet 失敗。",
-   "problems.restarts-near-limit-all-7.title": "JobSet 重新啟動接近 7 到 11 次的上限 (依全部重新啟動計)",
-   "problems.restarts-near-limit-all-7.message": "已用 {{.status.restarts}}/{{.spec.failurePolicy.maxRestarts}} 次允許的重新啟動：超出上限後的失敗會使 JobSet 失敗。",
+   "problems.restarts-near-limit-all.message": "已用 {{.status.restarts + .status.replicatedJobsStatus[*].jobRestartsCountTowardsMax|sum}}/{{.spec.failurePolicy.maxRestarts}} 次允許的重新啟動：超出上限後的失敗會使 JobSet 失敗。",
    "sectionBadges.jobset.label.other": "{{count}} 個 JobSet 需要注意"
   }
  }

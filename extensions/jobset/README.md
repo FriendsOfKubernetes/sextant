@@ -10,7 +10,9 @@ readings and problems), ADR-0139 (Sextant's own extensions), ADR-0140 (translati
 its own, `not` in rules), ADR-0153 (computed columns), ADR-0160 (the section's icon and place, the UI kit), ADR-0161
 (printer columns left out, paths picking an item, notification groups, lists counted as lengths), ADR-0163 (field
 values in texts, a problem's reason from the object), ADR-0164 (case tooltips, deeper conditions, `atLeast`) and
-ADR-0167 (the counter's own label, more conditions per rule).
+ADR-0167 (the counter's own label, column widths, case sort values, the `muted` tone, `[*]` paths and the `sum` format,
+tooltip fallbacks, `|sum` in conditions, columns and texts, `atLeast` offsets and added paths, `reasonOr`/`sinceOr`,
+`stamp`, untitled sections, blocks in Sextant's own memory, capped watches).
 
 ## At a glance
 
@@ -33,15 +35,20 @@ as on every kind. The section's counter shows how many JobSets need attention (t
 running JobSets whose counted restarts leave at most one before `maxRestarts`.
 
 **Columns**, after Name and Namespace, in place of the CRD's own printer columns (left out, as the built-in view did):
-- **Status** (`jobset-status`): Completed, Failed, Suspended, Restarting, Starting, Running or Pending, as the
-  controller's conditions and `terminalState` say, coloured; a completed or failed JobSet's condition reason and
-  message on hover.
-- **Succeeded** (`jobset-succeeded`): succeeded Jobs of the wanted ones.
-- **Active** (`jobset-active`) and **Failed** (`jobset-failed`): active and failed Jobs.
-- **Restarts** (`jobset-restarts`): the restarts, or with a failure policy those counted against `maxRestarts` as
-  "counted/max".
+- **Status** (`jobset-status`, 120 px): Completed, Failed, Suspended, Restarting, Starting, Running or Pending, as the
+  controller's conditions and `terminalState` say, coloured as the built-in column (Suspended muted); Running when any
+  replicated job has active or ready Jobs; a completed or failed JobSet's condition "reason: message" on hover (the
+  one of them it has, else none). It sorts by the state, as the built-in column did.
+- **Succeeded** (`jobset-succeeded`, 100 px): succeeded Jobs of the wanted ones of every replicated job added up,
+  "succeeded/wanted", sorted as text as the built-in column was.
+- **Active** (`jobset-active`) and **Failed** (`jobset-failed`), 80 px: active and failed Jobs of every replicated job
+  added up, 0 before the controller wrote any, sorted as numbers.
+- **Restarts** (`jobset-restarts`, 90 px): the restarts, or with a failure policy those counted against `maxRestarts`
+  as "counted/max" — the JobSet's own and its Jobs' own (`jobRestartsCountTowardsMax`); sorted as text, as the built-in
+  column was.
 
-**Details**, a section **JobSet** (`jobset`) drawn with the SDK's UI kit in the classes of Sextant's own details panel:
+**Details**, a section **JobSet** (`jobset`) without a heading of its own (as the built-in one; "JobSet" stays its
+accessible name), drawn with the SDK's UI kit in the classes of Sextant's own details panel:
 - when it failed, the controller's reason and message, the first failed Job the Failed condition names (a link) and
   that Job's own failure reason, or that it no longer exists;
 - a warning when the counted restarts leave at most one before the limit, and a remark when it is suspended;
@@ -51,8 +58,13 @@ running JobSets whose counted restarts leave at most one before `maxRestarts`.
 - the replicated jobs (Jobs, completions/parallelism, ready, active, succeeded, failed, depends on) and the failure
   policy's rules;
 - its Jobs (replicated job, index, state, restart attempt, failure) and its pods (Job, status; at most 50, those not
-  running first), watched while the section shows in the JobSet's namespace by the label the controller puts on them,
-  `jobset.sigs.k8s.io/jobset-name=<name>`.
+  running first), watched in the JobSet's namespace by the label the controller puts on them,
+  `jobset.sigs.k8s.io/jobset-name=<name>`: the Jobs while their block is open or the JobSet failed (its failure names
+  the first failed Job), the pods while theirs is open; each list keeps at most 500 objects and says when it is cut.
+
+The replicated jobs, failure policy rules, Jobs and Pods blocks open and close with their titles, in Sextant's own
+memory of details sections: as Settings → Appearance says (globally, per cluster, or this object only), and with the
+panel's "Expand all" and "Collapse all".
 
 Every object named is a link to its details in Sextant's panel. Kueue's queue section on JobSets is Sextant's own and
 stays there.
@@ -67,26 +79,22 @@ stays there.
 
 ## Problems
 
-As the built-in category `jobset`, on by default. Every rule may notify; none waits a grace period. The `failed`
-rules form one notification group, and so do the `restarts-near-limit` rules. A failed JobSet's reason is the
-controller's own (`FailedJobs`, `ReachedMaxRestarts`, `FailJobSetFailurePolicyAction`, `DeadlineExceeded`, …), "Failed"
-when it gives none; it stays a problem for a day after the Failed condition's time (after its creation without one).
-The restarts counted are `status.restartsCountTowardsMax`, else, from a controller without that field, every restart
-(`status.restarts`) unless a rule restarts with `RestartJobSetAndIgnoreMaxRestarts`. Because a rule cannot subtract,
-"one before the limit" is spelled out for each limit up to 19 (11 for a controller without the field); a higher limit
-is reported once the restarts reach it.
+As the built-in category `jobset`, on by default. Every rule may notify; none waits a grace period. The two
+`restarts-near-limit` rules form one notification group. A failed JobSet's reason is the controller's own
+(`FailedJobs`, `ReachedMaxRestarts`, `FailJobSetFailurePolicyAction`, `DeadlineExceeded`, …), "Failed" when it gives
+none; it stays a problem for a day after the Failed condition's time (after its creation without one). The restarts
+counted are the JobSet's own — `status.restartsCountTowardsMax`, else, from a controller without that field, every
+restart (`status.restarts`) unless a rule restarts with `RestartJobSetAndIgnoreMaxRestarts` — plus its Jobs' own
+(every number of `status.replicatedJobsStatus[*].jobRestartsCountTowardsMax`). A new count of restarts counts as first
+seen again (the built-in problem's progress); the problem is told once, as the built-in one was. The two
+`restarts-near-limit` rules are one notification group: two only because the JobSet's own count is read from a
+different field, which the message adds to the Jobs' own.
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
-| `failed` | JobSet | Failed (terminal state or condition), not completed, with a reason and a time, for a day from the Failed condition | None | No |
-| `failed-unnamed` | JobSet | The same without a reason (reason "Failed") | None | No |
-| `failed-untimed` | JobSet | Failed with a reason, the condition without a time: for a day from its creation | None | No |
-| `failed-unnamed-untimed` | JobSet | The same without a reason (reason "Failed") | None | No |
-| `restarts-near-limit` | JobSet | Not completed, failed or suspended; counted restarts above 0 and at or over the limit, or one below a limit of 1 to 7 | None | No |
-| `restarts-near-limit-8` | JobSet | The same, one below a limit of 8 to 13 | None | No |
-| `restarts-near-limit-14` | JobSet | The same, one below a limit of 14 to 19 | None | No |
-| `restarts-near-limit-all` | JobSet | As `restarts-near-limit`, from a controller without `restartsCountTowardsMax` (every restart counted), limits 1 to 6 | None | No |
-| `restarts-near-limit-all-7` | JobSet | The same, one below a limit of 7 to 11 | None | No |
+| `failed` | JobSet | Failed (terminal state or condition) and not completed, for a day from the Failed condition's time (else from its creation) | None | No |
+| `restarts-near-limit` | JobSet | Not completed, failed or suspended; `maxRestarts` above 0; `restartsCountTowardsMax` (missing: 0) and the Jobs' own counted restarts added up are above 0 and at least one before the limit | None | No |
+| `restarts-near-limit-all` | JobSet | The same from a controller without `restartsCountTowardsMax`, every restart and the Jobs' own counted | None | No |
 
 ## Metrics
 
@@ -109,19 +117,7 @@ None: the extension is read-only and has no action of its own (ADR-0114).
 ## Requirements and limits
 
 - JobSet's CRD (`jobset.x-k8s.io/v1alpha2`); the section shows only where the cluster serves it.
-- Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - The Succeeded, Active and Failed columns add up the replicated jobs only for a JobSet of one replicated job; for
-    more, they show each replicated job's count in order ("1/1 + 3/4", "1 + 2"), the first two (Succeeded) or four
-    (Active, Failed) followed by "…" beyond. They sort by that text.
-  - The Restarts column and the restarts problem leave out the Jobs' own `jobRestartsCountTowardsMax` (the RestartJob
-    strategy); the details count them.
-  - A JobSet counts as Running from the active or ready Jobs of its first 13 replicated jobs.
-  - One restart before a limit over 19 (over 11 for a controller without `restartsCountTowardsMax`) is not a problem
-    until the limit is reached; the built-in rule notified again on each new count of restarts, the rules once.
-  - Suspended is drawn in the neutral colour in the table (the built-in table muted it).
-  - The details are a titled section (the built-in one had no title of its own); its blocks are always open when
-    shown (the built-in panel remembered closed blocks), and the Jobs and pods are watched while the section shows,
-    open or closed, with no cap (the built-in view read at most 500 of each and said when a list was cut).
+- No difference from the former built-in view is known.
 - Checked by tests on fixtures of JobSet's objects (copied from the built-in view) against the built-in readings and
   rules; not yet tried on a live cluster.
 

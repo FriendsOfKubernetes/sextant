@@ -51,7 +51,7 @@ describe("catalogs", () => {
 });
 
 describe("the manifest's translations", () => {
-  type Case = { text: string; tooltip?: string };
+  type Case = { text: string; tooltip?: string; tooltipOr?: string[] };
   const c = manifest.contributes;
   const translations = manifest.translations as Record<string, Record<string, string>>;
 
@@ -67,6 +67,7 @@ describe("the manifest's translations", () => {
         ...(((col as { cases?: Case[] }).cases ?? []).flatMap((cs, i) => [
           `columns.${col.id}.cases.${i}.text`,
           ...(cs.tooltip === undefined ? [] : [`columns.${col.id}.cases.${i}.tooltip`]),
+          ...(cs.tooltipOr ?? []).map((_, k) => `columns.${col.id}.cases.${i}.tooltipOr.${k}`),
         ])),
       ]),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
@@ -92,6 +93,7 @@ describe("the manifest's translations", () => {
       for (const [i, cs] of ((col as { cases?: Case[] }).cases ?? []).entries()) {
         english.set(`columns.${col.id}.cases.${i}.text`, cs.text);
         if (cs.tooltip !== undefined) english.set(`columns.${col.id}.cases.${i}.tooltip`, cs.tooltip);
+        for (const [k, alt] of (cs.tooltipOr ?? []).entries()) english.set(`columns.${col.id}.cases.${i}.tooltipOr.${k}`, alt);
       }
     }
     for (const rule of c.problems) english.set(`problems.${rule.id}.message`, rule.message);
@@ -103,8 +105,7 @@ describe("the manifest's translations", () => {
 
   it("say the JobSet states as the details do", () => {
     const status = c.columns.find((col) => col.id === "jobset-status")! as { cases: Case[] };
-    // Completed and Failed come twice: with the reason on hover, and without one.
-    const states = ["completed", "completed", "failed", "failed", "suspended", "restarting", "starting", "running", "pending"];
+    const states = ["completed", "failed", "suspended", "restarting", "starting", "running", "pending"];
     expect(status.cases.map((cs) => cs.text)).toEqual(states.map((s) => en[`state.${s}` as keyof typeof en]));
     for (const [language, texts] of Object.entries(translations)) {
       const catalog = CATALOGS[language as keyof typeof CATALOGS] as Record<string, string>;

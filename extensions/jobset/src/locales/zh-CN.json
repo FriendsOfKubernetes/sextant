@@ -69,5 +69,6 @@
   "listUnknown": "无法读取列表。",
   "noJobs": "没有 Job。",
   "noPods": "没有 Pod。",
-  "morePods": "显示了 {{total}} 个中的前 {{shown}} 个，未运行的排在前面。"
+  "morePods": "显示了 {{total}} 个中的前 {{shown}} 个，未运行的排在前面。",
+  "truncated": "只读取了前 {{max}} 个：列表不完整。"
 }

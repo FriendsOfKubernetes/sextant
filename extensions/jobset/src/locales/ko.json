@@ -69,5 +69,6 @@
   "listUnknown": "목록을 읽을 수 없습니다.",
   "noJobs": "Job이 없습니다.",
   "noPods": "Pod가 없습니다.",
-  "morePods": "{{total}}개 중 처음 {{shown}}개를 실행 중이 아닌 것부터 표시합니다."
+  "morePods": "{{total}}개 중 처음 {{shown}}개를 실행 중이 아닌 것부터 표시합니다.",
+  "truncated": "처음 {{max}}개만 읽습니다: 목록이 불완전합니다."
 }

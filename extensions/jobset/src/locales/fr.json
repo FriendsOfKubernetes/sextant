@@ -69,5 +69,6 @@
   "listUnknown": "La liste n'a pas pu être lue.",
   "noJobs": "Aucun Job n'existe.",
   "noPods": "Aucun Pod n'existe.",
-  "morePods": "Les {{shown}} premiers sur {{total}} sont affichés, ceux qui ne tournent pas en premier."
+  "morePods": "Les {{shown}} premiers sur {{total}} sont affichés, ceux qui ne tournent pas en premier.",
+  "truncated": "Seuls les {{max}} premiers sont lus : la liste est incomplète."
 }

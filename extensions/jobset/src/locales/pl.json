@@ -69,5 +69,6 @@
   "listUnknown": "Nie udało się odczytać listy.",
   "noJobs": "Nie ma żadnego Joba.",
   "noPods": "Nie ma żadnego Poda.",
-  "morePods": "Pokazano pierwsze {{shown}} z {{total}}, najpierw niedziałające."
+  "morePods": "Pokazano pierwsze {{shown}} z {{total}}, najpierw niedziałające.",
+  "truncated": "Odczytywane są tylko pierwsze {{max}}: lista jest niepełna."
 }

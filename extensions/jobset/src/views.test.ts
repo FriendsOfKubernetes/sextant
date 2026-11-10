@@ -3,7 +3,7 @@ import type { KubeObject, WatchUpdate } from "@sextant/extension-sdk";
 import { startTestHost, type TestHost, type TestWatch } from "@sextant/extension-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 import objectsJson from "../fixtures/objects.json";
-import { MAX_LISTED_PODS, startDetails } from "./details";
+import { MAX_CHILDREN, MAX_LISTED_PODS, startDetails } from "./details";
 import { setLanguage } from "./i18n";
 
 const objects = objectsJson as unknown as KubeObject[];
@@ -21,10 +21,20 @@ let host: TestHost;
 let root: HTMLElement;
 let stop: () => void = () => undefined;
 
-async function open(obj: KubeObject, language = "en"): Promise<void> {
+/** Sextant's memory of the section's blocks, as the window keeps it (`context.blocks`, `ui.setBlockOpen`). */
+let remembered: Record<string, boolean> = {};
+
+async function open(obj: KubeObject, language = "en", blocks: Record<string, boolean> = {}): Promise<void> {
+  remembered = { ...blocks };
   host = await startTestHost({
-    context: { view: "details", contribution: "jobset", selection: [ref(obj)], resourceVersion: "1", language },
-    handlers: { "resources.get": () => structuredClone(obj) },
+    context: { view: "details", contribution: "jobset", selection: [ref(obj)], resourceVersion: "1", language, blocks: remembered },
+    handlers: {
+      "resources.get": () => structuredClone(obj),
+      "ui.setBlockOpen": ({ id, open }: { id: string; open: boolean }) => {
+        remembered = { ...remembered, [id]: open };
+        host.setContext({ blocks: remembered });
+      },
+    },
   });
   setLanguage(language);
   root = document.createElement("main");
@@ -113,5 +123,59 @@ describe("details", () => {
     await open(suspended, "ru");
     expect(text()).toContain("Приостановлен");
     expect(root.querySelector(".jobset-muted")).not.toBeNull();
+  });
+  it("watches the Jobs and pods at most 500 each, and says when a list is cut", async () => {
+    await open(running());
+    await expect.poll(() => watchOf("Pod")).toBeDefined();
+    expect((watchOf("Job")!.params as { maxObjects?: number }).maxObjects).toBe(MAX_CHILDREN);
+    expect((watchOf("Pod")!.params as { maxObjects?: number }).maxObjects).toBe(MAX_CHILDREN);
+    watchOf("Job")!.emit(snapshot([]));
+    watchOf("Pod")!.emit(snapshot([find("Pod", "failure-policy-leader-0-0-x7k2p")]));
+    watchOf("Pod")!.emit({ type: "capped", total: 1200 } as unknown as WatchUpdate);
+    await expect.poll(() => root.querySelector('[data-block="pods"]')?.textContent).toContain("Only the first 500 are read: the list is incomplete.");
+    expect(root.querySelector('[data-block="jobs"]')?.textContent).not.toContain("incomplete");
+  });
+
+  it("keeps its blocks in Sextant's memory, and watches a block's list only while it is open", async () => {
+    await open(running());
+    await expect.poll(() => watchOf("Pod")).toBeDefined();
+    const toggle = (id: string) => root.querySelector<HTMLButtonElement>(`[data-block="${id}"] .sx-block__toggle`)!;
+    toggle("pods").focus();
+    toggle("pods").click();
+    await expect.poll(() => watchOf("Pod")).toBeUndefined();
+    expect(host.calls.filter((c) => c.method === "ui.setBlockOpen").map((c) => c.params)).toEqual([{ id: "pods", open: false }]);
+    await expect.poll(() => remembered).toEqual({ pods: false });
+    expect(toggle("pods").getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(toggle("pods"));
+    toggle("jobs").click();
+    await expect.poll(() => watchOf("Job")).toBeUndefined();
+    expect(remembered).toEqual({ pods: false, jobs: false });
+    toggle("pods").click();
+    await expect.poll(() => watchOf("Pod")).toBeDefined();
+    expect(remembered).toEqual({ pods: true, jobs: false });
+  });
+
+  it("follows the panel's Expand all and Collapse all", async () => {
+    await open(running(), "en", { pods: false });
+    const expanded = (id: string) => root.querySelector(`[data-block="${id}"] .sx-block__toggle`)?.getAttribute("aria-expanded");
+    expect(expanded("pods")).toBe("false");
+    expect(expanded("jobs")).toBe("true");
+    host.setContext({ blocks: { "*": false } });
+    await expect.poll(() => ["jobs", "pods", "replicated"].map(expanded)).toEqual(["false", "false", "false"]);
+    await expect.poll(() => watchOf("Pod")).toBeUndefined();
+    expect(watchOf("Job")).toBeUndefined();
+    host.setContext({ blocks: { "*": true } });
+    await expect.poll(() => ["jobs", "pods", "replicated"].map(expanded)).toEqual(["true", "true", "true"]);
+    await expect.poll(() => watchOf("Pod")).toBeDefined();
+  });
+
+  it("opens with the blocks closed before closed, and watches a failed JobSet's Jobs even so", async () => {
+    await open(failed(), "en", { jobs: false, pods: false, replicated: false, rules: false });
+    for (const id of ["jobs", "pods", "replicated", "rules"])
+      expect(root.querySelector(`[data-block="${id}"] .sx-block__toggle`)?.getAttribute("aria-expanded"), id).toBe("false");
+    await expect.poll(() => watchOf("Job")).toBeDefined();
+    expect(watchOf("Pod")).toBeUndefined();
+    watchOf("Job")!.emit(snapshot([find("Job", "failure-policy-leader-0")]));
+    await expect.poll(() => [...root.querySelectorAll(".jobset-note--danger")].map((n) => n.textContent)).toContain("BackoffLimitExceeded: Job has reached the specified backoff limit");
   });
 });

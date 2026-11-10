@@ -69,5 +69,6 @@
   "listUnknown": "The list could not be read.",
   "noJobs": "No Job exists.",
   "noPods": "No Pod exists.",
-  "morePods": "The first {{shown}} of {{total}} are shown, those not running first."
+  "morePods": "The first {{shown}} of {{total}} are shown, those not running first.",
+  "truncated": "Only the first {{max}} are read: the list is incomplete."
 }

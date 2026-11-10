@@ -1,9 +1,12 @@
 // The details section of a JobSet (the manifest's `contributes.detailsSections`, id `jobset`): its state, and when it
 // failed the controller's reason and message with the first failed Job and that Job's own failure reason; restarts
 // against `failurePolicy.maxRestarts`; the success, failure and startup policies; the replicated jobs with their
-// counts; its Jobs and their pods (links). Its Jobs and pods are watched while the section shows, in the JobSet's
-// namespace only, selected on the API server by the label the controller puts on them
-// (`jobset.sigs.k8s.io/jobset-name=<name>`). The frame reads the shown object again whenever its resourceVersion
+// counts; its Jobs and their pods (links). Its blocks open and close as the built-in panel's did, in Sextant's own
+// memory of details sections (the context's `blocks`, `ui.setBlockOpen`), so "Expand all", "Collapse all" and
+// Settings → Appearance apply to them. Its Jobs are watched while their block is open or the JobSet failed, its pods while theirs is
+// open, in the JobSet's namespace only, selected on the API server by the label the controller puts on them
+// (`jobset.sigs.k8s.io/jobset-name=<name>`), each list at most `MAX_CHILDREN` objects (a TPU multislice JobSet can run
+// thousands of pods) with a note when it is cut. The frame reads the shown object again whenever its resourceVersion
 // changes. Conditions, events and YAML are Sextant's own sections. Read-only (ADR-0114).
 import { trackObjects, ui, type KubeObject, type ObjectRef, type Sextant, type UiContent, type Watch, type WatchParams } from "@sextant/extension-sdk";
 import { dateTime, errorText, note, reasonText, remark } from "./dom";
@@ -36,18 +39,31 @@ import {
 
 /** Pods listed at most (not running first). */
 export const MAX_LISTED_PODS = 50;
+/** Objects each list of Jobs or pods keeps at most, as the built-in view's. */
+export const MAX_CHILDREN = 500;
 
-/** A list watched while the section shows: its objects, whether the first answer came, whether it failed. */
+/** A list watched while its block is open: its objects, whether the first answer came, whether it failed or was cut. */
 export interface Live {
   items: KubeObject[];
   ready: boolean;
   failed: boolean;
+  truncated: boolean;
+}
+
+/** The blocks of the section: whether one is open, and `toggle`, which remembers a change and draws again. */
+export interface Blocks {
+  isOpen(id: string): boolean;
+  toggle(id: string, open: boolean): void;
 }
 
 const present = (nodes: (Node | null | false | undefined)[]): Node[] => nodes.filter((n): n is Node => Boolean(n));
 
-/** A titled block as the built-in view's: open, and closable with its title. */
-const block = (title: string, content: UiContent): HTMLElement => ui.block(title, content, { collapsible: true });
+/** A titled block as the built-in view's: open unless the user closed it, closable with its title. */
+function block(blocks: Blocks, id: string, title: string, content: UiContent): HTMLElement {
+  const node = ui.block(title, content, { collapsible: true, collapsed: !blocks.isOpen(id), onToggle: (open) => blocks.toggle(id, open) });
+  node.dataset.block = id;
+  return node;
+}
 
 /** A link to an object's details in Sextant's panel; nothing without a name. */
 export function link(sextant: Sextant, kind: KindOf, name: string | undefined, namespace: string | null): HTMLElement | null {
@@ -87,7 +103,9 @@ function failure(sextant: Sextant, obj: KubeObject, jobs: Live): Node[] {
   ]);
 }
 
-function jobsBlock(sextant: Sextant, obj: KubeObject, jobs: Live): HTMLElement {
+const truncatedNote = (live: Live) => live.truncated && remark(t("truncated", { max: MAX_CHILDREN }));
+
+function jobsBlock(sextant: Sextant, obj: KubeObject, jobs: Live, blocks: Blocks): HTMLElement {
   const ns = obj.metadata.namespace ?? null;
   const rows = jobs.items.map((j) => {
     const s = jobState(j);
@@ -106,12 +124,12 @@ function jobsBlock(sextant: Sextant, obj: KubeObject, jobs: Live): HTMLElement {
     : rows.length > 0
       ? ui.table(headers, rows, { label: t("jobs.title") })
       : remark(jobs.failed ? t("listUnknown") : t("noJobs"));
-  return block(t("jobs.title"), content);
+  return block(blocks, "jobs", t("jobs.title"), [content, truncatedNote(jobs) || null]);
 }
 
 const RUNNING = new Set(["Running", "Succeeded", "Completed"]);
 
-function podsBlock(sextant: Sextant, obj: KubeObject, pods: Live): HTMLElement {
+function podsBlock(sextant: Sextant, obj: KubeObject, pods: Live, blocks: Blocks): HTMLElement {
   const ns = obj.metadata.namespace ?? null;
   const sorted = [...pods.items].sort((a, b) => Number(RUNNING.has(podStatus(a))) - Number(RUNNING.has(podStatus(b))));
   const shown = sorted.slice(0, MAX_LISTED_PODS);
@@ -125,7 +143,11 @@ function podsBlock(sextant: Sextant, obj: KubeObject, pods: Live): HTMLElement {
     : rows.length > 0
       ? ui.table(headers, rows, { label: t("pods.title") })
       : remark(pods.failed ? t("listUnknown") : t("noPods"));
-  return block(t("pods.title"), [content, sorted.length > shown.length ? remark(t("morePods", { shown: shown.length, total: sorted.length })) : null]);
+  return block(blocks, "pods", t("pods.title"), [
+    content,
+    sorted.length > shown.length ? remark(t("morePods", { shown: shown.length, total: sorted.length })) : null,
+    truncatedNote(pods) || null,
+  ]);
 }
 
 /** The success policy in words: `All`/`Any` Job of the targets (every replicated job without targets). */
@@ -136,21 +158,26 @@ function successText(obj: KubeObject): string {
   return t(`success.${op}Of`, { targets: i18n().formatList(success.targets) });
 }
 
-/** What the section watches besides its object: the JobSet's Jobs and their pods, by the controller's label. */
-export function childWatches(obj: KubeObject): Record<"jobs" | "pods", Omit<WatchParams, "clusterId"> | null> {
+/**
+ * What the section watches besides its object, by the controller's label: the JobSet's Jobs while their block is open
+ * or it failed (the failure names its first failed Job), its pods while theirs is open.
+ */
+export function childWatches(obj: KubeObject, isOpen: (id: string) => boolean = () => true): Record<"jobs" | "pods", Omit<WatchParams, "clusterId"> | null> {
   const ns = obj.metadata.namespace;
   const name = obj.metadata.name;
   if (!ns || !name) return { jobs: null, pods: null };
   const labelSelector = `${JOBSET_NAME_LABEL}=${name}`;
+  const jobsWanted = isOpen("jobs") || jobSetState(obj) === "failed";
   return {
-    jobs: { kind: JOB, namespaces: [ns], labelSelector },
-    pods: { kind: POD, namespaces: [ns], labelSelector },
+    jobs: jobsWanted ? { kind: JOB, namespaces: [ns], labelSelector, maxObjects: MAX_CHILDREN } : null,
+    pods: !isOpen("pods") ? null : { kind: POD, namespaces: [ns], labelSelector, maxObjects: MAX_CHILDREN },
   };
 }
 
-const NONE: Live = { items: [], ready: false, failed: false };
+const NONE: Live = { items: [], ready: false, failed: false, truncated: false };
+const ALL_OPEN: Blocks = { isOpen: () => true, toggle: () => undefined };
 
-export function jobSetView(sextant: Sextant, obj: KubeObject, related: { jobs?: Live; pods?: Live }): Node[] {
+export function jobSetView(sextant: Sextant, obj: KubeObject, related: { jobs?: Live; pods?: Live }, blocks: Blocks = ALL_OPEN): Node[] {
   const jobs = related.jobs ?? NONE;
   const pods = related.pods ?? NONE;
   const state = jobSetState(obj);
@@ -192,10 +219,10 @@ export function jobSetView(sextant: Sextant, obj: KubeObject, related: { jobs?: 
       ["coordinator", coordinatorText],
       ["managedBy", str(get(obj, "spec", "managedBy"))],
     ]),
-    replicated.length > 0 && block(t("replicated.title"), ui.table(repHeaders, replicated, { label: t("replicated.title") })),
-    rules.length > 0 && block(t("rules.title"), ui.table(ruleHeaders, rules, { label: t("rules.title") })),
-    jobsBlock(sextant, obj, jobs),
-    podsBlock(sextant, obj, pods),
+    replicated.length > 0 && block(blocks, "replicated", t("replicated.title"), ui.table(repHeaders, replicated, { label: t("replicated.title") })),
+    rules.length > 0 && block(blocks, "rules", t("rules.title"), ui.table(ruleHeaders, rules, { label: t("rules.title") })),
+    jobsBlock(sextant, obj, jobs, blocks),
+    podsBlock(sextant, obj, pods, blocks),
   ]);
 }
 
@@ -226,7 +253,7 @@ class Watches {
   }
 
   private start(key: string, spec: Omit<WatchParams, "clusterId">): { watch: Watch; live: Live } {
-    const live: Live = { items: [], ready: false, failed: false };
+    const live: Live = { items: [], ready: false, failed: false, truncated: false };
     const settle = (failed: boolean) => {
       live.ready = true;
       live.failed = failed;
@@ -243,6 +270,10 @@ class Watches {
         },
       ),
       onError: () => settle(true),
+      onCapped: (total) => {
+        live.truncated = total > (spec.maxObjects ?? Infinity);
+        this.changed();
+      },
     });
     watch.started.catch(() => undefined);
     const entry = { watch, live };
@@ -266,6 +297,18 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
   let object: KubeObject | null = null;
   let scheduled = false;
   let stopped = false;
+  // The blocks' choices as Sextant remembers them (`context.blocks`); a choice made here counts until the context that
+  // carries it (or any other change of the remembered choices, "Collapse all" among them) comes back.
+  const choices = new Map<string, boolean>();
+  let rememberedBlocks = JSON.stringify(sextant.context.blocks ?? {});
+  const blocks: Blocks = {
+    isOpen: (id) => choices.get(id) ?? ui.blockOpen(sextant.context.blocks, id, true),
+    toggle: (id, open) => {
+      choices.set(id, open);
+      void sextant.ui.setBlockOpen(id, open).catch(() => undefined);
+      schedule();
+    },
+  };
 
   const render = () => {
     if (!object || stopped) return;
@@ -273,8 +316,12 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
       root.replaceChildren(ui.empty(t("common.nothingToShow", { view: contribution })));
       return;
     }
-    const related = watches.want(childWatches(object));
-    root.replaceChildren(...jobSetView(sextant, object, related));
+    const related = watches.want(childWatches(object, blocks.isOpen));
+    // Drawn again on every change: the focus stays on the toggle of the block it was on.
+    const focused = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>("[data-block]")?.dataset.block;
+    const onToggle = document.activeElement?.classList.contains("sx-block__toggle") ?? false;
+    root.replaceChildren(...jobSetView(sextant, object, related, blocks));
+    if (focused && onToggle) root.querySelector<HTMLElement>(`[data-block="${focused}"] .sx-block__toggle`)?.focus();
   };
   const schedule = () => {
     if (scheduled || stopped) return;
@@ -299,6 +346,12 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
   };
 
   const follow = () => {
+    const nowRemembered = JSON.stringify(sextant.context.blocks ?? {});
+    if (nowRemembered !== rememberedBlocks) {
+      rememberedBlocks = nowRemembered;
+      choices.clear();
+      schedule();
+    }
     const ref = sextant.context.selection[0];
     if (!ref) {
       root.replaceChildren(ui.empty(t("common.nothingSelected")));
