@@ -12,7 +12,6 @@
     "helm": "Helm",
     "accessControl": "액세스 제어",
     "volumeSnapshots": "볼륨 스냅샷",
-    "crossplane": "Crossplane",
     "customResources": "사용자 지정 리소스"
   },
   "kinds": {

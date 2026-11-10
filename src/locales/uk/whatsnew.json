@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Подання інструментів кластера тепер розширення",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager та OpenShift винесено із Sextant у його власні розширення з каталогу розширень, які оновлюються окремо. Установіть потрібні нижче: доти їхні розділи не показуються. Ваші налаштування сповіщень для них збережено, а бічна панель також пропонує їх у кластерах, де працюють ці інструменти."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Crossplane, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager та OpenShift винесено із Sextant у його власні розширення з каталогу розширень, які оновлюються окремо. Установіть потрібні нижче: доти їхні розділи не показуються. Ваші налаштування сповіщень для них збережено, а бічна панель також пропонує їх у кластерах, де працюють ці інструменти."
     },
     "api4": {
       "title": "API розширень 4",
@@ -36,6 +36,7 @@
       "kuberay": "Кластери, завдання та сервіси Ray з їхніми логами",
       "kserve": "InferenceService, середовища виконання моделей і графи інференсу",
       "knative": "Сервіси, ревізії та маршрути Serving; брокери, тригери, канали та джерела Eventing",
+      "crossplane": "Composite Resource Definitions, Compositions і пакети з їхнім станом, кожен claim і складений ресурс з тим, що не так насамперед, і ланцюжок claim → складений ресурс → керовані ресурси",
       "gpu-operator": "ClusterPolicy, драйвери NVIDIA, їхні компоненти та вузли з GPU",
       "dra": "ResourceClaim з їхніми пристроями, шаблони claim, класи пристроїв, ResourceSlice і сторінка «Пристрої»",
       "velero": "Резервні копії, розклади, відновлення та місця зберігання; резервна копія namespace і відновлення з копії",

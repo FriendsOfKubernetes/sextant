@@ -366,3 +366,26 @@ category; `diagnose_service` and `check_connectivity` never used the mesh engine
 kinds it scans (`hygiene/kinds.ts`), and request metrics and the traffic graph keep their Istio and Linkerd sources
 (ADR-0095, ADR-0096). The icons the extension names stay in Sextant's set. Where the extension still differs is listed
 in its README.
+
+## Amendment: Crossplane
+
+`extensions/crossplane` (`sextant.crossplane`, 1.0.0) takes the Crossplane view (ADR-0101): XRDs, Compositions,
+Providers, Configurations and Functions in the section `crossplane` with the built-in columns and the packages'
+"Only problems", the "Composite Resources" page (Sextant's own checkbox for "Only problems", ADR-0167), the details of
+Crossplane's kinds, and the claim/composite/managed-resource block on every kind with the chain Claim → composite →
+composed resources, read 4 at a time as the built-in did and following the cluster's kinds (`kindsVersion`). It was a
+Sextant section and the anchor of the places from Kyverno to OpenShift; it becomes an extension place after
+`volumeSnapshots` (behind Knative Eventing's place) and those places keep hanging off `crossplane`, so the sidebar is
+unchanged (a test pins the whole order). The problems of claims and composites, whose kinds only the XRDs name, are
+rules of kinds read from definitions (`kindsFrom`, ADR-0137 amendment) in the extension's main category
+`ext:sextant.crossplane`, titled "Crossplane" by its name as the built-in category was; the category `crossplane` (on
+by default, never given to agents) moves to it (`MOVED_PROBLEM_CATEGORIES`) and `get_problems` reads the old name
+through `moved_category`. The rules are proved equal to the built-in `toProblems` (ported as `builtInProblems`) on
+every combination of Synced, Ready, another condition, a pause and a claim reference, run through the window's own
+`registerExtensionProblems` and `resolve`. The sidebar offers the extension where `apiextensions.crossplane.io` or
+`pkg.crossplane.io` is served. The core keeps no view of Crossplane: the TLS views' stylesheet (`src/features/tls/
+tls.css`) keeps only the `cm-*` classes they use, the ones only Crossplane used (explanations, messages, the chain)
+going with the view, and Cleanup's cluster-wide scan still finds the Secrets a ProviderConfig names without knowing its
+schema. The icons the extension names stay in Sextant's set. Where the extension still differs (Read on every kind, a
+details frame on every kind, the page's columns not resizable, the XRDs past the first 20 not marked as a part) is
+listed in its README.

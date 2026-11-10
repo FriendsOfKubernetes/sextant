@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Küme araçlarının görünümleri artık uzantı",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager ve OpenShift, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Crossplane, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager ve OpenShift, Sextant'tan uzantı kataloğundaki kendi uzantılarına taşındı; bunlar ayrı güncellenir. Kullandıklarınızı aşağıdan kurun: o zamana kadar bölümleri gösterilmez. Onlar için bildirim ayarlarınız korundu ve kenar çubuğu bu araçları çalıştıran kümelerde de onları önerir."
     },
     "api4": {
       "title": "Eklenti API 4",
@@ -36,6 +36,7 @@
       "kuberay": "Günlükleriyle Ray kümeleri, işleri ve servisleri",
       "kserve": "InferenceService'ler, sunum çalışma ortamları ve çıkarım grafikleri",
       "knative": "Serving servisleri, revizyonları ve rotaları; Eventing broker'ları, tetikleyicileri, kanalları ve kaynakları",
+      "crossplane": "Durumlarıyla Composite Resource Definition'lar, Composition'lar ve paketler, ilk başarısız olan koşuluyla her claim ve bileşik kaynak, ve claim → bileşik kaynak → yönetilen kaynaklar zinciri",
       "gpu-operator": "ClusterPolicy'ler, NVIDIA sürücüleri, bileşenleri ve GPU düğümleri",
       "dra": "Cihazlarıyla ResourceClaim'ler, claim şablonları, cihaz sınıfları, ResourceSlice'lar ve Cihazlar sayfası",
       "velero": "Yedekler, zamanlamalar, geri yüklemeler ve depolama konumları; bir namespace'i yedekleme veya bir yedekten geri yükleme",

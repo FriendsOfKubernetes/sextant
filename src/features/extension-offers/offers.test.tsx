@@ -43,6 +43,13 @@ describe("offersFor", () => {
     }
     expect(offersFor(refs(kind("istio.io", "Other"), OTHER), new Set(), [], new Set())).toEqual([]);
   });
+
+  it("offers Crossplane where its own kinds are served", () => {
+    for (const served of [[kind("apiextensions.crossplane.io", "CompositeResourceDefinition")], [kind("pkg.crossplane.io", "Provider")]]) {
+      expect(offersFor(refs(...served), new Set(), [], new Set()).map((o) => o.id)).toEqual(["sextant.crossplane"]);
+    }
+    expect(offersFor(refs(kind("database.example.org", "XPostgreSQLInstance"), OTHER), new Set(), [], new Set())).toEqual([]);
+  });
 });
 
 describe("the offers above the sidebar", () => {

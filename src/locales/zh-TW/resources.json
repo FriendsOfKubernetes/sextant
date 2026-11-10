@@ -12,7 +12,6 @@
     "helm": "Helm",
     "accessControl": "存取控制",
     "volumeSnapshots": "磁碟區快照",
-    "crossplane": "Crossplane",
     "customResources": "自訂資源"
   },
   "kinds": {

@@ -40,6 +40,8 @@ export const OFFERS: readonly ExtensionOffer[] = [
   { id: "sextant.traefik", tool: "Traefik", matches: (k) => k.group === "traefik.io" || k.group === "traefik.containo.us" },
   { id: "sextant.contour", tool: "Contour", matches: (k) => k.group === "projectcontour.io" },
   { id: "sextant.knative", tool: "Knative", matches: (k) => k.group === "serving.knative.dev" || k.group === "eventing.knative.dev" },
+  // Crossplane: by its own kinds (`apiextensions.crossplane.io`, `pkg.crossplane.io`), not the kinds its XRDs define.
+  { id: "sextant.crossplane", tool: "Crossplane", matches: (k) => k.group === "apiextensions.crossplane.io" || k.group === "pkg.crossplane.io" },
   { id: "sextant.kyverno", tool: "Kyverno", matches: (k) => k.group === "kyverno.io" },
   { id: "sextant.external-secrets", tool: "External Secrets", matches: (k) => k.group === "external-secrets.io" },
   { id: "sextant.sealed-secrets", tool: "Sealed Secrets", matches: (k) => k.group === "bitnami.com" && k.kind === "SealedSecret" },

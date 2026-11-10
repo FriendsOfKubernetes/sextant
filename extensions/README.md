@@ -38,6 +38,7 @@ for other authors. The guide to writing one is the wiki page
 | Karpenter (`sextant.karpenter`) | [`karpenter/`](karpenter/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | NodePools with their usage against their limits, disruption settings and recent disruptions, NodeClaims with their launch and disruption, and node classes, read-only |
 | cert-manager (`sextant.cert-manager`) | [`cert-manager/`](cert-manager/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Certificates, CertificateRequests, Issuers, ClusterIssuers, Orders and Challenges with their state and reasons in plain words and the issuance chain, read-only, with the problems of Certificates that are not ready, fail to renew, expire soon or have expired |
 | Service mesh (`sextant.mesh`) | [`mesh/`](mesh/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Istio's and Linkerd's objects in two sections with their routes and policies in plain words, the Request routing page, every workload's mesh membership, mTLS mode and who may call it, and Istio configuration mistakes as problems, read-only |
+| Crossplane (`sextant.crossplane`) | [`crossplane/`](crossplane/README.md) | 1.0.0 | Sextant 0.30 (`sextantApi` 4) | Composite Resource Definitions, Compositions, Providers, Configurations and Functions with their state, the Composite Resources page, and the chain Claim → composite → managed resources in the details of any kind, read-only, with the problems of claims and composites |
 
 ## The documents of an extension
 

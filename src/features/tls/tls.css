@@ -1,66 +1,8 @@
-/* The TLS views (certificate lists, the TLS certificates page) and the classes Crossplane's views reuse (explanations,
-   the chain tree, muted text, tables). The `cm-` names are from the former cert-manager view. */
-.cm-explain {
-  margin: 0 0 8px;
-  padding: 6px 10px;
-  border-left: 3px solid var(--color-warning);
-  overflow-wrap: anywhere;
-}
-
-.cm-explain--danger {
-  border-left-color: var(--color-danger);
-}
-
-.cm-message {
-  margin: 4px 0 0;
-  color: var(--color-text-muted);
-  overflow-wrap: anywhere;
-}
-
+/* The TLS views (certificate lists, the TLS certificates page): muted text, the page, its table. The `cm-` names are
+   from the former cert-manager view. */
 .cm-muted {
   margin: 4px 0;
   color: var(--color-text-muted);
-}
-
-.cm-chain,
-.cm-chain ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.cm-chain ul {
-  margin-left: 12px;
-  padding-left: 12px;
-  border-left: 1px solid var(--color-border);
-}
-
-.cm-chain__item {
-  margin: 4px 0;
-}
-
-.cm-chain__row {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 8px;
-  min-width: 0;
-}
-
-.cm-chain__item[aria-current="true"] > .cm-chain__row {
-  background: var(--color-selected);
-  border-radius: 4px;
-  padding: 0 4px;
-}
-
-.cm-chain__kind {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-.cm-chain__extra {
-  color: var(--color-text-muted);
-  overflow-wrap: anywhere;
 }
 
 .cm-cert-list {

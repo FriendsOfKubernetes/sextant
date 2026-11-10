@@ -19,7 +19,6 @@
     "jobs": "Job",
     "volumes": "ボリューム要求",
     "gateway": "Gateway API",
-    "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "セキュリティ",
     "practices": "ベストプラクティス",

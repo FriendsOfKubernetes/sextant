@@ -21,7 +21,6 @@
     "jobs": "Job'lar",
     "volumes": "Birim talepleri",
     "gateway": "Gateway API",
-    "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "Güvenlik",
     "practices": "En iyi uygulamalar",

@@ -23,7 +23,6 @@
     "jobs": "Jobs",
     "volumes": "Volume claims",
     "gateway": "Gateway API",
-    "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "Segurança",
     "practices": "Boas práticas",

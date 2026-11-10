@@ -1,13 +1,16 @@
-// What the Crossplane section reads from Crossplane objects (#213): the kinds it knows (XRDs, Compositions and the
-// packages), the kinds the XRDs define (composites and their claims), the chain Claim → composite → composed
-// resources by the references Crossplane writes, Synced/Ready and the first failing condition, and a package's
-// Installed/Healthy. Both layouts are read: Crossplane v1 (`spec.resourceRef(s)`, `spec.claimRef`) and v2
-// (`spec.crossplane.*`). Pure functions, no React; texts are i18n keys under `crossplane:`.
-import type { KindRef, KubeObject, ObjectRef } from "../../api";
-import { kindFromApiVersion, status } from "../../resources";
-import type { Tone } from "../../resources/status";
+// What the extension reads from Crossplane objects (ADR-0101, #213), ported unchanged from Sextant's former built-in
+// view: the kinds it knows (XRDs, Compositions and the packages), the kinds the XRDs define (composites and their
+// claims), the chain Claim → composite → composed resources by the references Crossplane writes, Synced/Ready and the
+// first failing condition, and a package's Installed/Healthy. Both layouts are read: Crossplane v1
+// (`spec.resourceRef(s)`, `spec.claimRef`) and v2 (`spec.crossplane.*`). Pure functions; texts are keys of the
+// extension's catalogs. The manifest's columns and "Only problems" are tested against these readings.
+import type { KubeObject, ObjectRef, UiTone } from "@sextant/extension-sdk";
 
-const { arr, get, str } = status;
+export interface KindRef {
+  group: string;
+  version: string;
+  kind: string;
+}
 
 export const XP_GROUP = "apiextensions.crossplane.io";
 export const PKG_GROUP = "pkg.crossplane.io";
@@ -19,32 +22,59 @@ export const COMPOSITION = k(XP_GROUP, "v1", "Composition");
 export const PROVIDER = k(PKG_GROUP, "v1", "Provider");
 export const PKG_CONFIGURATION = k(PKG_GROUP, "v1", "Configuration");
 export const FUNCTION = k(PKG_GROUP, "v1", "Function");
+export const SECRET = k("", "v1", "Secret");
 
-export interface CrossplaneKind {
-  kind: KindRef;
-  order: number;
-  /** Key under `crossplane:sidebar`. */
-  label: string;
-}
+/** The kinds of the section, all cluster-scoped. */
+export const CROSSPLANE_KINDS: readonly KindRef[] = [XRD, COMPOSITION, PROVIDER, PKG_CONFIGURATION, FUNCTION];
 
-/** All cluster-scoped. */
-export const CROSSPLANE_KINDS: readonly CrossplaneKind[] = [
-  { kind: XRD, order: 20, label: "xrds" },
-  { kind: COMPOSITION, order: 30, label: "compositions" },
-  { kind: PROVIDER, order: 40, label: "providers" },
-  { kind: PKG_CONFIGURATION, order: 50, label: "configurations" },
-  { kind: FUNCTION, order: 60, label: "functions" },
-];
+export const sameKind = (a: Pick<KindRef, "group" | "kind">, b: Pick<KindRef, "group" | "kind">) => a.group === b.group && a.kind === b.kind;
 
-export const sameKind = (a: Pick<KindRef, "group" | "kind">, b: Pick<KindRef, "group" | "kind">) =>
-  a.group === b.group && a.kind === b.kind;
-
-export function crossplaneKind(kind: Pick<KindRef, "group" | "kind">): CrossplaneKind | undefined {
-  return CROSSPLANE_KINDS.find((d) => sameKind(d.kind, kind));
+export function crossplaneKind(kind: Pick<KindRef, "group" | "kind">): KindRef | undefined {
+  return CROSSPLANE_KINDS.find((d) => sameKind(d, kind));
 }
 
 export const isPackageKind = (kind: Pick<KindRef, "group" | "kind">) => kind.group === PKG_GROUP;
-export const apiVersionOf = (kind: KindRef) => `${kind.group}/${kind.version}`;
+
+/** Kinds of installed APIs that may be Crossplane's: not built in, not Kubernetes' own groups, not the static kinds. */
+export function mayBeCrossplaneResource(kind: Pick<KindRef, "group" | "kind">): boolean {
+  return kind.group.includes(".") && !kind.group.endsWith(".k8s.io") && !crossplaneKind(kind) && kind.group !== PKG_GROUP;
+}
+
+// ---------- Field access ----------
+
+export function get(obj: unknown, ...path: (string | number)[]): unknown {
+  let cur: unknown = obj;
+  for (const key of path) {
+    if (cur === null || typeof cur !== "object") return undefined;
+    cur = (cur as Record<string | number, unknown>)[key];
+  }
+  return cur;
+}
+
+export const str = (value: unknown): string | undefined => (typeof value === "string" ? value : undefined);
+export const arr = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
+export const record = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+
+/** `group/version` or a core `v1` and a kind, as a kind reference. */
+export function kindFromApiVersion(apiVersion: string, kind: string): KindRef {
+  const slash = apiVersion.indexOf("/");
+  return slash < 0 ? { group: "", version: apiVersion, kind } : { group: apiVersion.slice(0, slash), version: apiVersion.slice(slash + 1), kind };
+}
+
+export const apiVersionOf = (kind: Pick<KindRef, "group" | "version">) => (kind.group ? `${kind.group}/${kind.version}` : kind.version);
+
+/** The controlling owner, else the first one (Sextant's `controllerOf`). */
+export function controllerOf(obj: KubeObject): { apiVersion: string; kind: string; name: string } | undefined {
+  const owners = arr(obj.metadata?.ownerReferences);
+  const owner = owners.find((o) => get(o, "controller") === true) ?? owners[0];
+  if (!owner) return undefined;
+  const kind = str(get(owner, "kind"));
+  const name = str(get(owner, "name"));
+  const apiVersion = str(get(owner, "apiVersion"));
+  if (!kind || !name || !apiVersion) return undefined;
+  return { apiVersion, kind, name };
+}
 
 // ---------- Conditions ----------
 
@@ -68,14 +98,14 @@ export function conditionsOf(obj: KubeObject): Condition[] {
 export const conditionOf = (obj: KubeObject, type: string) => conditionsOf(obj).find((c) => c.type === type);
 export const conditionStatus = (obj: KubeObject, type: string) => conditionOf(obj, type)?.status;
 
-export const conditionTone = (value: string | undefined): Tone =>
+export const conditionTone = (value: string | undefined): UiTone =>
   value === "True" ? "success" : value === "False" ? "danger" : value === "Unknown" ? "warning" : "muted";
 
 /** Ready=False reasons that are progress, not failure: a resource being created or deleted. */
 const IN_PROGRESS = new Set(["Creating", "Deleting"]);
 
 export type Health = "ready" | "progressing" | "paused" | "failed" | "unknown";
-export const HEALTH_TONE: Record<Health, Tone> = { ready: "success", progressing: "warning", paused: "muted", failed: "danger", unknown: "muted" };
+export const HEALTH_TONE: Record<Health, UiTone> = { ready: "success", progressing: "warning", paused: "muted", failed: "danger", unknown: "muted" };
 
 /** The annotation that pauses reconciling (crossplane-runtime `meta.AnnotationKeyReconciliationPaused`, value "true"). */
 export const PAUSED_ANNOTATION = "crossplane.io/paused";
@@ -234,7 +264,7 @@ export interface ManagedFields {
 }
 
 export function managedFields(obj: KubeObject): ManagedFields {
-  const labels = status.labelsOf(obj);
+  const labels = record(obj.metadata?.labels) as Record<string, string>;
   return {
     externalName: str(get(obj, "metadata", "annotations", "crossplane.io/external-name")),
     providerConfig: str(get(obj, "spec", "providerConfigRef", "name")),
@@ -287,7 +317,7 @@ export function compositionFields(obj: KubeObject): CompositionFields {
 // ---------- Plain words ----------
 
 export interface Phrase {
-  /** Key under `crossplane:explain`. */
+  /** Key under `explain.`. */
   key: string;
   params?: Record<string, string>;
 }
@@ -333,4 +363,122 @@ export function explainXrd(info: XrdInfo): Phrase {
   return info.claim
     ? { key: "xrdEstablishedWithClaim", params: { kind: info.composite.kind, claim: info.claim.kind } }
     : { key: "xrdEstablished", params: { kind: info.composite.kind } };
+}
+
+// ---------- The rows of "Composite Resources" ----------
+
+/** XRDs whose kinds are watched at most (two kinds each). */
+export const MAX_XRDS = 20;
+/** Rows kept at most; beyond it the page says it shows a part. */
+export const MAX_ROWS = 5000;
+/** Rows drawn at most. */
+export const MAX_SHOWN = 500;
+
+export interface Row {
+  ref: ObjectRef;
+  uid: string;
+  role: Role;
+  health: Health;
+  synced?: string;
+  ready?: string;
+  failing?: Condition;
+  composition?: string;
+  /** A composite a claim stands for: its problems are told through the claim. */
+  claimed: boolean;
+  created?: string;
+}
+
+/** One claim or composite as a row. */
+export function toRow(obj: KubeObject, kind: KindRef, role: Role): Row {
+  return {
+    ref: { kind, namespace: obj.metadata?.namespace ?? null, name: obj.metadata?.name ?? "" },
+    uid: obj.metadata?.uid ?? `${obj.metadata?.namespace ?? ""}/${obj.metadata?.name ?? ""}`,
+    role,
+    health: resourceHealth(obj),
+    synced: conditionStatus(obj, "Synced"),
+    ready: conditionStatus(obj, "Ready"),
+    failing: firstFailing(obj),
+    composition: compositionOf(obj),
+    claimed: role === "composite" && claimRefOf(obj) !== undefined,
+    created: str(obj.metadata?.creationTimestamp),
+  };
+}
+
+const RANK: Record<Health, number> = { failed: 0, progressing: 1, unknown: 2, paused: 3, ready: 4 };
+
+/** Problems first, then by kind, namespace and name. */
+export const byState = (a: Row, b: Row) =>
+  RANK[a.health] - RANK[b.health] ||
+  a.ref.kind.kind.localeCompare(b.ref.kind.kind) ||
+  (a.ref.namespace ?? "").localeCompare(b.ref.namespace ?? "") ||
+  a.ref.name.localeCompare(b.ref.name);
+
+// ---------- Problems (the built-in category `crossplane`, ported unchanged as the reference of the manifest's rules) ----------
+
+/** A failure the next reconcile fixes passes quietly. */
+export const FAILURE_GRACE_MS = 2 * 60_000;
+/** Still being created after this long: worth a look (a managed database can take a quarter of an hour). */
+export const CREATING_GRACE_MS = 30 * 60_000;
+
+/**
+ * Whether the built-in category `crossplane` counted a row: a claim or an unclaimed composite that is not Synced, or not
+ * Ready for another reason than being created or deleted (and one still being created after `CREATING_GRACE_MS`).
+ */
+export function isProblemRow(row: Row): boolean {
+  if (row.claimed || row.health === "ready" || row.health === "paused" || row.health === "unknown") return false;
+  return !(row.health === "progressing" && row.failing?.reason === "Deleting");
+}
+
+/** A problem as the built-in category told it. */
+export interface BuiltInProblem {
+  key: string;
+  notifyKey: string;
+  uid: string;
+  object: ObjectRef;
+  reason: string;
+  message?: string;
+  since?: string;
+  firstSeen: number;
+  activeAt: number;
+}
+
+function time(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const t = Date.parse(value);
+  return Number.isNaN(t) ? undefined : t;
+}
+
+/**
+ * The built-in category's problems of the rows (its `toProblems`, unchanged); `firstSeen` keeps when each was first
+ * seen. The manifest's rules are tested against it (`model.test.ts`).
+ */
+export function builtInProblems(rows: readonly Row[], firstSeen: Map<string, number>, now: number): BuiltInProblem[] {
+  const keys = new Set<string>();
+  const out: BuiltInProblem[] = [];
+  for (const row of rows) {
+    if (row.claimed || row.health === "ready" || row.health === "paused" || row.health === "unknown") continue;
+    const creating = row.health === "progressing";
+    // Deleting is the user's own doing: never a problem.
+    if (creating && row.failing?.reason === "Deleting") continue;
+    const condition = row.failing;
+    const reason = condition?.reason ?? (creating ? "Creating" : `${condition?.type ?? "Ready"}=False`);
+    const key = `${row.uid}|${reason}`;
+    keys.add(key);
+    const first = firstSeen.get(key) ?? now;
+    firstSeen.set(key, first);
+    const start = time(condition?.lastTransitionTime) ?? first;
+    out.push({
+      key,
+      notifyKey: `${row.uid}|notReady`,
+      uid: row.uid,
+      object: row.ref,
+      reason,
+      message: condition?.message,
+      since: condition?.lastTransitionTime,
+      firstSeen: first,
+      activeAt: start + (creating ? CREATING_GRACE_MS : FAILURE_GRACE_MS),
+    });
+  }
+  for (const key of [...firstSeen.keys()]) if (!keys.has(key)) firstSeen.delete(key);
+  return out;
 }

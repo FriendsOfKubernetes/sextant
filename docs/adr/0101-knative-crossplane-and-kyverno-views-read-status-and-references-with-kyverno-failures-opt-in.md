@@ -32,3 +32,17 @@
 - A Crossplane installation with more than 20 XRDs shows and judges the claims and composites of the first 20 (by name); the page says so.
 - A Kyverno older than 1.10 (aggregated reports) shows no per-object results and no policy summary; its reports are still listed and, with the category on, judged.
 - A Kyverno policy summary depends on the policy labels Kyverno puts on reports; if a release stops writing them, the summary says no report holds results.
+
+## Amendment (0.30): the three views are Sextant's own extensions
+
+Knative (`extensions/knative`), Kyverno (`extensions/kyverno`) and Crossplane (`extensions/crossplane`) moved out of the
+core into Sextant's own extensions (ADR-0162 amendments), on the public extension API, keeping this ADR's readings:
+statuses and references only, both Crossplane layouts, a paused resource neutral, the chain read once per change of the
+shown object and no watch per named object, the first 20 XRDs by name. Their categories moved with them (`knative` and
+`crossplane` to the extensions' main categories, `policies` to Kyverno's own opt-in one). Crossplane's problems, which
+this ADR kept to a provider of the window because their kinds are known only from the XRDs, are now declarative rules
+whose kinds Rust reads from the XRDs (`kindsFrom`, ADR-0137 amendment). "Agents get nothing new" still holds: agents
+get Knative's and Crossplane's categories only when the user lets them (ADR-0146), and Kyverno's own opt-in category
+never. The extensions ask for Read where the view
+read with the user's access; Crossplane's asks for Read on every kind, since claims, composites and managed resources
+are of kinds no manifest can name.

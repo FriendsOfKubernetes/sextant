@@ -12,7 +12,6 @@
     "helm": "Helm",
     "accessControl": "Керування доступом",
     "volumeSnapshots": "Знімки томів",
-    "crossplane": "Crossplane",
     "customResources": "Користувацькі ресурси"
   },
   "kinds": {

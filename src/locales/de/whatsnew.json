@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Ansichten von Cluster-Werkzeugen sind jetzt Erweiterungen",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager und OpenShift sind aus Sextant in seine eigenen Erweiterungen aus dem Erweiterungskatalog gewandert, die eigenständig aktualisiert werden. Installieren Sie unten die, die Sie nutzen: bis dahin werden ihre Bereiche nicht angezeigt. Ihre Benachrichtigungseinstellungen dafür bleiben erhalten, und die Seitenleiste bietet sie auch in Clustern an, in denen diese Werkzeuge laufen."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Crossplane, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager und OpenShift sind aus Sextant in seine eigenen Erweiterungen aus dem Erweiterungskatalog gewandert, die eigenständig aktualisiert werden. Installieren Sie unten die, die Sie nutzen: bis dahin werden ihre Bereiche nicht angezeigt. Ihre Benachrichtigungseinstellungen dafür bleiben erhalten, und die Seitenleiste bietet sie auch in Clustern an, in denen diese Werkzeuge laufen."
     },
     "api4": {
       "title": "Erweiterungs-API 4",
@@ -36,6 +36,7 @@
       "kuberay": "Ray-Cluster, -Jobs und -Services mit ihren Logs",
       "kserve": "InferenceServices, Serving-Runtimes und Inferenzgraphen",
       "knative": "Serving-Services, Revisionen und Routen; Eventing-Broker, Trigger, Kanäle und Quellen",
+      "crossplane": "Composite Resource Definitions, Compositions und Pakete mit ihrem Zustand, jeder Claim und jede Composite Resource mit dem, was zuerst fehlschlägt, und die Kette Claim → Composite → Managed Resources",
       "gpu-operator": "ClusterPolicies, NVIDIA-Treiber, ihre Komponenten und GPU-Knoten",
       "dra": "ResourceClaims mit ihren Geräten, Claim-Vorlagen, Geräteklassen, ResourceSlices und die Seite „Geräte“",
       "velero": "Backups, Zeitpläne, Wiederherstellungen und Speicherorte; einen Namespace sichern oder ein Backup wiederherstellen",

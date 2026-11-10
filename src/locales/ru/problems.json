@@ -25,7 +25,6 @@
     "jobs": "Jobs",
     "volumes": "Запросы томов",
     "gateway": "Gateway API",
-    "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "Безопасность",
     "practices": "Лучшие практики",

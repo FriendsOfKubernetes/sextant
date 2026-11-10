@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Views of cluster tools are now extensions",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager and OpenShift moved out of Sextant into its own extensions from the extension catalog, which are updated on their own. Install the ones you use below: until then their sections are not shown. Your notification settings for them were kept, and the sidebar also offers them in clusters that run these tools."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Crossplane, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager and OpenShift moved out of Sextant into its own extensions from the extension catalog, which are updated on their own. Install the ones you use below: until then their sections are not shown. Your notification settings for them were kept, and the sidebar also offers them in clusters that run these tools."
     },
     "api4": {
       "title": "Extension API 4",
@@ -36,6 +36,7 @@
       "kuberay": "Ray clusters, jobs and services with their logs",
       "kserve": "InferenceServices, serving runtimes and inference graphs",
       "knative": "Serving Services, revisions and routes; Eventing brokers, triggers, channels and sources",
+      "crossplane": "Composite Resource Definitions, Compositions and packages with their state, every claim and composite resource with what fails first, and the chain Claim → composite → managed resources",
       "gpu-operator": "ClusterPolicies, NVIDIA drivers, their components and GPU nodes",
       "dra": "ResourceClaims with their devices, claim templates, device classes, ResourceSlices and the Devices page",
       "velero": "Backups, schedules, restores and storage locations; back up a namespace or restore a backup",

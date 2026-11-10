@@ -19,7 +19,6 @@
     "jobs": "Jobs",
     "volumes": "볼륨 클레임",
     "gateway": "Gateway API",
-    "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "보안",
     "practices": "모범 사례",

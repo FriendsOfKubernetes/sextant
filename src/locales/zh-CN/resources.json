@@ -12,7 +12,6 @@
     "helm": "Helm",
     "accessControl": "访问控制",
     "volumeSnapshots": "卷快照",
-    "crossplane": "Crossplane",
     "customResources": "自定义资源"
   },
   "kinds": {

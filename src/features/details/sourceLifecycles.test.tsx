@@ -14,8 +14,6 @@ import { ClaimUsageSection } from "../storage/UsageViews";
 import { LINGER_MS, USAGE_POLL_MS, resetVolumeUsage, useVolumeUsage } from "../storage/usageStore";
 import { VclusterSection } from "../vcluster/details";
 const KSERVICE = { group: "serving.knative.dev", version: "v1", kind: "Service" };
-import { CrossplaneResourceSection } from "../crossplane/details";
-import { XRD } from "../crossplane/model";
 import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "./testing";
 
 const POD: KindRef = { group: "", version: "v1", kind: "Pod" };
@@ -30,7 +28,7 @@ beforeEach(async () => {
   wb = watchBackend(); settings = defaultAppSettings();
   wb.backend.on("settings_get", () => settings);
   wb.backend.on("settings_update", args => settings = args.settings as AppSettings);
-  const kinds = [POD, PVC, SERVICE, DEPLOYMENT, NODE_POOL, NODE_CLAIM, HPA, SCALED_OBJECT, KSERVICE, XRD];
+  const kinds = [POD, PVC, SERVICE, DEPLOYMENT, NODE_POOL, NODE_CLAIM, HPA, SCALED_OBJECT, KSERVICE];
   wb.backend.on("cluster_kinds", () => kinds.map((kindRef): ResourceKind => ({ kindRef, plural: kindRef.kind.toLowerCase() + "s", namespaced: !["NodePool", "NodeClaim", "ResourceSlice"].includes(kindRef.kind), verbs: ["list", "watch"], printerColumns: [] })));
   await loadSettings();
 });
@@ -150,16 +148,4 @@ it("keeps a retry header when the missing NodeClaim could be in a forbidden list
   fireEvent.click(button);
   expect(button).toHaveAttribute("aria-expanded", "true");
   expect(await screen.findByRole("alert")).toBeInTheDocument();
-});
-
-it("ignores a nonexistent Crossplane chain consumer when managed fields close", async () => {
-  const ref = refOf({ group: "s3.aws.upbound.io", version: "v1beta1", kind: "Bucket" });
-  const obj: KubeObject = { apiVersion: "s3.aws.upbound.io/v1beta1", kind: "Bucket", metadata: { name: ref.name, namespace: "demo" }, spec: { forProvider: {} } };
-  render(card(ref, <CrossplaneResourceSection clusterId="c1" objectRef={ref} obj={obj} />));
-  const xrd = await watchOf(wb, "CompositeResourceDefinition"); emitSnapshot(wb, xrd, []);
-  await waitFor(() => expect(document.querySelector('[data-disclosure="probe/details:sections.fields"]')).not.toBeNull());
-  expect(document.querySelector('[data-disclosure="probe/crossplane:chain.title"]')).toBeNull();
-  toggle("details:sections.fields");
-  await waitFor(() => expect(wb.backend.listenerCount(`watch:${xrd}`)).toBe(0));
-  toggle("details:sections.fields"); expect(await watchOf(wb, "CompositeResourceDefinition")).not.toBe(xrd);
 });

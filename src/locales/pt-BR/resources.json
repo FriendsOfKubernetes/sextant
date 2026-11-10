@@ -12,7 +12,6 @@
     "helm": "Helm",
     "accessControl": "Controle de acesso",
     "volumeSnapshots": "Snapshots de volume",
-    "crossplane": "Crossplane",
     "customResources": "Recursos personalizados"
   },
   "kinds": {

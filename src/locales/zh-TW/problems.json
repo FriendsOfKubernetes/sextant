@@ -19,7 +19,6 @@
     "jobs": "Job",
     "volumes": "磁碟區宣告",
     "gateway": "Gateway API",
-    "crossplane": "Crossplane",
     "reflector": "Reflector",
     "security": "安全性",
     "practices": "最佳做法",

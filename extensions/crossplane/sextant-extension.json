@@ -1,0 +1,2277 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.crossplane",
+  "name": "Crossplane",
+  "version": "1.0.0",
+  "description": "Crossplane's Composite Resource Definitions, Compositions, Providers, Configurations and Functions with their state, the claims and composite resources of the kinds the XRDs define with the first condition that fails, and the chain Claim → composite → composed resources in the details of claims, composite and managed resources. Read-only.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "crossplane",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "all"
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "sections": [
+      {
+        "section": "crossplane",
+        "title": "Crossplane",
+        "icon": "crossplane",
+        "after": "contour"
+      }
+    ],
+    "pages": [
+      {
+        "id": "composites",
+        "title": "Composite Resources",
+        "section": "crossplane",
+        "icon": "crossplaneComposites",
+        "order": 10
+      }
+    ],
+    "kinds": [
+      {
+        "group": "apiextensions.crossplane.io",
+        "kind": "CompositeResourceDefinition",
+        "section": "crossplane",
+        "title": "Composite Resource Definitions",
+        "icon": "crossplaneXrd",
+        "order": 20,
+        "printerColumns": false
+      },
+      {
+        "group": "apiextensions.crossplane.io",
+        "kind": "Composition",
+        "section": "crossplane",
+        "title": "Compositions",
+        "icon": "crossplaneComposition",
+        "order": 30,
+        "printerColumns": false
+      },
+      {
+        "group": "pkg.crossplane.io",
+        "kind": "Provider",
+        "section": "crossplane",
+        "title": "Providers",
+        "icon": "crossplanePackage",
+        "order": 40,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+              "value": "False"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+              "value": "False"
+            }
+          ]
+        }
+      },
+      {
+        "group": "pkg.crossplane.io",
+        "kind": "Configuration",
+        "section": "crossplane",
+        "title": "Configurations",
+        "icon": "crossplanePackage",
+        "order": 50,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+              "value": "False"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+              "value": "False"
+            }
+          ]
+        }
+      },
+      {
+        "group": "pkg.crossplane.io",
+        "kind": "Function",
+        "section": "crossplane",
+        "title": "Functions",
+        "icon": "crossplaneFunction",
+        "order": 60,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+              "value": "False"
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+              "value": "False"
+            }
+          ]
+        }
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "crossplane",
+        "title": "Crossplane",
+        "kinds": [
+          {
+            "group": "apiextensions.crossplane.io",
+            "kind": "CompositeResourceDefinition"
+          },
+          {
+            "group": "apiextensions.crossplane.io",
+            "kind": "Composition"
+          },
+          {
+            "group": "pkg.crossplane.io",
+            "kind": "Provider"
+          },
+          {
+            "group": "pkg.crossplane.io",
+            "kind": "Configuration"
+          },
+          {
+            "group": "pkg.crossplane.io",
+            "kind": "Function"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      },
+      {
+        "id": "crossplane-resource",
+        "title": "Crossplane",
+        "kinds": [
+          {
+            "group": "*",
+            "kind": "*"
+          }
+        ],
+        "placement": "section",
+        "order": 21,
+        "heading": false,
+        "startHidden": true
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "apiextensions.crossplane.io",
+          "kind": "CompositeResourceDefinition"
+        },
+        "id": "xrd-composite",
+        "title": "Composite kind",
+        "afterColumn": "name",
+        "width": "minmax(120px, 1fr)",
+        "paths": [
+          ".spec.names"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.group",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.names.kind",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.spec.names.kind}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "apiextensions.crossplane.io",
+          "kind": "CompositeResourceDefinition"
+        },
+        "id": "xrd-claim",
+        "title": "Claim kind",
+        "afterColumn": "xrd-composite",
+        "width": "minmax(120px, 1fr)",
+        "paths": [
+          ".spec.claimNames"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.group",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.names.kind",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.claimNames.kind",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.spec.claimNames.kind}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "apiextensions.crossplane.io",
+          "kind": "CompositeResourceDefinition"
+        },
+        "id": "xrd-established",
+        "title": "Established",
+        "afterColumn": "xrd-claim",
+        "width": "100px",
+        "paths": [
+          ".status.conditions[type=\"Established\",status!=\"\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning",
+          "*": "muted"
+        }
+      },
+      {
+        "kind": {
+          "group": "apiextensions.crossplane.io",
+          "kind": "CompositeResourceDefinition"
+        },
+        "id": "xrd-offered",
+        "title": "Offered",
+        "afterColumn": "xrd-established",
+        "width": "100px",
+        "paths": [
+          ".status.conditions[type=\"Offered\",status!=\"\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning",
+          "*": "muted"
+        }
+      },
+      {
+        "kind": {
+          "group": "apiextensions.crossplane.io",
+          "kind": "Composition"
+        },
+        "id": "composition-type",
+        "title": "Composite type",
+        "afterColumn": "name",
+        "width": "minmax(180px, 2fr)",
+        "paths": [
+          ".spec.compositeTypeRef"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.compositeTypeRef.apiVersion",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.compositeTypeRef.kind",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.spec.compositeTypeRef.kind}}.{{.spec.compositeTypeRef.apiVersion}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "apiextensions.crossplane.io",
+          "kind": "Composition"
+        },
+        "id": "composition-mode",
+        "title": "Mode",
+        "afterColumn": "composition-type",
+        "width": "100px",
+        "paths": [
+          ".spec.mode"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "absent",
+                  "path": ".spec.mode"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.pipeline[0]"
+                }
+              ]
+            },
+            "text": "Pipeline"
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".spec.mode"
+            },
+            "text": "Resources"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Provider"
+        },
+        "id": "provider-status",
+        "title": "Status",
+        "afterColumn": "name",
+        "width": "110px",
+        "filterBy": "value",
+        "paths": [
+          ".status.conditions"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                  "value": "False"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                  "value": "False"
+                }
+              ]
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                  "value": "True"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                  "value": "True"
+                }
+              ]
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "value": "ready"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "Progressing",
+            "tone": "warning",
+            "value": "progressing"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                    "nonEmpty": true
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                    "nonEmpty": true
+                  }
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "muted",
+            "value": "unknown"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Provider"
+        },
+        "id": "provider-package",
+        "title": "Package",
+        "afterColumn": "provider-status",
+        "width": "minmax(200px, 3fr)",
+        "paths": [
+          ".spec.package"
+        ],
+        "tooltipPaths": [
+          ".spec.package"
+        ]
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Provider"
+        },
+        "id": "provider-installed",
+        "title": "Installed",
+        "afterColumn": "provider-package",
+        "width": "100px",
+        "paths": [
+          ".status.conditions[type=\"Installed\",status!=\"\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning",
+          "*": "muted"
+        }
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Provider"
+        },
+        "id": "provider-healthy",
+        "title": "Healthy",
+        "afterColumn": "provider-installed",
+        "width": "100px",
+        "paths": [
+          ".status.conditions[type=\"Healthy\",status!=\"\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning",
+          "*": "muted"
+        }
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Configuration"
+        },
+        "id": "configuration-status",
+        "title": "Status",
+        "afterColumn": "name",
+        "width": "110px",
+        "filterBy": "value",
+        "paths": [
+          ".status.conditions"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                  "value": "False"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                  "value": "False"
+                }
+              ]
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                  "value": "True"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                  "value": "True"
+                }
+              ]
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "value": "ready"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "Progressing",
+            "tone": "warning",
+            "value": "progressing"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                    "nonEmpty": true
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                    "nonEmpty": true
+                  }
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "muted",
+            "value": "unknown"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Configuration"
+        },
+        "id": "configuration-package",
+        "title": "Package",
+        "afterColumn": "configuration-status",
+        "width": "minmax(200px, 3fr)",
+        "paths": [
+          ".spec.package"
+        ],
+        "tooltipPaths": [
+          ".spec.package"
+        ]
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Configuration"
+        },
+        "id": "configuration-installed",
+        "title": "Installed",
+        "afterColumn": "configuration-package",
+        "width": "100px",
+        "paths": [
+          ".status.conditions[type=\"Installed\",status!=\"\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning",
+          "*": "muted"
+        }
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Configuration"
+        },
+        "id": "configuration-healthy",
+        "title": "Healthy",
+        "afterColumn": "configuration-installed",
+        "width": "100px",
+        "paths": [
+          ".status.conditions[type=\"Healthy\",status!=\"\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning",
+          "*": "muted"
+        }
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Function"
+        },
+        "id": "function-status",
+        "title": "Status",
+        "afterColumn": "name",
+        "width": "110px",
+        "filterBy": "value",
+        "paths": [
+          ".status.conditions"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                  "value": "False"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                  "value": "False"
+                }
+              ]
+            },
+            "text": "Failed",
+            "tone": "error",
+            "value": "failed"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                  "value": "True"
+                },
+                {
+                  "type": "equals",
+                  "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                  "value": "True"
+                }
+              ]
+            },
+            "text": "Ready",
+            "tone": "ok",
+            "value": "ready"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "Progressing",
+            "tone": "warning",
+            "value": "progressing"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".status.conditions[type=\"Installed\",status!=\"\"].status",
+                    "nonEmpty": true
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".status.conditions[type=\"Healthy\",status!=\"\"].status",
+                    "nonEmpty": true
+                  }
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "muted",
+            "value": "unknown"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Function"
+        },
+        "id": "function-package",
+        "title": "Package",
+        "afterColumn": "function-status",
+        "width": "minmax(200px, 3fr)",
+        "paths": [
+          ".spec.package"
+        ],
+        "tooltipPaths": [
+          ".spec.package"
+        ]
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Function"
+        },
+        "id": "function-installed",
+        "title": "Installed",
+        "afterColumn": "function-package",
+        "width": "100px",
+        "paths": [
+          ".status.conditions[type=\"Installed\",status!=\"\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning",
+          "*": "muted"
+        }
+      },
+      {
+        "kind": {
+          "group": "pkg.crossplane.io",
+          "kind": "Function"
+        },
+        "id": "function-healthy",
+        "title": "Healthy",
+        "afterColumn": "function-installed",
+        "width": "100px",
+        "paths": [
+          ".status.conditions[type=\"Healthy\",status!=\"\"].status"
+        ],
+        "tones": {
+          "True": "ok",
+          "False": "error",
+          "Unknown": "warning",
+          "*": "muted"
+        }
+      }
+    ],
+    "problems": [
+      {
+        "id": "not-synced",
+        "title": "Claim or composite resource not synced",
+        "kindsFrom": {
+          "kind": {
+            "group": "apiextensions.crossplane.io",
+            "kind": "CompositeResourceDefinition"
+          },
+          "groupPath": ".spec.group",
+          "kindPaths": [
+            ".spec.names.kind",
+            ".spec.claimNames.kind"
+          ],
+          "max": 20
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "exists",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                        "value": "False"
+                      },
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].reason",
+                        "value": "ReconcilePaused"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"crossplane.io/paused\"]",
+                    "value": "true"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+              "value": "False"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Synced\",status!=\"\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "{{.status.conditions[type=\"Synced\",status!=\"\"].reason}}",
+        "reasonOr": "Synced=False",
+        "message": "{{.status.conditions[type=\"Synced\",status!=\"\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-condition",
+        "title": "Claim or composite resource not ready: a condition is False",
+        "kindsFrom": {
+          "kind": {
+            "group": "apiextensions.crossplane.io",
+            "kind": "CompositeResourceDefinition"
+          },
+          "groupPath": ".spec.group",
+          "kindPaths": [
+            ".spec.names.kind",
+            ".spec.claimNames.kind"
+          ],
+          "max": 20
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "exists",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                        "value": "False"
+                      },
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].reason",
+                        "value": "ReconcilePaused"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"crossplane.io/paused\"]",
+                    "value": "true"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Ready\",status!=\"\"].status",
+              "value": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "in",
+                "path": ".status.conditions[type=\"Ready\",status!=\"\"].reason",
+                "values": [
+                  "Creating",
+                  "Deleting"
+                ]
+              }
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[status=\"False\",type!=\"Ready\"]"
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[status=\"False\",type!=\"Ready\"].reason"
+            }
+          ]
+        },
+        "since": ".status.conditions[status=\"False\",type!=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "{{.status.conditions[status=\"False\",type!=\"Ready\"].reason}}",
+        "message": "{{.status.conditions[status=\"False\",type!=\"Ready\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready-condition-unnamed",
+        "title": "Claim or composite resource not ready: a condition is False (no reason given)",
+        "kindsFrom": {
+          "kind": {
+            "group": "apiextensions.crossplane.io",
+            "kind": "CompositeResourceDefinition"
+          },
+          "groupPath": ".spec.group",
+          "kindPaths": [
+            ".spec.names.kind",
+            ".spec.claimNames.kind"
+          ],
+          "max": 20
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "exists",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                        "value": "False"
+                      },
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].reason",
+                        "value": "ReconcilePaused"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"crossplane.io/paused\"]",
+                    "value": "true"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Ready\",status!=\"\"].status",
+              "value": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "in",
+                "path": ".status.conditions[type=\"Ready\",status!=\"\"].reason",
+                "values": [
+                  "Creating",
+                  "Deleting"
+                ]
+              }
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[status=\"False\",type!=\"Ready\"]"
+            },
+            {
+              "type": "absent",
+              "path": ".status.conditions[status=\"False\",type!=\"Ready\"].reason"
+            }
+          ]
+        },
+        "since": ".status.conditions[status=\"False\",type!=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "{{.status.conditions[status=\"False\",type!=\"Ready\"].type}}=False",
+        "message": "{{.status.conditions[status=\"False\",type!=\"Ready\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "not-ready",
+        "title": "Claim or composite resource not ready",
+        "kindsFrom": {
+          "kind": {
+            "group": "apiextensions.crossplane.io",
+            "kind": "CompositeResourceDefinition"
+          },
+          "groupPath": ".spec.group",
+          "kindPaths": [
+            ".spec.names.kind",
+            ".spec.claimNames.kind"
+          ],
+          "max": 20
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "exists",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                        "value": "False"
+                      },
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].reason",
+                        "value": "ReconcilePaused"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"crossplane.io/paused\"]",
+                    "value": "true"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "equals",
+              "path": ".status.conditions[type=\"Ready\",status!=\"\"].status",
+              "value": "False"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "in",
+                "path": ".status.conditions[type=\"Ready\",status!=\"\"].reason",
+                "values": [
+                  "Creating",
+                  "Deleting"
+                ]
+              }
+            },
+            {
+              "type": "absent",
+              "path": ".status.conditions[status=\"False\",type!=\"Ready\"]"
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\",status!=\"\"].lastTransitionTime",
+        "graceMinutes": 2,
+        "reason": "{{.status.conditions[type=\"Ready\",status!=\"\"].reason}}",
+        "reasonOr": "Ready=False",
+        "message": "{{.status.conditions[type=\"Ready\",status!=\"\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "creating-condition",
+        "title": "Claim or composite resource still being created: a condition is False",
+        "kindsFrom": {
+          "kind": {
+            "group": "apiextensions.crossplane.io",
+            "kind": "CompositeResourceDefinition"
+          },
+          "groupPath": ".spec.group",
+          "kindPaths": [
+            ".spec.names.kind",
+            ".spec.claimNames.kind"
+          ],
+          "max": 20
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "exists",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                        "value": "False"
+                      },
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].reason",
+                        "value": "ReconcilePaused"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"crossplane.io/paused\"]",
+                    "value": "true"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.conditions[type=\"Ready\",status!=\"\"].status",
+                      "value": "False"
+                    },
+                    {
+                      "type": "in",
+                      "path": ".status.conditions[type=\"Ready\",status!=\"\"].reason",
+                      "values": [
+                        "Creating",
+                        "Deleting"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Ready\",status!=\"\"].status",
+                        "value": "False"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Ready\",status!=\"\"].status",
+                        "value": "True"
+                      }
+                    },
+                    {
+                      "type": "any",
+                      "of": [
+                        {
+                          "type": "exists",
+                          "path": ".status.conditions[type=\"Synced\",status!=\"\"]"
+                        },
+                        {
+                          "type": "exists",
+                          "path": ".status.conditions[type=\"Ready\",status!=\"\"]"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "exists",
+              "path": ".status.conditions[status=\"False\",type!=\"Ready\"]"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[status=\"False\",type!=\"Ready\"].reason",
+                "value": "Deleting"
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[status=\"False\",type!=\"Ready\"].lastTransitionTime",
+        "graceMinutes": 30,
+        "reason": "{{.status.conditions[status=\"False\",type!=\"Ready\"].reason}}",
+        "reasonOr": "Creating",
+        "message": "{{.status.conditions[status=\"False\",type!=\"Ready\"].message}}",
+        "group": "not-ready"
+      },
+      {
+        "id": "creating",
+        "title": "Claim or composite resource still being created",
+        "kindsFrom": {
+          "kind": {
+            "group": "apiextensions.crossplane.io",
+            "kind": "CompositeResourceDefinition"
+          },
+          "groupPath": ".spec.group",
+          "kindPaths": [
+            ".spec.names.kind",
+            ".spec.claimNames.kind"
+          ],
+          "max": 20
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "exists",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.crossplane.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "absent",
+                        "path": ".spec.crossplane.claimRef"
+                      },
+                      {
+                        "type": "all",
+                        "of": [
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.apiVersion",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.kind",
+                            "nonEmpty": true
+                          },
+                          {
+                            "type": "exists",
+                            "path": ".spec.claimRef.name",
+                            "nonEmpty": true
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "all",
+                    "of": [
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                        "value": "False"
+                      },
+                      {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Synced\",status!=\"\"].reason",
+                        "value": "ReconcilePaused"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".metadata.annotations[\"crossplane.io/paused\"]",
+                    "value": "true"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.conditions[type=\"Synced\",status!=\"\"].status",
+                "value": "False"
+              }
+            },
+            {
+              "type": "any",
+              "of": [
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "equals",
+                      "path": ".status.conditions[type=\"Ready\",status!=\"\"].status",
+                      "value": "False"
+                    },
+                    {
+                      "type": "in",
+                      "path": ".status.conditions[type=\"Ready\",status!=\"\"].reason",
+                      "values": [
+                        "Creating",
+                        "Deleting"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Ready\",status!=\"\"].status",
+                        "value": "False"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "equals",
+                        "path": ".status.conditions[type=\"Ready\",status!=\"\"].status",
+                        "value": "True"
+                      }
+                    },
+                    {
+                      "type": "any",
+                      "of": [
+                        {
+                          "type": "exists",
+                          "path": ".status.conditions[type=\"Synced\",status!=\"\"]"
+                        },
+                        {
+                          "type": "exists",
+                          "path": ".status.conditions[type=\"Ready\",status!=\"\"]"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "absent",
+              "path": ".status.conditions[status=\"False\",type!=\"Ready\"]"
+            },
+            {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "equals",
+                    "path": ".status.conditions[type=\"Ready\",status!=\"\"].status",
+                    "value": "False"
+                  },
+                  {
+                    "type": "equals",
+                    "path": ".status.conditions[type=\"Ready\",status!=\"\"].reason",
+                    "value": "Deleting"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "since": ".status.conditions[type=\"Ready\",status=\"False\"].lastTransitionTime",
+        "graceMinutes": 30,
+        "reason": "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+        "reasonOr": "Creating",
+        "message": "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
+        "group": "not-ready"
+      }
+    ],
+    "sectionBadges": [
+      {
+        "section": "crossplane",
+        "count": "problems",
+        "label": {
+          "one": "{{count}} claim or composite resource needs attention",
+          "other": "{{count}} claims or composite resources need attention"
+        }
+      }
+    ]
+  },
+  "translations": {
+    "de": {
+      "description": "Composite Resource Definitions, Compositions, Providers, Configurations und Functions von Crossplane mit ihrem Zustand, die Claims und Composite-Ressourcen der von den XRDs definierten Kinds mit der ersten fehlschlagenden Bedingung und die Kette Claim → Composite → zusammengesetzte Ressourcen in den Details von Claims, Composite- und verwalteten Ressourcen. Nur lesend.",
+      "columns.xrd-composite.title": "Composite-Kind",
+      "columns.xrd-claim.title": "Claim-Kind",
+      "columns.composition-type.title": "Composite-Typ",
+      "columns.composition-mode.title": "Modus",
+      "columns.provider-status.cases.0.text": "Fehlgeschlagen",
+      "columns.provider-status.cases.1.text": "Bereit",
+      "columns.provider-status.cases.2.text": "In Arbeit",
+      "columns.provider-status.cases.3.text": "Unbekannt",
+      "columns.provider-package.title": "Paket",
+      "columns.configuration-status.cases.0.text": "Fehlgeschlagen",
+      "columns.configuration-status.cases.1.text": "Bereit",
+      "columns.configuration-status.cases.2.text": "In Arbeit",
+      "columns.configuration-status.cases.3.text": "Unbekannt",
+      "columns.configuration-package.title": "Paket",
+      "columns.function-status.cases.0.text": "Fehlgeschlagen",
+      "columns.function-status.cases.1.text": "Bereit",
+      "columns.function-status.cases.2.text": "In Arbeit",
+      "columns.function-status.cases.3.text": "Unbekannt",
+      "columns.function-package.title": "Paket",
+      "problems.not-synced.title": "Claim oder Composite Resource nicht synchronisiert",
+      "problems.not-ready-condition.title": "Claim oder Composite Resource nicht bereit: eine Bedingung ist False",
+      "problems.not-ready-condition-unnamed.title": "Claim oder Composite Resource nicht bereit: Bedingung ist False (ohne Grund)",
+      "problems.not-ready.title": "Claim oder Composite Resource nicht bereit",
+      "problems.creating-condition.title": "Claim oder Composite Resource wird noch erstellt: eine Bedingung ist False",
+      "problems.creating.title": "Claim oder Composite Resource wird noch erstellt",
+      "sectionBadges.crossplane.label.one": "{{count}} Claim oder Composite Resource braucht Aufmerksamkeit",
+      "sectionBadges.crossplane.label.other": "{{count}} Claims oder Composite Resources brauchen Aufmerksamkeit"
+    },
+    "es": {
+      "description": "Las Composite Resource Definitions, Compositions, Providers, Configurations y Functions de Crossplane con su estado, los claims y recursos compuestos de los kinds que definen los XRD con la primera condición que falla, y la cadena Claim → recurso compuesto → recursos que lo componen en los detalles de claims, recursos compuestos y administrados. Solo lectura.",
+      "pages.composites.title": "Recursos compuestos",
+      "columns.xrd-composite.title": "Kind compuesto",
+      "columns.xrd-claim.title": "Kind del claim",
+      "columns.composition-type.title": "Tipo compuesto",
+      "columns.composition-mode.title": "Modo",
+      "columns.provider-status.title": "Estado",
+      "columns.provider-status.cases.0.text": "Falló",
+      "columns.provider-status.cases.1.text": "Listo",
+      "columns.provider-status.cases.2.text": "En curso",
+      "columns.provider-status.cases.3.text": "Desconocido",
+      "columns.provider-package.title": "Paquete",
+      "columns.configuration-status.title": "Estado",
+      "columns.configuration-status.cases.0.text": "Falló",
+      "columns.configuration-status.cases.1.text": "Listo",
+      "columns.configuration-status.cases.2.text": "En curso",
+      "columns.configuration-status.cases.3.text": "Desconocido",
+      "columns.configuration-package.title": "Paquete",
+      "columns.function-status.title": "Estado",
+      "columns.function-status.cases.0.text": "Falló",
+      "columns.function-status.cases.1.text": "Listo",
+      "columns.function-status.cases.2.text": "En curso",
+      "columns.function-status.cases.3.text": "Desconocido",
+      "columns.function-package.title": "Paquete",
+      "problems.not-synced.title": "Claim o recurso compuesto no sincronizado",
+      "problems.not-ready-condition.title": "Claim o recurso compuesto no listo: una condición es False",
+      "problems.not-ready-condition-unnamed.title": "Claim o recurso compuesto no listo: una condición es False (sin motivo)",
+      "problems.not-ready.title": "Claim o recurso compuesto no listo",
+      "problems.creating-condition.title": "Claim o recurso compuesto aún en creación: una condición es False",
+      "problems.creating.title": "Claim o recurso compuesto aún en creación",
+      "sectionBadges.crossplane.label.one": "{{count}} claim o recurso compuesto requiere atención",
+      "sectionBadges.crossplane.label.many": "{{count}} de claims o recursos compuestos requieren atención",
+      "sectionBadges.crossplane.label.other": "{{count}} claims o recursos compuestos requieren atención"
+    },
+    "fr": {
+      "description": "Les Composite Resource Definitions, Compositions, Providers, Configurations et Functions de Crossplane avec leur état, les claims et ressources composites des kinds que définissent les XRD avec la première condition en échec, et la chaîne Claim → ressource composite → ressources qui la composent dans les détails des claims, des ressources composites et gérées. Lecture seule.",
+      "pages.composites.title": "Ressources composites",
+      "columns.xrd-composite.title": "Kind composite",
+      "columns.xrd-claim.title": "Kind du claim",
+      "columns.composition-type.title": "Type composite",
+      "columns.provider-status.title": "État",
+      "columns.provider-status.cases.0.text": "Échec",
+      "columns.provider-status.cases.1.text": "Prêt",
+      "columns.provider-status.cases.2.text": "En cours",
+      "columns.provider-status.cases.3.text": "Inconnu",
+      "columns.provider-package.title": "Paquet",
+      "columns.configuration-status.title": "État",
+      "columns.configuration-status.cases.0.text": "Échec",
+      "columns.configuration-status.cases.1.text": "Prêt",
+      "columns.configuration-status.cases.2.text": "En cours",
+      "columns.configuration-status.cases.3.text": "Inconnu",
+      "columns.configuration-package.title": "Paquet",
+      "columns.function-status.title": "État",
+      "columns.function-status.cases.0.text": "Échec",
+      "columns.function-status.cases.1.text": "Prêt",
+      "columns.function-status.cases.2.text": "En cours",
+      "columns.function-status.cases.3.text": "Inconnu",
+      "columns.function-package.title": "Paquet",
+      "problems.not-synced.title": "Claim ou ressource composite non synchronisé",
+      "problems.not-ready-condition.title": "Claim ou ressource composite pas prêt : une condition est False",
+      "problems.not-ready-condition-unnamed.title": "Claim ou ressource composite pas prêt : une condition est False (sans raison)",
+      "problems.not-ready.title": "Claim ou ressource composite pas prêt",
+      "problems.creating-condition.title": "Claim ou ressource composite encore en création : une condition est False",
+      "problems.creating.title": "Claim ou ressource composite encore en création",
+      "sectionBadges.crossplane.label.one": "{{count}} claim ou ressource composite demande de l’attention",
+      "sectionBadges.crossplane.label.many": "{{count}} de claims ou ressources composites demandent de l’attention",
+      "sectionBadges.crossplane.label.other": "{{count}} claims ou ressources composites demandent de l’attention"
+    },
+    "it": {
+      "description": "Le Composite Resource Definitions, Compositions, Providers, Configurations e Functions di Crossplane con il loro stato, i claim e le risorse composite dei kind definiti dagli XRD con la prima condizione che fallisce, e la catena Claim → risorsa composita → risorse che la compongono nei dettagli di claim, risorse composite e gestite. Sola lettura.",
+      "pages.composites.title": "Risorse composite",
+      "columns.xrd-composite.title": "Kind composito",
+      "columns.xrd-claim.title": "Kind del claim",
+      "columns.composition-type.title": "Tipo composito",
+      "columns.composition-mode.title": "Modalità",
+      "columns.provider-status.title": "Stato",
+      "columns.provider-status.cases.0.text": "Non riuscito",
+      "columns.provider-status.cases.1.text": "Pronto",
+      "columns.provider-status.cases.2.text": "In corso",
+      "columns.provider-status.cases.3.text": "Sconosciuto",
+      "columns.provider-package.title": "Pacchetto",
+      "columns.configuration-status.title": "Stato",
+      "columns.configuration-status.cases.0.text": "Non riuscito",
+      "columns.configuration-status.cases.1.text": "Pronto",
+      "columns.configuration-status.cases.2.text": "In corso",
+      "columns.configuration-status.cases.3.text": "Sconosciuto",
+      "columns.configuration-package.title": "Pacchetto",
+      "columns.function-status.title": "Stato",
+      "columns.function-status.cases.0.text": "Non riuscito",
+      "columns.function-status.cases.1.text": "Pronto",
+      "columns.function-status.cases.2.text": "In corso",
+      "columns.function-status.cases.3.text": "Sconosciuto",
+      "columns.function-package.title": "Pacchetto",
+      "problems.not-synced.title": "Claim o risorsa composita non sincronizzata",
+      "problems.not-ready-condition.title": "Claim o risorsa composita non pronta: una condizione è False",
+      "problems.not-ready-condition-unnamed.title": "Claim o risorsa composita non pronta: una condizione è False (senza motivo)",
+      "problems.not-ready.title": "Claim o risorsa composita non pronta",
+      "problems.creating-condition.title": "Claim o risorsa composita ancora in creazione: una condizione è False",
+      "problems.creating.title": "Claim o risorsa composita ancora in creazione",
+      "sectionBadges.crossplane.label.one": "{{count}} claim o risorsa composita richiede attenzione",
+      "sectionBadges.crossplane.label.many": "{{count}} di claim o risorse composite richiedono attenzione",
+      "sectionBadges.crossplane.label.other": "{{count}} claim o risorse composite richiedono attenzione"
+    },
+    "ja": {
+      "description": "Crossplane の Composite Resource Definitions、Compositions、Providers、Configurations、Functions とその状態、XRD が定義する Kind の Claim と複合リソース(最初に失敗している条件付き)、そして Claim、複合リソース、マネージドリソースの詳細に Claim → 複合リソース → 構成リソースのつながり。読み取り専用。",
+      "pages.composites.title": "複合リソース",
+      "columns.xrd-composite.title": "複合リソースの Kind",
+      "columns.xrd-claim.title": "Claim の Kind",
+      "columns.composition-type.title": "複合の種類",
+      "columns.composition-mode.title": "モード",
+      "columns.provider-status.title": "状態",
+      "columns.provider-status.cases.0.text": "失敗",
+      "columns.provider-status.cases.1.text": "準備完了",
+      "columns.provider-status.cases.2.text": "進行中",
+      "columns.provider-status.cases.3.text": "不明",
+      "columns.provider-package.title": "パッケージ",
+      "columns.configuration-status.title": "状態",
+      "columns.configuration-status.cases.0.text": "失敗",
+      "columns.configuration-status.cases.1.text": "準備完了",
+      "columns.configuration-status.cases.2.text": "進行中",
+      "columns.configuration-status.cases.3.text": "不明",
+      "columns.configuration-package.title": "パッケージ",
+      "columns.function-status.title": "状態",
+      "columns.function-status.cases.0.text": "失敗",
+      "columns.function-status.cases.1.text": "準備完了",
+      "columns.function-status.cases.2.text": "進行中",
+      "columns.function-status.cases.3.text": "不明",
+      "columns.function-package.title": "パッケージ",
+      "problems.not-synced.title": "claim または複合リソースが同期されていない",
+      "problems.not-ready-condition.title": "claim または複合リソースが未準備: 条件が False",
+      "problems.not-ready-condition-unnamed.title": "claim または複合リソースが未準備: 条件が False (理由なし)",
+      "problems.not-ready.title": "claim または複合リソースが未準備",
+      "problems.creating-condition.title": "claim または複合リソースが作成中: 条件が False",
+      "problems.creating.title": "claim または複合リソースが作成中",
+      "sectionBadges.crossplane.label.other": "{{count}} 件の claim または複合リソースに対応が必要です"
+    },
+    "ko": {
+      "description": "Crossplane의 Composite Resource Definitions, Compositions, Providers, Configurations, Functions와 그 상태, XRD가 정의하는 Kind의 Claim과 복합 리소스(처음 실패한 조건 포함), 그리고 Claim, 복합 리소스, 관리형 리소스의 세부 정보에 Claim → 복합 리소스 → 구성 리소스 연결. 읽기 전용.",
+      "pages.composites.title": "복합 리소스",
+      "columns.xrd-composite.title": "복합 Kind",
+      "columns.xrd-claim.title": "Claim Kind",
+      "columns.composition-type.title": "복합 유형",
+      "columns.composition-mode.title": "모드",
+      "columns.provider-status.title": "상태",
+      "columns.provider-status.cases.0.text": "실패",
+      "columns.provider-status.cases.1.text": "준비됨",
+      "columns.provider-status.cases.2.text": "진행 중",
+      "columns.provider-status.cases.3.text": "알 수 없음",
+      "columns.provider-package.title": "패키지",
+      "columns.configuration-status.title": "상태",
+      "columns.configuration-status.cases.0.text": "실패",
+      "columns.configuration-status.cases.1.text": "준비됨",
+      "columns.configuration-status.cases.2.text": "진행 중",
+      "columns.configuration-status.cases.3.text": "알 수 없음",
+      "columns.configuration-package.title": "패키지",
+      "columns.function-status.title": "상태",
+      "columns.function-status.cases.0.text": "실패",
+      "columns.function-status.cases.1.text": "준비됨",
+      "columns.function-status.cases.2.text": "진행 중",
+      "columns.function-status.cases.3.text": "알 수 없음",
+      "columns.function-package.title": "패키지",
+      "problems.not-synced.title": "claim 또는 복합 리소스가 동기화되지 않음",
+      "problems.not-ready-condition.title": "claim 또는 복합 리소스가 준비되지 않음: 조건이 False",
+      "problems.not-ready-condition-unnamed.title": "claim 또는 복합 리소스가 준비되지 않음: 조건이 False (이유 없음)",
+      "problems.not-ready.title": "claim 또는 복합 리소스가 준비되지 않음",
+      "problems.creating-condition.title": "claim 또는 복합 리소스가 아직 생성 중: 조건이 False",
+      "problems.creating.title": "claim 또는 복합 리소스가 아직 생성 중",
+      "sectionBadges.crossplane.label.other": "claim 또는 복합 리소스 {{count}}개에 주의가 필요합니다"
+    },
+    "pl": {
+      "description": "Composite Resource Definitions, Compositions, Providers, Configurations i Functions Crossplane z ich stanem, claimy i zasoby złożone kindów definiowanych przez XRD z pierwszym niespełnionym warunkiem oraz łańcuch Claim → zasób złożony → zasoby składowe w szczegółach claimów, zasobów złożonych i zarządzanych. Tylko do odczytu.",
+      "pages.composites.title": "Zasoby złożone",
+      "columns.xrd-composite.title": "Kind złożony",
+      "columns.xrd-claim.title": "Kind claimu",
+      "columns.composition-type.title": "Typ złożony",
+      "columns.composition-mode.title": "Tryb",
+      "columns.provider-status.title": "Stan",
+      "columns.provider-status.cases.0.text": "Błąd",
+      "columns.provider-status.cases.1.text": "Gotowy",
+      "columns.provider-status.cases.2.text": "W toku",
+      "columns.provider-status.cases.3.text": "Nieznany",
+      "columns.provider-package.title": "Pakiet",
+      "columns.configuration-status.title": "Stan",
+      "columns.configuration-status.cases.0.text": "Błąd",
+      "columns.configuration-status.cases.1.text": "Gotowy",
+      "columns.configuration-status.cases.2.text": "W toku",
+      "columns.configuration-status.cases.3.text": "Nieznany",
+      "columns.configuration-package.title": "Pakiet",
+      "columns.function-status.title": "Stan",
+      "columns.function-status.cases.0.text": "Błąd",
+      "columns.function-status.cases.1.text": "Gotowy",
+      "columns.function-status.cases.2.text": "W toku",
+      "columns.function-status.cases.3.text": "Nieznany",
+      "columns.function-package.title": "Pakiet",
+      "problems.not-synced.title": "Claim lub zasób złożony niezsynchronizowany",
+      "problems.not-ready-condition.title": "Claim lub zasób złożony niegotowy: warunek ma wartość False",
+      "problems.not-ready-condition-unnamed.title": "Claim lub zasób złożony niegotowy: warunek ma wartość False (bez powodu)",
+      "problems.not-ready.title": "Claim lub zasób złożony niegotowy",
+      "problems.creating-condition.title": "Claim lub zasób złożony nadal tworzony: warunek ma wartość False",
+      "problems.creating.title": "Claim lub zasób złożony nadal tworzony",
+      "sectionBadges.crossplane.label.one": "{{count}} claim lub zasób złożony wymaga uwagi",
+      "sectionBadges.crossplane.label.few": "{{count}} claimy lub zasoby złożone wymagają uwagi",
+      "sectionBadges.crossplane.label.many": "{{count}} claimów lub zasobów złożonych wymaga uwagi",
+      "sectionBadges.crossplane.label.other": "{{count}} claimu lub zasobu złożonego wymaga uwagi"
+    },
+    "pt-BR": {
+      "description": "As Composite Resource Definitions, Compositions, Providers, Configurations e Functions do Crossplane com seu estado, os claims e recursos compostos dos kinds que os XRDs definem com a primeira condição que falha, e a cadeia Claim → recurso composto → recursos que o compõem nos detalhes de claims, recursos compostos e gerenciados. Somente leitura.",
+      "pages.composites.title": "Recursos compostos",
+      "columns.xrd-composite.title": "Kind composto",
+      "columns.xrd-claim.title": "Kind do claim",
+      "columns.composition-type.title": "Tipo composto",
+      "columns.composition-mode.title": "Modo",
+      "columns.provider-status.title": "Estado",
+      "columns.provider-status.cases.0.text": "Falhou",
+      "columns.provider-status.cases.1.text": "Pronto",
+      "columns.provider-status.cases.2.text": "Em andamento",
+      "columns.provider-status.cases.3.text": "Desconhecido",
+      "columns.provider-package.title": "Pacote",
+      "columns.configuration-status.title": "Estado",
+      "columns.configuration-status.cases.0.text": "Falhou",
+      "columns.configuration-status.cases.1.text": "Pronto",
+      "columns.configuration-status.cases.2.text": "Em andamento",
+      "columns.configuration-status.cases.3.text": "Desconhecido",
+      "columns.configuration-package.title": "Pacote",
+      "columns.function-status.title": "Estado",
+      "columns.function-status.cases.0.text": "Falhou",
+      "columns.function-status.cases.1.text": "Pronto",
+      "columns.function-status.cases.2.text": "Em andamento",
+      "columns.function-status.cases.3.text": "Desconhecido",
+      "columns.function-package.title": "Pacote",
+      "problems.not-synced.title": "Claim ou recurso composto não sincronizado",
+      "problems.not-ready-condition.title": "Claim ou recurso composto não pronto: uma condição é False",
+      "problems.not-ready-condition-unnamed.title": "Claim ou recurso composto não pronto: uma condição é False (sem motivo)",
+      "problems.not-ready.title": "Claim ou recurso composto não pronto",
+      "problems.creating-condition.title": "Claim ou recurso composto ainda em criação: uma condição é False",
+      "problems.creating.title": "Claim ou recurso composto ainda em criação",
+      "sectionBadges.crossplane.label.one": "{{count}} claim ou recurso composto precisa de atenção",
+      "sectionBadges.crossplane.label.many": "{{count}} de claims ou recursos compostos precisam de atenção",
+      "sectionBadges.crossplane.label.other": "{{count}} claims ou recursos compostos precisam de atenção"
+    },
+    "ru": {
+      "description": "Composite Resource Definitions, Compositions, Providers, Configurations и Functions Crossplane с их состоянием, claim и составные ресурсы видов, определенных XRD, с первым невыполненным условием, и цепочка Claim → составной ресурс → составляющие ресурсы в деталях claim, составных и управляемых ресурсов. Только чтение.",
+      "pages.composites.title": "Составные ресурсы",
+      "columns.xrd-composite.title": "Kind составного",
+      "columns.xrd-claim.title": "Kind claim",
+      "columns.composition-type.title": "Тип составного",
+      "columns.composition-mode.title": "Режим",
+      "columns.provider-status.title": "Состояние",
+      "columns.provider-status.cases.0.text": "Сбой",
+      "columns.provider-status.cases.1.text": "Готов",
+      "columns.provider-status.cases.2.text": "Выполняется",
+      "columns.provider-status.cases.3.text": "Неизвестно",
+      "columns.provider-package.title": "Пакет",
+      "columns.configuration-status.title": "Состояние",
+      "columns.configuration-status.cases.0.text": "Сбой",
+      "columns.configuration-status.cases.1.text": "Готов",
+      "columns.configuration-status.cases.2.text": "Выполняется",
+      "columns.configuration-status.cases.3.text": "Неизвестно",
+      "columns.configuration-package.title": "Пакет",
+      "columns.function-status.title": "Состояние",
+      "columns.function-status.cases.0.text": "Сбой",
+      "columns.function-status.cases.1.text": "Готов",
+      "columns.function-status.cases.2.text": "Выполняется",
+      "columns.function-status.cases.3.text": "Неизвестно",
+      "columns.function-package.title": "Пакет",
+      "problems.not-synced.title": "Claim или составной ресурс не синхронизирован",
+      "problems.not-ready-condition.title": "Claim или составной ресурс не готов: условие равно False",
+      "problems.not-ready-condition-unnamed.title": "Claim или составной ресурс не готов: условие равно False (без причины)",
+      "problems.not-ready.title": "Claim или составной ресурс не готов",
+      "problems.creating-condition.title": "Claim или составной ресурс ещё создаётся: условие равно False",
+      "problems.creating.title": "Claim или составной ресурс ещё создаётся",
+      "sectionBadges.crossplane.label.one": "{{count}} claim или составной ресурс требует внимания",
+      "sectionBadges.crossplane.label.few": "{{count}} claim или составных ресурса требуют внимания",
+      "sectionBadges.crossplane.label.many": "{{count}} claim или составных ресурсов требуют внимания",
+      "sectionBadges.crossplane.label.other": "{{count}} claim или составного ресурса требуют внимания"
+    },
+    "tr": {
+      "description": "Crossplane'in Composite Resource Definitions, Compositions, Providers, Configurations ve Functions nesneleri durumlarıyla, XRD'lerin tanımladığı kind'ların claim'leri ve bileşik kaynakları ilk başarısız koşulla, ve claim, bileşik ve yönetilen kaynakların ayrıntılarında Claim → bileşik kaynak → oluşturan kaynaklar zinciri. Salt okunur.",
+      "pages.composites.title": "Bileşik Kaynaklar",
+      "columns.xrd-composite.title": "Bileşik kind",
+      "columns.xrd-claim.title": "Claim kind'ı",
+      "columns.composition-type.title": "Bileşik tür",
+      "columns.composition-mode.title": "Mod",
+      "columns.provider-status.title": "Durum",
+      "columns.provider-status.cases.0.text": "Başarısız",
+      "columns.provider-status.cases.1.text": "Hazır",
+      "columns.provider-status.cases.2.text": "Sürüyor",
+      "columns.provider-status.cases.3.text": "Bilinmiyor",
+      "columns.provider-package.title": "Paket",
+      "columns.configuration-status.title": "Durum",
+      "columns.configuration-status.cases.0.text": "Başarısız",
+      "columns.configuration-status.cases.1.text": "Hazır",
+      "columns.configuration-status.cases.2.text": "Sürüyor",
+      "columns.configuration-status.cases.3.text": "Bilinmiyor",
+      "columns.configuration-package.title": "Paket",
+      "columns.function-status.title": "Durum",
+      "columns.function-status.cases.0.text": "Başarısız",
+      "columns.function-status.cases.1.text": "Hazır",
+      "columns.function-status.cases.2.text": "Sürüyor",
+      "columns.function-status.cases.3.text": "Bilinmiyor",
+      "columns.function-package.title": "Paket",
+      "problems.not-synced.title": "Claim veya bileşik kaynak eşitlenmedi",
+      "problems.not-ready-condition.title": "Claim veya bileşik kaynak hazır değil: bir koşul False",
+      "problems.not-ready-condition-unnamed.title": "Claim veya bileşik kaynak hazır değil: bir koşul False (neden yok)",
+      "problems.not-ready.title": "Claim veya bileşik kaynak hazır değil",
+      "problems.creating-condition.title": "Claim veya bileşik kaynak hâlâ oluşturuluyor: bir koşul False",
+      "problems.creating.title": "Claim veya bileşik kaynak hâlâ oluşturuluyor",
+      "sectionBadges.crossplane.label.one": "{{count}} claim veya bileşik kaynak ilgi bekliyor",
+      "sectionBadges.crossplane.label.other": "{{count}} claim veya bileşik kaynak ilgi bekliyor"
+    },
+    "uk": {
+      "description": "Composite Resource Definitions, Compositions, Providers, Configurations і Functions Crossplane з їхнім станом, claim і складені ресурси видів, визначених XRD, з першою невиконаною умовою, і ланцюжок Claim → складений ресурс → складові ресурси в деталях claim, складених і керованих ресурсів. Лише читання.",
+      "pages.composites.title": "Складені ресурси",
+      "columns.xrd-composite.title": "Kind складеного",
+      "columns.xrd-claim.title": "Kind claim",
+      "columns.composition-type.title": "Тип складеного",
+      "columns.composition-mode.title": "Режим",
+      "columns.provider-status.title": "Стан",
+      "columns.provider-status.cases.0.text": "Збій",
+      "columns.provider-status.cases.1.text": "Готовий",
+      "columns.provider-status.cases.2.text": "Виконується",
+      "columns.provider-status.cases.3.text": "Невідомо",
+      "columns.provider-package.title": "Пакет",
+      "columns.configuration-status.title": "Стан",
+      "columns.configuration-status.cases.0.text": "Збій",
+      "columns.configuration-status.cases.1.text": "Готовий",
+      "columns.configuration-status.cases.2.text": "Виконується",
+      "columns.configuration-status.cases.3.text": "Невідомо",
+      "columns.configuration-package.title": "Пакет",
+      "columns.function-status.title": "Стан",
+      "columns.function-status.cases.0.text": "Збій",
+      "columns.function-status.cases.1.text": "Готовий",
+      "columns.function-status.cases.2.text": "Виконується",
+      "columns.function-status.cases.3.text": "Невідомо",
+      "columns.function-package.title": "Пакет",
+      "problems.not-synced.title": "Claim або складений ресурс не синхронізовано",
+      "problems.not-ready-condition.title": "Claim або складений ресурс не готовий: умова дорівнює False",
+      "problems.not-ready-condition-unnamed.title": "Claim або складений ресурс не готовий: умова дорівнює False (без причини)",
+      "problems.not-ready.title": "Claim або складений ресурс не готовий",
+      "problems.creating-condition.title": "Claim або складений ресурс ще створюється: умова дорівнює False",
+      "problems.creating.title": "Claim або складений ресурс ще створюється",
+      "sectionBadges.crossplane.label.one": "{{count}} claim або складений ресурс потребує уваги",
+      "sectionBadges.crossplane.label.few": "{{count}} claim або складені ресурси потребують уваги",
+      "sectionBadges.crossplane.label.many": "{{count}} claim або складених ресурсів потребують уваги",
+      "sectionBadges.crossplane.label.other": "{{count}} claim або складеного ресурсу потребують уваги"
+    },
+    "zh-CN": {
+      "description": "Crossplane 的 Composite Resource Definitions、Compositions、Providers、Configurations 和 Functions 及其状态，XRD 所定义 Kind 的 Claim 和组合资源及其第一个失败的条件，以及在 Claim、组合资源和托管资源详情中的 Claim → 组合资源 → 组成资源链。只读。",
+      "pages.composites.title": "组合资源",
+      "columns.xrd-composite.title": "组合资源 Kind",
+      "columns.xrd-claim.title": "Claim Kind",
+      "columns.composition-type.title": "组合类型",
+      "columns.composition-mode.title": "模式",
+      "columns.provider-status.title": "状态",
+      "columns.provider-status.cases.0.text": "失败",
+      "columns.provider-status.cases.1.text": "就绪",
+      "columns.provider-status.cases.2.text": "进行中",
+      "columns.provider-status.cases.3.text": "未知",
+      "columns.provider-package.title": "包",
+      "columns.configuration-status.title": "状态",
+      "columns.configuration-status.cases.0.text": "失败",
+      "columns.configuration-status.cases.1.text": "就绪",
+      "columns.configuration-status.cases.2.text": "进行中",
+      "columns.configuration-status.cases.3.text": "未知",
+      "columns.configuration-package.title": "包",
+      "columns.function-status.title": "状态",
+      "columns.function-status.cases.0.text": "失败",
+      "columns.function-status.cases.1.text": "就绪",
+      "columns.function-status.cases.2.text": "进行中",
+      "columns.function-status.cases.3.text": "未知",
+      "columns.function-package.title": "包",
+      "problems.not-synced.title": "claim 或组合资源未同步",
+      "problems.not-ready-condition.title": "claim 或组合资源未就绪：某个条件为 False",
+      "problems.not-ready-condition-unnamed.title": "claim 或组合资源未就绪：某个条件为 False（无原因）",
+      "problems.not-ready.title": "claim 或组合资源未就绪",
+      "problems.creating-condition.title": "claim 或组合资源仍在创建：某个条件为 False",
+      "problems.creating.title": "claim 或组合资源仍在创建",
+      "sectionBadges.crossplane.label.other": "{{count}} 个 claim 或组合资源需要关注"
+    },
+    "zh-TW": {
+      "description": "Crossplane 的 Composite Resource Definitions、Compositions、Providers、Configurations 和 Functions 及其狀態，XRD 所定義 Kind 的 Claim 和組合資源及其第一個失敗的條件，以及在 Claim、組合資源和受管資源詳細資料中的 Claim → 組合資源 → 組成資源鏈。唯讀。",
+      "pages.composites.title": "組合資源",
+      "columns.xrd-composite.title": "組合資源 Kind",
+      "columns.xrd-claim.title": "Claim Kind",
+      "columns.composition-type.title": "組合類型",
+      "columns.composition-mode.title": "模式",
+      "columns.provider-status.title": "狀態",
+      "columns.provider-status.cases.0.text": "失敗",
+      "columns.provider-status.cases.1.text": "就緒",
+      "columns.provider-status.cases.2.text": "進行中",
+      "columns.provider-status.cases.3.text": "未知",
+      "columns.provider-package.title": "套件",
+      "columns.configuration-status.title": "狀態",
+      "columns.configuration-status.cases.0.text": "失敗",
+      "columns.configuration-status.cases.1.text": "就緒",
+      "columns.configuration-status.cases.2.text": "進行中",
+      "columns.configuration-status.cases.3.text": "未知",
+      "columns.configuration-package.title": "套件",
+      "columns.function-status.title": "狀態",
+      "columns.function-status.cases.0.text": "失敗",
+      "columns.function-status.cases.1.text": "就緒",
+      "columns.function-status.cases.2.text": "進行中",
+      "columns.function-status.cases.3.text": "未知",
+      "columns.function-package.title": "套件",
+      "problems.not-synced.title": "claim 或組合資源未同步",
+      "problems.not-ready-condition.title": "claim 或組合資源未就緒：某個條件為 False",
+      "problems.not-ready-condition-unnamed.title": "claim 或組合資源未就緒：某個條件為 False（無原因）",
+      "problems.not-ready.title": "claim 或組合資源未就緒",
+      "problems.creating-condition.title": "claim 或組合資源仍在建立：某個條件為 False",
+      "problems.creating.title": "claim 或組合資源仍在建立",
+      "sectionBadges.crossplane.label.other": "{{count}} 個 claim 或組合資源需要注意"
+    }
+  }
+}

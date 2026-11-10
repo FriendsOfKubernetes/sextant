@@ -121,8 +121,8 @@ export type ColumnFilterValue =
   | readonly (string | number | boolean | null | undefined)[];
 
 /**
- * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `gatewayApi`, `crossplane` and
- * others belong to APIs and tools installed in the cluster: see `DISCOVERED_SECTIONS`.
+ * Sidebar sections in Lens order. Pages (`registerPage`) use the same ids in `section`. `gatewayApi` and
+ * `volumeSnapshots` belong to APIs installed in the cluster: see `DISCOVERED_SECTIONS`.
  */
 export const SIDEBAR_SECTIONS = [
   "cluster",
@@ -137,7 +137,6 @@ export const SIDEBAR_SECTIONS = [
   "helm",
   "accessControl",
   "volumeSnapshots",
-  "crossplane",
   "customResources",
 ] as const;
 export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
@@ -172,6 +171,10 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
   ["contour", "linkerd"],
   ["knative", "linkerd"],
   ["knativeEventing", "linkerd"],
+  // Crossplane came after Knative Eventing's place, before "Custom Resources": an extension section now, hanging off
+  // `volumeSnapshots` behind every place above (those off `linkerd` included); the sections that came after it hang
+  // off `crossplane`, in this order.
+  ["crossplane", "volumeSnapshots"],
   ["kyverno", "crossplane"],
   ["externalSecrets", "crossplane"],
   ["sealedSecrets", "crossplane"],
@@ -199,11 +202,7 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
  * once discovery says the cluster serves them, never before it comes, so a section without served kinds — the CRDs
  * are not installed — is not drawn at all.
  */
-export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>([
-  "gatewayApi",
-  "volumeSnapshots",
-  "crossplane",
-]);
+export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>(["gatewayApi", "volumeSnapshots"]);
 
 /** Icon of each sidebar section's header (and of a section shown as one link); `settings` is the Settings page. */
 export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
@@ -219,7 +218,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   helm: "helm",
   accessControl: "accessControl",
   volumeSnapshots: "volumeSnapshots",
-  crossplane: "crossplane",
   customResources: "customResources",
   settings: "settings",
 };

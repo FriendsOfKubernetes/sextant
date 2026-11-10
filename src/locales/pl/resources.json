@@ -12,7 +12,6 @@
     "helm": "Helm",
     "accessControl": "Kontrola dostępu",
     "volumeSnapshots": "Migawki woluminów",
-    "crossplane": "Crossplane",
     "customResources": "Zasoby niestandardowe"
   },
   "kinds": {

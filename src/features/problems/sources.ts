@@ -1,10 +1,9 @@
 // Which kinds are watched for each category of problems. Built-in kinds are watched without discovery; the kinds of
-// installed tools (Gateway API, Crossplane, …) only once discovery says the cluster serves them, at the
+// installed tools (Gateway API, …) only once discovery says the cluster serves them, at the
 // version it serves.
 import type { KindRef, KubeObject, ResourceKind } from "../../api";
 import { findKind } from "../../resources";
 import { COUNTED_KINDS } from "../gateway-api/problems";
-import { XRD } from "../crossplane/model";
 import { SECRET as REFLECTOR_SECRET } from "../reflector/model";
 import {
   CRONJOB,
@@ -109,9 +108,6 @@ export const CATEGORY_SOURCES: Record<BuiltInCategory, SourceDef[]> = {
   jobs: [builtIn("jobs", JOB)],
   volumes: [builtIn("volumes", PVC)],
   gateway: COUNTED_KINDS.map((kind) => tool("gateway", kind)),
-  // Crossplane claims and composites (#213) are kinds the XRDs define: the provider of features/crossplane watches the
-  // XRDs and the kinds they name (bounded there) and judges them (`external`), held only where XRDs are served.
-  crossplane: [{ category: "crossplane", kind: XRD, fieldSelector: null, discovered: true, external: true }],
   // Watches of their own (`sourceKey`): judged only while the opt-in category is on, kept apart from the problems of
   // pods and workloads (the map's colours, the cap of `MAX_PROBLEM_OBJECTS`).
   security: [POD, DEPLOYMENT, STATEFULSET, DAEMONSET, REPLICASET, JOB, CRONJOB].map((kind) => builtIn("security", kind)),

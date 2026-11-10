@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Представления инструментов кластера теперь расширения",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager и OpenShift вынесены из Sextant в его собственные расширения из каталога расширений, которые обновляются отдельно. Установите нужные ниже: до этого их разделы не показываются. Ваши настройки уведомлений для них сохранены, а боковая панель тоже предлагает их в кластерах, где работают эти инструменты."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Istio, Linkerd, Knative, Traefik, Contour, Crossplane, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager и OpenShift вынесены из Sextant в его собственные расширения из каталога расширений, которые обновляются отдельно. Установите нужные ниже: до этого их разделы не показываются. Ваши настройки уведомлений для них сохранены, а боковая панель тоже предлагает их в кластерах, где работают эти инструменты."
     },
     "api4": {
       "title": "API расширений 4",
@@ -36,6 +36,7 @@
       "kuberay": "Кластеры, задания и сервисы Ray с их логами",
       "kserve": "InferenceService, среды выполнения моделей и графы инференса",
       "knative": "Сервисы, ревизии и маршруты Serving; брокеры, триггеры, каналы и источники Eventing",
+      "crossplane": "Composite Resource Definitions, Compositions и пакеты с их состоянием, каждый claim и составной ресурс с тем, что не так в первую очередь, и цепочка claim → составной ресурс → управляемые ресурсы",
       "gpu-operator": "ClusterPolicy, драйверы NVIDIA, их компоненты и узлы с GPU",
       "dra": "ResourceClaim с их устройствами, шаблоны claim, классы устройств, ResourceSlice и страница «Устройства»",
       "velero": "Резервные копии, расписания, восстановления и места хранения; резервная копия namespace и восстановление из копии",

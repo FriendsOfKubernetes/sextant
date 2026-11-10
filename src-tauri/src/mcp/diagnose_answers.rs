@@ -190,7 +190,6 @@ pub const PROBLEM_CATEGORIES: &[&str] = &[
     "jobs",
     "volumes",
     "gateway",
-    "crossplane",
     "reflector",
     "security",
     "practices",
@@ -209,10 +208,8 @@ pub const OPT_IN_CATEGORIES: [&str; 6] = [
     "alerts",
 ];
 /// Never given to agents: expiring kubeconfig credentials are the app user's, not the cluster's (ADR-0084).
-/// Crossplane problems (#213) are window views of this build: agents get nothing new.
 pub const NEVER_FOR_AGENTS: &[&str] = &[
     "credentials",
-    "crossplane",
     // Reflector mirrors (#241): a window view of 0.21.0.
     "reflector",
     // Firing alerts of Prometheus and Alertmanager (#264): a window view of 0.24.0.
