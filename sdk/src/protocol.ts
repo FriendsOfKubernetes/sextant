@@ -43,6 +43,11 @@ export interface HostContext {
    * memory of details sections (since Sextant 0.30, #416); a block it does not name keeps its default.
    */
   blocks?: Record<string, boolean>;
+  /**
+   * How many days before a certificate's end Sextant warns (`notifications.certExpiryDays`, 1–365, 14 by default), so a
+   * frame warns as the problems do (since Sextant 0.30); a new context comes when it changes.
+   */
+  certExpiryDays?: number;
 }
 
 export interface ProtocolError {

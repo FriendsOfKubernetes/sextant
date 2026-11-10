@@ -277,3 +277,6 @@ Kubernetes quantities: a compared path may end in `|quantity` (the amount of "64
 `notifications.certExpiryDays` (14 by default), and a problem it gives moves when that setting changes, as Sextant's
 own certificate problems do (`expiresAt`, `applyCertExpiryDays`); `olderThan.minutes` may be 0 (expired at once) — a
 cert-manager Certificate's `status.notAfter`.
+`|daysLeft` (a compared path, a column's `paths`, a placeholder) is the whole days until a time, 0 once it has passed,
+and a frame's context carries `certExpiryDays` (the user's warning days, sent again when they change): the
+cert-manager extension's "Expires in" column and details warn as Sextant's own did.

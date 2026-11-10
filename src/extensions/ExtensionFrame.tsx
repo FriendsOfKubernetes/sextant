@@ -4,9 +4,10 @@
 // rest of the window is not affected. The frame reloads when the extension's files change (development mode).
 import { Component, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { ClusterId, ExtensionInfo, ObjectRef } from "../api";
+import { useSettings, type ClusterId, type ExtensionInfo, type ObjectRef } from "../api";
 import { useAppStore } from "../app/store";
 import { Button } from "../components";
+import { clampExpiryDays } from "../features/problems/model";
 import { createBridge, type Bridge } from "./bridge";
 import {
   frameUrl,
@@ -188,6 +189,7 @@ function FrameView({
   const bridge = useRef<Bridge | null>(null);
   const [height, setHeight] = useState<number | null>(null);
   const { theme, tokens } = useFrameTheme();
+  const certExpiryDays = clampExpiryDays(useSettings().settings?.notifications.certExpiryDays);
   const selectionKey = JSON.stringify(selection);
   const blocksKey = JSON.stringify(blocks?.choices ?? {});
   const setBlockOpen = useRef(blocks?.setOpen);
@@ -212,8 +214,9 @@ function FrameView({
       resourceVersion,
       ...(uid !== null ? { uid } : {}),
       ...(blocks ? { blocks: JSON.parse(blocksKey) as Record<string, boolean> } : {}),
+      certExpiryDays,
     }),
-    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion, uid, blocksKey, blocks !== null],
+    [info.id, view, contribution, clusterId, namespacesKey, theme, i18n.language, tokens, selectionKey, resourceVersion, uid, blocksKey, blocks !== null, certExpiryDays],
   );
   const services = info.manifest?.contributes.services ?? [];
   const latest = useRef({ context, name: info.name, autoHeight, onClose, onFailed, services, onHidden });

@@ -1442,10 +1442,14 @@ pub(crate) fn numeric_path<'t>(
     };
     // `|min`/`|max` (#404): a list's smallest or largest number, or earliest or latest time.
     // `|quantity` (#404): a Kubernetes quantity ("64Gi", "500m") read as its amount.
-    if !matches!(filter.trim(), "sum" | "count" | "min" | "max" | "quantity") {
+    // `|daysLeft`: the whole days until a time, 0 once it has passed (a certificate's days left).
+    if !matches!(
+        filter.trim(),
+        "sum" | "count" | "min" | "max" | "quantity" | "daysLeft"
+    ) {
         return Err(at(
             path,
-            "ends in `|sum`, `|count`, `|min`, `|max` or `|quantity`, or in no filter",
+            "ends in `|sum`, `|count`, `|min`, `|max`, `|quantity` or `|daysLeft`, or in no filter",
         ));
     }
     if api < SOURCES_API {
@@ -1787,7 +1791,7 @@ fn split_outside_quotes<'a>(field: &'a str, sep: &str) -> Vec<&'a str> {
 }
 
 /// What may follow a placeholder's path after `|` (#404).
-pub const PLACEHOLDER_FILTERS: [&str; 13] = [
+pub const PLACEHOLDER_FILTERS: [&str; 14] = [
     "firstLine",
     "lastSegment",
     "list",
@@ -1801,6 +1805,7 @@ pub const PLACEHOLDER_FILTERS: [&str; 13] = [
     "product",
     "cpu",
     "bytes",
+    "daysLeft",
 ];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.

@@ -1095,7 +1095,7 @@ export function splitOutsideQuotes(field, sep) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes"];
+const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft"];
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
 
@@ -1671,7 +1671,8 @@ function numericPath(text, api, segments) {
   const filter = text.slice(bar + 1).trim();
   // `|min`/`|max` (#404): a list's smallest or largest number, or earliest or latest time.
   // `|quantity` (#404): a Kubernetes quantity read as its amount.
-  if (!["sum", "count", "min", "max", "quantity"].includes(filter)) fail(segments, "ends in `|sum`, `|count`, `|min`, `|max` or `|quantity`, or in no filter");
+  // `|daysLeft`: the whole days until a time, 0 once it has passed.
+  if (!["sum", "count", "min", "max", "quantity", "daysLeft"].includes(filter)) fail(segments, "ends in `|sum`, `|count`, `|min`, `|max`, `|quantity` or `|daysLeft`, or in no filter");
   if (api < SOURCES_API) fail(segments, `\`|${filter}\` needs sextantApi ${SOURCES_API} or later`);
   return text.slice(0, bar).trim();
 }

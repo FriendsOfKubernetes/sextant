@@ -58,6 +58,7 @@ export function valueAt(obj: unknown, path: string): unknown {
     if (filter === "min" || filter === "max") return extremeOf(value, filter);
     // A Kubernetes quantity ("64Gi", "500m") as its amount (#404): a NodePool's usage against its limit.
     if (filter === "quantity") return parseQuantity(value);
+    if (filter === "daysLeft") return daysLeftOf(value);
     return undefined;
   }
   const steps = parseFieldPath(path.trim());
@@ -528,7 +529,17 @@ export function splitOutsideQuotes(field: string, sep: string): string[] {
   return out;
 }
 
+/** The whole days until a time (RFC 3339), 0 once it has passed (#404): a certificate's days left, as the built-in view. */
+export function daysLeftOf(value: unknown, now = Date.now()): number | undefined {
+  const t = timeOf(value);
+  return t === undefined ? undefined : Math.max(0, Math.floor((t - now) / (24 * 3600_000)));
+}
+
 function filteredText(value: unknown, filter: string | undefined): string | undefined {
+  if (filter === "daysLeft") {
+    const days = daysLeftOf(value);
+    return days === undefined ? undefined : String(days);
+  }
   if (filter === "sum") {
     const n = sumOf(value);
     return n === undefined ? undefined : String(n);

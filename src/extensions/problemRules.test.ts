@@ -21,6 +21,15 @@ const cluster: KubeObject = {
 const holds = (condition: ProblemCondition) => evaluate(condition, cluster).holds;
 
 describe("problem rules of extensions", () => {
+  it("read a time's whole days left, 0 once passed, in a path and a placeholder (#404)", () => {
+    const now = Date.now();
+    const at = (ms: number) => ({ status: { notAfter: new Date(now + ms).toISOString() } });
+    expect(valueAt(at(10.5 * 24 * 3600_000), ".status.notAfter|daysLeft")).toBe(10);
+    expect(valueAt(at(-3 * 24 * 3600_000), ".status.notAfter|daysLeft")).toBe(0);
+    expect(valueAt({ status: {} }, ".status.notAfter|daysLeft")).toBeUndefined();
+    expect(fillTemplate("{{.status.notAfter|daysLeft}} days", at(2.2 * 24 * 3600_000) as unknown as KubeObject)).toBe("2 days");
+  });
+
   it("tell a time expiring within the user's warning days, moved with the setting (#404)", () => {
     const now = Date.now();
     const cert = { metadata: { name: "c" }, status: { notAfter: new Date(now + 10 * 24 * 3600_000).toISOString() } } as unknown as KubeObject;
