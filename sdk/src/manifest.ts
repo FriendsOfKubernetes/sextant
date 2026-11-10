@@ -169,6 +169,8 @@ export interface ManifestColumn {
   }[];
   /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
   afterColumn?: string;
+  /** `"value"`: a text column filters by its cases' `value`s, not the translated texts shown (since Sextant 0.30). */
+  filterBy?: "value";
   /** A `list` column of every path's items in order, each once, not the first path's (since Sextant 0.30). */
   joinPaths?: boolean;
   /** Its width as Sextant's own columns give it: `<n>px` or `minmax(<n>px, <m>fr)` (since Sextant 0.30). */

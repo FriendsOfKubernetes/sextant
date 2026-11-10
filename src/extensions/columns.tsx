@@ -250,8 +250,15 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
           ? { type: "age", value: (obj, ctx) => ageMs(cellOf(column, obj, ctx.now).sort, ctx.now) }
           : format === "duration"
             ? { type: "number", value: (obj, ctx) => numericSort(cellOf(column, obj, ctx.now).sort) }
-            : { type: "string", value: (obj, ctx) => cellOf(column, obj, ctx.now).text },
+            : column.filterBy === "value"
+              ? // The cases' values, not the translated texts (#404): a state's name in every language.
+                { type: "string", value: (obj, ctx) => filterValue(cellOf(column, obj, ctx.now)) }
+              : { type: "string", value: (obj, ctx) => cellOf(column, obj, ctx.now).text },
   };
+}
+
+function filterValue(cell: Cell): string | undefined {
+  return cell.sort === undefined ? cell.text : String(cell.sort);
 }
 
 function numericSort(sort: string | number | undefined): number | undefined {

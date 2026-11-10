@@ -293,6 +293,23 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 ));
             }
         }
+        if let Some(by) = &column.filter_by {
+            if manifest.sextant_api < WINDOW_API {
+                return Err(at(
+                    &here.key("filterBy"),
+                    format!("needs sextantApi {WINDOW_API} or later"),
+                ));
+            }
+            if by != "value"
+                || column.format.unwrap_or(ColumnFormat::Text) != ColumnFormat::Text
+                || column.cases.as_ref().is_none_or(|c| c.is_empty())
+            {
+                return Err(at(
+                    &here.key("filterBy"),
+                    "is `\"value\"` on a text column with `cases`",
+                ));
+            }
+        }
         if column.join_paths.is_some() {
             if manifest.sextant_api < WINDOW_API {
                 return Err(at(
@@ -406,6 +423,17 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 &here.key("cases").index(j).key("when"),
                 manifest.sextant_api,
             )?;
+            // An empty text leaves the cell blank (#404); never a blank one.
+            let text_at = here.key("cases").index(j).key("text");
+            if case.text.is_empty() && manifest.sextant_api < WINDOW_API {
+                return Err(at(
+                    &text_at,
+                    format!("is empty only from sextantApi {WINDOW_API}"),
+                ));
+            }
+            if !case.text.is_empty() && case.text.trim().is_empty() {
+                return Err(at(&text_at, "must not be blank"));
+            }
             // Field values in the text, as a problem message has them (#368), and in its tooltip (#380).
             check_message(
                 &case.text,
@@ -522,8 +550,9 @@ fn is_column_id(text: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b':'))
 }
 
-fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 10] {
+fn fields_of_column(column: &ColumnContribution) -> [(&'static str, bool); 11] {
     [
+        ("filterBy", column.filter_by.is_some()),
         ("joinPaths", column.join_paths.is_some()),
         ("paths", column.paths.is_some()),
         ("lookup", column.lookup.is_some()),

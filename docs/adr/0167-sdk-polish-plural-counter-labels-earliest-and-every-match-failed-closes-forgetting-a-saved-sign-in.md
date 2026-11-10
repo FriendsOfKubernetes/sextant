@@ -206,3 +206,6 @@ A match step's field with dots reaches through a list on the way, and any of its
 whose placeholder has no value gives the row no sort value, so it sorts last in both directions, as a missing value does.
 A `list` column with `joinPaths` shows every path's items in order, each once (a listener declared and one only in the
 status), not the first path's; `exists.nonEmpty` takes a blank text for nothing too.
+A text column with `filterBy: "value"` filters by its cases' `value`s (a state's name in every language) instead of the
+translated texts shown; a case's text may be empty (a blank cell, nothing to translate) that still sorts by its
+`value`; the placeholder filter `|keys` names a map's keys (a SecretStore's provider, the one key of `spec.provider`).

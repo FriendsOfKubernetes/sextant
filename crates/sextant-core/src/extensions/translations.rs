@@ -90,10 +90,13 @@ fn texts(manifest: &ExtensionManifest) -> BTreeMap<String, Text<'_>> {
             );
         }
         for (i, case) in column.cases.iter().flatten().enumerate() {
-            out.insert(
-                format!("columns.{}.cases.{i}.text", column.id),
-                Text::Template(&case.text, 200),
-            );
+            // An empty text is nothing to translate (#404).
+            if !case.text.is_empty() {
+                out.insert(
+                    format!("columns.{}.cases.{i}.text", column.id),
+                    Text::Template(&case.text, 200),
+                );
+            }
             if let Some(tooltip) = &case.tooltip {
                 out.insert(
                     format!("columns.{}.cases.{i}.tooltip", column.id),

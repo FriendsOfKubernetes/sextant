@@ -959,7 +959,7 @@ export function addedPaths(field) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "join", "count", "sum"];
+const PLACEHOLDER_FILTERS = ["firstLine", "lastSegment", "list", "join", "count", "sum", "keys"];
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
 
@@ -1226,7 +1226,8 @@ export function translatableTexts(manifest) {
     out.set(`columns.${column.id}.title`, title);
     if (column.valueText !== undefined) out.set(`columns.${column.id}.valueText`, { max: 40, message: column.valueText });
     (column.cases ?? []).forEach((c, i) => {
-      out.set(`columns.${column.id}.cases.${i}.text`, { max: 200, message: c.text });
+      // An empty text is nothing to translate (#404).
+      if (c.text !== "") out.set(`columns.${column.id}.cases.${i}.text`, { max: 200, message: c.text });
       if (c.tooltip !== undefined) out.set(`columns.${column.id}.cases.${i}.tooltip`, { max: 300, message: c.tooltip });
       (c.tooltipOr ?? []).forEach((t, k) => out.set(`columns.${column.id}.cases.${i}.tooltipOr.${k}`, { max: 300, message: t }));
     });
@@ -1630,7 +1631,7 @@ function checkActionPatch(patch, segments) {
   walk(patch, segments);
 }
 
-const COLUMN_FIELDS = ["joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
+const COLUMN_FIELDS = ["filterBy", "joinPaths", "paths", "lookup", "valueText", "format", "endPaths", "totalPaths", "tones", "tooltipPaths", "cases"];
 
 function checkColumns(manifest) {
   const list = ["contributes", "columns"];
@@ -1641,6 +1642,10 @@ function checkColumns(manifest) {
     if (column.width !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "width"], `needs sextantApi ${WINDOW_API} or later`);
       if (!isColumnWidth(column.width)) fail([...here, "width"], "is `<n>px` or `minmax(<n>px, <m>fr)`, n from 40 to 600 and m from 0.5 to 5");
+    }
+    if (column.filterBy !== undefined) {
+      if (manifest.sextantApi < WINDOW_API) fail([...here, "filterBy"], `needs sextantApi ${WINDOW_API} or later`);
+      if (column.filterBy !== "value" || (column.format ?? "text") !== "text" || (column.cases ?? []).length === 0) fail([...here, "filterBy"], 'is `"value"` on a text column with `cases`');
     }
     if (column.joinPaths !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "joinPaths"], `needs sextantApi ${WINDOW_API} or later`);
@@ -1682,7 +1687,8 @@ function checkColumns(manifest) {
     }
     (column.cases ?? []).forEach((c, j) => {
       checkObjectCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi);
-      // Field values in the text, as a problem message has them (#368).
+      // Field values in the text, as a problem message has them (#368). An empty text leaves the cell blank (#404).
+      if (c.text === "" ? manifest.sextantApi < WINDOW_API : c.text.trim() === "") fail([...here, "cases", j, "text"], c.text === "" ? `is empty only from sextantApi ${WINDOW_API}` : "must not be blank");
       checkMessage(c.text, column.kind, [...here, "cases", j, "text"], false);
       if (c.value !== undefined) {
         // A text column's value may be a text with placeholders, the reason a row sorts by (#404).

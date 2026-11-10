@@ -1300,8 +1300,15 @@ pub fn added_paths(field: &str) -> Vec<&str> {
 }
 
 /// What may follow a placeholder's path after `|` (#404).
-pub const PLACEHOLDER_FILTERS: [&str; 6] =
-    ["firstLine", "lastSegment", "list", "join", "count", "sum"];
+pub const PLACEHOLDER_FILTERS: [&str; 7] = [
+    "firstLine",
+    "lastSegment",
+    "list",
+    "join",
+    "count",
+    "sum",
+    "keys",
+];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.
 pub fn placeholders(text: &str) -> Option<Vec<&str>> {

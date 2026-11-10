@@ -472,6 +472,7 @@
                 "format": "non-blank",
                 "pattern": "\\S"
               },
+              "filterBy": { "description": "\"value\": a text column filters by its cases' values, not the translated texts shown (sextantApi 4).", "type": "string", "enum": ["value"] },
               "joinPaths": { "description": "A list column of every path's items in order, each once, not the first path's (sextantApi 4).", "type": "boolean" },
               "width": {
                 "description": "Its width: `<n>px`, or `minmax(<n>px, <m>fr)` (sextantApi 4).",
@@ -495,12 +496,9 @@
                   "properties": {
                     "when": { "$ref": "#/$defs/problemCondition" },
                     "text": {
-                      "description": "Text with up to 5 `{{<field path>}}` placeholders filled from the object; a case whose placeholder has no value does not hold.",
+                      "description": "Text with up to 5 `{{<field path>}}` placeholders filled from the object; a case whose placeholder has no value does not hold; empty leaves the cell blank (sextantApi 4).",
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 200,
-                      "format": "non-blank",
-                      "pattern": "\\S"
+                      "maxLength": 200
                     },
                     "tone": { "type": "string", "enum": ["ok", "warning", "error", "neutral", "muted"] },
                     "value": {

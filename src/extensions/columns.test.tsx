@@ -48,6 +48,25 @@ describe("an extension's computed column", () => {
     expect(computedColumn("x", column({ paths: [".metadata.labels"], format: "entries" })).searchText!(o, ctx)).toBe("app=shop, tier=web");
   });
 
+  it("leave a cell blank with an empty case text, filter by case values, show a map's keys (#404)", () => {
+    const yes = { type: "exists", path: ".status.connectorStatus" } as const;
+    const running = column({
+      paths: [".status.tasks"],
+      cases: [{ when: { type: "not", of: { type: "exists", path: ".status.tasks" } }, text: "", value: 0 }],
+    });
+    const none = { metadata: { name: "n" }, status: {} } as unknown as KubeObject;
+    const def = computedColumn("x", running);
+    expect(def.searchText!(none, ctx)).toBe("");
+    expect(def.value!(none)).toBe(0);
+    const state = computedColumn("s", column({ paths: [".status.phase"], filterBy: "value", cases: [{ when: yes, text: "Prêt", value: "ready" }] }));
+    const ready = { metadata: { name: "r" }, status: { connectorStatus: {}, phase: "x" } } as unknown as KubeObject;
+    expect(state.searchText!(ready, ctx)).toBe("Prêt");
+    expect(state.filter!.value!(ready, ctx)).toBe("ready");
+    const store = { metadata: { name: "s" }, spec: { provider: { vault: { server: "x" } } } } as unknown as KubeObject;
+    const provider = computedColumn("p", column({ paths: [".spec.provider"], cases: [{ when: { type: "exists", path: ".spec.provider" }, text: "{{.spec.provider|keys}}" }] }));
+    expect(provider.searchText!(store, ctx)).toBe("vault");
+  });
+
   it("join every path's list with joinPaths, each item once (#404)", () => {
     const o = {
       metadata: { name: "k" },

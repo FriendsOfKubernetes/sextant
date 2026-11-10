@@ -350,6 +350,12 @@ function filteredText(value: unknown, filter: string | undefined): string | unde
     if (Array.isArray(value)) return String(value.length);
     return value !== null && typeof value === "object" ? String(Object.keys(value).length) : undefined;
   }
+  if (filter === "keys") {
+    // A map's keys in its order (#404): the provider named by `spec.provider`'s one key.
+    if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
+    const keys = Object.keys(value);
+    return keys.length === 0 ? undefined : formatList(keys);
+  }
   if (filter === "list" || filter === "join") {
     const items = Array.isArray(value) ? value.filter(isScalar).map(String) : isScalar(value) ? [String(value)] : [];
     if (items.length === 0) return undefined;

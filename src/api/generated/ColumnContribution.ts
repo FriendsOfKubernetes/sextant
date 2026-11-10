@@ -51,6 +51,10 @@ cases?: Array<ColumnCase>,
  */
 afterColumn?: string, 
 /**
+ * `"value"`: a text column filters by its cases' `value`s, not the translated texts shown (#404); `sextantApi` 4.
+ */
+filterBy?: string, 
+/**
  * A `list` column of every path's items in order, each once (#404), not the first path's; `sextantApi` 4.
  */
 joinPaths?: boolean, 
