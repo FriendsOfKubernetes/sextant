@@ -86,6 +86,7 @@
   "pods.status": "状态",
   "pods.none": "集群没有 Pod。",
   "pods.more_other": "还有 {{count}} 个 Pod 未列出。",
+  "pods.truncated": "集群的 Pod 多于此处保留的数量：列表不完整。",
   "deploymentsHealthy": "{{healthy}}/{{total}} 健康",
   "apps.name": "应用",
   "apps.status": "状态",

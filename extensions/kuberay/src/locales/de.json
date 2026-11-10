@@ -87,6 +87,7 @@
   "pods.none": "Der Cluster hat keine Pods.",
   "pods.more_one": "{{count}} weiterer Pod ist nicht aufgeführt.",
   "pods.more_other": "{{count}} weitere Pods sind nicht aufgeführt.",
+  "pods.truncated": "Der Cluster hat mehr Pods, als hier gehalten werden: Die Liste ist unvollständig.",
   "deploymentsHealthy": "{{healthy}} von {{total}} fehlerfrei",
   "apps.name": "Anwendung",
   "apps.status": "Status",

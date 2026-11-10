@@ -87,6 +87,7 @@
   "pods.none": "Kümenin Pod’u yok.",
   "pods.more_one": "{{count}} Pod daha listelenmedi.",
   "pods.more_other": "{{count}} Pod daha listelenmedi.",
+  "pods.truncated": "Kümede burada tutulandan daha fazla Pod var: liste eksik.",
   "deploymentsHealthy": "{{total}} içinden {{healthy}} sağlıklı",
   "apps.name": "Uygulama",
   "apps.status": "Durum",

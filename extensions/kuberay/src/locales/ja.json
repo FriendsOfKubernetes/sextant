@@ -86,6 +86,7 @@
   "pods.status": "状態",
   "pods.none": "クラスターに Pod はありません。",
   "pods.more_other": "ほかに {{count}} 個の Pod は表示されていません。",
+  "pods.truncated": "クラスターの Pod はここに保持できる数を超えています。一覧は不完全です。",
   "deploymentsHealthy": "{{total}} 中 {{healthy}} 正常",
   "apps.name": "アプリケーション",
   "apps.status": "状態",

@@ -86,6 +86,7 @@
   "pods.status": "상태",
   "pods.none": "클러스터에 Pod가 없습니다.",
   "pods.more_other": "Pod {{count}}개가 더 있지만 표시되지 않았습니다.",
+  "pods.truncated": "클러스터의 Pod가 여기에 보관되는 수보다 많습니다. 목록이 불완전합니다.",
   "deploymentsHealthy": "{{total}}개 중 {{healthy}}개 정상",
   "apps.name": "애플리케이션",
   "apps.status": "상태",

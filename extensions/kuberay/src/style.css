@@ -39,6 +39,21 @@ body.compact {
   margin: 0 0 0.5rem;
 }
 
+/* A logs button as Sextant's compact button with its logs icon. */
+.kr-logs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-height-compact, 28px);
+  padding: 0 8px;
+}
+
+.kr-icon {
+  flex: none;
+  width: var(--icon-size, 16px);
+  height: var(--icon-size, 16px);
+}
+
 .kr-messages {
   white-space: pre-wrap;
 }

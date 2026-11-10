@@ -50,9 +50,10 @@ const at = (iso: string) => Date.parse(iso);
 const ofKind = (kind: string) => objects.filter((o) => o.kind === kind).map(copy);
 type Cond = Record<string, unknown>;
 const conds = (o: KubeObject) => st(o).conditions as Cond[];
+/** Sets a condition as KubeRay writes it: a metav1.Condition always carries `message` (no omitempty), "" when empty. */
 const setCond = (o: KubeObject, c: Cond) => {
   const list = (st(o).conditions as Cond[] | undefined) ?? [];
-  st(o).conditions = [...list.filter((x) => x.type !== c.type), c];
+  st(o).conditions = [...list.filter((x) => x.type !== c.type), { message: "", ...c }];
 };
 
 // ---------- Sextant's window engine ----------
@@ -71,12 +72,17 @@ interface Detected {
   activeFrom?: number;
   until?: number;
   notify: boolean;
+  /** `notifyAgainOn`'s values: a new one notifies again. */
+  notifyTag?: string;
 }
 interface Engine {
   evaluate(condition: unknown, obj: KubeObject): Verdict;
   detectRule(rule: unknown, obj: KubeObject): Detected[];
 }
 interface WindowColumn {
+  width?: string;
+  value(obj: KubeObject): unknown;
+  filter?: { value(obj: KubeObject, ctx: { now: number }): unknown };
   render(obj: KubeObject, ctx: { now: number }): unknown;
   searchText(obj: KubeObject, ctx: { now: number; t: (key: string, values?: { count?: number }) => string }): string | null | undefined;
 }
@@ -100,17 +106,11 @@ const windowProblems = (kind: KindOf, obj: KubeObject): Detected[] =>
 /** The built-in notification groups (a problem without one was grouped by its reason), as the rules' groups. */
 const BUILT_IN_GROUPS: Record<string, string> = { failed: "failed", headNotReady: "head-not-ready", notReady: "not-ready" };
 
-/**
- * A rule's `since` is one path: a failed RayJob's is its `endTime`; without one the window counts from when it first
- * saw the problem (the built-in detector took the start or the creation then; the end of the day counted is the same).
- */
-const sinceOf = (kind: KindOf, obj: KubeObject, since: string | undefined) => (isKind(kind, RAY_JOB) && !st(obj).endTime ? undefined : since);
-
 function expectSameProblems(kind: KindOf, obj: KubeObject): void {
   const expected = rayProblems(kind, obj).map((d) => ({
     reason: d.reason,
     message: d.message ?? "",
-    since: sinceOf(kind, obj, d.since),
+    since: d.since,
     graceMs: d.graceMs,
     until: d.until,
     group: d.group ? BUILT_IN_GROUPS[d.group] : "job-failed",
@@ -150,7 +150,62 @@ function clusters(): KubeObject[] {
   setCond(gpuHeadDown, { type: "HeadPodReady", status: "False", reason: "HeadPodNotFound", message: "gone" });
   const bare = copy(ok);
   delete (bare as { status?: unknown }).status;
-  return [...ofKind("RayCluster"), headDown, headDownUnnamed, coming, comingHeadDown, old, oldSuspended, oldProvisioning, suspending, suspended, gpuUnnamed, gpuDeleting, gpuHeadDown, bare];
+  // Conditions without words of their own: the reason, else the next condition's, else `status.reason`.
+  const replicaFailure = (o: KubeObject) => conds(o).find((c) => c.type === "ReplicaFailure")!;
+  const gpuNoMessage = copy(gpu);
+  replicaFailure(gpuNoMessage).message = "";
+  const gpuNoWords = copy(gpuNoMessage);
+  replicaFailure(gpuNoWords).reason = "";
+  const gpuNoWordsHeadDown = copy(gpuNoWords);
+  setCond(gpuNoWordsHeadDown, { type: "HeadPodReady", status: "False", reason: "HeadPodNotFound" });
+  const gpuNoWordsHeadMessage = copy(gpuNoWordsHeadDown);
+  setCond(gpuNoWordsHeadMessage, { type: "HeadPodReady", status: "False", reason: "HeadPodNotFound", message: "Head Pod not found" });
+  const gpuNoWordsAtAll = copy(gpuNoWords);
+  st(gpuNoWordsAtAll).reason = "quota exceeded";
+  const headDownNoMessage = copy(headDown);
+  conds(headDownNoMessage).find((c) => c.type === "HeadPodReady")!.message = "";
+  const suspendingQuiet = copy(ok);
+  setCond(suspendingQuiet, { type: "RayClusterSuspending", status: "True" });
+  st(suspendingQuiet).reason = "suspending now";
+  const legacy = find("RayCluster", "raycluster-legacy");
+  const legacyHeadDown = copy(legacy);
+  setCond(legacyHeadDown, { type: "HeadPodReady", status: "False", reason: "HeadPodNotFound" });
+  // Workers of operators before `desiredWorkerReplicas`: the replicas of the groups not suspended.
+  const groups = (o: KubeObject) => (o.spec as { workerGroupSpecs: Record<string, unknown>[] }).workerGroupSpecs;
+  const noDesired = copy(old);
+  delete st(noDesired).desiredWorkerReplicas;
+  groups(noDesired).push({ groupName: "big", replicas: 3, minReplicas: 0, maxReplicas: 4 }, { groupName: "off", replicas: 7, suspend: true, numOfHosts: 1 });
+  const noDesiredNoReady = copy(noDesired);
+  delete st(noDesiredNoReady).readyWorkerReplicas;
+  const noDesiredAllSuspended = copy(noDesired);
+  for (const g of groups(noDesiredAllSuspended)) g.suspend = true;
+  return [
+    ...ofKind("RayCluster"),
+    headDown,
+    headDownUnnamed,
+    coming,
+    comingHeadDown,
+    old,
+    oldSuspended,
+    oldProvisioning,
+    suspending,
+    suspended,
+    gpuUnnamed,
+    gpuDeleting,
+    gpuHeadDown,
+    bare,
+    gpuNoMessage,
+    gpuNoWords,
+    gpuNoWordsHeadDown,
+    gpuNoWordsHeadMessage,
+    gpuNoWordsAtAll,
+    headDownNoMessage,
+    suspendingQuiet,
+    legacyHeadDown,
+    noDesired,
+    noDesiredNoReady,
+    noDesiredAllSuspended,
+  ];
 }
 
 function jobs(): KubeObject[] {
@@ -260,8 +315,56 @@ function services(): KubeObject[] {
   setCond(suspending, { type: "Suspending", status: "True" });
   const deleting = copy(notReady);
   deleting.metadata.deletionTimestamp = "2026-10-22T11:00:00Z";
+  // The first failed application by name gives the message, whether it failed to deploy or is unhealthy.
+  const bothFailed = copy(failedDown);
+  apps(bothFailed, "activeServiceStatus").a_app = { status: "UNHEALTHY", message: "a is down" };
+  const bothFailedLater = copy(failedDown);
+  apps(bothFailedLater, "activeServiceStatus").z_app = { status: "UNHEALTHY", message: "z is down" };
+  const bothFailedWhileReady = copy(failedWhileReady);
+  apps(bothFailedWhileReady, "activeServiceStatus").a_app = { status: "UNHEALTHY", message: "a is down" };
+  // Invalid with a failed application: the application's message.
+  const invalidWithApp = copy(sample);
+  setCond(invalidWithApp, { type: "Ready", status: "False", reason: "InitializingTimeout", message: "timed out", lastTransitionTime: "2026-10-22T10:00:00Z" });
+  const invalidWithActiveApp = copy(failedDown);
+  setCond(invalidWithActiveApp, { type: "Ready", status: "False", reason: "ValidationFailed", message: "invalid", lastTransitionTime: "2026-10-22T10:00:00Z" });
+  const invalidWithQuietApp = copy(invalidWithApp);
+  delete apps(invalidWithQuietApp, "pendingServiceStatus").fruit_app!.message;
+  const invalidQuiet = copy(invalid);
+  conds(invalidQuiet).find((c) => c.type === "Ready")!.message = "";
+  // A failed application without a message: the False Ready's message, else its reason.
+  const failedQuiet = copy(failedDown);
+  delete apps(failedQuiet, "activeServiceStatus").fruit_app!.message;
+  const failedQuietNoMessage = copy(failedQuiet);
+  conds(failedQuietNoMessage).find((c) => c.type === "Ready")!.message = "";
+  const failedQuietWhileReady = copy(failedWhileReady);
+  delete apps(failedQuietWhileReady, "activeServiceStatus").fruit_app!.message;
+  const pendingQuiet = copy(sample);
+  delete apps(pendingQuiet, "pendingServiceStatus").fruit_app!.message;
+  const pendingQuietNoMessage = copy(pendingQuiet);
+  conds(pendingQuietNoMessage).find((c) => c.type === "Ready")!.message = "";
+  const notReadyNoMessage = copy(notReady);
+  conds(notReadyNoMessage).find((c) => c.type === "Ready")!.message = "";
+  const suspendedWithApp = copy(sample);
+  setCond(suspendedWithApp, { type: "Suspended", status: "True" });
+  const upgradingQuiet = copy(upgradingDown);
+  conds(upgradingQuiet).find((c) => c.type === "Ready")!.message = "";
   return [
     ...ofKind("RayService"),
+    bothFailed,
+    bothFailedLater,
+    bothFailedWhileReady,
+    invalidWithApp,
+    invalidWithActiveApp,
+    invalidWithQuietApp,
+    invalidQuiet,
+    failedQuiet,
+    failedQuietNoMessage,
+    failedQuietWhileReady,
+    pendingQuiet,
+    pendingQuietNoMessage,
+    notReadyNoMessage,
+    suspendedWithApp,
+    upgradingQuiet,
     upgrading,
     upgradingDown,
     rolling,
@@ -398,9 +501,21 @@ describe("the problem rules, against the built-in detector", () => {
     expect(d).toMatchObject({ reason: "AppFailed", since: "2026-10-21T08:02:40Z", until: at("2026-10-21T08:02:40Z") + FAILED_JOB_MS });
     const invalid = jobs().find((o) => st(o).jobDeploymentStatus === "ValidationFailed")!;
     expect(windowProblems(RAY_JOB, invalid)[0]).toMatchObject({ reason: "ValidationFailed", until: at("2026-10-21T08:00:00Z") + FAILED_JOB_MS });
+    expect(windowProblems(RAY_JOB, invalid)[0]?.since).toBe("2026-10-21T08:00:00Z");
     const started = find("RayJob", "rayjob-sample");
     delete st(started).endTime;
-    expect(windowProblems(RAY_JOB, started)[0]?.until).toBe(at("2026-10-21T08:00:05Z") + FAILED_JOB_MS);
+    expect(windowProblems(RAY_JOB, started)[0]).toMatchObject({ since: "2026-10-21T08:00:05Z", until: at("2026-10-21T08:00:05Z") + FAILED_JOB_MS });
+  });
+
+  it("notify again about a RayJob when its reason changes, as the built-in ones (notified once per reason)", () => {
+    // The built-in notification was per object and reason (a problem without a group): one per reason here too.
+    const identity = (o: KubeObject) => windowProblems(RAY_JOB, o).map((d) => `${d.group}|${d.notifyTag ?? ""}`)[0];
+    const builtIn = (o: KubeObject) => rayProblems(RAY_JOB, o)[0]?.reason;
+    const failed = jobs().filter((o) => windowProblems(RAY_JOB, o).length > 0);
+    for (const a of failed) for (const b of failed) expect(identity(a) === identity(b), `${builtIn(a)} ${builtIn(b)}`).toBe(builtIn(a) === builtIn(b));
+    const other = find("RayJob", "rayjob-sample");
+    st(other).reason = "DeadlineExceeded";
+    expect(identity(other)).not.toBe(identity(find("RayJob", "rayjob-sample")));
   });
 
   it("find a RayService not ready or with a failed Serve application, with the built-in reasons, graces and times", () => {
@@ -410,11 +525,22 @@ describe("the problem rules, against the built-in detector", () => {
     expect(d?.message).toContain("No module named 'fruit'");
   });
 
-  it("differ where the API cannot say it: an invalid RayService with a failed application gives Ready's message", () => {
-    const both = find("RayService", "rayservice-sample");
-    setCond(both, { type: "Ready", status: "False", reason: "InitializingTimeout", message: "timed out", lastTransitionTime: "2026-10-22T10:00:00Z" });
-    expect(rayProblems(RAY_SERVICE, both)[0]?.message).toContain("No module named 'fruit'");
-    expect(windowProblems(RAY_SERVICE, both).map((p) => [p.reason, p.message])).toEqual([["InitializingTimeout", "timed out"]]);
+  it("tell the first failed application by name, and an invalid RayService's failed application", () => {
+    const both = services().find((o) => (st(o).activeServiceStatus as { applicationStatuses?: Apps }).applicationStatuses?.a_app)!;
+    expect(windowProblems(RAY_SERVICE, both)[0]?.message).toBe("a is down");
+    const invalid = find("RayService", "rayservice-sample");
+    setCond(invalid, { type: "Ready", status: "False", reason: "InitializingTimeout", message: "timed out", lastTransitionTime: "2026-10-22T10:00:00Z" });
+    expect(windowProblems(RAY_SERVICE, invalid).map((p) => [p.reason, p.graceMs])).toEqual([["InitializingTimeout", undefined]]);
+    expect(windowProblems(RAY_SERVICE, invalid)[0]?.message).toContain("No module named 'fruit'");
+  });
+
+  it("give a condition's reason where its message is empty, as the built-in ones", () => {
+    const gpu = find("RayCluster", "raycluster-gpu");
+    conds(gpu).find((c) => c.type === "ReplicaFailure")!.message = "";
+    expect(windowProblems(RAY_CLUSTER, gpu)[0]?.message).toBe("FailedCreateWorkerPod");
+    const svc = find("RayService", "rayservice-ready");
+    setCond(svc, { type: "Ready", status: "False", reason: "ZeroServeEndpoints", lastTransitionTime: "2026-10-22T10:00:00Z" });
+    expect(windowProblems(RAY_SERVICE, svc)[0]?.message).toBe("ZeroServeEndpoints");
   });
 
   it("are each met by a variant", () => {
@@ -450,9 +576,10 @@ describe("the kinds' Only problems, against the built-in filter", () => {
     }
   });
 
-  it("of RayServices: the rules' problems (their graces included)", () => {
-    expect((kindEntry(RAY_SERVICE) as { problemWhen?: unknown }).problemWhen).toBeUndefined();
-    // Every RayService the built-in filter shows has a problem of the rules, and no other.
+  it("of RayServices: failed or not ready, at once", () => {
+    const when = (kindEntry(RAY_SERVICE) as { problemWhen?: unknown }).problemWhen;
+    for (const o of services()) expect(engine.evaluate(when, o).holds, o.metadata.name).toBe(isProblem(o, RAY_SERVICE));
+    // And every RayService it shows has a problem of the rules (after their graces), and no other.
     for (const o of services()) expect(windowProblems(RAY_SERVICE, o).length > 0, o.metadata.name).toBe(isProblem(o, RAY_SERVICE));
   });
 
@@ -487,7 +614,6 @@ function drawn(id: string, obj: KubeObject): Drawn {
   // An empty hover (`title=""`) shows nothing, as none.
   return { title: title || undefined, tone: node?.props?.tone };
 }
-const toneOf = (tone: string) => (tone === "muted" ? "neutral" : tone);
 const word = (key: string) => (en as Record<string, string>)[key];
 
 describe("the columns, against the built-in ones", () => {
@@ -514,23 +640,63 @@ describe("the columns, against the built-in ones", () => {
     ]);
   });
 
+  it("have the built-in widths, and the states sort by the state, as the built-in ones", () => {
+    const widths = Object.fromEntries(manifest.contributes.columns.map((c) => [c.id, windowColumn(c.id).width]));
+    expect(widths).toEqual({
+      "cluster-status": "130px",
+      "cluster-workers": "90px",
+      "cluster-head-ip": "minmax(110px, 1fr)",
+      "cluster-ray-version": "100px",
+      "job-status": "110px",
+      "job-job-status": "110px",
+      "job-deployment-status": "130px",
+      "job-cluster": "minmax(140px, 1.5fr)",
+      "job-started": "100px",
+      "service-status": "120px",
+      "service-applications": "110px",
+      "service-endpoints": "90px",
+      "service-active-cluster": "minmax(160px, 1.5fr)",
+    });
+    // The built-in tables sorted and filtered these columns by the state's name, in every language.
+    const byState = (id: string, list: KubeObject[], state: (o: KubeObject) => string) => {
+      for (const o of list) {
+        expect(windowColumn(id).value(o), o.metadata.name).toBe(state(o));
+        expect(windowColumn(id).filter?.value(o, { now: NOW }), o.metadata.name).toBe(state(o));
+      }
+    };
+    byState("cluster-status", clusters(), clusterState);
+    byState("job-status", jobs(), jobState);
+    byState("service-status", services(), serviceState);
+  });
+
   it("of RayClusters: the state toned with the operator's reason, workers ready of desired, head IP and Ray version", () => {
     for (const o of clusters()) {
       const state = clusterState(o);
       expect(cell("cluster-status", o), o.metadata.name).toBe(word(`clusterState.${state}`));
-      expect(drawn("cluster-status", o), o.metadata.name).toEqual({ title: clusterReason(o) || undefined, tone: toneOf(CLUSTER_TONE[state]) });
+      expect(drawn("cluster-status", o), o.metadata.name).toEqual({ title: clusterReason(o) || undefined, tone: CLUSTER_TONE[state] });
       const w = workersOf(o);
-      if (st(o)?.desiredWorkerReplicas !== undefined) expect(cell("cluster-workers", o)).toBe(`${w.ready}/${w.desired}`);
+      expect(cell("cluster-workers", o), o.metadata.name).toBe(`${w.ready}/${w.desired}`);
+      expect(windowColumn("cluster-workers").value(o)).toBe(`${w.ready}/${w.desired}`);
       expect(cell("cluster-head-ip", o)).toBe(headOf(o).podIP);
       expect(cell("cluster-ray-version", o)).toBe(str(get(o, "spec", "rayVersion")));
     }
+  });
+
+  it("of RayClusters before `desiredWorkerReplicas`: the replicas of the groups not suspended; words from the next condition", () => {
+    const list = clusters();
+    const named = (n: number) => list[list.length - n]!;
+    expect([3, 2, 1].map((n) => cell("cluster-workers", named(n)))).toEqual(["1/4", "0/4", "1/0"]);
+    expect(cell("cluster-workers", find("RayCluster", "raycluster-legacy"))).toBe("0/0");
+    const quiet = list.find((o) => (st(o) as Record<string, unknown> | undefined)?.reason === "quota exceeded")!;
+    expect(drawn("cluster-status", quiet)).toEqual({ title: "quota exceeded", tone: "danger" });
+    expect(windowProblems(RAY_CLUSTER, quiet).map((p) => [p.reason, p.message])).toEqual([["ReplicaFailure", "quota exceeded"]]);
   });
 
   it("of RayJobs: the state toned with KubeRay's message, the two statuses, the RayCluster and the start", () => {
     for (const o of jobs()) {
       const state = jobState(o);
       expect(cell("job-status", o), o.metadata.name).toBe(word(`jobState.${state}`));
-      expect(drawn("job-status", o)).toEqual({ title: jobMessageOf(o), tone: toneOf(JOB_TONE[state]) });
+      expect(drawn("job-status", o)).toEqual({ title: jobMessageOf(o), tone: JOB_TONE[state] });
       expect(cell("job-job-status", o) || undefined).toBe(jobStatusOf(o));
       expect(cell("job-deployment-status", o)).toBe(deploymentStatusOf(o));
       expect(cell("job-cluster", o)).toBe(str(get(o, "status", "rayClusterName")));
@@ -541,11 +707,11 @@ describe("the columns, against the built-in ones", () => {
     for (const o of services()) {
       const state = serviceState(o);
       expect(cell("service-status", o), o.metadata.name).toBe(word(`serviceState.${state}`));
-      // Upgrading or suspended, the built-in hover named Ready=False's message too; the column says nothing then.
-      const title = state === "upgrading" || state === "suspended" ? undefined : serviceReason(o) || undefined;
-      expect(drawn("service-status", o), o.metadata.name).toEqual({ title, tone: toneOf(SERVICE_TONE[state]) });
+      expect(drawn("service-status", o), o.metadata.name).toEqual({ title: serviceReason(o) || undefined, tone: SERVICE_TONE[state] });
       const apps = activeOf(o).apps;
-      expect(cell("service-applications", o), o.metadata.name).toBe(apps.length === 0 ? undefined : String(apps.filter((a) => a.status === "RUNNING").length));
+      const running = apps.length === 0 ? undefined : `${apps.filter((a) => a.status === "RUNNING").length}/${apps.length}`;
+      expect(cell("service-applications", o), o.metadata.name).toBe(running);
+      expect(windowColumn("service-applications").value(o), o.metadata.name).toBe(running);
       expect(cell("service-endpoints", o)).toBe(st(o).numServeEndpoints === undefined ? undefined : String(st(o).numServeEndpoints));
       expect(cell("service-active-cluster", o)).toBe(activeOf(o).rayClusterName);
     }
@@ -557,10 +723,11 @@ describe("the columns, against the built-in ones", () => {
 describe("the kinds", () => {
   it("are the built-in ones", () => {
     expect(isKind(RAY_CLUSTER, { group: "ray.io", kind: "RayCluster" })).toBe(true);
-    expect(manifest.contributes.detailsSections.map((d) => [d.id, d.kinds[0]!.kind, d.order])).toEqual([
-      ["ray-cluster", "RayCluster", 20],
-      ["ray-job", "RayJob", 20],
-      ["ray-service", "RayService", 20],
+    // One untitled section per kind, as the built-in one (it had no heading of its own).
+    expect(manifest.contributes.detailsSections.map((d) => [d.id, d.kinds[0]!.kind, d.order, d.heading])).toEqual([
+      ["ray-cluster", "RayCluster", 20, false],
+      ["ray-job", "RayJob", 20, false],
+      ["ray-service", "RayService", 20, false],
     ]);
   });
 });

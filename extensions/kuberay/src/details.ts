@@ -7,8 +7,10 @@
 //   ray-service — its state and why it is not ready, the serve Service, the active RayCluster and the pending one of an
 //                 upgrade with their Serve applications, and `serveConfigV2` with every environment value and
 //                 secret-looking value masked (mask.ts), or not at all when it cannot be read safely.
-// Each frame reads the shown object again whenever its resourceVersion changes. Conditions, events and YAML are
-// Sextant's own sections. Read-only (ADR-0115).
+// Each frame reads the shown object again whenever its resourceVersion changes. Its blocks open and close as the
+// built-in section's did, kept in Sextant's own memory of details sections (`context.blocks`, `ui.setBlockOpen`) with
+// the panel's "Expand all" and "Collapse all". Conditions, events and YAML are Sextant's own sections. Read-only
+// (ADR-0115).
 import { trackObjects, ui, type KubeObject, type ObjectRef, type Sextant, type UiContent, type UiTone, type Watch, type WatchParams } from "@sextant/extension-sdk";
 import { code, dateTime, element, errorText, note, remark } from "./dom";
 import { t } from "./i18n";
@@ -62,20 +64,41 @@ import {
 } from "./model";
 import { safeUriText } from "./uri";
 
-/** A list watched while the section shows: its objects, whether the first answer came, whether it failed. */
+/**
+ * A list watched while the section shows: its objects, whether the first answer came, whether it failed, and whether
+ * more match than the watch keeps.
+ */
 export interface Live {
   items: KubeObject[];
   ready: boolean;
   failed: boolean;
+  capped: boolean;
 }
+
+/** Pods one RayCluster's watch keeps (a large cluster can have thousands of workers), as the built-in view's. */
+export const MAX_RAY_PODS = 2000;
+
+/**
+ * Which blocks are open, and where a toggle goes: Sextant's own memory of details sections (`context.blocks`, written
+ * by `ui.setBlockOpen`), kept as Settings → Appearance says, with the panel's "Expand all" and "Collapse all" — where
+ * the built-in section's blocks were kept.
+ */
+export interface BlockMemory {
+  isOpen(block: string): boolean;
+  setOpen(block: string, open: boolean): void;
+}
+
+/** Blocks that are all open and remember nothing. */
+export const OPEN_BLOCKS: BlockMemory = { isOpen: () => true, setOpen: () => undefined };
 
 /** The lists a section watches besides its object, by name; `undefined` when it watches none of that name. */
 export type Related = Record<string, Live | undefined>;
 
 const present = (nodes: (Node | null | false | undefined)[]): Node[] => nodes.filter((n): n is Node => Boolean(n));
 
-/** A titled block as the built-in view's: open, and closable with its title. */
-const block = (title: string, content: UiContent): HTMLElement => ui.block(title, content, { collapsible: true });
+/** A titled block as the built-in view's: open by default, closable with its title, as Sextant's memory says. */
+const block = (memory: BlockMemory, id: string, title: string, content: UiContent, actions?: HTMLElement[]): HTMLElement =>
+  ui.block(title, content, { collapsible: true, collapsed: !memory.isOpen(id), onToggle: (open) => memory.setOpen(id, open), actions });
 
 /** A link to an object's details in Sextant's panel, named by its name; nothing without a name. */
 export function link(sextant: Sextant, kind: KindOf, name: string | undefined, namespace: string | null = null): HTMLElement | null {
@@ -98,12 +121,32 @@ function statusWord(text: string, tone: UiTone, title: string | undefined): HTML
   return node;
 }
 
-/** A logs button: Sextant's logs tab opens; a refusal shows beside the buttons. */
-function logsButton(sextant: Sextant, label: string, params: { namespace: string; pod: string } | { namespace: string; labelSelector: string }, error: HTMLElement): HTMLElement {
-  return ui.button(label, () => {
+const SVG = "http://www.w3.org/2000/svg";
+/** Sextant's "logs" icon (Lucide's scroll-text, ISC), drawn in the text colour and hidden from screen readers. */
+const LOGS_ICON = ["M15 12h-5", "M15 8h-5", "M19 17V5a2 2 0 0 0-2-2H4", "M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"];
+function logsIcon(): SVGSVGElement {
+  const svg = document.createElementNS(SVG, "svg");
+  for (const [name, value] of Object.entries({ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true", focusable: "false", class: "kr-icon" }))
+    svg.setAttribute(name, value);
+  for (const d of LOGS_ICON) {
+    const path = document.createElementNS(SVG, "path");
+    path.setAttribute("d", d);
+    svg.append(path);
+  }
+  return svg;
+}
+
+type LogsParams = { namespace: string; pod: string } | { namespace: string; labelSelector: string; title: string };
+
+/** A compact logs button with the logs icon, as the built-in view's: Sextant's logs tab opens; a refusal shows in `error`. */
+function logsButton(sextant: Sextant, label: string, params: LogsParams, error: HTMLElement): HTMLElement {
+  const button = ui.button(label, () => {
     error.replaceChildren();
     void sextant.ui.openLogs(params).catch((err: unknown) => error.replaceChildren(ui.errorState(errorText(err))));
   });
+  button.classList.add("kr-logs");
+  button.prepend(logsIcon());
+  return button;
 }
 
 // ---------- RayCluster ----------
@@ -112,10 +155,10 @@ function logsButton(sextant: Sextant, label: string, params: { namespace: string
 export function clusterWatches(obj: KubeObject): Record<string, Omit<WatchParams, "clusterId"> | null> {
   const ns = obj.metadata.namespace;
   const name = obj.metadata.name;
-  return { pods: ns && name ? { kind: POD, namespaces: [ns], labelSelector: clusterSelector(name) } : null };
+  return { pods: ns && name ? { kind: POD, namespaces: [ns], labelSelector: clusterSelector(name), maxObjects: MAX_RAY_PODS } : null };
 }
 
-export function clusterView(sextant: Sextant, obj: KubeObject, related: Related): Node[] {
+export function clusterView(sextant: Sextant, obj: KubeObject, related: Related, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const ns = obj.metadata.namespace ?? null;
   const name = obj.metadata.name;
   const state = clusterState(obj);
@@ -124,6 +167,7 @@ export function clusterView(sextant: Sextant, obj: KubeObject, related: Related)
   const live = related.pods;
   const loading = live !== undefined && !live.ready;
   const failed = live?.failed === true;
+  const truncated = live?.capped === true;
   const pods = [...(live?.items ?? [])].sort((a, b) => (a.metadata.name ?? "").localeCompare(b.metadata.name ?? ""));
   const headPod = pods.find((p) => p.metadata.name === head.podName) ?? pods.find((p) => labelOf(p, NODE_TYPE_LABEL) === "head");
   const reason = clusterReason(obj);
@@ -148,15 +192,14 @@ export function clusterView(sextant: Sextant, obj: KubeObject, related: Related)
     return [link(sextant, POD, p.metadata.name, ns), labelOf(p, NODE_TYPE_LABEL) ?? "", labelOf(p, GROUP_LABEL) ?? "", ui.status(phase, statusTone(phase))];
   });
   const error = element("div");
+  // In the Pods block's head, as the built-in view's; the workers' merged tab titled `raycluster/<name>` as its was.
   const buttons =
     ns && name
-      ? element(
-          "div",
-          { className: "kr-actions" },
+      ? [
           headPod ? logsButton(sextant, t("pods.headLogs"), { namespace: ns, pod: headPod.metadata.name }, error) : null,
-          logsButton(sextant, t("pods.workerLogs"), { namespace: ns, labelSelector: workerSelector(name) }, error),
-        )
-      : null;
+          logsButton(sextant, t("pods.workerLogs"), { namespace: ns, labelSelector: workerSelector(name), title: `raycluster/${name}` }, error),
+        ].filter((b): b is HTMLElement => b !== null)
+      : undefined;
   const groupHeaders = ["name", "desired", "bounds", "ready", "suspended"].map((h) => t(`groups.${h}`));
   const podHeaders = ["name", "type", "group", "status"].map((h) => t(`pods.${h}`));
   return present([
@@ -182,25 +225,32 @@ export function clusterView(sextant: Sextant, obj: KubeObject, related: Related)
       ["endpoints", ui.chips(endpointsOf(obj))],
       ["desired", ui.chips(desired)],
     ]),
-    block(t("groups.title"), [
+    block(memory, "groups", t("groups.title"), [
       groups.length > 0 && ui.table(groupHeaders, groups, { label: t("groups.title") }),
       groups.length === 0 && remark(t("groups.none")),
     ]),
-    block(t("pods.title"), [
+    block(
+      memory,
+      "pods",
+      t("pods.title"),
+      [
+        loading && remark(t("pods.loading")),
+        failed && remark(t("pods.error")),
+        listed.length > 0 && ui.table(podHeaders, listed, { label: t("pods.title") }),
+        !loading && !failed && pods.length === 0 && remark(t("pods.none")),
+        pods.length > MAX_LISTED_PODS && remark(t("pods.more", { count: pods.length - MAX_LISTED_PODS })),
+        truncated && remark(t("pods.truncated")),
+      ],
       buttons,
-      error,
-      loading && remark(t("pods.loading")),
-      failed && remark(t("pods.error")),
-      listed.length > 0 && ui.table(podHeaders, listed, { label: t("pods.title") }),
-      !loading && !failed && pods.length === 0 && remark(t("pods.none")),
-      pods.length > MAX_LISTED_PODS && remark(t("pods.more", { count: pods.length - MAX_LISTED_PODS })),
-    ]),
+    ),
+    // A logs button's refusal, seen while the block is closed too.
+    error,
   ]);
 }
 
 // ---------- RayJob ----------
 
-export function jobView(sextant: Sextant, obj: KubeObject): Node[] {
+export function jobView(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const ns = obj.metadata.namespace ?? null;
   const state = jobState(obj);
   const submitter = submitterJobOf(obj);
@@ -230,8 +280,14 @@ export function jobView(sextant: Sextant, obj: KubeObject): Node[] {
       ["failed", num(get(obj, "status", "failed"))?.toString()],
       ["shutdown", get(obj, "spec", "shutdownAfterJobFinishes") === true ? t("yes") : null],
     ]),
-    block(t("entrypoint"), entrypoint ?? remark(t("noEntrypoint"))),
-    ns && submitter ? element("div", { className: "kr-actions" }, logsButton(sextant, t("submitterLogs"), { namespace: ns, labelSelector: submitterSelector(submitter) }, error)) : null,
+    block(memory, "entrypoint", t("entrypoint"), entrypoint ?? remark(t("noEntrypoint"))),
+    ns && submitter
+      ? element(
+          "div",
+          { className: "kr-actions" },
+          logsButton(sextant, t("submitterLogs"), { namespace: ns, labelSelector: submitterSelector(submitter), title: submitterSelector(submitter) }, error),
+        )
+      : null,
     error,
   ]);
 }
@@ -258,9 +314,9 @@ function appsTable(title: string, apps: ServeApp[]): HTMLElement | null {
   return ui.table(headers, rows, { label: title });
 }
 
-function serveClusterBlock(sextant: Sextant, title: string, cluster: ServeCluster, ns: string | null): HTMLElement | null {
+function serveClusterBlock(sextant: Sextant, memory: BlockMemory, id: string, title: string, cluster: ServeCluster, ns: string | null): HTMLElement | null {
   if (!cluster.rayClusterName && cluster.apps.length === 0) return null;
-  return block(title, [
+  return block(memory, id, title, [
     fieldsOf([
       ["rayCluster", link(sextant, RAY_CLUSTER, cluster.rayClusterName, ns)],
       ["trafficPercent", cluster.trafficPercent === undefined ? null : t("percent", { value: cluster.trafficPercent })],
@@ -270,7 +326,7 @@ function serveClusterBlock(sextant: Sextant, title: string, cluster: ServeCluste
   ]);
 }
 
-export function serviceView(sextant: Sextant, obj: KubeObject): Node[] {
+export function serviceView(sextant: Sextant, obj: KubeObject, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   const ns = obj.metadata.namespace ?? null;
   const state = serviceState(obj);
   const reason = serviceReason(obj);
@@ -291,9 +347,9 @@ export function serviceView(sextant: Sextant, obj: KubeObject): Node[] {
       ["upgrade", upgrade?.status === "True" ? upgrade.message || upgrade.reason : null],
       ["rollback", rollback?.status === "True" ? rollback.message || rollback.reason || t("yes") : null],
     ]),
-    serveClusterBlock(sextant, t("activeCluster"), activeOf(obj), ns),
-    serveClusterBlock(sextant, t("pendingCluster"), pendingOf(obj), ns),
-    block(t("serveConfig"), serveConfig),
+    serveClusterBlock(sextant, memory, "active-apps", t("activeCluster"), activeOf(obj), ns),
+    serveClusterBlock(sextant, memory, "pending-apps", t("pendingCluster"), pendingOf(obj), ns),
+    block(memory, "serve-config", t("serveConfig"), serveConfig),
   ]);
 }
 
@@ -306,14 +362,14 @@ function watchesOf(contribution: string, obj: KubeObject): Record<string, Omit<W
 }
 
 /** The section's content for its object and the lists it watches. */
-export function sectionView(sextant: Sextant, contribution: string, obj: KubeObject, related: Related): Node[] {
+export function sectionView(sextant: Sextant, contribution: string, obj: KubeObject, related: Related, memory: BlockMemory = OPEN_BLOCKS): Node[] {
   switch (contribution) {
     case "ray-cluster":
-      return clusterView(sextant, obj, related);
+      return clusterView(sextant, obj, related, memory);
     case "ray-job":
-      return jobView(sextant, obj);
+      return jobView(sextant, obj, memory);
     case "ray-service":
-      return serviceView(sextant, obj);
+      return serviceView(sextant, obj, memory);
     default:
       return [ui.empty(t("common.nothingToShow", { view: contribution }))];
   }
@@ -346,7 +402,7 @@ class Watches {
   }
 
   private start(key: string, spec: Omit<WatchParams, "clusterId">): { watch: Watch; live: Live } {
-    const live: Live = { items: [], ready: false, failed: false };
+    const live: Live = { items: [], ready: false, failed: false, capped: false };
     const settle = (failed: boolean) => {
       live.ready = true;
       live.failed = failed;
@@ -363,6 +419,13 @@ class Watches {
         },
       ),
       onError: () => settle(true),
+      // More match than `maxObjects`: the list is incomplete, and the view says so.
+      onCapped: (total) => {
+        const capped = spec.maxObjects !== undefined && total > spec.maxObjects;
+        if (capped === live.capped) return;
+        live.capped = capped;
+        this.changed();
+      },
     });
     watch.started.catch(() => undefined);
     const entry = { watch, live };
@@ -377,9 +440,24 @@ class Watches {
 
 /**
  * Starts the details section `contribution` on the object in the context: read again whenever its resourceVersion
- * changes; a RayCluster's pods watched while it shows, and drawn again as they change.
+ * changes; a RayCluster's pods watched while it shows, and drawn again as they change. The view is drawn again when
+ * Sextant's memory of its blocks changes ("Expand all", another panel of the kind), unless the blocks already show it
+ * (the user's own toggle).
  */
 export function startDetails(sextant: Sextant, root: HTMLElement, contribution: string): () => void {
+  /** How the shown blocks show now, each toggle included. */
+  const shownBlocks = new Map<string, boolean>();
+  const memory: BlockMemory = {
+    isOpen: (id) => {
+      const open = ui.blockOpen(sextant.context.blocks, id, true);
+      shownBlocks.set(id, open);
+      return open;
+    },
+    setOpen: (id, open) => {
+      shownBlocks.set(id, open);
+      void sextant.ui.setBlockOpen(id, open).catch(() => undefined);
+    },
+  };
   let shownVersion: string | null | undefined;
   let shownRef: string | null = null;
   let reading = 0;
@@ -390,7 +468,8 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
   const render = () => {
     if (!object || stopped) return;
     const related = watches.want(watchesOf(contribution, object));
-    root.replaceChildren(...sectionView(sextant, contribution, object, related));
+    shownBlocks.clear();
+    root.replaceChildren(...sectionView(sextant, contribution, object, related, memory));
   };
   const schedule = () => {
     if (scheduled || stopped) return;
@@ -429,7 +508,10 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
       root.replaceChildren(ui.loading(t("loading")));
     }
     const version = sextant.context.resourceVersion;
-    if (version === shownVersion) return;
+    if (version === shownVersion) {
+      if (object && [...shownBlocks].some(([id, open]) => ui.blockOpen(sextant.context.blocks, id, true) !== open)) render();
+      return;
+    }
     shownVersion = version;
     void read(ref);
   };

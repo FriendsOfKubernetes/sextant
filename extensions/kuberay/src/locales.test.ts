@@ -60,7 +60,9 @@ describe("catalogs", () => {
 });
 
 describe("the manifest's translations", () => {
-  type Case = { text: string; tooltip?: string };
+  type Case = { text: string; tooltip?: string; tooltipOr?: string[] };
+  /** A text of placeholders and signs only has nothing to translate: every language uses it as written. */
+  const wordless = (text: string) => !/\p{L}/u.test(text.replace(/\{\{[\s\S]*?\}\}/g, ""));
   const c = manifest.contributes;
   const translations = manifest.translations as Record<string, Record<string, string>>;
 
@@ -74,11 +76,12 @@ describe("the manifest's translations", () => {
       ...c.columns.flatMap((col) => [
         `columns.${col.id}.title`,
         ...(((col as { cases?: Case[] }).cases ?? []).flatMap((cs, i) => [
-          `columns.${col.id}.cases.${i}.text`,
-          ...(cs.tooltip === undefined ? [] : [`columns.${col.id}.cases.${i}.tooltip`]),
+          ...(wordless(cs.text) ? [] : [`columns.${col.id}.cases.${i}.text`]),
+          ...(cs.tooltip === undefined || wordless(cs.tooltip) ? [] : [`columns.${col.id}.cases.${i}.tooltip`]),
+          ...(cs.tooltipOr ?? []).flatMap((tip, k) => (wordless(tip) ? [] : [`columns.${col.id}.cases.${i}.tooltipOr.${k}`])),
         ])),
       ]),
-      ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
+      ...c.problems.flatMap((r) => [`problems.${r.id}.title`, ...(wordless(r.message) ? [] : [`problems.${r.id}.message`])]),
     ].sort();
     expect(Object.keys(translations).sort()).toEqual(SEXTANT_LANGUAGES.filter((l) => l !== "en"));
     // The counter's label in exactly the language's plural forms (ADR-0167).
@@ -104,9 +107,11 @@ describe("the manifest's translations", () => {
       }
     }
     for (const rule of c.problems) english.set(`problems.${rule.id}.message`, rule.message);
+    // Every hover and problem message here is the object's own words, through placeholders only.
+    expect([...english].filter(([k, v]) => !k.endsWith(".text") && !wordless(v))).toEqual([]);
     expect(new Set(c.problems.map((r) => r.title)).size).toBe(c.problems.length);
     for (const [language, texts] of Object.entries(translations)) {
-      for (const [key, text] of english) expect(placeholders(texts[key]!), `${language} ${key}`).toEqual(placeholders(text));
+      for (const [key, text] of english) if (!wordless(text)) expect(placeholders(texts[key]!), `${language} ${key}`).toEqual(placeholders(text));
       for (const rule of c.problems) expect(texts[`problems.${rule.id}.title`], language).not.toBe(rule.title);
       expect(new Set(c.problems.map((r) => texts[`problems.${r.id}.title`])).size, language).toBe(c.problems.length);
     }

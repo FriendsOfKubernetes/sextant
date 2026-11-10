@@ -88,6 +88,7 @@
   "pods.more_one": "{{count}} autre Pod n’est pas affiché.",
   "pods.more_many": "{{count}} autres Pods ne sont pas affichés.",
   "pods.more_other": "{{count}} autres Pods ne sont pas affichés.",
+  "pods.truncated": "Le cluster a plus de Pods que ce qui est conservé ici : la liste est incomplète.",
   "deploymentsHealthy": "{{healthy}} sur {{total}} en bonne santé",
   "apps.name": "Application",
   "apps.status": "Statut",

@@ -31,31 +31,43 @@ section's icon, in the built-in section's place: Ray Clusters, Ray Jobs and Ray 
 table, filters, selection bar and details, and Edit and Delete as on every kind. The section's counter shows how many
 KubeRay objects need attention (the problems below).
 
-**"Only problems"**, as the built-in tables had it: on Ray Clusters the failed ones and those whose head pod is not
-ready, at once; on Ray Jobs the failed ones, however long ago; on Ray Services those with a problem below.
+**"Only problems"**, as the built-in tables had it, at once (no grace): on Ray Clusters the failed ones and those whose
+head pod is not ready; on Ray Jobs the failed ones, however long ago; on Ray Services the failed ones and those not
+ready.
 
-**Columns**, after Name and Namespace, in place of the CRDs' own printer columns (left out, as the built-in view did):
+**Columns**, after Name and Namespace, in place of the CRDs' own printer columns (left out, as the built-in view did),
+with the built-in widths:
 - Ray Clusters: **Status** (`cluster-status`: Ready, Provisioning, Head not ready, Suspending, Suspended or Failed,
-  coloured, the operator's reason on hover), **Workers** (`cluster-workers`: ready worker pods of desired),
-  **Head IP** (`cluster-head-ip`) and **Ray version** (`cluster-ray-version`).
+  coloured, Suspending and Suspended muted; on hover why it failed or waits: the failing condition's message or
+  reason, else `status.reason`), **Workers** (`cluster-workers`: ready worker pods of desired, "1/3"; without
+  `status.desiredWorkerReplicas` the replicas of the worker groups not suspended), **Head IP** (`cluster-head-ip`)
+  and **Ray version** (`cluster-ray-version`).
 - Ray Jobs: **Status** (`job-status`: Succeeded, Running, Pending, Retrying, Stopped, Suspended or Failed, coloured,
-  KubeRay's message on hover), **Job status** (`job-job-status`, Ray's), **Deployment status**
-  (`job-deployment-status`, KubeRay's), **Ray cluster** (`job-cluster`) and **Started** (`job-started`, an age).
-- Ray Services: **Status** (`service-status`: Ready, Upgrading, Not ready, Suspended or Failed, coloured, why it is not
-  ready on hover), **Applications** (`service-applications`: the active cluster's Serve applications that run),
+  Pending, Stopped and Suspended muted, KubeRay's message on hover), **Job status** (`job-job-status`, Ray's),
+  **Deployment status** (`job-deployment-status`, KubeRay's), **Ray cluster** (`job-cluster`) and **Started**
+  (`job-started`, an age).
+- Ray Services: **Status** (`service-status`: Ready, Upgrading, Not ready, Suspended or Failed, coloured, Suspended
+  muted; on hover the first failed Serve application's message, else a False Ready condition's message or reason),
+  **Applications** (`service-applications`: the active cluster's Serve applications that run of all, "1/2"),
   **Endpoints** (`service-endpoints`) and **Active cluster** (`service-active-cluster`).
 
-**Details**, a section per kind, drawn with the SDK's UI kit in the classes of Sextant's own details panel:
+The Status columns sort and filter by the state, as the built-in ones (the same in every language); Workers and
+Applications sort as their text.
+
+**Details**, a section per kind without a heading of its own (as the built-in one), drawn with the SDK's UI kit in the
+classes of Sextant's own details panel. Its blocks open and close with their titles and are remembered in Sextant's
+own memory of details sections (Settings → Appearance), with the panel's "Expand all" and "Collapse all":
 - **RayCluster** (`ray-cluster`): why it failed or waits (the failing condition or `status.reason`), its state, Ray
   version, workers ready of desired and their bounds ("no upper limit" for the largest int32), the head pod, its IP,
   the head Service and its IP, the endpoints and the requested resources; the worker groups with their desired pods,
   replica bounds, ready pods and suspension; and the cluster's pods (watched by KubeRay's label
-  `ray.io/cluster=<name>` in its namespace while the section shows; at most 50 listed, the rest counted) with
-  **Head logs** (the head pod) and **Worker logs** (the pods `ray.io/cluster=<name>,ray.io/node-type=worker`) in
-  Sextant's logs tab.
+  `ray.io/cluster=<name>` in its namespace while the section shows, at most 2000 kept, saying so when more match; at
+  most 50 listed, the rest counted) with **Head logs** (the head pod) and **Worker logs** (the pods
+  `ray.io/cluster=<name>,ray.io/node-type=worker`, a merged tab titled `raycluster/<name>`) in Sextant's logs tab,
+  compact buttons with the logs icon in the Pods block's head.
 - **RayJob** (`ray-job`): KubeRay's message (cut at 20 000 characters), its state, Ray's job status, KubeRay's
   deployment status and reason, its RayCluster and cluster selector, the submission mode, the submitter Job (only in
-  `K8sJobMode`: a Job of the RayJob's own name) with **Submitter logs** (`job-name=<job>`), the job id, the dashboard
+  `K8sJobMode`: a Job of the RayJob's own name) with **Submitter logs** (`job-name=<job>`, so titled), the job id, the dashboard
   URL (without credentials or query), its times and attempts, and the entrypoint as text with secret-looking flags and
   variables masked and URIs cleaned.
 - **RayService** (`ray-service`): why it is not ready (a failed Serve application's message, else the Ready
@@ -79,38 +91,34 @@ queries and fragments of the URIs in them.
 
 ## Problems
 
-As the built-in category `kuberay`, on by default. A suspended or deleted object is never a problem. Every rule may
-notify; a rule's reason is the object's own (the condition's or the job's reason), and the `-unnamed` rules give the
-built-in fallback reason when the object gives none. A RayService's rules are split by which Serve application failed
-(the active cluster's, or the pending one's while there is no active cluster) and by its Ready condition (with a
-reason, without one, or True: then the grace runs from when Sextant first saw the failure).
+As the built-in category `kuberay`, on by default, with the built-in reasons, messages, graces and notifications. A
+suspended or deleted object is never a problem. Every rule may notify, once per object and state as the built-in
+ones: a RayCluster's failure and its head not ready, a RayService's problems as one, and a RayJob's once per reason
+(`notifyAgainOn` its `status.reason`). A rule's reason is the object's own (the condition's or the job's reason), else
+the built-in fallback (`reasonOr`). The message is the one the built-in view gave: where a condition's message is
+empty its reason, and where it has neither the next one's words; the variants of a rule below differ only by where
+that message comes from. The rules watch up to 20 000 RayClusters and RayServices and 5000 RayJobs.
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
-| `cluster-replica-failure` | RayCluster | `ReplicaFailure` is True: KubeRay cannot create or delete pods | 5 min from the condition's change | No |
-| `cluster-replica-failure-unnamed` | RayCluster | The same without a reason (reason "ReplicaFailure") | 5 min | No |
-| `cluster-failed` | RayCluster | `status.state: failed` (operators before 1.2) | None | No |
-| `cluster-head-not-ready` | RayCluster | `HeadPodReady` is False, not failed | 5 min from the condition's change | No |
-| `cluster-head-not-ready-unnamed` | RayCluster | The same without a reason (reason "HeadPodNotReady") | 5 min | No |
-| `job-failed` | RayJob | Failed (`jobDeploymentStatus` Failed or ValidationFailed, or `jobStatus` FAILED; never while Retrying), for a day after its end (else its start, else its creation) | None | No |
-| `job-validation-failed` | RayJob | The same without a reason, ValidationFailed (reason "ValidationFailed") | None | No |
-| `job-failed-unnamed` | RayJob | The same without a reason otherwise (reason "RayJobFailed") | None | No |
-| `service-failed` | RayService | `Ready` is False with reason ValidationFailed or InitializingTimeout | None | No |
-| `service-app-failed` | RayService | An application of the active cluster is DEPLOY_FAILED, `Ready` False with a reason | 10 min from `Ready`'s change | No |
-| `service-app-failed-unnamed` | RayService | The same, `Ready` not True and without a reason (reason "ServeApplicationFailed") | 10 min | No |
-| `service-app-failed-while-ready` | RayService | The same, `Ready` True | 5 min from when Sextant first saw it | No |
-| `service-app-unhealthy` | RayService | An application of the active cluster is UNHEALTHY (none DEPLOY_FAILED), `Ready` False with a reason | 10 min | No |
-| `service-app-unhealthy-unnamed` | RayService | The same, `Ready` not True and without a reason | 10 min | No |
-| `service-app-unhealthy-while-ready` | RayService | The same, `Ready` True | 5 min | No |
-| `service-new-app-failed` | RayService | No active cluster yet, an application of the pending one is DEPLOY_FAILED, `Ready` False with a reason | 10 min | No |
-| `service-new-app-failed-unnamed` | RayService | The same, `Ready` not True and without a reason | 10 min | No |
-| `service-new-app-failed-while-ready` | RayService | The same, `Ready` True | 5 min | No |
-| `service-new-app-unhealthy` | RayService | No active cluster yet, an application of the pending one is UNHEALTHY, `Ready` False with a reason | 10 min | No |
-| `service-new-app-unhealthy-unnamed` | RayService | The same, `Ready` not True and without a reason | 10 min | No |
-| `service-new-app-unhealthy-while-ready` | RayService | The same, `Ready` True | 5 min | No |
-| `service-not-ready` | RayService | `Ready` is False with a reason, no application failed, no upgrade or rollback in progress | 10 min from `Ready`'s change | No |
-| `service-not-ready-unnamed` | RayService | `Ready` is Unknown, or False without a reason (reason "RayServiceNotReady") | 10 min | No |
-| `service-not-running` | RayService | No `Ready` condition (operators before 1.3) and `serviceStatus` is not Running | 10 min from when Sextant first saw it | No |
+| `cluster-replica-failure` | RayCluster | `ReplicaFailure` is True: KubeRay cannot create or delete pods (reason the condition's, else "ReplicaFailure"; its message, else its reason) | 5 min from the condition's change | No |
+| `cluster-replica-failure-head` | RayCluster | The same, the condition without words: a False `HeadPodReady`'s message or reason | 5 min from the condition's change | No |
+| `cluster-replica-failure-cluster` | RayCluster | The same, no condition with words: `status.reason` | 5 min from the condition's change | No |
+| `cluster-failed` | RayCluster | `status.state: failed` (operators before 1.2; reason "RayClusterFailed", message `status.reason`) | None | No |
+| `cluster-failed-head` | RayCluster | The same with a False `HeadPodReady` with words: its message or reason | None | No |
+| `cluster-head-not-ready` | RayCluster | `HeadPodReady` is False, not failed (reason the condition's, else "HeadPodNotReady") | 5 min from the condition's change | No |
+| `job-failed` | RayJob | Failed (`jobDeploymentStatus` Failed, or `jobStatus` FAILED; never while Retrying), for a day after its end, else its start, else its creation (reason `status.reason`, else "RayJobFailed") | None | No |
+| `job-validation-failed` | RayJob | The same, `jobDeploymentStatus` ValidationFailed (reason `status.reason`, else "ValidationFailed") | None | No |
+| `service-failed` | RayService | `Ready` is False with reason ValidationFailed or InitializingTimeout (message `Ready`'s, else its reason) | None | No |
+| `service-failed-app` | RayService | The same with a failed application of the active cluster that has a message: that message | None | No |
+| `service-failed-new-app` | RayService | The same with a failed application of the pending cluster (no active one yet) that has a message: that message | None | No |
+| `service-app-failed` | RayService | An application of the active cluster is DEPLOY_FAILED or UNHEALTHY, `Ready` not True (reason a False `Ready`'s, else "ServeApplicationFailed"; message the first failed application's by name) | 10 min from `Ready`'s change | No |
+| `service-app-failed-ready` | RayService | The same, that application without a message: a False `Ready`'s message or reason | 10 min from `Ready`'s change | No |
+| `service-new-app-failed` | RayService | No active cluster yet, an application of the pending one is DEPLOY_FAILED or UNHEALTHY, `Ready` not True | 10 min from `Ready`'s change | No |
+| `service-new-app-failed-ready` | RayService | The same, that application without a message: a False `Ready`'s message or reason | 10 min from `Ready`'s change | No |
+| `service-app-failed-while-ready` | RayService | An application of the active cluster is DEPLOY_FAILED or UNHEALTHY, `Ready` True (reason "ServeApplicationFailed") | 5 min from when Sextant first saw it | No |
+| `service-new-app-failed-while-ready` | RayService | The same of the pending cluster, no active one yet, `Ready` True | 5 min from when Sextant first saw it | No |
+| `service-not-ready` | RayService | No application failed, no upgrade or rollback in progress, and `Ready` is not True (or, before KubeRay 1.3, no `Ready` and `serviceStatus` is not Running); reason a False `Ready`'s, else "RayServiceNotReady" | 10 min from `Ready`'s change, else from when Sextant first saw it | No |
 
 ## Metrics
 
@@ -136,31 +144,18 @@ None: the extension is read-only. It has no action of its own.
 
 - KubeRay's CRDs; the section shows only the kinds the cluster serves.
 - Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - The Status columns sort by the text shown, not by the state; Suspending, Suspended, Stopped and Pending are drawn
-    in the neutral colour (the built-in tables muted them), and the columns have Sextant's default widths (#403).
-  - The Applications column counts the active cluster's running Serve applications; the built-in one wrote "running
-    of all", which needs a path that counts a map's entries (#404).
-  - The Workers column is empty for a RayCluster without `status.desiredWorkerReplicas` (very old operators); the
-    built-in one summed the worker groups' replicas then.
-  - A hover or problem message whose condition has an empty message shows nothing, where the built-in one gave the
-    condition's reason (#404). A RayService that is upgrading or suspended has no hover (the built-in one showed a
-    False Ready condition's message): a column takes at most 10 cases.
-  - An invalid RayService (Ready False with ValidationFailed or InitializingTimeout) that also has a failed Serve
-    application gives the Ready condition's message, not the application's; with applications both DEPLOY_FAILED and
-    UNHEALTHY, the message is the first DEPLOY_FAILED one's, not the first by name (#405: a path step cannot match one
-    of several values).
-  - A failed RayJob without `status.endTime` counts from when Sextant first saw it (the built-in one took its start,
-    else its creation); when it stops counting, a day after, is the same. A rule's `since` is one path.
-  - Failed RayJobs are watched for problems without the built-in cap of 5000; RayCluster pods in the details are
-    watched without the built-in cap of 2000 (#406).
-  - "Only problems" on Ray Services shows the RayServices with an active problem of the rules, so a new one counts
-    after its grace; the built-in filter had none. The condition limits (three levels of `all`, `any` and `not`, 30
-    conditions) cannot say "not ready" without the rules.
-  - A RayJob's problems notify once per object; the built-in ones notified again when the reason changed.
-  - The details are a titled section per kind (the built-in one had no title of its own); its blocks are always open
-    when shown (the built-in panel remembered closed blocks) (#406). The logs buttons are Sextant buttons in the Pods
-    block, without the logs icon, and the worker logs tab is titled by its label selector (the built-in one by
-    `raycluster/<name>`): `ui.openLogs` takes no title.
+  - The failed Serve application whose message counts is the first by name whose status is none of NOT_STARTED,
+    DEPLOYING, RUNNING and DELETING (a path step cannot match one of several values): an application without a status
+    sorting before the failed one would give its (empty) message — KubeRay always copies Ray Serve's status, and Ray
+    Serve has no other. Names sort by their characters (the built-in view compared them in the UI language), which
+    differs only for names in mixed case.
+  - The Workers column of a RayCluster without `status.desiredWorkerReplicas` (operators before it) is empty when a
+    worker group not suspended has `numOfHosts` other than 1 or no `replicas`: a sum cannot multiply an item's values
+    or fall back to its `minReplicas`, as the built-in one did.
+  - A problem's message falls back from a condition's message to its reason only when the message is there and empty:
+    a condition without a `message` field (KubeRay's conditions always have one) gives none. Hovers are not affected.
+  - The rules watch at most 20 000 RayClusters and 20 000 RayServices (the most a rule's source takes); the built-in
+    problems had no cap there.
 - Checked by tests on fixtures of KubeRay's objects (copied from the built-in view) against the built-in readings,
   masking and rules; not yet tried on a live cluster.
 

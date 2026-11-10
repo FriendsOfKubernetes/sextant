@@ -89,6 +89,7 @@
   "pods.more_few": "Ще {{count}} Pod не показано.",
   "pods.more_many": "Ще {{count}} Pod не показано.",
   "pods.more_other": "Ще {{count}} Pod не показано.",
+  "pods.truncated": "У кластера більше Pod, ніж тут зберігається: список неповний.",
   "deploymentsHealthy": "Справних {{healthy}} з {{total}}",
   "apps.name": "Застосунок",
   "apps.status": "Статус",

@@ -86,6 +86,7 @@
   "pods.status": "狀態",
   "pods.none": "叢集沒有 Pod。",
   "pods.more_other": "還有 {{count}} 個 Pod 未列出。",
+  "pods.truncated": "叢集的 Pod 多於此處保留的數量：清單不完整。",
   "deploymentsHealthy": "{{healthy}}/{{total}} 健康",
   "apps.name": "應用程式",
   "apps.status": "狀態",

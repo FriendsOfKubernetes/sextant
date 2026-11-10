@@ -6,6 +6,7 @@ import objectsJson from "../fixtures/objects.json";
 import { startDetails } from "./details";
 import { setLanguage } from "./i18n";
 import { HIDDEN } from "./mask";
+import { MAX_RAY_PODS } from "./details";
 import { MAX_LISTED_PODS, MAX_TEXT } from "./model";
 
 const objects = objectsJson as unknown as KubeObject[];
@@ -24,10 +25,10 @@ let host: TestHost;
 let root: HTMLElement;
 let stop: () => void = () => undefined;
 
-async function open(obj: KubeObject, handlers: Record<string, (params: unknown) => unknown> = {}): Promise<void> {
+async function open(obj: KubeObject, handlers: Record<string, (params: unknown) => unknown> = {}, blocks?: Record<string, boolean>): Promise<void> {
   host = await startTestHost({
-    context: { view: "details", contribution: SECTION[obj.kind!], selection: [ref(obj)], resourceVersion: "1" },
-    handlers: { "resources.get": () => structuredClone(obj), "ui.openLogs": () => null, ...handlers },
+    context: { view: "details", contribution: SECTION[obj.kind!], selection: [ref(obj)], resourceVersion: "1", ...(blocks ? { blocks } : {}) },
+    handlers: { "resources.get": () => structuredClone(obj), "ui.openLogs": () => null, "ui.setBlockOpen": () => null, ...handlers },
   });
   root = document.createElement("main");
   document.body.append(root);
@@ -50,12 +51,23 @@ const watchOf = (kind: string) => host.watches.find((w) => watchParams(w).kind.k
 const snapshot = (items: KubeObject[]): WatchUpdate => ({ type: "snapshot", items: items as never });
 const rows = () => [...root.querySelectorAll("tr")].map((r) => r.textContent);
 const callOf = (method: string) => host.calls.find((c) => c.method === method)?.params;
+/** A block by its title: whether it is open, its toggle and its head's buttons. */
+const blockOf = (title: string) => {
+  const section = [...root.querySelectorAll<HTMLElement>(".sx-block")].find((b) => b.getAttribute("aria-label") === title);
+  const toggle = section?.querySelector<HTMLButtonElement>(".sx-block__toggle");
+  return {
+    section,
+    toggle,
+    open: toggle?.getAttribute("aria-expanded") === "true",
+    actions: [...(section?.querySelectorAll<HTMLButtonElement>(".sx-block__actions button") ?? [])].map((b) => b.textContent),
+  };
+};
 
 describe("details of a RayCluster", () => {
   it("the head pod with its logs, the worker groups and the pods by label", async () => {
     await open(find("RayCluster", "raycluster-kuberay"));
     await expect.poll(() => watchOf("Pod")).toBeDefined();
-    expect(watchParams(watchOf("Pod")!)).toMatchObject({ namespaces: ["default"], labelSelector: "ray.io/cluster=raycluster-kuberay" });
+    expect(watchParams(watchOf("Pod")!)).toMatchObject({ namespaces: ["default"], labelSelector: "ray.io/cluster=raycluster-kuberay", maxObjects: MAX_RAY_PODS });
     expect(text()).toContain("Looking for the cluster's pods…");
     watchOf("Pod")!.emit(snapshot(objects.filter((o) => o.kind === "Pod")));
     await expect.poll(() => byText("Head logs")).toBeDefined();
@@ -68,12 +80,16 @@ describe("details of a RayCluster", () => {
     expect(text()).not.toContain("GPU:");
     expect(rows()).toContain("workergroup11 to 51No");
     expect(root.querySelector(".sx-status--success")?.textContent).toBe("Ready");
+    // The logs buttons in the Pods block's head, with the logs icon, as the built-in view's.
+    expect(blockOf("Pods").actions).toEqual(["Head logs", "Worker logs"]);
+    expect(byText("Head logs")!.querySelector("svg.kr-icon")?.getAttribute("aria-hidden")).toBe("true");
     byText("Head logs")!.click();
     await expect.poll(() => callOf("ui.openLogs")).toEqual({ namespace: "default", pod: "raycluster-kuberay-head" });
     byText("Worker logs")!.click();
     await expect.poll(() => host.calls.filter((c) => c.method === "ui.openLogs").at(-1)?.params).toEqual({
       namespace: "default",
       labelSelector: "ray.io/cluster=raycluster-kuberay,ray.io/node-type=worker",
+      title: "raycluster/raycluster-kuberay",
     });
     byLabel("Open Service raycluster-kuberay-head-svc")[0]!.click();
     await expect.poll(() => callOf("ui.openDetails")).toEqual({
@@ -98,6 +114,34 @@ describe("details of a RayCluster", () => {
     expect(text()).not.toContain("2147483647");
     // Every ready worker of the group counts, listed or not.
     expect(rows()).toContain(`workergroup1At least 1, no upper limit${MAX_LISTED_PODS + 3}No`);
+  });
+
+  it("with more pods than the watch keeps: says the list is incomplete, as the built-in view", async () => {
+    await open(find("RayCluster", "raycluster-kuberay"));
+    await expect.poll(() => watchOf("Pod")).toBeDefined();
+    watchOf("Pod")!.emit(snapshot(objects.filter((o) => o.kind === "Pod")));
+    await expect.poll(() => byText("Head logs")).toBeDefined();
+    expect(text()).not.toContain("the list is incomplete");
+    watchOf("Pod")!.emit({ type: "capped", total: MAX_RAY_PODS + 5 } as never);
+    await expect.poll(text).toContain("The cluster has more pods than are kept here: the list is incomplete.");
+  });
+
+  it("keeps its blocks open or closed in Sextant's memory, and follows Expand all and Collapse all", async () => {
+    await open(find("RayCluster", "raycluster-kuberay"), {}, { pods: false });
+    expect(blockOf("Pods").open).toBe(false);
+    expect(blockOf("Worker groups").open).toBe(true);
+    // The head's buttons stay while the block is closed, as the built-in block's.
+    expect(blockOf("Pods").actions).toEqual(["Worker logs"]);
+    blockOf("Worker groups").toggle!.click();
+    await expect.poll(() => callOf("ui.setBlockOpen")).toEqual({ id: "groups", open: false });
+    const toggle = blockOf("Worker groups").toggle;
+    // Sextant tells the choice back: the frame keeps what it shows (the toggle keeps its focus).
+    host.setContext({ blocks: { pods: false, groups: false } });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(blockOf("Worker groups").toggle).toBe(toggle);
+    host.setContext({ blocks: { "*": true } });
+    await expect.poll(() => blockOf("Pods").open).toBe(true);
+    expect(blockOf("Worker groups").open).toBe(true);
   });
 
   it("whose pods cannot be read: says so, and counts no ready pods", async () => {
@@ -140,7 +184,7 @@ describe("details of a RayJob", () => {
     expect(byLabel("Open Job rayjob-sample")).toHaveLength(1);
     expect(text()).toContain("AppFailed");
     byText("Submitter logs")!.click();
-    await expect.poll(() => callOf("ui.openLogs")).toEqual({ namespace: "default", labelSelector: "job-name=rayjob-sample" });
+    await expect.poll(() => callOf("ui.openLogs")).toEqual({ namespace: "default", labelSelector: "job-name=rayjob-sample", title: "job-name=rayjob-sample" });
   });
 
   it("the entrypoint and dashboard URL masked, a long message cut", async () => {
@@ -153,6 +197,11 @@ describe("details of a RayJob", () => {
     expect(text()).toContain("https://ray.example.com/");
     expect(text()).not.toMatch(/hf_SECRET|dash_pw|auth=1/);
     expect(root.querySelector(".kr-note")?.textContent).toHaveLength(MAX_TEXT + 1);
+  });
+
+  it("its entrypoint block as Sextant remembers it", async () => {
+    await open(find("RayJob", "rayjob-sample"), {}, { "*": false });
+    expect(blockOf("Entrypoint").open).toBe(false);
   });
 
   it("submitted another way: no submitter, no entrypoint", async () => {
@@ -184,6 +233,13 @@ describe("details of a RayService", () => {
     expect(byLabel("Open RayCluster rayservice-ready-raycluster-2kz9w")).toHaveLength(1);
     expect(text()).toContain("2 of 2 healthy");
     expect(root.querySelector(".kr-note")).toBeNull();
+  });
+
+  it("its blocks as Sextant remembers them", async () => {
+    await open(find("RayService", "rayservice-sample"), {}, { "serve-config": false, "pending-apps": false });
+    expect([blockOf("Serve configuration").open, blockOf("Pending cluster (upgrade)").open]).toEqual([false, false]);
+    blockOf("Serve configuration").toggle!.click();
+    await expect.poll(() => callOf("ui.setBlockOpen")).toEqual({ id: "serve-config", open: true });
   });
 
   it("an unreadable serve config is not shown", async () => {
