@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Views of cluster tools are now extensions",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager and OpenShift moved out of Sextant into its own extensions from the extension catalog, which are updated on their own. Install the ones you use below: until then their sections are not shown. Your notification settings for them were kept, and the sidebar also offers them in clusters that run these tools."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager and OpenShift moved out of Sextant into its own extensions from the extension catalog, which are updated on their own. Install the ones you use below: until then their sections are not shown. Your notification settings for them were kept, and the sidebar also offers them in clusters that run these tools."
     },
     "api4": {
       "title": "Extension API 4",
@@ -42,6 +42,9 @@
       "kueue": "ClusterQueues with quota and usage, LocalQueues, Workloads and why they wait",
       "kyverno": "Policies with their mode and results, policy reports and every object's results",
       "sealed-secrets": "SealedSecrets with their sync state, scope, target Secret and sealed keys, and the controller with its sealing keys",
+      "trivy": "Vulnerability, configuration audit, exposed secret, RBAC, infrastructure, compliance and SBOM reports with their most severe findings, and every workload's image scans",
+      "keda": "ScaledObjects, ScaledJobs and TriggerAuthentications with their state, triggers and the HPA KEDA manages",
+      "karpenter": "NodePools with their limits and disruptions, NodeClaims with their launch, and node classes",
       "vpa": "VerticalPodAutoscalers with their state and recommendation and what a new pod would get, their checkpoints and components, and every workload's VPAs",
       "prometheus-operator": "ServiceMonitors, PodMonitors and Probes with what they select, PrometheusRules, Prometheuses and Alertmanagers",
       "cluster-api": "Clusters with their state, control planes, MachineDeployments, MachineSets and Machines down to the workload cluster's Nodes, MachineHealthChecks and ClusterResourceSets",

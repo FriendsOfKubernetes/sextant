@@ -112,65 +112,11 @@
     "CRITICAL": "심각",
     "HIGH": "높음",
     "MEDIUM": "보통",
-    "LOW": "낮음",
-    "UNKNOWN": "알 수 없음"
+    "LOW": "낮음"
   },
   "trivy": {
-    "sidebar": {
-      "vulnerabilityReports": "Vulnerability Reports",
-      "clusterVulnerabilityReports": "Cluster Vulnerability Reports",
-      "configAuditReports": "Config Audit Reports",
-      "clusterConfigAuditReports": "Cluster Config Audit Reports",
-      "exposedSecretReports": "Exposed Secret Reports",
-      "rbacAssessmentReports": "RBAC Assessment Reports",
-      "clusterRbacAssessmentReports": "Cluster RBAC Assessment Reports",
-      "infraAssessmentReports": "Infra Assessment Reports",
-      "clusterInfraAssessmentReports": "Cluster Infra Assessment Reports",
-      "clusterComplianceReports": "Cluster Compliance Reports",
-      "sbomReports": "SBOM Reports",
-      "clusterSbomReports": "Cluster SBOM Reports"
-    },
-    "columns": {
-      "resource": "리소스",
-      "container": "컨테이너",
-      "image": "이미지",
-      "critical": "심각",
-      "high": "높음",
-      "medium": "보통",
-      "low": "낮음",
-      "title": "제목",
-      "pass": "통과",
-      "fail": "실패",
-      "components": "구성 요소"
-    },
-    "table": {
-      "severity": "심각도",
-      "id": "ID",
-      "package": "패키지",
-      "installed": "설치됨",
-      "fixed": "수정 버전",
-      "rule": "규칙",
-      "title": "제목",
-      "target": "대상",
-      "control": "컨트롤",
-      "failed": "실패"
-    },
-    "section": "이미지 스캔(Trivy)",
-    "reportTitle": "보고서",
-    "scanned": "스캔한 개체:",
-    "none": "Trivy Operator에 아직 이 개체의 보고서가 없습니다.",
     "watchFailed": "Trivy 보고서를 읽을 수 없습니다.",
-    "openReport": "보고서 열기",
-    "configAudit": "구성 감사",
     "severityCount": "{{severity}}: {{count}}",
-    "fixable_other": "취약점 {{count}}개에 수정 버전이 있습니다.",
-    "topShown": "표시: {{total}}개 중 가장 심각한 {{shown}}개.",
-    "noFix": "수정 없음",
-    "noVulnerabilities": "취약점이 없습니다.",
-    "noFailed": "모든 검사를 통과했습니다.",
-    "noSecrets": "노출된 시크릿이 없습니다.",
-    "passFail": "통과: {{pass}}, 실패: {{fail}}",
-    "components": "구성 요소: {{count}}",
     "auditCount_other": "심각 또는 높음 감사 발견 사항 {{count}}건"
   }
 }

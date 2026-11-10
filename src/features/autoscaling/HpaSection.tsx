@@ -3,7 +3,7 @@ import { ErrorState } from "../../components";
 // The "Autoscaling" details of a HorizontalPodAutoscaler — why it is where it is: the verdict, causes read from the
 // conditions, the target and its pod template's requests, each metric's current value against its target and the
 // replicas it asks for, the conditions in plain words, the behavior (stabilization, policies, tolerance) and the
-// recent scaling events — and the compact form (`HpaSummary`) the workload and ScaledObject details show.
+// recent scaling events — and the compact form (`HpaSummary`) the workload details show.
 import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KubeObject } from "../../api";
@@ -215,8 +215,8 @@ function HpaDetailsContent({ clusterId, hpa }: { clusterId: ClusterId; hpa: Kube
   );
 }
 
-/** One HPA in a line or two: a link, the verdict and the metrics (workload and ScaledObject details). */
-export function HpaSummary({ hpa, metrics = false }: { hpa: KubeObject; metrics?: boolean }) {
+/** One HPA in a line or two: a link and the verdict (workload details). */
+export function HpaSummary({ hpa }: { hpa: KubeObject }) {
   const { t } = useTranslation();
   const a = useMemo(() => analyzeHpa(hpa), [hpa]);
   const name = hpa.metadata?.name ?? "";
@@ -230,7 +230,6 @@ export function HpaSummary({ hpa, metrics = false }: { hpa: KubeObject; metrics?
       <Fields labelPrefix={FIELDS} rows={fields} />
       <PhraseLine phrase={a.verdict} />
       <Phrases phrases={a.causes} />
-      {metrics && <MetricsTable metrics={a.metrics} />}
     </div>
   );
 }

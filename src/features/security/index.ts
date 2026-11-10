@@ -5,9 +5,9 @@
 //   workloads would need (namespaces.ts);
 // - the "Security" page of the Cluster section (bounded by the namespace filter), the "Security" section of workload
 //   and Pod details;
-// - Trivy Operator's reports (aquasecurity.github.io), when installed: a sidebar section of their kinds (only the kinds
-//   the cluster serves), their details (counts and the most severe rows only), and per workload in the page and the
-//   details (trivy.ts);
+// - Trivy Operator's image vulnerability and configuration audit reports (aquasecurity.github.io), when installed:
+//   their summary counts per workload on the page (trivy.ts). The report kinds' sidebar section, their details and a
+//   workload's "Image scans (Trivy)" block are Sextant's own extension `extensions/trivy` (`sextant.trivy`);
 // - Baseline violations feed the problems screen and the notifications as the opt-in category `security`
 //   (src/features/problems/model.ts). Trivy reports do not: watching every report of every connected cluster in the
 //   background would move whole vulnerability lists for a count.

@@ -1,0 +1,4066 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.keda",
+  "name": "KEDA",
+  "version": "1.0.0",
+  "description": "KEDA's ScaledObjects, ScaledJobs and TriggerAuthentications: the target, replica range, triggers and state in plain words, the HPA KEDA manages with its verdict and metrics, and where the trigger parameters come from (names only). Read-only.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "keda",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "keda.sh",
+              "kind": "ScaledObject"
+            },
+            {
+              "group": "keda.sh",
+              "kind": "ScaledJob"
+            },
+            {
+              "group": "keda.sh",
+              "kind": "TriggerAuthentication"
+            },
+            {
+              "group": "keda.sh",
+              "kind": "ClusterTriggerAuthentication"
+            },
+            {
+              "group": "autoscaling",
+              "kind": "HorizontalPodAutoscaler"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "keda.sh",
+        "kind": "ScaledObject",
+        "section": "keda",
+        "title": "Scaled Objects",
+        "icon": "scaledObject",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+        }
+      },
+      {
+        "group": "keda.sh",
+        "kind": "ScaledJob",
+        "section": "keda",
+        "title": "Scaled Jobs",
+        "icon": "scaledJob",
+        "order": 20,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+        }
+      },
+      {
+        "group": "keda.sh",
+        "kind": "TriggerAuthentication",
+        "section": "keda",
+        "title": "Trigger Authentications",
+        "icon": "triggerAuthentication",
+        "order": 30,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+        }
+      },
+      {
+        "group": "keda.sh",
+        "kind": "ClusterTriggerAuthentication",
+        "section": "keda",
+        "title": "Cluster Trigger Authentications",
+        "icon": "triggerAuthentication",
+        "order": 31,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+        }
+      }
+    ],
+    "sections": [
+      {
+        "section": "keda",
+        "title": "KEDA",
+        "icon": "keda",
+        "after": "trivy"
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "scaled-object",
+        "title": "KEDA",
+        "kinds": [
+          {
+            "group": "keda.sh",
+            "kind": "ScaledObject"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      },
+      {
+        "id": "scaled-job",
+        "title": "KEDA",
+        "kinds": [
+          {
+            "group": "keda.sh",
+            "kind": "ScaledJob"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      },
+      {
+        "id": "trigger-authentication",
+        "title": "Where the parameters come from",
+        "kinds": [
+          {
+            "group": "keda.sh",
+            "kind": "TriggerAuthentication"
+          },
+          {
+            "group": "keda.sh",
+            "kind": "ClusterTriggerAuthentication"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ScaledObject"
+        },
+        "id": "so-target",
+        "title": "Target",
+        "afterColumn": "namespace",
+        "width": "minmax(140px, 1.5fr)",
+        "paths": [
+          ".spec.scaleTargetRef.name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".spec.scaleTargetRef.name",
+              "nonEmpty": true
+            },
+            "text": "{{.spec.scaleTargetRef.kind ?? \"Deployment\"}}/{{.spec.scaleTargetRef.name}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ScaledObject"
+        },
+        "id": "so-min",
+        "title": "Min",
+        "afterColumn": "so-target",
+        "width": "60px",
+        "format": "number",
+        "paths": [
+          ".spec.minReplicaCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".spec.minReplicaCount"
+            },
+            "text": "0",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ScaledObject"
+        },
+        "id": "so-max",
+        "title": "Max",
+        "afterColumn": "so-min",
+        "width": "60px",
+        "format": "number",
+        "paths": [
+          ".spec.maxReplicaCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".spec.maxReplicaCount"
+            },
+            "text": "100",
+            "value": 100
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ScaledObject"
+        },
+        "id": "so-triggers",
+        "title": "Triggers",
+        "afterColumn": "so-max",
+        "width": "minmax(120px, 1.5fr)",
+        "format": "list",
+        "paths": [
+          ".spec.triggers[*].type"
+        ],
+        "joinPaths": true,
+        "separator": ", "
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ScaledObject"
+        },
+        "id": "so-ready",
+        "title": "Ready",
+        "afterColumn": "so-triggers",
+        "width": "80px",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "True",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "False",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].status",
+              "nonEmpty": true
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].status}}",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].status"
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "warning"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ScaledObject"
+        },
+        "id": "so-state",
+        "title": "State",
+        "afterColumn": "so-ready",
+        "width": "100px",
+        "paths": [
+          ".status.conditions[type=\"Active\"].type"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "in",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "values": [
+                    "Failed",
+                    "Error",
+                    "CrashLoopBackOff",
+                    "ImagePullBackOff",
+                    "ErrImagePull",
+                    "OOMKilled",
+                    "Lost",
+                    "Evicted",
+                    "Unknown",
+                    "False",
+                    "failed"
+                  ]
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "in",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "values": [
+                    "Running",
+                    "Active",
+                    "Bound",
+                    "Available",
+                    "Ready",
+                    "True",
+                    "Complete",
+                    "deployed"
+                  ]
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "in",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "values": [
+                    "Succeeded",
+                    "Completed",
+                    "Released",
+                    "Terminated"
+                  ]
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "tone": "muted"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "startsWith",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "values": [
+                    "Init:Err",
+                    "Init:Crash"
+                  ]
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                }
+              ]
+            },
+            "text": "NotReady",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Paused",
+                  "status": "True"
+                },
+                {
+                  "type": "equals",
+                  "path": ".metadata.annotations[\"autoscaling.keda.sh/paused\"]",
+                  "value": "true"
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.annotations[\"autoscaling.keda.sh/paused-replicas\"]"
+                }
+              ]
+            },
+            "text": "Paused",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Fallback",
+              "status": "True"
+            },
+            "text": "Fallback",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Active",
+              "status": "True"
+            },
+            "text": "Active",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Active\"]"
+            },
+            "text": "Inactive",
+            "tone": "muted"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ScaledJob"
+        },
+        "id": "sj-max",
+        "title": "Max",
+        "afterColumn": "namespace",
+        "width": "60px",
+        "format": "number",
+        "paths": [
+          ".spec.maxReplicaCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".spec.maxReplicaCount"
+            },
+            "text": "100",
+            "value": 100
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ScaledJob"
+        },
+        "id": "sj-triggers",
+        "title": "Triggers",
+        "afterColumn": "sj-max",
+        "width": "minmax(120px, 1.5fr)",
+        "format": "list",
+        "paths": [
+          ".spec.triggers[*].type"
+        ],
+        "joinPaths": true,
+        "separator": ", "
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ScaledJob"
+        },
+        "id": "sj-ready",
+        "title": "Ready",
+        "afterColumn": "sj-triggers",
+        "width": "80px",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "True",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "False",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].status",
+              "nonEmpty": true
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].status}}",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].status"
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "warning"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ScaledJob"
+        },
+        "id": "sj-state",
+        "title": "State",
+        "afterColumn": "sj-ready",
+        "width": "100px",
+        "paths": [
+          ".status.conditions[type=\"Active\"].type"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "in",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "values": [
+                    "Failed",
+                    "Error",
+                    "CrashLoopBackOff",
+                    "ImagePullBackOff",
+                    "ErrImagePull",
+                    "OOMKilled",
+                    "Lost",
+                    "Evicted",
+                    "Unknown",
+                    "False",
+                    "failed"
+                  ]
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "in",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "values": [
+                    "Running",
+                    "Active",
+                    "Bound",
+                    "Available",
+                    "Ready",
+                    "True",
+                    "Complete",
+                    "deployed"
+                  ]
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "in",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "values": [
+                    "Succeeded",
+                    "Completed",
+                    "Released",
+                    "Terminated"
+                  ]
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "tone": "muted"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "startsWith",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "values": [
+                    "Init:Err",
+                    "Init:Crash"
+                  ]
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"].reason",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].reason}}",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "condition",
+                    "conditionType": "Ready",
+                    "status": "True"
+                  }
+                }
+              ]
+            },
+            "text": "NotReady",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "condition",
+                  "conditionType": "Paused",
+                  "status": "True"
+                },
+                {
+                  "type": "equals",
+                  "path": ".metadata.annotations[\"autoscaling.keda.sh/paused\"]",
+                  "value": "true"
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.annotations[\"autoscaling.keda.sh/paused-replicas\"]"
+                }
+              ]
+            },
+            "text": "Paused",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Fallback",
+              "status": "True"
+            },
+            "text": "Fallback",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Active",
+              "status": "True"
+            },
+            "text": "Active",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Active\"]"
+            },
+            "text": "Inactive",
+            "tone": "muted"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "TriggerAuthentication"
+        },
+        "id": "ta-sources",
+        "title": "Sources",
+        "afterColumn": "namespace",
+        "width": "minmax(160px, 2fr)",
+        "paths": [
+          ".spec.secretTargetRef[0].name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Secret"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.configMapTargetRef[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "ConfigMap"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "env"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.hashiCorpVault"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "hashiCorpVault"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.azureKeyVault"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "azureKeyVault"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".spec.awsSecretManager"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "awsSecretManager"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.gcpSecretManager"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "gcpSecretManager"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.boundServiceAccountToken"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "boundServiceAccountToken"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "{{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.configMapTargetRef[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Secret, ConfigMap"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Secret, env"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.configMapTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "ConfigMap, env"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Secret, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "env, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.azureKeyVault"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "azureKeyVault, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".spec.awsSecretManager"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "awsSecretManager, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.gcpSecretManager"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "gcpSecretManager, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.hashiCorpVault"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "hashiCorpVault, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.configMapTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Secret, ConfigMap, env"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.configMapTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.hashiCorpVault"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.azureKeyVault"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.awsSecretManager"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.gcpSecretManager"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.boundServiceAccountToken"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.podIdentity.provider",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.spec|keys}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "keda.sh",
+          "kind": "ClusterTriggerAuthentication"
+        },
+        "id": "cta-sources",
+        "title": "Sources",
+        "afterColumn": "name",
+        "width": "minmax(160px, 2fr)",
+        "paths": [
+          ".spec.secretTargetRef[0].name"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Secret"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.configMapTargetRef[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "ConfigMap"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "env"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.hashiCorpVault"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "hashiCorpVault"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.azureKeyVault"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "azureKeyVault"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".spec.awsSecretManager"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "awsSecretManager"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.gcpSecretManager"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "gcpSecretManager"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.boundServiceAccountToken"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "boundServiceAccountToken"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "{{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.configMapTargetRef[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Secret, ConfigMap"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Secret, env"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.configMapTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "ConfigMap, env"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Secret, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "env, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.azureKeyVault"
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "azureKeyVault, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "exists",
+                      "path": ".spec.awsSecretManager"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "awsSecretManager, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.gcpSecretManager"
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "gcpSecretManager, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.secretTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.configMapTargetRef[0]"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.env[0]"
+                  }
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.hashiCorpVault"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "exists",
+                      "path": ".spec.podIdentity.provider",
+                      "nonEmpty": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "hashiCorpVault, {{.spec.podIdentity.provider}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.configMapTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.hashiCorpVault"
+                  }
+                },
+                {
+                  "type": "not",
+                  "of": {
+                    "type": "exists",
+                    "path": ".spec.azureKeyVault"
+                  }
+                },
+                {
+                  "type": "all",
+                  "of": [
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.awsSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.gcpSecretManager"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.boundServiceAccountToken"
+                      }
+                    },
+                    {
+                      "type": "not",
+                      "of": {
+                        "type": "exists",
+                        "path": ".spec.podIdentity.provider",
+                        "nonEmpty": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "Secret, ConfigMap, env"
+          },
+          {
+            "when": {
+              "type": "any",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".spec.secretTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.configMapTargetRef[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.env[0]"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.hashiCorpVault"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.azureKeyVault"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.awsSecretManager"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.gcpSecretManager"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.boundServiceAccountToken"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.podIdentity.provider",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.spec|keys}}"
+          }
+        ]
+      }
+    ]
+  },
+  "translations": {
+    "de": {
+      "description": "KEDAs ScaledObjects, ScaledJobs und TriggerAuthentications: Ziel, Replikatbereich, Trigger und Zustand in klaren Worten, das von KEDA verwaltete HPA mit seinem Urteil und seinen Metriken und woher die Trigger-Parameter kommen (nur Namen). Nur lesend.",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "Woher die Parameter kommen",
+      "columns.so-target.title": "Ziel",
+      "columns.so-min.title": "Min.",
+      "columns.so-max.title": "Max.",
+      "columns.so-triggers.title": "Trigger",
+      "columns.so-ready.title": "Bereit",
+      "columns.so-state.title": "Zustand",
+      "columns.sj-max.title": "Max.",
+      "columns.sj-triggers.title": "Trigger",
+      "columns.sj-ready.title": "Bereit",
+      "columns.sj-state.title": "Zustand",
+      "columns.ta-sources.title": "Quellen",
+      "columns.cta-sources.title": "Quellen"
+    },
+    "es": {
+      "description": "ScaledObjects, ScaledJobs y TriggerAuthentications de KEDA: el destino, el rango de réplicas, los disparadores y el estado en palabras claras, el HPA que KEDA gestiona con su veredicto y sus métricas, y de dónde vienen los parámetros de los disparadores (solo nombres). Solo lectura.",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "De dónde salen los parámetros",
+      "columns.so-target.title": "Destino",
+      "columns.so-min.title": "Mín.",
+      "columns.so-max.title": "Máx.",
+      "columns.so-triggers.title": "Disparadores",
+      "columns.so-ready.title": "Listo",
+      "columns.so-state.title": "Estado",
+      "columns.sj-max.title": "Máx.",
+      "columns.sj-triggers.title": "Disparadores",
+      "columns.sj-ready.title": "Listo",
+      "columns.sj-state.title": "Estado",
+      "columns.ta-sources.title": "Fuentes",
+      "columns.cta-sources.title": "Fuentes"
+    },
+    "fr": {
+      "description": "Les ScaledObjects, ScaledJobs et TriggerAuthentications de KEDA : la cible, la plage de réplicas, les déclencheurs et l'état en mots simples, le HPA que KEDA gère avec son verdict et ses métriques, et d'où viennent les paramètres des déclencheurs (noms seulement). Lecture seule.",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "D'où viennent les paramètres",
+      "columns.so-target.title": "Cible",
+      "columns.so-min.title": "Min.",
+      "columns.so-max.title": "Max.",
+      "columns.so-triggers.title": "Déclencheurs",
+      "columns.so-ready.title": "Prêt",
+      "columns.so-state.title": "État",
+      "columns.sj-max.title": "Max.",
+      "columns.sj-triggers.title": "Déclencheurs",
+      "columns.sj-ready.title": "Prêt",
+      "columns.sj-state.title": "État",
+      "columns.ta-sources.title": "Sources",
+      "columns.cta-sources.title": "Sources"
+    },
+    "it": {
+      "description": "ScaledObject, ScaledJob e TriggerAuthentication di KEDA: la destinazione, l'intervallo di repliche, i trigger e lo stato in parole semplici, l'HPA che KEDA gestisce con il suo verdetto e le sue metriche, e da dove vengono i parametri dei trigger (solo nomi). Sola lettura.",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "Da dove vengono i parametri",
+      "columns.so-target.title": "Destinazione",
+      "columns.so-min.title": "Min",
+      "columns.so-max.title": "Max",
+      "columns.so-triggers.title": "Trigger",
+      "columns.so-ready.title": "Pronto",
+      "columns.so-state.title": "Stato",
+      "columns.sj-max.title": "Max",
+      "columns.sj-triggers.title": "Trigger",
+      "columns.sj-ready.title": "Pronto",
+      "columns.sj-state.title": "Stato",
+      "columns.ta-sources.title": "Origini",
+      "columns.cta-sources.title": "Origini"
+    },
+    "ja": {
+      "description": "KEDA の ScaledObject、ScaledJob、TriggerAuthentication: 対象、レプリカの範囲、トリガー、状態をわかりやすく、KEDA が管理する HPA とその判定とメトリクス、トリガーのパラメーターの取得元（名前のみ）。読み取り専用。",
+      "kinds.0.title": "ScaledObject",
+      "kinds.1.title": "ScaledJob",
+      "kinds.2.title": "TriggerAuthentication",
+      "kinds.3.title": "ClusterTriggerAuthentication",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "パラメーターの取得元",
+      "columns.so-target.title": "対象",
+      "columns.so-min.title": "最小",
+      "columns.so-max.title": "最大",
+      "columns.so-triggers.title": "トリガー",
+      "columns.so-ready.title": "準備完了",
+      "columns.so-state.title": "状態",
+      "columns.sj-max.title": "最大",
+      "columns.sj-triggers.title": "トリガー",
+      "columns.sj-ready.title": "準備完了",
+      "columns.sj-state.title": "状態",
+      "columns.ta-sources.title": "ソース",
+      "columns.cta-sources.title": "ソース"
+    },
+    "ko": {
+      "description": "KEDA의 ScaledObject, ScaledJob, TriggerAuthentication: 대상, 레플리카 범위, 트리거와 상태를 쉬운 말로, KEDA가 관리하는 HPA와 그 판단 및 메트릭, 트리거 매개변수의 출처(이름만). 읽기 전용.",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "매개변수의 출처",
+      "columns.so-target.title": "대상",
+      "columns.so-min.title": "최소",
+      "columns.so-max.title": "최대",
+      "columns.so-triggers.title": "트리거",
+      "columns.so-ready.title": "준비",
+      "columns.so-state.title": "상태",
+      "columns.sj-max.title": "최대",
+      "columns.sj-triggers.title": "트리거",
+      "columns.sj-ready.title": "준비",
+      "columns.sj-state.title": "상태",
+      "columns.ta-sources.title": "소스",
+      "columns.cta-sources.title": "소스"
+    },
+    "pl": {
+      "description": "ScaledObjecty, ScaledJoby i TriggerAuthentications KEDA: cel, zakres replik, wyzwalacze i stan prostymi słowami, HPA zarządzany przez KEDA z jego werdyktem i metrykami oraz skąd pochodzą parametry wyzwalaczy (tylko nazwy). Tylko do odczytu.",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "Skąd pochodzą parametry",
+      "columns.so-target.title": "Cel",
+      "columns.so-min.title": "Min.",
+      "columns.so-max.title": "Maks.",
+      "columns.so-triggers.title": "Wyzwalacze",
+      "columns.so-ready.title": "Gotowy",
+      "columns.so-state.title": "Stan",
+      "columns.sj-max.title": "Maks.",
+      "columns.sj-triggers.title": "Wyzwalacze",
+      "columns.sj-ready.title": "Gotowy",
+      "columns.sj-state.title": "Stan",
+      "columns.ta-sources.title": "Źródła",
+      "columns.cta-sources.title": "Źródła"
+    },
+    "pt-BR": {
+      "description": "ScaledObjects, ScaledJobs e TriggerAuthentications do KEDA: o alvo, a faixa de réplicas, os gatilhos e o estado em palavras simples, o HPA que o KEDA gerencia com seu veredito e suas métricas, e de onde vêm os parâmetros dos gatilhos (só nomes). Somente leitura.",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "De onde vêm os parâmetros",
+      "columns.so-target.title": "Alvo",
+      "columns.so-min.title": "Mín.",
+      "columns.so-max.title": "Máx.",
+      "columns.so-triggers.title": "Gatilhos",
+      "columns.so-ready.title": "Pronto",
+      "columns.so-state.title": "Estado",
+      "columns.sj-max.title": "Máx.",
+      "columns.sj-triggers.title": "Gatilhos",
+      "columns.sj-ready.title": "Pronto",
+      "columns.sj-state.title": "Estado",
+      "columns.ta-sources.title": "Fontes",
+      "columns.cta-sources.title": "Fontes"
+    },
+    "ru": {
+      "description": "ScaledObject, ScaledJob и TriggerAuthentication в KEDA: цель, диапазон реплик, триггеры и состояние простыми словами, HPA, которым управляет KEDA, с его вердиктом и метриками, и откуда берутся параметры триггеров (только имена). Только чтение.",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "Откуда берутся параметры",
+      "columns.so-target.title": "Цель",
+      "columns.so-min.title": "Мин.",
+      "columns.so-max.title": "Макс.",
+      "columns.so-triggers.title": "Триггеры",
+      "columns.so-ready.title": "Готов",
+      "columns.so-state.title": "Состояние",
+      "columns.sj-max.title": "Макс.",
+      "columns.sj-triggers.title": "Триггеры",
+      "columns.sj-ready.title": "Готов",
+      "columns.sj-state.title": "Состояние",
+      "columns.ta-sources.title": "Источники",
+      "columns.cta-sources.title": "Источники"
+    },
+    "tr": {
+      "description": "KEDA'nın ScaledObject, ScaledJob ve TriggerAuthentication nesneleri: hedef, replika aralığı, tetikleyiciler ve durum sade sözcüklerle, KEDA'nın yönettiği HPA ile kararı ve metrikleri, ve tetikleyici parametrelerinin nereden geldiği (yalnızca adlar). Salt okunur.",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "Parametrelerin kaynağı",
+      "columns.so-target.title": "Hedef",
+      "columns.so-min.title": "En az",
+      "columns.so-max.title": "En çok",
+      "columns.so-triggers.title": "Tetikleyiciler",
+      "columns.so-ready.title": "Hazır",
+      "columns.so-state.title": "Durum",
+      "columns.sj-max.title": "En çok",
+      "columns.sj-triggers.title": "Tetikleyiciler",
+      "columns.sj-ready.title": "Hazır",
+      "columns.sj-state.title": "Durum",
+      "columns.ta-sources.title": "Kaynaklar",
+      "columns.cta-sources.title": "Kaynaklar"
+    },
+    "uk": {
+      "description": "ScaledObject, ScaledJob і TriggerAuthentication у KEDA: ціль, діапазон реплік, тригери й стан простими словами, HPA, яким керує KEDA, з його вердиктом і метриками, і звідки беруться параметри тригерів (лише імена). Лише читання.",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "Звідки беруться параметри",
+      "columns.so-target.title": "Ціль",
+      "columns.so-min.title": "Мін.",
+      "columns.so-max.title": "Макс.",
+      "columns.so-triggers.title": "Тригери",
+      "columns.so-ready.title": "Готовий",
+      "columns.so-state.title": "Стан",
+      "columns.sj-max.title": "Макс.",
+      "columns.sj-triggers.title": "Тригери",
+      "columns.sj-ready.title": "Готовий",
+      "columns.sj-state.title": "Стан",
+      "columns.ta-sources.title": "Джерела",
+      "columns.cta-sources.title": "Джерела"
+    },
+    "zh-CN": {
+      "description": "KEDA 的 ScaledObject、ScaledJob 和 TriggerAuthentication：目标、副本范围、触发器和状态的通俗说明，KEDA 管理的 HPA 及其结论和指标，以及触发器参数的来源（仅名称）。只读。",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "参数来源",
+      "columns.so-target.title": "目标",
+      "columns.so-min.title": "最小",
+      "columns.so-max.title": "最大",
+      "columns.so-triggers.title": "触发器",
+      "columns.so-ready.title": "就绪",
+      "columns.so-state.title": "状态",
+      "columns.sj-max.title": "最大",
+      "columns.sj-triggers.title": "触发器",
+      "columns.sj-ready.title": "就绪",
+      "columns.sj-state.title": "状态",
+      "columns.ta-sources.title": "来源",
+      "columns.cta-sources.title": "来源"
+    },
+    "zh-TW": {
+      "description": "KEDA 的 ScaledObject、ScaledJob 與 TriggerAuthentication：目標、副本範圍、觸發器與狀態的白話說明，KEDA 管理的 HPA 及其結論與指標，以及觸發器參數的來源（僅名稱）。唯讀。",
+      "kinds.0.title": "Scaled Objects",
+      "kinds.1.title": "Scaled Jobs",
+      "kinds.2.title": "Trigger Authentications",
+      "kinds.3.title": "Cluster Trigger Authentications",
+      "sections.keda.title": "KEDA",
+      "detailsSections.scaled-object.title": "KEDA",
+      "detailsSections.scaled-job.title": "KEDA",
+      "detailsSections.trigger-authentication.title": "參數來源",
+      "columns.so-target.title": "目標",
+      "columns.so-min.title": "最小",
+      "columns.so-max.title": "最大",
+      "columns.so-triggers.title": "觸發器",
+      "columns.so-ready.title": "就緒",
+      "columns.so-state.title": "狀態",
+      "columns.sj-max.title": "最大",
+      "columns.sj-triggers.title": "觸發器",
+      "columns.sj-ready.title": "就緒",
+      "columns.sj-state.title": "狀態",
+      "columns.ta-sources.title": "來源",
+      "columns.cta-sources.title": "來源"
+    }
+  }
+}

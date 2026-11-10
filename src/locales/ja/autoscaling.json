@@ -1,34 +1,5 @@
 {
   "title": "オートスケール",
-  "sidebar": {
-    "scaledObjects": "ScaledObject",
-    "scaledJobs": "ScaledJob",
-    "triggerAuthentications": "TriggerAuthentication",
-    "clusterTriggerAuthentications": "ClusterTriggerAuthentication",
-    "nodePools": "NodePool",
-    "nodeClaims": "NodeClaim",
-    "ec2NodeClasses": "EC2NodeClass",
-    "aksNodeClasses": "AKSNodeClass"
-  },
-  "columns": {
-    "ready": "準備完了",
-    "state": "状態",
-    "triggers": "トリガー",
-    "target": "対象",
-    "min": "最小",
-    "max": "最大",
-    "sources": "ソース",
-    "nodeClass": "ノードクラス",
-    "nodes": "ノード",
-    "limits": "使用量 / 上限",
-    "consolidation": "統合",
-    "nodePool": "NodePool",
-    "instanceType": "インスタンスタイプ",
-    "capacityType": "容量",
-    "zone": "ゾーン",
-    "node": "ノード",
-    "role": "ロール"
-  },
   "fields": {
     "target": "対象",
     "replicas": "レプリカ",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "容量タイプ",
-    "instanceType": "インスタンスタイプ",
-    "node": "ノード",
-    "zone": "ゾーン",
-    "nodeClass": "ノードクラス",
-    "consolidationPolicy": "統合ポリシー",
-    "consolidateAfter": "統合までの時間",
-    "expireAfter": "有効期限",
-    "budgets": "中断バジェット",
-    "idleReplicas": "アイドル時のレプリカ",
-    "pollingInterval": "ポーリング間隔",
-    "cooldownPeriod": "クールダウン期間",
-    "fallback": "フォールバック",
-    "maxReplicas": "最大レプリカ数",
-    "strategy": "スケール戦略",
-    "image": "イメージ",
-    "podIdentity": "Pod ID"
+    "instanceType": "インスタンスタイプ"
   },
   "events": {
     "reason": "理由",
@@ -248,7 +204,6 @@
     "notLaunched": "起動していません: {{reason}}。",
     "notRegistered": "起動しましたが、ノードがクラスターに参加していません: {{reason}}。",
     "notInitialized": "ノードは参加しましたが、まだ初期化されていません: {{reason}}。",
-    "ready": "起動、登録、初期化が完了しています。",
     "disrupting": "Karpenter がこのノードを中断しています。taint が付き、Pod が移動されています。",
     "terminating": "ノードは終了中です。",
     "drifted": "ドリフト ({{reason}}): ノードが NodePool またはノードクラスと一致しなくなったため、Karpenter が置き換えます。",
@@ -265,15 +220,7 @@
       "expiration": "期限切れ",
       "other": "その他"
     },
-    "disruptions": "中断イベント",
-    "claimTitle": "起動と中断",
-    "poolTitle": "上限と中断",
-    "resource": "リソース",
-    "inUse": "使用中",
-    "limit": "上限",
-    "noLimits": "上限なし: NodePool は制限なくノードを起動できます。",
-    "recentDisruptions": "NodeClaim の最近の中断",
-    "noDisruptions": "最近の中断イベントはありません。"
+    "disruptions": "中断イベント"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -292,7 +239,6 @@
     "scaleDown": "スケールダウン"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "KEDA はこのオブジェクトをスケールできません ({{reason}})。Ready 条件とイベントを確認してください。",
     "paused": "アノテーション {{annotation}} で一時停止中です。KEDA は対象をスケールしません。",
     "pausedAt": "アノテーション {{annotation}} で一時停止中です。対象はこのレプリカ数で維持されます: {{replicas}}。",
@@ -302,22 +248,6 @@
     "jobInactive": "非アクティブ: しきい値を超えるトリガーがないため、Job は作成されません。",
     "active": "アクティブ: トリガーがアクティブ化のしきい値を超えているため、HPA が対象をスケールします (レプリカ: {{min}}–{{max}})。",
     "inactiveIdle": "非アクティブ: しきい値を超えるトリガーがないため、対象はアイドル時のレプリカ数で維持されます: {{replicas}}。",
-    "inactive": "非アクティブ: しきい値を超えるトリガーがないため、HPA は対象を minReplicaCount で維持します: {{replicas}}。",
-    "hpaMissing": "KEDA がこの ScaledObject のために管理する HPA {{name}} がありません。",
-    "noTriggers": "トリガーはありません。",
-    "trigger": "トリガー",
-    "metadata": "メタデータ",
-    "auth": "認証",
-    "health": "正常性",
-    "seconds_other": "{{count}} 秒",
-    "fallbackSpec": "失敗のしきい値: {{failures}}、フォールバックのレプリカ: {{replicas}}",
-    "triggers": "トリガー",
-    "managedHpa": "KEDA が管理する HPA",
-    "authTitle": "パラメーターの取得元",
-    "noSources": "パラメーターの取得元はありません。",
-    "parameter": "パラメーター",
-    "from": "取得元",
-    "name": "名前",
-    "key": "キー"
+    "inactive": "非アクティブ: しきい値を超えるトリガーがないため、HPA は対象を minReplicaCount で維持します: {{replicas}}。"
   }
 }

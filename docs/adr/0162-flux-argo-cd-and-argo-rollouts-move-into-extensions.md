@@ -301,3 +301,24 @@ not: `src/features/diagnose/traefik.ts`, registered with the "Diagnose" action a
 `resolve.ts` it needs (the groups, routes and their references in the shapes of Traefik's types, a TraefikService's
 children, and what a reference finds: another namespace, another provider and the old group only stay unknown) — with
 its fixture and its texts as `diagnose:traefik.*`. Where the extension still differs is listed in its README.
+
+## Amendment: Trivy, KEDA and Karpenter
+
+`extensions/trivy` (`sextant.trivy`, 1.0.0) takes Trivy Operator's report kinds (ADR-0076): Vulnerability, ConfigAudit,
+ExposedSecret, RbacAssessment, InfraAssessment, Compliance and SBOM reports of `aquasecurity.github.io`, namespaced and
+cluster-wide, in the section `trivy` with the built-in columns and details (the scanned object, the operator's summary
+counts and the most severe rows), and a workload's "Image scans (Trivy)" block, now its details section `scans`.
+`extensions/keda` (`sextant.keda`, 1.0.0) and `extensions/karpenter` (`sextant.karpenter`, 1.0.0) take the KEDA and
+Karpenter parts of the autoscaling view (ADR-0080): ScaledObjects, ScaledJobs and (Cluster)TriggerAuthentications in
+the section `keda`, NodePools, NodeClaims and the served node classes in the section `karpenter`, with the built-in
+columns, "Only problems" and details. The three sections, and VPA's, which hung off `karpenter` in
+`EXTENSION_SECTION_PLACES`, now hang off `certManager`, in their former order, so the sidebar is unchanged; the sidebar
+offers each extension where `aquasecurity.github.io`, `keda.sh` or `karpenter.sh` is served. None of them had a
+problem category, so the version-3 migration has nothing to move. The core keeps what its own views read of these
+objects: the Security page's severity counts and filter per workload (`security/trivy.ts`: the two report kinds,
+`countsOf`, `countAtLeast`, `scannedAs`, `indexReports`, `reportsFor`, `sumCounts`; `useTrivyReports` and
+`useServedTrivyKind`; `SeverityCounts`), and the KEDA and Karpenter readers (`autoscaling/keda.ts`,
+`autoscaling/karpenter.ts`) behind a workload's "Autoscaling" block (a ScaledObject that scales it), the Node
+"Autoscaling" block (its NodePool and NodeClaim, disruption), a Pending pod's scheduling (Karpenter's nominations and
+launches, a NodePool at its limits), agents' `get_autoscaling_status` and Cleanup's kinds. The icons the extensions
+name stay in Sextant's set. Where the extensions still differ is listed in their READMEs.

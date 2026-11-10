@@ -112,65 +112,11 @@
     "CRITICAL": "緊急",
     "HIGH": "高",
     "MEDIUM": "中",
-    "LOW": "低",
-    "UNKNOWN": "不明"
+    "LOW": "低"
   },
   "trivy": {
-    "sidebar": {
-      "vulnerabilityReports": "VulnerabilityReport",
-      "clusterVulnerabilityReports": "ClusterVulnerabilityReport",
-      "configAuditReports": "ConfigAuditReport",
-      "clusterConfigAuditReports": "ClusterConfigAuditReport",
-      "exposedSecretReports": "ExposedSecretReport",
-      "rbacAssessmentReports": "RbacAssessmentReport",
-      "clusterRbacAssessmentReports": "ClusterRbacAssessmentReport",
-      "infraAssessmentReports": "InfraAssessmentReport",
-      "clusterInfraAssessmentReports": "ClusterInfraAssessmentReport",
-      "clusterComplianceReports": "ClusterComplianceReport",
-      "sbomReports": "SbomReport",
-      "clusterSbomReports": "ClusterSbomReport"
-    },
-    "columns": {
-      "resource": "リソース",
-      "container": "コンテナー",
-      "image": "イメージ",
-      "critical": "緊急",
-      "high": "高",
-      "medium": "中",
-      "low": "低",
-      "title": "タイトル",
-      "pass": "合格",
-      "fail": "不合格",
-      "components": "コンポーネント"
-    },
-    "table": {
-      "severity": "重大度",
-      "id": "ID",
-      "package": "パッケージ",
-      "installed": "インストール済み",
-      "fixed": "修正バージョン",
-      "rule": "ルール",
-      "title": "タイトル",
-      "target": "対象",
-      "control": "コントロール",
-      "failed": "不合格"
-    },
-    "section": "イメージのスキャン (Trivy)",
-    "reportTitle": "レポート",
-    "scanned": "スキャン対象:",
-    "none": "Trivy Operator にはまだこのオブジェクトのレポートがありません。",
     "watchFailed": "Trivy のレポートを読み取れませんでした。",
-    "openReport": "レポートを開く",
-    "configAudit": "構成の監査",
     "severityCount": "{{severity}}: {{count}}",
-    "fixable_other": "{{count}} 件の脆弱性に修正バージョンがあります。",
-    "topShown": "表示: {{total}} 件中、重大な {{shown}} 件。",
-    "noFix": "修正なし",
-    "noVulnerabilities": "脆弱性は見つかりませんでした。",
-    "noFailed": "すべてのチェックに合格しました。",
-    "noSecrets": "露出したシークレットは見つかりませんでした。",
-    "passFail": "合格: {{pass}}、不合格: {{fail}}",
-    "components": "コンポーネント: {{count}}",
     "auditCount_other": "緊急または高の監査の指摘 {{count}} 件"
   }
 }

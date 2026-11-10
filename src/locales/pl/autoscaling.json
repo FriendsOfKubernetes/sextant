@@ -1,34 +1,5 @@
 {
   "title": "Autoskalowanie",
-  "sidebar": {
-    "scaledObjects": "Scaled Objects",
-    "scaledJobs": "Scaled Jobs",
-    "triggerAuthentications": "Trigger Authentications",
-    "clusterTriggerAuthentications": "Cluster Trigger Authentications",
-    "nodePools": "Node Pools",
-    "nodeClaims": "Node Claims",
-    "ec2NodeClasses": "EC2 Node Classes",
-    "aksNodeClasses": "AKS Node Classes"
-  },
-  "columns": {
-    "ready": "Gotowy",
-    "state": "Stan",
-    "triggers": "Wyzwalacze",
-    "target": "Cel",
-    "min": "Min.",
-    "max": "Maks.",
-    "sources": "Źródła",
-    "nodeClass": "Klasa węzłów",
-    "nodes": "Węzły",
-    "limits": "Użycie / limity",
-    "consolidation": "Konsolidacja",
-    "nodePool": "NodePool",
-    "instanceType": "Typ instancji",
-    "capacityType": "Pojemność",
-    "zone": "Strefa",
-    "node": "Węzeł",
-    "role": "Rola"
-  },
   "fields": {
     "target": "Cel",
     "replicas": "Repliki",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "Typ pojemności",
-    "instanceType": "Typ instancji",
-    "node": "Węzeł",
-    "zone": "Strefa",
-    "nodeClass": "Klasa węzłów",
-    "consolidationPolicy": "Zasada konsolidacji",
-    "consolidateAfter": "Konsolidacja po",
-    "expireAfter": "Wygaśnięcie po",
-    "budgets": "Budżety przerwań",
-    "idleReplicas": "Repliki w spoczynku",
-    "pollingInterval": "Interwał odpytywania",
-    "cooldownPeriod": "Okres wygaszania",
-    "fallback": "Tryb awaryjny",
-    "maxReplicas": "Maks. replik",
-    "strategy": "Strategia skalowania",
-    "image": "Obraz",
-    "podIdentity": "Tożsamość Poda"
+    "instanceType": "Typ instancji"
   },
   "events": {
     "reason": "Przyczyna",
@@ -299,7 +255,6 @@
     "notLaunched": "Nie uruchomiono: {{reason}}.",
     "notRegistered": "Uruchomiono, ale węzeł nie dołączył do klastra: {{reason}}.",
     "notInitialized": "Węzeł dołączył, ale nie jest jeszcze zainicjowany: {{reason}}.",
-    "ready": "Uruchomiony, zarejestrowany i zainicjowany.",
     "disrupting": "Karpenter przerywa pracę tego węzła: ma taint, a jego pody są przenoszone.",
     "terminating": "Węzeł jest kończony.",
     "drifted": "Dryf ({{reason}}): węzeł nie odpowiada już swojemu NodePool ani klasie węzłów, więc Karpenter go zastępuje.",
@@ -316,15 +271,7 @@
       "expiration": "Wygaśnięcie",
       "other": "Inne"
     },
-    "disruptions": "Zdarzenia przerwań",
-    "claimTitle": "Uruchomienie i przerwania",
-    "poolTitle": "Limity i przerwania",
-    "resource": "Zasób",
-    "inUse": "W użyciu",
-    "limit": "Limit",
-    "noLimits": "Brak limitów: NodePool może uruchamiać węzły bez ograniczeń.",
-    "recentDisruptions": "Ostatnie przerwania jego NodeClaim",
-    "noDisruptions": "Brak ostatnich zdarzeń przerwań."
+    "disruptions": "Zdarzenia przerwań"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -343,7 +290,6 @@
     "scaleDown": "W dół"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "KEDA nie może skalować tego obiektu ({{reason}}): zobacz warunek Ready i zdarzenia.",
     "paused": "Wstrzymano adnotacją {{annotation}}: KEDA nie skaluje celu.",
     "pausedAt": "Wstrzymano adnotacją {{annotation}}: cel jest utrzymywany przy tej liczbie replik: {{replicas}}.",
@@ -356,25 +302,6 @@
     "jobInactive": "Nieaktywny: żaden wyzwalacz nie przekracza progu aktywacji, więc Joby nie są tworzone.",
     "active": "Aktywny: wyzwalacz przekracza próg aktywacji, więc HPA skaluje cel (repliki: {{min}}–{{max}}).",
     "inactiveIdle": "Nieaktywny: żaden wyzwalacz nie przekracza progu aktywacji, więc cel pozostaje przy liczbie replik w spoczynku: {{replicas}}.",
-    "inactive": "Nieaktywny: żaden wyzwalacz nie przekracza progu aktywacji, więc HPA utrzymuje cel przy minReplicaCount: {{replicas}}.",
-    "hpaMissing": "HPA {{name}}, którym KEDA zarządza dla tego ScaledObject, nie istnieje.",
-    "noTriggers": "Brak wyzwalaczy.",
-    "trigger": "Wyzwalacz",
-    "metadata": "Metadane",
-    "auth": "Uwierzytelnianie",
-    "health": "Kondycja",
-    "seconds_one": "{{count}} sekunda",
-    "seconds_few": "{{count}} sekundy",
-    "seconds_many": "{{count}} sekund",
-    "seconds_other": "{{count}} sekundy",
-    "fallbackSpec": "próg błędów: {{failures}}; repliki awaryjne: {{replicas}}",
-    "triggers": "Wyzwalacze",
-    "managedHpa": "HPA zarządzany przez KEDA",
-    "authTitle": "Skąd pochodzą parametry",
-    "noSources": "Brak źródeł parametrów.",
-    "parameter": "Parametr",
-    "from": "Źródło",
-    "name": "Nazwa",
-    "key": "Klucz"
+    "inactive": "Nieaktywny: żaden wyzwalacz nie przekracza progu aktywacji, więc HPA utrzymuje cel przy minReplicaCount: {{replicas}}."
   }
 }

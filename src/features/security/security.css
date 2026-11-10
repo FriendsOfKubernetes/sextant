@@ -1,4 +1,4 @@
-/* Security posture: the page, the details section, findings with their fix, and Trivy report tables. */
+/* Security posture: the page, the details section and findings with their fix. */
 .sec-page {
   padding: 16px 24px 32px;
   min-width: 0;
@@ -83,8 +83,7 @@
 }
 
 .sec-rows,
-.sec-findings,
-.sec-checks {
+.sec-findings {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -97,8 +96,6 @@
 
 .sec-row__head,
 .sec-finding__head,
-.sec-report__head,
-.sec-report__counts,
 .sec-section__posture {
   display: flex;
   flex-wrap: wrap;
@@ -116,8 +113,7 @@
   margin: 4px 0 8px 36px;
 }
 
-.sec-finding,
-.sec-check {
+.sec-finding {
   margin: 6px 0;
   padding: 6px 8px;
   border-left: 3px solid var(--color-border);
@@ -204,53 +200,8 @@
   margin: 8px 0;
 }
 
-.sec-trivy {
-  margin-top: 12px;
-}
-
-.sec-trivy__title {
-  margin: 0 0 6px;
-  font-size: 0.8125rem;
-}
-
-.sec-report {
-  margin: 8px 0 12px;
-}
-
-.sec-report__name {
-  font-weight: 600;
-}
-
 .sec-counts {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 4px;
-}
-
-.sec-remediation {
-  margin: 4px 0 0;
-  overflow-wrap: anywhere;
-}
-
-.sec-table-wrap {
-  overflow-x: auto;
-  margin: 6px 0;
-}
-
-.sec-table {
-  border-collapse: collapse;
-  font-size: 0.75rem;
-}
-
-.sec-table th,
-.sec-table td {
-  padding: 3px 8px;
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: top;
-}
-
-.sec-table th {
-  color: var(--color-text-muted);
-  font-weight: 600;
 }

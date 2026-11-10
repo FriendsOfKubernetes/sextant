@@ -1,34 +1,5 @@
 {
   "title": "Scalabilità automatica",
-  "sidebar": {
-    "scaledObjects": "Scaled Objects",
-    "scaledJobs": "Scaled Jobs",
-    "triggerAuthentications": "Trigger Authentications",
-    "clusterTriggerAuthentications": "Cluster Trigger Authentications",
-    "nodePools": "Node Pools",
-    "nodeClaims": "Node Claims",
-    "ec2NodeClasses": "EC2 Node Classes",
-    "aksNodeClasses": "AKS Node Classes"
-  },
-  "columns": {
-    "ready": "Pronto",
-    "state": "Stato",
-    "triggers": "Trigger",
-    "target": "Destinazione",
-    "min": "Min",
-    "max": "Max",
-    "sources": "Origini",
-    "nodeClass": "Classe di nodi",
-    "nodes": "Nodi",
-    "limits": "Uso / limiti",
-    "consolidation": "Consolidamento",
-    "nodePool": "NodePool",
-    "instanceType": "Tipo di istanza",
-    "capacityType": "Capacità",
-    "zone": "Zona",
-    "node": "Nodo",
-    "role": "Ruolo"
-  },
   "fields": {
     "target": "Destinazione",
     "replicas": "Repliche",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "Tipo di capacità",
-    "instanceType": "Tipo di istanza",
-    "node": "Nodo",
-    "zone": "Zona",
-    "nodeClass": "Classe di nodi",
-    "consolidationPolicy": "Criterio di consolidamento",
-    "consolidateAfter": "Consolida dopo",
-    "expireAfter": "Scade dopo",
-    "budgets": "Budget di interruzione",
-    "idleReplicas": "Repliche inattive",
-    "pollingInterval": "Intervallo di polling",
-    "cooldownPeriod": "Periodo di raffreddamento",
-    "fallback": "Fallback",
-    "maxReplicas": "Repliche max",
-    "strategy": "Strategia di scalabilità",
-    "image": "Immagine",
-    "podIdentity": "Identità del Pod"
+    "instanceType": "Tipo di istanza"
   },
   "events": {
     "reason": "Motivo",
@@ -282,7 +238,6 @@
     "notLaunched": "Non avviato: {{reason}}.",
     "notRegistered": "Avviato, ma il nodo non si è unito al cluster: {{reason}}.",
     "notInitialized": "Il nodo si è unito ma non è ancora inizializzato: {{reason}}.",
-    "ready": "Avviato, registrato e inizializzato.",
     "disrupting": "Karpenter sta interrompendo questo nodo: ha un taint e i suoi pod vengono spostati.",
     "terminating": "Il nodo è in fase di arresto.",
     "drifted": "Derivato ({{reason}}): il nodo non corrisponde più al suo NodePool o alla sua classe di nodi, quindi Karpenter lo sostituisce.",
@@ -299,15 +254,7 @@
       "expiration": "Scadenza",
       "other": "Altro"
     },
-    "disruptions": "Eventi di interruzione",
-    "claimTitle": "Avvio e interruzione",
-    "poolTitle": "Limiti e interruzione",
-    "resource": "Risorsa",
-    "inUse": "In uso",
-    "limit": "Limite",
-    "noLimits": "Nessun limite: il NodePool può avviare nodi senza tetto.",
-    "recentDisruptions": "Interruzioni recenti dei suoi NodeClaim",
-    "noDisruptions": "Nessun evento di interruzione recente."
+    "disruptions": "Eventi di interruzione"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -326,7 +273,6 @@
     "scaleDown": "Riduzione"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "KEDA non riesce a ridimensionare questo oggetto ({{reason}}): vedi la condizione Ready e gli eventi.",
     "paused": "In pausa per l'annotazione {{annotation}}: KEDA non ridimensiona la destinazione.",
     "pausedAt": "In pausa per l'annotazione {{annotation}}: la destinazione resta a questo numero di repliche: {{replicas}}.",
@@ -338,24 +284,6 @@
     "jobInactive": "Inattivo: nessun trigger supera la soglia di attivazione, quindi non vengono creati Job.",
     "active": "Attivo: un trigger supera la soglia di attivazione, quindi l'HPA ridimensiona la destinazione (repliche: {{min}}–{{max}}).",
     "inactiveIdle": "Inattivo: nessun trigger supera la soglia di attivazione, quindi la destinazione resta al numero di repliche inattive: {{replicas}}.",
-    "inactive": "Inattivo: nessun trigger supera la soglia di attivazione, quindi l'HPA tiene la destinazione a minReplicaCount: {{replicas}}.",
-    "hpaMissing": "L'HPA {{name}} che KEDA gestisce per questo ScaledObject non esiste.",
-    "noTriggers": "Nessun trigger.",
-    "trigger": "Trigger",
-    "metadata": "Metadati",
-    "auth": "Autenticazione",
-    "health": "Salute",
-    "seconds_one": "{{count}} secondo",
-    "seconds_many": "{{count}} secondi",
-    "seconds_other": "{{count}} secondi",
-    "fallbackSpec": "soglia di errori: {{failures}}; repliche di fallback: {{replicas}}",
-    "triggers": "Trigger",
-    "managedHpa": "L'HPA gestito da KEDA",
-    "authTitle": "Da dove vengono i parametri",
-    "noSources": "Nessuna origine dei parametri.",
-    "parameter": "Parametro",
-    "from": "Origine",
-    "name": "Nome",
-    "key": "Chiave"
+    "inactive": "Inattivo: nessun trigger supera la soglia di attivazione, quindi l'HPA tiene la destinazione a minReplicaCount: {{replicas}}."
   }
 }

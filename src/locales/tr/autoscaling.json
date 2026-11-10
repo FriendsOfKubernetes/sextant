@@ -1,34 +1,5 @@
 {
   "title": "Otomatik ölçeklendirme",
-  "sidebar": {
-    "scaledObjects": "Scaled Objects",
-    "scaledJobs": "Scaled Jobs",
-    "triggerAuthentications": "Trigger Authentications",
-    "clusterTriggerAuthentications": "Cluster Trigger Authentications",
-    "nodePools": "Node Pools",
-    "nodeClaims": "Node Claims",
-    "ec2NodeClasses": "EC2 Node Classes",
-    "aksNodeClasses": "AKS Node Classes"
-  },
-  "columns": {
-    "ready": "Hazır",
-    "state": "Durum",
-    "triggers": "Tetikleyiciler",
-    "target": "Hedef",
-    "min": "En az",
-    "max": "En çok",
-    "sources": "Kaynaklar",
-    "nodeClass": "Düğüm sınıfı",
-    "nodes": "Düğümler",
-    "limits": "Kullanım / sınırlar",
-    "consolidation": "Birleştirme",
-    "nodePool": "NodePool",
-    "instanceType": "Örnek türü",
-    "capacityType": "Kapasite",
-    "zone": "Bölge",
-    "node": "Düğüm",
-    "role": "Rol"
-  },
   "fields": {
     "target": "Hedef",
     "replicas": "Replikalar",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "Kapasite türü",
-    "instanceType": "Örnek türü",
-    "node": "Düğüm",
-    "zone": "Bölge",
-    "nodeClass": "Düğüm sınıfı",
-    "consolidationPolicy": "Birleştirme ilkesi",
-    "consolidateAfter": "Birleştirme gecikmesi",
-    "expireAfter": "Sona erme süresi",
-    "budgets": "Kesinti bütçeleri",
-    "idleReplicas": "Boşta replikalar",
-    "pollingInterval": "Yoklama aralığı",
-    "cooldownPeriod": "Soğuma süresi",
-    "fallback": "Yedek mod",
-    "maxReplicas": "En çok replika",
-    "strategy": "Ölçeklendirme stratejisi",
-    "image": "İmaj",
-    "podIdentity": "Pod kimliği"
+    "instanceType": "Örnek türü"
   },
   "events": {
     "reason": "Neden",
@@ -265,7 +221,6 @@
     "notLaunched": "Başlatılmadı: {{reason}}.",
     "notRegistered": "Başlatıldı, ancak düğüm kümeye katılmadı: {{reason}}.",
     "notInitialized": "Düğüm katıldı ancak henüz başlatılmadı: {{reason}}.",
-    "ready": "Başlatıldı, kaydedildi ve hazırlandı.",
     "disrupting": "Karpenter bu düğümü kesintiye uğratıyor: düğümde taint var ve pod'ları taşınıyor.",
     "terminating": "Düğüm sonlandırılıyor.",
     "drifted": "Sapma ({{reason}}): düğüm artık NodePool'u veya düğüm sınıfıyla eşleşmiyor, bu yüzden Karpenter onu değiştiriyor.",
@@ -282,15 +237,7 @@
       "expiration": "Süre dolumu",
       "other": "Diğer"
     },
-    "disruptions": "Kesinti olayları",
-    "claimTitle": "Başlatma ve kesinti",
-    "poolTitle": "Sınırlar ve kesinti",
-    "resource": "Kaynak",
-    "inUse": "Kullanımda",
-    "limit": "Sınır",
-    "noLimits": "Sınır yok: NodePool sınırsız düğüm başlatabilir.",
-    "recentDisruptions": "NodeClaim'lerinin son kesintileri",
-    "noDisruptions": "Yakın zamanda kesinti olayı yok."
+    "disruptions": "Kesinti olayları"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -309,7 +256,6 @@
     "scaleDown": "Azaltma"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "KEDA bu nesneyi ölçeklendiremiyor ({{reason}}): Ready koşuluna ve olaylara bakın.",
     "paused": "{{annotation}} ek açıklamasıyla duraklatıldı: KEDA hedefi ölçeklendirmiyor.",
     "pausedAt": "{{annotation}} ek açıklamasıyla duraklatıldı: hedef şu replika sayısında tutuluyor: {{replicas}}.",
@@ -320,23 +266,6 @@
     "jobInactive": "Etkin değil: hiçbir tetikleyici etkinleştirme eşiğinin üstünde değil, bu yüzden Job oluşturulmuyor.",
     "active": "Etkin: bir tetikleyici etkinleştirme eşiğinin üstünde, bu yüzden HPA hedefi ölçeklendiriyor (replikalar: {{min}}–{{max}}).",
     "inactiveIdle": "Etkin değil: hiçbir tetikleyici etkinleştirme eşiğinin üstünde değil, bu yüzden hedef boşta replika sayısında tutuluyor: {{replicas}}.",
-    "inactive": "Etkin değil: hiçbir tetikleyici etkinleştirme eşiğinin üstünde değil, bu yüzden HPA hedefi minReplicaCount değerinde tutuyor: {{replicas}}.",
-    "hpaMissing": "KEDA'nın bu ScaledObject için yönettiği HPA {{name}} mevcut değil.",
-    "noTriggers": "Tetikleyici yok.",
-    "trigger": "Tetikleyici",
-    "metadata": "Meta veriler",
-    "auth": "Kimlik doğrulama",
-    "health": "Sağlık",
-    "seconds_one": "{{count}} saniye",
-    "seconds_other": "{{count}} saniye",
-    "fallbackSpec": "hata eşiği: {{failures}}; yedek replikalar: {{replicas}}",
-    "triggers": "Tetikleyiciler",
-    "managedHpa": "KEDA'nın yönettiği HPA",
-    "authTitle": "Parametrelerin kaynağı",
-    "noSources": "Parametre kaynağı yok.",
-    "parameter": "Parametre",
-    "from": "Kaynak",
-    "name": "Ad",
-    "key": "Anahtar"
+    "inactive": "Etkin değil: hiçbir tetikleyici etkinleştirme eşiğinin üstünde değil, bu yüzden HPA hedefi minReplicaCount değerinde tutuyor: {{replicas}}."
   }
 }

@@ -12,7 +12,7 @@ import {
   nominationsOf,
   reachedLimits,
 } from "./karpenter";
-import { authSources, kedaState, managedHpaName, scaleTargetOf, stateWord, triggersOf } from "./keda";
+import { kedaState, scaleTargetOf, triggersOf } from "./keda";
 import type { EventRow } from "./model";
 
 const cond = (type: string, status: string, reason?: string) => ({ type, status, ...(reason ? { reason } : {}) });
@@ -39,11 +39,9 @@ function scaledObject(extra: { annotations?: Record<string, string>; conditions?
 }
 
 describe("KEDA", () => {
-  it("target, managed HPA and triggers with their health", () => {
+  it("target and triggers with their health", () => {
     const so = scaledObject({ status: { health: { "s0-rabbitmq-orders": { numberOfFailures: 4, status: "Failure" } } } });
     expect(scaleTargetOf(so)).toEqual({ apiVersion: "apps/v1", kind: "Deployment", name: "orders-worker" });
-    expect(managedHpaName(so)).toBe("keda-hpa-orders");
-    expect(managedHpaName(scaledObject({ status: { hpaName: "custom" } }))).toBe("custom");
     const triggers = triggersOf(so);
     expect(triggers[0]).toMatchObject({ type: "rabbitmq", auth: { kind: "TriggerAuthentication", name: "rabbit" }, failures: 4, health: "Failure" });
     expect(triggers[0]?.metadata).toEqual(["queueName=orders", "mode=QueueLength", "value=20"]);
@@ -52,17 +50,16 @@ describe("KEDA", () => {
   });
 
   it.each([
-    ["active", [cond("Ready", "True"), cond("Active", "True")], {}, ["keda.active"], "Active"],
-    ["inactive, kept at min", [cond("Ready", "True"), cond("Active", "False")], {}, ["keda.inactive"], "Inactive"],
-    ["inactive, scaled to idle", [cond("Ready", "True"), cond("Active", "False")], { spec: { idleReplicaCount: 0 } }, ["keda.inactiveIdle"], "Inactive"],
-    ["not ready", [cond("Ready", "False", "ScaledObjectCheckFailed"), cond("Active", "False")], {}, ["keda.notReady", "keda.inactive"], "ScaledObjectCheckFailed"],
-    ["paused by annotation", [cond("Ready", "True"), cond("Active", "False")], { annotations: { "autoscaling.keda.sh/paused": "true" } }, ["keda.paused"], "Paused"],
-    ["paused at replicas", [cond("Ready", "True")], { annotations: { "autoscaling.keda.sh/paused-replicas": "2" } }, ["keda.pausedAt"], "Paused"],
-    ["fallback", [cond("Ready", "True"), cond("Active", "True"), cond("Fallback", "True")], { spec: { fallback: { failureThreshold: 3, replicas: 6 } } }, ["keda.fallback", "keda.active"], "Fallback"],
-  ])("%s", (_name, conditions, extra, keys, word) => {
+    ["active", [cond("Ready", "True"), cond("Active", "True")], {}, ["keda.active"]],
+    ["inactive, kept at min", [cond("Ready", "True"), cond("Active", "False")], {}, ["keda.inactive"]],
+    ["inactive, scaled to idle", [cond("Ready", "True"), cond("Active", "False")], { spec: { idleReplicaCount: 0 } }, ["keda.inactiveIdle"]],
+    ["not ready", [cond("Ready", "False", "ScaledObjectCheckFailed"), cond("Active", "False")], {}, ["keda.notReady", "keda.inactive"]],
+    ["paused by annotation", [cond("Ready", "True"), cond("Active", "False")], { annotations: { "autoscaling.keda.sh/paused": "true" } }, ["keda.paused"]],
+    ["paused at replicas", [cond("Ready", "True")], { annotations: { "autoscaling.keda.sh/paused-replicas": "2" } }, ["keda.pausedAt"]],
+    ["fallback", [cond("Ready", "True"), cond("Active", "True"), cond("Fallback", "True")], { spec: { fallback: { failureThreshold: 3, replicas: 6 } } }, ["keda.fallback", "keda.active"]],
+  ])("%s", (_name, conditions, extra, keys) => {
     const so = scaledObject({ conditions, ...(extra as object) });
     expect(kedaState(so).phrases.map((p) => p.key)).toEqual(keys);
-    expect(stateWord(so)).toBe(word);
   });
 
   it("a failing trigger is named", () => {
@@ -73,25 +70,6 @@ describe("KEDA", () => {
   it("a ScaledJob's state", () => {
     const job: KubeObject = { spec: { maxReplicaCount: 5, triggers: [] }, status: { conditions: [cond("Ready", "True"), cond("Active", "True")] } };
     expect(kedaState(job, true).phrases).toEqual([{ key: "keda.jobActive", params: { max: 5 }, tone: "success" }]);
-  });
-
-  it("a TriggerAuthentication's sources, never values", () => {
-    const auth: KubeObject = {
-      spec: {
-        secretTargetRef: [{ parameter: "host", name: "rabbit", key: "url" }],
-        env: [{ parameter: "region", name: "AWS_REGION" }],
-        podIdentity: { provider: "aws" },
-        hashiCorpVault: { address: "https://vault", credentials: [{ parameter: "token", path: "secret/rabbit" }] },
-      },
-    };
-    expect(authSources(auth)).toEqual({
-      sources: [
-        { parameter: "host", from: "Secret", name: "rabbit", key: "url" },
-        { parameter: "region", from: "env", name: "AWS_REGION" },
-        { parameter: "token", from: "hashiCorpVault", name: "secret/rabbit" },
-      ],
-      podIdentity: "aws",
-    });
   });
 });
 

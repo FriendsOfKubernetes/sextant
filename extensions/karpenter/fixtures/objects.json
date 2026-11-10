@@ -1,0 +1,165 @@
+[
+  {
+    "apiVersion": "karpenter.sh/v1",
+    "kind": "NodePool",
+    "metadata": { "name": "default", "uid": "np-default", "creationTimestamp": "2026-09-01T00:00:00Z" },
+    "spec": {
+      "template": { "spec": { "expireAfter": "720h", "nodeClassRef": { "group": "karpenter.k8s.aws", "kind": "EC2NodeClass", "name": "default" } } },
+      "limits": { "cpu": "1000", "memory": "1000Gi" },
+      "disruption": {
+        "consolidationPolicy": "WhenEmptyOrUnderutilized",
+        "consolidateAfter": "1m",
+        "budgets": [{ "nodes": "10%" }, { "nodes": "0", "reasons": ["Drifted", "Underutilized"], "schedule": "0 9 * * mon-fri", "duration": "8h" }]
+      }
+    },
+    "status": {
+      "resources": { "cpu": "12", "memory": "48093964Ki", "nodes": "3", "pods": "330" },
+      "conditions": [{ "type": "Ready", "status": "True", "reason": "Ready" }]
+    }
+  },
+  {
+    "apiVersion": "karpenter.sh/v1",
+    "kind": "NodePool",
+    "metadata": { "name": "gpu", "uid": "np-gpu" },
+    "spec": {
+      "template": { "spec": { "nodeClassRef": { "group": "karpenter.k8s.aws", "kind": "EC2NodeClass", "name": "gpu" } } },
+      "limits": { "cpu": "64", "nvidia.com/gpu": "8" },
+      "disruption": { "consolidationPolicy": "WhenEmpty", "consolidateAfter": "30s" }
+    },
+    "status": { "resources": { "cpu": "64", "nvidia.com/gpu": "8", "nodes": "2" }, "conditions": [{ "type": "Ready", "status": "True" }] }
+  },
+  {
+    "apiVersion": "karpenter.sh/v1",
+    "kind": "NodePool",
+    "metadata": { "name": "spot", "uid": "np-spot" },
+    "spec": { "template": { "spec": { "nodeClassRef": { "group": "karpenter.azure.com", "kind": "AKSNodeClass", "name": "spot" } } }, "limits": { "nodes": "5" } },
+    "status": { "resources": { "nodes": "5" }, "conditions": [{ "type": "Ready", "status": "False", "reason": "NodeClassNotReady", "message": "AKSNodeClass spot is not ready" }] }
+  },
+  {
+    "apiVersion": "karpenter.sh/v1",
+    "kind": "NodePool",
+    "metadata": { "name": "unbounded", "uid": "np-unbounded" },
+    "spec": { "template": { "spec": { "nodeClassRef": { "kind": "EC2NodeClass", "name": "default" } } } },
+    "status": { "resources": { "nodes": "0" } }
+  },
+  {
+    "apiVersion": "karpenter.sh/v1",
+    "kind": "NodePool",
+    "metadata": { "name": "many", "uid": "np-many" },
+    "spec": { "limits": { "cpu": "100", "memory": "400Gi", "nodes": "20" } },
+    "status": { "resources": { "cpu": "4", "memory": "16Gi", "nodes": "1" }, "conditions": [{ "type": "Ready", "status": "Unknown" }] }
+  },
+  {
+    "apiVersion": "karpenter.sh/v1",
+    "kind": "NodeClaim",
+    "metadata": {
+      "name": "default-abc12",
+      "uid": "nc-ready",
+      "creationTimestamp": "2026-10-20T08:00:00Z",
+      "labels": { "karpenter.sh/nodepool": "default", "node.kubernetes.io/instance-type": "m6i.large", "karpenter.sh/capacity-type": "spot", "topology.kubernetes.io/zone": "eu-west-1a" },
+      "annotations": { "karpenter.sh/do-not-disrupt": "true" }
+    },
+    "spec": { "nodeClassRef": { "group": "karpenter.k8s.aws", "kind": "EC2NodeClass", "name": "default" } },
+    "status": {
+      "nodeName": "ip-10-0-1-23.eu-west-1.compute.internal",
+      "providerID": "aws:///eu-west-1a/i-0abc",
+      "conditions": [
+        { "type": "Launched", "status": "True" },
+        { "type": "Registered", "status": "True" },
+        { "type": "Initialized", "status": "True" },
+        { "type": "Consolidatable", "status": "True" },
+        { "type": "Drifted", "status": "True", "reason": "NodeClassDrift" },
+        { "type": "Ready", "status": "True" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "karpenter.sh/v1",
+    "kind": "NodeClaim",
+    "metadata": { "name": "default-launching", "uid": "nc-launching", "labels": { "karpenter.sh/nodepool": "default" } },
+    "status": { "conditions": [{ "type": "Ready", "status": "Unknown" }] }
+  },
+  {
+    "apiVersion": "karpenter.sh/v1",
+    "kind": "NodeClaim",
+    "metadata": { "name": "gpu-failed", "uid": "nc-failed", "labels": { "karpenter.sh/nodepool": "gpu" } },
+    "status": { "conditions": [{ "type": "Launched", "status": "False", "reason": "InsufficientCapacity", "message": "no capacity" }, { "type": "Ready", "status": "False" }] }
+  },
+  {
+    "apiVersion": "karpenter.sh/v1",
+    "kind": "NodeClaim",
+    "metadata": { "name": "spot-joining", "uid": "nc-joining", "labels": { "karpenter.sh/provisioner-name": "spot" }, "deletionTimestamp": "2026-10-22T13:00:00Z" },
+    "status": { "nodeName": "aks-spot-1", "conditions": [{ "type": "Launched", "status": "True" }, { "type": "Registered", "status": "Unknown", "reason": "AwaitingReconciliation" }] }
+  },
+  {
+    "apiVersion": "karpenter.sh/v1",
+    "kind": "NodeClaim",
+    "metadata": { "name": "default-init", "uid": "nc-init", "labels": { "karpenter.sh/nodepool": "default" } },
+    "spec": { "expireAfter": "Never" },
+    "status": { "conditions": [{ "type": "Launched", "status": "True" }, { "type": "Registered", "status": "True" }, { "type": "Initialized", "status": "False" }, { "type": "Empty", "status": "True" }, { "type": "Expired", "status": "True" }] }
+  },
+  {
+    "apiVersion": "karpenter.k8s.aws/v1",
+    "kind": "EC2NodeClass",
+    "metadata": { "name": "default", "uid": "ec2-default" },
+    "spec": { "role": "KarpenterNodeRole-prod", "amiSelectorTerms": [{ "alias": "al2023@latest" }] },
+    "status": { "conditions": [{ "type": "Ready", "status": "True" }] }
+  },
+  {
+    "apiVersion": "karpenter.k8s.aws/v1",
+    "kind": "EC2NodeClass",
+    "metadata": { "name": "gpu", "uid": "ec2-gpu" },
+    "spec": { "instanceProfile": "KarpenterGpuProfile" },
+    "status": { "conditions": [{ "type": "Ready", "status": "False", "reason": "AMINotFound" }] }
+  },
+  {
+    "apiVersion": "karpenter.azure.com/v1beta1",
+    "kind": "AKSNodeClass",
+    "metadata": { "name": "spot", "uid": "aks-spot" },
+    "spec": { "imageFamily": "Ubuntu2204" }
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Event",
+    "metadata": { "name": "default-abc12.1", "namespace": "default", "uid": "ev-1" },
+    "involvedObject": { "kind": "NodeClaim", "name": "default-abc12" },
+    "reason": "DisruptionBlocked",
+    "message": "Cannot disrupt NodeClaim: pdb default/web prevents pod evictions",
+    "type": "Normal",
+    "source": { "component": "karpenter" },
+    "lastTimestamp": "2026-10-22T13:30:00Z"
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Event",
+    "metadata": { "name": "default-old.1", "namespace": "default", "uid": "ev-2" },
+    "involvedObject": { "kind": "NodeClaim", "name": "default-old42" },
+    "reason": "DisruptionTerminating",
+    "message": "Disrupting NodeClaim: Drifted/Delete",
+    "type": "Warning",
+    "source": { "component": "karpenter" },
+    "lastTimestamp": "2026-10-22T12:00:00Z"
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Event",
+    "metadata": { "name": "gpu-1.1", "namespace": "default", "uid": "ev-3" },
+    "involvedObject": { "kind": "NodeClaim", "name": "gpu-x1" },
+    "reason": "Unconsolidatable",
+    "message": "Can't replace with a cheaper node",
+    "type": "Normal",
+    "source": { "component": "karpenter" },
+    "lastTimestamp": "2026-10-22T11:00:00Z"
+  },
+  {
+    "apiVersion": "v1",
+    "kind": "Event",
+    "metadata": { "name": "default-abc12.2", "namespace": "default", "uid": "ev-4" },
+    "involvedObject": { "kind": "NodeClaim", "name": "default-abc12" },
+    "reason": "Launched",
+    "message": "Status condition transitioned, Type: Launched, Status: True",
+    "type": "Normal",
+    "source": { "component": "karpenter" },
+    "lastTimestamp": "2026-10-20T08:01:00Z"
+  }
+]

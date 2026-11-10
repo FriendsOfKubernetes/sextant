@@ -1,0 +1,50 @@
+{
+  "apiVersion": "aquasecurity.github.io/v1alpha1",
+  "kind": "ConfigAuditReport",
+  "metadata": {
+    "name": "replicaset-web-7d9c6b8f5d",
+    "namespace": "shop",
+    "uid": "car-1",
+    "creationTimestamp": "2026-10-10T08:00:00Z",
+    "labels": {
+      "plugin-config-hash": "659b7b9c46",
+      "resource-spec-hash": "6c7d8b9f4",
+      "trivy-operator.resource.kind": "ReplicaSet",
+      "trivy-operator.resource.name": "web-7d9c6b8f5d",
+      "trivy-operator.resource.namespace": "shop"
+    }
+  },
+  "report": {
+    "updateTimestamp": "2026-10-10T08:00:00Z",
+    "scanner": { "name": "Trivy", "vendor": "Aqua Security", "version": "0.62.1" },
+    "summary": { "criticalCount": 0, "highCount": 1, "mediumCount": 1, "lowCount": 0 },
+    "checks": [
+      {
+        "checkID": "KSV001",
+        "title": "Can elevate its own privileges",
+        "severity": "MEDIUM",
+        "category": "Kubernetes Security Check",
+        "description": "A program inside the container can elevate its own privileges and run as root.",
+        "messages": ["Container 'nginx' should set 'securityContext.allowPrivilegeEscalation' to false"],
+        "remediation": "Set 'set containers[].securityContext.allowPrivilegeEscalation' to 'false'.",
+        "success": false
+      },
+      {
+        "checkID": "KSV014",
+        "title": "Root file system is not read-only",
+        "severity": "HIGH",
+        "category": "Kubernetes Security Check",
+        "messages": ["Container 'nginx' should set 'securityContext.readOnlyRootFilesystem' to true"],
+        "remediation": "Change 'containers[].securityContext.readOnlyRootFilesystem' to 'true'.",
+        "success": false
+      },
+      {
+        "checkID": "KSV017",
+        "title": "Privileged container",
+        "severity": "HIGH",
+        "category": "Kubernetes Security Check",
+        "success": true
+      }
+    ]
+  }
+}

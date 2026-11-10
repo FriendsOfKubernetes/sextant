@@ -112,65 +112,11 @@
     "CRITICAL": "重大",
     "HIGH": "高",
     "MEDIUM": "中",
-    "LOW": "低",
-    "UNKNOWN": "未知"
+    "LOW": "低"
   },
   "trivy": {
-    "sidebar": {
-      "vulnerabilityReports": "Vulnerability Reports",
-      "clusterVulnerabilityReports": "Cluster Vulnerability Reports",
-      "configAuditReports": "Config Audit Reports",
-      "clusterConfigAuditReports": "Cluster Config Audit Reports",
-      "exposedSecretReports": "Exposed Secret Reports",
-      "rbacAssessmentReports": "RBAC Assessment Reports",
-      "clusterRbacAssessmentReports": "Cluster RBAC Assessment Reports",
-      "infraAssessmentReports": "Infra Assessment Reports",
-      "clusterInfraAssessmentReports": "Cluster Infra Assessment Reports",
-      "clusterComplianceReports": "Cluster Compliance Reports",
-      "sbomReports": "SBOM Reports",
-      "clusterSbomReports": "Cluster SBOM Reports"
-    },
-    "columns": {
-      "resource": "資源",
-      "container": "容器",
-      "image": "映像檔",
-      "critical": "重大",
-      "high": "高",
-      "medium": "中",
-      "low": "低",
-      "title": "標題",
-      "pass": "通過",
-      "fail": "失敗",
-      "components": "元件"
-    },
-    "table": {
-      "severity": "嚴重性",
-      "id": "ID",
-      "package": "套件",
-      "installed": "已安裝",
-      "fixed": "修正版本",
-      "rule": "規則",
-      "title": "標題",
-      "target": "目標",
-      "control": "控制項",
-      "failed": "失敗"
-    },
-    "section": "映像檔掃描（Trivy）",
-    "reportTitle": "報告",
-    "scanned": "掃描的物件：",
-    "none": "Trivy Operator 尚無此物件的報告。",
     "watchFailed": "無法讀取 Trivy 報告。",
-    "openReport": "開啟報告",
-    "configAudit": "設定稽核",
     "severityCount": "{{severity}}: {{count}}",
-    "fixable_other": "{{count}} 個弱點有修正版本。",
-    "topShown": "已列出：{{total}} 個中最嚴重的 {{shown}} 個。",
-    "noFix": "無修正",
-    "noVulnerabilities": "未發現弱點。",
-    "noFailed": "所有檢查皆已通過。",
-    "noSecrets": "未發現外洩的機密。",
-    "passFail": "通過：{{pass}}，失敗：{{fail}}",
-    "components": "元件：{{count}}",
     "auditCount_other": "{{count}} 項重大或高稽核發現"
   }
 }

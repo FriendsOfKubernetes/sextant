@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Подання інструментів кластера тепер розширення",
-      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager та OpenShift винесено із Sextant у його власні розширення з каталогу розширень, які оновлюються окремо. Установіть потрібні нижче: доти їхні розділи не показуються. Ваші налаштування сповіщень для них збережено, а бічна панель також пропонує їх у кластерах, де працюють ці інструменти."
+      "text": "Flux, Argo CD, Argo Rollouts, Argo Workflows, Velero, Knative, Traefik, Contour, Kyverno, CloudNativePG, Strimzi, External Secrets, Sealed Secrets, Prometheus Operator, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Cluster API, k3s / RKE2, Dynamic Resource Allocation, NVIDIA GPU Operator, Kueue, JobSet, KubeRay, KServe, Operator Lifecycle Manager та OpenShift винесено із Sextant у його власні розширення з каталогу розширень, які оновлюються окремо. Установіть потрібні нижче: доти їхні розділи не показуються. Ваші налаштування сповіщень для них збережено, а бічна панель також пропонує їх у кластерах, де працюють ці інструменти."
     },
     "api4": {
       "title": "API розширень 4",
@@ -42,6 +42,9 @@
       "kueue": "ClusterQueue з квотою та використанням, LocalQueue, Workload і причини очікування",
       "kyverno": "Політики з режимом і результатами, звіти політик і результати кожного об’єкта",
       "sealed-secrets": "SealedSecret зі станом синхронізації, областю, цільовим Secret і запечатаними ключами, і контролер з його ключами запечатування",
+      "trivy": "Звіти про вразливості, аудит конфігурації, розкриті секрети, RBAC, інфраструктуру, відповідність і SBOM з найсерйознішими знахідками, і скани образів кожного робочого навантаження",
+      "keda": "ScaledObject, ScaledJob і TriggerAuthentication з їхнім станом, тригерами та HPA, яким керує KEDA",
+      "karpenter": "NodePool з їхніми лімітами й перериваннями, NodeClaim з їхнім запуском і класи вузлів",
       "vpa": "VerticalPodAutoscaler зі станом і рекомендацією та тим, що отримає новий под, їхні контрольні точки й компоненти, і VPA кожного робочого навантаження",
       "prometheus-operator": "ServiceMonitor, PodMonitor і Probe з тим, що вони вибирають, PrometheusRule, Prometheus і Alertmanager",
       "cluster-api": "Cluster зі станом, control plane, MachineDeployment, MachineSet і Machine аж до Node робочого кластера, MachineHealthCheck і ClusterResourceSet",

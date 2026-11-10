@@ -1,0 +1,110 @@
+[
+  {
+    "apiVersion": "aquasecurity.github.io/v1alpha1",
+    "kind": "ExposedSecretReport",
+    "metadata": {
+      "name": "replicaset-web-7d9c6b8f5d-nginx",
+      "namespace": "shop",
+      "uid": "esr-1",
+      "creationTimestamp": "2026-10-10T08:00:00Z",
+      "labels": {
+        "trivy-operator.container.name": "nginx",
+        "trivy-operator.resource.kind": "ReplicaSet",
+        "trivy-operator.resource.name": "web-7d9c6b8f5d",
+        "trivy-operator.resource.namespace": "shop"
+      }
+    },
+    "report": {
+      "registry": { "server": "ghcr.io" },
+      "artifact": { "repository": "acme/web", "digest": "sha256:0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0" },
+      "summary": { "criticalCount": 1, "highCount": 0, "mediumCount": 0, "lowCount": 0 },
+      "secrets": [
+        { "ruleID": "aws-access-key-id", "severity": "CRITICAL", "title": "AWS Access Key ID", "target": "/app/.env", "category": "AWS", "match": "AWS_ACCESS_KEY_ID=AKIA****" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "aquasecurity.github.io/v1alpha1",
+    "kind": "ClusterRbacAssessmentReport",
+    "metadata": {
+      "name": "clusterrole-admin",
+      "uid": "crar-1",
+      "creationTimestamp": "2026-10-10T08:00:00Z",
+      "labels": { "trivy-operator.resource.kind": "ClusterRole", "trivy-operator.resource.name": "admin" }
+    },
+    "report": {
+      "summary": { "criticalCount": 2, "highCount": 1, "mediumCount": 0, "lowCount": 3 },
+      "checks": [
+        { "checkID": "KSV041", "title": "Manage secrets", "severity": "CRITICAL", "messages": ["ClusterRole 'admin' shouldn't have access to manage secrets"], "remediation": "Remove 'secrets' from the resources.", "success": false },
+        { "checkID": "KSV044", "title": "Manage all resources", "severity": "CRITICAL", "messages": ["first", "second"], "success": false },
+        { "checkID": "KSV048", "title": "Manage Kubernetes workloads and pods", "severity": "HIGH", "success": false },
+        { "checkID": "KSV113", "title": "Manage namespace secrets", "severity": "LOW", "success": true }
+      ]
+    }
+  },
+  {
+    "apiVersion": "aquasecurity.github.io/v1alpha1",
+    "kind": "ClusterInfraAssessmentReport",
+    "metadata": {
+      "name": "node-worker-1",
+      "uid": "ciar-1",
+      "creationTimestamp": "2026-10-10T08:00:00Z",
+      "labels": { "trivy-operator.resource.kind": "Node", "trivy-operator.resource.name": "worker-1" }
+    },
+    "report": { "summary": { "criticalCount": 0, "highCount": 0, "mediumCount": 0, "lowCount": 0 }, "checks": [{ "checkID": "KCV0001", "severity": "HIGH", "success": true }] }
+  },
+  {
+    "apiVersion": "aquasecurity.github.io/v1alpha1",
+    "kind": "ClusterComplianceReport",
+    "metadata": { "name": "k8s-cis-1.23", "uid": "ccr-1", "creationTimestamp": "2026-10-10T08:00:00Z" },
+    "spec": { "compliance": { "id": "k8s-cis-1.23", "title": "CIS Kubernetes Benchmarks v1.23" } },
+    "status": {
+      "summary": { "passCount": 101, "failCount": 15 },
+      "summaryReport": {
+        "id": "k8s-cis-1.23",
+        "controlCheck": [
+          { "id": "1.1.1", "name": "Ensure that the API server pod specification file permissions are set to 600", "severity": "HIGH", "totalFail": 1 },
+          { "id": "5.2.2", "name": "Minimize the admission of privileged containers", "severity": "CRITICAL", "totalFail": 4 },
+          { "id": "5.7.4", "name": "The default namespace should not be used", "severity": "MEDIUM", "totalFail": 0 },
+          { "id": "4.2.6", "name": "Ensure that the --protect-kernel-defaults argument is set to true", "severity": "LOW", "totalFail": 2 }
+        ]
+      }
+    }
+  },
+  {
+    "apiVersion": "aquasecurity.github.io/v1alpha1",
+    "kind": "SbomReport",
+    "metadata": {
+      "name": "replicaset-web-7d9c6b8f5d-nginx",
+      "namespace": "shop",
+      "uid": "sbom-1",
+      "creationTimestamp": "2026-10-10T08:00:00Z",
+      "labels": {
+        "trivy-operator.container.name": "nginx",
+        "trivy-operator.resource.kind": "ReplicaSet",
+        "trivy-operator.resource.name": "web-7d9c6b8f5d",
+        "trivy-operator.resource.namespace": "shop"
+      }
+    },
+    "report": {
+      "artifact": { "repository": "library/nginx", "tag": "1.25.3" },
+      "summary": { "componentsCount": 142, "dependenciesCount": 140 }
+    }
+  },
+  {
+    "apiVersion": "aquasecurity.github.io/v1alpha1",
+    "kind": "ClusterVulnerabilityReport",
+    "metadata": {
+      "name": "node-worker-1-kubelet",
+      "uid": "cvr-1",
+      "creationTimestamp": "2026-10-10T08:00:00Z",
+      "labels": { "trivy-operator.resource.kind": "Node", "trivy-operator.resource.name": "worker-1" }
+    },
+    "report": {
+      "registry": { "server": "" },
+      "artifact": { "repository": "k8s.io/kubelet", "tag": "" },
+      "summary": { "highCount": 1 },
+      "vulnerabilities": [{ "vulnerabilityID": "CVE-2025-0001", "resource": "k8s.io/kubelet", "installedVersion": "1.30.0", "severity": "HIGH" }]
+    }
+  }
+]

@@ -17,7 +17,9 @@ import auditJson from "./fixtures/configauditreport.json";
 import vulnJson from "./fixtures/vulnerabilityreport.json";
 import "./index";
 import { SecurityPage } from "./SecurityPage";
-import { CLUSTER_COMPLIANCE_REPORT, CONFIG_AUDIT_REPORT, VULNERABILITY_REPORT } from "./trivy";
+import { CONFIG_AUDIT_REPORT, VULNERABILITY_REPORT } from "./trivy";
+
+const CLUSTER_COMPLIANCE_REPORT: KindRef = { group: "aquasecurity.github.io", version: "v1alpha1", kind: "ClusterComplianceReport" };
 
 const vuln = vulnJson as KubeObject;
 const audit = auditJson as KubeObject;
@@ -124,25 +126,13 @@ const sections = () =>
     .map((b) => b.textContent);
 
 describe("the sidebar", () => {
-  it("lists the Trivy report kinds the cluster serves, and the Security page under Cluster", async () => {
-    render(<Sidebar clusterId="c1" />);
-    await waitFor(() => expect(sections()).toContain("Trivy"));
-    fireEvent.click(screen.getByRole("button", { name: /Trivy/ }));
-    const trivy = within(screen.getByRole("button", { name: /Trivy/ }).closest("li")!);
-    for (const label of ["Vulnerability Reports", "Config Audit Reports", "Cluster Compliance Reports"]) {
-      expect(trivy.getByRole("button", { name: label })).toBeInTheDocument();
-    }
-    expect(trivy.queryByRole("button", { name: "Exposed Secret Reports" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Cluster" }));
-    expect(screen.getByRole("button", { name: "Security" })).toBeInTheDocument();
-  });
-
-  it("has no Trivy section without Trivy Operator", async () => {
-    discovery = [...BUILT_IN];
+  it("lists the Security page under Cluster, and no Trivy section of its own (Sextant's own extension has it)", async () => {
     render(<Sidebar clusterId="c1" />);
     await waitFor(() => expect(wb.backend.calls.some((c) => c.cmd === "cluster_kinds")).toBe(true));
     await waitFor(() => expect(sections()).toContain("Workloads"));
     expect(sections()).not.toContain("Trivy");
+    fireEvent.click(screen.getByRole("button", { name: "Cluster" }));
+    expect(screen.getByRole("button", { name: "Security" })).toBeInTheDocument();
   });
 });
 
@@ -244,7 +234,7 @@ describe("the Security section of a workload", () => {
     await waitFor(() => expect(sec.getByText("pod-security.kubernetes.io/enforce=restricted: 1 workload would be rejected.")).toBeInTheDocument());
     expect(sec.getByText("Privilege escalation not disabled")).toBeInTheDocument();
 
-    // Its ReplicaSets by its selector, then the reports of the live one by label.
+    // Its ReplicaSets by its selector.
     const rsWatch = await watchOf(wb, "ReplicaSet", (s) => s.labelSelector === "app=web");
     emitSnapshot(wb, rsWatch, [webRs]);
     // Its live Pods: a sidecar injected at admission adds what the template does not have.
@@ -260,27 +250,8 @@ describe("the Security section of a workload", () => {
     expect(within(added).getByText(/^Added at admission: seen in Pod web-7d9c6b8f5d-abcde/)).toBeInTheDocument();
     expect(within(added).queryByRole("button", { name: "Copy the fix" })).toBeNull();
     expect(sec.getByText("Violates Baseline")).toBeInTheDocument();
-    const selector = "trivy-operator.resource.kind=ReplicaSet,trivy-operator.resource.name=web-7d9c6b8f5d";
-    emitSnapshot(wb, await watchOf(wb, "VulnerabilityReport", (s) => s.labelSelector === selector), [vuln]);
-    emitSnapshot(wb, await watchOf(wb, "ConfigAuditReport", (s) => s.labelSelector === selector), [audit]);
-    await waitFor(() => expect(sec.getByText("CVE-2024-45491")).toBeInTheDocument());
-    const imageScans = sec.getByRole("heading", { name: "Image scans (Trivy)" }).closest<HTMLElement>(".dt-block")!;
-    expect(within(imageScans).getByText("Container nginx")).toBeInTheDocument();
-    expect(sec.getByText("4 vulnerabilities have a fixed version.")).toBeInTheDocument();
-    expect(sec.getByText("KSV014")).toBeInTheDocument();
-    expect(sec.getByRole("button", { name: "Open VulnerabilityReport replicaset-web-7d9c6b8f5d-nginx" })).toBeInTheDocument();
-  });
-});
-
-describe("the details of a Trivy report", () => {
-  it("links the scanned object and lists the most severe rows with their fixed versions", async () => {
-    await openDetails(vuln, VULNERABILITY_REPORT);
-    const report = within(section("trivyReport"));
-    await waitFor(() => expect(report.getByRole("button", { name: "Open ReplicaSet web-7d9c6b8f5d" })).toBeInTheDocument());
-    const ids = [...section("trivyReport").querySelectorAll(".sec-table tbody tr")].map((tr) => tr.children[1]?.textContent);
-    expect(ids).toEqual(["CVE-2024-45491", "CVE-2024-45492", "CVE-2023-52425", "CVE-2024-2511", "CVE-2024-5535"]);
-    expect(report.getAllByText("2.5.0-1+deb12u1")).toHaveLength(2);
-    expect(report.getAllByText("No fix")).toHaveLength(1);
+    // A workload's Trivy reports are the Trivy extension's: this section watches none.
+    expect([...wb.specs.values()].some((spec) => spec.kind.group === "aquasecurity.github.io")).toBe(false);
   });
 });
 

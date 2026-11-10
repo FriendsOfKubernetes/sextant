@@ -1,52 +1,42 @@
 // Node autoscaling in the details panel:
 //  - Node: which Karpenter NodePool and NodeClaim it belongs to and why Karpenter disrupts it (or may not), or the
 //    marks Cluster Autoscaler put on it, with the events of both about it;
-//  - NodeClaim: launch, registration and initialization in plain words, its node and NodePool, disruption;
-//  - NodePool: its limits against what it launched, its disruption settings and budgets, and the recent disruptions
-//    of its NodeClaims — the reasons for nodes that are already gone;
 //  - Cluster Autoscaler's status ConfigMap (`kube-system/cluster-autoscaler-status`) read into health and node groups.
+// The details of NodeClaims and NodePools are Sextant's own extension `extensions/karpenter` (`sextant.karpenter`).
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ClusterId, KubeObject, WatchState } from "../../api";
-import { formatDateTime, formatList } from "../../i18n";
+import { formatDateTime } from "../../i18n";
 import type { DetailsSectionProps } from "../../layout/details/registry";
-import { useDetailsDisclosure } from "../../layout/details/disclosure";
 import { UNKNOWN_DETAILS_SOURCE, useDisclosureProbe, useDisclosureProbeResult, watchProbeResult } from "../details/disclosureProbe";
 import { ErrorState } from "../../components";
 import { status, StatusText, useClusterKinds } from "../../resources";
-import { Block, Fields, KINDS, link, table, type ColumnWrap, type FieldRow } from "../details";
+import { Block, Fields, link, table, type ColumnWrap, type FieldRow } from "../details";
 import { caNodeMarks, isCaEvent, isCaStatusMap, parseCaStatus } from "./clusterAutoscaler";
-import { useKindEvents, useObjectEventsSource, useSharedList } from "./hooks";
+import { useObjectEventsSource, useSharedList } from "./hooks";
 import {
   CAPACITY_TYPE_LABEL,
   causeOf,
   disruptionOf,
-  disruptionSettings,
   INSTANCE_TYPE_LABEL,
   isDisruptionEvent,
   isKarpenterNode,
-  launchProblem,
-  limitRows,
   nodeClaimOf,
   nodePoolOf,
-  ZONE_LABEL,
 } from "./karpenter";
-import { NODE_CLAIM, NODE_POOL, phrase, type EventRow, type Phrase } from "./model";
+import { NODE_CLAIM, NODE_POOL, type EventRow, type Phrase } from "./model";
 import { CaStatusFields } from "./SchedulingSection";
-import { EventsTable, Note, PhraseLine, Phrases } from "./ui";
+import { EventsTable, Phrases } from "./ui";
 
 /** Where the column widths of this file's tables are saved (`table` of `details/ui`). */
 const TABLE_IDS = {
-  karpenterLimits: "karpenter.limits",
   clusterAutoscalerGroups: "clusterAutoscaler.groups",
 };
 
-const { get, record, str } = status;
+const { record, str } = status;
 const FIELDS = "autoscaling:fields";
 const NODE_POOL_TYPE = { apiVersion: "karpenter.sh/v1", kind: "NodePool" };
 const NODE_CLAIM_TYPE = { apiVersion: "karpenter.sh/v1", kind: "NodeClaim" };
-const CLAIM_READY = phrase("karpenter.ready", undefined, "success");
-const LIMIT_WRAP: readonly ColumnWrap[] = ["nowrap", "nowrap", "nowrap"];
 const GROUP_WRAP: readonly ColumnWrap[] = ["nowrap", "nowrap", "nowrap", "nowrap", "nowrap", "nowrap"];
 
 /** "expiresAt" carries an ISO time: shown in the UI language. */
@@ -132,122 +122,6 @@ function NodeAutoscaling({ clusterId, node }: { clusterId: ClusterId; node: Kube
         </Block>
       )}
     </Block>
-  );
-}
-
-// ---------- NodeClaim ----------
-
-export function NodeClaimSection({ clusterId, obj }: DetailsSectionProps) {
-  if (!obj) return null;
-  return <NodeClaimDetails clusterId={clusterId} claim={obj} />;
-}
-
-function NodeClaimDetails({ clusterId, claim }: { clusterId: ClusterId; claim: KubeObject }) {
-  const { t } = useTranslation();
-  return <Block id="autoscaling:karpenter.claimTitle" title={t("autoscaling:karpenter.claimTitle")}><NodeClaimDetailsContent clusterId={clusterId} claim={claim} /></Block>;
-}
-
-function NodeClaimDetailsContent({ clusterId, claim }: { clusterId: ClusterId; claim: KubeObject }) {
-  const { t } = useTranslation();
-  const pools = useSharedList(clusterId, NODE_POOL, null);
-  const poolName = nodePoolOf(claim);
-  const pool = pools.items.find((p) => p.metadata?.name === poolName);
-  const nodeName = str(get(claim, "status", "nodeName"));
-  const labels = record(claim.metadata?.labels);
-  const problem = launchProblem(claim);
-  const disruptionsProbe = useDisclosureProbe("autoscaling:karpenter.disruptions");
-  const eventSource = useObjectEventsSource(clusterId, claim, "NodeClaim", disruptionsProbe.enabled);
-  const events = eventSource.events;
-  const disruptions = events.filter(isDisruptionEvent);
-  const answer = watchProbeResult(disruptions.length > 0, [eventSource.state]);
-  const disruptionsView = useDisclosureProbeResult(disruptionsProbe, answer);
-  const cause = useCauseColumn();
-  const fields: FieldRow[] = [
-    ["node", link(KINDS.node, nodeName)],
-    ["nodePool", link(NODE_POOL_TYPE, poolName)],
-    ["capacityType", str(labels[CAPACITY_TYPE_LABEL]) ?? null],
-    ["instanceType", str(labels[INSTANCE_TYPE_LABEL]) ?? null],
-    ["zone", str(labels[ZONE_LABEL]) ?? null],
-  ];
-  return (
-    <>
-      <PhraseLine phrase={problem ?? CLAIM_READY} />
-      <Fields labelPrefix={FIELDS} rows={fields} />
-      <Phrases phrases={phrasesWithTimes(disruptionOf(undefined, claim, pool))} />
-      {disruptionsView.visible && (
-        <Block id="autoscaling:karpenter.disruptions" title={t("autoscaling:karpenter.disruptions")}>
-          {answer === "unknown" ? <ErrorState error={eventSource.state.error ?? UNKNOWN_DETAILS_SOURCE} /> : <EventsTable events={disruptions} first={cause} />}
-        </Block>
-      )}
-    </>
-  );
-}
-
-// ---------- NodePool ----------
-
-export function NodePoolSection({ clusterId, obj }: DetailsSectionProps) {
-  if (!obj) return null;
-  return <NodePoolDetails clusterId={clusterId} pool={obj} />;
-}
-
-function NodePoolDetails({ clusterId, pool }: { clusterId: ClusterId; pool: KubeObject }) {
-  const { t } = useTranslation();
-  return <Block id="autoscaling:karpenter.poolTitle" title={t("autoscaling:karpenter.poolTitle")}><NodePoolDetailsContent clusterId={clusterId} pool={pool} /></Block>;
-}
-
-function NodePoolDetailsContent({ clusterId, pool }: { clusterId: ClusterId; pool: KubeObject }) {
-  const { t } = useTranslation();
-  const name = pool.metadata?.name ?? "";
-  const limits = limitRows(pool);
-  const settings = disruptionSettings(pool);
-  const classRef = get(pool, "spec", "template", "spec", "nodeClassRef");
-  const classKind = str(get(classRef, "kind"));
-  const classGroup = str(get(classRef, "group")) ?? "karpenter.k8s.aws";
-  const disruptionsOpen = useDetailsDisclosure("autoscaling:karpenter.recentDisruptions")?.open ?? true;
-  const events = useKindEvents(clusterId, "NodeClaim", disruptionsOpen);
-  // A NodePool names its NodeClaims `<nodepool>-<suffix>`.
-  const disruptions = useMemo(() => events.filter((e) => e.involvedName.startsWith(`${name}-`) && isDisruptionEvent(e)), [events, name]);
-  const cause = useCauseColumn();
-  const reached = limits.filter((l) => l.reached).map((l) => l.resource);
-  const budgets = settings.budgets.map((b) =>
-    formatList([b.nodes, ...(b.reasons.length > 0 ? [b.reasons.join("/")] : []), ...(b.schedule ? [`${b.schedule}${b.duration ? ` (${b.duration})` : ""}`] : [])]),
-  );
-
-  const limitPhrase = reached.length > 0 ? phrase("karpenter.poolLimit", { name, resources: formatList(reached) }, "danger") : null;
-  const fields: FieldRow[] = [
-    ["nodeClass", classKind ? link({ apiVersion: `${classGroup}/v1`, kind: classKind }, str(get(classRef, "name"))) : null],
-    ["consolidationPolicy", settings.consolidationPolicy ?? null],
-    ["consolidateAfter", settings.consolidateAfter ?? null],
-    ["expireAfter", settings.expireAfter ?? null],
-    ["budgets", budgets.length > 0 ? <Lines lines={budgets} /> : null],
-  ];
-  const limitTable = table(
-    TABLE_IDS.karpenterLimits,
-    [t("autoscaling:karpenter.resource"), t("autoscaling:karpenter.inUse"), t("autoscaling:karpenter.limit")],
-    limits.map((l) => [l.resource, l.used ?? "", l.reached ? <StatusText value={l.limit} tone="danger" /> : l.limit]),
-    LIMIT_WRAP,
-  );
-  const claimColumn = { header: t("autoscaling:karpenter.nodeClaim"), cell: (e: EventRow) => `${e.involvedName} · ${cause.cell(e)}` };
-
-  return (
-    <>
-      {limitPhrase && <PhraseLine phrase={limitPhrase} />}
-      <Fields labelPrefix={FIELDS} rows={fields} />
-      {limits.length > 0 ? limitTable : <Note>{t("autoscaling:karpenter.noLimits")}</Note>}
-      <Block id="autoscaling:karpenter.recentDisruptions" title={t("autoscaling:karpenter.recentDisruptions")}>
-        {disruptions.length === 0 ? <Note>{t("autoscaling:karpenter.noDisruptions")}</Note> : <EventsTable events={disruptions} first={claimColumn} />}
-      </Block>
-    </>
-  );
-}
-
-function Lines({ lines }: { lines: readonly string[] }) {
-  return (
-    <span className="as-lines">
-      {lines.map((line) => (
-        <span key={line}>{line}</span>
-      ))}
-    </span>
   );
 }
 

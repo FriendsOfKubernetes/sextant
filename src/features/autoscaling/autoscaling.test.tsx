@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { KindRef, KubeObject, ObjectRef, ResourceKind, WatchSpec } from "../../api";
 import { resetAppStore, useAppStore } from "../../app/store";
@@ -21,12 +21,10 @@ import {
   NODE_POOL,
   POD,
   PVC,
-  SCALED_JOB,
   SCALED_OBJECT,
-  TRIGGER_AUTHENTICATION,
-  CLUSTER_TRIGGER_AUTHENTICATION,
-  EC2_NODE_CLASS,
 } from "./model";
+
+const tool = (group: string, version: string, kind: string): KindRef => ({ group, version, kind });
 
 const served = (kind: KindRef, namespaced = true): ResourceKind => ({
   kindRef: kind,
@@ -37,8 +35,13 @@ const served = (kind: KindRef, namespaced = true): ResourceKind => ({
 });
 
 const BUILT_IN = [served(POD), served(NODE, false), served(DEPLOYMENT), served(HPA), served(EVENT), served(CONFIG_MAP), served(PVC)];
-const KEDA = [served(SCALED_OBJECT), served(SCALED_JOB), served(TRIGGER_AUTHENTICATION), served(CLUSTER_TRIGGER_AUTHENTICATION, false)];
-const KARPENTER = [served(NODE_POOL, false), served(NODE_CLAIM, false), served(EC2_NODE_CLASS, false)];
+const KEDA = [
+  served(SCALED_OBJECT),
+  served(tool("keda.sh", "v1alpha1", "ScaledJob")),
+  served(tool("keda.sh", "v1alpha1", "TriggerAuthentication")),
+  served(tool("keda.sh", "v1alpha1", "ClusterTriggerAuthentication"), false),
+];
+const KARPENTER = [served(NODE_POOL, false), served(NODE_CLAIM, false), served(tool("karpenter.k8s.aws", "v1", "EC2NodeClass"), false)];
 
 let wb: WatchBackend;
 let discovery: ResourceKind[];
@@ -71,18 +74,7 @@ const sections = () =>
     .map((b) => b.textContent);
 
 describe("the KEDA and Karpenter sections", () => {
-  it("are listed with the kinds the cluster serves", async () => {
-    render(<Sidebar clusterId="c1" />);
-    await waitFor(() => expect(sections()).toContain("KEDA"));
-    expect(sections()).toContain("Karpenter");
-    fireEvent.click(screen.getByRole("button", { name: /Karpenter/ }));
-    const karpenter = within(screen.getByRole("button", { name: /Karpenter/ }).closest("li")!);
-    for (const label of ["Node Pools", "Node Claims", "EC2 Node Classes"]) expect(karpenter.getByRole("button", { name: label })).toBeInTheDocument();
-    expect(karpenter.queryByRole("button", { name: "AKS Node Classes" })).toBeNull();
-  });
-
-  it("are not there without the tools", async () => {
-    discovery = [...BUILT_IN];
+  it("are not Sextant's own: Sextant's own extensions have them", async () => {
     render(<Sidebar clusterId="c1" />);
     await waitFor(() => expect(wb.backend.calls.some((c) => c.cmd === "cluster_kinds")).toBe(true));
     await waitFor(() => expect(sections()).toContain("Workloads"));

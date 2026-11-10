@@ -1,7 +1,9 @@
 // Karpenter (karpenter.sh v1, and v1beta1 where fields moved) as the autoscaling views read it — pure, no React:
 // which NodePool and NodeClaim a node belongs to, a NodePool's limits against what it has launched, whether a
 // NodeClaim launched, registered and initialized, and why Karpenter disrupts (or may not disrupt) a node — drift,
-// consolidation, emptiness, expiration — from conditions, taints, annotations and events.
+// consolidation, emptiness, expiration — from conditions, taints, annotations and events; for the Node "Autoscaling"
+// block and a Pending pod's scheduling. Karpenter's own kinds (sidebar section, tables, NodePool and NodeClaim details)
+// are Sextant's own extension `extensions/karpenter` (`sextant.karpenter`).
 import type { KubeObject } from "../../api";
 import { status } from "../../resources";
 import { conditionOf, conditionsOf, formatAmount, phrase, quantity, type EventRow, type Phrase } from "./model";
@@ -15,7 +17,6 @@ const DISRUPTED_TAINT = "karpenter.sh/disrupted";
 const OLD_DISRUPTION_TAINT = "karpenter.sh/disruption";
 export const CAPACITY_TYPE_LABEL = "karpenter.sh/capacity-type";
 export const INSTANCE_TYPE_LABEL = "node.kubernetes.io/instance-type";
-export const ZONE_LABEL = "topology.kubernetes.io/zone";
 
 /** The NodePool a node or a NodeClaim belongs to, by its label. */
 export function nodePoolOf(obj: KubeObject): string | undefined {

@@ -1,0 +1,172 @@
+[
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ScaledObject",
+    "metadata": { "name": "orders", "namespace": "shop", "uid": "so-orders", "creationTimestamp": "2026-10-01T10:00:00Z" },
+    "spec": {
+      "scaleTargetRef": { "apiVersion": "apps/v1", "kind": "Deployment", "name": "orders" },
+      "minReplicaCount": 1,
+      "maxReplicaCount": 10,
+      "pollingInterval": 15,
+      "fallback": { "failureThreshold": 3, "replicas": 6 },
+      "triggers": [
+        { "type": "rabbitmq", "name": "orders-queue", "metadata": { "queueName": "orders", "mode": "QueueLength", "value": "20", "empty": "" }, "authenticationRef": { "name": "rabbit" } },
+        { "type": "cron", "metadata": { "timezone": "Europe/Berlin", "start": "0 8 * * *", "end": "0 20 * * *", "desiredReplicas": "3" }, "authenticationRef": { "name": "cluster-aws", "kind": "ClusterTriggerAuthentication" } },
+        { "type": "rabbitmq", "metadata": { "queueName": "returns" } }
+      ]
+    },
+    "status": {
+      "hpaName": "keda-hpa-orders",
+      "health": { "s0-rabbitmq-orders": { "numberOfFailures": 4, "status": "Failure" }, "s1-cron-Europe-Berlin": { "numberOfFailures": 0, "status": "Happy" } },
+      "conditions": [
+        { "type": "Ready", "status": "True", "reason": "ScaledObjectReady" },
+        { "type": "Active", "status": "True", "reason": "ScalerActive" },
+        { "type": "Fallback", "status": "False" },
+        { "type": "Paused", "status": "False" }
+      ]
+    }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ScaledObject",
+    "metadata": { "name": "paused", "namespace": "shop", "uid": "so-paused", "annotations": { "autoscaling.keda.sh/paused": "true" } },
+    "spec": { "scaleTargetRef": { "kind": "StatefulSet", "name": "db" }, "triggers": [{ "type": "prometheus", "metadata": { "serverAddress": "http://prometheus:9090", "threshold": "100" } }] },
+    "status": { "conditions": [{ "type": "Ready", "status": "True" }, { "type": "Active", "status": "False" }] }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ScaledObject",
+    "metadata": { "name": "held", "namespace": "shop", "uid": "so-held", "annotations": { "autoscaling.keda.sh/paused-replicas": "2" } },
+    "spec": { "scaleTargetRef": { "name": "web" }, "minReplicaCount": 0, "triggers": [{ "type": "cpu", "metricType": "Utilization", "metadata": { "value": "60" } }] },
+    "status": { "conditions": [{ "type": "Ready", "status": "True" }, { "type": "Paused", "status": "True" }] }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ScaledObject",
+    "metadata": { "name": "fallback", "namespace": "shop", "uid": "so-fallback" },
+    "spec": { "scaleTargetRef": { "name": "api" }, "fallback": { "failureThreshold": 3, "replicas": 6 }, "triggers": [{ "type": "kafka", "name": "lag", "metadata": { "topic": "events", "lagThreshold": "50" } }] },
+    "status": {
+      "health": { "s0-kafka-events": { "numberOfFailures": 7, "status": "Failure" } },
+      "conditions": [{ "type": "Ready", "status": "True" }, { "type": "Active", "status": "True" }, { "type": "Fallback", "status": "True" }]
+    }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ScaledObject",
+    "metadata": { "name": "broken", "namespace": "shop", "uid": "so-broken" },
+    "spec": { "scaleTargetRef": { "apiVersion": "argoproj.io/v1alpha1", "kind": "Rollout", "name": "checkout" }, "triggers": [{ "type": "aws-sqs-queue", "metadata": { "queueURL": "https://sqs.eu-west-1.amazonaws.com/1/q" } }] },
+    "status": { "conditions": [{ "type": "Ready", "status": "False", "reason": "ScaledObjectCheckFailed", "message": "ScaledObject doesn't have correct scaleTargetRef specification" }, { "type": "Active", "status": "False" }] }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ScaledObject",
+    "metadata": { "name": "idle", "namespace": "shop", "uid": "so-idle" },
+    "spec": { "scaleTargetRef": { "name": "worker" }, "idleReplicaCount": 0, "minReplicaCount": 2, "maxReplicaCount": 20, "cooldownPeriod": 120, "triggers": [] },
+    "status": { "conditions": [{ "type": "Ready", "status": "True" }, { "type": "Active", "status": "False" }] }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ScaledObject",
+    "metadata": { "name": "fresh", "namespace": "shop", "uid": "so-fresh" },
+    "spec": { "scaleTargetRef": { "name": "batch" } }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ScaledObject",
+    "metadata": { "name": "unknown", "namespace": "shop", "uid": "so-unknown" },
+    "spec": { "scaleTargetRef": { "name": "cart" }, "triggers": [{ "type": "redis", "metadata": { "listName": "jobs" } }] },
+    "status": { "conditions": [{ "type": "Ready" }, { "type": "Active", "status": "Unknown" }] }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ScaledJob",
+    "metadata": { "name": "importer", "namespace": "shop", "uid": "sj-importer" },
+    "spec": {
+      "maxReplicaCount": 5,
+      "pollingInterval": 10,
+      "scalingStrategy": { "strategy": "accurate" },
+      "jobTargetRef": { "template": { "spec": { "containers": [{ "name": "import", "image": "registry.example.com/importer:1.4" }] } } },
+      "triggers": [{ "type": "rabbitmq", "metadata": { "queueName": "imports" }, "authenticationRef": { "name": "rabbit" } }]
+    },
+    "status": { "conditions": [{ "type": "Ready", "status": "True" }, { "type": "Active", "status": "True" }] }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ScaledJob",
+    "metadata": { "name": "nightly", "namespace": "shop", "uid": "sj-nightly" },
+    "spec": { "jobTargetRef": { "template": { "spec": { "containers": [{ "name": "run" }] } } }, "triggers": [{ "type": "cron", "metadata": { "start": "0 1 * * *" } }] },
+    "status": { "conditions": [{ "type": "Ready", "status": "True" }, { "type": "Active", "status": "False" }] }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "TriggerAuthentication",
+    "metadata": { "name": "rabbit", "namespace": "shop", "uid": "ta-rabbit" },
+    "spec": { "secretTargetRef": [{ "parameter": "host", "name": "rabbit-conn", "key": "uri" }, { "parameter": "password", "name": "rabbit-conn", "key": "password" }] }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "TriggerAuthentication",
+    "metadata": { "name": "mixed", "namespace": "shop", "uid": "ta-mixed" },
+    "spec": {
+      "secretTargetRef": [{ "parameter": "password", "name": "db", "key": "password" }],
+      "configMapTargetRef": [{ "parameter": "host", "name": "db-settings", "key": "host" }],
+      "env": [{ "parameter": "user", "name": "DB_USER", "containerName": "app" }]
+    }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "TriggerAuthentication",
+    "metadata": { "name": "vault", "namespace": "shop", "uid": "ta-vault" },
+    "spec": { "hashiCorpVault": { "address": "https://vault:8200", "authentication": "token", "credential": { "token": "" }, "secrets": [{ "parameter": "password", "key": "pw", "path": "secret/data/rabbit" }] } }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "TriggerAuthentication",
+    "metadata": { "name": "azure", "namespace": "shop", "uid": "ta-azure" },
+    "spec": { "podIdentity": { "provider": "azure-workload" }, "azureKeyVault": { "vaultUri": "https://kv.vault.azure.net", "secrets": [] } }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "TriggerAuthentication",
+    "metadata": { "name": "clouds", "namespace": "shop", "uid": "ta-clouds" },
+    "spec": { "awsSecretManager": { "secrets": [{ "parameter": "a", "name": "x" }] }, "gcpSecretManager": { "secrets": [{ "parameter": "b", "id": "y" }] } }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "TriggerAuthentication",
+    "metadata": { "name": "empty", "namespace": "shop", "uid": "ta-empty" },
+    "spec": { "secretTargetRef": [] }
+  },
+  {
+    "apiVersion": "keda.sh/v1alpha1",
+    "kind": "ClusterTriggerAuthentication",
+    "metadata": { "name": "cluster-aws", "uid": "cta-aws" },
+    "spec": { "podIdentity": { "provider": "aws" }, "secretTargetRef": [{ "parameter": "awsRegion", "name": "aws-settings", "key": "region" }] }
+  },
+  {
+    "apiVersion": "autoscaling/v2",
+    "kind": "HorizontalPodAutoscaler",
+    "metadata": { "name": "keda-hpa-orders", "namespace": "shop", "uid": "hpa-orders" },
+    "spec": {
+      "scaleTargetRef": { "apiVersion": "apps/v1", "kind": "Deployment", "name": "orders" },
+      "minReplicas": 1,
+      "maxReplicas": 10,
+      "metrics": [
+        { "type": "External", "external": { "metric": { "name": "s0-rabbitmq-orders", "selector": { "matchLabels": { "scaledobject.keda.sh/name": "orders" } } }, "target": { "type": "AverageValue", "averageValue": "20" } } },
+        { "type": "External", "external": { "metric": { "name": "s1-cron-Europe-Berlin" }, "target": { "type": "AverageValue", "averageValue": "1" } } }
+      ]
+    },
+    "status": {
+      "currentReplicas": 3,
+      "desiredReplicas": 3,
+      "currentMetrics": [
+        { "type": "External", "external": { "metric": { "name": "s0-rabbitmq-orders", "selector": { "matchLabels": { "scaledobject.keda.sh/name": "orders" } } }, "current": { "averageValue": "18" } } }
+      ],
+      "conditions": [
+        { "type": "AbleToScale", "status": "True", "reason": "ReadyForNewScale" },
+        { "type": "ScalingActive", "status": "False", "reason": "FailedGetExternalMetric", "message": "the HPA was unable to compute the replica count: unable to get external metric shop/s1-cron-Europe-Berlin: unable to fetch metrics from external metrics API: the server is currently unable to handle the request (get external.metrics.k8s.io)" },
+        { "type": "ScalingLimited", "status": "False", "reason": "DesiredWithinRange" }
+      ]
+    }
+  }
+]

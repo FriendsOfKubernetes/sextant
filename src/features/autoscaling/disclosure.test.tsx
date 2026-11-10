@@ -8,7 +8,6 @@ import { resetClusterKinds } from "../../resources";
 import { emitSnapshot, watchBackend, watchOf, type WatchBackend } from "../details/testing";
 import { resetSharedWatches, setWatchLinger } from "../resource-map/watches";
 import { RoleAccessSection } from "../rbac/details";
-import { NodeClaimSection } from "./NodeSection";
 import { HpaSection } from "./HpaSection";
 import { WorkloadAutoscalingSection } from "./WorkloadSection";
 import { DEPLOYMENT, EVENT, HPA, SCALED_OBJECT } from "./model";
@@ -92,16 +91,4 @@ it("stops HPA requests and events sources when their nested blocks close while p
   toggle("autoscaling:hpa.title/autoscaling:hpa.requests");
   toggle("autoscaling:hpa.title/autoscaling:hpa.events");
   await watchOf(wb, "Deployment"); await watchOf(wb, "Event");
-});
-it("stops only NodeClaim disruption events when its nested block closes", async () => {
-  const claim: KubeObject = { apiVersion: "karpenter.sh/v1", kind: "NodeClaim", metadata: { name: "claim", labels: { "karpenter.sh/nodepool": "pool" } } };
-  render(card(<NodeClaimSection {...props} obj={claim} />));
-  const events = await watchOf(wb, "Event");
-  emitSnapshot(wb, events, [{ apiVersion: "v1", kind: "Event", metadata: { name: "disrupt" }, reason: "DisruptionBlocked", message: "Blocked by pdb" }]);
-  await waitFor(() => expect(document.querySelector('[data-disclosure="feature/autoscaling:karpenter.claimTitle/autoscaling:karpenter.disruptions"]')).not.toBeNull());
-  toggle("autoscaling:karpenter.claimTitle/autoscaling:karpenter.disruptions");
-  await waitFor(() => expect(wb.backend.listenerCount(`watch:${events}`)).toBe(0));
-  expect(document.querySelector('[data-disclosure="feature/autoscaling:karpenter.claimTitle"] button')).toHaveAttribute("aria-expanded", "true");
-  toggle("autoscaling:karpenter.claimTitle/autoscaling:karpenter.disruptions");
-  await watchOf(wb, "Event");
 });

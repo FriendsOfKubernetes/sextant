@@ -112,65 +112,11 @@
     "CRITICAL": "严重",
     "HIGH": "高",
     "MEDIUM": "中",
-    "LOW": "低",
-    "UNKNOWN": "未知"
+    "LOW": "低"
   },
   "trivy": {
-    "sidebar": {
-      "vulnerabilityReports": "Vulnerability Reports",
-      "clusterVulnerabilityReports": "Cluster Vulnerability Reports",
-      "configAuditReports": "Config Audit Reports",
-      "clusterConfigAuditReports": "Cluster Config Audit Reports",
-      "exposedSecretReports": "Exposed Secret Reports",
-      "rbacAssessmentReports": "RBAC Assessment Reports",
-      "clusterRbacAssessmentReports": "Cluster RBAC Assessment Reports",
-      "infraAssessmentReports": "Infra Assessment Reports",
-      "clusterInfraAssessmentReports": "Cluster Infra Assessment Reports",
-      "clusterComplianceReports": "Cluster Compliance Reports",
-      "sbomReports": "SBOM Reports",
-      "clusterSbomReports": "Cluster SBOM Reports"
-    },
-    "columns": {
-      "resource": "资源",
-      "container": "容器",
-      "image": "镜像",
-      "critical": "严重",
-      "high": "高",
-      "medium": "中",
-      "low": "低",
-      "title": "标题",
-      "pass": "通过",
-      "fail": "失败",
-      "components": "组件"
-    },
-    "table": {
-      "severity": "严重性",
-      "id": "ID",
-      "package": "软件包",
-      "installed": "已安装",
-      "fixed": "修复版本",
-      "rule": "规则",
-      "title": "标题",
-      "target": "目标",
-      "control": "控制项",
-      "failed": "失败"
-    },
-    "section": "镜像扫描（Trivy）",
-    "reportTitle": "报告",
-    "scanned": "扫描对象：",
-    "none": "Trivy Operator 尚无此对象的报告。",
     "watchFailed": "无法读取 Trivy 报告。",
-    "openReport": "打开报告",
-    "configAudit": "配置审计",
     "severityCount": "{{severity}}: {{count}}",
-    "fixable_other": "{{count}} 个漏洞有修复版本。",
-    "topShown": "已列出：{{total}} 个中最严重的 {{shown}} 个。",
-    "noFix": "无修复",
-    "noVulnerabilities": "未发现漏洞。",
-    "noFailed": "所有检查均已通过。",
-    "noSecrets": "未发现暴露的密钥。",
-    "passFail": "通过：{{pass}}，失败：{{fail}}",
-    "components": "组件：{{count}}",
     "auditCount_other": "{{count}} 项严重或高审计发现"
   }
 }

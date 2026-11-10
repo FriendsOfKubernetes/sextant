@@ -1,34 +1,5 @@
 {
   "title": "Mise à l'échelle automatique",
-  "sidebar": {
-    "scaledObjects": "Scaled Objects",
-    "scaledJobs": "Scaled Jobs",
-    "triggerAuthentications": "Trigger Authentications",
-    "clusterTriggerAuthentications": "Cluster Trigger Authentications",
-    "nodePools": "Node Pools",
-    "nodeClaims": "Node Claims",
-    "ec2NodeClasses": "EC2 Node Classes",
-    "aksNodeClasses": "AKS Node Classes"
-  },
-  "columns": {
-    "ready": "Prêt",
-    "state": "État",
-    "triggers": "Déclencheurs",
-    "target": "Cible",
-    "min": "Min.",
-    "max": "Max.",
-    "sources": "Sources",
-    "nodeClass": "Classe de nœuds",
-    "nodes": "Nœuds",
-    "limits": "Usage / limites",
-    "consolidation": "Consolidation",
-    "nodePool": "NodePool",
-    "instanceType": "Type d'instance",
-    "capacityType": "Capacité",
-    "zone": "Zone",
-    "node": "Nœud",
-    "role": "Rôle"
-  },
   "fields": {
     "target": "Cible",
     "replicas": "Réplicas",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "Type de capacité",
-    "instanceType": "Type d'instance",
-    "node": "Nœud",
-    "zone": "Zone",
-    "nodeClass": "Classe de nœuds",
-    "consolidationPolicy": "Politique de consolidation",
-    "consolidateAfter": "Consolider après",
-    "expireAfter": "Expiration après",
-    "budgets": "Budgets d'interruption",
-    "idleReplicas": "Réplicas au repos",
-    "pollingInterval": "Intervalle d'interrogation",
-    "cooldownPeriod": "Période de refroidissement",
-    "fallback": "Repli",
-    "maxReplicas": "Réplicas max.",
-    "strategy": "Stratégie de mise à l'échelle",
-    "image": "Image",
-    "podIdentity": "Identité du Pod"
+    "instanceType": "Type d'instance"
   },
   "events": {
     "reason": "Raison",
@@ -282,7 +238,6 @@
     "notLaunched": "Non lancé : {{reason}}.",
     "notRegistered": "Lancé, mais le nœud n'a pas rejoint le cluster : {{reason}}.",
     "notInitialized": "Le nœud a rejoint le cluster mais n'est pas encore initialisé : {{reason}}.",
-    "ready": "Lancé, enregistré et initialisé.",
     "disrupting": "Karpenter interrompt ce nœud : il porte un taint et ses pods sont déplacés.",
     "terminating": "Le nœud est en cours d'arrêt.",
     "drifted": "Dérive ({{reason}}) : le nœud ne correspond plus à son NodePool ou à sa classe de nœuds, Karpenter le remplace donc.",
@@ -299,15 +254,7 @@
       "expiration": "Expiration",
       "other": "Autre"
     },
-    "disruptions": "Événements d'interruption",
-    "claimTitle": "Lancement et interruption",
-    "poolTitle": "Limites et interruption",
-    "resource": "Ressource",
-    "inUse": "Utilisé",
-    "limit": "Limite",
-    "noLimits": "Aucune limite : le NodePool peut lancer des nœuds sans borne.",
-    "recentDisruptions": "Interruptions récentes de ses NodeClaims",
-    "noDisruptions": "Aucun événement d'interruption récent."
+    "disruptions": "Événements d'interruption"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -326,7 +273,6 @@
     "scaleDown": "Réduction"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "KEDA ne peut pas mettre à l'échelle cet objet ({{reason}}) : voir la condition Ready et les événements.",
     "paused": "En pause via l'annotation {{annotation}} : KEDA ne met pas la cible à l'échelle.",
     "pausedAt": "En pause via l'annotation {{annotation}} : la cible est maintenue à ce nombre de réplicas : {{replicas}}.",
@@ -338,24 +284,6 @@
     "jobInactive": "Inactif : aucun déclencheur ne dépasse son seuil d'activation, aucun Job n'est donc créé.",
     "active": "Actif : un déclencheur dépasse son seuil d'activation, le HPA met donc la cible à l'échelle (réplicas : {{min}}–{{max}}).",
     "inactiveIdle": "Inactif : aucun déclencheur ne dépasse son seuil d'activation, la cible reste donc au nombre de réplicas au repos : {{replicas}}.",
-    "inactive": "Inactif : aucun déclencheur ne dépasse son seuil d'activation, le HPA garde donc la cible à minReplicaCount : {{replicas}}.",
-    "hpaMissing": "Le HPA {{name}} que KEDA gère pour ce ScaledObject n'existe pas.",
-    "noTriggers": "Aucun déclencheur.",
-    "trigger": "Déclencheur",
-    "metadata": "Métadonnées",
-    "auth": "Authentification",
-    "health": "Santé",
-    "seconds_one": "{{count}} seconde",
-    "seconds_many": "{{count}} secondes",
-    "seconds_other": "{{count}} secondes",
-    "fallbackSpec": "seuil d'échecs : {{failures}} ; réplicas de repli : {{replicas}}",
-    "triggers": "Déclencheurs",
-    "managedHpa": "Le HPA géré par KEDA",
-    "authTitle": "D'où viennent les paramètres",
-    "noSources": "Aucune source de paramètres.",
-    "parameter": "Paramètre",
-    "from": "Source",
-    "name": "Nom",
-    "key": "Clé"
+    "inactive": "Inactif : aucun déclencheur ne dépasse son seuil d'activation, le HPA garde donc la cible à minReplicaCount : {{replicas}}."
   }
 }

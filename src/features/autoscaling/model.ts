@@ -22,17 +22,11 @@ export const DEPLOYMENT = k("apps", "v1", "Deployment");
 export const STATEFULSET = k("apps", "v1", "StatefulSet");
 export const REPLICASET = k("apps", "v1", "ReplicaSet");
 
-export const KEDA_GROUP = "keda.sh";
-export const SCALED_OBJECT = k(KEDA_GROUP, "v1alpha1", "ScaledObject");
-export const SCALED_JOB = k(KEDA_GROUP, "v1alpha1", "ScaledJob");
-export const TRIGGER_AUTHENTICATION = k(KEDA_GROUP, "v1alpha1", "TriggerAuthentication");
-export const CLUSTER_TRIGGER_AUTHENTICATION = k(KEDA_GROUP, "v1alpha1", "ClusterTriggerAuthentication");
-
-export const KARPENTER_GROUP = "karpenter.sh";
-export const NODE_POOL = k(KARPENTER_GROUP, "v1", "NodePool");
-export const NODE_CLAIM = k(KARPENTER_GROUP, "v1", "NodeClaim");
-export const EC2_NODE_CLASS = k("karpenter.k8s.aws", "v1", "EC2NodeClass");
-export const AKS_NODE_CLASS = k("karpenter.azure.com", "v1beta1", "AKSNodeClass");
+// KEDA's and Karpenter's kinds the built-in sections read (their own views are Sextant's own extensions
+// `extensions/keda` and `extensions/karpenter`).
+export const SCALED_OBJECT = k("keda.sh", "v1alpha1", "ScaledObject");
+export const NODE_POOL = k("karpenter.sh", "v1", "NodePool");
+export const NODE_CLAIM = k("karpenter.sh", "v1", "NodeClaim");
 
 /** Workload kinds an HPA (or a KEDA ScaledObject) usually scales; their details get the "Autoscaling" section. */
 export const SCALABLE_KINDS: readonly KindRef[] = [DEPLOYMENT, STATEFULSET, REPLICASET];

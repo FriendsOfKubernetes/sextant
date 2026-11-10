@@ -1,0 +1,55 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields, tables,
+   status words and links are the SDK's UI kit (`ui`, classes `sx-*`). */
+body.compact {
+  padding: 8px 0;
+}
+
+/* The built-in autoscaling view's styles (src/features/autoscaling/autoscaling.css): verdicts and causes in their tone,
+   notes, stacked lines in a field and the warning colour. */
+.as-phrase {
+  margin: 0 0 6px;
+  padding: 4px 10px;
+  border-left: 3px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+.as-phrase--success {
+  border-left-color: var(--color-success);
+}
+
+.as-phrase--warning {
+  border-left-color: var(--color-warning);
+}
+
+.as-phrase--danger {
+  border-left-color: var(--color-danger);
+}
+
+.as-phrase--muted {
+  color: var(--color-text-muted);
+}
+
+.as-note {
+  margin: 4px 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.as-warning {
+  color: var(--color-warning);
+}
+
+.as-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Table columns kept on one line, as the built-in tables' `nowrap` columns. */
+.sx-table .as-nowrap {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}

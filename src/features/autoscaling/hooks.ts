@@ -159,13 +159,3 @@ export function useObjectEventsSource(clusterId: ClusterId, obj: KubeObject | nu
   const events = useMemo(() => [...watch.items.values()].map(eventRow), [watch.items]);
   return { events, state: watch };
 }
-
-/** Events about objects of one kind (cluster-scoped kinds: every NodeClaim's), as rows. */
-export function useKindEvents(clusterId: ClusterId, kind: string, enabled: boolean): EventRow[] {
-  const spec = useMemo<WatchSpec | null>(
-    () => (enabled ? { kind: EVENT, namespaces: null, labelSelector: null, fieldSelector: `involvedObject.kind=${kind}` } : null),
-    [enabled, kind],
-  );
-  const watch = useWatch(clusterId, spec);
-  return useMemo(() => [...watch.items.values()].map(eventRow), [watch.items]);
-}

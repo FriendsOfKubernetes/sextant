@@ -484,8 +484,8 @@ const ICONS = {
   acmeOrder: ScrollText,
   acmeChallenge: TicketCheck,
   tlsCertificates: LockKeyhole,
-  // Security posture (src/features/security): the page, the Trivy section and its report kinds (namespaced and
-  // cluster-wide kinds of one report share an icon).
+  // Security posture (src/features/security): the page; the Trivy section and its report kinds (namespaced and
+  // cluster-wide kinds of one report share an icon), named by Sextant's own extension `extensions/trivy`.
   securityPosture: ShieldEllipsis,
   trivy: ScanSearch,
   trivyVulnerabilities: Bug,
@@ -505,7 +505,8 @@ const ICONS = {
   bestPractices: ClipboardList,
   // Cost (src/features/cost): the page of the Cluster section.
   cost: Coins,
-  // Autoscaling insights (src/features/autoscaling): the KEDA and Karpenter sections and their kinds.
+  // KEDA and Karpenter: the sections and their kinds, named by Sextant's own extensions `extensions/keda` and
+  // `extensions/karpenter`.
   keda: Zap,
   karpenter: Hammer,
   scaledObject: TrendingUp,

@@ -137,9 +137,6 @@ export const SIDEBAR_SECTIONS = [
   "helm",
   "accessControl",
   "certManager",
-  "trivy",
-  "keda",
-  "karpenter",
   "volumeSnapshots",
   "istio",
   "linkerd",
@@ -153,7 +150,12 @@ export type SidebarSection = (typeof SIDEBAR_SECTIONS)[number];
  * section comes where it always was, after the Sextant section named here, whatever its manifest's `after` says.
  */
 export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, after: SidebarSection])[] = [
-  ["vpa", "karpenter"],
+  // Trivy, KEDA and Karpenter came after cert-manager, the Vertical Pod Autoscaler after Karpenter: all are extension
+  // sections now, so they hang off `certManager`, in this order.
+  ["trivy", "certManager"],
+  ["keda", "certManager"],
+  ["karpenter", "certManager"],
+  ["vpa", "certManager"],
   ["velero", "volumeSnapshots"],
   ["flux", "volumeSnapshots"],
   ["argocd", "volumeSnapshots"],
@@ -195,9 +197,6 @@ export const EXTENSION_SECTION_PLACES: readonly (readonly [section: string, afte
 export const DISCOVERED_SECTIONS: ReadonlySet<SidebarSection> = new Set<SidebarSection>([
   "gatewayApi",
   "certManager",
-  "trivy",
-  "keda",
-  "karpenter",
   "volumeSnapshots",
   "istio",
   "linkerd",
@@ -218,9 +217,6 @@ export const SECTION_ICONS: Record<SidebarSection | "settings", IconName> = {
   helm: "helm",
   accessControl: "accessControl",
   certManager: "certManager",
-  trivy: "trivy",
-  keda: "keda",
-  karpenter: "karpenter",
   volumeSnapshots: "volumeSnapshots",
   istio: "istio",
   linkerd: "linkerd",

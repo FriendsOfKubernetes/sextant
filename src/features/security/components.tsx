@@ -1,22 +1,12 @@
-// Pieces shared by the Security page, the "Security" details section and the Trivy report details: findings with
-// their field and fix, the posture and count badges, the namespace's Pod Security labels compared with its
-// workloads, and the tables of a Trivy report (at most `TOP_LIMIT` rows).
+// Pieces shared by the Security page and the "Security" details section: findings with their field and fix, the
+// posture, level and severity count badges, and the namespace's Pod Security labels compared with its workloads.
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge, Button, type BadgeTone } from "../../components";
 import { compareModes, PSA_PREFIX, type Judged, type ModeLabel } from "./namespaces";
 import { postureOf, type Finding, type FindingLevel, type Posture } from "./pss";
 import { toYaml } from "./snippet";
-import {
-  SEVERITIES,
-  type Check,
-  type ComplianceControl,
-  type Counts,
-  type ExposedSecret,
-  type Top,
-  type Vulnerability,
-} from "./trivy";
-import { ResizableTable } from "../../components/Table";
+import type { Counts } from "./trivy";
 
 export const LEVEL_TONE: Record<FindingLevel, BadgeTone> = { baseline: "danger", restricted: "warning", hint: "neutral" };
 export const POSTURE_TONE: Record<Posture, BadgeTone> = { restricted: "success", baseline: "warning", privileged: "danger" };
@@ -54,12 +44,6 @@ export function LevelCounts({ findings, levels }: { findings: readonly Finding[]
 }
 
 const SEVERITY_TONE: Record<string, BadgeTone> = { CRITICAL: "danger", HIGH: "danger", MEDIUM: "warning", LOW: "info", UNKNOWN: "neutral" };
-
-export function SeverityBadge({ severity }: { severity: string }) {
-  const { t } = useTranslation();
-  const known = (SEVERITIES as readonly string[]).includes(severity) ? severity : "UNKNOWN";
-  return <Badge tone={SEVERITY_TONE[known]}>{t(`security:severity.${known}`)}</Badge>;
-}
 
 /** "Critical: 2", "High: 7", … for the severities with any (all four when `all`). */
 export function SeverityCounts({ counts, all = false }: { counts: Counts; all?: boolean }) {
@@ -216,132 +200,4 @@ export function weakest(judged: readonly Judged[]): Posture {
   let worst = 2;
   for (const j of judged) worst = Math.min(worst, order.indexOf(postureOf(j.findings)));
   return order[worst]!;
-}
-
-function MoreNote({ top }: { top: Top<unknown> }) {
-  const { t } = useTranslation();
-  if (top.total <= top.rows.length) return null;
-  return <p className="sec-note">{t("security:trivy.topShown", { shown: top.rows.length, total: top.total })}</p>;
-}
-
-export function VulnerabilityTable({ top }: { top: Top<Vulnerability> }) {
-  const { t } = useTranslation();
-  return (
-    <>
-      <div className="sec-table-wrap">
-        <ResizableTable tableId="security.vulnerabilities" className="sec-table">
-          <thead>
-            <tr>
-              <th>{t("security:trivy.table.severity")}</th>
-              <th>{t("security:trivy.table.id")}</th>
-              <th>{t("security:trivy.table.package")}</th>
-              <th>{t("security:trivy.table.installed")}</th>
-              <th>{t("security:trivy.table.fixed")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {top.rows.map((v, i) => (
-              <tr key={`${v.id}|${v.resource}|${i}`}>
-                <td>
-                  <SeverityBadge severity={v.severity} />
-                </td>
-                <td title={v.title}>{v.id}</td>
-                <td>{v.resource}</td>
-                <td>{v.installed}</td>
-                <td>{v.fixed ?? <span className="sec-muted">{t("security:trivy.noFix")}</span>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </ResizableTable>
-      </div>
-      <MoreNote top={top} />
-    </>
-  );
-}
-
-export function CheckTable({ top }: { top: Top<Check> }) {
-  return (
-    <>
-      <ul className="sec-checks">
-        {top.rows.map((c, i) => (
-          <li key={`${c.id}|${i}`} className="sec-check">
-            <div className="sec-finding__head">
-              <SeverityBadge severity={c.severity} />
-              <span className="sec-finding__title">{c.id}</span>
-              {c.title && <span>{c.title}</span>}
-            </div>
-            {c.messages.length > 0 && <p className="sec-note">{c.messages.join("\n")}</p>}
-            {c.remediation && <p className="sec-remediation">{c.remediation}</p>}
-          </li>
-        ))}
-      </ul>
-      <MoreNote top={top} />
-    </>
-  );
-}
-
-export function SecretTable({ top }: { top: Top<ExposedSecret> }) {
-  const { t } = useTranslation();
-  return (
-    <>
-      <div className="sec-table-wrap">
-        <ResizableTable tableId="security.secrets" className="sec-table">
-          <thead>
-            <tr>
-              <th>{t("security:trivy.table.severity")}</th>
-              <th>{t("security:trivy.table.rule")}</th>
-              <th>{t("security:trivy.table.title")}</th>
-              <th>{t("security:trivy.table.target")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {top.rows.map((s, i) => (
-              <tr key={`${s.rule}|${s.target}|${i}`}>
-                <td>
-                  <SeverityBadge severity={s.severity} />
-                </td>
-                <td>{s.rule}</td>
-                <td>{s.title}</td>
-                <td>{s.target}</td>
-              </tr>
-            ))}
-          </tbody>
-        </ResizableTable>
-      </div>
-      <MoreNote top={top} />
-    </>
-  );
-}
-
-export function ControlTable({ top }: { top: Top<ComplianceControl> }) {
-  const { t } = useTranslation();
-  return (
-    <>
-      <div className="sec-table-wrap">
-        <ResizableTable tableId="security.controls" className="sec-table">
-          <thead>
-            <tr>
-              <th>{t("security:trivy.table.severity")}</th>
-              <th>{t("security:trivy.table.control")}</th>
-              <th>{t("security:trivy.table.title")}</th>
-              <th>{t("security:trivy.table.failed")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {top.rows.map((c, i) => (
-              <tr key={`${c.id}|${i}`}>
-                <td>
-                  <SeverityBadge severity={c.severity} />
-                </td>
-                <td>{c.id}</td>
-                <td>{c.name}</td>
-                <td>{c.failed}</td>
-              </tr>
-            ))}
-          </tbody>
-        </ResizableTable>
-      </div>
-      <MoreNote top={top} />
-    </>
-  );
 }

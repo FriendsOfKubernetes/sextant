@@ -1,34 +1,5 @@
 {
   "title": "自動調整規模",
-  "sidebar": {
-    "scaledObjects": "Scaled Objects",
-    "scaledJobs": "Scaled Jobs",
-    "triggerAuthentications": "Trigger Authentications",
-    "clusterTriggerAuthentications": "Cluster Trigger Authentications",
-    "nodePools": "Node Pools",
-    "nodeClaims": "Node Claims",
-    "ec2NodeClasses": "EC2 Node Classes",
-    "aksNodeClasses": "AKS Node Classes"
-  },
-  "columns": {
-    "ready": "就緒",
-    "state": "狀態",
-    "triggers": "觸發器",
-    "target": "目標",
-    "min": "最小",
-    "max": "最大",
-    "sources": "來源",
-    "nodeClass": "節點類別",
-    "nodes": "節點",
-    "limits": "用量 / 限制",
-    "consolidation": "整併",
-    "nodePool": "NodePool",
-    "instanceType": "執行個體類型",
-    "capacityType": "容量",
-    "zone": "區域",
-    "node": "節點",
-    "role": "角色"
-  },
   "fields": {
     "target": "目標",
     "replicas": "複本",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "容量類型",
-    "instanceType": "執行個體類型",
-    "node": "節點",
-    "zone": "區域",
-    "nodeClass": "節點類別",
-    "consolidationPolicy": "整併原則",
-    "consolidateAfter": "整併延遲",
-    "expireAfter": "到期時間",
-    "budgets": "中斷預算",
-    "idleReplicas": "閒置複本數",
-    "pollingInterval": "輪詢間隔",
-    "cooldownPeriod": "冷卻期",
-    "fallback": "後援",
-    "maxReplicas": "最大複本數",
-    "strategy": "調整規模策略",
-    "image": "映像",
-    "podIdentity": "Pod 身分識別"
+    "instanceType": "執行個體類型"
   },
   "events": {
     "reason": "原因",
@@ -248,7 +204,6 @@
     "notLaunched": "未啟動：{{reason}}。",
     "notRegistered": "已啟動，但節點尚未加入叢集：{{reason}}。",
     "notInitialized": "節點已加入，但尚未初始化：{{reason}}。",
-    "ready": "已啟動、註冊並初始化。",
     "disrupting": "Karpenter 正在中斷這個節點：它帶有 taint，其 Pod 正在移轉。",
     "terminating": "節點正在終止。",
     "drifted": "已漂移（{{reason}}）：節點不再符合其 NodePool 或節點類別，因此 Karpenter 會取代它。",
@@ -265,15 +220,7 @@
       "expiration": "到期",
       "other": "其他"
     },
-    "disruptions": "中斷事件",
-    "claimTitle": "啟動與中斷",
-    "poolTitle": "限制與中斷",
-    "resource": "資源",
-    "inUse": "已使用",
-    "limit": "上限",
-    "noLimits": "沒有上限：NodePool 可以不受限制地啟動節點。",
-    "recentDisruptions": "其 NodeClaim 最近的中斷",
-    "noDisruptions": "最近沒有中斷事件。"
+    "disruptions": "中斷事件"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -292,7 +239,6 @@
     "scaleDown": "縮減"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "KEDA 無法調整這個物件的規模（{{reason}}）：請查看 Ready 條件和事件。",
     "paused": "已由註解 {{annotation}} 暫停：KEDA 不會調整目標的規模。",
     "pausedAt": "已由註解 {{annotation}} 暫停：目標維持在此複本數：{{replicas}}。",
@@ -302,22 +248,6 @@
     "jobInactive": "未作用：沒有觸發器高於其啟用門檻，因此不會建立 Job。",
     "active": "作用中：有觸發器高於其啟用門檻，因此 HPA 會調整目標的規模（複本：{{min}}–{{max}}）。",
     "inactiveIdle": "未作用：沒有觸發器高於其啟用門檻，因此目標維持在閒置複本數：{{replicas}}。",
-    "inactive": "未作用：沒有觸發器高於其啟用門檻，因此 HPA 讓目標維持在 minReplicaCount：{{replicas}}。",
-    "hpaMissing": "KEDA 為這個 ScaledObject 管理的 HPA {{name}} 不存在。",
-    "noTriggers": "沒有觸發器。",
-    "trigger": "觸發器",
-    "metadata": "中繼資料",
-    "auth": "驗證",
-    "health": "健康狀態",
-    "seconds_other": "{{count}} 秒",
-    "fallbackSpec": "失敗門檻：{{failures}}；後援複本數：{{replicas}}",
-    "triggers": "觸發器",
-    "managedHpa": "KEDA 管理的 HPA",
-    "authTitle": "參數來源",
-    "noSources": "沒有參數來源。",
-    "parameter": "參數",
-    "from": "來源",
-    "name": "名稱",
-    "key": "金鑰"
+    "inactive": "未作用：沒有觸發器高於其啟用門檻，因此 HPA 讓目標維持在 minReplicaCount：{{replicas}}。"
   }
 }

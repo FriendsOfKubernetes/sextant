@@ -1,38 +1,20 @@
 // "Security" section of the details panel (#143) for Pods, Deployments, StatefulSets, DaemonSets, ReplicaSets, Jobs
 // and CronJobs: the posture against the Pod Security Standards, the namespace's Pod Security labels compared with
-// this object, its findings with a fix to copy, and — when Trivy Operator is installed — the image vulnerabilities and
-// the configuration audit of the object, linked to the reports. Watched only while the panel shows it: the namespace by
-// name, the reports of this object by label in its namespace (a Deployment's through its ReplicaSets).
+// this object and its findings with a fix to copy. Watched only while the panel shows it: the namespace by name, the
+// object's live Pods (a Deployment's through its ReplicaSets). A workload's Trivy reports ("Image scans (Trivy)") are
+// the `scans` section of Sextant's own extension `extensions/trivy`.
 import { Block } from "../details/ui";
-import { useDetailsDisclosure } from "../../layout/details/disclosure";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useWatch, type ClusterId, type KindRef, type KubeObject, type WatchSpec } from "../../api";
-import { useAppStore } from "../../app/store";
+import { useWatch, type KindRef, type KubeObject, type WatchSpec } from "../../api";
 import { Badge } from "../../components";
 import type { DetailsSectionProps } from "../../layout/details/registry";
 import { status } from "../../resources";
-import { FindingList, LevelCounts, ModeComparisons, POSTURE_TONE, SeverityCounts, VulnerabilityTable, CheckTable } from "./components";
-import { findingsOf, inNamespaces, NAMESPACE, POD, REPLICASET, useServedTrivyKind } from "./hooks";
+import { FindingList, LevelCounts, ModeComparisons, POSTURE_TONE } from "./components";
+import { findingsOf, inNamespaces, NAMESPACE, POD, REPLICASET } from "./hooks";
 import { psaLabels } from "./namespaces";
 import { admittedFindings, POD_SPEC_KINDS, postureOf } from "./pss";
-import {
-  CONFIG_AUDIT_REPORT,
-  countsOf,
-  fixableCount,
-  imageOf,
-  reportMatches,
-  reportSelector,
-  scannedAs,
-  targetOf,
-  topFailedChecks,
-  topVulnerabilities,
-  VULNERABILITY_REPORT,
-} from "./trivy";
 import "./security.css";
-
-/** Rows of one report listed in the details (the report's own details list up to `TOP_LIMIT`). */
-const DETAILS_TOP = 10;
 
 export function securityApplies(kind: KindRef): boolean {
   return (kind.group === "" || kind.group === "apps" || kind.group === "batch") && POD_SPEC_KINDS.has(kind.kind) && kind.kind !== "ReplicationController";
@@ -115,116 +97,7 @@ function SecuritySectionBody({ clusterId, objectRef, obj }: DetailsSectionProps)
         </details>
       )}
       {findings.length === 0 && <p className="sec-note">{t("security:details.noFindings")}</p>}
-      {namespace && <TrivyOfObject clusterId={clusterId} kind={kind} obj={obj} namespace={namespace} replicaSets={replicaSets} />}
     </section>
-  );
-}
-
-/** The Trivy reports of one object (shown only when the cluster serves the report kinds). */
-function TrivyOfObject({
-  clusterId,
-  kind,
-  obj,
-  namespace,
-  replicaSets,
-}: {
-  clusterId: ClusterId;
-  kind: string;
-  obj: KubeObject;
-  namespace: string;
-  /** A Deployment's ReplicaSets (its reports are filed under them). */
-  replicaSets: KubeObject[];
-}) {
-  const { t } = useTranslation();
-  const vulnKind = useServedTrivyKind(clusterId, VULNERABILITY_REPORT);
-  const auditKind = useServedTrivyKind(clusterId, CONFIG_AUDIT_REPORT);
-  const served = !!vulnKind || !!auditKind;
-  const open = useDetailsDisclosure("security:trivy.section")?.open ?? true;
-  const scanned = scannedAs(kind, obj, replicaSets);
-  const selector = open && scanned ? reportSelector(scanned) : null;
-  const vulns = useWatch(clusterId, selector ? inNamespaces(vulnKind, [namespace], selector) : null);
-  const audits = useWatch(clusterId, selector ? inNamespaces(auditKind, [namespace], selector) : null);
-
-  const vulnReports = useMemo(
-    () => (scanned ? [...vulns.items.values()].filter((r) => reportMatches(r, namespace, scanned)) : []),
-    [vulns.items, scanned, namespace],
-  );
-  const auditReports = useMemo(
-    () => (scanned ? [...audits.items.values()].filter((r) => reportMatches(r, namespace, scanned)) : []),
-    [audits.items, scanned, namespace],
-  );
-  if (!served) return null;
-  const loading = !!vulnKind && vulns.status === "loading";
-  return (
-    <Block id="security:trivy.section" title={t("security:trivy.section")}>
-      {vulns.status === "error" || audits.status === "error" ? (
-        <p className="sec-note sec-note--warning">{t("security:trivy.watchFailed")}</p>
-      ) : vulnReports.length === 0 && auditReports.length === 0 ? (
-        !loading && <p className="sec-note">{t("security:trivy.none")}</p>
-      ) : null}
-      {vulnReports.map((r) => (
-        <ImageReport key={r.metadata?.uid ?? r.metadata?.name} report={r} vulnKind={vulnKind!} />
-      ))}
-      {auditReports.map((r) => (
-        <AuditReport key={r.metadata?.uid ?? r.metadata?.name} report={r} auditKind={auditKind!} />
-      ))}
-    </Block>
-  );
-}
-
-function OpenReport({ kind, report }: { kind: KindRef; report: KubeObject }) {
-  const { t } = useTranslation();
-  const openDetails = useAppStore((s) => s.openDetails);
-  const name = report.metadata?.name ?? "";
-  return (
-    <button
-      type="button"
-      className="rt-link"
-      aria-label={t("resources:table.openObject", { kind: kind.kind, name })}
-      onClick={() => openDetails({ kind, namespace: report.metadata?.namespace ?? null, name })}
-    >
-      {t("security:trivy.openReport")}
-    </button>
-  );
-}
-
-function ImageReport({ report, vulnKind }: { report: KubeObject; vulnKind: KindRef }) {
-  const { t } = useTranslation();
-  const counts = countsOf(report);
-  const top = topVulnerabilities(report, DETAILS_TOP);
-  const container = targetOf(report)?.container;
-  return (
-    <div className="sec-report">
-      <div className="sec-report__head">
-        <span className="sec-report__name">
-          {container ? t("security:finding.container", { name: container }) : (report.metadata?.name ?? "")}
-        </span>
-        {imageOf(report) && <code className="sec-code">{imageOf(report)}</code>}
-        <OpenReport kind={vulnKind} report={report} />
-      </div>
-      <div className="sec-report__counts">
-        <SeverityCounts counts={counts} all />
-        <span className="sec-note">{t("security:trivy.fixable", { count: fixableCount(report) })}</span>
-      </div>
-      {top.rows.length > 0 ? <VulnerabilityTable top={top} /> : <p className="sec-note">{t("security:trivy.noVulnerabilities")}</p>}
-    </div>
-  );
-}
-
-function AuditReport({ report, auditKind }: { report: KubeObject; auditKind: KindRef }) {
-  const { t } = useTranslation();
-  const top = topFailedChecks(report, DETAILS_TOP);
-  return (
-    <div className="sec-report">
-      <div className="sec-report__head">
-        <span className="sec-report__name">{t("security:trivy.configAudit")}</span>
-        <OpenReport kind={auditKind} report={report} />
-      </div>
-      <div className="sec-report__counts">
-        <SeverityCounts counts={countsOf(report)} all />
-      </div>
-      {top.rows.length > 0 ? <CheckTable top={top} /> : <p className="sec-note">{t("security:trivy.noFailed")}</p>}
-    </div>
   );
 }
 

@@ -1,34 +1,5 @@
 {
   "title": "Автомасштабирование",
-  "sidebar": {
-    "scaledObjects": "Scaled Objects",
-    "scaledJobs": "Scaled Jobs",
-    "triggerAuthentications": "Trigger Authentications",
-    "clusterTriggerAuthentications": "Cluster Trigger Authentications",
-    "nodePools": "Node Pools",
-    "nodeClaims": "Node Claims",
-    "ec2NodeClasses": "EC2 Node Classes",
-    "aksNodeClasses": "AKS Node Classes"
-  },
-  "columns": {
-    "ready": "Готов",
-    "state": "Состояние",
-    "triggers": "Триггеры",
-    "target": "Цель",
-    "min": "Мин.",
-    "max": "Макс.",
-    "sources": "Источники",
-    "nodeClass": "Класс узлов",
-    "nodes": "Узлы",
-    "limits": "Использование / лимиты",
-    "consolidation": "Консолидация",
-    "nodePool": "NodePool",
-    "instanceType": "Тип инстанса",
-    "capacityType": "Емкость",
-    "zone": "Зона",
-    "node": "Узел",
-    "role": "Роль"
-  },
   "fields": {
     "target": "Цель",
     "replicas": "Реплики",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "Тип емкости",
-    "instanceType": "Тип инстанса",
-    "node": "Узел",
-    "zone": "Зона",
-    "nodeClass": "Класс узлов",
-    "consolidationPolicy": "Политика консолидации",
-    "consolidateAfter": "Консолидация через",
-    "expireAfter": "Срок жизни",
-    "budgets": "Бюджеты прерываний",
-    "idleReplicas": "Реплики в простое",
-    "pollingInterval": "Интервал опроса",
-    "cooldownPeriod": "Период остывания",
-    "fallback": "Резервный режим",
-    "maxReplicas": "Макс. реплик",
-    "strategy": "Стратегия масштабирования",
-    "image": "Образ",
-    "podIdentity": "Удостоверение Pod"
+    "instanceType": "Тип инстанса"
   },
   "events": {
     "reason": "Причина",
@@ -299,7 +255,6 @@
     "notLaunched": "Не запущен: {{reason}}.",
     "notRegistered": "Запущен, но узел не присоединился к кластеру: {{reason}}.",
     "notInitialized": "Узел присоединился, но еще не инициализирован: {{reason}}.",
-    "ready": "Запущен, зарегистрирован и инициализирован.",
     "disrupting": "Karpenter прерывает работу этого узла: на нем taint, а его Pod переносятся.",
     "terminating": "Узел завершается.",
     "drifted": "Дрейф ({{reason}}): узел больше не соответствует своему NodePool или классу узлов, поэтому Karpenter его заменяет.",
@@ -316,15 +271,7 @@
       "expiration": "Истечение срока",
       "other": "Другое"
     },
-    "disruptions": "События прерывания",
-    "claimTitle": "Запуск и прерывание",
-    "poolTitle": "Лимиты и прерывание",
-    "resource": "Ресурс",
-    "inUse": "Используется",
-    "limit": "Лимит",
-    "noLimits": "Лимитов нет: NodePool может запускать узлы без ограничений.",
-    "recentDisruptions": "Недавние прерывания его NodeClaim",
-    "noDisruptions": "Недавних событий прерывания нет."
+    "disruptions": "События прерывания"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -343,7 +290,6 @@
     "scaleDown": "Уменьшение"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "KEDA не может масштабировать этот объект ({{reason}}): смотрите условие Ready и события.",
     "paused": "Приостановлено аннотацией {{annotation}}: KEDA не масштабирует цель.",
     "pausedAt": "Приостановлено аннотацией {{annotation}}: цель удерживается на таком числе реплик: {{replicas}}.",
@@ -356,25 +302,6 @@
     "jobInactive": "Неактивен: ни один триггер не выше порога активации, поэтому Job не создаются.",
     "active": "Активен: триггер выше порога активации, поэтому HPA масштабирует цель (реплики: {{min}}–{{max}}).",
     "inactiveIdle": "Неактивен: ни один триггер не выше порога активации, поэтому цель держится на числе реплик в простое: {{replicas}}.",
-    "inactive": "Неактивен: ни один триггер не выше порога активации, поэтому HPA держит цель на minReplicaCount: {{replicas}}.",
-    "hpaMissing": "HPA {{name}}, которым KEDA управляет для этого ScaledObject, отсутствует.",
-    "noTriggers": "Триггеров нет.",
-    "trigger": "Триггер",
-    "metadata": "Метаданные",
-    "auth": "Аутентификация",
-    "health": "Состояние",
-    "seconds_one": "{{count}} секунда",
-    "seconds_few": "{{count}} секунды",
-    "seconds_many": "{{count}} секунд",
-    "seconds_other": "{{count}} секунды",
-    "fallbackSpec": "порог сбоев: {{failures}}; резервные реплики: {{replicas}}",
-    "triggers": "Триггеры",
-    "managedHpa": "HPA под управлением KEDA",
-    "authTitle": "Откуда берутся параметры",
-    "noSources": "Источников параметров нет.",
-    "parameter": "Параметр",
-    "from": "Источник",
-    "name": "Имя",
-    "key": "Ключ"
+    "inactive": "Неактивен: ни один триггер не выше порога активации, поэтому HPA держит цель на minReplicaCount: {{replicas}}."
   }
 }

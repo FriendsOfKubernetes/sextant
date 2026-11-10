@@ -1,7 +1,7 @@
-// KEDA (keda.sh/v1alpha1) as the autoscaling views read it — pure, no React: a ScaledObject's or ScaledJob's target,
-// triggers and their health, the HPA KEDA manages for a ScaledObject (`keda-hpa-<name>` unless named otherwise),
-// and its state in plain words from the Ready, Active, Fallback and Paused conditions and the pause annotations.
-// TriggerAuthentications are summarised by where their parameters come from; no Secret value is read.
+// KEDA (keda.sh/v1alpha1) as the built-in autoscaling views read it — pure, no React: a ScaledObject's or ScaledJob's
+// target, triggers and their health, and its state in plain words from the Ready, Active, Fallback and Paused
+// conditions and the pause annotations, for the workloads a ScaledObject scales and agents' `get_autoscaling_status`.
+// KEDA's own kinds (sidebar section, tables, details) are Sextant's own extension `extensions/keda` (`sextant.keda`).
 import type { KubeObject } from "../../api";
 import { status } from "../../resources";
 import { conditionOf, phrase, type Phrase } from "./model";
@@ -23,15 +23,6 @@ export function scaleTargetOf(obj: KubeObject): TargetRef | undefined {
   const name = str(get(ref, "name"));
   if (!name) return undefined;
   return { apiVersion: str(get(ref, "apiVersion")) ?? "apps/v1", kind: str(get(ref, "kind")) ?? "Deployment", name };
-}
-
-/** The HPA KEDA creates for a ScaledObject. */
-export function managedHpaName(obj: KubeObject): string {
-  return (
-    str(get(obj, "status", "hpaName")) ??
-    str(get(obj, "spec", "advanced", "horizontalPodAutoscalerConfig", "name")) ??
-    `keda-hpa-${obj.metadata?.name ?? ""}`
-  );
 }
 
 export interface TriggerRow {
@@ -127,64 +118,4 @@ export function kedaState(obj: KubeObject, job = false): KedaState {
     else phrases.push(phrase("keda.inactive", { replicas: Math.max(min, 1) }, "neutral"));
   }
   return { phrases, ready: ready?.status === "True", active: active?.status === "True", paused, fallback: fallback?.status === "True" };
-}
-
-/** A short state for the tables: Paused, Fallback, Active, Inactive, or the Ready reason when not ready. */
-export function stateWord(obj: KubeObject): string | undefined {
-  const s = kedaState(obj);
-  const ready = conditionOf(obj, "Ready");
-  if (ready && ready.status !== "True") return ready.reason ?? "NotReady";
-  if (s.paused) return "Paused";
-  if (s.fallback) return "Fallback";
-  const active = conditionOf(obj, "Active");
-  if (!active) return undefined;
-  return s.active ? "Active" : "Inactive";
-}
-
-/** Trigger types as one line for the tables. */
-export function triggerTypes(obj: KubeObject): string[] {
-  return [...new Set(triggersOf(obj).map((t) => t.type).filter(Boolean))];
-}
-
-// ---------- TriggerAuthentication ----------
-
-export interface AuthSource {
-  parameter: string;
-  /** "Secret", "ConfigMap", "env", or the provider ("hashiCorpVault", "azureKeyVault", …). */
-  from: string;
-  /** The Secret, ConfigMap or variable name. */
-  name?: string;
-  key?: string;
-}
-
-const PROVIDERS = ["hashiCorpVault", "azureKeyVault", "awsSecretManager", "gcpSecretManager", "boundServiceAccountToken"];
-
-/** Where a TriggerAuthentication's parameters come from (names only, never values). */
-export function authSources(obj: KubeObject): { sources: AuthSource[]; podIdentity?: string } {
-  const spec = get(obj, "spec");
-  const sources: AuthSource[] = [];
-  const ref = (from: string, list: unknown, nameField: string, keyField?: string) => {
-    for (const r of arr(list)) {
-      const source: AuthSource = { parameter: str(get(r, "parameter")) ?? "", from };
-      const name = str(get(r, nameField));
-      const key = keyField ? str(get(r, keyField)) : undefined;
-      if (name) source.name = name;
-      if (key) source.key = key;
-      sources.push(source);
-    }
-  };
-  ref("Secret", get(spec, "secretTargetRef"), "name", "key");
-  ref("ConfigMap", get(spec, "configMapTargetRef"), "name", "key");
-  ref("env", get(spec, "env"), "name");
-  for (const provider of PROVIDERS) {
-    const p = get(spec, provider);
-    if (p === undefined) continue;
-    const params = arr(get(p, "credentials")).length > 0 ? get(p, "credentials") : get(p, "secrets");
-    if (arr(params).length === 0) sources.push({ parameter: "", from: provider });
-    else ref(provider, params, "path");
-  }
-  const out: { sources: AuthSource[]; podIdentity?: string } = { sources };
-  const identity = str(get(spec, "podIdentity", "provider"));
-  if (identity) out.podIdentity = identity;
-  return out;
 }

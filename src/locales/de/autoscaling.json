@@ -1,34 +1,5 @@
 {
   "title": "Autoskalierung",
-  "sidebar": {
-    "scaledObjects": "Scaled Objects",
-    "scaledJobs": "Scaled Jobs",
-    "triggerAuthentications": "Trigger Authentications",
-    "clusterTriggerAuthentications": "Cluster Trigger Authentications",
-    "nodePools": "Node Pools",
-    "nodeClaims": "Node Claims",
-    "ec2NodeClasses": "EC2 Node Classes",
-    "aksNodeClasses": "AKS Node Classes"
-  },
-  "columns": {
-    "ready": "Bereit",
-    "state": "Zustand",
-    "triggers": "Trigger",
-    "target": "Ziel",
-    "min": "Min.",
-    "max": "Max.",
-    "sources": "Quellen",
-    "nodeClass": "Knotenklasse",
-    "nodes": "Knoten",
-    "limits": "Nutzung / Limits",
-    "consolidation": "Konsolidierung",
-    "nodePool": "NodePool",
-    "instanceType": "Instanztyp",
-    "capacityType": "Kapazität",
-    "zone": "Zone",
-    "node": "Knoten",
-    "role": "Rolle"
-  },
   "fields": {
     "target": "Ziel",
     "replicas": "Replikate",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "Kapazitätstyp",
-    "instanceType": "Instanztyp",
-    "node": "Knoten",
-    "zone": "Zone",
-    "nodeClass": "Knotenklasse",
-    "consolidationPolicy": "Konsolidierungsrichtlinie",
-    "consolidateAfter": "Konsolidieren nach",
-    "expireAfter": "Ablauf nach",
-    "budgets": "Unterbrechungsbudgets",
-    "idleReplicas": "Replikate im Leerlauf",
-    "pollingInterval": "Abfrageintervall",
-    "cooldownPeriod": "Abkühlphase",
-    "fallback": "Fallback",
-    "maxReplicas": "Max. Replikate",
-    "strategy": "Skalierungsstrategie",
-    "image": "Image",
-    "podIdentity": "Pod-Identität"
+    "instanceType": "Instanztyp"
   },
   "events": {
     "reason": "Grund",
@@ -265,7 +221,6 @@
     "notLaunched": "Nicht gestartet: {{reason}}.",
     "notRegistered": "Gestartet, aber der Knoten ist dem Cluster nicht beigetreten: {{reason}}.",
     "notInitialized": "Der Knoten ist beigetreten, aber noch nicht initialisiert: {{reason}}.",
-    "ready": "Gestartet, registriert und initialisiert.",
     "disrupting": "Karpenter unterbricht diesen Knoten: Er hat einen Taint, und seine Pods werden verschoben.",
     "terminating": "Der Knoten wird beendet.",
     "drifted": "Abgedriftet ({{reason}}): Der Knoten passt nicht mehr zu seinem NodePool oder seiner Knotenklasse, daher ersetzt Karpenter ihn.",
@@ -282,15 +237,7 @@
       "expiration": "Ablauf",
       "other": "Sonstiges"
     },
-    "disruptions": "Unterbrechungsereignisse",
-    "claimTitle": "Start und Unterbrechung",
-    "poolTitle": "Limits und Unterbrechung",
-    "resource": "Ressource",
-    "inUse": "Belegt",
-    "limit": "Limit",
-    "noLimits": "Keine Limits: Der NodePool kann unbegrenzt Knoten starten.",
-    "recentDisruptions": "Letzte Unterbrechungen seiner NodeClaims",
-    "noDisruptions": "Keine aktuellen Unterbrechungsereignisse."
+    "disruptions": "Unterbrechungsereignisse"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -309,7 +256,6 @@
     "scaleDown": "Herunterskalieren"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "KEDA kann dieses Objekt nicht skalieren ({{reason}}): Siehe die Bedingung Ready und die Ereignisse.",
     "paused": "Durch die Annotation {{annotation}} pausiert: KEDA skaliert das Ziel nicht.",
     "pausedAt": "Durch die Annotation {{annotation}} pausiert: Das Ziel wird bei dieser Replikatanzahl gehalten: {{replicas}}.",
@@ -320,23 +266,6 @@
     "jobInactive": "Inaktiv: Kein Trigger liegt über seiner Aktivierungsschwelle, daher werden keine Jobs erstellt.",
     "active": "Aktiv: Ein Trigger liegt über seiner Aktivierungsschwelle, daher skaliert der HPA das Ziel (Replikate: {{min}}–{{max}}).",
     "inactiveIdle": "Inaktiv: Kein Trigger liegt über seiner Aktivierungsschwelle, daher bleibt das Ziel bei der Replikatanzahl im Leerlauf: {{replicas}}.",
-    "inactive": "Inaktiv: Kein Trigger liegt über seiner Aktivierungsschwelle, daher hält der HPA das Ziel bei minReplicaCount: {{replicas}}.",
-    "hpaMissing": "Der HPA {{name}}, den KEDA für dieses ScaledObject verwaltet, ist nicht vorhanden.",
-    "noTriggers": "Keine Trigger.",
-    "trigger": "Trigger",
-    "metadata": "Metadaten",
-    "auth": "Authentifizierung",
-    "health": "Zustand",
-    "seconds_one": "{{count}} Sekunde",
-    "seconds_other": "{{count}} Sekunden",
-    "fallbackSpec": "Fehlerschwelle: {{failures}}; Fallback-Replikate: {{replicas}}",
-    "triggers": "Trigger",
-    "managedHpa": "Der von KEDA verwaltete HPA",
-    "authTitle": "Woher die Parameter kommen",
-    "noSources": "Keine Parameterquellen.",
-    "parameter": "Parameter",
-    "from": "Quelle",
-    "name": "Name",
-    "key": "Schlüssel"
+    "inactive": "Inaktiv: Kein Trigger liegt über seiner Aktivierungsschwelle, daher hält der HPA das Ziel bei minReplicaCount: {{replicas}}."
   }
 }

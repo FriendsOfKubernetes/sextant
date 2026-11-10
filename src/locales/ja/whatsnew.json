@@ -5,7 +5,7 @@
   "v0_30_0": {
     "extensionsMoved": {
       "title": "クラスターツールのビューは拡張機能になりました",
-      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Traefik、Contour、Kyverno、CloudNativePG、Strimzi、External Secrets、Sealed Secrets、Prometheus Operator、Vertical Pod Autoscaler、Cluster API、k3s / RKE2、Dynamic Resource Allocation、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe、Operator Lifecycle Manager、OpenShift は Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
+      "text": "Flux、Argo CD、Argo Rollouts、Argo Workflows、Velero、Knative、Traefik、Contour、Kyverno、CloudNativePG、Strimzi、External Secrets、Sealed Secrets、Prometheus Operator、Trivy、KEDA、Karpenter、Vertical Pod Autoscaler、Cluster API、k3s / RKE2、Dynamic Resource Allocation、NVIDIA GPU Operator、Kueue、JobSet、KubeRay、KServe、Operator Lifecycle Manager、OpenShift は Sextant から、拡張機能カタログにある Sextant 自身の拡張機能へ移り、個別に更新されます。使うものを下でインストールしてください。それまでセクションは表示されません。これらの通知設定は引き継がれ、これらのツールが動くクラスターではサイドバーでもおすすめされます。"
     },
     "api4": {
       "title": "拡張機能 API 4",
@@ -42,6 +42,9 @@
       "kueue": "クォータと使用量付きの ClusterQueue、LocalQueue、Workload とその待機理由",
       "kyverno": "モードと結果付きのポリシー、ポリシーレポート、各オブジェクトの結果",
       "sealed-secrets": "SealedSecret の同期状態、スコープ、対象の Secret、封印されたキー、およびコントローラーとその封印キー",
+      "trivy": "脆弱性、構成監査、漏えいしたシークレット、RBAC、インフラ、コンプライアンス、SBOM のレポートと最も深刻な検出結果、各ワークロードのイメージスキャン",
+      "keda": "ScaledObject、ScaledJob、TriggerAuthentication の状態、トリガー、KEDA が管理する HPA",
+      "karpenter": "NodePool の上限と中断、NodeClaim の起動、ノードクラス",
       "vpa": "VerticalPodAutoscaler の状態と推奨値、新しい Pod に設定される値、チェックポイントとコンポーネント、各ワークロードの VPA",
       "prometheus-operator": "ServiceMonitor、PodMonitor、Probe とその選択対象、PrometheusRule、Prometheus、Alertmanager",
       "cluster-api": "Cluster とその状態、コントロールプレーン、ワークロードクラスターの Node までの MachineDeployment、MachineSet、Machine、MachineHealthCheck と ClusterResourceSet",

@@ -1,34 +1,5 @@
 {
   "title": "자동 스케일링",
-  "sidebar": {
-    "scaledObjects": "Scaled Objects",
-    "scaledJobs": "Scaled Jobs",
-    "triggerAuthentications": "Trigger Authentications",
-    "clusterTriggerAuthentications": "Cluster Trigger Authentications",
-    "nodePools": "Node Pools",
-    "nodeClaims": "Node Claims",
-    "ec2NodeClasses": "EC2 Node Classes",
-    "aksNodeClasses": "AKS Node Classes"
-  },
-  "columns": {
-    "ready": "준비",
-    "state": "상태",
-    "triggers": "트리거",
-    "target": "대상",
-    "min": "최소",
-    "max": "최대",
-    "sources": "소스",
-    "nodeClass": "노드 클래스",
-    "nodes": "노드",
-    "limits": "사용량 / 제한",
-    "consolidation": "통합",
-    "nodePool": "NodePool",
-    "instanceType": "인스턴스 유형",
-    "capacityType": "용량",
-    "zone": "영역",
-    "node": "노드",
-    "role": "역할"
-  },
   "fields": {
     "target": "대상",
     "replicas": "복제본",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "용량 유형",
-    "instanceType": "인스턴스 유형",
-    "node": "노드",
-    "zone": "영역",
-    "nodeClass": "노드 클래스",
-    "consolidationPolicy": "통합 정책",
-    "consolidateAfter": "통합 대기 시간",
-    "expireAfter": "만료 시간",
-    "budgets": "중단 예산",
-    "idleReplicas": "유휴 복제본",
-    "pollingInterval": "폴링 간격",
-    "cooldownPeriod": "쿨다운 기간",
-    "fallback": "대체",
-    "maxReplicas": "최대 복제본",
-    "strategy": "스케일링 전략",
-    "image": "이미지",
-    "podIdentity": "Pod ID"
+    "instanceType": "인스턴스 유형"
   },
   "events": {
     "reason": "이유",
@@ -248,7 +204,6 @@
     "notLaunched": "시작되지 않음: {{reason}}.",
     "notRegistered": "시작했지만 노드가 클러스터에 참여하지 않았습니다: {{reason}}.",
     "notInitialized": "노드가 참여했지만 아직 초기화되지 않았습니다: {{reason}}.",
-    "ready": "시작, 등록, 초기화가 완료되었습니다.",
     "disrupting": "Karpenter가 이 노드를 중단하고 있습니다. taint가 있으며 Pod가 옮겨지고 있습니다.",
     "terminating": "노드가 종료되고 있습니다.",
     "drifted": "드리프트({{reason}}): 노드가 더 이상 NodePool이나 노드 클래스와 맞지 않아 Karpenter가 교체합니다.",
@@ -265,15 +220,7 @@
       "expiration": "만료",
       "other": "기타"
     },
-    "disruptions": "중단 이벤트",
-    "claimTitle": "시작 및 중단",
-    "poolTitle": "제한 및 중단",
-    "resource": "리소스",
-    "inUse": "사용 중",
-    "limit": "제한",
-    "noLimits": "제한 없음: NodePool이 제한 없이 노드를 시작할 수 있습니다.",
-    "recentDisruptions": "NodeClaim의 최근 중단",
-    "noDisruptions": "최근 중단 이벤트가 없습니다."
+    "disruptions": "중단 이벤트"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -292,7 +239,6 @@
     "scaleDown": "축소"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "KEDA가 이 객체를 스케일링할 수 없습니다({{reason}}). Ready 조건과 이벤트를 확인하세요.",
     "paused": "어노테이션 {{annotation}}으로 일시 중지됨: KEDA가 대상을 스케일링하지 않습니다.",
     "pausedAt": "어노테이션 {{annotation}}으로 일시 중지됨: 대상이 이 복제본 수로 유지됩니다: {{replicas}}.",
@@ -302,22 +248,6 @@
     "jobInactive": "비활성: 활성화 임계값을 넘은 트리거가 없어 Job을 만들지 않습니다.",
     "active": "활성: 트리거가 활성화 임계값을 넘어 HPA가 대상을 스케일링합니다(복제본: {{min}}–{{max}}).",
     "inactiveIdle": "비활성: 활성화 임계값을 넘은 트리거가 없어 대상이 유휴 복제본 수로 유지됩니다: {{replicas}}.",
-    "inactive": "비활성: 활성화 임계값을 넘은 트리거가 없어 HPA가 대상을 minReplicaCount로 유지합니다: {{replicas}}.",
-    "hpaMissing": "KEDA가 이 ScaledObject를 위해 관리하는 HPA {{name}}이(가) 없습니다.",
-    "noTriggers": "트리거가 없습니다.",
-    "trigger": "트리거",
-    "metadata": "메타데이터",
-    "auth": "인증",
-    "health": "상태",
-    "seconds_other": "{{count}}초",
-    "fallbackSpec": "실패 임계값: {{failures}}, 대체 복제본: {{replicas}}",
-    "triggers": "트리거",
-    "managedHpa": "KEDA가 관리하는 HPA",
-    "authTitle": "매개변수의 출처",
-    "noSources": "매개변수 출처가 없습니다.",
-    "parameter": "매개변수",
-    "from": "출처",
-    "name": "이름",
-    "key": "키"
+    "inactive": "비활성: 활성화 임계값을 넘은 트리거가 없어 HPA가 대상을 minReplicaCount로 유지합니다: {{replicas}}."
   }
 }

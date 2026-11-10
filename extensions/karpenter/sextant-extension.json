@@ -1,0 +1,1462 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.karpenter",
+  "name": "Karpenter",
+  "version": "1.0.0",
+  "description": "Karpenter's NodePools, NodeClaims and node classes: a NodePool's usage against its limits, its disruption settings and the recent disruptions of its NodeClaims, and a NodeClaim's launch, registration and initialization with why Karpenter disrupts it. Read-only.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "karpenter",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "karpenter.sh",
+              "kind": "NodePool"
+            },
+            {
+              "group": "karpenter.sh",
+              "kind": "NodeClaim"
+            },
+            {
+              "group": "karpenter.k8s.aws",
+              "kind": "EC2NodeClass"
+            },
+            {
+              "group": "karpenter.azure.com",
+              "kind": "AKSNodeClass"
+            },
+            {
+              "group": "",
+              "kind": "Event"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "karpenter.sh",
+        "kind": "NodePool",
+        "section": "karpenter",
+        "title": "Node Pools",
+        "icon": "nodePool",
+        "order": 10,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "any",
+          "of": [
+            {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            {
+              "type": "atLeast",
+              "path": ".status.resources.cpu|quantity",
+              "otherPath": ".spec.limits.cpu|quantity"
+            },
+            {
+              "type": "atLeast",
+              "path": ".status.resources.memory|quantity",
+              "otherPath": ".spec.limits.memory|quantity"
+            },
+            {
+              "type": "atLeast",
+              "path": ".status.resources.nodes|quantity",
+              "otherPath": ".spec.limits.nodes|quantity"
+            },
+            {
+              "type": "atLeast",
+              "path": ".status.resources.pods|quantity",
+              "otherPath": ".spec.limits.pods|quantity"
+            },
+            {
+              "type": "atLeast",
+              "path": ".status.resources.ephemeral-storage|quantity",
+              "otherPath": ".spec.limits.ephemeral-storage|quantity"
+            },
+            {
+              "type": "atLeast",
+              "path": ".status.resources[\"nvidia.com/gpu\"]|quantity",
+              "otherPath": ".spec.limits[\"nvidia.com/gpu\"]|quantity"
+            },
+            {
+              "type": "atLeast",
+              "path": ".status.resources[\"amd.com/gpu\"]|quantity",
+              "otherPath": ".spec.limits[\"amd.com/gpu\"]|quantity"
+            },
+            {
+              "type": "atLeast",
+              "path": ".status.resources[\"aws.amazon.com/neuron\"]|quantity",
+              "otherPath": ".spec.limits[\"aws.amazon.com/neuron\"]|quantity"
+            }
+          ]
+        }
+      },
+      {
+        "group": "karpenter.sh",
+        "kind": "NodeClaim",
+        "section": "karpenter",
+        "title": "Node Claims",
+        "icon": "nodeClaim",
+        "order": 20,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+        }
+      },
+      {
+        "group": "karpenter.k8s.aws",
+        "kind": "EC2NodeClass",
+        "section": "karpenter",
+        "title": "EC2 Node Classes",
+        "icon": "nodeClass",
+        "order": 30,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+        }
+      },
+      {
+        "group": "karpenter.azure.com",
+        "kind": "AKSNodeClass",
+        "section": "karpenter",
+        "title": "AKS Node Classes",
+        "icon": "nodeClass",
+        "order": 31,
+        "printerColumns": false,
+        "problemWhen": {
+          "type": "condition",
+          "conditionType": "Ready",
+          "status": "False"
+        }
+      }
+    ],
+    "sections": [
+      {
+        "section": "karpenter",
+        "title": "Karpenter",
+        "icon": "karpenter",
+        "after": "trivy"
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "node-pool",
+        "title": "Limits and disruption",
+        "kinds": [
+          {
+            "group": "karpenter.sh",
+            "kind": "NodePool"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      },
+      {
+        "id": "node-claim",
+        "title": "Launch and disruption",
+        "kinds": [
+          {
+            "group": "karpenter.sh",
+            "kind": "NodeClaim"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodePool"
+        },
+        "id": "np-node-class",
+        "title": "Node class",
+        "afterColumn": "name",
+        "width": "minmax(110px, 1fr)",
+        "paths": [
+          ".spec.template.spec.nodeClassRef.name"
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodePool"
+        },
+        "id": "np-nodes",
+        "title": "Nodes",
+        "afterColumn": "np-node-class",
+        "width": "70px",
+        "paths": [
+          ".status.resources.nodes"
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodePool"
+        },
+        "id": "np-limits",
+        "title": "Usage / limits",
+        "afterColumn": "np-nodes",
+        "width": "minmax(160px, 2fr)",
+        "format": "entries",
+        "paths": [
+          ".spec.limits"
+        ],
+        "separator": ", ",
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 1
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.cpu"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.cpu|quantity",
+                      "otherPath": ".spec.limits.cpu|quantity"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 1
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.cpu"
+                }
+              ]
+            },
+            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 1
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.memory"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.memory|quantity",
+                      "otherPath": ".spec.limits.memory|quantity"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 1
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.memory"
+                }
+              ]
+            },
+            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 1
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.nodes"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.nodes|quantity",
+                      "otherPath": ".spec.limits.nodes|quantity"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 1
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.nodes"
+                }
+              ]
+            },
+            "text": "nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 1
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources[\"nvidia.com/gpu\"]|quantity",
+                      "otherPath": ".spec.limits[\"nvidia.com/gpu\"]|quantity"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 1
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
+                }
+              ]
+            },
+            "text": "nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 2
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.cpu"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.memory"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.cpu|quantity",
+                      "otherPath": ".spec.limits.cpu|quantity"
+                    },
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.memory|quantity",
+                      "otherPath": ".spec.limits.memory|quantity"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 2
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.cpu"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.memory"
+                }
+              ]
+            },
+            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 2
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.cpu"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.nodes"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.cpu|quantity",
+                      "otherPath": ".spec.limits.cpu|quantity"
+                    },
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.nodes|quantity",
+                      "otherPath": ".spec.limits.nodes|quantity"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 2
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.cpu"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.nodes"
+                }
+              ]
+            },
+            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 2
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.memory"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.nodes"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.memory|quantity",
+                      "otherPath": ".spec.limits.memory|quantity"
+                    },
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.nodes|quantity",
+                      "otherPath": ".spec.limits.nodes|quantity"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}, nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 2
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.memory"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.nodes"
+                }
+              ]
+            },
+            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}, nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 2
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.cpu"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.cpu|quantity",
+                      "otherPath": ".spec.limits.cpu|quantity"
+                    },
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources[\"nvidia.com/gpu\"]|quantity",
+                      "otherPath": ".spec.limits[\"nvidia.com/gpu\"]|quantity"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 2
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.cpu"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
+                }
+              ]
+            },
+            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 2
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.memory"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
+                },
+                {
+                  "type": "any",
+                  "of": [
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources.memory|quantity",
+                      "otherPath": ".spec.limits.memory|quantity"
+                    },
+                    {
+                      "type": "atLeast",
+                      "path": ".status.resources[\"nvidia.com/gpu\"]|quantity",
+                      "otherPath": ".spec.limits[\"nvidia.com/gpu\"]|quantity"
+                    }
+                  ]
+                }
+              ]
+            },
+            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}, nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "equals",
+                  "path": ".spec.limits|count",
+                  "value": 2
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits.memory"
+                },
+                {
+                  "type": "exists",
+                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
+                }
+              ]
+            },
+            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}, nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodePool"
+        },
+        "id": "np-consolidation",
+        "title": "Consolidation",
+        "afterColumn": "np-limits",
+        "width": "minmax(120px, 1fr)",
+        "paths": [
+          ".spec.disruption.consolidationPolicy"
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodePool"
+        },
+        "id": "np-ready",
+        "title": "Ready",
+        "afterColumn": "np-consolidation",
+        "width": "80px",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "True",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "False",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].status",
+              "nonEmpty": true
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].status}}",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].status"
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "warning"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodeClaim"
+        },
+        "id": "nc-node-pool",
+        "title": "NodePool",
+        "afterColumn": "name",
+        "width": "minmax(100px, 1fr)",
+        "paths": [
+          ".metadata.labels[\"karpenter.sh/nodepool\"]",
+          ".metadata.labels[\"karpenter.sh/provisioner-name\"]"
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodeClaim"
+        },
+        "id": "nc-instance-type",
+        "title": "Instance type",
+        "afterColumn": "nc-node-pool",
+        "width": "minmax(100px, 1fr)",
+        "paths": [
+          ".metadata.labels[\"node.kubernetes.io/instance-type\"]"
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodeClaim"
+        },
+        "id": "nc-capacity-type",
+        "title": "Capacity",
+        "afterColumn": "nc-instance-type",
+        "width": "90px",
+        "paths": [
+          ".metadata.labels[\"karpenter.sh/capacity-type\"]"
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodeClaim"
+        },
+        "id": "nc-zone",
+        "title": "Zone",
+        "afterColumn": "nc-capacity-type",
+        "width": "minmax(90px, 1fr)",
+        "paths": [
+          ".metadata.labels[\"topology.kubernetes.io/zone\"]"
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodeClaim"
+        },
+        "id": "nc-node",
+        "title": "Node",
+        "afterColumn": "nc-zone",
+        "width": "minmax(140px, 1.5fr)",
+        "paths": [
+          ".status.nodeName"
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodeClaim"
+        },
+        "id": "nc-state",
+        "title": "State",
+        "afterColumn": "nc-node",
+        "width": "minmax(100px, 1fr)",
+        "paths": [
+          ".status.conditions[type=\"Initialized\",status!=\"True\"].reason"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.conditions[type=\"Launched\"]"
+            },
+            "text": "",
+            "value": "{{.status.conditions[type=\"Launched\"].reason}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Launched",
+                "status": "True"
+              }
+            },
+            "text": "{{.status.conditions[type=\"Launched\"].reason ?? .status.conditions[type=\"Launched\"].status ?? \"Unknown\"}}"
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.conditions[type=\"Registered\"]"
+            },
+            "text": "",
+            "value": "{{.status.conditions[type=\"Registered\"].reason}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Registered",
+                "status": "True"
+              }
+            },
+            "text": "{{.status.conditions[type=\"Registered\"].reason ?? .status.conditions[type=\"Registered\"].status ?? \"Unknown\"}}"
+          },
+          {
+            "when": {
+              "type": "absent",
+              "path": ".status.conditions[type=\"Initialized\"]"
+            },
+            "text": "",
+            "value": "{{.status.conditions[type=\"Initialized\"].reason}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "condition",
+                "conditionType": "Initialized",
+                "status": "True"
+              }
+            },
+            "text": "{{.status.conditions[type=\"Initialized\"].reason ?? .status.conditions[type=\"Initialized\"].status ?? \"Unknown\"}}"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.sh",
+          "kind": "NodeClaim"
+        },
+        "id": "nc-ready",
+        "title": "Ready",
+        "afterColumn": "nc-state",
+        "width": "80px",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "True",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "False",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].status",
+              "nonEmpty": true
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].status}}",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].status"
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "warning"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.k8s.aws",
+          "kind": "EC2NodeClass"
+        },
+        "id": "ec2-role",
+        "title": "Role",
+        "afterColumn": "name",
+        "width": "minmax(140px, 2fr)",
+        "paths": [
+          ".spec.role",
+          ".spec.instanceProfile"
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.k8s.aws",
+          "kind": "EC2NodeClass"
+        },
+        "id": "ec2-ready",
+        "title": "Ready",
+        "afterColumn": "ec2-role",
+        "width": "80px",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "True",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "False",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].status",
+              "nonEmpty": true
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].status}}",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].status"
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "warning"
+          }
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.azure.com",
+          "kind": "AKSNodeClass"
+        },
+        "id": "aks-role",
+        "title": "Role",
+        "afterColumn": "name",
+        "width": "minmax(140px, 2fr)",
+        "paths": [
+          ".spec.role",
+          ".spec.instanceProfile"
+        ]
+      },
+      {
+        "kind": {
+          "group": "karpenter.azure.com",
+          "kind": "AKSNodeClass"
+        },
+        "id": "aks-ready",
+        "title": "Ready",
+        "afterColumn": "aks-role",
+        "width": "80px",
+        "paths": [
+          ".status.conditions[type=\"Ready\"].status"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "True"
+            },
+            "text": "True",
+            "tone": "ok"
+          },
+          {
+            "when": {
+              "type": "condition",
+              "conditionType": "Ready",
+              "status": "False"
+            },
+            "text": "False",
+            "tone": "error"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".status.conditions[type=\"Ready\"].status",
+              "nonEmpty": true
+            },
+            "text": "{{.status.conditions[type=\"Ready\"].status}}",
+            "tone": "warning"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".status.conditions[type=\"Ready\"]"
+                },
+                {
+                  "type": "absent",
+                  "path": ".status.conditions[type=\"Ready\"].status"
+                }
+              ]
+            },
+            "text": "Unknown",
+            "tone": "warning"
+          }
+        ]
+      }
+    ]
+  },
+  "translations": {
+    "de": {
+      "description": "Karpenters NodePools, NodeClaims und Knotenklassen: die Nutzung eines NodePools gegen seine Limits, seine Unterbrechungseinstellungen und die jüngsten Unterbrechungen seiner NodeClaims sowie Start, Registrierung und Initialisierung eines NodeClaims und warum Karpenter ihn unterbricht. Nur lesend.",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "Limits und Unterbrechung",
+      "detailsSections.node-claim.title": "Start und Unterbrechung",
+      "columns.np-node-class.title": "Knotenklasse",
+      "columns.np-nodes.title": "Knoten",
+      "columns.np-limits.title": "Nutzung / Limits",
+      "columns.np-consolidation.title": "Konsolidierung",
+      "columns.np-ready.title": "Bereit",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "Instanztyp",
+      "columns.nc-capacity-type.title": "Kapazität",
+      "columns.nc-zone.title": "Zone",
+      "columns.nc-node.title": "Knoten",
+      "columns.nc-state.title": "Zustand",
+      "columns.nc-ready.title": "Bereit",
+      "columns.ec2-role.title": "Rolle",
+      "columns.ec2-ready.title": "Bereit",
+      "columns.aks-role.title": "Rolle",
+      "columns.aks-ready.title": "Bereit"
+    },
+    "es": {
+      "description": "NodePools, NodeClaims y clases de nodo de Karpenter: el uso de un NodePool frente a sus límites, su configuración de interrupción y las interrupciones recientes de sus NodeClaims, y el arranque, registro e inicialización de un NodeClaim con el motivo por el que Karpenter lo interrumpe. Solo lectura.",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "Límites e interrupción",
+      "detailsSections.node-claim.title": "Lanzamiento e interrupción",
+      "columns.np-node-class.title": "Clase de nodos",
+      "columns.np-nodes.title": "Nodos",
+      "columns.np-limits.title": "Uso / límites",
+      "columns.np-consolidation.title": "Consolidación",
+      "columns.np-ready.title": "Listo",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "Tipo de instancia",
+      "columns.nc-capacity-type.title": "Capacidad",
+      "columns.nc-zone.title": "Zona",
+      "columns.nc-node.title": "Nodo",
+      "columns.nc-state.title": "Estado",
+      "columns.nc-ready.title": "Listo",
+      "columns.ec2-role.title": "Rol",
+      "columns.ec2-ready.title": "Listo",
+      "columns.aks-role.title": "Rol",
+      "columns.aks-ready.title": "Listo"
+    },
+    "fr": {
+      "description": "Les NodePools, NodeClaims et classes de nœuds de Karpenter : l'utilisation d'un NodePool face à ses limites, ses réglages d'interruption et les interruptions récentes de ses NodeClaims, et le lancement, l'enregistrement et l'initialisation d'un NodeClaim avec la raison pour laquelle Karpenter l'interrompt. Lecture seule.",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "Limites et interruption",
+      "detailsSections.node-claim.title": "Lancement et interruption",
+      "columns.np-node-class.title": "Classe de nœuds",
+      "columns.np-nodes.title": "Nœuds",
+      "columns.np-limits.title": "Usage / limites",
+      "columns.np-consolidation.title": "Consolidation",
+      "columns.np-ready.title": "Prêt",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "Type d'instance",
+      "columns.nc-capacity-type.title": "Capacité",
+      "columns.nc-zone.title": "Zone",
+      "columns.nc-node.title": "Nœud",
+      "columns.nc-state.title": "État",
+      "columns.nc-ready.title": "Prêt",
+      "columns.ec2-role.title": "Rôle",
+      "columns.ec2-ready.title": "Prêt",
+      "columns.aks-role.title": "Rôle",
+      "columns.aks-ready.title": "Prêt"
+    },
+    "it": {
+      "description": "NodePool, NodeClaim e classi di nodi di Karpenter: l'uso di un NodePool rispetto ai suoi limiti, le sue impostazioni di interruzione e le interruzioni recenti dei suoi NodeClaim, e l'avvio, la registrazione e l'inizializzazione di un NodeClaim con il motivo per cui Karpenter lo interrompe. Sola lettura.",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "Limiti e interruzione",
+      "detailsSections.node-claim.title": "Avvio e interruzione",
+      "columns.np-node-class.title": "Classe di nodi",
+      "columns.np-nodes.title": "Nodi",
+      "columns.np-limits.title": "Uso / limiti",
+      "columns.np-consolidation.title": "Consolidamento",
+      "columns.np-ready.title": "Pronto",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "Tipo di istanza",
+      "columns.nc-capacity-type.title": "Capacità",
+      "columns.nc-zone.title": "Zona",
+      "columns.nc-node.title": "Nodo",
+      "columns.nc-state.title": "Stato",
+      "columns.nc-ready.title": "Pronto",
+      "columns.ec2-role.title": "Ruolo",
+      "columns.ec2-ready.title": "Pronto",
+      "columns.aks-role.title": "Ruolo",
+      "columns.aks-ready.title": "Pronto"
+    },
+    "ja": {
+      "description": "Karpenter の NodePool、NodeClaim、ノードクラス: NodePool の上限に対する使用量、中断の設定とその NodeClaim の最近の中断、NodeClaim の起動・登録・初期化と Karpenter が中断する理由。読み取り専用。",
+      "kinds.0.title": "NodePool",
+      "kinds.1.title": "NodeClaim",
+      "kinds.2.title": "EC2NodeClass",
+      "kinds.3.title": "AKSNodeClass",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "上限と中断",
+      "detailsSections.node-claim.title": "起動と中断",
+      "columns.np-node-class.title": "ノードクラス",
+      "columns.np-nodes.title": "ノード",
+      "columns.np-limits.title": "使用量 / 上限",
+      "columns.np-consolidation.title": "統合",
+      "columns.np-ready.title": "準備完了",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "インスタンスタイプ",
+      "columns.nc-capacity-type.title": "容量",
+      "columns.nc-zone.title": "ゾーン",
+      "columns.nc-node.title": "ノード",
+      "columns.nc-state.title": "状態",
+      "columns.nc-ready.title": "準備完了",
+      "columns.ec2-role.title": "ロール",
+      "columns.ec2-ready.title": "準備完了",
+      "columns.aks-role.title": "ロール",
+      "columns.aks-ready.title": "準備完了"
+    },
+    "ko": {
+      "description": "Karpenter의 NodePool, NodeClaim, 노드 클래스: 한도 대비 NodePool의 사용량, 중단 설정과 그 NodeClaim의 최근 중단, NodeClaim의 시작·등록·초기화와 Karpenter가 중단하는 이유. 읽기 전용.",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "제한 및 중단",
+      "detailsSections.node-claim.title": "시작 및 중단",
+      "columns.np-node-class.title": "노드 클래스",
+      "columns.np-nodes.title": "노드",
+      "columns.np-limits.title": "사용량 / 제한",
+      "columns.np-consolidation.title": "통합",
+      "columns.np-ready.title": "준비",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "인스턴스 유형",
+      "columns.nc-capacity-type.title": "용량",
+      "columns.nc-zone.title": "영역",
+      "columns.nc-node.title": "노드",
+      "columns.nc-state.title": "상태",
+      "columns.nc-ready.title": "준비",
+      "columns.ec2-role.title": "역할",
+      "columns.ec2-ready.title": "준비",
+      "columns.aks-role.title": "역할",
+      "columns.aks-ready.title": "준비"
+    },
+    "pl": {
+      "description": "NodePoole, NodeClaimy i klasy węzłów Karpentera: użycie NodePoola względem jego limitów, jego ustawienia przerywania i ostatnie przerwania jego NodeClaimów oraz uruchomienie, rejestracja i inicjalizacja NodeClaima wraz z powodem, dla którego Karpenter go przerywa. Tylko do odczytu.",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "Limity i przerwania",
+      "detailsSections.node-claim.title": "Uruchomienie i przerwania",
+      "columns.np-node-class.title": "Klasa węzłów",
+      "columns.np-nodes.title": "Węzły",
+      "columns.np-limits.title": "Użycie / limity",
+      "columns.np-consolidation.title": "Konsolidacja",
+      "columns.np-ready.title": "Gotowy",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "Typ instancji",
+      "columns.nc-capacity-type.title": "Pojemność",
+      "columns.nc-zone.title": "Strefa",
+      "columns.nc-node.title": "Węzeł",
+      "columns.nc-state.title": "Stan",
+      "columns.nc-ready.title": "Gotowy",
+      "columns.ec2-role.title": "Rola",
+      "columns.ec2-ready.title": "Gotowy",
+      "columns.aks-role.title": "Rola",
+      "columns.aks-ready.title": "Gotowy"
+    },
+    "pt-BR": {
+      "description": "NodePools, NodeClaims e classes de nós do Karpenter: o uso de um NodePool frente aos seus limites, suas configurações de interrupção e as interrupções recentes de seus NodeClaims, e a inicialização, o registro e a preparação de um NodeClaim com o motivo pelo qual o Karpenter o interrompe. Somente leitura.",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "Limites e interrupção",
+      "detailsSections.node-claim.title": "Início e interrupção",
+      "columns.np-node-class.title": "Classe de nós",
+      "columns.np-nodes.title": "Nós",
+      "columns.np-limits.title": "Uso / limites",
+      "columns.np-consolidation.title": "Consolidação",
+      "columns.np-ready.title": "Pronto",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "Tipo de instância",
+      "columns.nc-capacity-type.title": "Capacidade",
+      "columns.nc-zone.title": "Zona",
+      "columns.nc-node.title": "Nó",
+      "columns.nc-state.title": "Estado",
+      "columns.nc-ready.title": "Pronto",
+      "columns.ec2-role.title": "Papel",
+      "columns.ec2-ready.title": "Pronto",
+      "columns.aks-role.title": "Papel",
+      "columns.aks-ready.title": "Pronto"
+    },
+    "ru": {
+      "description": "NodePool, NodeClaim и классы узлов Karpenter: использование NodePool относительно его лимитов, его настройки прерывания и недавние прерывания его NodeClaim, а также запуск, регистрация и инициализация NodeClaim и причина, по которой Karpenter его прерывает. Только чтение.",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "Лимиты и прерывание",
+      "detailsSections.node-claim.title": "Запуск и прерывание",
+      "columns.np-node-class.title": "Класс узлов",
+      "columns.np-nodes.title": "Узлы",
+      "columns.np-limits.title": "Использование / лимиты",
+      "columns.np-consolidation.title": "Консолидация",
+      "columns.np-ready.title": "Готов",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "Тип инстанса",
+      "columns.nc-capacity-type.title": "Емкость",
+      "columns.nc-zone.title": "Зона",
+      "columns.nc-node.title": "Узел",
+      "columns.nc-state.title": "Состояние",
+      "columns.nc-ready.title": "Готов",
+      "columns.ec2-role.title": "Роль",
+      "columns.ec2-ready.title": "Готов",
+      "columns.aks-role.title": "Роль",
+      "columns.aks-ready.title": "Готов"
+    },
+    "tr": {
+      "description": "Karpenter'ın NodePool, NodeClaim ve düğüm sınıfları: bir NodePool'un sınırlarına göre kullanımı, kesinti ayarları ve NodeClaim'lerinin son kesintileri, ayrıca bir NodeClaim'in başlatılması, kaydı ve hazırlanması ile Karpenter'ın onu neden kestiği. Salt okunur.",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "Sınırlar ve kesinti",
+      "detailsSections.node-claim.title": "Başlatma ve kesinti",
+      "columns.np-node-class.title": "Düğüm sınıfı",
+      "columns.np-nodes.title": "Düğümler",
+      "columns.np-limits.title": "Kullanım / sınırlar",
+      "columns.np-consolidation.title": "Birleştirme",
+      "columns.np-ready.title": "Hazır",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "Örnek türü",
+      "columns.nc-capacity-type.title": "Kapasite",
+      "columns.nc-zone.title": "Bölge",
+      "columns.nc-node.title": "Düğüm",
+      "columns.nc-state.title": "Durum",
+      "columns.nc-ready.title": "Hazır",
+      "columns.ec2-role.title": "Rol",
+      "columns.ec2-ready.title": "Hazır",
+      "columns.aks-role.title": "Rol",
+      "columns.aks-ready.title": "Hazır"
+    },
+    "uk": {
+      "description": "NodePool, NodeClaim і класи вузлів Karpenter: використання NodePool щодо його лімітів, його налаштування переривання й недавні переривання його NodeClaim, а також запуск, реєстрація й ініціалізація NodeClaim і причина, з якої Karpenter його перериває. Лише читання.",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "Ліміти й переривання",
+      "detailsSections.node-claim.title": "Запуск і переривання",
+      "columns.np-node-class.title": "Клас вузлів",
+      "columns.np-nodes.title": "Вузли",
+      "columns.np-limits.title": "Використання / ліміти",
+      "columns.np-consolidation.title": "Консолідація",
+      "columns.np-ready.title": "Готовий",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "Тип інстансу",
+      "columns.nc-capacity-type.title": "Ємність",
+      "columns.nc-zone.title": "Зона",
+      "columns.nc-node.title": "Вузол",
+      "columns.nc-state.title": "Стан",
+      "columns.nc-ready.title": "Готовий",
+      "columns.ec2-role.title": "Роль",
+      "columns.ec2-ready.title": "Готовий",
+      "columns.aks-role.title": "Роль",
+      "columns.aks-ready.title": "Готовий"
+    },
+    "zh-CN": {
+      "description": "Karpenter 的 NodePool、NodeClaim 和节点类：NodePool 相对其限制的用量、它的中断设置及其 NodeClaim 最近的中断，以及 NodeClaim 的启动、注册和初始化与 Karpenter 中断它的原因。只读。",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "限制与中断",
+      "detailsSections.node-claim.title": "启动与中断",
+      "columns.np-node-class.title": "节点类",
+      "columns.np-nodes.title": "节点",
+      "columns.np-limits.title": "用量 / 限制",
+      "columns.np-consolidation.title": "整合",
+      "columns.np-ready.title": "就绪",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "实例类型",
+      "columns.nc-capacity-type.title": "容量",
+      "columns.nc-zone.title": "可用区",
+      "columns.nc-node.title": "节点",
+      "columns.nc-state.title": "状态",
+      "columns.nc-ready.title": "就绪",
+      "columns.ec2-role.title": "角色",
+      "columns.ec2-ready.title": "就绪",
+      "columns.aks-role.title": "角色",
+      "columns.aks-ready.title": "就绪"
+    },
+    "zh-TW": {
+      "description": "Karpenter 的 NodePool、NodeClaim 與節點類別：NodePool 相對其限制的用量、它的中斷設定及其 NodeClaim 最近的中斷，以及 NodeClaim 的啟動、註冊與初始化和 Karpenter 中斷它的原因。唯讀。",
+      "kinds.0.title": "Node Pools",
+      "kinds.1.title": "Node Claims",
+      "kinds.2.title": "EC2 Node Classes",
+      "kinds.3.title": "AKS Node Classes",
+      "sections.karpenter.title": "Karpenter",
+      "detailsSections.node-pool.title": "限制與中斷",
+      "detailsSections.node-claim.title": "啟動與中斷",
+      "columns.np-node-class.title": "節點類別",
+      "columns.np-nodes.title": "節點",
+      "columns.np-limits.title": "用量 / 限制",
+      "columns.np-consolidation.title": "整併",
+      "columns.np-ready.title": "就緒",
+      "columns.nc-node-pool.title": "NodePool",
+      "columns.nc-instance-type.title": "執行個體類型",
+      "columns.nc-capacity-type.title": "容量",
+      "columns.nc-zone.title": "區域",
+      "columns.nc-node.title": "節點",
+      "columns.nc-state.title": "狀態",
+      "columns.nc-ready.title": "就緒",
+      "columns.ec2-role.title": "角色",
+      "columns.ec2-ready.title": "就緒",
+      "columns.aks-role.title": "角色",
+      "columns.aks-ready.title": "就緒"
+    }
+  }
+}

@@ -7,11 +7,12 @@
 //  - a Pending pod the scheduler could not place: its message parsed, a local per-node check (resources, taints,
 //    affinity, topology spread, volume zones; ≤ 200 nodes, from taps on the problems store's node and pod watches),
 //    and what Karpenter or Cluster Autoscaler decided (scheduling.ts, SchedulingSection.tsx);
-//  - nodes, NodeClaims and NodePools: Karpenter's disruption reasons (drift, consolidation, emptiness, expiration),
-//    NodePool limits and the disruptions of removed nodes; Cluster Autoscaler's marks and its status ConfigMap
-//    (karpenter.ts, clusterAutoscaler.ts, NodeSection.tsx);
-//  - the discovered sidebar sections KEDA (ScaledObjects, ScaledJobs, TriggerAuthentications) and Karpenter
-//    (NodePools, NodeClaims, node classes), shown only while the cluster serves their kinds (register.tsx).
+//  - nodes: Karpenter's NodePool and NodeClaim and its disruption reasons (drift, consolidation, emptiness,
+//    expiration); Cluster Autoscaler's marks and its status ConfigMap (karpenter.ts, clusterAutoscaler.ts,
+//    NodeSection.tsx).
+// The KEDA and Karpenter kinds' sidebar sections, tables and details are Sextant's own extensions `extensions/keda`
+// (`sextant.keda`) and `extensions/karpenter` (`sextant.karpenter`); keda.ts and karpenter.ts keep what the sections
+// above and agents' `get_autoscaling_status` read of their objects.
 // Nothing here changes the cluster; agents and extensions get nothing new.
 import "./autoscaling.css";
 import "./register";

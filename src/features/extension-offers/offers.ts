@@ -21,6 +21,10 @@ export const OFFERS: readonly ExtensionOffer[] = [
   { id: "sextant.argo-cd", tool: "Argo CD", matches: (k) => k.group === "argoproj.io" && k.kind === "Application" },
   { id: "sextant.argo-rollouts", tool: "Argo Rollouts", matches: (k) => k.group === "argoproj.io" && k.kind === "Rollout" },
   { id: "sextant.argo-workflows", tool: "Argo Workflows", matches: (k) => k.group === "argoproj.io" && k.kind === "Workflow" },
+  // Trivy Operator: by its report kinds (`aquasecurity.github.io`).
+  { id: "sextant.trivy", tool: "Trivy", matches: (k) => k.group === "aquasecurity.github.io" },
+  { id: "sextant.keda", tool: "KEDA", matches: (k) => k.group === "keda.sh" },
+  { id: "sextant.karpenter", tool: "Karpenter", matches: (k) => k.group === "karpenter.sh" },
   { id: "sextant.vpa", tool: "Vertical Pod Autoscaler", matches: (k) => k.group === "autoscaling.k8s.io" && k.kind === "VerticalPodAutoscaler" },
   { id: "sextant.velero", tool: "Velero", matches: (k) => k.group === "velero.io" },
   // Traefik: by its kinds of `traefik.io` or, on an older Traefik, `traefik.containo.us`.

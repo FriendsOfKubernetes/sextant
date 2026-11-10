@@ -1,34 +1,5 @@
 {
   "title": "Autoscaling",
-  "sidebar": {
-    "scaledObjects": "Scaled Objects",
-    "scaledJobs": "Scaled Jobs",
-    "triggerAuthentications": "Trigger Authentications",
-    "clusterTriggerAuthentications": "Cluster Trigger Authentications",
-    "nodePools": "Node Pools",
-    "nodeClaims": "Node Claims",
-    "ec2NodeClasses": "EC2 Node Classes",
-    "aksNodeClasses": "AKS Node Classes"
-  },
-  "columns": {
-    "ready": "Ready",
-    "state": "State",
-    "triggers": "Triggers",
-    "target": "Target",
-    "min": "Min",
-    "max": "Max",
-    "sources": "Sources",
-    "nodeClass": "Node class",
-    "nodes": "Nodes",
-    "limits": "Usage / limits",
-    "consolidation": "Consolidation",
-    "nodePool": "NodePool",
-    "instanceType": "Instance type",
-    "capacityType": "Capacity",
-    "zone": "Zone",
-    "node": "Node",
-    "role": "Role"
-  },
   "fields": {
     "target": "Target",
     "replicas": "Replicas",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "Capacity type",
-    "instanceType": "Instance type",
-    "node": "Node",
-    "zone": "Zone",
-    "nodeClass": "Node class",
-    "consolidationPolicy": "Consolidation policy",
-    "consolidateAfter": "Consolidate after",
-    "expireAfter": "Expire after",
-    "budgets": "Disruption budgets",
-    "idleReplicas": "Idle replicas",
-    "pollingInterval": "Polling interval",
-    "cooldownPeriod": "Cooldown period",
-    "fallback": "Fallback",
-    "maxReplicas": "Max replicas",
-    "strategy": "Scaling strategy",
-    "image": "Image",
-    "podIdentity": "Pod identity"
+    "instanceType": "Instance type"
   },
   "events": {
     "reason": "Reason",
@@ -265,7 +221,6 @@
     "notLaunched": "Not launched: {{reason}}.",
     "notRegistered": "Launched, but the node has not joined the cluster: {{reason}}.",
     "notInitialized": "The node joined but is not initialized yet: {{reason}}.",
-    "ready": "Launched, registered and initialized.",
     "disrupting": "Karpenter is disrupting this node: it is tainted and its Pods are being moved.",
     "terminating": "The node is being terminated.",
     "drifted": "Drifted ({{reason}}): the node no longer matches its NodePool or node class, so Karpenter replaces it.",
@@ -282,15 +237,7 @@
       "expiration": "Expiration",
       "other": "Other"
     },
-    "disruptions": "Disruption events",
-    "claimTitle": "Launch and disruption",
-    "poolTitle": "Limits and disruption",
-    "resource": "Resource",
-    "inUse": "In use",
-    "limit": "Limit",
-    "noLimits": "No limits: the NodePool may launch nodes without bound.",
-    "recentDisruptions": "Recent disruptions of its NodeClaims",
-    "noDisruptions": "No recent disruption events."
+    "disruptions": "Disruption events"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -309,7 +256,6 @@
     "scaleDown": "Scale down"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "KEDA cannot scale this object ({{reason}}): see the Ready condition and the events.",
     "paused": "Paused by the annotation {{annotation}}: KEDA does not scale the target.",
     "pausedAt": "Paused by the annotation {{annotation}}: the target is held at this replica count: {{replicas}}.",
@@ -320,23 +266,6 @@
     "jobInactive": "Inactive: no trigger is above its activation threshold, so no Jobs are created.",
     "active": "Active: a trigger is above its activation threshold, so the HPA scales the target (replicas: {{min}}–{{max}}).",
     "inactiveIdle": "Inactive: no trigger is above its activation threshold, so the target is kept at its idle replica count: {{replicas}}.",
-    "inactive": "Inactive: no trigger is above its activation threshold, so the HPA keeps the target at minReplicaCount: {{replicas}}.",
-    "hpaMissing": "The HPA {{name}} that KEDA manages for this ScaledObject is not there.",
-    "noTriggers": "No triggers.",
-    "trigger": "Trigger",
-    "metadata": "Metadata",
-    "auth": "Authentication",
-    "health": "Health",
-    "seconds_one": "{{count}} second",
-    "seconds_other": "{{count}} seconds",
-    "fallbackSpec": "failure threshold: {{failures}}; fallback replicas: {{replicas}}",
-    "triggers": "Triggers",
-    "managedHpa": "The HPA KEDA manages",
-    "authTitle": "Where the parameters come from",
-    "noSources": "No parameter sources.",
-    "parameter": "Parameter",
-    "from": "From",
-    "name": "Name",
-    "key": "Key"
+    "inactive": "Inactive: no trigger is above its activation threshold, so the HPA keeps the target at minReplicaCount: {{replicas}}."
   }
 }

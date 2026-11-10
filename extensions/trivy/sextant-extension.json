@@ -1,0 +1,4103 @@
+{
+  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
+  "id": "sextant.trivy",
+  "name": "Trivy",
+  "version": "1.0.0",
+  "description": "Trivy Operator's reports: image vulnerabilities, configuration audits, exposed secrets, RBAC and infrastructure assessments, compliance reports and SBOMs, with their severity counts and most severe findings, and the image scans of every workload. Read-only.",
+  "author": "Sextant",
+  "sextantApi": 4,
+  "entry": "index.html",
+  "icon": "trivy",
+  "permissions": {
+    "clusters": {
+      "type": "all"
+    },
+    "rules": [
+      {
+        "namespaces": {
+          "type": "all"
+        },
+        "kinds": {
+          "type": "only",
+          "kinds": [
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "VulnerabilityReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "ClusterVulnerabilityReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "ConfigAuditReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "ClusterConfigAuditReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "ExposedSecretReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "RbacAssessmentReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "ClusterRbacAssessmentReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "InfraAssessmentReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "ClusterInfraAssessmentReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "ClusterComplianceReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "SbomReport"
+            },
+            {
+              "group": "aquasecurity.github.io",
+              "kind": "ClusterSbomReport"
+            },
+            {
+              "group": "apps",
+              "kind": "Deployment"
+            },
+            {
+              "group": "apps",
+              "kind": "StatefulSet"
+            },
+            {
+              "group": "apps",
+              "kind": "DaemonSet"
+            },
+            {
+              "group": "apps",
+              "kind": "ReplicaSet"
+            },
+            {
+              "group": "batch",
+              "kind": "Job"
+            },
+            {
+              "group": "batch",
+              "kind": "CronJob"
+            },
+            {
+              "group": "",
+              "kind": "Pod"
+            }
+          ]
+        },
+        "actions": [
+          "read"
+        ]
+      }
+    ]
+  },
+  "contributes": {
+    "kinds": [
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "VulnerabilityReport",
+        "section": "trivy",
+        "title": "Vulnerability Reports",
+        "icon": "trivyVulnerabilities",
+        "order": 10,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "ClusterVulnerabilityReport",
+        "section": "trivy",
+        "title": "Cluster Vulnerability Reports",
+        "icon": "trivyVulnerabilities",
+        "order": 15,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "ConfigAuditReport",
+        "section": "trivy",
+        "title": "Config Audit Reports",
+        "icon": "trivyConfigAudit",
+        "order": 20,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "ClusterConfigAuditReport",
+        "section": "trivy",
+        "title": "Cluster Config Audit Reports",
+        "icon": "trivyConfigAudit",
+        "order": 25,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "ExposedSecretReport",
+        "section": "trivy",
+        "title": "Exposed Secret Reports",
+        "icon": "trivySecrets",
+        "order": 30,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "RbacAssessmentReport",
+        "section": "trivy",
+        "title": "RBAC Assessment Reports",
+        "icon": "trivyRbac",
+        "order": 40,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "ClusterRbacAssessmentReport",
+        "section": "trivy",
+        "title": "Cluster RBAC Assessment Reports",
+        "icon": "trivyRbac",
+        "order": 45,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "InfraAssessmentReport",
+        "section": "trivy",
+        "title": "Infra Assessment Reports",
+        "icon": "trivyInfra",
+        "order": 50,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "ClusterInfraAssessmentReport",
+        "section": "trivy",
+        "title": "Cluster Infra Assessment Reports",
+        "icon": "trivyInfra",
+        "order": 55,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "ClusterComplianceReport",
+        "section": "trivy",
+        "title": "Cluster Compliance Reports",
+        "icon": "trivyCompliance",
+        "order": 60,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "SbomReport",
+        "section": "trivy",
+        "title": "SBOM Reports",
+        "icon": "trivySbom",
+        "order": 70,
+        "printerColumns": false
+      },
+      {
+        "group": "aquasecurity.github.io",
+        "kind": "ClusterSbomReport",
+        "section": "trivy",
+        "title": "Cluster SBOM Reports",
+        "icon": "trivySbom",
+        "order": 75,
+        "printerColumns": false
+      }
+    ],
+    "sections": [
+      {
+        "section": "trivy",
+        "title": "Trivy",
+        "icon": "trivy",
+        "after": "certManager"
+      }
+    ],
+    "detailsSections": [
+      {
+        "id": "report",
+        "title": "Report",
+        "kinds": [
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "VulnerabilityReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "ClusterVulnerabilityReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "ConfigAuditReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "ClusterConfigAuditReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "ExposedSecretReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "RbacAssessmentReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "ClusterRbacAssessmentReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "InfraAssessmentReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "ClusterInfraAssessmentReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "ClusterComplianceReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "SbomReport"
+          },
+          {
+            "group": "aquasecurity.github.io",
+            "kind": "ClusterSbomReport"
+          }
+        ],
+        "placement": "section",
+        "order": 20,
+        "heading": false
+      },
+      {
+        "id": "scans",
+        "title": "Image scans (Trivy)",
+        "kinds": [
+          {
+            "group": "apps",
+            "kind": "Deployment"
+          },
+          {
+            "group": "apps",
+            "kind": "StatefulSet"
+          },
+          {
+            "group": "apps",
+            "kind": "DaemonSet"
+          },
+          {
+            "group": "apps",
+            "kind": "ReplicaSet"
+          },
+          {
+            "group": "batch",
+            "kind": "Job"
+          },
+          {
+            "group": "batch",
+            "kind": "CronJob"
+          },
+          {
+            "group": "",
+            "kind": "Pod"
+          }
+        ],
+        "placement": "section",
+        "order": 58,
+        "heading": false,
+        "startHidden": true
+      }
+    ],
+    "columns": [
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "VulnerabilityReport"
+        },
+        "id": "vr-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "VulnerabilityReport"
+        },
+        "id": "vr-container",
+        "title": "Container",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.container.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "vr-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "VulnerabilityReport"
+        },
+        "id": "vr-image",
+        "title": "Image",
+        "paths": [
+          ".report.artifact.repository"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.tag",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}:{{.report.artifact.tag}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}:{{.report.artifact.tag}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.digest",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}@{{.report.artifact.digest}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}@{{.report.artifact.digest}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.tag",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}:{{.report.artifact.tag}}",
+            "tooltip": "{{.report.artifact.repository}}:{{.report.artifact.tag}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.digest",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}@{{.report.artifact.digest}}",
+            "tooltip": "{{.report.artifact.repository}}@{{.report.artifact.digest}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}",
+            "tooltip": "{{.report.artifact.repository}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "vr-container"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "VulnerabilityReport"
+        },
+        "id": "vr-critical",
+        "title": "Critical",
+        "format": "number",
+        "paths": [
+          ".report.summary.criticalCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.criticalCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.criticalCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.criticalCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.criticalCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.criticalCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "vr-image"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "VulnerabilityReport"
+        },
+        "id": "vr-high",
+        "title": "High",
+        "format": "number",
+        "paths": [
+          ".report.summary.highCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.highCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.highCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.highCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.highCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.highCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "vr-critical"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "VulnerabilityReport"
+        },
+        "id": "vr-medium",
+        "title": "Medium",
+        "format": "number",
+        "paths": [
+          ".report.summary.mediumCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.mediumCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.mediumCount}}",
+            "tone": "warning",
+            "value": "{{.report.summary.mediumCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.mediumCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.mediumCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "vr-high"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "VulnerabilityReport"
+        },
+        "id": "vr-low",
+        "title": "Low",
+        "format": "number",
+        "paths": [
+          ".report.summary.lowCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.lowCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.lowCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "vr-medium"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterVulnerabilityReport"
+        },
+        "id": "cvr-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterVulnerabilityReport"
+        },
+        "id": "cvr-container",
+        "title": "Container",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.container.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "cvr-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterVulnerabilityReport"
+        },
+        "id": "cvr-image",
+        "title": "Image",
+        "paths": [
+          ".report.artifact.repository"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.tag",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}:{{.report.artifact.tag}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}:{{.report.artifact.tag}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.digest",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}@{{.report.artifact.digest}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}@{{.report.artifact.digest}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.tag",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}:{{.report.artifact.tag}}",
+            "tooltip": "{{.report.artifact.repository}}:{{.report.artifact.tag}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.digest",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}@{{.report.artifact.digest}}",
+            "tooltip": "{{.report.artifact.repository}}@{{.report.artifact.digest}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}",
+            "tooltip": "{{.report.artifact.repository}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "cvr-container"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterVulnerabilityReport"
+        },
+        "id": "cvr-critical",
+        "title": "Critical",
+        "format": "number",
+        "paths": [
+          ".report.summary.criticalCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.criticalCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.criticalCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.criticalCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.criticalCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.criticalCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "cvr-image"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterVulnerabilityReport"
+        },
+        "id": "cvr-high",
+        "title": "High",
+        "format": "number",
+        "paths": [
+          ".report.summary.highCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.highCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.highCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.highCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.highCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.highCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "cvr-critical"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterVulnerabilityReport"
+        },
+        "id": "cvr-medium",
+        "title": "Medium",
+        "format": "number",
+        "paths": [
+          ".report.summary.mediumCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.mediumCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.mediumCount}}",
+            "tone": "warning",
+            "value": "{{.report.summary.mediumCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.mediumCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.mediumCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "cvr-high"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterVulnerabilityReport"
+        },
+        "id": "cvr-low",
+        "title": "Low",
+        "format": "number",
+        "paths": [
+          ".report.summary.lowCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.lowCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.lowCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "cvr-medium"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ConfigAuditReport"
+        },
+        "id": "car-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ConfigAuditReport"
+        },
+        "id": "car-critical",
+        "title": "Critical",
+        "format": "number",
+        "paths": [
+          ".report.summary.criticalCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.criticalCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.criticalCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.criticalCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.criticalCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.criticalCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "car-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ConfigAuditReport"
+        },
+        "id": "car-high",
+        "title": "High",
+        "format": "number",
+        "paths": [
+          ".report.summary.highCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.highCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.highCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.highCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.highCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.highCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "car-critical"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ConfigAuditReport"
+        },
+        "id": "car-medium",
+        "title": "Medium",
+        "format": "number",
+        "paths": [
+          ".report.summary.mediumCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.mediumCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.mediumCount}}",
+            "tone": "warning",
+            "value": "{{.report.summary.mediumCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.mediumCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.mediumCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "car-high"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ConfigAuditReport"
+        },
+        "id": "car-low",
+        "title": "Low",
+        "format": "number",
+        "paths": [
+          ".report.summary.lowCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.lowCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.lowCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "car-medium"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterConfigAuditReport"
+        },
+        "id": "ccar-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterConfigAuditReport"
+        },
+        "id": "ccar-critical",
+        "title": "Critical",
+        "format": "number",
+        "paths": [
+          ".report.summary.criticalCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.criticalCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.criticalCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.criticalCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.criticalCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.criticalCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "ccar-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterConfigAuditReport"
+        },
+        "id": "ccar-high",
+        "title": "High",
+        "format": "number",
+        "paths": [
+          ".report.summary.highCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.highCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.highCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.highCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.highCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.highCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "ccar-critical"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterConfigAuditReport"
+        },
+        "id": "ccar-medium",
+        "title": "Medium",
+        "format": "number",
+        "paths": [
+          ".report.summary.mediumCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.mediumCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.mediumCount}}",
+            "tone": "warning",
+            "value": "{{.report.summary.mediumCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.mediumCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.mediumCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "ccar-high"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterConfigAuditReport"
+        },
+        "id": "ccar-low",
+        "title": "Low",
+        "format": "number",
+        "paths": [
+          ".report.summary.lowCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.lowCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.lowCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "ccar-medium"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ExposedSecretReport"
+        },
+        "id": "esr-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ExposedSecretReport"
+        },
+        "id": "esr-container",
+        "title": "Container",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.container.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "esr-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ExposedSecretReport"
+        },
+        "id": "esr-image",
+        "title": "Image",
+        "paths": [
+          ".report.artifact.repository"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.tag",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}:{{.report.artifact.tag}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}:{{.report.artifact.tag}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.digest",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}@{{.report.artifact.digest}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}@{{.report.artifact.digest}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.tag",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}:{{.report.artifact.tag}}",
+            "tooltip": "{{.report.artifact.repository}}:{{.report.artifact.tag}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.digest",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}@{{.report.artifact.digest}}",
+            "tooltip": "{{.report.artifact.repository}}@{{.report.artifact.digest}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}",
+            "tooltip": "{{.report.artifact.repository}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "esr-container"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ExposedSecretReport"
+        },
+        "id": "esr-critical",
+        "title": "Critical",
+        "format": "number",
+        "paths": [
+          ".report.summary.criticalCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.criticalCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.criticalCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.criticalCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.criticalCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.criticalCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "esr-image"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ExposedSecretReport"
+        },
+        "id": "esr-high",
+        "title": "High",
+        "format": "number",
+        "paths": [
+          ".report.summary.highCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.highCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.highCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.highCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.highCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.highCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "esr-critical"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ExposedSecretReport"
+        },
+        "id": "esr-medium",
+        "title": "Medium",
+        "format": "number",
+        "paths": [
+          ".report.summary.mediumCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.mediumCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.mediumCount}}",
+            "tone": "warning",
+            "value": "{{.report.summary.mediumCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.mediumCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.mediumCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "esr-high"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ExposedSecretReport"
+        },
+        "id": "esr-low",
+        "title": "Low",
+        "format": "number",
+        "paths": [
+          ".report.summary.lowCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.lowCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.lowCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "esr-medium"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "RbacAssessmentReport"
+        },
+        "id": "rar-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "RbacAssessmentReport"
+        },
+        "id": "rar-critical",
+        "title": "Critical",
+        "format": "number",
+        "paths": [
+          ".report.summary.criticalCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.criticalCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.criticalCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.criticalCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.criticalCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.criticalCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "rar-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "RbacAssessmentReport"
+        },
+        "id": "rar-high",
+        "title": "High",
+        "format": "number",
+        "paths": [
+          ".report.summary.highCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.highCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.highCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.highCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.highCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.highCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "rar-critical"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "RbacAssessmentReport"
+        },
+        "id": "rar-medium",
+        "title": "Medium",
+        "format": "number",
+        "paths": [
+          ".report.summary.mediumCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.mediumCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.mediumCount}}",
+            "tone": "warning",
+            "value": "{{.report.summary.mediumCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.mediumCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.mediumCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "rar-high"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "RbacAssessmentReport"
+        },
+        "id": "rar-low",
+        "title": "Low",
+        "format": "number",
+        "paths": [
+          ".report.summary.lowCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.lowCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.lowCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "rar-medium"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterRbacAssessmentReport"
+        },
+        "id": "crar-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterRbacAssessmentReport"
+        },
+        "id": "crar-critical",
+        "title": "Critical",
+        "format": "number",
+        "paths": [
+          ".report.summary.criticalCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.criticalCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.criticalCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.criticalCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.criticalCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.criticalCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "crar-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterRbacAssessmentReport"
+        },
+        "id": "crar-high",
+        "title": "High",
+        "format": "number",
+        "paths": [
+          ".report.summary.highCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.highCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.highCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.highCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.highCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.highCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "crar-critical"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterRbacAssessmentReport"
+        },
+        "id": "crar-medium",
+        "title": "Medium",
+        "format": "number",
+        "paths": [
+          ".report.summary.mediumCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.mediumCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.mediumCount}}",
+            "tone": "warning",
+            "value": "{{.report.summary.mediumCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.mediumCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.mediumCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "crar-high"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterRbacAssessmentReport"
+        },
+        "id": "crar-low",
+        "title": "Low",
+        "format": "number",
+        "paths": [
+          ".report.summary.lowCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.lowCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.lowCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "crar-medium"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "InfraAssessmentReport"
+        },
+        "id": "iar-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "InfraAssessmentReport"
+        },
+        "id": "iar-critical",
+        "title": "Critical",
+        "format": "number",
+        "paths": [
+          ".report.summary.criticalCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.criticalCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.criticalCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.criticalCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.criticalCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.criticalCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "iar-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "InfraAssessmentReport"
+        },
+        "id": "iar-high",
+        "title": "High",
+        "format": "number",
+        "paths": [
+          ".report.summary.highCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.highCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.highCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.highCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.highCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.highCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "iar-critical"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "InfraAssessmentReport"
+        },
+        "id": "iar-medium",
+        "title": "Medium",
+        "format": "number",
+        "paths": [
+          ".report.summary.mediumCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.mediumCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.mediumCount}}",
+            "tone": "warning",
+            "value": "{{.report.summary.mediumCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.mediumCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.mediumCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "iar-high"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "InfraAssessmentReport"
+        },
+        "id": "iar-low",
+        "title": "Low",
+        "format": "number",
+        "paths": [
+          ".report.summary.lowCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.lowCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.lowCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "iar-medium"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterInfraAssessmentReport"
+        },
+        "id": "ciar-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterInfraAssessmentReport"
+        },
+        "id": "ciar-critical",
+        "title": "Critical",
+        "format": "number",
+        "paths": [
+          ".report.summary.criticalCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.criticalCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.criticalCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.criticalCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.criticalCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.criticalCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "ciar-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterInfraAssessmentReport"
+        },
+        "id": "ciar-high",
+        "title": "High",
+        "format": "number",
+        "paths": [
+          ".report.summary.highCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.highCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.highCount}}",
+            "tone": "error",
+            "value": "{{.report.summary.highCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.highCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.highCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "ciar-critical"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterInfraAssessmentReport"
+        },
+        "id": "ciar-medium",
+        "title": "Medium",
+        "format": "number",
+        "paths": [
+          ".report.summary.mediumCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".report.summary.mediumCount",
+              "value": 0
+            },
+            "text": "{{.report.summary.mediumCount}}",
+            "tone": "warning",
+            "value": "{{.report.summary.mediumCount}}"
+          },
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.mediumCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.mediumCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "ciar-high"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterInfraAssessmentReport"
+        },
+        "id": "ciar-low",
+        "title": "Low",
+        "format": "number",
+        "paths": [
+          ".report.summary.lowCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "exists",
+              "path": ".metadata.name"
+            },
+            "text": "{{.report.summary.lowCount ?? 0}}",
+            "tone": "muted",
+            "value": "{{.report.summary.lowCount ?? 0}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "ciar-medium"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterComplianceReport"
+        },
+        "id": "ccr-title",
+        "title": "Title",
+        "paths": [
+          ".spec.compliance.title",
+          ".spec.compliance.id"
+        ],
+        "width": "minmax(180px, 3fr)",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterComplianceReport"
+        },
+        "id": "ccr-pass",
+        "title": "Passed",
+        "format": "number",
+        "paths": [
+          ".status.summary.passCount"
+        ],
+        "width": "80px",
+        "afterColumn": "ccr-title"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterComplianceReport"
+        },
+        "id": "ccr-fail",
+        "title": "Failed",
+        "format": "number",
+        "paths": [
+          ".status.summary.failCount"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "above",
+              "path": ".status.summary.failCount",
+              "value": 0
+            },
+            "text": "{{.status.summary.failCount}}",
+            "tone": "error",
+            "value": "{{.status.summary.failCount}}"
+          },
+          {
+            "when": {
+              "type": "below",
+              "path": ".status.summary.failCount",
+              "value": 1
+            },
+            "text": "{{.status.summary.failCount}}",
+            "tone": "ok",
+            "value": "{{.status.summary.failCount}}"
+          }
+        ],
+        "width": "80px",
+        "afterColumn": "ccr-pass"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "SbomReport"
+        },
+        "id": "sbom-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "namespace"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "SbomReport"
+        },
+        "id": "sbom-container",
+        "title": "Container",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.container.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "sbom-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "SbomReport"
+        },
+        "id": "sbom-image",
+        "title": "Image",
+        "paths": [
+          ".report.artifact.repository"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.tag",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}:{{.report.artifact.tag}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}:{{.report.artifact.tag}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.digest",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}@{{.report.artifact.digest}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}@{{.report.artifact.digest}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.tag",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}:{{.report.artifact.tag}}",
+            "tooltip": "{{.report.artifact.repository}}:{{.report.artifact.tag}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.digest",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}@{{.report.artifact.digest}}",
+            "tooltip": "{{.report.artifact.repository}}@{{.report.artifact.digest}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}",
+            "tooltip": "{{.report.artifact.repository}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "sbom-container"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "SbomReport"
+        },
+        "id": "sbom-components",
+        "title": "Components",
+        "format": "number",
+        "paths": [
+          ".report.summary.componentsCount"
+        ],
+        "width": "110px",
+        "afterColumn": "sbom-image"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterSbomReport"
+        },
+        "id": "csbom-resource",
+        "title": "Resource",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.resource.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}/{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          },
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "name"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterSbomReport"
+        },
+        "id": "csbom-container",
+        "title": "Container",
+        "paths": [
+          ".metadata.labels[\"trivy-operator.container.name\"]"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "not",
+              "of": {
+                "type": "all",
+                "of": [
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.kind\"]",
+                    "nonEmpty": true
+                  },
+                  {
+                    "type": "exists",
+                    "path": ".metadata.labels[\"trivy-operator.resource.name\"]",
+                    "nonEmpty": true
+                  }
+                ]
+              }
+            },
+            "text": "",
+            "value": "{{.metadata.labels[\"trivy-operator.resource.kind\"]}}{{.metadata.labels[\"trivy-operator.resource.name\"]}}"
+          }
+        ],
+        "width": "minmax(100px, 1fr)",
+        "afterColumn": "csbom-resource"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterSbomReport"
+        },
+        "id": "csbom-image",
+        "title": "Image",
+        "paths": [
+          ".report.artifact.repository"
+        ],
+        "cases": [
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.tag",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}:{{.report.artifact.tag}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}:{{.report.artifact.tag}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.digest",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}@{{.report.artifact.digest}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}@{{.report.artifact.digest}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.registry.server",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.registry.server}}/{{.report.artifact.repository}}",
+            "tooltip": "{{.report.registry.server}}/{{.report.artifact.repository}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.tag",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}:{{.report.artifact.tag}}",
+            "tooltip": "{{.report.artifact.repository}}:{{.report.artifact.tag}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                },
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.digest",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}@{{.report.artifact.digest}}",
+            "tooltip": "{{.report.artifact.repository}}@{{.report.artifact.digest}}"
+          },
+          {
+            "when": {
+              "type": "all",
+              "of": [
+                {
+                  "type": "exists",
+                  "path": ".report.artifact.repository",
+                  "nonEmpty": true
+                }
+              ]
+            },
+            "text": "{{.report.artifact.repository}}",
+            "tooltip": "{{.report.artifact.repository}}"
+          }
+        ],
+        "width": "minmax(160px, 2fr)",
+        "afterColumn": "csbom-container"
+      },
+      {
+        "kind": {
+          "group": "aquasecurity.github.io",
+          "kind": "ClusterSbomReport"
+        },
+        "id": "csbom-components",
+        "title": "Components",
+        "format": "number",
+        "paths": [
+          ".report.summary.componentsCount"
+        ],
+        "width": "110px",
+        "afterColumn": "csbom-image"
+      }
+    ]
+  },
+  "translations": {
+    "de": {
+      "name": "Trivy",
+      "description": "Die Berichte des Trivy Operators: Schwachstellen von Images, Konfigurationsprüfungen, offengelegte Geheimnisse, RBAC- und Infrastrukturbewertungen, Compliance-Berichte und SBOMs, mit ihren Zählungen nach Schweregrad und ihren schwersten Befunden, und die Image-Scans jedes Workloads. Nur lesend.",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "Bericht",
+      "detailsSections.scans.title": "Image-Scans (Trivy)",
+      "columns.vr-resource.title": "Ressource",
+      "columns.vr-container.title": "Container",
+      "columns.vr-image.title": "Image",
+      "columns.vr-critical.title": "Kritisch",
+      "columns.vr-high.title": "Hoch",
+      "columns.vr-medium.title": "Mittel",
+      "columns.vr-low.title": "Niedrig",
+      "columns.cvr-resource.title": "Ressource",
+      "columns.cvr-container.title": "Container",
+      "columns.cvr-image.title": "Image",
+      "columns.cvr-critical.title": "Kritisch",
+      "columns.cvr-high.title": "Hoch",
+      "columns.cvr-medium.title": "Mittel",
+      "columns.cvr-low.title": "Niedrig",
+      "columns.car-resource.title": "Ressource",
+      "columns.car-critical.title": "Kritisch",
+      "columns.car-high.title": "Hoch",
+      "columns.car-medium.title": "Mittel",
+      "columns.car-low.title": "Niedrig",
+      "columns.ccar-resource.title": "Ressource",
+      "columns.ccar-critical.title": "Kritisch",
+      "columns.ccar-high.title": "Hoch",
+      "columns.ccar-medium.title": "Mittel",
+      "columns.ccar-low.title": "Niedrig",
+      "columns.esr-resource.title": "Ressource",
+      "columns.esr-container.title": "Container",
+      "columns.esr-image.title": "Image",
+      "columns.esr-critical.title": "Kritisch",
+      "columns.esr-high.title": "Hoch",
+      "columns.esr-medium.title": "Mittel",
+      "columns.esr-low.title": "Niedrig",
+      "columns.rar-resource.title": "Ressource",
+      "columns.rar-critical.title": "Kritisch",
+      "columns.rar-high.title": "Hoch",
+      "columns.rar-medium.title": "Mittel",
+      "columns.rar-low.title": "Niedrig",
+      "columns.crar-resource.title": "Ressource",
+      "columns.crar-critical.title": "Kritisch",
+      "columns.crar-high.title": "Hoch",
+      "columns.crar-medium.title": "Mittel",
+      "columns.crar-low.title": "Niedrig",
+      "columns.iar-resource.title": "Ressource",
+      "columns.iar-critical.title": "Kritisch",
+      "columns.iar-high.title": "Hoch",
+      "columns.iar-medium.title": "Mittel",
+      "columns.iar-low.title": "Niedrig",
+      "columns.ciar-resource.title": "Ressource",
+      "columns.ciar-critical.title": "Kritisch",
+      "columns.ciar-high.title": "Hoch",
+      "columns.ciar-medium.title": "Mittel",
+      "columns.ciar-low.title": "Niedrig",
+      "columns.ccr-title.title": "Titel",
+      "columns.ccr-pass.title": "Bestanden",
+      "columns.ccr-fail.title": "Fehlgeschlagen",
+      "columns.sbom-resource.title": "Ressource",
+      "columns.sbom-container.title": "Container",
+      "columns.sbom-image.title": "Image",
+      "columns.sbom-components.title": "Komponenten",
+      "columns.csbom-resource.title": "Ressource",
+      "columns.csbom-container.title": "Container",
+      "columns.csbom-image.title": "Image",
+      "columns.csbom-components.title": "Komponenten"
+    },
+    "es": {
+      "name": "Trivy",
+      "description": "Los informes de Trivy Operator: vulnerabilidades de imágenes, auditorías de configuración, secretos expuestos, evaluaciones de RBAC y de infraestructura, informes de cumplimiento y SBOM, con sus recuentos por gravedad y sus hallazgos más graves, y los análisis de imágenes de cada carga de trabajo. Solo lectura.",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "Informe",
+      "detailsSections.scans.title": "Análisis de imágenes (Trivy)",
+      "columns.vr-resource.title": "Recurso",
+      "columns.vr-container.title": "Contenedor",
+      "columns.vr-image.title": "Imagen",
+      "columns.vr-critical.title": "Críticas",
+      "columns.vr-high.title": "Altas",
+      "columns.vr-medium.title": "Medias",
+      "columns.vr-low.title": "Bajas",
+      "columns.cvr-resource.title": "Recurso",
+      "columns.cvr-container.title": "Contenedor",
+      "columns.cvr-image.title": "Imagen",
+      "columns.cvr-critical.title": "Críticas",
+      "columns.cvr-high.title": "Altas",
+      "columns.cvr-medium.title": "Medias",
+      "columns.cvr-low.title": "Bajas",
+      "columns.car-resource.title": "Recurso",
+      "columns.car-critical.title": "Críticas",
+      "columns.car-high.title": "Altas",
+      "columns.car-medium.title": "Medias",
+      "columns.car-low.title": "Bajas",
+      "columns.ccar-resource.title": "Recurso",
+      "columns.ccar-critical.title": "Críticas",
+      "columns.ccar-high.title": "Altas",
+      "columns.ccar-medium.title": "Medias",
+      "columns.ccar-low.title": "Bajas",
+      "columns.esr-resource.title": "Recurso",
+      "columns.esr-container.title": "Contenedor",
+      "columns.esr-image.title": "Imagen",
+      "columns.esr-critical.title": "Críticas",
+      "columns.esr-high.title": "Altas",
+      "columns.esr-medium.title": "Medias",
+      "columns.esr-low.title": "Bajas",
+      "columns.rar-resource.title": "Recurso",
+      "columns.rar-critical.title": "Críticas",
+      "columns.rar-high.title": "Altas",
+      "columns.rar-medium.title": "Medias",
+      "columns.rar-low.title": "Bajas",
+      "columns.crar-resource.title": "Recurso",
+      "columns.crar-critical.title": "Críticas",
+      "columns.crar-high.title": "Altas",
+      "columns.crar-medium.title": "Medias",
+      "columns.crar-low.title": "Bajas",
+      "columns.iar-resource.title": "Recurso",
+      "columns.iar-critical.title": "Críticas",
+      "columns.iar-high.title": "Altas",
+      "columns.iar-medium.title": "Medias",
+      "columns.iar-low.title": "Bajas",
+      "columns.ciar-resource.title": "Recurso",
+      "columns.ciar-critical.title": "Críticas",
+      "columns.ciar-high.title": "Altas",
+      "columns.ciar-medium.title": "Medias",
+      "columns.ciar-low.title": "Bajas",
+      "columns.ccr-title.title": "Título",
+      "columns.ccr-pass.title": "Superadas",
+      "columns.ccr-fail.title": "Fallidas",
+      "columns.sbom-resource.title": "Recurso",
+      "columns.sbom-container.title": "Contenedor",
+      "columns.sbom-image.title": "Imagen",
+      "columns.sbom-components.title": "Componentes",
+      "columns.csbom-resource.title": "Recurso",
+      "columns.csbom-container.title": "Contenedor",
+      "columns.csbom-image.title": "Imagen",
+      "columns.csbom-components.title": "Componentes"
+    },
+    "fr": {
+      "name": "Trivy",
+      "description": "Les rapports de Trivy Operator : vulnérabilités des images, audits de configuration, secrets exposés, évaluations RBAC et d’infrastructure, rapports de conformité et SBOM, avec leurs nombres par gravité et leurs constats les plus graves, et les analyses d’images de chaque charge de travail. Lecture seule.",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "Rapport",
+      "detailsSections.scans.title": "Analyses d'images (Trivy)",
+      "columns.vr-resource.title": "Ressource",
+      "columns.vr-container.title": "Conteneur",
+      "columns.vr-image.title": "Image",
+      "columns.vr-critical.title": "Critiques",
+      "columns.vr-high.title": "Élevées",
+      "columns.vr-medium.title": "Moyennes",
+      "columns.vr-low.title": "Faibles",
+      "columns.cvr-resource.title": "Ressource",
+      "columns.cvr-container.title": "Conteneur",
+      "columns.cvr-image.title": "Image",
+      "columns.cvr-critical.title": "Critiques",
+      "columns.cvr-high.title": "Élevées",
+      "columns.cvr-medium.title": "Moyennes",
+      "columns.cvr-low.title": "Faibles",
+      "columns.car-resource.title": "Ressource",
+      "columns.car-critical.title": "Critiques",
+      "columns.car-high.title": "Élevées",
+      "columns.car-medium.title": "Moyennes",
+      "columns.car-low.title": "Faibles",
+      "columns.ccar-resource.title": "Ressource",
+      "columns.ccar-critical.title": "Critiques",
+      "columns.ccar-high.title": "Élevées",
+      "columns.ccar-medium.title": "Moyennes",
+      "columns.ccar-low.title": "Faibles",
+      "columns.esr-resource.title": "Ressource",
+      "columns.esr-container.title": "Conteneur",
+      "columns.esr-image.title": "Image",
+      "columns.esr-critical.title": "Critiques",
+      "columns.esr-high.title": "Élevées",
+      "columns.esr-medium.title": "Moyennes",
+      "columns.esr-low.title": "Faibles",
+      "columns.rar-resource.title": "Ressource",
+      "columns.rar-critical.title": "Critiques",
+      "columns.rar-high.title": "Élevées",
+      "columns.rar-medium.title": "Moyennes",
+      "columns.rar-low.title": "Faibles",
+      "columns.crar-resource.title": "Ressource",
+      "columns.crar-critical.title": "Critiques",
+      "columns.crar-high.title": "Élevées",
+      "columns.crar-medium.title": "Moyennes",
+      "columns.crar-low.title": "Faibles",
+      "columns.iar-resource.title": "Ressource",
+      "columns.iar-critical.title": "Critiques",
+      "columns.iar-high.title": "Élevées",
+      "columns.iar-medium.title": "Moyennes",
+      "columns.iar-low.title": "Faibles",
+      "columns.ciar-resource.title": "Ressource",
+      "columns.ciar-critical.title": "Critiques",
+      "columns.ciar-high.title": "Élevées",
+      "columns.ciar-medium.title": "Moyennes",
+      "columns.ciar-low.title": "Faibles",
+      "columns.ccr-title.title": "Titre",
+      "columns.ccr-pass.title": "Réussis",
+      "columns.ccr-fail.title": "Échoués",
+      "columns.sbom-resource.title": "Ressource",
+      "columns.sbom-container.title": "Conteneur",
+      "columns.sbom-image.title": "Image",
+      "columns.sbom-components.title": "Composants",
+      "columns.csbom-resource.title": "Ressource",
+      "columns.csbom-container.title": "Conteneur",
+      "columns.csbom-image.title": "Image",
+      "columns.csbom-components.title": "Composants"
+    },
+    "it": {
+      "name": "Trivy",
+      "description": "I report di Trivy Operator: vulnerabilità delle immagini, audit della configurazione, segreti esposti, valutazioni RBAC e dell’infrastruttura, report di conformità e SBOM, con i conteggi per gravità e i rilievi più gravi, e le scansioni delle immagini di ogni carico di lavoro. Sola lettura.",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "Report",
+      "detailsSections.scans.title": "Scansioni delle immagini (Trivy)",
+      "columns.vr-resource.title": "Risorsa",
+      "columns.vr-container.title": "Container",
+      "columns.vr-image.title": "Immagine",
+      "columns.vr-critical.title": "Critiche",
+      "columns.vr-high.title": "Alte",
+      "columns.vr-medium.title": "Medie",
+      "columns.vr-low.title": "Basse",
+      "columns.cvr-resource.title": "Risorsa",
+      "columns.cvr-container.title": "Container",
+      "columns.cvr-image.title": "Immagine",
+      "columns.cvr-critical.title": "Critiche",
+      "columns.cvr-high.title": "Alte",
+      "columns.cvr-medium.title": "Medie",
+      "columns.cvr-low.title": "Basse",
+      "columns.car-resource.title": "Risorsa",
+      "columns.car-critical.title": "Critiche",
+      "columns.car-high.title": "Alte",
+      "columns.car-medium.title": "Medie",
+      "columns.car-low.title": "Basse",
+      "columns.ccar-resource.title": "Risorsa",
+      "columns.ccar-critical.title": "Critiche",
+      "columns.ccar-high.title": "Alte",
+      "columns.ccar-medium.title": "Medie",
+      "columns.ccar-low.title": "Basse",
+      "columns.esr-resource.title": "Risorsa",
+      "columns.esr-container.title": "Container",
+      "columns.esr-image.title": "Immagine",
+      "columns.esr-critical.title": "Critiche",
+      "columns.esr-high.title": "Alte",
+      "columns.esr-medium.title": "Medie",
+      "columns.esr-low.title": "Basse",
+      "columns.rar-resource.title": "Risorsa",
+      "columns.rar-critical.title": "Critiche",
+      "columns.rar-high.title": "Alte",
+      "columns.rar-medium.title": "Medie",
+      "columns.rar-low.title": "Basse",
+      "columns.crar-resource.title": "Risorsa",
+      "columns.crar-critical.title": "Critiche",
+      "columns.crar-high.title": "Alte",
+      "columns.crar-medium.title": "Medie",
+      "columns.crar-low.title": "Basse",
+      "columns.iar-resource.title": "Risorsa",
+      "columns.iar-critical.title": "Critiche",
+      "columns.iar-high.title": "Alte",
+      "columns.iar-medium.title": "Medie",
+      "columns.iar-low.title": "Basse",
+      "columns.ciar-resource.title": "Risorsa",
+      "columns.ciar-critical.title": "Critiche",
+      "columns.ciar-high.title": "Alte",
+      "columns.ciar-medium.title": "Medie",
+      "columns.ciar-low.title": "Basse",
+      "columns.ccr-title.title": "Titolo",
+      "columns.ccr-pass.title": "Superati",
+      "columns.ccr-fail.title": "Non superati",
+      "columns.sbom-resource.title": "Risorsa",
+      "columns.sbom-container.title": "Container",
+      "columns.sbom-image.title": "Immagine",
+      "columns.sbom-components.title": "Componenti",
+      "columns.csbom-resource.title": "Risorsa",
+      "columns.csbom-container.title": "Container",
+      "columns.csbom-image.title": "Immagine",
+      "columns.csbom-components.title": "Componenti"
+    },
+    "ja": {
+      "name": "Trivy",
+      "description": "Trivy Operator のレポート: イメージの脆弱性、構成の監査、露出したシークレット、RBAC とインフラの評価、コンプライアンス レポートと SBOM を、重大度ごとの件数と最も重大な指摘とともに表示し、各ワークロードのイメージのスキャンも表示します。読み取り専用。",
+      "kinds.0.title": "VulnerabilityReport",
+      "kinds.1.title": "ClusterVulnerabilityReport",
+      "kinds.2.title": "ConfigAuditReport",
+      "kinds.3.title": "ClusterConfigAuditReport",
+      "kinds.4.title": "ExposedSecretReport",
+      "kinds.5.title": "RbacAssessmentReport",
+      "kinds.6.title": "ClusterRbacAssessmentReport",
+      "kinds.7.title": "InfraAssessmentReport",
+      "kinds.8.title": "ClusterInfraAssessmentReport",
+      "kinds.9.title": "ClusterComplianceReport",
+      "kinds.10.title": "SbomReport",
+      "kinds.11.title": "ClusterSbomReport",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "レポート",
+      "detailsSections.scans.title": "イメージのスキャン (Trivy)",
+      "columns.vr-resource.title": "リソース",
+      "columns.vr-container.title": "コンテナー",
+      "columns.vr-image.title": "イメージ",
+      "columns.vr-critical.title": "緊急",
+      "columns.vr-high.title": "高",
+      "columns.vr-medium.title": "中",
+      "columns.vr-low.title": "低",
+      "columns.cvr-resource.title": "リソース",
+      "columns.cvr-container.title": "コンテナー",
+      "columns.cvr-image.title": "イメージ",
+      "columns.cvr-critical.title": "緊急",
+      "columns.cvr-high.title": "高",
+      "columns.cvr-medium.title": "中",
+      "columns.cvr-low.title": "低",
+      "columns.car-resource.title": "リソース",
+      "columns.car-critical.title": "緊急",
+      "columns.car-high.title": "高",
+      "columns.car-medium.title": "中",
+      "columns.car-low.title": "低",
+      "columns.ccar-resource.title": "リソース",
+      "columns.ccar-critical.title": "緊急",
+      "columns.ccar-high.title": "高",
+      "columns.ccar-medium.title": "中",
+      "columns.ccar-low.title": "低",
+      "columns.esr-resource.title": "リソース",
+      "columns.esr-container.title": "コンテナー",
+      "columns.esr-image.title": "イメージ",
+      "columns.esr-critical.title": "緊急",
+      "columns.esr-high.title": "高",
+      "columns.esr-medium.title": "中",
+      "columns.esr-low.title": "低",
+      "columns.rar-resource.title": "リソース",
+      "columns.rar-critical.title": "緊急",
+      "columns.rar-high.title": "高",
+      "columns.rar-medium.title": "中",
+      "columns.rar-low.title": "低",
+      "columns.crar-resource.title": "リソース",
+      "columns.crar-critical.title": "緊急",
+      "columns.crar-high.title": "高",
+      "columns.crar-medium.title": "中",
+      "columns.crar-low.title": "低",
+      "columns.iar-resource.title": "リソース",
+      "columns.iar-critical.title": "緊急",
+      "columns.iar-high.title": "高",
+      "columns.iar-medium.title": "中",
+      "columns.iar-low.title": "低",
+      "columns.ciar-resource.title": "リソース",
+      "columns.ciar-critical.title": "緊急",
+      "columns.ciar-high.title": "高",
+      "columns.ciar-medium.title": "中",
+      "columns.ciar-low.title": "低",
+      "columns.ccr-title.title": "タイトル",
+      "columns.ccr-pass.title": "合格",
+      "columns.ccr-fail.title": "不合格",
+      "columns.sbom-resource.title": "リソース",
+      "columns.sbom-container.title": "コンテナー",
+      "columns.sbom-image.title": "イメージ",
+      "columns.sbom-components.title": "コンポーネント",
+      "columns.csbom-resource.title": "リソース",
+      "columns.csbom-container.title": "コンテナー",
+      "columns.csbom-image.title": "イメージ",
+      "columns.csbom-components.title": "コンポーネント"
+    },
+    "ko": {
+      "name": "Trivy",
+      "description": "Trivy Operator의 보고서: 이미지 취약점, 구성 감사, 노출된 시크릿, RBAC 및 인프라 평가, 규정 준수 보고서와 SBOM을 심각도별 개수와 가장 심각한 발견 사항과 함께 보여 주고, 모든 워크로드의 이미지 스캔도 보여 줍니다. 읽기 전용.",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "보고서",
+      "detailsSections.scans.title": "이미지 스캔(Trivy)",
+      "columns.vr-resource.title": "리소스",
+      "columns.vr-container.title": "컨테이너",
+      "columns.vr-image.title": "이미지",
+      "columns.vr-critical.title": "심각",
+      "columns.vr-high.title": "높음",
+      "columns.vr-medium.title": "보통",
+      "columns.vr-low.title": "낮음",
+      "columns.cvr-resource.title": "리소스",
+      "columns.cvr-container.title": "컨테이너",
+      "columns.cvr-image.title": "이미지",
+      "columns.cvr-critical.title": "심각",
+      "columns.cvr-high.title": "높음",
+      "columns.cvr-medium.title": "보통",
+      "columns.cvr-low.title": "낮음",
+      "columns.car-resource.title": "리소스",
+      "columns.car-critical.title": "심각",
+      "columns.car-high.title": "높음",
+      "columns.car-medium.title": "보통",
+      "columns.car-low.title": "낮음",
+      "columns.ccar-resource.title": "리소스",
+      "columns.ccar-critical.title": "심각",
+      "columns.ccar-high.title": "높음",
+      "columns.ccar-medium.title": "보통",
+      "columns.ccar-low.title": "낮음",
+      "columns.esr-resource.title": "리소스",
+      "columns.esr-container.title": "컨테이너",
+      "columns.esr-image.title": "이미지",
+      "columns.esr-critical.title": "심각",
+      "columns.esr-high.title": "높음",
+      "columns.esr-medium.title": "보통",
+      "columns.esr-low.title": "낮음",
+      "columns.rar-resource.title": "리소스",
+      "columns.rar-critical.title": "심각",
+      "columns.rar-high.title": "높음",
+      "columns.rar-medium.title": "보통",
+      "columns.rar-low.title": "낮음",
+      "columns.crar-resource.title": "리소스",
+      "columns.crar-critical.title": "심각",
+      "columns.crar-high.title": "높음",
+      "columns.crar-medium.title": "보통",
+      "columns.crar-low.title": "낮음",
+      "columns.iar-resource.title": "리소스",
+      "columns.iar-critical.title": "심각",
+      "columns.iar-high.title": "높음",
+      "columns.iar-medium.title": "보통",
+      "columns.iar-low.title": "낮음",
+      "columns.ciar-resource.title": "리소스",
+      "columns.ciar-critical.title": "심각",
+      "columns.ciar-high.title": "높음",
+      "columns.ciar-medium.title": "보통",
+      "columns.ciar-low.title": "낮음",
+      "columns.ccr-title.title": "제목",
+      "columns.ccr-pass.title": "통과",
+      "columns.ccr-fail.title": "실패",
+      "columns.sbom-resource.title": "리소스",
+      "columns.sbom-container.title": "컨테이너",
+      "columns.sbom-image.title": "이미지",
+      "columns.sbom-components.title": "구성 요소",
+      "columns.csbom-resource.title": "리소스",
+      "columns.csbom-container.title": "컨테이너",
+      "columns.csbom-image.title": "이미지",
+      "columns.csbom-components.title": "구성 요소"
+    },
+    "pl": {
+      "name": "Trivy",
+      "description": "Raporty Trivy Operator: podatności obrazów, audyty konfiguracji, ujawnione sekrety, oceny RBAC i infrastruktury, raporty zgodności i SBOM, z liczbami według ważności i najpoważniejszymi ustaleniami, oraz skany obrazów każdego obciążenia. Tylko do odczytu.",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "Raport",
+      "detailsSections.scans.title": "Skany obrazów (Trivy)",
+      "columns.vr-resource.title": "Zasób",
+      "columns.vr-container.title": "Kontener",
+      "columns.vr-image.title": "Obraz",
+      "columns.vr-critical.title": "Krytyczne",
+      "columns.vr-high.title": "Wysokie",
+      "columns.vr-medium.title": "Średnie",
+      "columns.vr-low.title": "Niskie",
+      "columns.cvr-resource.title": "Zasób",
+      "columns.cvr-container.title": "Kontener",
+      "columns.cvr-image.title": "Obraz",
+      "columns.cvr-critical.title": "Krytyczne",
+      "columns.cvr-high.title": "Wysokie",
+      "columns.cvr-medium.title": "Średnie",
+      "columns.cvr-low.title": "Niskie",
+      "columns.car-resource.title": "Zasób",
+      "columns.car-critical.title": "Krytyczne",
+      "columns.car-high.title": "Wysokie",
+      "columns.car-medium.title": "Średnie",
+      "columns.car-low.title": "Niskie",
+      "columns.ccar-resource.title": "Zasób",
+      "columns.ccar-critical.title": "Krytyczne",
+      "columns.ccar-high.title": "Wysokie",
+      "columns.ccar-medium.title": "Średnie",
+      "columns.ccar-low.title": "Niskie",
+      "columns.esr-resource.title": "Zasób",
+      "columns.esr-container.title": "Kontener",
+      "columns.esr-image.title": "Obraz",
+      "columns.esr-critical.title": "Krytyczne",
+      "columns.esr-high.title": "Wysokie",
+      "columns.esr-medium.title": "Średnie",
+      "columns.esr-low.title": "Niskie",
+      "columns.rar-resource.title": "Zasób",
+      "columns.rar-critical.title": "Krytyczne",
+      "columns.rar-high.title": "Wysokie",
+      "columns.rar-medium.title": "Średnie",
+      "columns.rar-low.title": "Niskie",
+      "columns.crar-resource.title": "Zasób",
+      "columns.crar-critical.title": "Krytyczne",
+      "columns.crar-high.title": "Wysokie",
+      "columns.crar-medium.title": "Średnie",
+      "columns.crar-low.title": "Niskie",
+      "columns.iar-resource.title": "Zasób",
+      "columns.iar-critical.title": "Krytyczne",
+      "columns.iar-high.title": "Wysokie",
+      "columns.iar-medium.title": "Średnie",
+      "columns.iar-low.title": "Niskie",
+      "columns.ciar-resource.title": "Zasób",
+      "columns.ciar-critical.title": "Krytyczne",
+      "columns.ciar-high.title": "Wysokie",
+      "columns.ciar-medium.title": "Średnie",
+      "columns.ciar-low.title": "Niskie",
+      "columns.ccr-title.title": "Tytuł",
+      "columns.ccr-pass.title": "Zaliczone",
+      "columns.ccr-fail.title": "Niezaliczone",
+      "columns.sbom-resource.title": "Zasób",
+      "columns.sbom-container.title": "Kontener",
+      "columns.sbom-image.title": "Obraz",
+      "columns.sbom-components.title": "Komponenty",
+      "columns.csbom-resource.title": "Zasób",
+      "columns.csbom-container.title": "Kontener",
+      "columns.csbom-image.title": "Obraz",
+      "columns.csbom-components.title": "Komponenty"
+    },
+    "pt-BR": {
+      "name": "Trivy",
+      "description": "Os relatórios do Trivy Operator: vulnerabilidades de imagens, auditorias de configuração, segredos expostos, avaliações de RBAC e de infraestrutura, relatórios de conformidade e SBOMs, com as contagens por gravidade e as constatações mais graves, e as varreduras de imagens de cada carga de trabalho. Somente leitura.",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "Relatório",
+      "detailsSections.scans.title": "Varreduras de imagens (Trivy)",
+      "columns.vr-resource.title": "Recurso",
+      "columns.vr-container.title": "Contêiner",
+      "columns.vr-image.title": "Imagem",
+      "columns.vr-critical.title": "Críticas",
+      "columns.vr-high.title": "Altas",
+      "columns.vr-medium.title": "Médias",
+      "columns.vr-low.title": "Baixas",
+      "columns.cvr-resource.title": "Recurso",
+      "columns.cvr-container.title": "Contêiner",
+      "columns.cvr-image.title": "Imagem",
+      "columns.cvr-critical.title": "Críticas",
+      "columns.cvr-high.title": "Altas",
+      "columns.cvr-medium.title": "Médias",
+      "columns.cvr-low.title": "Baixas",
+      "columns.car-resource.title": "Recurso",
+      "columns.car-critical.title": "Críticas",
+      "columns.car-high.title": "Altas",
+      "columns.car-medium.title": "Médias",
+      "columns.car-low.title": "Baixas",
+      "columns.ccar-resource.title": "Recurso",
+      "columns.ccar-critical.title": "Críticas",
+      "columns.ccar-high.title": "Altas",
+      "columns.ccar-medium.title": "Médias",
+      "columns.ccar-low.title": "Baixas",
+      "columns.esr-resource.title": "Recurso",
+      "columns.esr-container.title": "Contêiner",
+      "columns.esr-image.title": "Imagem",
+      "columns.esr-critical.title": "Críticas",
+      "columns.esr-high.title": "Altas",
+      "columns.esr-medium.title": "Médias",
+      "columns.esr-low.title": "Baixas",
+      "columns.rar-resource.title": "Recurso",
+      "columns.rar-critical.title": "Críticas",
+      "columns.rar-high.title": "Altas",
+      "columns.rar-medium.title": "Médias",
+      "columns.rar-low.title": "Baixas",
+      "columns.crar-resource.title": "Recurso",
+      "columns.crar-critical.title": "Críticas",
+      "columns.crar-high.title": "Altas",
+      "columns.crar-medium.title": "Médias",
+      "columns.crar-low.title": "Baixas",
+      "columns.iar-resource.title": "Recurso",
+      "columns.iar-critical.title": "Críticas",
+      "columns.iar-high.title": "Altas",
+      "columns.iar-medium.title": "Médias",
+      "columns.iar-low.title": "Baixas",
+      "columns.ciar-resource.title": "Recurso",
+      "columns.ciar-critical.title": "Críticas",
+      "columns.ciar-high.title": "Altas",
+      "columns.ciar-medium.title": "Médias",
+      "columns.ciar-low.title": "Baixas",
+      "columns.ccr-title.title": "Título",
+      "columns.ccr-pass.title": "Aprovadas",
+      "columns.ccr-fail.title": "Reprovadas",
+      "columns.sbom-resource.title": "Recurso",
+      "columns.sbom-container.title": "Contêiner",
+      "columns.sbom-image.title": "Imagem",
+      "columns.sbom-components.title": "Componentes",
+      "columns.csbom-resource.title": "Recurso",
+      "columns.csbom-container.title": "Contêiner",
+      "columns.csbom-image.title": "Imagem",
+      "columns.csbom-components.title": "Componentes"
+    },
+    "ru": {
+      "name": "Trivy",
+      "description": "Отчеты Trivy Operator: уязвимости образов, аудит конфигурации, раскрытые секреты, оценки RBAC и инфраструктуры, отчеты о соответствии и SBOM, с числом находок по важности и самыми серьезными из них, а также сканирование образов каждой рабочей нагрузки. Только чтение.",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "Отчет",
+      "detailsSections.scans.title": "Сканирование образов (Trivy)",
+      "columns.vr-resource.title": "Ресурс",
+      "columns.vr-container.title": "Контейнер",
+      "columns.vr-image.title": "Образ",
+      "columns.vr-critical.title": "Критические",
+      "columns.vr-high.title": "Высокие",
+      "columns.vr-medium.title": "Средние",
+      "columns.vr-low.title": "Низкие",
+      "columns.cvr-resource.title": "Ресурс",
+      "columns.cvr-container.title": "Контейнер",
+      "columns.cvr-image.title": "Образ",
+      "columns.cvr-critical.title": "Критические",
+      "columns.cvr-high.title": "Высокие",
+      "columns.cvr-medium.title": "Средние",
+      "columns.cvr-low.title": "Низкие",
+      "columns.car-resource.title": "Ресурс",
+      "columns.car-critical.title": "Критические",
+      "columns.car-high.title": "Высокие",
+      "columns.car-medium.title": "Средние",
+      "columns.car-low.title": "Низкие",
+      "columns.ccar-resource.title": "Ресурс",
+      "columns.ccar-critical.title": "Критические",
+      "columns.ccar-high.title": "Высокие",
+      "columns.ccar-medium.title": "Средние",
+      "columns.ccar-low.title": "Низкие",
+      "columns.esr-resource.title": "Ресурс",
+      "columns.esr-container.title": "Контейнер",
+      "columns.esr-image.title": "Образ",
+      "columns.esr-critical.title": "Критические",
+      "columns.esr-high.title": "Высокие",
+      "columns.esr-medium.title": "Средние",
+      "columns.esr-low.title": "Низкие",
+      "columns.rar-resource.title": "Ресурс",
+      "columns.rar-critical.title": "Критические",
+      "columns.rar-high.title": "Высокие",
+      "columns.rar-medium.title": "Средние",
+      "columns.rar-low.title": "Низкие",
+      "columns.crar-resource.title": "Ресурс",
+      "columns.crar-critical.title": "Критические",
+      "columns.crar-high.title": "Высокие",
+      "columns.crar-medium.title": "Средние",
+      "columns.crar-low.title": "Низкие",
+      "columns.iar-resource.title": "Ресурс",
+      "columns.iar-critical.title": "Критические",
+      "columns.iar-high.title": "Высокие",
+      "columns.iar-medium.title": "Средние",
+      "columns.iar-low.title": "Низкие",
+      "columns.ciar-resource.title": "Ресурс",
+      "columns.ciar-critical.title": "Критические",
+      "columns.ciar-high.title": "Высокие",
+      "columns.ciar-medium.title": "Средние",
+      "columns.ciar-low.title": "Низкие",
+      "columns.ccr-title.title": "Название",
+      "columns.ccr-pass.title": "Пройдено",
+      "columns.ccr-fail.title": "Не пройдено",
+      "columns.sbom-resource.title": "Ресурс",
+      "columns.sbom-container.title": "Контейнер",
+      "columns.sbom-image.title": "Образ",
+      "columns.sbom-components.title": "Компоненты",
+      "columns.csbom-resource.title": "Ресурс",
+      "columns.csbom-container.title": "Контейнер",
+      "columns.csbom-image.title": "Образ",
+      "columns.csbom-components.title": "Компоненты"
+    },
+    "tr": {
+      "name": "Trivy",
+      "description": "Trivy Operator raporları: imaj güvenlik açıkları, yapılandırma denetimleri, açığa çıkmış gizli bilgiler, RBAC ve altyapı değerlendirmeleri, uyumluluk raporları ve SBOM'lar; önem derecesine göre sayıları ve en ciddi bulgularıyla, ayrıca her iş yükünün imaj taramaları. Salt okunur.",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "Rapor",
+      "detailsSections.scans.title": "İmaj taramaları (Trivy)",
+      "columns.vr-resource.title": "Kaynak",
+      "columns.vr-container.title": "Kapsayıcı",
+      "columns.vr-image.title": "İmaj",
+      "columns.vr-critical.title": "Kritik",
+      "columns.vr-high.title": "Yüksek",
+      "columns.vr-medium.title": "Orta",
+      "columns.vr-low.title": "Düşük",
+      "columns.cvr-resource.title": "Kaynak",
+      "columns.cvr-container.title": "Kapsayıcı",
+      "columns.cvr-image.title": "İmaj",
+      "columns.cvr-critical.title": "Kritik",
+      "columns.cvr-high.title": "Yüksek",
+      "columns.cvr-medium.title": "Orta",
+      "columns.cvr-low.title": "Düşük",
+      "columns.car-resource.title": "Kaynak",
+      "columns.car-critical.title": "Kritik",
+      "columns.car-high.title": "Yüksek",
+      "columns.car-medium.title": "Orta",
+      "columns.car-low.title": "Düşük",
+      "columns.ccar-resource.title": "Kaynak",
+      "columns.ccar-critical.title": "Kritik",
+      "columns.ccar-high.title": "Yüksek",
+      "columns.ccar-medium.title": "Orta",
+      "columns.ccar-low.title": "Düşük",
+      "columns.esr-resource.title": "Kaynak",
+      "columns.esr-container.title": "Kapsayıcı",
+      "columns.esr-image.title": "İmaj",
+      "columns.esr-critical.title": "Kritik",
+      "columns.esr-high.title": "Yüksek",
+      "columns.esr-medium.title": "Orta",
+      "columns.esr-low.title": "Düşük",
+      "columns.rar-resource.title": "Kaynak",
+      "columns.rar-critical.title": "Kritik",
+      "columns.rar-high.title": "Yüksek",
+      "columns.rar-medium.title": "Orta",
+      "columns.rar-low.title": "Düşük",
+      "columns.crar-resource.title": "Kaynak",
+      "columns.crar-critical.title": "Kritik",
+      "columns.crar-high.title": "Yüksek",
+      "columns.crar-medium.title": "Orta",
+      "columns.crar-low.title": "Düşük",
+      "columns.iar-resource.title": "Kaynak",
+      "columns.iar-critical.title": "Kritik",
+      "columns.iar-high.title": "Yüksek",
+      "columns.iar-medium.title": "Orta",
+      "columns.iar-low.title": "Düşük",
+      "columns.ciar-resource.title": "Kaynak",
+      "columns.ciar-critical.title": "Kritik",
+      "columns.ciar-high.title": "Yüksek",
+      "columns.ciar-medium.title": "Orta",
+      "columns.ciar-low.title": "Düşük",
+      "columns.ccr-title.title": "Başlık",
+      "columns.ccr-pass.title": "Geçen",
+      "columns.ccr-fail.title": "Başarısız",
+      "columns.sbom-resource.title": "Kaynak",
+      "columns.sbom-container.title": "Kapsayıcı",
+      "columns.sbom-image.title": "İmaj",
+      "columns.sbom-components.title": "Bileşenler",
+      "columns.csbom-resource.title": "Kaynak",
+      "columns.csbom-container.title": "Kapsayıcı",
+      "columns.csbom-image.title": "İmaj",
+      "columns.csbom-components.title": "Bileşenler"
+    },
+    "uk": {
+      "name": "Trivy",
+      "description": "Звіти Trivy Operator: вразливості образів, аудит конфігурації, розкриті секрети, оцінки RBAC та інфраструктури, звіти про відповідність і SBOM, з кількістю знахідок за важливістю та найсерйознішими з них, а також сканування образів кожного робочого навантаження. Лише читання.",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "Звіт",
+      "detailsSections.scans.title": "Сканування образів (Trivy)",
+      "columns.vr-resource.title": "Ресурс",
+      "columns.vr-container.title": "Контейнер",
+      "columns.vr-image.title": "Образ",
+      "columns.vr-critical.title": "Критичні",
+      "columns.vr-high.title": "Високі",
+      "columns.vr-medium.title": "Середні",
+      "columns.vr-low.title": "Низькі",
+      "columns.cvr-resource.title": "Ресурс",
+      "columns.cvr-container.title": "Контейнер",
+      "columns.cvr-image.title": "Образ",
+      "columns.cvr-critical.title": "Критичні",
+      "columns.cvr-high.title": "Високі",
+      "columns.cvr-medium.title": "Середні",
+      "columns.cvr-low.title": "Низькі",
+      "columns.car-resource.title": "Ресурс",
+      "columns.car-critical.title": "Критичні",
+      "columns.car-high.title": "Високі",
+      "columns.car-medium.title": "Середні",
+      "columns.car-low.title": "Низькі",
+      "columns.ccar-resource.title": "Ресурс",
+      "columns.ccar-critical.title": "Критичні",
+      "columns.ccar-high.title": "Високі",
+      "columns.ccar-medium.title": "Середні",
+      "columns.ccar-low.title": "Низькі",
+      "columns.esr-resource.title": "Ресурс",
+      "columns.esr-container.title": "Контейнер",
+      "columns.esr-image.title": "Образ",
+      "columns.esr-critical.title": "Критичні",
+      "columns.esr-high.title": "Високі",
+      "columns.esr-medium.title": "Середні",
+      "columns.esr-low.title": "Низькі",
+      "columns.rar-resource.title": "Ресурс",
+      "columns.rar-critical.title": "Критичні",
+      "columns.rar-high.title": "Високі",
+      "columns.rar-medium.title": "Середні",
+      "columns.rar-low.title": "Низькі",
+      "columns.crar-resource.title": "Ресурс",
+      "columns.crar-critical.title": "Критичні",
+      "columns.crar-high.title": "Високі",
+      "columns.crar-medium.title": "Середні",
+      "columns.crar-low.title": "Низькі",
+      "columns.iar-resource.title": "Ресурс",
+      "columns.iar-critical.title": "Критичні",
+      "columns.iar-high.title": "Високі",
+      "columns.iar-medium.title": "Середні",
+      "columns.iar-low.title": "Низькі",
+      "columns.ciar-resource.title": "Ресурс",
+      "columns.ciar-critical.title": "Критичні",
+      "columns.ciar-high.title": "Високі",
+      "columns.ciar-medium.title": "Середні",
+      "columns.ciar-low.title": "Низькі",
+      "columns.ccr-title.title": "Назва",
+      "columns.ccr-pass.title": "Пройдено",
+      "columns.ccr-fail.title": "Не пройдено",
+      "columns.sbom-resource.title": "Ресурс",
+      "columns.sbom-container.title": "Контейнер",
+      "columns.sbom-image.title": "Образ",
+      "columns.sbom-components.title": "Компоненти",
+      "columns.csbom-resource.title": "Ресурс",
+      "columns.csbom-container.title": "Контейнер",
+      "columns.csbom-image.title": "Образ",
+      "columns.csbom-components.title": "Компоненти"
+    },
+    "zh-CN": {
+      "name": "Trivy",
+      "description": "Trivy Operator 的报告：镜像漏洞、配置审计、暴露的机密、RBAC 和基础设施评估、合规报告和 SBOM，附带按严重程度的计数和最严重的发现，以及每个工作负载的镜像扫描。只读。",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "报告",
+      "detailsSections.scans.title": "镜像扫描（Trivy）",
+      "columns.vr-resource.title": "资源",
+      "columns.vr-container.title": "容器",
+      "columns.vr-image.title": "镜像",
+      "columns.vr-critical.title": "严重",
+      "columns.vr-high.title": "高",
+      "columns.vr-medium.title": "中",
+      "columns.vr-low.title": "低",
+      "columns.cvr-resource.title": "资源",
+      "columns.cvr-container.title": "容器",
+      "columns.cvr-image.title": "镜像",
+      "columns.cvr-critical.title": "严重",
+      "columns.cvr-high.title": "高",
+      "columns.cvr-medium.title": "中",
+      "columns.cvr-low.title": "低",
+      "columns.car-resource.title": "资源",
+      "columns.car-critical.title": "严重",
+      "columns.car-high.title": "高",
+      "columns.car-medium.title": "中",
+      "columns.car-low.title": "低",
+      "columns.ccar-resource.title": "资源",
+      "columns.ccar-critical.title": "严重",
+      "columns.ccar-high.title": "高",
+      "columns.ccar-medium.title": "中",
+      "columns.ccar-low.title": "低",
+      "columns.esr-resource.title": "资源",
+      "columns.esr-container.title": "容器",
+      "columns.esr-image.title": "镜像",
+      "columns.esr-critical.title": "严重",
+      "columns.esr-high.title": "高",
+      "columns.esr-medium.title": "中",
+      "columns.esr-low.title": "低",
+      "columns.rar-resource.title": "资源",
+      "columns.rar-critical.title": "严重",
+      "columns.rar-high.title": "高",
+      "columns.rar-medium.title": "中",
+      "columns.rar-low.title": "低",
+      "columns.crar-resource.title": "资源",
+      "columns.crar-critical.title": "严重",
+      "columns.crar-high.title": "高",
+      "columns.crar-medium.title": "中",
+      "columns.crar-low.title": "低",
+      "columns.iar-resource.title": "资源",
+      "columns.iar-critical.title": "严重",
+      "columns.iar-high.title": "高",
+      "columns.iar-medium.title": "中",
+      "columns.iar-low.title": "低",
+      "columns.ciar-resource.title": "资源",
+      "columns.ciar-critical.title": "严重",
+      "columns.ciar-high.title": "高",
+      "columns.ciar-medium.title": "中",
+      "columns.ciar-low.title": "低",
+      "columns.ccr-title.title": "标题",
+      "columns.ccr-pass.title": "通过",
+      "columns.ccr-fail.title": "失败",
+      "columns.sbom-resource.title": "资源",
+      "columns.sbom-container.title": "容器",
+      "columns.sbom-image.title": "镜像",
+      "columns.sbom-components.title": "组件",
+      "columns.csbom-resource.title": "资源",
+      "columns.csbom-container.title": "容器",
+      "columns.csbom-image.title": "镜像",
+      "columns.csbom-components.title": "组件"
+    },
+    "zh-TW": {
+      "name": "Trivy",
+      "description": "Trivy Operator 的報告：映像檔弱點、組態稽核、外洩的機密、RBAC 與基礎架構評估、合規報告與 SBOM，附上依嚴重程度的計數與最嚴重的發現，以及每個工作負載的映像檔掃描。唯讀。",
+      "kinds.0.title": "Vulnerability Reports",
+      "kinds.1.title": "Cluster Vulnerability Reports",
+      "kinds.2.title": "Config Audit Reports",
+      "kinds.3.title": "Cluster Config Audit Reports",
+      "kinds.4.title": "Exposed Secret Reports",
+      "kinds.5.title": "RBAC Assessment Reports",
+      "kinds.6.title": "Cluster RBAC Assessment Reports",
+      "kinds.7.title": "Infra Assessment Reports",
+      "kinds.8.title": "Cluster Infra Assessment Reports",
+      "kinds.9.title": "Cluster Compliance Reports",
+      "kinds.10.title": "SBOM Reports",
+      "kinds.11.title": "Cluster SBOM Reports",
+      "sections.trivy.title": "Trivy",
+      "detailsSections.report.title": "報告",
+      "detailsSections.scans.title": "映像檔掃描（Trivy）",
+      "columns.vr-resource.title": "資源",
+      "columns.vr-container.title": "容器",
+      "columns.vr-image.title": "映像檔",
+      "columns.vr-critical.title": "重大",
+      "columns.vr-high.title": "高",
+      "columns.vr-medium.title": "中",
+      "columns.vr-low.title": "低",
+      "columns.cvr-resource.title": "資源",
+      "columns.cvr-container.title": "容器",
+      "columns.cvr-image.title": "映像檔",
+      "columns.cvr-critical.title": "重大",
+      "columns.cvr-high.title": "高",
+      "columns.cvr-medium.title": "中",
+      "columns.cvr-low.title": "低",
+      "columns.car-resource.title": "資源",
+      "columns.car-critical.title": "重大",
+      "columns.car-high.title": "高",
+      "columns.car-medium.title": "中",
+      "columns.car-low.title": "低",
+      "columns.ccar-resource.title": "資源",
+      "columns.ccar-critical.title": "重大",
+      "columns.ccar-high.title": "高",
+      "columns.ccar-medium.title": "中",
+      "columns.ccar-low.title": "低",
+      "columns.esr-resource.title": "資源",
+      "columns.esr-container.title": "容器",
+      "columns.esr-image.title": "映像檔",
+      "columns.esr-critical.title": "重大",
+      "columns.esr-high.title": "高",
+      "columns.esr-medium.title": "中",
+      "columns.esr-low.title": "低",
+      "columns.rar-resource.title": "資源",
+      "columns.rar-critical.title": "重大",
+      "columns.rar-high.title": "高",
+      "columns.rar-medium.title": "中",
+      "columns.rar-low.title": "低",
+      "columns.crar-resource.title": "資源",
+      "columns.crar-critical.title": "重大",
+      "columns.crar-high.title": "高",
+      "columns.crar-medium.title": "中",
+      "columns.crar-low.title": "低",
+      "columns.iar-resource.title": "資源",
+      "columns.iar-critical.title": "重大",
+      "columns.iar-high.title": "高",
+      "columns.iar-medium.title": "中",
+      "columns.iar-low.title": "低",
+      "columns.ciar-resource.title": "資源",
+      "columns.ciar-critical.title": "重大",
+      "columns.ciar-high.title": "高",
+      "columns.ciar-medium.title": "中",
+      "columns.ciar-low.title": "低",
+      "columns.ccr-title.title": "標題",
+      "columns.ccr-pass.title": "通過",
+      "columns.ccr-fail.title": "失敗",
+      "columns.sbom-resource.title": "資源",
+      "columns.sbom-container.title": "容器",
+      "columns.sbom-image.title": "映像檔",
+      "columns.sbom-components.title": "元件",
+      "columns.csbom-resource.title": "資源",
+      "columns.csbom-container.title": "容器",
+      "columns.csbom-image.title": "映像檔",
+      "columns.csbom-components.title": "元件"
+    }
+  }
+}

@@ -1,34 +1,5 @@
 {
   "title": "Escalonamento automático",
-  "sidebar": {
-    "scaledObjects": "Scaled Objects",
-    "scaledJobs": "Scaled Jobs",
-    "triggerAuthentications": "Trigger Authentications",
-    "clusterTriggerAuthentications": "Cluster Trigger Authentications",
-    "nodePools": "Node Pools",
-    "nodeClaims": "Node Claims",
-    "ec2NodeClasses": "EC2 Node Classes",
-    "aksNodeClasses": "AKS Node Classes"
-  },
-  "columns": {
-    "ready": "Pronto",
-    "state": "Estado",
-    "triggers": "Gatilhos",
-    "target": "Alvo",
-    "min": "Mín.",
-    "max": "Máx.",
-    "sources": "Fontes",
-    "nodeClass": "Classe de nós",
-    "nodes": "Nós",
-    "limits": "Uso / limites",
-    "consolidation": "Consolidação",
-    "nodePool": "NodePool",
-    "instanceType": "Tipo de instância",
-    "capacityType": "Capacidade",
-    "zone": "Zona",
-    "node": "Nó",
-    "role": "Papel"
-  },
   "fields": {
     "target": "Alvo",
     "replicas": "Réplicas",
@@ -52,22 +23,7 @@
     "nodePool": "NodePool",
     "nodeClaim": "NodeClaim",
     "capacityType": "Tipo de capacidade",
-    "instanceType": "Tipo de instância",
-    "node": "Nó",
-    "zone": "Zona",
-    "nodeClass": "Classe de nós",
-    "consolidationPolicy": "Política de consolidação",
-    "consolidateAfter": "Consolidar após",
-    "expireAfter": "Expirar após",
-    "budgets": "Orçamentos de interrupção",
-    "idleReplicas": "Réplicas ociosas",
-    "pollingInterval": "Intervalo de consulta",
-    "cooldownPeriod": "Período de resfriamento",
-    "fallback": "Fallback",
-    "maxReplicas": "Réplicas máx.",
-    "strategy": "Estratégia de escalonamento",
-    "image": "Imagem",
-    "podIdentity": "Identidade do Pod"
+    "instanceType": "Tipo de instância"
   },
   "events": {
     "reason": "Motivo",
@@ -282,7 +238,6 @@
     "notLaunched": "Não iniciado: {{reason}}.",
     "notRegistered": "Iniciado, mas o nó não entrou no cluster: {{reason}}.",
     "notInitialized": "O nó entrou no cluster, mas ainda não foi inicializado: {{reason}}.",
-    "ready": "Iniciado, registrado e inicializado.",
     "disrupting": "O Karpenter está interrompendo este nó: ele tem um taint e seus pods estão sendo movidos.",
     "terminating": "O nó está sendo encerrado.",
     "drifted": "Desviado ({{reason}}): o nó não corresponde mais ao seu NodePool ou à sua classe de nós, então o Karpenter o substitui.",
@@ -299,15 +254,7 @@
       "expiration": "Expiração",
       "other": "Outra"
     },
-    "disruptions": "Eventos de interrupção",
-    "claimTitle": "Início e interrupção",
-    "poolTitle": "Limites e interrupção",
-    "resource": "Recurso",
-    "inUse": "Em uso",
-    "limit": "Limite",
-    "noLimits": "Sem limites: o NodePool pode iniciar nós sem teto.",
-    "recentDisruptions": "Interrupções recentes dos seus NodeClaims",
-    "noDisruptions": "Nenhum evento de interrupção recente."
+    "disruptions": "Eventos de interrupção"
   },
   "ca": {
     "title": "Cluster Autoscaler",
@@ -326,7 +273,6 @@
     "scaleDown": "Redução"
   },
   "keda": {
-    "title": "KEDA",
     "notReady": "O KEDA não consegue escalonar este objeto ({{reason}}): veja a condição Ready e os eventos.",
     "paused": "Pausado pela anotação {{annotation}}: o KEDA não escalona o alvo.",
     "pausedAt": "Pausado pela anotação {{annotation}}: o alvo fica neste número de réplicas: {{replicas}}.",
@@ -338,24 +284,6 @@
     "jobInactive": "Inativo: nenhum gatilho está acima do limiar de ativação, então nenhum Job é criado.",
     "active": "Ativo: um gatilho está acima do limiar de ativação, então o HPA escalona o alvo (réplicas: {{min}}–{{max}}).",
     "inactiveIdle": "Inativo: nenhum gatilho está acima do limiar de ativação, então o alvo fica no número de réplicas ociosas: {{replicas}}.",
-    "inactive": "Inativo: nenhum gatilho está acima do limiar de ativação, então o HPA mantém o alvo em minReplicaCount: {{replicas}}.",
-    "hpaMissing": "O HPA {{name}} que o KEDA gerencia para este ScaledObject não existe.",
-    "noTriggers": "Nenhum gatilho.",
-    "trigger": "Gatilho",
-    "metadata": "Metadados",
-    "auth": "Autenticação",
-    "health": "Saúde",
-    "seconds_one": "{{count}} segundo",
-    "seconds_many": "{{count}} segundos",
-    "seconds_other": "{{count}} segundos",
-    "fallbackSpec": "limite de falhas: {{failures}}; réplicas de fallback: {{replicas}}",
-    "triggers": "Gatilhos",
-    "managedHpa": "O HPA gerenciado pelo KEDA",
-    "authTitle": "De onde vêm os parâmetros",
-    "noSources": "Nenhuma fonte de parâmetros.",
-    "parameter": "Parâmetro",
-    "from": "Fonte",
-    "name": "Nome",
-    "key": "Chave"
+    "inactive": "Inativo: nenhum gatilho está acima do limiar de ativação, então o HPA mantém o alvo em minReplicaCount: {{replicas}}."
   }
 }

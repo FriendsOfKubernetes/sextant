@@ -1,0 +1,124 @@
+/* Sextant's variables (--color-*, --control-height, …) come from the SDK's theme helper; blocks, fields and links are
+   the SDK's UI kit (`ui`, classes `sx-*`). The rest is the built-in view's look: Sextant's badges (global.css `.badge`)
+   and the Trivy parts of src/features/security/security.css, copied with their class names. */
+body.compact {
+  padding: 8px 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  background: var(--color-hover);
+}
+
+.badge--info {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.badge--success {
+  background: var(--color-success);
+  color: var(--color-on-status);
+}
+
+.badge--warning {
+  background: var(--color-warning);
+  color: var(--color-on-status);
+}
+
+.badge--danger {
+  background: var(--color-danger);
+  color: var(--color-on-status);
+}
+
+.sec-note {
+  margin: 4px 0 8px;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.sec-note--warning {
+  color: var(--color-warning);
+}
+
+.sec-muted {
+  color: var(--color-text-muted);
+}
+
+.sec-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sec-finding__head,
+.sec-report__head,
+.sec-report__counts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.sec-check {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border-left: 3px solid var(--color-border);
+}
+
+.sec-finding__title {
+  font-weight: 600;
+}
+
+.sec-code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.sec-report {
+  margin: 8px 0 12px;
+}
+
+.sec-report__name {
+  font-weight: 600;
+}
+
+.sec-counts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sec-remediation {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.sec-table-wrap {
+  overflow-x: auto;
+  margin: 6px 0;
+}
+
+.sec-table {
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.sec-table th,
+.sec-table td {
+  padding: 3px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.sec-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
