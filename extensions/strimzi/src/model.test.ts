@@ -210,6 +210,10 @@ function variants(): [string, KubeObject][] {
   (status(mirrorEmptyName).connectors as Json[])[1]!.name = "";
   const mirrorTaskNoTrace = mirrorWith(3, [], [2]);
   delete (((status(mirrorTaskNoTrace).connectors as Json[])[2]!.tasks as Json[])[1] as Json).trace;
+  const mirrorTaskBlankTrace = mirrorWith(3, [], [2]);
+  (((status(mirrorTaskBlankTrace).connectors as Json[])[2]!.tasks as Json[])[1] as Json).trace = "  \n\t \n";
+  const mirrorBlankTrace = mirrorWith(3, [1], []);
+  ((status(mirrorBlankTrace).connectors as Json[])[1]!.connector as Json).trace = " \n  ";
   const mirrorTaskNoName = mirrorWith(3, [], [2]);
   delete (status(mirrorTaskNoName).connectors as Json[])[2]!.name;
   const mirrorReady = copy(mirror);
@@ -242,6 +246,8 @@ function variants(): [string, KubeObject][] {
     ["mirror maker with the thirtieth connector failed", mirrorWith(30, [29], [])],
     ...[0, 1, 2, 7, 12, 19].map((i): [string, KubeObject] => [`mirror maker with failed tasks of connectors ${i + 1} and 20`, mirrorWith(20, [], [i, 19])]),
     ["mirror maker with a failed task without a trace", mirrorTaskNoTrace],
+    ["mirror maker with a failed task whose trace is blank", mirrorTaskBlankTrace],
+    ["mirror maker with a failed connector whose trace is blank", mirrorBlankTrace],
     ["mirror maker with a failed task of a connector without a name", mirrorTaskNoName],
     ["mirror maker with one connector and a failed task", mirrorWith(1, [], [0])],
     ["mirror maker with failed connectors and tasks, Ready False", mirrorWith(9, [4, 6], [3, 8], READY_FALSE)],
@@ -518,12 +524,16 @@ describe("the columns", () => {
     const reported = copy(kafka);
     delete (spec(reported).kafka as Json).listeners;
     expect(cell("kafka-listeners", reported)).toBe(names(reported));
-    // A listener only in the status (being removed) is not named while others are declared; the built-in column
-    // named it after them.
+    // A listener only in the status (being removed) is named after the declared ones, each once.
     const removing = copy(kafka);
     (status(removing).listeners as Json[]).push({ name: "old" });
-    expect(cell("kafka-listeners", removing)).toBe(names(kafka));
     expect(names(removing)).toBe(format.formatList(["plain", "tls", "external", "old"]));
+    expect(cell("kafka-listeners", removing)).toBe(names(removing));
+    // A status listener of the old shape, its name only as `type`: the built-in column named it by its type.
+    const legacy = copy(kafka);
+    status(legacy).listeners = [{ type: "plain" }, { type: "legacy" }];
+    expect(names(legacy)).toBe(format.formatList(["plain", "tls", "external", "legacy"]));
+    expect(cell("kafka-listeners", legacy)).toBe(names(kafka));
     const older = copy(kafka);
     status(older).kafkaVersion = undefined;
     expect(cell("kafka-version", older)).toBe("4.0.0");

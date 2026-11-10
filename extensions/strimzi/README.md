@@ -11,7 +11,7 @@ extensions), ADR-0140 (translations), ADR-0143 (the section's counter), ADR-0152
 ADR-0153 (computed columns), ADR-0160 (the section's icon and place, the UI kit), ADR-0161 (printer columns left out,
 paths picking an item, notification groups), ADR-0163 (field values in texts, a problem's reason from the object),
 ADR-0164 (case tooltips, deeper conditions), ADR-0165 (a kind's own "Only problems") and ADR-0167 (every match of a
-path, nested match fields reaching through lists, placeholder filters and clipping, case values, widths and the `muted` tone, `reasonOr`/`sinceOr`, 30
+path, nested match fields reaching through lists, placeholder filters and clipping, joined list paths, blank texts, case values, widths and the `muted` tone, `reasonOr`/`sinceOr`, 30
 rules and 40 conditions, sections without a heading, blocks in Sextant's own memory, text sort keys, non-empty texts,
 rule sources' caps, the counter's own label).
 
@@ -39,7 +39,8 @@ in the built-in columns' widths. Readiness (**Status**) is "Ready" (a `Ready` co
 True, or `Ready` False) or "Pending" (neither yet), coloured, with Strimzi's message on hover, sorted by the state in
 every language; **Reason** is that condition's reason.
 - Kafkas: **Status** (`kafka-status`), **Version** (`kafka-version`: the running Kafka version, else the one asked
-  for), **Listeners** (`kafka-listeners`: every declared listener's name, else the reported ones) and **Reason**
+  for), **Listeners** (`kafka-listeners`: every declared listener's name, then those only reported in the status, each
+  once) and **Reason**
   (`kafka-reason`).
 - Kafka Node Pools: **Kafka** (`node-pool-cluster`: the `strimzi.io/cluster` label), **Roles** (`node-pool-roles`)
   and **Replicas** (`node-pool-replicas`). Strimzi sets no readiness on a node pool.
@@ -145,12 +146,9 @@ None: it only reads.
 - The table's columns and the problem rules are computed by Sextant from field paths (ADR-0153, ADR-0137); where that
   cannot say exactly what the former built-in view computed, they differ as follows (the details always show the full
   reading):
-  - **Listeners** names the declared listeners, else the reported ones; a listener only in the status while others
-    are declared (one being removed) is not named, where the built-in column named it after them. A column reads the
-    first of its paths that gives a value; joining two lists would need a column that joins its paths' lists.
-  - A MirrorMaker 2 failure whose trace holds only blank lines has the message "<connector>: " where the built-in
-    message was none: a condition can tell an empty trace, not one of blank lines only. Kafka Connect writes the
-    exception on a trace's first line.
+  - **Listeners** reads a reported listener by its `name`; a status entry of the old shape that names its listener
+    only by `type` (Strimzi before `name` was added to `ListenerStatus`) is left out, where the built-in column named
+    it by its type. A path cannot pick the items that lack a field.
   - A KafkaConnector's auto-restart status without a count (Strimzi always writes one) counts as before the first
     restart, with its 2-minute grace, where the built-in view read 0 restarts and waited 2 minutes from
     the last restart's time; with a count and a restart time that is no time, the failure is told at once, where the

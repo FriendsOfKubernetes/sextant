@@ -388,6 +388,7 @@
           ".status.listeners[*].name"
         ],
         "format": "list",
+        "joinPaths": true,
         "afterColumn": "kafka-version",
         "width": "minmax(120px, 1.5fr)"
       },

@@ -7,7 +7,7 @@ view (ADR-0100) as an extension.
 
 - **A sidebar section "Strimzi"** with Kafkas, Kafka Node Pools, Kafka Topics, Kafka Users, Kafka Connects, Kafka
   MirrorMaker 2 and Kafka Connectors in Sextant's tables, and the built-in columns in their widths: readiness (sorted
-  by the state in every language), reason, version, every listener, the Kafka an object belongs to, roles, replicas,
+  by the state in every language), reason, version, every listener (declared, then only reported), the Kafka an object belongs to, roles, replicas,
   partitions, authentication, a connector's state (PAUSED and STOPPED muted), running tasks of all (red with a failed
   task, green with all running, blank without tasks, sorted by the running ones), the class's last part (the whole on hover) and automatic
   restarts.
