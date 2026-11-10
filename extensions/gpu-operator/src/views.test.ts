@@ -3,6 +3,7 @@
 import type { KubeObject, WatchUpdate } from "@sextant/extension-sdk";
 import { startTestHost, type TestHost, type TestWatch } from "@sextant/extension-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
+import manifest from "../sextant-extension.json";
 import fixtures from "../fixtures/objects.json";
 import { MAX_NAMESPACE_DAEMONSETS, startDetails } from "./details";
 import { setLanguage } from "./i18n";
@@ -23,10 +24,20 @@ let host: TestHost;
 let root: HTMLElement;
 let stop: () => void = () => undefined;
 
-async function open(obj: KubeObject, contribution: string, language = "en"): Promise<void> {
+/** Sextant's memory of the section's blocks, as the window keeps it (`context.blocks`, `ui.setBlockOpen`). */
+let remembered: Record<string, boolean> = {};
+
+async function open(obj: KubeObject, contribution: string, language = "en", blocks: Record<string, boolean> = {}): Promise<void> {
+  remembered = { ...blocks };
   host = await startTestHost({
-    context: { view: "details", contribution, selection: [ref(obj)], resourceVersion: "1", language },
-    handlers: { "resources.get": () => structuredClone(obj) },
+    context: { view: "details", contribution, selection: [ref(obj)], resourceVersion: "1", language, blocks: remembered },
+    handlers: {
+      "resources.get": () => structuredClone(obj),
+      "ui.setBlockOpen": ({ id, open }: { id: string; open: boolean }) => {
+        remembered = { ...remembered, [id]: open };
+        host.setContext({ blocks: remembered });
+      },
+    },
   });
   setLanguage(language);
   root = document.createElement("main");
@@ -52,7 +63,10 @@ afterEach(() => {
 
 const text = () => root.textContent ?? "";
 const byLabel = (label: string) => [...root.querySelectorAll("button")].filter((b) => b.getAttribute("aria-label") === label);
-const watchParams = (w: TestWatch) => w.params as { kind: { kind: string }; namespaces?: string[]; labelSelector?: string };
+const watchParams = (w: TestWatch) => w.params as { kind: { kind: string }; namespaces?: string[]; labelSelector?: string; maxObjects?: number };
+const capped = (total: number): WatchUpdate => ({ type: "capped", total }) as unknown as WatchUpdate;
+const toggle = (id: string) => root.querySelector<HTMLButtonElement>(`[data-block="${id}"] .sx-block__toggle`)!;
+const expanded = (id: string) => toggle(id)?.getAttribute("aria-expanded");
 const watchOf = (kind: string) => host.watches.find((w) => watchParams(w).kind.kind === kind && !w.stopped);
 const snapshot = (items: KubeObject[]): WatchUpdate => ({ type: "snapshot", items: items as never });
 const statusOf = (word: string) => [...root.querySelectorAll(".sx-status")].find((s) => s.textContent === word);
@@ -67,7 +81,7 @@ describe("a ClusterPolicy", () => {
     expect(root.querySelector(".gpu-note")?.textContent).toContain("The operator has not finished");
     expect(text()).toContain("Not set (the device plugin decides, by default none)");
     await expect.poll(() => watchOf("DaemonSet")).toBeDefined();
-    expect(watchParams(watchOf("DaemonSet")!)).toMatchObject({ namespaces: ["gpu-operator"] });
+    expect(watchParams(watchOf("DaemonSet")!)).toMatchObject({ namespaces: ["gpu-operator"], maxObjects: MAX_NAMESPACE_DAEMONSETS });
     expect(watchParams(watchOf("DaemonSet")!).labelSelector).toBeUndefined();
     expect(text()).toContain("Loading…");
     // Before the list comes, enabled components cannot be told.
@@ -114,13 +128,45 @@ describe("a ClusterPolicy", () => {
     await expect.poll(() => watchOf("DaemonSet")).toBeDefined();
     watchOf("DaemonSet")!.emit({ type: "forbidden", namespaces: ["gpu-operator"] } as never);
     await expect.poll(() => text()).toContain("The DaemonSets of namespace gpu-operator could not be read.");
-    const many = Array.from({ length: MAX_NAMESPACE_DAEMONSETS + 1 }, (_, i) => ({
-      apiVersion: "apps/v1",
-      kind: "DaemonSet",
-      metadata: { name: `ds-${String(i).padStart(4, "0")}`, namespace: "gpu-operator", uid: `u${i}` },
-    }));
-    watchOf("DaemonSet")!.emit(snapshot(many));
+    // The core keeps MAX_NAMESPACE_DAEMONSETS and counts the rest, as the built-in capped watch did.
+    watchOf("DaemonSet")!.emit(snapshot(daemonSets()));
+    watchOf("DaemonSet")!.emit(capped(MAX_NAMESPACE_DAEMONSETS + 1));
     await expect.poll(() => text()).toContain("Not every DaemonSet of the namespace was read");
+    watchOf("DaemonSet")!.emit(capped(MAX_NAMESPACE_DAEMONSETS));
+    await expect.poll(() => text()).not.toContain("Not every DaemonSet of the namespace was read");
+  });
+
+  it("has no heading of its own, keeps its block in Sextant's memory and watches the DaemonSets only while it is open", async () => {
+    await open(fx("policyNotReady"), "gpu-operator");
+    // The built-in sections had no heading of their own: Sextant draws none (`heading: false`), the frame none either.
+    expect(manifest.contributes.detailsSections.map((d) => [d.id, d.heading])).toEqual([
+      ["gpu-operator", false],
+      ["gpu-node", false],
+    ]);
+    expect(root.querySelector("h2, h3:not(.sx-block__title)")).toBeNull();
+    await expect.poll(() => watchOf("DaemonSet")).toBeDefined();
+    toggle("components").focus();
+    toggle("components").click();
+    await expect.poll(() => watchOf("DaemonSet")).toBeUndefined();
+    expect(host.calls.filter((c) => c.method === "ui.setBlockOpen").map((c) => c.params)).toEqual([{ id: "components", open: false }]);
+    await expect.poll(() => remembered).toEqual({ components: false });
+    expect(expanded("components")).toBe("false");
+    expect(document.activeElement).toBe(toggle("components"));
+    toggle("components").click();
+    await expect.poll(() => watchOf("DaemonSet")).toBeDefined();
+    expect(remembered).toEqual({ components: true });
+  });
+
+  it("opens with its block closed before closed, and follows the panel's Expand all and Collapse all", async () => {
+    await open(fx("policyReady"), "gpu-operator", "en", { components: false });
+    expect(expanded("components")).toBe("false");
+    expect(watchOf("DaemonSet")).toBeUndefined();
+    host.setContext({ blocks: { "*": true } });
+    await expect.poll(() => expanded("components")).toBe("true");
+    await expect.poll(() => watchOf("DaemonSet")).toBeDefined();
+    host.setContext({ blocks: { "*": false } });
+    await expect.poll(() => expanded("components")).toBe("false");
+    await expect.poll(() => watchOf("DaemonSet")).toBeUndefined();
   });
 
   it("speaks the UI language", async () => {
@@ -144,6 +190,16 @@ describe("an NVIDIADriver", () => {
     watchOf("DaemonSet")!.emit(snapshot([fx("dsToolkit")]));
     await expect.poll(() => text()).toContain("No DaemonSet of this NVIDIADriver yet.");
   });
+
+  it("watches its DaemonSets only while their block is open, remembered by Sextant", async () => {
+    await open(fx("driver"), "gpu-operator", "en", { daemonSets: false });
+    expect(expanded("daemonSets")).toBe("false");
+    expect(watchOf("DaemonSet")).toBeUndefined();
+    toggle("daemonSets").click();
+    await expect.poll(() => watchOf("DaemonSet")).toBeDefined();
+    expect(watchParams(watchOf("DaemonSet")!).maxObjects).toBe(MAX_NAMESPACE_DAEMONSETS);
+    expect(remembered).toEqual({ daemonSets: true });
+  });
 });
 
 describe("a node", () => {
@@ -154,6 +210,16 @@ describe("a node", () => {
     expect(root.querySelector(".gpu-message")?.textContent).toBe("The MIG manager could not apply the MIG configuration all-3g.40gb on this node.");
     expect(rows()).toEqual([["nvidia.com/gpu", "8", "8"]]);
     expect(host.watches).toHaveLength(0);
+  });
+
+  it("draws the GPU block as the built-in one: a block titled GPU, closed and opened in Sextant's memory", async () => {
+    await open(fx("nodeMig"), "gpu-node", "en", { gpu: false });
+    expect(root.querySelectorAll(".sx-block")).toHaveLength(1);
+    expect(toggle("gpu").textContent).toBe("GPU");
+    expect(expanded("gpu")).toBe("false");
+    toggle("gpu").click();
+    await expect.poll(() => remembered).toEqual({ gpu: true });
+    expect(expanded("gpu")).toBe("true");
   });
 
   it("MIG resources and memory per GPU; nothing on a node without GPUs", async () => {
@@ -192,8 +258,11 @@ describe("the GPU nodes page", () => {
   it("says when the list is cut or cannot be read", async () => {
     await openPage();
     await expect.poll(() => watchOf("Node")).toBeDefined();
-    const many = Array.from({ length: MAX_GPU_NODES + 1 }, (_, i) => ({ apiVersion: "v1", kind: "Node", metadata: { name: `n${i}`, uid: `n${i}` } }));
-    watchOf("Node")!.emit(snapshot(many));
+    expect(watchParams(watchOf("Node")!).maxObjects).toBe(MAX_GPU_NODES);
+    // The core keeps MAX_GPU_NODES and counts the rest, as the built-in capped watch did.
+    const kept = Array.from({ length: MAX_GPU_NODES }, (_, i) => ({ apiVersion: "v1", kind: "Node", metadata: { name: `n${i}`, uid: `n${i}` } }));
+    watchOf("Node")!.emit(snapshot(kept));
+    watchOf("Node")!.emit(capped(MAX_GPU_NODES + 1));
     await expect.poll(() => text()).toContain(`Only the first ${MAX_GPU_NODES} nodes are read.`);
     expect(root.querySelector('[role="status"]')?.textContent).toBe(`${MAX_GPU_NODES} nodes`);
     watchOf("Node")!.emit({ type: "error", code: "network", message: "down" } as never);

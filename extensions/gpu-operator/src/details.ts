@@ -7,9 +7,12 @@
 //   `gpu-node` on a Node (shown by Sextant only on GPU nodes, the section's `when`) — the GPU labels (product, count,
 //                 memory), the MIG configuration and its state, and the GPU and MIG resources' capacity and
 //                 allocatable, read from the node itself.
-// The operand namespace's DaemonSets are watched while a ClusterPolicy's or NVIDIADriver's section shows (at most
-// `MAX_NAMESPACE_DAEMONSETS` are used). The frame reads the shown object again whenever its resourceVersion changes.
-// Conditions, events and YAML are Sextant's own sections. Read-only.
+// The sections have no heading of their own (the manifest's `heading: false`), as the built-in ones had none; their
+// blocks open and close as the built-in panel's did, in Sextant's own memory of details sections (the context's
+// `blocks`, `ui.setBlockOpen`), so "Expand all" and "Collapse all" reach them too. The operand namespace's DaemonSets
+// are watched while the Components or DaemonSets block is open (at most `MAX_NAMESPACE_DAEMONSETS`, kept by the core,
+// a note when more match). The frame reads the shown object again whenever its resourceVersion changes. Conditions,
+// events and YAML are Sextant's own sections. Read-only.
 import { trackObjects, ui, type KubeObject, type ObjectRef, type Sextant, type UiContent, type Watch, type WatchParams } from "@sextant/extension-sdk";
 import { errorText, message, note, remark } from "./dom";
 import { t } from "./i18n";
@@ -40,15 +43,30 @@ import {
   type Rollout,
 } from "./model";
 
-/** DaemonSets of an operand namespace used at most, as the built-in view's capped list. */
+/** DaemonSets of an operand namespace the watch keeps at most, as the built-in view's capped list. */
 export const MAX_NAMESPACE_DAEMONSETS = 1000;
 
-/** A list watched while the section shows: its objects, whether the first answer came, whether it failed. */
+/** The ids of the blocks, in Sextant's memory of the sections. */
+export const COMPONENTS_BLOCK = "components";
+export const DAEMONSETS_BLOCK = "daemonSets";
+export const GPU_BLOCK = "gpu";
+
+/** A list watched while its block is open: its objects, whether the first answer came, whether it failed or was cut. */
 export interface Live {
   items: KubeObject[];
   ready: boolean;
   failed: boolean;
+  truncated: boolean;
 }
+
+/** The blocks of a section: whether one is open, and `toggle`, which remembers a change and draws again. */
+export interface Blocks {
+  isOpen(id: string): boolean;
+  toggle(id: string, open: boolean): void;
+}
+
+/** Every block open, nothing remembered (the views drawn on their own). */
+export const ALL_OPEN: Blocks = { isOpen: () => true, toggle: () => undefined };
 
 /** The operand namespace's DaemonSets as the views read them. */
 interface Listed {
@@ -60,8 +78,12 @@ interface Listed {
 
 const present = (nodes: (Node | null | false | undefined)[]): Node[] => nodes.filter((n): n is Node => Boolean(n));
 
-/** A titled block as the built-in view's: open, and closable with its title. */
-const block = (title: string, content: UiContent): HTMLElement => ui.block(title, content, { collapsible: true });
+/** A titled block as the built-in view's: open unless the user closed it, closable with its title. */
+function block(blocks: Blocks, id: string, title: string, content: UiContent): HTMLElement {
+  const node = ui.block(title, content, { collapsible: true, collapsed: !blocks.isOpen(id), onToggle: (open) => blocks.toggle(id, open) });
+  node.dataset.block = id;
+  return node;
+}
 
 /** A link to an object's details in Sextant's panel. */
 export function link(sextant: Sextant, kind: KindOf, name: string, namespace: string | null): HTMLElement {
@@ -105,15 +127,10 @@ function listNote(list: Listed, namespace: string | undefined): HTMLElement | nu
 /** The DaemonSets of the operand namespace as the views read them, from what the watch has. */
 export function listedOf(namespace: string | undefined, live: Live | undefined): Listed {
   if (!namespace || !live) return { items: [], loading: false, unavailable: true, truncated: false };
-  return {
-    items: live.items.slice(0, MAX_NAMESPACE_DAEMONSETS),
-    loading: !live.ready,
-    unavailable: live.failed,
-    truncated: live.items.length > MAX_NAMESPACE_DAEMONSETS,
-  };
+  return { items: live.items, loading: !live.ready, unavailable: live.failed, truncated: live.truncated };
 }
 
-export function policyView(sextant: Sextant, policy: KubeObject, live: Live | undefined): Node[] {
+export function policyView(sextant: Sextant, policy: KubeObject, live: Live | undefined, blocks: Blocks = ALL_OPEN): Node[] {
   const namespace = operandNamespaceOf(policy);
   const daemonSets = listedOf(namespace, live);
   const strategy = migStrategyOf(policy);
@@ -138,11 +155,11 @@ export function policyView(sextant: Sextant, policy: KubeObject, live: Live | un
       ["driver", driverByCrd(policy) ? t("fields.driverByCrd") : null],
     ]),
     ...stateNote(policy),
-    block(t("components.title"), [ui.table(headers, rows, { label: t("components.title") }), listNote(daemonSets, namespace)]),
+    block(blocks, COMPONENTS_BLOCK, t("components.title"), [ui.table(headers, rows, { label: t("components.title") }), listNote(daemonSets, namespace)]),
   ];
 }
 
-export function driverView(sextant: Sextant, driver: KubeObject, live: Live | undefined): Node[] {
+export function driverView(sextant: Sextant, driver: KubeObject, live: Live | undefined, blocks: Blocks = ALL_OPEN): Node[] {
   const namespace = operandNamespaceOf(driver);
   const daemonSets = listedOf(namespace, live);
   const owned = ownedDaemonSets(driver, daemonSets.items);
@@ -164,7 +181,7 @@ export function driverView(sextant: Sextant, driver: KubeObject, live: Live | un
       ["namespace", namespace ?? null],
     ]),
     ...stateNote(driver),
-    block(t("driver.daemonSets"), [content, listNote(daemonSets, namespace)]),
+    block(blocks, DAEMONSETS_BLOCK, t("driver.daemonSets"), [content, listNote(daemonSets, namespace)]),
   ];
 }
 
@@ -176,10 +193,10 @@ function amountsTable(node: KubeObject): HTMLElement {
   return ui.table(headers, rows, { label: t("node.title") });
 }
 
-export function nodeView(node: KubeObject): Node[] {
+export function nodeView(node: KubeObject, blocks: Blocks = ALL_OPEN): Node[] {
   const gpu = gpuNodeOf(node);
   if (!hasGpu(gpu)) return [];
-  return present([
+  const content = present([
     fieldsOf([
       ["product", gpu.product ?? null],
       ["count", gpu.count ?? null],
@@ -190,13 +207,22 @@ export function nodeView(node: KubeObject): Node[] {
     gpu.migState === "failed" && message(t("node.migFailed", { config: gpu.migConfig ?? "" })),
     amountsTable(node),
   ]);
+  return [block(blocks, GPU_BLOCK, t("node.title"), content)];
 }
 
-/** What a section watches besides its object: the DaemonSets of the operand namespace. */
-export function daemonSetWatch(obj: KubeObject, kind: { group: string; kind: string }): Omit<WatchParams, "clusterId"> | null {
-  if (!isKind(kind, CLUSTER_POLICY) && !isKind(kind, NVIDIA_DRIVER)) return null;
+/**
+ * What a section watches besides its object: the DaemonSets of the operand namespace, while the block that lists them
+ * (Components, DaemonSets) is open, as the built-in view watched them.
+ */
+export function daemonSetWatch(
+  obj: KubeObject,
+  kind: { group: string; kind: string },
+  isOpen: (id: string) => boolean = () => true,
+): Omit<WatchParams, "clusterId"> | null {
+  const id = isKind(kind, CLUSTER_POLICY) ? COMPONENTS_BLOCK : isKind(kind, NVIDIA_DRIVER) ? DAEMONSETS_BLOCK : null;
+  if (id === null || !isOpen(id)) return null;
   const namespace = operandNamespaceOf(obj);
-  return namespace ? { kind: DAEMONSET, namespaces: [namespace] } : null;
+  return namespace ? { kind: DAEMONSET, namespaces: [namespace], maxObjects: MAX_NAMESPACE_DAEMONSETS } : null;
 }
 
 /** The watches a section holds, by what they watch: started when first wanted, stopped when no longer. */
@@ -226,7 +252,7 @@ class Watches {
   }
 
   private start(key: string, spec: Omit<WatchParams, "clusterId">): { watch: Watch; live: Live } {
-    const live: Live = { items: [], ready: false, failed: false };
+    const live: Live = { items: [], ready: false, failed: false, truncated: false };
     const settle = (failed: boolean) => {
       live.ready = true;
       live.failed = failed;
@@ -243,6 +269,10 @@ class Watches {
         },
       ),
       onError: () => settle(true),
+      onCapped: (total) => {
+        live.truncated = total > (spec.maxObjects ?? Infinity);
+        this.changed();
+      },
     });
     watch.started.catch(() => undefined);
     const entry = { watch, live };
@@ -256,16 +286,16 @@ class Watches {
 }
 
 /** The view of `contribution` for the shown object; nothing when it does not apply. */
-function viewOf(sextant: Sextant, contribution: string, ref: ObjectRef, obj: KubeObject, live: Live | undefined): Node[] | null {
-  if (contribution === "gpu-operator" && isKind(ref.kind, CLUSTER_POLICY)) return policyView(sextant, obj, live);
-  if (contribution === "gpu-operator" && isKind(ref.kind, NVIDIA_DRIVER)) return driverView(sextant, obj, live);
-  if (contribution === "gpu-node" && isKind(ref.kind, NODE)) return nodeView(obj);
+function viewOf(sextant: Sextant, contribution: string, ref: ObjectRef, obj: KubeObject, live: Live | undefined, blocks: Blocks): Node[] | null {
+  if (contribution === "gpu-operator" && isKind(ref.kind, CLUSTER_POLICY)) return policyView(sextant, obj, live, blocks);
+  if (contribution === "gpu-operator" && isKind(ref.kind, NVIDIA_DRIVER)) return driverView(sextant, obj, live, blocks);
+  if (contribution === "gpu-node" && isKind(ref.kind, NODE)) return nodeView(obj, blocks);
   return null;
 }
 
 /**
  * Starts the details section `contribution` on the object in the context: read again whenever its resourceVersion
- * changes; the operand namespace's DaemonSets watched while it shows, and drawn again as they change.
+ * changes; the operand namespace's DaemonSets watched while their block is open, and drawn again as they change.
  */
 export function startDetails(sextant: Sextant, root: HTMLElement, contribution: string): () => void {
   let shownVersion: string | null | undefined;
@@ -274,14 +304,30 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
   let object: { ref: ObjectRef; obj: KubeObject } | null = null;
   let scheduled = false;
   let stopped = false;
+  // The blocks' choices as Sextant remembers them (`context.blocks`); a choice made here counts until the context that
+  // carries it (or any other change of the remembered choices, "Collapse all" among them) comes back.
+  const choices = new Map<string, boolean>();
+  let rememberedBlocks = JSON.stringify(sextant.context.blocks ?? {});
+  const blocks: Blocks = {
+    isOpen: (id) => choices.get(id) ?? ui.blockOpen(sextant.context.blocks, id, true),
+    toggle: (id, open) => {
+      choices.set(id, open);
+      void sextant.ui.setBlockOpen(id, open).catch(() => undefined);
+      schedule();
+    },
+  };
 
   const render = () => {
     if (!object || stopped) return;
     const { ref, obj } = object;
-    const related = watches.want({ daemonSets: daemonSetWatch(obj, ref.kind) });
-    const view = viewOf(sextant, contribution, ref, obj, related.daemonSets);
+    const related = watches.want({ daemonSets: daemonSetWatch(obj, ref.kind, blocks.isOpen) });
+    const view = viewOf(sextant, contribution, ref, obj, related.daemonSets, blocks);
+    // Drawn again on every change: the focus stays on the toggle of the block it was on.
+    const focused = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>("[data-block]")?.dataset.block;
+    const onToggle = document.activeElement?.classList.contains("sx-block__toggle") ?? false;
     if (view === null) root.replaceChildren(ui.empty(t("common.nothingToShow", { view: contribution })));
     else root.replaceChildren(...view);
+    if (focused && onToggle) root.querySelector<HTMLElement>(`[data-block="${focused}"] .sx-block__toggle`)?.focus();
   };
   const schedule = () => {
     if (scheduled || stopped) return;
@@ -306,6 +352,12 @@ export function startDetails(sextant: Sextant, root: HTMLElement, contribution: 
   };
 
   const follow = () => {
+    const nowRemembered = JSON.stringify(sextant.context.blocks ?? {});
+    if (nowRemembered !== rememberedBlocks) {
+      rememberedBlocks = nowRemembered;
+      choices.clear();
+      schedule();
+    }
     const ref = sextant.context.selection[0];
     if (!ref) {
       root.replaceChildren(ui.empty(t("common.nothingSelected")));

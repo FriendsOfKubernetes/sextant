@@ -104,11 +104,13 @@ describe("the manifest's translations", () => {
 
   it("say the states as the details do", () => {
     for (const id of ["policy-state", "driver-state"]) {
-      const column = c.columns.find((col) => col.id === id)! as { cases: Case[] };
-      expect(column.cases.map((cs) => cs.text)).toEqual(OPERATOR_STATES.map((s) => en[`state.${s}`]));
+      // Each state's cases (by the hover they take) sort and filter by the state's name.
+      const column = c.columns.find((col) => col.id === id)! as { cases: (Case & { value: string })[] };
+      expect(new Set(column.cases.map((cs) => cs.value))).toEqual(new Set(OPERATOR_STATES));
+      column.cases.forEach((cs) => expect(cs.text, `${id} ${cs.value}`).toBe(en[`state.${cs.value as (typeof OPERATOR_STATES)[number]}`]));
       for (const [language, texts] of Object.entries(translations)) {
         const catalog = CATALOGS[language as keyof typeof CATALOGS] as Record<string, string>;
-        OPERATOR_STATES.forEach((s, i) => expect(texts[`columns.${id}.cases.${i}.text`], language).toBe(catalog[`state.${s}`]));
+        column.cases.forEach((cs, i) => expect(texts[`columns.${id}.cases.${i}.text`], language).toBe(catalog[`state.${cs.value}`]));
       }
     }
   });

@@ -1,8 +1,8 @@
 // "GPU nodes" (the manifest's page `gpu-nodes` in the section `gpuOperator`), as the built-in page drew it: the nodes
 // labelled `nvidia.com/gpu.present=true` (at most `MAX_GPU_NODES` used), with the GPU product and count GPU Feature
 // Discovery labels, the `nvidia.com/gpu` and MIG resources' capacity and allocatable from the node status, and the MIG
-// configuration with its state. The nodes are watched while the page shows, selected on the API server by the label.
-// Read-only.
+// configuration with its state. The nodes are watched while the page shows, selected on the API server by the label,
+// at most `MAX_GPU_NODES` kept by the core (a note when more match). Read-only.
 import { trackObjects, ui, type KubeObject, type Sextant, type UiContent } from "@sextant/extension-sdk";
 import { element, remark } from "./dom";
 import { t } from "./i18n";
@@ -58,11 +58,11 @@ export function startPage(sextant: Sextant, root: HTMLElement): () => void {
   const render = () => root.replaceChildren(pageView(sextant, nodes));
   render();
   const watch = sextant.resources.watch(
-    { kind: NODE, labelSelector: GPU_NODE_SELECTOR },
+    { kind: NODE, labelSelector: GPU_NODE_SELECTOR, maxObjects: MAX_GPU_NODES },
     {
       onUpdate: trackObjects(
         (items) => {
-          nodes = { items: items.slice(0, MAX_GPU_NODES), loading: false, unavailable: false, truncated: items.length > MAX_GPU_NODES };
+          nodes = { ...nodes, items, loading: false, unavailable: false };
           render();
         },
         (other) => {
@@ -73,6 +73,10 @@ export function startPage(sextant: Sextant, root: HTMLElement): () => void {
       ),
       onError: () => {
         nodes = { ...nodes, loading: false, unavailable: true };
+        render();
+      },
+      onCapped: (total) => {
+        nodes = { ...nodes, truncated: total > MAX_GPU_NODES };
         render();
       },
     },
